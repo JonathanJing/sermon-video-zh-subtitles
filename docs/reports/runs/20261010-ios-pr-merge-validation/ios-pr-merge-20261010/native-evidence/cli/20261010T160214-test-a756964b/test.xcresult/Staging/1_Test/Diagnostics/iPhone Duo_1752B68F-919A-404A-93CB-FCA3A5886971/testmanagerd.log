@@ -1,0 +1,25 @@
+16:02:27.773 xcodebuild[45482:8539882] Sim iPhone Duo: Unregistering for sim device notification with token 3
+16:02:27.773 xcodebuild[45482:8539882] Calling -[SimDevice getenv:error:] for TESTMANAGERD_SIM_SOCK
+16:02:27.776 xcodebuild[45482:8539882] Sim iPhone Duo has testmanagerd socket at /private/var/tmp/com.apple.launchd.rgaPOepmau/com.apple.testmanagerd.unix-domain.socket
+16:02:27.776 xcodebuild[45482:8539882] Validating test connection socket path (/private/var/tmp/com.apple.launchd.rgaPOepmau/com.apple.testmanagerd.unix-domain.socket)
+16:02:27.776 xcodebuild[45482:8539882] Constructing transport for test connection socket
+16:02:27.776 xcodebuild[45482:8539882] Connected socket 30 to testmanagerd for Sim iPhone Duo
+16:02:27.777 xcodebuild[45482:8539882] Initiating control session with IDE capabilities: <XCTCapabilities: 0x7c41ea3b60>: {
+    "report crashes capability" = 3;
+}
+16:02:27.786 xcodebuild[45482:8539886] Got reply to control session initiation request (result:error): <XCTCapabilities: 0x7c41ea3ae0>: {
+    "authorize test session capability" = 1;
+    "automation mode" = 1;
+    "initiate daemon control session capability" = 4;
+    "initiate test runner session capability" = 2;
+    "record UI interaction capability" = 2;
+    "recording events as source code" = 1;
+    "request log archive capability" = 1;
+    "structured results configuration" = 1;
+    "supports delayed attachment transfers" = 1;
+}: (null)
+16:02:27.786 xcodebuild[45482:8539882] Requesting crash report collection for process names: xctest, DTServiceHub, ListeningActivityExtension, FrontBoard, testmanagerd, Tongxing, SpringBoard, TongxingUITests-Runner, debugserver, assertiond, runningboardd, backboardd
+16:02:33.223 xcodebuild[45482:8539890] Requesting authorization for pid 45680
+16:02:33.224 xcodebuild[45482:8539819] Got reply to authorization request for pid 45680 (result:error): 1: (null)
+16:02:38.255 xcodebuild[45482:8539892] Requesting authorization for pid 45757
+16:02:38.256 xcodebuild[45482:8539885] Got reply to authorization request for pid 45757 (result:error): 1: (null)

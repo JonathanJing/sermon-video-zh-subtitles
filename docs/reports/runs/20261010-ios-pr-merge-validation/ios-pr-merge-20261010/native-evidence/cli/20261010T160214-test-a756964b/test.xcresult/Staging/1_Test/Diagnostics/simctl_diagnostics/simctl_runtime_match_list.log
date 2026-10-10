@@ -1,0 +1,218 @@
+== Known SDKs ==
+    appletvos27.0
+    iphoneos27.1
+    watchos27.0
+    xros27.0
+
+
+== Preferred Build Map ==
+iphoneos15.4:
+    19E239  -->  19E240
+appletvos17.2:
+    21K354  -->  21K364
+    21K5330d  -->  21K5330e
+    21K5348e  -->  21K5348e
+appletvos16.0:
+    20J5328e  -->  20J5328e
+    20J5355f  -->  20J5355f
+    20J5319f  -->  20J5319f
+    20J5344e  -->  20J5344e
+    20J5299n  -->  20J5299n
+    20J373  -->  20J373
+xros1.2:
+    21O5565d  -->  21O5565d
+iphoneos16.4:
+    20E5212f  -->  20E5212f
+    20E5223f  -->  20E5223f
+    20E5238a  -->  20E5239a
+    20E238  -->  20E247
+iphoneos17.5:
+    21F77  -->  21F79
+    21F5058d  -->  21F5058d
+iphoneos17.4:
+    21E5195d  -->  21E5195d
+    21E210  -->  21E213
+    21E5200b  -->  21E5200d
+    21E5184g  -->  21E5184i
+    21E212  -->  21E213
+appletvos16.4:
+    20L5474e  -->  20L5474e
+    20L5463g  -->  20L5463g
+    20L489  -->  20L494
+    20L5489a  -->  20L5489a
+appletvos17.0:
+    21J351  -->  21J353
+    21J5318e  -->  21J5318f
+    21J5330e  -->  21J5330e
+    21J5273p  -->  21J5273p
+    21J5303f  -->  21J5303f
+    21J5345a  -->  21J5345a
+    21J5293e  -->  21J5293g
+    21J5351a  -->  21J5352a
+iphoneos16.1:
+    20B71  -->  20B72
+    20B5056e  -->  20B5056e
+    20B5045d  -->  20B5045d
+watchos10.5:
+    21T5555c  -->  21T5555c
+    21T569  -->  21T575
+watchos10.4:
+    21T5202c  -->  21T5202d
+    21T214  -->  21T214
+    21T5185f  -->  21T5185f
+    21T5196c  -->  21T5196c
+xros2.0:
+    22N5267d  -->  22N5267g
+    22N5252g  -->  22N5252m
+    22N5286f  -->  22N5286g
+    22N5297d  -->  22N5297g
+    22N5277d  -->  22N5277f
+    22N5312a  -->  22N5314a
+watchos10.2:
+    21S5349d  -->  21S5349d
+    21S355  -->  21S364
+    21S5331d  -->  21S5331e
+appletvos17.5:
+    21L566  -->  21L569
+    21L5553d  -->  21L5553e
+watchos9.0:
+    20R5316e  -->  20R5316e
+    20R5287p  -->  20R5287p
+    20R5307f  -->  20R5307f
+    20R5332f  -->  20R5332f
+    20R5343e  -->  20R5343e
+    20R362  -->  20R362
+watchos9.1:
+    20S71  -->  20S75
+    20S5044e  -->  20S5044e
+    20S5055d  -->  20S5055e
+iphoneos17.2:
+    21C52  -->  21C62
+    21C5046b  -->  21C5046b
+    21C5029d  -->  21C5029e
+iphoneos17.0:
+    21A325  -->  21A328
+    21A326  -->  21A342
+    21A5325a  -->  21A5326a
+    21A5248u  -->  21A5248u
+    21A5303c  -->  21A5303d
+    21A5291f  -->  21A5291g
+    21A5317a  -->  21A5317a
+    21A5277g  -->  21A5277g
+    21A5268f  -->  21A5268h
+watchos11.0:
+    22R5344a  -->  22R5346a
+    22R5328f  -->  22R5328f
+    22R5299c  -->  22R5299d
+    22R5318f  -->  22R5318h
+    22R5309d  -->  22R5309f
+    22R5284g  -->  22R5284o
+iphoneos16.0:
+    20A5283m  -->  20A5283p
+    20A360  -->  20A360
+    20A5312e  -->  20A5312e
+    20A5339d  -->  20A5339d
+    20A5303f  -->  20A5303f
+    20A5328h  -->  20A5328h
+watchos9.4:
+    20T248  -->  20T253
+    20T5248a  -->  20T5248a
+    20T5233d  -->  20T5233d
+    20T5222f  -->  20T5222f
+iphoneos16.2:
+    20C52  -->  20C52
+watchos10.0:
+    21R5275s  -->  21R5275s
+    21R5320f  -->  21R5320g
+    21R5295e  -->  21R5295g
+    21R5346a  -->  21R5346a
+    21R354  -->  21R355
+    21R5332e  -->  21R5332f
+    21R5354a  -->  21R5355a
+    21R5305e  -->  21R5305e
+iphoneos18.0:
+    22A5307d  -->  22A5307f
+    22A5326g  -->  22A5326g
+    22A5342a  -->  22A5346a
+    22A5316f  -->  22A5316j
+    22A5297f  -->  22A5297f
+    22A5282g  -->  22A5282m
+xros1.0:
+    21N301  -->  21N305
+    21N5207h  -->  21N5207f
+    21N5165f  -->  21N5165g
+    21N5295a  -->  21N5300a
+    21N5233e  -->  21N5233f
+    21N5259i  -->  21N5259j
+    21N5207e  -->  21N5207f
+iphoneos18.1:
+    22B5023b  -->  22B5023e
+appletvos17.4:
+    21L5212c  -->  21L5212d
+    21L5206e  -->  21L5206e
+    21L5195f  -->  21L5195h
+    21L224  -->  21L224
+appletvos18.0:
+    22J5324f  -->  22J5324f
+    22J5290f  -->  22J5290l
+    22J5305d  -->  22J5305e
+    22J5315c  -->  22J5315e
+    22J5350a  -->  22J5352a
+    22J5335e  -->  22J5335e
+appletvos16.1:
+    20K67  -->  20K67
+    20K5041d  -->  20K5041d
+    20K5052c  -->  20K5052c
+xros1.1:
+    21O5181e  -->  21O5181e
+    21O200  -->  21O209
+    21O5188b  -->  21O5188c
+iphoneos15.5:
+    19F64  -->  19F70
+
+
+== User Overrides ==
+(None)
+
+
+== Evaluation Results ==
+appletvos27.0:
+    SDK Version: 27.0
+    SDK Build: 24J360
+    SDK Directory: /Applications/Xcode.app/Contents/Developer/Platforms/AppleTVOS.platform/Developer/SDKs/AppleTVOS27.0.sdk
+    Platform: com.apple.platform.appletvos
+    Chosen Runtime: 24J360
+        User Override: (null)
+        Preferred: (null)
+        Default: 24J360
+
+iphoneos27.1:
+    SDK Version: 27.1
+    SDK Build: 24A94232
+    SDK Directory: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS27.1.sdk
+    Platform: com.apple.platform.iphoneos
+    Chosen Runtime: 24A94232
+        User Override: (null)
+        Preferred: (null)
+        Default: 24A94232
+
+watchos27.0:
+    SDK Version: 27.0
+    SDK Build: 24R360
+    SDK Directory: /Applications/Xcode.app/Contents/Developer/Platforms/WatchOS.platform/Developer/SDKs/WatchOS27.0.sdk
+    Platform: com.apple.platform.watchos
+    Chosen Runtime: 24R360
+        User Override: (null)
+        Preferred: (null)
+        Default: 24R360
+
+xros27.0:
+    SDK Version: 27.0
+    SDK Build: 24M361
+    SDK Directory: /Applications/Xcode.app/Contents/Developer/Platforms/XROS.platform/Developer/SDKs/XROS.sdk
+    Platform: com.apple.platform.xros
+    Chosen Runtime: 24M361
+        User Override: (null)
+        Preferred: (null)
+        Default: 24M361
+

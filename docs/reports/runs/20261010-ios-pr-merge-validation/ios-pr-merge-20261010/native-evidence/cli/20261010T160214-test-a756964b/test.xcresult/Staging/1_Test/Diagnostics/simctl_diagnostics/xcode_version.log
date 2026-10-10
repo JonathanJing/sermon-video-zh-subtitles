@@ -1,0 +1,124 @@
+DriverKit27.0.sdk - DriverKit 27.0 (driverkit27.0)
+SDKVersion: 27.0
+Path: /Applications/Xcode.app/Contents/Developer/Platforms/DriverKit.platform/Developer/SDKs/DriverKit27.0.sdk
+PlatformVersion: 27.0
+PlatformPath: /Applications/Xcode.app/Contents/Developer/Platforms/DriverKit.platform
+
+iPhoneOS27.1.sdk - iOS 27.1 (iphoneos27.1)
+SDKVersion: 27.1
+Path: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS27.1.sdk
+PlatformVersion: 27.1
+PlatformPath: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform
+BuildID: CB31F722-B7DE-11F1-A97B-8467920FADBA
+ProductBuildVersion: 24A94232
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: iPhone OS
+ProductVersion: 27.1
+
+iPhoneSimulator27.1.sdk - Simulator - iOS 27.1 (iphonesimulator27.1)
+SDKVersion: 27.1
+Path: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk
+PlatformVersion: 27.1
+PlatformPath: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform
+BuildID: CB31F722-B7DE-11F1-A97B-8467920FADBA
+ProductBuildVersion: 24A94232
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: iPhone OS
+ProductVersion: 27.1
+
+MacOSX27.sdk - macOS 27.0 (macosx27.0)
+SDKVersion: 27.0
+Path: /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.sdk
+PlatformVersion: 27.0
+PlatformPath: /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform
+BuildID: F8088D3E-A1DA-11F1-AAD4-A82B6E44CE4F
+ProductBuildVersion: 26A425
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: macOS
+ProductUserVisibleVersion: 27.0
+ProductVersion: 27.0
+iOSSupportVersion: 27.0
+
+MacOSX27.0.sdk - macOS 27.0 (macosx27.0)
+SDKVersion: 27.0
+Path: /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk
+PlatformVersion: 27.0
+PlatformPath: /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform
+BuildID: F8088D3E-A1DA-11F1-AAD4-A82B6E44CE4F
+ProductBuildVersion: 26A425
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: macOS
+ProductUserVisibleVersion: 27.0
+ProductVersion: 27.0
+iOSSupportVersion: 27.0
+
+AppleTVOS27.0.sdk - tvOS 27.0 (appletvos27.0)
+SDKVersion: 27.0
+Path: /Applications/Xcode.app/Contents/Developer/Platforms/AppleTVOS.platform/Developer/SDKs/AppleTVOS27.0.sdk
+PlatformVersion: 27.0
+PlatformPath: /Applications/Xcode.app/Contents/Developer/Platforms/AppleTVOS.platform
+BuildID: CA572AB2-A1E9-11F1-897C-5D64769D1288
+ProductBuildVersion: 24J360
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: Apple TVOS
+ProductVersion: 27.0
+
+AppleTVSimulator27.0.sdk - Simulator - tvOS 27.0 (appletvsimulator27.0)
+SDKVersion: 27.0
+Path: /Applications/Xcode.app/Contents/Developer/Platforms/AppleTVSimulator.platform/Developer/SDKs/AppleTVSimulator27.0.sdk
+PlatformVersion: 27.0
+PlatformPath: /Applications/Xcode.app/Contents/Developer/Platforms/AppleTVSimulator.platform
+BuildID: CA572AB2-A1E9-11F1-897C-5D64769D1288
+ProductBuildVersion: 24J360
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: Apple TVOS
+ProductVersion: 27.0
+
+XROS27.0.sdk - visionOS 27.0 (xros27.0)
+SDKVersion: 27.0
+Path: /Applications/Xcode.app/Contents/Developer/Platforms/XROS.platform/Developer/SDKs/XROS27.0.sdk
+PlatformVersion: 27.0
+PlatformPath: /Applications/Xcode.app/Contents/Developer/Platforms/XROS.platform
+BuildID: 03F050EE-A0FC-11F1-AD34-488FB93739A6
+ProductBuildVersion: 24M361
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: xrOS
+ProductVersion: 27.0
+iOSSupportVersion: 27.0
+
+XRSimulator27.0.sdk - Simulator - visionOS 27.0 (xrsimulator27.0)
+SDKVersion: 27.0
+Path: /Applications/Xcode.app/Contents/Developer/Platforms/XRSimulator.platform/Developer/SDKs/XRSimulator27.0.sdk
+PlatformVersion: 27.0
+PlatformPath: /Applications/Xcode.app/Contents/Developer/Platforms/XRSimulator.platform
+BuildID: 03F050EE-A0FC-11F1-AD34-488FB93739A6
+ProductBuildVersion: 24M361
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: xrOS
+ProductVersion: 27.0
+iOSSupportVersion: 27.0
+
+WatchOS27.0.sdk - watchOS 27.0 (watchos27.0)
+SDKVersion: 27.0
+Path: /Applications/Xcode.app/Contents/Developer/Platforms/WatchOS.platform/Developer/SDKs/WatchOS27.0.sdk
+PlatformVersion: 27.0
+PlatformPath: /Applications/Xcode.app/Contents/Developer/Platforms/WatchOS.platform
+BuildID: 8A5D5550-A2AF-11F1-89F4-E7B6EF0E3DA2
+ProductBuildVersion: 24R360
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: Watch OS
+ProductVersion: 27.0
+
+WatchSimulator27.0.sdk - Simulator - watchOS 27.0 (watchsimulator27.0)
+SDKVersion: 27.0
+Path: /Applications/Xcode.app/Contents/Developer/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator27.0.sdk
+PlatformVersion: 27.0
+PlatformPath: /Applications/Xcode.app/Contents/Developer/Platforms/WatchSimulator.platform
+BuildID: 8A5D5550-A2AF-11F1-89F4-E7B6EF0E3DA2
+ProductBuildVersion: 24R360
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: Watch OS
+ProductVersion: 27.0
+
+Xcode 27.1
+Build version 27A9275

@@ -1,0 +1,242 @@
+== Device Types ==
+iPhone 18 Pro (com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 18 Pro.simdevicetype]
+iPhone 18 Pro Max (com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro-Max) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 18 Pro Max.simdevicetype]
+iPhone Duo (com.apple.CoreSimulator.SimDeviceType.iPhone-Duo) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone Duo.simdevicetype]
+iPhone 17 Pro (com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 17 Pro.simdevicetype]
+iPhone 17 Pro Max (com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 17 Pro Max.simdevicetype]
+iPhone 17e (com.apple.CoreSimulator.SimDeviceType.iPhone-17e) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 17e.simdevicetype]
+iPhone Air (com.apple.CoreSimulator.SimDeviceType.iPhone-Air) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone Air.simdevicetype]
+iPhone 17 (com.apple.CoreSimulator.SimDeviceType.iPhone-17) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 17.simdevicetype]
+iPhone 16 Pro (com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 16 Pro.simdevicetype]
+iPhone 16 Pro Max (com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro-Max) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 16 Pro Max.simdevicetype]
+iPhone 16e (com.apple.CoreSimulator.SimDeviceType.iPhone-16e) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 16e.simdevicetype]
+iPhone 16 (com.apple.CoreSimulator.SimDeviceType.iPhone-16) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 16.simdevicetype]
+iPhone 16 Plus (com.apple.CoreSimulator.SimDeviceType.iPhone-16-Plus) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 16 Plus.simdevicetype]
+iPhone 15 Pro (com.apple.CoreSimulator.SimDeviceType.iPhone-15-Pro) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 15 Pro.simdevicetype]
+iPhone 15 Pro Max (com.apple.CoreSimulator.SimDeviceType.iPhone-15-Pro-Max) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 15 Pro Max.simdevicetype]
+iPhone 15 (com.apple.CoreSimulator.SimDeviceType.iPhone-15) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 15.simdevicetype]
+iPhone 15 Plus (com.apple.CoreSimulator.SimDeviceType.iPhone-15-Plus) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 15 Plus.simdevicetype]
+iPhone 14 Pro (com.apple.CoreSimulator.SimDeviceType.iPhone-14-Pro) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 14 Pro.simdevicetype]
+iPhone 14 Pro Max (com.apple.CoreSimulator.SimDeviceType.iPhone-14-Pro-Max) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 14 Pro Max.simdevicetype]
+iPhone 14 (com.apple.CoreSimulator.SimDeviceType.iPhone-14) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 14.simdevicetype]
+iPhone 14 Plus (com.apple.CoreSimulator.SimDeviceType.iPhone-14-Plus) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 14 Plus.simdevicetype]
+iPhone SE (3rd generation) (com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone SE (3rd generation).simdevicetype]
+iPhone 13 Pro (com.apple.CoreSimulator.SimDeviceType.iPhone-13-Pro) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 13 Pro.simdevicetype]
+iPhone 13 Pro Max (com.apple.CoreSimulator.SimDeviceType.iPhone-13-Pro-Max) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 13 Pro Max.simdevicetype]
+iPhone 13 (com.apple.CoreSimulator.SimDeviceType.iPhone-13) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 13.simdevicetype]
+iPhone 13 mini (com.apple.CoreSimulator.SimDeviceType.iPhone-13-mini) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 13 mini.simdevicetype]
+iPhone 12 Pro (com.apple.CoreSimulator.SimDeviceType.iPhone-12-Pro) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 12 Pro.simdevicetype]
+iPhone 12 Pro Max (com.apple.CoreSimulator.SimDeviceType.iPhone-12-Pro-Max) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 12 Pro Max.simdevicetype]
+iPhone 12 (com.apple.CoreSimulator.SimDeviceType.iPhone-12) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 12.simdevicetype]
+iPhone 12 mini (com.apple.CoreSimulator.SimDeviceType.iPhone-12-mini) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 12 mini.simdevicetype]
+iPhone SE (2nd generation) (com.apple.CoreSimulator.SimDeviceType.iPhone-SE--2nd-generation-) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone SE (2nd generation).simdevicetype]
+iPhone 11 Pro (com.apple.CoreSimulator.SimDeviceType.iPhone-11-Pro) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 11 Pro.simdevicetype]
+iPhone 11 Pro Max (com.apple.CoreSimulator.SimDeviceType.iPhone-11-Pro-Max) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 11 Pro Max.simdevicetype]
+iPhone 11 (com.apple.CoreSimulator.SimDeviceType.iPhone-11) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 11.simdevicetype]
+iPhone Xʀ (com.apple.CoreSimulator.SimDeviceType.iPhone-XR) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone Xʀ.simdevicetype]
+iPhone Xs (com.apple.CoreSimulator.SimDeviceType.iPhone-XS) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone Xs.simdevicetype]
+iPhone Xs Max (com.apple.CoreSimulator.SimDeviceType.iPhone-XS-Max) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone Xs Max.simdevicetype]
+iPhone X (com.apple.CoreSimulator.SimDeviceType.iPhone-X) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone X.simdevicetype]
+iPhone 8 (com.apple.CoreSimulator.SimDeviceType.iPhone-8) [/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 8.simdevicetype]
+... 150 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+    iPad Pro 11-inch (M5) (7F180013-BF34-4EB5-9FBF-31EE824C4581) (Shutdown)
+    iPad mini (A17 Pro) (714D8298-1150-4DCF-94B4-C02AB9DB8E5C) (Shutdown)
+    iPad Air 13-inch (M4) (1EFF8CCF-C26A-4A2A-BB58-D2EA171F8D5F) (Shutdown)
+    iPad Air 11-inch (M4) (E18812A0-A7A9-4387-AF36-EE9CF07C6763) (Shutdown)
+    iPad (A16) (51EA5EFB-B6CB-495F-B3EF-4DAF6DAE208D) (Shutdown)
+-- iOS 27.1 (24A94401) [/Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime] --
+    iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971) (Booted)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.iOS-15-0 --
+    iPhone 13 Pro (4C475E5E-7B1D-4196-A06B-0B3536DCDA99) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 Pro Max (9C4A155B-C111-4516-B48B-E3FEAAAFD44A) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 (0ADB2EE1-D24C-4925-9564-3316C66648B0) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 mini (186BC2B5-6085-4126-8B80-7F0D08EC5DC3) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 Pro (AB158C69-57B2-4845-922B-3CDAFDAC15CD) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 Pro Max (D8C36EA0-07F3-434F-B86A-DA74A878359C) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 (3190515C-67DF-41E8-AFD5-5A9A861BC7F6) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 mini (2BE74329-2BDF-4611-9C77-F8B0E13B02A4) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone SE (2nd generation) (5616F2B9-A94F-4BA0-BF2D-DA87681887F6) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 Pro (751E3EE6-C8D2-46A9-B9E0-DF45B5564BA7) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 Pro Max (5745FF59-82F8-41FA-B8A4-78236DCB3270) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 (02C91D57-E457-47E3-B9EF-FB43541BE130) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 8 (617218CE-6368-4302-824E-B41CA7E711B4) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 8 Plus (381B050A-C347-4EF7-8F15-E84B3F389AA4) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad mini (6th generation) (DF67329A-7BEC-4B9D-B72B-5E84EB385637) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (11-inch) (3rd generation) (9A2F3BFB-D234-4BB9-8DC7-F63F66178AA7) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (12.9-inch) (5th generation) (F7AF2848-7C0C-479F-9B2E-5C8309179443) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad (9th generation) (E40F387A-9A47-46DE-8BFE-5278B4D7D446) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Air (4th generation) (6A0C25AD-802C-4957-A1E3-76DD40CD98E7) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (9.7-inch) (9F21A0CF-186B-4F66-935D-4F812D263422) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPod touch (7th generation) (B3117A9B-629E-4A95-8B88-1D859025BA01) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.iOS-15-2 --
+    iPhone 13 Pro (47C26502-9CB3-45EE-8743-9938AE6EE8CD) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 Pro Max (10A1BC01-F648-4BB5-A6B6-FA2BF21859A7) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 (23F47979-44A2-4F1B-A2A7-A2B1A162994E) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 mini (B85716BB-347F-4BB1-B36F-CFD01E21E0CE) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 Pro (898F561B-4FF3-4996-8225-55783E3E7B05) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 Pro Max (A95A9930-BE50-4CCA-A376-03A5F627C629) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 (EF08A708-0646-4CBE-8198-87EFD1F284CD) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 mini (760A6B42-7AB9-4A53-B55C-330A8468397A) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone SE (2nd generation) (4BE17EA7-1AA0-4C1F-8AAC-AD042334FBF7) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 Pro (8FD25695-228E-442F-A019-9438644EFF59) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 Pro Max (3858AA39-15A4-487F-8827-06876F9E6AD2) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 (2B6C3303-E3E3-4D43-BDAE-A59C31A482D6) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 8 (1B2FC99B-BA3B-4EC2-9425-D872C73CDF0D) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 8 Plus (E735FDB4-3EC7-41CF-96EE-4C074805423E) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad mini (6th generation) (2ED9D9B8-6901-4B7D-AD74-8A43DB292897) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (11-inch) (3rd generation) (C548AFE0-B1BE-4D28-894F-566EA9574A5F) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (12.9-inch) (5th generation) (4FE5796F-23BB-4B89-B247-47C8B107DA2A) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad (9th generation) (294EE950-D29B-495A-B08C-0391DA4CB043) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Air (4th generation) (20D42E8D-4511-44EF-8DDD-42BFE992BE72) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (9.7-inch) (8504AE0D-27A8-4DC2-A4D0-6468591CDEAD) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPod touch (7th generation) (1B8091BA-F28A-41B4-81FA-D35CE77044FC) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.iOS-15-4 --
+    iPhone SE (3rd generation) (2B76561E-FD22-43BD-A216-27666355C48D) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 Pro (790D5145-4A4F-49FD-BEAC-9BE9D26098AF) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 Pro Max (AAB8BE30-9667-4C15-8AD4-AD2E399D5E19) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 (C38DBA96-FA87-4473-9F58-1CAD189DC256) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 mini (612974D7-E8B3-469B-A66B-EB3554264A3A) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 Pro (3A3D2B75-8133-48FE-A292-B894C2E1A3B7) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 Pro Max (BD8A970D-0F6C-47BE-8658-094AEEDD993B) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 (B2227628-44E7-4A93-9A5A-165CF0CBE5C8) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 mini (A5E246A3-3C21-47EB-9AF2-783F1EDD29E0) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 Pro (531C209A-1C4C-4B07-AD85-6CFDC66F11AB) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 Pro Max (2DED8587-0737-40CB-9158-CDB833538C52) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 (F7AB06F3-E4CF-462B-ACB3-688396DE4F98) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 8 (E846E40F-4962-44D0-AAEA-18F77C78FB8B) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 8 Plus (ECDA2B4F-BDC5-4C5A-B600-CC74F608F254) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Air (5th generation) (EAAB4E08-B524-4284-8521-BC3E9B3E8BEE) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad mini (6th generation) (0373C9DD-E1DE-4CA2-8C13-075E0BD72A72) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (11-inch) (3rd generation) (E717855D-6128-4CC4-B3A4-A2E7A6BF5F9E) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (12.9-inch) (5th generation) (138EB8BF-12C8-42D5-8224-63A668DE919E) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad (9th generation) (9B19592B-21BE-4C59-B620-4260A9E2EA1E) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (9.7-inch) (8CFFE71F-4026-49F8-B494-F62052D66129) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPod touch (7th generation) (DCB63D59-57D5-4FD8-93B6-DFE3D23C4B8B) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.iOS-15-5 --
+    iPhone SE (3rd generation) (3920BAA4-C38F-4C21-A7D7-C226D506E691) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 Pro (9B8CABB7-93F2-4828-AEF2-8B10C015FE32) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 Pro Max (91ED29C4-6E1E-4BE9-9445-B1C87038656D) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 (23908CA0-8AF3-4F19-9E04-F4DF161D1E9D) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 13 mini (6CD105BA-7A77-4A66-B571-4D4F876D8A72) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 Pro (F1E287B8-6A84-4970-8390-385255058EA9) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 Pro Max (03A26BDF-0C99-4E6B-A74F-05FF0302847D) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 (C6ED19FD-9865-4450-AB3C-BC838B57F690) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 12 mini (FA6AF005-8C03-4219-B909-0542D95AE139) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 Pro (4FEE9617-C9CF-44AF-A54F-4E60F7ECD464) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 Pro Max (F2D97675-7510-47A6-A6DC-39225AE67754) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 11 (D6712A1C-802E-41E1-A467-0B3C2944C6EF) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 8 (F7A9890B-5311-41EF-9970-0D77343CE021) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 8 Plus (6DA216D2-9759-4DA3-A870-F13DF8B12C75) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Air (5th generation) (1FF59FDC-B82C-45FC-9E60-1A3C4FB58489) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad mini (6th generation) (7C7ECAFF-552E-498D-95E4-1838317C77D8) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (11-inch) (3rd generation) (DCD23373-53F6-4503-8D2B-6360737D8126) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (12.9-inch) (5th generation) (DC6DD396-ABAF-4E66-8587-0D0AC835630B) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad (9th generation) (B039FC13-E6D3-4D42-8027-8FAE5E40821E) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (9.7-inch) (9D2C86A7-F377-4B1F-B178-F06C498BD286) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPod touch (7th generation) (F1BB93B2-C4A5-4F7C-9CEB-24665A7E4B52) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.iOS-16-4 --
+    iPhone 14 Pro (3CE05170-5FAE-4DBB-A4FE-33E55D26F21F) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 14 Pro Max (F8EF7EDE-9F37-449B-8440-4AE538FE4C72) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 14 (FA80AA60-462D-40FC-B24E-4110E3E7B099) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone 14 Plus (62C6A1F9-B53B-4B7C-B39A-49EC94D8E8CC) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPhone SE (3rd generation) (1C490017-6CD4-4DDA-AF1C-6029E83E300E) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (11-inch) (4th generation) (82D4A744-4FBD-4532-AF72-6D623D2F8B8D) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Pro (12.9-inch) (6th generation) (A1EB8292-57C0-43E4-AD45-1AED7BC9FF6D) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad (10th generation) (A365A8FA-A4D0-4C50-B96C-1D939D1D62B6) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad Air (5th generation) (B6B28A0D-0FA1-426E-8133-7C516CE741FA) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    iPad mini (6th generation) (94813513-A23B-4118-BD4C-884D19BE7827) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.tvOS-15-0 --
+    Apple TV 4K (2nd generation) (4ADA7B76-0FA1-49D3-A22F-3E8B70542EC6) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple TV 4K (at 1080p) (2nd generation) (308F2252-6C46-4B3B-84BC-66FB44607FD6) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple TV (2872FDD8-88FA-4E09-A540-BA111C02B7C9) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.tvOS-15-2 --
+    Apple TV 4K (2nd generation) (A212C6BD-B822-4EBB-BC70-1CED46E5FF64) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple TV 4K (at 1080p) (2nd generation) (9320B702-DF8B-45F0-8618-B1AEFB811535) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple TV (C40815DE-4C0A-4B69-8738-978D70CEFBDF) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.tvOS-15-4 --
+    Apple TV 4K (2nd generation) (732AD5CA-00C6-4AA7-BB11-7743972EB0C4) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple TV 4K (at 1080p) (2nd generation) (90E95058-C85E-4533-AC90-ED48F61C018F) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple TV (5D575E01-A0DA-48BC-8BDB-A5D13F7F0B77) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.watchOS-26-2 --
+    Apple Watch Series 11 (46mm) (36FBFFF1-E5D9-4644-BA2D-37042FE522E5) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 11 (42mm) (C6B39485-0778-4862-8BDE-893789612B41) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Ultra 3 (49mm) (945DC06F-1AD2-4992-926C-2F586F630B8B) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch SE 3 (44mm) (769C3BE9-8B55-4555-9D90-8CFA02376091) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch SE 3 (40mm) (31582DA3-D274-48FE-A773-4B3B23531142) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.watchOS-8-0 --
+    Apple Watch Series 7 - 45mm (874B16C8-E903-43EB-9702-B75EABD59435) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 7 - 41mm (724E8011-1D9F-43C8-BB0A-1C41EE550F94) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 6 - 44mm (A2F8DA7B-0258-4F9C-B734-5C75B4EBDB13) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 6 - 40mm (B0F1816B-2BDB-4C6B-A828-284DCD6279A1) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 5 - 44mm (4F684C77-44F1-4FB7-ABF4-588F96CFC1EF) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 5 - 40mm (1B160AC1-CD22-44EB-9CBA-1FF1C14E4190) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.watchOS-8-3 --
+    Apple Watch Series 7 - 45mm (649C7972-485E-4B12-91E6-726C768DC248) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 7 - 41mm (EAC5C760-4728-4221-9422-78EF175AD29B) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 6 - 44mm (B8ED0D5B-BFCB-43A4-A997-CB916D7F052D) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 6 - 40mm (3BDCDFAD-E6D7-4675-BD03-148128156848) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 5 - 44mm (916C9AF2-630A-46F1-8255-E78E910D447D) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 5 - 40mm (F8950EF9-5B10-45AC-ABDF-8A7B9706DD6D) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.watchOS-8-5 --
+    Apple Watch Series 7 - 45mm (13DA8214-D50E-4126-A7F5-49A1B1A8A116) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 7 - 41mm (46331B10-D35B-463B-8DF6-0B76F1163ADC) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 6 - 44mm (AB3B6E43-AFA8-42E5-A715-AE3ADA5B5151) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 6 - 40mm (B79A353F-0319-4CB2-91F0-67FC061C7E5A) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 5 - 44mm (6801D169-82B5-4B01-9A76-1436C1EA3598) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+    Apple Watch Series 5 - 40mm (A8FB50CD-4799-4B85-834F-BE8C0C58F540) (Shutdown) (unavailable, runtime profile not found using “System” match policy)
+== Device Pairs ==
+0A2F4DFE-B09E-490E-A8BC-B59AF1821FFA (unavailable)
+    Watch: Apple Watch Series 7 - 45mm (874B16C8-E903-43EB-9702-B75EABD59435) (Shutdown)
+    Phone: iPhone 13 (0ADB2EE1-D24C-4925-9564-3316C66648B0) (Shutdown)
+627329E4-D4FC-44B9-838B-52AF58A36169 (unavailable)
+    Watch: Apple Watch Series 7 - 41mm (724E8011-1D9F-43C8-BB0A-1C41EE550F94) (Shutdown)
+    Phone: iPhone 13 mini (186BC2B5-6085-4126-8B80-7F0D08EC5DC3) (Shutdown)
+925CCAE7-D3AF-4EB2-80E2-F3A383A4DAD1 (unavailable)
+    Watch: Apple Watch Series 6 - 44mm (A2F8DA7B-0258-4F9C-B734-5C75B4EBDB13) (Shutdown)
+    Phone: iPhone 13 Pro Max (9C4A155B-C111-4516-B48B-E3FEAAAFD44A) (Shutdown)
+97F67B62-048A-4068-B5D3-D343775012B8 (unavailable)
+    Watch: Apple Watch Series 6 - 40mm (B0F1816B-2BDB-4C6B-A828-284DCD6279A1) (Shutdown)
+    Phone: iPhone 13 Pro (4C475E5E-7B1D-4196-A06B-0B3536DCDA99) (Shutdown)
+0E7461E1-C44A-420D-AF02-DACA0B47354C (unavailable)
+    Watch: Apple Watch Series 5 - 44mm (4F684C77-44F1-4FB7-ABF4-588F96CFC1EF) (Shutdown)
+    Phone: iPhone 12 Pro Max (D8C36EA0-07F3-434F-B86A-DA74A878359C) (Shutdown)
+E1A93FE1-E83E-470A-82A0-580E0DBB52D9 (unavailable)
+    Watch: Apple Watch Series 5 - 40mm (1B160AC1-CD22-44EB-9CBA-1FF1C14E4190) (Shutdown)
+    Phone: iPhone 12 Pro (AB158C69-57B2-4845-922B-3CDAFDAC15CD) (Shutdown)
+5F024DBF-A0E2-4B50-BAE3-337A6C14961C (unavailable)
+    Watch: Apple Watch Series 7 - 45mm (649C7972-485E-4B12-91E6-726C768DC248) (Shutdown)
+    Phone: iPhone 13 (23F47979-44A2-4F1B-A2A7-A2B1A162994E) (Shutdown)
+7EEEB0A7-4089-42C6-83AC-91CF077E37E9 (unavailable)
+    Watch: Apple Watch Series 7 - 41mm (EAC5C760-4728-4221-9422-78EF175AD29B) (Shutdown)
+    Phone: iPhone 13 mini (B85716BB-347F-4BB1-B36F-CFD01E21E0CE) (Shutdown)
+4B3B0E3B-3F37-453F-8CA3-756E34A0A2FF (unavailable)
+    Watch: Apple Watch Series 6 - 44mm (B8ED0D5B-BFCB-43A4-A997-CB916D7F052D) (Shutdown)
+    Phone: iPhone 13 Pro Max (10A1BC01-F648-4BB5-A6B6-FA2BF21859A7) (Shutdown)
+5FD12B06-841B-4658-956B-23FD6A77766F (unavailable)
+    Watch: Apple Watch Series 6 - 40mm (3BDCDFAD-E6D7-4675-BD03-148128156848) (Shutdown)
+    Phone: iPhone 13 Pro (47C26502-9CB3-45EE-8743-9938AE6EE8CD) (Shutdown)
+65EBEB86-7710-44D3-858D-FFA4FE81D595 (unavailable)
+    Watch: Apple Watch Series 5 - 44mm (916C9AF2-630A-46F1-8255-E78E910D447D) (Shutdown)
+    Phone: iPhone 12 Pro Max (A95A9930-BE50-4CCA-A376-03A5F627C629) (Shutdown)
+64E0B38A-0F73-4713-AD50-1899A3DAFFB7 (unavailable)
+    Watch: Apple Watch Series 5 - 40mm (F8950EF9-5B10-45AC-ABDF-8A7B9706DD6D) (Shutdown)
+    Phone: iPhone 12 Pro (898F561B-4FF3-4996-8225-55783E3E7B05) (Shutdown)
+B095E017-F2CE-4EAF-B131-DC21590AF363 (unavailable)
+    Watch: Apple Watch Series 7 - 45mm (13DA8214-D50E-4126-A7F5-49A1B1A8A116) (Shutdown)
+    Phone: iPhone 13 (23908CA0-8AF3-4F19-9E04-F4DF161D1E9D) (Shutdown)
+00304710-F25D-4B2B-8518-3C4D9F3271CA (unavailable)
+    Watch: Apple Watch Series 7 - 41mm (46331B10-D35B-463B-8DF6-0B76F1163ADC) (Shutdown)
+    Phone: iPhone 13 mini (6CD105BA-7A77-4A66-B571-4D4F876D8A72) (Shutdown)
+A5A6C477-AFAB-4B9C-B964-8FE5EC29C3F7 (unavailable)
+    Watch: Apple Watch Series 6 - 44mm (AB3B6E43-AFA8-42E5-A715-AE3ADA5B5151) (Shutdown)
+    Phone: iPhone 13 Pro Max (91ED29C4-6E1E-4BE9-9445-B1C87038656D) (Shutdown)
+3ADD50A1-E3E2-4070-BC8C-706AAB9AA0D8 (unavailable)
+    Watch: Apple Watch Series 6 - 40mm (B79A353F-0319-4CB2-91F0-67FC061C7E5A) (Shutdown)
+    Phone: iPhone 13 Pro (9B8CABB7-93F2-4828-AEF2-8B10C015FE32) (Shutdown)
+22EC9C5C-D80D-4CB6-BEB6-52420D4D8009 (unavailable)
+    Watch: Apple Watch Series 5 - 44mm (6801D169-82B5-4B01-9A76-1436C1EA3598) (Shutdown)
+    Phone: iPhone 12 Pro Max (03A26BDF-0C99-4E6B-A74F-05FF0302847D) (Shutdown)
+3BE3F464-4283-43E0-A9D9-668C54450853 (unavailable)
+    Watch: Apple Watch Series 5 - 40mm (A8FB50CD-4799-4B85-834F-BE8C0C58F540) (Shutdown)
+    Phone: iPhone 12 Pro (F1E287B8-6A84-4970-8390-385255058EA9) (Shutdown)

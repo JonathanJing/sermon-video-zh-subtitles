@@ -1,0 +1,245 @@
+Xcode version: 27.1 (27A9275)
+16:02:27.781 xcodebuild[45482:8539816] Beginning test session TongxingTests-86D87BB8-ECF1-4230-80E1-DEDDDE69828D at 2026-10-10 16:02:27.781 on target <DVTiPhoneSimulator: 0x7c450d9800> {
+		SimDevice: iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971, iOS 27.1, Booted)
+} (27.1 (24A94401))
+16:02:27.782 xcodebuild[45482:8539816] 	/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild
+-project
+/private/tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Tongxing.xcodeproj
+-scheme
+Tongxing
+-configuration
+Debug
+-sdk
+iphonesimulator
+-destination
+platform=iOS Simulator,id=1752B68F-919A-404A-93CB-FCA3A5886971
+-derivedDataPath
+/private/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData
+-disableAutomaticPackageResolution
+CODE_SIGNING_ALLOWED=NO
+CODE_SIGNING_REQUIRED=NO
+-resultBundlePath
+/private/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/20261010T160214-test-a756964b/test.xcresult
+-parallel-testing-enabled
+NO
+-only-testing:TongxingTests/PlaybackControllerTests/testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback
+-only-testing:TongxingUITests/ListeningFlowUITests/testRemoteCategoriesUseInterfaceLanguageForNewPageTypes
+-only-testing:TongxingUITests/ListeningFlowUITests/testRemoteCategoryRefreshWithoutRebuildPreservesPausedPlayback
+test
+16:02:27.782 xcodebuild[45482:8539816] Test standard output and standard error is at /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/20261010T160214-test-a756964b/test.xcresult/Staging/1_Test/Diagnostics/TongxingTests-276EBD01-8B42-4B6E-B30A-E501F0B961CC-Configuration-Test Scheme Action-Iteration-1/TongxingTests-A9E8693E-1039-4E05-9513-0457854333E9/StandardOutputAndStandardError.txt
+16:02:27.785 xcodebuild[45482:8539892] 📱<DVTiPhoneSimulator (0x7c450d9800), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> claim LaunchSessionClaim_0x7c45376e80 on simulator was issued, 2 claims exist.
+16:02:27.785 xcodebuild[45482:8539816] Setting up test runner session
+16:02:27.785 xcodebuild[45482:8539892] Sim iPhone Duo: Unregistering for sim device notification with token 5
+16:02:27.785 xcodebuild[45482:8539892] Calling -[SimDevice getenv:error:] for TESTMANAGERD_SIM_SOCK
+16:02:27.785 xcodebuild[45482:8539816] Registering/updating daemon-based crash report observer for process names (
+    xctest,
+    debugserver,
+    FrontBoard,
+    assertiond,
+    runningboardd,
+    SpringBoard,
+... 221 lines omitted; 3 error-like lines, 3 kept below ...
+[line 56] 16:02:27.788 xcodebuild[45482:8539886] Got reply to session initiation request with identifier 86D87BB8-ECF1-4230-80E1-DEDDDE69828D (error: (null))
+[line 123] 16:02:33.220 Tongxing[45680:8541661] Creating future for 'requesting test configuration' with timeout 600.00
+[line 247] 	            testTimeoutsEnabled:NO
+... end of omitted section ...
+    "skipped suite capability" = 1;
+    "skipped test capability" = 1;
+    "sync crash reporter capability" = 1;
+    "test case run configurations" = 1;
+    "test iterations" = 3;
+    "test timeout capability" = 1;
+    traits = 1;
+    "ubiquitous test identifiers" = 1;
+    "unified issue recorded" = 1;
+}
+	        symbolicationImageNames:Tongxing, TongxingTests, TongxingUITests, TongxingUITests-Runner, ListeningActivityExtension
+	         applicationBundleInfos:(null)
+
+16:02:33.235 Tongxing[45680:8541661] <XCTWaiter: 0x10a276cd0> entering wait loop for 600.00s with expectations: `requesting ready for testing`
+16:02:33.235 Tongxing[45680:8541661] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a276cd0>
+16:02:33.235 Tongxing[45680:8541661] Wait <XCTWaiterWait: 0x10a09e140> completed after 0.000s
+16:02:33.235 Tongxing[45680:8541661] cleaning up requesting ready for testing
+16:02:33.235 Tongxing[45680:8541661] <XCTWaiter: 0x10a2777e0> entering wait loop for 600.00s with expectations: `IDE proxy`
+16:02:33.235 Tongxing[45680:8541661] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a2777e0>
+16:02:33.235 Tongxing[45680:8541661] Wait <XCTWaiterWait: 0x10a09e280> completed after 0.000s
+16:02:33.235 Tongxing[45680:8541661] cleaning up IDE proxy
+16:02:33.236 Tongxing[45680:8541661] Bypassing UI testing initialization because the test configuration does not request it.
+16:02:33.236 Tongxing[45680:8541661] Loading test suite...
+16:02:33.237 Tongxing[45680:8541661] Finished loading test suite, took 0.001s
+16:02:33.237 Tongxing[45680:8541661] <XCTWaiter: 0x106b05830> entering wait loop for 599.92s with expectations: `preparing execution worker`
+16:02:33.269 Tongxing[45680:8541661] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x106b05830>
+16:02:33.269 Tongxing[45680:8541661] Wait <XCTWaiterWait: 0x10a09e780> completed after 0.033s
+16:02:33.270 Tongxing[45680:8541661] cleaning up preparing execution worker
+16:02:33.273 xcodebuild[45482:8539816] Test runner started executing tests.
+16:02:33.270 Tongxing[45680:8541661] Entering test execution event loop
+16:02:33.273 xcodebuild[45482:8539819] XCTHTestOperationStateMachine: Transitioning from state ReportedReady to ExecutingTests
+16:02:33.277 Tongxing[45680:8541661] Setting a new interop record handler: Optional(XCTestCore.XCTestInteropRecordHandler())
+16:02:33.277 Tongxing[45680:8541661] -[XCTRunnerIDESession(_XCTestObservationInternal) testBundleWillStart:]
+16:02:33.277 Tongxing[45680:8541661] Running suite...
+16:02:33.277 Tongxing[45680:8541661] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteWillStart:]
+Test Suite 'Selected tests' started at 2026-10-10 16:02:33.277.
+16:02:33.278 xcodebuild[45482:8539816] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container ["Selected tests"]> didStartAt:2026-10-10 23:02:33 +0000 traits:(null)
+16:02:33.279 xcodebuild[45482:8539816] Nothing to delete
+16:02:33.278 Tongxing[45680:8541661] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteWillStart:]
+16:02:33.279 xcodebuild[45482:8539816] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container []> didStartAt:2026-10-10 23:02:33 +0000 traits:(null)
+16:02:33.279 xcodebuild[45482:8539816] Nothing to delete
+Test Suite 'TongxingTests.xctest' started at 2026-10-10 16:02:33.278.
+16:02:33.278 Tongxing[45680:8541661] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteWillStart:]
+16:02:33.279 xcodebuild[45482:8539816] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container, class ["PlaybackControllerTests"]> didStartAt:2026-10-10 23:02:33 +0000 traits:(null)
+16:02:33.279 xcodebuild[45482:8539816] Nothing to delete
+16:02:33.279 Tongxing[45680:8541661] -[XCTRuntimeIssueDetectionManager runtimeIssueDetectionEnabled] runtimeIssueDetectionEnabled based on XCTDisableRuntimeIssues and runtime diagnostics policies: YES
+16:02:33.280 xcodebuild[45482:8539816] Nothing to delete
+Test Suite 'PlaybackControllerTests' started at 2026-10-10 16:02:33.278.
+16:02:33.280 xcodebuild[45482:8539816] Nothing to delete
+16:02:33.281 xcodebuild[45482:8539816] Nothing to delete
+16:02:33.281 xcodebuild[45482:8539816] Nothing to delete
+16:02:33.282 Tongxing[45680:8541661] -[XCTRunnerIDESession(_XCTestObservationInternal) testCaseWillStart:] TongxingTests.PlaybackControllerTests testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback
+Test Case '-[TongxingTests.PlaybackControllerTests testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback]' started.
+16:02:33.284 xcodebuild[45482:8539816] _XCT_testCaseDidStartWithIdentifier:<XCTTestIdentifier leaf, method, swift ["PlaybackControllerTests", "testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback"]>testCaseRunConfiguration:<XCTestCaseRunConfiguration: 0x7c44401360>traits:(null)
+16:02:33.285 xcodebuild[45482:8539816] Test case did start: <XCTTestIdentifier leaf, method, swift ["PlaybackControllerTests", "testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback"]>
+16:02:33.287 xcodebuild[45482:8539816] Nothing to delete
+16:02:33.287 xcodebuild[45482:8539816] Nothing to delete
+16:02:33.283 Tongxing[45680:8541661] <XCTWaiter: 0x10a277cc0> entering indefinite wait loop for expectations: `failable invocation block completion`
+16:02:33.284 Tongxing[45680:8541661] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a277cc0>
+16:02:33.284 Tongxing[45680:8541661] Wait <XCTWaiterWait: 0x10a09eec0> completed after 0.000s
+16:02:33.284 Tongxing[45680:8541661] cleaning up failable invocation block completion
+16:02:33.284 Tongxing[45680:8541661] <XCTWaiter: 0x10a1dbde0> entering indefinite wait loop for expectations: `failable invocation block completion`
+16:02:33.287 xcodebuild[45482:8539816] Nothing to delete
+2026-10-10 16:02:33.367202-0700 Tongxing[45680:8542219] [Default] Task <B3D9A35F-F8F0-4493-8CA2-C44192BDBC7D>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <B3D9A35F-F8F0-4493-8CA2-C44192BDBC7D>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <B3D9A35F-F8F0-4493-8CA2-C44192BDBC7D>.<2>}
+16:02:33.374 xcodebuild[45482:8539816] Nothing to delete
+2026-10-10 16:02:33.578205-0700 Tongxing[45680:8542220] [Default] Connection 1: received failure notification
+2026-10-10 16:02:33.578353-0700 Tongxing[45680:8542220] [Default] Connection 1: failed to connect 12:8, reason -1
+2026-10-10 16:02:33.578398-0700 Tongxing[45680:8542220] [Default] Connection 1: encountered error(12:8)
+2026-10-10 16:02:33.578749-0700 Tongxing[45680:8542220] [Default] Task <B538E992-83C7-46A8-AF29-9168836B48A9>.<1> HTTP load failed, 0/0 bytes (error code: -1003 [12:8])
+2026-10-10 16:02:33.579950-0700 Tongxing[45680:8542219] [Default] Task <B538E992-83C7-46A8-AF29-9168836B48A9>.<1> finished with error [-1003] Error Domain=NSURLErrorDomain Code=-1003 "A server with the specified hostname could not be found." UserInfo={_kCFStreamErrorCodeKey=8, NSUnderlyingError=0x10a177450 {Error Domain=kCFErrorDomainCFNetwork Code=-1003 "(null)" UserInfo={_kCFStreamErrorDomainKey=12, _kCFStreamErrorCodeKey=8, _NSURLErrorNWResolutionReportKey=Resolved 0 endpoints in 14ms using unknown from query, _NSURLErrorNWPathKey=satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown}}, _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <B538E992-83C7-46A8-AF29-9168836B48A9>.<1>, _NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <B538E992-83C7-46A8-AF29-9168836B48A9>.<1>"
+), NSLocalizedDescription=A server with the specified hostname could not be found., NSErrorFailingURLStringKey=https://tongxing-ui-fixture.example.test/media/fixture-first.mp3, NSErrorFailingURLKey=https://tongxing-ui-fixture.example.test/media/fixture-first.mp3, _kCFStreamErrorDomainKey=12}
+2026-10-10 16:02:33.580429-0700 Tongxing[45680:8542221] [] HTTPRequest signalled err=-1003 at <>:1503
+2026-10-10 16:02:33.629042-0700 Tongxing[45680:8542220] [carc] Invalidation handler: Connection cannot be formed.
+2026-10-10 16:02:33.802992-0700 Tongxing[45680:8541868] [plugin] AddInstanceForFactory: No factory registered for id <CFUUID 0x113421840> F8BB1C28-BAE8-11D6-9C31-00039315CD46
+objc[45680]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x109fd0398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x1132f4310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-10-10 16:02:34.034866-0700 Tongxing[45680:8542252] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:658   EnhanceDialogueProcessor has no tuning for unrecognized device type
+2026-10-10 16:02:34.035005-0700 Tongxing[45680:8542252] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:268   EnhanceDialogueProcessor() - Product does not have valid tuning at ''
+2026-10-10 16:02:34.035088-0700 Tongxing[45680:8542252] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:658   EnhanceDialogueProcessor has no tuning for unrecognized device type
+2026-10-10 16:02:34.035140-0700 Tongxing[45680:8542252] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:268   EnhanceDialogueProcessor() - Product does not have valid tuning at ''
+2026-10-10 16:02:34.360124-0700 Tongxing[45680:8542252] [AQ]        LoudnessManager.mm:1767  ReadPListFile: unable to open stream for LoudnessManager plist
+2026-10-10 16:02:34.360231-0700 Tongxing[45680:8542252] [AQ]        LoudnessManager.mm:1268  GetHardwarePlatformKey: cannot get acoustic ID
+2026-10-10 16:02:34.360368-0700 Tongxing[45680:8542252] [AQ]        LoudnessManager.mm:1222  IsHardwareSupported: no plist loaded, returning false
+2026-10-10 16:02:34.360486-0700 Tongxing[45680:8542252] [AQ]        LoudnessManager.mm:1222  IsHardwareSupported: no plist loaded, returning false
+2026-10-10 16:02:34.363945-0700 Tongxing[45680:8542252] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-10 16:02:34.364985-0700 Tongxing[45680:8542252] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-10 16:02:34.446748-0700 Tongxing[45680:8542240] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+Test Case '-[TongxingTests.PlaybackControllerTests testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback]' passed (1.165 seconds).
+Test Suite 'PlaybackControllerTests' passed at 2026-10-10 16:02:34.448.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.165 (1.169) seconds
+Test Suite 'TongxingTests.xctest' passed at 2026-10-10 16:02:34.448.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.165 (1.170) seconds
+Test Suite 'Selected tests' passed at 2026-10-10 16:02:34.448.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.165 (1.171) seconds
+2026-10-10 16:02:34.449194-0700 Tongxing[45680:8542240] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+16:02:34.446 Tongxing[45680:8541661] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a1dbde0>
+16:02:34.447 Tongxing[45680:8541661] Wait <XCTWaiterWait: 0x10a09eec0> completed after 1.162s
+16:02:34.447 Tongxing[45680:8541661] cleaning up failable invocation block completion
+16:02:34.447 Tongxing[45680:8541661] <XCTWaiter: 0x10a210ae0> entering indefinite wait loop for expectations: `failable invocation block completion`
+16:02:34.447 Tongxing[45680:8541661] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a210ae0>
+16:02:34.452 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.447 Tongxing[45680:8541661] Wait <XCTWaiterWait: 0x113428040> completed after 0.000s
+16:02:34.453 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.453 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.453 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.447 Tongxing[45680:8541661] cleaning up failable invocation block completion
+16:02:34.447 Tongxing[45680:8541661] -[XCTRunnerIDESession(_XCTestObservationInternal) testCaseDidFinish:] TongxingTests.PlaybackControllerTests testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback
+16:02:34.453 xcodebuild[45482:8539816] _XCT_testCaseWithIdentifier:<XCTTestIdentifier leaf, method, swift ["PlaybackControllerTests", "testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback"]> didFinishWithStatus:passed duration:1.165239930152893
+16:02:34.453 xcodebuild[45482:8539816] Test case (<XCTTestIdentifier leaf, method, swift ["PlaybackControllerTests", "testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback"]>) finished - enqueuing console chunks to delegate.
+16:02:34.453 xcodebuild[45482:8539816] Finishing test with new console chunk 2026-10-10 16:02:33.367202-0700 Tongxing[45680:8542219] [Default] Task <B3D9A35F-F8F0-4493-8CA2-C44192BDBC7D>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <B3D9A35F-F8F0-4493-8CA2-C44192BDBC7D>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <B3D9A35F-F8F0-4493-8CA2-C44192BDBC7D>.<2>}
+2026-10-10 16:02:33.578205-0700 Tongxing[45680:8542220] [Default] Connection 1: received failure notification
+2026-10-10 16:02:33.578353-0700 Tongxing[45680:8542220] [Default] Connection 1: failed to connect 12:8, reason -1
+2026-10-10 16:02:33.578398-0700 Tongxing[45680:8542220] [Default] Connection 1: encountered error(12:8)
+2026-10-10 16:02:33.578749-0700 Tongxing[45680:8542220] [Default] Task <B538E992-83C7-46A8-AF29-9168836B48A9>.<1> HTTP load failed, 0/0 bytes (error code: -1003 [12:8])
+2026-10-10 16:02:33.579950-0700 Tongxing[45680:8542219] [Default] Task <B538E992-83C7-46A8-AF29-9168836B48A9>.<1> finished with error [-1003] Error Domain=NSURLErrorDomain Code=-1003 "A server with the specified hostname could not be found." UserInfo={_kCFStreamErrorCodeKey=8, NSUnderlyingError=0x10a177450 {Error Domain=kCFErrorDomainCFNetwork Code=-1003 "(null)" UserInfo={_kCFStreamErrorDomainKey=12, _kCFStreamErrorCodeKey=8, _NSURLErrorNWResolutionReportKey=Resolved 0 endpoints in 14ms using unknown from query, _NSURLErrorNWPathKey=satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown}}, _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <B538E992-83C7-46A8-AF29-9168836B48A9>.<1>, _NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <B538E992-83C7-46A8-AF29-9168836B48A9>.<1>"
+), NSLocalizedDescription=A server with the specified hostname could not be found., NSErrorFailingURLStringKey=https://tongxing-ui-fixture.example.test/media/fixture-first.mp3, NSErrorFailingURLKey=https://tongxing-ui-fixture.example.test/media/fixture-first.mp3, _kCFStreamErrorDomainKey=12}
+2026-10-10 16:02:33.580429-0700 Tongxing[45680:8542221] [] HTTPRequest signalled err=-1003 at <>:1503
+2026-10-10 16:02:33.629042-0700 Tongxing[45680:8542220] [carc] Invalidation handler: Connection cannot be formed.
+2026-10-10 16:02:33.802992-0700 Tongxing[45680:8541868] [plugin] AddInstanceForFactory: No factory registered for id <CFUUID 0x113421840> F8BB1C28-BAE8-11D6-9C31-00039315CD46
+objc[45680]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x109fd0398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x1132f4310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-10-10 16:02:34.034866-0700 Tongxing[45680:8542252] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:658   EnhanceDialogueProcessor has no tuning for unrecognized device type
+2026-10-10 16:02:34.035005-0700 Tongxing[45680:8542252] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:268   EnhanceDialogueProcessor() - Product does not have valid tuning at ''
+2026-10-10 16:02:34.035088-0700 Tongxing[45680:8542252] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:658   EnhanceDialogueProcessor has no tuning for unrecognized device type
+2026-10-10 16:02:34.035140-0700 Tongxing[45680:8542252] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:268   EnhanceDialogueProcessor() - Product does not have valid tuning at ''
+2026-10-10 16:02:34.360124-0700 Tongxing[45680:8542252] [AQ]        LoudnessManager.mm:1767  ReadPListFile: unable to open stream for LoudnessManager plist
+2026-10-10 16:02:34.360231-0700 Tongxing[45680:8542252] [AQ]        LoudnessManager.mm:1268  GetHardwarePlatformKey: cannot get acoustic ID
+2026-10-10 16:02:34.360368-0700 Tongxing[45680:8542252] [AQ]        LoudnessManager.mm:1222  IsHardwareSupported: no plist loaded, returning false
+2026-10-10 16:02:34.360486-0700 Tongxing[45680:8542252] [AQ]        LoudnessManager.mm:1222  IsHardwareSupported: no plist loaded, returning false
+2026-10-10 16:02:34.363945-0700 Tongxing[45680:8542252] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-10 16:02:34.364985-0700 Tongxing[45680:8542252] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-10 16:02:34.446748-0700 Tongxing[45680:8542240] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+Test Case '-[TongxingTests.PlaybackControllerTests testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback]' passed (1.165 seconds).
+
+16:02:34.454 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.448 Tongxing[45680:8541661] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteDidFinish:]
+16:02:34.454 xcodebuild[45482:8539816] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container, class ["PlaybackControllerTests"]> didFinishAt:2026-10-10 23:02:34 +0000 runCount:1 skipCount:0 failureCount:0 expectedFailureCount:0 uncaughtExceptionCount:0 testDuration:1.165239930152893 totalDuration:1.169348955154419
+16:02:34.454 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.456 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.448 Tongxing[45680:8541661] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteDidFinish:]
+16:02:34.456 xcodebuild[45482:8539816] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container []> didFinishAt:2026-10-10 23:02:34 +0000 runCount:1 skipCount:0 failureCount:0 expectedFailureCount:0 uncaughtExceptionCount:0 testDuration:1.165239930152893 totalDuration:1.16971492767334
+16:02:34.456 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.457 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.448 Tongxing[45680:8541661] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteDidFinish:]
+16:02:34.457 xcodebuild[45482:8539816] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container ["Selected tests"]> didFinishAt:2026-10-10 23:02:34 +0000 runCount:1 skipCount:0 failureCount:0 expectedFailureCount:0 uncaughtExceptionCount:0 testDuration:1.165239930152893 totalDuration:1.170561075210571
+16:02:34.457 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.457 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.448 Tongxing[45680:8541661] Finished running suite.
+16:02:34.448 Tongxing[45680:8541661] Setting a new interop record handler: nil
+16:02:34.448 Tongxing[45680:8541661] <XCTWaiter: 0x10a175500> entering indefinite wait loop for expectations: `XCTAsyncEnumerateWithWaiter(<XCTest.SwiftTestingExecutionExtension: 0x111a63200>)`
+16:02:34.448 Tongxing[45680:8541869] -[XCTRuntimeIssueDetectionManager runtimeIssueDetectionEnabled] runtimeIssueDetectionEnabled based on XCTDisableRuntimeIssues and runtime diagnostics policies: YES
+16:02:34.448 Tongxing[45680:8541869] -[XCTRuntimeIssueDetectionManager runtimeIssueDetectionEnabled] runtimeIssueDetectionEnabled based on XCTDisableRuntimeIssues and runtime diagnostics policies: YES
+16:02:34.462 Tongxing[45680:8541869] Setting a new interop record handler: Optional(XCTest.SwiftTestingInteropRecordHandler(interruptTestHandler: nil))
+16:02:34.463 Tongxing[45680:8541870] Setting a new interop record handler: nil
+16:02:34.463 Tongxing[45680:8541661] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a175500>
+16:02:34.463 Tongxing[45680:8541661] Wait <XCTWaiterWait: 0x1134289c0> completed after 0.015s
+16:02:34.463 Tongxing[45680:8541661] cleaning up XCTAsyncEnumerateWithWaiter(<XCTest.SwiftTestingExecutionExtension: 0x111a63200>)
+16:02:34.463 Tongxing[45680:8541661] <XCTWaiter: 0x10a175500> entering indefinite wait loop for expectations: `XCTAsyncEnumerateWithWaiter(<XCTTestRunSession: 0x11193d300>)`
+16:02:34.463 Tongxing[45680:8541661] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a175500>
+16:02:34.463 Tongxing[45680:8541661] Wait <XCTWaiterWait: 0x113428a00> completed after 0.000s
+16:02:34.463 Tongxing[45680:8541661] cleaning up XCTAsyncEnumerateWithWaiter(<XCTTestRunSession: 0x11193d300>)
+16:02:34.463 Tongxing[45680:8541661] -[XCTRunnerIDESession(_XCTestObservationInternal) testBundleDidFinish:], Flushing connection to IDE...
+16:02:34.463 Tongxing[45680:8541661] Exited test execution event loop
+16:02:34.463 Tongxing[45680:8541661] Creating future for 'flushing telemetry' with timeout 10.00
+16:02:34.463 Tongxing[45680:8541661] <XCTWaiter: 0x10a2108a0> entering wait loop for 10.00s with expectations: `flushing telemetry`
+16:02:34.463 Tongxing[45680:8541661] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a2108a0>
+16:02:34.463 Tongxing[45680:8541661] Wait <XCTWaiterWait: 0x113428640> completed after 0.000s
+16:02:34.463 Tongxing[45680:8541661] cleaning up flushing telemetry
+16:02:34.464 Tongxing[45680:8541661] Creating future for 'confirming end of session with the harness' with timeout 1800.00
+16:02:34.464 xcodebuild[45482:8539816] -[XCTTestRunnerSession _XCT_didFinishExecutingTestPlan]_block_invoke
+16:02:34.464 Tongxing[45680:8541661] <XCTWaiter: 0x10a210420> entering wait loop for 1800.00s with expectations: `confirming end of session with the harness`
+16:02:34.464 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.464 Tongxing[45680:8541870] Creating future for 'flushing telemetry' with timeout 10.00
+16:02:34.464 Tongxing[45680:8541870] <XCTWaiter: 0x10a229110> entering wait loop for 10.00s with expectations: `flushing telemetry`
+16:02:34.464 Tongxing[45680:8541870] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a229110>
+16:02:34.464 Tongxing[45680:8541870] Wait <XCTWaiterWait: 0x113428400> completed after 0.000s
+16:02:34.464 Tongxing[45680:8541870] cleaning up flushing telemetry
+16:02:34.464 Tongxing[45680:8541661] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a210420>
+16:02:34.465 Tongxing[45680:8541661] Wait <XCTWaiterWait: 0x1134284c0> completed after 0.001s
+16:02:34.465 Tongxing[45680:8541661] cleaning up confirming end of session with the harness
+16:02:34.480 xcodebuild[45482:8539819] Closing socket 33 to testmanagerd for Sim iPhone Duo
+16:02:34.480 xcodebuild[45482:8539890] <XCTTestRunnerSession: 0x7c452bda90> lost its connection.
+16:02:34.480 xcodebuild[45482:8539816] 📱<DVTiPhoneSimulator (0x7c450d9800), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> got death notice for pid 45680 (exit code: 0, signal: (null)), removing from SimulatorSessionMap
+16:02:34.481 xcodebuild[45482:8539816] 📱<DVTiPhoneSimulator (0x7c450d9800), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> claim LaunchSessionClaim_0x7c45376e80 on simulator was relinquished, 1 claims remain.
+16:02:34.481 xcodebuild[45482:8539816] 📱<DVTiPhoneSimulator (0x7c450d9800), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> claim LaunchSessionClaim_0x7c45376e80 on simulator was relinquished, 1 claims remain.
+16:02:34.481 xcodebuild[45482:8539816] 📱<DVTiPhoneSimulator (0x7c450d9800), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> claim LaunchSessionClaim_0x7c45376e80 on simulator was relinquished, 1 claims remain.
+16:02:34.481 xcodebuild[45482:8539816] Launch session expired.
+16:02:34.481 xcodebuild[45482:8539816] Lost connection to test process
+16:02:34.573 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.740 xcodebuild[45482:8539816] <XCTHTestOperationCoordinator: 0x7c45377180> finished receiving data from testing launch session
+16:02:34.740 xcodebuild[45482:8539816] <XCTHTestOperationCoordinator: 0x7c45377180>: _considerFlushingDelegateBlockQueue - nothing to flush
+16:02:34.740 xcodebuild[45482:8539816] Nothing to delete
+16:02:34.740 xcodebuild[45482:8539816] Can finish test, forceToNotWaitForAsynchronousDiagnostics is NO. Finishing...
+16:02:34.740 xcodebuild[45482:8539816] _finishWithError:(null)
+16:02:34.740 xcodebuild[45482:8539816] Current state: testRunnerLaunchSessionHasFinishedReceivingData: YES, delegateBlockQueue.count: 0
+16:02:34.740 xcodebuild[45482:8539816] <XCTHTestOperationCoordinator: 0x7c45377180>: _considerFlushingDelegateBlockQueue - nothing to flush

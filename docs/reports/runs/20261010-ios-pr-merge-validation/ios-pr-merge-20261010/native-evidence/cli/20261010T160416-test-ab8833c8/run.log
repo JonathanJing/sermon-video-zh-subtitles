@@ -1,0 +1,246 @@
+
+$ /usr/bin/xcrun xcodebuild -project /private/tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-15-2" : [
+
+    ],
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5469306880,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+... 790 lines omitted; 4 error-like lines, 4 kept below ...
+[line 723] /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:717:100: warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 734]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 738] /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:834:21: warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 742]      |                     `- warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+... end of omitted section ...
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -bundle -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -L/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/Developer/Library/Frameworks -filelist /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker - ...[line truncated]
+
+CopySwiftLibs /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest (in target 'TongxingUITests' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests --scan-folder /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --scan-folder /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/PlugIns --scan-folder /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/SystemExtensions --scan-folder /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'TongxingUITests' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name TongxingUITests --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk --xcode-version 27A9275 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.jonathanjing.tongxing.dev.uitests --output /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest --target-triple arm64-apple-ios17.0-simulator --binary-file /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests --dependency-file /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests_dependency_info.dat --stringsdata-file /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.SwiftFileList --metadata-file-list /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/TongxingUITests.DependencyMetadataFileList --static-metadata-file-list /tmp/tongxing-ios-pr-merge-20261010/artif ...[line truncated]
+2026-10-10 16:04:22.372 appintentsmetadataprocessor[46502:8550168] Starting appintentsmetadataprocessor export
+2026-10-10 16:04:22.374 appintentsmetadataprocessor[46502:8550168] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+PruneExplicitPrecompiledModules /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+2026-10-10 16:04:22.428 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:22.429 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-10 16:04:27.041783-0700 Tongxing[46503:8550507] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2026-10-10 16:04:27.078106-0700 Tongxing[46503:8550361] [XPCErrors] non-launching port is incompatible with service identifier "com.apple.PointerUI.pointeruid.default-service"
+Test Suite 'Selected tests' started at 2026-10-10 16:04:27.363.
+Test Suite 'TongxingTests.xctest' started at 2026-10-10 16:04:27.363.
+Test Suite 'PlaybackControllerTests' started at 2026-10-10 16:04:27.364.
+Test Case '-[TongxingTests.PlaybackControllerTests testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback]' started.
+2026-10-10 16:04:27.444664-0700 Tongxing[46503:8550895] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+2026-10-10 16:04:27.451614-0700 Tongxing[46503:8550894] [Default] Task <426F95B0-9E7E-484B-8925-EF0C6C0B80BD>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <426F95B0-9E7E-484B-8925-EF0C6C0B80BD>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <426F95B0-9E7E-484B-8925-EF0C6C0B80BD>.<2>}
+objc[46503]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x1102d0398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x1123a4310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-10-10 16:04:27.683164-0700 Tongxing[46503:8550895] [Default] Connection 1: received failure notification
+2026-10-10 16:04:27.690275-0700 Tongxing[46503:8550895] [Default] Connection 1: failed to connect 12:8, reason -1
+2026-10-10 16:04:27.690375-0700 Tongxing[46503:8550895] [Default] Connection 1: encountered error(12:8)
+2026-10-10 16:04:27.690755-0700 Tongxing[46503:8550895] [Default] Task <17CB1510-9EFF-4133-81D6-583ED5208C99>.<1> HTTP load failed, 0/0 bytes (error code: -1003 [12:8])
+2026-10-10 16:04:27.693450-0700 Tongxing[46503:8550894] [Default] Task <17CB1510-9EFF-4133-81D6-583ED5208C99>.<1> finished with error [-1003] Error Domain=NSURLErrorDomain Code=-1003 "A server with the specified hostname could not be found." UserInfo={_kCFStreamErrorCodeKey=8, NSUnderlyingError=0x108d4d0e0 {Error Domain=kCFErrorDomainCFNetwork Code=-1003 "(null)" UserInfo={_kCFStreamErrorDomainKey=12, _kCFStreamErrorCodeKey=8, _NSURLErrorNWResolutionReportKey=Resolved 0 endpoints in 10ms using unknown from cache, _NSURLErrorNWPathKey=satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown}}, _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <17CB1510-9EFF-4133-81D6-583ED5208C99>.<1>, _NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <17CB1510-9EFF-4133-81D6-583ED5208C99>.<1>"
+), NSLocalizedDescription=A server with the specified hostname could not be found., NSErrorFailingURLStringKey=https://tongxing-ui-fixture.example.test/media/fixture-first.mp3, NSErrorFailingURLKey=https://tongxing-ui-fixture.example.test/media/fixture-first.mp3, _kCFStreamErrorDomainKey=12}
+2026-10-10 16:04:27.701231-0700 Tongxing[46503:8550895] [] HTTPRequest signalled err=-1003 at <>:1503
+2026-10-10 16:04:27.780079-0700 Tongxing[46503:8550893] [carc] Invalidation handler: Connection cannot be formed.
+2026-10-10 16:04:27.932699-0700 Tongxing[46503:8550893] [plugin] AddInstanceForFactory: No factory registered for id <CFUUID 0x11280d4e0> F8BB1C28-BAE8-11D6-9C31-00039315CD46
+2026-10-10 16:04:28.138320-0700 Tongxing[46503:8550893] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:658   EnhanceDialogueProcessor has no tuning for unrecognized device type
+2026-10-10 16:04:28.138402-0700 Tongxing[46503:8550893] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:268   EnhanceDialogueProcessor() - Product does not have valid tuning at ''
+2026-10-10 16:04:28.138460-0700 Tongxing[46503:8550893] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:658   EnhanceDialogueProcessor has no tuning for unrecognized device type
+2026-10-10 16:04:28.138508-0700 Tongxing[46503:8550893] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:268   EnhanceDialogueProcessor() - Product does not have valid tuning at ''
+2026-10-10 16:04:28.370540-0700 Tongxing[46503:8550960] [AQ]        LoudnessManager.mm:1767  ReadPListFile: unable to open stream for LoudnessManager plist
+2026-10-10 16:04:28.370692-0700 Tongxing[46503:8550960] [AQ]        LoudnessManager.mm:1268  GetHardwarePlatformKey: cannot get acoustic ID
+2026-10-10 16:04:28.370804-0700 Tongxing[46503:8550960] [AQ]        LoudnessManager.mm:1222  IsHardwareSupported: no plist loaded, returning false
+2026-10-10 16:04:28.370887-0700 Tongxing[46503:8550960] [AQ]        LoudnessManager.mm:1222  IsHardwareSupported: no plist loaded, returning false
+2026-10-10 16:04:28.375001-0700 Tongxing[46503:8550960] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-10 16:04:28.376450-0700 Tongxing[46503:8550960] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-10 16:04:28.446822-0700 Tongxing[46503:8550961] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-10 16:04:28.449839-0700 Tongxing[46503:8550961] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+Test Case '-[TongxingTests.PlaybackControllerTests testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback]' passed (1.093 seconds).
+Test Suite 'PlaybackControllerTests' passed at 2026-10-10 16:04:28.459.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.093 (1.096) seconds
+Test Suite 'TongxingTests.xctest' passed at 2026-10-10 16:04:28.460.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.093 (1.096) seconds
+Test Suite 'Selected tests' passed at 2026-10-10 16:04:28.460.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.093 (1.097) seconds
+2026-10-10 16:04:28.488 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:28.488 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-10 16:04:28.489 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:28.489 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-10 16:04:28.490 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:28.490 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-10 16:04:28.760 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:28.760 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-10 16:04:32.274811-0700 TongxingUITests-Runner[46546:8551259] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-10 16:04:32.494.
+Test Suite 'TongxingUITests.xctest' started at 2026-10-10 16:04:32.495.
+Test Suite 'ListeningFlowUITests' started at 2026-10-10 16:04:32.495.
+Test Case '-[TongxingUITests.ListeningFlowUITests testRemoteCategoryRefreshWithoutRebuildPreservesPausedPlayback]' started.
+    t =     0.01s Start Test at 2026-10-10 16:04:32.502
+    t =     0.03s Set Up
+    t =     0.03s Open com.jonathanjing.tongxing.dev
+    t =     0.04s     Launch com.jonathanjing.tongxing.dev
+2026-10-10 16:04:32.595 xcodebuild[46481:8549806] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-10 16:04:32.595 xcodebuild[46481:8549806] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-10 16:04:32.633 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:32.633 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+    t =     0.31s         Setting up automation session
+objc[46546]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x10df24398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10e094310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     3.32s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =     6.67s Checking `Expect predicate `label == "正式播放版"` for object "published-page-edition" StaticText`
+    t =     6.67s     Find the "published-page-edition" StaticText
+    t =     7.88s Checking `Expect predicate `exists == 1 AND enabled == 1 AND hittable == 1` for object "playback-toggle" Button`
+    t =     7.88s     Checking existence of `"playback-toggle" Button`
+    t =     7.94s     Find the "playback-toggle" Button
+    t =     7.99s     Find the "playback-toggle" Button
+    t =     8.06s Tap "playback-toggle" Button
+    t =     8.06s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     8.06s     Find the "playback-toggle" Button
+    t =     8.11s     Check for interrupting elements affecting "playback-toggle" Button
+    t =     8.18s         Wait for com.apple.springboard to idle
+    t =     8.26s     Synthesize event
+    t =     8.56s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     9.31s Checking existence of `"playback-progress" Any`
+    t =    10.55s Checking `Expect predicate `NOT value BEGINSWITH "00:00，"` for object "playback-progress" Any`
+    t =    10.55s     Find the "playback-progress" Any
+    t =    10.69s Tap "playback-toggle" Button
+    t =    10.69s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    10.69s     Find the "playback-toggle" Button
+    t =    10.75s     Check for interrupting elements affecting "playback-toggle" Button
+    t =    10.79s         Wait for com.apple.springboard to idle
+    t =    10.84s     Synthesize event
+    t =    11.14s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    12.92s Checking `Expect predicate `label == "开始播放"` for object "playback-toggle" Button`
+    t =    12.92s     Find the "playback-toggle" Button
+    t =    12.98s Checking existence of `"playback-progress" Any`
+    t =    13.12s Find the "playback-progress" Any
+    t =    13.37s Added attachment named 'remote-category-before-refresh'
+    t =    13.37s Tap "more-options" Button
+    t =    13.37s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    13.38s     Find the "more-options" Button
+    t =    13.43s     Check for interrupting elements affecting "more-options" Button
+    t =    13.48s         Wait for com.apple.springboard to idle
+    t =    13.53s     Synthesize event
+    t =    13.83s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    14.54s Find the CollectionView (First Match)
+    t =    14.61s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    14.68s Find the "更多选项" NavigationBar
+    t =    14.77s Checking existence of `"刷新证道目录" Button`
+    t =    14.85s Find the "刷新证道目录" Button
+    t =    14.94s Find the "刷新证道目录" Button
+    t =    15.04s Tap "刷新证道目录" Button
+    t =    15.04s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    15.04s     Find the "刷新证道目录" Button
+    t =    15.12s     Check for interrupting elements affecting "刷新证道目录" Button
+    t =    15.20s         Wait for com.apple.springboard to idle
+    t =    15.25s     Synthesize event
+    t =    15.55s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    17.04s Checking `Expect predicate `label == "正式版 · 更新"` for object "published-page-edition" StaticText`
+    t =    17.04s     Find the "published-page-edition" StaticText
+    t =    17.11s Find the "playback-toggle" Button
+    t =    17.16s Checking existence of `"playback-progress" Any`
+    t =    17.30s Find the "playback-progress" Any
+    t =    17.53s Added attachment named 'remote-category-after-refresh'
+    t =    17.53s Tap "choose-sermon" Button
+    t =    17.53s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    17.54s     Find the "choose-sermon" Button
+    t =    17.59s     Check for interrupting elements affecting "choose-sermon" Button
+    t =    17.63s         Wait for com.apple.springboard to idle
+    t =    17.68s     Synthesize event
+    t =    17.98s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    18.40s Waiting 5.0s for "完成" Button to exist
+    t =    19.49s     Checking `Expect predicate `existsNoRetry == 1` for object "完成" Button`
+    t =    19.50s         Checking existence of `"完成" Button`
+    t =    19.61s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    19.66s Find the "完成" Button
+    t =    19.74s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    19.80s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    19.86s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (233.0, 290.0) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (233.0, 70.0) with velocity of 500.00 pixels per second, and then hold for 0.0 seconds
+    t =    19.86s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    19.86s     Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    19.92s     Check for interrupting elements affecting "同行" Application
+    t =    19.99s         Wait for com.apple.springboard to idle
+    t =    20.03s     Synthesize event
+    t =    20.03s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    20.09s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    20.15s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    20.21s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    20.27s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    21.11s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    21.80s Find the "picker-remote-archive-edition" StaticText
+    t =    21.90s Terminate com.jonathanjing.tongxing.dev:46573
+2026-10-10 16:04:54.412 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:54.412 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-10 16:04:54.412 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:54.412 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-10 16:04:54.413 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:54.413 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+    t =    22.94s Tear Down
+Test Case '-[TongxingUITests.ListeningFlowUITests testRemoteCategoryRefreshWithoutRebuildPreservesPausedPlayback]' passed (22.966 seconds).
+Test Suite 'ListeningFlowUITests' passed at 2026-10-10 16:04:55.469.
+	 Executed 1 test, with 0 failures (0 unexpected) in 22.966 (22.974) seconds
+Test Suite 'TongxingUITests.xctest' passed at 2026-10-10 16:04:55.471.
+	 Executed 1 test, with 0 failures (0 unexpected) in 22.966 (22.976) seconds
+Test Suite 'Selected tests' passed at 2026-10-10 16:04:55.472.
+	 Executed 1 test, with 0 failures (0 unexpected) in 22.966 (22.977) seconds
+2026-10-10 16:04:55.511 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:55.511 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-10 16:04:55.511 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:55.511 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-10 16:04:55.512 xcodebuild[46481:8549806] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-10 16:04:55.512 xcodebuild[46481:8549806] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-10 16:04:55.782 xcodebuild[46481:8549806] [MT] IDETestOperationsObserverDebug: 33.398 elapsed -- Testing started completed.
+2026-10-10 16:04:55.782 xcodebuild[46481:8549806] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-10 16:04:55.782 xcodebuild[46481:8549806] [MT] IDETestOperationsObserverDebug: 33.398 sec, +33.398 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/20261010T160416-test-ab8833c8/test.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+
+Exit status: 0

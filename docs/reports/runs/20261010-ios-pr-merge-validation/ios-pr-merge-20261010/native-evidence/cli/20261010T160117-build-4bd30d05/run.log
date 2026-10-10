@@ -1,0 +1,244 @@
+
+$ /usr/bin/xcrun xcodebuild -project /private/tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun xcodebuild -project /private/tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Tongxing.xcodeproj -scheme Tongxing -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath /private/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -resultBundlePath /private/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/20261010T160117-build-4bd30d05/build.xcresult build
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project /private/tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Tongxing.xcodeproj -scheme Tongxing -configuration Debug -sdk iphonesimulator -destination "generic/platform=iOS Simulator" -derivedDataPath /private/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -resultBundlePath /private/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/20261010T160117-build-4bd30d05/build.xcresult build
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+    CODE_SIGNING_REQUIRED = NO
+    SDKROOT = iphonesimulator27.1
+
+Resolve Package Graph
+
+... 2286 lines omitted; 2 error-like lines, 2 kept below ...
+[line 1885] RegisterExecutionPolicyException /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex (in target 'ListeningActivityExtension' from project 'Tongxing')
+[line 1887]     builtin-RegisterExecutionPolicyException /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex
+... end of omitted section ...
+    builtin-SwiftPerFileCompile AudioAlignmentController.swift
+
+SwiftCompile normal arm64 /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/BetaNotifications.swift (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-SwiftPerFileCompile BetaNotifications.swift
+
+SwiftMergeGeneratedHeaders /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/DerivedSources/Tongxing-Swift.h /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing-Swift.h /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing-Swift.h (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-swiftHeaderTool -arch arm64 /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing-Swift.h -arch x86_64 /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing-Swift.h -o /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/DerivedSources/Tongxing-Swift.h
+
+SwiftDriverJobDiscovery normal x86_64 Compiling Localization.swift, MicrophoneCapture.swift (in target 'Tongxing' from project 'Tongxing')
+
+Copy /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.swiftmodule /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftmodule (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftmodule /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.swiftdoc /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftdoc (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftdoc /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.abi.json /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.abi.json (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.abi.json /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftsourceinfo (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftsourceinfo /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+SwiftCompile normal arm64 Compiling\ VoiceDemoCatalog.swift,\ VoiceDemoSection.swift /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/VoiceDemoCatalog.swift /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/VoiceDemoSection.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal arm64 /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/VoiceDemoCatalog.swift (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-SwiftPerFileCompile VoiceDemoCatalog.swift
+
+SwiftCompile normal arm64 /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/VoiceDemoSection.swift (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-SwiftPerFileCompile VoiceDemoSection.swift
+
+SwiftDriverJobDiscovery normal x86_64 Compiling VoiceDemoCatalog.swift, VoiceDemoSection.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal arm64 Compiling\ ListeningActivityCard.swift,\ ListeningActivityIslandContent.swift,\ ListeningLiveActivity.swift /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Shared/ListeningActivityCard.swift /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Shared/ListeningActivityIslandContent.swift /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/ListeningLiveActivity.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal arm64 /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Shared/ListeningActivityCard.swift (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-SwiftPerFileCompile ListeningActivityCard.swift
+
+SwiftCompile normal arm64 /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Shared/ListeningActivityIslandContent.swift (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-SwiftPerFileCompile ListeningActivityIslandContent.swift
+
+SwiftCompile normal arm64 /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/ListeningLiveActivity.swift (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-SwiftPerFileCompile ListeningLiveActivity.swift
+
+SwiftCompile normal x86_64 Compiling\ PlaybackPanelLayout.swift,\ PrivacySupportView.swift /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/PlaybackPanelLayout.swift /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/PrivacySupportView.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal x86_64 /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/PlaybackPanelLayout.swift (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-SwiftPerFileCompile PlaybackPanelLayout.swift
+
+SwiftCompile normal x86_64 /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/PrivacySupportView.swift (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-SwiftPerFileCompile PrivacySupportView.swift
+
+SwiftDriverJobDiscovery normal arm64 Compiling DownloadBackgroundAssertion.swift, EnglishLocateSheet.swift, ListeningActivityAttributes.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal x86_64 Compiling\ AppModel.swift,\ AudioAlignmentController.swift,\ BetaNotifications.swift /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/AppModel.swift /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/AudioAlignmentController.swift /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/BetaNotifications.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal x86_64 /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/AppModel.swift (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-SwiftPerFileCompile AppModel.swift
+
+SwiftCompile normal x86_64 /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/AudioAlignmentController.swift (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-SwiftPerFileCompile AudioAlignmentController.swift
+
+SwiftCompile normal x86_64 /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/BetaNotifications.swift (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-SwiftPerFileCompile BetaNotifications.swift
+
+SwiftDriverJobDiscovery normal arm64 Compiling Localization.swift, MicrophoneCapture.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling TongxingApp.swift, UITestLaunch.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal x86_64 Compiling PlaybackPanelLayout.swift, PrivacySupportView.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling ListeningActivityCard.swift, ListeningActivityIslandContent.swift, ListeningLiveActivity.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal x86_64 Compiling PlaybackController.swift, PlaybackDock.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling VoiceDemoCatalog.swift, VoiceDemoSection.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling AppModel.swift, AudioAlignmentController.swift, BetaNotifications.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling PlaybackController.swift, PlaybackDock.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal x86_64 Compiling AppModel.swift, AudioAlignmentController.swift, BetaNotifications.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal x86_64 Compiling BetaRemotePush.swift, ContentView.swift, DesignSystem.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriver\ Compilation Tongxing normal x86_64 com.apple.xcode.tools.swift.compiler (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-Swift-Compilation -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Tongxing -Onone @/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -target x86_64-apple-ios17.0-simulator -g -module-cache-path /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -F /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/SDKStatCaches.noindex/iphonesimulator27.1-24A94232-35d3147121984ba087c28d913653d626.sdkstatcache -output-file-map /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path / ...[line truncated]
+
+Ld /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Binary/Tongxing.debug.dylib normal x86_64 (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target x86_64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -filelist /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing.LinkFileList -install_name @rpath/Tongxing.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path -Xlinker -rpath -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /tmp/to ...[line truncated]
+
+ConstructStubExecutorLinkFileList /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-ExecutorLinkFileList-normal-x86_64.txt (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    construct-stub-executor-link-file-list /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Binary/Tongxing.debug.dylib /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-ExecutorLinkFileList-normal-x86_64.txt
+note: Using stub executor library with Swift entry point. (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling BetaRemotePush.swift, ContentView.swift, DesignSystem.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriver\ Compilation Tongxing normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-Swift-Compilation -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Tongxing -Onone @/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -F /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/SDKStatCaches.noindex/iphonesimulator27.1-24A94232-35d3147121984ba087c28d913653d626.sdkstatcache -output-file-map /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp ...[line truncated]
+
+Ld /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Binary/Tongxing.debug.dylib normal arm64 (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -filelist /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.LinkFileList -install_name @rpath/Tongxing.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path -Xlinker -rpath -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /tmp/tongx ...[line truncated]
+
+ConstructStubExecutorLinkFileList /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-ExecutorLinkFileList-normal-arm64.txt (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    construct-stub-executor-link-file-list /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Binary/Tongxing.debug.dylib /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'Tongxing' from project 'Tongxing')
+
+CreateUniversalBinary /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing.debug.dylib normal arm64\ x86_64 (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo -create /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Binary/Tongxing.debug.dylib /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Binary/Tongxing.debug.dylib -output /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing.debug.dylib
+
+Ld /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Binary/Tongxing normal arm64 (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @loader_path -Xlinker -rpath -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -debug_variant -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-ExecutorLinkFileList-normal-arm64.txt /tmp/tongxing-ios-pr-merge-20261010/artifacts/tong ...[line truncated]
+
+Ld /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Binary/Tongxing normal x86_64 (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target x86_64-apple-ios17.0-simulator -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @loader_path -Xlinker -rpath -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -debug_variant -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-DebugDylibPath-normal-x86_64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-DebugDylibInstallName-normal-x86_64.txt -Xlinker -filelist -Xlinker /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-ExecutorLinkFileList-normal-x86_64.txt /tmp/tongxing-ios-pr-merge-20261010/artifacts/ ...[line truncated]
+
+CreateUniversalBinary /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing normal arm64\ x86_64 (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo -create /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Binary/Tongxing /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Binary/Tongxing -output /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing
+
+Copy /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks -remove-static-executable /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns
+
+ProcessInfoPlistFile /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/Info.plist (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-infoPlistUtility /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/App/Info.plist -producttype com.apple.product-type.application -genpkginfo /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/assetcatalog_generated_info.plist -scanforprivacyfile /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex -o /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist
+
+CopySwiftLibs /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing.debug.dylib --scan-folder /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Frameworks --scan-folder /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns --scan-folder /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/SystemExtensions --scan-folder /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name Tongxing --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk --xcode-version 27A9275 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.jonathanjing.tongxing.dev --output /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app --target-triple arm64-apple-ios17.0-simulator --target-triple x86_64-apple-ios17.0-simulator --binary-file /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing --dependency-file /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing_dependency_info.dat --dependency-file /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing_dependency_info.dat --stringsdata-file /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --stringsdata-file /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Deb ...[line truncated]
+2026-10-10 16:01:45.923 appintentsmetadataprocessor[45159:8537174] Starting appintentsmetadataprocessor export
+2026-10-10 16:01:45.924 appintentsmetadataprocessor[45159:8537174] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+ValidateEmbeddedBinary /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/usr/bin/embeddedBinaryValidationUtility /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex -info-plist-path /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist
+
+AppIntentsSSUTraining (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist --temp-dir-path /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/ssu --bundle-id com.jonathanjing.tongxing.dev --product-path /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app --extracted-metadata-path /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Metadata.appintents --metadata-file-list /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing.DependencyMetadataFileList --source-file /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist --archive-ssu-assets
+2026-10-10 16:01:45.951 appintentsnltrainingprocessor[45161:8537179] Parsing options for appintentsnltrainingprocessor
+2026-10-10 16:01:45.951 appintentsnltrainingprocessor[45161:8537179] Starting AppIntents SSU YAML Generation
+2026-10-10 16:01:45.951 appintentsnltrainingprocessor[45161:8537179] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-RegisterExecutionPolicyException /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app
+
+Validate /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    builtin-validationUtility /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios
+    /usr/bin/touch -c /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app
+
+PruneExplicitPrecompiledModules /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+
+Result bundle written to path:
+	/tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/20261010T160117-build-4bd30d05/build.xcresult
+
+** BUILD SUCCEEDED **
+
+
+Exit status: 0

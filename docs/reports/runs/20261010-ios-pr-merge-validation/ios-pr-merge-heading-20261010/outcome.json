@@ -1,0 +1,13 @@
+{
+  "status": "passed_after_fixture_load_repair",
+  "revision": "79bc3ec4",
+  "scope": "selected non-default locale keeps verified transcript title, series, speaker",
+  "hosted": {
+    "passed": 1,
+    "name": "testSelectedNonDefaultLocaleKeepsVerifiedHeading"
+  },
+  "initialFailure": "New hosted fixture omitted the view task loadSelectedPublishedTranscript; explicit invocation added",
+  "productFix": "Remove accidental defaultTargetLocale condition; fixture has differing Chinese and Korean titles with matching release hashes",
+  "publication": "not_run",
+  "deviceAcceptance": "not_run"
+}

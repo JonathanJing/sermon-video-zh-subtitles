@@ -1,0 +1,242 @@
+2026-09-18 15:58:18-0700 diagnosticd[36423]: diagnosticd starting
+2026-09-18 15:58:18-0700 diagnosticd[36423]: Registered for persona generation change notifications
+2026-09-18 15:58:18-0700 diagnosticd[36423]: System mode client started - diagnosticd (36423) - mode: 0x9, filter: "<empty>"
+2026-09-18 15:59:21-0700 diagnosticd[36423]: System mode client started - DTServiceHub (36626) - mode: 0x8, filter: "{
+    logicalExp =     {
+        subfilters =         (
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+                                                {
+                            pid =                             {
+                                36619 = 0;
+                            };
+                        },
+                                                {
+                            subsystem =                             {
+                                "com.apple.runtime-issues" = 0;
+                            };
+                        }
+                    );
+                };
+            },
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+
+2026-09-18 16:00:03-0700 diagnosticd[36823]: diagnosticd starting
+2026-09-18 16:00:03-0700 diagnosticd[36823]: Registered for persona generation change notifications
+2026-09-18 16:00:03-0700 diagnosticd[36823]: System mode client started - diagnosticd (36823) - mode: 0x9, filter: "<empty>"
+2026-09-19 22:44:28-0700 diagnosticd[4213]: diagnosticd starting
+2026-09-19 22:44:28-0700 diagnosticd[4213]: Registered for persona generation change notifications
+2026-09-19 22:44:28-0700 diagnosticd[4213]: System mode client started - diagnosticd (4213) - mode: 0x9, filter: "<empty>"
+2026-09-19 22:44:58-0700 diagnosticd[4475]: diagnosticd starting
+2026-09-19 22:44:58-0700 diagnosticd[4475]: Registered for persona generation change notifications
+2026-09-19 22:44:58-0700 diagnosticd[4475]: System mode client started - diagnosticd (4475) - mode: 0x9, filter: "<empty>"
+2026-09-19 22:46:50-0700 diagnosticd[5538]: diagnosticd starting
+2026-09-19 22:46:50-0700 diagnosticd[5538]: Registered for persona generation change notifications
+2026-09-19 22:46:50-0700 diagnosticd[5538]: System mode client started - diagnosticd (5538) - mode: 0x9, filter: "<empty>"
+... 31 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+2026-09-22 16:48:24-0700 diagnosticd[62569]: Registered for persona generation change notifications
+2026-09-22 16:48:24-0700 diagnosticd[62569]: System mode client started - diagnosticd (62569) - mode: 0x9, filter: "<empty>"
+2026-09-22 16:53:21-0700 diagnosticd[63482]: diagnosticd starting
+2026-09-22 16:53:21-0700 diagnosticd[63482]: Registered for persona generation change notifications
+2026-09-22 16:53:21-0700 diagnosticd[63482]: System mode client started - diagnosticd (63482) - mode: 0x9, filter: "<empty>"
+2026-09-22 16:56:50-0700 diagnosticd[64196]: diagnosticd starting
+2026-09-22 16:56:50-0700 diagnosticd[64196]: Registered for persona generation change notifications
+2026-09-22 16:56:50-0700 diagnosticd[64196]: System mode client started - diagnosticd (64196) - mode: 0x9, filter: "<empty>"
+2026-09-22 17:00:00-0700 diagnosticd[65045]: diagnosticd starting
+2026-09-22 17:00:00-0700 diagnosticd[65045]: Registered for persona generation change notifications
+2026-09-22 17:00:00-0700 diagnosticd[65045]: System mode client started - diagnosticd (65045) - mode: 0x9, filter: "<empty>"
+2026-09-22 17:03:27-0700 diagnosticd[65885]: diagnosticd starting
+2026-09-22 17:03:27-0700 diagnosticd[65885]: Registered for persona generation change notifications
+2026-09-22 17:03:27-0700 diagnosticd[65885]: System mode client started - diagnosticd (65885) - mode: 0x9, filter: "<empty>"
+2026-09-22 17:06:42-0700 diagnosticd[66625]: diagnosticd starting
+2026-09-22 17:06:42-0700 diagnosticd[66625]: Registered for persona generation change notifications
+2026-09-22 17:06:42-0700 diagnosticd[66625]: System mode client started - diagnosticd (66625) - mode: 0x9, filter: "<empty>"
+2026-09-22 17:08:04-0700 diagnosticd[67327]: diagnosticd starting
+2026-09-22 17:08:04-0700 diagnosticd[67327]: Registered for persona generation change notifications
+2026-09-22 17:08:04-0700 diagnosticd[67327]: System mode client started - diagnosticd (67327) - mode: 0x9, filter: "<empty>"
+2026-09-22 19:17:30-0700 diagnosticd[95149]: diagnosticd starting
+2026-09-22 19:17:30-0700 diagnosticd[95149]: Registered for persona generation change notifications
+2026-09-22 19:17:30-0700 diagnosticd[95149]: System mode client started - diagnosticd (95149) - mode: 0x9, filter: "<empty>"
+2026-09-22 19:19:32-0700 diagnosticd[95794]: diagnosticd starting
+2026-09-22 19:19:32-0700 diagnosticd[95794]: Registered for persona generation change notifications
+2026-09-22 19:19:32-0700 diagnosticd[95794]: System mode client started - diagnosticd (95794) - mode: 0x9, filter: "<empty>"
+2026-09-24 16:10:48-0700 diagnosticd[95794]: System mode client started - DTServiceHub (96437) - mode: 0x8, filter: "{
+    logicalExp =     {
+        subfilters =         (
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+                                                {
+                            pid =                             {
+                                15058 = 0;
+                            };
+                        },
+                                                {
+                            subsystem =                             {
+                                "com.apple.runtime-issues" = 0;
+                            };
+                        }
+                    );
+                };
+            },
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+
+2026-09-24 16:11:15-0700 diagnosticd[95794]: System mode client stopped - DTServiceHub (96437) - clearing mode: 0x0, still active: 0x9
+2026-09-24 16:11:23-0700 diagnosticd[95794]: System mode client started - DTServiceHub (96437) - mode: 0x8, filter: "{
+    logicalExp =     {
+        subfilters =         (
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+                                                {
+                            pid =                             {
+                                15198 = 0;
+                            };
+                        },
+                                                {
+                            subsystem =                             {
+                                "com.apple.runtime-issues" = 0;
+                            };
+                        }
+                    );
+                };
+            },
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+
+2026-09-26 09:45:51-0700 diagnosticd[72287]: diagnosticd starting
+2026-09-26 09:45:51-0700 diagnosticd[72287]: Registered for persona generation change notifications
+2026-09-26 09:45:51-0700 diagnosticd[72287]: System mode client started - diagnosticd (72287) - mode: 0x9, filter: "<empty>"
+2026-09-26 09:58:11-0700 diagnosticd[74329]: diagnosticd starting
+2026-09-26 09:58:11-0700 diagnosticd[74329]: Registered for persona generation change notifications
+2026-09-26 09:58:11-0700 diagnosticd[74329]: System mode client started - diagnosticd (74329) - mode: 0x9, filter: "<empty>"
+2026-09-26 09:59:15-0700 diagnosticd[74897]: diagnosticd starting
+2026-09-26 09:59:15-0700 diagnosticd[74897]: Registered for persona generation change notifications
+2026-09-26 09:59:15-0700 diagnosticd[74897]: System mode client started - diagnosticd (74897) - mode: 0x9, filter: "<empty>"
+2026-09-26 10:06:07-0700 diagnosticd[76264]: diagnosticd starting
+2026-09-26 10:06:07-0700 diagnosticd[76264]: Registered for persona generation change notifications
+2026-09-26 10:06:07-0700 diagnosticd[76264]: System mode client started - diagnosticd (76264) - mode: 0x9, filter: "<empty>"
+2026-09-26 10:09:33-0700 diagnosticd[77423]: diagnosticd starting
+2026-09-26 10:09:33-0700 diagnosticd[77423]: Registered for persona generation change notifications
+2026-09-26 10:09:33-0700 diagnosticd[77423]: System mode client started - diagnosticd (77423) - mode: 0x9, filter: "<empty>"
+2026-09-26 10:45:47-0700 diagnosticd[1232]: diagnosticd starting
+2026-09-26 10:45:47-0700 diagnosticd[1232]: Registered for persona generation change notifications
+2026-09-26 10:45:47-0700 diagnosticd[1232]: System mode client started - diagnosticd (1232) - mode: 0x9, filter: "<empty>"
+2026-09-26 12:24:04-0700 diagnosticd[21547]: diagnosticd starting
+2026-09-26 12:24:04-0700 diagnosticd[21547]: Registered for persona generation change notifications
+2026-09-26 12:24:04-0700 diagnosticd[21547]: System mode client started - diagnosticd (21547) - mode: 0x9, filter: "<empty>"
+2026-09-26 16:50:04-0700 diagnosticd[63609]: diagnosticd starting
+2026-09-26 16:50:04-0700 diagnosticd[63609]: Registered for persona generation change notifications
+2026-09-26 16:50:04-0700 diagnosticd[63609]: System mode client started - diagnosticd (63609) - mode: 0x9, filter: "<empty>"
+2026-09-26 16:57:29-0700 diagnosticd[69332]: diagnosticd starting
+2026-09-26 16:57:29-0700 diagnosticd[69332]: Registered for persona generation change notifications
+2026-09-26 16:57:29-0700 diagnosticd[69332]: System mode client started - diagnosticd (69332) - mode: 0x9, filter: "<empty>"
+2026-09-29 06:04:15-0700 diagnosticd[69332]: System mode client started - DTServiceHub (69313) - mode: 0x8, filter: "{
+    logicalExp =     {
+        subfilters =         (
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+                                                {
+                            pid =                             {
+                                10733 = 0;
+                            };
+                        },
+                                                {
+                            subsystem =                             {
+                                "com.apple.runtime-issues" = 0;
+                            };
+                        }
+                    );
+                };
+            },
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+
+2026-09-29 06:05:35-0700 diagnosticd[69332]: System mode client stopped - DTServiceHub (69313) - clearing mode: 0x0, still active: 0x9
+2026-09-29 06:05:38-0700 diagnosticd[69332]: System mode client started - DTServiceHub (69313) - mode: 0x8, filter: "{
+    logicalExp =     {
+        subfilters =         (
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+                                                {
+                            pid =                             {
+                                12091 = 0;
+                            };
+                        },
+                                                {
+                            subsystem =                             {
+                                "com.apple.runtime-issues" = 0;
+                            };
+                        }
+                    );
+                };
+            },
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+
+2026-09-29 06:06:36-0700 diagnosticd[69332]: System mode client stopped - DTServiceHub (69313) - clearing mode: 0x0, still active: 0x9
+2026-09-30 21:23:35-0700 diagnosticd[91210]: diagnosticd starting
+2026-09-30 21:23:35-0700 diagnosticd[91210]: Registered for persona generation change notifications
+2026-09-30 21:23:35-0700 diagnosticd[91210]: System mode client started - diagnosticd (91210) - mode: 0x9, filter: "<empty>"
+2026-10-01 10:50:44-0700 diagnosticd[31622]: diagnosticd starting
+2026-10-01 10:50:44-0700 diagnosticd[31622]: Registered for persona generation change notifications
+2026-10-01 10:50:44-0700 diagnosticd[31622]: System mode client started - diagnosticd (31622) - mode: 0x9, filter: "<empty>"
+2026-10-01 10:54:10-0700 diagnosticd[33539]: diagnosticd starting
+2026-10-01 10:54:10-0700 diagnosticd[33539]: Registered for persona generation change notifications
+2026-10-01 10:54:10-0700 diagnosticd[33539]: System mode client started - diagnosticd (33539) - mode: 0x9, filter: "<empty>"
+2026-10-01 10:57:25-0700 diagnosticd[35730]: diagnosticd starting
+2026-10-01 10:57:25-0700 diagnosticd[35730]: Registered for persona generation change notifications
+2026-10-01 10:57:25-0700 diagnosticd[35730]: System mode client started - diagnosticd (35730) - mode: 0x9, filter: "<empty>"
+2026-10-01 10:58:27-0700 diagnosticd[37205]: diagnosticd starting
+2026-10-01 10:58:27-0700 diagnosticd[37205]: Registered for persona generation change notifications
+2026-10-01 10:58:27-0700 diagnosticd[37205]: System mode client started - diagnosticd (37205) - mode: 0x9, filter: "<empty>"
+2026-10-08 20:45:02-0700 diagnosticd[99316]: diagnosticd starting
+2026-10-08 20:45:02-0700 diagnosticd[99316]: Registered for persona generation change notifications
+2026-10-08 20:45:02-0700 diagnosticd[99316]: System mode client started - diagnosticd (99316) - mode: 0x9, filter: "<empty>"
+2026-10-09 19:14:33-0700 diagnosticd[99316]: System mode client started - DTServiceHub (99577) - mode: 0x8, filter: "{
+    logicalExp =     {
+        subfilters =         (
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+                                                {
+                            pid =                             {
+                                9907 = 0;
+                            };
+                        },
+                                                {
+                            subsystem =                             {
+                                "com.apple.runtime-issues" = 0;
+                            };
+                        }
+                    );
+                };
+            },
+                        {
+                logicalExp =                 {
+                    operator = 1;
+                    subfilters =                     (
+
+2026-10-09 19:15:09-0700 diagnosticd[99316]: System mode client stopped - DTServiceHub (99577) - clearing mode: 0x0, still active: 0x9
