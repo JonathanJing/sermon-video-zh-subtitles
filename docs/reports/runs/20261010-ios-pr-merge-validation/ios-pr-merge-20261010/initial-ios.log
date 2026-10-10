@@ -98,7 +98,7 @@ Writing result bundle at path:
     t =    18.52s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    18.58s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    18.65s Find the Target Application 'com.jonathanjing.tongxing.dev'
-    t =    18.71s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds 
+    t =    18.71s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds
     t =    18.71s     Wait for com.jonathanjing.tongxing.dev to idle
     t =    18.71s     Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    18.78s     Check for interrupting elements affecting "同行" Application
@@ -120,7 +120,7 @@ Writing result bundle at path:
     t =    20.58s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    20.64s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    20.70s Find the Target Application 'com.jonathanjing.tongxing.dev'
-    t =    20.76s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds 
+    t =    20.76s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds
     t =    20.76s     Wait for com.jonathanjing.tongxing.dev to idle
     t =    20.76s     Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    20.82s     Check for interrupting elements affecting "同行" Application
@@ -142,7 +142,7 @@ Writing result bundle at path:
     t =    22.65s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    22.71s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    22.76s Find the Target Application 'com.jonathanjing.tongxing.dev'
-    t =    22.82s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds 
+    t =    22.82s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds
     t =    22.82s     Wait for com.jonathanjing.tongxing.dev to idle
     t =    22.82s     Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    22.88s     Check for interrupting elements affecting "同行" Application
@@ -164,7 +164,7 @@ Writing result bundle at path:
     t =    24.67s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    24.73s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    24.79s Find the Target Application 'com.jonathanjing.tongxing.dev'
-    t =    24.84s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds 
+    t =    24.84s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds
     t =    24.84s     Wait for com.jonathanjing.tongxing.dev to idle
     t =    24.85s     Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    24.91s     Check for interrupting elements affecting "同行" Application
@@ -186,7 +186,7 @@ Writing result bundle at path:
     t =    26.74s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    26.80s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    26.86s Find the Target Application 'com.jonathanjing.tongxing.dev'
-    t =    26.91s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds 
+    t =    26.91s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds
     t =    26.91s     Wait for com.jonathanjing.tongxing.dev to idle
     t =    26.92s     Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    26.97s     Check for interrupting elements affecting "同行" Application
@@ -208,7 +208,7 @@ Writing result bundle at path:
     t =    28.79s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    28.84s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    28.90s Find the Target Application 'com.jonathanjing.tongxing.dev'
-    t =    28.96s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds 
+    t =    28.96s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds
     t =    28.96s     Wait for com.jonathanjing.tongxing.dev to idle
     t =    28.96s     Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    29.02s     Check for interrupting elements affecting "同行" Application
@@ -230,7 +230,7 @@ Writing result bundle at path:
     t =    30.87s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    30.93s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    30.99s Find the Target Application 'com.jonathanjing.tongxing.dev'
-    t =    31.05s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds 
+    t =    31.05s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds
     t =    31.05s     Wait for com.jonathanjing.tongxing.dev to idle
     t =    31.05s     Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    31.11s     Check for interrupting elements affecting "同行" Application
@@ -252,7 +252,7 @@ Writing result bundle at path:
     t =    32.95s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    33.00s Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    33.06s Find the Target Application 'com.jonathanjing.tongxing.dev'
-    t =    33.11s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds 
+    t =    33.11s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 165.7) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (190.0, 205.7) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds
     t =    33.11s     Wait for com.jonathanjing.tongxing.dev to idle
     t =    33.12s     Find the Target Application 'com.jonathanjing.tongxing.dev'
     t =    33.18s     Check for interrupting elements affecting "同行" Application

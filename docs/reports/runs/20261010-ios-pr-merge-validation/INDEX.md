@@ -14,10 +14,10 @@ Error-like log lines (first 5 per log):
 - `initial-ios.log`: [line 535] RegisterExecutionPolicyException /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/TongxingCore_-2
 - `initial-ios.log`: [line 537]     builtin-RegisterExecutionPolicyException /tmp/tongxing-ios-pr-merge-20261010/artifacts/tongxing-ios/2026-10-10/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/Ton
 - `initial-ios.log`: [line 660] /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:717:100: warning: main actor-isolated static property 'match' can not be referenced from a no
-- `initial-ios.log`: [line 671]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from 
+- `initial-ios.log`: [line 671]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from
 - `ios-recheck.log`: ... 181 lines omitted; 4 error-like lines, 4 kept below ...
 - `ios-recheck.log`: [line 115] /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:717:100: warning: main actor-isolated static property 'match' can not be referenced from a no
-- `ios-recheck.log`: [line 126]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from 
+- `ios-recheck.log`: [line 126]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from
 - `ios-recheck.log`: [line 130] /tmp/tongxing-ios-pr-merge-20261010/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:834:21: warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mut
 - `ios-recheck.log`: [line 134]      |                     `- warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
 - `web.log`: ✔ optional requests have a bounded timeout and abort pending network work (13.090416ms)

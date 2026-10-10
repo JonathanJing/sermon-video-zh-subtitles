@@ -9,3 +9,5 @@
 未使用Spark资源；版本号、Apple build分配及外部部署均未改变。唯一预检改进是按当前视图容器选择测试定位方法。原始日志、xcresult及截图保留在忽略目录，稍后清理临时worktree前应先复制产物。
 
 本轮代码在#261；旧发行分支的合并保留当前1.26.18配置。海报/APNs及类别架构的既有反馈记录在docs/ios-pr-history-integration-20261010.zh.md，关闭历史PR线程不表示这些问题已经修复。云端CI及最终合并回执另以GitHub PR为准；本报告仅为本地测试结果。
+
+#263 追加兼容修复：v2网页读取器接受并严格校验类别元数据；`node --test tests/test_formal_dev_adapter.mjs` 11项通过，提交5d254a8b。报告日志副本去除行尾空格以满足文档检查，manifest中的SHA仍绑定原始运行文件。
