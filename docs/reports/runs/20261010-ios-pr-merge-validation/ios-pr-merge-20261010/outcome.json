@@ -5,7 +5,7 @@
   "initialFailure": "UI test used listening scroll bounds inside More Form",
   "repair": "Use More Form navigation helper; hosted and refresh tests passed",
   "core": {
-    "passed": 18,
+    "passed": 16,
     "skipped": 2
   },
   "python": {
