@@ -165,6 +165,27 @@ public struct PageDisplayCategory: Codable, Sendable, Equatable {
     public let schemaVersion: String
     public let labels: [String: String]
 
+    public init(schemaVersion: String, labels: [String: String]) {
+        self.schemaVersion = schemaVersion
+        self.labels = labels
+    }
+
+    private struct Field: CodingKey {
+        let stringValue: String
+        init?(stringValue: String) { self.stringValue = stringValue }
+        var intValue: Int? { nil }
+        init?(intValue: Int) { return nil }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let fields = try decoder.container(keyedBy: Field.self)
+        guard Set(fields.allKeys.map(\.stringValue)) == ["schemaVersion", "labels"] else {
+            throw CatalogError.invalid("页面类别显示元数据包含未知或缺失字段")
+        }
+        schemaVersion = try fields.decode(String.self, forKey: Field(stringValue: "schemaVersion")!)
+        labels = try fields.decode([String: String].self, forKey: Field(stringValue: "labels")!)
+    }
+
     public func validate() throws {
         guard schemaVersion == Self.supportedSchemaVersion,
               (1...16).contains(labels.count), labels["en"] != nil,
@@ -177,15 +198,18 @@ public struct PageDisplayCategory: Codable, Sendable, Equatable {
 
     /// Interface locale, never audio/content locale. English is required fallback.
     public func label(locale: String) -> String? {
-        let requested = locale.replacingOccurrences(of: "_", with: "-")
-        if let exact = labels[requested] { return exact }
-        if ["zh-CN", "zh-SG", "zh-Hans"].contains(requested) || requested.hasPrefix("zh-Hans-") {
-            for alias in ["zh-Hans", "zh-CN", "zh-SG", "zh"] {
-                if let value = labels[alias] { return value }
+        let requested = locale.replacingOccurrences(of: "_", with: "-").lowercased()
+        func value(_ key: String) -> String? {
+            labels.keys.sorted().first { $0.lowercased() == key }.flatMap { labels[$0] }
+        }
+        if let exact = value(requested) { return exact }
+        if ["zh-cn", "zh-sg", "zh-hans"].contains(requested) || requested.hasPrefix("zh-hans-") {
+            for alias in ["zh-hans", "zh-cn", "zh-sg", "zh"] {
+                if let match = value(alias) { return match }
             }
         }
         let base = requested.split(separator: "-").first.map(String.init) ?? requested
-        return labels[base] ?? labels["en"]
+        return value(base) ?? value("en")
     }
 }
 

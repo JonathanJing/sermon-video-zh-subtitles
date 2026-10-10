@@ -13,7 +13,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSIONS = {f"sermon-multilingual-catalog-v{v}": v for v in (2, 3)}
+VERSIONS = {f"sermon-multilingual-catalog-v{v}": v for v in (2, 3, 4)}
 
 
 def validate_catalog(catalog: dict) -> None:
@@ -21,7 +21,7 @@ def validate_catalog(catalog: dict) -> None:
         raise ValueError("Catalog must be a JSON object")
     version = VERSIONS.get(catalog.get("schemaVersion"))
     if version is None:
-        raise ValueError("Only multilingual catalog v2/v3 is supported")
+        raise ValueError("Only multilingual catalog v2/v3/v4 is supported")
     schema = json.loads((ROOT / f"schemas/sermon-multilingual-catalog-v{version}.schema.json").read_text())
     errors = sorted(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(catalog),
                     key=lambda error: str(error.json_path))
@@ -60,7 +60,10 @@ def parse_json(data: bytes) -> dict:
                 raise ValueError(f"Duplicate JSON key: {key}")
             result[key] = value
         return result
-    return json.loads(data.decode("utf-8"), object_pairs_hook=unique_pairs)
+    def reject_constant(value):
+        raise ValueError(f"Non-finite JSON constant: {value}")
+    return json.loads(data.decode("utf-8"), object_pairs_hook=unique_pairs,
+                      parse_constant=reject_constant)
 
 
 def read_json(path: Path) -> dict:
@@ -96,7 +99,7 @@ def main() -> int:
         original = args.catalog.read_bytes()
         updates = read_json(args.updates)
         result = update_categories(parse_json(original), updates)
-        encoded = (json.dumps(result, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        encoded = (json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
         write_new(args.output, encoded)
         print(json.dumps({"schemaVersion": "catalog-display-category-update-receipt-v1",
                           "catalogSchemaVersion": result["schemaVersion"],

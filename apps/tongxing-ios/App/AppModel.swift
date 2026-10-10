@@ -34,6 +34,8 @@ final class AppModel: ObservableObject {
 
     let allowsDevCandidates: Bool
     let playback: PlaybackController
+    let weeklyUpdates: WeeklyUpdates
+    let notificationWeeklyUpdates: WeeklyUpdates
     @Published private(set) var catalog: WeeklyCatalog?
     @Published private(set) var selectedWeek: SermonWeek? {
         didSet { rebuildBilingualRows() }
@@ -211,6 +213,8 @@ final class AppModel: ObservableObject {
             .appendingPathComponent("Tongxing", isDirectory: true)
         mediaOrigin = contentOrigin ?? Self.contentOrigin
         mediaSession = session
+        weeklyUpdates = WeeklyUpdates(origin: mediaOrigin, support: support, session: session)
+        notificationWeeklyUpdates = WeeklyUpdates(origin: mediaOrigin, support: support, session: session)
         allowsDevCandidates = Self.permitsDevCandidates(origin: mediaOrigin, bundleIdentifier: applicationBundleIdentifier)
         languagePreferenceURL = support.appendingPathComponent("tongxing-language-preferences-v2.json")
         let savedPreferences = try? JSONDecoder().decode(ContentLanguagePreferences.self,
@@ -349,30 +353,40 @@ final class AppModel: ObservableObject {
     }
 
     func heading(for week: SermonWeek) -> SermonHeading {
-        SermonHeading(title: SermonHeading.displayTitle(week.title, pageID: week.id, date: week.date,
-                                                       fallback: AppLocalization.shared.text("证道")),
-                      series: week.series, speaker: week.speaker)
+        let page = multilingualCatalog?.pages.first { $0.id == week.id }
+        return resolvedHeading(SermonHeading(
+            title: SermonHeading.displayTitle(week.title, pageID: week.id, date: week.date,
+                                              fallback: AppLocalization.shared.text("证道")),
+            series: week.series, speaker: week.speaker), page: page)
     }
 
-    private func displayEdition(for page: MultilingualPage) -> String? {
-        page.displayEdition(locale: AppLocalization.shared.language.rawValue)
+    /// Catalog labels are already localized; only legacy title/category keys use
+    /// the bundled String Catalog. Both native and overlapping weekly rows agree.
+    private func resolvedHeading(_ heading: SermonHeading, page: MultilingualPage?) -> SermonHeading {
+        let locale = AppLocalization.shared.language.rawValue
+        let edition: String?
+        if let page, page.diagnosticOnly != true, page.simulationOnly != true,
+           let category = page.displayCategory {
+            edition = category.label(locale: locale)
+        } else {
+            edition = (page?.displayEdition(locale: locale) ?? heading.edition).map {
+                AppLocalization.shared.text($0)
+            }
+        }
+        return SermonHeading(title: heading.title, series: heading.series, speaker: heading.speaker,
+                             displayEdition: edition)
     }
 
     func heading(for page: MultilingualPage) -> SermonHeading {
         if let transcript = currentPublishedTranscript, transcript.pageID == page.id,
-           transcript.sourceIdentitySha256 == page.sourceIdentitySha256 {
-            return SermonHeading(title: displayTitle(transcript.title ?? page.title, for: page),
-                                 series: transcript.series, speaker: transcript.speaker,
-                                 displayEdition: displayEdition(for: page))
+           selectedContentLocale == page.defaultTargetLocale {
+            return resolvedHeading(SermonHeading(title: displayTitle(transcript.title ?? page.title, for: page),
+                                                series: transcript.series, speaker: transcript.speaker), page: page)
         }
         if let cached = publishedHeadings[publishedHeadingKey(page)] {
-            // Resolve catalog presentation on each render: a metadata refresh or
-            // interface-language change must not retain an old cached category.
-            // Cached edition contains only a legacy title suffix, never catalog labels.
-            return SermonHeading(title: cached.title, series: cached.series, speaker: cached.speaker,
-                                 displayEdition: displayEdition(for: page) ?? cached.edition)
+            return resolvedHeading(cached, page: page)
         }
-        return SermonHeading(title: displayTitle(page.title, for: page), displayEdition: displayEdition(for: page))
+        return resolvedHeading(SermonHeading(title: displayTitle(page.title, for: page)), page: page)
     }
 
     private func displayTitle(_ title: String?, for page: MultilingualPage) -> String {
@@ -499,6 +513,29 @@ final class AppModel: ObservableObject {
         guard !started else { return }
         started = true
         await refresh()
+    }
+
+    var weeklyUpdateIdentity: String {
+        guard let catalog = multilingualCatalog else { return "" }
+        return [catalog.defaultPageId, selectedContentLocale,
+                catalog.defaultPage.targets[selectedContentLocale]?.releasePackageJsonSha256 ?? ""].joined(separator: ":")
+    }
+
+    func openWeeklyUpdate(_ page: MultilingualPage, catalog: MultilingualCatalog) {
+        let previous = selectedMultilingualPage
+        let bindingChanged = previous?.id == page.id &&
+            (previous?.sourceIdentitySha256 != page.sourceIdentitySha256
+             || previous?.targets[selectedContentLocale] != page.targets[selectedContentLocale]
+             || selectedAudioLocale.map { previous?.targets[$0] != page.targets[$0] } == true)
+        multilingualCatalog = catalog
+        selectPublishedPage(page, forceReload: bindingChanged)
+    }
+
+    /// Foreground discovery uses a fresh snapshot without replacing the playing selection.
+    func checkWeeklyUpdates() async {
+        guard started, !isLoading, let multilingualRepository,
+              let result = try? await multilingualRepository.loadCatalog() else { return }
+        await weeklyUpdates.load(catalog: result.catalog, locale: selectedContentLocale)
     }
 
     func refresh() async {
@@ -646,9 +683,9 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func selectPublishedPage(_ page: MultilingualPage) {
+    func selectPublishedPage(_ page: MultilingualPage, forceReload: Bool = false) {
         guard independentPages.contains(where: { $0.id == page.id }) else { return }
-        guard selectedWeek != nil || selectedPageID != page.id else { return }
+        guard forceReload || selectedWeek != nil || selectedPageID != page.id else { return }
         publishedSelectionRevision = UUID()
         cancelPublishedAudioPreparation()
         playback.clear()
