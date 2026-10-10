@@ -81,6 +81,7 @@ jobs:
           tests.test_ios_ci_route
           tests.test_xcode_cloud_archive_admission
           tests.test_ios_testflight_release
+          tests.test_ios_apns_single_device
           tests.test_tongxing_interface_locales
           tests.test_shared_client_contract_fixtures
           tests.test_shared_text_only_release_fixtures
