@@ -11,3 +11,5 @@
 - APNs sender 的 v4/release 路径兼容、旧或冷目录通知的 pending 重试，以及新增控件的多语言。
 
 原始反馈和上下文保存在 [#275 审核](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/275#pullrequestreview-threads) 与 [#276 审核](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/276#pullrequestreview-threads)。后续修复需绑定其自己的 revision 和回归证据；既有单设备远程通知证据仍只证明记录中的设备、包和操作。
+
+类别历史反馈的两个既有边界也保留：Core 的 legacy fallback 仍返回既有中文展示键；`dev` 的 v3 schema 已含 `displayCategory`，其 `x-contractRevision` 仍为 2。本次类别修复不宣称完成这两项架构/历史协议迁移。类别更新工具可处理 v4，但一次只更新一个文件；v4/v3 共同页面仍须按类别文档显式同步两个快照。
