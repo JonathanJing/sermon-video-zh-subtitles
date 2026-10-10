@@ -24,7 +24,7 @@ Spark Agent 工作目录为 `/home/achillesjing/spark-agent-current`，存在 `r
 | 保存恢复快照 | 记录原先运行的目标服务／容器、完整 container ID、image ID、autoRemove、restart policy、unit 身份、任务计数和内存读数。只保存必要字段与配置 hash，不保存环境变量、凭据或完整 docker inspect。每项修改前写 intent，之后写 readback |
 | 保存与抢占 | 不等待既有任务完成：固定入口后保存队列、任务参数、执行身份和已有产物位置，再按恢复计划中断受管工作负载。数据库备份和任务参数为私有恢复材料，不进入 Git 或公开 log。运行中的未知 API 结果独立登记，恢复前必须对账 |
 | 释放常驻模型 | 当前候选是先停 collector，再通过 systemd 停 llama-server。运行容器按冻结 ID 优雅停止，保留镜像、权重、卷和缓存。autoRemove／一次性容器需有可核验的重建入口，不能保存不完整参数后声称能恢复。身份不明的进程先识别管理入口，不能用任意 PID kill 冒充可恢复抢占 |
-| 核验容量 | 目标 unit／容器已停，竞争 GPU PID 已退出，MemAvailable 连续稳定并达到本轮 minimumAvailableGiB。阈值依据 8×8 TTS／ASR 实测峰值加余量配置，目前不编造固定安全值。GPU 内存总量为 N/A 时不能当成零占用 |
+| 核验容量 | 目标 unit／容器已停，竞争 GPU PID 已退出，MemAvailable 连续稳定并达到本轮 minimumAvailableGiB。默认最低可用内存为 110 GiB（`DEFAULT_MINIMUM_AVAILABLE_GIB`，CLI `--minimum-available-gib` 的默认值），即整轮任务独占 Spark 直到结束；可显式传入其他值。该默认值来自 2026-10-05 实机验证中停服务后约 117 GiB 可用内存的余量，不代表 128 GB 整机内存全部可用。GPU 内存总量为 N/A 时不能当成零占用 |
 | 保持整轮独占 | fresh source/MFA、TTS、回转写和后续 renderer 均核验 session token，worker 带归属。返修、locale 切换、阶段结束、等待人审或单个 CLI 退出都不恢复常驻服务。发现外部模型重新启动，停止新派发并报告竞争，不擅自杀进程 |
 | 开发结束恢复 | owner 明确关闭整轮会话；确认所有本会话 job 终态且进程退出，再恢复原先运行的模型、collector 和容器，最后解除其他任务准入。原先停止的项目不启动。核验原模型 ID 和服务健康，部分失败保留 restoring_failed，幂等重试只处理未完成项 |
 
