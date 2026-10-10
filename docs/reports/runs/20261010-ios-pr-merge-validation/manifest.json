@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261010-ios-pr-merge-validation",
+  "runs": [
+    {
+      "label": "ios-pr-merge-20261010",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/ios-pr-merge-20261010",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "core.log",
+      "kind": "log",
+      "bytes": 3327,
+      "truncated": false,
+      "sha256": "3db3af7409c0745f36f39494788db39ceddc41210a3c7613ac01c3789ca02e0e",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "initial-ios.log",
+      "kind": "log",
+      "bytes": 344023,
+      "truncated": true,
+      "sha256": "84a8f6ebeafac72de65fa950cb551638a4b49134b8e79cb6684e6a7df1fed7df",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "ios-recheck.log",
+      "kind": "log",
+      "bytes": 96871,
+      "truncated": true,
+      "sha256": "2d695f531c1f15c2ce7bbd42172e47f56c73bc9404780bae42c0bfdd45c83e77",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 554,
+      "truncated": false,
+      "sha256": "1ca1d1faf553097459bf423b611102b468c6824914a4fa4b1b0ade4bceb8967d",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "web.log",
+      "kind": "log",
+      "bytes": 5354,
+      "truncated": false,
+      "sha256": "4e9c1c83877547fea42e3da44d3671e4793ea136b3e696ea01a3dbc2dc24e733",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
