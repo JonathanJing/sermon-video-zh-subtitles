@@ -107,7 +107,7 @@ final class ListeningFlowUITests: XCTestCase {
         screenshot("remote-category-before-refresh", app: app)
         app.buttons["more-options"].tap()
         let refresh = app.buttons["刷新证道目录"]
-        try reveal(refresh, in: app, direction: .up)
+        try revealDemo(refresh, in: app, direction: .up)
         refresh.tap()
         try waitFor(category, "label == '正式版 · 更新'")
         XCTAssertEqual(play.label, "开始播放")

@@ -129,6 +129,12 @@ final class PlaybackControllerTests: XCTestCase {
         categorized.displayCategory = try JSONDecoder().decode(PageDisplayCategory.self, from: Data(
             #"{"schemaVersion":"sermon-page-display-category-v1","labels":{"en":"Updated source category"}}"#.utf8))
         XCTAssertEqual(model.heading(for: categorized).edition, "Updated source category")
+        let previousLanguage = AppLocalization.shared.preference
+        AppLocalization.shared.setPreference(.english)
+        categorized.displayCategory = try JSONDecoder().decode(PageDisplayCategory.self, from: Data(
+            #"{"schemaVersion":"sermon-page-display-category-v1","labels":{"en":"播客"}}"#.utf8))
+        XCTAssertEqual(model.heading(for: categorized).edition, "播客", "Resolved remote labels must remain verbatim")
+        AppLocalization.shared.setPreference(previousLanguage)
         categorized.displayCategory = nil
         XCTAssertNil(model.heading(for: categorized).edition, "Removing catalog category must not retain cached remote text")
         XCTAssertEqual(model.selectedWeek, week)
