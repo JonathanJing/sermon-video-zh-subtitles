@@ -22,6 +22,9 @@ V3, V4 = 'multilingual-v3.json', 'multilingual-v4.json'
 PUBLISHED = {'human_reviewed', 'machine_checked'}
 
 
+# Seconds a dubbed track may end after the approved clip and still count as source-clocked.
+TAIL_OVERRUN_ALLOWANCE = 1.0
+
 def digest(path):
     with Path(path).open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
@@ -107,8 +110,11 @@ def _bind(public, catalog, page_id, *, machine):
             # Landmark alignment maps the dub 1:1 onto source time; a dub on its own
             # clock (e.g. a condensed spoken script) cannot be located that way.
             require(content.get('status') == release['contentStatus'], 'Content status differs from its release')
-            require(abs(content.get('audioDurationSeconds', content['durationSeconds'])
-                        - content['durationSeconds']) < .1, 'Dub is not on the source clock')
+            # A natural dub may end up to TAIL_OVERRUN_ALLOWANCE after the source (its final
+            # sentence outlasting the English, recorded in the Layer 3 trim evidence); it still
+            # runs on source time. A shorter or longer track is on its own clock.
+            drift = content.get('audioDurationSeconds', content['durationSeconds']) - content['durationSeconds']
+            require(-.1 < drift < TAIL_OVERRUN_ALLOWANCE + .1, 'Dub is not on the source clock')
         require(source_sha in (None, binding['sourceSha256']), 'Locales have different media')
         source_sha = binding['sourceSha256']
         index = read_json(public_path(public, binding['indexUrl']), sha256=binding['indexSha256'])
