@@ -100,7 +100,10 @@ def calibration_summary(calibration: dict, locale: str, implementation: str, *,
                 + ([f"spoken.{kind}" for kind in waiver.SPOKEN_KINDS] if require_spoken else []))
     expected = [kind for kind in expected
                 if not waiver.calibration_kind_not_applicable(kind, calibration["kinds"][kind])]
-    rates = [calibration["kinds"][kind]["rate"] for kind in expected]
+    # The per-kind minimum applies from PER_KIND_MINIMUM_TRIALS, as calibration_problems
+    # gates it; smaller samples still count in the overall rate below.
+    gated = [kind for kind in expected if calibration["kinds"][kind]["trials"] >= waiver.PER_KIND_MINIMUM_TRIALS]
+    rates = [calibration["kinds"][kind]["rate"] for kind in (gated or expected)]
     # The admitted rate covers only the kinds this release needs, as admission does.
     trials = sum(calibration["kinds"][kind]["trials"] for kind in expected)
     detected = sum(calibration["kinds"][kind]["detected"] for kind in expected)
