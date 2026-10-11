@@ -213,6 +213,23 @@ class ScoringTests(unittest.TestCase):
         self.assertFalse(trials.score_diagnosis({**good, 'root_cause': 'model download failed'}, expected, evidence)['correct'])
         self.assertFalse(trials.score_diagnosis(None, expected, evidence)['correct'])
 
+    def test_valid_cause_quote_does_not_excuse_any_fabricated_citation(self):
+        expected = self.cases['f05-asr-symlink-mount']
+        evidence = trials.CASES / 'f05-asr-symlink-mount/evidence'
+        good = {'category': 'mount_or_environment',
+                'root_cause': 'snapshot files are symlinks into ../../blobs, but only the snapshot directory is mounted',
+                'evidence': [{'file': 'snapshot-listing.txt', 'quote': 'model.safetensors -> ../../blobs/9f2e41...'}]}
+        self.assertTrue(trials.score_diagnosis(good, expected, evidence)['correct'])
+        for fabricated in ({'file': 'invented.log', 'quote': 'mount failed'},
+                           {'file': 'snapshot-listing.txt', 'quote': 'fabricated quote'}):
+            with self.subTest(citation=fabricated):
+                report = {**good, 'evidence': good['evidence'] + [fabricated]}
+                score = trials.score_diagnosis(report, expected, evidence)
+                self.assertTrue(score['causeSupportedByQuote'])
+                self.assertEqual(score['validCitations'], 1)
+                self.assertEqual(score['invalidCitations'], [fabricated])
+                self.assertFalse(score['correct'])
+
     def test_fabricated_citations_do_not_count(self):
         expected = self.cases['f05-asr-symlink-mount']
         evidence = trials.CASES / 'f05-asr-symlink-mount/evidence'

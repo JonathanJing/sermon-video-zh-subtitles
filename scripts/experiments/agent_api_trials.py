@@ -831,7 +831,7 @@ def score_diagnosis(report, expected, evidence):
     # At least one cause term must come from a verified quote, so an unrelated real quote cannot carry the cause.
     supported = any(any(term.lower() in quotes for term in group) for group in expected['causeKeywords'])
     fix_ok = _groups_match(_text(report.get('fix')), expected.get('fixKeywords', []))
-    return {'submitted': True, 'correct': category_ok and cause_ok and supported, 'categoryOk': category_ok,
+    return {'submitted': True, 'correct': category_ok and cause_ok and supported and not invalid, 'categoryOk': category_ok,
             'causeOk': cause_ok, 'causeSupportedByQuote': supported, 'fixOk': fix_ok,
             'validCitations': len(valid), 'invalidCitations': invalid,
             'bonusOk': _groups_match(text + _text(report.get('fix')), expected['bonusKeywords']) if expected.get('bonusKeywords') else None,

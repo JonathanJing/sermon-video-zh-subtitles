@@ -123,6 +123,26 @@ class RunnerTests(unittest.TestCase):
                 self.assertEqual(restored['status'], 'outcome_unknown')
                 self.assertEqual(dispatcher.call_count, 1)
 
+    def test_selected_stage_without_cases_fails_before_authority_or_dispatch(self):
+        ab.atomic(self.root/'cases.json', [self.case])
+        for mode in ('offline', 'live'):
+            args = SimpleNamespace(out=str(self.root), mode=mode, stage='E01', timeout=1)
+            with self.subTest(mode=mode), \
+                    patch.object(ab, 'Ledger') as ledger, \
+                    patch.object(ab, 'measured_attempt') as measured, \
+                    patch.object(ab, 'atomic') as atomic:
+                with self.assertRaisesRegex(ValueError, 'selected_stage_has_no_cases'):
+                    ab.run(args)
+                ledger.assert_not_called()
+                measured.assert_not_called()
+                atomic.assert_not_called()
+            argv = ['weekly-ab', 'run', '--out', str(self.root), '--stage', 'E01', '--mode', mode]
+            with patch.object(ab.sys, 'argv', argv), patch.object(ab, 'run_lock'), \
+                    patch.object(ab, 'measured_attempt') as measured, patch('builtins.print'):
+                self.assertEqual(ab.main(), 2)
+                measured.assert_not_called()
+        self.assertFalse((self.root/'authority.json').exists())
+
     def test_run_stops_at_unknown_server_outcome_before_the_other_arm(self):
         args = SimpleNamespace(out=str(self.root), mode='offline', stage=self.case['stageId'], timeout=1)
         row = {'status': 'outcome_unknown', 'restored': False, 'timings': {'effectiveDecisionMs': 1}}

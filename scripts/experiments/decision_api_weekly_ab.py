@@ -722,6 +722,8 @@ def prepare(args):
 def run(args):
     root = Path(args.out).resolve()
     cases=validate_cases(read(root/"cases.json"))
+    stage_cases = [c for c in cases if c["stageId"] == args.stage]
+    require(bool(stage_cases), "selected_stage_has_no_cases")
     ledger=None
     if args.mode=="live":
         bound=read(root/"authority.json")
@@ -732,7 +734,6 @@ def run(args):
         require(current==bound,"authority_or_code_changed")
         ledger=Ledger(root,bound)
     rows=[]; stopped=False; stop_reason=None
-    stage_cases = [c for c in cases if c["stageId"] == args.stage]
     random.Random(20261006).shuffle(stage_cases)
     for index, case in enumerate(stage_cases):
         order = ["A", "B"] if index % 2 == 0 else ["B", "A"]
