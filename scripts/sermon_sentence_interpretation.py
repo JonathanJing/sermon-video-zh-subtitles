@@ -321,7 +321,7 @@ def _outlier_phone_evidence(segment: dict[str, Any], words: list[dict[str, Any]]
 
 def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
                          min_unit_seconds: float, pause_seconds: float,
-                         forced_after_word_id: str | list[str] | None = None
+                         forced_after_word_id: str | list[str] | dict[str, list[str]] | None = None
                          ) -> tuple[list[tuple[list[dict[str, Any]], dict[str, Any]]], bool]:
     """Build v2 subunits without inventing a word-level boundary.
 
@@ -334,7 +334,14 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
     if forced_after_word_id is not None:
         # One word ID (historical form) or an ordered list of word IDs to split after. Every
         # resulting part and boundary must pass the same safety rules as a single split.
-        forced_ids = [forced_after_word_id] if isinstance(forced_after_word_id, str) else list(forced_after_word_id)
+        # A dict form names the split points and, separately, the boundaries where the operator
+        # has confirmed the grammatical dependency (for example parallel ", to ..." infinitives).
+        accepted_dependencies: set[str] = set()
+        if isinstance(forced_after_word_id, dict):
+            accepted_dependencies = set(forced_after_word_id["acceptDependentBoundaryAfter"])
+            forced_ids = list(forced_after_word_id["splitAfter"])
+        else:
+            forced_ids = [forced_after_word_id] if isinstance(forced_after_word_id, str) else list(forced_after_word_id)
         if float(words[-1]["end"]) - float(words[0]["start"]) <= max_seconds + 0.5:
             raise ValueError("Boundary override is unnecessary for a sentence within the duration target")
         indexes = []
@@ -354,9 +361,11 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
         for index in indexes:
             gap = float(words[index + 1]["start"]) - float(words[index]["end"])
             if (not (gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
-                    or _dependent_clause_boundary(words, index)):
+                    or (_dependent_clause_boundary(words, index)
+                        and words[index]["wordId"] not in accepted_dependencies)):
                 raise ValueError(f"Boundary override lacks a safe clause split: {words[index]['wordId']}")
-        parts = [(words[start:end + 1], _clause_boundary_evidence(words, end, pause_seconds, max_seconds))
+        parts = [(words[start:end + 1], {**_clause_boundary_evidence(words, end, pause_seconds, max_seconds),
+                  **({"operatorAcceptedDependency": True} if words[end]["wordId"] in accepted_dependencies else {})})
                  for start, end in zip(starts[:-1], ends[:-1])]
         last_duration = float(words[-1]["end"]) - float(words[starts[-1]]["start"])
         parts.append((words[starts[-1]:], {
@@ -460,9 +469,13 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
              "Out-of-scope boundary overrides require stable identity offsets")
     _require(unit_policy == UNIT_POLICY_V2 or not overrides,
              "Boundary overrides require clause_stable_v2")
+    def _override_ids(value: Any) -> bool:
+        return isinstance(value, list) and bool(value) and all(isinstance(item, str) and item for item in value)
     _require(all(isinstance(key, str) and key and (
-                     (isinstance(value, str) and value)
-                     or (isinstance(value, list) and value and all(isinstance(item, str) and item for item in value)))
+                     (isinstance(value, str) and value) or _override_ids(value)
+                     or (isinstance(value, dict) and set(value) == {"splitAfter", "acceptDependentBoundaryAfter"}
+                         and _override_ids(value["splitAfter"]) and _override_ids(value["acceptDependentBoundaryAfter"])
+                         and set(value["acceptDependentBoundaryAfter"]) <= set(value["splitAfter"])))
                  for key, value in overrides.items()), "Boundary override IDs must be nonempty strings")
 
     ordered = sorted(segments, key=lambda item: (float(item.get("start", -1)), int(item.get("id", 0))))
