@@ -78,3 +78,25 @@ class ApiJudgeTests(unittest.TestCase):
                 "approvalReceipt": "approval.json"}))
             with self.assertRaisesRegex(ValueError, "not bound to its approval"):
                 driver.ApiJudge(root / "auth.json")
+
+
+class ProviderRetryTests(unittest.TestCase):
+    def test_5xx_error_documents_are_retried_and_4xx_is_not(self):
+        import urllib.error
+        from scripts import canonical_layer2_budget as budget
+        calls = []
+
+        def executor(req, wall, *, deadline):
+            calls.append(deadline)
+            if len(calls) < 3:
+                raise urllib.error.HTTPError("https://api", 503, "err", {}, None)
+            return {"ok": True}
+        slept = []
+        self.assertEqual(budget.execute_with_provider_retry("req", 300, executor=executor, sleep=slept.append), {"ok": True})
+        self.assertEqual((len(calls), slept), (3, [1, 2]))
+
+        def bad(req, wall, *, deadline):
+            raise urllib.error.HTTPError("https://api", 400, "err", {}, None)
+        with self.assertRaises(urllib.error.HTTPError):
+            budget.execute_with_provider_retry("req", 300, executor=bad, sleep=slept.append)
+        self.assertEqual(len(slept), 2)

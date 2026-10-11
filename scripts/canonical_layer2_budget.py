@@ -10,6 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 import time
+import urllib.error
 import urllib.request
 
 from scripts import sermon_provider_limits as limits
@@ -31,6 +32,30 @@ LOCALE_LEDGER_MAX_BYTES = 8 * 1024 * 1024
 # Busy only ever delays admission, settlement or a replayed result; it never
 # repeats an external request, so waiting longer is safe under group concurrency.
 LEDGER_BUSY_WAIT_SECONDS = 120
+# A provider error document with one of these statuses means no completion was
+# produced (the 2026-10-11 run lost three whole-sermon locale jobs to single 503s).
+RETRYABLE_PROVIDER_STATUSES = frozenset({500, 502, 503, 504})
+PROVIDER_RETRY_ATTEMPTS = 5
+
+
+def execute_with_provider_retry(req, wall_seconds, *, executor=None, sleep=time.sleep):
+    """Run the isolated single-request executor, retrying 5xx error documents within the wall deadline.
+
+    The strict transport treats any HTTP error it sees as outcome-unknown. A 5xx
+    reply is an error document, not a completion, so it is retried here before the
+    transport sees it; the reservation stays live and no second completion can be
+    produced for the same attempt."""
+    executor = executor or http.execute
+    deadline = time.monotonic() + wall_seconds
+    for attempt in range(PROVIDER_RETRY_ATTEMPTS):
+        try:
+            return executor(req, wall_seconds, deadline=deadline)
+        except urllib.error.HTTPError as error:
+            wait = 2 ** attempt
+            if (error.code not in RETRYABLE_PROVIDER_STATUSES or attempt == PROVIDER_RETRY_ATTEMPTS - 1
+                    or time.monotonic() + wait >= deadline):
+                raise
+            sleep(wait)
 
 
 def sha(path):
@@ -157,7 +182,7 @@ class BudgetedCaller:
             request.accounting_model = payload['model']
             request.accounting_settings = pipeline.request_metadata(payload)
             response = pipeline.request_json(request, retries=1, response_observer=preserve,
-                request_executor=lambda req: http.execute(req, self.auth['limits']['wallTimeMs'] / 1000))
+                request_executor=lambda req: execute_with_provider_retry(req, self.auth['limits']['wallTimeMs'] / 1000))
         else:
             response = self.transport(key, payload)
         elapsed_ms = int((time.monotonic() - start) * 1000) + 1
