@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261008-pr295-terminal-review",
+  "runs": [
+    {
+      "label": "pr295-terminal-review",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/pr295-terminal-review",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr295-terminal-review",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 340,
+      "truncated": false,
+      "sha256": "259ba4e78805347feaa2a553791df87fe2ac696ce588045bf923f34097dc5dff",
+      "redactions": {}
+    },
+    {
+      "run": "pr295-terminal-review",
+      "path": "tests.log",
+      "kind": "log",
+      "bytes": 161,
+      "truncated": false,
+      "sha256": "d4233ecaaddeaa640ca9e9429aa37d8c39f3398820650546b2883bad6ae47057",
+      "redactions": {}
+    },
+    {
+      "run": "pr295-terminal-review",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 49,
+      "truncated": false,
+      "sha256": "b56ea0cd0937a8cdb0e106f4d5d892d36c4759d49a3a1861db16549ecd211058",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

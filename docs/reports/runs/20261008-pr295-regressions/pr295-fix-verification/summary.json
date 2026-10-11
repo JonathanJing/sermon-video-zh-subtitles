@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "testCount": 479,
+  "moduleCount": 32,
+  "paidCalls": 0,
+  "commit": "f4778f1ba01a41e8c44bd21eef972505a2cdc236",
+  "ci": "in_progress",
+  "deviceAcceptance": "not_run",
+  "publication": "not_run"
+}

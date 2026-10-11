@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "53ed094fd4a9bd1026a29b7db2b197751b04fd3c",
+  "scope": "controller and auto repair tests after durable-root overlap fix",
+  "paidCalls": 0,
+  "testCount": 28,
+  "initialTestAssertionFailure": "ancestor output already rejected as invalid_execution_paths; removed redundant assertion and reran"
+}

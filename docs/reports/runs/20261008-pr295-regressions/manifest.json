@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261008-pr295-regressions",
+  "runs": [
+    {
+      "label": "pr295-fix-verification",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/pr295-fix-verification",
+      "skipped": {
+        ".md": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "pr295-fix-verification",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1590,
+      "truncated": false,
+      "sha256": "ee0f8104cd082cbc7189ac070cf578cd427e1cef8d2d5c00a84c35acc2272762",
+      "redactions": {}
+    },
+    {
+      "run": "pr295-fix-verification",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 224,
+      "truncated": false,
+      "sha256": "506f8722b95bb48139c591277ea577fc6209b097777e2a75f811293085b6f95d",
+      "redactions": {}
+    },
+    {
+      "run": "pr295-fix-verification",
+      "path": "tests.log",
+      "kind": "log",
+      "bytes": 6064,
+      "truncated": false,
+      "sha256": "5b271ed02cee49140437305a4df11fea618ef45101ce72d99d762f0a02c12aa2",
+      "redactions": {}
+    },
+    {
+      "run": "pr295-fix-verification",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 46,
+      "truncated": false,
+      "sha256": "9ac8f681bec06d4c6f6f88faa7c5f083ed88104c81b9f96f650beaf382d9b9dc",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
