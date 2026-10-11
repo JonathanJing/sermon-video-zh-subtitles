@@ -103,6 +103,32 @@ class CompactAudioTests(unittest.TestCase):
         self.assertEqual(subject.integrity.probe_full_decode(track)['codec'], 'mp3')
         self.assertTrue((destination / 'review/leading-silence-trim.json').is_file())
 
+    def test_operator_end_lag_budget_is_recorded_not_applied_silently(self):
+        fixture = render_tests.FormalRenderTests(
+            'test_two_units_full_decode_and_resume_without_synthesis')
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        subject.renderer.render_units(fixture.context, fixture.paths, fixture.root,
+                                      fixture.root / 'checkpoint-map.json',
+                                      synth_factory=EdgeSynth)
+        destination = fixture.root.parent / 'lag-compacted'
+        with patch.object(subject.renderer, 'checked_context', return_value=fixture.context):
+            with self.assertRaisesRegex(ValueError, 'End-lag budget'):
+                subject.compact(fixture.paths, fixture.paths['job'], destination,
+                                fixture.root / 'checkpoint-map.json',
+                                fixture.root / 'audio-operation-policies.json',
+                                trim_trailing=True, max_end_lag_seconds=1.0)
+            manifest = subject.compact(
+                fixture.paths, fixture.paths['job'], destination,
+                fixture.root / 'checkpoint-map.json',
+                fixture.root / 'audio-operation-policies.json',
+                trim_trailing=True, max_end_lag_seconds=120.0)
+        trim = json.loads((destination / 'review/leading-silence-trim.json').read_text())
+        self.assertEqual(trim['schemaVersion'], subject.EDGE_SCHEMA)
+        self.assertEqual(trim['maxEndLagSeconds'], 120.0)
+        schedule = json.loads((destination / manifest['schedule']['path']).read_text())
+        self.assertEqual(schedule['policy']['maxEndLagSeconds'], 120.0)
+
 
 if __name__ == '__main__':
     unittest.main()

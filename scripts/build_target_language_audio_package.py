@@ -518,7 +518,10 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
     schedule = read_object(Path(schedule_artifact["path"]))
     if "silenceTrimEvidence" in manifest and trim.get("schemaVersion") == "sermon-formal-edge-silence-trim-v1":
         require(schedule["policy"]["interUtteranceGapSeconds"] == trim["interUtteranceGapSeconds"]
-                and schedule["policy"]["reactionLagSeconds"] == trim.get("reactionLagSeconds", 0.05),
+                and schedule["policy"]["reactionLagSeconds"] == trim.get("reactionLagSeconds", 0.05)
+                # An end-lag budget beyond the renderer default is admitted only when the trim evidence records it.
+                and (schedule["policy"]["maxEndLagSeconds"] == trim["maxEndLagSeconds"] if "maxEndLagSeconds" in trim
+                     else schedule["policy"]["maxEndLagSeconds"] <= 8.0),
                 "Edge trim schedule policy differs from evidence")
     captions = read_object(Path(captions_artifact["path"]))
     validate_schedule(schedule, candidate, anchor, durations, track_duration,

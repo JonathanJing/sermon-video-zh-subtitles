@@ -176,9 +176,15 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
             padding_seconds: float = PADDING_SECONDS, trim_trailing: bool = False,
             inter_utterance_gap_seconds: float = renderer.DEFAULT_POLICY["interUtteranceGapSeconds"],
             reaction_lag_seconds: float = renderer.DEFAULT_POLICY["reactionLagSeconds"],
+            max_end_lag_seconds: float = renderer.DEFAULT_POLICY["maxEndLagSeconds"],
             track_format: str = "wav") -> dict:
     require(0 <= inter_utterance_gap_seconds <= renderer.DEFAULT_POLICY["interUtteranceGapSeconds"],
             "Silence compaction cannot expand the inter-utterance gap")
+    # A natural dub may trail the 1x source timeline; the operator's end-lag budget is
+    # recorded in the trim evidence and the schedule policy, never applied silently.
+    require(isinstance(max_end_lag_seconds, (int, float)) and math.isfinite(max_end_lag_seconds)
+            and max_end_lag_seconds >= renderer.DEFAULT_POLICY["maxEndLagSeconds"],
+            "End-lag budget must be a finite number at least the renderer default")
     require(0 <= reaction_lag_seconds <= renderer.DEFAULT_POLICY["reactionLagSeconds"],
             "Reaction lag must remain within the tested schedule policy")
     require(source_job.is_file(), "Raw job missing")
@@ -210,7 +216,8 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
     require(identity.json_sha256(renderer.checked_context(
         adapted_paths, checkpoint_map, operation_policies)["job"]) == job_hash,
         "Bound speech job changed during silence compaction")
-    edge_mode = trim_trailing or padding_seconds != PADDING_SECONDS
+    edge_mode = (trim_trailing or padding_seconds != PADDING_SECONDS
+                 or max_end_lag_seconds != renderer.DEFAULT_POLICY["maxEndLagSeconds"])
     receipt = {"schemaVersion": EDGE_SCHEMA if edge_mode else SCHEMA,
                "status": "measured_silence_removed",
                "targetLocale": context["job"]["targetLocale"],
@@ -224,6 +231,7 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
         receipt["trimTrailing"] = trim_trailing
         receipt["interUtteranceGapSeconds"] = inter_utterance_gap_seconds
         receipt["reactionLagSeconds"] = reaction_lag_seconds
+        receipt["maxEndLagSeconds"] = max_end_lag_seconds
     trim_path = destination_root / "review/leading-silence-trim.json"
     if trim_path.exists():
         require(json.loads(trim_path.read_text(encoding="utf-8")) == receipt,
@@ -232,7 +240,8 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
         renderer.write_json_atomic(trim_path, receipt)
     policy = dict(renderer.DEFAULT_POLICY,
                   interUtteranceGapSeconds=inter_utterance_gap_seconds,
-                  reactionLagSeconds=reaction_lag_seconds)
+                  reactionLagSeconds=reaction_lag_seconds,
+                  maxEndLagSeconds=max_end_lag_seconds)
     manifest = renderer.assemble(context, adapted_paths, destination_root,
                                  [row["manifestUnit"] for row in rows], policy=policy,
                                  track_format=track_format)
@@ -264,6 +273,9 @@ def main():
                         default=renderer.DEFAULT_POLICY["interUtteranceGapSeconds"])
     parser.add_argument("--reaction-lag-seconds", type=float,
                         default=renderer.DEFAULT_POLICY["reactionLagSeconds"])
+    parser.add_argument("--max-end-lag-seconds", type=float,
+                        default=renderer.DEFAULT_POLICY["maxEndLagSeconds"],
+                        help="Operator-approved end-lag budget behind the 1x source timeline")
     parser.add_argument("--track-format", choices=("wav", "mp3"), default="wav")
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate", "adapter",
@@ -281,6 +293,7 @@ def main():
                        trim_trailing=args.trim_trailing,
                        inter_utterance_gap_seconds=args.inter_utterance_gap_seconds,
                        reaction_lag_seconds=args.reaction_lag_seconds,
+                       max_end_lag_seconds=args.max_end_lag_seconds,
                        track_format=args.track_format)
     print(json.dumps({"status": "candidate", "locale": manifest["targetLocale"],
                       "trimmedUnits": len(manifest["units"]),
