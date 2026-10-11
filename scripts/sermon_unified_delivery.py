@@ -210,6 +210,7 @@ def inspect(config_path):
     machine_checked = any(read(refs[locale]).get('reviewKind') == 'machine_quality_waiver'
                           or read(refs[locale]).get('schemaVersion') in (
                               'sermon-target-language-machine-text-waiver-v1',
+                              'sermon-target-language-machine-text-waiver-v2',
                               'sermon-target-language-machine-audio-waiver-v1')
                           for name in ('full_review_receipt', 'spoken_review_receipt', 'audio_review_receipt')
                           for refs in [builder.assignment_map(getattr(args, name), args.locales)] for locale in args.locales)

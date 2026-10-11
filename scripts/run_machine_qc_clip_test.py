@@ -610,7 +610,8 @@ def screened_groups(paths: dict) -> tuple[list[dict], list[dict] | None]:
     return spoken, qc_groups(read(Path(paths["fullCandidate"])), anchor)
 
 
-def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings: Timings, workers: int) -> dict:
+def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings: Timings, workers: int,
+               human_acceptance: dict | None = None) -> dict:
     source, anchor = read(Path(paths["source"])), read(Path(paths["anchor"]))
     candidate, policy = read(Path(paths["candidate"])), read(Path(paths["policy"]))
     groups, full_groups = screened_groups(paths)
@@ -648,7 +649,11 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
                       if row["status"] != "pass"
                       and (key := (tuple(row["sourceUnitIds"]), row["targetTextSha256"])) in current
                       and still_failing(row, current[key])]
-        if unrepaired:
+        accepted = set()
+        if unrepaired and human_acceptance is not None:
+            from scripts import text_qc_human_acceptance as acceptance_rules
+            accepted = acceptance_rules.check(human_acceptance, candidate=candidate, text_qc=head)
+        if unrepaired and not set(unrepaired) <= accepted:
             return {"status": "blocked_prior_failure", "failedGroups": unrepaired,
                     "reason": "failed groups are unchanged; repair them in a new candidate revision"}
     # Past the repair ladder a unit falls back to English, which waiver v1 cannot
@@ -664,6 +669,10 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
     qc_binding = json_sha256({"groups": groups, "policy": policy, "identity": judge.identity,
                               "implementation": basis.waiver.implementation_sha256()})
     qc = load_once(head_path, qc_binding) if head is not None else None
+    if qc is None and human_acceptance is not None and head is not None:
+        # A person accepted the failed groups of the head receipt: keep that exact
+        # receipt; never screen the same text again under another judge.
+        qc = head
     if qc is None:
         # The receipt is written before its ledger entry. A receipt past the ledger
         # head is from an interrupted run: append it if it still binds these inputs,
@@ -690,7 +699,11 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         result.update(status="source_text_fallback", fallbackGroups=qc["sourceTextFallbackGroupIds"],
                       reason="the repair limit is used up; waiver v1 cannot release an English fallback")
         return result
-    if qc["status"] != "pass":
+    accepted_groups = set()
+    if qc["status"] != "pass" and human_acceptance is not None:
+        from scripts import text_qc_human_acceptance as acceptance_rules
+        accepted_groups = acceptance_rules.check(human_acceptance, candidate=candidate, text_qc=qc)
+    if qc["status"] != "pass" and not set(result["failedGroups"]) <= accepted_groups:
         # Calibration binds this candidate, which a repair replaces anyway.
         result.update(status="requires_repair", reason="text QC failed; repair the failed groups in a new candidate revision")
         return result
@@ -717,7 +730,8 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
     entries = ledger.load(ledger_root, lineage)
     waiver_binding = json_sha256({"calibration": calibration_binding, "qc": json_sha256(qc),
                                   "calibrationReceipt": json_sha256(calibration), "ledger": entries,
-                                  **({"condensationBinding": json_sha256(binding)} if spoken else {})})
+                                  **({"condensationBinding": json_sha256(binding)} if spoken else {}),
+                                  **({"humanAcceptance": json_sha256(human_acceptance)} if accepted_groups else {})})
     waiver_path = folder / f"{'spoken-' if spoken else ''}text-waiver-{waiver_binding[:16]}.json"
     if not isinstance(judge, FakeJudge):
         saved = load_once(waiver_path, waiver_binding)
@@ -727,7 +741,8 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
             return result
     try:
         waiver = timings.run(f"{locale}.text-waiver", lambda: basis.build_text_waiver(
-            source, anchor, candidate, qc, calibration, repair_ledger=entries, condensation_binding=binding))
+            source, anchor, candidate, qc, calibration, repair_ledger=entries, condensation_binding=binding,
+            human_acceptance=human_acceptance if accepted_groups else None))
     except ValueError as error:
         result.update(status="waiver_refused", reason=str(error))
         return result
@@ -774,6 +789,8 @@ def main(argv=None) -> int:
     parser.add_argument("--text-backend", choices=("codex", "api", "fake"), default="codex")
     parser.add_argument("--workers", type=int, default=4, help="Parallel Codex CLI calls")
     parser.add_argument("--preflight-only", action="store_true", help="Stop before any model call")
+    parser.add_argument("--human-acceptance", action="append", default=[], metavar="LOCALE=PATH",
+                        help="A person's acceptance of failed groups in the head text QC (text_qc_human_acceptance)")
     parser.add_argument("--api-budget-authorization", type=Path,
                         help="Bound budget for --text-backend api (sermon-machine-qc-api-budget-authorization-v1)")
     args = parser.parse_args(argv)
@@ -868,7 +885,9 @@ def main(argv=None) -> int:
                        "reason": f"model calls with an unknown outcome in {state / 'codex-calls'}; reconcile them first"}
         else:
             try:
-                outcome = run_locale(locale, paths, out, state, judge, timings, args.workers)
+                acceptance = next((read(Path(item.partition("=")[2])) for item in args.human_acceptance
+                                   if item.partition("=")[0] == locale), None)
+                outcome = run_locale(locale, paths, out, state, judge, timings, args.workers, human_acceptance=acceptance)
             except Exception as error:  # The receipt says what failed.
                 outcome = {"status": "error", "reason": f"{type(error).__name__}: {error}"}
         summary["locales"][locale].update(outcome)
