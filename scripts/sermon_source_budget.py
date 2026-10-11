@@ -70,7 +70,7 @@ class SourceBudget:
     def __init__(self, root, authority, *, verify, transport=None, max_concurrent=1, resource_policy=None):
         self.root, self.authority, self.verify = Path(root), authority, verify
         self.transport = transport
-        require(type(max_concurrent) is int and 1 <= max_concurrent <= 8, 'invalid_source_concurrency')
+        require(type(max_concurrent) is int and 1 <= max_concurrent <= 16, 'invalid_source_concurrency')
         self.max_concurrent = max_concurrent
         self.resource_policy = None
         if resource_policy is not None:

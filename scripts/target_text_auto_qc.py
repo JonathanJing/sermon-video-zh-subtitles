@@ -61,6 +61,10 @@ COMPARE_SYSTEM = ("Compare an ORIGINAL English sermon passage with an independen
                   "notice: omission, addition, negation, number, name, scripture_reference, meaning_shift. "
                   "Ignore wording, word order, register and natural paraphrase. Severity is major when "
                   "a fact, claim, instruction or theological point changes; otherwise minor. "
+                  "CONTEXT, when given, is the surrounding English the translator saw. A pronoun or "
+                  "ellipsis the rendering resolves to the referent CONTEXT names (\"he\" -> \"my father\"), "
+                  "and the target language's generic grammatical gender for a mixed or unspecified "
+                  "group, are at most minor; a referent CONTEXT does not support is a major issue. "
                   "status is fail when any major issue exists. Return JSON matching the schema.")
 SPOKEN_COMPARE_SYSTEM = (
     "Compare an ORIGINAL English sermon passage with an independent BACK-TRANSLATION of its "
@@ -152,7 +156,8 @@ def comparison_request(group: dict, locale: str, back_translation: str) -> dict:
     system = SPOKEN_COMPARE_SYSTEM if group.get("condensation") else COMPARE_SYSTEM
     request = {"role": "back_translation_judge",
                "system": system.format(language=LANGUAGE_NAMES[locale]),
-               "user": json.dumps({"ORIGINAL": group["english"], "BACK-TRANSLATION": back_translation},
+               "user": json.dumps({"ORIGINAL": group["english"], "BACK-TRANSLATION": back_translation,
+                                   **({"CONTEXT": group["contextEnglish"]} if group.get("contextEnglish") else {})},
                                   ensure_ascii=False),
                "schema": COMPARISON_SCHEMA}
     return {**request, "requestSha256": _sha(request)}

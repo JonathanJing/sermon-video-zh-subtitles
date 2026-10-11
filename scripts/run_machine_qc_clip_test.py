@@ -68,7 +68,7 @@ REPORT_DIRS: list[Path] = []
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCALES = ("zh-Hans", "ko", "es")
-MAX_WORKERS = 8  # Codex CLI calls this driver may run at once
+MAX_WORKERS = 16  # parallel judge calls (Codex CLI or API) this driver may run at once
 CANDIDATE_SCHEMA_PREFIX = "sermon-target-language-candidate"
 CANDIDATE_SCHEMA = "sermon-target-language-candidate-v2"  # the version the waiver path accepts
 CACHE_NAMESPACE = "machine-qc-clip-test-v1"
@@ -191,9 +191,18 @@ def candidate_problems(candidate: dict) -> list[str]:
 
 
 def qc_groups(candidate: dict, anchor: dict) -> list[dict]:
-    english = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}
+    units = anchor["sourceUnits"]
+    english = {unit["sourceUnitId"]: unit["english"] for unit in units}
+    order = {unit["sourceUnitId"]: index for index, unit in enumerate(units)}
+
+    def context(unit_ids):
+        # The same surrounding English the Layer 2 translator saw: three units before, two after.
+        first, last = order[unit_ids[0]], order[unit_ids[-1]]
+        return {"before": " ".join(unit["english"] for unit in units[max(0, first - 3):first]),
+                "after": " ".join(unit["english"] for unit in units[last + 1:last + 3])}
     return [{"groupId": group["translationGroupId"],
              "english": " ".join(english[unit_id] for unit_id in group["sourceUnitIds"]),
+             "contextEnglish": context(group["sourceUnitIds"]),
              "targetText": group["targetText"], "sourceUnitIds": group["sourceUnitIds"]}
             for group in candidate["groups"]]
 
@@ -438,10 +447,29 @@ class ApiJudge:
             raise ValueError("Machine QC API calls need the dev or prod OpenAI launcher")
         self.limits = limits
         self.request_limits = value["authority"]["requestLimits"]
+        # API-only calls use no Spark compute: the process verifies the exclusive session
+        # before its first call and again each minute, instead of a hold per request.
+        from scripts.production_spark_admission import require_session
+        self._session_checked, self._session_lock = 0.0, threading.Lock()
+
+        def verify():
+            with self._session_lock:
+                if time.monotonic() - self._session_checked > 60:
+                    require_session()
+                    self._session_checked = time.monotonic()
+        verify()
+        wall = self.request_limits["wallTimeMs"] / 1000
+
+        def transport(endpoint, request, content_type, api_key):
+            import urllib.request
+            call = urllib.request.Request(endpoint, data=request, method="POST",
+                                          headers={"Authorization": "Bearer " + api_key, "Content-Type": content_type})
+            with urllib.request.urlopen(call, timeout=wall) as response:
+                return json.loads(response.read())
         self.ledger = budget.SourceBudget(value["budgetRoot"], {
             "approvalSha256": value["authority"]["approvalSha256"],
             "globalBounds": value["authority"]["bounds"]["globalBounds"], "requestLimits": self.request_limits},
-            verify=lambda: None, max_concurrent=8)
+            verify=verify, transport=transport, max_concurrent=16)
         self.api_key = os.environ["OPENAI_API_KEY"]
         self.reasoning = reasoning
         self.identity = {"backend": "openai_api", "model": "gpt-6.1-sol", "modelRevision": "openai-api",
@@ -450,7 +478,8 @@ class ApiJudge:
                                       "promptFormat": "system-user-json-v1",
                                       "maxCompletionTokens": self.request_limits["maxCompletionTokens"],
                                       "route": {k: route.get(k) for k in ("environment", "credentialAlias")},
-                                      "transport": {"adapterSha256": file_sha256(Path(__file__))}}}
+                                      "transport": {"adapterSha256": file_sha256(Path(__file__)),
+                                                    "sessionCheck": "per_process_60s"}}}
 
     def key(self, role, system, user, schema) -> str:
         return json_sha256({"role": role, "system": system, "user": user, "schema": schema,
