@@ -205,6 +205,23 @@ def copy_release(source, destination):
 
 def check_verification(release, receipt, origin):
     report, _ = read_release(release)
+    deployment_path = Path(release) / "deployment-receipt.json"
+    if deployment_path.exists():
+        deployment = json.loads(deployment_path.read_text())
+        if (deployment.get("schemaVersion") != "sermon-legacy-deployment-attempt-v2"
+                or deployment.get("status") != "deployed_http_verification_pending"
+                or not deployment.get("newVersion")
+                or receipt.get("deploymentAttemptId") != deployment.get("attemptId")
+                or receipt.get("deploymentReceiptSha256") != sha256(deployment_path)
+                or receipt.get("deploymentVersion") != deployment.get("newVersion")):
+            raise ValueError("HTTP receipt does not bind current deployment attempt")
+        times = [deployment.get("startedAt"), deployment.get("completedAt"), receipt.get("startedAt"), receipt.get("completedAt")]
+        try:
+            parsed = [datetime.fromisoformat(value.replace("Z", "+00:00")) for value in times]
+        except (AttributeError, ValueError, TypeError) as exc:
+            raise ValueError("Deployment/HTTP time is unknown") from exc
+        if any(value.tzinfo is None for value in parsed) or parsed != sorted(parsed):
+            raise ValueError("HTTP evidence predates deployment")
     if (receipt.get("passed") is not True or receipt.get("origin") != origin_url(origin)
             or receipt.get("buildReportSha256") != sha256(Path(release) / "build-report.json")):
         raise ValueError("verification receipt does not bind this release and origin")

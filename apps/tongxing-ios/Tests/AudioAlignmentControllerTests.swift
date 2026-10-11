@@ -1,10 +1,153 @@
 import Foundation
+import AVFoundation
+import CryptoKit
 import TongxingCore
 import XCTest
 @testable import Tongxing
 
 @MainActor
 final class AudioAlignmentControllerTests: XCTestCase {
+    func testSyntheticLiveActivityRequiresBothExplicitUITestFlags() {
+        XCTAssertFalse(UITestLaunch.liveActivitySmokeEnabled(arguments: []))
+        XCTAssertFalse(UITestLaunch.liveActivitySmokeEnabled(arguments: ["--ui-testing"]))
+        XCTAssertFalse(UITestLaunch.liveActivitySmokeEnabled(arguments: ["--ui-testing-live-activity"]))
+        XCTAssertTrue(UITestLaunch.liveActivitySmokeEnabled(arguments: ["--ui-testing", "--ui-testing-live-activity"]))
+    }
+
+    func testNormalDebugIdentityDoesNotPublishBetaAlignmentPhases() throws {
+        guard Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String != "tongxing-beta" else {
+            throw XCTSkip("This boundary check requires the ordinary Debug identity")
+        }
+        XCTAssertFalse(UITestLaunch.liveActivitySmokeEnabled())
+        let playback = PlaybackController(historyURL: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString).appendingPathComponent("history.json"))
+        playback.setAlignmentPhase(.preparing)
+        playback.setAlignmentPhase(.listening)
+        XCTAssertNil(playback.alignmentPhase)
+    }
+
+    func testForegroundAlignmentFeedbackObservesPlaybackAndExistingResultExpiry() async throws {
+        guard Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String == "tongxing-beta" else {
+            throw XCTSkip("Foreground alignment is enabled only in the Beta identity")
+        }
+        let model = AppModel(supportDirectory: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString), contentOrigin: URL(string: "https://example.invalid")!)
+        model.playback.setAlignmentPhase(.preparing)
+        model.playback.setAlignmentPhase(.listening)
+        model.playback.setAlignmentPhase(.aligned)
+        XCTAssertEqual(model.foregroundAlignmentPhase, .aligned)
+        try await Task.sleep(for: .milliseconds(8_300))
+        XCTAssertNil(model.playback.alignmentPhase)
+        XCTAssertNil(model.foregroundAlignmentPhase)
+    }
+
+    func testForegroundAlignmentFeedbackFollowsFastTransactionAndClearsWithController() {
+        let model = AppModel(supportDirectory: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString), contentOrigin: URL(string: "https://example.invalid")!)
+        XCTAssertNil(model.foregroundAlignmentPhase)
+        // A terminal phase without an explicit transaction is not a popup.
+        model.updateForegroundAlignmentPhase(.aligned)
+        XCTAssertNil(model.foregroundAlignmentPhase)
+        for result in [ListeningAlignmentPhase.aligned, .unmatched, .failed] {
+            model.updateForegroundAlignmentPhase(.preparing)
+            model.updateForegroundAlignmentPhase(.listening)
+            model.updateForegroundAlignmentPhase(.matching)
+            model.updateForegroundAlignmentPhase(result)
+            XCTAssertEqual(model.foregroundAlignmentPhase, result)
+            model.updateForegroundAlignmentPhase(nil)
+            XCTAssertNil(model.foregroundAlignmentPhase)
+        }
+    }
+
+    func testForegroundAlignmentFeedbackDoesNotReplayAfterBackground() {
+        let model = AppModel(supportDirectory: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString), contentOrigin: URL(string: "https://example.invalid")!)
+        model.updateForegroundAlignmentPhase(.preparing)
+        model.updateForegroundAlignmentPhase(.listening)
+        model.setAlignmentFeedbackForeground(false)
+        XCTAssertNil(model.foregroundAlignmentPhase)
+        model.updateForegroundAlignmentPhase(.failed)
+        model.setAlignmentFeedbackForeground(true)
+        model.updateForegroundAlignmentPhase(.failed)
+        XCTAssertNil(model.foregroundAlignmentPhase)
+        model.updateForegroundAlignmentPhase(.preparing)
+        model.updateForegroundAlignmentPhase(.listening)
+        XCTAssertEqual(model.foregroundAlignmentPhase, .listening)
+    }
+
+    func testRepeatedAppForegroundNotificationsKeepCurrentFeedback() {
+        let model = AppModel(supportDirectory: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString), contentOrigin: URL(string: "https://example.invalid")!)
+        model.updateForegroundAlignmentPhase(.preparing)
+        model.updateForegroundAlignmentPhase(.listening)
+        model.setAlignmentFeedbackForeground(true)
+        model.setAlignmentFeedbackForeground(true)
+        XCTAssertEqual(model.foregroundAlignmentPhase, .listening)
+        model.suspendAlignment()
+        XCTAssertNil(model.foregroundAlignmentPhase)
+    }
+
+    func testDevCandidateSelectionRequiresBetaIdentityAndExactOrigin() throws {
+        let origin = URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!
+        XCTAssertTrue(AppModel.permitsDevCandidates(origin: origin, bundleIdentifier: "com.jonathanjing.tongxing.beta"))
+        for identifier in ["com.jonathanjing.tongxing", "com.jonathanjing.tongxing.beta.tests", "unknown"] {
+            XCTAssertFalse(AppModel.permitsDevCandidates(origin: origin, bundleIdentifier: identifier))
+        }
+        for url in ["https://ai-for-god-sermon-audio.web.app", "http://ai-for-god-sermon-audio-dev.web.app", "https://ai-for-god-sermon-audio-dev.web.app:444", "https://other.example", "https://user@ai-for-god-sermon-audio-dev.web.app"] {
+            XCTAssertFalse(AppModel.permitsDevCandidates(origin: URL(string: url)!, bundleIdentifier: "com.jonathanjing.tongxing.beta"))
+        }
+        let fixtureURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Core/Tests/TongxingCoreTests/Fixtures/dev-candidate-catalog-readback.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: fixtureURL)) as? [String: Any])
+        let catalog = try MultilingualCatalog.decode(JSONSerialization.data(withJSONObject: fixture["catalog"]!), allowDevCandidates: true)
+        let page = catalog.pages[1]
+        XCTAssertEqual(AppModel.selectableTargets(in: page, allowDevCandidates: true).map(\.locale), ["es", "ko", "zh-Hans"])
+        XCTAssertEqual(AppModel.selectableTargets(in: page, allowDevCandidates: false).map(\.locale), ["zh-Hans"])
+        XCTAssertEqual(page.targets["ko"]?.contentStatus, "machine_reviewed")
+    }
+
+    func testFrozenDevCandidateLanguagesCanBeSelectedAndReadWithoutHumanPromotion() async throws {
+        guard let path = ProcessInfo.processInfo.environment["TONGXING_DEV_CATALOG_FIXTURE_ROOT"] else {
+            throw XCTSkip("Frozen public Dev assets were not provided; no live network fallback")
+        }
+        let fixtureRoot = URL(fileURLWithPath: path)
+        CandidateAppModelProtocol.fixtureRoot = fixtureRoot
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [CandidateAppModelProtocol.self]
+        let session = URLSession(configuration: config)
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = "Tongxing-Candidate-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let origin = URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!
+        let model = AppModel(supportDirectory: support, contentOrigin: origin, session: session,
+            statisticsDefaults: defaults, applicationBundleIdentifier: "com.jonathanjing.tongxing.beta")
+        defer {
+            model.playback.clear(); session.invalidateAndCancel(); defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: support)
+        }
+        await model.refresh()
+        let page = try XCTUnwrap(model.independentPages.first { $0.id == "if-i-had-more-time-jesus-is-worthy" })
+        model.selectPublishedPage(page)
+        XCTAssertNil(model.fullVideoURL, "Podcast candidates must not invent a full-video path")
+        XCTAssertEqual(model.availableContentLanguages.map(\.locale), ["es", "ko", "zh-Hans"])
+        for locale in ["ko", "es", "zh-Hans"] {
+            model.selectPublishedContentLanguage(locale)
+            await model.loadSelectedPublishedTranscript()
+            XCTAssertEqual(model.selectedContentLocale, locale)
+            XCTAssertEqual(model.publishedTranscript?.captions.count, 839)
+            XCTAssertEqual(model.publishedTranscript?.releaseStatus, "candidate")
+            XCTAssertEqual(model.publishedTranscript?.contentStatus, locale == "zh-Hans" ? "human_reviewed" : "machine_reviewed")
+            XCTAssertTrue(model.selectedContentReviewNotice?.contains(locale == "zh-Hans" ? "设备验收尚未完成" : "人工全文审核未批准") == true)
+        }
+        let production = AppModel(supportDirectory: support.appendingPathComponent("production"), contentOrigin: origin,
+            session: session, statisticsDefaults: defaults, applicationBundleIdentifier: "com.jonathanjing.tongxing")
+        defer { production.playback.clear() }
+        await production.refresh()
+        XCTAssertFalse(production.independentPages.contains { $0.id == page.id })
+        production.selectPublishedPage(page)
+        XCTAssertNotEqual(production.selectedPageID, page.id)
+    }
+
     func testQueryStartUsesMonotonicElapsedOnceAndRejectsExpiredOrOutOfRange() {
         let start = ContinuousClock.now
         XCTAssertEqual(AlignmentTarget.position(offset: 100, startedAt: start,
@@ -27,6 +170,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(f.status, "已对齐至 {time}。")
         XCTAssertEqual(f.resultPosition, 108)
         XCTAssertTrue(f.failures.isEmpty)
+        XCTAssertEqual(f.phases, [.preparing, .listening, .matching, .aligned])
     }
 
     func testFailedMatchNeverSeeksAndRestoresPriorPlayingIntent() async throws {
@@ -38,6 +182,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertTrue(f.player.isPlaying)
         XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
         XCTAssertEqual(f.failures, [f.status])
+        XCTAssertEqual(f.phases, [.preparing, .listening, .matching, .listening, .matching, .listening, .matching, .listening, .matching, .unmatched])
     }
 
     func testManualSeekCancelsLateMatcherWithoutOverwritingUserPosition() async throws {
@@ -93,6 +238,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         try await eventually { !f.controller.busy }
         XCTAssertEqual(f.status, "对齐超时，请保持前台后重试。")
         XCTAssertEqual(f.failures, [f.status])
+        XCTAssertEqual(f.phases, [.preparing, .listening, .matching, .failed])
         XCTAssertGreaterThan(f.capture.stops, 0)
         await gate.finish(Self.match)
         try await Task.sleep(for: .milliseconds(20))
@@ -105,6 +251,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         f.controller.start()
         try await eventually { !f.controller.busy }
         XCTAssertEqual(f.player.seeks, [])
+        XCTAssertEqual(f.phases, [.preparing, .failed], "Permission dialog must never be reported as active listening")
         XCTAssertEqual(f.status, AudioAlignmentError.permissionDenied.localizedDescription)
         XCTAssertEqual(f.failures, [f.status])
         XCTAssertGreaterThan(f.capture.stops, 0)
@@ -169,12 +316,12 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(f.capture.calls, 0)
     }
 
-    func testPublishedCapabilityCapturesTenSecondsAndSilenceNeverSeeks() async throws {
+    func testPublishedCapabilityStreamsWithinBudgetAndSilenceNeverSeeks() async throws {
         let f = try Fixture(published: true)
         XCTAssertTrue(f.controller.available)
         f.controller.start()
-        try await eventually { !f.controller.busy }
-        XCTAssertEqual(f.capture.requestedSeconds, [10])
+        try await eventually(timeout: .seconds(15)) { !f.controller.busy }
+        XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
         XCTAssertEqual(f.player.seeks, [])
         XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
         XCTAssertGreaterThan(f.capture.stops, 0)
@@ -225,9 +372,9 @@ final class AudioAlignmentControllerTests: XCTestCase {
             }, onState: { _, _, _ in })
         XCTAssertTrue(controller.available)
         controller.start()
-        try await eventually { !controller.busy }
+        try await eventually(timeout: .seconds(15)) { !controller.busy }
         XCTAssertEqual(loaded, 1)
-        XCTAssertEqual(capture.requestedSeconds, [10])
+        XCTAssertEqual(capture.requestedMaxSeconds, [15])
         XCTAssertTrue(player.seeks.isEmpty)
         selected = nil
         XCTAssertFalse(controller.available)
@@ -245,8 +392,8 @@ final class AudioAlignmentControllerTests: XCTestCase {
         f.selection = .init(week: reviewed, track: reviewed.tracks[0])
         XCTAssertTrue(f.controller.available)
         f.controller.start()
-        try await eventually { !f.controller.busy }
-        XCTAssertEqual(f.capture.requestedSeconds, [10])
+        try await eventually(timeout: .seconds(15)) { !f.controller.busy }
+        XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
         XCTAssertEqual(f.player.seeks, [])
         XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
     }
@@ -265,6 +412,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(f.player.seeks, [])
         XCTAssertFalse(f.controller.busy)
         XCTAssertEqual(f.status, "已取消对齐。")
+        XCTAssertEqual(f.phases, [.preparing, .cancelled])
     }
 
     func testPublishedSourceWindowChangeRejectsLateIndexWithoutResume() async throws {
@@ -378,6 +526,161 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(model.alignmentDisplayStatus, "本篇尚未提供现场对齐资料，请刷新目录或手动定位。")
     }
 
+    func testEarlyStopAtFirstCheckpointSeeksOnceAndStopsMic() async throws {
+        let counter = CallCounter()
+        let f = try Fixture(matcher: { prefix, _ in
+            counter.increment()
+            XCTAssertEqual(prefix.samples.count, 56_000, "First checkpoint must contain seven seconds")
+            return Self.match
+        })
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.player.seeks, [108])
+        XCTAssertEqual(counter.count, 1)
+        XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
+        XCTAssertEqual(f.capture.session?.cancels, 1)
+        XCTAssertEqual(f.status, "已对齐至 {time}。")
+        XCTAssertEqual(f.resultPosition, 108)
+        XCTAssertTrue(f.failures.isEmpty)
+    }
+
+    func testMissThenHitContinuesInSameSession() async throws {
+        let counter = CallCounter()
+        let f = try Fixture(matcher: { prefix, _ in
+            counter.increment()
+            XCTAssertEqual(prefix.samples.count, counter.count == 1 ? 56_000 : 80_000)
+            return counter.count == 1 ? Self.noMatch : Self.match
+        })
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.player.seeks, [108])
+        XCTAssertEqual(counter.count, 2)
+        XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
+        XCTAssertEqual(f.status, "已对齐至 {time}。")
+        XCTAssertTrue(f.failures.isEmpty)
+    }
+
+    func testAllCheckpointsMissNeverSeeks() async throws {
+        let counter = CallCounter()
+        let f = try Fixture(matcher: { _, _ in counter.increment(); return Self.noMatch })
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.player.seeks, [])
+        XCTAssertEqual(counter.count, 4)
+        XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
+        XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
+        XCTAssertEqual(f.failures, [f.status])
+    }
+
+    func testSlowCheckpointMatchTimesOutAndLaterCheckpointHits() async throws {
+        let gate = ResultGate()
+        let counter = CallCounter()
+        let f = try Fixture(matchBudget: .milliseconds(60), matcher: { _, _ in
+            counter.increment()
+            if counter.count == 1 { return await gate.result() }
+            return Self.match
+        })
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.player.seeks, [108])
+        XCTAssertEqual(counter.count, 2)
+        XCTAssertEqual(f.status, "已对齐至 {time}。")
+        await gate.finish(Self.noMatch)
+    }
+
+    func testTimedOutCheckpointLateHitCannotReplaceLaterMatch() async throws {
+        let gate = ResultGate()
+        let counter = CallCounter()
+        let f = try Fixture(matchBudget: .milliseconds(30), matcher: { _, _ in
+            counter.increment()
+            if counter.count == 1 { return await gate.result() }
+            return Self.match
+        })
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.player.seeks, [108])
+        XCTAssertEqual(counter.count, 2)
+        XCTAssertEqual(f.capture.session?.maxWaitedSeconds, 10)
+        await gate.finish(FingerprintMatchResult(matched: true, offsetSeconds: 200,
+            confidence: 1, diagnostics: .init(reason: "late")))
+        try await Task.sleep(for: .milliseconds(30))
+        XCTAssertEqual(f.player.seeks, [108])
+    }
+
+    func testInterruptionWhileMatchingDiscardsHitAndDoesNotResume() async throws {
+        let f = try Fixture(playing: true)
+        f.capture.terminalAfterMatch = AudioAlignmentError.interrupted
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertTrue(f.player.seeks.isEmpty)
+        XCTAssertEqual(f.player.resumes, 0)
+        XCTAssertEqual(f.status, AudioAlignmentError.interrupted.localizedDescription)
+        XCTAssertEqual(f.phases.last, .failed)
+    }
+
+    func testCancelWhileWaitingForCheckpointNeverMatchesOrSeeks() async throws {
+        let gate = ResultGate()
+        let counter = CallCounter()
+        let f = try Fixture(matcher: { _, _ in counter.increment(); return Self.match })
+        f.capture.checkpointWait = { _ = await gate.result() }
+        f.controller.start()
+        try await gate.waitUntilStarted()
+        f.controller.cancel()
+        XCTAssertFalse(f.controller.busy)
+        XCTAssertEqual(f.capture.session?.cancels, 1)
+        await gate.finish(Self.noMatch)
+        try await Task.sleep(for: .milliseconds(20))
+        XCTAssertEqual(counter.count, 0)
+        XCTAssertTrue(f.player.seeks.isEmpty)
+        XCTAssertTrue(f.failures.isEmpty)
+        XCTAssertEqual(f.phases.last, .cancelled)
+    }
+
+    func testContinuousSessionWithoutBuffersStopsAtWallBudget() async throws {
+        var restores = 0
+        let session = ContinuousCaptureSession(owner: nil, token: UUID(),
+            engineSetup: {}, restorePlayback: { _ in restores += 1 })
+        let start = ContinuousClock.now
+        try session.startEngine(maxSeconds: 0.03)
+        do { try await session.waitUntil(seconds: 7); XCTFail("No-buffer capture must fail") }
+        catch { XCTAssertEqual(error as? AudioAlignmentError, .invalidCapture) }
+        XCTAssertTrue(session.isFinished)
+        XCTAssertLessThan(start.duration(to: .now), .seconds(1))
+        XCTAssertEqual(restores, 1)
+        session.cancel()
+        XCTAssertEqual(restores, 1, "Cleanup must run once")
+    }
+
+    func testContinuousSessionStartupFailureRestoresOnce() throws {
+        var restores = 0
+        let session = ContinuousCaptureSession(owner: nil, token: UUID(),
+            engineSetup: { throw AudioAlignmentError.invalidCapture },
+            restorePlayback: { _ in restores += 1 })
+        XCTAssertThrowsError(try session.startEngine(maxSeconds: 15))
+        XCTAssertTrue(session.isFinished)
+        XCTAssertEqual(restores, 1)
+        session.cancel()
+        XCTAssertEqual(restores, 1)
+    }
+
+    func testContinuousAccumulatorRejectsFrameGapAndKeepsOneStartClock() throws {
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 8000, channels: 1))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 800))
+        buffer.frameLength = 800
+        for i in 0..<800 { buffer.floatChannelData![0][i] = 0.1 }
+        let accumulator = CaptureAccumulator(sampleRate: 8000, seconds: 15)
+        XCTAssertNil(accumulator.append(buffer, at: AVAudioTime(sampleTime: 0, atRate: 8000)))
+        let first = try XCTUnwrap(accumulator.snapshot())
+        XCTAssertNil(accumulator.append(buffer, at: AVAudioTime(sampleTime: 800, atRate: 8000)))
+        XCTAssertEqual(accumulator.snapshot()?.startedAt, first.startedAt)
+        XCTAssertEqual(accumulator.accumulatedSeconds, 0.2, accuracy: 0.0001)
+        guard case .failure(let error) = accumulator.append(buffer, at: AVAudioTime(sampleTime: 2400, atRate: 8000)) else {
+            return XCTFail("A missing buffer must not be spliced into continuous PCM")
+        }
+        XCTAssertEqual(error as? AudioAlignmentError, .interrupted)
+        XCTAssertEqual(accumulator.accumulatedSeconds, 0.2, accuracy: 0.0001)
+    }
+
     private func withoutAlignment(_ track: SermonTrack) -> SermonTrack {
         SermonTrack(id: track.id, label: track.label, voiceLabel: track.voiceLabel,
             audioUrl: track.audioUrl, file: track.file, sha256: track.sha256,
@@ -390,8 +693,8 @@ final class AudioAlignmentControllerTests: XCTestCase {
     private static let noMatch = FingerprintMatchResult(matched: false, offsetSeconds: nil, confidence: 0,
                                                         diagnostics: .init(reason: "no-match"))
 
-    private func eventually(_ predicate: @MainActor () -> Bool) async throws {
-        let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+    private func eventually(timeout: Duration = .seconds(3), _ predicate: @MainActor () -> Bool) async throws {
+        let deadline = ContinuousClock.now.advanced(by: timeout)
         while !predicate() {
             guard ContinuousClock.now < deadline else { XCTFail("Timed out waiting for alignment state"); return }
             try await Task.sleep(for: .milliseconds(10))
@@ -407,11 +710,13 @@ final class AudioAlignmentControllerTests: XCTestCase {
         var selection: AudioAlignmentController.Selection?
         var status = ""
         var failures: [String] = []
+        var phases: [ListeningAlignmentPhase] = []
         var resultPosition: Double?
         var controller: AudioAlignmentController!
 
         init(playing: Bool = false, result: FingerprintMatchResult = AudioAlignmentControllerTests.match,
-             deadline: Duration = .seconds(20), matcher: AudioAlignmentController.Matcher? = nil,
+             deadline: Duration = .seconds(20), matchBudget: Duration = .seconds(3),
+             matcher: AudioAlignmentController.Matcher? = nil,
              published: Bool = false, publishedLoadGate: ResultGate? = nil) throws {
             let hash = String(repeating: "a", count: 64)
             let alignment = SermonAudioAlignment(fingerprintUrl: "/alignment/\(hash)-fingerprint.json", fingerprintSha256: hash,
@@ -465,8 +770,9 @@ final class AudioAlignmentControllerTests: XCTestCase {
             controller = AudioAlignmentController(playback: player, capture: capture, getSelection: { [weak self] in self?.selection },
                 loadIndex: { _ in index }, loadPublishedIndex: publishedLoader, match: matcher ?? { _, _ in result }, now: { [weak self] in
                     self!.start.advanced(by: .seconds(self!.elapsed))
-                }, deadline: deadline, onState: { [weak self] status, _, position in self?.status = status; self?.resultPosition = position },
-                onFailure: { [weak self] message in self?.failures.append(message) })
+                }, deadline: deadline, matchBudget: matchBudget, onState: { [weak self] status, _, position in self?.status = status; self?.resultPosition = position },
+                onFailure: { [weak self] message in self?.failures.append(message) },
+                onPhase: { [weak self] phase in self?.phases.append(phase) })
         }
     }
 
@@ -489,20 +795,82 @@ final class AudioAlignmentControllerTests: XCTestCase {
     }
 
     @MainActor
+    private final class FakeSession: ContinuousCaptureSessionProtocol {
+        var startedAt = ContinuousClock.now
+        var samples: [Float] = []
+        var waitError: Error?
+        var terminalAfterMatch: Error?
+        var maxWaitedSeconds: Double = 0
+        var cancels = 0
+        var waitHook: (() async throws -> Void)?
+        weak var capture: FakeCapture?
+
+        var accumulatedSeconds: Double { Double(samples.count) / 8000 }
+        var isFinished: Bool { false }
+
+        func waitUntil(seconds: Double) async throws {
+            maxWaitedSeconds = max(maxWaitedSeconds, seconds)
+            if seconds == 0, let terminalAfterMatch { throw terminalAfterMatch }
+            try await waitHook?()
+            if let waitError { throw waitError }
+        }
+
+        func snapshot() -> CapturedAudio? {
+            let count = Int(maxWaitedSeconds * 8000)
+            let prefix = Array(samples.prefix(count)) + [Float](repeating: 0, count: max(0, count - samples.count))
+            return CapturedAudio(samples: prefix, sampleRate: 8000, startedAt: startedAt)
+        }
+
+        func cancel() {
+            guard cancels == 0 else { return }
+            cancels += 1
+            capture?.stops += 1
+        }
+    }
+
+    /// Sendable call counter for @Sendable matcher stubs.
+    private final class CallCounter: Sendable {
+        private let lock = NSLock()
+        private var _count = 0
+        var count: Int { lock.lock(); defer { lock.unlock() }; return _count }
+        func increment() { lock.lock(); defer { lock.unlock() }; _count += 1 }
+    }
+
+    @MainActor
     private final class FakeCapture: MicrophoneCapturing {
+        var onCaptureStarted: (() -> Void)?
         var start = ContinuousClock.now
         var failure: Error?
         var calls = 0
         var stops = 0
         var requestedSeconds: [Double] = []
+        var requestedMaxSeconds: [Double] = []
         var samples: [Float] = []
+        var session: FakeSession?
+        var checkpointWait: (() async throws -> Void)?
+        var terminalAfterMatch: Error?
         func capture(seconds: Double) async throws -> CapturedAudio {
             calls += 1
             requestedSeconds.append(seconds)
             if let failure { throw failure }
+            onCaptureStarted?()
             return CapturedAudio(samples: samples, sampleRate: 8000, startedAt: start)
         }
-        func cancel() { stops += 1 }
+        func beginContinuousCapture(maxSeconds: Double) async throws -> any ContinuousCaptureSessionProtocol {
+            calls += 1
+            requestedMaxSeconds.append(maxSeconds)
+            if let failure { throw failure }
+            let s = FakeSession()
+            s.startedAt = start
+            s.samples = samples
+            s.capture = self
+            s.waitHook = checkpointWait
+            s.terminalAfterMatch = terminalAfterMatch
+            session = s
+            onCaptureStarted?()
+            return s
+        }
+        func cancel() { stops += 1; session?.cancel() }
     }
 
     private actor ResultGate {
@@ -519,4 +887,200 @@ final class AudioAlignmentControllerTests: XCTestCase {
             while !started { try await Task.sleep(for: .milliseconds(5)) }
         }
     }
+}
+
+/// All requests are served from frozen JSON or fail locally. Audio is never
+/// downloaded; this harness validates selection and reader state, not playback.
+private final class CandidateAppModelProtocol: URLProtocol {
+    static var fixtureRoot: URL?
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        guard let url = request.url else { client?.urlProtocol(self, didFailWithError: URLError(.badURL)); return }
+        let bytes = url.pathExtension == "json" ? Self.fixtureRoot.flatMap {
+            try? Data(contentsOf: $0.appendingPathComponent(String(url.path.dropFirst())))
+        } : nil
+        let response = HTTPURLResponse(url: url, statusCode: bytes == nil ? 404 : 200, httpVersion: "HTTP/1.1", headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        if let bytes { client?.urlProtocol(self, didLoad: bytes) }
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() { }
+}
+
+/// Synthetic bound release/audio remain usable while both transcript assets fail.
+@MainActor
+final class MachineDisclosureTests: XCTestCase {
+    func testMachineCatalogFallbackNoticeAndMissingCatalogCompatibility() async throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MachineDisclosureProtocol.self]
+        let session = URLSession(configuration: config)
+        let suite = "Tongxing-Machine-Catalog-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let model = AppModel(supportDirectory: support,
+                             contentOrigin: URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!,
+                             session: session, statisticsDefaults: defaults,
+                             applicationBundleIdentifier: "com.jonathanjing.tongxing.beta")
+        defer {
+            model.playback.clear(); session.invalidateAndCancel()
+            MachineDisclosureProtocol.install([:])
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: support)
+        }
+        let hash = String(repeating: "a", count: 64)
+        let catalog = try JSONSerialization.data(withJSONObject: [
+            "schemaVersion": MultilingualCatalog.dualScriptSchemaVersion,
+            "generatedAt": "2026-10-07T00:00:00Z", "defaultPageId": "fallback-page",
+            "pages": [["id": "fallback-page", "title": "Synthetic human text", "date": "2026-10-04",
+                       "sourceLocale": "en", "sourceIdentitySha256": hash, "defaultTargetLocale": "zh-Hans",
+                       "targets": ["zh-Hans": ["releasePackageUrl": "/releases-v2/fallback-page/zh-Hans.json",
+                                               "releasePackageJsonSha256": hash, "contentStatus": "human_reviewed",
+                                               "audioStatus": "unavailable", "capabilities": ["text"]]]]]
+        ])
+        // Both invalid v4 data and a server error preserve v3 while exposing the degradation.
+        for status in [200, 503] {
+            MachineDisclosureProtocol.install(["/multilingual-v3.json": catalog,
+                                               "/multilingual-v4.json": Data("invalid".utf8)],
+                                              statuses: ["/multilingual-v4.json": status])
+            await model.refresh()
+            XCTAssertEqual(model.multilingualCatalog?.schemaVersion, MultilingualCatalog.dualScriptSchemaVersion)
+            XCTAssertTrue(model.multilingualNotice?.contains("机器质检语言目录") == true)
+            XCTAssertTrue(model.multilingualNotice?.contains("刷新重试") == true)
+        }
+        // An ordinary v4 404 is an older site's supported protocol, and clears the earlier notice.
+        MachineDisclosureProtocol.install(["/multilingual-v3.json": catalog])
+        await model.refresh()
+        XCTAssertNotNil(model.multilingualCatalog)
+        XCTAssertNil(model.multilingualNotice)
+    }
+
+    func testAudioDisclosureSurvivesTranscriptFailureAndRejectsStaleSelections() async throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MachineDisclosureProtocol.self]
+        let session = URLSession(configuration: config)
+        let suite = "Tongxing-Machine-Disclosure-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let model = AppModel(supportDirectory: support, contentOrigin: URL(string: "https://example.invalid")!,
+                             session: session, statisticsDefaults: defaults)
+        defer {
+            model.playback.clear(); session.invalidateAndCancel()
+            MachineDisclosureProtocol.install([:])
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: support)
+        }
+        func json(_ value: Any) throws -> Data { try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]) }
+        func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+        let fixtureURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Core/Tests/TongxingCoreTests/Fixtures/shared-machine-checked-contracts.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: fixtureURL)) as? [String: Any])
+        let rows = try XCTUnwrap(fixture["releases"] as? [[String: Any]])
+        let esRow = try XCTUnwrap(rows.first { $0["id"] as? String == "machine-checked-es" })
+        let es = try XCTUnwrap(esRow["release"] as? [String: Any])
+        let disclosure = try XCTUnwrap(es["disclosure"] as? [String: String])
+        let sourceIdentity = try XCTUnwrap(es["englishSourcePackageJsonSha256"] as? String)
+        let identity = try XCTUnwrap(es["sourceIdentity"] as? [String: Any])
+        let sourceMedia = try XCTUnwrap(identity["mediaSha256"] as? String)
+        // One tenth of a second of encoded synthetic silence, pre-cached to avoid media transfer.
+        let audioDirectory = support.appendingPathComponent("MultilingualCatalog/Audio")
+        try FileManager.default.createDirectory(at: audioDirectory, withIntermediateDirectories: true)
+        let audio = try XCTUnwrap(Data(base64Encoded: "SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYzLjEuMTAxAAAAAAAAAAAAAAD/4xjEAAAAA0gAAAAATEFNRTQuMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/4xjEOwAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/4xjEdgAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/4xjEsQAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU="))
+        let audioHash = hash(audio)
+        try audio.write(to: audioDirectory.appendingPathComponent("\(audioHash).mp3"))
+        var files: [String: Data] = [:]
+        var pages: [[String: Any]] = []
+        for pageID in ["synthetic-machine-page", "synthetic-second-page"] {
+            var targets: [String: Any] = [:]
+            for locale in ["es", "zh-Hans"] {
+                let row = try XCTUnwrap(rows.first { $0["id"] as? String == "machine-checked-\(locale)" })
+                var release = try XCTUnwrap(row["release"] as? [String: Any])
+                release["pageId"] = pageID
+                release["packageId"] = "\(pageID)-\(locale)-dual-script"
+                release["assets"] = (release["assets"] as! [[String: Any]]).map { asset -> [String: Any] in
+                    var asset = asset
+                    asset["path"] = (asset["path"] as! String).replacingOccurrences(of: "synthetic-machine-page", with: pageID)
+                    if asset["role"] as? String == "audio" {
+                        asset["path"] = "/media/\(pageID)/\(locale).mp3"
+                        asset["sha256"] = audioHash
+                    }
+                    return asset
+                }
+                let bytes = try json(release)
+                let path = "/releases-v4/\(pageID)/\(locale).json"
+                files[path] = bytes
+                targets[locale] = ["releasePackageUrl": path, "releasePackageJsonSha256": hash(bytes),
+                                   "contentStatus": "machine_checked", "audioStatus": "machine_checked",
+                                   "capabilities": ["text", "captions", "audio"]]
+            }
+            pages.append(["id": pageID, "title": "Synthetic fixture", "date": "2026-10-04", "sourceLocale": "en",
+                          "sourceIdentitySha256": sourceIdentity, "sourceMediaSha256": sourceMedia,
+                          "defaultTargetLocale": "es", "targets": targets])
+        }
+        func catalog() throws -> Data {
+            try json(["schemaVersion": MultilingualCatalog.machineCheckedSchemaVersion,
+                      "generatedAt": "2026-10-07T00:00:00Z", "defaultPageId": "synthetic-machine-page", "pages": pages])
+        }
+        files["/multilingual-v4.json"] = try catalog()
+        MachineDisclosureProtocol.install(files)
+        await model.refresh()
+        XCTAssertNotNil(model.multilingualCatalog, model.multilingualNotice ?? "Catalog failed")
+        for _ in 0..<200 where model.publishedAudioSha256 == nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(model.publishedAudioSha256, audioHash)
+        await model.loadSelectedPublishedTranscript()
+        XCTAssertNil(model.currentPublishedTranscript)
+        XCTAssertNotNil(model.publishedTranscriptError)
+        XCTAssertEqual(model.selectedMachineCheckedDisclosure, disclosure["text"])
+
+        model.selectPublishedContentLanguage("zh-Hans")
+        XCTAssertNil(model.selectedMachineCheckedDisclosure, "An es release cannot disclose a zh-Hans selection")
+        model.selectPublishedContentLanguage("es")
+        for _ in 0..<200 where model.publishedAudioSha256 == nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(model.selectedMachineCheckedDisclosure, disclosure["text"])
+        let otherPage = try XCTUnwrap(model.independentPages.first { $0.id == "synthetic-second-page" })
+        model.selectPublishedPage(otherPage)
+        XCTAssertNil(model.selectedMachineCheckedDisclosure, "Disclosure must not leak to another page")
+        let firstPage = try XCTUnwrap(model.independentPages.first { $0.id == "synthetic-machine-page" })
+        model.selectPublishedPage(firstPage)
+        for _ in 0..<200 where model.publishedAudioSha256 == nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(model.selectedMachineCheckedDisclosure, disclosure["text"])
+        // A changed catalog hash refuses the old release rather than retaining its disclosure.
+        var targets = pages[0]["targets"] as! [String: Any]
+        var changed = targets["es"] as! [String: Any]
+        changed["releasePackageJsonSha256"] = String(repeating: "f", count: 64)
+        targets["es"] = changed; pages[0]["targets"] = targets
+        files["/multilingual-v4.json"] = try catalog()
+        MachineDisclosureProtocol.install(files)
+        await model.refresh()
+        XCTAssertNil(model.selectedMachineCheckedDisclosure, "Disclosure is bound to the release hash")
+    }
+}
+
+private final class MachineDisclosureProtocol: URLProtocol {
+    private static let lock = NSLock()
+    private static var files: [String: Data] = [:]
+    private static var statuses: [String: Int] = [:]
+    static func install(_ value: [String: Data], statuses responseStatuses: [String: Int] = [:]) {
+        lock.lock(); files = value; statuses = responseStatuses; lock.unlock()
+    }
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        Self.lock.lock()
+        let bytes = Self.files[request.url?.path ?? ""]
+        let status = Self.statuses[request.url?.path ?? ""] ?? (bytes == nil ? 404 : 200)
+        Self.lock.unlock()
+        guard let url = request.url else { client?.urlProtocol(self, didFailWithError: URLError(.badURL)); return }
+        let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        if let bytes { client?.urlProtocol(self, didLoad: bytes) }
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() { }
 }

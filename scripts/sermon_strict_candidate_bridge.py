@@ -38,7 +38,7 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
     request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric, diagnostic_context=diagnostic_context)
     c.require(type(revisions) in (list, tuple) and 1 <= len(revisions) <= 4096,
               'strict_bridge_revision_count')
-    groups, bindings, seen, snapshots = [], [], set(), []
+    groups, bindings, seen, snapshots, rule_receipts = [], [], set(), [], []
     generation = {role: {'model': policy[role]['model'],
         'promptVersion': policy[role]['promptVersion'], 'requestIds': []}
         for role in ('translator', 'reviewer')}
@@ -67,7 +67,14 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
         c.validate_revision_lineage(manifest,repair['parentRevision'] if repair else None,repair['plan'] if repair else None)
         group = {k: artifact[k] for k in ('translationGroupId', 'sourceUnitIds')}
         limits = read('request-limits.json')[0] if (root / 'request-limits.json').exists() else None
-        prepared = strict.prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group, request_limits=limits, diagnostic_context=diagnostic_context)
+        rules = read('rule-preflight.json')[0] if (root / 'rule-preflight.json').exists() else None
+        if rules is not None:
+            rule_receipts.append(rules)
+            context = read('rule-context.json')[0]
+            c.require(_safe_path(Path(context['pluginPath'])) == _safe_path(Path(plugin_path)),
+                      'strict_bridge_rule_plugin_changed')
+        prepared = strict.prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group, request_limits=limits, diagnostic_context=diagnostic_context, rule_preflight=rules,
+            rule_context=read('rule-context.json')[0] if rules is not None else None)
         dispatch_proofs={}
         if repair is not None:strict.validate_repair(prepared,manifest['candidateId'],manifest['revisionId'],repair)
         if repair is not None and 'languagePluginRepair' in repair:
@@ -152,14 +159,26 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
     c.require(len(set(translator_ids + reviewer_ids)) == len(translator_ids + reviewer_ids),
               'strict_bridge_response_identity_reused')
     evidence = {**request, 'generation': generation, 'groups': groups}
+    c.require(len(rule_receipts) in (0, len(revisions))
+        and len({c.canonical_sha256(item) for item in rule_receipts}) <= 1,
+        'strict_bridge_rule_preflight_changed')
+    actual_plan = [{k: row[k] for k in ('translationGroupId', 'sourceUnitIds')} for row in groups]
+    c.require(all(c.decode_json(captured['rule-context.json'])['groupPlan'] == actual_plan
+                  for _, captured in snapshots if 'rule-context.json' in captured),
+              'strict_bridge_rule_group_plan_changed')
+    rule_receipt = rule_receipts[0] if rule_receipts else None
     plugin = producer.run_language_plugin(source, anchor, policy, request, evidence,
-        Path(plugin_path), expected_plugin_sha256, strict_rubric=rubric, diagnostic_context=diagnostic_context)
+        Path(plugin_path), expected_plugin_sha256, strict_rubric=rubric, diagnostic_context=diagnostic_context,
+        rule_preflight_receipt=rule_receipt)
     # Retain the actual result only after rechecking the evidence it assessed.
     for root, captured in snapshots:
         for name, data in captured.items():
             c.require(c.read_snapshot(root / name)[1] == data, 'strict_bridge_snapshot_changed')
     if any(row['status'] != 'pass' for row in plugin['groupReviews']):
         raise LanguagePluginRejected(plugin, bindings)
+    if rule_receipt is not None:
+        from scripts.target_language_rule_preflight import verify_consumer_receipt
+        verify_consumer_receipt(request, policy, Path(plugin_path), evidence, rule_receipt)
     candidate_groups = []
     for group, result in zip(groups, plugin['groupReviews']):
         candidate_groups.append({**{k: copy.deepcopy(v) for k, v in group.items()
@@ -200,9 +219,11 @@ def validate_approved_chain(source_bytes, anchor_bytes, policy_bytes, rubric_byt
     source, anchor, policy, rubric = [c.decode_json(b) for b in
         (source_bytes, anchor_bytes, policy_bytes, rubric_bytes)]
     handoff._validate_schema(candidate, 'sermon-target-language-candidate-v2.schema.json', 'approved candidate')
-    handoff.validate_target_candidate(source, anchor, candidate)
+    released = handoff.validate_released_candidate(source, anchor, candidate, human_receipt)
+    # Strict gate decisions record the receipt as a human approval; a machine
+    # waiver takes the non-strict speech-job path until they record waivers apart.
+    c.require(released['textPolicy'] == handoff.HUMAN_TEXT_POLICY, 'strict_bridge_requires_human_receipt')
     handoff.validate_policy_binding(candidate, policy, strict_rubric=rubric)
-    handoff.validate_human_review_receipt(source, anchor, candidate, human_receipt)
     return {**result, 'candidate': copy.deepcopy(candidate),
-        'humanReceiptSha256': c.canonical_sha256(human_receipt),
+        'humanReceiptSha256': c.canonical_sha256(human_receipt), 'textPolicy': released['textPolicy'],
         'publicCandidateSha256': c.canonical_sha256(candidate), 'admissionStatus': 'validated_only'}

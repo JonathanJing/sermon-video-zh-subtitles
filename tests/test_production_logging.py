@@ -24,6 +24,9 @@ class ProductionLoggingTests(unittest.TestCase):
         for mocked in [patch.object(accounting, "execution_identity", return_value={"gitCommit": None}),
                        patch.object(accounting, "resource_snapshot", return_value={}),
                        patch.object(local, "completed_production_report", return_value=None),
+                       # Exercise SDK log projection with an offline fake Runner;
+                       # production still rejects SDK sessions without resume.
+                       patch.object(supervisor, "require_sdk_resume_adapter"),
                        patch.object(local.live_source_monitor, "send_sendgrid_notification", side_effect=AssertionError("No notifications"))]:
             mocked.start()
             self.addCleanup(mocked.stop)
@@ -35,6 +38,7 @@ class ProductionLoggingTests(unittest.TestCase):
             args = module.parse_args()
         if module is local:
             args.skip_source_refresh = True
+            args.agent_backend = "codex-cli"
         args.api_key_secret = None
         args.notify_sendgrid_secret = None
         args.notify_recipients_secret = None

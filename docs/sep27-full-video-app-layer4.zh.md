@@ -1,5 +1,7 @@
 # 2026-09-27 完整视频的 App Layer 4 发布
 
+本文件保留 2026-09-27 的专用 adapter 与历史发布记录。2026-10-03 按 `dev` commit `b638dc9d30cf1ade606bd2c411074d5806564bd9` 核对下面的命令范围，不重新宣称线上、真机或现场验收。后续周更遵守[每周发行合同](tongxing-weekly-release.zh.md#v3-周更发布清单与验收)，不能把本次适配器视为通用自动周更入口。
+
 本周面向听众的交付物是**在同行 App 内可选择、打开和收听的 9 月 27 日证道**。`/pages/2026-09-27-weekend-sermon-drive-530/index.html` 是公开内容资产和浏览器兼容入口；单独访问该 URL 或取得 HTTP 200，不算完成 App 交付。App 内须能从“选择证道”看到本周并进入同一阅读／播放界面，在界面内观看完整 31:31 原视频、切换中韩西三语配音与文字、阅读英文对照并使用现场声音定位。网页 App 与原生 iOS 分别验收；已安装旧 iOS 版本还需取得并安装支持该目录的更新。
 
 配音使用另行批准的短口播稿；完整阅读稿与短口播稿同属一个已批准英文来源，但三语音轨分别绑定短口播候选。因此本次 App 发布使用 `sermon-target-language-release-package-v2`：`targetLanguageCandidateJsonSha256` 指完整阅读稿，`spokenTargetLanguageCandidateJsonSha256` 指短口播稿，`targetLanguageAudioPackageJsonSha256` 指已经整轨听审的音频包。Layer 4 只核对和聚合，不修改任何上游文字或音频。
@@ -10,9 +12,13 @@
 
 `scripts/build_full_video_app_release.py` 有三个子命令，均使用仓库 Python 环境：
 
-1. `prepare` 输入同一 `ready_for_translation` 英文包，以及每语言的完整候选与人审收据、短口播候选与人审收据、音频包与整轨人审／ASR 收据、已批准完整文稿 JSON。每种 `--full-candidate`、`--full-review-receipt`、`--spoken-candidate`、`--spoken-review-receipt`、`--audio-package`、`--audio-review-receipt`、`--audio-screening-receipt`、`--full-content` 都传入三次 `LOCALE=PATH`（`zh-Hans`、`ko`、`es`），另传 `--source`、`--metadata-approval`、`--metadata-proposal`、`--page-id`、`--date`、`--out`。页面显示字段须与原提案和批准记录完全一致。输出目录必须不存在。实际参数见 `prepare --help`。
-2. `prepare --out PREPARED` 生成 `PREPARED/public/` 的 15 个新文件：每语言一个静态完整阅读页、原样复制的完整文稿 JSON、规范路径 MP3、短口播字幕 JSON，以及一份 `candidate` Release Package。`PREPARED/preparation-manifest.json` 记录 12 项用户资产的 SHA。静态阅读页不依赖脚本，音轨不覆盖网页原有 hashed 路径。此时所有 HTTP、设备、现场状态都是 `not_run`。
-3. 将上述 15 个文件叠加到经当前站点基线核对的 Hosting 候选后发布。运行 `verify --prepared PREPARED --origin https://ai-for-god-sermon-audio.web.app --out HTTP.json`，逐一 GET 并计算 12 项新资产的完整 SHA；任何状态或 hash 不符即失败。随后运行 `seal --prepared PREPARED --http-verification HTTP.json --out SEALED`。它只用 12 项资产的 HTTP 收据作发布证据，避免 Release Package 自引用哈希；输出 `SEALED/public/` 的 16 个文件，即 12 项资产、三份 `published_http_verified` Release Package 和 `/multilingual-v3.json`。第二次叠加只更新三份 Release Package 并添加新目录，发布后再次核对三个最终包与目录 SHA。`SEALED/seal-report.json` 列出全部文件、SHA 和字节数。
+1. `prepare` 输入同一 `ready_for_translation` 英文包，以及每个发布 locale 的完整候选与人审收据、短口播候选与人审收据、音频包与整轨人审／ASR 收据、已批准完整文稿 JSON。`--locales` 可指定非空且无重复的 `zh-Hans`、`ko`、`es` 子集；每种 `--full-candidate`、`--full-review-receipt`、`--spoken-candidate`、`--spoken-review-receipt`、`--audio-package`、`--audio-review-receipt`、`--audio-screening-receipt`、`--full-content` 都只传所选语言的 `LOCALE=PATH`。metadata approval v1 继续只接受三语全批；v2 按提案 SHA、page/date 和显式 `approvedLocales` 绑定恰好同一子集。中文日期标签模式仍仅支持中文。另传 `--source`、`--metadata-approval`、`--metadata-proposal`、`--page-id`、`--date`、`--out`。页面显示字段须与原提案和批准记录完全一致。输出目录必须不存在。实际参数见 `prepare --help`。
+2. `prepare --out PREPARED` 每种语言生成一张静态完整阅读页、原样复制的完整文稿 JSON、规范路径 MP3、短口播字幕 JSON，以及一份 `candidate` Release Package。`PREPARED/preparation-manifest.json` 记录所选语言的 4 项用户资产 SHA。静态阅读页按内容包的 `durationSeconds` 显示时长，不依赖脚本；音轨不覆盖网页原有 hashed 路径。此时所有 HTTP、设备、现场状态都是 `not_run`。
+3. 将上述 15 个文件叠加到经当前站点基线核对的 Hosting 候选后发布。运行 `verify --prepared PREPARED --origin https://ai-for-god-sermon-audio.web.app --out HTTP.json`。它逐一 GET 并计算 12 项新资产的完整 SHA，任何状态或 hash 不符即失败。这个子命令不核验 MP3 Range，也不核验最终 Release Package 或 catalog。
+4. 随后运行 `seal --prepared PREPARED --http-verification HTTP.json --out SEALED`。它只消费所选用户资产的 HTTP 收据，避免 Release Package 自引用哈希。输出各所选语言的 `published_http_verified` Release Package 和 `/multilingual-v3.json`。`SEALED/seal-report.json` 列出全部文件、SHA 和字节数，并记录 `ready_for_catalog_deployment`。此时包内的 `published_http_verified` 字段只绑定前述用户资产收据，不证明最终包与目录已经上线核验。
+5. `seal` 生成的 catalog 只包含本次一个页面，不读取旧 catalog。存在旧 v3 周次时，必须将这个单页目录合入经基线核对的完整旧 catalog，保留旧周次和语言。不能将单页输出作为完整周更目录直接覆盖。随后进行第二次部署，更新三份 Release Package 和合并后的目录。发布后再次核对三个最终包与目录的公开 GET／SHA，并单独核验音频 206／Range。App、设备与现场验收仍分别留证。
+
+后续周更的完整基线、stage manifest、历史保留和候选检查入口见[每周发行合同](tongxing-weekly-release.zh.md#v3-周更发布清单与验收)。`scripts/assemble_multilingual_v3_update.py` 读取完整旧目录和单页 stage 目录，但仍要求该合同规定的完整 stage 资产及清单。不能直接把上述 16 文件的 `SEALED/public/` 当作已满足其输入合同。这里描述误用单页目录的风险，没有断言历史目录已被覆盖或历史资产已丢失。
 
 发布目录：
 

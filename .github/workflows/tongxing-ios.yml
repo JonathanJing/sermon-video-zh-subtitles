@@ -7,6 +7,13 @@ on:
       - main
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+    inputs:
+      scheme:
+        description: App identity to validate (Beta exercises Beta-only feedback)
+        type: choice
+        required: false
+        default: Tongxing
+        options: [Tongxing, TongxingBeta]
 
 concurrency:
   group: tongxing-ios-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
@@ -124,7 +131,14 @@ jobs:
     needs: changes
     if: needs.changes.outputs.scope == 'native' && (github.event_name == 'workflow_dispatch' || (github.base_ref == 'main' && !github.event.pull_request.draft))
     runs-on: macos-15
-    timeout-minutes: 35
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [app-system, transcript-collapse, remaining-listening]
+    env:
+      TONGXING_VALIDATION_SCHEME: ${{ inputs.scheme || 'Tongxing' }}
+      TONGXING_VALIDATION_SUITE: ${{ matrix.suite }}
     defaults:
       run:
         working-directory: apps/tongxing-ios
@@ -139,6 +153,7 @@ jobs:
       - name: Build for iOS Simulator without signing
         run: >-
           ./scripts/ios.sh build --developer-dir "$(xcode-select -p)"
+          --scheme "$TONGXING_VALIDATION_SCHEME"
           --derived-data DerivedData --artifacts-dir TestResults
       - name: Select an available iPhone simulator
         id: simulator
@@ -160,16 +175,52 @@ jobs:
           print("Hosted tests:", candidates[0]["name"], candidates[0]["udid"])
           PY
       - name: iOS player and user-flow tests
-        run: >-
-          ./scripts/ios.sh test --developer-dir "$(xcode-select -p)"
-          --simulator '${{ steps.simulator.outputs.udid }}'
-          --derived-data DerivedData --artifacts-dir TestResults
-          --only-testing TongxingTests --only-testing TongxingUITests
+        env:
+          TONGXING_VALIDATION_SIMULATOR: ${{ steps.simulator.outputs.udid }}
+        run: |
+          python3 - <<'PY'
+          import os, re, subprocess
+          from pathlib import Path
+          classes = {name for path in Path("UITests").glob("*.swift")
+                     for name in re.findall(r"\bclass\s+(\w+)\s*:\s*XCTestCase\b", path.read_text())}
+          flow_class = "ListeningFlowUITests"
+          if flow_class not in classes:
+              raise SystemExit("ListeningFlowUITests must remain in the complete UI test partition.")
+          methods = set(re.findall(r"\bfunc\s+(test\w+)\s*\(", Path("UITests/ListeningFlowUITests.swift").read_text()))
+          regression = {
+              "testDuoPosturePlaybackAndPanelsScreenshots",
+              "testPlaybackDockSwipeCollapsesWithoutPausingAndExpands",
+              "testFullTranscriptReturnToCurrentKeepsPausePositionAndReadingMode",
+              "testNormalTextTranscriptTimeTapAndAutomaticFollowing",
+              "testTranscriptAutomaticallyFollowsNextCaption",
+              "testTranscriptFollowsPlaybackUntilDraggedAndTimeTapRestoresFollowing",
+          }
+          if not regression <= methods:
+              raise SystemExit("Update the regression partition when a selected test is renamed or removed.")
+          remaining = methods - regression
+          assert regression.isdisjoint(remaining) and regression | remaining == methods
+          groups = {
+              "app-system": ["TongxingTests"] + ["TongxingUITests/" + name for name in sorted(classes - {flow_class})],
+              "transcript-collapse": ["TongxingUITests/" + flow_class + "/" + name for name in sorted(regression)],
+              "remaining-listening": ["TongxingUITests/" + flow_class + "/" + name for name in sorted(remaining)],
+          }
+          group = os.environ["TONGXING_VALIDATION_SUITE"]
+          selected = groups[group]
+          print("Full coverage partition:", sorted(classes), "ListeningFlow methods:", len(methods),
+                "regression:", len(regression), "remaining:", len(remaining), flush=True)
+          print("Executing group:", group, selected, flush=True)
+          command = ["./scripts/ios.sh", "test", "--developer-dir", subprocess.check_output(["xcode-select", "-p"], text=True).strip(),
+                     "--scheme", os.environ["TONGXING_VALIDATION_SCHEME"], "--simulator", os.environ["TONGXING_VALIDATION_SIMULATOR"],
+                     "--derived-data", "DerivedData", "--artifacts-dir", "TestResults"]
+          for target in selected:
+              command.extend(["--only-testing", target])
+          subprocess.run(command, check=True)
+          PY
       - name: Preserve iOS test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tongxing-ios-tests
+          name: tongxing-ios-tests-${{ matrix.suite }}
           path: apps/tongxing-ios/TestResults/
           if-no-files-found: ignore
 

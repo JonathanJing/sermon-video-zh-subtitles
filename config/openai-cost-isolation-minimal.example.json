@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "sermon-cost-isolation-v2",
+  "kind": "config",
+  "environments": {
+    "dev": {
+      "projectId": "REPLACE_DEV_PROJECT_ID",
+      "keyAliases": {
+        "transcription": "tongxing-dev-runtime",
+        "translation": "tongxing-dev-runtime",
+        "reviewer": "tongxing-dev-runtime"
+      }
+    },
+    "prod": {
+      "projectId": "REPLACE_PROD_PROJECT_ID",
+      "keyAliases": {
+        "transcription": "tongxing-prod-runtime",
+        "translation": "tongxing-prod-runtime",
+        "reviewer": "tongxing-prod-runtime"
+      }
+    }
+  }
+}

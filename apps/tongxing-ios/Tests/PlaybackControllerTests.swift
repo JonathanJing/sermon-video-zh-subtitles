@@ -12,7 +12,114 @@ import XCTest
 /// not represent a real phone call, headphone route, lock-screen or venue test.
 @MainActor
 final class PlaybackControllerTests: XCTestCase {
+    func testContinuousPlaybackAdvancesMappedSystemSubtitleWithoutSeek() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let audio = fixture.publishedAudio(locale: "zh-Hans")
+        fixture.player.loadPublishedAudio(audio)
+        try await eventually("published ready") { fixture.player.isReady }
+        fixture.player.updateSystemMetadata(
+            identity: TrackIdentity(weekID: audio.pageID, trackID: "published_zh-Hans", audioSHA256: audio.sha256),
+            sourceID: audio.sourceIdentitySha256, title: "Synthetic", speaker: "Fixture", subtitles: [
+                PlaybackSystemSubtitle(id: "first", start: 0, end: 1, chinese: "第一句", english: "First"),
+                PlaybackSystemSubtitle(id: "second", start: 2, end: 12, chinese: "第二句", english: "Second")
+            ])
+        XCTAssertEqual(fixture.player.currentSystemSubtitle?.id, "first")
+        fixture.player.play()
+        try await eventually("gap while playing") {
+            fixture.player.position >= 1 && fixture.player.position < 2 && fixture.player.currentSystemSubtitle == nil
+        }
+        try await eventually("second while playing") { fixture.player.currentSystemSubtitle?.id == "second" }
+        XCTAssertTrue(fixture.player.isPlaying)
+        XCTAssertEqual(fixture.player.currentSystemSubtitle?.chinese, "第二句")
+        XCTAssertEqual(fixture.player.currentSystemSubtitle?.english, "Second")
+    }
+
+    func testSystemMetadataAndMappedSubtitleAreBoundToLoadedAudio() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let audio = fixture.publishedAudio(locale: "zh-Hans")
+        fixture.player.loadPublishedAudio(audio)
+        try await eventually("published ready") { fixture.player.isReady }
+        let identity = TrackIdentity(weekID: audio.pageID, trackID: "published_zh-Hans", audioSHA256: audio.sha256)
+        XCTAssertNotEqual(MPNowPlayingInfoCenter.default().nowPlayingInfo?[MPMediaItemPropertyTitle] as? String, audio.pageID)
+        fixture.player.updateSystemMetadata(identity: identity, sourceID: audio.sourceIdentitySha256,
+            title: "完整证道标题", speaker: "Speaker", subtitles: [
+                PlaybackSystemSubtitle(id: "first", start: 0, end: 3, chinese: "第一句", english: "First"),
+                PlaybackSystemSubtitle(id: "second", start: 5, end: 10, chinese: "第二句", english: nil)
+            ])
+        XCTAssertEqual(fixture.player.currentSystemSubtitle?.english, "First")
+        XCTAssertEqual(MPNowPlayingInfoCenter.default().nowPlayingInfo?[MPMediaItemPropertyTitle] as? String, "完整证道标题")
+        fixture.player.jump(to: 4)
+        XCTAssertNil(fixture.player.currentSystemSubtitle, "Seek in flight clears the prior sentence immediately")
+        try await eventually("gap position") { abs(fixture.player.position - 4) < 0.1 }
+        XCTAssertNil(fixture.player.currentSystemSubtitle)
+        fixture.player.jump(to: 6)
+        try await eventually("second position") { abs(fixture.player.position - 6) < 0.1 }
+        XCTAssertEqual(fixture.player.currentSystemSubtitle?.chinese, "第二句")
+        XCTAssertNil(fixture.player.currentSystemSubtitle?.english, "Missing English mapping must remain unavailable")
+        fixture.player.pause()
+        XCTAssertEqual(fixture.player.currentSystemSubtitle?.id, "second")
+        fixture.player.loadPublishedAudio(fixture.publishedAudio(locale: "ko"))
+        XCTAssertNil(fixture.player.currentSystemSubtitle)
+        fixture.player.updateSystemMetadata(identity: identity, sourceID: audio.sourceIdentitySha256,
+            title: "Stale", speaker: "Stale", subtitles: [])
+        XCTAssertNotEqual(MPNowPlayingInfoCenter.default().nowPlayingInfo?[MPMediaItemPropertyTitle] as? String, "Stale")
+    }
+
+    func testRemoteCommandsRejectNoAudioAndSerializeActivationIntent() async throws {
+        let activation = DelayedAudioSessionActivator()
+        let fixture = try Fixture(audioSessionActivator: activation)
+        defer { fixture.dispose() }
+        XCTAssertEqual(fixture.player.handleRemoteCommand(.play), .noSuchContent)
+        XCTAssertEqual(fixture.player.handleRemoteCommand(.toggle), .noSuchContent)
+        try await fixture.load()
+        XCTAssertEqual(fixture.player.handleRemoteCommand(.play), .success)
+        try await waitForActivationRequests(activation, count: 1)
+        XCTAssertTrue(fixture.player.isWaiting)
+        XCTAssertEqual(fixture.player.handleRemoteCommand(.toggle), .success)
+        XCTAssertFalse(fixture.player.alignmentPlaybackIntent)
+        XCTAssertEqual(fixture.player.handleRemoteCommand(.pause), .success)
+        XCTAssertEqual(fixture.player.handleRemoteCommand(.seek(.nan)), .commandFailed)
+        try await activation.succeed(0)
+        try await settleCallbacks()
+        XCTAssertFalse(fixture.player.isPlaying)
+        XCTAssertFalse(fixture.player.isWaiting)
+        XCTAssertEqual(MPNowPlayingInfoCenter.default().nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] as? Double, 0)
+        fixture.player.setVideoPresented(true)
+        XCTAssertEqual(fixture.player.handleRemoteCommand(.play), .commandFailed)
+        XCTAssertFalse(fixture.player.isPlaying)
+    }
+
     #if DEBUG
+    func testSelectedNonDefaultLocaleKeepsVerifiedHeading() async throws {
+        let run = UUID().uuidString
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("HeadingLocale-\(run)")
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "HeadingLocale-\(run)"))
+        let model = UITestLaunch.makeFixtureModel(supportDirectory: directory,
+                                                  statisticsDefaults: defaults, headingLanguages: true)
+        defer {
+            model.playback.pause()
+            model.mediaSession.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: "HeadingLocale-\(run)")
+            try? FileManager.default.removeItem(at: directory)
+        }
+        await model.start()
+        let page = try XCTUnwrap(model.independentPages.first)
+        model.selectPublishedPage(page)
+        model.selectPublishedContentLanguage("ko")
+        await model.loadSelectedPublishedTranscript()
+        try await eventually("selected Korean transcript") { model.currentPublishedTranscript?.locale == "ko" }
+        XCTAssertEqual(page.defaultTargetLocale, "zh-Hans")
+        let transcript = try XCTUnwrap(model.currentPublishedTranscript)
+        XCTAssertEqual(transcript.title, "한국어 제목")
+        XCTAssertNotEqual(transcript.title, page.title)
+        let heading = model.heading(for: page)
+        XCTAssertEqual(heading.title, transcript.title)
+        XCTAssertEqual(heading.series, transcript.series)
+        XCTAssertEqual(heading.speaker, transcript.speaker)
+    }
+
     func testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback() async throws {
         let run = UUID().uuidString
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("Heading-\(run)")
@@ -43,6 +150,21 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(heading.title, "测试完整视频证道")
         XCTAssertEqual(heading.series, "启示录：耶稣带来的安慰与盼望")
         XCTAssertEqual(heading.speaker, "Eric Geiger")
+        var categorized = page
+        categorized.displayCategory = try JSONDecoder().decode(PageDisplayCategory.self, from: Data(
+            #"{"schemaVersion":"sermon-page-display-category-v1","labels":{"en":"Remote source category"}}"#.utf8))
+        XCTAssertEqual(model.heading(for: categorized).edition, "Remote source category")
+        categorized.displayCategory = try JSONDecoder().decode(PageDisplayCategory.self, from: Data(
+            #"{"schemaVersion":"sermon-page-display-category-v1","labels":{"en":"Updated source category"}}"#.utf8))
+        XCTAssertEqual(model.heading(for: categorized).edition, "Updated source category")
+        let previousLanguage = AppLocalization.shared.preference
+        AppLocalization.shared.setPreference(.english)
+        categorized.displayCategory = try JSONDecoder().decode(PageDisplayCategory.self, from: Data(
+            #"{"schemaVersion":"sermon-page-display-category-v1","labels":{"en":"播客"}}"#.utf8))
+        XCTAssertEqual(model.heading(for: categorized).edition, "播客", "Resolved remote labels must remain verbatim")
+        AppLocalization.shared.setPreference(previousLanguage)
+        categorized.displayCategory = nil
+        XCTAssertNil(model.heading(for: categorized).edition, "Removing catalog category must not retain cached remote text")
         XCTAssertEqual(model.selectedWeek, week)
         XCTAssertEqual(model.selectedPageID, week.id)
         XCTAssertEqual(model.selectedTrack, track)
@@ -261,7 +383,7 @@ final class PlaybackControllerTests: XCTestCase {
         let originalPreference = localization.preference
         defer { localization.setPreference(originalPreference) }
         fixture.player.loadPublishedAudio(fixture.publishedAudio(locale: "zh-Hans"))
-        try await eventually("published fixture ready") { fixture.player.isReady }
+        try await eventually("published fixture ready", timeout: 30) { fixture.player.isReady }
         fixture.player.jump(to: 5)
         localization.setPreference(.english)
         localization.setPreference(.korean)

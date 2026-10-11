@@ -5,6 +5,7 @@ They do not grant dispatch authority and cannot turn historical receipts into
 current provider execution. Equivalent outbox replay is accepted; conflicts fail.
 """
 from copy import deepcopy
+from functools import wraps
 
 from scripts import sermon_accounting as accounting
 from scripts import sermon_log_contract as log
@@ -42,24 +43,96 @@ def validate_synthetic_shape(handle):
     return deepcopy(handle)
 
 
-def _rows(events, run_id=None):
+def _batch_rows(events, run_ids):
     checked = log.replay_integrity(events)
     incomplete = {'missing_attempt_start', 'missing_attempt_finish', 'missing_model_start', 'missing_model_finish'}
-    # Preserve global event/sequence conflicts, but an interrupted OLD collector
-    # run remains historical partial evidence, not a veto on a new receipt-only
-    # recovery. No old fact is removed or completed here.
+    # An interrupted OLD collector remains historical partial evidence, not a
+    # veto on a new receipt-only recovery. Global conflicts remain failures.
     c.require(not [d for d in checked['diagnostics'] if d['code'] not in incomplete],
         'completion_log_integrity_failed')
     unique = {row['eventId']: row for row in events if row.get('contractVersion') == log.VERSION}
-    rows = list(unique.values())
-    if run_id is not None:
-        rows = [row for row in rows if row['runId'] == run_id]
+    all_rows = list(unique.values())
+    by_run = {}
+    for run_id in run_ids:
+        rows = [row for row in all_rows if row['runId'] == run_id]
         scoped = log.replay_integrity(rows)
-        # Producer sequence numbers span collector runs; their global integrity
-        # was already checked. An open containing stage is expected at capture.
+        # Producer sequences span collector runs. Global integrity was checked;
+        # an open containing stage is expected while capturing a completion.
         c.require(not [d for d in scoped['diagnostics'] if d['code'] not in
             {'sequence_gap', 'missing_attempt_finish'}], 'completion_log_integrity_failed')
-    return rows
+        by_run[run_id] = rows
+    return all_rows, by_run
+
+
+def _rows(events, run_id=None):
+    rows, by_run = _batch_rows(events, [] if run_id is None else [run_id])
+    return rows if run_id is None else by_run[run_id]
+
+
+def _stable_schema(operation):
+    @wraps(operation)
+    def checked(*args, **kwargs):
+        # No snapshot is returned or reusable. Reject mutation during this
+        # operation as well as observing a fresh schema on the next call.
+        with log._schema_snapshot_lock:
+            schema_key = (log.VERSION, log._schema_snapshot()[0])
+        # Never hold the schema lock across ledger IO (writers acquire their
+        # file lock before validating schema, so doing so would invert locks).
+        result = operation(*args, **kwargs)
+        with log._schema_snapshot_lock:
+            c.require((log.VERSION, log._schema_snapshot()[0]) == schema_key, 'completion_schema_changed')
+        return result
+    return checked
+
+
+@_stable_schema
+def validate_many(checks, events, *, production_run_id):
+    """Validate V1 handles together; no reusable validation authority escapes.
+
+    Each check contains handle and optional stage/artifact_sha256/dependencies.
+    Every call copies current inputs and repeats global and per-run integrity.
+    """
+    return _validate_many(checks, events, production_run_id=production_run_id, synthetic=False)
+
+
+@_stable_schema
+def validate_synthetic_many(checks, events, *, production_run_id):
+    """Explicit V2 batch, additionally accepting per-check job_id/revision_id."""
+    return _validate_many(checks, events, production_run_id=production_run_id, synthetic=True)
+
+
+def _validate_many(checks, events, *, production_run_id, synthetic):
+    c.require(type(checks) is list, 'completion_batch_invalid')
+    checks = deepcopy(checks)
+    events = deepcopy(events)
+    allowed = {'handle', 'stage', 'artifact_sha256', 'dependencies'}
+    if synthetic:
+        allowed |= {'job_id', 'revision_id'}
+    run_ids = []
+    for check in checks:
+        c.require(type(check) is dict and 'handle' in check and set(check) <= allowed,
+            'completion_batch_invalid')
+        handle = check['handle']
+        c.require(type(handle) is dict and type(handle.get('runId')) is str, 'completion_binding_invalid')
+        if handle['runId'] not in run_ids:
+            run_ids.append(handle['runId'])
+    _, by_run = _batch_rows(events, run_ids)
+    result = []
+    for check in checks:
+        args = dict(check)
+        handle = args.pop('handle')
+        job = args.pop('job_id', None)
+        revision = args.pop('revision_id', None)
+        if synthetic:
+            c.require(handle.get('schemaVersion') == SYNTHETIC_SCHEMA, 'completion_synthetic_version_required')
+        _validate_shape(handle, production_run_id=production_run_id, synthetic=synthetic)
+        checked = _validate_in_rows(handle, by_run[handle['runId']],
+            production_run_id=production_run_id, synthetic=synthetic, **args)
+        if synthetic:
+            c.require(job is None or checked['jobId'] == job, 'completion_job_changed')
+            c.require(revision is None or checked['revisionId'] == revision, 'completion_revision_changed')
+        result.append(checked)
+    return result
 
 
 def validate(handle, events, *, production_run_id, stage=None, artifact_sha256=None,
@@ -71,6 +144,13 @@ def validate(handle, events, *, production_run_id, stage=None, artifact_sha256=N
 
 def _validate(handle, events, *, production_run_id, synthetic, stage=None,
               artifact_sha256=None, dependencies=None):
+    _validate_shape(handle, production_run_id=production_run_id, synthetic=synthetic)
+    return _validate_in_rows(handle, _rows(events, handle['runId']),
+        production_run_id=production_run_id, synthetic=synthetic, stage=stage,
+        artifact_sha256=artifact_sha256, dependencies=dependencies)
+
+
+def _validate_shape(handle, *, production_run_id, synthetic):
     # The public entry point selects the evidence domain. Never infer it from
     # caller-supplied handles at an existing production acceptance gate.
     if synthetic:
@@ -88,7 +168,10 @@ def _validate(handle, events, *, production_run_id, synthetic, stage=None,
     c.require(type(handle['dependsOn']) is list and len(set(handle['dependsOn'])) == len(handle['dependsOn'])
         and handle['workUnitId'] is not None and handle['attemptId'] is not None,
         'completion_identity_required')
-    rows = _rows(events, handle['runId'])
+
+
+def _validate_in_rows(handle, rows, *, production_run_id, synthetic, stage=None,
+                      artifact_sha256=None, dependencies=None):
     span = [r for r in rows if r.get('runId') == handle['runId'] and r.get('spanId') == handle['spanId']]
     starts = [r for r in span if r['event'] == 'stage_started']
     ends = [r for r in span if r['event'] == 'stage_finished']
@@ -122,6 +205,7 @@ def current_events():
     return identity, events
 
 
+@_stable_schema
 def capture(span_id, *, production_run_id, artifact_sha256, artifact_kind,
             execution_mode='current_execution'):
     identity, events = current_events()
@@ -135,7 +219,8 @@ def capture(span_id, *, production_run_id, artifact_sha256, artifact_kind,
     handle.update(schemaVersion=SCHEMA, productionRunId=production_run_id,
         terminalEventId=end['eventId'], terminalFactSha256=log.fact_hash(end),
         artifactSha256=artifact_sha256, artifactKind=artifact_kind, executionMode=execution_mode)
-    return validate(handle, events, production_run_id=production_run_id)
+    _validate_shape(handle, production_run_id=production_run_id, synthetic=False)
+    return _validate_in_rows(handle, rows, production_run_id=production_run_id, synthetic=False)
 
 
 def validate_synthetic(handle, events, *, production_run_id, job_id=None, revision_id=None,
@@ -148,6 +233,7 @@ def validate_synthetic(handle, events, *, production_run_id, job_id=None, revisi
     return checked
 
 
+@_stable_schema
 def capture_synthetic(span_id, *, production_run_id, artifact_sha256, artifact_kind,
                       job_id, revision_id):
     """Capture a synthetic leaf whose terminal binds the verified artifact.
@@ -157,7 +243,8 @@ def capture_synthetic(span_id, *, production_run_id, artifact_sha256, artifact_k
     type or production qualification is implied by a synthetic completion.
     """
     identity, events = current_events()
-    ends = [row for row in _rows(events, identity[1]) if row.get('spanId') == span_id
+    rows = _rows(events, identity[1])
+    ends = [row for row in rows if row.get('spanId') == span_id
         and row['event'] == 'stage_finished']
     c.require(len(ends) == 1, 'completion_terminal_required')
     end = ends[0]
@@ -167,5 +254,5 @@ def capture_synthetic(span_id, *, production_run_id, artifact_sha256, artifact_k
         terminalEventId=end['eventId'], terminalFactSha256=log.fact_hash(end),
         artifactSha256=artifact_sha256, artifactKind=artifact_kind, executionMode='synthetic',
         evidenceMode='synthetic', jobId=job_id, revisionId=revision_id)
-    return validate_synthetic(handle, events, production_run_id=production_run_id,
-        job_id=job_id, revision_id=revision_id)
+    _validate_shape(handle, production_run_id=production_run_id, synthetic=True)
+    return _validate_in_rows(handle, rows, production_run_id=production_run_id, synthetic=True)

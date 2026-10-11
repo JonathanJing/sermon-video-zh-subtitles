@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "sermon-cli-model-defaults-migration-evidence-v1",
+  "date": "2026-10-05",
+  "authority": "user_direct_instruction",
+  "scope": [
+    "dev",
+    "test",
+    "formal_new_local_runs"
+  ],
+  "roles": {
+    "textProduction": {
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "serviceTier": "fast",
+      "backend": "codex-cli"
+    },
+    "independentReviewer": {
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "medium",
+      "serviceTier": "fast",
+      "backend": "codex-cli"
+    },
+    "supervisor": {
+      "model": "gpt-6-luna",
+      "reasoningEffort": "medium",
+      "serviceTier": "fast",
+      "backend": "codex-cli"
+    }
+  },
+  "transcription": {
+    "model": "gpt-transcribe",
+    "backend": "openai_api",
+    "credentialPreserved": true
+  },
+  "textApiFallback": {
+    "default": "disabled",
+    "automaticFallback": false,
+    "futureActivation": "explicit_operator_new_identity_after_prior_outcome_reconciled"
+  },
+  "validation": {
+    "testsPassed": 487,
+    "subtestsPassed": 214,
+    "elapsedSeconds": 104.04,
+    "mode": "mock_and_invalid_auth_dispatch_rejection",
+    "newModelQualityBenchmark": "not_run",
+    "newLunaCliSpeed": "unknown",
+    "newSol61MediumFastSpeed": "unknown",
+    "logSha256": {
+      "pr248-model-migration-verified.txt": "651b107c3fd05ddd560bb4a0060f44b25c2f6658432b3b29a02f183de7bd7f72",
+      "l2-tests.txt": "0cbcdd7b29b13ecfa1bf59b15106b5abc74d479357d60a4a0e23d8949cb73849",
+      "l2-tests2.txt": "22b6636dcce043995a7486f39b5e0fd6bfbf4af4d8ef373916cf14e45034703c",
+      "l2-final-tests3.txt": "db7b836ac3233470c168d3c1e2c61c77a0fb0305fc9d67ee734c5aa6a7d0a029"
+    }
+  },
+  "limitations": {
+    "strictProviderOutputTokenCapAdapter": "not_implemented_block_before_dispatch",
+    "remoteDeployment": "not_run",
+    "fullFourLayerAcceptance": "not_run"
+  },
+  "unintendedTestAttempts": {
+    "maximumSuspiciousWorkerAttempts": 4,
+    "actualCliCalls": null,
+    "completedCalls": null,
+    "usage": null,
+    "activeProcessesObserved": false,
+    "reason": "legacy_tests_assumed_no_api_key_meant_no_cli_dispatch",
+    "finalMitigation": "invalid_Codex_auth_before_spawn"
+  },
+  "policyFileSha256": {
+    "config/target-language-policies/es.json": "27e615596396b754f650584252e71b07c865afa44cb2cfcc2b2448e3a8293b1d",
+    "config/target-language-policies/ko.json": "5b8116f2f51e792937830f570a4a7ab4cf81d8320343f6ff90747319ecd5ad32",
+    "config/target-language-policies/zh-Hans.json": "09f83d076e085ddb99d0b6d3ba324ad04f38346f191da708899f00eb94c26f42"
+  }
+}

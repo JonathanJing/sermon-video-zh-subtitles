@@ -1,10 +1,12 @@
 # Sermon Reading-PDF Production Supervisor Agent
 
+当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
+
 Production code is installed and the default entry passed read-only and authorized execute validation on September 11. The cutover receipt recorded `waiting_for_matching_sunday` at that time; it is dated evidence, not a current production decision. Every run must re-read source, lease, approval, run-status, and QA state. See the [cutover receipt](agents-api-production-cutover-20260911.zh.md) and the later [September 20 production record](production-2026-09-20.zh.md).
 
 ## Summary
 
-The local runner now integrates **OpenAI Agents API**, with `--agent-backend agents-api` as its default and explicit `--agent-backend sdk` rollback to the existing Agents SDK / Responses path. This document describes the control-plane contract. Real API cases, local scheduling, and real production acceptance have separate evidence; a passing synthetic case does not establish a complete production cutover.
+New dev and formal local runs use **Codex CLI**, with `--agent-backend codex-cli`, `gpt-6-luna`, medium reasoning and fast service tier. Existing Agents API sessions retain explicit original-session resume; new SDK sessions are disabled. This document describes the control-plane contract. Real API cases, local scheduling, and real production acceptance have separate evidence; a passing synthetic case does not establish a complete production cutover.
 
 - Cloud Scheduler discovers the source; the local runner drives production. An active Codex schedule must be verified separately.
 - Existing Python scripts are the deterministic execution layer. The former post-live Cloud Run Job was retired; rebuilding it is a separately verified recovery option, not an active fallback.
@@ -33,7 +35,7 @@ flowchart LR
     G --> L
 ```
 
-Agents API maintains the server-side session and control loop with `environment: none`. The local runner executes bounded tool requests and submits results. Downloading, ASR, translation, PDF rendering, QA, and publication remain in the deterministic Python layer. The supervisor defaults to **`gpt-6-sol` with reasoning effort `medium`**. Explicit SDK rollback uses the same Sol Medium model and changes only the control-plane transport. Translation, reading review, and companion generation remain Astra Medium, and ASR remains `gpt-transcribe`. Existing Astra sessions retain their model binding; finish or reconcile unresolved sessions before starting a Sol session.
+The CLI Supervisor sees minimal structured state and returns a schema-bound operation. Local ProductionTools validate and execute each operation under the existing lease, approval and once-per-stage rules. The new default is **`gpt-6-luna` / medium / fast**; former Astra Medium text roles use **`gpt-6.1-sol` / high / fast**, independent Sol Medium reviewers use **`gpt-6.1-sol` / medium / fast**, all through Codex CLI. ASR remains `gpt-transcribe` and is the API-key workload. API session protocol details below describe legacy original-session recovery; unresolved old sessions must be reconciled before a new CLI run.
 
 The first scheduler inspection on September 11 did not find this production task; a later authorized step created and re-read the active `pdf-context-pack` Codex schedule. That is dated installation evidence, so current health and run history still require a fresh check. See the [local runbook](./codex-local-production-runbook.zh.md).
 

@@ -3,6 +3,12 @@ export function isFormalPlayback(week) {
   return week?.releaseLabel === "正式播放版";
 }
 
+// A machine quality waiver is never a human approval: such a published locale
+// shows its own machine-check label and release disclosure instead.
+export function isMachineChecked(week) {
+  return week?.machineChecked === true;
+}
+
 const blockKey = value => typeof value === 'string' ? value : Number.isSafeInteger(value) && value >= 0 ? String(value) : null;
 const validBlockKey = value => typeof value === 'string' && value.length > 0 && value.length <= 128 && value.trim() === value && !/[\u0000-\u001f\u007f]/.test(value);
 
@@ -54,7 +60,9 @@ export function validateCatalog(catalog) {
     ids.add(week.id);
     validateTranscript(week);
     for (const track of week.tracks) {
-      if (!/^\/media\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.mp3$/.test(track.audioUrl) || !(track.durationSeconds > 0) || !track.cues?.length) throw new Error("Invalid track");
+      const path = /^\/media\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.(mp3|wav|m4a)$/.exec(track.audioUrl);
+      const devAudio = week.devCandidate === true && week.diagnosticOnly === true;
+      if (!path || (path[1] !== "mp3" && !devAudio) || !(track.durationSeconds > 0) || !track.cues?.length) throw new Error("Invalid track");
       let previous = 0;
       for (const cue of track.cues) {
         if (!(previous <= cue.start && cue.start < cue.end && cue.end <= track.durationSeconds + 0.001) || !cue.text?.trim()) throw new Error("Invalid cues");
@@ -98,6 +106,8 @@ export function downloadFilename(week, track) {
   if (sourceLabel && !week.title.includes(sourceLabel)) parts.push(sourceLabel);
   if (isFormalPlayback(week)) {
     if (!parts.some(part => String(part).includes("正式播放版"))) parts.push("正式播放版");
+  } else if (isMachineChecked(week)) {
+    if (!parts.some(part => String(part).includes(week.releaseLabel))) parts.push(week.releaseLabel);
   } else if (week.humanContentReview === "approved") {
     // Content review is independent of video synchronization.
   } else if (track.scope === "full_candidate") {
@@ -105,7 +115,9 @@ export function downloadFilename(week, track) {
   } else if (track.scope !== "full_reviewed") {
     parts.push("样片", track.label);
   }
-  return `${parts.map(clean).filter(Boolean).join("_")}.mp3`;
+  const extension = week.devCandidate === true && week.diagnosticOnly === true
+    ? /\.(mp3|wav|m4a)$/.exec(track.audioUrl)?.[1] || "mp3" : "mp3";
+  return `${parts.map(clean).filter(Boolean).join("_")}.${extension}`;
 }
 
 
@@ -114,9 +126,58 @@ export function weekOptionLabel(week) {
   const title = typeof week.title === 'string' ? week.title.trim() : '';
   const route = typeof week.sourceLabel === 'string' ? week.sourceLabel.trim() : '';
   const diagnostic = diagnosticPresentation(week);
-  const status = diagnostic ? ({failed:'处理失败',blocked:'流程受阻',pending:'待生成',ready:'DEV 可试听'})[diagnostic.status] : isFormalPlayback(week) ? '正式播放版' : week.humanContentReview === 'approved' ? '整篇中文' : week.audioStatus === 'full_candidate' ? '整篇待审' : week.tracks?.length ? '可试听' : '待配音';
+  const status = diagnostic ? ({failed:'处理失败',blocked:'流程受阻',pending:'待生成',ready:'DEV 可试听'})[diagnostic.status] : isFormalPlayback(week) ? '正式播放版' : isMachineChecked(week) ? week.releaseLabel : week.humanContentReview === 'approved' ? '整篇中文' : week.audioStatus === 'full_candidate' ? '整篇待审' : week.tracks?.length ? '可试听' : '待配音';
   const displayStatus = isFormalPlayback(week) && [title, route].some(text => text.includes(status)) ? '' : status;
   return [date, title, route && !title.includes(route) ? route : '', displayStatus].filter(Boolean).join(' · ');
+}
+
+// Development entries are opt-in by the reader's environment, never by a
+// title, URL query parameter, or a catalog claiming to be a development build.
+export function catalogNavigationEnvironment(origin) {
+  try {
+    const url = new URL(origin);
+    if (url.origin !== origin) return 'production';
+    if (url.protocol === 'https:' && ['ai-for-god-sermon-audio-dev.web.app',
+      'ai-for-god-sermon-audio-dev.firebaseapp.com'].includes(url.hostname)) return 'development';
+    if (['http:', 'https:'].includes(url.protocol)
+        && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) return 'development';
+  } catch { /* Unknown origins use the production navigation policy. */ }
+  return 'production';
+}
+
+function navigationGroup(week) {
+  const variants = [week, ...Object.values(week.contentVariants || {})];
+  if (variants.some(item => item?.diagnosticOnly === true)) return 'diagnostics';
+  if (variants.some(item => item?.simulationOnly === true)) return 'simulations';
+  return 'sermons';
+}
+
+export function buildCatalogNavigation(catalog, { environment } = {}) {
+  if (!['development', 'production'].includes(environment)) throw new Error('Explicit navigation environment required');
+  validateCatalog(catalog); // Reject duplicate identities before environment filtering.
+  const groupIds = ['sermons', 'diagnostics', 'simulations'];
+  const groups = groupIds.map(id => ({ id, items: [] }));
+  const weeks = catalog.weeks.filter(item => environment === 'development' || navigationGroup(item) === 'sermons')
+    .slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || a.id.localeCompare(b.id));
+  if (!weeks.length) throw new Error('No selectable weeks in this environment');
+  const labels = weeks.map(weekOptionLabel), counts = new Map();
+  for (const label of labels) counts.set(label, (counts.get(label) || 0) + 1);
+  // Reserve every existing label as well as generated labels. Full stable IDs
+  // distinguish same-name runs without introducing a shortened-ID collision.
+  const reserved = new Set(labels);
+  weeks.forEach((week, index) => {
+    let label = labels[index];
+    if (counts.get(label) > 1) {
+      do { label += ` [ID: ${week.id}]`; } while (reserved.has(label));
+      reserved.add(label);
+    }
+    groups.find(group => group.id === navigationGroup(week)).items.push({ week, label });
+  });
+  const visibleGroups = groups.filter(group => group.items.length);
+  const orderedWeeks = visibleGroups.flatMap(group => group.items.map(item => item.week));
+  const defaultWeekId = orderedWeeks.some(item => item.id === catalog.defaultWeekId)
+    ? catalog.defaultWeekId : orderedWeeks[0].id;
+  return { catalog: { ...catalog, weeks: orderedWeeks, defaultWeekId }, groups: visibleGroups };
 }
 
 // Only diagnostic variants consume this state. Formal and legacy weeks retain

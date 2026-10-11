@@ -21,11 +21,64 @@ from scripts import sermon_workflow_jobs as jobs
 from scripts.sermon_release_workflow import _safe_path
 
 
+def prepare_locale_inputs(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *,
+                          plugin_path, expected_plugin_sha256, group_plan=None,
+                          request_limits=None, diagnostic_context=None):
+    """Freeze exactly the rule-bound inputs used by preflight and dispatch."""
+    raw = (source_bytes, anchor_bytes, policy_bytes, rubric_bytes)
+    source, anchor, policy, rubric = map(c.decode_json, raw)
+    request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric, diagnostic_context=diagnostic_context)
+    plan = models.group_plan(request, anchor, group_plan)
+    # The current whole-locale Gate accepts at most 128 current revisions.
+    # Do not spend on a locale that cannot reach that existing boundary.
+    c.require(len(plan) <= 128, 'strict_locale_admission_inventory_limit')
+    from scripts import target_language_rule_preflight as rule_preflight
+    checked_plugin = _safe_path(Path(plugin_path))
+    models.require_plugin_identity(checked_plugin, expected_plugin_sha256)
+    c.require(policy['languageReview']['pluginImplementationSha256'] == expected_plugin_sha256,
+              'strict_locale_plugin_policy_changed')
+    rule_receipt = rule_preflight.preflight(request, policy, checked_plugin, plan)
+    prepared = [strict.prepare(*raw, group, request_limits=request_limits, diagnostic_context=diagnostic_context, rule_preflight=rule_receipt, rule_context={'pluginPath': str(checked_plugin), 'groupPlan': plan}) for group in plan]
+    return raw, source, policy, plan, prepared
+
+
+def bind_locale_input(root, binding, *, resume_legacy=False):
+    """Keep v1 bytes immutable; explicit migration records a separate v2 identity."""
+    path = root / 'locale-input.json'
+    if not path.exists():
+        strict.save_once(path, binding)
+        return binding, False
+    previous, previous_bytes = c.read_snapshot(path)
+    if previous.get('schemaVersion') != 'sermon-strict-locale-input-v1':
+        strict.save_once(path, binding)
+        return binding, False
+    c.require(resume_legacy is True, 'strict_locale_legacy_resume_required')
+    mutable = {'schemaVersion', 'rulePreflight', 'ruleContext'}
+    c.require({k: v for k, v in previous.items() if k not in mutable} ==
+              {k: v for k, v in binding.items() if k not in mutable},
+              'strict_locale_legacy_identity_changed')
+    for key in ('rulePreflight', 'ruleContext'):
+        if key in previous:
+            c.require(previous[key] == binding[key], 'strict_locale_legacy_rule_evidence_changed')
+    proven = all(key in previous for key in ('rulePreflight', 'ruleContext'))
+    migration = {'schemaVersion': 'sermon-strict-locale-migration-v1',
+        'legacyInputSha256': c.canonical_sha256(previous),
+        'legacyInputBytesSha256': c.bytes_sha256(previous_bytes),
+        'currentInputSha256': c.canonical_sha256(binding),
+        'completeRuleEvidenceBound': proven,
+        'cachedPromptProof': 'requires_existing_group_chain_validation' if proven else 'unproven',
+        'status': 'resume_original_identity' if proven else 'blocked_rules_not_proven',
+        'humanApproval': False, 'executionAuthority': 'none'}
+    strict.save_once(root / 'locale-input-v2.json', binding)
+    strict.save_once(root / 'locale-input-migration.json', migration)
+    return previous, not proven
+
+
 def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                store, job_root, production_run_id, graph, plugin_path,
                expected_plugin_sha256, api_key, caller, bounds,
                usage_resolver=None, group_plan=None, created_at=None, request_limits=None, diagnostic_context=None, depends_on=None,
-               historical_reuse=None):
+               historical_reuse=None, resume_legacy=False):
     """Run fixed groups and bounded repairs, then the real public/plugin bridge.
 
     All group inputs and the complete locale coverage are validated before the
@@ -37,19 +90,14 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
     if diagnostic_context is not None:
         from scripts.sermon_diagnostic_context import validate_runtime
         diagnostic_context = validate_runtime(diagnostic_context, run_id=production_run_id, store_sha256=store.store_sha256)
-    raw = (source_bytes, anchor_bytes, policy_bytes, rubric_bytes)
-    source, anchor, policy, rubric = map(c.decode_json, raw)
-    request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric, diagnostic_context=diagnostic_context)
-    plan = models.group_plan(request, anchor, group_plan)
-    # The current whole-locale Gate accepts at most 128 current revisions.
-    # Do not spend on a locale that cannot reach that existing boundary.
-    c.require(len(plan) <= 128, 'strict_locale_admission_inventory_limit')
-    prepared = [strict.prepare(*raw, group, request_limits=request_limits, diagnostic_context=diagnostic_context) for group in plan]
+    raw, source, policy, plan, prepared = prepare_locale_inputs(
+        source_bytes, anchor_bytes, policy_bytes, rubric_bytes, plugin_path=plugin_path,
+        expected_plugin_sha256=expected_plugin_sha256, group_plan=group_plan,
+        request_limits=request_limits, diagnostic_context=diagnostic_context)
     if historical_reuse is not None:
         from scripts.sermon_historical_layer2 import HistoricalLayer2Reuse
         c.require(type(historical_reuse) is HistoricalLayer2Reuse,'trusted_historical_layer2_required')
         historical_reuse._current()
-        for item in prepared:historical_reuse.inspect(item)
     if hasattr(caller, 'preflight_locale'):
         caller.preflight_locale(prepared)
     units = [item['workUnitId'] for item in prepared]
@@ -68,12 +116,14 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
     models.require_plugin_identity(plugin_path, expected_plugin_sha256)
     c.require(policy['languageReview']['pluginImplementationSha256'] == expected_plugin_sha256,
               'strict_locale_plugin_policy_changed')
-    binding = {'schemaVersion': 'sermon-strict-locale-input-v1',
+    binding = {'schemaVersion': 'sermon-strict-locale-input-v2',
         'productionRunId': production_run_id, 'targetLocale': policy['targetLocale'],
         'inputBytesSha256': [c.bytes_sha256(data) for data in raw],
         'groups': plan, 'graph': graph, 'pluginSha256': expected_plugin_sha256,
         'storeSha256': store.store_sha256, 'authoritySha256': store.authority_sha256,
-        'bounds': bounds, **({'requestLimits': prepared[0]['requestLimits']} if request_limits is not None else {}),
+        'bounds': bounds, 'rulePreflight': prepared[0]['rulePreflight'],
+        'ruleContext': prepared[0]['ruleContext'],
+        **({'requestLimits': prepared[0]['requestLimits']} if request_limits is not None else {}),
         **({'diagnosticContext': diagnostic_context} if diagnostic_context is not None else {}),
         **({'historicalReuseSha256':c.canonical_sha256(historical_reuse.spec)} if historical_reuse is not None else {})}
     lock_key = c.canonical_sha256({'purpose': 'strict-locale-run',
@@ -82,18 +132,30 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
         c.require(held, 'strict_locale_busy')
         with accounting.stage('rqc.locale_input_binding', depends_on=depends_on, executor_type='deterministic_program') as bound_span:
             root.mkdir(parents=True, exist_ok=True, mode=0o700)
-            strict.save_once(root / 'locale-input.json', binding)
+            binding, legacy_blocked = bind_locale_input(root, binding, resume_legacy=resume_legacy)
+            if legacy_blocked:
+                # No new reservation or prompt may reuse an identity that did not
+                # prove consumption of the current rules. Paid artifacts stay put.
+                return {'status': 'blocked', 'reasonCode': 'strict_locale_legacy_rules_not_proven',
+                    'executionAuthority': 'none', 'output': None,
+                    'preservedGroupRoots': [str(root / 'groups' / c.canonical_sha256(group))
+                        for group in plan if (root / 'groups' / c.canonical_sha256(group)).exists()],
+                    'requiresNewRevision': True}
+            strict.save_once(root / 'rule-preflight.json', binding['rulePreflight'])
             jobs._sync_directory_ancestry(root)
             accounting.record_workload('rqc.locale_input', {
                 'sourceMediaSha256': source['source']['media']['sha256'],
                 'sourcePackageSha256': c.canonical_sha256(source),
                 'policySha256': c.canonical_sha256(policy),
-                'rubricSha256': c.canonical_sha256(rubric),
+                'rubricSha256': c.canonical_sha256(prepared[0]['rubric']),
                 'localeInputSha256': c.canonical_sha256(binding),
                 'targetLocale': policy['targetLocale'], 'groupCount': len(prepared),
                 **({'diagnosticContextSha256': c.canonical_sha256(diagnostic_context),
                     'simulatedHumanGate': True, 'humanAcceptancePending': True,
                     'productionEligible': False} if diagnostic_context is not None else {})})
+        if historical_reuse is not None:
+            for item in prepared:
+                historical_reuse.inspect(item)
         results, revisions, dependencies = [], [], [bound_span]
         for item in prepared:
             group_root=root/'groups'/c.canonical_sha256(item['group'])

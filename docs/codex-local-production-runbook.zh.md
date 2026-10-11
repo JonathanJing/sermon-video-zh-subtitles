@@ -1,5 +1,9 @@
 # Codex 本地周末生产 Runbook
 
+当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
+
+额度耗尽时的后续方向见[API fallback 设计](codex-quota-api-fallback-design.zh.md)：需要明确拒绝证据、独立调用身份、入口验收和绑定预算；目前没有实现或启用。不能通过更换环境变量、认证或删除 started marker 将未决调用转到 API。
+
 真实Dev音频测试按[已接入的参数入口](local-production-next-dev-test-parameters.zh.md#已接入的音频入口)运行`python -m scripts.run_dev_local_audio_test tts|back-asr`：自动读取profile选配音batch2、回转写batch4，显式batch1作基线、回转写8作对照。此入口保留正式producer门禁与独立回执；合并dev和CI不会自动运行GPU或付费模型。
 
 每周正式制作前先运行 `python scripts/evaluate_backend_four_layer_dry_run.py --out <忽略目录内的评估收据>`，再按[后端四层快速 Dry Run](backend-four-layer-dry-run.zh.md)生成 Firebase Dev 独立测试页。该评估模拟拿到链接，走 Layer 1–4 的短夹具交接，并测试四处失败阻断及无效故障点；CI 也在非文档 PR 上执行。模拟通过只说明这条测试链路工作；正式周次仍从真实来源、审核和音频证据继续。本 runbook 下文的 Supervisor 仍只覆盖 `dual_pdf` 范围。
@@ -8,11 +12,11 @@
 
 ## 生产边界
 
-2026-09-11 起，本地生产入口默认使用 Agents API，继续采用 local-first hybrid；当前 Supervisor 调度默认模型为 Sol Medium，内容模型仍按各阶段配置：
+新本地生产入口默认使用 Codex CLI，采用 local-first hybrid；Supervisor 为 Luna medium fast，内容参数见模型策略：
 
 - GCP Cloud Scheduler：只发现直播源并写入 GCS state
 - GCS：保存 source、lease、run-status、timeline、审批、QA 和最终 PDF
-- Codex 本地 automation：唤醒本机入口；Agents API 管理 Supervisor 会话，本机执行确定性工具
+- Codex 本地 automation：唤醒本机入口；Codex CLI 返回结构化监管操作，本机校验并执行确定性工具
 - Cloud Run Web：继续提供网页和公开交付入口
 
 不再让 Cloud Run Job 负责 YouTube 下载和 post-live 重处理。
@@ -86,7 +90,7 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 ## 每周默认交付海报
 
-每周内容发行并完成 HTTP 核验后，默认继续制作本周分享海报，作为周末交付的一部分；用户无需每周重复提出。复用已核验的发行包和页面 ID，由 Codex 使用内置 ImageGen 生成主视觉，再用 `scripts/build_sermon_poster.py` 合成本周目录文字及真实二维码。不传 `--art` 先准备 brief／prompt；提供 `--art`、`--art-prompt` 及有效 HTTP 核验收据后渲染，实际目视后追加 `--visual-reviewed` 记录机器验收。交付 `poster.png`、`poster-preview.png` 与 `poster-receipt.json`。详细命令、绑定和验收见[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
+每周内容发行并完成 HTTP 核验后，默认继续制作本周分享海报，作为周末交付的一部分；用户无需每周重复提出。复用已核验的发行包和页面 ID，由 Codex 使用内置 ImageGen 生成主视觉，再用 `scripts/build_multilingual_sermon_posters.py` 按[格式规范 v1](tongxing-weekly-poster-format.zh.md)合成本周已发布语言的双二维码海报（`build_sermon_poster.py` 只保留旧 `weekly.json` 单语言兼容格式，不用于新周次）。不传 `--art` 先准备 brief／prompt；提供 `--art`、`--art-prompt` 后渲染并通过公开 HTTP 核验输入，实际目视后追加 `--visual-reviewed` 记录机器验收。交付 `poster.png`、`poster-preview.png` 与 `poster-receipt.json`。详细命令、绑定和验收见[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
 
 此处是 Codex 执行流程约定，不表示现有 Supervisor 或 Scheduler 已接入图像工具。准备与本地合成不自动发起付费 API 调用，不自动上传或发送海报；ImageGen 阶段由 Codex 按工具与已有授权执行。工具不可用或 QA 未通过时，保留待完成状态与证据，不把页面发行完成等同于海报完成。
 
@@ -95,8 +99,9 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 需要连同配音候选一起检查或顺序推进时，使用[周六统一入口](saturday-harness.zh.md)：默认只读，显式 `execute` 才调用现有生产阶段；不会自动替换当前定时任务。续租、超时、目录锁和远端结果核对见[执行保护与恢复](sermon-execution-harness.zh.md)。
 
 ```bash
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
-  --mode execute --agent-backend agents-api \
+.venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
+  .venv/bin/python scripts/run_codex_local_sermon_production.py \
+  --mode execute --agent-backend codex-cli --model gpt-6-luna --reasoning-effort medium --service-tier fast \
   --notify-sendgrid-secret '' --notify-recipients-secret '' --notify-sender-secret ''
 ```
 
@@ -107,9 +112,11 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 - work root：`artifacts/post-live-runs`
 - report：`artifacts/sermon-production-supervisor/<Sunday>/latest.json`
 - artifact bucket：`sermon-zh-artifacts-ai-for-god`
-- OpenAI 与 YouTube Data API：通过 Secret Manager resource reference 读取
+- OpenAI：由显式 `prod` 启动器注入 `tongxing-prod-runtime` 与 Project 身份，不再向生成子进程传入默认 OpenAI Secret Manager 引用；YouTube Data API 仍通过 Secret Manager resource reference 读取
 - 本任务通知：命令中禁用 SendGrid，仅在 Codex 内报告；CLI 保留兼容配置，单独启用须有收件通知授权
-- Supervisor 调度：`gpt-6-sol` / `medium`，默认 `--agent-backend agents-api`；显式 `sdk` 为人工选择的回退，不在 API 失败后自动切换。旧 Astra 会话需按原模型恢复，切换默认值不能跳过未决会话或工具。
+- Supervisor 调度：`gpt-6-luna` / `medium` / `fast`，默认 `--agent-backend codex-cli`。旧 Agents API 仅可明确续跑原会话；新 SDK 会话禁用，未决工具先对账。
+
+正式内容生成使用上述 `--environment prod`；开发、Beta 和实验将它改为 `--environment dev`。先按[双 Project 启动器配置](openai-minimal-project-setup.zh.md)准备忽略的 `.env.openai`，不要在命令中传 OpenAI key 或另加 `--api-key-secret`。整个 Supervisor 在选定环境下启动，其正常继承环境的后代沿用同一配置。已有持久任务继续原凭据身份，不用此模板就地迁移旧任务。
 
 ## Agents API 会话与生产工具
 
@@ -117,17 +124,38 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 工具只允许检查状态、执行确定性状态允许的来源媒体准备、执行已有人工批准的双 PDF 生成，以及提交结构化决定。每次修改后必须重新检查；同一会话每阶段最多尝试一次，持久化结果防止重放。最终完成同时要求根 turn 完成、结构化输出齐全和新的本地生产证据通过。底层 lease、下载授权、QA、hash 与审批契约保持生效。
 
-默认报告目录下的 `agents-api-runs/` 保存绑定指纹、session ID 和工具收据。未确认远端停止的 timeout/cancel ACK 不允许另开会话重置执行记录；异常停止先检查本地 `state.json`、`result.json` 与远端状态。需要显式续跑原会话时增加 `--agent-run-dir <原目录> --resume-agent-session`。保留 executing 工具记录时必须人工核实实际阶段结果，不删除记录重试。只有确认原会话终止、无未决工具且生产状态允许后才选择新会话或 SDK 回退。
+默认报告目录下的 `agents-api-runs/` 保存绑定指纹、session ID 和工具收据。未确认远端停止的 timeout/cancel ACK 不允许另开会话重置执行记录；异常停止先检查本地 `state.json`、`result.json` 与远端状态。保留 executing 工具记录时必须人工核实实际阶段结果，不删除记录重试。确认原会话终止、无未决工具且生产状态允许后，才可决定新的运行身份；不自动回退到 SDK。
+
+### 旧 Agents API 会话恢复
+
+恢复使用 `scripts/run_sermon_production_supervisor_agent.py` 的直接入口，显式传入 `--agent-backend agents-api --agent-run-dir ORIGINAL_AGENT_RUN_DIR --resume-agent-session`。Saturday harness 没有会话恢复参数；本地自动入口要求新 API 任务使用环境启动器，也不能拿它的新任务模板替换旧会话配置。
+
+以下仅适用于原会话使用旧 Secret Manager 引用的情况。清除新 Project 路由及继承的 OpenAI key，让直接入口读取**原来的 secret 引用**；不使用 dev/prod 启动器，不创建 key。将所有 `ORIGINAL_*`、日期及原有可选参数从原完整启动命令与绑定配置复原。示例为原 `execute` 会话，原会话为 `shadow` 时须保留 `shadow`；模型、目录、GCS、glossary、cookies、通知及可选 release 配置同样不得因当前默认值改变。
+
+```bash
+env -u SERMON_OPENAI_ENVIRONMENT -u SERMON_OPENAI_CREDENTIAL_ALIAS \
+  -u OPENAI_PROJECT_ID -u OPENAI_API_KEY \
+  .venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
+  --sunday YYYY-MM-DD --state-file ORIGINAL_STATE_FILE \
+  --work-root ORIGINAL_WORK_ROOT --out ORIGINAL_REPORT_PATH \
+  --gcs-bucket ORIGINAL_BUCKET --gcs-prefix ORIGINAL_PREFIX \
+  --api-key-secret ORIGINAL_OPENAI_SECRET_REFERENCE \
+  --youtube-api-key-secret ORIGINAL_YOUTUBE_SECRET_REFERENCE \
+  --model ORIGINAL_MODEL --mode execute --agent-backend agents-api \
+  --agent-run-dir ORIGINAL_AGENT_RUN_DIR --resume-agent-session
+```
+
+恢复入口将会话标志和原配置传给 Agents API adapter，由其核对配置／payload 指纹、读取原 session 和工具收据；不因显式恢复而豁免指纹检查。若原会话已经绑定 Project 启动器，则保留那个环境、凭据和配置，不能使用上述清除环境的旧 secret 示例。遇到配置不匹配或远端结果未知，先对账，不删除状态或改建新会话重发。
 
 `--mode shadow` 不刷新源、不执行生成、不恢复失败阶段。`execute` 的源刷新仍由本机确定性入口负责；已完成周次先走 completion latch，证据仍有效时无需模型调用。API usage 是 best-effort；账本记录 backend 与已知用量，缺失用量/金额保持 unknown。设计、恢复与验证详见 [Supervisor 设计](sermon-production-supervisor-agent.zh.md)。
 
 ## 每周模型与交付策略（2026-09-06 起）
 
-未来每周使用 `gpt-6-astra`、`medium`：中文初译、阅读稿两轮编辑/审核及中文证道同行生成。现有 OpenAI provider 与 Secret Manager 配置继续使用；ASR 保持 `gpt-transcribe`。模型审核只标记机器审核，不等于人工 Gold 或周日双语提示词批准。
+新 canonical Layer 2 的翻译／复核按[当前模型及调用策略](production-model-runtime-policy.zh.md)执行。legacy 双 PDF、阅读稿和证道同行仍以各入口实际参数与运行收据为准：`sermon_pipeline` 的文字请求走 OpenAI API，手动阅读稿入口默认 `--reading-edition-provider openai`，Supervisor 的 generation 命令显式指定阅读稿 provider 为 `codex`。这些入口不能统称为“全部 CLI”或视为已自动迁移到 canonical Layer 2。ASR 保持 `gpt-transcribe` 及所属 API 环境。模型审核只标记机器审核，不等于人工 Gold 或周日双语提示词批准。
 
 后续同行制作默认使用和合本（CUV）。英文来源冻结后、交付与配音前，按[和合本经文锁定与证道重译](sermon-cuv-production.zh.md)执行 `scripts/sermon_cuv_translation.py run`：识别直接经文、从固定库精确取文、锁定引用，再完成全篇翻译和独立审校。字幕、阅读 PDF、TTS 及大纲中的经文引用须采用同一份通过审校的锁定中文；大纲仍可概括讲解，不能作为配音稿。解释、玩笑和讲员错引保留为讲员话，不强改成经文；机器审核不授予人工批准。现有 Supervisor 不会自动调用此新步骤，须核对实际执行收据；重译后更新关联产物，并用新音频重新测量时长。
 
-Supervisor 的 generation 命令固定传入上述参数及 `--export-sunday-context`。手动调用 `run_post_live_subtitle_generation.py` 时，翻译/阅读审核/证道同行也默认 Astra Medium；需要周日产物时显式加 `--export-sunday-context`。
+Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider `codex` 及 `--export-sunday-context`，不据此推断其他阶段的后端或实际 service tier。手动调用 `run_post_live_subtitle_generation.py` 时按其各项 provider/model 参数执行；需要周日产物时显式加 `--export-sunday-context`。
 
 双 PDF QA 通过后，在同一 run 的 `pipeline/sunday-context/` 导出：
 
@@ -172,12 +200,12 @@ Supervisor 的 generation 命令固定传入上述参数及 `--export-sunday-con
 缺少有效窗口审批或绑定的 source/timeline 已改变时，Operator 必须独立观看完整回放并确认绝对时间；已存在匹配审批时直接续跑：
 
 ```bash
-.venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
+.venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
+  .venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
   --sunday YYYY-MM-DD \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
   --work-root artifacts/post-live-runs \
   --gcs-bucket sermon-zh-artifacts-ai-for-god \
-  --api-key-secret 'projects/ai-for-god/secrets/openai-api-key/versions/latest' \
   --youtube-api-key-secret 'projects/ai-for-god/secrets/youtube-data-api-key/versions/latest' \
   --approve-window \
   --start-time HH:MM:SS \
@@ -225,6 +253,17 @@ Supervisor 以新读取的 `snapshot.recommendedAction.action == "complete"` 为
 - HTTP、实体设备、现场验收各自按实际状态记录，不互相代替。
 
 当前 Supervisor 没有完整验证上述四层 package；因此它的 `complete` 不得被 Agent、runbook 或通知改写为整条预制多语言生产完成。
+
+## 运行报告
+
+每次正式运行或测试结束后，不论成功失败，都按[运行报告与复盘](test-run-retrospective.zh.md)生成脱敏报告并开报告 PR，云端会话据此复盘。运行目录有多处时（例如 L2 和音频），一并传给导出命令：
+
+```bash
+.venv/bin/python scripts/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <YYYYMMDD-简称>
+scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
+```
+
+报告只汇总证据，不改变 `dual_pdf` 或 `four_layer_release` 的完成判断。
 
 ## 本地恢复与云端重建
 

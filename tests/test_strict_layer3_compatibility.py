@@ -22,6 +22,8 @@ class StrictLayer3Tests(unittest.TestCase):
         self.rubric['requiredLanguagePluginChecks']=f.policy['languageReview']['requiredChecks']
         draft=copy.deepcopy(f.policy);draft.pop('componentSha256')
         draft.update(schemaVersion=policies.POLICY_V3,reviewMode='strict_verifier')
+        draft['translator'].update(model='gpt-6-astra', reasoningEffort='medium')
+        draft['reviewer'].update(model='gpt-6-sol', reasoningEffort='medium')
         draft['translator']['promptVersion']='astra-strict-generator-v1'
         draft['reviewer']['promptVersion']='sol-strict-verifier-v1'
         draft['reviewContract']=dict(rubricCanonicalJsonSha256=contracts.canonical_sha256(self.rubric),
@@ -31,6 +33,7 @@ class StrictLayer3Tests(unittest.TestCase):
         f.policy=policies.freeze_strict_policy(draft,self.rubric)
         f.candidate['translationPolicySha256']=policies.validate_strict_policy(f.policy,self.rubric)['translationPolicySha256']
         for role in ('translator','reviewer'):
+            f.candidate['generation'][role]['model']=f.policy[role]['model']
             f.candidate['generation'][role]['promptVersion']=f.policy[role]['promptVersion']
         f.human_receipt['translationPolicySha256']=f.candidate['translationPolicySha256']
         f.human_receipt['candidateJsonSha256']=package.json_sha256(f.candidate)
@@ -40,7 +43,32 @@ class StrictLayer3Tests(unittest.TestCase):
             fixtures.write_json(f.paths[key],value)
         # Synthetic fixture approvals are rebound only inside this test. The
         # production preparer still checks each existing independent receipt.
+        # The renderer now freezes these dependencies before validating the
+        # strict policy. Keep actual, hash-bound files so rejection below must
+        # come from the rubric gate, not a missing checkpoint-map fixture.
+        self.operation_policies = {
+            'normalization': {'policy':'exact_human_approved_target_text_no_rewrite'},
+            'asrScreening': {'policy':'strict_fixture_screening'},
+            'subtitle': {'policy':'strict_fixture_subtitle'},
+        }
+        for name,field in (('normalization','normalizationPolicySha256'),
+                           ('asrScreening','asrScreeningPolicySha256'),
+                           ('subtitle','subtitlePolicySha256')):
+            f.adapter[field] = package.json_sha256(self.operation_policies[name])
+        fixtures.write_json(f.paths['adapter'], f.adapter)
+        checkpoint = f.root / 'frozen-checkpoint'
+        checkpoint.mkdir()
+        fixtures.write_json(checkpoint / 'config.json', {'fixtureOnly':True})
+        self.checkpoint_map = f.root / 'checkpoint-map.json'
+        fixtures.write_json(self.checkpoint_map, {
+            'schemaVersion':'sermon-speaker-checkpoint-map-v1',
+            'checkpoints':[{'speakerId':f.adapter['speakerId'],
+                            'checkpointRef':f.adapter['conditioningRef'], 'path':str(checkpoint)}],
+        })
+        self.operation_policies_path = f.root / 'operation-policies.json'
+        fixtures.write_json(self.operation_policies_path, self.operation_policies)
         f.job=self.prepare(self.rubric)
+        render.validate_operation_policies(self.operation_policies, f.adapter, f.job)
         fixtures.write_json(f.paths['job'],f.job)
         f.manifest['targetLanguageCandidateJsonSha256']=package.json_sha256(f.candidate)
         f.manifest['targetLanguageSpeechJobJsonSha256']=package.json_sha256(f.job)
@@ -83,14 +111,16 @@ class StrictLayer3Tests(unittest.TestCase):
     def test_missing_changed_or_cross_locale_rubric_fails_before_render_or_package(self):
         changed=copy.deepcopy(self.rubric);changed['rubricVersion']='changed'
         other=copy.deepcopy(self.rubric);other['targetLocale']='es'
-        for rubric in (None,changed,other):
+        for rubric,reason in ((None,'Unsupported Target-Language Policy version'),
+                              (changed,'strict_rubric_binding_mismatch'),
+                              (other,'strict_rubric_binding_mismatch')):
             with self.subTest(rubric=rubric):
-                with self.assertRaises(ValueError):self.prepare(rubric)
-                with self.assertRaises(ValueError):self.build(rubric)
+                with self.assertRaisesRegex(ValueError,reason):self.prepare(rubric)
+                with self.assertRaisesRegex(ValueError,reason):self.build(rubric)
                 synth=Mock(side_effect=AssertionError('No model may be loaded'))
-                with self.assertRaises(ValueError):
-                    render.render(self.f.paths,self.f.root/'absent-checkpoint-map.json',
-                        self.f.root/'absent-operation-policies.json',strict_rubric=rubric,synth_factory=synth)
+                with self.assertRaisesRegex(ValueError,reason):
+                    render.render(self.f.paths,self.checkpoint_map,
+                        self.operation_policies_path,strict_rubric=rubric,synth_factory=synth)
                 synth.assert_not_called()
 
     def test_renderer_real_job_validation_accepts_explicit_strict_rubric(self):

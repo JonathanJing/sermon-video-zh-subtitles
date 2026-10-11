@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Explicit human acceptance of one complete scripture anchor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "humanApproval",
+    "reviewedBy",
+    "reviewedAt",
+    "userDecision",
+    "reason",
+    "targetLocale",
+    "englishSourcePackage",
+    "anchorManifest",
+    "acceptedIssue"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-human-anchor-exception-receipt-v1"
+    },
+    "status": {
+      "const": "approved"
+    },
+    "humanApproval": {
+      "const": true
+    },
+    "reviewedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "userDecision": {
+      "const": "\u6388\u6743\u672c\u6b21\u4f8b\u5916\uff0c\u7acb\u5373\u53d1\u5e03\u4e2d\u6587"
+    },
+    "reason": {
+      "const": "preserve_complete_scripture_sentence"
+    },
+    "targetLocale": {
+      "const": "zh-Hans"
+    },
+    "englishSourcePackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "jsonSha256"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "jsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "anchorManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "jsonSha256"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "jsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "acceptedIssue": {
+      "type": "object"
+    }
+  }
+}

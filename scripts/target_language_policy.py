@@ -24,6 +24,14 @@ SERIES_TABLE = ROOT / "docs/series-terminology.zh.md"
 COMPONENTS = ("translator", "reviewer", "terminology", "scripture", "languageReview", "formatting", "batching")
 POLICY_V2 = "sermon-target-language-policy-v2"
 POLICY_V3 = "sermon-target-language-policy-v3"
+POLICY_V4 = "sermon-target-language-policy-v4"
+PLUGIN_DIR = ROOT / "scripts/language_review_plugins"
+# Week-independent machine-QC plugins a NEW ko/es policy binds by default. The
+# frozen policy carries pluginId/implementation hash/requiredChecks as before,
+# so the policy format is unchanged and existing frozen policies keep their bytes.
+MACHINE_QC_PLUGINS = {"ko": "ko_weekly_auto.py", "es": "es_weekly_auto.py"}
+LANGUAGE_REVIEW_BINDING = ("pluginId", "pluginImplementationSha256", "implementationStatus", "requiredChecks")
+LANGUAGE_REVIEW_MODES = ("draft", "machine_qc")
 
 
 def canonical_sha256(value: object) -> str:
@@ -41,9 +49,10 @@ def file_sha256(path: Path) -> str:
 
 def _schema_errors(policy: dict[str, Any]) -> list[str]:
     version = policy.get("schemaVersion")
-    if version not in {"sermon-target-language-policy-v1", POLICY_V2}:
+    if version not in {"sermon-target-language-policy-v1", POLICY_V2, POLICY_V4}:
         raise ValueError("Unsupported Target-Language Policy version")
-    schema_path = (ROOT / "schemas/sermon-target-language-policy-v2.schema.json"
+    schema_path = (ROOT / "schemas/sermon-target-language-policy-v4.schema.json"
+                   if version == POLICY_V4 else ROOT / "schemas/sermon-target-language-policy-v2.schema.json"
                    if version == POLICY_V2 else SCHEMA_PATH)
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     return [error.message for error in Draft202012Validator(schema).iter_errors(policy)]
@@ -55,7 +64,8 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
     errors = _schema_errors(policy)
     if errors:
         raise ValueError(f"Invalid Target-Language Policy: {errors[0]}")
-    components = COMPONENTS + (("sourceScope",) if policy["schemaVersion"] == POLICY_V2 else ())
+    scoped_policy = policy["schemaVersion"] in {POLICY_V2, POLICY_V4}
+    components = COMPONENTS + (("sourceScope",) if scoped_policy else ())
     for component in components:
         if policy["componentSha256"][component] != canonical_sha256(policy[component]):
             raise ValueError(f"Target-Language Policy component hash changed: {component}")
@@ -90,9 +100,9 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
         unresolved.append("scripture_policy_pending")
     if policy["languageReview"]["implementationStatus"] != "verified":
         unresolved.append("language_review_plugin_pending")
-    if policy["schemaVersion"] != POLICY_V2:
+    if policy["schemaVersion"] not in {POLICY_V2, POLICY_V4}:
         unresolved.append("plugin_implementation_hash_unbound_migrate_to_v2")
-    if policy["schemaVersion"] == POLICY_V2:
+    if scoped_policy:
         scope = policy["sourceScope"]
         series_sources = {term["source"] for term in series_names}
         proper_sources = {term["source"] for term in policy["terminology"]["properNames"]}
@@ -113,8 +123,28 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
                 ("properNames", scope["usedProperNames"]))
                for term in policy["terminology"][kind] if term["source"] in names):
             unresolved.append("terminology_review_pending")
-        if any(name not in {entry["source"] for entry in evidence}
-               for name in scope["usedProperNames"]):
+        if policy["schemaVersion"] == POLICY_V4:
+            receipt = scope["termApprovalReceipt"]
+            proper_terms = {row["source"]: row["target"] for row in policy["terminology"]["properNames"]}
+            approved_terms = {row["source"]: row["target"] for row in receipt["approvedTerms"]}
+            excluded = set(scope["ordinaryPhraseExclusions"])
+            if (receipt["targetLocale"] != policy["targetLocale"]
+                    or receipt["englishSourcePackageJsonSha256"] != scope["englishSourcePackageJsonSha256"]
+                    or receipt["anchorManifestSha256"] != scope["anchorManifestSha256"]
+                    or receipt["humanApproval"] is not True
+                    or receipt["decision"] != "approved"
+                    or not receipt["reviewedBy"].strip()
+                    or not receipt["reviewedAt"].strip()
+                    or not approved_terms
+                    or len(approved_terms) != len(receipt["approvedTerms"])
+                    or approved_terms != proper_terms
+                    or set(receipt["excludedScannerPhrases"]) != excluded
+                    or not set(scope["usedProperNames"]) <= set(approved_terms)):
+                raise ValueError("Direct human term receipt does not match the source-scoped policy")
+            if evidence:
+                raise ValueError("Policy v4 uses its direct human receipt, not shadow term evidence")
+        elif any(name not in {entry["source"] for entry in evidence}
+                 for name in scope["usedProperNames"]):
             unresolved.append("proper_name_approval_evidence_pending")
     elif any(term["reviewStatus"] == "pending" for kind in ("seriesNames", "properNames") for term in policy["terminology"][kind]):
         unresolved.append("terminology_review_pending")
@@ -125,6 +155,33 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
         "productionPolicyReady": not unresolved,
         "unresolved": unresolved,
     }
+
+
+def validate_diagnostic_policy(policy, context, *, series_table=SERIES_TABLE):
+    """Explicit isolated model configuration; ordinary policy validation rejects it."""
+    from scripts.sermon_diagnostic_context import validate_context
+    validate_context(context)
+    configuration = policy.get('simulationModelConfiguration')
+    if configuration is None:
+        result = validate_policy(policy, series_table=series_table)
+    else:
+        from scripts.codex_layer2_transport import validate_test_configuration
+        validate_test_configuration(configuration)
+        view = copy.deepcopy(policy)
+        view.pop('simulationModelConfiguration')
+        for role in ('translator', 'reviewer'):
+            settings = configuration[role]
+            if (view[role]['model'] != settings['model']
+                    or view[role]['reasoningEffort'] != settings['reasoningEffort']):
+                raise ValueError('Diagnostic role configuration changed')
+        result = validate_policy(view, series_table=series_table)
+    from scripts.language_review_plugins.diagnostic_pinned_quotes import is_policy
+    if is_policy(policy):
+        # Only explicit diagnostic context accepts pending citation permission;
+        # production validation continues to report scripture_policy_pending.
+        result = {**result, 'diagnosticPinnedQuotePolicy': True}
+    return {**result, 'translationPolicySha256': canonical_sha256(policy),
+            'productionEligible': False, 'humanApproval': False}
 
 
 def _strict_legacy_validation_view(policy):
@@ -158,11 +215,65 @@ def validate_strict_policy(policy, rubric, *, series_table=SERIES_TABLE):
             'executionAuthority': 'none'}
 
 
+def machine_qc_language_review(locale: str) -> dict[str, Any]:
+    """Language-review binding of the week-independent ko/es machine-QC plugin."""
+    if locale not in MACHINE_QC_PLUGINS:
+        raise ValueError("Machine-QC language plugins cover ko and es only; "
+                         "zh-Hans keeps its own plugin binding")
+    try:
+        from scripts import produce_target_language_candidate as producer
+        from scripts.language_review_plugins import auto_qc_text_common
+    except ImportError:  # Direct execution via ``python scripts/...``.
+        import produce_target_language_candidate as producer
+        from language_review_plugins import auto_qc_text_common
+    import ast
+    plugin = PLUGIN_DIR / MACHINE_QC_PLUGINS[locale]
+    if plugin.name not in producer.AUTO_QC_PLUGIN_NAMES:
+        raise ValueError("Machine-QC plugin is not hashed with its shared rules")
+    literals = {node.targets[0].id: node.value.value
+                for node in ast.parse(plugin.read_text(encoding="utf-8")).body
+                if isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name) and isinstance(node.value, ast.Constant)}
+    return {"pluginId": literals["PLUGIN_ID"],
+            "pluginImplementationSha256": producer.plugin_implementation_sha256(plugin),
+            "implementationStatus": "verified",
+            "requiredChecks": list(auto_qc_text_common.REQUIRED)}
+
+
+def bind_language_review(draft: dict[str, Any], mode: str | None = None) -> dict[str, Any]:
+    """Select the language plugin of a NEW draft; frozen policies are never rebound.
+
+    ``draft`` keeps the draft's own binding. A ko/es draft whose languageReview
+    leaves the whole plugin binding out gets the machine-QC plugin, and
+    ``machine_qc`` replaces a template's binding with it explicitly. zh-Hans keeps
+    its existing plugin and must name it.
+    """
+    mode = mode or "draft"
+    if mode not in LANGUAGE_REVIEW_MODES:
+        raise ValueError(f"Unknown language review mode: {mode}")
+    if not isinstance(draft, dict) or "componentSha256" in draft:
+        raise ValueError("Freeze requires an unresolved policy draft without component hashes")
+    review = draft.get("languageReview")
+    if not isinstance(review, dict):
+        return draft
+    present = [key for key in LANGUAGE_REVIEW_BINDING if key in review]
+    if mode == "draft" and present:
+        if "pluginId" not in present:
+            raise ValueError("Language review binding is incomplete; name the plugin or leave the binding out")
+        return draft
+    if draft.get("schemaVersion") not in {POLICY_V2, POLICY_V3, POLICY_V4}:
+        raise ValueError("Machine-QC plugin binding needs a v2, v3 or v4 policy draft")
+    bound = copy.deepcopy(draft)
+    bound["languageReview"].update(machine_qc_language_review(draft.get("targetLocale")))
+    return bound
+
+
 def freeze_strict_policy(draft, rubric, *, series_table=SERIES_TABLE,
-                         shadow_candidate=None, content_approval=None):
+                         shadow_candidate=None, content_approval=None, language_review=None):
     """Freeze a NEW strict policy; no mode migration or old-artifact mutation."""
     if not isinstance(draft, dict) or draft.get('schemaVersion') != POLICY_V3 or 'componentSha256' in draft:
         raise ValueError('Strict freeze requires a new v3 draft without component hashes')
+    draft = bind_language_review(draft, language_review)
     legacy = copy.deepcopy(draft)
     legacy['schemaVersion'] = POLICY_V2
     legacy.pop('reviewMode', None); legacy.pop('reviewContract', None)
@@ -210,15 +321,16 @@ def verify_shadow_term_evidence(policy: dict[str, Any], candidate: dict[str, Any
 
 def freeze_policy(draft: dict[str, Any], *, series_table: Path = SERIES_TABLE,
                   shadow_candidate: dict[str, Any] | None = None,
-                  content_approval: dict[str, Any] | None = None) -> dict[str, Any]:
+                  content_approval: dict[str, Any] | None = None,
+                  language_review: str | None = None) -> dict[str, Any]:
     if not isinstance(draft, dict) or "componentSha256" in draft:
         raise ValueError("Freeze requires an unresolved policy draft without component hashes")
-    policy = dict(draft)
+    policy = dict(bind_language_review(draft, language_review))
     if policy.get("schemaVersion") == POLICY_V2 and policy["sourceScope"]["termApprovalEvidence"]:
         if shadow_candidate is None or content_approval is None:
             raise ValueError("Scoped term approvals require the exact shadow candidate and human receipt")
         verify_shadow_term_evidence(policy, shadow_candidate, content_approval)
-    components = COMPONENTS + (("sourceScope",) if policy.get("schemaVersion") == POLICY_V2 else ())
+    components = COMPONENTS + (("sourceScope",) if policy.get("schemaVersion") in {POLICY_V2, POLICY_V4} else ())
     policy["componentSha256"] = {name: canonical_sha256(policy[name]) for name in components}
     validate_policy(policy, series_table=series_table)
     return policy
@@ -227,7 +339,7 @@ def freeze_policy(draft: dict[str, Any], *, series_table: Path = SERIES_TABLE,
 def validate_source_scope(policy: dict[str, Any], source: dict[str, Any],
                           anchor: dict[str, Any]) -> None:
     """Require a v2 policy's declared terminology use to match its frozen source."""
-    if policy["schemaVersion"] != POLICY_V2:
+    if policy["schemaVersion"] not in {POLICY_V2, POLICY_V4}:
         return
     scope = policy["sourceScope"]
     if (scope["englishSourcePackageJsonSha256"] != canonical_sha256(source)
@@ -242,12 +354,23 @@ def validate_source_scope(policy: dict[str, Any], source: dict[str, Any],
     # Multiword capitalized names are conservatively required in the scoped
     # proper-name list. Single biblical names are audited by locale plugins.
     observed_names = source_scoped_proper_names(rows, observed_series)
+    if policy["schemaVersion"] == POLICY_V4:
+        exclusions = set(scope["ordinaryPhraseExclusions"])
+        if not exclusions <= observed_names:
+            raise ValueError("Ordinary phrase exclusions are not source-scoped name candidates")
+        observed_names -= exclusions
     if observed_names != set(scope["usedProperNames"]):
         raise ValueError("Source-scoped proper names are incomplete or overdeclared")
     by_id = {row["sourceUnitId"]: row["english"] for row in rows}
     for item in scope["termApprovalEvidence"]:
         if item["sourceUnitId"] not in by_id or item["source"] not in by_id[item["sourceUnitId"]]:
             raise ValueError("Source-scoped term evidence points outside its English unit")
+    if policy["schemaVersion"] == POLICY_V4:
+        receipt = scope["termApprovalReceipt"]
+        for item in receipt["approvedTerms"]:
+            if (item["sourceUnitId"] not in by_id
+                    or item["source"].casefold() not in by_id[item["sourceUnitId"]].casefold()):
+                raise ValueError("Direct term approval points outside its English source unit")
 
 
 def source_scoped_proper_names(rows: list[dict[str, Any]],
@@ -281,6 +404,9 @@ def main() -> None:
     parser.add_argument("--series-terminology", type=Path, default=SERIES_TABLE)
     parser.add_argument("--shadow-candidate", type=Path)
     parser.add_argument("--content-approval", type=Path)
+    parser.add_argument("--language-review", choices=LANGUAGE_REVIEW_MODES, default="draft",
+                        help="draft: keep the draft's plugin binding (ko/es drafts without one get "
+                             "the machine-QC plugin); machine_qc: bind ko/es-weekly-auto-v1")
     args = parser.parse_args()
     policy = json.loads(args.policy.read_text(encoding="utf-8"))
     if args.command == "freeze":
@@ -292,6 +418,7 @@ def main() -> None:
             if args.shadow_candidate else None,
             content_approval=json.loads(args.content_approval.read_text(encoding="utf-8"))
             if args.content_approval else None,
+            language_review=args.language_review,
         )
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(resolved, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

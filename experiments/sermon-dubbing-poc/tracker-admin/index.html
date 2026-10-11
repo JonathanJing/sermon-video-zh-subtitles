@@ -18,6 +18,7 @@
         </div>
         <div class="top-actions">
           <span id="connection" class="connection">正在连接</span>
+          <button id="retry-connection" class="retry-connection" type="button" hidden data-en="Retry connection">重新连接</button>
           <div id="language-switch" class="language-switch" role="group" aria-label="页面语言">
             <button id="language-zh" type="button" aria-pressed="true">中文</button>
             <button id="language-en" type="button" aria-pressed="false">EN</button>
@@ -48,11 +49,18 @@
             </div>
           </section>
 
+          <p id="snapshot-health" class="snapshot-health" role="status"></p>
+
           <section class="metrics" aria-label="总览">
             <article class="metric metric-overall"><span data-en="Overall progress · Formal checkpoints">整体进度 · 正式门禁检查点</span><strong id="metric-progress">—</strong><small id="metric-progress-count">—</small><div class="progress-track overall-track"><div id="overall-fill" class="progress-fill"></div></div><small id="metric-progress-note">—</small></article>
             <article class="metric"><span data-en="Estimated time">预计时间</span><strong id="metric-eta">—</strong><small id="metric-eta-note">—</small><details class="metric-details"><summary data-en="How is this calculated?">怎样计算？</summary><p id="eta-explanation">—</p></details></article>
             <article class="metric"><span data-en="Open gates">待处理关口</span><strong id="metric-blockers">—</strong><small data-en="Human review or blocked">待人工审核或阻塞</small><details class="metric-details" id="blocker-details"><summary data-en="View details">查看详情</summary><ul id="blocker-list"></ul></details></article>
             <article class="metric"><span data-en="Video update">视频更新</span><strong id="metric-video">—</strong><small id="metric-video-note">—</small></article>
+          </section>
+
+          <section class="section-block dag-section" aria-labelledby="dag-title">
+            <div class="section-heading"><div><span class="eyebrow">EXECUTION OBSERVABILITY</span><h3 id="dag-title" data-en="Run DAG & node evidence">运行 DAG 与节点证据</h3></div><p data-en="Execution, review, and admission stay separate">执行、审核、准入分别记录</p></div>
+            <div id="dag-panel" class="dag-panel"></div>
           </section>
 
           <section id="bridge-mock" class="section-block bridge-mock" aria-labelledby="bridge-mock-title" hidden>

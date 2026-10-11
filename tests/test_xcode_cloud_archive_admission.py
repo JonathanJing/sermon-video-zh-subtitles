@@ -22,13 +22,30 @@ def stamp(value):
     return value.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def source_configuration(directory, channel):
+    project = GUARD.parse_project((directory / "project.pbxproj").read_text())
+    objects = project["objects"]
+    root = objects[project["rootObject"]]
+    _, configuration, _ = GUARD.CHANNELS[channel]
+    target_name = "Tongxing"
+    targets = [objects[key] for key in root["targets"] if objects[key].get("name") == target_name]
+    if len(targets) != 1:
+        raise AssertionError(f"expected one {target_name} target")
+    configurations = objects[targets[0]["buildConfigurationList"]]["buildConfigurations"]
+    matches = [objects[key] for key in configurations if objects[key].get("name") == configuration]
+    if len(matches) != 1:
+        raise AssertionError(f"expected one {configuration} configuration")
+    return matches[0]["buildSettings"]
+
+
 def fixture(directory, channel="production", now=NOW):
     scheme, config, bundle = GUARD.CHANNELS[channel]
+    settings = source_configuration(directory, channel)
     intent = {
         "schemaVersion": 1, "sourceCommit": "a" * 40,
         "channel": channel, "scheme": scheme, "configuration": config,
-        "version": "1.26.7" if channel == "production" else "1.2.0",
-        "sourceBuild": "50" if channel == "production" else "48",
+        "version": settings["MARKETING_VERSION"],
+        "sourceBuild": settings["CURRENT_PROJECT_VERSION"],
         # Cloud's separately selected counter need not equal CURRENT_PROJECT_VERSION.
         "cloudBuild": "123", "issuedAt": stamp(now - timedelta(minutes=5)),
         "expiresAt": stamp(now + timedelta(minutes=55)),
@@ -148,10 +165,13 @@ class ArchiveAdmissionTest(unittest.TestCase):
     def test_intent_schema_and_frozen_identity(self):
         cases = [None, [], True, {**self.intent, "allowArchive": True}]
         cases += [{k: v for k, v in self.intent.items() if k != field} for field in self.intent]
+        version_parts = self.intent["version"].split(".")
+        wrong_version = ".".join((*version_parts[:-1], str(int(version_parts[-1]) + 1)))
+        wrong_build = str(int(self.intent["sourceBuild"]) + 1)
         cases += [{**self.intent, key: value} for key, value in (
             ("schemaVersion", True), ("schemaVersion", 2), ("sourceCommit", "a" * 7),
-            ("sourceCommit", "b" * 40), ("version", "01.26.7"), ("version", "1.26.8"),
-            ("version", "1.26.7 Beta"), ("sourceBuild", "51"), ("sourceBuild", 50),
+            ("sourceCommit", "b" * 40), ("version", "01.26.7"), ("version", wrong_version),
+            ("version", "1.26.7 Beta"), ("sourceBuild", 51), ("sourceBuild", wrong_build),
             ("cloudBuild", "124"), ("cloudBuild", "0123"), ("cloudBuild", "0"),
             ("channel", "unknown"), ("scheme", "TongxingBeta"), ("configuration", "Debug"),
             ("resourcesSHA256", {}), ("resourcesSHA256", []),
@@ -191,12 +211,17 @@ class ArchiveAdmissionTest(unittest.TestCase):
     def test_changed_project_semantics_rejected_even_with_matching_digest(self):
         path = self.directory / "project.pbxproj"
         original = path.read_text()
+        current_version = self.intent["version"]
+        current_build = self.intent["sourceBuild"]
+        version_parts = current_version.split(".")
+        wrong_version = ".".join((*version_parts[:-1], str(int(version_parts[-1]) + 1)))
+        wrong_build = str(int(current_build) + 1)
         for old, new in (
-            ("MARKETING_VERSION = 1.26.7;", "MARKETING_VERSION = 1.26.8;"),
-            ("CURRENT_PROJECT_VERSION = 50;", "CURRENT_PROJECT_VERSION = 49;"),
+            (f"MARKETING_VERSION = {current_version};", f"MARKETING_VERSION = {wrong_version};"),
+            (f"CURRENT_PROJECT_VERSION = {current_build};", f"CURRENT_PROJECT_VERSION = {wrong_build};"),
             ('PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.dev.listening-activity";', "PRODUCT_BUNDLE_IDENTIFIER = wrong;"),
-            ("MARKETING_VERSION = 1.26.7;", 'MARKETING_VERSION = "$(OVERRIDE_VERSION)";'),
-            ("MARKETING_VERSION = 1.26.7;", 'MARKETING_VERSION = 1.26.7; "MARKETING_VERSION[sdk=iphoneos*]" = 1.2.0;'),
+            (f"MARKETING_VERSION = {current_version};", 'MARKETING_VERSION = "$(OVERRIDE_VERSION)";'),
+            (f"MARKETING_VERSION = {current_version};", f'MARKETING_VERSION = {current_version}; "MARKETING_VERSION[sdk=iphoneos*]" = 1.2.0;'),
         ):
             with self.subTest(new=new), self.assertRaises(GUARD.AdmissionError):
                 self.assertIn(old, original)

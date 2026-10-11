@@ -15,6 +15,7 @@ from urllib.parse import unquote, urlsplit
 
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
+RUN_REPORT_SUFFIXES = {".json", ".tsv", ".log"}
 STANDALONE_GENERATED_DIAGRAMS = {"firebase-release-flow.svg"}
 INLINE_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 REFERENCE_LINK = re.compile(r"^ {0,3}\[[^\]]+\]:\s*(\S+)", re.MULTILINE)
@@ -27,6 +28,8 @@ def is_documentation_path(path: str) -> bool:
     file = Path(path)
     if not path.startswith("docs/") or ".." in file.parts:
         return False
+    if path.startswith("docs/reports/runs/") and file.suffix.lower() in RUN_REPORT_SUFFIXES:
+        return True  # redacted run evidence from scripts/export_run_digest.py; nothing executes it
     return file.suffix.lower() in {".md", ".svg", *IMAGE_SUFFIXES} or path == "docs/diagrams/diagram-specs.json"
 
 

@@ -22,7 +22,8 @@ class Layer2LeafAccountingTests(unittest.TestCase):
         out = out or self.out
         with accounting.accounting_session(out / 'accounting', 'layer2_models'):
             result = runner.run(self.f.source, self.f.anchor, self.f.policy, out,
-                                'fixture-key', caller or self.fixture.fake_call, **options)
+                                'fixture-key', caller or self.fixture.fake_call,
+                                plugin_path=self.f.plugin_path, **options)
         events, damaged = accounting.read_events(out / 'accounting')
         self.assertFalse(damaged)
         report = weekly.project(out / 'accounting')['runs'][-1]
@@ -38,10 +39,10 @@ class Layer2LeafAccountingTests(unittest.TestCase):
         def coverage(*args, **kwargs):
             time.sleep(.01)
             return original_coverage(*args, **kwargs)
-        def save(path, value):
+        def save(path, value, **kwargs):
             if path.name == 'evidence.json':
                 time.sleep(.02)
-            return original_save(path, value)
+            return original_save(path, value, **kwargs)
         with patch.object(runner.producer, 'prepare_request', side_effect=source), \
              patch.object(runner, '_coverage_substring', side_effect=coverage), \
              patch.object(runner, 'save_new', side_effect=save):
@@ -87,7 +88,7 @@ class Layer2LeafAccountingTests(unittest.TestCase):
         caller = self.fixture.fake_call
         def failed(key, payload):
             answer = caller(key, payload)
-            if payload['model'] == 'gpt-6-sol':
+            if payload['reasoning_effort'] == self.f.policy['reviewer']['reasoningEffort']:
                 # Keep the paid response shape; change only its semantic result.
                 import json
                 content = json.loads(answer['choices'][0]['message']['content'])
@@ -95,7 +96,8 @@ class Layer2LeafAccountingTests(unittest.TestCase):
                 answer['choices'][0]['message']['content'] = json.dumps(content)
             return answer
         with self.assertRaises(ValueError), accounting.accounting_session(self.out / 'accounting', 'layer2_models'):
-            runner.run(self.f.source, self.f.anchor, self.f.policy, self.out, 'fixture-key', failed)
+            runner.run(self.f.source, self.f.anchor, self.f.policy, self.out, 'fixture-key', failed,
+                       plugin_path=self.f.plugin_path)
         events, damaged = accounting.read_events(self.out / 'accounting')
         self.assertFalse(damaged)
         failed_spans = [e for e in events if e['event'] == 'stage_finished' and e['stage'].startswith('layer2.review_validation.')]

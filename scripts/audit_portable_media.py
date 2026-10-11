@@ -111,7 +111,9 @@ def load_evidence(package_path: Path, approval_path: Path, *, expected_source: s
     version = approval.get("schemaVersion")
     require(isinstance(version, str)
             and version in {"sermon-target-language-audio-human-review-receipt-v1",
-                        "sermon-target-language-audio-human-review-receipt-v2"},
+                        "sermon-target-language-audio-human-review-receipt-v2",
+                        "sermon-target-language-audio-human-review-receipt-v3",
+                        "sermon-target-language-audio-human-review-receipt-v4"},
             "approval_schema_unsupported")
     validate_schema(approval, f"{version}.schema.json")
     require(package["targetLocale"] == expected_locale, "expected_locale_mismatch")
@@ -141,9 +143,19 @@ def load_evidence(package_path: Path, approval_path: Path, *, expected_source: s
             and approval["reviewedUnitIds"] == unit_ids, "approval_unit_mismatch")
     require(all(approval[key] == human[key] for key in ("reviewedBy", "reviewedAt", "fullPlayback")),
             "approval_review_mismatch")
-    if version.endswith("-v2"):
+    if version in {"sermon-target-language-audio-human-review-receipt-v2",
+                   "sermon-target-language-audio-human-review-receipt-v3",
+                   "sermon-target-language-audio-human-review-receipt-v4"}:
         require(approval["machineScreeningStatus"] == package["machineScreening"]["status"],
                 "approval_screening_mismatch")
+    if version == "sermon-target-language-audio-human-review-receipt-v4":
+        exception = approval["publicationException"]
+        require(exception["targetLocale"] == expected_locale
+                and exception["englishSourcePackageJsonSha256"] == expected_source
+                and exception["targetLanguageCandidateJsonSha256"] == expected_candidate
+                and exception["targetLanguageAudioPackageJsonSha256"] == package_hash["jsonSha256"]
+                and exception["trackSha256"] == package["track"]["sha256"],
+                "publication_exception_identity_mismatch")
     return package, approval, package_hash, approval_hash
 
 

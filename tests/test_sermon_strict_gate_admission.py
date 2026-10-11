@@ -25,8 +25,8 @@ NOW = '2026-09-30T00:00:00Z'
 class AdmissionTests(unittest.TestCase):
     def setUp(self):
         fixture = fixtures.StrictAdapterTests()
-        fixture.setUp()
         self.addCleanup(fixture.doCleanups)
+        fixture.setUp()
         self.f = SimpleNamespace(f=fixture, groups=copy.deepcopy(fixture.f.evidence['groups']), revisions=[])
         self.f.compile = lambda: bridge.compile_candidate(*fixture.args, self.f.revisions,
             plugin_path=fixture.f.plugin_path, expected_plugin_sha256=fixture.f.plugin_sha)
@@ -49,6 +49,19 @@ class AdmissionTests(unittest.TestCase):
             plugin=self.f.f.f.plugin_path, plugin_sha256=self.f.f.f.plugin_sha)
         self.boundary = admission.AdmissionBoundary(self.config, self.store)
 
+    def test_policy_preview_tampering_cannot_enter_admission(self):
+        root = self.f.revisions[0][0]
+        path = root / 'generator.policy-preview.json'
+        original = c.read_snapshot(path)[0]
+        for changes in ({'humanApproval': True}, {'status': 'approved'},
+                        {'payload': {'changed': True}, 'payloadSha256': c.canonical_sha256({'changed': True})}):
+            with self.subTest(changes=changes):
+                path.write_bytes(c.canonical_bytes({**original, **changes}))
+                with self.assertRaisesRegex(c.ContractError, 'admission_policy_preview_changed'):
+                    self.boundary.snapshot()
+                path.write_bytes(c.canonical_bytes(original))
+        self.boundary.snapshot()
+
     def approve(self, evidence="Synthetic test only, not actual human acceptance"):
         pending = self.f.compile()['candidate']
         source, anchor, policy, rubric = [c.decode_json(b) for b in self.f.f.args]
@@ -68,7 +81,8 @@ class AdmissionTests(unittest.TestCase):
                 root = self.root / group['translationGroupId']
                 if root.exists(): shutil.rmtree(root)
                 self.f.f.f.evidence['groups'][0] = group
-                prepared = strict.prepare(*self.f.f.args, {k: group[k] for k in ('translationGroupId', 'sourceUnitIds')})
+                prepared = strict.prepare(*self.f.f.args, {k: group[k] for k in ('translationGroupId', 'sourceUnitIds')},
+                                          rule_preflight=self.f.f.rule_preflight, rule_context=self.f.f.rule_context)
                 self.subject.generate(prepared, root, 'candidate', 'r1', 'fixture', self.f.f.transport,
                     bounds=budget_fixtures.bounds(), usage_resolver=budget_fixtures.measured)
                 self.f.f.mode = first_mode if index == 0 else 'pass'
@@ -141,7 +155,8 @@ class AdmissionTests(unittest.TestCase):
         self.generate_groups(first_mode='rewrite')
         root = self.f.revisions[0][0]
         group = self.f.groups[0]
-        prepared = strict.prepare(*self.f.f.args, {k: group[k] for k in ('translationGroupId', 'sourceUnitIds')})
+        prepared = strict.prepare(*self.f.f.args, {k: group[k] for k in ('translationGroupId', 'sourceUnitIds')},
+                                  rule_preflight=self.f.f.rule_preflight, rule_context=self.f.f.rule_context)
         self.assertEqual(c.read_snapshot(root / 'review-receipt.json')[0]['executionStatus'], 'failed')
         self.f.f.mode = 'pass'
         with self.f.f.session():
@@ -260,7 +275,8 @@ class AdmissionTests(unittest.TestCase):
         root = self.f.revisions[1][0]
         # A fresh, real failing second attempt remains in the full inventory.
         group = self.f.groups[1]
-        prepared = strict.prepare(*self.f.f.args, {k: group[k] for k in ('translationGroupId', 'sourceUnitIds')})
+        prepared = strict.prepare(*self.f.f.args, {k: group[k] for k in ('translationGroupId', 'sourceUnitIds')},
+                                  rule_preflight=self.f.f.rule_preflight, rule_context=self.f.f.rule_context)
         self.f.f.mode = 'fail'
         with self.f.f.session():
             strict.review(prepared, root, 'candidate', 'r1', 'fixture', self.f.f.transport, attempt_number=2)
@@ -311,8 +327,8 @@ class FailedReviewInventoryTests(unittest.TestCase):
 
         for second_kind in ('invalid_json', 'rejection'):
             with self.subTest(second_kind=second_kind):
-                runtime=budget_fixtures.StrictBudgetTests();runtime.setUp()
-                self.addCleanup(runtime.doCleanups)
+                runtime=budget_fixtures.StrictBudgetTests();self.addCleanup(runtime.doCleanups)
+                runtime.setUp()
                 fixture=runtime.f;root=fixture.root
                 paths={}
                 for name,raw in zip(('source','anchor','policy','rubric'),fixture.args):

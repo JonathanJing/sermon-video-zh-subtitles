@@ -28,9 +28,53 @@
       "items": {
         "$ref": "#/$defs/page"
       }
+    },
+    "defaultTargetLocale": {
+      "$ref": "#/$defs/locale",
+      "description": "Optional legacy catalog hint preserved on incremental publication; per-page defaults remain authoritative."
     }
   },
   "$defs": {
+    "displayCategory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "labels"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-page-display-category-v1"
+        },
+        "labels": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 16,
+          "required": [
+            "en"
+          ],
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 48,
+            "allOf": [
+              {
+                "pattern": "\\S"
+              },
+              {
+                "not": {
+                  "pattern": "[\\u0000-\\u001f\\u007f-\\u009f\\u2028\\u2029]"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
     "sha256": {
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
@@ -116,7 +160,10 @@
           "$ref": "#/$defs/sha256"
         },
         "contentStatus": {
-          "const": "human_reviewed"
+          "enum": [
+            "human_reviewed",
+            "machine_reviewed"
+          ]
         },
         "audioStatus": {
           "enum": [
@@ -140,13 +187,25 @@
         },
         "audioFingerprint": {
           "$ref": "#/$defs/fingerprintBinding"
+        },
+        "simulationOnly": {
+          "type": "boolean",
+          "description": "Dev-only test content; production readers exclude true."
+        },
+        "diagnosticOnly": {
+          "type": "boolean",
+          "description": "Dev-only test content; production readers exclude true."
         }
       }
     },
     "page": {
       "type": "object",
       "additionalProperties": false,
-      "dependentRequired": { "videoDelivery": ["sourceMediaSha256"] },
+      "dependentRequired": {
+        "videoDelivery": [
+          "sourceMediaSha256"
+        ]
+      },
       "required": [
         "id",
         "date",
@@ -157,6 +216,7 @@
         "title"
       ],
       "properties": {
+        "displayCategory": { "$ref": "#/$defs/displayCategory" },
         "id": {
           "$ref": "#/$defs/identifier"
         },
@@ -172,6 +232,17 @@
         },
         "sourceMediaSha256": {
           "$ref": "#/$defs/sha256"
+        },
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        },
+        "mediaType": {
+          "enum": [
+            "podcast",
+            "video"
+          ]
         },
         "defaultTargetLocale": {
           "$ref": "#/$defs/locale"
@@ -196,9 +267,17 @@
         "videoDelivery": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["schemaVersion", "canonicalUrl", "storageUrl", "sha256", "bytes"],
+          "required": [
+            "schemaVersion",
+            "canonicalUrl",
+            "storageUrl",
+            "sha256",
+            "bytes"
+          ],
           "properties": {
-            "schemaVersion": { "const": "sermon-video-delivery-v1" },
+            "schemaVersion": {
+              "const": "sermon-video-delivery-v1"
+            },
             "canonicalUrl": {
               "type": "string",
               "pattern": "^/pages/[A-Za-z0-9_-]{1,160}/full-video-browser\\.mp4$"
@@ -207,11 +286,25 @@
               "type": "string",
               "pattern": "^https://storage\\.googleapis\\.com/ai-for-god-sermon-media-(dev|prod)/weekly/[A-Za-z0-9_-]{1,160}/[a-f0-9]{64}\\.mp4$"
             },
-            "sha256": { "$ref": "#/$defs/sha256" },
-            "bytes": { "type": "integer", "minimum": 1 }
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
+        },
+        "simulationOnly": {
+          "type": "boolean",
+          "description": "Dev-only test content; production readers exclude true."
+        },
+        "diagnosticOnly": {
+          "type": "boolean",
+          "description": "Dev-only test content; production readers exclude true."
         }
       }
     }
-  }
+  },
+  "x-contractRevision": 2
 }

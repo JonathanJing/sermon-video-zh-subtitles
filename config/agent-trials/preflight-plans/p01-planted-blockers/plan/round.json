@@ -1,0 +1,15 @@
+{
+  "purpose": "Spark 180s diagnostic: L2 reuse + 8x8 TTS + back-ASR, then finish",
+  "cwd": "<HOME>/sermon-video-zh-subtitles",
+  "steps": [
+    "local_model_session.py begin --host spark --mode preempt --owner round-x --allow-interrupted-restart",
+    "run_spark_diagnostic_audio.py execute --fixture artifacts/r/fixture-180s-r3 --layer2-out artifacts/r/live-180s-r4 --out artifacts/r/diagnostic-audio-r4 --media artifacts/clip/source.mp4",
+    "local_model_session.py finish"
+  ],
+  "exclusiveSessionStopsServices": [
+    "spark-api",
+    "spark-agent",
+    "collector",
+    "llama-server"
+  ]
+}

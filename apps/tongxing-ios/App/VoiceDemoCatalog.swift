@@ -136,6 +136,35 @@ struct VoiceDemoCatalog: Decodable {
     static let clipsRelativePath = "voice-demos/speaker-clips-v2/catalog.json"
     private static let clipsPrefix = "/voice-demos/speaker-clips-v2/"
 
+    /// Beta and Production consume the same matched-clip contract from their own
+    /// configured origin. A missing catalog must not silently replace it with
+    /// unrelated legacy manuscripts or fetch Beta media from a Production app.
+    static func loadMatched(origin: URL, session: URLSession) async throws -> VoiceDemoCatalog {
+        try await loadMatched(origin: origin) { try await session.data(for: $0) }
+    }
+
+    static func loadMatched(origin: URL,
+        transport: (URLRequest) async throws -> (Data, URLResponse)) async throws -> VoiceDemoCatalog {
+        guard origin.scheme == "https", origin.host?.isEmpty == false,
+              origin.user == nil, origin.password == nil, origin.query == nil,
+              origin.fragment == nil,
+              let url = URL(string: "/" + clipsRelativePath, relativeTo: origin)?.absoluteURL,
+              url.host == origin.host, url.port == origin.port else {
+            throw CocoaError(.fileReadNoPermission)
+        }
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = 15
+        let (data, response) = try await transport(request)
+        try Task.checkCancellation()
+        guard response.url == url,
+              (response as? HTTPURLResponse)?.statusCode == 200,
+              !data.isEmpty, data.count < 2_000_000 else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        return try validatedClips(data)
+    }
+
     static let relativePath = "voice-demos/2026-09-21-v2/catalog.json"
     static let productionPath = "voice-demos/2026-09-21-v2/production-ko-es.json"
     private static let prefix = "/voice-demos/2026-09-21-v2/"

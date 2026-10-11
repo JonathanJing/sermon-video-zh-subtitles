@@ -1,3 +1,5 @@
+import { sanitizeDag } from './src/dag-contract.js';
+
 /** Explicit public projection: unknown fields cannot reach Firestore. */
 const PAGE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$/;
 const LOCALE = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
@@ -96,7 +98,7 @@ export function sanitizeSnapshot(input) {
       || !input.source || !input.progress || input.readOnly !== true) {
     throw new Error('invalid tracker snapshot');
   }
-  if (Buffer.byteLength(JSON.stringify(input), 'utf8') > 512 * 1024) throw new Error('snapshot too large');
+  if (new TextEncoder().encode(JSON.stringify(input)).length > 512 * 1024) throw new Error('snapshot too large');
   const hasElapsed = input.schemaVersion === 'sermon-public-tracker-snapshot-v2';
   const source = input.source;
   const progress = input.progress;
@@ -142,6 +144,7 @@ export function sanitizeSnapshot(input) {
       completedWithoutMeasuredExecutionStepIds: missingTimingStepIds,
     },
     timeline: publicTimeline(input.timeline, publicStepIds),
+    dag: hasElapsed ? sanitizeDag(input.dag) : null,
     sharedLayer1: row(input.sharedLayer1),
     locales: input.locales.slice(0, 20).filter((item) => LOCALE.test(item?.locale || '')).map((item) => ({
       locale: item.locale,

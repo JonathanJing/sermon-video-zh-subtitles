@@ -282,13 +282,15 @@ class FullFreshDAG(mock.MockTTSDAG):
             'realProviderCalls': 0, 'realModelCalls': 0, 'newMFACalls': 0, **QUALIFICATIONS}
 
     def layer_evidence(self):
-        events, errors = accounting.read_events(self.stream.directory)
+        return accounting._with_report_snapshot(self.stream.directory,
+            lambda events, errors, digest, integrity: self._layer_evidence(events, errors, integrity))
+
+    def _layer_evidence(self, events, errors, integrity):
         c.require(not errors, 'fresh_full_log_damaged')
         c.require(bool(events) and all(row['runId'] == self.stream.run_id
             and row.get('productionRunId') == self._production_run_id()
             and row.get('evidenceMode') == 'synthetic' for row in events),
             'fresh_full_log_scope_changed')
-        integrity = log.replay_integrity(events)
         c.require(integrity['status'] == 'consistent', 'fresh_full_log_inconsistent')
         starts = {row['spanId']: row for row in events if row['event'] == 'stage_started'}
         workflows = {row['workflowId']: row for row in events if row['event'] == 'workflow_started'}
@@ -329,22 +331,29 @@ class FullFreshDAG(mock.MockTTSDAG):
         return result
 
     def accounting_projection(self):
-        events, errors = accounting.read_events(self.stream.directory)
+        return self.report_bundle()['accountingProjection']
+
+    def report_bundle(self):
+        """Read once for the final layer/accounting reports and summary outputs."""
+        def project(events, errors, digest, integrity, summary):
+            layer = self._layer_evidence(events, errors, integrity)
+            projection = self._accounting_projection(events, errors, integrity, summary, layer)
+            return {'layerEvidence': layer, 'accountingProjection': projection}
+        return accounting._with_summary_snapshot(self.stream.directory, project)
+
+    def _accounting_projection(self, events, errors, event_integrity, summary, layer):
         c.require(not errors, 'fresh_full_log_damaged')
-        event_integrity = accounting.profile_integrity(events)
         receipt_integrity = accounting.receipt_integrity(events, event_integrity=event_integrity)
         c.require(event_integrity['status'] == 'consistent' and not receipt_integrity['conflicts'],
             'fresh_full_accounting_inconsistent')
         calls = [row for row in events if row['event'] == 'api_attempt' and id(row) in receipt_integrity['_selected']]
-        summary = accounting.summarize(self.stream.directory)
         run = next(row for row in summary['runs'] if row['runId'] == self.stream.run_id)
         c.require(run['apiAttempts'] == len(calls), 'fresh_full_direct_call_double_count')
-        layer = self.layer_evidence()
         span_layers = {row['spanId']: row['layer'] for row in layer['spans']}
         by_layer = {str(i): sum(span_layers.get(row['spanId']) == i for row in calls) for i in range(1, 5)}
         c.require(sum(by_layer.values()) == len(calls) and by_layer['3'] == by_layer['4'] == 0,
             'fresh_full_provider_layer_changed')
-        inspected = logs.inspect_logs(self.stream.directory, run_id=self.stream.run_id, tail=1)
+        inspected = logs._inspect_events(events, errors, event_integrity, run_id=self.stream.run_id, tail=1)
         return {'schemaVersion': 'sermon-fresh-full-accounting-projection-v1', 'planSha256': self.plan_sha256,
             'canonicalRunId': self.stream.run_id, 'replayIntegrity': event_integrity['status'],
             'receiptIntegrity': summary['receiptIntegrity']['status'],
@@ -411,6 +420,7 @@ def run(session, recipe, authorization, locale_drafts, config, *, recovery=None)
                     persisted[node['id']] = {**record, 'engineState': task_run.state.name,
                         'timestamps': mock._engine_timing(task_run, client.read_task_run_states(task_run.id))}
             edges = dag.observed_edges()
+        reports = dag.report_bundle()
         final = {'schemaVersion': SCHEMA, 'planSha256': dag.plan_sha256, 'invocationId': dag.invocation,
             'status': 'synthetic_complete' if results['final.readonly']['readyForDownstream'] else 'incomplete',
             'nodes': results, 'engineEvidence': persisted, 'engine': dag.binding['engine'],
@@ -422,7 +432,7 @@ def run(session, recipe, authorization, locale_drafts, config, *, recovery=None)
             'unknownDispatchAcknowledgements': sum(dag.results.get(node['id'], {}).get('newDispatch', False) is None
                 for node in dag.nodes if node['operation'] == 'submit'),
             'finalProjection': dag.results.get('final.readonly'),
-            'layerEvidence': dag.layer_evidence(), 'accountingProjection': dag.accounting_projection(),
+            **reports,
             'invocationAccounting': {'workflowId': invocation['workflowId'],
                 'timingSource': 'canonical_workflow_started_and_finished',
                 'scope': 'complete_flow_after_frozen_plan_including_source_text_mock_and_validation'},

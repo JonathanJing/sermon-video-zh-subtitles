@@ -122,9 +122,9 @@ def simulated_policy(locale: str) -> dict:
     """Prompt inputs for a short fixture, never a frozen production policy."""
     return {"schemaVersion": "sermon-dry-run-model-policy-v1", "simulationOnly": True,
             "targetLocale": locale,
-            "translator": {"model": "gpt-6-astra", "reasoningEffort": "medium",
+            "translator": {"model": "gpt-6.1-sol", "reasoningEffort": "high",
                            "promptVersion": "dry-run-fixture-v1"},
-            "reviewer": {"model": "gpt-6-sol", "reasoningEffort": "medium",
+            "reviewer": {"model": "gpt-6.1-sol", "reasoningEffort": "medium",
                          "promptVersion": "dry-run-fixture-v1"},
             "batching": {"batchSize": 1, "workers": 1},
             "terminology": {"seriesNames": [], "properNames": []},
@@ -288,8 +288,13 @@ def run(fixture_path: Path, out: Path, *, fail_at: str | None = None) -> dict:
                     source_ids = inputs["sourceUnitIds"]
                     if group_id not in group_index or source_ids != group_plan[group_index[group_id]]["sourceUnitIds"]:
                         raise ValueError("Simulated model group identity changed")
-                    role = "astra" if payload["model"] == "gpt-6-astra" else "sol"
-                    if role == "sol" and payload["model"] != "gpt-6-sol":
+                    # Preserve existing failure/event suffixes while both
+                    # current roles use Sol 6.1. The reviewer receives the
+                    # matching draft; a model name cannot distinguish roles.
+                    role = "sol" if "astraDraft" in inputs else "astra"
+                    policy_role = "reviewer" if role == "sol" else "translator"
+                    if (payload["model"] != policy[policy_role]["model"]
+                            or payload["reasoning_effort"] != policy[policy_role]["reasoningEffort"]):
                         raise ValueError("Unexpected simulated model role")
                     texts = [by_id[unit_id] for unit_id in source_ids]
                     result = {"translationGroupId": group_id,

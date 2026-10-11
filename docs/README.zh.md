@@ -18,6 +18,8 @@
 
 | 要做的事 | 先读 | 状态边界 |
 |---|---|---|
+| 查看 Resi UUID 每周观察 | [逐周记录与跨周比较](reports/resi-uuid-weekly.zh.md) | 仅观察UUID与采样覆盖，不证明媒体内容或完整性 |
+| 正式运行或测试后生成报告并复盘 | [运行报告与复盘](test-run-retrospective.zh.md) | 报告只汇总脱敏证据，不改变任何层的完成状态 |
 | 查看或更新 Dev 开发优先级 | [Dev 统一 Backlog](backlog.zh.md) | 唯一顶层开发清单；专项 backlog 只展开细节，生产 Tracker 只记录单次运行 |
 | 执行未来预制多语言生产 | [四层接口合同](multilingual-production-interfaces.zh.md) → [本地生产 Runbook](codex-local-production-runbook.zh.md) | 必须按 Layer 1–4 逐层留证；legacy 完成不等于四层完成 |
 | 查看三条产品路径与完成标准 | [工作流总览](workflows/README.zh.md) | 当前总入口 |
@@ -35,6 +37,7 @@
 ### 来源、文本与 PDF
 
 - [多语言生产四层接口](multilingual-production-interfaces.zh.md)：今后预制多语言生产的命名、包和失效规则唯一来源
+- [机器质检豁免与 TTS 前时长预算](machine-quality-waiver.zh.md)：三语机器质检自动发布、单句 4 次修复、5% 规则、注错校准与 8 秒预测排程
 - [Dev 统一 Backlog](backlog.zh.md)：跨 Layer 1–4、Firebase Dev、Web／iOS、现场对齐、CI 与审核工具的唯一顶层优先级
 - [四层制作 Tracker](four-layer-production-tracker.zh.md)：单次制作的每层检查点、状态记录和有条件 ETA
 - [Firebase 四层公开 Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md)：每周源视频、三语分层制作、页面／语音／声纹的脱敏实时只读视图
@@ -52,6 +55,7 @@
 - [受限并发](parallel-production.zh.md)与[配音／PDF 汇合合同](parallel-dubbing-contract.zh.md)
 - [质量回归 Harness](saturday-quality-harness.zh.md)
 - [流程记账](workflow-accounting.zh.md)、[Trace 导出](sermon-trace-export.zh.md)与[Temporal 编排](sermon-temporal.zh.md)
+- [统一 CLI 与持久化执行设计](unified-cli-pipeline.zh.md)、[协议](unified-cli-protocol.zh.md)与[v2运行说明](unified-cli-runtime.zh.md)：可执行入口、单owner、审核、恢复及可选Temporal；[实现与验收](reports/20261004-pr242-implementation-and-acceptance.zh.md)分别记录软件和真实生产证据；[续跑配方](unified-continuation.zh.md)、[独立学习产物生成](unified-study-generation.zh.md)、[四产物公开交付](layer4-four-product-public-delivery.zh.md)说明新增路径
 
 ### 同行页面、音频与客户端
 

@@ -38,6 +38,15 @@ WEEKLY_FILE_COUNT = STAGE_FILE_COUNT + 1  # The mutable v3 catalog is updated la
 BUCKET_PROFILE = "three_locale_bucket_video_v2"
 BUCKET_STAGE_SCHEMA = "sermon-multilingual-v3-stage-manifest-v3"
 BUCKET_STAGE_FILE_COUNT = 20
+SINGLE_PROFILE = "single_zh_full_video_v1"
+SINGLE_BUCKET_PROFILE = "single_zh_bucket_video_v1"
+SINGLE_STAGE_SCHEMA = "sermon-multilingual-v3-stage-manifest-v4"
+PROFILE_CONTRACTS = {
+    PUBLICATION_PROFILE: (STAGE_SCHEMA, STAGE_FILE_COUNT, False, SUPPORTED_LOCALES),
+    BUCKET_PROFILE: (BUCKET_STAGE_SCHEMA, BUCKET_STAGE_FILE_COUNT, True, SUPPORTED_LOCALES),
+    SINGLE_PROFILE: (SINGLE_STAGE_SCHEMA, 9, False, {"zh-Hans"}),
+    SINGLE_BUCKET_PROFILE: (SINGLE_STAGE_SCHEMA, 8, True, {"zh-Hans"}),
+}
 
 
 def validate_schema(value: dict, name: str) -> None:
@@ -102,7 +111,7 @@ def validate_page(public: Path, page: dict) -> set[str]:
         elif video_sha != content["browserVideoSha256"]:
             raise ValueError(f"{page_id}/{locale}: browser video binding differs")
         if locale == page["defaultTargetLocale"]:
-            title = f"{content.get('series', '').strip()} · {content.get('title', '').strip()}"
+            title = ' · '.join(value for value in (content.get('series', '').strip(), content.get('title', '').strip()) if value)
             if title != page["title"]:
                 raise ValueError(f"{page_id}: catalog title differs from approved content")
         has_audio = target["audioStatus"] == "human_reviewed"
@@ -228,14 +237,14 @@ def stage_files_from_manifest(stage_public: Path, manifest_path: Path,
                               page_id: str) -> tuple[dict[str, Path], dict[str, str], dict | None]:
     manifest = load(manifest_path)
     profile = manifest.get("profile")
-    bucket = profile == BUCKET_PROFILE
+    if profile not in PROFILE_CONTRACTS:
+        raise ValueError("Production weekly stage requires a supported file contract")
+    schema, count, bucket, _ = PROFILE_CONTRACTS[profile]
     expected_keys = {"schemaVersion", "profile", "pageId", "files"}
     if bucket:
         expected_keys.add("videoDelivery")
-    schema = BUCKET_STAGE_SCHEMA if bucket else STAGE_SCHEMA
-    count = BUCKET_STAGE_FILE_COUNT if bucket else STAGE_FILE_COUNT
     if (set(manifest) != expected_keys or manifest.get("schemaVersion") != schema
-            or profile not in {PUBLICATION_PROFILE, BUCKET_PROFILE}
+            or profile not in PROFILE_CONTRACTS
             or manifest.get("pageId") != page_id):
         raise ValueError("Production weekly stage requires a supported three-locale file contract")
     entries = manifest.get("files")
@@ -269,6 +278,9 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
     base_files = regular_files(base_public)
     if CATALOG not in base_files or "weekly.json" not in base_files:
         raise ValueError("Base is not a complete Production snapshot")
+    if "multilingual-v4.json" in base_files:
+        # v3 must stay the human-only projection of v4; this assembler only writes v3.
+        raise ValueError("Base carries multilingual-v4.json; publish through the four-layer seal")
     # Freeze the baseline before validation/copy. Comparing a copied file to a
     # later read of its source can silently accept a concurrently changed input.
     base_identities = {name: digest(path) for name, path in base_files.items()}
@@ -282,12 +294,16 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
     if len(incoming["pages"]) != 1 or incoming["defaultPageId"] != incoming["pages"][0]["id"]:
         raise ValueError("Stage catalog must contain one new default page")
     page = incoming["pages"][0]
-    if (set(page["targets"]) != SUPPORTED_LOCALES
+    profile = load(stage_manifest).get("profile")
+    if profile not in PROFILE_CONTRACTS:
+        raise ValueError("Production weekly stage requires a supported file contract")
+    required_locales = PROFILE_CONTRACTS[profile][3]
+    if (set(page["targets"]) != required_locales
             or any(target["audioStatus"] != "human_reviewed"
                    or "alignment" not in target["capabilities"]
                    or target.get("audioFingerprint") is None
                    for target in page["targets"].values())):
-        raise ValueError("Current Production weekly profile requires zh-Hans/ko/es reviewed audio and alignment")
+        raise ValueError("Current Production weekly profile requires its exact locales, reviewed audio and alignment")
     if any(prior["id"] == page["id"] for prior in old["pages"]):
         raise ValueError("Existing page ID cannot be overwritten")
     for prior in old["pages"]:
@@ -359,7 +375,7 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
         report = {
             "schemaVersion": "sermon-multilingual-v3-update-candidate-v2",
             "status": "validated_not_deployed",
-            "publicationProfile": BUCKET_PROFILE if delivery else PUBLICATION_PROFILE,
+            "publicationProfile": profile,
             "pageId": page["id"],
             "targetLocales": sorted(page["targets"]),
             "oldCatalogSha256": old_catalog_sha,

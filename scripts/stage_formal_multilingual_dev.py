@@ -53,6 +53,18 @@ def read_package(path: Path, schema_name: str) -> dict:
     return value
 
 
+AUDIO_SCREENING_VERSIONS = ("sermon-target-language-audio-screening-v1", "sermon-target-language-audio-screening-v2")
+
+
+def read_audio_screening(path: Path) -> dict:
+    """Read an ASR screening receipt against its own version's schema (v1 or v2)."""
+    value = json.loads(path.read_text(encoding="utf-8"))
+    version = value.get("schemaVersion") if isinstance(value, dict) else None
+    if version not in AUDIO_SCREENING_VERSIONS:
+        raise StageError(f"{path}: unsupported audio screening receipt version")
+    return read_package(path, version + ".schema.json")
+
+
 def assignment_map(values: list[str], option: str) -> dict[str, Path]:
     result = {}
     for value in values:
@@ -85,6 +97,36 @@ def reviewed_candidate(candidate: dict) -> bool:
 
 def validate_audio_screening_review(audio: dict, receipt: dict,
                                     screening: dict | None) -> None:
+    from scripts import machine_quality_release_basis as machine_basis
+    if machine_basis.is_audio_waiver(receipt):
+        # A machine listening waiver, never a human approval of the track.
+        try:
+            machine_basis.validate_audio_waiver(audio, receipt, screening)
+        except ValueError as error:
+            raise StageError(str(error)) from error
+        return
+    if receipt.get("schemaVersion") == "sermon-target-language-audio-human-review-receipt-v3":
+        schema = json.loads((ROOT / "schemas/sermon-target-language-audio-human-review-receipt-v3.schema.json").read_text())
+        if (list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(receipt))
+                or audio["targetLocale"] != "zh-Hans"
+                or receipt["publicationException"]["trackSha256"] != audio["track"]["sha256"]):
+            raise StageError("Invalid exact-track Chinese publication exception")
+    elif receipt.get("schemaVersion") == "sermon-target-language-audio-human-review-receipt-v4":
+        schema = json.loads((ROOT / "schemas/sermon-target-language-audio-human-review-receipt-v4.schema.json").read_text())
+        exception = receipt.get("publicationException", {})
+        identities = {"targetLocale": audio["targetLocale"],
+                      "englishSourcePackageJsonSha256": audio["englishSourcePackageJsonSha256"],
+                      "targetLanguageCandidateJsonSha256": audio["targetLanguageCandidateJsonSha256"],
+                      "targetLanguageAudioPackageJsonSha256": canonical_sha(audio),
+                      "trackSha256": audio["track"]["sha256"]}
+        if (list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(receipt))
+                or receipt["targetLocale"] != audio["targetLocale"]
+                or audio["targetLocale"] not in LOCALES
+                or any(receipt.get(key) != value for key, value in identities.items())
+                or any(exception.get(key) != value for key, value in identities.items())):
+            raise StageError("Invalid locale-bound publication exception v2")
+    elif receipt.get("schemaVersion") not in {"sermon-target-language-audio-human-review-receipt-v1", "sermon-target-language-audio-human-review-receipt-v2"}:
+        raise StageError("Unsupported audio human review receipt")
     status = audio["machineScreening"]["status"]
     if receipt["schemaVersion"] == "sermon-target-language-audio-human-review-receipt-v1":
         if status != "pass":
@@ -336,12 +378,13 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
         audio_receipt_version = json.loads(audio_review_paths[locale].read_text(encoding="utf-8")).get("schemaVersion")
         if audio_receipt_version not in {
                 "sermon-target-language-audio-human-review-receipt-v1",
-                "sermon-target-language-audio-human-review-receipt-v2"}:
+                "sermon-target-language-audio-human-review-receipt-v2",
+                "sermon-target-language-audio-human-review-receipt-v3",
+                "sermon-target-language-audio-human-review-receipt-v4"}:
             raise StageError(f"{locale}: unsupported audio human review receipt version")
         audio_receipt = read_package(
             audio_review_paths[locale], f"{audio_receipt_version}.schema.json")
-        screening = (read_package(screening_paths[locale],
-                                  "sermon-target-language-audio-screening-v1.schema.json")
+        screening = (read_audio_screening(screening_paths[locale])
                      if locale in screening_paths else None)
         release = read_package(release_paths[locale], "sermon-target-language-release-package-v1.schema.json")
         candidate_hash = canonical_sha(candidate)

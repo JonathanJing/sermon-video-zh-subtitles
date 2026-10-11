@@ -1,0 +1,649 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-release-package-v4.schema.json",
+  "title": "Layer 4 four-product release with at least one machine-checked product",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "packageId",
+    "pageId",
+    "sourceLocale",
+    "targetLocale",
+    "targetLanguageCandidateJsonSha256",
+    "spokenTargetLanguageCandidateJsonSha256",
+    "targetLanguageAudioPackageJsonSha256",
+    "status",
+    "contentStatus",
+    "audioStatus",
+    "interfaceLocale",
+    "contentLocale",
+    "audioLocale",
+    "assets",
+    "httpVerification",
+    "deviceAcceptance",
+    "venueAcceptance",
+    "issues",
+    "englishSourcePackageJsonSha256",
+    "sourceIdentity",
+    "fourProducts",
+    "reviewBasis",
+    "disclosure"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-target-language-release-package-v4"
+    },
+    "packageId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pageId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,159}$"
+    },
+    "sourceLocale": {
+      "const": "en"
+    },
+    "targetLocale": {
+      "$ref": "#/$defs/locale"
+    },
+    "targetLanguageCandidateJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "targetLanguageAudioPackageJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "status": {
+      "enum": [
+        "candidate",
+        "published_http_verified",
+        "withdrawn"
+      ]
+    },
+    "contentStatus": {
+      "enum": [
+        "human_reviewed",
+        "machine_checked"
+      ]
+    },
+    "audioStatus": {
+      "enum": [
+        "human_reviewed",
+        "machine_checked"
+      ]
+    },
+    "interfaceLocale": {
+      "$ref": "#/$defs/locale"
+    },
+    "contentLocale": {
+      "$ref": "#/$defs/locale"
+    },
+    "audioLocale": {
+      "$ref": "#/$defs/locale"
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "page",
+              "content",
+              "audio",
+              "captions",
+              "outline",
+              "meditation",
+              "product_manifest"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/[^/].*"
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          }
+        }
+      },
+      "maxItems": 7,
+      "uniqueItems": true,
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "page"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "content"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "audio"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "captions"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "outline"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "meditation"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "product_manifest"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "httpVerification": {
+      "$ref": "#/$defs/acceptance"
+    },
+    "deviceAcceptance": {
+      "$ref": "#/$defs/acceptance"
+    },
+    "venueAcceptance": {
+      "$ref": "#/$defs/acceptance"
+    },
+    "issues": {
+      "type": "array"
+    },
+    "spokenTargetLanguageCandidateJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "englishSourcePackageJsonSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sourceIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "sourceUrlHash",
+        "mediaSha256",
+        "durationSeconds",
+        "window"
+      ],
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceUrlHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "mediaSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "durationSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "startSeconds",
+            "endSeconds",
+            "approvalReceiptSha256"
+          ],
+          "properties": {
+            "startSeconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "endSeconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "approvalReceiptSha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        }
+      }
+    },
+    "fourProducts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourcePackageSha256",
+        "textCandidateSha256",
+        "audioPackageSha256",
+        "outlineArtifactSha256",
+        "meditationArtifactSha256",
+        "outlineReviewSha256",
+        "meditationReviewSha256",
+        "metadataApprovalSha256",
+        "contentSha256",
+        "candidateSha256"
+      ],
+      "properties": {
+        "sourcePackageSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "textCandidateSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "audioPackageSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "outlineArtifactSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "meditationArtifactSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "outlineReviewSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "meditationReviewSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "metadataApprovalSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "contentSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "candidateSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "reviewBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fullText",
+        "spokenText",
+        "audio"
+      ],
+      "properties": {
+        "fullText": {
+          "$ref": "#/$defs/reviewBasis"
+        },
+        "spokenText": {
+          "$ref": "#/$defs/reviewBasis"
+        },
+        "audio": {
+          "$ref": "#/$defs/reviewBasis"
+        }
+      }
+    },
+    "disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "locale",
+        "text",
+        "english"
+      ],
+      "properties": {
+        "locale": {
+          "$ref": "#/$defs/locale"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "english": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "captionText": {
+      "description": "What dubbed captions display, on the dub's timing: full_text shows the complete translation (by textGroupId); spoken_text shows the spoken script. Readers treat a missing value as spoken_text.",
+      "enum": [
+        "full_text",
+        "spoken_text"
+      ]
+    },
+    "spokenCondensation": {
+      "description": "The interpreter-style condensation behind a spoken script that differs from the full translation only in condensed groups; null when none.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "condensationRecordJsonSha256",
+            "condensationBindingJsonSha256",
+            "condensedGroupIds"
+          ],
+          "properties": {
+            "condensationRecordJsonSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "condensationBindingJsonSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "condensedGroupIds": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "locale": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "evidenceSha256"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "not_run",
+            "pass",
+            "fail"
+          ]
+        },
+        "evidenceSha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "reviewBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "receiptSha256"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "human_review",
+            "machine_quality_waiver"
+          ]
+        },
+        "receiptSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  },
+  "description": "Used only when the full text, the spoken script or the audio was admitted by a machine quality waiver instead of a human review. A waiver is never a human approval: machine_checked means the bound waiver receipt passed, and every reader must show the disclosure. Releases whose products are all human-reviewed stay on v3. Published at /releases-v4/<pageId>/<locale>.json.",
+  "allOf": [
+    {
+      "anyOf": [
+        {
+          "properties": {
+            "contentStatus": {
+              "const": "machine_checked"
+            }
+          }
+        },
+        {
+          "properties": {
+            "audioStatus": {
+              "const": "machine_checked"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "if": {
+        "properties": {
+          "contentStatus": {
+            "const": "machine_checked"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reviewBasis": {
+            "properties": {
+              "fullText": {
+                "properties": {
+                  "kind": {
+                    "const": "machine_quality_waiver"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "reviewBasis": {
+            "properties": {
+              "fullText": {
+                "properties": {
+                  "kind": {
+                    "const": "human_review"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "audioStatus": {
+            "const": "human_reviewed"
+          }
+        }
+      },
+      "then": {
+        "allOf": [
+          {
+            "properties": {
+              "reviewBasis": {
+                "properties": {
+                  "spokenText": {
+                    "properties": {
+                      "kind": {
+                        "const": "human_review"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "reviewBasis": {
+                "properties": {
+                  "audio": {
+                    "properties": {
+                      "kind": {
+                        "const": "human_review"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "else": {
+        "allOf": [
+          {
+            "properties": {
+              "reviewBasis": {
+                "properties": {
+                  "spokenText": {
+                    "properties": {
+                      "kind": {
+                        "const": "machine_quality_waiver"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "spokenCondensation"
+        ],
+        "properties": {
+          "spokenCondensation": {
+            "type": "object"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "captionText"
+        ],
+        "properties": {
+          "captionText": {
+            "const": "full_text"
+          },
+          "audioStatus": {
+            "const": "machine_checked"
+          },
+          "reviewBasis": {
+            "properties": {
+              "spokenText": {
+                "properties": {
+                  "kind": {
+                    "const": "machine_quality_waiver"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

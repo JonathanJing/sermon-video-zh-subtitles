@@ -63,6 +63,56 @@ class BackendFourLayerDryRunTests(unittest.TestCase):
                 self.assertEqual(report["layers"]["layer3"][locale]["schedule"], "pass")
             checked_backend_run(root)
 
+    def test_l3_completion_automatically_hands_bound_audio_to_layer4(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder) / "run"
+            report = dry.run(self.fixture, root)
+            self.assertEqual(report["status"], "pass_simulated")
+            layer4_started = next(event for event in report["events"]
+                                  if event["step"] == "layer4")["startedAt"]
+            for locale in dry.LOCALES:
+                l3_event = next(event for event in report["events"]
+                                if event["step"] == f"layer3:{locale}")
+                self.assertEqual(l3_event["status"], "pass")
+                self.assertLessEqual(l3_event["endedAt"], layer4_started)
+
+            assets = {row["path"]: row for row in report["layers"]["layer4"]["assets"]}
+            for locale in dry.LOCALES:
+                relative_path = f"/media/{locale}.wav"
+                expected_sha = report["layers"]["layer3"][locale]["audioSha256"]
+                self.assertEqual(assets[relative_path]["sha256"], expected_sha)
+                copied = root / "public/flow" / relative_path.lstrip("/")
+                self.assertEqual(dry.digest(copied), expected_sha)
+            self.assertFalse(report["formalApproval"])
+            self.assertFalse(report["productionReleaseEligible"])
+
+    def test_l3_failure_stops_before_automatic_layer4_handoff(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder) / "failed-l3"
+            report = dry.run(self.fixture, root, fail_at="layer3:ko")
+            self.assertEqual(report["status"], "failed")
+            self.assertEqual(report["events"][-1]["step"], "layer3:ko")
+            self.assertEqual(report["events"][-1]["status"], "fail")
+            self.assertNotIn("layer4", report["layers"])
+            self.assertFalse((root / "public/flow/index.html").exists())
+            with self.assertRaises(ValueError):
+                checked_backend_run(root)
+
+    def test_current_same_model_roles_keep_independent_review_and_legacy_failure_ids(self):
+        call = dry.layer2_runner._model_call
+        with TemporaryDirectory() as folder, patch.object(dry.layer2_runner, "_model_call", wraps=call) as observed:
+            report = dry.run(self.fixture, Path(folder) / "run")
+        self.assertEqual(report["status"], "pass_simulated")
+        self.assertEqual(sum(report["externalCalls"].values()), 0)
+        self.assertEqual(len(observed.call_args_list), 12)
+        for dispatched in observed.call_args_list:
+            role, prompt, policy = dispatched.args[:3]
+            self.assertEqual(policy[role]["model"], "gpt-6.1-sol")
+            self.assertEqual(policy[role]["reasoningEffort"], "high" if role == "translator" else "medium")
+            self.assertEqual("astraDraft" in prompt["input"], role == "reviewer")
+        events = [row["step"] for row in report["events"] if row["step"].endswith((":astra", ":sol"))]
+        self.assertEqual(events[:2], ["layer2:zh-Hans:unit-0:astra", "layer2:zh-Hans:unit-0:sol"])
+
     def test_layer4_uses_formal_copy_gate_and_changed_upstream_never_creates_preview(self):
         from scripts import build_formal_dev_release_assets as formal
         from scripts import build_full_video_app_release as full

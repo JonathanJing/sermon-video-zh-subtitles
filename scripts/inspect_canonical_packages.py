@@ -117,7 +117,8 @@ def inspect_configuration(root, config):
                 or window_receipt.get('status') != 'approved' or window_receipt.get('humanApproval') is not True
                 or english.file_sha256(_safe_path(root / window_evidence['path'])) != window_evidence['sha256']
                 or hashes['sourceWindowReview'] != window_evidence['jsonSha256']
-                or window_receipt.get('sourceUrlHash') not in (None, source['source']['sourceUrlHash'])):
+                or not english.approval_url_matches(window_receipt, source['source']['sourceUrlHash'],
+                                                    source_url=summary.get('sourceUrl'))):
             raise ValueError('source_window_approval_changed')
         # The source's independent human receipt and aligned transcript remain
         # immutable evidence; do not accept a copied approval flag alone.
@@ -166,10 +167,13 @@ def inspect_configuration(root, config):
             continue
         try:
             receipt = _read_package(root, lane['humanReview'], hashes, 'review.' + locale)
-            handoff.validate_target_candidate(source, anchor, candidate)
-            handoff.validate_human_review_receipt(source, anchor, candidate, receipt)
+            # A human receipt or a machine quality waiver satisfies this gate.
+            released = handoff.validate_released_candidate(source, anchor, candidate, receipt)
             audio_id = project()['nodes'][audio]['identity']
             approvals[audio] = {'translation_review': {'identity': audio_id, 'receiptSha256': hashes['review.' + locale]}}
+            if released['textPolicy'] == handoff.MACHINE_TEXT_POLICY:
+                # Satisfied by policy, but never recorded as a human approval.
+                approvals[audio]['translation_review']['kind'] = pipeline.WAIVER_KIND
         except (ValueError, TypeError, KeyError, OSError):
             diagnostics[audio] = 'translation_review_not_validated'
             continue
@@ -193,6 +197,8 @@ def inspect_configuration(root, config):
                 page_id = project()['nodes'][page]['identity']
                 approvals[page] = {'audio_listening_review': {
                     'identity': page_id, 'receiptSha256': checked['listeningReviewSha256']}}
+                if checked.get('listeningReviewKind') == 'machine_quality_waiver':
+                    approvals[page]['audio_listening_review']['kind'] = pipeline.WAIVER_KIND
         except (ValueError, TypeError, KeyError, OSError):
             diagnostics[audio] = 'audio_package_or_review_not_validated'
             continue

@@ -78,6 +78,14 @@ class SourceTextReviewTest(unittest.TestCase):
         corrected[0]["metadata"]["sourceIds"].append(1)
         self.assertEqual(self.segments, original)
 
+    def test_new_sol_review_preserves_actual_model_identity(self):
+        review = deepcopy(self.review)
+        review["model"] = "gpt-6.1-sol"
+        corrected, provenance = self.apply(review=review)
+        self.assertEqual(provenance["model"], "gpt-6.1-sol")
+        self.assertIs(provenance["humanApproval"], False)
+        self.assertEqual(corrected[0]["text"], "But I have committed to not shield you.")
+
     def test_stale_source_audio_is_rejected(self):
         self.audio.write_bytes(b"changed source")
         with self.assertRaisesRegex(ValueError, "stale sourceAudioSha256"):
@@ -253,6 +261,24 @@ class SourceTextReviewTest(unittest.TestCase):
         self.review["reviewedAt"] = "2026-09-05T13:00:00Z"
         _, second = self.apply()
         self.assertNotEqual(first["reviewSha256"], second["reviewSha256"])
+
+    def test_machine_authority_requires_its_receipt_under_either_label(self):
+        # The machine authority always rests on one bound source-meaning receipt; v1 or v2, a review
+        # without one is refused (a v1 label is further limited to receipts from pre-v2 writers).
+        self.assertEqual(review_module.SCHEMAS, (review_module.SCHEMA, review_module.SCHEMA_V2))
+        for schema in review_module.SCHEMAS:
+            with self.subTest(schema=schema), self.assertRaisesRegex(ValueError, "exactly one source-meaning receipt"):
+                self.apply(review=dict(self.review, schemaVersion=schema, authority=review_module.MACHINE_AUTHORITY))
+        with self.assertRaisesRegex(ValueError, "conversational source correction review"):
+            self.apply(review=dict(self.review, schemaVersion="sermon-source-text-review-v3"))
+
+    def test_v2_keeps_the_conversational_review_and_records_its_schema(self):
+        corrected, provenance = self.apply(review=dict(self.review, schemaVersion=review_module.SCHEMA_V2))
+        self.assertEqual(corrected[0]["text"], "But I have committed to not shield you.")
+        self.assertEqual(provenance["schemaVersion"], review_module.SCHEMA_V2)
+        self.assertEqual(provenance["authority"], review_module.AUTHORITY)
+        _, v1 = self.apply()
+        self.assertEqual(v1["schemaVersion"], review_module.SCHEMA)
 
     def test_missing_malformed_or_duplicate_key_review_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "unavailable"):

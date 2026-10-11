@@ -34,12 +34,14 @@ struct FormalDevContentPage: Decodable {
 
     static func decode(_ data: Data, package: TargetLanguageReleasePackage) throws -> Self {
         let value = try JSONDecoder().decode(Self.self, from: data)
-        guard value.schemaVersion == "sermon-formal-dev-content-v1",
+        guard (value.schemaVersion == "sermon-formal-dev-content-v1" ||
+                (package.schemaVersion == TargetLanguageReleasePackage.dualScriptSchemaVersion &&
+                 package.contentStatus == "machine_reviewed" && value.schemaVersion == "sermon-dev-podcast-candidate-content-v2")),
               value.pageId == package.pageId, value.sourceLocale == "en",
               value.locale == package.targetLocale,
               value.targetLanguageCandidateJsonSha256 == package.targetLanguageCandidateJsonSha256,
               value.targetLanguageAudioPackageJsonSha256 == package.targetLanguageAudioPackageJsonSha256,
-              value.contentStatus == "human_reviewed", value.audioStatus == package.audioStatus,
+              value.contentStatus == package.contentStatus, value.audioStatus == package.audioStatus,
               !value.title.isEmpty, !value.series.isEmpty, !value.date.isEmpty,
               value.durationSeconds.isFinite, (7...14_400).contains(value.durationSeconds),
               !value.cues.isEmpty, value.cues.count <= 1_000,
@@ -52,10 +54,16 @@ struct FormalDevContentPage: Decodable {
         return value
     }
 
-    var html: String {
+    var html: String { renderedHTML(studies: nil) }
+
+    func renderedHTML(studies: ReviewedStudyResources?) -> String {
         let outlineHTML = outline.map { item in
             "<li><strong>\(Self.escape(item.title))</strong> \(Self.escape(item.body))</li>"
         }.joined()
+        let studyHTML = studies.map {
+            "<section id=\"study-outline\"><h2>\(locale == "zh-Hans" ? "讲道大纲" : locale == "ko" ? "설교 개요" : "Bosquejo")</h2><ol>\($0.outline.htmlItems)</ol></section>" +
+            "<section id=\"study-meditation\"><h2>\(locale == "zh-Hans" ? "默想" : locale == "ko" ? "묵상" : "Meditación")</h2><ol>\($0.meditation.htmlItems)</ol></section>"
+        } ?? "<section><ol>\(outlineHTML)</ol></section>"
         let cueHTML = cues.map { cue in
             let seconds = Int(cue.start)
             let time = String(format: "%02d:%02d", seconds / 60, seconds % 60)
@@ -67,9 +75,9 @@ struct FormalDevContentPage: Decodable {
         <style>body{font:17px/1.65 -apple-system,BlinkMacSystemFont,sans-serif;max-width:760px;margin:auto;padding:22px;color:#172333;background:#fff}h1{font-size:1.6em;line-height:1.25}header p{color:#536171}section{margin-top:30px}ol{padding-left:1.4em}li{margin:12px 0}time{color:#52637b;font-size:.85em}li p{margin:2px 0 18px}footer{font-size:.8em;color:#667}</style>
         </head><body><header><p>\(Self.escape(series)) · \(Self.escape(date))</p>
         <h1>\(Self.escape(title))</h1><p>\(Self.escape(speaker)) · \(Self.escape(scripture))</p></header>
-        <section><p>\(Self.escape(summary))</p><ol>\(outlineHTML)</ol></section>
+        <section><p>\(Self.escape(summary))</p></section>\(studyHTML)
         <section><h2>\(locale == "zh-Hans" ? "逐句内容" : locale == "ko" ? "자막" : "Subtítulos")</h2><ol>\(cueHTML)</ol></section>
-        <footer>AI generated audio · Human reviewed content · Dev POC</footer></body></html>
+        <footer>AI generated audio · \(contentStatus == "human_reviewed" ? "Human reviewed content" : "Machine reviewed content; human review pending") · Dev POC</footer></body></html>
         """
     }
 

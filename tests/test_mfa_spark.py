@@ -44,7 +44,7 @@ class SparkTransportTests(unittest.TestCase):
                 return subprocess.CompletedProcess(command, 0, b'{"schemaVersion":1,"backend":"dgx-spark-ssh","runtime":{}}')
 
             with patch.object(spark.subprocess, 'run', side_effect=execute):
-                spark._call('align', chunks=[{'text': 'Hello.'}], clip_path=link, **self.options())
+                spark._call('align', chunks=[{'text': 'Hello.'}], clip_path=link, session_verifier=lambda: {'status':'offline_test'}, **self.options())
 
     def test_nested_relay_uses_mini_key_and_host_alias(self):
         with patch.object(spark.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, b'{"schemaVersion":1,"backend":"dgx-spark-ssh"}')) as run:

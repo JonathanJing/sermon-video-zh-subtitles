@@ -54,6 +54,20 @@ class CanonicalPlanningTests(unittest.TestCase):
         self.complete('audio.ko')
         self.assertEqual(self.plan()['nodes']['page.ko']['status'], 'ready')
 
+    def test_machine_waiver_satisfies_a_gate_but_stays_visible_as_waived(self):
+        self.complete('source'); self.complete('text.ko')
+        state = self.plan()['nodes']['audio.ko']
+        self.approvals['audio.ko'] = {'translation_review': {
+            'identity': state['identity'], 'receiptSha256': 'c' * 64, 'kind': p.WAIVER_KIND}}
+        waived = self.plan()['nodes']['audio.ko']
+        self.assertNotIn('translation_review', waived['missingGates'])
+        self.assertEqual(waived['waivedGates'], ['translation_review'])
+        # A human approval records no waived gate, and an unknown kind satisfies nothing.
+        self.approvals['audio.ko']['translation_review'].pop('kind')
+        self.assertNotIn('waivedGates', self.plan()['nodes']['audio.ko'])
+        self.approvals['audio.ko']['translation_review']['kind'] = 'something_else'
+        self.assertIn('translation_review', self.plan()['nodes']['audio.ko']['missingGates'])
+
     def test_unknown_outcome_waits_without_retry_and_other_locale_progresses(self):
         self.complete('source')
         identity = self.plan()['nodes']['text.ko']['identity']

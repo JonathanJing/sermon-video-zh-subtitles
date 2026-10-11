@@ -25,8 +25,9 @@ except ImportError:  # Direct execution via ``python scripts/...``.
 SCHEMA_VERSION = "sermon-english-source-package-v1"
 REVIEW_SCHEMA_VERSION = "sermon-english-source-review-v1"
 MACHINE_JUDGE_SCHEMA_VERSION = "sermon-english-source-machine-judge-v1"
-MACHINE_JUDGE_MODEL = "gpt-6-astra"
-MACHINE_JUDGE_REASONING_EFFORT = "medium"
+MACHINE_JUDGE_MODEL = "gpt-6.1-sol"
+MACHINE_JUDGE_IDENTITIES = {("gpt-6-astra", "medium"), (MACHINE_JUDGE_MODEL, "high")}
+MACHINE_JUDGE_REASONING_EFFORT = "high"
 MACHINE_JUDGE_CHECKS = frozenset({
     "meaningPreserved",
     "negationsNumbersNames",
@@ -113,6 +114,22 @@ def _validate_reviewed_at(value: object) -> None:
         raise ValueError("English source review time must be ISO 8601") from exc
     if parsed.tzinfo is None:
         raise ValueError("English source review time must include a timezone")
+
+
+def approval_url_matches(approval: dict[str, Any], source_url_hash: str | None,
+                         *, source_url: str | None = None) -> bool:
+    """Bind original Supervisor short URL hash without rewriting its approval.
+
+    The formal package retains a full SHA-256; a legacy 16-character receipt
+    is accepted only with the actual URL whose full hash matches that package.
+    """
+    observed = approval.get("sourceUrlHash")
+    if observed in (None, source_url_hash):
+        return True
+    if not isinstance(source_url, str) or not source_url:
+        return False
+    full = hashlib.sha256(source_url.encode("utf-8")).hexdigest()
+    return full == source_url_hash and observed == full[:16]
 
 
 def _alignment_provider(summary: dict[str, Any]) -> str:
@@ -256,8 +273,7 @@ def _machine_judge_payload(
         raise ValueError("English source machine judge must retain model-only provenance")
     judge_script = Path(__file__).resolve().with_name("judge_english_source_for_translation.py")
     if (judge.get("implementationSha256") != file_sha256(judge_script)
-            or judge.get("model") != MACHINE_JUDGE_MODEL
-            or judge.get("reasoningEffort") != MACHINE_JUDGE_REASONING_EFFORT
+            or (judge.get("model"), judge.get("reasoningEffort")) not in MACHINE_JUDGE_IDENTITIES
             or judge.get("promptVersion") != MACHINE_JUDGE_SCHEMA_VERSION
             or judge.get("thresholds") != MACHINE_JUDGE_THRESHOLDS):
         raise ValueError("English source machine judge implementation or policy is not current")
@@ -360,7 +376,7 @@ def build_package(
         approval_evidence_path = approval_evidence_path.resolve()
         approval = read_object(approval_evidence_path, "operator window approval")
         approval_artifact = artifact(approval_evidence_path, value=approval)
-        if source_url_hash and approval.get("sourceUrlHash") not in (None, source_url_hash):
+        if source_url_hash and not approval_url_matches(approval, source_url_hash, source_url=summary.get("sourceUrl")):
             raise ValueError("Operator approval belongs to a different source URL")
         identity = summary.get("pipelineInputIdentity")
         pipeline_window = identity.get("sermonWindow") if isinstance(identity, dict) else None

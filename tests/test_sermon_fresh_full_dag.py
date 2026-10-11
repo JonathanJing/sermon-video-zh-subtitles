@@ -13,6 +13,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -285,6 +286,18 @@ class ActualFreshFullPrefectTests(unittest.TestCase):
 def run_clean_scenario(repository, scenario):
     """Both invocations are separate actual SDK processes; no identity patches."""
     from tests.mock_tts_sdk_diagnostics import result_summary
+    from tests.mock_tts_preflight import require_native_worker_preflight
+    from tests.mock_experiment_progress import emit_progress
+    emit_progress('preflight_started', scenario=scenario)
+    preflight_started = time.monotonic()
+    try:
+        require_native_worker_preflight(scenario)
+    except Exception:
+        emit_progress('preflight_finished', scenario=scenario, status='failed',
+            wall_seconds=time.monotonic()-preflight_started)
+        raise
+    emit_progress('preflight_finished', scenario=scenario, status='completed',
+        wall_seconds=time.monotonic()-preflight_started)
     fixture = FullFreshDAGFixture(); fixture.setUp()
     def brief(value):
         return json.dumps(result_summary(value, fixture.root/'fresh-full-dag'/value['planSha256']), sort_keys=True)
@@ -305,10 +318,27 @@ def run_clean_scenario(repository, scenario):
             payload_path = fixture.root/('sdk-invoke-'+str(number)+'.json')
             payload_path.write_text(json.dumps(fixture.payload(config, result_path,
                 allow_calls=number == 1, recovery=recovery)))
-            child = subprocess.run([sys.executable, '-c', launch, repository, str(payload_path)],
-                cwd=str(fixture.root), env=environment, capture_output=True, text=True, timeout=650)
+            emit_progress('invocation_started', scenario=scenario, invocation=number)
+            invocation_started = time.monotonic()
+            try:
+                child = subprocess.run([sys.executable, '-c', launch, repository, str(payload_path)],
+                    cwd=str(fixture.root), env=environment, capture_output=True, text=True, timeout=650)
+                if child.returncode:
+                    emit_progress('invocation_finished', scenario=scenario, invocation=number,
+                        status='failed', wall_seconds=time.monotonic()-invocation_started)
+            except Exception:
+                emit_progress('invocation_finished', scenario=scenario, invocation=number,
+                    status='failed', wall_seconds=time.monotonic()-invocation_started)
+                raise
             assert child.returncode == 0, child.stdout[-4000:]+child.stderr[-14000:]
-            result = json.loads(result_path.read_text()); results.append(result)
+            try:
+                result = json.loads(result_path.read_text()); results.append(result)
+            except Exception:
+                emit_progress('invocation_finished', scenario=scenario, invocation=number,
+                    status='failed', wall_seconds=time.monotonic()-invocation_started)
+                raise
+            emit_progress('invocation_finished', scenario=scenario, invocation=number,
+                status=result['status'], wall_seconds=time.monotonic()-invocation_started)
             assert result['syntheticProviderDispatches'] == (6 if number == 1 else 0), brief(result)
             assert result['newMockDispatches'] == (2 if number == 1 else 1 if scenario == 'failure' else 0), brief(result)
             assert result['realProviderCalls'] == result['realModelCalls'] == result['newMFACalls'] == 0, brief(result)
@@ -376,6 +406,7 @@ def run_clean_scenario(repository, scenario):
                         (frozen/'mock-control'/'reconciliations').glob('*.json')]
                     assert any(row['status'] == 'succeeded' for row in reconciliations)
                     assert result['nodes']['mock.input.'+UNITS[0]]['jobId'] == results[0]['nodes']['mock.input.'+UNITS[0]]['jobId']
+        emit_progress('scenario_verified', scenario=scenario, status='completed')
         print('actual-fresh-full-'+scenario+'-ok')
     finally:
         try: preserve_full_evidence(fixture.root, scenario)

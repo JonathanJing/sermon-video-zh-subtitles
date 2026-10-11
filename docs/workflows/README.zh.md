@@ -25,6 +25,7 @@
 3. **周日实时字幕：** 以当场麦克风和当下英文 ASR 为事实来源，本地生成中文字幕并保留独立恢复录音。
 
 **多语言生产合同：** 今后预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)，按 locale 的 DAG 调度与长期讲员 checkpoint 管理见[多语言每周调度与 Speaker Voice Registry](../multilingual-speaker-voice-registry.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语、越南语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。当前 Layer 1 已接入确定性 shadow，独立机器裁判可解锁 Layer 2 shadow 开发但不授予正式资格；韩语已有界面、`sourceLocale=en` 展示 sidecar、六句机器审核候选、片段 TTS/ASR 演示、Target-Language Candidate 合同和 Layer 2 → Layer 3 speech-job 准备器。韩语整篇人工翻译、完整音轨听审、真实同步及通用 Layer 2–4 正式 producer 尚未完成。因此现有 legacy 工具只能完成它们明确的 PDF、中文音频或页面范围；没有四个 canonical package 和各自门禁时，不得报告“四层生产完成”。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
+环境首次准备与周更开工核对见[多语言证道生产环境准备](../environment-preparation.zh.md)，其中按四层列出凭据、工具、Codex Skills、Layer 4 发布及海报收尾。
 
 ![四层多语言生产：每层流程、模型、输出与门禁](../diagrams/four-layer-production-workflow.svg)
 
@@ -75,11 +76,13 @@
 
 可选的[统一检查与执行入口](../saturday-harness.zh.md)按顺序连接原 PDF Supervisor 和配音桥接器，分开报告 PDF、候选、听审、同步与发布。[执行保护](../sermon-execution-harness.zh.md)连接 [Promptfoo 真实固定回归集](../saturday-quality-harness.zh.md)、[本机持久化追踪与自动观察](../sermon-trace-export.zh.md)及 [Temporal 持久工作流](../sermon-temporal.zh.md)。各自的实际集成证据和运行命令见专题文档；不表示真实生产或现场已通过，也未自动替换定时任务。
 
-**Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[目标语言 Astra→Sol 操作说明](../target-language-astra-sol-production.zh.md)执行：Astra 初译、Sol 逐组独立复核，之后运行冻结语言插件并逐组人工审核。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
+统一入口与持久化推进的开发说明见[统一 CLI 与持久化执行](../unified-cli-pipeline.zh.md)，流程、产物和命令的字段合同见[协议](../unified-cli-protocol.zh.md)。命令、owner 服务和验收目标仍是拟议能力，不代表正式生产已经打通或提速已经实测。
 
-**控制层迁移说明（2026-09-11）：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 已在本地 runner 接入 OpenAI Agents API，默认 `--agent-backend agents-api`，原 Agents SDK / Responses 通过 `--agent-backend sdk` 显式回退。服务端 session 使用 `environment: none`；本地只执行状态检查、来源媒体准备（保留 timeline 工具名）和经审批 PDF 生成三个受限业务工具，另有结构化结论提交。Session 状态和工具结果持久化，同一会话恢复；自动新建会话须先确认远端 completed/failed/cancelled 且无执行中或结果未确认的工具，本地 timeout 或取消 ACK 不足以放行；source、人工审批、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
+**Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[当前模型及调用策略](../production-model-runtime-policy.zh.md)执行：Sol 6.1 high 初译、Sol 6.1 medium 逐组独立复核，默认走 OpenAI API 与已批准的请求 tier，之后运行冻结语言插件和候选准入。正式后继门禁消费人工收据，或在已支持路径消费有效的[机器质检豁免](../machine-quality-waiver.zh.md)；机器豁免保持 `humanApproval=false`。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
 
-Supervisor 调度默认使用 `gpt-6-sol` Medium，SDK 回退也使用同一 Sol；生产内容的 Astra Medium 和 ASR 的 `gpt-transcribe` 不变。Agents API 仅接收固定 allowlist 的日期、动作枚举与证据布尔状态；完整 snapshot 和用于恢复配置核对的 `configFingerprint` 留在本地。旧 Astra 会话仍按原模型恢复，未决会话不得因切换默认值而被跳过。
+**当前控制层：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 的新 dev／正式本地任务默认 `--agent-backend codex-cli`，使用 Luna medium fast。旧 Agents API 会话以显式 `--agent-backend agents-api` 按原身份恢复，新 SDK 会话禁用，自动后端 fallback 禁用。source、审批或适用的豁免、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
+
+**历史控制层迁移（2026-09-11）：** 当时接入的 Agents API 只接收固定 allowlist 的日期、动作枚举与证据布尔状态；完整 snapshot 和用于恢复配置核对的 `configFingerprint` 留在本地。Session 状态和工具结果持久化，同一会话恢复；新建会话前须确认远端 completed/failed/cancelled 且无执行中或结果未确认的工具，本地 timeout 或取消 ACK 不足以放行。旧 Astra／Sol 会话仍按原模型恢复，未决会话不得因切换默认值而被跳过；当时的模型及后端不是新任务默认值。
 
 真实 Agents API 的两个全模拟用例已核验：`live-synthetic-01` 缺审批用例完成 2 次工具调用、未调用生成并返回 usage；`live-synthetic-advance-01` 完成 4 次工具调用，模拟 generation 执行恰好 1 次。`live-real-shadow-minimal-01` 对 2026-09-13 实际生产 GCS 状态作只读检查，当时结果为 `waiting_for_matching_sunday`。这些都是带日期的切换证据，不代表 9 月 20 日以后仍处于相同业务状态；当前周次必须重新读取本地和 GCS snapshot。[报告链接与验证限界](../sermon-production-supervisor-agent.zh.md#验证进度)也不能代替真实产物或现场验收。
 

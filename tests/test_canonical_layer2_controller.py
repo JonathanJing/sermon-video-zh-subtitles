@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import threading
 import time
 import unittest
 from unittest.mock import patch
@@ -34,6 +35,8 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
                             'locales': {'zh-Hans': {'outputDirectory': 'outputs/zh-Hans',
                                                    'plugin': str(self.fixture.fixture.plugin_path)}}}
         self.save_config()
+        (self.root / "invalid-auth").mkdir()
+        (self.root / "invalid-auth" / "auth.json").write_text(json.dumps({"auth_mode": "api"}))
         self.calls = []
 
     def save_config(self):
@@ -50,7 +53,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         input_group = json.loads(payload['messages'][1]['content'])
         group = self.fixture.fixture.evidence['groups'][index]
         fields = ['translationGroupId', 'sourceUnitIds', 'targetUtterances', 'coverage']
-        if payload['model'] == 'gpt-6-sol':
+        if payload['reasoning_effort'] == 'medium':
             fields += ['semanticReview']
         answer = {k: copy.deepcopy(group[k]) for k in fields}
         answer['translationGroupId'] = input_group['translationGroupId']
@@ -131,7 +134,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             self.assertFalse(candidate['releaseEligible'])
             self.assertEqual(candidate['humanReview']['translation'], 'pending')
             self.assertEqual(result['candidateJsonSha256'], jobs._digest(candidate))
-            self.assertEqual([c['model'] for c in self.calls], ['gpt-6-astra', 'gpt-6-sol']*2)
+            self.assertEqual([c['model'] for c in self.calls], ['gpt-6.1-sol', 'gpt-6.1-sol']*2)
             self.assertTrue((self.output / 'language-review.json').is_file())
             jobs._write_state(folder, key, 'succeeded')
         controller = subject.Controller(self.path, mode='deterministic_execute')
@@ -175,6 +178,29 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         candidate = json.loads((self.output / 'candidate.json').read_text())
         self.assertNotIn('spanId', json.dumps(candidate))
         self.assertFalse(candidate['releaseEligible'])
+
+    def test_state_wrapper_preserves_cli_decoder_and_identity_without_api_envelope(self):
+        decoded = []
+        owner = self
+        class CliCaller:
+            execution_identity = {'backend': 'codex_cli', 'testIdentity': 'mock-only'}
+            billing = 'local'
+            def __call__(self, key, payload):
+                api = owner.fake_call(key, payload)
+                return {'id': api['id'], 'cliContent': api['choices'][0]['message']['content']}
+            def completed_content(self, response, model, role):
+                decoded.append((model, role))
+                return response['cliContent']
+        with self.active() as (config, code, key, _):
+            result = subject.execute(config.path, 'zh-Hans', config.sha256, code, key,
+                                     caller=CliCaller(), api_key='fixture-key')
+        self.assertFalse(result['releaseEligible'])
+        self.assertEqual(decoded, [('gpt-6.1-sol', 'translator'), ('gpt-6.1-sol', 'reviewer')]*2)
+        cached_hashes = {json.loads(path.read_text())["payloadSha256"] for path in self.output.glob("*-astra.json")}
+        expected_hashes = {subject.models.policy_tools.canonical_sha256({
+            "payload": payload, "modelTransportIdentity": CliCaller.execution_identity})
+            for payload in self.calls if payload["reasoning_effort"] == "high"}
+        self.assertEqual(cached_hashes, expected_hashes)
 
     def test_plugin_failure_keeps_model_evidence_and_records_failed_dependency_leaf(self):
         with self.active() as (config, code, key, _), patch.object(
@@ -269,6 +295,17 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         self.assertEqual(result['nodes']['text.zh-Hans']['status'], 'blocked')
         self.assertIsNone(result['proposedWorkUnit'])
 
+    def test_outputs_cannot_overlap_derived_durable_roots(self):
+        for suffix in ('layer2-repair', 'layer2-budget'):
+            for output in (f'.jobs.{suffix}', f'.jobs.{suffix}/nested'):
+                with self.subTest(output=output):
+                    self.config_data['locales']['zh-Hans']['outputDirectory'] = output
+                    self.save_config()
+                    before = self.files()
+                    with self.assertRaisesRegex(ValueError, 'execution_paths_overlap'):
+                        subject.load_configuration(self.path)
+                    self.assertEqual(self.files(), before)
+
     def test_unknown_fields_and_overlapping_outputs_are_rejected(self):
         base = copy.deepcopy(self.config_data)
         for key, value in [('command', ['sh','-c','anything']), ('apiKey','must-not-be-stored'), ('mode','execute')]:
@@ -286,18 +323,56 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             self.assertFalse(result['dispatched'])
             start.assert_not_called()
             view = subject.snapshot(config)
-            # Even a separate ready lane cannot exceed this adapter's initial
-            # per-production-run locale capacity.
+            # A running locale reserves the single controller slot.
             view['nodes']['text.ko'] = {'status': 'ready'}
             controller.config.lanes['ko'] = {}
             self.assertIsNone(controller._choose(view))
 
-    def test_actual_worker_cli_without_key_stops_before_any_model_cache(self):
+    def test_binding_is_rechecked_after_waiting_for_api_slot(self):
+        entered = threading.Event()
+        release = threading.Event()
+        calls = []
+        errors = []
+
+        @contextmanager
+        def held_slot(_job_root):
+            entered.set()
+            if not release.wait(timeout=10):
+                raise TimeoutError('test did not release API slot')
+            yield
+
+        def caller(key, payload):
+            calls.append(payload)
+            return self.fake_call(key, payload)
+
+        with self.active() as (config, code, key, _):
+            with patch.object(subject.api_concurrency, 'request_slot', held_slot):
+                def execute():
+                    try:
+                        self.execute(config, code, key, caller=caller)
+                    except BaseException as exc:
+                        errors.append(exc)
+
+                worker = threading.Thread(target=execute)
+                worker.start()
+                try:
+                    self.assertTrue(entered.wait(timeout=5))
+                    self.config_data['productionRunId'] = 'b' * 64
+                    self.save_config()
+                finally:
+                    release.set()
+                worker.join(timeout=5)
+                self.assertFalse(worker.is_alive())
+        self.assertEqual(calls, [])
+        self.assertEqual(len(errors), 1)
+        self.assertIn('worker_configuration_or_code_changed_during_models', str(errors[0]))
+
+    def test_actual_worker_api_without_budget_stops_before_any_model_cache(self):
         with self.active() as (config, code, key, _):
             result = subprocess.run(subject._worker_command(config, 'zh-Hans', key, code),
-                cwd=subject.ROOT, env={'OPENAI_API_KEY': ''}, capture_output=True, text=True, timeout=10)
+                cwd=subject.ROOT, env={'OPENAI_API_KEY': '', 'CODEX_HOME': str(self.root / 'invalid-auth')}, capture_output=True, text=True, timeout=10)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn('OPENAI_API_KEY_is_not_configured', result.stderr)
+        self.assertIn('bound_budget_authorization_required', result.stderr)
         self.assertEqual({p.name for p in self.output.iterdir()}, {'accounting'})
         events, damaged = accounting.read_events(self.output / 'accounting')
         self.assertFalse(damaged)
@@ -307,7 +382,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
     def test_two_real_controllers_launch_one_durable_attempt_and_preserve_failure(self):
         command = [sys.executable, str(Path(subject.__file__).resolve()), 'tick', '--config', str(self.path),
                    '--mode', 'deterministic_execute']
-        children = [subprocess.Popen(command, cwd=subject.ROOT, env={'OPENAI_API_KEY': ''},
+        children = [subprocess.Popen(command, cwd=subject.ROOT, env={'OPENAI_API_KEY': '', 'CODEX_HOME': str(self.root / 'invalid-auth')},
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) for _ in range(2)]
         outputs = []
         try:
@@ -354,8 +429,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             pass
         controller = subject.Controller(self.path)
         view = subject.snapshot(controller.config)
-        view['nodes']['text.ko'] = {'status': 'ready'}
-        controller.config.lanes['ko'] = {}
+        # An uncertain owner conservatively retains the single locale slot.
         self.assertTrue(controller._capacity_full(view))
         self.assertIsNone(controller._choose(view))
 

@@ -24,6 +24,9 @@ import urllib.request
 import uuid
 import webbrowser
 
+if __package__ in (None, ''):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 def official_prompt(source: str) -> str:
     """Frozen source-only MiLMMT A0 prompt; never apply a chat template."""
     return ("Translate this from English to Chinese (Simplified):\n"
@@ -100,8 +103,18 @@ class MLXEngine:
             raise ValueError("unexpected EOS configuration")
 
     def translate(self, source, emit, cancelled):
+        from scripts import sermon_model_call_observation as model_calls
+        from scripts import sermon_accounting as accounting
+        name = 'milmmt.warmup' if source == WARMUP else 'milmmt.translate'
+        with accounting.stage(name, billing='local', executor_type='production_model'):
+            with model_calls.invocation('milmmt-sermon-v41-experimental-mlx-q5', backend='local', provider='mlx',
+                    role='production', timing_scope='request', usage_source='local_tokenizer') as receipt:
+                return self._translate(source, emit, cancelled, receipt)
+
+    def _translate(self, source, emit, cancelled, receipt):
         started = time.perf_counter()
         prompt = self.tokenizer.encode(official_prompt(source), add_special_tokens=False)
+        receipt['usage'] = {'inputTokens': len(prompt)}
         if len(prompt) > MAX_PROMPT_TOKENS:
             raise RequestError("原文分词后过长，请拆成更短的段落。", 413)
         self.mx.random.seed(42)
@@ -113,10 +126,13 @@ class MLXEngine:
                 if cancelled.is_set():
                     raise RequestError("翻译已取消。", 499)
                 elapsed = time.perf_counter() - started
+                if receipt['firstTokenSeconds'] is None:
+                    receipt['firstTokenSeconds'] = elapsed
                 if elapsed > MAX_SECONDS:
                     raise RequestError("翻译超时，请缩短原文后重试。", 504)
                 parts.append(response.text)
                 token_ids.append(int(response.token))
+                receipt['usage']['outputTokens'] = len(token_ids)
                 if first_chinese is None and any("\u3400" <= c <= "\u9fff" for c in response.text):
                     first_chinese = elapsed * 1000
                 if response.text:
@@ -127,6 +143,10 @@ class MLXEngine:
             self.mx.synchronize()
         if last is None or last.finish_reason != "stop" or not "".join(parts).strip():
             raise RequestError("输出未完整结束，请缩短原文后重试。", 422)
+        receipt['usage']['outputTokens'] = last.generation_tokens
+        measured_rate = getattr(last, 'generation_tps', None)
+        if type(measured_rate) in (int, float) and 0 < measured_rate < float('inf'):
+            receipt['usage']['generation_tps'] = measured_rate
         return {"text": "".join(parts), "source": source, "finishReason": "stop",
                 "promptTokens": len(prompt), "generatedTokens": last.generation_tokens,
                 "generatedTokenIdsSha256": hashlib.sha256(json.dumps(token_ids, separators=(",", ":")).encode()).hexdigest(),
@@ -344,6 +364,14 @@ def write_state(path, value):
 
 
 def serve(args):
+    from scripts import sermon_accounting as accounting
+    # Main-thread session exports attribution to the dedicated MLX worker.
+    # The existing service state directory keeps logs outside tracked source.
+    with accounting.accounting_session(args.state_dir / 'accounting', 'milmmt_local_service', {'mode': 'execute'}):
+        return _serve(args)
+
+
+def _serve(args):
     # Held for the entire process lifetime, including model loading and shutdown.
     lifetime_lock = (args.state_dir / "service.lock").open("a")
     try:

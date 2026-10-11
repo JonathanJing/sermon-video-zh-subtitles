@@ -347,18 +347,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--anchor-manifest", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--model", default="gpt-6-astra")
-    parser.add_argument("--reasoning-effort", default="medium")
+    parser.add_argument("--model", default="gpt-6.1-sol")
+    parser.add_argument("--reasoning-effort", default="high")
     parser.add_argument("--batch-size", type=int, default=15)
     parser.add_argument("--workers", type=int, default=3)
     parser.add_argument("--api-key-secret", help="Google Secret Manager resource for OPENAI_API_KEY")
     args = parser.parse_args()
-    if args.api_key_secret:
+    if args.model == "gpt-6.1-sol":
+        api_key = ""
+    elif args.api_key_secret:
         from backend.cloud import access_secret
         api_key = access_secret(args.api_key_secret)
     else:
         api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not api_key:
+    if not api_key and args.model != "gpt-6.1-sol":
         raise SystemExit("OPENAI_API_KEY is not set and --api-key-secret was not provided")
     result = run(
         manifest_path=args.anchor_manifest,

@@ -1,10 +1,12 @@
 # 证道阅读版生产 Supervisor Agent
 
+当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
+
 2026-09-11 的安装与验收状态见 [Agents API 生产切换记录](agents-api-production-cutover-20260911.zh.md)：当时代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用，业务状态为等待匹配源。该值是带日期的切换收据，不是当前周次的永久状态；每次运行都须重新读取 source、lease、审批、run status 与 QA。后续完整内容制作证据见 [2026-09-20 制作记录](production-2026-09-20.zh.md)。
 
 ## 结论
 
-控制层已接入 **OpenAI Agents API**，本地 runner 默认值为 `--agent-backend agents-api`，原 OpenAI Agents SDK / Responses 路径保留为显式 `--agent-backend sdk` 回退。以下描述当前控制层契约；真实 API 用例、本机定时接入和真实生产验收分别记录。已通过的合成用例不等于完整生产切换。
+新 dev／正式控制层使用 **Codex CLI**，默认 `--agent-backend codex-cli`、`gpt-6-luna`／medium／fast。旧 Agents API 仅保留明确的原会话续跑，新 SDK 会话禁用。以下描述当前控制层契约；真实 API 用例、本机定时接入和真实生产验收分别记录。已通过的合成用例不等于完整生产切换。
 
 - Cloud Scheduler 只负责轻量直播找源
 - 本地 runner 负责推进生产 Supervisor；是否已有有效 Codex 定时任务以本机核验和 runbook 回执为准
@@ -30,7 +32,7 @@ flowchart LR
     G --> L
 ```
 
-Agents API 在服务端保存 session 并驱动控制循环，使用 `environment: none`；本地 runner 执行批准暴露的工具并提交结果。原有下载、ASR、翻译、PDF 渲染、QA 和发布仍在确定性 Python 层。Supervisor 调度默认模型为 **`gpt-6-sol`，reasoning effort `medium`**；显式 SDK 回退也使用同一 Sol Medium 模型，只切换控制层 transport。实际翻译/阅读审核/证道同行保持 Astra Medium，ASR 保持 `gpt-transcribe`。旧 Astra 会话仍绑定原模型，未决会话必须先核实，不因默认值改变而另开 Sol 会话。
+CLI Supervisor 读取最小结构化状态，返回受 schema 约束的操作，本地 ProductionTools 在原审批、lease 与阶段去重门禁下执行。新默认为 **`gpt-6-luna`／medium／fast**；原 Astra Medium 文字角色改为 **`gpt-6.1-sol`／high／fast**，原 Sol Medium 独立复核改为 **`gpt-6.1-sol`／medium／fast**，统一使用 Codex CLI。ASR 保持 `gpt-transcribe`，API key 仅供转录。下文 API session 细节用于历史原会话恢复；未决旧会话先对账，不因默认值变化另开 CLI 任务。
 
 Cloud Scheduler 不会把一个 HTTP target 的返回结果自动传给另一个 target。自动交接通过持久状态完成：
 

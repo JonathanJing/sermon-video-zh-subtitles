@@ -24,23 +24,33 @@ DEFAULT_REQUEST_LIMITS = {'schemaVersion': SCHEMA, 'maxInputTokens': 8192,
 MAX_REQUEST_LIMITS = {**DEFAULT_REQUEST_LIMITS, 'maxInputTokens': 16384, 'maxCompletionTokens': 8192}
 RUN_TARGET_MICROUSD = 25_000_000
 RUN_HARD_CAP_MICROUSD = 40_000_000
-SUPPORTED_MODELS = ('gpt-6-astra', 'gpt-6-sol')
+SUPPORTED_MODELS = ('gpt-6-astra', 'gpt-6-sol', 'gpt-6.1-sol', 'gpt-6-luna')
 SUPPORTED_REASONING_EFFORTS = ('low', 'medium', 'high', 'xhigh', 'max')
 MODEL_REASONING_EFFORTS = {
     'gpt-6-astra': SUPPORTED_REASONING_EFFORTS,
     'gpt-6-sol': ('low', 'medium', 'high', 'xhigh', 'max'),
+    'gpt-6.1-sol': ('low', 'medium', 'high', 'xhigh', 'max'),
+    'gpt-6-luna': ('none', 'low', 'medium', 'high', 'xhigh', 'max'),
 }
-PRICE_VERIFIED_AT = '2026-09-30'
+PRICE_VERIFIED_AT = '2026-10-05'
 PRICE_SOURCES = {
     'gpt-6-astra': 'https://developers.openai.com/api/docs/pricing?tab=suite',
     'gpt-6-sol': 'https://developers.openai.com/api/docs/models/gpt-6-sol',
+    'gpt-6.1-sol': 'https://developers.openai.com/api/docs/models/gpt-6.1-sol',
+    'gpt-6-luna': 'https://developers.openai.com/api/docs/models/gpt-6-luna',
 }
-PRICE_ASSUMPTION_VERSION = 'strict-chat-worst-case-2026-09-30-v1'
+PRICE_ASSUMPTION_VERSION = 'strict-chat-worst-case-2026-10-05-v2'
+PRICE_VERIFIED_AT_BY_MODEL = {model: PRICE_VERIFIED_AT for model in SUPPORTED_MODELS}
+PRICE_ASSUMPTION_VERSION_BY_MODEL = {model: PRICE_ASSUMPTION_VERSION for model in SUPPORTED_MODELS}
+PRICE_VERIFIED_AT_BY_MODEL['gpt-6-luna'] = '2026-10-08'
+PRICE_ASSUMPTION_VERSION_BY_MODEL['gpt-6-luna'] = 'strict-chat-luna-2026-10-08-v1'
 # USD per million tokens equals micro-USD per token. Exact decimal strings avoid
 # float under-reservation; these rates cannot be supplied by a model/caller.
 PRICES_USD_PER_MILLION = {
     'gpt-6-astra': {'inputWorstCase': '12.5', 'output': '50'},
     'gpt-6-sol': {'inputWorstCase': '2.5', 'output': '10'},
+    'gpt-6.1-sol': {'inputWorstCase': '2.5', 'output': '10'},
+    'gpt-6-luna': {'inputWorstCase': '0.125', 'output': '0.5'},
 }
 MAX_METRIC = 10**15
 MAX_MESSAGES = 16
@@ -189,10 +199,11 @@ def usage_resolver(observation):
 def usage_cost_evidence(observation):
     """Safe provenance separate from the numeric durable-budget projection."""
     measured, reason = _observation(observation)
-    common = {'currency': 'USD', 'priceAssumptionVersion': PRICE_ASSUMPTION_VERSION,
+    model = measured['model'] if measured is not None else None
+    common = {'currency': 'USD', 'priceAssumptionVersion': PRICE_ASSUMPTION_VERSION_BY_MODEL.get(model, PRICE_ASSUMPTION_VERSION),
         'priceBasis': 'frozen_worst_case_input_and_output_rate_assumption',
-        'invoiceVerified': False, 'priceVerifiedAt': PRICE_VERIFIED_AT,
-        'priceSource': None if measured is None else PRICE_SOURCES[measured['model']],
+        'invoiceVerified': False, 'priceVerifiedAt': PRICE_VERIFIED_AT_BY_MODEL.get(model, PRICE_VERIFIED_AT),
+        'priceSource': None if measured is None else PRICE_SOURCES[model],
         'costStatus': 'unknown' if measured is None else 'estimated_upper_bound',
         'reasonCode': reason}
     if measured is None:
@@ -207,8 +218,9 @@ def usage_cost_evidence(observation):
 def request_cost_evidence(payload, limits):
     """Explain the reservation upper bound without claiming actual usage/spend."""
     capped = bounded_payload(payload, limits)
-    return {'priceAssumptionVersion': PRICE_ASSUMPTION_VERSION,
-        'priceSource': PRICE_SOURCES[capped['model']], 'priceVerifiedAt': PRICE_VERIFIED_AT,
+    model = capped['model']
+    return {'priceAssumptionVersion': PRICE_ASSUMPTION_VERSION_BY_MODEL[model],
+        'priceSource': PRICE_SOURCES[model], 'priceVerifiedAt': PRICE_VERIFIED_AT_BY_MODEL[model],
         'priceBasis': 'frozen_worst_case_input_and_output_rate_assumption', 'invoiceVerified': False,
         'costStatus': 'request_reservation_upper_bound', 'model': capped['model'], 'serviceTier': 'default',
         'inputBoundBasis': 'serialized_messages_response_format_utf8_bytes_plus_framing_allowance',

@@ -27,14 +27,14 @@ from tests.test_sermon_transcription_request import wav, riff_size
 
 class BoundedRunTests(unittest.TestCase):
     def setUp(self):
-        self.fixture=provider_fixtures.ProviderTests();self.fixture.setUp();self.addCleanup(self.fixture.doCleanups)
+        self.fixture=provider_fixtures.ProviderTests();self.addCleanup(self.fixture.doCleanups); self.fixture.setUp()
         self.f=self.fixture.f
         self.raw=wav(frames=16000*180)
         self.calls=[]
         self.clip=self.f.root/'source-180s.mp4'
         self.clip.write_bytes(b'synthetic approved clip')
         self.subject=provider.DiagnosticProvider(self.fixture.store,
-            config(sourceAudioSha256=c.bytes_sha256(self.raw), sourceClipSha256=c.bytes_sha256(self.clip.read_bytes())), executor=self.capture,
+            config(sourceAudioSha256=c.bytes_sha256(self.raw), sourceClipSha256=c.bytes_sha256(self.clip.read_bytes())), request_limits=self.fixture.selected, executor=self.capture,
             monotonic=lambda:100.,domain=lambda:'7'*64)
         self.runner=run.BoundedRun(self.subject,'synthetic',self.f.root,source_clip=self.clip)
         self.groups=self.f.f.evidence['groups'].copy()
@@ -101,6 +101,24 @@ class BoundedRunTests(unittest.TestCase):
         self.assertTrue(all(row['usage']['inputTokens']==100 for row in receipts[1:]))
         checks=[row for row in rows if row['event']=='rqc_observation']
         self.assertTrue(checks)
+
+    def test_default_input_cap_still_blocks_expanded_review_before_dispatch(self):
+        from scripts import sermon_provider_limits as limits
+        self.subject = provider.DiagnosticProvider(self.fixture.store, self.subject.config,
+            request_limits=limits.DEFAULT_REQUEST_LIMITS, executor=self.capture,
+            monotonic=lambda:100., domain=lambda:'7'*64)
+        self.runner = run.BoundedRun(self.subject, 'synthetic', self.f.root, source_clip=self.clip)
+        with self.f.session():
+            self.runner.transcribe(self.raw)
+            self.runner.source_check(operation_id='source.initial')
+            result = self.locale()
+        self.assertEqual(result['status'], 'blocked')
+        self.assertEqual([row['reasonCode'] for row in result['groups']],
+            ['provider_input_bound_exceeded'] * 2)
+        # Only ASR, Source and the two translators ran; no review reservation.
+        self.assertEqual(len(self.calls), 4)
+        self.assertEqual(self.subject.snapshot()['requestCount'], 4)
+        self.assertTrue(all(row['reviewReceipt'] is None for row in result['groups']))
 
     def test_changed_clip_rejects_every_phase_before_reservation(self):
         self.clip.write_bytes(b'different unapproved clip')

@@ -1,0 +1,361 @@
+{
+  "schemaVersion": "codex-translation-three-arm-ab-v1",
+  "date": "2026-10-05",
+  "groups": 13,
+  "units": 39,
+  "freshCalls": {
+    "astra_medium": 0,
+    "sol_high": 0,
+    "sol_low": 13
+  },
+  "humanApproval": false,
+  "metrics": {
+    "astra_medium": {
+      "sumSeconds": 144.1548613330815,
+      "medianSeconds": 11.116236082976684,
+      "minSeconds": 8.42126970901154,
+      "maxSeconds": 13.769550416967832,
+      "usage": {
+        "input_tokens": 210723,
+        "cached_input_tokens": 24576,
+        "output_tokens": 2916,
+        "reasoning_output_tokens": 0
+      }
+    },
+    "sol_high": {
+      "sumSeconds": 314.8734965841286,
+      "medianSeconds": 25.6600077500334,
+      "minSeconds": 15.390736624947749,
+      "maxSeconds": 29.118092791060917,
+      "usage": {
+        "input_tokens": 211499,
+        "cached_input_tokens": 24832,
+        "output_tokens": 7162,
+        "reasoning_output_tokens": 4286
+      }
+    },
+    "sol_low": {
+      "sumSeconds": 160.29733637627214,
+      "medianSeconds": 12.553720874944702,
+      "minSeconds": 9.26807687501423,
+      "maxSeconds": 17.798541916999966,
+      "usage": {
+        "input_tokens": 211410,
+        "cached_input_tokens": 12416,
+        "output_tokens": 2879,
+        "reasoning_output_tokens": 0
+      }
+    }
+  },
+  "ratios": {
+    "lowOverAstraSum": 1.1119800948362897,
+    "lowOverHighSum": 0.5090848804845141
+  },
+  "fasterPairCounts": {
+    "lowVsAstra": 2,
+    "lowVsHigh": 13
+  },
+  "validation": {
+    "sameSourcePromptsAndSchema": true,
+    "baselineFingerprints": true,
+    "allCliCallsCompletedNoTools": true,
+    "resumeFreshCalls": 0,
+    "resumeCacheHits": 13,
+    "effortMismatchRejected": true,
+    "frozenRunnerVerified": true
+  },
+  "limitations": [
+    "Historical sequential arms, not randomized contemporaneous repeats",
+    "CLI requested model identity; server model unavailable",
+    "Single machine blinded review, not human translation approval",
+    "180-second zh-Hans introduction; no direct Bible quotations"
+  ],
+  "artifactRoots": {
+    "previousHigh": "artifacts/codex-astra-medium-sol61-high-ab-20261005",
+    "newLow": "artifacts/codex-astra-medium-sol61-low-ab-20261005"
+  },
+  "quality": {
+    "reviewType": "independent_agent_three_arm_machine_blind_review",
+    "humanApproval": false,
+    "reviewerSawModelKey": false,
+    "positionAssignment": "balanced cyclic rotation per group",
+    "groups": [
+      {
+        "group": "fresh-g001",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      },
+      {
+        "group": "fresh-g002",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      },
+      {
+        "group": "fresh-g003",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      },
+      {
+        "group": "fresh-g004",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      },
+      {
+        "group": "fresh-g005",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      },
+      {
+        "group": "fresh-g006",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      },
+      {
+        "group": "fresh-g007",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      },
+      {
+        "group": "fresh-g008",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      },
+      {
+        "group": "fresh-g009",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      },
+      {
+        "group": "fresh-g010",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      },
+      {
+        "group": "fresh-g011",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      },
+      {
+        "group": "fresh-g012",
+        "anonymousBest": [
+          "Q"
+        ],
+        "modelBest": [
+          "high"
+        ],
+        "mediumIssues": {
+          "astra": 1,
+          "high": 0,
+          "low": 1
+        },
+        "evidence": "He oversees everything in throne/governance context: Q 统管 accurate; P/R 看顾 shifts toward care"
+      },
+      {
+        "group": "fresh-g013",
+        "anonymousBest": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable style"
+      }
+    ],
+    "allThreeTies": 12,
+    "uniqueBest": {
+      "astra": 0,
+      "high": 1,
+      "low": 0
+    },
+    "mediumIssues": {
+      "astra": 1,
+      "high": 0,
+      "low": 1
+    },
+    "majorIssues": {
+      "astra": 0,
+      "high": 0,
+      "low": 0
+    },
+    "limits": "Single machine qualitative review; no human approval, statistical proof, direct Bible quotes or historical fact verification"
+  },
+  "runnerSha256": "9132e00d318dd4fe1aa43f5cca372656c58b813c2f7e203f1a62c7606df60ffd",
+  "artifactHashes": {
+    "blind.json": "faa1c89ae7377ce5b034a1caa965ed7a2504ba603096cfdc40562cb064e04fd4",
+    "three-arm-blind-first.json": "70ec4b64246f73d66866c52d5bd59130b72be654149ce0c11a76af32d8cb3749",
+    "summary.json": "d31b5b1d33b66f479be81fd64fbd2da93514edd4e08dbbaf973eb75c20c71d1c",
+    "three-arm-key-first.json": "eaff901e019380a824e3a3babd8cbae0537864c4425aab825032fb932bd4f61a",
+    "three-arm-summary.json": "cfb0e61c8f1318e6f59473248723836ea83511bec99fabaffd639a15ffb3de8b",
+    "pairs.json": "a2e122804d4a14890d4f89824ac421e9e840cf608002879dd89c49d2bc346cf5",
+    "blind-key.json": "34e4c7f98da63988425dd147602ed9eb1ef913cbba00b5055dcf64b8a7282b6b",
+    "three-arm-quality.json": "1ab650bd54fc06a4f4ec7945215bafea9219ddfc48855cd7ef68716ec54c3d5a",
+    "three-arm-key.json": "b2348ba1dd339f421d69ba6175a7496ae8bef18c0e99858d7b204720b4cb3599",
+    "three-arm-blind-rest.json": "59ca1abb1b762fd877a13258da59f70e458825a244400288bcdc305f2f6186bf",
+    "identity.json": "705a0b67a423b50bb67842e6d333f2fd123e7cb9d25bf0818227108440d5c2e3",
+    "three-arm-blind.json": "915d293a8146926b3e0a67df9995a9a80e773be9f7f1d643e202b069409ac0d3"
+  },
+  "previousHighReceipt": "docs/reports/20261005-astra-medium-sol61-high-translation-ab-receipt.json"
+}

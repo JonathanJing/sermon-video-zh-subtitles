@@ -23,6 +23,8 @@ build/
 coverage/
 .pytest_cache/
 *.log
+# Reconstructed evidence for the agent trials is source, not a run log.
+!config/agent-trials/**/*.log
 data/raw/
 data/benchmarks/**/work/
 data/benchmarks/**/recording.wav
@@ -30,3 +32,10 @@ artifacts/
 output/pdf/
 tmp/
 web/playback-simulation.generated.js
+
+# Local tracker publisher lifecycle state
+*.publisher-health.json
+*.publisher-health.json.*.tmp
+*.publisher-runtime.json
+*.publisher-runtime.json.*.tmp
+*.publisher-start.lock
