@@ -26,8 +26,12 @@ Dev 版本 `57bbf4a0e7886f1d` 已发布，38 个 HTTP 文件哈希与 3 个语�
 
 ## 外部可见的变化
 
-Beta Dev 内容更新，单设备 APNs 已接受。真机 deviceDisplayed/contentOpened/posterVerified 仍为 not_run，等待用户回复。生产环境未在本轮变更。
+Beta Dev 内容更新，单设备 APNs 已接受。用户已确认“已收到，点击后是本周海报”：本次单设备 deviceDisplayed/contentOpened/posterVerified 均为 pass，依据见 device-acceptance-receipt.json。生产环境未在本轮变更。
 
 ## 后续
 
-用户确认真机通知及本周海报；维护者据回复补充设备验收。云端会话尚未读取本报告，不能声称已完成云端复盘。
+本次单设备通知显示、点击打开及本周海报已由用户验收。云端会话尚未读取本报告，不能声称已完成云端复盘。
+
+## 真机回执补充
+
+用户确认：“已收到，点击后是本周海报”。绑定 10 月 11 日 pageId `resi-20261011-54475d42`、APNs ID `4bc2ab5b-dfc3-4284-a516-f84faaa72721`。本次单设备通知显示、点击跳转和海报核验通过；音频播放、麦克风定位、场地验收及正式 App 全用户推送不在此回执范围内。原始运行摘要保留发送时的待确认状态，新增收据记录后续验收。
