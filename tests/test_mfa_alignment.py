@@ -216,6 +216,20 @@ class AlignmentTest(unittest.TestCase):
         validated = mfa._entries({'tiers': {'phones': {'entries': entries}}}, 'phones', 2.0)
         self.assertEqual(len(validated), 3)
 
+    def test_final_overlap_requires_chunk_boundary_and_phone_tier(self):
+        for tier, duration in (("words", 2.0), ("phones", 3.0)):
+            entries = [[0.0, 1.0, "a"], [1.0, 2.0, "b"], [1.99, 2.0, "t"]]
+            with self.subTest(tier=tier, duration=duration), self.assertRaises(ValueError):
+                mfa._entries({"tiers": {tier: {"entries": entries}}}, tier, duration)
+
+    def test_final_phone_overlap_includes_exact_decimal_limit(self):
+        entries = [[0.0, 1.000007, "a"], [0.980007, 1.000007, "t"]]
+        validated = mfa._entries({"tiers": {"phones": {"entries": entries}}}, "phones", 1.000007)
+        self.assertEqual(len(validated), 2)
+        entries[-1][0] -= 0.00001
+        with self.assertRaises(ValueError):
+            mfa._entries({"tiers": {"phones": {"entries": entries}}}, "phones", 1.000007)
+
     def test_final_entry_overlap_beyond_the_tolerance_is_rejected(self):
         entries = [[0.0, 1.0, 'a'], [1.0, 2.0, 'b'], [1.9, 2.0, 't']]
         with self.assertRaises(ValueError):
