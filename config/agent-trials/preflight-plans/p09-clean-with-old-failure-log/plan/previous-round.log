@@ -1,0 +1,6 @@
+2026-10-07T02:31:40Z round: begin session
+2026-10-07T02:31:44Z round: exclusive_ready
+2026-10-07T02:36:02Z [asr] ERROR local_model_missing: /asr-hub/model/model.safetensors (exists=False, is_symlink=True)
+2026-10-07T02:36:05Z round: command exit 1
+2026-10-07T02:36:40Z round: finish services active=4/4
+# Previous round (2026-10-07). The mount was widened to the whole hub directory afterwards; see docker-asr-mount.txt.

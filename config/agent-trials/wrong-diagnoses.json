@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "agent-trials-wrong-diagnoses-v1",
+  "purpose": "Deliberately wrong diagnoses for the refuter. Each is plausible, cites a real line, and is wrong in the stated way. The refuter should answer refuted or insufficient_evidence.",
+  "diagnoses": [
+    {
+      "case": "f01-plugin-identity",
+      "flaw": "wrong_cause",
+      "note": "Blames a missing or corrupted fixture; the log shows the fixture loaded and the identity check failed.",
+      "diagnosis": {
+        "category": "missing_dependency",
+        "root_cause": "The fixture directory fixture-180s-r2 is incomplete or corrupted, so load_fixture could not read it and raised ValueError.",
+        "evidence": [
+          {
+            "file": "layer2.log",
+            "quote": "File \"scripts/codex_layer2_diagnostic.py\", line 150, in load_fixture"
+          }
+        ],
+        "fix": "Re-copy the fixture directory from the last good run.",
+        "confidence": 0.8,
+        "unknowns": []
+      }
+    },
+    {
+      "case": "f02-preempt-authorization",
+      "flaw": "contradicted_by_evidence",
+      "note": "Blames busy inference; the log shows processingSlots=0 queue=0.",
+      "diagnosis": {
+        "category": "other",
+        "root_cause": "llama-server was busy with in-flight requests, so the session refused to preempt and exited.",
+        "evidence": [
+          {
+            "file": "spark-session.log",
+            "quote": "[begin] preempt would stop: spark-api spark-agent collector llama-server"
+          }
+        ],
+        "fix": "Wait until llama-server is idle and retry.",
+        "confidence": 0.75,
+        "unknowns": []
+      }
+    },
+    {
+      "case": "f03-relative-out",
+      "flaw": "wrong_cause",
+      "note": "Blames a missing media file; the traceback is relative_to on a relative --out path.",
+      "diagnosis": {
+        "category": "missing_dependency",
+        "root_cause": "artifacts/clip/source.mp4 does not exist, so staging the material failed.",
+        "evidence": [
+          {
+            "file": "execute.log",
+            "quote": "[execute] staging material"
+          }
+        ],
+        "fix": "Download the source clip again before execute.",
+        "confidence": 0.7,
+        "unknowns": []
+      }
+    },
+    {
+      "case": "f05-asr-symlink-mount",
+      "flaw": "contradicted_by_evidence",
+      "note": "Blames an incomplete download; the listing shows the blobs exist on the host.",
+      "diagnosis": {
+        "category": "missing_dependency",
+        "root_cause": "The Qwen3-ASR download was interrupted, so model.safetensors was never written to the host cache.",
+        "evidence": [
+          {
+            "file": "back-asr.log",
+            "quote": "ERROR local_model_missing"
+          }
+        ],
+        "fix": "Re-download the model with huggingface-cli.",
+        "confidence": 0.8,
+        "unknowns": []
+      }
+    },
+    {
+      "case": "f07-services-not-yet-restored",
+      "flaw": "wrong_ordering",
+      "note": "Treats a check taken during restoration as a failed recovery; a later check shows all four active.",
+      "diagnosis": {
+        "category": "other",
+        "root_cause": "finish did not restore the services: spark-api, spark-agent, collector and llama-server were all inactive after the round.",
+        "evidence": [
+          {
+            "file": "services-check-1.txt",
+            "quote": "inactive"
+          }
+        ],
+        "fix": "Restart the four services manually and make finish verify them.",
+        "confidence": 0.85,
+        "unknowns": []
+      }
+    },
+    {
+      "case": "f08-monitor-bad-substitution",
+      "flaw": "wrong_cause",
+      "note": "Blames unset environment variables; the error is zsh rejecting bash indirect expansion.",
+      "diagnosis": {
+        "category": "missing_dependency",
+        "root_cause": "L2_LOG and AUDIO_LOG were not exported, so the substitution had nothing to expand.",
+        "evidence": [
+          {
+            "file": "monitor.log",
+            "quote": "zsh:2: bad substitution"
+          }
+        ],
+        "fix": "Export L2_LOG and AUDIO_LOG before starting the monitor.",
+        "confidence": 0.7,
+        "unknowns": []
+      }
+    },
+    {
+      "case": "f06-zero-inference-seconds",
+      "flaw": "unsupported_certainty",
+      "note": "Asserts a cause the evidence cannot prove; the correct response is insufficient_evidence or refuted.",
+      "diagnosis": {
+        "category": "other",
+        "root_cause": "batch-001 reused replicas already warmed by batch-000, so its timer started after generation finished and recorded 0.0.",
+        "evidence": [
+          {
+            "file": "tts-batch-001-receipt.json",
+            "quote": "\"inferenceSeconds\": 0.0"
+          }
+        ],
+        "fix": "Start the batch timer before dispatching to warm replicas.",
+        "confidence": 0.9,
+        "unknowns": []
+      }
+    },
+    {
+      "case": "f04-missing-terminology",
+      "flaw": "wrong_cause",
+      "note": "Blames the speaker registry; the log shows the registry loaded and the terminology file was missing.",
+      "diagnosis": {
+        "category": "missing_dependency",
+        "root_cause": "The speaker voice registry was not staged, so TTS input validation failed.",
+        "evidence": [
+          {
+            "file": "remote-tts.log",
+            "quote": "[tts] ERROR input validation failed"
+          }
+        ],
+        "fix": "Add config/speaker-voice-registry.json to the staging list.",
+        "confidence": 0.75,
+        "unknowns": []
+      }
+    }
+  ]
+}

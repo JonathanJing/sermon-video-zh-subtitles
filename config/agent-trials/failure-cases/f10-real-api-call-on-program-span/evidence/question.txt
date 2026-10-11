@@ -1,0 +1,1 @@
+These are the accounting events from the 2026-09-30 bounded source diagnostic. The pipeline report built from them lists 0 production_model seconds for the source text review run, although that run made a 32.9-second model API call. Why is the model time missing from the report, and what should change?

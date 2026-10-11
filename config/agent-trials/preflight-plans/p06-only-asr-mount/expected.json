@@ -1,0 +1,39 @@
+{
+  "id": "p06-only-asr-mount",
+  "generatedBy": "scripts/experiments/build_agent_trial_variants.py",
+  "reconstructedFrom": "p02-clean with parts of p01-planted-blockers",
+  "blockers": {
+    "asr_symlink_mount": [
+      [
+        "symlink",
+        "blobs",
+        "link"
+      ],
+      [
+        "mount",
+        "-v",
+        "/asr-hub"
+      ]
+    ]
+  },
+  "requiredChecks": [
+    {
+      "tool": "compare_plugin_identity",
+      "expect": true
+    },
+    {
+      "tool": "check_out_path",
+      "argument": "<HOME>/sermon-video-zh-subtitles/artifacts/r/diagnostic-audio-r4",
+      "expect": true
+    },
+    {
+      "tool": "check_staged",
+      "argument": "docs/series-terminology.zh.md",
+      "expect": true
+    },
+    {
+      "tool": "check_mount_resolves",
+      "expect": false
+    }
+  ]
+}
