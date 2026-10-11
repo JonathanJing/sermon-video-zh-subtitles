@@ -12,7 +12,7 @@ from scripts.claude_layer2_transport import ClaudeLayer2Transport, child_environ
 SOURCE = {'translationGroupId': 'g001', 'sourceUnitIds': ['u1']}
 CONTENT = {'translationGroupId': 'g001', 'sourceUnitIds': ['u1'], 'targetUtterances': ['你好。'],
            'coverage': [{'sourceUnitId': 'u1', 'targetText': '你好。'}]}
-PAYLOAD = {'messages': [{'role': 'system', 'content': 'Translate.'},
+PAYLOAD = {'max_completion_tokens': 4096, 'messages': [{'role': 'system', 'content': 'Translate.'},
                         {'role': 'user', 'content': json.dumps(SOURCE)}]}
 
 FAKE = r'''#!/usr/bin/env python3
@@ -25,7 +25,8 @@ if args == ['--version']:
     print('9.9.9 (Claude Code)'); sys.exit(0)
 with open(os.environ['FAKE_CLAUDE_LOG'], 'a') as log:
     log.write(json.dumps({'args': args, 'stdin': sys.stdin.read(),
-                          'apiKey': os.environ.get('ANTHROPIC_API_KEY')}) + '\n')
+                          'apiKey': os.environ.get('ANTHROPIC_API_KEY'),
+                          'caps': {k: os.environ.get(k) for k in ['CLAUDE_CODE_MAX_OUTPUT_TOKENS', 'CLAUDE_CODE_MAX_RETRIES', 'MAX_STRUCTURED_OUTPUT_RETRIES']}}) + '\n')
 print(json.dumps(state['result'])); sys.exit(state.get('exit', 0))
 '''
 
@@ -75,6 +76,8 @@ class ClaudeTransportTests(unittest.TestCase):
         self.assertEqual(response['usage']['reasoningTokens'], 120)
         call = json.loads(self.log.read_text().splitlines()[0])
         self.assertIsNone(call['apiKey'])
+        self.assertEqual(call['caps'], {'CLAUDE_CODE_MAX_OUTPUT_TOKENS': '4096',
+            'CLAUDE_CODE_MAX_RETRIES': '0', 'MAX_STRUCTURED_OUTPUT_RETRIES': '1'})
         self.assertEqual(call['stdin'], json.dumps(SOURCE))
         self.assertIn('--json-schema', call['args'])
         self.assertEqual(call['args'][call['args'].index('--tools') + 1], '')
@@ -95,6 +98,16 @@ class ClaudeTransportTests(unittest.TestCase):
         self.set_state(result(modelUsage={'claude-haiku-5-5': {}}))
         with self.assertRaisesRegex(RuntimeError, 'identity'):
             self.transport()('', PAYLOAD)
+
+    def test_fallback_model_is_rejected(self):
+        self.set_state(result(modelUsage={'claude-opus-5-5': {}, 'claude-opus-5': {}}))
+        with self.assertRaisesRegex(RuntimeError, 'identity'):
+            self.transport()('', PAYLOAD)
+
+    def test_missing_output_cap_is_rejected_before_dispatch(self):
+        with self.assertRaisesRegex(ValueError, 'output_cap_required'):
+            self.transport()('', {'messages': PAYLOAD['messages']})
+        self.assertFalse(self.log.exists())
 
     def test_error_or_schema_violation_fails(self):
         for value in (result(is_error=True), result(structured_output=None),
