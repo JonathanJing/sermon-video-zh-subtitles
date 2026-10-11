@@ -342,8 +342,9 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
                 "englishSourcePackageJsonSha256", "anchorManifestSha256",
                 "translationPolicySha256", "sourceUnits"):
         _require(evidence.get(key) == expected[key], f"Layer 2 evidence identity changed: {key}")
-    _require(policy["schemaVersion"] == (policy_tools.POLICY_V3 if strict_rubric is not None else policy_tools.POLICY_V2),
-             "Language plugin policy schema differs")
+    # v4 is v2 plus reviewed ordinary-phrase exclusions and a term-approval receipt.
+    allowed = {policy_tools.POLICY_V3} if strict_rubric is not None else {policy_tools.POLICY_V2, policy_tools.POLICY_V4}
+    _require(policy["schemaVersion"] in allowed, "Language plugin policy schema differs")
     evaluated = evaluate_plugin_groups(policy, expected, plugin_path, expected_plugin_sha256,
                                        evidence.get("groups"), diagnostic_context=diagnostic_context)
     group_reviews = evaluated["groupReviews"]

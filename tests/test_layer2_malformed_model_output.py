@@ -49,3 +49,12 @@ class CollectorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PolicyV4AdmissionTests(unittest.TestCase):
+    def test_v4_is_admitted_like_v2_and_strict_still_needs_v3(self):
+        import inspect
+        from scripts import produce_target_language_candidate as producer
+        source = inspect.getsource(producer)
+        self.assertIn("{policy_tools.POLICY_V2, policy_tools.POLICY_V4}", source)
+        self.assertIn("{policy_tools.POLICY_V3} if strict_rubric is not None", source)
