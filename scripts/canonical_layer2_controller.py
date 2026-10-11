@@ -45,6 +45,7 @@ CONCURRENT_SCHEMA = 'sermon-canonical-layer2-execution-v2'
 # locale jobs at once. It does not accept the v2 Codex CLI concurrency profile;
 # API requests still share the job root's 24 in-flight slots.
 AUTO_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v3'
+SHADOW_SCHEMA = 'sermon-canonical-layer2-execution-v4'
 MAX_AUTO_REPAIR_LOCALES = 3
 
 
@@ -103,22 +104,27 @@ class Configuration:
     concurrency_profile: dict | None = None
     resource_policy: dict | None = None
     auto_repair: dict | None = None
+    candidate_mode: str = 'production'
 
 
 def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _json(path)
     required_keys = {'schemaVersion', 'productionRunId', 'inspectionConfig', 'jobRoot', 'locales'}
+    # v1-v3 remain production contracts; shadow has a distinct v4 identity.
+    candidate_mode = value.get('candidateMode', 'production') if isinstance(value, dict) else 'production'
     require(((set(value) == required_keys and value['schemaVersion'] == SCHEMA)
              or (set(value) == required_keys | {'concurrencyProfile', 'resourcePolicy'}
                  and value['schemaVersion'] == CONCURRENT_SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair'}
-                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA))
+                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA)
+             or (set(value) == required_keys | {'layer2AutoRepair', 'candidateMode'}
+                 and value['schemaVersion'] == SHADOW_SCHEMA and candidate_mode == 'shadow'))
             and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
     repair_binding = (_auto_repair_binding(value['layer2AutoRepair'])
-                      if value['schemaVersion'] == AUTO_REPAIR_SCHEMA else None)
+                      if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA} else None)
     inspection_path = _path(path.parent, value['inspectionConfig'])
     inspection = _json(inspection_path)
     require(inspection.get('schemaVersion') == packages.SCHEMA
@@ -169,7 +175,8 @@ def load_configuration(path):
         binding.update(concurrencyProfile=concurrency_profile, resourcePolicy=resource_policy)
     sha = jobs._digest(binding)
     return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha,
-                         concurrency_profile, resource_policy, repair_binding)
+                         concurrency_profile, resource_policy, repair_binding,
+                         candidate_mode)
 
 
 def repair_ledger_root(config):
@@ -196,7 +203,7 @@ def package_view(config):
             # Only this registered future output may be absent. An existing
             # invalid package is always validated and blocks the lane.
             effective['locales'][locale].pop('candidate', None)
-    view = packages.inspect_configuration(config.inspection_root, effective)
+    view = packages.inspect_configuration(config.inspection_root, effective, candidate_mode=config.candidate_mode)
     notes = (getattr(config, 'auto_repair', None) or {}).get('sourceMeaningNotes')
     if notes:
         # The meaning notes the repair loop reads are a Layer 1 input of every text job: new notes are
@@ -233,7 +240,7 @@ def _reopen_verifier(config):
         if locale not in ledgers:
             source, anchor, policy = _lane_values(config, locale, observed)
             ledgers[locale] = (auto_repair.load_ledger(repair_ledger_root(config), auto_repair.lineage(
-                producer.prepare_request(source, anchor, policy))), source, anchor)
+                producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode))), source, anchor)
         entries, source, anchor = ledgers[locale]
         sequence, groups = receipt['repairLedgerSequence'], receipt['reopenedGroups']
         head = entries[sequence - 1] if sequence <= len(entries) else None
@@ -300,7 +307,7 @@ def _inputs(config, locale, view):
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
-    request = producer.prepare_request(source, anchor, policy)
+    request = producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode)
     plan = models.group_plan(request, anchor)
     rule_preflight.preflight(request, policy, lane['plugin'], plan)
     return source, anchor, policy
@@ -506,7 +513,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     evidence = models.run_accounted(source, anchor, policy, model_output, api_key,
                                                  bound_call, None, lane['plugin'], None, None,
                                                  progress_callback=progress.progress, predecessor_spans=[admission_span],
-                                                 completion_spans=model_completion)
+                                                 completion_spans=model_completion, candidate_mode=config.candidate_mode)
             # Paid results remain recoverable if approval/source/config/code drifted
             # while a request was outstanding. Never turn those results into approval.
             with accounting.stage('layer2.post_model_binding.' + locale, depends_on=model_completion,
@@ -546,7 +553,7 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
     bound budget transport; the loop's 10% repair cap sits below it. A stopped
     loop leaves its receipt and fails the job: no candidate, no automatic retry.
     """
-    request = producer.prepare_request(source, anchor, policy)
+    request = producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode)
     total_groups = len(models.group_plan(request, anchor))
     rounds_root = lane['output'] / 'repair-rounds'
 
@@ -555,7 +562,8 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
         return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
                                     None, reuse_from, partial_repair_brief=brief,
                                     progress_callback=progress, predecessor_spans=[admission_span],
-                                    completion_spans=completion_spans, failure_collector=collector)
+                                    completion_spans=completion_spans, failure_collector=collector,
+                                    candidate_mode=config.candidate_mode)
 
     notes = None
     notes_artifact_sha256 = None
@@ -604,7 +612,7 @@ def _reopen_plan(config, locale, view):
             'reopen_requires_new_meaning_notes')
     source, anchor, policy = _inputs(config, locale, current)
     entries = auto_repair.load_ledger(repair_ledger_root(config),
-                                      auto_repair.lineage(producer.prepare_request(source, anchor, policy)))
+                                      auto_repair.lineage(producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode)))
     require(bool(entries) and entries[-1]['outcome'] == 'stopped', 'reopen_requires_stopped_repair_chain')
     rounds = (config.lanes[locale]['output'] / 'repair-rounds').resolve()
     head = Path(entries[-1]['runDirectory']).resolve()

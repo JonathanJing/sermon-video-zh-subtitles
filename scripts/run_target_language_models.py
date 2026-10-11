@@ -767,6 +767,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
     reports a systemic stop, and ends the run with a failure report rather than
     evidence. It never writes a plugin group stop.
     """
+    require(request.get("candidateMode", "production") == "production",
+            "Shadow execution is not implemented: complete shadow admission is required")
     with accounting.stage(f"layer2.run_admission.{request['targetLocale']}",
                           depends_on=[source_admission_span] if source_admission_span else [],
                           executor_type="deterministic_program",
@@ -1243,7 +1245,9 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   progress_ledger: Path | None = None,
                   cache_only: bool = False, progress_callback=None,
                   predecessor_spans=(), completion_spans: list[str] | None = None,
-                  failure_collector=None) -> dict:
+                  failure_collector=None, candidate_mode: str = "production") -> dict:
+    require(candidate_mode == "production",
+            "Shadow execution is not implemented: candidate schema, plugin admission and human receipt are required")
     require(plugin is not None,
             "Formal Layer 2 requires the frozen language plugin before dispatch")
     locale = policy["targetLocale"]
@@ -1254,7 +1258,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
             with accounting.stage(f"layer2.source_admission.{locale}", depends_on=list(predecessor_spans),
                                   executor_type="deterministic_program",
                                   work_unit_id=f"l2.{locale}.source_admission") as source_span:
-                request = producer.prepare_request(source, anchor, policy)
+                request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
                 plan = group_plan(request, anchor, group_plan_data)
                 window = source["source"]["approvedWindow"]
                 accounting.record_workload("layer2.source_identity", {
@@ -1311,7 +1315,12 @@ def main() -> None:
     source, anchor, policy = (producer._load(path) for path in
                               (args.english_source_package, args.anchor, args.policy))
     # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
-    request = producer.prepare_request(source, anchor, policy)
+    # A bound canonical configuration declares whether this is a non-production shadow candidate.
+    candidate_mode = "production"
+    if args.budget_config is not None:
+        from scripts import canonical_layer2_controller as controller
+        candidate_mode = controller.load_configuration(args.budget_config).candidate_mode
+    request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
     if args.budget_config is None:
         validate_standalone_worker_budget(policy)
     plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))

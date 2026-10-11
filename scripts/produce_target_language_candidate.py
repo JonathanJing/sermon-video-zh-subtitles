@@ -121,8 +121,17 @@ def validate_source_for_translation(source: dict[str, Any], anchor: dict[str, An
 
 
 def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
-                    policy: dict[str, Any], *, strict_rubric=None, diagnostic_context=None) -> dict[str, Any]:
-    """Freeze exactly one source and locale; leave all generated fields blank."""
+                    policy: dict[str, Any], *, strict_rubric=None, diagnostic_context=None,
+                    candidate_mode: str = "production") -> dict[str, Any]:
+    """Freeze exactly one source and locale; leave all generated fields blank.
+
+    ``candidate_mode="shadow"`` relaxes only the production-readiness gate, for a
+    non-production candidate that a human reviews for terminology. The request is
+    marked, so the shadow identity cannot be confused with a production request.
+    """
+    _require(candidate_mode in {"production", "shadow"}, "Unknown candidate mode")
+    _require(candidate_mode == "production" or diagnostic_context is None,
+             "Shadow candidate mode is not available for diagnostic contexts")
     if diagnostic_context is None:
         anchor_hash = validate_source_for_translation(source, anchor)
     else:
@@ -137,12 +146,18 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
         identity = policy_tools.validate_strict_policy(policy, strict_rubric)
         policy_tools.validate_strict_source_scope(policy, strict_rubric, source, anchor)
     if diagnostic_context is None:
-        _require(identity["productionPolicyReady"],
-                 "Production policy has unresolved scripture, terminology, or language-review gates")
+        if candidate_mode == "shadow":
+            _require(isinstance(identity.get("unresolved"), list)
+                     and set(identity["unresolved"]) <= {"terminology_review_pending",
+                                                        "proper_name_approval_evidence_pending"},
+                     "Shadow mode permits only unresolved terminology gates")
+        if candidate_mode == "production":
+            _require(identity["productionPolicyReady"],
+                     "Production policy has unresolved scripture, terminology, or language-review gates")
     else:
         from scripts.sermon_diagnostic_context import require_policy_ready
         require_policy_ready(identity, diagnostic_context)
-    return {
+    request = {
         "schemaVersion": REQUEST_SCHEMA,
         "sourceLocale": "en",
         "targetLocale": policy["targetLocale"],
@@ -154,6 +169,10 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
         "generation": None,
         "groups": None,
     }
+    if candidate_mode == "shadow":
+        request["schemaVersion"] = "sermon-target-language-evidence-request-v2"
+        request["candidateMode"] = "shadow"
+    return request
 
 
 def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
@@ -162,7 +181,10 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
                    plugin_path: Path, expected_plugin_sha256: str, *, rule_preflight_receipt=None,
                    diagnostic_context=None) -> dict[str, Any]:
     """Validate externally produced evidence; preserve human review as pending."""
-    expected = prepare_request(source, anchor, policy, diagnostic_context=diagnostic_context)
+    _require(request.get("candidateMode", "production") == "production",
+             "Shadow candidate admission is not implemented; no formal candidate may be emitted")
+    expected = prepare_request(source, anchor, policy, diagnostic_context=diagnostic_context,
+                               candidate_mode=request.get("candidateMode", "production"))
     _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
     if rule_preflight_receipt is not None:
         try:
@@ -330,7 +352,9 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
     are recalculated at admission; a pass string in translation evidence is
     never accepted as language-review evidence.
     """
-    expected = prepare_request(source, anchor, policy, strict_rubric=strict_rubric, diagnostic_context=diagnostic_context)
+    expected = prepare_request(source, anchor, policy, strict_rubric=strict_rubric,
+                               diagnostic_context=diagnostic_context,
+                               candidate_mode=request.get("candidateMode", "production"))
     _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
     if rule_preflight_receipt is not None:
         try:
