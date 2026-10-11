@@ -79,6 +79,9 @@ ACTIONS = {
     # A deterministic language check names its own finding (an over-long utterance,
     # a forbidden register form); one repair carries it, a repeat goes to engineering.
     "language_plugin_failed": "repair_translation",
+    # A reply that breaks the output contract (utterances as objects, missing
+    # coverage) says nothing about the translation; ask once more for the format.
+    "malformed_model_output": "repair_translation",
 }
 # What a repeated failure becomes once a repair made no progress on it.
 REPEATED_FAILURE_ACTIONS = {
@@ -86,6 +89,7 @@ REPEATED_FAILURE_ACTIONS = {
     "review_uncertainty": "request_human_review",
     "review_issue_open": "request_human_review",
     "language_plugin_failed": "escalate_engineering",
+    "malformed_model_output": "escalate_engineering",
 }
 INSTRUCTIONS = {
     "meaning_omission": "Restore every meaning the English source states; the prior translation omitted some.",
@@ -100,6 +104,8 @@ INSTRUCTIONS = {
     "language_plugin_failed": ("Fix the deterministic language check finding below without changing meaning: "
                                "keep each utterance at most 180 characters (split at natural clause boundaries), "
                                "use the policy register, and keep every number, name and reference the English says."),
+    "malformed_model_output": ("The prior reply broke the JSON contract. Return targetUtterances as a JSON array "
+                               "of plain strings and one coverage row per source unit with an exact targetText substring."),
 }
 SYSTEMIC_MINIMUM_GROUPS = 3
 SYSTEMIC_FRACTION = 0.01
@@ -141,7 +147,7 @@ def classify_review(semantic: dict) -> tuple[list[str], str]:
 # a third a name). They stop dispatch only when consecutive, never by scattered
 # count at the end of a round.
 UMBRELLA_CODES = frozenset({"negation_number_name_error", "review_issue_open", "review_uncertainty",
-                            "language_plugin_failed"})
+                            "language_plugin_failed", "malformed_model_output"})
 # Repository waiver policy: at most four repairs per English source unit.
 MAX_REPAIRS_PER_SOURCE_UNIT = 4
 
@@ -250,6 +256,14 @@ class FailureCollector:
                       "failureCodes": ["language_plugin_failed"], "action": ACTIONS["language_plugin_failed"],
                       "evidence": _clip("; ".join(f"{check.get('checkId')}: {check.get('evidence', '')}"
                                                   for check in failed)),
+                      "issues": [], "uncertainty": []})
+
+    def record_malformed_output(self, index: int, group: dict, role: str, cache_path: Path, reason: str) -> None:
+        """A translator or reviewer reply that broke the output contract fails only its group."""
+        _require(role in ("translator", "reviewer"), "Malformed output role must be translator or reviewer")
+        self._record({**self._base(index, group, cache_path), "gate": "output_contract",
+                      "failedRole": role, "failureCodes": ["malformed_model_output"],
+                      "action": ACTIONS["malformed_model_output"], "evidence": _clip(reason),
                       "issues": [], "uncertainty": []})
 
     def record_not_dispatched(self, index: int, group: dict) -> None:
@@ -484,7 +498,7 @@ def repair_row(failure: dict, meaning_notes: dict | None = None) -> dict:
     instruction += (" Machine-written repair instruction from a failed machine check; "
                     "check every point against the English source. " + finding + reason)
     return {"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
-            "failedRole": "reviewer", "failedCacheSha256": failure["reviewerCacheSha256"],
+            "failedRole": failure.get("failedRole", "reviewer"), "failedCacheSha256": failure["reviewerCacheSha256"],
             "failureReason": reason, "instruction": instruction[:2000]}
 
 
