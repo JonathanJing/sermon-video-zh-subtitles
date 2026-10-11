@@ -33,6 +33,7 @@ class ProductionCodexTransportTests(unittest.TestCase):
         self.executions = []
         self.content = '{"ok":true}'
         self.tool = False
+        self.notices = []
         self.returncode = 0
         self.env_patch = patch.dict(mod.os.environ, {'CODEX_HOME': str(self.home), 'SERMON_CODEX_CLI': str(self.cli),
             'OPENAI_API_KEY': 'do-not-forward', 'OPENAI_PROJECT_ID': 'do-not-forward',
@@ -54,6 +55,7 @@ class ProductionCodexTransportTests(unittest.TestCase):
             {'type': 'turn.completed', 'usage': {'input_tokens': 100, 'cached_input_tokens': 40, 'output_tokens': 20}}]
         if self.tool:
             rows.insert(1, {'type': 'item.completed', 'item': {'type': 'command_execution', 'command': 'unexpected'}})
+        rows[1:1] = self.notices
         return subprocess.CompletedProcess(command, self.returncode, '\n'.join(json.dumps(row) for row in rows), '')
 
     def call(self, **kwargs):
@@ -108,6 +110,18 @@ class ProductionCodexTransportTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'reconciliation'):
             self.call()
         self.assertEqual(self.run.call_count, 1)
+
+    def test_websocket_fallback_notices_are_not_tool_use(self):
+        self.notices = [{'type': 'error', 'message': 'Reconnecting... 2/5 (unexpected status 403 Forbidden)'},
+                        {'type': 'item.completed', 'item': {'type': 'error', 'message':
+                            'Falling back from WebSockets to HTTPS transport. unexpected status 403 Forbidden'}}]
+        self.call()
+        self.assertTrue((self.directory / 'response.json').exists())
+
+    def test_other_errors_are_still_rejected(self):
+        self.notices = [{'type': 'error', 'message': 'stream disconnected before completion'}]
+        with self.assertRaisesRegex(RuntimeError, 'tool_failure'):
+            self.call()
 
     def test_timeout_preserves_unknown_and_never_reissues(self):
         self.run.side_effect = subprocess.TimeoutExpired(['fake'], 1, output='partial', stderr='failure')

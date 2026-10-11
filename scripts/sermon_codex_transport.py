@@ -199,6 +199,15 @@ def _call_unlocked(prompt, *, model, reasoning='medium', service_tier='fast', ou
                 if len(terminals) == 1:
                     receipt['usage'] = terminals[0].get('usage')
                 threads = [row['thread_id'] for row in rows if row.get('type') == 'thread.started']
+                # The CLI reports its own WebSocket reconnects and HTTPS fallback as
+                # error rows; the turn still completes. Those notices are not tool use.
+                def transport_notice(row):
+                    message = (row.get('message') if row.get('type') == 'error'
+                               else row.get('item', {}).get('message') if row.get('item', {}).get('type') == 'error'
+                               else None)
+                    return isinstance(message, str) and (message.startswith('Reconnecting... ')
+                                                         or message.startswith('Falling back from WebSockets to HTTPS transport'))
+                rows = [row for row in rows if not transport_notice(row)]
                 tools = [row for row in rows if row.get('type', '').startswith('item.')
                          and row.get('item', {}).get('type') not in {None, 'agent_message', 'reasoning'}]
                 final = [row['item'].get('text') for row in rows if row.get('type') == 'item.completed'
