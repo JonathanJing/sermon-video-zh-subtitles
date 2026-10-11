@@ -26,9 +26,34 @@ STATUS = "approved_for_source_correction"
 AUTHORITY = "user_directed_conversation_review"
 MACHINE_AUTHORITY = "machine_audio_adjudication"
 AUTHORITIES = {AUTHORITY, MACHINE_AUTHORITY}
+# v1 is the conversational-review contract existing reviews carry and keep. v2 has the same
+# fields and adds the machine authority, whose review rests on a bound source-meaning receipt
+# validated against the adjudicated package, with every correction consumed. A conversational
+# review is valid under either, and every new machine-authority review is v2.
+SCHEMA_V2 = "sermon-source-text-review-v2"
+SCHEMAS = (SCHEMA, SCHEMA_V2)
+# Before v2 existed the source-meaning adjudicator labelled its machine reviews v1 (its git history
+# from 9a34493 through 907c998, keyed here by the adjudicator file's SHA-256). Such a frozen review
+# stays readable under the same machine checks, but only resting on a v1 receipt one of those writers
+# signed; every later writer labels its machine reviews v2, so a v1 label on anything else is refused.
+V1_MACHINE_REVIEW_WRITERS = frozenset({
+    "d0069ae329a1a976e28d67592142f71fb3fb1b55cf3c480c393c5f8ebf76acc4",
+    "a996f72e59e26ec2c9f697bd38ebcc5eb96574b6abf1a34a4fbb00edc88b6da4",
+    "043afa8872162cadaf65bc2d32b7b2a1c5862d7cbd3c5b5bb82ff781514dc7a9",
+    "82495ef91b07d346f564a593f1666fce2c8d49a31f13e7e8afa1da83ee2f947b",
+    "aa9844492a04c0e134145d44731937bcedf14985f6874f641ffcf684351cf705",
+    "103dd09e7a8e16a66948a22e9dfa790d95e289f7098d405112c2274b6fa263d4",
+    "a8752fb10c61a58578fe14519d4930f3f1d6294ae98178657a391a86bf4ae541",
+    "e856a679593682306943eda3a41a1c0301140f1db18ba2c1d6aca8b02074be6c",
+})
 # A machine-authority review rests on exactly one source-meaning receipt among
 # its evidence; every patch must be that receipt's corrections and nothing else.
-MACHINE_RECEIPT_SCHEMA = "sermon-source-meaning-machine-adjudication-v1"
+# v1 receipts were written before model verdicts were derived again from the adjudicator's request
+# cache and before the budget record; they stay readable under the rules they were written for.
+# v2 receipts always record the budget (null for a cache-only run) and need the cache beside them.
+MACHINE_RECEIPT_SCHEMA_V1 = "sermon-source-meaning-machine-adjudication-v1"
+MACHINE_RECEIPT_SCHEMA = "sermon-source-meaning-machine-adjudication-v2"
+MACHINE_RECEIPT_SCHEMAS = (MACHINE_RECEIPT_SCHEMA_V1, MACHINE_RECEIPT_SCHEMA)
 MACHINE_ROLE = "machine_adjudicator"
 UNIT_TIME_TOLERANCE = 0.05
 PATCH_FIELDS = {
@@ -95,17 +120,23 @@ def _machine_receipt(review: dict[str, Any], evidence: list[dict[str, str]],
     ``anchor.json``) and media it was made against. A hand-written or stale
     receipt for other inputs is refused before any patch is read.
     """
-    receipts: list[tuple[str, dict[str, Any]]] = []
+    receipts: list[tuple[str, dict[str, Any], Path]] = []
     for item in evidence:
         try:
             value = json.loads(Path(item["path"]).read_bytes())
         except (OSError, UnicodeError, json.JSONDecodeError):
             continue
-        if isinstance(value, dict) and value.get("schemaVersion") == MACHINE_RECEIPT_SCHEMA:
-            receipts.append((item["sha256"], value))
+        if isinstance(value, dict) and value.get("schemaVersion") in MACHINE_RECEIPT_SCHEMAS:
+            receipts.append((item["sha256"], value, Path(item["path"])))
     if len(receipts) != 1:
         raise ValueError("Machine audio adjudication requires exactly one source-meaning receipt as evidence")
-    sha, receipt = receipts[0]
+    sha, receipt, receipt_path = receipts[0]
+    if review.get("schemaVersion") == SCHEMA and not (
+            receipt.get("schemaVersion") == MACHINE_RECEIPT_SCHEMA_V1
+            and receipt.get("implementationSha256") in V1_MACHINE_REVIEW_WRITERS):
+        # A machine review labelled v1 is one a pre-v2 writer produced, resting on its own v1 receipt.
+        raise ValueError(f"A {MACHINE_AUTHORITY} review requires the {SCHEMA_V2} contract unless a writer "
+                         "that labelled its machine reviews v1 produced its receipt")
     adjudicator, media, bindings, units = (receipt.get(k) for k in ("adjudicator", "media", "bindings", "units"))
     if not (
         receipt.get("decidedByRole") == MACHINE_ROLE
@@ -137,8 +168,10 @@ def _machine_receipt(review: dict[str, Any], evidence: list[dict[str, str]],
                          "(source.json and anchor.json) as adjudicated_package")
     from scripts import source_meaning_machine_adjudication as adjudicator_module
     try:
+        # The request cache beside the receipt lets each model verdict be derived again from its response.
         adjudicator_module.validate_receipt(receipt, source=package["source"], anchor=package["anchor"],
-                                            media_sha256=package.get("mediaSha256"))
+                                            media_sha256=package.get("mediaSha256"),
+                                            cache=receipt_path.parent / adjudicator_module.ADJUDICATOR_CACHE)
     except adjudicator_module.SourceAdjudicationError as exc:
         raise ValueError(f"Source-meaning receipt is not bound to the adjudicated package and media: {exc}") from exc
     return sha, receipt
@@ -192,7 +225,7 @@ def apply_review(
     review_path = Path(review_path).resolve()
     review, review_hash = _load_review(review_path)
     if not (
-        review.get("schemaVersion") == SCHEMA
+        review.get("schemaVersion") in SCHEMAS
         and review.get("reviewType") == "model"
         and review.get("model") in SUPPORTED_MODELS
         and review.get("humanApproval") is False
@@ -309,7 +342,7 @@ def apply_review(
         if segment["id"] in changes:
             segment["text"] = changes[segment["id"]]
     provenance = {
-        "schemaVersion": SCHEMA,
+        "schemaVersion": review["schemaVersion"],
         "reviewType": "model",
         "model": review["model"],
         "humanApproval": False,

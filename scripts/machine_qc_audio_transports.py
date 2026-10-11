@@ -142,6 +142,32 @@ class CallCache:
         _write_once(folder / "outcome.json", {"status": "completed", "responseJsonSha256": json_sha256(response)})
         return response
 
+    def reconcile(self, key: str, request: dict, response):
+        """Bind a response the paid-call ledger kept to a call this cache started and never completed.
+
+        Never invokes anything: the started marker must carry ``request``, and a response or
+        outcome already recorded must agree with ``response``. Returns the cached response."""
+        folder = self.root / key
+        started = folder / "started.json"
+        if not started.exists():
+            raise ValueError(f"call {key} never started; nothing to reconcile")
+        if json.loads(started.read_text(encoding="utf-8")) != {"request": request}:
+            raise ValueError(f"call {key} started with another request")
+        try:
+            outcome = json.loads((folder / "outcome.json").read_text(encoding="utf-8"))
+        except OSError:
+            outcome = None
+        if outcome is not None and outcome.get("status") != "completed":
+            raise ValueError(f"call {key} recorded an uncompleted outcome; reconcile it explicitly")
+        if (folder / "response.json").exists():
+            if json.loads((folder / "response.json").read_text(encoding="utf-8")) != response:
+                raise ValueError(f"call {key} already recorded a different response")
+        else:
+            _write_once(folder / "response.json", response)
+        if outcome is None:
+            _write_once(folder / "outcome.json", {"status": "completed", "responseJsonSha256": json_sha256(response)})
+        return self.get(key)
+
     def uncertain(self) -> list[str]:
         if not self.paid:
             return []

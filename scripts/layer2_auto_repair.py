@@ -511,6 +511,134 @@ def _saved_report(out: Path, request: dict, total_groups: int) -> dict:
     return report
 
 
+def noted_units(entries: list[dict], source_unit_ids: list[str]) -> set[str]:
+    """The units of this group an earlier repair already carried a meaning note for.
+
+    A noted repair records ``notedUnits``; a row written before that field existed
+    counts every unit of its group as noted, as the group-wide rule did."""
+    units = set(source_unit_ids)
+    noted: set[str] = set()
+    for entry in entries:
+        for row in entry["groups"]:
+            if row["decision"] == "source_meaning_noted" and units & set(row["sourceUnitIds"]):
+                noted |= set(row.get("notedUnits", row["sourceUnitIds"]))
+    return noted & units
+
+
+def reopenable_groups(entries: list[dict], meaning_notes: dict | None) -> dict[str, dict]:
+    """The stopped head's groups that these meaning notes reopen, keyed by translation group.
+
+    Only a chain whose last entry stopped can reopen. A group qualifies when it
+    stopped for ``request_source_review``, the notes cover one of its units that
+    no earlier repair carried a note for, and its units have had fewer than
+    ``MAX_REPAIRS_PER_SOURCE_UNIT`` repairs. A note for one unit therefore does
+    not settle the others: a later note for another unit of the group reopens it
+    again. The canonical controller's ``reopen-repair`` command asks the same
+    question before it lets a new job run."""
+    if not entries or entries[-1]["outcome"] != "stopped" or not meaning_notes:
+        return {}
+    eligible = {}
+    for row in entries[-1]["stopped"]:
+        history = unit_history(entries, row["sourceUnitIds"])
+        fresh = {unit for unit in row["sourceUnitIds"] if unit in meaning_notes} \
+            - noted_units(entries, row["sourceUnitIds"])
+        if row["reasonCode"] == "request_source_review" and fresh \
+                and sum(item["repaired"] for item in history) < MAX_REPAIRS_PER_SOURCE_UNIT:
+            eligible[row["translationGroupId"]] = row
+    return eligible
+
+
+def _affordable_repairs(entries: list[dict]) -> tuple[int, str]:
+    """How many groups the repair allowance can still reserve before any round runs, and the reason when short.
+
+    The same caps the loop applies when it picks a round's repairs: 10% of the
+    initial calls (at least ``MINIMUM_REPAIR_CALLS``) and of the initial tokens,
+    reserved at the enforced worst case per call."""
+    initial = entries[0]["spend"]
+    if initial["callsWithoutUsage"] or any(e["spend"]["callsWithoutUsage"] for e in entries[1:]):
+        return 0, "repair_token_usage_unavailable"
+    token_bound = _repair_token_bound()
+    if token_bound is None:
+        return 0, "repair_token_bound_unavailable"
+    calls = sum(e["spend"]["calls"] for e in entries[1:])
+    tokens = sum(e["spend"]["tokens"] for e in entries[1:])
+    cap_calls = max(MINIMUM_REPAIR_CALLS, math.ceil(initial["calls"] * SPEND_FRACTION))
+    cap_tokens = math.ceil(initial["tokens"] * SPEND_FRACTION)
+    return min(max(0, (cap_calls - calls) // CALLS_PER_REPAIR),
+               max(0, (cap_tokens - tokens) // (CALLS_PER_REPAIR * token_bound))), "repair_spend_cap"
+
+
+def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], value: dict, ledger_root: Path,
+                      meaning_notes: dict | None) -> dict | None:
+    """Reopen a chain stopped for source review once meaning notes settle those groups' units.
+
+    Audio adjudication normally becomes available after a locale has stopped with
+    ``request_source_review``. Its notes do not change the lineage, so the chain
+    continues instead of starting over: each stopped group whose units are noted
+    and never repaired with a note gets one repair carrying it; every other
+    stopped group keeps its reason. The entry records the notes it was reopened by."""
+    last = entries[-1]
+    eligible = reopenable_groups(entries, meaning_notes)
+    if not eligible:
+        return None
+    # Each group's brief comes from the report of the round that last reported it. A group stopped long
+    # ago may have been carried through later rounds (notes arriving in batches, a reopened neighbour
+    # passing), so that report can sit in an earlier round than the head's.
+    reports, failures, origins = {}, [], {}
+    for group_id in eligible:
+        origin = next((entry for entry in reversed(entries) if entry["failureReportSha256"] is not None
+                       and any(row["translationGroupId"] == group_id for row in entry["groups"])), None)
+        _require(origin is not None, "Stopped groups are missing from the saved failure report")
+        if origin["sequence"] not in reports:
+            report = _saved_report(Path(origin["runDirectory"]), request, total_groups)
+            # The brief is derived from this report, so it must be the very report that entry committed:
+            # a report edited afterwards could change failure codes or unit associations behind unchanged caches.
+            _require(json_sha256(report) == origin["failureReportSha256"],
+                     "Saved failure report differs from the one the stopped ledger entry committed")
+            reports[origin["sequence"]] = report
+        failure = next((row for row in reports[origin["sequence"]]["failures"]
+                        if row["translationGroupId"] == group_id), None)
+        _require(failure is not None, "Stopped groups are missing from the saved failure report")
+        # The repair reuses the head round's caches; the failing cache it names must be the one reported.
+        _require(_cache_matches(Path(last["runDirectory"]) / failure["reviewerCache"], failure["reviewerCacheSha256"]),
+                 "A stopped group's failing cache changed after its failure report")
+        failures.append(failure)
+        origins[origin["sequence"]] = origin["failureReportSha256"]
+    order = [row["translationGroupId"] for row in last["stopped"]]
+    failures.sort(key=lambda failure: order.index(failure["translationGroupId"]))
+    # The allowance is checked before the entry is written, so the chain never holds a ``repairing`` head
+    # it cannot pay for. Groups beyond it stay stopped with the cap's reason (and are not reopened again);
+    # with none affordable the entry itself is terminal.
+    affordable, cap_reason = _affordable_repairs(entries)
+    failures, capped = failures[:affordable], failures[affordable:]
+
+    def ledger_row(failure: dict, repaired: bool) -> dict:
+        noted = sorted(unit for unit in failure["sourceUnitIds"] if unit in meaning_notes)
+        return {"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
+                "failureCodes": failure["failureCodes"],
+                "fingerprint": fingerprint(value, failure["sourceUnitIds"], failure["failureCodes"]),
+                "repaired": repaired, "decision": "source_meaning_noted" if repaired else cap_reason,
+                **({"notedUnits": noted} if repaired else {})}
+
+    rows = [ledger_row(failure, True) for failure in failures] + [ledger_row(failure, False) for failure in capped]
+    held = {row["translationGroupId"]: row for row in last["stopped"]}
+    stopped = [row for row in last["stopped"] if row["translationGroupId"] not in eligible] + [
+        {**held[failure["translationGroupId"]], "reasonCode": cap_reason} for failure in capped]
+    next_brief = {"schemaVersion": runner.PARTIAL_REPAIR_SCHEMA, **{key: request[key] for key in (
+        "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256")},
+        "groups": [repair_row(failure, meaning_notes) for failure in failures]} if failures else None
+    units = sorted({unit for failure in failures + capped for unit in failure["sourceUnitIds"] if unit in meaning_notes})
+    return append_ledger(ledger_root, value, entries, {
+        "runDirectory": last["runDirectory"], "routingVersion": ROUTING_VERSION, "repairBriefSha256": None,
+        "evidenceSha256": None, "failureReportSha256": None,
+        "spend": {"calls": 0, "tokens": 0, "callsWithoutUsage": 0}, "groups": rows,
+        "outcome": "repairing" if failures else "stopped", "stopped": stopped, "nextBrief": next_brief,
+        "reopenedBy": {"evidence": "source_meaning_notes", "meaningNotesSha256": json_sha256(meaning_notes),
+                       "units": units,
+                       "failureReports": [{"sequence": sequence, "failureReportSha256": digest}
+                                          for sequence, digest in sorted(origins.items())]}})
+
+
 def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Path,
           ledger_root: Path, *, group_workers: int = 1, meaning_notes: dict | None = None) -> dict:
     """Run rounds until every group passes or repair stops; write and return a receipt.
@@ -528,15 +656,23 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
     value = lineage(request)
     out_root = Path(out_root)
     entries = load_ledger(ledger_root, value)
+    if entries and entries[-1]["outcome"] != "repairing":
+        reopened = _reopen_for_notes(request, total_groups, entries, value, ledger_root, meaning_notes)
+        if reopened is not None:
+            entries.append(reopened)
+        if entries[-1]["outcome"] != "repairing":
+            return _receipt(out_root, ledger_root, value, entries, entries[-1]["outcome"], entries[-1]["stopped"])
     # A loop resumes after its last recorded round; it never repeats one.
     sequence = len(entries)
     reuse_from = Path(entries[-1]["runDirectory"]) if entries else None
     brief = entries[-1]["nextBrief"] if entries else None
+    # Groups the previous entry stopped stay stopped until a round reports them again. A repair round
+    # normally re-reports them from their reused failing caches; a reopened chain dispatches only the
+    # noted groups, and its other stops must never vanish into a passing receipt.
+    inherited = entries[-1]["stopped"] if entries else []
     initial = entries[0]["spend"] if entries else None
     spent = {"calls": sum(e["spend"]["calls"] for e in entries[1:]),
              "tokens": sum(e["spend"]["tokens"] for e in entries[1:])}
-    if entries and entries[-1]["outcome"] != "repairing":
-        return _receipt(out_root, ledger_root, value, entries, entries[-1]["outcome"], entries[-1]["stopped"])
     while True:
         sequence += 1
         out = out_root / f"round-{sequence:03d}"
@@ -581,7 +717,10 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
                              "sourceUnitIds": failure["sourceUnitIds"],
                              "failureCodes": failure["failureCodes"],
                              "fingerprint": fingerprint(value, failure["sourceUnitIds"], failure["failureCodes"]),
-                             "repaired": verdict == "repair", "decision": reason})
+                             "repaired": verdict == "repair", "decision": reason,
+                             **({"notedUnits": sorted(unit for unit in failure["sourceUnitIds"]
+                                                      if unit in (meaning_notes or {}))}
+                                if reason == "source_meaning_noted" else {})})
                 if verdict == "repair":
                     repairs.append(failure)
                 else:
@@ -627,6 +766,12 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
                         "reasonCode": "repair_token_usage_unavailable" if spend["callsWithoutUsage"]
                         else "repair_spend_cap", "evidencePath": str(out / "evidence.json")}
                        for row in brief["groups"]]
+        reported = {row["translationGroupId"] for row in rows} | {row["translationGroupId"] for row in stopped}
+        carried = [row for row in inherited if row["translationGroupId"] not in reported]
+        if carried:
+            stopped = stopped + carried
+            if outcome == "passed":
+                outcome = "stopped"
         next_brief = None
         if repairs:
             next_brief = {"schemaVersion": runner.PARTIAL_REPAIR_SCHEMA, **{key: request[key] for key in (
@@ -641,7 +786,7 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
         entries.append(entry)
         if outcome != "repairing":
             return _receipt(out_root, ledger_root, value, entries, outcome, stopped)
-        reuse_from, brief = out, next_brief
+        reuse_from, brief, inherited = out, next_brief, stopped
 
 
 def _receipt(out_root: Path, ledger_root: Path, value: dict, entries: list[dict], outcome: str,

@@ -1,6 +1,7 @@
 import contextlib
 import copy
 from datetime import datetime,timedelta,timezone
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -9,7 +10,7 @@ import unittest
 import wave
 from unittest.mock import patch
 from scripts import sermon
-from scripts.sermon_unified import contracts as c,runtime as r
+from scripts.sermon_unified import contracts as c,runtime as r,adapters
 from scripts.sermon_unified_observability import project,events,compare
 
 class UnifiedCliTests(unittest.TestCase):
@@ -59,6 +60,98 @@ class UnifiedCliTests(unittest.TestCase):
         self.assertEqual(report['handoff']['count'],99);self.assertLessEqual(report['handoff']['p95Seconds'],2)
         r.pump(self.root,state['runKey'],executor=lambda *a: self.fail('duplicate dispatch'))
         self.assertEqual(len(events(state)),200);self.assertEqual(events(state,after=state['events'][-1]['eventId']),[])
+
+    def test_l3_success_automatically_dispatches_l4_with_bound_audio_package(self):
+        audio = self.base / 'audio.json'
+        audio.write_text('{}')
+        delivery = self.base / 'delivery.json'
+        package = self.base / 'audio-package.json'
+        package_bytes = b'{"schemaVersion":"fixture-audio-package"}\n'
+        package_sha = hashlib.sha256(package_bytes).hexdigest()
+        delivery.write_text(json.dumps({'inputs': {'audio_package': {'zh-Hans': {
+            'path': str(package), 'sha256': package_sha}}}}))
+        self.m['activeScope'] = 'media_verified'
+        self.m['steps'] = [
+            {'id':'media','stageId':'media_verify','adapter':'media.verify','dependsOn':[],
+             'scope':'media_verified'},
+            {'id':'audio-zh','stageId':'layer3_unit','adapter':'canonical.audio','locale':'zh-Hans',
+             'configuration':'audioConfig','dependsOn':['media'],'scope':'media_verified'},
+            {'id':'release-zh','stageId':'publish_endpoint','adapter':'app.delivery','locale':'zh-Hans',
+             'configuration':'deliveryConfig','dependsOn':['audio-zh'],'scope':'media_verified'},
+        ]
+        self.m['bindings'].update({
+            'audioConfig': {'path':str(audio),'sha256':c.file_sha(audio)},
+            'deliveryConfig': {'path':str(delivery),'sha256':c.file_sha(delivery)},
+        })
+        with patch.object(c,'admit',return_value=[]), patch.object(adapters,'inspect_step'):
+            state = self.freeze()
+        calls = []
+
+        def executor(manifest, base, step, output):
+            calls.append(step['id'])
+            if step['id'] == 'media':
+                return {'status':'succeeded','artifact':'verified','kind':'media_identity',
+                        'mediaSha256':manifest['source']['mediaSha256']}
+            if step['id'] == 'audio-zh':
+                package.write_bytes(package_bytes)
+                return {'status':'succeeded','artifact':'verified','review':'human_pending',
+                        'productionEligible':False,
+                        'audioPackage':{'path':str(package),'sha256':c.file_sha(package)}}
+            config = json.loads(delivery.read_text())
+            reference = config['inputs']['audio_package']['zh-Hans']
+            self.assertEqual(reference['sha256'], c.file_sha(reference['path']))
+            self.assertEqual(reference['path'], str(package))
+            return {'status':'succeeded','kind':'app_delivery','artifact':'verified',
+                    'fourProducts':'validated'}
+
+        with patch.object(c,'admit',return_value=[]), \
+             patch.object(adapters,'inspect_step'), patch.object(adapters,'verify_result'), \
+             patch.object(r,'valid_success',return_value=True):
+            r.pump(self.root,state['runKey'],executor=executor)
+        final = r.load(self.root,state['runKey'])
+        self.assertEqual(calls,['media','audio-zh','release-zh'])
+        self.assertEqual(final['steps']['audio-zh']['process'],'succeeded')
+        self.assertEqual(final['steps']['release-zh']['process'],'succeeded')
+        self.assertEqual(final['steps']['release-zh']['dependsOnEvents'],
+                         [final['steps']['audio-zh']['completionEventId']])
+
+    def test_l3_failure_does_not_dispatch_l4(self):
+        audio = self.base / 'audio.json'
+        audio.write_text('{}')
+        delivery = self.base / 'delivery.json'
+        delivery.write_text('{}')
+        self.m['activeScope'] = 'media_verified'
+        self.m['steps'] = [
+            {'id':'media','stageId':'media_verify','adapter':'media.verify','dependsOn':[],
+             'scope':'media_verified'},
+            {'id':'audio-zh','stageId':'layer3_unit','adapter':'canonical.audio','locale':'zh-Hans',
+             'configuration':'audioConfig','dependsOn':['media'],'scope':'media_verified'},
+            {'id':'release-zh','stageId':'publish_endpoint','adapter':'app.delivery','locale':'zh-Hans',
+             'configuration':'deliveryConfig','dependsOn':['audio-zh'],'scope':'media_verified'},
+        ]
+        self.m['bindings'].update({
+            'audioConfig': {'path':str(audio),'sha256':c.file_sha(audio)},
+            'deliveryConfig': {'path':str(delivery),'sha256':c.file_sha(delivery)},
+        })
+        with patch.object(c,'admit',return_value=[]), patch.object(adapters,'inspect_step'):
+            state = self.freeze()
+        calls = []
+
+        def executor(manifest, base, step, output):
+            calls.append(step['id'])
+            if step['id'] == 'media':
+                return {'status':'succeeded','artifact':'verified','kind':'media_identity',
+                        'mediaSha256':manifest['source']['mediaSha256']}
+            return {'status':'blocked','reason':'synthetic_layer3_failure'}
+
+        with patch.object(c,'admit',return_value=[]), \
+             patch.object(adapters,'inspect_step'), patch.object(adapters,'verify_result'), \
+             patch.object(r,'valid_success',return_value=True):
+            r.pump(self.root,state['runKey'],executor=executor)
+        final = r.load(self.root,state['runKey'])
+        self.assertEqual(calls,['media','audio-zh'])
+        self.assertEqual(final['steps']['audio-zh']['process'],'blocked')
+        self.assertEqual(final['steps']['release-zh']['process'],'not_started')
     def test_completed_response_cannot_be_replaced(self):
         state=self.freeze();r.pump(self.root,state['runKey']);state=r.load(self.root,state['runKey'])
         sid=c.digest(c.job_identity(self.m,self.m['steps'][0]));path=r.folder(self.root,state['runKey'])/('response-'+sid+'.json')

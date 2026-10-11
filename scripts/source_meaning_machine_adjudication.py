@@ -17,7 +17,7 @@ instead of a person:
    frozen text and what the listeners heard, never a wording nobody heard.
 
 The receipt is machine evidence (``humanApproval`` false). A corrected unit also
-yields a ``sermon-source-text-review-v1`` review on its ASR segment, which the
+yields a ``sermon-source-text-review-v2`` review on its ASR segment, which the
 existing Layer 1 path applies and realigns; the new Layer 1 identity then
 invalidates every locale downstream, as the contract requires. A confirmed or
 undetermined unit keeps the frozen text; ``meaning-notes.json`` carries its
@@ -29,7 +29,9 @@ import argparse
 from datetime import datetime, timezone
 import difflib
 import hashlib
+import io
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -38,7 +40,7 @@ import subprocess
 import sys
 import tempfile
 from typing import Any, Callable
-import urllib.request
+import wave
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -49,11 +51,30 @@ from scripts import sermon_source_text_review as source_review  # noqa: E402
 from scripts import target_language_policy as policies  # noqa: E402
 
 SCHEMA = source_review.MACHINE_RECEIPT_SCHEMA
+# Receipts written before verdicts were reproduced from the request cache; read under their own rules.
+SCHEMA_V1 = source_review.MACHINE_RECEIPT_SCHEMA_V1
 QUESTION_SCHEMA = 'sermon-source-meaning-adjudication-question-v1'
 RESPONSE_SCHEMA = 'sermon-source-meaning-adjudication-response-v1'
 PROMPT_VERSION = 'source-meaning-adjudication-v2'
 NOTES_SCHEMA = 'sermon-source-meaning-notes-v1'
 VERSION = '2026-10-08-v3'
+# Every implementation of this module that wrote v1 receipts (its git history from 9a34493 through a565df1),
+# with the version it signed. A v1 receipt is read under its pre-cache rules only when it names one of them,
+# so relabelling a newer receipt as v1 cannot switch off the cache and question checks.
+V1_IMPLEMENTATIONS = {
+    'd0069ae329a1a976e28d67592142f71fb3fb1b55cf3c480c393c5f8ebf76acc4': '2026-10-08-v1',
+    'a996f72e59e26ec2c9f697bd38ebcc5eb96574b6abf1a34a4fbb00edc88b6da4': '2026-10-08-v2',
+    '043afa8872162cadaf65bc2d32b7b2a1c5862d7cbd3c5b5bb82ff781514dc7a9': '2026-10-08-v2',
+    '82495ef91b07d346f564a593f1666fce2c8d49a31f13e7e8afa1da83ee2f947b': '2026-10-08-v3',
+    'aa9844492a04c0e134145d44731937bcedf14985f6874f641ffcf684351cf705': '2026-10-08-v3',
+    '103dd09e7a8e16a66948a22e9dfa790d95e289f7098d405112c2274b6fa263d4': '2026-10-08-v3',
+    'a8752fb10c61a58578fe14519d4930f3f1d6294ae98178657a391a86bf4ae541': '2026-10-08-v3',
+    'e856a679593682306943eda3a41a1c0301140f1db18ba2c1d6aca8b02074be6c': '2026-10-08-v3',
+    '95e48ac4649725369526a2e83a500e87303bc17b7231f404a7d736166b6867e7': '2026-10-08-v3',
+    'adf10632baf989ebb7192d801bc39af4307d0a835b35b9a37d0dde726361118b': '2026-10-08-v3',
+    'e2142ff7817ae4c79805e762048adc733bd488cd4e214f2a24b31bc0b0943437': '2026-10-08-v3',
+    '743fec4cb4e255d86e0ad05d99c8093176c4ebbbdfe12a2a683beb814fbe47f7': '2026-10-08-v3',
+}
 ROLE = source_review.MACHINE_ROLE
 MODEL, EFFORT = 'gpt-6.1-sol', 'medium'
 # Only a model the Layer 1 review path also accepts may adjudicate; otherwise a
@@ -66,6 +87,12 @@ NEIGHBOUR_MATCH_MIN = 0.5  # share of a neighbour's frozen words a listener must
 SAMPLE_RATE = 16000
 MAX_NOTE_CHARS = 300
 TIME_TOLERANCE = source_review.UNIT_TIME_TOLERANCE
+BUDGET_SCHEMA = 'sermon-source-meaning-budget-authorization-v1'
+BUDGET_APPROVAL_SCHEMA = 'sermon-source-meaning-budget-approval-v1'
+BUDGET_DIR = 'budget'            # the SourceBudget ledger under --out-dir
+ADJUDICATOR_CACHE = 'cache'      # the request cache under --out-dir, receipts name files inside it
+LISTEN_REQUEST_SCHEMA = 'sermon-source-meaning-listen-request-v1'
+CHAT_URL = 'https://api.openai.com/v1/chat/completions'
 QWEN_SETTINGS = {'dtype': 'bfloat16', 'executionDevice': 'cuda:0', 'batchSize': 1, 'maxNewTokens': 2048,
                  'language': 'English'}
 LISTEN_PROMPT = ('Transcribe this English church sermon audio exactly as spoken. '
@@ -233,6 +260,19 @@ def _route_identity(route: dict[str, Any] | None) -> dict[str, Any] | None:
     return {key: route[key] for key in ('environment', 'projectId', 'credentialAlias')}
 
 
+def _route_key(route: dict[str, Any] | None) -> str:
+    """Namespaces cached answers by the selected OpenAI Project, so dev answers never serve prod."""
+    return 'unrouted' if route is None else f"{route['environment']}-{route['projectId']}"
+
+
+def _wav_seconds(wav: bytes) -> float:
+    try:
+        with wave.open(io.BytesIO(wav)) as handle:
+            return handle.getnframes() / handle.getframerate()
+    except (wave.Error, EOFError, ZeroDivisionError) as exc:
+        raise SourceAdjudicationError('listener_clip_not_wav') from exc
+
+
 class OpenAiTranscribeListener:
     """``gpt-transcribe`` through the selected OpenAI Project; it never sees the frozen text.
 
@@ -241,13 +281,17 @@ class OpenAiTranscribeListener:
 
     name = model = 'gpt-transcribe'
 
-    def __init__(self, *, cache: Path, max_calls: int):
+    def __init__(self, *, cache: Path, max_calls: int, budget: dict[str, Any] | None = None):
         from scripts import machine_qc_audio_transports as transports
         from scripts import sermon_openai_runtime as runtime
         self.route = _route_identity(runtime.selected_route())
         _require(self.route is not None, 'openai_environment_launcher_required')
         self.cache = transports.CallCache(cache, paid=True)
         self.max_calls, self.calls = max_calls, 0
+        # A new paid request dispatches only through the run's bound budget (``load_budget_authorization``);
+        # without one the listener may replay its cache and nothing else.
+        self.budget = budget
+        self.operations = self.cache.root / 'operations.json'
         self.fields = [('model', self.model), ('response_format', 'json'), ('prompt', LISTEN_PROMPT),
                        ('languages[]', 'en')]
 
@@ -256,17 +300,57 @@ class OpenAiTranscribeListener:
         return {'backend': 'openai-api', 'endpoint': '/v1/audio/transcriptions', 'model': self.model,
                 'language': 'en', 'promptSha256': _sha(LISTEN_PROMPT.encode('utf-8')), 'route': self.route}
 
+    def _operations_table(self) -> dict[str, str]:
+        table = _load(self.operations) if self.operations.is_file() else {}
+        _require(isinstance(table, dict) and all(isinstance(v, str) for v in table.values()),
+                 'listener_operations_corrupt')
+        return table
+
+    def _operation(self, audio_sha: str) -> str:
+        """The ledger operation of one clip, ``asr.NNNN`` in first-heard order, kept across a resumed run."""
+        from scripts import english_source_judge_cache as judge_cache
+        table = self._operations_table()
+        if audio_sha not in table:
+            _require(len(table) < 9999, 'listener_operation_cap')
+            table[audio_sha] = f'asr.{len(table) + 1:04d}'
+            judge_cache._atomic(self.operations, table)
+        return table[audio_sha]
+
+    def _request(self, wav: bytes) -> tuple[bytes, str, dict[str, Any]]:
+        """The multipart body, its content type and the ledger identity of one clip's request."""
+        from scripts import machine_qc_audio_transports as transports
+        body, content_type = transports._multipart(self.fields, wav)
+        identity = {'schemaVersion': LISTEN_REQUEST_SCHEMA, 'model': self.model,
+                    'endpoint': transports.TRANSCRIBE_URL, 'audioSha256': _sha(wav),
+                    'inputDurationSeconds': round(_wav_seconds(wav), 3), 'requestBodySha256': _sha(body),
+                    'listener': self.identity()}
+        return body, content_type, identity
+
+    def _returned(self, wav: bytes) -> bool:
+        """Whether the ledger already holds this clip's returned response (read only; nothing is numbered)."""
+        known = self._operations_table().get(_sha(wav))
+        return known is not None and self.budget['store'].returned(known, self._request(wav)[2])
+
     def _send(self, wav: bytes) -> dict[str, Any]:
         from scripts import machine_qc_audio_transports as transports
-        from scripts import sermon_pipeline
-        from scripts.sermon_openai_runtime import project_headers
-        body, content_type = transports._multipart(self.fields, wav)
-        key = os.environ['OPENAI_API_KEY']
-        request = urllib.request.Request(transports.TRANSCRIBE_URL, data=body, method='POST', headers={
-            'Authorization': f'Bearer {key}', 'Content-Type': content_type, **project_headers(key)})
-        request.accounting_model = self.model
-        request.accounting_settings = {'requestPayloadSha256': _sha(body)}
-        response = sermon_pipeline.request_json(request, retries=1)
+        from scripts import sermon_transcription_request as transcription
+        _require(self.budget is not None, 'budget_authorization_required')
+        body, content_type, identity = self._request(wav)
+        audio_sha, seconds = _sha(wav), _wav_seconds(wav)
+        # Reserved before dispatch, like the Layer 1 transcription: one request, its wall time and the
+        # duration-billed minutes at the frozen planning price; never a token dimension.
+        bounds = {'requests': 1, 'wallTimeMs': transcription.WALL_TIME_MS,
+                  'costMicrousd': max(1, math.ceil(seconds / 60)) * transcription.MICROUSD_PER_MINUTE}
+        store = self.budget['store']
+        if not self._returned(wav):
+            # The cap counts new paid requests only: a response the ledger already holds for this clip
+            # replays at no cost, so a resumed run with ``--max-api-calls 0`` still recovers it.
+            _require(self.calls < self.max_calls, 'listener_call_cap_reached')
+            self.calls += 1
+        response = store.call(
+            operation=self._operation(audio_sha), identity=identity, bounds=bounds, request=body,
+            api_key=os.environ.get('OPENAI_API_KEY', ''), content_type=content_type,
+            endpoint=transports.TRANSCRIBE_URL)
         _require(isinstance(response, dict) and isinstance(response.get('text'), str), 'listener_returned_no_text')
         return {'text': response['text'], 'usage': response.get('usage')}
 
@@ -275,9 +359,24 @@ class OpenAiTranscribeListener:
         key = policies.canonical_sha256({'listener': self.name, 'audioSha256': audio_sha, 'identity': self.identity()})
         done = self.cache.get(key)
         if done is None:
-            _require(self.calls < self.max_calls, 'listener_call_cap_reached')
-            self.calls += 1
-            done = self.cache.run(key, {'audioSha256': audio_sha, 'listener': self.name}, lambda: self._send(wav))
+            _require(self.budget is not None, 'budget_authorization_required')
+            # The budget ledger is the paid-call record (reserved, live, returned or unknown) and replays a
+            # returned response itself; a refused reservation leaves nothing to reconcile. The cache keeps
+            # the returned text so the next run reads it without opening the ledger.
+            request = {'audioSha256': audio_sha, 'listener': self.name}
+            started = (self.cache.root / key / 'started.json').exists()
+            # A started marker settles only from a response the ledger already holds. Without one the marker
+            # may come from a run that sent the request before this ledger existed, so its outcome is unknown:
+            # it is never sent again and waits for an operator to reconcile it.
+            _require(not started or self._returned(wav), 'source_marker_outcome_unknown')
+            response = self._send(wav)
+            if started:
+                # A run that died after the ledger kept the returned text but before this cache recorded it
+                # leaves the started marker. The ledger replayed that operation above; bind its response to
+                # the marker instead of treating the paid clip as an unknown outcome for good.
+                done = self.cache.reconcile(key, request, response)
+            else:
+                done = self.cache.run(key, request, lambda: response)
         return done['text'].strip()
 
 
@@ -376,28 +475,56 @@ class SolAdjudicator:
     requests of one run, and a cached answer is served without a call."""
 
     def __init__(self, *, api_key: str, cache: Path, model: str = MODEL, effort: str = EFFORT,
-                 caller: Callable[..., dict[str, Any]] | None = None, max_calls: int | None = None):
+                 caller: Callable[..., dict[str, Any]] | None = None, max_calls: int | None = None,
+                 budget: dict[str, Any] | None = None, request_limits: dict[str, Any] | None = None):
         _require(model in ADJUDICATOR_MODELS and effort in limits.MODEL_REASONING_EFFORTS[model],
                  'unsupported_adjudicator_model')
         _require(max_calls is None or (type(max_calls) is int and max_calls >= 0), 'adjudicator_call_cap')
+        # The authorization pays for the model and effort it was approved for, and nothing else.
+        _require(budget is None or budget.get('adjudicator') == {'model': model, 'reasoningEffort': effort},
+                 'budget_authorization_binding_changed')
+        # The request limits come from the bound budget's approved tier unless a test pins them.
+        self.budget = budget
+        self.limits = limits.validate_request_limits(
+            request_limits if request_limits is not None
+            else budget['requestLimits'] if budget is not None else limits.DEFAULT_REQUEST_LIMITS)
         if caller is None:
-            from scripts.production_spark_admission import SessionBoundCaller
-            from scripts.sermon_pipeline import chat_json
-            caller = SessionBoundCaller(chat_json, purpose='source-meaning-adjudication')
+            # A new paid request dispatches only through the bound budget's ledger; with no budget the
+            # default caller refuses before any transport exists, so a cache miss cannot spend.
+            caller = self._budgeted_call if budget is not None else _unbound_call
         self.api_key, self.cache, self.model, self.effort, self.caller = api_key, Path(cache), model, effort, caller
         self.max_calls, self.calls = max_calls, 0
         from scripts import sermon_openai_runtime as runtime
         self.route = _route_identity(runtime.selected_route())
 
+    def _ledger_identity(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """The ledger row's identity: the model the transport accounts for, the selected OpenAI Project
+        and the request, so a response paid for under one Project is never replayed to a run on another
+        (``source_operation_identity_changed``)."""
+        return {'model': payload['model'], 'route': self.route, 'payload': payload}
+
+    @staticmethod
+    def _ledger_operation(payload: dict[str, Any]) -> str:
+        from scripts import sermon_workflow_jobs as jobs
+        return 'judge.' + jobs._digest(payload)
+
+    def _budgeted_call(self, key: str, payload: dict[str, Any]) -> dict[str, Any]:
+        inputs = limits._input_upper_bound(payload)
+        bounds = {'requests': 1, 'wallTimeMs': self.limits['wallTimeMs'],
+                  'costMicrousd': limits._cost(payload['model'], inputs, self.limits['maxCompletionTokens'])}
+        return self.budget['store'].call(
+            operation=self._ledger_operation(payload), identity=self._ledger_identity(payload), bounds=bounds,
+            request=json.dumps(payload, ensure_ascii=False).encode('utf-8'), api_key=key,
+            content_type='application/json', endpoint=CHAT_URL)
+
     @property
     def route_key(self) -> str:
-        """Namespaces cached answers by the selected OpenAI Project, so dev answers never serve prod."""
-        return 'unrouted' if self.route is None else f"{self.route['environment']}-{self.route['projectId']}"
+        return _route_key(self.route)
 
     def identity(self) -> dict[str, Any]:
         return {'model': self.model, 'reasoningEffort': self.effort, 'promptVersion': PROMPT_VERSION,
                 'promptSha256': _sha(SYSTEM_PROMPT.encode('utf-8')),
-                'requestLimits': dict(limits.DEFAULT_REQUEST_LIMITS), 'maxNewCalls': self.max_calls,
+                'requestLimits': dict(self.limits), 'maxNewCalls': self.max_calls,
                 'route': self.route}
 
     def payload(self, question: dict[str, Any]) -> dict[str, Any]:
@@ -405,11 +532,10 @@ class SolAdjudicator:
                    'response_format': {'type': 'json_object'},
                    'messages': [{'role': 'system', 'content': SYSTEM_PROMPT},
                                 {'role': 'user', 'content': json.dumps(question, ensure_ascii=False)}],
-                   'max_completion_tokens': limits.DEFAULT_REQUEST_LIMITS['maxCompletionTokens'],
-                   'service_tier': limits.DEFAULT_REQUEST_LIMITS['serviceTier']}
+                   'max_completion_tokens': self.limits['maxCompletionTokens'],
+                   'service_tier': self.limits['serviceTier']}
         # The strict transport refuses anything but a payload already carrying its worst-case cap.
-        _require(limits.bounded_payload(payload, limits.DEFAULT_REQUEST_LIMITS) == payload,
-                 'adjudicator_payload_unbounded')
+        _require(limits.bounded_payload(payload, self.limits) == payload, 'adjudicator_payload_unbounded')
         return payload
 
     def decide(self, unit_id: str, question: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -418,14 +544,143 @@ class SolAdjudicator:
         payload, stage = self.payload(question), f'source-meaning-{self.route_key}-{unit_id}'
         request_hash = contract.json_sha256({'schemaVersion': judge_cache.RUN_SCHEMA, 'stage': stage,
                                              'payload': payload})
-        cached = (self.cache.resolve() / 'cache' / f'{stage}-{request_hash}.json').is_file()
+        path = self.cache.resolve() / 'cache' / f'{stage}-{request_hash}.json'
+        cached, caller = path.is_file(), self.caller
         if not cached:
-            _require(self.max_calls is None or self.calls < self.max_calls, 'adjudicator_call_cap_reached')
-            self.calls += 1
+            # A response the ledger already holds replays at no cost and is not a new call for the cap.
+            replay = self.budget is not None and self.budget['store'].returned(self._ledger_operation(payload),
+                                                                                 self._ledger_identity(payload))
+            marker = path.with_suffix('.started.json')
+            # A started marker settles only from a response the ledger already holds. Without one the marker
+            # may come from a run that sent the request directly, before this ledger existed, so its outcome is
+            # unknown: it is never sent again and waits for an operator to reconcile it.
+            _require(not marker.is_file() or self.budget is None or replay, 'source_marker_outcome_unknown')
+            _require(replay or self.max_calls is None or self.calls < self.max_calls, 'adjudicator_call_cap_reached')
+            # Refused before the cache writes its started marker, so an unbound run leaves nothing to reconcile.
+            _require(self.caller is not _unbound_call, 'budget_authorization_required')
+            if not replay:
+                self.calls += 1
+            if self.budget is not None and (marker.is_file() or self.caller == self._budgeted_call):
+                # The ledger is the paid-call record, so it reserves and dispatches (or replays) before the cache
+                # writes its marker: a refused reservation (bounds, authorization, session) leaves no marker
+                # behind, and every marker this run writes has the ledger's returned response beside it.
+                response = self._budgeted_call(self.api_key, payload)
+                if marker.is_file():
+                    # A run that died after the ledger kept the response but before the cache file was written
+                    # left this marker; bind the replayed response into the cache instead of staying blocked.
+                    judge_cache.reconcile_returned_response(marker_path=marker, response=response,
+                                                            expected_request_sha256=request_hash,
+                                                            requested_model=self.model)
+                else:
+                    caller = lambda _key, _payload: response  # noqa: E731
         result, request = judge_cache.cached_call(out=self.cache, stage=stage, payload=payload, api_key=self.api_key,
-                                                  requested_model=self.model, caller=self.caller)
-        return result, {**request, 'cached': cached,
-                        'bounds': limits.request_bounds(payload, limits.DEFAULT_REQUEST_LIMITS)}
+                                                  requested_model=self.model, caller=caller)
+        return result, {**request, 'cached': cached, 'bounds': limits.request_bounds(payload, self.limits)}
+
+
+def _unbound_call(key: str, payload: dict[str, Any]) -> dict[str, Any]:
+    raise SourceAdjudicationError('budget_authorization_required')
+
+
+# ---------------------------------------------------------------- budget
+
+def budget_binding(source: dict[str, Any], anchor: dict[str, Any], unit_ids: list[str], out_dir: Path, *,
+                   model: str, effort: str) -> dict[str, Any]:
+    """What a spend authorization must name: the frozen package, the doubted units, the code closure,
+    the selected OpenAI Project, the adjudicator's model and reasoning effort and the ledger root under
+    the output directory. Any other run is a different authorization: in particular one approved for dev
+    cannot be loaded, replayed or spent under prod, one approved for Sol at medium effort cannot pay for
+    another model or effort, and the binding exists only under the environment launcher."""
+    from scripts import canonical_layer2_controller as controller
+    from scripts import sermon_openai_runtime as runtime
+    _require(model in ADJUDICATOR_MODELS and effort in limits.MODEL_REASONING_EFFORTS[model],
+             'unsupported_adjudicator_model')
+    route = _route_identity(runtime.selected_route())
+    _require(route is not None, 'openai_environment_launcher_required')
+    return {'bindings': {'source.json': policies.canonical_sha256(source), 'anchor.json': policies.canonical_sha256(anchor)},
+            'doubtedUnits': sorted(unit_ids), 'codeIdentitySha256': controller.code_identity(), 'route': route,
+            'adjudicator': {'model': model, 'reasoningEffort': effort},
+            'budgetRoot': str(Path(out_dir).resolve() / BUDGET_DIR)}
+
+
+def _authorization_identity(path: Path, *, binding: dict[str, Any]) -> dict[str, Any]:
+    """What the authorization file and its approval receipt say now, refused unless they bind this run."""
+    value = _load(path)
+    _require(isinstance(value, dict) and set(value) == {'schemaVersion', 'binding', 'authority', 'approvalReceipt'}
+             and value['schemaVersion'] == BUDGET_SCHEMA and isinstance(value['authority'], dict)
+             and set(value['authority']) == {'approvalSha256', 'globalBounds', 'requestLimits'}
+             and isinstance(value['approvalReceipt'], str), 'budget_authorization_schema')
+    _require(value['binding'] == binding, 'budget_authorization_binding_changed')
+    authority = value['authority']
+    approval_path = (path.parent / value['approvalReceipt']).resolve()
+    _require(approval_path.is_file(), 'budget_approval_not_bound')
+    approval = _load(approval_path)
+    _require(file_sha256(approval_path) == authority['approvalSha256'] and isinstance(approval, dict)
+             and approval.get('schemaVersion') == BUDGET_APPROVAL_SCHEMA
+             and approval.get('binding') == {**binding, 'globalBounds': authority['globalBounds'],
+                                             'requestLimits': authority['requestLimits']}
+             and approval.get('humanApproval') is True and approval.get('decision') == 'approved'
+             and approval.get('operatorEvidence') and approval.get('reviewedBy') and approval.get('reviewedAt'),
+             'budget_approval_not_bound')
+    return {'schemaVersion': BUDGET_SCHEMA, 'authorizationSha256': file_sha256(path),
+            'approvalSha256': authority['approvalSha256'], 'budgetRoot': binding['budgetRoot'],
+            'globalBounds': dict(authority['globalBounds']), 'requestLimits': dict(authority['requestLimits'])}
+
+
+def load_budget_authorization(path: Path, *, binding: dict[str, Any], transport: Any = None) -> dict[str, Any]:
+    """The human-approved spend authority for exactly this run, with its durable ledger.
+
+    Shaped like the Layer 1 source budget: the authorization names the binding, the global
+    bounds and the request limits; the approval receipt it hashes into its authority repeats
+    them with a human decision. Every paid call of the run then dispatches through one
+    ``SourceBudget`` ledger under ``budgetRoot``: reserved before dispatch, replayed after,
+    never retried on an unknown outcome. The ledger re-reads the authorization, its approval
+    and the code closure before every reservation, dispatch and returned response, so a file
+    replaced or code changed after this load refuses (``budget_authorization_changed`` /
+    ``budget_authorization_binding_changed``) before the ledger moves. ``transport`` is a
+    test seam only."""
+    from scripts import canonical_layer2_controller as controller
+    from scripts import sermon_source_budget as source_budget
+    path = Path(path).resolve()
+    identity = _authorization_identity(path, binding=binding)
+
+    def verify() -> None:
+        current = _authorization_identity(path, binding={**binding, 'codeIdentitySha256': controller.code_identity()})
+        _require(current == identity, 'budget_authorization_changed')
+
+    authority = {key: identity[key] for key in ('approvalSha256', 'globalBounds', 'requestLimits')}
+    store = source_budget.SourceBudget(Path(binding['budgetRoot']), authority, verify=verify, transport=transport)
+    return {**identity, 'store': store, 'adjudicator': dict(binding['adjudicator'])}
+
+
+BUDGET_IDENTITY_KEYS = ('schemaVersion', 'authorizationSha256', 'approvalSha256', 'budgetRoot', 'globalBounds',
+                        'requestLimits')
+
+
+def budget_identity(budget: dict[str, Any] | None) -> dict[str, Any] | None:
+    """What the receipt records of the authority a run spent under; the ledger store stays out."""
+    return None if budget is None else {key: budget[key] for key in BUDGET_IDENTITY_KEYS}
+
+
+def _is_budget_identity(value: Any) -> bool:
+    """Whether ``value`` could have come from ``load_budget_authorization``: two file hashes, an absolute
+    ledger root named ``budget``, ledger-valid global bounds and a supported request-limit tier."""
+    from scripts import sermon_source_budget as source_budget
+    if not (isinstance(value, dict) and set(value) == set(BUDGET_IDENTITY_KEYS) and value['schemaVersion'] == BUDGET_SCHEMA
+            and all(isinstance(value[key], str) and re.fullmatch('[a-f0-9]{64}', value[key])
+                    for key in ('authorizationSha256', 'approvalSha256'))
+            and isinstance(value['budgetRoot'], str) and Path(value['budgetRoot']).is_absolute()
+            and Path(value['budgetRoot']).name == BUDGET_DIR):
+        return False
+    bounds = value['globalBounds']
+    if not (isinstance(bounds, dict) and set(bounds) == set(source_budget.METRICS)
+            and all(type(v) is int and 0 < v <= 10**15 for v in bounds.values())):
+        return False
+    try:
+        limits.validate_request_limits(value['requestLimits'])
+    except ValueError:
+        return False
+    return True
 
 
 def _checked_answer(result: Any, frozen: list[str], heard: list[dict[str, Any]]) -> dict[str, Any]:
@@ -498,6 +753,28 @@ def _media_binding(source: dict[str, Any]) -> tuple[dict[str, Any], float]:
     return media, float(window['startSeconds'])
 
 
+def _question(units: list[dict[str, Any]], index: int, independence: dict[str, Any],
+              heard: list[dict[str, Any]]) -> dict[str, Any]:
+    """What the adjudicator is asked about ``units[index]``; a v2 receipt's request cache must hold exactly this.
+
+    The doubted unit with its neighbouring text, the clip's units and length,
+    the listeners' independence and, per listener, what it heard and how the
+    neighbours bound it. ``heard`` rows are the receipt's hearing rows."""
+    unit = units[index]
+    low, high = max(0, index - CLIP_CONTEXT_UNITS), min(len(units) - 1, index + CLIP_CONTEXT_UNITS)
+    context = [{'sourceUnitId': units[i]['sourceUnitId'], 'english': units[i]['english'],
+                'position': 'doubted' if i == index else 'before' if i < index else 'after'}
+               for i in range(max(0, index - TEXT_CONTEXT_UNITS), min(len(units), index + TEXT_CONTEXT_UNITS + 1))]
+    return {'schemaVersion': QUESTION_SCHEMA, 'sourceUnitId': unit['sourceUnitId'], 'frozenText': unit['english'],
+            'context': context, 'listenerIndependence': independence,
+            'clip': {'sourceUnitIds': [units[i]['sourceUnitId'] for i in range(low, high + 1)],
+                     'seconds': round(float(units[high]['end']) - float(units[low]['start']), 3)},
+            'listeners': [{'name': row['listener'], 'model': row['model'], 'heardClip': row['text'],
+                           'heardForUnit': row['unitWindow'], 'similarityToFrozen': row['similarityToFrozen'],
+                           'agreesWithFrozen': row['agreesWithFrozen'], 'unitBoundedByNeighbours': row['bounded'],
+                           'boundary': row['boundary']} for row in heard]}
+
+
 def _require_bound_anchor(source: dict[str, Any], anchor: dict[str, Any]) -> None:
     """The anchor must be the one the English Source Package names, built on the package's transcript.
 
@@ -514,7 +791,7 @@ def _require_bound_anchor(source: dict[str, Any], anchor: dict[str, Any]) -> Non
 def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list[str], media: Path | None,
                listeners: list[Any], adjudicator: SolAdjudicator | None, out_dir: Path,
                cut: Callable[[Path, float, float], bytes] = cut_clip,
-               now: datetime | None = None) -> dict[str, Any]:
+               now: datetime | None = None, budget: dict[str, Any] | None = None) -> dict[str, Any]:
     """Adjudicate the doubted units; write clips and re-listens under ``out_dir``; return the receipt.
 
     Unit times in the anchor are relative to the approved window, so each clip
@@ -569,20 +846,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list
             decided_by, request = 'listeners_agree_with_transcript', None
         else:
             _require(adjudicator is not None, 'adjudicator_required')
-            context = [{'sourceUnitId': units[i]['sourceUnitId'], 'english': units[i]['english'],
-                        'position': 'doubted' if i == index else 'before' if i < index else 'after'}
-                       for i in range(max(0, index - TEXT_CONTEXT_UNITS),
-                                      min(len(units), index + TEXT_CONTEXT_UNITS + 1))]
-            question = {'schemaVersion': QUESTION_SCHEMA, 'sourceUnitId': uid, 'frozenText': unit['english'],
-                        'context': context, 'listenerIndependence': independence,
-                        'clip': {'sourceUnitIds': [units[i]['sourceUnitId'] for i in range(low, high + 1)],
-                                 'seconds': round(end - start, 3)},
-                        'listeners': [{'name': row['listener'], 'model': row['model'], 'heardClip': row['text'],
-                                       'heardForUnit': row['unitWindow'],
-                                       'similarityToFrozen': row['similarityToFrozen'],
-                                       'agreesWithFrozen': row['agreesWithFrozen'],
-                                       'unitBoundedByNeighbours': row['bounded'],
-                                       'boundary': row['boundary']} for row in heard]}
+            question = _question(units, index, independence, heard)
             result, request = adjudicator.decide(uid, question)
             verdict = _checked_answer(result, frozen, heard)
             decided_by = 'model'
@@ -610,10 +874,11 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list
                        'sessions': getattr(item, 'sessions', None)} for item in listeners],
         'listenerIndependence': independence,
         'adjudicator': None if adjudicator is None else adjudicator.identity(),
+        'budget': budget_identity(budget),
         'units': rows,
         'counts': {'units': len(rows), **{d: sum(r['decision'] == d for r in rows) for d in DECISIONS}},
         'notice': ('Machine evidence from the bound audio; not human approval. A corrected unit changes '
-                   'Layer 1 through sermon-source-text-review-v1 and invalidates every locale downstream. '
+                   'Layer 1 through sermon-source-text-review-v2 and invalidates every locale downstream. '
                    'A confirmed or undetermined unit keeps the frozen text; meaning-notes.json carries its '
                    "meaningNote for the translator's and reviewer's repair instruction."),
     }
@@ -628,7 +893,7 @@ UNIT_DECIDERS = {'listeners_agree_with_transcript', 'model'}
 
 
 def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anchor: dict[str, Any] | None = None,
-                     media_sha256: str | None = None) -> dict[str, Any]:
+                     media_sha256: str | None = None, cache: Path | None = None) -> dict[str, Any]:
     """Refuse anything but a receipt this module wrote, bound to the package and media it names.
 
     The role string and signature prove nothing by themselves. The receipt must
@@ -636,19 +901,39 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
     a correction that one bounded listener actually heard), and when the
     adjudicated ``source``/``anchor`` or the media hash are supplied, its
     bindings must be theirs: a stale or synthetic receipt for other inputs
-    is refused before any patch of Layer 1 or any repair note is admitted."""
-    _require(isinstance(receipt, dict) and receipt.get('schemaVersion') == SCHEMA
+    is refused before any patch of Layer 1 or any repair note is admitted.
+    In a v2 receipt a model-decided row is accepted only with ``cache`` (the
+    adjudicator's request cache, ``<out-dir>/cache``): its verdict is derived
+    again from the hash-bound response the row names, so an edited decision is
+    refused, and with ``anchor`` the cached question must be the one this
+    receipt and anchor ask. A v1 receipt was written before that contract and
+    keeps its rules: its model rows name a request, nothing more is checked. Those
+    rules apply only to a receipt signed by an implementation that wrote v1
+    (``V1_IMPLEMENTATIONS``)."""
+    _require(isinstance(receipt, dict) and receipt.get('schemaVersion') in (SCHEMA_V1, SCHEMA)
              and receipt.get('decidedByRole') == ROLE and receipt.get('humanApproval') is False, 'receipt_schema')
+    current = receipt['schemaVersion'] == SCHEMA
     version, implementation = receipt.get('version'), receipt.get('implementationSha256')
     _require(isinstance(version, str) and isinstance(implementation, str) and len(implementation) == 64
              and receipt.get('decidedBy') == f'source_meaning_machine_adjudication {version} {implementation[:16]}',
              'receipt_signature')
+    # The schema label alone never selects the older rules: a v1 receipt must name an implementation that
+    # wrote v1, with the version it signed. A v2 receipt relabelled v1 names this or a later implementation.
+    _require(current or V1_IMPLEMENTATIONS.get(implementation) == version, 'receipt_v1_implementation_unknown')
     bindings, media = receipt.get('bindings'), receipt.get('media')
     _require(isinstance(bindings, dict) and set(bindings) == {'source.json', 'anchor.json'}
              and all(isinstance(v, str) and len(v) == 64 for v in bindings.values())
              and isinstance(media, dict) and isinstance(media.get('sha256'), str)
              and type(media.get('sizeBytes')) is int and isinstance(media.get('offsetSeconds'), (int, float)),
              'receipt_bindings')
+    # A v2 receipt always records its budget: ``null`` for a cache-only run, otherwise an authorization
+    # identity this module could have written (every field is checked, not only the key set and the schema
+    # string). A v1 receipt was written before the budget contract and carries none.
+    if current:
+        _require('budget' in receipt and (receipt['budget'] is None or _is_budget_identity(receipt['budget'])),
+                 'receipt_budget')
+    else:
+        _require('budget' not in receipt, 'receipt_budget')
     listeners, independence = receipt.get('listeners'), receipt.get('listenerIndependence')
     _require(isinstance(listeners, list) and listeners
              and all(isinstance(row, dict) and isinstance(row.get('name'), str) and isinstance(row.get('model'), str)
@@ -660,9 +945,13 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
     _require(independence == listener_independence([row['model'] for row in listeners],
                                                    independence.get('sourceAsrModel')), 'receipt_listeners')
     names = sorted(row['name'] for row in listeners)
+    models = {row['name']: row['model'] for row in listeners}
     adjudicator, units = receipt.get('adjudicator'), receipt.get('units')
+    if current and adjudicator is not None:
+        _adjudicator_runtime(adjudicator, receipt['budget'])
     _require(isinstance(units, list) and units, 'receipt_units')
     seen: set[str] = set()
+    asked: dict[str, dict[str, Any]] = {}
     for row in units:
         _require(isinstance(row, dict) and isinstance(row.get('sourceUnitId'), str) and row['sourceUnitId'] not in seen
                  and isinstance(row.get('frozenText'), str) and row.get('decision') in DECISIONS
@@ -676,6 +965,8 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
                  and all(isinstance(h.get('unitTokens'), list) and isinstance(h.get('bounded'), bool)
                          and isinstance(h.get('agreesWithFrozen'), bool) and isinstance(h.get('text'), str)
                          for h in heard), 'receipt_unit_hearings')
+        # A v2 hearing names the model of the listener it belongs to; the cached question carries it.
+        _require(not current or all(h.get('model') == models[h['listener']] for h in heard), 'receipt_unit_hearings')
         # Agreement is a fact about the words heard, not a stored flag.
         frozen_tokens = tokens(row['frozenText'])
         _require(all(h['agreesWithFrozen'] == (h['unitTokens'] == frozen_tokens) for h in heard),
@@ -683,6 +974,9 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
         by_name = {h['listener']: h for h in heard}
         if row['decidedBy'] == 'model':
             _require(isinstance(adjudicator, dict) and isinstance(row.get('request'), dict), 'receipt_decision_evidence')
+            if current:
+                _require(cache is not None, 'receipt_model_response_missing')
+                asked[row['sourceUnitId']] = _verify_model_verdict(row, adjudicator, cache, frozen_tokens)
         else:
             _require(row['decision'] == 'transcript_confirmed' and independence['independent']
                      and all(h['agreesWithFrozen'] and h['bounded'] for h in heard), 'receipt_decision_evidence')
@@ -726,10 +1020,96 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
                 window = locate_unit(before, frozen_tokens, after, h['text'])
                 _require(window['tokens'] == h['unitTokens'] and window['bounded'] == h['bounded'],
                          'receipt_unit_hearings')
+                if current:
+                    _require(window == {'text': h.get('unitWindow'), 'tokens': h['unitTokens'],
+                                        'similarity': h.get('similarityToFrozen'), 'bounded': h['bounded'],
+                                        'boundary': h.get('boundary')}, 'receipt_unit_hearings')
+            if not current:
+                continue
+            # The clip the row names is the anchor's, and the adjudicator was asked exactly what this
+            # receipt and anchor ask: a cache answered for another fixture's context, clip or hearings
+            # cannot vouch for this unit even when its raw transcripts match.
+            clip = row.get('clip')
+            _require(isinstance(clip, dict)
+                     and clip.get('sourceUnitIds') == [all_units[i]['sourceUnitId'] for i in range(low, high + 1)]
+                     and clip.get('windowStart') == float(all_units[low]['start'])
+                     and clip.get('windowEnd') == float(all_units[high]['end']), 'receipt_unit_not_in_anchor')
+            if row['decidedBy'] == 'model':
+                _require(asked[row['sourceUnitId']] == _question(all_units, index, independence, row['heard']),
+                         'receipt_model_question_changed')
     corrected_ids = [row['sourceUnitId'] for row in units if row['decision'] == 'transcript_corrected']
     return {'receiptSha256': receipt_sha256(receipt), 'decidedBy': receipt['decidedBy'], 'bindings': dict(bindings),
             'mediaSha256': media['sha256'], 'units': [row['sourceUnitId'] for row in units],
             'correctedUnits': corrected_ids, 'listeners': names, 'independent': independence['independent']}
+
+
+def _adjudicator_runtime(adjudicator: Any, budget: dict[str, Any] | None) -> None:
+    """A v2 adjudicator identity names a route the environment launcher could select and a supported
+    request tier, under a budget the tier that budget approved; each cached request is then held to both
+    (``_verify_model_verdict``), so a receipt cannot claim another Project or tier than its cache was
+    asked under."""
+    from scripts import sermon_openai_runtime as runtime
+    _require(isinstance(adjudicator, dict), 'receipt_adjudicator_runtime')
+    route = adjudicator.get('route')
+    _require(route is None or (isinstance(route, dict) and set(route) == {'environment', 'projectId', 'credentialAlias'}
+                               and runtime.safe_route({'schemaVersion': 'sermon-openai-runtime-route-v1',
+                                                       'identitySource': 'configured_runtime', **route}) is not None),
+             'receipt_adjudicator_runtime')
+    try:
+        tier = limits.validate_request_limits(adjudicator.get('requestLimits'))
+    except ValueError as exc:
+        raise SourceAdjudicationError('receipt_adjudicator_runtime') from exc
+    # A budget exists only under the launcher and pays for the tier it approved, nothing else.
+    _require(budget is None or (route is not None and tier == budget['requestLimits']), 'receipt_adjudicator_runtime')
+
+
+def _verify_model_verdict(row: dict[str, Any], adjudicator: dict[str, Any], cache: Path,
+                          frozen_tokens: list[str]) -> dict[str, Any]:
+    """Reproduce a model-decided verdict from the hash-bound cached request/response the row names.
+
+    Returns the question the cached request asked, which the caller compares in
+    full with the one the receipt and anchor ask when the anchor is supplied."""
+    from scripts import sermon_sentence_interpretation as contract
+    from scripts.run_sentence_interpretation_models import _model_result
+    request = row['request']
+    _require(all(isinstance(request.get(key), str) for key in ('path', 'sha256', 'requestSha256')),
+             'receipt_decision_evidence')
+    path = Path(cache).resolve() / 'cache' / Path(request['path']).name
+    _require(path.is_file(), 'receipt_model_response_missing')
+    _require(contract.sha256(path) == request['sha256'], 'receipt_model_response_changed')
+    cached = _load(path)
+    _require(isinstance(cached, dict) and cached.get('requestSha256') == request['requestSha256']
+             and contract.json_sha256(cached.get('request')) == request['requestSha256']
+             and contract.json_sha256(cached.get('response')) == cached.get('responseSha256'),
+             'receipt_model_response_changed')
+    try:
+        payload = cached['request']['payload']
+        system, question = payload['messages'][0]['content'], json.loads(payload['messages'][1]['content'])
+        asked = [(item['name'], item['heardClip']) for item in question['listeners']]
+    except (KeyError, IndexError, TypeError, ValueError) as exc:
+        raise SourceAdjudicationError('receipt_model_question_changed') from exc
+    _require(payload.get('model') == adjudicator.get('model')
+             and payload.get('reasoning_effort') == adjudicator.get('reasoningEffort')
+             and _sha(system.encode('utf-8')) == adjudicator.get('promptSha256')
+             and question.get('schemaVersion') == QUESTION_SCHEMA
+             and question.get('sourceUnitId') == row['sourceUnitId'] and question.get('frozenText') == row['frozenText']
+             and asked == [(h['listener'], h['text']) for h in row['heard']], 'receipt_model_question_changed')
+    # The request was asked under the Project and tier the receipt names: the cache stage carries the
+    # route, the payload the tier's caps (``_adjudicator_runtime`` has checked both identities).
+    try:
+        bounded = limits.bounded_payload(payload, adjudicator['requestLimits']) == payload
+    except ValueError:
+        bounded = False
+    _require(bounded and cached['request'].get('stage')
+             == f"source-meaning-{_route_key(adjudicator.get('route'))}-{row['sourceUnitId']}",
+             'receipt_model_runtime_changed')
+    try:
+        result = _model_result(cached['response'], adjudicator['model'])
+    except ValueError as exc:
+        raise SourceAdjudicationError('receipt_model_response_changed') from exc
+    verdict = _checked_answer(result, frozen_tokens, row['heard'])
+    _require(all(row.get(key) == value for key, value in verdict.items()), 'receipt_verdict_not_from_model')
+    return question
 
 
 # ---------------------------------------------------------------- Layer 1 review
@@ -749,7 +1129,7 @@ def _segment_for(unit: dict[str, Any], segments: list[dict[str, Any]]) -> dict[s
 def source_text_review(receipt: dict[str, Any], anchor: dict[str, Any], segments: list[dict[str, Any]], *,
                        receipt_name: str, receipt_sha256: str, source_audio: Path,
                        asr_reference: Path) -> dict[str, Any] | None:
-    """A ``sermon-source-text-review-v1`` review for the corrected units, or None when nothing changed.
+    """A ``sermon-source-text-review-v2`` review for the corrected units, or None when nothing changed.
 
     The review binds the window clip and ASR reference the Layer 1 pipeline
     will apply it against, and the receipt file (its name beside the review,
@@ -780,7 +1160,7 @@ def source_text_review(receipt: dict[str, Any], anchor: dict[str, Any], segments
                         'reason': '; '.join(f"{row['sourceUnitId']} heard by {row['heardBy']}: {row['reason']}"
                                             for row in rows),
                         'evidenceSha256': evidence_sha})
-    return {'schemaVersion': source_review.SCHEMA, 'reviewType': 'model', 'model': receipt['adjudicator']['model'],
+    return {'schemaVersion': source_review.SCHEMA_V2, 'reviewType': 'model', 'model': receipt['adjudicator']['model'],
             'humanApproval': False, 'status': source_review.STATUS, 'authority': source_review.MACHINE_AUTHORITY,
             'reviewedBy': receipt['decidedBy'], 'reviewedAt': receipt['reviewedAt'],
             'sourceAudioSha256': file_sha256(source_audio), 'asrSha256': file_sha256(asr_reference),
@@ -828,7 +1208,7 @@ def load_meaning_notes(path: Path, *, source: dict[str, Any], anchor: dict[str, 
              'meaning_notes_receipt_changed')
     receipt = _load(receipt_path)
     try:
-        validate_receipt(receipt, source=source, anchor=anchor)
+        validate_receipt(receipt, source=source, anchor=anchor, cache=receipt_path.parent / ADJUDICATOR_CACHE)
         _require(receipt['bindings'] == notes['bindings'], 'meaning_notes_receipt_changed')
         expected = meaning_notes(receipt, receipt_sha256=notes['receiptSha256'])
     except (KeyError, TypeError) as exc:
@@ -953,7 +1333,17 @@ def main(argv: list[str] | None = None) -> int:
                         help='Layer 1 aligned segments; with the two paths below, a corrected unit writes the review')
     parser.add_argument('--source-audio', type=Path, help='The window clip the Layer 1 pipeline transcribed')
     parser.add_argument('--asr-reference', type=Path, help='The ASR reference file the Layer 1 pipeline wrote')
+    parser.add_argument('--budget-authorization', type=Path,
+                        help=f'{BUDGET_SCHEMA} bound to this fixture, these units, the code and --out-dir; '
+                             'without it the run may only replay cached calls')
+    parser.add_argument('--print-budget-binding', action='store_true',
+                        help='Print the binding a budget authorization must carry for this run and exit')
     args = parser.parse_args(argv)
+    if args.print_budget_binding:
+        source, anchor = _load(args.fixture / 'source.json'), _load(args.fixture / 'anchor.json')
+        print(json.dumps(budget_binding(source, anchor, args.unit, args.out_dir, model=args.model,
+                                        effort=args.reasoning_effort), ensure_ascii=False, indent=2))
+        return 0
     resumable_out_dir(args.out_dir)
     review_inputs = (args.aligned_segments, args.source_audio, args.asr_reference)
     if any(review_inputs) and not all(review_inputs):
@@ -963,26 +1353,32 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit('start under scripts/run_with_openai_environment.py --environment dev (prod for formal content)')
     api_key = os.environ.get('OPENAI_API_KEY', '').strip()
     source, anchor = _load(args.fixture / 'source.json'), _load(args.fixture / 'anchor.json')
+    # Unbound requests are refused before dispatch: with no authorization the listeners and the
+    # adjudicator replay their caches, and the first cache miss stops the run without spending.
+    budget = None if args.budget_authorization is None else load_budget_authorization(
+        args.budget_authorization, binding=budget_binding(source, anchor, args.unit, args.out_dir, model=args.model,
+                                                          effort=args.reasoning_effort))
     segments = None
     if args.aligned_segments:
         expected = source.get('transcript', {}).get('artifact', {}).get('sha256')
         if isinstance(expected, str) and file_sha256(args.aligned_segments) != expected:
             raise SystemExit('aligned segments differ from the transcript artifact source.json binds')
         segments = _load(args.aligned_segments)
-    cache = args.out_dir / 'cache'
+    cache = args.out_dir / ADJUDICATOR_CACHE
     listeners: list[Any] = []
     for choice in args.listener or ['openai']:
         if choice == 'openai':
-            listeners.append(OpenAiTranscribeListener(cache=cache / 'openai', max_calls=args.max_api_calls))
+            listeners.append(OpenAiTranscribeListener(cache=cache / 'openai', max_calls=args.max_api_calls,
+                                                      budget=budget))
         else:
             if args.asr_model_path is None:
                 raise SystemExit('--listener qwen needs --asr-model-path')
             listeners.append(QwenListener(args.asr_model_path, cache=cache / 'qwen'))
     adjudicator = SolAdjudicator(api_key=api_key, cache=cache, model=args.model, effort=args.reasoning_effort,
                                  max_calls=len(args.unit) if args.max_adjudicator_calls is None
-                                 else args.max_adjudicator_calls)
+                                 else args.max_adjudicator_calls, budget=budget)
     receipt = adjudicate(source, anchor, unit_ids=args.unit, media=args.media, listeners=listeners,
-                         adjudicator=adjudicator, out_dir=args.out_dir)
+                         adjudicator=adjudicator, out_dir=args.out_dir, budget=budget)
     # Everything derived from the receipt is built first: the receipt file marks the
     # output complete, and a failure before it leaves a resumable directory.
     file_sha = _sha(_encode(receipt))

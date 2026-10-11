@@ -5,7 +5,9 @@ unit. Audio is a generated WAV; listeners and the adjudicator are fakes that
 record what they were given, so these tests prove the plumbing and the
 invariants, not any model's hearing.
 """
+from contextlib import redirect_stdout
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -16,7 +18,11 @@ import unittest
 from unittest import mock
 import wave
 
+from scripts import canonical_layer2_controller as controller
+from scripts import machine_qc_audio_transports as transports
 from scripts import sermon_provider_limits as limits
+from scripts import sermon_sentence_interpretation as contract
+from scripts import sermon_source_budget as source_budget
 from scripts import sermon_source_text_review as source_review
 from scripts import source_meaning_machine_adjudication as machine
 from scripts import target_language_policy as policies
@@ -57,6 +63,18 @@ def segments():
              'text': UNITS[1]['english'] + ' ' + UNITS[2]['english']},
             {'id': 2, 'referenceChunkId': '0', 'start': 7.0, 'end': 10.5,
              'text': UNITS[3]['english'] + ' ' + UNITS[4]['english']}]
+
+
+def wav_bytes(seconds: float) -> bytes:
+    """A silent 16 kHz mono PCM16 clip, as ``cut_clip`` yields."""
+    buffer = io.BytesIO()
+    with wave.open(buffer, 'wb') as handle:
+        handle.setnchannels(1)
+        handle.setsampwidth(2)
+        handle.setframerate(machine.SAMPLE_RATE)
+        frames = int(machine.SAMPLE_RATE * seconds)
+        handle.writeframes(struct.pack(f'<{frames}h', *([0] * frames)))
+    return buffer.getvalue()
 
 
 def write_media(path: Path) -> dict:
@@ -107,6 +125,15 @@ class FakeCutter:
 def answer(decision, heard_by='frozen', corrected=None, note='Translate literally.', reason='weighed'):
     return {'schemaVersion': machine.RESPONSE_SCHEMA, 'decision': decision, 'heardBy': heard_by,
             'correctedText': corrected, 'meaningNote': note, 'reason': reason}
+
+
+def as_v1(receipt):
+    """The receipt as the last v1 writer (dev at 907c998) signed it, without a budget record."""
+    implementation = 'e856a679593682306943eda3a41a1c0301140f1db18ba2c1d6aca8b02074be6c'
+    version = machine.V1_IMPLEMENTATIONS[implementation]
+    return dict({k: v for k, v in receipt.items() if k != 'budget'}, schemaVersion=machine.SCHEMA_V1, version=version,
+                implementationSha256=implementation,
+                decidedBy=f'source_meaning_machine_adjudication {version} {implementation[:16]}')
 
 
 class FakeAdjudicator(machine.SolAdjudicator):
@@ -226,7 +253,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         heard = [FakeListener('openai', CLIP_HEARD_OTHER), FakeListener('qwen', CLIP_HEARD)]
         receipt = self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer(
             'undetermined', note='Translate the frozen English literally; the listeners disagree.')))
-        machine.validate_receipt(receipt, anchor=self.anchor)
+        machine.validate_receipt(receipt, anchor=self.anchor, cache=self.out / 'cache')
         self.assertTrue(receipt['listenerIndependence']['independent'])
 
         def confirmed(forge):
@@ -252,13 +279,13 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         forged = json.loads(json.dumps(lone))
         forged['listenerIndependence']['independent'] = True
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_listeners'):
-            machine.validate_receipt(forged, anchor=self.anchor)
+            machine.validate_receipt(forged, anchor=self.anchor, cache=self.out / 'cache-lone')
         forged['listenerIndependence']['sourceAsrModel'] = 'another-asr'
         forged['listenerIndependence']['independentOfSourceAsr'] = ['openai']
         forged['listenerIndependence']['reason'] = 'listener_differs_from_source_asr'
         self.assertEqual(forged['listenerIndependence'], machine.listener_independence(['openai'], 'another-asr'))
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_source_binding_changed'):
-            machine.validate_receipt(forged, source=self.source, anchor=self.anchor)
+            machine.validate_receipt(forged, source=self.source, anchor=self.anchor, cache=self.out / 'cache-lone')
 
     def test_disagreeing_listeners_may_end_undetermined_with_the_frozen_text_kept(self):
         heard = [FakeListener('openai', CLIP_HEARD_OTHER), FakeListener('qwen', CLIP_HEARD)]
@@ -341,21 +368,54 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'exactly one source-meaning receipt'):
             source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
 
-        def rebind(changed):
+        def rebind(changed, schema=review['schemaVersion']):
             receipt_path.write_text(json.dumps(changed), encoding='utf-8')
             sha = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
-            review_path.write_text(json.dumps(dict(review, reviewedBy=changed['decidedBy'],
+            review_path.write_text(json.dumps(dict(review, schemaVersion=schema, reviewedBy=changed['decidedBy'],
                                                    evidence=[{'path': 'receipt.json', 'sha256': sha}],
                                                    patches=[dict(review['patches'][0], evidenceSha256=sha)])),
                                    encoding='utf-8')
         rebind(dict(receipt, decidedBy='someone else'))
         with self.assertRaisesRegex(ValueError, 'receipt_signature'):
             source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
-        # A synthetic receipt whose correction nobody heard, or that drops its hearings, is refused.
+        # A receipt whose correction is not the one Sol's cached response gave, or that drops its
+        # hearings, is refused: each verdict is derived again from the request cache beside the receipt.
         unheard = dict(receipt, units=[dict(receipt['units'][0], correctedText="You're fine in the middle of a trial.")])
         rebind(unheard)
-        with self.assertRaisesRegex(ValueError, 'receipt_correction_not_heard'):
+        with self.assertRaisesRegex(ValueError, 'receipt_verdict_not_from_model'):
             source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+        moved = self.out / 'cache'
+        shutil.move(moved, self.out / 'cache-elsewhere')
+        rebind(receipt)
+        with self.assertRaisesRegex(ValueError, 'receipt_model_response_missing'):
+            source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+        # A v1 receipt (written before verdicts were derived again from the cache) is still read by the
+        # Layer 1 path under its own rules, without the cache.
+        rebind(as_v1(receipt))
+        corrected, _ = source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+        self.assertEqual(corrected[1]['text'], review['patches'][0]['correctedText'])
+        # A machine review the pre-v2 writers labelled v1 stays readable on their own v1 receipt.
+        self.assertEqual(review['schemaVersion'], source_review.SCHEMA_V2)
+        rebind(as_v1(receipt), schema=source_review.SCHEMA)
+        corrected, provenance = source_review.apply_review(segments(), review_path, clip, asr,
+                                                           adjudicated_package=package)
+        self.assertEqual(corrected[1]['text'], review['patches'][0]['correctedText'])
+        self.assertEqual(provenance['schemaVersion'], source_review.SCHEMA)
+        # A v1 label on a receipt from a later writer, or on a v2 receipt, is refused.
+        later = '95e48ac4649725369526a2e83a500e87303bc17b7231f404a7d736166b6867e7'
+        self.assertIn(later, machine.V1_IMPLEMENTATIONS)
+        self.assertNotIn(later, source_review.V1_MACHINE_REVIEW_WRITERS)
+        later_v1 = dict(as_v1(receipt), version=machine.V1_IMPLEMENTATIONS[later], implementationSha256=later,
+                        decidedBy=f'source_meaning_machine_adjudication {machine.V1_IMPLEMENTATIONS[later]} {later[:16]}')
+        for changed in (later_v1, receipt):
+            rebind(changed, schema=source_review.SCHEMA)
+            with self.subTest(receipt=changed['schemaVersion']), \
+                    self.assertRaisesRegex(ValueError, 'requires the sermon-source-text-review-v2 contract'):
+                source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+        rebind(later_v1)
+        corrected, _ = source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+        self.assertEqual(corrected[1]['text'], review['patches'][0]['correctedText'])
+        shutil.move(self.out / 'cache-elsewhere', moved)
         rebind(dict(receipt, units=[dict(receipt['units'][0], heard=[])]))
         with self.assertRaisesRegex(ValueError, 'receipt_unit_hearings'):
             source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
@@ -513,6 +573,21 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertEqual((len(dev.payloads), len(prod.payloads)), (1, 1))
         self.assertFalse(prod_receipt['units'][0]['request']['cached'])
         self.assertNotEqual(dev_receipt['units'][0]['request']['path'], prod_receipt['units'][0]['request']['path'])
+        # Each receipt names the Project its cached request was asked under, and no other.
+        cache = self.out / 'cache'
+        for receipt in (dev_receipt, prod_receipt):
+            machine.validate_receipt(receipt, anchor=self.anchor, cache=cache)
+        claimed = dict(prod_receipt, adjudicator=dict(prod_receipt['adjudicator'], route=expected))
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_runtime_changed'):
+            machine.validate_receipt(claimed, anchor=self.anchor, cache=cache)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_runtime_changed'):
+            machine.validate_receipt(dict(dev_receipt, adjudicator=dict(dev_receipt['adjudicator'], route=None)),
+                                     anchor=self.anchor, cache=cache)
+        # A route the launcher could never select (dev with the prod credential) is refused outright.
+        mixed = dict(expected, credentialAlias='tongxing-prod-runtime')
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_adjudicator_runtime'):
+            machine.validate_receipt(dict(dev_receipt, adjudicator=dict(dev_receipt['adjudicator'], route=mixed)),
+                                     anchor=self.anchor, cache=cache)
 
     def test_meaning_notes_bind_the_kept_units_for_the_layer2_repair_brief(self):
         heard = [FakeListener('a', CLIP_HEARD), FakeListener('b', CLIP_HEARD)]
@@ -742,6 +817,403 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         path = self.root / 'cut.wav'
         path.write_bytes(data)
         return path
+
+    def test_a_model_verdict_is_derived_again_from_its_cached_response(self):
+        heard = [FakeListener('openai', CLIP_HEARD_OTHER), FakeListener('qwen', CLIP_HEARD)]
+        receipt = self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer(
+            'undetermined', note='Translate the frozen English literally; the listeners disagree.')))
+        cache = self.out / 'cache'
+        row = receipt['units'][0]
+        self.assertEqual((row['decision'], row['decidedBy'], row['heard'][0]['bounded']), ('undetermined', 'model', True))
+        summary = machine.validate_receipt(receipt, source=self.source, anchor=self.anchor, cache=cache)
+        self.assertEqual(summary['correctedUnits'], [])
+        # The request cache is the evidence: a model-decided row is not accepted without it.
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_response_missing'):
+            machine.validate_receipt(receipt, anchor=self.anchor)
+        # A row edited into a correction the bounded listener did hear, but Sol never gave, is refused,
+        # as is any edited note or reason: the verdict must be the cached response's.
+        edited = json.loads(json.dumps(receipt))
+        edited['units'][0].update(decision='transcript_corrected', heardBy='openai', correctedText=HEARD_OTHER)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_verdict_not_from_model'):
+            machine.validate_receipt(edited, anchor=self.anchor, cache=cache)
+        for key, value in (('meaningNote', 'Render it as a promise of relief.'), ('reason', 'edited')):
+            changed = json.loads(json.dumps(receipt))
+            changed['units'][0][key] = value
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_verdict_not_from_model'):
+                machine.validate_receipt(changed, anchor=self.anchor, cache=cache)
+        # The receipt names the tier its request was asked under: another supported tier, an unsupported
+        # one, or (under a budget) a tier other than the approved one is refused.
+        larger = dict(receipt['adjudicator']['requestLimits'], maxCompletionTokens=8192)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_runtime_changed'):
+            machine.validate_receipt(dict(receipt, adjudicator=dict(receipt['adjudicator'], requestLimits=larger)),
+                                     anchor=self.anchor, cache=cache)
+        flex = dict(receipt['adjudicator']['requestLimits'], serviceTier='flex')
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_adjudicator_runtime'):
+            machine.validate_receipt(dict(receipt, adjudicator=dict(receipt['adjudicator'], requestLimits=flex)),
+                                     anchor=self.anchor, cache=cache)
+        budget = {'schemaVersion': machine.BUDGET_SCHEMA, 'authorizationSha256': 'a' * 64, 'approvalSha256': 'b' * 64,
+                  'budgetRoot': str((self.out / machine.BUDGET_DIR).resolve()),
+                  'globalBounds': {metric: 1000 for metric in source_budget.METRICS}, 'requestLimits': larger}
+        route = {'environment': 'dev', 'projectId': 'proj_devOnly', 'credentialAlias': 'tongxing-dev-runtime'}
+        for adjudicator in (receipt['adjudicator'], dict(receipt['adjudicator'], route=route)):
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_adjudicator_runtime'):
+                machine.validate_receipt(dict(receipt, budget=budget, adjudicator=adjudicator),
+                                         anchor=self.anchor, cache=cache)
+        # A cached response rewritten to match the edit no longer hashes to what the row names.
+        path = Path(row['request']['path'])
+        cached = json.loads(path.read_text(encoding='utf-8'))
+        cached['response']['choices'][0]['message']['content'] = json.dumps(
+            answer('transcript_corrected', 'openai', HEARD_OTHER))
+        cached['responseSha256'] = contract.json_sha256(cached['response'])
+        path.write_text(json.dumps(cached, sort_keys=True), encoding='utf-8')
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_response_changed'):
+            machine.validate_receipt(edited, anchor=self.anchor, cache=cache)
+        path.unlink()
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_response_missing'):
+            machine.validate_receipt(receipt, anchor=self.anchor, cache=cache)
+        # A v1 receipt predates the request-cache contract and keeps its rules: its model row names a
+        # request and is read without the cache, as it was before. It never carried a budget record.
+        v1 = as_v1(receipt)
+        summary = machine.validate_receipt(v1, source=self.source, anchor=self.anchor)
+        self.assertEqual(summary['units'], ['u3'])
+        # Only a receipt signed by an implementation that wrote v1 keeps those rules: relabelling this receipt
+        # (signed by the current implementation, or by any other) as v1 does not switch off the cache checks.
+        relabelled = dict({k: v for k, v in receipt.items() if k != 'budget'}, schemaVersion=machine.SCHEMA_V1)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_v1_implementation_unknown'):
+            machine.validate_receipt(relabelled, source=self.source, anchor=self.anchor)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_v1_implementation_unknown'):
+            machine.validate_receipt(dict(v1, version='2026-10-08-v1', decidedBy=v1['decidedBy'].replace(
+                v1['version'], '2026-10-08-v1')), source=self.source, anchor=self.anchor)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_decision_evidence'):
+            machine.validate_receipt(dict(v1, units=[dict(v1['units'][0], request=None)]), anchor=self.anchor)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_schema'):
+            machine.validate_receipt(dict(v1, schemaVersion='sermon-source-meaning-machine-adjudication-v3'))
+
+    def test_the_cached_question_must_be_the_one_the_receipt_and_anchor_ask(self):
+        heard = [FakeListener('openai', CLIP_HEARD_OTHER), FakeListener('qwen', CLIP_HEARD)]
+        receipt = self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer(
+            'undetermined', note='Translate the frozen English literally; the listeners disagree.')))
+        cache = self.out / 'cache'
+        machine.validate_receipt(receipt, source=self.source, anchor=self.anchor, cache=cache)
+        path = Path(receipt['units'][0]['request']['path'])
+        original = path.read_bytes()
+
+        def asked_instead(change):
+            """The same unit, frozen text, transcripts and answer, asked with other context or evidence."""
+            path.write_bytes(original)
+            cached = json.loads(original)
+            question = json.loads(cached['request']['payload']['messages'][1]['content'])
+            change(question)
+            cached['request']['payload']['messages'][1]['content'] = json.dumps(question)
+            cached['requestSha256'] = contract.json_sha256(cached['request'])
+            path.write_text(json.dumps(cached, sort_keys=True), encoding='utf-8')
+            forged = json.loads(json.dumps(receipt))
+            forged['units'][0]['request'].update(sha256=contract.sha256(path), requestSha256=cached['requestSha256'])
+            return forged
+        for name, change in (
+                ('context', lambda q: q['context'][0].update(english='Something else was said before.')),
+                ('independence', lambda q: q['listenerIndependence'].update(independent=False)),
+                ('clip', lambda q: q['clip'].update(seconds=q['clip']['seconds'] + 1)),
+                ('heardForUnit', lambda q: q['listeners'][0].update(heardForUnit='a different stretch')),
+                ('boundary', lambda q: q['listeners'][0].update(unitBoundedByNeighbours=False))):
+            with self.subTest(changed=name):
+                forged = asked_instead(change)
+                # Without the anchor only the unit, its frozen text and the raw transcripts can be compared.
+                machine.validate_receipt(forged, cache=cache)
+                with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_question_changed'):
+                    machine.validate_receipt(forged, anchor=self.anchor, cache=cache)
+        path.write_bytes(original)
+        # The clip a row names must be the anchor's, and every derived hearing fact is derived again.
+        moved = json.loads(json.dumps(receipt))
+        moved['units'][0]['clip']['windowStart'] += 0.5
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_unit_not_in_anchor'):
+            machine.validate_receipt(moved, anchor=self.anchor, cache=cache)
+        edited = json.loads(json.dumps(receipt))
+        edited['units'][0]['heard'][0]['similarityToFrozen'] = 0.99
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_unit_hearings'):
+            machine.validate_receipt(edited, anchor=self.anchor, cache=cache)
+
+    def test_new_paid_calls_dispatch_only_through_a_bound_budget_authorization(self):
+        route = {'SERMON_OPENAI_ENVIRONMENT': 'dev', 'OPENAI_PROJECT_ID': 'proj_devOnly',
+                 'SERMON_OPENAI_CREDENTIAL_ALIAS': 'tongxing-dev-runtime', 'OPENAI_API_KEY': 'not-a-real-key'}
+        clip = wav_bytes(3.0)
+        cache = self.out / 'cache'
+        # The binding names the selected OpenAI Project, so it exists only under the launcher.
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'openai_environment_launcher_required'):
+            machine.budget_binding(self.source, self.anchor, ['u3'], self.out, model=machine.MODEL, effort=machine.EFFORT)
+        with mock.patch.dict(os.environ, route):
+            # Unbound: a call cap is not spending authorization. The refusal comes before any
+            # transport exists and before either cache records a started call.
+            unbound = machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1)
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_required'):
+                unbound.transcribe(clip)
+            self.assertEqual(unbound.cache.uncertain(), [])
+            judge = machine.SolAdjudicator(api_key='k', cache=cache)
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_required'):
+                judge.decide('u3', {'schemaVersion': machine.QUESTION_SCHEMA, 'sourceUnitId': 'u3'})
+            self.assertEqual(list(self.out.glob('**/*.started.json')), [])
+
+            binding = machine.budget_binding(self.source, self.anchor, ['u3'], self.out, model=machine.MODEL, effort=machine.EFFORT)
+            self.assertEqual(binding['doubtedUnits'], ['u3'])
+            self.assertEqual(binding['budgetRoot'], str(self.out.resolve() / machine.BUDGET_DIR))
+            self.assertEqual(binding['bindings'], {'source.json': policies.canonical_sha256(self.source),
+                                                   'anchor.json': policies.canonical_sha256(self.anchor)})
+            self.assertEqual(binding['route'], {'environment': 'dev', 'projectId': 'proj_devOnly',
+                                                'credentialAlias': 'tongxing-dev-runtime'})
+            self.assertEqual(binding['adjudicator'], {'model': machine.MODEL, 'reasoningEffort': machine.EFFORT})
+            bounds = {'requests': 4, 'wallTimeMs': 4 * 300_000, 'costMicrousd': 2_000_000}
+            auth_path = self._authorization('budget', binding, bounds)
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
+                machine.load_budget_authorization(auth_path, binding={**binding, 'doubtedUnits': ['u3', 'u4']})
+            # An approval that signed other bounds than the authority carries is not this authorization's.
+            other = self._authorization('other', binding, bounds, approved_bounds=dict(bounds, costMicrousd=1))
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_approval_not_bound'):
+                machine.load_budget_authorization(other, binding=binding)
+
+            calls = []
+
+            def transport(endpoint, request, content_type, api_key):
+                calls.append((endpoint, api_key))
+                if endpoint == transports.TRANSCRIBE_URL:
+                    self.assertIn(b'name="prompt"', request)
+                    return {'text': CLIP_HEARD_OTHER}
+                payload = json.loads(request)
+                self.assertEqual(payload['max_completion_tokens'], limits.DEFAULT_REQUEST_LIMITS['maxCompletionTokens'])
+                return {'id': 'resp-1', 'model': machine.MODEL, 'choices': [{'finish_reason': 'stop', 'message': {
+                    'content': json.dumps(answer('undetermined', note='The listeners disagree; keep the frozen text.'))}}]}
+            budget = machine.load_budget_authorization(auth_path, binding=binding, transport=transport)
+            # The approval pays for the adjudicator it names: another model or effort is another run.
+            for model, effort in ((machine.MODEL, 'high'), ('gpt-6-astra', machine.EFFORT)):
+                with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
+                    machine.load_budget_authorization(auth_path, binding=machine.budget_binding(
+                        self.source, self.anchor, ['u3'], self.out, model=model, effort=effort), transport=transport)
+                with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
+                    machine.SolAdjudicator(api_key='k', cache=cache, model=model, effort=effort, budget=budget)
+            listener = machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=2, budget=budget)
+            judge = machine.SolAdjudicator(api_key='k', cache=cache, budget=budget)
+            receipt = machine.adjudicate(self.source, self.anchor, unit_ids=['u3'], media=None, listeners=[listener],
+                                         adjudicator=judge, out_dir=self.out, cut=lambda *_: clip, budget=budget)
+        row = receipt['units'][0]
+        self.assertEqual((row['decision'], row['decidedBy'], row['heard'][0]['text']),
+                         ('undetermined', 'model', CLIP_HEARD_OTHER))
+        self.assertEqual(calls, [(transports.TRANSCRIBE_URL, 'not-a-real-key'), (machine.CHAT_URL, 'k')])
+        # Every paid call went through the one ledger under the bound root, reserved before dispatch.
+        ledger = json.loads((self.out / machine.BUDGET_DIR / 'source-budget.json').read_text(encoding='utf-8'))
+        operations = sorted(ledger['requests'])
+        self.assertEqual(operations[0], 'asr.0001')
+        self.assertRegex(operations[1], r'judge\.[0-9a-f]{64}')
+        self.assertEqual({row['status'] for row in ledger['requests'].values()}, {'returned'})
+        self.assertEqual(ledger['requests']['asr.0001']['bounds'], {'requests': 1, 'wallTimeMs': 300_000, 'costMicrousd': 4500})
+        self.assertGreater(ledger['requests'][operations[1]]['bounds']['costMicrousd'], 0)
+        # Each ledger response names the model the transport accounts for (``identity['model']``), the route
+        # and the request.
+        saved = [json.loads(p.read_text(encoding='utf-8'))['requestIdentity']
+                 for p in sorted((self.out / machine.BUDGET_DIR / 'responses').glob('*.json'))]
+        self.assertEqual(sorted(row['model'] for row in saved), sorted([machine.MODEL, 'gpt-transcribe']))
+        judge_row = next(row for row in saved if 'payload' in row)
+        self.assertEqual((judge_row['route']['projectId'], judge_row['payload']['model']), ('proj_devOnly', machine.MODEL))
+        self.assertEqual(json.loads(listener.operations.read_text(encoding='utf-8')),
+                         {hashlib.sha256(clip).hexdigest(): 'asr.0001'})
+        self.assertEqual(receipt['budget'], machine.budget_identity(budget))
+        self.assertEqual(receipt['budget']['authorizationSha256'], hashlib.sha256(auth_path.read_bytes()).hexdigest())
+        self.assertNotIn('store', receipt['budget'])
+        self.assertEqual(receipt['adjudicator']['requestLimits'], limits.DEFAULT_REQUEST_LIMITS)
+        machine.validate_receipt(receipt, source=self.source, anchor=self.anchor, cache=cache)
+        # A v2 receipt always records its budget; dropping the record is refused. A v1 receipt was written
+        # before the budget contract and carries none; a record that is not the authorization identity this
+        # module writes is refused.
+        self.assertEqual(receipt['schemaVersion'], machine.SCHEMA)
+        stripped = {k: v for k, v in receipt.items() if k != 'budget'}
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
+            machine.validate_receipt(stripped, anchor=self.anchor, cache=cache)
+        machine.validate_receipt(as_v1(receipt), anchor=self.anchor, cache=cache)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
+            machine.validate_receipt(dict(as_v1(receipt), budget=receipt['budget']), anchor=self.anchor, cache=cache)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
+            machine.validate_receipt(dict(receipt, budget={'schemaVersion': machine.BUDGET_SCHEMA}), anchor=self.anchor, cache=cache)
+        # Every recorded field is checked: a null or malformed hash, root, bound or tier is not the loader's record.
+        for edited in ({'authorizationSha256': None}, {'approvalSha256': 'abc'}, {'budgetRoot': 'budget'},
+                       {'budgetRoot': str(self.out.resolve())},
+                       {'globalBounds': dict(receipt['budget']['globalBounds'], requests=0)}, {'globalBounds': {'requests': 1}},
+                       {'requestLimits': dict(limits.DEFAULT_REQUEST_LIMITS, maxCompletionTokens=10**9)}, {'requestLimits': None}):
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
+                machine.validate_receipt(dict(receipt, budget={**receipt['budget'], **edited}), anchor=self.anchor, cache=cache)
+        # The same run again replays both caches: no transport call, the same receipt rows.
+        with mock.patch.dict(os.environ, route):
+            again = machine.adjudicate(self.source, self.anchor, unit_ids=['u3'], media=None, adjudicator=machine.SolAdjudicator(
+                api_key='k', cache=cache, budget=budget), out_dir=self.out, cut=lambda *_: clip, budget=budget,
+                listeners=[machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=0, budget=budget)])
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(again['units'][0]['heard'], receipt['units'][0]['heard'])
+        self.assertTrue(again['units'][0]['request']['cached'])
+        # A run that died after the ledger kept the listener's returned text but before its call cache recorded
+        # the outcome leaves the cache's started marker. The resumed run binds the ledger's replay to that marker.
+        listened = next((cache / 'openai').glob('*/started.json')).parent
+        (listened / 'response.json').unlink()
+        (listened / 'outcome.json').unlink()
+        self.assertEqual(listener.cache.uncertain(), [listened.name])
+        with mock.patch.dict(os.environ, route):
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_required'):
+                machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1).transcribe(clip)
+            relistened = machine.adjudicate(self.source, self.anchor, unit_ids=['u3'], media=None, adjudicator=machine.SolAdjudicator(
+                api_key='k', cache=cache, budget=budget), out_dir=self.out, cut=lambda *_: clip, budget=budget,
+                listeners=[machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=0, budget=budget)])
+            # The cap counts new paid requests only: a clip the ledger never saw is refused before anything is
+            # numbered or reserved, while the replay above cost nothing under the same cap.
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'listener_call_cap_reached'):
+                machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=0, budget=budget).transcribe(wav_bytes(1.0))
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(listener.cache.uncertain(), [])
+        self.assertEqual(json.loads(listener.operations.read_text(encoding='utf-8')),
+                         {hashlib.sha256(clip).hexdigest(): 'asr.0001'})
+        self.assertEqual(relistened['units'][0]['heard'], receipt['units'][0]['heard'])
+        machine.validate_receipt(relistened, source=self.source, anchor=self.anchor, cache=cache)
+        # A marker is bound only to the ledger's response for its own request; nothing recorded is overwritten.
+        started_request = json.loads((listened / 'started.json').read_text(encoding='utf-8'))['request']
+        with self.assertRaisesRegex(ValueError, 'started with another request'):
+            listener.cache.reconcile(listened.name, {**started_request, 'audioSha256': 'other'}, {'text': 'x'})
+        with self.assertRaisesRegex(ValueError, 'different response'):
+            listener.cache.reconcile(listened.name, started_request, {'text': 'x'})
+        # A run that died after the ledger kept Sol's response but before the cache file was written leaves the
+        # cache's started marker. The resumed run binds the ledger's response into the cache without a new call.
+        cache_file = Path(row['request']['path'])
+        marker = cache_file.with_suffix('.started.json')
+        marker.write_text(json.dumps({'requestSha256': row['request']['requestSha256'],
+                                      'request': json.loads(cache_file.read_text(encoding='utf-8'))['request'],
+                                      'status': 'started_response_unconfirmed'}), encoding='utf-8')
+        cache_file.unlink()
+        with mock.patch.dict(os.environ, route):
+            resumed = machine.adjudicate(self.source, self.anchor, unit_ids=['u3'], media=None, adjudicator=machine.SolAdjudicator(
+                api_key='k', cache=cache, budget=budget, max_calls=0), out_dir=self.out, cut=lambda *_: clip, budget=budget,
+                listeners=[machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=0, budget=budget)])
+        self.assertEqual(len(calls), 2)
+        self.assertTrue(cache_file.is_file())
+        self.assertFalse(marker.exists() and not cache_file.exists())
+        self.assertEqual(resumed['units'][0]['decision'], 'undetermined')
+        self.assertFalse(resumed['units'][0]['request']['cached'])
+        machine.validate_receipt(resumed, source=self.source, anchor=self.anchor, cache=cache)
+        # Without a budget the marker stays an unknown outcome: nothing is sent and the run stops.
+        cache_file.unlink()
+        marker.write_text(marker.read_text(encoding='utf-8'), encoding='utf-8')
+        with mock.patch.dict(os.environ, route):
+            with self.assertRaisesRegex(ValueError, 'Unknown L1 request outcome'):
+                FakeAdjudicator(cache, answer('undetermined')).decide('u3', json.loads(
+                    json.loads(marker.read_text(encoding='utf-8'))['request']['payload']['messages'][1]['content']))
+        question = json.loads(json.loads(marker.read_text(encoding='utf-8'))['request']['payload']['messages'][1]['content'])
+        # A started marker the ledger holds no response for may come from a run that sent the request directly,
+        # before this ledger existed: its outcome is unknown, so it is refused rather than sent again, whatever
+        # the cap allows, for Sol and the listener alike. Nothing is numbered or reserved and the marker stays.
+        from scripts import english_source_judge_cache as judge_cache
+        before = json.loads((self.out / machine.BUDGET_DIR / 'source-budget.json').read_text(encoding='utf-8'))
+        with mock.patch.dict(os.environ, route):
+            legacy = machine.SolAdjudicator(api_key='k', cache=cache, budget=budget, max_calls=5)
+            asked = dict(question, askedBy='an earlier run')
+            stage = f'source-meaning-{legacy.route_key}-u3'
+            legacy_request = {'schemaVersion': judge_cache.RUN_SCHEMA, 'stage': stage, 'payload': legacy.payload(asked)}
+            legacy_marker = cache.resolve() / 'cache' / f'{stage}-{contract.json_sha256(legacy_request)}.started.json'
+            legacy_marker.write_text(json.dumps({'requestSha256': contract.json_sha256(legacy_request),
+                                                 'request': legacy_request, 'status': 'started_response_unconfirmed'}),
+                                     encoding='utf-8')
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'source_marker_outcome_unknown'):
+                legacy.decide('u3', asked)
+            fresh = wav_bytes(1.0)
+            relisten = machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1, budget=budget)
+            key = policies.canonical_sha256({'listener': relisten.name, 'audioSha256': hashlib.sha256(fresh).hexdigest(),
+                                             'identity': relisten.identity()})
+            (cache / 'openai' / key).mkdir()
+            (cache / 'openai' / key / 'started.json').write_text(json.dumps({'request': {
+                'audioSha256': hashlib.sha256(fresh).hexdigest(), 'listener': relisten.name}}), encoding='utf-8')
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'source_marker_outcome_unknown'):
+                relisten.transcribe(fresh)
+        self.assertEqual(len(calls), 2)
+        self.assertTrue(legacy_marker.is_file())
+        self.assertEqual(relisten.cache.uncertain(), [key])
+        self.assertEqual(json.loads(listener.operations.read_text(encoding='utf-8')),
+                         {hashlib.sha256(clip).hexdigest(): 'asr.0001'})
+        self.assertEqual(json.loads((self.out / machine.BUDGET_DIR / 'source-budget.json').read_text(encoding='utf-8')), before)
+        legacy_marker.unlink()
+        shutil.rmtree(cache / 'openai' / key)
+        # The authorization binds the selected OpenAI Project: under prod the same file is another run's, and
+        # the ledger row of a dev answer refuses a prod request before any replay or dispatch.
+        prod = {**route, 'SERMON_OPENAI_ENVIRONMENT': 'prod', 'OPENAI_PROJECT_ID': 'proj_prodOnly',
+                'SERMON_OPENAI_CREDENTIAL_ALIAS': 'tongxing-prod-runtime'}
+        with mock.patch.dict(os.environ, prod):
+            prod_binding = machine.budget_binding(self.source, self.anchor, ['u3'], self.out, model=machine.MODEL, effort=machine.EFFORT)
+            self.assertEqual(prod_binding['route']['projectId'], 'proj_prodOnly')
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
+                machine.load_budget_authorization(auth_path, binding=prod_binding, transport=transport)
+            with self.assertRaisesRegex(ValueError, 'source_operation_identity_changed'):
+                machine.SolAdjudicator(api_key='k', cache=cache, budget=budget).decide('u3', question)
+        self.assertEqual(len(calls), 2)
+        # The ledger re-reads the authorization, its approval and the code closure before every paid step:
+        # a file replaced or code changed after the load refuses the reservation, and nothing is sent.
+        approval_path = auth_path.parent / 'approval.json'
+        original = {path: path.read_bytes() for path in (auth_path, approval_path)}
+        widened, approval = json.loads(auth_path.read_text(encoding='utf-8')), json.loads(approval_path.read_text(encoding='utf-8'))
+        for holder in (widened['authority'], approval['binding']):
+            holder['globalBounds'] = dict(holder['globalBounds'], requests=40)
+        approval_path.write_text(json.dumps(approval), encoding='utf-8')
+        widened['authority']['approvalSha256'] = hashlib.sha256(approval_path.read_bytes()).hexdigest()
+        auth_path.write_text(json.dumps(widened), encoding='utf-8')
+        with mock.patch.dict(os.environ, route):
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_changed'):
+                machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1, budget=budget).transcribe(wav_bytes(1.0))
+            for path, data in original.items():
+                path.write_bytes(data)
+            with mock.patch.object(controller, 'code_identity', return_value='f' * 64):
+                with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
+                    machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1, budget=budget).transcribe(wav_bytes(1.0))
+        self.assertEqual(len(calls), 2)
+        ledger = json.loads((self.out / machine.BUDGET_DIR / 'source-budget.json').read_text(encoding='utf-8'))
+        self.assertEqual(sorted(ledger['requests']), operations)
+        # Exhausted bounds refuse before the transport is reached and leave nothing to reconcile.
+        tight_out = self.root / 'tight'
+        with mock.patch.dict(os.environ, route):
+            tight_binding = machine.budget_binding(self.source, self.anchor, ['u3'], tight_out, model=machine.MODEL, effort=machine.EFFORT)
+            tight = machine.load_budget_authorization(
+                self._authorization('tight', tight_binding, dict(bounds, costMicrousd=1000)),
+                binding=tight_binding, transport=transport)
+            short = machine.OpenAiTranscribeListener(cache=tight_out / 'cache' / 'openai', max_calls=1, budget=tight)
+            with self.assertRaisesRegex(ValueError, 'source_budget_exhausted'):
+                short.transcribe(clip)
+            # Sol reserves through the ledger before its cache writes a started marker, so a refused
+            # reservation leaves no marker to reconcile either.
+            with self.assertRaisesRegex(ValueError, 'source_budget_exhausted'):
+                machine.SolAdjudicator(api_key='k', cache=tight_out / 'cache', budget=tight).decide('u3', question)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(short.cache.uncertain(), [])
+        self.assertEqual(list(tight_out.glob('**/*.started.json')), [])
+        # The CLI prints the binding an authorization must carry, without touching the output directory.
+        fixture = self.root / 'fixture'
+        fixture.mkdir()
+        (fixture / 'source.json').write_text(json.dumps(self.source), encoding='utf-8')
+        (fixture / 'anchor.json').write_text(json.dumps(self.anchor), encoding='utf-8')
+        out = io.StringIO()
+        with mock.patch.dict(os.environ, route), redirect_stdout(out):
+            self.assertEqual(machine.main([str(fixture), '--media', str(self.media), '--unit', 'u3',
+                                           '--out-dir', str(self.root / 'printed'), '--print-budget-binding']), 0)
+            printed = machine.budget_binding(self.source, self.anchor, ['u3'], self.root / 'printed', model=machine.MODEL, effort=machine.EFFORT)
+        self.assertEqual(json.loads(out.getvalue()), printed)
+        self.assertEqual(printed['route']['environment'], 'dev')
+        self.assertFalse((self.root / 'printed').exists())
+
+    def _authorization(self, name, binding, bounds, approved_bounds=None):
+        """An authorization and its approval receipt, shaped like the Layer 1 source budget's."""
+        folder = self.root / name
+        folder.mkdir()
+        request_limits = dict(limits.DEFAULT_REQUEST_LIMITS)
+        approval = {'schemaVersion': machine.BUDGET_APPROVAL_SCHEMA,
+                    'binding': {**binding, 'globalBounds': approved_bounds or bounds, 'requestLimits': request_limits},
+                    'humanApproval': True, 'decision': 'approved',
+                    'operatorEvidence': 'test approval of the doubted-unit re-listen',
+                    'reviewedBy': 'operator', 'reviewedAt': '2026-10-08T20:00:00+00:00'}
+        (folder / 'approval.json').write_text(json.dumps(approval, indent=2), encoding='utf-8')
+        authorization = {'schemaVersion': machine.BUDGET_SCHEMA, 'binding': binding,
+                         'authority': {'approvalSha256': hashlib.sha256((folder / 'approval.json').read_bytes()).hexdigest(),
+                                       'globalBounds': bounds, 'requestLimits': request_limits},
+                         'approvalReceipt': 'approval.json'}
+        (folder / 'authorization.json').write_text(json.dumps(authorization, indent=2), encoding='utf-8')
+        return folder / 'authorization.json'
 
 
 if __name__ == '__main__':

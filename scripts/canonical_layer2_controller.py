@@ -196,11 +196,68 @@ def package_view(config):
             # Only this registered future output may be absent. An existing
             # invalid package is always validated and blocks the lane.
             effective['locales'][locale].pop('candidate', None)
-    return packages.inspect_configuration(config.inspection_root, effective)
+    view = packages.inspect_configuration(config.inspection_root, effective)
+    notes = (getattr(config, 'auto_repair', None) or {}).get('sourceMeaningNotes')
+    if notes:
+        # The meaning notes the repair loop reads are a Layer 1 input of every text job: new notes are
+        # a new job identity (durable._input_identity), which `reopen-repair` lets supersede a failed one.
+        digest = jobs._digest(_json(Path(notes)))
+        view['packageIdentities']['sourceMeaningNotes'] = digest
+        view['stateRevision'] = jobs._digest({'packages': view['stateRevision'], 'sourceMeaningNotes': digest})
+    return view
+
+
+def join_jobs(config, view):
+    """The package view joined with this run's durable jobs, a reopen checked against its lane's evidence."""
+    return durable.project(view, config.job_root, config.run_id, verify_reopen=_reopen_verifier(config))
+
+
+def _reopen_verifier(config):
+    """Checks a reopen receipt against the evidence it names before its failed job may yield.
+
+    Every receipt along a chain names this lane's repair ledger as it was: the entry at
+    its sequence is the one it hashed, that entry stopped, and every group the receipt
+    reopened was stopped there for source review. The receipt naming the text node's
+    identity now is the one a new job runs under, so it is checked in full: its notes are
+    the configured notes, and its groups are the ones those notes reopen from that entry
+    or, once the reopened job has begun, the ones its worker's reopen entry records. Its
+    configuration and code hashes record what the controller ran under; both may change
+    after a reopen (a deploy, a configuration edit) without changing what it proved, and
+    the worker checks its own before any paid call."""
+    ledgers = {}
+
+    def verify(receipt, observed, expected):
+        locale = receipt['identity']['workUnitId'][len('text.'):]
+        require(locale in config.lanes and bool(config.auto_repair), 'reopen_lane_not_registered')
+        if locale not in ledgers:
+            source, anchor, policy = _lane_values(config, locale, observed)
+            ledgers[locale] = (auto_repair.load_ledger(repair_ledger_root(config), auto_repair.lineage(
+                producer.prepare_request(source, anchor, policy))), source, anchor)
+        entries, source, anchor = ledgers[locale]
+        sequence, groups = receipt['repairLedgerSequence'], receipt['reopenedGroups']
+        head = entries[sequence - 1] if sequence <= len(entries) else None
+        require(head is not None and auto_repair.json_sha256(head) == receipt['repairLedgerHeadSha256']
+                and head['outcome'] == 'stopped', 'reopen_ledger_head_changed')
+        held = {row['translationGroupId'] for row in head['stopped'] if row['reasonCode'] == 'request_source_review'}
+        require(set(groups) <= held, 'reopen_group_not_stopped_for_source_review')
+        if receipt['nextIdentity'] != expected:
+            return
+        require(receipt['meaningNotesSha256'] == observed['packageIdentities'].get('sourceMeaningNotes'),
+                'reopen_meaning_notes_changed')
+        if len(entries) > sequence:
+            reopened = entries[sequence]
+            require('reopenedBy' in reopened
+                    and sorted(row['translationGroupId'] for row in reopened['groups']) == groups,
+                    'reopen_groups_changed')
+        else:
+            notes = source_meaning.load_meaning_notes(Path(config.auto_repair['sourceMeaningNotes']),
+                                                      source=source, anchor=anchor)
+            require(sorted(auto_repair.reopenable_groups(entries, notes)) == groups, 'reopen_groups_changed')
+    return verify
 
 
 def snapshot(config):
-    view = durable.project(package_view(config), config.job_root, config.run_id)
+    view = join_jobs(config, package_view(config))
     rejected = []
     for locale in config.lanes:
         unit = 'text.' + locale
@@ -216,7 +273,8 @@ def snapshot(config):
     return view
 
 
-def _inputs(config, locale, view):
+def _lane_values(config, locale, view):
+    """The lane's source, anchor and policy, as the view inspected them."""
     lane = config.lanes[locale]
     paths = {'source': _path(config.inspection_root, config.inspection['source']),
              'anchor': _path(config.inspection_root, config.inspection['anchor']),
@@ -224,7 +282,12 @@ def _inputs(config, locale, view):
     values = {key: packages._read_package(path.parent, str(path), {}, key) for key, path in paths.items()}
     require(all(jobs._digest(value) == view['packageIdentities'].get(key) for key, value in values.items()),
             'inputs_changed_after_inspection')
-    policy = values['policy.' + locale]
+    return values['source'], values['anchor'], values['policy.' + locale]
+
+
+def _inputs(config, locale, view):
+    lane = config.lanes[locale]
+    source, anchor, policy = _lane_values(config, locale, view)
     require(producer.plugin_implementation_sha256(lane['plugin']) == policy['languageReview']['pluginImplementationSha256'],
             'plugin_does_not_match_frozen_policy')
     # Fixed production models and the canonical runner's worker budget bound paid work.
@@ -232,10 +295,10 @@ def _inputs(config, locale, view):
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
-    request = producer.prepare_request(values['source'], values['anchor'], policy)
-    plan = models.group_plan(request, values['anchor'])
+    request = producer.prepare_request(source, anchor, policy)
+    plan = models.group_plan(request, anchor)
     rule_preflight.preflight(request, policy, lane['plugin'], plan)
-    return values['source'], values['anchor'], policy
+    return source, anchor, policy
 
 
 def _unreconciled_paid_call(config, locale):
@@ -374,7 +437,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 executor_type='deterministic_program', work_unit_id='l2.' + locale + '.worker_admission') as admission_span:
             current = package_view(config)
             require(current['nodes']['text.' + locale]['status'] == 'ready', 'worker_node_not_ready')
-            joined = durable.project(current, config.job_root, config.run_id)
+            joined = join_jobs(config, current)
             require(joined['nodes']['source']['status'] == 'validated'
                     and joined['nodes']['text.' + locale]['status'] == 'waiting_job'
                     and joined['nodes']['text.' + locale].get('reasonCode') == 'durable_job_active',
@@ -505,6 +568,105 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
     return evidence, final
 
 
+REOPEN_RESULT_SCHEMA = 'sermon-canonical-layer2-reopen-result-v1'
+
+
+def _reopen_plan(config, locale, view):
+    """What `reopen-repair` would bind for this lane, or the reason it refuses.
+
+    Exactly one failed text job blocks the lane, no owner or unknown paid call is
+    outstanding, the node is the same node with new inputs (the meaning notes),
+    and the lane's repair chain stopped with a source-review group the notes now
+    settle and no earlier noted repair touched."""
+    unit = 'text.' + locale
+    rows = [row for row in view['durableJobInspection']['jobs'] if row['workUnitId'] == unit]
+    require(not any(row['status'] in jobs.ACTIVE | {'uncertain'} for row in rows), 'job_owner_or_outcome_unsettled')
+    failed = [row for row in rows if row['status'] == 'failed']
+    require(len(failed) == 1, 'one_failed_text_job_required')
+    require(not _unreconciled_paid_call(config, locale), 'unknown_paid_outcome_requires_reconciliation')
+    key = failed[0]['jobId']
+    request = jobs._read(_safe_path(config.job_root / key / 'request.json'))
+    require(jobs._request_valid(request, key) and jobs._digest(request) == failed[0]['requestSha256']
+            and request['command'][2:7] == ['worker', '--config', str(config.path), '--locale', locale],
+            'original_execution_binding_changed')
+    current = package_view(config)
+    following = durable.identity(current, config.run_id, unit)
+    require(request['identity']['nodeIdentity'] == following['nodeIdentity'] and request['identity'] != following,
+            'reopen_requires_new_meaning_notes')
+    source, anchor, policy = _inputs(config, locale, current)
+    entries = auto_repair.load_ledger(repair_ledger_root(config),
+                                      auto_repair.lineage(producer.prepare_request(source, anchor, policy)))
+    require(bool(entries) and entries[-1]['outcome'] == 'stopped', 'reopen_requires_stopped_repair_chain')
+    rounds = (config.lanes[locale]['output'] / 'repair-rounds').resolve()
+    head = Path(entries[-1]['runDirectory']).resolve()
+    require(_overlap(rounds, head) and head != rounds, 'repair_chain_outside_lane')
+    notes = source_meaning.load_meaning_notes(Path(config.auto_repair['sourceMeaningNotes']), source=source, anchor=anchor)
+    groups = auto_repair.reopenable_groups(entries, notes)
+    require(bool(groups), 'meaning_notes_reopen_no_stopped_group')
+    return {'jobId': key, 'request': request, 'stateSha256': failed[0]['stateSha256'], 'nextIdentity': following,
+            'repairLedgerHeadSha256': auto_repair.json_sha256(entries[-1]), 'repairLedgerSequence': len(entries),
+            'meaningNotesSha256': current['packageIdentities']['sourceMeaningNotes'], 'reopenedGroups': sorted(groups)}
+
+
+def reopen_repair(config_path, locale, expected_revision):
+    """Let a failed text job's stopped repair chain continue under new machine audio meaning notes.
+
+    The failed job keeps its outcome and history. The receipt written beside it
+    names the identity the text node has now that the notes are one of its
+    inputs; the durable projection then treats the failed job as superseded and
+    the next execute tick starts a job under that identity, whose worker reopens
+    the same repair ledger for the noted groups only (layer2_auto_repair). This
+    makes no model call, writes no candidate and creates no approval."""
+    require(pipeline._sha(expected_revision), 'expected_revision_required')
+    config = load_configuration(config_path)
+    code = code_identity()
+    require(locale in config.lanes, 'locale_not_registered')
+    require(bool(config.auto_repair and config.auto_repair.get('sourceMeaningNotes')),
+            'reopen_requires_source_meaning_notes')
+    require(snapshot(config)['stateRevision'] == expected_revision, 'stale_reopen_revision')
+    with jobs._lock(config.job_root, ADMISSION_LOCK) as (_, _, admitted):
+        require(admitted, 'admission_busy')
+        admitted_config = load_configuration(config.path)
+        require(admitted_config.sha256 == config.sha256 and code_identity() == code, 'configuration_or_code_changed')
+        admitted_view = snapshot(admitted_config)
+        require(admitted_view['stateRevision'] == expected_revision, 'stale_reopen_revision')
+        plan = _reopen_plan(admitted_config, locale, admitted_view)
+        key = plan['jobId']
+        with jobs._lock(config.job_root, key) as (folder, _, held):
+            require(held, 'job_owner_still_active')
+            with work_lock(config.lanes[locale]['output']):
+                fresh_config = load_configuration(config.path)
+                require(fresh_config.sha256 == config.sha256 and code_identity() == code,
+                        'configuration_or_code_changed')
+                request, state = jobs._read(folder / 'request.json'), jobs._state(folder, key)
+                require(request == plan['request'] and state is not None and state['status'] == 'failed'
+                        and state.get('requestSha256') == jobs._digest(request)
+                        and jobs._digest(state) == plan['stateSha256'], 'original_execution_binding_changed')
+                require(_reopen_plan(fresh_config, locale, snapshot(fresh_config)) == plan, 'reopen_inputs_changed')
+                receipt = {'schemaVersion': durable.REOPEN_SCHEMA, 'jobId': key,
+                           'requestSha256': jobs._digest(request), 'stateSha256': jobs._digest(state),
+                           'identity': request['identity'], 'nextIdentity': plan['nextIdentity'],
+                           'configurationSha256': config.sha256, 'codeIdentitySha256': code,
+                           **{name: plan[name] for name in ('repairLedgerHeadSha256', 'repairLedgerSequence',
+                                                            'meaningNotesSha256', 'reopenedGroups')},
+                           'resolution': durable.REOPEN_RESOLUTION}
+                path = _safe_path(folder / durable.reopen_file(plan['nextIdentity']))
+                if path.exists():
+                    require(jobs._read(path) == receipt, 'immutable_reopen_conflict')
+                else:
+                    # Atomic durable publication under the job lock; state.json, request.json, logs, an
+                    # earlier receipt and the repair ledger are never rewritten.
+                    jobs._persist(path, receipt)
+                with path.open('rb') as stream:
+                    jobs.os.fsync(stream.fileno())
+                jobs._sync_directory_ancestry(folder)
+                return {'schemaVersion': REOPEN_RESULT_SCHEMA, 'status': 'reopened', 'jobId': key,
+                        'workUnitId': 'text.' + locale, 'receiptSha256': jobs._digest(receipt),
+                        'originalJobStatus': 'failed', 'nextJobId': jobs._digest(plan['nextIdentity']),
+                        'reopenedGroups': plan['reopenedGroups'], 'modelCalls': 0, 'runtimeCodexTurns': 0,
+                        'humanApprovalCreated': False}
+
+
 def drive(config_path, locale, *, budget_authorization=None):
     """One restart-safe unified tick; explicit bound budget is mandatory.
 
@@ -544,9 +706,16 @@ def main():
     worker.add_argument('--expected-job', required=True)
     worker.add_argument('--budget-authorization', type=Path)
     worker.add_argument('--expected-budget')
+    reopen = commands.add_parser('reopen-repair', help='supersede a failed text job whose repair chain new '
+                                 'machine audio meaning notes reopen; no model call')
+    reopen.add_argument('--config', required=True, type=Path)
+    reopen.add_argument('--locale', required=True, choices=pipeline.LOCALES)
+    reopen.add_argument('--expected-state-revision', required=True)
     args = parser.parse_args()
     if args.command == 'tick':
         result = Controller(args.config, mode=args.mode).tick()
+    elif args.command == 'reopen-repair':
+        result = reopen_repair(args.config, args.locale, args.expected_state_revision)
     else:
         result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
                          budget_authorization=args.budget_authorization, expected_budget=args.expected_budget)

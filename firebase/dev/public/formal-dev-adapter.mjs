@@ -20,6 +20,21 @@ function keysWithOptional(value, required, optional) {
     && Object.keys(value).every(name => required.includes(name) || optional.includes(name));
 }
 
+// Keep this nested presentation contract aligned with
+// schemas/sermon-page-display-category-v1.schema.json.
+function validDisplayCategory(value) {
+  if (!exactKeys(value, ["schemaVersion", "labels"])
+      || value.schemaVersion !== "sermon-page-display-category-v1") return false;
+  const labels = value.labels;
+  return labels && typeof labels === "object" && !Array.isArray(labels)
+    && Object.keys(labels).length >= 1 && Object.keys(labels).length <= 16
+    && Object.hasOwn(labels, "en")
+    && Object.entries(labels).every(([locale, label]) =>
+      /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(locale)
+      && typeof label === "string" && [...label].length >= 1 && [...label].length <= 48
+      && /\S/.test(label) && !/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(label));
+}
+
 // The formal catalog is optional while older Dev POC pages remain available.
 // A failed or malformed formal feed must not make the existing reader unusable.
 export async function loadOptionalFormalCatalog(fetcher, existingPageIds = []) {
@@ -54,7 +69,8 @@ export function validateFormalCatalog(catalog) {
   for (const page of catalog.pages) {
     requireValue(keysWithOptional(page,
       ["id", "date", "sourceLocale", "sourceIdentitySha256", "defaultTargetLocale", "targets"],
-      ["sourceMediaSha256"])
+      ["sourceMediaSha256", "displayCategory"])
+      && (!Object.hasOwn(page, "displayCategory") || validDisplayCategory(page.displayCategory))
       && PAGE_ID.test(page.id) && !ids.has(page.id)
       && page.sourceLocale === "en" && SHA256.test(page.sourceIdentitySha256)
       && (page.sourceMediaSha256 === undefined || SHA256.test(page.sourceMediaSha256))
