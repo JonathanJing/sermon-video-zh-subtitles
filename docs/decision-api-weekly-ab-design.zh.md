@@ -2,7 +2,9 @@
 
 日期：2026-10-06。范围：现有模型／程序／人工判断与 Decisions 的判断或辅助复核效果，逐环节下结论。
 
-状态：`design_ready`；尚未实现本实验 runner、发送请求、建立完整 gold 或取得任何胜负结果。JSON [实验计划](../config/decision-api-weekly-ab-plan-v1.json)是设计配置，现有生产入口不消费它。本文不更改生产模型策略、审批、预算、并发或发布资格。
+后续范围已按用户决定收窄：**程序能确定的判断继续用程序，后续只优先研究E01独立英文裁判的完整职责替换；人工辅助须先确认实际瓶颈**。本文件及JSON保留原两轮预注册快照；后续适用任务、优先级和排除项见[执行记录中的重新评估](reports/20261006-decision-api-weekly-ab-findings.zh.md)。已有规则结果只作历史记录，不继续扩展为程序替换实验。
+
+状态：`design_ready` 是本文件的预注册设计快照。当前 runner、真实请求和逐轮结果见 [执行记录](reports/20261006-decision-api-weekly-ab-findings.zh.md)；完整 gold 和胜负仍未建立。JSON [实验计划](../config/decision-api-weekly-ab-plan-v1.json)保留设计快照，实际在线授权使用 ignored artifacts 中冻结的 authority／ledger，不把设计中的历史 null／false当作当前执行状态。现有生产入口不消费实验计划；本文不更改生产模型策略、审批、并发或发布资格。
 
 ## 1. 问题与真实 A 基线
 
@@ -133,7 +135,7 @@ Pilot 仅给探索性结论。扩展测试目标每环节至少 200 个独立 ca
 
 每个 arm 记录 model/backend/effort/requested tier/actual tier、SDK／CLI版本、region、代码依赖闭包 hash、dirty diff hash、question/rubric hash、payload hash、source/candidate/ASR/timing hash、stateRevision、试验顺序、连接状态和缓存状态。actual tier 未返回保持 unknown。内容相同不要求 A/B prompt 字节相同，但输入语义证据必须一致；不向任何臂泄露 gold 或另一臂答案。
 
-B 只用文本，在同一 shared input 上可合并独立 questions；依赖前一个答案的后续判断另发请求、另计时间与费用。固定选项包含 needs_more_evidence／human／other。网络 timeout、refusal、未知 outcome 和无效 answer 留在分母，不自动重发。SDK 关闭隐式重试；请求前先写 experiment intent/reservation，返回后保存 raw answer 和可得 request-id header，再验证。不得假定 Decisions 有 retrieve 或 provider idempotency 能力。
+B 只用文本，在同一 shared input 上可合并独立 questions；依赖前一个答案的后续判断另发请求、另计时间与费用。固定选项包含 needs_more_evidence／human／other。网络 timeout、refusal、未知 outcome 和无效 answer 留在分母，不自动重发。 两个 POST 路径的 HTTP 5xx 均按 `outcome_unknown` 记录，保留原预算预留和状态码，立即停止后续派发；同一 ledger 在未知调用对账前拒绝新增 operation，不因重启或切换 stage 恢复派发资格。SDK 关闭隐式重试；请求前先写 experiment intent/reservation，返回后保存 raw answer 和可得 request-id header，再验证。不得假定 Decisions 有 retrieve 或 provider idempotency 能力。
 
 实验全部复用 [dev 环境启动器](openai-minimal-project-setup.zh.md)选定的 tongxing-dev-runtime；不创建 key，不消费 prod。读取现有预算框架建立独立实验支出范围，不能借生产 run 的未用预算。付费实施前需绑定各 phase 的 maxRequests、maxInputTokens、A/B/fallback 金额上限和批准收据；当前 JSON 的 liveExecutionAuthorized=false、金额 null 明确表示只完成设计。用户本次要求实验设计，不自动迁移生产配置或派发历史未决调用。
 
@@ -153,4 +155,4 @@ B 只用文本，在同一 shared input 上可合并独立 questions；依赖前
 | 6 | 10 分钟及全长隔离恢复 canary，记录必要修订和人审 | label-only / equivalent_task / end_to_end_repair 分开 |
 | 7 | 按证据提出逐环节替换或混合方案 | 正式策略变更、生产／发布、HTTP与设备收据另行处理 |
 
-产物目录建议：`artifacts/decision-api-weekly-ab/<experimentId>/<stageId>/<caseId>/<arm>/<attemptId>/`。case-level gold 受控保存；发布报告只用安全 ID／hash和汇总。持久恢复读取原 receipts；缺失 time/usage 保持 unknown。结构测试通过、API 可访问、pilot 胜出、生产接入与完整周发布分别报告。
+产物目录建议：`artifacts/decision-api-weekly-ab/<experimentId>/<stageId>/<caseId>/<arm>/<attemptId>/`。case-level gold 受控保存；发布报告只用安全 ID／hash和汇总。持久恢复读取原 receipts；live 网络收据必须同时匹配当前 operation 的 case/payload/evidence/code 身份、预算 bounds 和 ledger settlement hash／cost。若进程在写完 receipt 后、ledger.finish 前中断，恢复明确报 `cached_receipt_requires_ledger_reconciliation`，保留预留并要求对账，不标记 restored 成功、不重发请求；缺失 time/usage 保持 unknown。结构测试通过、API 可访问、pilot 胜出、生产接入与完整周发布分别报告。

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "decision-outline-machine-feasibility-v1",
+  "scopeDecision": "user_selected_machine_feasibility_only",
+  "originalHumanABDesignExecuted": false,
+  "sourceClusters": 4,
+  "totalSections": 24,
+  "samples": {
+    "untouchedReal": 8,
+    "faithfulParaphrase": 4,
+    "semanticVariants": 12
+  },
+  "previousSixDevelopmentSourcesExcluded": true,
+  "sourceIds": [
+    "ZDQwL3K-A44",
+    "-BeFX5G2oAw",
+    "8JYwTq1xcBE",
+    "l8ucqF9uA9A"
+  ],
+  "sourceSelection": "available_new_legacy_outline_corpus_not_random_production_sample",
+  "labels": [
+    "supported",
+    "contradiction",
+    "unsupported",
+    "needs_more_evidence"
+  ],
+  "framingLabels": [
+    "faithful",
+    "misleading",
+    "needs_more_evidence"
+  ],
+  "questionUnits": "whole_section_each_original_title_and_point_plus_framing_and_candidate_reference",
+  "authorExpectationsAreHumanGold": false,
+  "independentHumanGoldCompleted": false,
+  "humanTimingNotRun": true,
+  "productionReplacementEligible": false,
+  "budget": {
+    "cumulativeUserAuthorizationMicrousd": 20000000,
+    "phaseIncrementalCapMicrousd": 2000000,
+    "maxRequests": 24,
+    "credentialAlias": "tongxing-dev-runtime",
+    "environment": "dev",
+    "implicitRetries": false,
+    "carryPreviousLedger": true
+  },
+  "newSourcesNowDevelopmentOnly": true
+}

@@ -69,7 +69,7 @@ class OpenAILayer2TransportTests(unittest.TestCase):
         fixture.setUp()
         self.addCleanup(fixture.doCleanups)
         root = Path('/bound-run')
-        config = SimpleNamespace(path=root / 'execution.json', inspection_root=root,
+        config = SimpleNamespace(path=root / 'execution.json', inspection_root=root, candidate_mode='production',
             inspection={'source': 'source.json', 'anchor': 'anchor.json'}, lanes={
                 fixture.policy['targetLocale']: {'policy': root / 'policy.json',
                     'plugin': fixture.plugin_path, 'output': root / 'models'}})
