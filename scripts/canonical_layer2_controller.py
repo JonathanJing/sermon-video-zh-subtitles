@@ -291,7 +291,7 @@ def _inputs(config, locale, view):
     require(producer.plugin_implementation_sha256(lane['plugin']) == policy['languageReview']['pluginImplementationSha256'],
             'plugin_does_not_match_frozen_policy')
     # Fixed production models and the canonical runner's worker budget bound paid work.
-    require(all(policy[role]['model'] == model and policy[role]['reasoningEffort'] == models.MODEL_EFFORTS[role] for role, model in models.MODEL_ROLES.items()), 'production_model_policy_changed')
+    require(all(policy[role]['model'] == model and policy[role]['reasoningEffort'] == models.MODEL_EFFORTS[role] for role, model in models.production_models(policy).items()), 'production_model_policy_changed')
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
@@ -460,6 +460,9 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 route = selected_route()
                 require(route is not None, 'openai_layer2_requires_explicit_dev_or_prod_launcher')
                 api_key = os.environ['OPENAI_API_KEY']
+                # Canonical new dev/formal runs use the production Sol policy.
+                # Claude remains available only to explicit experimental callers.
+                models.production_models(policy)
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy)
                 caller.execution_identity = {
                     'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
