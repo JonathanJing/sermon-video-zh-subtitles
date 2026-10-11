@@ -92,6 +92,34 @@ final class PlaybackControllerTests: XCTestCase {
     }
 
     #if DEBUG
+    func testSelectedNonDefaultLocaleKeepsVerifiedHeading() async throws {
+        let run = UUID().uuidString
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("HeadingLocale-\(run)")
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "HeadingLocale-\(run)"))
+        let model = UITestLaunch.makeFixtureModel(supportDirectory: directory,
+                                                  statisticsDefaults: defaults, headingLanguages: true)
+        defer {
+            model.playback.pause()
+            model.mediaSession.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: "HeadingLocale-\(run)")
+            try? FileManager.default.removeItem(at: directory)
+        }
+        await model.start()
+        let page = try XCTUnwrap(model.independentPages.first)
+        model.selectPublishedPage(page)
+        model.selectPublishedContentLanguage("ko")
+        await model.loadSelectedPublishedTranscript()
+        try await eventually("selected Korean transcript") { model.currentPublishedTranscript?.locale == "ko" }
+        XCTAssertEqual(page.defaultTargetLocale, "zh-Hans")
+        let transcript = try XCTUnwrap(model.currentPublishedTranscript)
+        XCTAssertEqual(transcript.title, "한국어 제목")
+        XCTAssertNotEqual(transcript.title, page.title)
+        let heading = model.heading(for: page)
+        XCTAssertEqual(heading.title, transcript.title)
+        XCTAssertEqual(heading.series, transcript.series)
+        XCTAssertEqual(heading.speaker, transcript.speaker)
+    }
+
     func testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback() async throws {
         let run = UUID().uuidString
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("Heading-\(run)")
@@ -122,6 +150,21 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(heading.title, "测试完整视频证道")
         XCTAssertEqual(heading.series, "启示录：耶稣带来的安慰与盼望")
         XCTAssertEqual(heading.speaker, "Eric Geiger")
+        var categorized = page
+        categorized.displayCategory = try JSONDecoder().decode(PageDisplayCategory.self, from: Data(
+            #"{"schemaVersion":"sermon-page-display-category-v1","labels":{"en":"Remote source category"}}"#.utf8))
+        XCTAssertEqual(model.heading(for: categorized).edition, "Remote source category")
+        categorized.displayCategory = try JSONDecoder().decode(PageDisplayCategory.self, from: Data(
+            #"{"schemaVersion":"sermon-page-display-category-v1","labels":{"en":"Updated source category"}}"#.utf8))
+        XCTAssertEqual(model.heading(for: categorized).edition, "Updated source category")
+        let previousLanguage = AppLocalization.shared.preference
+        AppLocalization.shared.setPreference(.english)
+        categorized.displayCategory = try JSONDecoder().decode(PageDisplayCategory.self, from: Data(
+            #"{"schemaVersion":"sermon-page-display-category-v1","labels":{"en":"播客"}}"#.utf8))
+        XCTAssertEqual(model.heading(for: categorized).edition, "播客", "Resolved remote labels must remain verbatim")
+        AppLocalization.shared.setPreference(previousLanguage)
+        categorized.displayCategory = nil
+        XCTAssertNil(model.heading(for: categorized).edition, "Removing catalog category must not retain cached remote text")
         XCTAssertEqual(model.selectedWeek, week)
         XCTAssertEqual(model.selectedPageID, week.id)
         XCTAssertEqual(model.selectedTrack, track)

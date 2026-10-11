@@ -1349,7 +1349,8 @@ private struct SermonHeadingView: View {
             }
             .font(.subheadline).foregroundStyle(.secondary)
             if let edition = heading.edition {
-                Text(localization.text(edition)).font(.caption).foregroundStyle(.secondary)
+                Text(edition).font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("\(identifier)-edition")
             }
         }
         .fixedSize(horizontal: false, vertical: true)
