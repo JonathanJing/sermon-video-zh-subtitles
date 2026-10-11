@@ -461,11 +461,19 @@ class ApiJudge:
         wall = self.request_limits["wallTimeMs"] / 1000
 
         def transport(endpoint, request, content_type, api_key):
+            import urllib.error
             import urllib.request
             call = urllib.request.Request(endpoint, data=request, method="POST",
                                           headers={"Authorization": "Bearer " + api_key, "Content-Type": content_type})
-            with urllib.request.urlopen(call, timeout=wall) as response:
-                return json.loads(response.read())
+            # 429 and 5xx come back before any completion is produced; retry them with backoff.
+            for attempt in range(5):
+                try:
+                    with urllib.request.urlopen(call, timeout=wall) as response:
+                        return json.loads(response.read())
+                except urllib.error.HTTPError as error:
+                    if error.code != 429 and error.code < 500 or attempt == 4:
+                        raise
+                    time.sleep(2 ** attempt)
         self.ledger = budget.SourceBudget(value["budgetRoot"], {
             "approvalSha256": value["authority"]["approvalSha256"],
             "globalBounds": value["authority"]["bounds"]["globalBounds"], "requestLimits": self.request_limits},
