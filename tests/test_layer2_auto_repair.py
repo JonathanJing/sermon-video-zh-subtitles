@@ -62,8 +62,10 @@ class ClassificationTests(unittest.TestCase):
 
     def test_shared_codes_route_like_the_repair_planner(self):
         from scripts import sermon_repair_planning as planning
+        # Canonical auto-repair gives a plugin finding one repair before escalating;
+        # the strict planner escalates it at once.
         for code, action in subject.ACTIONS.items():
-            if code in planning.FAILURE_ACTIONS:
+            if code in planning.FAILURE_ACTIONS and code != "language_plugin_failed":
                 self.assertEqual(planning.FAILURE_ACTIONS[code], action, code)
 
 
@@ -491,12 +493,17 @@ class LoopTests(unittest.TestCase):
         self.assertEqual(receipt["status"], "all_groups_passed")
         self.assertEqual(receipt["gatesPassed"], ["independent_review", "language_plugin"])
 
-    def test_plugin_rejection_keeps_the_translation_and_costs_nothing(self):
+    def test_plugin_rejection_gets_one_repair_carrying_its_finding(self):
         fleet = Fleet(self, 46, [{"g3": "plugin"}])
         receipt = self.drive(fleet)
-        self.assertEqual(fleet.calls, ["all"])
+        self.assertEqual(fleet.calls, ["all", ["g3"]])
+        self.assertEqual(receipt["status"], "all_groups_passed")
+
+    def test_repeated_plugin_rejection_escalates_to_engineering(self):
+        fleet = Fleet(self, 46, [{"g3": "plugin"}, {"g3": "plugin"}])
+        receipt = self.drive(fleet)
+        self.assertEqual(fleet.calls, ["all", ["g3"]])
         self.assertEqual(receipt["stoppedGroups"][0]["reasonCode"], "escalate_engineering")
-        self.assertEqual(receipt["repairSpend"]["calls"], 0)
 
     def test_repeated_uncertainty_goes_to_a_person_and_spend_cap(self):
         fleet = Fleet(self, 46, [{"g4": failing(uncertainty=["which verse?"])}] * 3)
@@ -696,7 +703,7 @@ class RunnerCollectionTests(unittest.TestCase):
         with self.assertRaises(subject.GroupFailuresCollected) as raised:
             self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", caller,
                                 failure_collector=subject.FailureCollector(2))
-        self.assertEqual(raised.exception.report["failures"][0]["action"], "escalate_engineering")
+        self.assertEqual(raised.exception.report["failures"][0]["action"], "repair_translation")
         self.assertFalse((self.out / "plugin-group-stop.json").exists())
         self.assertEqual(len(self.calls), 4)
 

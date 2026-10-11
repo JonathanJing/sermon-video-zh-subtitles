@@ -3,16 +3,23 @@ import { t, onLocaleChange } from './i18n.mjs';
 import { captureFingerprintAudio, microphoneSupported, abortError } from './fingerprint-capture.mjs';
 import { diagnosticSummary, matchReason } from './fingerprint-diagnostics.mjs';
 const HASH = /^[a-f0-9]{64}$/;
+function matchesSourceDuration(duration, sourceDuration, originalWindow) {
+  if (!Number.isFinite(duration)) return false;
+  const drift = duration - sourceDuration;
+  // Published original-window dubs can retain a natural final-sentence tail,
+  // matching bind_published_fingerprints.mjs. Legacy tracks keep their tolerance.
+  return originalWindow ? drift > -.1 && drift < 1.1 : Math.abs(drift) <= .1;
+}
 export function fingerprintBinding(context) {
   const { week, track, generation } = context || {}, m = week?.audioFingerprint;
   const window = week?.sourceFingerprintWindow;
   if (window && (window.schemaVersion !== 'sermon-original-recording-window-v1' || window.mediaSha256 !== week.sourceSha256 || window.mediaSha256 !== m?.sourceSha256
     || !Number.isFinite(window.startSeconds) || !Number.isFinite(window.endSeconds)
     || window.startSeconds < 0 || window.endSeconds <= window.startSeconds
-    || Math.abs(window.endSeconds - window.startSeconds - track?.durationSeconds) > .1)) return null;
+    || !matchesSourceDuration(track?.durationSeconds, window.endSeconds - window.startSeconds, true))) return null;
   const sourceStart = window?.startSeconds ?? week?.sourceStartSeconds;
   const sourceEnd = window?.endSeconds ?? week?.sourceEndSeconds;
-  if (!m || !track || m.schemaVersion !== 'sermon-audio-fingerprint-binding-v1' || m.algorithmVersion !== 'spectral-landmarks-v1' || m.pageId !== week.id || !HASH.test(m.sourceSha256) || !HASH.test(m.trackSha256) || !HASH.test(m.indexSha256) || m.trackSha256 !== track.sha256 || m.sourceStartSeconds !== sourceStart || !Number.isFinite(m.sourceStartSeconds) || !Number.isFinite(m.sourceEndSeconds) || m.sourceEndSeconds <= m.sourceStartSeconds || Math.abs(track.durationSeconds - (m.sourceEndSeconds - m.sourceStartSeconds)) > .1 || m.captureSeconds !== 10 || !/^\/fingerprints\/[a-zA-Z0-9_.-]+\.json$/.test(m.indexUrl)) return null;
+  if (!m || !track || m.schemaVersion !== 'sermon-audio-fingerprint-binding-v1' || m.algorithmVersion !== 'spectral-landmarks-v1' || m.pageId !== week.id || !HASH.test(m.sourceSha256) || !HASH.test(m.trackSha256) || !HASH.test(m.indexSha256) || m.trackSha256 !== track.sha256 || m.sourceStartSeconds !== sourceStart || !Number.isFinite(m.sourceStartSeconds) || !Number.isFinite(m.sourceEndSeconds) || m.sourceEndSeconds <= m.sourceStartSeconds || !matchesSourceDuration(track.durationSeconds, m.sourceEndSeconds - m.sourceStartSeconds, Boolean(window)) || m.captureSeconds !== 10 || !/^\/fingerprints\/[a-zA-Z0-9_.-]+\.json$/.test(m.indexUrl)) return null;
   if (sourceEnd !== undefined && sourceEnd !== m.sourceEndSeconds) return null;
   return { weekId: week.id, sourceSha256: m.sourceSha256, trackSha256: track.sha256, trackId: track.id, generation, metadata: { ...m } };
 }

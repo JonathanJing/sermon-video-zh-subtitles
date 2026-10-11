@@ -76,13 +76,20 @@ ACTIONS = {
     # AGENTS.md: a Sol issue or uncertainty also starts a new repair revision.
     "review_uncertainty": "repair_translation",
     "review_issue_open": "repair_translation",
-    "language_plugin_failed": "escalate_engineering",
+    # A deterministic language check names its own finding (an over-long utterance,
+    # a forbidden register form); one repair carries it, a repeat goes to engineering.
+    "language_plugin_failed": "repair_translation",
+    # A reply that breaks the output contract (utterances as objects, missing
+    # coverage) says nothing about the translation; ask once more for the format.
+    "malformed_model_output": "repair_translation",
 }
 # What a repeated failure becomes once a repair made no progress on it.
 REPEATED_FAILURE_ACTIONS = {
     "quotation_attribution_error": "request_source_review",  # points at the source, not the wording
     "review_uncertainty": "request_human_review",
     "review_issue_open": "request_human_review",
+    "language_plugin_failed": "escalate_engineering",
+    "malformed_model_output": "escalate_engineering",
 }
 INSTRUCTIONS = {
     "meaning_omission": "Restore every meaning the English source states; the prior translation omitted some.",
@@ -94,6 +101,11 @@ INSTRUCTIONS = {
     "meaning_shift": "Restore the meaning of the English source; the prior translation shifted it.",
     "review_uncertainty": "Resolve the reviewer's stated uncertainty from the English source and its context.",
     "review_issue_open": "Resolve the reviewer's open issue from the English source.",
+    "language_plugin_failed": ("Fix the deterministic language check finding below without changing meaning: "
+                               "keep each utterance at most 180 characters (split at natural clause boundaries), "
+                               "use the policy register, and keep every number, name and reference the English says."),
+    "malformed_model_output": ("The prior reply broke the JSON contract. Return targetUtterances as a JSON array "
+                               "of plain strings and one coverage row per source unit with an exact targetText substring."),
 }
 SYSTEMIC_MINIMUM_GROUPS = 3
 SYSTEMIC_FRACTION = 0.01
@@ -134,7 +146,8 @@ def classify_review(semantic: dict) -> tuple[list[str], str]:
 # Umbrella codes lump unrelated defects (one group a negation, another a number,
 # a third a name). They stop dispatch only when consecutive, never by scattered
 # count at the end of a round.
-UMBRELLA_CODES = frozenset({"negation_number_name_error", "review_issue_open", "review_uncertainty"})
+UMBRELLA_CODES = frozenset({"negation_number_name_error", "review_issue_open", "review_uncertainty",
+                            "language_plugin_failed", "malformed_model_output"})
 # Repository waiver policy: at most four repairs per English source unit.
 MAX_REPAIRS_PER_SOURCE_UNIT = 4
 
@@ -243,6 +256,14 @@ class FailureCollector:
                       "failureCodes": ["language_plugin_failed"], "action": ACTIONS["language_plugin_failed"],
                       "evidence": _clip("; ".join(f"{check.get('checkId')}: {check.get('evidence', '')}"
                                                   for check in failed)),
+                      "issues": [], "uncertainty": []})
+
+    def record_malformed_output(self, index: int, group: dict, role: str, cache_path: Path, reason: str) -> None:
+        """A translator or reviewer reply that broke the output contract fails only its group."""
+        _require(role in ("translator", "reviewer"), "Malformed output role must be translator or reviewer")
+        self._record({**self._base(index, group, cache_path), "gate": "output_contract",
+                      "failedRole": role, "failureCodes": ["malformed_model_output"],
+                      "action": ACTIONS["malformed_model_output"], "evidence": _clip(reason),
                       "issues": [], "uncertainty": []})
 
     def record_not_dispatched(self, index: int, group: dict) -> None:
@@ -445,7 +466,7 @@ def decide(failure: dict, history: list[dict], value: dict, *, noted: bool = Fal
     if current in seen:
         repeated = {REPEATED_FAILURE_ACTIONS[code] for code in failure["failureCodes"]
                     if code in REPEATED_FAILURE_ACTIONS}
-        for action in ("request_source_review", "request_human_review"):
+        for action in ("request_source_review", "request_human_review", "escalate_engineering"):
             if action in repeated:
                 if action == "request_source_review" and noted \
                         and not any("source_meaning_noted" in row["decisions"] for row in history):
@@ -472,10 +493,12 @@ def repair_row(failure: dict, meaning_notes: dict | None = None) -> dict:
     if noted:
         # The frozen English of these units is what was said: translate it literally, add no meaning.
         instruction += " " + noted
-    instruction += (" Machine-written repair instruction from a failed independent review; "
-                    "check every point against the English source. Reviewer finding: " + reason)
+    finding = ("Language check finding: " if "language_plugin_failed" in failure["failureCodes"]
+               else "Reviewer finding: ")
+    instruction += (" Machine-written repair instruction from a failed machine check; "
+                    "check every point against the English source. " + finding + reason)
     return {"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
-            "failedRole": "reviewer", "failedCacheSha256": failure["reviewerCacheSha256"],
+            "failedRole": failure.get("failedRole", "reviewer"), "failedCacheSha256": failure["reviewerCacheSha256"],
             "failureReason": reason, "instruction": instruction[:2000]}
 
 
@@ -542,7 +565,11 @@ def reopenable_groups(entries: list[dict], meaning_notes: dict | None) -> dict[s
         history = unit_history(entries, row["sourceUnitIds"])
         fresh = {unit for unit in row["sourceUnitIds"] if unit in meaning_notes} \
             - noted_units(entries, row["sourceUnitIds"])
-        if row["reasonCode"] == "request_source_review" and fresh \
+        # A human ruling also answers a request_human_review stop for the units it covers.
+        answered = row["reasonCode"] == "request_source_review" or (
+            row["reasonCode"] == "request_human_review" and fresh
+            and all(meaning_notes[unit].get("humanRuling") for unit in fresh))
+        if answered and fresh \
                 and sum(item["repaired"] for item in history) < MAX_REPAIRS_PER_SOURCE_UNIT:
             eligible[row["translationGroupId"]] = row
     return eligible
