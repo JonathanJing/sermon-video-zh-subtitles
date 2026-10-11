@@ -2,6 +2,10 @@
 
 2026-10-08。`scripts/claude_layer2_transport.py` 用本机 Claude Code CLI 的订阅登录做 Layer 2 语言调用，接口与 `CodexLayer2Transport` 相同（`transport('', payload)` 返回带 `content`、`usage`、`elapsedSeconds` 的响应）。这是实验候选：正式翻译策略仍是 Sol 6.1 high 翻译 + Sol medium 复核，canonical runner 不接受 Claude 模型。
 
+## 当前实现边界（2026-10-10）
+
+#332 已合并独立 A/B runner v3：缓存绑定实际 preview payload、schema 与 transport identity；调用前独占写入 started 标记并同步文件/目录，响应同样持久化。未知结果不自动重发，缺用量保持 unknown。下文 v2 和测速结果是其原始日期的历史记录，不代表当前版本重新运行。新生产政策的 Claude freeze 在写出前拒绝；实验 runner 与已有冻结身份恢复不改变 canonical Sol API 默认，也不构成生产晋级。
+
 ## 调用方式
 
 ```
