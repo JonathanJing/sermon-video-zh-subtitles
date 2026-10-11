@@ -701,9 +701,10 @@ function selectWeek(id) {
   $("week-status").textContent = diagnosticPresentation(week) ? t(diagnosticPresentation(week).statusKey) : isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : ["full_reviewed", "full_machine_checked"].includes(week.audioStatus) ? t("app.week.ready") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
   $("central-message").textContent = week.centralMessage;
   $("audio-notice").textContent = diagnosticNotice() || week.audioNotice;
-  $("source-link").href = week.sourceUrl;
+  if (week.sourceUrl) $("source-link").href = week.sourceUrl;
+  else $("source-link").removeAttribute("href");
   setButtonLabel($("source-link"), week.sourceLabel ? t("app.source.link", { label: week.sourceLabel }) : t("app.source.open"));
-  $("source-link").hidden = false;
+  $("source-link").hidden = !week.sourceUrl;
   $("variants").replaceChildren();
   $("variants").hidden = !week.tracks.length || diagnosticPresentation(week)?.canPlay === false;
   for (const item of diagnosticPresentation(week)?.canPlay === false ? [] : week.tracks) {

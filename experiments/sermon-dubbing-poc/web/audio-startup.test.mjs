@@ -799,3 +799,20 @@ test('terminal online offline-cache failure displays unavailable rather than pen
     assert.equal(h.get('offline-reading-status').textContent, readerMessages.zh['reader.offlineUnavailable']);
   }
 });
+
+test('source link is removed for a week without video and restored when switching back', () => {
+  const h = setup();
+  const withoutVideo = { ...week, id: 'no-video-week', sourceUrl: null };
+  h.app.loadCatalog({ defaultWeekId: week.id, weeks: [week, withoutVideo] });
+  assert.equal(h.get('source-link').hidden, false);
+  assert.equal(h.get('source-link').href, week.sourceUrl);
+  h.get('source-link').setAttribute('href', week.sourceUrl);
+  h.app.selectWeek(withoutVideo.id);
+  assert.equal(h.get('source-link').hidden, true);
+  assert.equal(h.get('source-link').hasAttribute('href'), false);
+  assert.equal(h.get('title').textContent, withoutVideo.title);
+  assert.ok(h.audio.src.endsWith('/media/first.mp3'));
+  h.app.selectWeek(week.id);
+  assert.equal(h.get('source-link').hidden, false);
+  assert.equal(h.get('source-link').href, week.sourceUrl);
+});
