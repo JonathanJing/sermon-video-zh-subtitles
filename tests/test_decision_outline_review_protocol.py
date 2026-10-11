@@ -153,6 +153,45 @@ class OutlineReviewProtocolTests(unittest.TestCase):
         self.assertEqual(result["assignments"][0]["restrictedActiveSeconds"], 480)
         self.assertFalse(result["assignments"][0]["completed"])
 
+    def test_timing_requires_complete_frozen_case_pairs_before_events(self):
+        data = cases()
+        assignments = p.allocate_timed_reviews(data, ["t1", "t2"])
+        first = assignments[0]
+        events = [{**first, "type": "start", "timestampSeconds": 0},
+                  {**first, "type": "stop", "timestampSeconds": 1},
+                  {**first, "type": "completed", "timestampSeconds": 1}]
+        malformed = [[], assignments[:1], assignments[:-1],
+                     [row for row in assignments if row["arm"] == "A"],
+                     [row for row in assignments if row["caseId"] != first["caseId"]]]
+        for subset in malformed:
+            with self.subTest(rows=len(subset)), self.assertRaisesRegex(ValueError, "complete_paired"):
+                p.summarize_timing(data, subset, events)
+        result = p.summarize_timing(data, assignments, events)
+        for arm in ("A", "B"):
+            self.assertEqual(result["arms"][arm]["denominator"], len(data))
+        self.assertEqual(sum(row["censored"] for row in result["assignments"]), 11)
+
+    def test_timing_rejects_duplicate_pairs_and_reviewer_isolation_changes(self):
+        data = cases()
+        assignments = p.allocate_timed_reviews(data, ["t1", "t2"])
+        bad = copy.deepcopy(assignments)
+        bad.append(dict(bad[0]))
+        with self.assertRaisesRegex(ValueError, "assignment_invalid"):
+            p.summarize_timing(data, bad, [])
+        bad = copy.deepcopy(assignments)
+        bad[0]["reviewerId"] = "writer"
+        with self.assertRaisesRegex(ValueError, "author_timed_same_source"):
+            p.summarize_timing(data, bad, [])
+        bad[0]["reviewerId"] = "third-reviewer"
+        with self.assertRaisesRegex(ValueError, "timed_panel_requires_two_reviewers"):
+            p.summarize_timing(data, bad, [])
+        for patch in ({"payloadSha256": "wrong"}, {"sourceId": "invented"},
+                      {"reviewerId": " "}, {"reviewerId": True}):
+            bad = copy.deepcopy(assignments)
+            bad[0].update(patch)
+            with self.subTest(patch=patch), self.assertRaises(ValueError):
+                p.summarize_timing(data, bad, [])
+
     def test_timing_rejects_unpaired_or_reversed_or_unbound_events(self):
         data = cases()
         assignments = p.allocate_timed_reviews(data, ["t1", "t2"])

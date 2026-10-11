@@ -205,18 +205,35 @@ def summarize_timing(cases, assignments, events, observation_limit_seconds=480):
         raise ValueError("observation_limit_invalid")
     states = {}
     source_arms = {}
+    case_arms = {case_id: [] for case_id in by_id}
+    reviewers = set()
+    authors_by_source = {}
+    for case in by_id.values():
+        if case.get("authorId"):
+            authors_by_source.setdefault(case["sourceId"], set()).add(case["authorId"])
     for row in assignments:
         key = (row.get("reviewerId"), row.get("caseId"))
         case = by_id.get(row.get("caseId"))
-        if key in states or not case or row.get("arm") not in {"A", "B"} or not row.get("reviewerId"):
+        if key in states or not case or row.get("arm") not in {"A", "B"} or not isinstance(row.get("reviewerId"), str) or not row["reviewerId"].strip():
             raise ValueError("assignment_invalid")
         if row.get("sourceId") != case["sourceId"] or row.get("payloadSha256") != case["payloadSha256"]:
             raise ValueError("assignment_identity_mismatch")
+        if row["reviewerId"] in authors_by_source.get(case["sourceId"], set()):
+            raise ValueError("author_timed_same_source")
+        reviewers.add(row["reviewerId"])
+        case_arms[case["caseId"]].append(row["arm"])
         source_key = (key[0], case["sourceId"])
         if source_key in source_arms and source_arms[source_key] != row["arm"]:
             raise ValueError("reviewer_source_cross_arm")
         source_arms[source_key] = row["arm"]
         states[key] = {"assignment": row, "active": 0.0, "closedIntervals": 0, "start": None, "last": None, "first": None, "terminal": None}
+    # Missing assignments cannot silently shrink the frozen panel denominator.
+    # Unstarted reviews remain censored only after the complete A/B allocation
+    # has been verified; a truncated allocation itself is invalid evidence.
+    if any(sorted(arms) != ["A", "B"] for arms in case_arms.values()):
+        raise ValueError("complete_paired_assignments_required")
+    if len(reviewers) != 2:
+        raise ValueError("timed_panel_requires_two_reviewers")
     for event in events:
         key = (event.get("reviewerId"), event.get("caseId"))
         if key not in states:
