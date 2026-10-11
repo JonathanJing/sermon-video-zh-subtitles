@@ -1,0 +1,240 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-weekly-video-fingerprint-posters",
+  "runs": [
+    {
+      "label": "publish-shell-v1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-54475d42/publish-shell-v1",
+      "skipped": {
+        ".json": 1,
+        ".py": 2
+      }
+    },
+    {
+      "label": "publish-shell-v2",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-54475d42/publish-shell-v2",
+      "skipped": {
+        ".json": 1,
+        ".py": 1
+      }
+    },
+    {
+      "label": "publish-video-v1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-54475d42/publish-video-v1",
+      "skipped": {
+        ".json": 1,
+        ".py": 1
+      }
+    },
+    {
+      "label": "video-v1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-54475d42/video-v1",
+      "skipped": {
+        ".json": 3,
+        ".mp4": 1,
+        ".py": 3
+      }
+    },
+    {
+      "label": "multilingual-published-video-v1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sermon-poster/2026-10-11/multilingual-published-video-v1",
+      "skipped": {
+        ".json": 10,
+        ".txt": 3,
+        ".png": 9,
+        ".svg": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "publish-shell-v1",
+      "path": "deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 925,
+      "truncated": false,
+      "sha256": "eac91c6368f261f61d98dbba6a99814799df9d6b6837ae980bfe33aebd878449",
+      "redactions": {}
+    },
+    {
+      "run": "publish-shell-v1",
+      "path": "http-receipt.json",
+      "kind": "whole",
+      "bytes": 44612,
+      "truncated": false,
+      "sha256": "85a96ab1ea55729362ca0bc21d5d8b2d6f4f5ed4164499431e5ed3a52cf61fbb",
+      "redactions": {}
+    },
+    {
+      "run": "publish-shell-v1",
+      "path": "production-http-receipt-v2.json",
+      "kind": "whole",
+      "bytes": 44773,
+      "truncated": false,
+      "sha256": "54a9e3e320ff9b44467c08328e35bdd540e042f62c3fc1992d096b778c75d3e1",
+      "redactions": {}
+    },
+    {
+      "run": "publish-shell-v1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 674,
+      "truncated": false,
+      "sha256": "ca91f36fef231123fb1d037a3792c71970a3c7b9ba3608c5f617dd0f5af99937",
+      "redactions": {
+        "secret_field": 1
+      }
+    },
+    {
+      "run": "publish-shell-v2",
+      "path": "deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 925,
+      "truncated": false,
+      "sha256": "58fe5707adc047657d7e5fc5b6aa9f4728cc383528500aae360d296f937f638d",
+      "redactions": {}
+    },
+    {
+      "run": "publish-shell-v2",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 532,
+      "truncated": false,
+      "sha256": "3946b939d86079bf952512579375c355dc035fad8c269828037317c4c4fada77",
+      "redactions": {}
+    },
+    {
+      "run": "publish-video-v1",
+      "path": "browser-receipt.json",
+      "kind": "whole",
+      "bytes": 950,
+      "truncated": false,
+      "sha256": "27727dd998b916596435ceee1652c3b3a19451b36c388ff589eac68da72839fc",
+      "redactions": {}
+    },
+    {
+      "run": "publish-video-v1",
+      "path": "deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 925,
+      "truncated": false,
+      "sha256": "9ad59cb72aa009f0ab2b0af0d5981a90440407b67a383ef534187bfc9cc4bfb4",
+      "redactions": {}
+    },
+    {
+      "run": "publish-video-v1",
+      "path": "fingerprint-ui-receipt.json",
+      "kind": "whole",
+      "bytes": 5570,
+      "truncated": false,
+      "sha256": "20089db3238aa8e75b92c150a912b0b1fc7b9055fc1b70259ca2493b176f0e9f",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "publish-video-v1",
+      "path": "http-receipt.json",
+      "kind": "whole",
+      "bytes": 42071,
+      "truncated": false,
+      "sha256": "f8cc3f065cadba41f1785b7ae81ab2ef637182477c3aa7fd63fca77b5741ad2e",
+      "redactions": {}
+    },
+    {
+      "run": "publish-video-v1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 885,
+      "truncated": false,
+      "sha256": "445099e71b594f0a895cdad090b47dbb3d01bccabf2bf30967cd3d20a4c4cdb5",
+      "redactions": {}
+    },
+    {
+      "run": "video-v1",
+      "path": "decode.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "video-v1",
+      "path": "encode.log",
+      "kind": "log",
+      "bytes": 42946,
+      "truncated": false,
+      "sha256": "c33202ebbe02522891e82760e5ac82c3d1d9e5a2951dd51506f447d3ae0e310f",
+      "redactions": {}
+    },
+    {
+      "run": "video-v1",
+      "path": "local-video-receipt.json",
+      "kind": "whole",
+      "bytes": 1112,
+      "truncated": false,
+      "sha256": "c217848df4949695a21181fbeb37d63895f03c0a0a544ddc3daa8f50b670c7b9",
+      "redactions": {}
+    },
+    {
+      "run": "video-v1",
+      "path": "published-video-receipt.json",
+      "kind": "whole",
+      "bytes": 905,
+      "truncated": false,
+      "sha256": "51868bb2a25f3b6d851afbdacc694af274c30c10c9fd6f50cf85ae7f11b6df60",
+      "redactions": {}
+    },
+    {
+      "run": "video-v1",
+      "path": "upload-receipt.json",
+      "kind": "whole",
+      "bytes": 504,
+      "truncated": false,
+      "sha256": "5e481b7f05a0b764c0bc88d752798ad5214e754098d7f38057565efcf8134597",
+      "redactions": {}
+    },
+    {
+      "run": "video-v1",
+      "path": "video-http-receipt.json",
+      "kind": "whole",
+      "bytes": 847,
+      "truncated": false,
+      "sha256": "745fb91e19dfcd236865f7ccd66dd8dbeb715d0d149b46e49aec37181ecff89b",
+      "redactions": {}
+    },
+    {
+      "run": "multilingual-published-video-v1",
+      "path": "es/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4577,
+      "truncated": false,
+      "sha256": "4921f6991c9d72d17bea562bbf86d3acbc310c4941d6ede6b4ee5e62a9da08ba",
+      "redactions": {}
+    },
+    {
+      "run": "multilingual-published-video-v1",
+      "path": "ko/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4622,
+      "truncated": false,
+      "sha256": "52094620eb14eb90919782be570f7a105807930dc5b3f9736b5ed5fc3b8e131f",
+      "redactions": {}
+    },
+    {
+      "run": "multilingual-published-video-v1",
+      "path": "zh-Hans/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4453,
+      "truncated": false,
+      "sha256": "de477b820617cbe210a2302282e6fa8428b00759802c51ea48c2c9d40809fb72",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

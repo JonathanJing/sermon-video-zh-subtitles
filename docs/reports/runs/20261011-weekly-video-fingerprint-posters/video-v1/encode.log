@@ -1,0 +1,35 @@
+Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'artifacts/weekend-live/630_Resi weekend live [54475d42-6e3c-4ba7-9018-4df3f558b9a9].mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf63.1.101
+  Duration: 01:20:01.90, start: 0.000000, bitrate: 4325 kb/s
+  Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(progressive), 1920x1080 [SAR 1:1 DAR 16:9], 4188 kb/s, 29.97 fps, 29.97 tbr, 30k tbn (default)
+    Metadata:
+      handler_name    : VideoHandler
+  Stream #0:1[0x2](und): Audio: aac (LC) (mp4a / 0x6134706D), 48000 Hz, stereo, fltp, 130 kb/s (default)
+    Metadata:
+      handler_name    : SoundHandler
+Stream mapping:
+  Stream #0:0 -> #0:0 (h264 (native) -> h264 (h264_videotoolbox))
+  Stream #0:1 -> #0:1 (aac (native) -> aac (native))
+Output #0, mp4, to 'artifacts/weekend-live/layer4-54475d42/video-v1/full-video-browser.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf63.1.101
+  Stream #0:0(und): Video: h264 (avc1 / 0x31637661), yuv420p(progressive), 1920x1080 [SAR 1:1 DAR 16:9], q=2-31, 4000 kb/s, 29.97 fps, 30k tbn (default)
+    Metadata:
+      encoder         : Lavc63.1.101 h264_videotoolbox
+      handler_name    : VideoHandler
+  Stream #0:1(und): Audio: aac (LC) (mp4a / 0x6134706D), 48000 Hz, stereo, fltp, 192 kb/s (default)
+    Metadata:
+      encoder         : Lavc63.1.101 aac
+      handler_name    : SoundHandler
+[h264_videotoolbox @ 0x78cb439180] Color range not set for yuv420p. Using MPEG range.
+frame=    1 fps=0.0 q=-0.0 size=       0KiB time=00:00:00.12 bitrate=   3.0kbits/s speed=0.255x elapsed=0:00:00.50    frame=  185 fps=185 q=-0.0 size=    2816KiB time=00:00:06.25 bitrate=3690.7kbits/s speed=6.24x elapsed=0:00:01.00    frame=  373 fps=248 q=-0.0 size=    6400KiB time=00:00:12.52 bitrate=4186.7kbits/s speed=8.31x elapsed=0:00:01.50    frame=  560 fps=278 q=-0.0 size=    9216KiB time=00:00:18.65 bitrate=4047.7kbits/s speed=9.27x elapsed=0:00:02.01    frame=  748 fps=297 q=-0.0 size=   12800KiB time=00:00:25.13 bitrate=4172.5kbits/s speed=9.99x elapsed=0:00:02.51    frame=  935 fps=309 q=-0.0 size=   15872KiB time=00:00:31.27 bitrate=4157.5kbits/s speed=10.3x elapsed=0:00:03.02    frame= 1124 fps=319 q=-0.0 size=   19200KiB time=00:00:37.58 bitrate=4184.3kbits/s speed=10.7x elapsed=0:00:03.52    frame= 1302 fps=323 q=-0.0 size=   22272KiB time=00:00:43.41 bitrate=4202.7kbits/s speed=10.8x elapsed=0:00:04.02    frame= 1485 fps=328 q=-0.0 size=   25600KiB time=00:00:49.51 bitrate=4235.3kbits/s speed=10.9x elapsed=0:00:04.53    frame= 1657 fps=329 q=-0.0 size=   28672KiB time=00:00:55.25 bitrate=4250.8kbits/s speed=  11x elapsed=0:00:05.03    frame= 1847 fps=333 q=-0.0 size=   31744KiB time=00:01:01.59 bitrate=4221.9kbits/s speed=11.1x elapsed=0:00:05.54    frame= 2035 fps=337 q=-0.0 size=   35072KiB time=00:01:07.90 bitrate=4231.1kbits/s speed=11.2x elapsed=0:00:06.04    frame= 2221 fps=339 q=-0.0 size=   38400KiB time=00:01:14.07 bitrate=4246.7kbits/s speed=11.3x elapsed=0:00:06.54    frame= 2409 fps=342 q=-0.0 size=   41728KiB time=00:01:20.38 bitrate=4252.5kbits/s speed=11.4x elapsed=0:00:07.05    frame= 2597 fps=344 q=-0.0 size=   45056KiB time=00:01:26.61 bitrate=4261.1kbits/s speed=11.5x elapsed=0:00:07.55    frame= 2783 fps=345 q=-0.0 size=   48384KiB time=00:01:32.82 bitrate=4269.9kbits/s speed=11.5x elapsed=0:00:08.05    frame= 2971 fps=347 q=-0.0 size=   51456KiB time=00:01:39.11 bitrate=4252.9kbits/s speed=11.6x elapsed=0:00:08. ...[line truncated]
+[out#0/mp4 @ 0x78cb4143c0] video:1069039KiB audio:50498KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: 0.161972%
+frame=63867 fps=364 q=-0.0 Lsize= 1121351KiB time=00:35:31.00 bitrate=4310.7kbits/s speed=12.2x elapsed=0:02:55.38    
+[aac @ 0x78cb480380] Qavg: 1411.925
