@@ -2,7 +2,9 @@
 
 日期：2026-10-06。范围：现有模型／程序／人工判断与 Decisions 的判断或辅助复核效果，逐环节下结论。
 
-状态：`design_ready`；尚未实现本实验 runner、发送请求、建立完整 gold 或取得任何胜负结果。JSON [实验计划](../config/decision-api-weekly-ab-plan-v1.json)是设计配置，现有生产入口不消费它。本文不更改生产模型策略、审批、预算、并发或发布资格。
+后续范围已按用户决定收窄：**程序能确定的判断继续用程序，后续只优先研究E01独立英文裁判的完整职责替换；人工辅助须先确认实际瓶颈**。本文件及JSON保留原两轮预注册快照；后续适用任务、优先级和排除项见[执行记录中的重新评估](reports/20261006-decision-api-weekly-ab-findings.zh.md)。已有规则结果只作历史记录，不继续扩展为程序替换实验。
+
+状态：`design_ready` 是本文件的预注册设计快照。当前 runner、真实请求和逐轮结果见 [执行记录](reports/20261006-decision-api-weekly-ab-findings.zh.md)；完整 gold 和胜负仍未建立。JSON [实验计划](../config/decision-api-weekly-ab-plan-v1.json)保留设计快照，实际在线授权使用 ignored artifacts 中冻结的 authority／ledger，不把设计中的历史 null／false当作当前执行状态。现有生产入口不消费实验计划；本文不更改生产模型策略、审批、并发或发布资格。
 
 ## 1. 问题与真实 A 基线
 
