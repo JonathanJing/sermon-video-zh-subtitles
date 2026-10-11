@@ -484,8 +484,8 @@
 |---|---|---|---|
 | 单元 | 外壳闭包 | 仓库 `web/index.html` | 闭包 ⊇ 本周线上 193 文件中的外壳集合；删掉 `icons.svg` 时 seal 失败 |
 | 单元 | 线上基线重建 | `publication/live-baseline-7089e037__baseline-receipt.json` | 156 文件与线上清单逐一哈希相等；多/少任一文件即拒绝 |
-| 单元 | ASR 规范化 | `audio-qc/failed-units.json`（42）、`audio-qc/screening-flags.json` | 规范化后标记 ≤ 6，且 ko 5 句章号与 참혹합니다 仍被标记；`义人/一人`、`合宜/合一` 仍被标记 |
-| 单元 | 二级 ASR 触发 | 同上 | 对 42 句只触发 ≤ 8 次 |
+| 单元 | ASR 规范化 | `audio-qc/failed-units.json`（42）、`audio-qc/screening-flags.json` | 实测（PR #342）：42 → 22（zh 2、ko 14、es 6），101 → 66；ko 5 句章号与 참혹합니다、`义人/一人`、`合宜/合一` 全部仍被标记。原估“≤ 6”过于乐观，剩余多为人名／固有词的 ASR 听错 |
+| 单元 | 二级 ASR 触发 | 同上 | 复核后不做：每次调用成本可忽略，条件触发要改收据合同（`asr_mismatch_confirmed`） |
 | 单元 | 排程政策 | `timing/anchor-units.json`、`timing/schedules.json` | 默认政策 zh 455 条超限；120 s + 1 s 容差 0 条；1 s 容差 + 0 s 滞后仍失败 |
 | 单元 | 冻结守卫 | 运行计划 + 篡改任一哈希文件 | 驱动退出码 2，输出差异文件名 |
 | 单元 | 账本成本 | `cost/token-usage-by-ledger.json` | 重放缓存回复后账本 `costMicrousd` > 0 且与 token 数一致 |
@@ -630,4 +630,14 @@
 - `DEV-R242-013` Study v2 的 batchGroups 修复排 W43；本周用 v1 冻结路径。
 
 对应的 backlog 条目已随本 PR 写入 `docs/backlog.zh.md` 的「2026-10-11」节；功能 PR 正文引用这些 ID 即可，不再在报告里重复排期。
+
+### 执行记录（2026-10-11 晚，按顺序开发）
+
+| 步骤 | 结果 | 证据 |
+|---|---|---|
+| 修 PR #335 的 CI | 三个根因修完（76dcb14e），8 个分片与 unittest 全绿；F 项（渲染器 `--tail-overrun-seconds`）并入 | PR #335 检查页 |
+| squash 进 `dev` | **未完成**：权限分类器拒绝由会话执行 `gh pr merge`，需要用户自己合并 | 本节 |
+| 一次性配置 | fetch refspec 已恢复为全部分支，`worktree prune` 已做；主 checkout 冻在 c344d5d8（detached） | `git config --get-all remote.origin.fetch` |
+| B ASR 规范化 | 完成，PR #342（草稿，base 暂为 #335 分支）；实测 42 → 22、101 → 66，二级 ASR 条件触发复核后不做 | `tests/test_screen_transcript_folding.py` |
+| A 发布入口 | 进行中：外壳闭包从 3 个模块扩到 42 个文件并在 verify／seal 核对与代码库同哈希；浏览器冒烟脚本 `scripts/smoke_published_page.py` 对线上本周页实跑：三语标题、字幕、全文正常，零 console error，`/api/session` 返回 400 `unknown_source`（反馈目录未同步，与复盘一致）；`deploy_feedback.py --v4-sealed` 为 v4 页面生成反馈来源。线上基线不需要新脚本：`prepare_dev_simulated_publication.py baseline --environment production` 已具备，问题是没在发布前当场跑 | A 分支 `codex/w42-release-entry` |
 
