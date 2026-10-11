@@ -211,6 +211,21 @@ class AlignmentTest(unittest.TestCase):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 mfa._entries({'tiers': {'words': {'entries': [[bad, 1, 'no']]}}}, 'words', 3)
 
+    def test_final_entry_may_overlap_by_a_few_milliseconds(self):
+        entries = [[0.0, 1.0, 'a'], [1.0, 2.0, 'b'], [1.99, 2.0, 't']]
+        validated = mfa._entries({'tiers': {'phones': {'entries': entries}}}, 'phones', 2.0)
+        self.assertEqual(len(validated), 3)
+
+    def test_final_entry_overlap_beyond_the_tolerance_is_rejected(self):
+        entries = [[0.0, 1.0, 'a'], [1.0, 2.0, 'b'], [1.9, 2.0, 't']]
+        with self.assertRaises(ValueError):
+            mfa._entries({'tiers': {'phones': {'entries': entries}}}, 'phones', 2.0)
+
+    def test_overlap_before_the_final_entry_is_rejected(self):
+        entries = [[0.0, 1.0, 'a'], [0.99, 2.0, 'b'], [2.0, 2.0, 'sil']]
+        with self.assertRaises(ValueError):
+            mfa._entries({'tiers': {'phones': {'entries': entries}}}, 'phones', 2.0)
+
 
 if __name__ == '__main__':
     unittest.main()
