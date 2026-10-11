@@ -128,6 +128,35 @@ class CompactAudioTests(unittest.TestCase):
         self.assertEqual(trim['maxEndLagSeconds'], 120.0)
         schedule = json.loads((destination / manifest['schedule']['path']).read_text())
         self.assertEqual(schedule['policy']['maxEndLagSeconds'], 120.0)
+        self.assertEqual(schedule['policy']['tailOverrunSeconds'], 0.0)
+
+    def test_tail_overrun_budget_is_capped_and_recorded(self):
+        fixture = render_tests.FormalRenderTests(
+            'test_two_units_full_decode_and_resume_without_synthesis')
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        subject.renderer.render_units(fixture.context, fixture.paths, fixture.root,
+                                      fixture.root / 'checkpoint-map.json',
+                                      synth_factory=EdgeSynth)
+        destination = fixture.root.parent / 'tail-compacted'
+        with patch.object(subject.renderer, 'checked_context', return_value=fixture.context):
+            with self.assertRaisesRegex(ValueError, 'Tail overrun budget'):
+                subject.compact(fixture.paths, fixture.paths['job'], destination,
+                                fixture.root / 'checkpoint-map.json',
+                                fixture.root / 'audio-operation-policies.json',
+                                trim_trailing=True, tail_overrun_seconds=1.5)
+            manifest = subject.compact(
+                fixture.paths, fixture.paths['job'], destination,
+                fixture.root / 'checkpoint-map.json',
+                fixture.root / 'audio-operation-policies.json',
+                trim_trailing=True, max_end_lag_seconds=120.0, tail_overrun_seconds=1.0)
+        trim = json.loads((destination / 'review/leading-silence-trim.json').read_text())
+        self.assertEqual(trim['tailOverrunSeconds'], 1.0)
+        schedule = json.loads((destination / manifest['schedule']['path']).read_text())
+        self.assertEqual(schedule['policy']['tailOverrunSeconds'], 1.0)
+        clip = fixture.context['clip_timeline_map']['clipDurationSeconds']
+        self.assertLessEqual(schedule['entries'][-1]['plannedEnd'], clip + 1.0 + 1e-6)
+        self.assertGreaterEqual(schedule['trackDurationSeconds'], clip - 1e-6)
 
 
 if __name__ == '__main__':

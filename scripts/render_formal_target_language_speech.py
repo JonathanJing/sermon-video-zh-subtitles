@@ -61,8 +61,10 @@ VERSION = "sermon-formal-target-speech-render-v1"
 # Observability-only edits must not invalidate already rendered sound. The
 # accounting execution identity still records the current file's actual hash.
 RENDERER_SOUND_IDENTITY_SHA256 = "fef7604882470137f46f1b01fbd06c7c3c9a07166da91003243608785fa47f0b"
+# tailOverrunSeconds: how far the final unit may end after the approved clip; the
+# default admits none, and a compaction records any operator budget in its evidence.
 DEFAULT_POLICY = {"reactionLagSeconds": 0.05, "interUtteranceGapSeconds": 0.05,
-                  "maxEndLagSeconds": 8.0}
+                  "maxEndLagSeconds": 8.0, "tailOverrunSeconds": 0.0}
 BATCH_SIZES = (1, 2, 4, 8)
 BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_full_window_v2"
 BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
@@ -1168,6 +1170,7 @@ def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
     anchor = {u["sourceUnitId"]: u for u in context["anchor"]["sourceUnits"]}
     offset = context["clip_timeline_map"]["anchorOffsetSeconds"]
     clip_duration = context["clip_timeline_map"]["clipDurationSeconds"]
+    tail_limit = clip_duration + policy.get("tailOverrunSeconds", 0.0)
     cursor = 0.0
     entries = []
     issues = []
@@ -1181,7 +1184,7 @@ def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
         entry = {"textGroupId": group["translationGroupId"], "sourceUnitIds": source_ids,
                  "plannedStart": round(start, 6), "plannedEnd": round(end, 6)}
         entries.append(entry)
-        if end > clip_duration + 1e-6 or end - source_end > policy["maxEndLagSeconds"] + 1e-6:
+        if end > tail_limit + 1e-6 or end - source_end > policy["maxEndLagSeconds"] + 1e-6:
             issues.append({"unitIndex": index, "textGroupId": group["translationGroupId"],
                            "plannedEnd": round(end, 6), "sourceEnd": round(source_end, 6),
                            "clipDuration": clip_duration,
@@ -1190,7 +1193,8 @@ def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
     return {"targetLocale": context["job"]["targetLocale"],
             "timingKind": "measured_target_audio",
             "status": "pass" if not issues else "fail", "issues": issues,
-            "trackDurationSeconds": clip_duration, "policy": policy,
+            "trackDurationSeconds": round(max([clip_duration, *(e["plannedEnd"] for e in entries)]), 6),
+            "policy": policy,
             "entries": entries}
 
 
@@ -1230,6 +1234,8 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
                           cache_hit=(root / "render-manifest.json").is_file(),
                           work_unit_id=f"l3.{locale}.assembly_admission") as admission_span:
         policy = DEFAULT_POLICY.copy() if policy is None else policy.copy()
+        # Callers predating the tail budget pass the three original knobs; they admit no tail.
+        policy.setdefault("tailOverrunSeconds", DEFAULT_POLICY["tailOverrunSeconds"])
         require(all(isinstance(value, (float, int)) and not isinstance(value, bool)
                     and math.isfinite(value) and value >= 0 for value in policy.values())
                 and set(policy) == set(DEFAULT_POLICY), "Invalid schedule policy")
@@ -1295,7 +1301,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
             require(rate == sample_rate and channel_count == channels,
                     "Units differ in sample rate or channel count; renderer does not resample")
             waves.append(signal)
-        track = assemble_pcm16_track(plan, waves, sample_rate, channels, clip_duration)
+        track = assemble_pcm16_track(plan, waves, sample_rate, channels, plan["trackDurationSeconds"])
         # No time stretching, truncation, loudness normalization, or omitted units.
         wav_path.parent.mkdir(parents=True, exist_ok=True)
         partial = wav_path.with_suffix(".partial.wav")

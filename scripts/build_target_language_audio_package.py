@@ -283,16 +283,19 @@ def validate_schedule(schedule: dict[str, Any], candidate: dict[str, Any], ancho
             and math.isfinite(scheduled_duration)
             and abs(track_duration - scheduled_duration) <= track_tolerance,
             "Schedule track duration differs from measured audio")
-    require(track_duration <= clip_duration_seconds + track_tolerance
-            and scheduled_duration <= clip_duration_seconds + track_tolerance,
-            "Dubbed track exceeds approved 1x source clip duration")
     policy = schedule.get("policy", {})
     reaction = policy.get("reactionLagSeconds")
     gap = policy.get("interUtteranceGapSeconds")
     max_lag = policy.get("maxEndLagSeconds")
+    tail = policy.get("tailOverrunSeconds", 0.0)
     require(all(isinstance(x, (int, float)) and not isinstance(x, bool)
-                and math.isfinite(x) and x >= 0 for x in (reaction, gap, max_lag)),
+                and math.isfinite(x) and x >= 0 for x in (reaction, gap, max_lag, tail))
+            and tail <= 1.0,
             "Schedule policy is invalid")
+    clip_limit = clip_duration_seconds + tail
+    require(track_duration <= clip_limit + track_tolerance
+            and scheduled_duration <= clip_limit + track_tolerance,
+            "Dubbed track exceeds approved 1x source clip duration")
     entries = schedule.get("entries")
     require(isinstance(entries, list) and len(entries) == len(durations),
             "Schedule group count mismatch")
@@ -310,7 +313,7 @@ def validate_schedule(schedule: dict[str, Any], candidate: dict[str, Any], ancho
         near(start, entry.get("plannedStart"), f"Schedule start {index}")
         near(end, entry.get("plannedEnd"), f"Schedule end {index}")
         require(end - source_end <= max_lag + EPSILON, f"Schedule overflow at {index}")
-        require(end <= clip_duration_seconds + EPSILON,
+        require(end <= clip_limit + EPSILON,
                 f"Schedule exceeds approved 1x source clip at {index}")
         require(end <= track_duration + EPSILON, f"Schedule exceeds track at {index}")
         cursor = end
@@ -506,8 +509,6 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         pcm_track = Path(track["path"]).with_suffix(".wav")
         require(pcm_track.is_file(), "MP3 source PCM track is missing")
         pcm_duration, _, _ = probe_audio(pcm_track)
-        require(abs(pcm_duration - clip_timeline["clipDurationSeconds"]) <= EPSILON,
-                "MP3 source PCM differs from approved 1x source clip duration")
     schedule_artifact = checked_artifact(artifact_root, manifest.get("schedule"), json_artifact=True)
     captions_artifact = checked_artifact(artifact_root, manifest.get("captions"))
     locale_root = (artifact_root / "languages" / locale).resolve()
@@ -516,7 +517,18 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         require(Path(item["path"]).is_relative_to(locale_root),
                 f"{label} belongs to another locale")
     schedule = read_object(Path(schedule_artifact["path"]))
-    if "silenceTrimEvidence" in manifest and trim.get("schemaVersion") == "sermon-formal-edge-silence-trim-v1":
+    if track_format == "mp3":
+        # The PCM master is the approved clip, extended only by an evidenced tail of the final unit.
+        planned_ends = [entry.get("plannedEnd", 0.0) for entry in schedule.get("entries", []) if isinstance(entry, dict)]
+        expected_pcm = max([clip_timeline["clipDurationSeconds"], *planned_ends])
+        require(abs(pcm_duration - expected_pcm) <= EPSILON,
+                "MP3 source PCM differs from approved 1x source clip duration")
+    edge_trim = "silenceTrimEvidence" in manifest and trim.get("schemaVersion") == "sermon-formal-edge-silence-trim-v1"
+    # A tail past the approved clip is admitted only when edge-trim evidence records that exact budget.
+    require(schedule.get("policy", {}).get("tailOverrunSeconds", 0.0)
+            == (trim.get("tailOverrunSeconds", 0.0) if edge_trim else 0.0),
+            "Tail overrun budget differs from evidence")
+    if edge_trim:
         require(schedule["policy"]["interUtteranceGapSeconds"] == trim["interUtteranceGapSeconds"]
                 and schedule["policy"]["reactionLagSeconds"] == trim.get("reactionLagSeconds", 0.05)
                 # An end-lag budget beyond the renderer default is admitted only when the trim evidence records it.

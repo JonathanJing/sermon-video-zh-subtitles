@@ -34,6 +34,7 @@ THRESHOLD = 0.01
 PADDING_SECONDS = 0.06
 WINDOW_SECONDS = 0.01
 MAX_TRIM_SECONDS = 0.75
+MAX_TAIL_OVERRUN_SECONDS = 1.0
 
 
 def require(ok: bool, message: str) -> None:
@@ -177,6 +178,7 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
             inter_utterance_gap_seconds: float = renderer.DEFAULT_POLICY["interUtteranceGapSeconds"],
             reaction_lag_seconds: float = renderer.DEFAULT_POLICY["reactionLagSeconds"],
             max_end_lag_seconds: float = renderer.DEFAULT_POLICY["maxEndLagSeconds"],
+            tail_overrun_seconds: float = renderer.DEFAULT_POLICY["tailOverrunSeconds"],
             track_format: str = "wav") -> dict:
     require(0 <= inter_utterance_gap_seconds <= renderer.DEFAULT_POLICY["interUtteranceGapSeconds"],
             "Silence compaction cannot expand the inter-utterance gap")
@@ -185,6 +187,9 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
     require(isinstance(max_end_lag_seconds, (int, float)) and math.isfinite(max_end_lag_seconds)
             and max_end_lag_seconds >= renderer.DEFAULT_POLICY["maxEndLagSeconds"],
             "End-lag budget must be a finite number at least the renderer default")
+    require(isinstance(tail_overrun_seconds, (int, float)) and math.isfinite(tail_overrun_seconds)
+            and 0 <= tail_overrun_seconds <= MAX_TAIL_OVERRUN_SECONDS,
+            "Tail overrun budget must be between 0 and 1 second")
     require(0 <= reaction_lag_seconds <= renderer.DEFAULT_POLICY["reactionLagSeconds"],
             "Reaction lag must remain within the tested schedule policy")
     require(source_job.is_file(), "Raw job missing")
@@ -217,7 +222,8 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
         adapted_paths, checkpoint_map, operation_policies)["job"]) == job_hash,
         "Bound speech job changed during silence compaction")
     edge_mode = (trim_trailing or padding_seconds != PADDING_SECONDS
-                 or max_end_lag_seconds != renderer.DEFAULT_POLICY["maxEndLagSeconds"])
+                 or max_end_lag_seconds != renderer.DEFAULT_POLICY["maxEndLagSeconds"]
+                 or tail_overrun_seconds != renderer.DEFAULT_POLICY["tailOverrunSeconds"])
     receipt = {"schemaVersion": EDGE_SCHEMA if edge_mode else SCHEMA,
                "status": "measured_silence_removed",
                "targetLocale": context["job"]["targetLocale"],
@@ -232,6 +238,7 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
         receipt["interUtteranceGapSeconds"] = inter_utterance_gap_seconds
         receipt["reactionLagSeconds"] = reaction_lag_seconds
         receipt["maxEndLagSeconds"] = max_end_lag_seconds
+        receipt["tailOverrunSeconds"] = tail_overrun_seconds
     trim_path = destination_root / "review/leading-silence-trim.json"
     if trim_path.exists():
         require(json.loads(trim_path.read_text(encoding="utf-8")) == receipt,
@@ -241,7 +248,8 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
     policy = dict(renderer.DEFAULT_POLICY,
                   interUtteranceGapSeconds=inter_utterance_gap_seconds,
                   reactionLagSeconds=reaction_lag_seconds,
-                  maxEndLagSeconds=max_end_lag_seconds)
+                  maxEndLagSeconds=max_end_lag_seconds,
+                  tailOverrunSeconds=tail_overrun_seconds)
     manifest = renderer.assemble(context, adapted_paths, destination_root,
                                  [row["manifestUnit"] for row in rows], policy=policy,
                                  track_format=track_format)
@@ -276,6 +284,9 @@ def main():
     parser.add_argument("--max-end-lag-seconds", type=float,
                         default=renderer.DEFAULT_POLICY["maxEndLagSeconds"],
                         help="Operator-approved end-lag budget behind the 1x source timeline")
+    parser.add_argument("--tail-overrun-seconds", type=float,
+                        default=renderer.DEFAULT_POLICY["tailOverrunSeconds"],
+                        help="Operator-approved seconds the final unit may end after the approved clip (at most 1)")
     parser.add_argument("--track-format", choices=("wav", "mp3"), default="wav")
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate", "adapter",
@@ -294,6 +305,7 @@ def main():
                        inter_utterance_gap_seconds=args.inter_utterance_gap_seconds,
                        reaction_lag_seconds=args.reaction_lag_seconds,
                        max_end_lag_seconds=args.max_end_lag_seconds,
+                       tail_overrun_seconds=args.tail_overrun_seconds,
                        track_format=args.track_format)
     print(json.dumps({"status": "candidate", "locale": manifest["targetLocale"],
                       "trimmedUnits": len(manifest["units"]),

@@ -738,6 +738,15 @@ class AudioPackageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Edge silence trim duration"):
             self.build()
 
+    def test_tail_overrun_is_admitted_only_from_edge_trim_evidence(self):
+        schedule_path = self.asset_root / self.manifest["schedule"]["path"]
+        schedule = json.loads(schedule_path.read_text())
+        schedule["policy"]["tailOverrunSeconds"] = 0.5
+        write_json(schedule_path, schedule)
+        self.manifest["schedule"] = self.artifact(self.manifest["schedule"]["path"], json_artifact=True)
+        with self.assertRaisesRegex(ValueError, "Tail overrun budget differs from evidence"):
+            self.build()
+
 
 if __name__ == "__main__":
     unittest.main()
