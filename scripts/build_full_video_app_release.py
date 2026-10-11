@@ -302,6 +302,12 @@ def partial_assignment_map(values, locales):
     return assignment_map(values, scope)
 
 
+def catalog_title(content: dict) -> str:
+    """Catalog page name: the approved series and title of the default content locale."""
+    series, title = (content.get("series") or "").strip(), content["title"].strip()
+    return f"{series} · {title}" if series and not title.startswith(series) else title
+
+
 def prepare(args: argparse.Namespace) -> dict:
     require(PAGE_ID.fullmatch(args.page_id) is not None, "Unsafe page ID")
     require(not args.out.exists(), "Output already exists")
@@ -554,7 +560,8 @@ def prepare(args: argparse.Namespace) -> dict:
                     "status": "candidate_not_deployed", "pageId": args.page_id,
                     "date": args.date, "englishSourcePackageJsonSha256": source_sha,
                     "metadataApprovalJsonSha256": stage.canonical_sha(metadata),
-                    "title": read(maps["full_content"][display_locale])["title"],
+                    # The catalog names a page "series · title" in its default content locale.
+                    "title": catalog_title(read(maps["full_content"][display_locale])),
                     "releases": releases,
                     **({'runtimeAssets': runtime_assets} if require_study else {}),
                     "assets": sorted([asset for locale in locales
