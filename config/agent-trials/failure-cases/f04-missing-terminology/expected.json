@@ -1,0 +1,30 @@
+{
+  "id": "f04-missing-terminology",
+  "reconstructedFrom": "docs/reports/20261007-haiku-180s-8x8-spark-diagnostic-retrospective.zh.md #4",
+  "category": "missing_dependency",
+  "abstain": false,
+  "causeKeywords": [
+    [
+      "series-terminology",
+      "terminology",
+      "术语"
+    ],
+    [
+      "stag",
+      "copy",
+      "rsync",
+      "manifest",
+      "missing",
+      "not found"
+    ]
+  ],
+  "fixKeywords": [
+    [
+      "stag",
+      "include",
+      "add",
+      "copy",
+      "manifest"
+    ]
+  ]
+}

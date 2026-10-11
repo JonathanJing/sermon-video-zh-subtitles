@@ -3,6 +3,7 @@ import copy
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts import machine_repair_ledger as ledger
 from scripts import target_audio_auto_qc as audio_qc
@@ -31,6 +32,15 @@ class RepairLedgerTests(unittest.TestCase):
 
     def head(self):
         return ledger.position(LINEAGE, ledger.load(self.root, LINEAGE))
+
+    def test_an_interrupted_append_leaves_no_partial_entry(self):
+        qc = self.run_qc(failing_groups(), self.head())
+        with patch.object(ledger.os, "link", side_effect=OSError("disk full")), self.assertRaises(OSError):
+            ledger.append(self.root, LINEAGE, qc)
+        self.assertEqual(ledger.load(self.root, LINEAGE), [])
+        self.assertEqual([p.name for p in self.root.rglob("*") if p.is_file()], [])
+        ledger.append(self.root, LINEAGE, qc)
+        self.assertEqual(len(ledger.load(self.root, LINEAGE)), 1)
 
     def test_counts_survive_reruns_and_cannot_be_reset(self):
         groups = failing_groups()

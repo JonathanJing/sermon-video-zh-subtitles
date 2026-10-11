@@ -90,7 +90,7 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 ## 每周默认交付海报
 
-每周内容发行并完成 HTTP 核验后，默认继续制作本周分享海报，作为周末交付的一部分；用户无需每周重复提出。复用已核验的发行包和页面 ID，由 Codex 使用内置 ImageGen 生成主视觉，再用 `scripts/build_sermon_poster.py` 合成本周目录文字及真实二维码。不传 `--art` 先准备 brief／prompt；提供 `--art`、`--art-prompt` 及有效 HTTP 核验收据后渲染，实际目视后追加 `--visual-reviewed` 记录机器验收。交付 `poster.png`、`poster-preview.png` 与 `poster-receipt.json`。详细命令、绑定和验收见[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
+每周内容发行并完成 HTTP 核验后，默认继续制作本周分享海报，作为周末交付的一部分；用户无需每周重复提出。复用已核验的发行包和页面 ID，由 Codex 使用内置 ImageGen 生成主视觉，再用 `scripts/build_multilingual_sermon_posters.py` 按[格式规范 v1](tongxing-weekly-poster-format.zh.md)合成本周已发布语言的双二维码海报（`build_sermon_poster.py` 只保留旧 `weekly.json` 单语言兼容格式，不用于新周次）。不传 `--art` 先准备 brief／prompt；提供 `--art`、`--art-prompt` 后渲染并通过公开 HTTP 核验输入，实际目视后追加 `--visual-reviewed` 记录机器验收。交付 `poster.png`、`poster-preview.png` 与 `poster-receipt.json`。详细命令、绑定和验收见[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
 
 此处是 Codex 执行流程约定，不表示现有 Supervisor 或 Scheduler 已接入图像工具。准备与本地合成不自动发起付费 API 调用，不自动上传或发送海报；ImageGen 阶段由 Codex 按工具与已有授权执行。工具不可用或 QA 未通过时，保留待完成状态与证据，不把页面发行完成等同于海报完成。
 
@@ -253,6 +253,17 @@ Supervisor 以新读取的 `snapshot.recommendedAction.action == "complete"` 为
 - HTTP、实体设备、现场验收各自按实际状态记录，不互相代替。
 
 当前 Supervisor 没有完整验证上述四层 package；因此它的 `complete` 不得被 Agent、runbook 或通知改写为整条预制多语言生产完成。
+
+## 运行报告
+
+每次正式运行或测试结束后，不论成功失败，都按[运行报告与复盘](test-run-retrospective.zh.md)生成脱敏报告并开报告 PR，云端会话据此复盘。运行目录有多处时（例如 L2 和音频），一并传给导出命令：
+
+```bash
+.venv/bin/python scripts/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <YYYYMMDD-简称>
+scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
+```
+
+报告只汇总证据，不改变 `dual_pdf` 或 `four_layer_release` 的完成判断。
 
 ## 本地恢复与云端重建
 

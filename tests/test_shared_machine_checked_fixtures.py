@@ -80,6 +80,20 @@ class SharedMachineCheckedFixturesTests(unittest.TestCase):
             with self.subTest(matrix='contents', case=row['id']):
                 self.assertEqual(accepts(machine_content), row['expected'] == 'accept')
 
+    def test_catalog_pages_may_carry_a_localized_display_category(self):
+        row = next(r for r in self.matrix['catalogTargets'] if r['expected'] == 'accept')
+        good = {'schemaVersion': 'sermon-page-display-category-v1', 'labels': {'zh-Hans': '正式播放版', 'en': 'Archive edition'}}
+        for category, expected in ((good, True), ({**good, 'labels': {'zh-Hans': '正式播放版'}}, False),
+                                   ({**good, 'extra': 1}, False), ({**good, 'labels': {'en': ' '}}, False)):
+            page = catalog(row)
+            page['pages'][0]['displayCategory'] = category
+            with self.subTest(category=category):
+                self.assertEqual(accepts(lambda: contract.validate_catalog_schema(page)), expected)
+        validator('sermon-page-display-category-v1').validate(good)
+        v3 = json.loads((ROOT / 'schemas/sermon-multilingual-catalog-v3.schema.json').read_text())
+        self.assertEqual(v3['$defs']['displayCategory'],
+                         json.loads((ROOT / 'schemas/sermon-multilingual-catalog-v4.schema.json').read_text())['$defs']['displayCategory'])
+
 
 if __name__ == '__main__':
     unittest.main()

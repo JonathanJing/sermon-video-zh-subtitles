@@ -2,6 +2,7 @@
 from __future__ import annotations
 import argparse
 import copy
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -36,8 +37,8 @@ def artifact_directory(path):
 
 
 def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_ref, code_commit,
-                   translator_model=None, scripture_classification='not_reviewed', source_quotation_units=(),
-                   concurrency_profile=None):
+                   translator_model=None, reviewer_model=None, scripture_classification='not_reviewed', source_quotation_units=(),
+                   concurrency_profile=None, scripture_adjudication=None):
     """Freeze supplied unapproved Layer 1 bytes, never manufacture review receipts."""
     out, plugin = artifact_directory(out), Path(plugin).resolve()
     require(not out.exists(), 'Diagnostic fixture requires a new directory')
@@ -45,10 +46,15 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
             'Diagnostic fixture requires a simulation authorization reference')
     baseline = copy.deepcopy(policy)
     policies.validate_policy(baseline)
-    if translator_model is not None:
-        from scripts.codex_layer2_transport import TEST_CONFIGURATION, validate_test_configuration
+    if translator_model is not None or reviewer_model is not None:
+        from scripts.codex_layer2_transport import (API_LUNA_TEST_CONFIGURATION, TEST_CONFIGURATION,
+                                                     validate_test_configuration)
         require(translator_model == 'gpt-6.1-sol', 'Unsupported isolated diagnostic translator')
-        configuration = validate_test_configuration(TEST_CONFIGURATION)
+        if reviewer_model is None:
+            configuration = validate_test_configuration(TEST_CONFIGURATION)
+        else:
+            require(reviewer_model == 'gpt-6-luna', 'Unsupported isolated API diagnostic reviewer')
+            configuration = validate_test_configuration(API_LUNA_TEST_CONFIGURATION)
         policy = copy.deepcopy(policy)
         for role in ('translator', 'reviewer'):
             policy[role].update({k: v for k, v in configuration[role].items() if k != 'serviceTier'})
@@ -68,6 +74,25 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
                 'sourceWindow': {k: source['source']['approvedWindow'][k] for k in ('startSeconds', 'endSeconds')},
                 'anchorTimeline': 'relative_to_frozen_window_start',
                 'sourceUnits': len(anchor['sourceUnits']), 'groups': len(plan)}
+    receipt_bytes = None
+    admission = None
+    if scripture_classification == 'contains_direct_quotations':
+        # A human adjudication receipt must cover every flagged unit before freezing.
+        from scripts import scripture_adjudication as adjudication
+        require(scripture_adjudication is not None, 'scripture_adjudication_required')
+        bindings = {name: policies.canonical_sha256(material[name]) for name in adjudication.BINDING_KEYS}
+        admission = adjudication.validate_receipt(scripture_adjudication, target_locale=policy['targetLocale'],
+            bindings=bindings, flagged_units=list(source_quotation_units),
+            machine_inputs={name: material[name] for name in adjudication.BINDING_KEYS})
+        receipt_bytes = (json.dumps(scripture_adjudication, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+        manifest['scriptureAdjudication'] = {'path': 'scripture-adjudication.json',
+                                             'sha256': hashlib.sha256(receipt_bytes).hexdigest()}
+        if admission.get('generator'):
+            # The generator that reproduced a machine receipt at freeze time; a later generator
+            # admits this frozen run on that record instead of re-running it (frozen identity).
+            manifest['scriptureAdjudication']['generator'] = {
+                key: admission['generator'][key]
+                for key in ('reproduced', 'version', 'implementationSha256', 'signatureCurrent')}
     if concurrency_profile is not None:
         from scripts.production_concurrency_profile import validate_profile
         manifest['concurrencyProfile'] = validate_profile(concurrency_profile)
@@ -81,11 +106,14 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
     request = producer.prepare_request(source, anchor, policy, diagnostic_context=context)
     runner.group_plan(request, anchor, plan)
     _check_boundaries(source, anchor)
-    _check_plugin_scope(policy, anchor, plugin, manifest)
+    _check_plugin_scope(policy, anchor, plugin, manifest, admission)
     runner.rule_preflight.preflight(request, policy, plugin, plan)
     with work_lock(out):
+        require(not out.exists(), 'Diagnostic fixture requires a new directory')
         for name, value in material.items():
             save(out / name, value)
+        if receipt_bytes is not None:
+            save(out / 'scripture-adjudication.json', scripture_adjudication)
         save(out / 'fixture-manifest.json', manifest)
         save(out / 'diagnostic-context.json', context)
     return manifest
@@ -103,7 +131,7 @@ def _check_boundaries(source, anchor):
         previous_end = unit['end']
 
 
-def _check_plugin_scope(policy, anchor, plugin, manifest):
+def _check_plugin_scope(policy, anchor, plugin, manifest, admission=None):
     require(manifest.get('scriptureClassification') in
             {'no_direct_quotations', 'contains_direct_quotations', 'not_reviewed'},
             'Diagnostic scripture classification missing')
@@ -118,6 +146,22 @@ def _check_plugin_scope(policy, anchor, plugin, manifest):
         require(manifest['scriptureClassification'] == 'contains_direct_quotations'
                 and set(quotation_units) == bound_units,
                 'Diagnostic quotation annotation differs from pinned spans')
+        # Match the payload actually injected into model rules, not just unit IDs.
+        from scripts import cuv_scripture
+        library = cuv_scripture.CuvLibrary.from_path()
+        pinned = []
+        for quote in bindings.get('quotes', []):
+            text = ''.join(part['targetText'] for part in quote['parts'])
+            reference = cuv_scripture.parse_reference(quote['reference'])
+            classification = ('direct_quote' if text == library.lookup(reference)['text']
+                              else 'partial_direct_quote')
+            pinned.append((tuple(sorted({part['sourceUnitId'] for part in quote['parts']})),
+                           classification, reference.canonical_ref, text))
+        approved = [(tuple(sorted(row['sourceUnitIds'])), row['classification'],
+                     row['canonicalRef'], row['exactSentence'])
+                    for row in (admission or {}).get('admitted', [])]
+        require(sorted(pinned) == sorted(approved),
+                'Diagnostic pinned quotation payload differs from the adjudication receipt')
     if plugin.resolve() == (ROOT / 'scripts/language_review_plugins/diagnostic_structural.py').resolve():
         from scripts.language_review_plugins import diagnostic_structural
         english = ' '.join(unit['english'] for unit in anchor['sourceUnits'])
@@ -163,19 +207,39 @@ def load_fixture(directory):
         require(policy['batching']['workers'] == 1, 'CLI diagnostic runs one group and locale at a time')
     runner.group_plan(request, anchor, plan)
     _check_boundaries(source, anchor)
-    _check_plugin_scope(policy, anchor, plugin, manifest)
+    admission = None
+    if manifest.get('scriptureClassification') == 'contains_direct_quotations':
+        # Re-admit the frozen human receipt before any model dispatch can start.
+        from scripts import scripture_adjudication as adjudication
+        admission = adjudication.require_admitted(manifest, directory, target_locale=policy['targetLocale'],
+            bindings={name: manifest['files'][name] for name in adjudication.BINDING_KEYS},
+            flagged_units=list(manifest.get('sourceQuotationUnits') or []))
+        facts = runner.rule_preflight._literals(plugin)
+        if facts.get('DIAGNOSTIC_ADMITTED_QUOTES') is True:
+            # The frozen plugin must carry exactly the receipt that was just admitted.
+            require(facts.get('ADMITTED_RECEIPT_SHA256') == admission['receiptSha256'],
+                    'Diagnostic admitted quotation plugin differs from the adjudication receipt')
+            quoted = sorted({unit for row in facts['ADMITTED_QUOTES'] for unit in row['sourceUnitIds']})
+            require(quoted == sorted({unit for row in admission['quotes'] for unit in row['sourceUnitIds']}),
+                    'Diagnostic admitted quotation units differ from the adjudication receipt')
+            # Every flagged unit is routed: pinned as an admitted quotation or translated as the speaker's words.
+            require(sorted(quoted + list(facts.get('SPEAKER_WORDS_UNITS', [])))
+                    == sorted(manifest.get('sourceQuotationUnits') or []),
+                    'Diagnostic admitted quotation units differ from the fixture annotation')
+    _check_plugin_scope(policy, anchor, plugin, manifest, admission)
     receipt = runner.rule_preflight.preflight(request, policy, plugin, plan)
     return source, anchor, policy, plan, plugin, request, receipt, context, manifest
 
 
-def run_chain(inputs, out, caller):
+def run_chain(inputs, out, caller, *, reuse_from=None, partial_repair_brief=None):
     source, anchor, policy, plan, plugin, request, receipt, context, manifest = inputs
     out = artifact_directory(out)
     require(getattr(caller, 'execution_identity', {}).get('concurrencyProfile') == manifest.get('concurrencyProfile'),
             'Diagnostic concurrency capability differs from frozen fixture')
     with work_lock(out):
         evidence = runner._run_prepared_groups(request, anchor, policy, out, '', caller, plan, plugin,
-            simulation_only=True, diagnostic_context=context)
+            simulation_only=True, diagnostic_context=context, reuse_from=reuse_from,
+            partial_repair_brief=partial_repair_brief)
         require(producer._load(out / 'rule-preflight.json') == receipt, 'Diagnostic rule receipt changed')
         # Check actual translator/reviewer payloads even on same-run cache resume.
         runner.rule_preflight.verify_prior_model_inputs(out, request, policy, plan, receipt,
@@ -202,8 +266,10 @@ def main():
     parser.add_argument('--authorization-ref', required=True)
     parser.add_argument('--code-commit', required=True)
     parser.add_argument('--translator-model', choices=['gpt-6.1-sol'])
+    parser.add_argument('--reviewer-model', choices=['gpt-6-luna'], help='OpenAI API diagnostic-only reviewer')
     parser.add_argument('--concurrency-profile', type=Path, help='Explicit versioned capability; legacy fixtures remain serial')
     parser.add_argument('--scripture-classification', choices=['no_direct_quotations', 'contains_direct_quotations', 'not_reviewed'], default='not_reviewed')
+    parser.add_argument('--scripture-adjudication', type=Path, help='Human scripture adjudication receipt JSON')
     parser.add_argument('--source-quotation-unit', action='append', default=[], help='Bound source risk annotation, not quotation approval')
     args = parser.parse_args()
     from scripts.production_concurrency_profile import load_profile
@@ -211,9 +277,12 @@ def main():
     values = [json.loads(path.read_text()) for path in (args.source, args.anchor, args.policy, args.group_plan)]
     print(json.dumps(freeze_fixture(*values, args.plugin, args.out, authorization_ref=args.authorization_ref,
                                    code_commit=args.code_commit, translator_model=args.translator_model,
+                                   reviewer_model=args.reviewer_model,
                                    scripture_classification=args.scripture_classification,
                                    source_quotation_units=args.source_quotation_unit,
-                                   concurrency_profile=concurrency_profile), ensure_ascii=False))
+                                   concurrency_profile=concurrency_profile,
+                                   scripture_adjudication=(json.loads(args.scripture_adjudication.read_text(encoding='utf-8'))
+                                                           if args.scripture_adjudication else None)), ensure_ascii=False))
 
 
 if __name__ == '__main__':

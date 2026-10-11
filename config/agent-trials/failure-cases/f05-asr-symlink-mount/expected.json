@@ -1,0 +1,29 @@
+{
+  "id": "f05-asr-symlink-mount",
+  "reconstructedFrom": "docs/reports/20261007-haiku-180s-8x8-spark-diagnostic-retrospective.zh.md #5",
+  "category": "mount_or_environment",
+  "abstain": false,
+  "causeKeywords": [
+    [
+      "symlink",
+      "symbolic link",
+      "blobs",
+      "link"
+    ],
+    [
+      "mount",
+      "volume",
+      "-v"
+    ]
+  ],
+  "fixKeywords": [
+    [
+      "mount",
+      "whole",
+      "entire",
+      "parent",
+      "model directory",
+      "/asr-hub"
+    ]
+  ]
+}

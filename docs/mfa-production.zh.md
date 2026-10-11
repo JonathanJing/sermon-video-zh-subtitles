@@ -42,7 +42,23 @@ export MFA_SPARK_G2P_MODEL=/home/achillesjing/sermon-mfa-runtime/models/english_
 
 `sermon_pipeline.py` 和 `run_post_live_subtitle_generation.py` 支持对应的 `--mfa-spark-host`、`--mfa-spark-python`、`--mfa-spark-root`、`--mfa-spark-executable`、`--mfa-spark-dictionary`、`--mfa-spark-acoustic-model`、`--mfa-spark-g2p-model` 参数。
 
-MacBook 不在同一局域网时，经 Tailscale 的 Mac mini 中转：
+连接前先区分网络与运行环境：Mac 直连 `192.168.1.152` 返回 `No route to host` 时，只能记录「直连不可达、Spark 运行环境未检查」，不能据此判断模型、容器或 GPU 不可用。真正运行前选以下一种连接方式，再预检所需环境。
+
+**方式一：Mac 连回 Spark 所在局域网，直接连接。**
+
+```sh
+ssh -o BatchMode=yes -o ConnectTimeout=5 achillesjing@192.168.1.152 'hostname; whoami; pwd'
+```
+
+**方式二：Mac 经 Tailscale 连接 Mac mini，由 mini 再连接 Spark。** 以下是已配置的地址，并非本次实测可达收据；要求 mini 可以访问 Spark，且拥有到 Spark 的 SSH 认证。
+
+```sh
+ssh -o BatchMode=yes -o ConnectTimeout=5 -o HostKeyAlias=jonys-mac-mini.local jonyopenclaw@100.73.116.52 'hostname'
+ssh -o BatchMode=yes -o ConnectTimeout=5 -o HostKeyAlias=jonys-mac-mini.local jonyopenclaw@100.73.116.52 \
+  "ssh -o BatchMode=yes -o ConnectTimeout=5 achillesjing@192.168.1.152 'hostname; whoami; pwd'"
+```
+
+两段连接成功后，将 relay 参数传给 MFA 的实际执行入口：
 
 ```sh
 export MFA_SPARK_RELAY_HOST=jonyopenclaw@100.73.116.52
@@ -50,6 +66,8 @@ export MFA_SPARK_RELAY_HOST_KEY_ALIAS=jonys-mac-mini.local
 ```
 
 对应参数是 `--mfa-spark-relay-host` 与 `--mfa-spark-relay-host-key-alias`。已有本机可认证到 Spark 的 SSH 跳板配置时，也可使用 `MFA_SPARK_PROXY_JUMP`／`--mfa-spark-proxy-jump`；它与 relay 互斥。relay 在 mini 上发起第二段 SSH；ProxyJump 只转发连接，不取得 mini 的 SSH 身份。正常校验主机密钥，不关闭验证。
+
+SSH 成功只证明连接与认证；仍须检查本次所需的 Python、MFA 模型和执行路径。上述环境变量只适用于支持它们的 MFA producer，不代表 canonical TTS／ASR 已自动使用中转；后者须核对各自的远程执行与文件传输入口。离开局域网时，中转也不会让 Mac 的直连 NFS 自动可用，静态文件可通过 SSH 读取。
 
 Spark 运行根目录为 `/home/achillesjing/sermon-mfa-runtime/`，分别保存 `env/`、`models/`、`bin/mfa-run`、`jobs/`。本次 ARM64 部署发现 Conda 的 `kalpy` 包不可直接取得，使用 [Spark MFA 安装脚本](../scripts/setup_spark_mfa.sh) 在独立环境源码构建。安装脚本包含 SQLite 依赖；修复原生 SQLite 运行依赖后，已验证 MFA 3.4.2 在 Spark 完成真实 A 样本对齐，详见下方冒烟记录。此结果只确认已测样本路径，不代表完整周次验收。MFA 可在 Spark CPU 执行，不必占用或重启现有 GPU 模型服务。
 

@@ -4,6 +4,10 @@
 English is taken verbatim from the frozen, human-approved source anchors. Full
 translation groups define the mapping; spoken captions must use those same IDs.
 Only public identities and comparison text are emitted, never local evidence paths.
+
+Reads catalog v4 when the snapshot publishes it (machine-checked locales included),
+otherwise the human-only v3 catalog. ``reviewState`` describes the English source
+only; each locale's translation keeps the status of its own release and content.
 """
 
 import argparse
@@ -11,6 +15,15 @@ import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
+
+try:
+    from scripts import delivery_contract
+except ImportError:
+    import delivery_contract
+
+# Statuses a published reading text may carry; v4 releases add machine-checked text.
+PUBLISHED_CONTENT = {"sermon-multilingual-catalog-v3": {"human_reviewed"},
+                     "sermon-multilingual-catalog-v4": {"human_reviewed", "machine_checked"}}
 
 
 def require(condition, message):
@@ -46,6 +59,23 @@ def public_path(root, url):
     return path
 
 
+def published_catalog(public):
+    """The catalog listing every published locale: v4 when present, else v3.
+
+    A snapshot with v4 must keep v3 as exactly its human-only projection.
+    """
+    v3 = read_json(public / "multilingual-v3.json")
+    require(v3.get("schemaVersion") == "sermon-multilingual-catalog-v3", "Unsupported catalog")
+    if not (public / "multilingual-v4.json").exists():
+        return v3
+    v4 = read_json(public / "multilingual-v4.json")
+    require(v4.get("schemaVersion") == "sermon-multilingual-catalog-v4", "Unsupported v4 catalog")
+    delivery_contract.validate_catalog_schema(v4)
+    require(delivery_contract.project_human_catalog(v4) == v3,
+            "multilingual-v3.json is not the human-only projection of multilingual-v4.json")
+    return v4
+
+
 def build_reference(public, page_id, source_path):
     public = Path(public).resolve()
     require(re.fullmatch(r"[A-Za-z0-9_-]+", page_id), "Invalid page ID")
@@ -79,8 +109,8 @@ def build_reference(public, page_id, source_path):
     require(all(isinstance(text, str) and text.strip() for text in english.values()), "Empty English unit")
     source_sha = canonical_sha(source)
     media_sha = source["source"]["media"]["sha256"]
-    catalog = read_json(public / "multilingual-v3.json")
-    require(catalog.get("schemaVersion") == "sermon-multilingual-catalog-v3", "Unsupported catalog")
+    catalog = published_catalog(public)
+    allowed = PUBLISHED_CONTENT[catalog["schemaVersion"]]
     pages = [page for page in catalog["pages"] if page["id"] == page_id]
     require(len(pages) == 1, "Page must occur exactly once in catalog")
     page = pages[0]
@@ -91,8 +121,16 @@ def build_reference(public, page_id, source_path):
         # name); the English source package identity uses canonical JSON above.
         release = read_json(public_path(public, target["releasePackageUrl"]),
                             sha256=target["releasePackageJsonSha256"])
-        require(release.get("status") == "published_http_verified" and release.get("contentStatus") == "human_reviewed",
+        require(release.get("status") == "published_http_verified" and release.get("contentStatus") in allowed,
                 f"Unpublished or unreviewed release: {locale}")
+        if catalog["schemaVersion"] == delivery_contract.CATALOG_V4:
+            machine = release.get("schemaVersion") == delivery_contract.RELEASE_V4
+            require(machine == delivery_contract.machine_checked(target)
+                    and (release.get("contentStatus"), release.get("audioStatus"))
+                    == (target.get("contentStatus"), target.get("audioStatus"))
+                    and target["releasePackageUrl"] == delivery_contract.release_path(release)
+                    and release.get("englishSourcePackageJsonSha256") == source_sha,
+                    f"Release status/path/source differs from its v4 catalog target: {locale}")
         require(release.get("pageId") == page_id and release.get("targetLocale") == locale
                 and release.get("contentLocale") == locale, f"Release identity mismatch: {locale}")
         assets = {}
@@ -104,7 +142,7 @@ def build_reference(public, page_id, source_path):
         content, content_sha = assets["content"]
         captions, captions_sha = assets["captions"]
         require(content.get("pageId") == page_id and content.get("targetLocale") == locale
-                and content.get("status") == "human_reviewed", f"Content identity/status mismatch: {locale}")
+                and content.get("status") == release["contentStatus"], f"Content identity/status mismatch: {locale}")
         require(content.get("englishSourcePackageJsonSha256") == source_sha
                 and content.get("sourceMediaSha256") == media_sha, f"Content source mismatch: {locale}")
         require(content.get("targetLanguageCandidateJsonSha256") == release.get("targetLanguageCandidateJsonSha256"),
