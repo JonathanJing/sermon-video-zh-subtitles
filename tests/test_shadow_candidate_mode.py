@@ -52,27 +52,33 @@ class ShadowConfigurationTests(unittest.TestCase):
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
         self.base = json.loads(self.fixture.path.read_text())
+        self.auto_repair = {"routingVersion": controller.auto_repair.ROUTING_VERSION, "groupWorkers": 16, "maxActiveLocales": 1}
 
     def write(self, data, name):
         path = self.fixture.root / name
         path.write_text(json.dumps(data))
         return path
 
-    def test_default_configuration_is_production(self):
+    def v3(self, **extra):
+        return dict(self.base, schemaVersion=controller.AUTO_REPAIR_SCHEMA, layer2AutoRepair=self.auto_repair, **extra)
+
+    def test_v1_configuration_is_production(self):
         config = controller.load_configuration(self.fixture.path)
         self.assertEqual(config.candidate_mode, "production")
 
-    def test_shadow_schema_loads_as_shadow(self):
-        data = dict(self.base, schemaVersion=controller.SHADOW_SCHEMA, candidateMode="shadow")
-        config = controller.load_configuration(self.write(data, "shadow.json"))
+    def test_v3_without_candidate_mode_is_production(self):
+        config = controller.load_configuration(self.write(self.v3(), "v3.json"))
+        self.assertEqual(config.candidate_mode, "production")
+        self.assertEqual(config.auto_repair["groupWorkers"], 16)
+
+    def test_v3_shadow_loads_as_shadow(self):
+        config = controller.load_configuration(self.write(self.v3(candidateMode="shadow"), "shadow.json"))
         self.assertEqual(config.candidate_mode, "shadow")
 
-    def test_shadow_schema_rejects_production_mode(self):
-        data = dict(self.base, schemaVersion=controller.SHADOW_SCHEMA, candidateMode="production")
+    def test_v3_rejects_unknown_candidate_mode(self):
         with self.assertRaises(Exception):
-            controller.load_configuration(self.write(data, "shadow-bad.json"))
+            controller.load_configuration(self.write(self.v3(candidateMode="draft"), "bad-mode.json"))
 
-    def test_production_schema_rejects_candidate_mode_field(self):
-        data = dict(self.base, candidateMode="shadow")
+    def test_v1_rejects_candidate_mode_field(self):
         with self.assertRaises(Exception):
-            controller.load_configuration(self.write(data, "production-with-field.json"))
+            controller.load_configuration(self.write(dict(self.base, candidateMode="shadow"), "v1-with-field.json"))

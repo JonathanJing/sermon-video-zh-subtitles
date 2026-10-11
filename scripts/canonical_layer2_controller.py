@@ -45,8 +45,6 @@ CONCURRENT_SCHEMA = 'sermon-canonical-layer2-execution-v2'
 # locale jobs at once. It does not accept the v2 Codex CLI concurrency profile;
 # API requests still share the job root's 24 in-flight slots.
 AUTO_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v3'
-# Explicit non-production candidate mode for terminology review; see docs/layer2-shadow-candidate-mode.zh.md.
-SHADOW_SCHEMA = 'sermon-canonical-layer2-execution-shadow-v1'
 MAX_AUTO_REPAIR_LOCALES = 3
 
 
@@ -112,14 +110,15 @@ def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _json(path)
     required_keys = {'schemaVersion', 'productionRunId', 'inspectionConfig', 'jobRoot', 'locales'}
+    # candidateMode is an optional v3 field: absent means production; 'shadow' marks the non-production
+    # terminology-review candidate mode (docs/layer2-shadow-candidate-mode.zh.md).
     candidate_mode = value.get('candidateMode', 'production') if isinstance(value, dict) else 'production'
     require(((set(value) == required_keys and value['schemaVersion'] == SCHEMA)
              or (set(value) == required_keys | {'concurrencyProfile', 'resourcePolicy'}
                  and value['schemaVersion'] == CONCURRENT_SCHEMA)
-             or (set(value) == required_keys | {'layer2AutoRepair'}
-                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA)
-             or (set(value) == required_keys | {'candidateMode'}
-                 and value['schemaVersion'] == SHADOW_SCHEMA and candidate_mode == 'shadow'))
+             or (required_keys | {'layer2AutoRepair'} <= set(value) <= required_keys | {'layer2AutoRepair', 'candidateMode'}
+                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA
+                 and candidate_mode in {'production', 'shadow'}))
             and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
@@ -176,7 +175,7 @@ def load_configuration(path):
     sha = jobs._digest(binding)
     return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha,
                          concurrency_profile, resource_policy, repair_binding,
-                         candidate_mode if value['schemaVersion'] == SHADOW_SCHEMA else 'production')
+                         candidate_mode)
 
 
 def repair_ledger_root(config):
