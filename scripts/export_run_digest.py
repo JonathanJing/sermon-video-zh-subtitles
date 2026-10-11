@@ -43,7 +43,11 @@ from datetime import datetime, timezone
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "sermon-run-digest-v1"
 # diagnose/refute/risk.json carry agent-trial rows the run report reviews case by case.
-WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json", "diagnose.json", "refute.json", "risk.json"}
+WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json", "diagnose.json", "refute.json", "risk.json",
+               # The run journal and decision record (run_journal.py, record_decision.py) are the retrospective's spine.
+               "journal.ndjson", "decisions.ndjson"}
+# Human receipts and acceptances are evidence the retrospective must see whole.
+WHOLE_STEMS = ("acceptance", "approval", "receipt", "evidence")
 MAX_WHOLE_BYTES = 256 * 1024
 # Agent-trial result files hold one row per case; one over the cap is exported as row chunks, each under the cap,
 # so case-level evidence is not dropped. The whole-digest cap still bounds the total.
@@ -98,11 +102,16 @@ def redact_json(value, secrets: list[str], counts: dict[str, int]):
     if isinstance(value, dict):
         out = {}
         for key, item in value.items():
+            # Keys are redacted like values: a host map keyed by "user@192.168.x.y"
+            # leaked private addresses from Layer 1 summaries on 2026-10-11.
+            safe_key, found = redact(str(key), secrets)
+            for name, hits in found.items():
+                counts[name] = counts.get(name, 0) + hits
             if SECRET_KEY.search(str(key)) and item not in ("<redacted>", None):
                 counts["secret_field"] = counts.get("secret_field", 0) + 1
-                out[key] = "<redacted>"
+                out[safe_key] = "<redacted>"
             else:
-                out[key] = redact_json(item, secrets, counts)
+                out[safe_key] = redact_json(item, secrets, counts)
         return out
     if isinstance(value, list):
         return [redact_json(item, secrets, counts) for item in value]
@@ -175,7 +184,9 @@ def read_log(path: Path, digest) -> tuple[str, bool]:
 
 
 def classify(path: Path) -> str | None:
-    if path.name in WHOLE_NAMES or (path.suffix == ".json" and "receipt" in path.name):
+    if path.name in WHOLE_NAMES:
+        return "whole"
+    if path.suffix in (".json", ".txt") and any(stem in path.name for stem in WHOLE_STEMS):
         return "whole"
     if path.suffix == ".log":
         return "log"

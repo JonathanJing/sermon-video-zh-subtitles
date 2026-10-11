@@ -18,7 +18,7 @@
 1. **一次运行对应一份报告。** 报告名为 `YYYYMMDD-<简称>`，目录结构固定：
    - `INDEX.md`：自动生成，包括结束状态、各阶段耗时、失败阶段和错误行。
    - `manifest.json`：原文件路径、哈希、截断和脱敏次数。云端可以据此核对本机证据，不需要原文件。
-   - 运行目录的副本：只含 `outcome.json`、`timings.tsv`、`summary.json`、`preflight.json`、`*receipt*.json`；`*.log` 只保留开头 40 行、结尾 200 行和中间的错误行。
+   - 运行目录的副本：只含 `outcome.json`、`timings.tsv`、`summary.json`、`preflight.json`、`journal.ndjson`、`decisions.ndjson`，以及名字含 `receipt`、`acceptance`、`approval`、`evidence` 的 JSON／文本收据；`*.log` 只保留开头 40 行、结尾 200 行和中间的错误行。JSON 的键和值都脱敏（2026-10-11 以 `user@内网IP` 为键的主机表曾漏出）。
    - `RETROSPECTIVE.md`：按下面的复盘清单生成的骨架，由本地或云端的 agent 填写。
 2. **两步，分开生成和公开。** `export_run_digest.py` 只在被忽略的 `artifacts/run-reports/` 下生成报告，不碰 Git；`publish_run_report.sh` 先复查脱敏，再公开。生成可以无条件自动执行，公开是一个单独、可检查的动作。
 3. **报告单独走 PR。** 公开脚本从 `origin/dev` 切出 `run-report/<name>` 分支，在临时 worktree 里把报告加成 `docs/reports/runs/<name>/`，推送并开草稿 PR。当前检出和分支都不动。报告 PR 只含文档，走 CI 的文档快速路径；修复另开 PR，引用报告路径。这样报告不会被代码评审卡住，修复也不会混进证据。
@@ -35,6 +35,8 @@
 
    其他入口（每周正式生产、Spark 诊断等）由执行运行的 agent 在结束时手动导出，见 [AGENTS.md](../AGENTS.md) 和[本地生产 runbook](codex-local-production-runbook.zh.md#运行报告)。
 6. **云端怎么用。** 云端会话读报告 PR 的文件，填写或评审 `RETROSPECTIVE.md`，问题另开修复 PR。复盘填好后合并报告 PR；跨轮比较就读 `docs/reports/runs/` 下的历次 `INDEX.md`。
+
+7. **运行日志与决定记录（2026-10-11 复盘 D 项）。** 复盘不该靠翻派发日志重建时间线。每个驱动和派发器在起止处调用 `scripts/run_journal.py append --run-dir <运行目录> --stage <阶段> --event started|finished|failed|waiting|resumed`（`waiting` 必须带 `--waiting-on`，说明等的是人、服务还是凭据），`run_journal.py summary` 直接给出每阶段和整轮的计算／等待／返工时长与结算成本。操作者的每个决定用 `scripts/record_decision.py --run-dir <运行目录> --question … --choice … --decided-by "Jony (chat)" --evidence <原话或文件路径>` 记成一行，文件证据按当时的 SHA-256 绑定，替代手写的 `*.evidence.txt`。来源预算账本每条已返回的请求现在带 `settlement`：供应商报告的 token 数和按所请求模型冻结费率估算的 `costMicrousd`（`estimated_upper_bound`），缺用量或无价格时记 `unknown` 与原因，不再恒为 0；预留上限 `bounds.costMicrousd` 原样保留。这三样都进摘要。
 
 ## 命令
 

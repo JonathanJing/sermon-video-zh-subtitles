@@ -34,6 +34,38 @@ def require(ok, code):
         raise ValueError(code)
 
 
+def settlement(identity, response, elapsed):
+    """What a returned response actually used, next to the reservation it was booked under.
+
+    The ledger row's ``bounds.costMicrousd`` is the worst-case reservation; until now
+    nothing recorded the measured tokens, so every retrospective summed them by hand
+    from cached responses. This records the provider's token counts and prices them
+    at the requested model's frozen rate (``sermon_provider_limits._cost``). A
+    response without usable usage, or for a model without a price, settles as
+    ``unknown`` with the reason; nothing is invented and no row is settled to zero.
+    """
+    usage = response.get('usage') if isinstance(response, dict) else None
+    model = identity.get('model') if isinstance(identity, dict) else None
+    result = {'costStatus': 'unknown', 'costMicrousd': None, 'usage': None, 'reasonCode': None,
+              'requestedModel': model, 'providerModel': response.get('model') if isinstance(response, dict) else None,
+              'elapsedSeconds': elapsed, 'priceBasis': 'requested_model_frozen_worst_case_rate', 'invoiceVerified': False}
+    if not isinstance(usage, dict):
+        return dict(result, reasonCode='missing_provider_usage')
+    inputs = usage.get('prompt_tokens', usage.get('input_tokens'))
+    outputs = usage.get('completion_tokens', usage.get('output_tokens'))
+    if not all(type(value) is int and value >= 0 for value in (inputs, outputs)):
+        return dict(result, reasonCode='missing_or_invalid_token_counts')
+    details_in = usage.get('prompt_tokens_details') if isinstance(usage.get('prompt_tokens_details'), dict) else {}
+    details_out = usage.get('completion_tokens_details') if isinstance(usage.get('completion_tokens_details'), dict) else {}
+    result['usage'] = {'inputTokens': inputs, 'outputTokens': outputs,
+                       'cachedInputTokens': details_in.get('cached_tokens'),
+                       'reasoningTokens': details_out.get('reasoning_tokens'),
+                       'totalTokens': usage.get('total_tokens', inputs + outputs)}
+    if model not in text_limits.PRICES_USD_PER_MILLION:
+        return dict(result, reasonCode='no_frozen_price_for_model')
+    return dict(result, costStatus='estimated_upper_bound', costMicrousd=text_limits._cost(model, inputs, outputs))
+
+
 @contextmanager
 def judge_limits(limits):
     token = JUDGE_LIMITS.set(limits)
@@ -103,7 +135,7 @@ class SourceBudget:
                         for operation, row in ledger['requests'].items():
                             require(isinstance(operation, str) and re.fullmatch(r'(asr\.[0-9]{4}|judge\.[a-f0-9]{64})', operation)
                                     and isinstance(row, dict) and row.get('status') in {'returned', 'started_response_unconfirmed', 'live_started'}
-                                    and set(row) - {'resourceBinding'} == ({'identitySha256', 'bounds', 'status', 'responseSha256'}
+                                    and set(row) - {'resourceBinding', 'settlement'} == ({'identitySha256', 'bounds', 'status', 'responseSha256'}
                                         if row.get('status') == 'returned' else {'identitySha256', 'bounds', 'status', 'dispatchOwner'}
                                         if row.get('status') == 'live_started' and version == LEDGER_V2 else {'identitySha256', 'bounds', 'status'})
                                     and isinstance(row.get('identitySha256'), str)
@@ -115,6 +147,13 @@ class SourceBudget:
                             if row['status'] == 'returned':
                                 require(isinstance(row.get('responseSha256'), str)
                                     and re.fullmatch('[a-f0-9]{64}', row['responseSha256']), 'source_budget_ledger_corrupt')
+                            if 'settlement' in row:
+                                # Measured usage settles only returned rows; its status says whether a price applied.
+                                require(row['status'] == 'returned' and isinstance(row['settlement'], dict)
+                                    and row['settlement'].get('costStatus') in {'estimated_upper_bound', 'unknown'}
+                                    and (row['settlement'].get('costMicrousd') is None
+                                         or type(row['settlement']['costMicrousd']) is int and row['settlement']['costMicrousd'] >= 0),
+                                    'source_budget_ledger_corrupt')
                             if 'resourceBinding' in row:
                                 require(self.resource_policy is not None
                                     and row['resourceBinding'] == self._resource_binding(operation, row['identitySha256']),
@@ -267,13 +306,14 @@ class SourceBudget:
         def returned(response, call_id=None, elapsed=None):
             saved = {'identitySha256': fingerprint, 'requestIdentity': identity, 'response': response,
                      'modelCallId': call_id, 'elapsedSeconds': elapsed,
-                     'reservationBounds': bounds, 'invoiceVerified': False}
+                     'reservationBounds': bounds, 'invoiceVerified': False,
+                     'settlement': settlement(identity, response, elapsed)}
             immutable._atomic(response_path, saved)
             self.verify()
             with self._locked() as (ledger, path):
                 row = ledger['requests'][operation]
                 require(row['identitySha256'] == fingerprint, 'source_call_binding_changed')
-                row.update(status='returned', responseSha256=jobs._digest(saved))
+                row.update(status='returned', responseSha256=jobs._digest(saved), settlement=saved['settlement'])
                 row.pop('dispatchOwner', None)
                 jobs._persist(path, ledger)
                 self._release_resource(row)
