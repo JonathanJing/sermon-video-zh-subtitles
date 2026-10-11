@@ -43,8 +43,8 @@ flowchart TD
 ### 一次 run 怎么走
 
 1. 本机下载来源、算 SHA、上传到 `sources/`，调用 controller 开 run。
-2. L1 Job 跑完写英文来源包和收据，Workflows 挂起等英文批准。
-3. 批准后 controller **按语言并行**派 L2：每语言一个 locale job，组内多个 group worker（Cloud Run Job 的 task 并行）调 Sol 6.1 API。上限沿用现有规则：默认每 run 一个 active locale，execution-v2 最多 3 个（[controller 合同](../canonical-layer2-controller.zh.md)）。组 task 只产出不可变的组结果；每个语言另有**一个**受租约保护的汇总 task，读齐所有组结果后，按规定只跑一次语言插件、候选构建和候选准入（现在这一步在 canonical worker 的进程内 pool 里完成，拆成多个 task 后必须有唯一 owner，不能每个组各建一份候选）。API 槽位改成 Firestore 里的全局计数，跨 Job 共享。所有付费 Job 设 `maxRetries=0`（Cloud Run Jobs 默认每个 task 自动重试 3 次，会在 controller 对账前重复调用 API）；task 超时显式设成大于一组初译加复核的最长耗时（默认 10 分钟不够，单次 API 调用就可能用到 300 秒），超时值写进冻结的执行策略，controller 的心跳和无进展上限照旧。
+2. L1 Job 跑完写待批准的不可变英文来源包和收据，Workflows 挂起等英文批准。批准收据进入 `reviewEvidenceSha256` 后，生成新的 L1 revision/package 身份，状态为 `ready_for_translation`，保留待批准版本；不能只给旧包旁边添加收据或原地修改状态。controller 在同一 Firestore 事务中核对当前租约 fencing token、旧 current 身份和新包／收据绑定，再切换 L1 current 指针；Layer 2 只消费指针指向且通过 `validate_ready_package` 的新包。来源包身份改变后，各语言下游按四层合同失效。
+3. 批准后 controller **按语言并行**派 L2：每语言一个 locale job，组内多个 group worker（Cloud Run Job 的 task 并行）调 Sol 6.1 API。上限沿用现有规则：默认每 run 一个 active locale，execution-v2 最多 3 个（[controller 合同](../canonical-layer2-controller.zh.md)）。每个组 task 在初译、独立复核后立即运行冻结的语言插件，写不可变组结果与插件收据。默认 v1/v2 正式路径由 controller 串行派组：前组插件通过才派下一组，拒绝后禁止后续派发，保留原串行 `plugin-group-stop` 语义；不能先把全部 task 派完再汇总跑插件。若采用分波并行，须使用新版本执行和停止收据合同，由 controller 在每波插件结果齐备后决定下一波，记录实际在途／完成／未派发组；不冒充旧串行收据。已采用的 v3 `failure_collector` 路径则保留其有界并行、组失败收集及达到系统性阈值后停止新派发的语义，在途组仍完成并记账。每个语言另有**一个**受租约保护的汇总 task，读齐这些组结果与插件证据后，按源顺序构建候选并运行候选准入；准入所需插件重放也由唯一 owner 完成，不能让每个组各建一份候选。API 槽位改成 Firestore 里的全局计数，跨 Job 共享。所有付费 Job 设 `maxRetries=0`（Cloud Run Jobs 默认每个 task 自动重试 3 次，会在 controller 对账前重复调用 API）；task 超时显式设成大于一组初译加复核的最长耗时（默认 10 分钟不够，单次 API 调用就可能用到 300 秒），超时值写进冻结的执行策略，controller 的心跳和无进展上限照旧。
 4. 某个语言文字批准一到，先检查这个语言的配音前提：音色登记里该语言的能力已验证（现在 Eric 的韩语、西语仍是 `unverified_poc`）、checkpoint 绑定一致、有当前来源的音色授权收据；`prepare_target_language_speech_job.py` 给出 `synthesisEligible=true` 才开 GPU 跑 L3，不等其他语言。前提不全就进入等待状态，不开卡。
 5. L4 准备前先检查全部输入是否就绪：听审收据或音频 waiver，以及大纲、默想、来源复核、metadata 等各自独立的批准。缺哪个就进入对应的等待状态（这是正常等待，不是失败）。全部就绪后，L4 只做**准备**：打包、预检，然后停下。听审批准或 waiver 不等于发布授权；现有发布流程要求一份绑定这个已准备 release 和 Firebase 目标的单独授权（`scripts/sermon_release_workflow.py:282-288`）。Workflows 在这里再挂起一次，授权收据到了才部署，然后做 HTTP 核验，并按 release plan 的语言联动要求发布。canonical 发布还要生成 catalog v4 和对应的人工审核 v3 投影；客户端靠 catalog 才能找到新 release，多语言联动也靠 catalog 的 release-set 一次切换。
 6. 任何一步结果不明（超时、断线、进程消失），controller 标 `reconciliation_required`，不自动重发，等 Supervisor 给出对账建议、你确认。这条是现有规则，上云后不放宽。
@@ -79,7 +79,8 @@ gs://tongxing-prod-evidence/
   cas/sha256/ab/cd…                         # 媒体、音频、大文件，只写一次
   runs/<pageId>/<runId>/
     run.json                                # 冻结的 run 身份：来源、窗口、策略、代码 commit
-    L1/english-source-package.json
+    L1/<revision>/<packageId>/english-source-package.json   # 批准改变reviewEvidence身份时写新包
+    L1/current                              # Firestore中的fenced指针，事务核对旧身份及租约后切换
     L2/<locale>/<revision>/candidate.json   # 每次修订一个目录，不覆盖
     L2/<locale>/<revision>/groups/<g>/attempts/<n>.json
     L3/<locale>/<renderId>/audio-package.json
