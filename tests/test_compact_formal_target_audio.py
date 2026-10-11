@@ -102,6 +102,12 @@ class CompactAudioTests(unittest.TestCase):
         self.assertEqual(manifest['track']['sha256'], identity.sha256(track))
         self.assertEqual(subject.integrity.probe_full_decode(track)['codec'], 'mp3')
         self.assertTrue((destination / 'review/leading-silence-trim.json').is_file())
+        # The delivery MP3 keeps the master's waveform in every audible window.
+        from scripts import target_audio_auto_qc as qc
+        settings = qc.TRACK_ENVELOPE
+        reference = qc._mono_pcm(track.with_suffix('.wav'), settings['sampleRate'])
+        compressed = qc._mono_pcm(track, settings['sampleRate'])
+        self.assertEqual(qc._waveform_comparison(reference, compressed, settings['sampleRate'], settings)['deviantWindows'], 0)
 
     def test_operator_end_lag_budget_is_recorded_not_applied_silently(self):
         fixture = render_tests.FormalRenderTests(

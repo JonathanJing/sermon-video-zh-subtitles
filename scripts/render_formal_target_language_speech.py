@@ -63,6 +63,9 @@ VERSION = "sermon-formal-target-speech-render-v1"
 RENDERER_SOUND_IDENTITY_SHA256 = "fef7604882470137f46f1b01fbd06c7c3c9a07166da91003243608785fa47f0b"
 # tailOverrunSeconds: how far the final unit may end after the approved clip; the
 # default admits none, and a compaction records any operator budget in its evidence.
+# The delivery MP3 must keep every audible window of the PCM master within the track
+# check's waveform bounds; 64 kbit/s smeared sharp sentence onsets on a full sermon.
+TRACK_MP3_BITRATE = "96k"
 DEFAULT_POLICY = {"reactionLagSeconds": 0.05, "interUtteranceGapSeconds": 0.05,
                   "maxEndLagSeconds": 8.0, "tailOverrunSeconds": 0.0}
 BATCH_SIZES = (1, 2, 4, 8)
@@ -1322,7 +1325,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
             encoded = subprocess.run([
                 "ffmpeg", "-nostdin", "-xerror", "-v", "error", "-y",
                 "-i", str(wav_path), "-map", "0:a:0", "-ac", "1",
-                "-c:a", "libmp3lame", "-b:a", "64k", "-write_xing", "1",
+                "-c:a", "libmp3lame", "-b:a", TRACK_MP3_BITRATE, "-write_xing", "1",
                 "-map_metadata", "-1", "-f", "mp3", str(partial_mp3),
             ], capture_output=True, text=True, check=False)
             require(encoded.returncode == 0 and partial_mp3.is_file(),
