@@ -1,0 +1,17 @@
+{
+  "scope": "PR 287 review repair; offline only",
+  "unitTests": {
+    "command": ".venv/bin/python -m unittest tests.test_agent_api_trials tests.test_source_bound_diagnostic_audio tests.test_export_run_digest",
+    "passed": 48,
+    "exitCode": 0
+  },
+  "fakeRun": {
+    "initialAgentSessions": 26,
+    "reusedAgentSessionsStarted": 0,
+    "riskActions": 26,
+    "newDecisionsRequestsOnRerun": 0
+  },
+  "liveCalls": 0,
+  "sparkCalls": 0,
+  "productionEligible": false
+}
