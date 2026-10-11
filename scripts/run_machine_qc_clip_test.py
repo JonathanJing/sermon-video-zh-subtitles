@@ -57,6 +57,7 @@ import time
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import auto_qc_seeded_errors as seeded
+from scripts import implementation_freeze as freeze
 from scripts import machine_quality_release_basis as basis
 from scripts import machine_repair_ledger as ledger
 from scripts import prepare_target_language_speech_job as speech
@@ -791,7 +792,14 @@ def main(argv=None) -> int:
                         help="A person's acceptance of failed groups in the head text QC (text_qc_human_acceptance)")
     parser.add_argument("--api-budget-authorization", type=Path,
                         help="Bound budget for --text-backend api (sermon-machine-qc-api-budget-authorization-v1)")
+    freeze.add_argument(parser)
     args = parser.parse_args(argv)
+    if args.expected_implementation:
+        # The run plan froze the QC implementation; refuse other code before any model call.
+        changed = freeze.mismatch(args.expected_implementation)
+        if changed:
+            print(json.dumps(changed, ensure_ascii=False), file=sys.stderr)
+            return freeze.EXIT_CODE
     locales = [locale for locale in args.locales.split(",") if locale]
     if not locales or set(locales) - set(LOCALES):
         parser.error(f"--locales must name one or more of {', '.join(LOCALES)}")
