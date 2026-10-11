@@ -403,3 +403,7 @@
 
 读法建议：先看 `decisions/` 还原「为什么」，再用 `timing/` 与 `audio-qc/` 做离线测试，最后用 `cost/` 校验新账本。
 
+### 原始模型回复归档（仓库外）
+
+本周 34 个预算账本的 27 292 条原始模型回复（含 usage）、`live-owners/` 与账本 JSON 打包为 `model-responses-20261011.tar.zst`（11.3 MB，解压 66 MB），存放在项目私有产物桶 `gs://sermon-zh-artifacts-ai-for-god/runs/20261011-weekly-resi-54475d42/model-responses/`，桶无公开绑定。归档哈希、对象路径、各账本文件数与恢复命令见 [`cost/model-responses-archive.json`](runs/20261011-weekly-fixtures/cost/model-responses-archive.json)。按恢复命令解到 `artifacts/weekend-live` 后，文字 QC 驱动会直接命中缓存，本周的任何重筛或校准回放都不再产生 API 调用——这是把校准改为「按模型版本离线做」时最直接的回放数据。
+

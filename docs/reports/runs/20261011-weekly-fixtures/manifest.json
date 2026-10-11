@@ -807,6 +807,12 @@
    "bytes": 12232,
    "sha256": "30985f78f13ea9fc305e4639c25849a34c210fe8d249a62565b775059549cd77",
    "source": "the script that built this bundle"
+  },
+  {
+   "path": "cost/model-responses-archive.json",
+   "bytes": 5245,
+   "sha256": "ed29289135e369b2bb38bfc0a5e4041d09e1af4f07827baabe7106ff05423ef4",
+   "source": "derived; points at private GCS"
   }
  ]
 }
