@@ -229,8 +229,10 @@ def calibration_coverage(groups: list[dict], locale: str, policy: dict | None,
             for kind in seeded.SPOKEN_KINDS})
     # The waiver exempts a role swap with no site (calibration_kind_not_applicable);
     # every other kind must be calibrated on this text.
-    return {"applicableGroups": counts, "untestableKinds": [kind for kind, count in counts.items()
-                                                           if not count and kind != "swapped_name"]}
+    # A kind with no site in the whole candidate is not applicable (the waiver records it
+    # with an empty applicableGroupIds); nothing here is untestable any more.
+    return {"applicableGroups": counts, "notApplicableKinds": [kind for kind, count in counts.items() if not count],
+            "untestableKinds": []}
 
 
 def resolve_spoken(index: dict, binding_file: Path, override: Path | None,

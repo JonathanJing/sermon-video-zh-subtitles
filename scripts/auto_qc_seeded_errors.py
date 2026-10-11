@@ -194,6 +194,18 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None,
             if (chapter, verse) in cited:
                 john, romans = OTHER_BOOK[locale]
                 return text[:start] + (romans if code == "JOH" else john) + text[end:]
+        if locale == "zh-Hans":
+            # Chinese writes a said chapter as 《启示录》第八章; swap the book inside the brackets.
+            john, romans = OTHER_BOOK[locale]
+            for code, chapter, verse in rules.english_book_citations(english):
+                if code is None or verse is not None:
+                    continue
+                for name, book in rules._ZH_BOOK_CODES.items():
+                    if book != code:
+                        continue
+                    match = re.search("《" + re.escape(name) + "》(?=\\s*第)", text)
+                    if match:
+                        return text[:match.start()] + "《" + (romans if code == "JOH" else john) + "》" + text[match.end():]
         if locale == "es":
             # Spanish often names a said chapter without "capitulo" ("Lucas 15").
             john, romans = OTHER_BOOK[locale]
@@ -362,9 +374,10 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
     for kind in TEXT_KINDS:
         # Applicability searches the complete bound candidate, before trial caps
         # and surface screens; zero executed trials alone never grants an exemption.
-        applicable = ([group["groupId"] for group in groups
-                       if mutate_text(group, kind, locale, policy, groups) is not None]
-                      if kind == "swapped_name" else None)
+        # Every kind records where it could be seeded in the complete candidate; a kind
+        # with no site anywhere is not applicable to this text (zero trials alone never is).
+        applicable = [group["groupId"] for group in groups
+                      if mutate_text(group, kind, locale, policy, groups) is not None]
         trials = detected = 0
         misses = []
         for group in groups:

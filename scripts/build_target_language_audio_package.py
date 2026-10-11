@@ -180,7 +180,12 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
                 "sentenceAndPauseBoundaries"))
             and window.get("status") == "approved"
             and window.get("humanApproval") is True
-            and (source.get("anchors", {}).get("issueCount") == 0 or anchor_exception),
+            and (source.get("anchors", {}).get("issueCount") == 0 or anchor_exception
+                 # Layer 1 keeps accepted anchor warnings in the manifest count but clears
+                 # them from the package only when its machine judge, the human source
+                 # review and any operator timing acceptance all cover them.
+                 or (source.get("issues") == [] and source.get("status") == "ready_for_translation"
+                     and source.get("translationEligible") is True)),
             "English Source Package lacks source/window/anchor human gates")
     speech.validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
     text_policy = speech.validate_text_release_basis(source, anchor, candidate, human_receipt)

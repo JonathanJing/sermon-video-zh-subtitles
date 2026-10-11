@@ -69,10 +69,12 @@ class TargetFormTests(unittest.TestCase):
         self.assertEqual(mutated, "en Juan 15,")
         self.assertTrue(rules.scripture_reference_problems(english, mutated, "es"))
 
-    def test_driver_treats_only_a_siteless_role_swap_as_not_applicable(self):
+    def test_driver_reports_siteless_kinds_as_not_applicable(self):
         import inspect
         from scripts import run_machine_qc_clip_test as driver
-        self.assertIn('kind != "swapped_name"', inspect.getsource(driver.calibration_coverage))
+        source = inspect.getsource(driver.calibration_coverage)
+        self.assertIn('"notApplicableKinds"', source)
+        self.assertIn('"untestableKinds": []', source)
 
 
     def test_added_content_seed_prefers_a_sentence_that_states_something(self):
