@@ -116,10 +116,14 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None,
     if kind == "added_content":
         # An ordinary sentence from elsewhere in the sermon, appended: the shortest
         # one without a number, so that only the back-translation check can see it.
-        pool = sorted((row["targetText"] for row in others
+        # Prefer the shortest sentence that still states something (at least six
+        # English words): a two-word interjection reads as filler, not as a claim.
+        pool = sorted((row for row in others
                        if row["groupId"] != group.get("groupId") and row["targetText"] not in text
-                       and not rules.english_number_values(row["english"])), key=len)
-        return None if not pool else text + ("" if locale == "zh-Hans" else " ") + pool[0]
+                       and not rules.english_number_values(row["english"])), key=lambda row: len(row["targetText"]))
+        claims = [row for row in pool if len(re.findall(r"[A-Za-z']+", row["english"])) >= 6]
+        chosen = (claims or pool)[0]["targetText"] if pool else None
+        return None if chosen is None else text + ("" if locale == "zh-Hans" else " ") + chosen
     if kind == "semantic_negation":
         # Flip a target negation without changing names, numbers, references or
         # script. Only groups with source negation supply this semantic trial.

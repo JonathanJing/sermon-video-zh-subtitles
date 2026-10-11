@@ -75,5 +75,18 @@ class TargetFormTests(unittest.TestCase):
         self.assertIn('kind != "swapped_name"', inspect.getsource(driver.calibration_coverage))
 
 
+    def test_added_content_seed_prefers_a_sentence_that_states_something(self):
+        from scripts import auto_qc_seeded_errors as seeds
+        group = {"groupId": "g1", "english": "God is holy.", "targetText": "Dios es santo."}
+        others = [group, {"groupId": "g2", "english": "Why?", "targetText": "¿Por qué?"},
+                  {"groupId": "g3", "english": "He brings the report card home to his father.", "targetText": "Lleva la boleta a casa."}]
+        self.assertEqual(seeds.mutate_text(group, "added_content", "es", None, others), "Dios es santo. Lleva la boleta a casa.")
+
+    def test_per_kind_gate_needs_a_minimum_sample(self):
+        from scripts import machine_quality_waiver as waiver
+        row = {"trials": 2, "detected": 1, "rate": 0.5}
+        self.assertLess(row["trials"], waiver.PER_KIND_MINIMUM_TRIALS)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -63,6 +63,9 @@ MAX_UNDUBBED_SHARE = 0.05
 MAX_SOURCE_FALLBACK_SHARE = 0.05
 CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.9,
                         "maxCleanFalsePositiveRate": 0.1}
+# A per-kind rate from fewer trials than this cannot show 0.9 either way (one miss
+# in two trials is 0.5); such kinds still count in the overall rate.
+PER_KIND_MINIMUM_TRIALS = 5
 # Every seeded error kind must be tried and caught; a kind with no trial was never tested.
 TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "placeholder",
               "dropped_name", "dropped_half", "semantic_negation", "added_number", "wrong_ordinal",
@@ -158,9 +161,11 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
         reported = _rate(row.get("rate"))
         if reported is None or not math.isclose(reported, derived, abs_tol=1e-6):
             problems.append(f"inconsistent detection rate for {kind}")
-        if kind in expected and trials > 0 and (reported is None or
+        if kind in expected and trials >= PER_KIND_MINIMUM_TRIALS and (reported is None or
                 derived < CALIBRATION_MINIMUMS["perKindDetectionRate"]):
             weak.append(kind)
+        elif kind in expected and 0 < trials < PER_KIND_MINIMUM_TRIALS and reported is None:
+            problems.append(f"inconsistent detection rate for {kind}")
     for kind in expected:
         if kind not in kinds:
             missing.append(kind)
