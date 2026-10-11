@@ -473,7 +473,8 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
 REBUILD_OVERRIDES_SCHEMA = 'sermon-anchor-boundary-overrides-v3'
 
 
-def rebuild(config_path, base_output, out_dir, overrides_path, authorization_path, *, api_key=None, transport=None):
+def rebuild(config_path, base_output, out_dir, overrides_path, authorization_path, *, api_key=None, transport=None,
+            operator_acceptance=None):
     """Rebuild anchors, judge and candidate from a run's frozen alignment; no ASR or MFA.
 
     The base run's aligned segments, summary and window approval are reused by hash. Boundary
@@ -494,9 +495,11 @@ def rebuild(config_path, base_output, out_dir, overrides_path, authorization_pat
             and overrides['schemaVersion'] == REBUILD_OVERRIDES_SCHEMA
             and overrides['alignedSegmentsSha256'] == receipt['alignedSha256']
             and isinstance(overrides['overrides'], dict), 'invalid_boundary_overrides')
+    acceptance_path = _safe_path(Path(operator_acceptance).absolute()) if operator_acceptance else None
     identity = jobs._digest({'baseConfiguration': base_identity, 'alignedSha256': receipt['alignedSha256'],
                              'boundaryOverrides': overrides, 'judge': value['judge'],
-                             'maxUnitSeconds': value['anchorPolicy']['maxUnitSeconds']})
+                             'maxUnitSeconds': value['anchorPolicy']['maxUnitSeconds'],
+                             **({'operatorAcceptanceSha256': _sha(acceptance_path)} if acceptance_path else {})})
     authorization_path = _safe_path(Path(authorization_path).absolute())
     auth = _load(authorization_path)
     budget_root = out.parent / f'.{out.name}.judge-budget'
@@ -527,7 +530,8 @@ def rebuild(config_path, base_output, out_dir, overrides_path, authorization_pat
             api_key=api_key if api_key is not None else os.environ.get('OPENAI_API_KEY', ''),
             caller=caller.judge, cache_root=out / 'judge-requests',
             model=value['judge']['model'], effort=value['judge']['reasoningEffort'],
-            batch_size=value['judge']['batchSize'], workers=value['judge']['workers'])
+            batch_size=value['judge']['batchSize'], workers=value['judge']['workers'],
+            operator_acceptance=acceptance_path)
     window_receipt = _safe_path(config_path.parent / value['windowApproval'])
     package = english.build_package(aligned_path, manifest_path, summary_path=out / 'summary.json',
         approval_evidence_path=window_receipt, machine_judge_path=out / 'machine-judge.json',
@@ -537,7 +541,8 @@ def rebuild(config_path, base_output, out_dir, overrides_path, authorization_pat
     _freeze(out / 'rebuild-receipt.json', {'schemaVersion': 'sermon-source-anchor-rebuild-v1',
         'baseOutput': str(base), 'baseConfigurationSha256': base_identity, 'rebuildIdentity': identity,
         'alignedSha256': receipt['alignedSha256'], 'boundaryOverridesSha256': _sha(_safe_path(Path(overrides_path).absolute())),
-        'budgetAuthorizationSha256': _sha(authorization_path), 'asrOrMfaRerun': False})
+        'budgetAuthorizationSha256': _sha(authorization_path), 'asrOrMfaRerun': False,
+        'operatorAcceptanceSha256': _sha(acceptance_path) if acceptance_path else None})
     return {'status': 'succeeded' if judged['layer2DevelopmentEligible'] else 'blocked',
             'kind': 'english_source_candidate',
             'reason': 'human_source_review_required' if judged['layer2DevelopmentEligible'] else 'source_machine_judge_rejected',
@@ -554,9 +559,11 @@ def main():
     parser.add_argument('--out', type=Path)
     parser.add_argument('--boundary-overrides', type=Path)
     parser.add_argument('--budget-authorization', type=Path)
+    parser.add_argument('--operator-acceptance', type=Path)
     args = parser.parse_args()
     if args.command == 'rebuild':
-        result = rebuild(args.config, args.base_output, args.out, args.boundary_overrides, args.budget_authorization)
+        result = rebuild(args.config, args.base_output, args.out, args.boundary_overrides, args.budget_authorization,
+                         operator_acceptance=args.operator_acceptance)
     else:
         result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
     print(json.dumps(result, ensure_ascii=False, indent=2))

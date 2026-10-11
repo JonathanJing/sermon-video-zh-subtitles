@@ -325,10 +325,58 @@ def _checked_batch(result: dict[str, Any], expected: list[dict[str, Any]]) -> li
     return rows
 
 
+OPERATOR_ACCEPTANCE_SCHEMA = "sermon-source-issue-acceptance-v1"
+OPERATOR_ACCEPTABLE_ISSUES = {"alignment_word_duration_outlier"}
+
+
+def _operator_acceptance(path: Path | None, manifest: dict[str, Any],
+                         reviewed: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Validate a human acceptance of specific reviewable timing issues.
+
+    A sentence is accepted only when the machine verdict failed on timelineCoherent
+    alone and every accepted item names a matching alignment_word_duration_outlier in
+    this exact manifest. Machine verdicts stay in the receipt unchanged.
+    """
+    if path is None:
+        return None
+    value = _load(Path(path).resolve(), "operator issue acceptance")
+    if not (isinstance(value, dict)
+            and set(value) == {"schemaVersion", "anchorManifestJsonSha256", "humanApproval", "acceptedBy", "acceptedAt", "accepted"}
+            and value["schemaVersion"] == OPERATOR_ACCEPTANCE_SCHEMA and value["humanApproval"] is True
+            and isinstance(value["acceptedBy"], str) and value["acceptedBy"].strip()
+            and isinstance(value["acceptedAt"], str) and value["acceptedAt"].strip()
+            and value["anchorManifestJsonSha256"] == layer1.json_sha256(manifest)
+            and isinstance(value["accepted"], list) and value["accepted"]):
+        raise ValueError("Operator issue acceptance is invalid or bound to another anchor manifest")
+    issues = {(issue.get("sourceSentenceId"), issue.get("type"), issue.get("wordId"))
+              for issue in manifest.get("issues", []) if isinstance(issue, dict)}
+    rows = {row["sourceSentenceId"]: row for row in reviewed}
+    accepted_ids: list[str] = []
+    for item in value["accepted"]:
+        if not (isinstance(item, dict) and set(item) == {"sourceSentenceId", "issueType", "wordId", "reason"}
+                and item["issueType"] in OPERATOR_ACCEPTABLE_ISSUES
+                and isinstance(item["reason"], str) and item["reason"].strip()
+                and (item["sourceSentenceId"], item["issueType"], item["wordId"]) in issues):
+            raise ValueError("Operator issue acceptance names an issue absent from the manifest")
+        row = rows.get(item["sourceSentenceId"])
+        failing = sorted(name for name in CHECKS if (row or {}).get("checks", {}).get(name) != "pass")
+        if row is None or failing not in ([], ["timelineCoherent"]):
+            raise ValueError("Operator acceptance applies only to sentences failing timelineCoherent alone: "
+                             + item["sourceSentenceId"])
+        if not failing:
+            continue  # the machine judge passed this sentence; the acceptance is not needed
+        if item["sourceSentenceId"] not in accepted_ids:
+            accepted_ids.append(item["sourceSentenceId"])
+    return {"schemaVersion": OPERATOR_ACCEPTANCE_SCHEMA, "sha256": layer1.file_sha256(Path(path).resolve()),
+            "acceptedBy": value["acceptedBy"], "acceptedAt": value["acceptedAt"],
+            "acceptedSentenceIds": accepted_ids, "items": value["accepted"]}
+
+
 def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt-6.1-sol",
         effort: str = "high", batch_size: int = 15, api_key: str,
         cache_root: Path | None = None, workers: int = 1, prewarm: bool = False,
-        caller: Callable[..., dict[str, Any]] | None = None) -> dict[str, Any]:
+        caller: Callable[..., dict[str, Any]] | None = None,
+        operator_acceptance: Path | None = None) -> dict[str, Any]:
     if type(workers) is not int or not 1 <= workers <= 8:
         raise ValueError("L1 judge workers must be an integer between 1 and 8")
     aligned_path = aligned_path.resolve()
@@ -397,6 +445,10 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
 
     expected_sentence_ids = [item["sourceSentenceId"] for item in sentences]
     reviewed_sentence_ids = [item["sourceSentenceId"] for item in reviewed]
+    acceptance = _operator_acceptance(operator_acceptance, manifest, reviewed)
+    accepted_ids = set(acceptance["acceptedSentenceIds"]) if acceptance else set()
+    accepted_rows = [row for row in reviewed if row["sourceSentenceId"] in accepted_ids]
+    reviewed = [row for row in reviewed if row["sourceSentenceId"] not in accepted_ids]
     sentence_pass = sum(
         row.get("verdict") == "pass"
         and row.get("risk") != "high"
@@ -415,10 +467,11 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
             unresolved.append(f"{row['sourceSentenceId']}: semantic or timeline judge failed")
         if row.get("risk") == "high":
             unresolved.append(f"{row['sourceSentenceId']}: high-risk boundary")
+    reviewed_rows_for_receipt = sorted(reviewed + accepted_rows, key=lambda row: reviewed_sentence_ids.index(row["sourceSentenceId"]))
     eligible = (
         deterministic["status"] == "pass"
         and reviewed_sentence_ids == expected_sentence_ids
-        and sentence_pass == len(sentences)
+        and sentence_pass + len(accepted_rows) == len(sentences)
         and sentence_fail == 0
         and high_risk == 0
         and not unresolved
@@ -437,6 +490,7 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
         "reasoningEffort": effort,
         "promptVersion": PROMPT_VERSION,
         "requestIds": request_ids,
+        **({"operatorAcceptanceSha256": acceptance["sha256"]} if acceptance else {}),
     }
     receipt = {
         "schemaVersion": SCHEMA_VERSION,
@@ -459,7 +513,8 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
         "deterministicReview": deterministic,
         "reviewedSourceSentenceIds": reviewed_sentence_ids,
         "reviewedManifestIssueJsonSha256s": manifest_issue_hashes,
-        "sentences": reviewed,
+        "sentences": reviewed_rows_for_receipt,
+        **({"operatorAcceptance": acceptance} if acceptance else {}),
         "counts": {
             "sourceSentences": len(sentences),
             "sourceUnits": len(manifest.get("sourceUnits", [])),
@@ -467,6 +522,7 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
             "sentencePass": sentence_pass,
             "sentenceFail": sentence_fail,
             "highRiskSentences": high_risk,
+            **({"operatorAcceptedSentences": len(accepted_rows)} if acceptance else {}),
         },
         "unresolvedIssues": unresolved,
         "requestReceipts": request_receipts,
