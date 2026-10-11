@@ -413,6 +413,90 @@ class CodexJudge:
                                     output_dir=self.cache / self.key(role, system, user, schema))
 
 
+class ApiJudge:
+    """``call(role, system, user, schema)`` through the OpenAI API under a bound source budget.
+
+    Same model and effort as the Codex judge. Every request reserves its worst-case
+    cost in the budget ledger, the raw response is kept before parsing, and a
+    returned response replays for free. An unknown outcome stops new dispatch.
+    """
+
+    def __init__(self, authorization: Path, *, reasoning: str = "medium", cache_namespace: str = CACHE_NAMESPACE):
+        from scripts import sermon_source_budget as budget
+        from scripts import sermon_provider_limits as limits
+        from scripts.sermon_openai_runtime import selected_route
+        value = read(authorization)
+        receipt = authorization.parent / value["approvalReceipt"]
+        approval = read(receipt)
+        if not (value.get("schemaVersion") == "sermon-machine-qc-api-budget-authorization-v1"
+                and value["authority"]["approvalSha256"] == file_sha256(receipt)
+                and approval.get("humanApproval") is True and approval.get("decision") == "approved"
+                and approval.get("binding") == {"budgetRoot": value["budgetRoot"], **value["authority"]["bounds"]}):
+            raise ValueError("Machine QC API budget authorization is not bound to its approval")
+        route = selected_route()
+        if route is None:
+            raise ValueError("Machine QC API calls need the dev or prod OpenAI launcher")
+        self.limits = limits
+        self.request_limits = value["authority"]["requestLimits"]
+        self.ledger = budget.SourceBudget(value["budgetRoot"], {
+            "approvalSha256": value["authority"]["approvalSha256"],
+            "globalBounds": value["authority"]["bounds"]["globalBounds"], "requestLimits": self.request_limits},
+            verify=lambda: None, max_concurrent=8)
+        self.api_key = os.environ["OPENAI_API_KEY"]
+        self.reasoning = reasoning
+        self.identity = {"backend": "openai_api", "model": "gpt-6.1-sol", "modelRevision": "openai-api",
+                         "cacheNamespace": cache_namespace,
+                         "settings": {"reasoningEffort": reasoning, "serviceTier": self.request_limits["serviceTier"],
+                                      "promptFormat": "system-user-json-v1",
+                                      "maxCompletionTokens": self.request_limits["maxCompletionTokens"],
+                                      "route": {k: route.get(k) for k in ("environment", "credentialAlias")},
+                                      "transport": {"adapterSha256": file_sha256(Path(__file__))}}}
+
+    def key(self, role, system, user, schema) -> str:
+        return json_sha256({"role": role, "system": system, "user": user, "schema": schema,
+                            "identity": self.identity})
+
+    def _payload(self, role, system, user, schema):
+        return {"model": "gpt-6.1-sol", "reasoning_effort": self.reasoning,
+                "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+                "response_format": {"type": "json_schema", "json_schema": {"name": "machine_qc_" + role.replace(".", "_"),
+                                                                           "strict": True, "schema": schema}},
+                "max_completion_tokens": self.request_limits["maxCompletionTokens"],
+                "service_tier": self.request_limits["serviceTier"]}
+
+    def _operation(self, role, system, user, schema):
+        return "judge." + self.key(role, system, user, schema)
+
+    def cached(self, role, system, user, schema):
+        payload = self._payload(role, system, user, schema)
+        return self(role, system, user, schema) if self.ledger.returned(self._operation(role, system, user, schema), payload) else None
+
+    def uncertain(self) -> list[str]:
+        path = Path(self.ledger.root) / "source-budget.json"
+        if not path.exists():
+            return []
+        rows = read(path).get("requests", {})
+        return sorted(key for key, row in rows.items() if row.get("status") == "started_response_unconfirmed")
+
+    def __call__(self, role, system, user, schema):
+        import jsonschema
+        payload = self._payload(role, system, user, schema)
+        inputs = self.limits._input_upper_bound(payload)
+        if inputs > self.request_limits["maxInputTokens"]:
+            raise ValueError("machine_qc_api_input_bound_exceeded")
+        bounds = {"requests": 1, "wallTimeMs": self.request_limits["wallTimeMs"],
+                  "costMicrousd": self.limits._cost(payload["model"], inputs, self.request_limits["maxCompletionTokens"])}
+        response = self.ledger.call(operation=self._operation(role, system, user, schema), identity=payload, bounds=bounds,
+                                    request=json.dumps(payload, ensure_ascii=False).encode(), api_key=self.api_key,
+                                    content_type="application/json", endpoint="https://api.openai.com/v1/chat/completions")
+        choice = (response.get("choices") or [{}])[0]
+        if choice.get("finish_reason") != "stop":
+            raise ValueError("machine_qc_api_response_incomplete")
+        value = json.loads(choice["message"]["content"])
+        jsonschema.validate(value, schema)
+        return value
+
+
 class FakeJudge:
     """Plumbing-only judge: back-translation is exact for the clean texts it was given.
 
@@ -650,16 +734,20 @@ def main(argv=None) -> int:
                         help="Use this candidate instead of searching the run")
     parser.add_argument("--spoken-binding", action="append", default=[], metavar="LOCALE=PATH",
                         help="Screen the condensed spoken script this spoken_condensation binding names")
-    parser.add_argument("--text-backend", choices=("codex", "fake"), default="codex")
+    parser.add_argument("--text-backend", choices=("codex", "api", "fake"), default="codex")
     parser.add_argument("--workers", type=int, default=4, help="Parallel Codex CLI calls")
     parser.add_argument("--preflight-only", action="store_true", help="Stop before any model call")
+    parser.add_argument("--api-budget-authorization", type=Path,
+                        help="Bound budget for --text-backend api (sermon-machine-qc-api-budget-authorization-v1)")
     args = parser.parse_args(argv)
     locales = [locale for locale in args.locales.split(",") if locale]
     if not locales or set(locales) - set(LOCALES):
         parser.error(f"--locales must name one or more of {', '.join(LOCALES)}")
     if not 1 <= args.workers <= MAX_WORKERS:
         parser.error(f"--workers must be between 1 and {MAX_WORKERS}")
-    if args.text_backend == "codex" and not args.preflight_only and not args.state_dir:
+    if args.text_backend == "api" and not args.preflight_only and not args.api_budget_authorization:
+        parser.error("--text-backend api requires --api-budget-authorization")
+    if args.text_backend in ("codex", "api") and not args.preflight_only and not args.state_dir:
         # The repair ledger must outlive any one OUT, or each revision would restart the repair cap.
         parser.error("real runs need --state-dir: the run's persistent state dir holding its repair ledger")
     if args.text_backend == "fake" and args.state_dir:
@@ -729,6 +817,8 @@ def main(argv=None) -> int:
         return 0 if len(resolved) == len(locales) else 2
     if args.text_backend == "codex":
         judge = CodexJudge(state / "codex-calls")
+    elif args.text_backend == "api":
+        judge = ApiJudge(args.api_budget_authorization.resolve())
     else:
         judge = FakeJudge({locale: [group for part in screened_groups(paths) for group in part or []]
                            for locale, paths in resolved.items()})

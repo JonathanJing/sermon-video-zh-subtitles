@@ -58,3 +58,23 @@ class PolicyV4AdmissionTests(unittest.TestCase):
         source = inspect.getsource(producer)
         self.assertIn("{policy_tools.POLICY_V2, policy_tools.POLICY_V4}", source)
         self.assertIn("{policy_tools.POLICY_V3} if strict_rubric is not None", source)
+
+
+class ApiJudgeTests(unittest.TestCase):
+    def test_api_judge_refuses_an_authorization_not_bound_to_its_approval(self):
+        from scripts import run_machine_qc_clip_test as driver
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            bounds = {"globalBounds": {"requests": 10, "wallTimeMs": 1000, "costMicrousd": 1000},
+                      "requestLimits": {"schemaVersion": "sermon-openai-chat-request-limits-v1", "maxInputTokens": 1000,
+                                        "maxCompletionTokens": 100, "wallTimeMs": 1000, "serviceTier": "default"}}
+            (root / "approval.json").write_text(json.dumps({"binding": {"budgetRoot": "elsewhere", **bounds},
+                                                            "humanApproval": True, "decision": "approved"}))
+            import hashlib
+            (root / "auth.json").write_text(json.dumps({
+                "schemaVersion": "sermon-machine-qc-api-budget-authorization-v1", "budgetRoot": str(root / "budget"),
+                "authority": {"approvalSha256": hashlib.sha256((root / "approval.json").read_bytes()).hexdigest(),
+                              "bounds": bounds, "requestLimits": bounds["requestLimits"]},
+                "approvalReceipt": "approval.json"}))
+            with self.assertRaisesRegex(ValueError, "not bound to its approval"):
+                driver.ApiJudge(root / "auth.json")
