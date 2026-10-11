@@ -1,0 +1,479 @@
+{
+  "schemaVersion": "decision-semantic-eval-v1",
+  "humanGoldCompleted": false,
+  "productionReplacementEligible": false,
+  "groups": {
+    "E01:frozen_real_source_batch": {
+      "items": 60,
+      "arms": {
+        "A": {
+          "attempts": 4,
+          "validated": 4,
+          "labelCounts": {
+            "pass": 60
+          },
+          "authorLabelMatches": 0,
+          "authorLabelDenominator": 0,
+          "statuses": {
+            "validated": 4
+          },
+          "p50Ms": 37205.79289604211,
+          "p95Ms": 46186.79826252046
+        },
+        "B": {
+          "attempts": 4,
+          "validated": 4,
+          "labelCounts": {
+            "fail": 17,
+            "pass": 43
+          },
+          "authorLabelMatches": 0,
+          "authorLabelDenominator": 0,
+          "statuses": {
+            "validated": 4
+          },
+          "p50Ms": 366.47747951792553,
+          "p95Ms": 510.9875536290928
+        }
+      },
+      "pairAgreement": 43,
+      "pairedItems": 60,
+      "mismatches": [],
+      "sourceClusterCount": 1,
+      "realInputAccuracyNotMeasured": true
+    },
+    "E02:unadjudicated_real_semantic_input": {
+      "items": 60,
+      "arms": {
+        "A": {
+          "attempts": 12,
+          "validated": 12,
+          "labelCounts": {
+            "meaning_preserved": 60
+          },
+          "authorLabelMatches": 0,
+          "authorLabelDenominator": 0,
+          "statuses": {
+            "validated": 12
+          },
+          "p50Ms": 2975.0438954797573,
+          "p95Ms": 4042.743743909523
+        },
+        "B": {
+          "attempts": 12,
+          "validated": 12,
+          "labelCounts": {
+            "meaning_preserved": 56,
+            "material_error": 4
+          },
+          "authorLabelMatches": 0,
+          "authorLabelDenominator": 0,
+          "statuses": {
+            "validated": 12
+          },
+          "p50Ms": 306.7211460438557,
+          "p95Ms": 371.8344963330309
+        }
+      },
+      "pairAgreement": 56,
+      "pairedItems": 60,
+      "mismatches": [],
+      "sourceClusterCount": 1,
+      "realInputAccuracyNotMeasured": true
+    },
+    "E04:unadjudicated_real_semantic_input": {
+      "items": 60,
+      "arms": {
+        "A": {
+          "attempts": 4,
+          "validated": 4,
+          "labelCounts": {
+            "equivalent": 31,
+            "material_difference": 29
+          },
+          "authorLabelMatches": 0,
+          "authorLabelDenominator": 0,
+          "statuses": {
+            "validated": 4
+          },
+          "p50Ms": 5933.913291490171,
+          "p95Ms": 6969.484597304836
+        },
+        "B": {
+          "attempts": 4,
+          "validated": 4,
+          "labelCounts": {
+            "equivalent": 40,
+            "material_difference": 20
+          },
+          "authorLabelMatches": 0,
+          "authorLabelDenominator": 0,
+          "statuses": {
+            "validated": 4
+          },
+          "p50Ms": 306.45677051506937,
+          "p95Ms": 340.57304105954245
+        }
+      },
+      "pairAgreement": 51,
+      "pairedItems": 60,
+      "mismatches": [],
+      "sourceClusterCount": 1,
+      "realInputAccuracyNotMeasured": true
+    },
+    "E06:unadjudicated_real_study_input": {
+      "items": 36,
+      "arms": {
+        "A": {
+          "attempts": 12,
+          "validated": 12,
+          "labelCounts": {
+            "supported": 35,
+            "unsupported": 1
+          },
+          "authorLabelMatches": 0,
+          "authorLabelDenominator": 0,
+          "statuses": {
+            "validated": 12
+          },
+          "p50Ms": 2369.196792016737,
+          "p95Ms": 4264.131608197929
+        },
+        "B": {
+          "attempts": 12,
+          "validated": 12,
+          "labelCounts": {
+            "supported": 36
+          },
+          "authorLabelMatches": 0,
+          "authorLabelDenominator": 0,
+          "statuses": {
+            "validated": 12
+          },
+          "p50Ms": 294.5604579290375,
+          "p95Ms": 392.0668081904296
+        }
+      },
+      "pairAgreement": 35,
+      "pairedItems": 36,
+      "mismatches": [],
+      "sourceClusterCount": 6,
+      "realInputAccuracyNotMeasured": true
+    },
+    "E01:constructed_semantic_challenge": {
+      "items": 9,
+      "arms": {
+        "A": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "preserved": 3,
+            "insufficient_evidence": 3,
+            "altered": 3
+          },
+          "authorLabelMatches": 9,
+          "authorLabelDenominator": 9,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 2637.1754999272525,
+          "p95Ms": 2637.1754999272525
+        },
+        "B": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "preserved": 3,
+            "insufficient_evidence": 3,
+            "altered": 3
+          },
+          "authorLabelMatches": 9,
+          "authorLabelDenominator": 9,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 270.81804198678583,
+          "p95Ms": 270.81804198678583
+        }
+      },
+      "pairAgreement": 9,
+      "pairedItems": 9,
+      "mismatches": [],
+      "sourceClusterCount": 1,
+      "realInputAccuracyNotMeasured": false
+    },
+    "E02:constructed_semantic_challenge": {
+      "items": 12,
+      "arms": {
+        "A": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "semantic_error": 4,
+            "faithful": 4,
+            "insufficient_evidence": 4
+          },
+          "authorLabelMatches": 12,
+          "authorLabelDenominator": 12,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 3406.9037080043927,
+          "p95Ms": 3406.9037080043927
+        },
+        "B": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "semantic_error": 4,
+            "faithful": 4,
+            "insufficient_evidence": 4
+          },
+          "authorLabelMatches": 12,
+          "authorLabelDenominator": 12,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 270.2882499434054,
+          "p95Ms": 270.2882499434054
+        }
+      },
+      "pairAgreement": 12,
+      "pairedItems": 12,
+      "mismatches": [],
+      "sourceClusterCount": 1,
+      "realInputAccuracyNotMeasured": false
+    },
+    "E03:constructed_semantic_challenge": {
+      "items": 12,
+      "arms": {
+        "A": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "open_text_revision": 3,
+            "human_review": 3,
+            "no_repair_needed": 3,
+            "source_ambiguity": 3
+          },
+          "authorLabelMatches": 12,
+          "authorLabelDenominator": 12,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 3014.288083068095,
+          "p95Ms": 3014.288083068095
+        },
+        "B": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "open_text_revision": 3,
+            "human_review": 3,
+            "no_repair_needed": 3,
+            "source_ambiguity": 3
+          },
+          "authorLabelMatches": 12,
+          "authorLabelDenominator": 12,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 251.2472909875214,
+          "p95Ms": 251.2472909875214
+        }
+      },
+      "pairAgreement": 12,
+      "pairedItems": 12,
+      "mismatches": [],
+      "sourceClusterCount": 1,
+      "realInputAccuracyNotMeasured": false
+    },
+    "E04:constructed_semantic_challenge": {
+      "items": 9,
+      "arms": {
+        "A": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "audio_verification_required": 3,
+            "text_discrepancy": 3,
+            "semantic_match": 3
+          },
+          "authorLabelMatches": 9,
+          "authorLabelDenominator": 9,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 2530.2144589368254,
+          "p95Ms": 2530.2144589368254
+        },
+        "B": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "audio_verification_required": 3,
+            "text_discrepancy": 3,
+            "semantic_match": 3
+          },
+          "authorLabelMatches": 9,
+          "authorLabelDenominator": 9,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 266.4754999568686,
+          "p95Ms": 266.4754999568686
+        }
+      },
+      "pairAgreement": 9,
+      "pairedItems": 9,
+      "mismatches": [],
+      "sourceClusterCount": 1,
+      "realInputAccuracyNotMeasured": false
+    },
+    "E06:constructed_semantic_challenge": {
+      "items": 12,
+      "arms": {
+        "A": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "unsupported": 3,
+            "contradiction": 3,
+            "insufficient_evidence": 3,
+            "supported": 3
+          },
+          "authorLabelMatches": 12,
+          "authorLabelDenominator": 12,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 3391.692042001523,
+          "p95Ms": 3391.692042001523
+        },
+        "B": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "unsupported": 3,
+            "contradiction": 3,
+            "insufficient_evidence": 3,
+            "supported": 3
+          },
+          "authorLabelMatches": 12,
+          "authorLabelDenominator": 12,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 261.8770420085639,
+          "p95Ms": 261.8770420085639
+        }
+      },
+      "pairAgreement": 12,
+      "pairedItems": 12,
+      "mismatches": [],
+      "sourceClusterCount": 1,
+      "realInputAccuracyNotMeasured": false
+    },
+    "E08:constructed_semantic_challenge": {
+      "items": 12,
+      "arms": {
+        "A": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "playback_problem": 3,
+            "no_action_needed": 3,
+            "clarification_needed": 3,
+            "content_correction": 3
+          },
+          "authorLabelMatches": 12,
+          "authorLabelDenominator": 12,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 2808.277834090404,
+          "p95Ms": 2808.277834090404
+        },
+        "B": {
+          "attempts": 1,
+          "validated": 1,
+          "labelCounts": {
+            "playback_problem": 3,
+            "no_action_needed": 3,
+            "clarification_needed": 3,
+            "content_correction": 3
+          },
+          "authorLabelMatches": 12,
+          "authorLabelDenominator": 12,
+          "statuses": {
+            "validated": 1
+          },
+          "p50Ms": 377.690082998015,
+          "p95Ms": 377.690082998015
+        }
+      },
+      "pairAgreement": 12,
+      "pairedItems": 12,
+      "mismatches": [],
+      "sourceClusterCount": 1,
+      "realInputAccuracyNotMeasured": false
+    }
+  },
+  "budget": {
+    "networkAttempts": 76,
+    "carriedPreviousMicrousd": 1950457,
+    "estimatedOrReservedMicrousd": 2995649,
+    "unsettledAttempts": 0,
+    "maxCostMicrousd": 20000000,
+    "invoiceVerified": false,
+    "hardProviderFinancialCapVerified": false
+  },
+  "runIdentity": {
+    "caseSetSha256": "3e6b2669115097bb52f72bb3a2688201a949927105ed212501e82b2fc770da1c",
+    "authoritySha256": "587a682c9ff37f3dd4c485c4c0465bf61b7fc36718f91f80a153bf0076a3a853",
+    "ledgerSha256": "33c6e40bc4e6fd5fba326fb5c211e9aad341bbe4363b3ac6cf59d44a6a32fa44",
+    "codeDependencySha256": "5d5f4a67640293e1f2a85b0b990da4236ce581bac63acfd0e0330d43509b416f",
+    "maxRequests": 76,
+    "inputPlanningBound": 65536
+  },
+  "priorRoundsNetworkRequests": 408,
+  "cumulativeNetworkRequests": 484,
+  "phaseEstimatedCostMicrousd": 1045192,
+  "reviewEvidence": {
+    "independentAgentQualitativeReviewOnly": true,
+    "humanGoldCompleted": false,
+    "englishDisagreementsBlindSample": 11,
+    "englishBlindPass": 11,
+    "translationBlindSample": 7,
+    "translationBlindLabels": {
+      "meaning_preserved": 5,
+      "needs_more_evidence": 2,
+      "material_error": 0
+    },
+    "asrBlindSample": 9,
+    "asrBlindLabels": {
+      "equivalent": 1,
+      "material_difference": 7,
+      "needs_more_evidence": 1
+    },
+    "studyBlindSample": 4,
+    "studyBlindLabels": {
+      "supported": 4
+    }
+  },
+  "stageObservationSeconds": {
+    "E01": 162.185,
+    "E02": 45.085,
+    "E03": 3.268,
+    "E04": 27.599,
+    "E06": 38.707,
+    "E08": 3.189
+  },
+  "resumeCheck": {
+    "stage": "E08",
+    "restoredArms": 2,
+    "requestsBefore": 76,
+    "requestsAfter": 76,
+    "originalTimingsPreserved": true
+  }
+}
