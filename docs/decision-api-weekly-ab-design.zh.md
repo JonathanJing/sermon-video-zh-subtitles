@@ -135,7 +135,7 @@ Pilot 仅给探索性结论。扩展测试目标每环节至少 200 个独立 ca
 
 每个 arm 记录 model/backend/effort/requested tier/actual tier、SDK／CLI版本、region、代码依赖闭包 hash、dirty diff hash、question/rubric hash、payload hash、source/candidate/ASR/timing hash、stateRevision、试验顺序、连接状态和缓存状态。actual tier 未返回保持 unknown。内容相同不要求 A/B prompt 字节相同，但输入语义证据必须一致；不向任何臂泄露 gold 或另一臂答案。
 
-B 只用文本，在同一 shared input 上可合并独立 questions；依赖前一个答案的后续判断另发请求、另计时间与费用。固定选项包含 needs_more_evidence／human／other。网络 timeout、refusal、未知 outcome 和无效 answer 留在分母，不自动重发。SDK 关闭隐式重试；请求前先写 experiment intent/reservation，返回后保存 raw answer 和可得 request-id header，再验证。不得假定 Decisions 有 retrieve 或 provider idempotency 能力。
+B 只用文本，在同一 shared input 上可合并独立 questions；依赖前一个答案的后续判断另发请求、另计时间与费用。固定选项包含 needs_more_evidence／human／other。网络 timeout、refusal、未知 outcome 和无效 answer 留在分母，不自动重发。 两个 POST 路径的 HTTP 5xx 均按 `outcome_unknown` 记录，保留原预算预留和状态码，立即停止后续派发；同一 ledger 在未知调用对账前拒绝新增 operation，不因重启或切换 stage 恢复派发资格。SDK 关闭隐式重试；请求前先写 experiment intent/reservation，返回后保存 raw answer 和可得 request-id header，再验证。不得假定 Decisions 有 retrieve 或 provider idempotency 能力。
 
 实验全部复用 [dev 环境启动器](openai-minimal-project-setup.zh.md)选定的 tongxing-dev-runtime；不创建 key，不消费 prod。读取现有预算框架建立独立实验支出范围，不能借生产 run 的未用预算。付费实施前需绑定各 phase 的 maxRequests、maxInputTokens、A/B/fallback 金额上限和批准收据；当前 JSON 的 liveExecutionAuthorized=false、金额 null 明确表示只完成设计。用户本次要求实验设计，不自动迁移生产配置或派发历史未决调用。
 

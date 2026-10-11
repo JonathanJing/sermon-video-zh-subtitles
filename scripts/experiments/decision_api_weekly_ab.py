@@ -315,6 +315,9 @@ class Ledger:
                 require(record["identity"] == identity and record["bounds"] == bounds,
                         "experiment_operation_identity_changed")
                 return False, record
+            require(not any(r.get("status") in {"reserved_outcome_unknown", "outcome_unknown"}
+                            for r in data["operations"].values()),
+                    "experiment_outcome_requires_reconciliation")
             require(not any(r.get("status") == "budget_bound_exceeded" for r in data["operations"].values()),
                     "experiment_observed_bound_exceeded")
             costs = sum(record.get("settledCostMicrousd")
@@ -453,7 +456,9 @@ def _worker():
                 result = {"status": "returned", "response": json.loads(body),
                           "requestId": safe_request_id(response.headers.get("x-request-id"))}
         except urllib.error.HTTPError as error:
-            result = {"status": "http_error", "httpStatus": error.code,
+            result = {"status": "outcome_unknown" if 500 <= error.code < 600 else "http_error",
+                      "httpStatus": error.code,
+                      "reasonCode": "provider_server_outcome_unknown" if 500 <= error.code < 600 else "provider_http_error",
                       "requestId": safe_request_id(error.headers.get("x-request-id"))}
     except BaseException:
         result = {"status": "outcome_unknown", "reasonCode": "provider_worker_failed"}
@@ -597,10 +602,14 @@ def measured_attempt(case, arm, *, mode, directory, ledger=None, dispatcher=disp
         except Exception:
             row.update(status="invalid_response", reasonCode="response_validation_failed")
     elif envelope.get("status") == "http_error":
-        row.update(status="http_error", httpStatus=envelope.get("httpStatus"),
-                   reasonCode="provider_http_error")
+        status = envelope.get("httpStatus")
+        uncertain = type(status) is int and 500 <= status < 600
+        row.update(status="outcome_unknown" if uncertain else "http_error", httpStatus=status,
+                   reasonCode="provider_server_outcome_unknown" if uncertain else "provider_http_error")
     else:
-        row.update(status="outcome_unknown", reasonCode="provider_outcome_unknown")
+        row.update(status="outcome_unknown", reasonCode=envelope.get("reasonCode", "provider_outcome_unknown"))
+        if type(envelope.get("httpStatus")) is int:
+            row["httpStatus"] = envelope["httpStatus"]
     row["timings"]["postprocessValidationMs"] = (time.monotonic()-before)*1000
     if cost is not None and cost > bounds["costMicrousd"]:
         row.update(status="budget_bound_exceeded", reasonCode="observed_cost_exceeds_reserved_bound")

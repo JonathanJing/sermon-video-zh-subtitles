@@ -1,10 +1,13 @@
 """Offline budget, validation and crash-resume checks; no provider calls."""
 import copy
+import io
+import urllib.error
+from types import SimpleNamespace
 from decimal import Decimal
 import tempfile
 from pathlib import Path
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from scripts.experiments import decision_api_weekly_ab as ab
 from scripts.experiments.decision_api_cases_rules import build_rule_cases
@@ -73,6 +76,61 @@ class RunnerTests(unittest.TestCase):
                                     ledger=self.ledger, dispatcher=unknown)
         self.assertEqual(third['status'], 'blocked_prior_operation')
         self.assertEqual(len(calls), 1)
+
+    def test_worker_post_5xx_is_unknown_for_both_provider_endpoints(self):
+        for kind, url in ab.ENDPOINTS.items():
+            for code in (500, 503, 429):
+                with self.subTest(kind=kind, code=code):
+                    packet = {'url': url, 'payload': {}, 'key': 'fake-key',
+                              'project': 'proj_fake', 'timeout': 1}
+                    output = io.BytesIO()
+                    opener = Mock()
+                    opener.open.side_effect = urllib.error.HTTPError(url, code, 'test',
+                                                                   {'x-request-id': 'req_test'}, None)
+                    with patch.object(ab.sys, 'stdin', SimpleNamespace(buffer=io.BytesIO(ab.encoded(packet)))), \
+                            patch.object(ab.sys, 'stdout', SimpleNamespace(buffer=output)), \
+                            patch.object(ab.urllib.request, 'build_opener', return_value=opener):
+                        ab._worker()
+                    row = ab.json.loads(output.getvalue())
+                    self.assertEqual(row['status'], 'outcome_unknown' if code >= 500 else 'http_error')
+                    self.assertEqual(row['httpStatus'], code)
+                    self.assertEqual(opener.open.call_args.args[0].get_method(), 'POST')
+
+    def test_5xx_preserves_reservation_and_blocks_later_network_operations(self):
+        case = copy.deepcopy(self.case)
+        case['a'] = {'kind': 'chat', 'payload': {
+            'model': 'gpt-6.1-sol', 'reasoning_effort': 'medium', 'service_tier': 'default',
+            'messages': [{'role': 'user', 'content': 'test'}],
+            'response_format': {'type': 'json_object'}}}
+        for arm in ('A', 'B'):
+            with self.subTest(arm=arm):
+                root = self.root / arm
+                ledger = ab.Ledger(root, ab.authority(root, [case], Decimal('20'), 200, 'test'))
+                dispatcher = Mock(return_value={'status': 'http_error', 'httpStatus': 503, 'requestId': 'req_test'})
+                row = ab.measured_attempt(case, arm, mode='live', directory=root/'live',
+                                          ledger=ledger, dispatcher=dispatcher)
+                self.assertEqual(row['status'], 'outcome_unknown')
+                self.assertEqual(row['httpStatus'], 503)
+                self.assertIsNone(row['estimatedCostMicrousd'])
+                self.assertEqual(ledger.summary()['unsettledAttempts'], 1)
+                record = ab.read(root/'ledger.json')['operations'][case['caseId']+'.'+arm]
+                self.assertEqual(ledger.summary()['estimatedOrReservedMicrousd'], record['bounds']['costMicrousd'])
+                with self.assertRaisesRegex(ValueError, 'experiment_outcome_requires_reconciliation'):
+                    ledger.reserve('another-request', {}, {'costMicrousd': 1})
+                restored = ab.measured_attempt(case, arm, mode='live', directory=root/'live',
+                                               ledger=ledger, dispatcher=dispatcher)
+                self.assertTrue(restored['restored'])
+                self.assertEqual(restored['status'], 'outcome_unknown')
+                self.assertEqual(dispatcher.call_count, 1)
+
+    def test_run_stops_at_unknown_server_outcome_before_the_other_arm(self):
+        args = SimpleNamespace(out=str(self.root), mode='offline', stage=self.case['stageId'], timeout=1)
+        row = {'status': 'outcome_unknown', 'restored': False, 'timings': {'effectiveDecisionMs': 1}}
+        with patch.object(ab, 'read', return_value=[self.case]), \
+                patch.object(ab, 'measured_attempt', return_value=row) as measured, \
+                patch.object(ab, 'atomic'), patch.object(ab, 'summarize', return_value={}), patch('builtins.print'):
+            self.assertEqual(ab.run(args), 2)
+        self.assertEqual(measured.call_count, 1)
 
     def test_budget_cannot_be_overbooked_or_changed(self):
         tiny = {**self.bound, 'maxCostMicrousd': 10}
