@@ -211,7 +211,9 @@ def inspect(config_path):
                           or read(refs[locale]).get('schemaVersion') in (
                               'sermon-target-language-machine-text-waiver-v1',
                               'sermon-target-language-machine-text-waiver-v2',
-                              'sermon-target-language-machine-audio-waiver-v1')
+                              'sermon-target-language-machine-audio-waiver-v1',
+                              'sermon-target-language-machine-audio-waiver-v2',
+                              'sermon-target-language-machine-audio-waiver-v3')
                           for name in ('full_review_receipt', 'spoken_review_receipt', 'audio_review_receipt')
                           for refs in [builder.assignment_map(getattr(args, name), args.locales)] for locale in args.locales)
     result = {'machineChecked': machine_checked, 'status': 'ready_to_prepare', 'planHash': plan_hash, 'kind': 'app_delivery',

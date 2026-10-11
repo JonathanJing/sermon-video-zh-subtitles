@@ -354,7 +354,8 @@ def prepare(args: argparse.Namespace) -> dict:
             audio_receipt_path = maps["audio_review_receipt"][locale]
             receipt_schema = read(audio_receipt_path)["schemaVersion"] + ".schema.json"
             audio_receipt = stage.read_package(audio_receipt_path, receipt_schema)
-            audio_waived = machine_basis.is_audio_waiver(audio_receipt)
+            from scripts import machine_audio_waiver_acceptance as machine_waivers
+            audio_waived = machine_waivers.is_audio_waiver(audio_receipt)
             require(audio["targetLocale"] == locale
                     and audio["englishSourcePackageJsonSha256"] == source_sha
                     and audio["targetLanguageCandidateJsonSha256"] == spoken_sha

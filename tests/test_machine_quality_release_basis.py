@@ -768,6 +768,47 @@ class AudioWaiverTests(unittest.TestCase):
             else:
                 stage.validate_audio_screening_review(package, legacy, screening)
 
+    def test_person_may_accept_failed_units_as_waiver_v3(self):
+        from scripts import audio_qc_human_acceptance as acceptance_rules
+        package, screening, qc, text = audio_fixture(flagged=True)
+        failed = copy.deepcopy(qc)
+        failed["status"] = "fail"
+        failed["results"][1].update(status="fail", asrDecision="fail", nextAction="re_render", asrSecondary=0.5,
+                                    asrSecondaryRecognized="내가 함께")
+        with self.assertRaisesRegex(ValueError, "Every unit must pass audio QC"):
+            self.build(package, screening, failed, text)
+        acceptance = acceptance_rules.build(
+            package=package, audio_qc=failed, decided_by="Jony", decided_at="2026-10-11T15:00:00Z",
+            user_statement="Ko用现有读音发布", group_ids=["g2"],
+            attribution={"g2": {"decidedBy": "Claude (delegated by Jony)", "decidedByRole": "delegated_agent",
+                                "reason": "numeral read as native Korean; shipped as is"}})
+        from scripts import machine_audio_waiver_acceptance as v3
+        anchor, candidate = audio_sources()
+        cal = seeded_into(calibration(), audio=failed, candidate=candidate, condensed=False)
+        receipt = v3.build_audio_waiver(
+            package, screening, failed, text, cal, human_acceptance=acceptance, anchor=anchor, candidate=candidate,
+            repair_ledger=bound_ledger("audio", failed, "ko", package["englishSourcePackageJsonSha256"],
+                                       basis.json_sha256(anchor), candidate["groups"]),
+            speech_job=fixtures.speech_job("ko"), track_check=track_check(package))
+        self.assertEqual(receipt["schemaVersion"], v3.SCHEMA)
+        self.assertFalse(receipt["humanApproval"])
+        self.assertEqual(receipt["humanAcceptance"]["groupIds"], ["g2"])
+        self.assertEqual(receipt["humanAcceptance"]["groupDecisions"][0]["decidedByRole"], "delegated_agent")
+        self.assertEqual([row["status"] for row in receipt["unitResults"]], ["pass", "human_accepted"])
+        v3.validate_audio_waiver(package, receipt, screening)
+        stage.validate_audio_screening_review(package, receipt, screening)
+        with self.assertRaisesRegex(ValueError, "Unsupported audio waiver schema"):
+            basis.validate_audio_waiver(package, receipt, screening)
+        # The acceptance binds the exact audio: a re-rendered unit is not accepted.
+        rerendered = copy.deepcopy(package)
+        rerendered["units"][1]["audio"]["sha256"] = "f" * 64
+        with self.assertRaisesRegex(ValueError, "human_acceptance_binding_changed|human_acceptance_unit_changed"):
+            acceptance_rules.check(acceptance, package=rerendered, audio_qc=failed)
+        # A unit the QC passed cannot be "accepted" into the record.
+        with self.assertRaisesRegex(ValueError, "human_acceptance_unit_not_failed"):
+            acceptance_rules.build(package=package, audio_qc=failed, decided_by="Jony", decided_at="2026-10-11T15:00:00Z",
+                                   user_statement="x", group_ids=["g1"])
+
     def test_waiver_refuses_subtitle_only_units_and_reviewed_packages(self):
         package, screening, qc, text = audio_fixture()
         partial = copy.deepcopy(qc)
