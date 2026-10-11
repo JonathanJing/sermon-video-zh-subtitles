@@ -1,0 +1,168 @@
+{
+ "schemaVersion": "sermon-audio-qc-human-acceptance-v1",
+ "targetLocale": "zh-Hans",
+ "targetLanguageAudioPackageJsonSha256": "34c08bd22d4d6aa411e9a05d6b7e476149e67c1fcf8b156560d9d6eccf8cddc2",
+ "targetLanguageCandidateJsonSha256": "e402fab4e25f0274f87c14e14f4ceb760411b79260469e9488be3ce779e4ed31",
+ "audioQcJsonSha256": "8a9b60c8c3f1bb78a077e1d781b99ae4eb050d86c57c2308599b03353cd75be0",
+ "decidedBy": "Jony",
+ "decidedByRole": "human_operator",
+ "humanApproval": true,
+ "decidedAt": "2026-10-11T15:08:28Z",
+ "userStatement": "单独给zh es接受记录，继续发布 (chat 2026-10-11; operator decision to publish the existing zh-Hans and es readings without re-synthesis)",
+ "units": [
+  {
+   "groupId": "translation-chunk-0001-u038",
+   "audioSha256": "27e595dcde1aa7c8287dfc66568cd1025bdfd177115ed7f62439df2022b3c41f",
+   "textSha256": "163217a961873710857e8fe9fea74f502b6323ba74d35041769d7fa83ee61b36",
+   "asrPrimaryRecognized": "一共有七只号角。",
+   "asrSecondaryRecognized": "一共有七只号角。",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "支/只 are homophones (zhī)"
+  },
+  {
+   "groupId": "translation-chunk-0002-u022",
+   "audioSha256": "d3ef23fc3cf7ab940f68b70fdacb65e09dd66904a6dc3de164a48092ce1b5ab1",
+   "textSha256": "df9e74bd1bb8e34002076a935782b141aa56e04410ca768b57ece7780f54a015",
+   "asrPrimaryRecognized": "你算一算，就会发现地球上会有二十七亿人丧生。",
+   "asrSecondaryRecognized": "你算一算就会发现，地球上会有二十七亿人丧生。",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "27亿 read as 二十七亿, the correct spoken form"
+  },
+  {
+   "groupId": "translation-chunk-0003-u013",
+   "audioSha256": "004a60907c8df8badbca9e7ceb4efcab63f2e7f60c400822669daa33b411bd40",
+   "textSha256": "b6805c480ac38af4cb95eb39657422d65163ce093944d00ee638ce82b1e2b04c",
+   "asrPrimaryRecognized": "神是有愤怒的。",
+   "asrSecondaryRecognized": "神是有愤怒的。",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "忿怒/愤怒 are homophones (fènnù)"
+  },
+  {
+   "groupId": "translation-chunk-0003-u016",
+   "audioSha256": "bdbcc420c72811ee76682234a1bf10bf6d70a8bd34bbe0bc4774e3e7be23540a",
+   "textSha256": "91a426d0c22050d4eff5d3acb0466c1f544a0eeca60c0d29b0519f46942551e4",
+   "asrPrimaryRecognized": "而正是因为神有慈爱，他也有愤怒。",
+   "asrSecondaryRecognized": "而正是因为神有慈爱，他也有愤怒。",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "忿怒/愤怒 and 祂/他 are homophones"
+  },
+  {
+   "groupId": "translation-chunk-0003-u032",
+   "audioSha256": "f851187e20a1ada3031924139ebfa49c2bba6c12c7466a08b9a914bd52360441",
+   "textSha256": "509ef9a2339a3872e97b249c4441f165fee33590c7b0805add33091538ae7e58",
+   "asrPrimaryRecognized": "他是最棒的。",
+   "asrSecondaryRecognized": "他是最棒的。",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "她/他 are homophones (tā)"
+  },
+  {
+   "groupId": "translation-chunk-0006-u036",
+   "audioSha256": "c3feffa9876479ec109d56b1e2937f69b4cc3a126d1ca50516d14697a817afa4",
+   "textSha256": "7129391b63e67b006bf396cc87f1b70c581fb762f04738e3f316c10be0c67cc4",
+   "asrPrimaryRecognized": "你们做出了回应。",
+   "asrSecondaryRecognized": "你们做出了回应。",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "作出/做出 are homophones"
+  },
+  {
+   "groupId": "translation-chunk-0007-u008",
+   "audioSha256": "028b066da05e4460d77c011cfd5cbc1bec9840d791a49872894c7b0803bb8a99",
+   "textSha256": "96f05dc2f39e95c15398a4f9e1eaaec760e4f70fa925c1d9b458b4b43c9a2864",
+   "asrPrimaryRecognized": "它就会降下瘟疫。",
+   "asrSecondaryRecognized": "它就会降下瘟疫。",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "他/它 are homophones (tā)"
+  },
+  {
+   "groupId": "translation-chunk-0007-u021",
+   "audioSha256": "22aee80320f61c3a6fa93501b457338133553a2810e226ea8dab5fa1cb9b7abe",
+   "textSha256": "88c619a688a7da037a12db316bb4ed197fcb26e7fcceb683a713ebd8d0e4dd96",
+   "asrPrimaryRecognized": "如果你手边有《series》杂志，可以看看第八十一页上方的表格。不过两者之间的相似之处确实多得惊人。",
+   "asrSecondaryRecognized": "如果你手边有《Sirius》杂志，可以看看第八十一页上方的表格。不过，两者之间的相似之处确实多得惊人。",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "第81页 read as 第八十一页; 'Series' is a Latin-script title"
+  },
+  {
+   "groupId": "translation-chunk-0007-u029",
+   "audioSha256": "67358b26d64acd0e4799b7080c8c24d2121d9d8f861a79f95d8b44a903c303db",
+   "textSha256": "90a1522b95b2dfdfdd6286406fc76c6768494b4a9eac22a431aa87cba5ef9e99",
+   "asrPrimaryRecognized": "在第八十一页的底部，你们会看到另一张表，里面讲的是创造和对创造的逆转。",
+   "asrSecondaryRecognized": "在第八十一页的底部，你们会看到另一张表，里面讲的是创造和对创造的逆转。",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "第81页 read as 第八十一页"
+  },
+  {
+   "groupId": "translation-chunk-0010-u009",
+   "audioSha256": "460a894c17afa11560a577d56b4acf8fcaec56a57eead47fbcf18bc5f17a58cd",
+   "textSha256": "6d1726459e21a21e78cd8a033cbe97f8d9aece00bea6b8a882b857e1680f1ce9",
+   "asrPrimaryRecognized": "他牺牲了自己的生命，为要使你我在他里面成为一人。",
+   "asrSecondaryRecognized": "他牺牲了自己的生命，为要使你我在他里面成为一人。",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "义人/一人: yì/yī confusion at the sentence end"
+  },
+  {
+   "groupId": "translation-chunk-0011-u009",
+   "audioSha256": "fd6950d6dc8a06c90b578bb804b4edf581580af530a82d546461460f57757df8",
+   "textSha256": "86707fe2b2d623406acdafd1882c36cc932a426b0208d16b0a3cf6ec7c33bde2",
+   "asrPrimaryRecognized": "所以今晚我们领受圣餐的合一方式。",
+   "asrSecondaryRecognized": "所以，今晚我们领受圣餐的合一方式。",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "合宜/合一: yí/yī confusion"
+  }
+ ]
+}

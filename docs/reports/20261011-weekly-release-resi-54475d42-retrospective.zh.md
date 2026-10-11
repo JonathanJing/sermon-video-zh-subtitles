@@ -378,3 +378,28 @@
 
 周六晚放入录像和计划；周日早上看到 Dev 站三语可播、一张 0–3 项的待决清单、一个「放行」按钮；周一 10 分钟抽听，发现问题用 `fix` 当天修。人只在白天做三次决定。
 
+## 十三、开发用夹具包（从本地生成物提取）
+
+`docs/reports/runs/20261011-weekly-fixtures/`：134 个文件、2.1 MB，全部脱敏（家目录、Spark 主机/用户/IP、邮箱、密钥），`manifest.json` 记录每个文件的来源与哈希，`tooling/build_fixture_bundle.py` 可在本机重新生成。它补上了第十节运行摘要没有覆盖的四类东西：**人的决定、失败句的原文与转写、时序数据、花费**。
+
+| 目录 | 内容 | 对应第八节的开发任务 |
+|---|---|---|
+| `decisions/text/` | 文字 QC 逐句接受记录 ko v2–v5、es v2–v5、zh v1（每句的 problems、决定人、角色、理由） | 回译 judge 规范化：这些就是「被接受的误报」集合 |
+| `decisions/audio/` | 音频逐句接受记录三语（每句两套 ASR 转写、决定理由） | ASR 评分规范化 |
+| `decisions/audio-review/` | 人工试听工作表（已填）与收据三语 | 发布后抽样表的输入格式 |
+| `decisions/study/` | 大纲/默想产物与审核收据三语 | 学习产物 v1 路径的真实样本 |
+| `decisions/layer4/`、`decisions/evidence/` | 元数据提案/批准、发布计划、每次人工决定的原话与时间 | `decisions.ndjson` 的雏形 |
+| `text-qc/flagged-groups.json` | 三语最终候选在历次筛查中被标记的全部组（含译文） | 规范化前后的误报对比基准 |
+| `text-qc/<locale>/` | 最终文字豁免、校准收据（逐次试验）、预检 | 校准改为按模型版本时的基线数据 |
+| `audio-qc/failed-units.json` | 三语单句 QC 失败句：两级 ASR 转写、相似度、声学指标、译文 | 数字/同音字折叠规则的测试集（预期：42 → ≤6） |
+| `audio-qc/screening-flags.json` | 三语 ASR 筛查标记句及 ASR 运行设置 | 同上；TTS 口播规则（韩语章号）的目标句 |
+| `audio-qc/ko-c5b/` | ko 音频注错校准收据（428 次试验、`dropped_key_word` 漏检样本）与整轨核对 | 漏词检测器修复 |
+| `timing/anchor-units.json`、`timing/schedules.json` | 461 个英文单元起止；三语原始 8 s 政策排程（zh 含 455 条超限）、c–c4 各次压缩尝试的政策与末尾时刻、c5 最终排程 | 1× 门禁 / 尾部滞后 / 片尾容差的离线夹具：`schedule()` 直接喂这些 entries |
+| `timing/mp3-bitrate-waveform-check.json` | 64/96/128 kbit/s 的波形核对结果 | 码率政策的依据 |
+| `cost/token-usage-by-ledger.json` | 每个预算账本的回复数与 token（文字 QC 27 072 次、874 万；Layer 2 220 次、50 万） | 账本成本字段修复的验收基线 |
+| `layer2/reviewer-repair-records.json`、`layer2/execution-*.json` | 第二模型复核触发的 12 条修复与各轮执行记录 | 决定复核留废的量化材料 |
+| `publication/` | 两个会话的全部发布收据（资产先行、封存、外壳、视频、海报、默认周、Dev 同步、推送准备）与 HTTP 核验 | 单入口发布工具的预期输出 |
+| `tooling/` | 本会话的 Spark 派发器（渲染/压缩/筛查/试听）、14 个链式脚本、内容 v3 构建、学习产物冻结；另一会话的发布 prepare/verify/config | 下周调度器与发布入口的起点；派发器里的容器挂载、路径映射、会话网关是已验证可用的模式 |
+
+读法建议：先看 `decisions/` 还原「为什么」，再用 `timing/` 与 `audio-qc/` 做离线测试，最后用 `cost/` 校验新账本。
+

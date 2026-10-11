@@ -1,0 +1,810 @@
+{
+ "note": "every group the text QC back-translation judge flagged in any screening of the final candidates (status != pass), with the translated text",
+ "counts": {
+  "zh-Hans": 31,
+  "ko": 41,
+  "es": 27
+ },
+ "rows": {
+  "zh-Hans": [
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0000-u002",
+    "problems": [
+     "Han share 0.48 < 0.60"
+    ],
+    "targetText": "如果我们还没见过面，我叫 Steve Bang Lee。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0000-u012",
+    "problems": [
+     "back_translation addition: my brother -> my younger brother"
+    ],
+    "targetText": "好，我弟弟如今很聪明，各方面也都挺好，但那天他带回家的那张成绩单，成绩可不怎么样。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0000-u017",
+    "problems": [
+     "Han share 0.52 < 0.60"
+    ],
+    "targetText": "“我要拿一把锤子，把那台PlayStation砸坏。”"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0000-u027",
+    "problems": [
+     "back_translation meaning_shift: Because we are. -> Because we really are stronger than our younger brothers and sisters."
+    ],
+    "targetText": "因为我们确实比弟弟妹妹强嘛。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0000-u035",
+    "problems": [
+     "back_translation meaning_shift: Yes. -> Remember."
+    ],
+    "targetText": "记得。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0000-u037",
+    "problems": [
+     "back_translation meaning_shift: Yes. -> Remember."
+    ],
+    "targetText": "记得。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0001-u007",
+    "problems": [
+     "Han share 0.42 < 0.60"
+    ],
+    "targetText": "而我的第三个念头是，那台PlayStation其实是我的PlayStation。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0001-u010",
+    "problems": [
+     "back_translation number: we're going to see God give warnings -> we will see God give a warning"
+    ],
+    "targetText": "所以我分享这件事，是因为今天晚上，当我们继续《启示录》这个系列的讲道时，我们会看到神发出警告。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0001-u012",
+    "problems": [
+     "back_translation number: He's going to give warnings -> God will give a warning"
+    ],
+    "targetText": "神要向世界发出警告，向这个悖逆、不信的世界发出警告。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0001-u020",
+    "problems": [
+     "back_translation addition: That's where we're going to be. -> Next, we will focus on this part."
+    ],
+    "targetText": "我们接下来就集中看这部分。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0001-u029",
+    "problems": [
+     "back_translation meaning_shift: God's people would blow a trumpet as a warning that they were about to attack. -> God's people will blow the trumpet and sound a warning, indicating that they are about to launch an attack."
+    ],
+    "targetText": "神的子民会吹响号角，发出警告，表明他们即将发动进攻。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0001-u035",
+    "problems": [
+     "back_translation addition: the walls of Jericho came tumbling down. -> Then the walls of Jericho collapsed."
+    ],
+    "targetText": "耶利哥的城墙就倒塌了。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0001-u036",
+    "problems": [
+     "back_translation number: The trumpets -> The sound of that trumpet"
+    ],
+    "targetText": "那号声是对耶利哥的警告，预告神即将要做的事。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0003-u037",
+    "problems": [
+     "back_translation meaning_shift: I felt angry. -> I feel angry."
+    ],
+    "targetText": "我感到愤怒。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0003-u038",
+    "problems": [
+     "back_translation meaning_shift: I felt angry -> that makes me angry"
+    ],
+    "targetText": "我们的世界里有暴力、虐待、酒后驾驶这样的事，这让我感到愤怒。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0003-u044",
+    "problems": [
+     "back_translation meaning_shift: He called me names. -> He scolded me."
+    ],
+    "targetText": "他骂我。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0004-u001",
+    "problems": [
+     "Han share 0.59 < 0.60"
+    ],
+    "targetText": "那个小男孩，我们能不能借用一下他的 PlayStation？"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0004-u013",
+    "problems": [
+     "Han share 0.59 < 0.60"
+    ],
+    "targetText": "贝基·曼利·皮珀特在她的著作《希望有其理由》(Hope Has Its Reasons)中，是这样说的。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0004-u037",
+    "problems": [
+     "back_translation meaning_shift: Like the intense guy, his core attribute is intensity. -> Just like that person who is such a stickler, his core trait is being a stickler."
+    ],
+    "targetText": "就像那个特别较真的人，他的核心特质就是较真。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0005-u032",
+    "problems": [
+     "back_translation number: Trumpets. -> Trumpet."
+    ],
+    "targetText": "号角。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0006-u028",
+    "problems": [
+     "back_translation meaning_shift: I've stood with people on our church patio -> I have stood with everyone in the courtyard of our church"
+    ],
+    "targetText": "我曾在我们教会的庭院里和大家站在一起，听过你们的故事。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0006-u035",
+    "problems": [
+     "back_translation number: trumpet warnings -> trumpet warning"
+    ],
+    "targetText": "你们听见了神发出的神圣而满有恩典的号角警告，并且作出了回应。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0007-u007",
+    "problems": [
+     "back_translation meaning_shift: He was unhappy. -> God is not pleased."
+    ],
+    "targetText": "神不高兴。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0007-u008",
+    "problems": [
+     "back_translation meaning_shift: He'd send a plague. -> He will then send down a plague.",
+     "back_translation addition:  -> then"
+    ],
+    "targetText": "他就会降下瘟疫。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0009-u010",
+    "problems": [
+     "back_translation addition: the prayers of the saints -> the prayers of all the saints"
+    ],
+    "targetText": "香的烟伴随着众圣徒的祷告，从天使的手中升到神面前。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0009-u022",
+    "problems": [
+     "back_translation meaning_shift: really convicted me -> really made me reflect deeply"
+    ],
+    "targetText": "很多年前，我听过一个令人惊叹的故事，实在让我深深反省。故事讲的是一个男人，"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0009-u027",
+    "problems": [
+     "back_translation meaning_shift: It was my sister. -> She is my sister."
+    ],
+    "targetText": "他说：“是我的姐妹。”"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0009-u034",
+    "problems": [
+     "back_translation meaning_shift: And anytime we walk by, -> And whenever we walked past there,"
+    ],
+    "targetText": "而每当我们从那里走过时，"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0010-u021",
+    "problems": [
+     "back_translation addition: And I will lead us in this room. -> And in this room, I will lead all of us in taking Communion together."
+    ],
+    "targetText": "而在这个房间里，我会带领我们大家一起领圣餐。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0010-u026",
+    "problems": [
+     "back_translation meaning_shift: our older brother -> our eldest brother"
+    ],
+    "targetText": "也不是放在我们所做的事上，而是放在耶稣——我们的长兄身上。"
+   },
+   {
+    "receipt": "19b182298914/entry-000001.json",
+    "groupId": "translation-chunk-0011-u019",
+    "problems": [
+     "back_translation addition: And remember, not 99% of your sins, 100% of all of your sins. -> your sins are forgiven"
+    ],
+    "targetText": "还有，要记住：你们的罪得赦免，不是百分之九十九，而是百分之百——你们所有的罪。"
+   }
+  ],
+  "ko": [
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0000-u040",
+    "problems": [
+     "back_translation meaning_shift: he brings it to my dad -> I bring those things to my father"
+    ],
+    "targetText": "그리고 그 물건들을 제 아버지에게 가져다줍니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0001-u037",
+    "problems": [
+     "back_translation number: the trumpets are God's divine warnings -> the trumpet is God's warning"
+    ],
+    "targetText": "그리고 요한계시록에서 나팔은 세상을 향한 하나님의 경고입니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0002-u010",
+    "problems": [
+     "back_translation addition: about one third of the elements -> about a third of the elements that make up the world"
+    ],
+    "targetText": "자, 여러분도 아마 이 첫 네 나팔이 세상을 이루는 요소들의 약 삼분의 일에 영향을 미쳤다는 점을 알아차리셨을 것입니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0003-u004",
+    "problems": [
+     "back_translation addition:  -> It is praising ... not praising ..."
+    ],
+    "targetText": "피비린내 나는 복수와 하나님의 진노를 찬양하는 것이지, 사랑이나 자비, 용서와 화해를 찬양하는 것은 아니라는 것입니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0003-u044",
+    "problems": [
+     "back_translation meaning_shift: He called me names. -> That kid swore at me."
+    ],
+    "targetText": "“그 애가 저한테 욕을 했어요.”"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0004-u001",
+    "problems": [
+     "back_translation addition:  -> Could you ask"
+    ],
+    "targetText": "그 어린 남자아이에게 우리가 그 아이의 플레이스테이션을 빌릴 수 있는지 물어봐 줄래?"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0004-u013",
+    "problems": [
+     "Hangul share 0.59 < 0.60"
+    ],
+    "targetText": "베키 맨리 피퍼트는 자신의 저서 『Hope Has Its Reasons』에서 이렇게 표현했습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0005-u021",
+    "problems": [
+     "back_translation number: but also signs -> but also through a sign"
+    ],
+    "targetText": "그러니 나팔들이 주어지기도 전에 침묵뿐 아니라 표징을 통해서도 하나님의 거룩함이 어떻게 분명히 드러났는지 아시겠습니까?"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0005-u032",
+    "problems": [
+     "back_translation number: Trumpets. -> It is a trumpet."
+    ],
+    "targetText": "나팔입니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0005-u034",
+    "problems": [
+     "back_translation number: the trumpet warnings are given -> a warning given through the trumpet"
+    ],
+    "targetText": "그리고 그제야, 오직 그제야 나팔을 통한 경고가 주어집니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0007-u008",
+    "problems": [
+     "back_translation meaning_shift: He'd send a plague. -> God used to bring disasters."
+    ],
+    "targetText": "하나님은 재앙을 내리곤 했습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0008-u008",
+    "problems": [
+     "back_translation meaning_shift: to spend all our energy curating our image -> We are putting all our energy into cultivating our own image"
+    ],
+    "targetText": "예수의 형상으로 변화되기보다는 우리의 이미지를 가꾸는 데 모든 힘을 쏟는 것입니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0008-u014",
+    "problems": [
+     "back_translation addition: how do you and I -> how should you and I live?"
+    ],
+    "targetText": "여러분이 예수를 믿고 의지하게 되었다면, 그의 나팔을 통한 경고를 듣고 응답했다면, 여러분과 저는 어떻게 살아야 하겠습니까?"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0008-u016",
+    "problems": [
+     "back_translation addition: In two ways. -> We must live in two ways."
+    ],
+    "targetText": "두 가지 방식으로 살아가야 합니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0008-u022",
+    "problems": [
+     "back_translation addition: my brother -> my younger sibling"
+    ],
+    "targetText": "제 아버지는 제 동생 때문에 마음 아파하고 있었습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0008-u023",
+    "problems": [
+     "back_translation meaning_shift: My heart should have also ached for my brother, but I missed it. -> I, too, should have felt heartache thinking of my brother, but I did not understand his feelings."
+    ],
+    "targetText": "저도 제 형제를 생각하며 마음 아파했어야 했지만, 그 마음을 헤아리지 못했습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0009-u002",
+    "problems": [
+     "back_translation addition: just drop the hammer on you -> punishes you without mercy"
+    ],
+    "targetText": "“아, 예수가 다시 돌아와 너희에게 가차 없이 벌을 내릴 때가 정말 기다려집니다.”"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0010-u007",
+    "problems": [
+     "back_translation meaning_shift: he was not self-righteous -> he did not boast about his own righteousness"
+    ],
+    "targetText": "예수는 완전히 의로웠지만, 자기 의를 내세우지는 않았습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0010-u029",
+    "problems": [
+     "back_translation meaning_shift: You walked in here tonight -> Some of you came in here tonight."
+    ],
+    "targetText": "여러분 중 어떤 분은 오늘 밤 이곳에 들어왔습니다. 그리고 그 문을 지나 이 방에 들어오기 전에 자신의 오래된 영적 성적표를 재빨리 확인했습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0011-u001",
+    "problems": [
+     "back_translation addition: Card, -> I'm talking about report cards."
+    ],
+    "targetText": "성적표 말입니다. 여러분도 교회에 가기 전에 그렇게 해 본 적이 있습니까?"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000001.json",
+    "groupId": "translation-chunk-0011-u009",
+    "problems": [
+     "back_translation addition: And so the worthy way that we take communion tonight -> So the way we partake of Communion worthily tonight is"
+    ],
+    "targetText": "그래서 오늘 밤 우리가 합당하게 성찬에 참여하는 방법은"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0000-u029",
+    "problems": [
+     "back_translation addition: my brother -> my younger brother"
+    ],
+    "targetText": "제 남동생이 또 성적이 좋지 않은 성적표를 집에 가져온다면 얼마나 웃기겠어요?"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0000-u040",
+    "problems": [
+     "back_translation number: he brings -> they bring"
+    ],
+    "targetText": "그리고 그 물건들을 제 아버지에게 가져다줍니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0000-u041",
+    "problems": [
+     "back_translation meaning_shift: From upstairs, I hear two loud cracks. -> I hear a loud sound of something breaking upstairs twice."
+    ],
+    "targetText": "저는 위층에서 무언가 깨지는 큰 소리를 두 번 듣습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0001-u037",
+    "problems": [
+     "back_translation number: the trumpets are God's divine warnings -> the trumpet is God's warning"
+    ],
+    "targetText": "그리고 요한계시록에서 나팔은 세상을 향한 하나님의 경고입니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0002-u024",
+    "problems": [
+     "back_translation meaning_shift: It is intense. -> It is truly amazing."
+    ],
+    "targetText": "정말 엄청납니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0003-u004",
+    "problems": [
+     "back_translation addition: bloody vengeance, and divine wrath -> It is praising bloody revenge and God's wrath"
+    ],
+    "targetText": "피비린내 나는 복수와 하나님의 진노를 찬양하는 것이지, 사랑이나 자비, 용서와 화해를 찬양하는 것은 아니라는 것입니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0003-u016",
+    "problems": [
+     "back_translation meaning_shift: God is also wrathful -> God sometimes becomes angry"
+    ],
+    "targetText": "그리고 하나님이 진노하기도 하는 것은 바로 하나님이 사랑이 많기 때문입니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0003-u044",
+    "problems": [
+     "back_translation meaning_shift: He called me names. -> That kid swore at me."
+    ],
+    "targetText": "“그 애가 저한테 욕을 했어요.”"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0004-u001",
+    "problems": [
+     "back_translation addition: that little boy if we could borrow his PlayStation. -> Could you ask that little boy if we can borrow his PlayStation?"
+    ],
+    "targetText": "그 어린 남자아이에게 우리가 그 아이의 플레이스테이션을 빌릴 수 있는지 물어봐 줄래?"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0004-u013",
+    "problems": [
+     "Hangul share 0.59 < 0.60"
+    ],
+    "targetText": "베키 맨리 피퍼트는 자신의 저서 『Hope Has Its Reasons』에서 이렇게 표현했습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0005-u021",
+    "problems": [
+     "back_translation number: but also signs -> but also through a sign"
+    ],
+    "targetText": "그러니 나팔들이 주어지기도 전에 침묵뿐 아니라 표징을 통해서도 하나님의 거룩함이 어떻게 분명히 드러났는지 아시겠습니까?"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0005-u032",
+    "problems": [
+     "back_translation number: Trumpets. -> It is a trumpet."
+    ],
+    "targetText": "나팔입니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0007-u008",
+    "problems": [
+     "back_translation meaning_shift: He'd send a plague. -> God used to send disasters."
+    ],
+    "targetText": "하나님은 재앙을 내리곤 했습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0008-u014",
+    "problems": [
+     "back_translation addition: how do you and I, -> how should you and I live?"
+    ],
+    "targetText": "여러분이 예수를 믿고 의지하게 되었다면, 그의 나팔을 통한 경고를 듣고 응답했다면, 여러분과 저는 어떻게 살아야 하겠습니까?"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0008-u016",
+    "problems": [
+     "back_translation addition: In two ways. -> We must live in two ways."
+    ],
+    "targetText": "두 가지 방식으로 살아가야 합니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0008-u022",
+    "problems": [
+     "back_translation meaning_shift: My dad's heart was aching for my brother. -> My father was heartbroken because of my younger sibling.",
+     "back_translation addition: my brother -> my younger sibling"
+    ],
+    "targetText": "제 아버지는 제 동생 때문에 마음 아파하고 있었습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0008-u023",
+    "problems": [
+     "back_translation meaning_shift: but I missed it. -> but I did not understand his feelings."
+    ],
+    "targetText": "저도 제 형제를 생각하며 마음 아파했어야 했지만, 그 마음을 헤아리지 못했습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0009-u002",
+    "problems": [
+     "back_translation addition: drop the hammer on you -> punishes you without mercy"
+    ],
+    "targetText": "“아, 예수가 다시 돌아와 너희에게 가차 없이 벌을 내릴 때가 정말 기다려집니다.”"
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0010-u007",
+    "problems": [
+     "back_translation meaning_shift: he was not self-righteous -> he did not boast about his own righteousness"
+    ],
+    "targetText": "예수는 완전히 의로웠지만, 자기 의를 내세우지는 않았습니다."
+   },
+   {
+    "receipt": "c41c57f4ea36/entry-000002.json",
+    "groupId": "translation-chunk-0010-u029",
+    "problems": [
+     "back_translation meaning_shift: You walked in here tonight ... you quickly checked your old spiritual report card. -> Some of you came in here tonight ... you quickly checked your old spiritual report card."
+    ],
+    "targetText": "여러분 중 어떤 분은 오늘 밤 이곳에 들어왔습니다. 그리고 그 문을 지나 이 방에 들어오기 전에 자신의 오래된 영적 성적표를 재빨리 확인했습니다."
+   }
+  ],
+  "es": [
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0000-u008",
+    "problems": [
+     "back_translation meaning_shift: as the oldest sibling -> being the older brother"
+    ],
+    "targetText": "Muchos de ustedes crecieron siendo el hermano mayor."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0000-u040",
+    "problems": [
+     "back_translation number: he brings it to my dad -> he takes them to my dad"
+    ],
+    "targetText": "Y se los lleva a mi papá."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0003-u045",
+    "problems": [
+     "back_translation meaning_shift: tell her -> tell him"
+    ],
+    "targetText": "¿Saben qué quería decirle?"
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0003-u046",
+    "problems": [
+     "back_translation meaning_shift: I wanted to say to her -> I wanted to say to him"
+    ],
+    "targetText": "Quería decirle: «¿Puedes preguntarle…?»"
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0004-u006",
+    "problems": [
+     "back_translation meaning_shift: It's to not care. -> It is not worrying."
+    ],
+    "targetText": "Es no preocuparse."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0007-u001",
+    "problems": [
+     "back_translation meaning_shift: You don't know -> They don't know"
+    ],
+    "targetText": "No lo saben; Dios podría estar allá arriba ahora mismo diciendo:"
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0007-u002",
+    "problems": [
+     "back_translation meaning_shift: Are they getting any of these messages? -> Are you receiving any of these messages?"
+    ],
+    "targetText": "¿Están recibiendo alguno de estos mensajes?"
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0008-u020",
+    "problems": [
+     "back_translation meaning_shift: I was just filled with self-righteousness. -> He was simply filled with a sense of moral superiority."
+    ],
+    "targetText": "Simplemente estaba lleno de un sentido de superioridad moral."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0009-u007",
+    "problems": [
+     "back_translation meaning_shift: not tweeting about the world, but praying for the world -> you are not tweeting about the world, but praying for the world"
+    ],
+    "targetText": "Esto les va a sorprender: no están tuiteando sobre el mundo, sino orando por el mundo."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0009-u024",
+    "problems": [
+     "back_translation number: we asked him -> we asked them"
+    ],
+    "targetText": "Y le preguntamos: «¿Qué marcó la diferencia?»"
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0009-u033",
+    "problems": [
+     "back_translation meaning_shift: put it in the fridge -> put it on the refrigerator"
+    ],
+    "targetText": "o escribiéramos el nombre de esa persona en un bloc de notas adhesivas y lo pusiéramos en el refrigerador."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0010-u006",
+    "problems": [
+     "back_translation meaning_shift: Jesus is our oldest spiritual brother. -> Jesus is our older brother spiritually."
+    ],
+    "targetText": "Saben, el libro de Hebreos nos dice que Jesús es nuestro hermano, que Jesús es nuestro hermano mayor en lo espiritual."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0010-u013",
+    "problems": [
+     "back_translation meaning_shift: Not on you, not on me. -> Not about you, not about me."
+    ],
+    "targetText": "No sobre ti, no sobre mí."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000001.json",
+    "groupId": "translation-chunk-0011-u001",
+    "problems": [
+     "back_translation meaning_shift: Card, you ever do that before you go to church? -> Do you ever check that ticket before going to church?"
+    ],
+    "targetText": "¿Alguna vez revisas esa boleta antes de ir a la iglesia?"
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0000-u008",
+    "problems": [
+     "back_translation meaning_shift: the oldest sibling -> the older brother"
+    ],
+    "targetText": "Muchos de ustedes crecieron siendo el hermano mayor."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0003-u045",
+    "problems": [
+     "back_translation meaning_shift: what I wanted to tell her -> what I wanted to tell you"
+    ],
+    "targetText": "¿Saben qué quería decirle?"
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0003-u046",
+    "problems": [
+     "back_translation meaning_shift: I wanted to say to her -> I wanted to say to him"
+    ],
+    "targetText": "Quería decirle: «¿Puedes preguntarle…?»"
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0004-u006",
+    "problems": [
+     "back_translation meaning_shift: It's to not care. -> It is not worrying."
+    ],
+    "targetText": "Es no preocuparse."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0007-u001",
+    "problems": [
+     "back_translation meaning_shift: You don't know -> They don't know"
+    ],
+    "targetText": "No lo saben; Dios podría estar allá arriba ahora mismo diciendo:"
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0007-u002",
+    "problems": [
+     "back_translation meaning_shift: Are they getting any of these messages? -> Are you receiving any of these messages?"
+    ],
+    "targetText": "¿Están recibiendo alguno de estos mensajes?"
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0007-u008",
+    "problems": [
+     "back_translation meaning_shift: He'd send a plague. -> He sent a plague."
+    ],
+    "targetText": "Él enviaba una plaga."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0008-u020",
+    "problems": [
+     "back_translation meaning_shift: I was just filled with self-righteousness. -> He was simply filled with a sense of moral superiority."
+    ],
+    "targetText": "Simplemente estaba lleno de un sentido de superioridad moral."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0008-u024",
+    "problems": [
+     "back_translation meaning_shift: I was self-righteous. -> I thought I was righteous."
+    ],
+    "targetText": "No me di cuenta porque me creía justo."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0009-u033",
+    "problems": [
+     "back_translation meaning_shift: put it in the fridge -> put it on the refrigerator"
+    ],
+    "targetText": "o escribiéramos el nombre de esa persona en un bloc de notas adhesivas y lo pusiéramos en el refrigerador."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0010-u006",
+    "problems": [
+     "back_translation meaning_shift: Jesus is our oldest spiritual brother. -> Jesús is our older brother spiritually."
+    ],
+    "targetText": "Saben, el libro de Hebreos nos dice que Jesús es nuestro hermano, que Jesús es nuestro hermano mayor en lo espiritual."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0010-u013",
+    "problems": [
+     "back_translation meaning_shift: Not on you, not on me. -> Not about you, not about me."
+    ],
+    "targetText": "No sobre ti, no sobre mí."
+   },
+   {
+    "receipt": "cddd839b303f/entry-000002.json",
+    "groupId": "translation-chunk-0011-u001",
+    "problems": [
+     "back_translation meaning_shift: Card, you ever do that before you go to church? -> Do you ever check that ticket before going to church?"
+    ],
+    "targetText": "¿Alguna vez revisas esa boleta antes de ir a la iglesia?"
+   }
+  ]
+ }
+}
