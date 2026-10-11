@@ -53,7 +53,17 @@ class TranslatorBackendPolicyTests(unittest.TestCase):
     def test_claude_policy_selects_claude_translator_and_keeps_sol_reviewer(self):
         policy = translator_policy(CLAUDE, 'high')
         self.assertEqual(models.translator_backend(policy), 'claude_cli')
-        self.assertEqual(models.production_models(policy), {'translator': CLAUDE, 'reviewer': 'gpt-6.1-sol'})
+        with self.assertRaisesRegex(ValueError, 'experimental_only'):
+            models.production_models(policy)
+
+    def test_claude_history_is_recoverable_only_without_dispatch(self):
+        policy = translator_policy(CLAUDE, 'high')
+        self.assertEqual(models.historical_models(policy, cache_only=True)['translator'], CLAUDE)
+        with self.assertRaisesRegex(ValueError, 'unsupported_historical_model_policy'):
+            models.historical_models(policy, cache_only=False)
+        policy['reviewer']['model'] = CLAUDE
+        with self.assertRaisesRegex(ValueError, 'unsupported_historical_model_policy'):
+            models.historical_models(policy, cache_only=True)
 
     def test_claude_effort_or_unknown_model_is_refused(self):
         with self.assertRaisesRegex(ValueError, 'translator_backend_effort_changed'):
@@ -129,7 +139,8 @@ class ClaudeTransportAdapterTests(unittest.TestCase):
 
     def test_child_environment_drops_openai_and_anthropic_credentials(self):
         environ = {'OPENAI_API_KEY': 'k1', 'OPENAI_PROJECT_ID': 'p1', 'ANTHROPIC_API_KEY': 'k2',
-                   'CLAUDE_CODE_SESSION': 's', 'PATH': '/bin'}
+                   'CLAUDE_CODE_SESSION': 's', 'ANTHROPIC_BASE_URL': 'https://bad',
+                   'ANTHROPIC_CUSTOM_HEADERS': 'private', 'PATH': '/bin'}
         self.assertEqual(claude.child_environment(environ), {'PATH': '/bin'})
 
 
@@ -165,6 +176,10 @@ class ClaudeBudgetedCallerTests(unittest.TestCase):
         response = self.caller(claude_transport=fake)('sk-openai-must-not-leak', self.payload)
         self.assertEqual(fake.calls, [('', 'translator')])
         self.assertEqual(response['model'], CLAUDE)
+        records = list(self.caller(claude_transport=fake).root.glob('responses/*.json'))
+        self.assertEqual(len(records), 1)
+        self.assertEqual(jobs._read(records[0])['priceAssumptionVersion'],
+                         limits.PRICE_ASSUMPTION_VERSION_BY_MODEL[CLAUDE])
         self.assertEqual(models.completed_response_content(response, CLAUDE, 'translator'),
                          json.dumps({'translation': 'ok'}, ensure_ascii=False))
         data = jobs._read(self.h.auth['root'] / ledger.STORE_ID / 'state.json')

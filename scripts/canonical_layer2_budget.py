@@ -145,7 +145,7 @@ class BudgetedCaller:
         def preserve(response, attempt_id, elapsed):
             record = {'payloadSha256': fingerprint, 'response': response,
                       'reservationId': reservation['reservationId'], 'elapsedMs': int(elapsed * 1000) + 1,
-                      'modelCallId': attempt_id, 'priceAssumptionVersion': limits.PRICE_ASSUMPTION_VERSION,
+                      'modelCallId': attempt_id, 'priceAssumptionVersion': limits.PRICE_ASSUMPTION_VERSION_BY_MODEL.get(payload['model'], limits.PRICE_ASSUMPTION_VERSION),
                       'invoiceVerified': False}
             jobs._persist(returned, record)
             observed.append(record)
@@ -172,7 +172,7 @@ class BudgetedCaller:
         elapsed_ms = int((time.monotonic() - start) * 1000) + 1
         record = observed[0] if observed else {'payloadSha256': fingerprint, 'response': response,
                   'reservationId': reservation['reservationId'], 'elapsedMs': elapsed_ms,
-                  'priceAssumptionVersion': limits.PRICE_ASSUMPTION_VERSION, 'invoiceVerified': False}
+                  'priceAssumptionVersion': limits.PRICE_ASSUMPTION_VERSION_BY_MODEL.get(payload['model'], limits.PRICE_ASSUMPTION_VERSION), 'invoiceVerified': False}
         jobs._persist(returned, record)
         usage = response.get('usage', {})
         inputs, outputs = usage.get('prompt_tokens'), usage.get('completion_tokens')
