@@ -339,6 +339,16 @@ class Ledger:
                 if cost > record["bounds"]["costMicrousd"]:
                     record["status"] = "budget_bound_exceeded"
             atomic(path, data)
+    def verify_restored(self, operation, identity, bounds, receipt):
+        """A cached receipt is reusable only after its exact ledger settlement is durable."""
+        with self.locked() as (data, _):
+            record = data["operations"].get(operation)
+            require(record is not None and record["identity"] == identity and record["bounds"] == bounds,
+                    "cached_receipt_operation_identity_changed")
+            require(record.get("receiptSha256") == digest(receipt)
+                    and record.get("status") == receipt["status"]
+                    and record.get("settledCostMicrousd") == receipt.get("estimatedCostMicrousd"),
+                    "cached_receipt_requires_ledger_reconciliation")
     def summary(self):
         with self.locked() as (data, _):
             records = list(data["operations"].values())
@@ -489,6 +499,15 @@ def measured_attempt(case, arm, *, mode, directory, ledger=None, dispatcher=disp
         previous = read(path)
         require(previous["caseSha256"] == case_hash and previous["mode"] == mode,
                 "cached_receipt_identity_changed")
+        if mode == "live" and previous.get("payloadSha256"):
+            require(ledger is not None, "live_requires_bound_ledger")
+            payload, bounds, kind = payload_and_bounds(case, arm)
+            identity = {"caseSha256": case_hash, "payloadSha256": digest(payload), "arm": arm,
+                        "evidenceSha256": digest(case["sharedEvidence"]),
+                        "codeDependencySha256": ledger.authority["codeDependencySha256"]}
+            require(all(previous.get(key) == value for key, value in identity.items())
+                    and previous.get("backend") == kind, "cached_receipt_identity_changed")
+            ledger.verify_restored(case["caseId"] + "." + arm, identity, bounds, previous)
         return {**previous, "restored": True}
     started = time.monotonic()
     row = {"schemaVersion": VERSION, "caseId": case["caseId"], "stageId": case["stageId"],

@@ -155,4 +155,4 @@ B 只用文本，在同一 shared input 上可合并独立 questions；依赖前
 | 6 | 10 分钟及全长隔离恢复 canary，记录必要修订和人审 | label-only / equivalent_task / end_to_end_repair 分开 |
 | 7 | 按证据提出逐环节替换或混合方案 | 正式策略变更、生产／发布、HTTP与设备收据另行处理 |
 
-产物目录建议：`artifacts/decision-api-weekly-ab/<experimentId>/<stageId>/<caseId>/<arm>/<attemptId>/`。case-level gold 受控保存；发布报告只用安全 ID／hash和汇总。持久恢复读取原 receipts；缺失 time/usage 保持 unknown。结构测试通过、API 可访问、pilot 胜出、生产接入与完整周发布分别报告。
+产物目录建议：`artifacts/decision-api-weekly-ab/<experimentId>/<stageId>/<caseId>/<arm>/<attemptId>/`。case-level gold 受控保存；发布报告只用安全 ID／hash和汇总。持久恢复读取原 receipts；live 网络收据必须同时匹配当前 operation 的 case/payload/evidence/code 身份、预算 bounds 和 ledger settlement hash／cost。若进程在写完 receipt 后、ledger.finish 前中断，恢复明确报 `cached_receipt_requires_ledger_reconciliation`，保留预留并要求对账，不标记 restored 成功、不重发请求；缺失 time/usage 保持 unknown。结构测试通过、API 可访问、pilot 胜出、生产接入与完整周发布分别报告。

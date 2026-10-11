@@ -167,6 +167,41 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(bounds['outputTokens'], ab.MAX_COMPLETION)
         self.assertGreaterEqual(bounds['costMicrousd'], 22 * ab.MAX_COMPLETION)
 
+    def test_receipt_written_before_ledger_finish_requires_reconciliation_without_dispatch(self):
+        calls = []
+        def returned(*args):
+            calls.append(args)
+            return {'status': 'returned', 'response': self.response()}
+        with patch.object(self.ledger, 'finish', side_effect=RuntimeError('crash after receipt')):
+            with self.assertRaisesRegex(RuntimeError, 'crash after receipt'):
+                ab.measured_attempt(self.case, 'B', mode='live', directory=self.root/'live',
+                                    ledger=self.ledger, dispatcher=returned)
+        self.assertEqual(self.ledger.summary()['unsettledAttempts'], 1)
+        with self.assertRaisesRegex(ValueError, 'cached_receipt_requires_ledger_reconciliation'):
+            ab.measured_attempt(self.case, 'B', mode='live', directory=self.root/'live',
+                                ledger=self.ledger, dispatcher=returned)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(self.ledger.summary()['unsettledAttempts'], 1)
+
+    def test_restoration_rejects_changed_ledger_operation_identity_and_receipt(self):
+        ab.measured_attempt(self.case, 'B', mode='live', directory=self.root/'live',
+                            ledger=self.ledger, dispatcher=lambda *_: {'status': 'returned', 'response': self.response()})
+        operation = self.case['caseId'] + '.B'
+        with self.ledger.locked() as (data, path):
+            original = copy.deepcopy(data)
+            data['operations'][operation]['identity']['payloadSha256'] = 'f' * 64
+            ab.atomic(path, data)
+        with patch.object(ab, 'dispatch', side_effect=AssertionError('no network')):
+            with self.assertRaisesRegex(ValueError, 'cached_receipt_operation_identity_changed'):
+                ab.measured_attempt(self.case, 'B', mode='live', directory=self.root/'live', ledger=self.ledger)
+            ab.atomic(self.root/'ledger.json', original)
+            receipt_path = self.root/'live'/self.case['stageId']/self.case['caseId']/'B'/'receipt.json'
+            receipt = ab.read(receipt_path)
+            receipt['estimatedCostMicrousd'] = 0
+            ab.atomic(receipt_path, receipt)
+            with self.assertRaisesRegex(ValueError, 'cached_receipt_requires_ledger_reconciliation'):
+                ab.measured_attempt(self.case, 'B', mode='live', directory=self.root/'live', ledger=self.ledger)
+
     def test_valid_receipt_resume_preserves_call_and_cost(self):
         calls = []
         def returned(*args):
