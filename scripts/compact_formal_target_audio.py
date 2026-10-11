@@ -34,7 +34,8 @@ THRESHOLD = 0.01
 PADDING_SECONDS = 0.06
 WINDOW_SECONDS = 0.01
 MAX_TRIM_SECONDS = 0.75
-MAX_TAIL_OVERRUN_SECONDS = 1.0
+# One bound for every consumer of the tail allowance (renderer, timing plan, package builder).
+MAX_TAIL_OVERRUN_SECONDS = renderer.MAX_TAIL_OVERRUN_SECONDS
 
 
 def require(ok: bool, message: str) -> None:

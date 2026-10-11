@@ -124,6 +124,11 @@ class ExportTests(unittest.TestCase):
         incomplete = settings(); incomplete.pop("instruct")
         with self.assertRaisesRegex(ValueError, "Complete explicit"):
             producer.recovery_render_settings(incomplete)
+        # The tail allowance is the one optional field: absent means 0.0, present it is bounded.
+        self.assertEqual(producer.recovery_render_settings(settings(tailOverrunSeconds=0.5))["tailOverrunSeconds"], 0.5)
+        for bad in (1.5, -0.1, float("nan"), "0.5"):
+            with self.subTest(tail=bad), self.assertRaisesRegex(ValueError, "scheduling policy"):
+                producer.recovery_render_settings(settings(tailOverrunSeconds=bad))
 
     def test_precise_direct_parent_batch_cache_survives_pure_builder_extraction(self):
         from tests.test_formal_audio_batching import BatchEngine

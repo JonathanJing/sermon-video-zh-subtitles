@@ -68,6 +68,9 @@ RENDERER_SOUND_IDENTITY_SHA256 = "fef7604882470137f46f1b01fbd06c7c3c9a07166da910
 TRACK_MP3_BITRATE = "96k"
 DEFAULT_POLICY = {"reactionLagSeconds": 0.05, "interUtteranceGapSeconds": 0.05,
                   "maxEndLagSeconds": 8.0, "tailOverrunSeconds": 0.0}
+# The renderer, the compactor, the timing plan and the package builder all bound
+# the tail allowance here; a release plan cannot ask for more.
+MAX_TAIL_OVERRUN_SECONDS = 1.0
 BATCH_SIZES = (1, 2, 4, 8)
 BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_full_window_v2"
 BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
@@ -386,8 +389,12 @@ RECOVERY_SETTINGS_FIELDS = {"schemaVersion", "seed", "batchSize", "replicas", "d
 
 
 def recovery_render_settings(value: dict[str, Any]) -> dict[str, Any]:
-    """Require explicit complete settings; never infer them from old cache files."""
-    require(isinstance(value, dict) and set(value) == RECOVERY_SETTINGS_FIELDS
+    """Require explicit complete settings; never infer them from old cache files.
+
+    ``tailOverrunSeconds`` is the one optional field: settings recorded before the
+    tail allowance existed stay valid and mean 0.0, and a run that sets it records
+    it explicitly."""
+    require(isinstance(value, dict) and set(value) - {"tailOverrunSeconds"} == RECOVERY_SETTINGS_FIELDS
             and value["schemaVersion"] == RECOVERY_SETTINGS_VERSION,
             "Complete explicit recovery render settings required")
     require(type(value["seed"]) is int and value["seed"] >= 0
@@ -402,8 +409,10 @@ def recovery_render_settings(value: dict[str, Any]) -> dict[str, Any]:
             "Invalid recovery instruction")
     require(value["unitInstructions"] is None or (isinstance(value["unitInstructions"], str)
             and Path(value["unitInstructions"]).is_absolute()), "Explicit unit instruction path required")
-    require(all(type(value[key]) in (int, float) and math.isfinite(value[key]) and value[key] >= 0
-                for key in DEFAULT_POLICY), "Invalid recovery scheduling policy")
+    require(all(type(value.get(key, 0.0)) in (int, float) and math.isfinite(value.get(key, 0.0))
+                and value.get(key, 0.0) >= 0 for key in DEFAULT_POLICY)
+            and value.get("tailOverrunSeconds", 0.0) <= MAX_TAIL_OVERRUN_SECONDS,
+            "Invalid recovery scheduling policy")
     if value["replicas"] == 8:
         require(value["batchSize"] == 8 and value["device"] == "cuda:0"
                 and value["dtype"] == "bfloat16" and value["attention"] == "sdpa",
@@ -1515,8 +1524,11 @@ def main(argv=None) -> None:
     parser.add_argument("--reaction-lag-seconds", type=float, default=0.05)
     parser.add_argument("--inter-utterance-gap-seconds", type=float, default=0.05)
     parser.add_argument("--max-end-lag-seconds", type=float, default=8.0)
+    parser.add_argument("--tail-overrun-seconds", type=float, default=DEFAULT_POLICY["tailOverrunSeconds"],
+                        help=f"How far the final unit may end after the approved clip, at most "
+                             f"{MAX_TAIL_OVERRUN_SECONDS} s; the release plan's audio policy sets it")
     parser.add_argument("--track-format", choices=("wav", "mp3"), default="wav",
-                        help="Use reviewed 64 kbps mono MP3 for a full-length web release")
+                        help=f"Use reviewed {TRACK_MP3_BITRATE}bit/s mono MP3 for a full-length web release")
     parser.add_argument("--max-synthesis-units", type=int,
                         help="Bound generated units including full-window batch replay")
     parser.add_argument("--quarantine-unit", type=int, action="append", default=[],
@@ -1557,9 +1569,14 @@ def main(argv=None) -> None:
         paths["source_voice_authorization"] = args.source_voice_authorization
     if args.clip_voice_capability:
         paths["clip_voice_capability"] = args.clip_voice_capability
+    require(0 <= args.tail_overrun_seconds <= MAX_TAIL_OVERRUN_SECONDS,
+            f"--tail-overrun-seconds must be between 0 and {MAX_TAIL_OVERRUN_SECONDS}")
     policy = {"reactionLagSeconds": args.reaction_lag_seconds,
               "interUtteranceGapSeconds": args.inter_utterance_gap_seconds,
               "maxEndLagSeconds": args.max_end_lag_seconds}
+    if args.tail_overrun_seconds:
+        # Recorded only when set, so runs without a tail allowance keep their identity.
+        policy["tailOverrunSeconds"] = args.tail_overrun_seconds
     result = render_accounted(
         paths, args.checkpoint_map, args.audio_operation_policies,
         progress_ledger=args.progress_ledger,
