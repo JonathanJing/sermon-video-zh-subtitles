@@ -39,6 +39,15 @@ class OperatorAcceptanceTests(unittest.TestCase):
         result = judge._operator_acceptance(self.write(), self.manifest, [row("c-s001")])
         self.assertEqual(result["acceptedSentenceIds"], [])
 
+    def test_unit_duration_issue_is_accepted_with_a_null_word(self):
+        self.manifest["issues"].append({"type": "clause_unit_exceeds_target_without_safe_boundary",
+                                        "sourceSentenceId": "c-s002", "durationSeconds": 20.4, "maximumSeconds": 8.0})
+        accepted = [{"sourceSentenceId": "c-s002", "issueType": "clause_unit_exceeds_target_without_safe_boundary",
+                     "wordId": None, "reason": "long pause while the cup is passed"}]
+        result = judge._operator_acceptance(self.write(accepted=accepted), self.manifest,
+                                            [row("c-s001"), row("c-s002", ["timelineCoherent"])])
+        self.assertEqual(result["acceptedSentenceIds"], ["c-s002"])
+
     def test_semantic_failure_cannot_be_accepted(self):
         with self.assertRaisesRegex(ValueError, "timelineCoherent alone"):
             judge._operator_acceptance(self.write(), self.manifest,

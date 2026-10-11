@@ -326,7 +326,9 @@ def _checked_batch(result: dict[str, Any], expected: list[dict[str, Any]]) -> li
 
 
 OPERATOR_ACCEPTANCE_SCHEMA = "sermon-source-issue-acceptance-v1"
-OPERATOR_ACCEPTABLE_ISSUES = {"alignment_word_duration_outlier"}
+# Timing-only manifest issues an operator may accept; a unit-level issue has no single word, so its
+# accepted item carries wordId null.
+OPERATOR_ACCEPTABLE_ISSUES = {"alignment_word_duration_outlier", "clause_unit_exceeds_target_without_safe_boundary"}
 
 
 def _operator_acceptance(path: Path | None, manifest: dict[str, Any],
