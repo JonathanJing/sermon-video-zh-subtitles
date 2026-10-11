@@ -18,9 +18,10 @@ publication target; tools only read the fixture directories under
   classifies it as ``autonomous``, ``approval`` or ``observe_only``.
 - ``all``: the five above in order.
 
-Live mode needs the dev launcher (``scripts/run_with_openai_environment.py
---environment dev``) and refuses prod. ``--backend fake`` runs the same
-plumbing with scripted answers and is never evidence.
+Live mode is blocked until a canonical, authorization-bound budget adapter exists.
+The dev launcher alone does not authorize spending. ``--backend fake`` runs the
+same plumbing with scripted answers and is never evidence. ``timeline`` remains
+deterministic and needs no API credentials.
 
 Every live call is bounded: one session per case/arm, a tool-call cap, a
 deadline, no automatic retry. A session or request whose outcome is unknown
@@ -1156,6 +1157,8 @@ class Trials:
     def __init__(self, out, *, client, model, backend, max_seconds=600, max_tool_calls=24,
                  poll_seconds=2.0, max_sessions=60, decisions=None, case_ids=None, plan_ids=None, risk_repeats=1,
                  route=None):
+        if backend == 'live':
+            raise ValueError('live_trials_blocked_until_canonical_budget_adapter')
         self.out, self.client, self.model, self.backend = Path(out), client, model, backend
         # The OpenAI project and credential a live run bills to, bound by hash so the summary never names them.
         # The key itself is bound by a one-way fingerprint: rotating it behind the same alias changes the scope.
@@ -1594,7 +1597,7 @@ def _scorer_identity(stage):
                         _refutation_schema, score_refutation, _refute_summary],
              'preflight': [*tools, _preflight_schema, score_preflight, preflight_check, _check_receipts, _check_satisfied,
                            _call_matches, _declared_arguments, _check_input, _relative, _groups_match, _text],
-             'risk': [score_risk, risk_summary, _risk_unscored, _usage_values, _probability,
+             'risk': [score_risk, risk_summary, _risk_unscored, _usage_values, _probability, _choice_distribution,
                       _sum_decisions_usage]}[stage]
     # Completion and usage aggregation decide what a stored row means for the run's status, so they are bound too.
     # So is the code that assembles the status and the summary headline from the merged rows.
@@ -1713,6 +1716,18 @@ def _probability(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and 0 <= value <= 1
 
 
+def _choice_distribution(answer):
+    probabilities = answer.get('probabilities')
+    if (not isinstance(probabilities, list) or len(probabilities) != len(TIERS)
+            or any(not isinstance(row, dict) or not isinstance(row.get('value'), str)
+                   or row['value'] not in TIERS or not _probability(row.get('probability'))
+                   for row in probabilities)):
+        return False
+    return (sorted(row['value'] for row in probabilities) == sorted(TIERS)
+            and math.isclose(sum(row['probability'] for row in probabilities), 1.0,
+                             rel_tol=0, abs_tol=1e-6))
+
+
 def _usage_values(usage):
     """Token counts that are finite, non-negative numbers; anything else is not usage evidence."""
     if not isinstance(usage, dict):
@@ -1732,7 +1747,8 @@ def score_risk(action, response):
     # Each asked question must come back exactly once with its own type; otherwise nothing in it is scored.
     shaped = (len(raw_answers) == len(listed) == len(DECISION_QUESTIONS)
               and all([a.get('type') for a in listed if a.get('name') == name] == [kind] for name, kind in DECISION_QUESTIONS)
-              and all(_probability(a.get('probability')) for a in listed if a.get('type') == 'predicate'))
+              and all(_probability(a.get('probability')) for a in listed if a.get('type') == 'predicate')
+              and all(_choice_distribution(a) for a in listed if a.get('type') == 'choice'))
     # A single, valid tier answer is kept for the safety lists even when the rest of the response is not scored.
     tiers = [a for a in listed if a.get('name') == 'tier' and a.get('type') == 'choice']
     stated = tiers[0].get('choice') if len(tiers) == 1 and isinstance(tiers[0].get('choice'), str) \
@@ -2074,14 +2090,7 @@ def main(argv=None):
         client = decisions = None  # Deterministic; no credentials needed.
         poll = 0
     elif args.backend == 'live':
-        from scripts.sermon_openai_runtime import selected_route
-        route = selected_route()
-        if route is None or route['environment'] != 'dev':
-            parser.error('live trials run only under: scripts/run_with_openai_environment.py --environment dev -- ...')
-        route = dict(route, credentialFingerprint=credential_fingerprint(os.environ['OPENAI_API_KEY']))
-        client = agents.AgentsAPIClient(timeout=60)
-        decisions = DecisionsClient(out)
-        poll = 2.0
+        parser.error('live_trials_blocked_until_canonical_budget_adapter: dev launcher is not budget authorization')
     else:
         out = out / 'fake-plumbing'
         client = FakeAgentsClient(fake_agent_script)

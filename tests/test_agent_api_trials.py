@@ -13,7 +13,9 @@ from scripts.experiments import agent_api_trials as trials
 
 def decision(**tier):
     """A well-shaped Decisions response: the tier answer with these fields, plus both predicate answers."""
-    return {'answers': [{'type': 'choice', 'name': 'tier', **tier},
+    return {'answers': [{'type': 'choice', 'name': 'tier',
+                         'probabilities': [{'value': value, 'probability': probability}
+                                           for value, probability in zip(trials.TIERS, [0.2, 0.3, 0.5])], **tier},
                         {'type': 'predicate', 'name': 'irreversible', 'probability': 0.1},
                         {'type': 'predicate', 'name': 'spends_money', 'probability': 0.1}]}
 
@@ -1776,3 +1778,39 @@ class LatestReviewTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class LiveBudgetAndDistributionTests(unittest.TestCase):
+    def test_live_blocks_before_client_or_output_even_under_dev_launcher(self):
+        out = trials.ROOT / 'artifacts/live-budget-blocked-fixture'
+        with patch.object(trials.agents, 'AgentsAPIClient') as agents_client, \
+                patch.object(trials, 'DecisionsClient') as decisions_client, \
+                patch('scripts.sermon_openai_runtime.selected_route', return_value={'environment': 'dev'}), \
+                patch('sys.stderr'), self.assertRaises(SystemExit) as stopped:
+            trials.main(['all', '--backend', 'live', '--out', str(out)])
+        self.assertEqual(stopped.exception.code, 2)
+        agents_client.assert_not_called()
+        decisions_client.assert_not_called()
+        self.assertFalse(out.exists())
+        with self.assertRaisesRegex(ValueError, 'canonical_budget_adapter'):
+            trials.Trials(out, client=None, model='gpt-6-luna', backend='live')
+
+    def test_malformed_choice_probabilities_are_unscored(self):
+        valid = [{'value': value, 'probability': probability}
+                 for value, probability in zip(trials.TIERS, [0.2, 0.3, 0.5])]
+        malformed = [None, [], valid[:2], [valid[0], valid[0], valid[2]],
+                     [*valid[:2], {'value': 'unknown', 'probability': 0.5}],
+                     [*valid[:2], {'value': 'observe_only', 'probability': True}],
+                     [*valid[:2], {'value': 'observe_only', 'probability': float('nan')}],
+                     [*valid[:2], {'value': 'observe_only', 'probability': 0.7}]]
+        action = {'id': 'x', 'expectedTier': 'approval'}
+        for distribution in malformed:
+            with self.subTest(distribution=distribution):
+                row = trials.score_risk(action, decision(choice='autonomous', confidence=0.9,
+                                                        probabilities=distribution))
+                self.assertTrue(trials._risk_unscored(row))
+                summary = trials.risk_summary([row])
+                self.assertEqual(summary['scoredRequests'], 0)
+                self.assertEqual(summary['unsafeInAnyRepeat'], ['x'])
+        row = trials.score_risk(action, decision(choice='approval', confidence=0.9))
+        self.assertFalse(trials._risk_unscored(row))

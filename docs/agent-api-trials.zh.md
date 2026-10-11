@@ -8,7 +8,7 @@
 
 - 全部只读。agent 只能读 `config/agent-trials/` 下的样例文件，不能碰运行目录、Spark、Git、Firebase 或任何发布目标。
 - 每个样例的 `expected.json` 不在工具能读到的目录里，agent 看不到答案。样例和预检计划的 `expected.json` 在派发任何会话前先校验格式（类别、原因关键词组与必填的修复关键词组、阻断项关键词组；四项确定性检查各出现一次、参数与工具匹配、期望为布尔值，`check_out_path` 的目标须是计划里 `--out` 的值、`check_staged` 的目标须出现在计划代码摘录里，且每项检查在派发前先对计划实际跑一遍，读不了输入或结果与 `expect` 不符都拒绝；计划须有自己的 `plan` 目录，确定性检查读取的文件不能是符号链接；选中的每个构造样例恰好有一条植入的错误诊断（真实日志样例没有；只读选中样例的答案）、带缺陷说明和合法类别；会话能读到的证据目录里至少有一个文件、不能有 `expected.json`，每个证据文件都须是 UTF-8 文本；`realLogs` 只能是 `true` 或不写；`abstain: true` 的样例类别须是 `insufficient_evidence`（评分只认这一类为正确弃权）；`authorization.json` 存在时须是普通文件；风险动作最多 60 个），不合格整轮不启动。
-- 只在 dev 启动器下运行；prod 和未选环境在发送前拒绝。不新建 key。
+- 当前 live 后端全部拒绝，等待 canonical 预算授权 adapter；dev 启动器不能单独开放付费派发。不新建 key。
 - 每个会话限 24 次工具调用、600 秒；整轮最多 60 个会话（`--max-sessions`）。同一 `--out` 重跑复用已完成结果，不重复付费；结果未知的会话或请求会停下，等人核对。Decisions 请求被 4xx 明确拒绝（如 429）时整轮停下；用同一 `--out` 重跑只重发被拒的那一条，同一条最多被拒 3 次。5xx（如 503）可能已被处理，按结果未知处理：保留 `.started.json`，重跑会停在这一条，先到 OpenAI 用量页核对是否已计费，确认没有处理后再删掉该标记重跑。`agentUsage` 带 `sessionsCovered` 和 `sessionsMissingUsage`，`complete` 为 false 时总数不完整；`decisionsUsage` 同样带 `requestsCovered`、`requestsMissingUsage`。`summary.json` 的 `status` 不是 `completed` 时命令以退出码 2 结束，`outcome.json` 记为 failed。文件搜索工具只做字面匹配，不接受正则，找到 50 条即停止。
 
 ## 六项试验
@@ -32,17 +32,11 @@
 .venv/bin/python scripts/experiments/agent_api_trials.py all --backend fake --out artifacts/agent-api-trials/plumbing
 ```
 
-再在 dev 启动器下实跑。可以先跑最便宜的风险分档（60 个动作 × 3 次 = 180 次 Decisions 请求），再跑全部：
+当前 `--backend live` 在创建 Agents／Decisions 客户端、写运行产物和发送请求前明确拒绝：`live_trials_blocked_until_canonical_budget_adapter`。dev 启动器只绑定项目和凭据，不构成预算授权。必须先实现并验证 canonical budget configuration／authorization adapter，才可重新开放真实 API 试验；本文的调用规模、恢复规则和历史结果不授权新的付费运行。`timeline` 与 `--backend fake` 仍可离线执行。
 
-```sh
-python3 scripts/run_with_openai_environment.py --environment dev -- \
-  .venv/bin/python scripts/experiments/agent_api_trials.py risk --out artifacts/agent-api-trials/20261008-expanded
+以下范围与恢复规则描述已实现的离线脚手架及历史运行；不表示当前 live 后端可派发。
 
-python3 scripts/run_with_openai_environment.py --environment dev -- \
-  .venv/bin/python scripts/experiments/agent_api_trials.py all --out artifacts/agent-api-trials/20261008-expanded
-```
-
-两条命令用同一个 `--out`，第二条会复用第一条的风险分档结果。同一个 `--out` 里，每项试验只能用相同或更大的范围重跑（更多样例、计划或重复次数），不能缩小；范围记在 `scope.json`；后端、OpenAI 项目与凭据（项目只记哈希，密钥只记单向指纹，换密钥即换范围）、模型、`--max-tool-calls`（至少 1）、`--max-seconds`、提示词、评分代码（含会话运行器、Decisions 客户端，以及判断是否完成、合并检查点、拼装状态与汇总、汇总用量的代码），以及每个样例、计划和动作的证据与答案哈希（记为 `id@hash`；时间线只绑定证据，不读答案）也绑定在里面，换任何一个或改了样例内容、评分代码都要用新的 `--out`；所有试验的范围先一起检查，任何一项不兼容就一项都不写。`summary.json` 的后端和模型按各项试验绑定的范围汇总，仍有未完成检查点的试验列在 `partialStages`，此时 `status` 为 `partial`；有会话或请求没得分（失败、未提交、Decisions 报错、回答结构、档位或置信度缺失或不合格式，每个问题须恰好回答一次且类型正确，或拒答了其中任一问题）时列在 `unscored`，`status` 为 `incomplete`。扩大范围的试验在重跑完成前标为 `partial`；会话只读阶段开始时复制出的证据副本（复制时不跟随符号链接），解析不了的 JSON 证据和不存在的时间（如 13 月、`+25:00`）在时间线里列为无时间、不中止，模型看到的字节就是范围哈希覆盖的字节；运行中再改样例或代码不会影响本次运行（它只用开始时的副本），之后用同一 `--out` 重跑会因范围不符被拒，只能换新的 `--out`；万一范围在运行中仍对不上（绑定的身份本身变了），该项试验报错停下，并写 `invalidated.json` 把整个 `--out` 隔离。已存在的 `--out` 须为空目录或本工具之前的输出（有 `.trials.lock`，或 `scope.json` 只含试验名），否则拒绝运行，避免写坏其他运行的 `summary.json` 等文件。同一个 `--out` 同时只允许一个调用，第二个会直接报错；被拒绝的调用（范围不兼容、已隔离、被占用）不改动已有的 `summary.json` 和 `outcome.json`。风险动作的发送顺序也绑定，同一 `--out` 不能改动作列表。`export_run_digest.py` 会把 `diagnose.json`、`refute.json`、`risk.json` 一起导出供逐条核对；按导出后（脱敏、缩进后）的大小判断，超过单文件上限时按行拆成 `<名>.rows-NN.json` 导出，原路径写一个列出各部分的索引。`all` 共 48 个 Agents 会话（排查 20、反驳 10+8、预检 10）加 180 次 Decisions 请求。会话数超过 `--max-sessions` 时整轮停下，已完成的部分写进 `partial` 检查点，提高上限后用同一 `--out` 续跑。只想试一个样例时加 `--case f05-asr-symlink-mount`（可重复）。`--model` 可换 Agents 会话的模型，默认 `gpt-6-luna`；换模型要用新的 `--out`。
+同一个 `--out` 复用已完成且身份匹配的结果。同一个 `--out` 里，每项试验只能用相同或更大的范围重跑（更多样例、计划或重复次数），不能缩小；范围记在 `scope.json`；后端、OpenAI 项目与凭据（项目只记哈希，密钥只记单向指纹，换密钥即换范围）、模型、`--max-tool-calls`（至少 1）、`--max-seconds`、提示词、评分代码（含会话运行器、Decisions 客户端，以及判断是否完成、合并检查点、拼装状态与汇总、汇总用量的代码），以及每个样例、计划和动作的证据与答案哈希（记为 `id@hash`；时间线只绑定证据，不读答案）也绑定在里面，换任何一个或改了样例内容、评分代码都要用新的 `--out`；所有试验的范围先一起检查，任何一项不兼容就一项都不写。`summary.json` 的后端和模型按各项试验绑定的范围汇总，仍有未完成检查点的试验列在 `partialStages`，此时 `status` 为 `partial`；有会话或请求没得分（失败、未提交、Decisions 报错、回答结构、档位或置信度缺失或不合格式，或 choice 概率分布缺少三档、重复、越界、非有限数、总和不为 1，每个问题须恰好回答一次且类型正确，或拒答了其中任一问题）时列在 `unscored`，`status` 为 `incomplete`。扩大范围的试验在重跑完成前标为 `partial`；会话只读阶段开始时复制出的证据副本（复制时不跟随符号链接），解析不了的 JSON 证据和不存在的时间（如 13 月、`+25:00`）在时间线里列为无时间、不中止，模型看到的字节就是范围哈希覆盖的字节；运行中再改样例或代码不会影响本次运行（它只用开始时的副本），之后用同一 `--out` 重跑会因范围不符被拒，只能换新的 `--out`；万一范围在运行中仍对不上（绑定的身份本身变了），该项试验报错停下，并写 `invalidated.json` 把整个 `--out` 隔离。已存在的 `--out` 须为空目录或本工具之前的输出（有 `.trials.lock`，或 `scope.json` 只含试验名），否则拒绝运行，避免写坏其他运行的 `summary.json` 等文件。同一个 `--out` 同时只允许一个调用，第二个会直接报错；被拒绝的调用（范围不兼容、已隔离、被占用）不改动已有的 `summary.json` 和 `outcome.json`。风险动作的发送顺序也绑定，同一 `--out` 不能改动作列表。`export_run_digest.py` 会把 `diagnose.json`、`refute.json`、`risk.json` 一起导出供逐条核对；按导出后（脱敏、缩进后）的大小判断，超过单文件上限时按行拆成 `<名>.rows-NN.json` 导出，原路径写一个列出各部分的索引。`all` 共 48 个 Agents 会话（排查 20、反驳 10+8、预检 10）加 180 次 Decisions 请求。会话数超过 `--max-sessions` 时整轮停下，已完成的部分写进 `partial` 检查点，提高上限后用同一 `--out` 续跑。只想试一个样例时加 `--case f05-asr-symlink-mount`（可重复）。`--model` 可换 Agents 会话的模型，默认 `gpt-6-luna`；换模型要用新的 `--out`。
 
 结束后按[运行报告流程](test-run-retrospective.zh.md)导出并开报告 PR：
 
@@ -57,7 +51,7 @@ scripts/publish_run_report.sh artifacts/run-reports/20261008-agent-api-trials-ex
 
 - f01–f08 是按复盘重建的小证据包，比真实日志干净；真实日志只有 f09、f10 两个，分数仍偏乐观，只能说明方向。
 - 关键词判分是粗筛；分数接近时要人工看 `diagnose.json` 里的原文。
-- 2026-10-08 首轮实跑（`87ee8468`，报告 #288）后修了样例：两份预检计划补上会话授权记录 `authorization.json`；f05 接受 `path_handling` 类别；风险分档定义写明删除运行产物、重新冻结 fixture 不算可自主，对外分发和改主机服务配置属于只观察。这些改动让首轮的 `preflight`、`risk` 结果不能和之后的结果直接比较，重跑要换新的 `--out`。之后又扩充了样例（f09–f10、p03–p10、8 份故意写错的诊断、60 个风险动作 × 3 次），上面的命令已改用新的 `--out`。
+- 2026-10-08 首轮实跑（`87ee8468`，报告 #288）后修了样例：两份预检计划补上会话授权记录 `authorization.json`；f05 接受 `path_handling` 类别；风险分档定义写明删除运行产物、重新冻结 fixture 不算可自主，对外分发和改主机服务配置属于只观察。这些改动让首轮的 `preflight`、`risk` 结果不能和之后的结果直接比较，重跑要换新的 `--out`。之后又扩充了样例（f09–f10、p03–p10、8 份故意写错的诊断、60 个风险动作 × 3 次），历史扩展运行采用新的 `--out`；当前 live 后端已阻断。
 - 10 个样例、10 份计划、60 个动作，样本仍小，一两个的差异不算结论。风险分档重复 3 次只能看出模型自身的不稳定，不能代替更多动作。
 - [Decisions API 每周 A/B 设计](decision-api-weekly-ab-design.zh.md) 是另一份方案，本试验不实现它，也不使用它的预算绑定。
 - 本试验不涉及 Layer 2 翻译。要让 L2 测试真正走 OpenAI API，用 standalone 入口加 `--budget-config` 与 `--budget-authorization`，经 canonical controller 派发（见[运行时策略](production-model-runtime-policy.zh.md)）；诊断 fixture 入口没有预算绑定，不开放 API 后端。
