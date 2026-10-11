@@ -15,15 +15,21 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import urllib.error
+import urllib.request
 
 from jsonschema import Draft202012Validator, FormatChecker
 
 try:
     from scripts import multilingual_dev_preview as old_dev
     from scripts import verify_multilingual_hosting as http
+    from scripts import assemble_multilingual_v3_update as weekly
+    from scripts import verify_v3_bucket_video as bucket_http
 except ImportError:
     import multilingual_dev_preview as old_dev
     import verify_multilingual_hosting as http
+    import assemble_multilingual_v3_update as weekly
+    import verify_v3_bucket_video as bucket_http
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,6 +98,73 @@ def checked_browser_video(public: Path, page_id: str, page: dict, sha256: str) -
             or receipt.get("fullGetBytes") != delivery.get("bytes")
             or receipt.get("fullGetSha256") != sha256):
         raise ValueError(f"Browser video is neither local nor receipt-verified: {page_id}")
+
+
+def bucket_delivery(public: Path) -> dict | None:
+    catalog = load(public / "multilingual-v3.json")
+    page = next(p for p in catalog["pages"] if p["id"] == catalog["defaultPageId"])
+    delivery = page.get("videoDelivery")
+    if not delivery or (public / f"pages/{page['id']}/full-video-browser.mp4").is_file():
+        return None
+    weekly.validate_video_delivery(page["id"], delivery, delivery["sha256"])
+    checked_browser_video(public, page["id"], page, delivery["sha256"])
+    return delivery
+
+
+def bucket_hosting_config(config: dict, public: Path) -> dict:
+    """Reconstruct the verified object's exact redirect/CSP on the isolated Dev config."""
+    delivery = bucket_delivery(public)
+    if delivery is None:
+        return config
+    copied = json.loads(json.dumps(config))
+    redirects = copied["hosting"].get("redirects", [])
+    if any(rule.get("source") == delivery["canonicalUrl"] for rule in redirects):
+        weekly.require_video_redirect(copied, delivery)
+        copied["hosting"]["redirects"] = [rule for rule in redirects
+                                          if rule.get("source") != delivery["canonicalUrl"]]
+    return weekly.add_video_redirect(copied, delivery)
+
+
+def validate_bucket_hosting(config: dict, public: Path) -> None:
+    delivery = bucket_delivery(public)
+    if delivery is None:
+        return
+    weekly.require_video_redirect(config, delivery)
+    policies = [item.get("value", "") for rule in config["hosting"].get("headers", [])
+                if rule.get("source") == "**" for item in rule.get("headers", [])
+                if item.get("key", "").lower() == "content-security-policy"]
+    if len(policies) != 1 or "media-src 'self' https://storage.googleapis.com blob:" not in policies[0]:
+        raise ValueError("Bucket video requires the site-wide media CSP")
+
+
+def verify_bucket_route(delivery: dict) -> dict:
+    canonical = ORIGIN + delivery["canonicalUrl"]
+    opener = urllib.request.build_opener(bucket_http.NoRedirect)
+    try:
+        with opener.open(urllib.request.Request(canonical), timeout=30):
+            raise ValueError("Dev canonical video URL did not redirect")
+    except urllib.error.HTTPError as error:
+        if error.code != 302 or error.headers.get("Location") != delivery["storageUrl"]:
+            raise ValueError("Dev canonical video redirect differs") from error
+    with bucket_http.request(canonical, headers={"Range": "bytes=0-0", "Origin": ORIGIN}) as response:
+        if (response.status != 206 or response.url != delivery["storageUrl"]
+                or response.headers.get("Content-Range") != f"bytes 0-0/{delivery['bytes']}"
+                or response.headers.get("Access-Control-Allow-Origin") != ORIGIN
+                or len(response.read(2)) != 1):
+            raise ValueError("Dev canonical video Range/CORS failed")
+    hasher, size = hashlib.sha256(), 0
+    with bucket_http.request(canonical) as response:
+        if response.status != 200 or response.url != delivery["storageUrl"]:
+            raise ValueError("Dev canonical video full GET failed")
+        while chunk := response.read(1024 * 1024):
+            size += len(chunk)
+            if size > delivery["bytes"]:
+                raise ValueError("Dev canonical video exceeds bound size")
+            hasher.update(chunk)
+    if size != delivery["bytes"] or hasher.hexdigest() != delivery["sha256"]:
+        raise ValueError("Dev canonical video hash differs")
+    return {"path": delivery["canonicalUrl"], "videoRedirect302": True,
+            "videoRange206": True, "cors": True, "bytes": size, "sha256": hasher.hexdigest()}
 
 
 def validate_published_week(public: Path) -> tuple[str, list[str]]:
@@ -195,6 +268,8 @@ def prepare(base: Path, production_public: Path, production_config: Path, out: P
         config = load(base / "firebase.json")
         if config["hosting"].get("site") != SITE or config["hosting"].get("public") != "public":
             raise ValueError("Base Firebase target changed")
+        config = bucket_hosting_config(config, public)
+        validate_bucket_hosting(config, public)
         config["hosting"]["headers"].append({"source": "/multilingual-v3.json", "headers": [
             {"key": "Cache-Control", "value": "no-store"}]})
         if any(rule.get("source") == "/api/**" for rule in config["hosting"].get("rewrites", [])):
@@ -278,6 +353,7 @@ def candidate_report(candidate: Path) -> dict:
     page_id, _ = validate_published_week(candidate / "public")
     if page_id != report["pageId"]:
         raise ValueError("Dev v3 default page changed")
+    validate_bucket_hosting(load(candidate / "firebase.json"), candidate / "public")
     old_dev.verify_dev_poc_assets(candidate / "public")
     return report
 
@@ -325,15 +401,20 @@ def deploy(candidate: Path, receipt: Path) -> dict:
 
 def verify(candidate: Path) -> dict:
     report = candidate_report(candidate)
+    delivery = bucket_delivery(candidate / "public")
     results = []
     for item in report["files"]:
         name = item["path"]
         status, headers, size, sha = http.request_file(ORIGIN, "/" + name)
         if status != 200 or size != item["bytes"] or sha != item["sha256"]:
             raise ValueError(f"Dev HTTP file mismatch: {name}")
+        if delivery is not None and name == "index.html" and "media-src 'self' https://storage.googleapis.com blob:" not in headers.get("content-security-policy", ""):
+            raise ValueError("Dev HTTP bucket video media CSP differs")
         results.append({"path": name, "sha256": sha, "bytes": size})
     catalog = load(candidate / "public/multilingual-v3.json")
     page = next(p for p in catalog["pages"] if p["id"] == report["pageId"])
+    if delivery is not None:
+        results.append(verify_bucket_route(delivery))
     for locale, target in page["targets"].items():
         release = load(candidate / "public" / target["releasePackageUrl"].lstrip("/"))
         audio = next(a for a in release["assets"] if a["role"] == "audio")
@@ -376,6 +457,9 @@ def verify_label_update(candidate: Path, base: Path, full_receipt: Path) -> dict
         raise ValueError("Prior complete HTTP receipt is missing or changed")
     public = candidate / "public"
     checks = []
+    delivery = bucket_delivery(public)
+    if delivery is not None:
+        checks.append(verify_bucket_route(delivery))
     for path in ("/dev-preview-label.mjs", "/index.html", "/multilingual-v3.json"):
         status, headers, size, sha = http.request_file(ORIGIN, path)
         expected = public / path.lstrip("/")
