@@ -12,8 +12,6 @@ from pathlib import Path
 import shutil
 import subprocess
 
-import numpy as np
-from PIL import Image, ImageDraw, ImageFont
 
 W, H, FPS, FRAMES = 3840, 1646, 30, 300
 S = 2
@@ -28,6 +26,32 @@ def smooth(x):
     return x * x * (3 - 2 * x)
 
 
+def preflight_outputs(output, languages):
+    paths = [output / "manifest.json", output / "caption-layout.json"]
+    for locale in languages:
+        stem = f"tongxing-page-header-{locale}"
+        paths += [output / f"{stem}{suffix}" for suffix in
+                  (".mp4", "-preview.mp4", "-poster.png", "-encode.log", "-ffprobe.json")]
+        paths += [output / f"{stem}-frame-{index:03}.png" for index in (0, 60, 150, 240, 299)]
+    for path in paths:
+        if path.exists():
+            raise FileExistsError(path)
+
+
+def validate_target_binding(quote, page, locale, content, release):
+    target = page["targets"][locale]
+    if target.get("simulationOnly") or target.get("diagnosticOnly"):
+        raise ValueError("Synthetic target cannot be used for sermon marketing")
+    for value in (release, content):
+        if (value.get("pageId"), value.get("targetLocale"),
+                value.get("englishSourcePackageJsonSha256")) != (
+                quote["pageId"], locale, quote["sourceIdentitySha256"]):
+            raise ValueError("Quote release/content page, locale or source binding mismatch")
+    candidate = release.get("targetLanguageCandidateJsonSha256")
+    if not candidate or content.get("targetLanguageCandidateJsonSha256") != candidate:
+        raise ValueError("Quote release/content candidate binding mismatch")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     source = p.add_mutually_exclusive_group(required=True)
@@ -39,6 +63,9 @@ def main():
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--stills-only', action='store_true')
     args = p.parse_args()
+    preflight_outputs(args.output, ["zh", "en", "ko", "es"] if args.quote else ["zh", "en"])
+    import numpy as np
+    from PIL import Image, ImageDraw, ImageFont
     args.output.mkdir(parents=True, exist_ok=True)
     original_dir = args.output / 'sources'
     original_dir.mkdir(exist_ok=True)
@@ -77,6 +104,7 @@ def main():
         for locale, item in quote['translations'].items():
             content = json.loads((original_dir / item['file']).read_text())
             release = json.loads((original_dir / item['releaseFile']).read_text())
+            validate_target_binding(quote, page, locale, content, release)
             if (release['status'], release['contentStatus']) != ('published_http_verified', 'human_reviewed'):
                 raise ValueError('Quote requires reviewed published content')
             if page['targets'][locale]['releasePackageJsonSha256'] != item['releaseSHA256']:
@@ -211,7 +239,6 @@ def main():
             ui = Image.new('RGB', hero.size, '#173B39')
             ud = ImageDraw.Draw(ui)
             ud.text((32, 24), caption_label, font=language_font(21, locale), fill=sage)
-            ud.text((690, 30), '23:01', font=font(17, True), fill=sage)
             ui.paste(quote_cards[locale], (32, 100))
             for j in range(40):
                 height = round(8 + 19 * (.5 + .5 * math.sin(2 * math.pi * t / 10 * 3 + j * .5)))
