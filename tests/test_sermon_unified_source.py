@@ -139,6 +139,54 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertEqual(len(self.calls), 3)
         self.assertEqual(jobs._read(config.budget_root / 'source-budget.json')['maxConcurrent'], 8)
 
+    def rebind_budget(self):
+        self.path.write_text(json.dumps(self.config))
+        authorization_path = self.root / 'budget.json'
+        authorization = json.loads(authorization_path.read_text())
+        authorization['binding']['configurationSha256'] = jobs._digest(
+            {k: v for k, v in self.config.items() if k != 'budgetAuthorization'})
+        approval_path = self.root / 'budget-approval.json'
+        approval = json.loads(approval_path.read_text())
+        approval['binding'].update(authorization['binding'])
+        approval_path.write_text(json.dumps(approval))
+        authorization['authority']['approvalSha256'] = subject._sha(approval_path)
+        authorization_path.write_text(json.dumps(authorization))
+
+    def test_operator_reviewed_text_stops_before_mfa_then_applies_without_new_asr(self):
+        from scripts import sermon_source_text_review as review_module
+        self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=1, sourceTextReview='review.json')
+        self.rebind_budget()
+        aligned = []
+        original_align = self.align
+        self.align = lambda references, clip, out, **kw: aligned.append([r['text'] for r in references]) or original_align(references, clip, out, **kw)
+        with self.assertRaisesRegex(ValueError, 'source_text_review_required'):
+            self.execute()
+        self.assertEqual(aligned, [])
+        asr_calls = len(self.calls)
+        out = self.root / 'source'
+        references = json.loads((out / 'asr_reference_chunks.json').read_text())
+        original = references[0]['text']
+        corrected = original + ' Reviewed.'
+        evidence = self.root / 'review-evidence.json'
+        evidence.write_text(json.dumps({'confirmedBy': 'operator'}))
+        (self.root / 'review.json').write_text(json.dumps({
+            'schemaVersion': review_module.SCHEMA_V3, 'reviewType': 'human', 'humanApproval': True,
+            'status': review_module.STATUS, 'authority': review_module.HUMAN_AUTHORITY,
+            'reviewedBy': 'operator', 'reviewedAt': '2026-10-11T00:00:00Z',
+            'sourceAudioSha256': subject._sha(out / 'source-clip.wav'),
+            'asrSha256': subject._sha(out / 'asr_reference.json'),
+            'evidence': [{'path': str(evidence), 'sha256': subject._sha(evidence)}],
+            'patches': [{'segmentId': 0, 'originalTextSha256': review_module.text_sha256(original),
+                         'correctedText': corrected, 'reason': 'operator confirmed',
+                         'evidenceSha256': subject._sha(evidence)}]}))
+        result = self.execute()
+        self.assertEqual(len(self.calls) - asr_calls, 1)  # the judge only; ASR replays
+        self.assertEqual(aligned[0][0], corrected)
+        self.assertEqual(json.loads((out / 'asr_reference_chunks.json').read_text())[0]['text'], original)
+        provenance = json.loads((out / 'source-text-review-provenance.json').read_text())
+        self.assertEqual((provenance['reviewType'], provenance['humanApproval']), ('human', True))
+        self.assertFalse(result['productionEligible'])
+
     def test_legacy_source_configuration_cannot_silently_expand_judge_concurrency(self):
         self.config['judge']['workers'] = 8
         self.path.write_text(json.dumps(self.config))

@@ -42,6 +42,10 @@ FIELDS = {'schemaVersion', 'productionRunId', 'sourceId', 'sourceUrlHash', 'serv
           'jobRoot', 'outputDirectory', 'budgetAuthorization', 'mfa', 'anchorPolicy', 'judge'}
 LOCAL_MFA_FIELDS = {'mfa_executable', 'dictionary_path', 'acoustic_model', 'g2p_model', 'spoken_forms_path'}
 SPARK_MFA_FIELDS = LOCAL_MFA_FIELDS | {'host', 'proxy_jump', 'relay_host', 'relay_host_key_alias', 'python', 'root'}
+# Optional v2 field: the path of a source text review (scripts/sermon_source_text_review.py) applied to the
+# ASR reference text before MFA. The review binds this run's own ASR and clip hashes, so it can only be
+# written after ASR; its hash is therefore frozen in the run's provenance, not in the configuration.
+TEXT_REVIEW_FIELDS = {'sourceTextReview'}
 
 
 def require(ok, code):
@@ -126,7 +130,8 @@ def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _load(path)
     require(isinstance(value, dict) and value.get('schemaVersion') in (SCHEMA, SCHEMA_V2)
-            and set(value) == (FIELDS if value['schemaVersion'] == SCHEMA else FIELDS | {'asrWorkers'}),
+            and (set(value) == FIELDS if value['schemaVersion'] == SCHEMA else
+                 set(value) in (FIELDS | {'asrWorkers'}, FIELDS | {'asrWorkers'} | TEXT_REVIEW_FIELDS)),
             'invalid_source_preparation_configuration')
     if value['schemaVersion'] == SCHEMA_V2:
         require(type(value['asrWorkers']) is int and 1 <= value['asrWorkers'] <= 4,
@@ -146,6 +151,8 @@ def load_configuration(path):
         return _safe_path(path.parent / value[key])
     media, output, job_root, receipt_path = (resolve(k) for k in
         ('media', 'outputDirectory', 'jobRoot', 'windowApproval'))
+    if 'sourceTextReview' in value:
+        resolve('sourceTextReview')
     require(media.is_file() and _sha(media) == value['mediaSha256'], 'source_media_identity_changed')
     require(not any(output == p or output in p.parents for p in (media, path, receipt_path, job_root))
             and not (job_root == output or job_root in output.parents), 'source_paths_overlap')
@@ -384,6 +391,17 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
     _freeze(out / 'speaker-turns.json', {'schemaVersion': 'sermon-source-anonymous-turns-v1',
         'identityMapping': 'not_performed', 'crossChunkIdentity': 'unknown',
         'turns': [{k: row[k] for k in ('id', 'start', 'end', 'speakerId', 'speakerIdentityStatus')} for row in references]})
+    if 'sourceTextReview' in value:
+        # Apply the bound review to the reference text only; asr_reference*.json keep the raw ASR.
+        from scripts.sermon_source_text_review import apply_review
+        review_path = _safe_path(config.path.parent / value['sourceTextReview'])
+        # Stop before MFA until the operator's review of this run's ASR exists; ASR replays on resume.
+        require(review_path.is_file(), 'source_text_review_required')
+        segments = [{'id': index, 'text': row['text']} for index, row in enumerate(references)]
+        reviewed, provenance = apply_review(segments, review_path, clip, out / 'asr_reference.json')
+        provenance = {k: v for k, v in provenance.items() if k != 'reviewPath'}
+        _freeze(out / 'source-text-review-provenance.json', provenance)
+        references = [{**row, 'text': segment['text']} for row, segment in zip(references, reviewed)]
     alignment_marker = out / 'mfa-started.json'
     if aligned_path.exists():
         aligned = _load(aligned_path)
