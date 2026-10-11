@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import math
+import re
 from functools import lru_cache
 from pathlib import Path
 import shutil
@@ -19,6 +20,38 @@ S = 2
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+SCREENSHOT_NAME = '04a-full-transcript-zh-en-pairs.png'
+
+
+def validate_screenshot_manifest(screens):
+    """Bind the selected capture to its declared source revision before rendering.
+
+    MANIFEST.md must have one ``- Revision: `<40-hex commit>` `` line and
+    one Markdown table row ``| <filename> | <64-hex SHA256> | ... |``.
+    Historical manifests without a capture hash cannot prove this binding.
+    Return the verified bytes so a concurrent source replacement cannot change
+    the copied image or manifest after preflight.
+    """
+    manifest_bytes = (screens / 'MANIFEST.md').read_bytes()
+    manifest = manifest_bytes.decode('utf-8')
+    revisions = re.findall(r'^- Revision: `([0-9a-f]{40})`(?:[ \t].*)?$', manifest, re.M)
+    if len(revisions) != 1:
+        raise ValueError('Screenshot manifest requires one full source Revision')
+    records = []
+    for line in manifest.splitlines():
+        if line.strip().startswith('|'):
+            cells = [cell.strip().strip('`') for cell in line.strip().strip('|').split('|')]
+            if cells and cells[0] == SCREENSHOT_NAME:
+                records.append(cells)
+    if (len(records) != 1 or len(records[0]) < 2
+            or not re.fullmatch(r'[0-9a-f]{64}', records[0][1])):
+        raise ValueError('Screenshot manifest requires one filename/SHA256 binding')
+    screenshot_bytes = (screens / SCREENSHOT_NAME).read_bytes()
+    if hashlib.sha256(screenshot_bytes).hexdigest() != records[0][1]:
+        raise ValueError('Screenshot SHA256 differs from manifest binding')
+    return revisions[0], {SCREENSHOT_NAME: screenshot_bytes, 'MANIFEST.md': manifest_bytes}
 
 
 def smooth(x):
@@ -64,18 +97,20 @@ def main():
     p.add_argument('--stills-only', action='store_true')
     args = p.parse_args()
     preflight_outputs(args.output, ["zh", "en", "ko", "es"] if args.quote else ["zh", "en"])
+    screenshot_revision, screenshot_sources = (validate_screenshot_manifest(args.screens)
+                                                if args.screens else (None, {}))
     import numpy as np
     from PIL import Image, ImageDraw, ImageFont
     args.output.mkdir(parents=True, exist_ok=True)
     original_dir = args.output / 'sources'
     original_dir.mkdir(exist_ok=True)
     quote = json.loads(args.quote.read_text()) if args.quote else None
-    source_names = ['04a-full-transcript-zh-en-pairs.png', 'MANIFEST.md'] if args.screens else []
+    source_names = list(screenshot_sources)
     evidence = []
     for name in source_names:
-        source = args.screens / name
-        shutil.copy2(source, original_dir / name)
-        evidence.append({'file': name, 'sha256': sha(source)})
+        with (original_dir / name).open('xb') as stream:
+            stream.write(screenshot_sources[name])
+        evidence.append({'file': name, 'sha256': sha(original_dir / name)})
     shutil.copy2(args.logo, original_dir / 'brand-icon.png')
     evidence.append({'file': 'brand-icon.png', 'sha256': sha(args.logo)})
     if quote:
@@ -327,8 +362,8 @@ def main():
                                                    '-show_format', '-of', 'json', str(video)]))
         (args.output / f'{stem}-ffprobe.json').write_text(json.dumps(probe, indent=2))
     metadata = {'status': 'local_review_candidate', 'upload': 'not_run', 'approval': 'not_run',
-                'sourceScope': 'Published sermon quote, designed typography; not App UI or a screen recording' if quote else 'Beta simulator UI crops, editorial crossfade; not a screen recording',
-                'sourceRevision': quote['sourceIdentitySha256'] if quote else '65b56bb83d70bb81e18cdb236f5f9cd1efb4ea55',
+                'sourceScope': 'Published sermon quote, designed typography; not App UI or a screen recording' if quote else 'Manifest-bound UI crops, editorial crossfade; not a screen recording',
+                'sourceRevision': quote['sourceIdentitySha256'] if quote else screenshot_revision,
                 'dimensions': [W, H], 'fps': FPS, 'durationSeconds': 10,
                 'sources': evidence, 'cropBoxes': None if quote else boxes, 'languages': languages,
                 'firstLastRenderedFramesIdentical': all(frame(0, l).tobytes() == frame(299, l).tobytes()

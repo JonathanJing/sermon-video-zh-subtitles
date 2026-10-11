@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from scripts.codex_layer2_transport import CodexLayer2Transport, output_schema
 from scripts.claude_layer2_transport import ClaudeLayer2Transport
 from scripts.experiments.codex_translation_ab import save, save_or_check, sha, validate
-from scripts.run_target_language_models import SEMANTIC_CHECKS
+from scripts.run_target_language_models import SEMANTIC_CHECKS, save_new
 from scripts.target_language_policy import canonical_sha256
 from scripts.target_language_policy_preview import SCHEMA as PREVIEW_SCHEMA
 
@@ -133,10 +133,10 @@ def run_call(directory, call, payload, source, schema, *, execution):
         checked(response)
         return response, False
     assert not (directory / 'started.json').exists(), f'Unknown outcome in {directory}; reconcile receipts before retry'
-    save(directory / 'started.json', {'startedAt': datetime.now(timezone.utc).isoformat(), 'promptSha256': prompt_sha, 'executionIdentity': binding})
+    save_new(directory / 'started.json', {'startedAt': datetime.now(timezone.utc).isoformat(), 'promptSha256': prompt_sha, 'executionIdentity': binding})
     response = {**call(payload), 'experimentCallIdentity': binding}
     checked(response)
-    save(response_path, response)
+    save_new(response_path, response)
     return response, True
 
 

@@ -1,11 +1,14 @@
 """Sol versus Opus A/B runner: interleaved arms, resumable, blind key rotates."""
 import json
+import os
+import stat
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
 from scripts.experiments import claude_translation_ab as ab
+from scripts import sermon_workflow_jobs as jobs
 
 
 def content(group, text='好。'):
@@ -88,6 +91,50 @@ class ClaudeTranslationABTests(unittest.TestCase):
 
     def run_ab(self, *extra):
         ab.main(['--baseline', str(self.baseline), '--out', str(self.root / 'out'), *extra])
+
+    def test_durable_marker_and_new_parent_entries_precede_dispatch(self):
+        directory = self.root / 'new' / 'group' / 'arm'
+        events = []
+        fsync, sync_dir = os.fsync, jobs._sync_directory
+        def sync(fd):
+            if stat.S_ISREG(os.fstat(fd).st_mode):
+                events.append('file')
+            return fsync(fd)
+        def parent(path):
+            events.append(Path(path).resolve())
+            return sync_dir(path)
+        def dispatch(payload):
+            self.assertEqual(events[0], 'file')
+            for path in (directory, directory.parent, directory.parent.parent, self.root):
+                self.assertIn(path.resolve(), events)
+            raise RuntimeError('offline boundary reached')
+        with patch.object(os, 'fsync', side_effect=sync), patch.object(jobs, '_sync_directory', side_effect=parent):
+            with self.assertRaisesRegex(RuntimeError, 'offline boundary'):
+                ab.run_call(directory, dispatch, {'messages': []}, {}, {}, execution={})
+        self.assertTrue((directory / 'started.json').is_file())
+
+    def test_marker_sync_failure_blocks_dispatch_and_retry(self):
+        for boundary in ('file', 'directory'):
+            directory = self.root / boundary / 'arm'
+            calls = []
+            target, name = (os, 'fsync') if boundary == 'file' else (jobs, '_sync_directory_ancestry')
+            with patch.object(target, name, side_effect=OSError('disk failure')):
+                with self.assertRaises(OSError):
+                    ab.run_call(directory, lambda p: calls.append(p), {'messages': []}, {}, {}, execution={})
+            self.assertEqual(calls, [])
+            with self.assertRaisesRegex(AssertionError, 'Unknown outcome'):
+                ab.run_call(directory, lambda p: calls.append(p), {'messages': []}, {}, {}, execution={})
+            self.assertEqual(calls, [])
+
+    def test_response_cache_also_uses_durable_exclusive_save(self):
+        saves = []
+        save_new = ab.save_new
+        def remember(path, value):
+            saves.append(path.name)
+            return save_new(path, value)
+        with patch.object(ab, 'save_new', side_effect=remember):
+            self.run_ab()
+        self.assertEqual(saves, ['started.json', 'response.json'] * 4)
 
     def test_arms_interleave_and_resume_without_new_calls(self):
         self.run_ab()

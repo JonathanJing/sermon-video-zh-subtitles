@@ -71,3 +71,13 @@ Apple [Header PSD 模板](https://developer.apple.com/go/?id=photoshop-product-p
 Duo 截图来源为 `65b56bb83d70bb81e18cdb236f5f9cd1efb4ea55` 的 TongxingBeta / Dev 内容，原始 Manifest 位于主工作副本 `artifacts/tongxing-ios/2026-10-06/promo-screens/MANIFEST.md`。该组包含播放、暂停、双语全文、语言选择、定位、对齐准备、麦克风权限提示及更多选项；保留 Beta/Dev 原始标识，不能以本次上传推断正式功能验收。
 
 本轮哈希清单、十三项 Apple 素材 ID / URL / 状态读回及页面截图保存在工作树忽略目录 `artifacts/tongxing-ios/asset-library-upload-20261007/`。上传成功与审核通过、正式页面生效分别记录。
+
+
+### 截图重新渲染的来源校验
+
+`render_tongxing_page_header.py --screens` 现在读取输入 `MANIFEST.md` 的唯一完整
+``- Revision: `<40位小写Git提交>` `` 行，并要求选用截图在 Markdown 表格中具有唯一的
+`| 04a-full-transcript-zh-en-pairs.png | <64位小写SHA256> | ... |` 记录。
+输出 `sourceRevision` 使用该输入版本；图片字节必须匹配表格哈希。历史清单只有说明、
+没有图片哈希，不能直接重跑通过此校验。需依据原始捕获证据补齐来源清单，不能把新图片
+套用历史版本声明。上述历史上传收据保持其原有证据范围。
