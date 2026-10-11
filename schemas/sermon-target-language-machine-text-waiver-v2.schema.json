@@ -158,7 +158,8 @@
         "decidedAt",
         "userStatement",
         "textQcJsonSha256",
-        "groupIds"
+        "groupIds",
+        "groupDecisions"
       ],
       "properties": {
         "schemaVersion": {
@@ -189,6 +190,35 @@
           "items": {
             "type": "string",
             "minLength": 1
+          }
+        },
+        "groupDecisions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "groupId",
+              "decidedBy",
+              "decidedByRole"
+            ],
+            "properties": {
+              "groupId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "decidedBy": {
+                "type": "string",
+                "minLength": 1
+              },
+              "decidedByRole": {
+                "enum": [
+                  "human_operator",
+                  "delegated_agent"
+                ]
+              }
+            }
           }
         }
       }

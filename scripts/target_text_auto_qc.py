@@ -61,10 +61,14 @@ COMPARE_SYSTEM = ("Compare an ORIGINAL English sermon passage with an independen
                   "notice: omission, addition, negation, number, name, scripture_reference, meaning_shift. "
                   "Ignore wording, word order, register and natural paraphrase. Severity is major when "
                   "a fact, claim, instruction or theological point changes; otherwise minor. "
-                  "CONTEXT, when given, is the surrounding English the translator saw. A pronoun or "
-                  "ellipsis the rendering resolves to the referent CONTEXT names (\"he\" -> \"my father\"), "
-                  "and the target language's generic grammatical gender for a mixed or unspecified "
-                  "group, are at most minor; a referent CONTEXT does not support is a major issue. "
+                  "CONTEXT, when given, is the surrounding English the translator saw. Use it only to "
+                  "decide what a pronoun or elliptical phrase refers to: a pronoun the rendering resolves "
+                  "to the referent CONTEXT names (\"he\" -> \"my father\"), and the target language's "
+                  "generic grammatical gender for a mixed or unspecified group, are at most minor; a "
+                  "referent CONTEXT does not support is a major issue. CONTEXT never licenses content: "
+                  "every sentence, claim, number, ordinal or sequence marker (\"first\", \"second\") and "
+                  "name in BACK-TRANSLATION must be in ORIGINAL itself; anything present only in CONTEXT "
+                  "or in neither is a major addition. "
                   "status is fail when any major issue exists. Return JSON matching the schema.")
 SPOKEN_COMPARE_SYSTEM = (
     "Compare an ORIGINAL English sermon passage with an independent BACK-TRANSLATION of its "

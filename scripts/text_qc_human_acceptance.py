@@ -13,6 +13,7 @@ import json
 from typing import Any
 
 SCHEMA = "sermon-text-qc-human-acceptance-v1"
+ROLES = ("human_operator", "delegated_agent")
 
 
 def _require(ok: bool, code: str) -> None:
@@ -29,16 +30,24 @@ def _text_sha(text: str) -> str:
 
 
 def build(*, candidate: dict, text_qc: dict, decided_by: str, decided_at: str, user_statement: str,
-          group_ids: list[str]) -> dict:
+          group_ids: list[str], attribution: dict[str, dict] | None = None) -> dict:
+    """``attribution`` may give a group its own ``decidedBy``/``decidedByRole``/``reason``; a group the
+    person delegated to an agent is recorded as ``delegated_agent`` with the delegating statement."""
     rows = {row["groupId"]: row for row in text_qc["results"]}
+    attribution = attribution or {}
     _require(group_ids and all(gid in rows and rows[gid]["status"] != "pass" for gid in group_ids),
              "human_acceptance_group_not_failed")
+    _require(all(set(a) <= {"decidedBy", "decidedByRole", "reason"} and a.get("decidedByRole", "human_operator") in ROLES
+                 for a in attribution.values()), "human_acceptance_attribution")
     return {"schemaVersion": SCHEMA, "targetLocale": candidate["targetLocale"], "candidateJsonSha256": _sha(candidate),
             "textQcJsonSha256": _sha(text_qc), "decidedBy": decided_by, "decidedByRole": "human_operator",
             "humanApproval": True, "decidedAt": decided_at, "userStatement": user_statement,
             "groups": [{"groupId": gid, "englishSha256": rows[gid]["englishSha256"],
                         "targetTextSha256": rows[gid]["targetTextSha256"], "problems": rows[gid]["problems"],
-                        "decision": "accepted"} for gid in group_ids]}
+                        "decision": "accepted", "decidedBy": attribution.get(gid, {}).get("decidedBy", decided_by),
+                        "decidedByRole": attribution.get(gid, {}).get("decidedByRole", "human_operator"),
+                        **({"reason": attribution[gid]["reason"]} if attribution.get(gid, {}).get("reason") else {})}
+                       for gid in group_ids]}
 
 
 def check(acceptance: dict, *, candidate: dict, text_qc: dict) -> set[str]:
@@ -65,6 +74,8 @@ def check(acceptance: dict, *, candidate: dict, text_qc: dict) -> set[str]:
     for item in acceptance.get("groups") or []:
         gid = item.get("groupId")
         _require(gid in rows and gid in texts and gid not in accepted and item.get("decision") == "accepted"
+                 and item.get("decidedByRole", "human_operator") in ROLES
+                 and isinstance(item.get("decidedBy", "x"), str) and item.get("decidedBy", "x").strip()
                  and item.get("targetTextSha256") == rows[gid]["targetTextSha256"] == _text_sha(texts[gid])
                  and item.get("englishSha256") == rows[gid]["englishSha256"], "human_acceptance_group_changed")
         accepted.add(gid)

@@ -293,7 +293,10 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
             "decidedBy": human_acceptance["decidedBy"], "decidedAt": human_acceptance["decidedAt"],
             "userStatement": human_acceptance["userStatement"],
             "textQcJsonSha256": human_acceptance["textQcJsonSha256"],
-            "groupIds": [row["groupId"] for row in results if row["groupId"] in accepted and row.get("status") != "pass"]}
+            "groupIds": [row["groupId"] for row in results if row["groupId"] in accepted and row.get("status") != "pass"],
+            "groupDecisions": [{"groupId": g["groupId"], "decidedBy": g.get("decidedBy", human_acceptance["decidedBy"]),
+                                "decidedByRole": g.get("decidedByRole", "human_operator")}
+                               for g in human_acceptance["groups"] if g["groupId"] in accepted]}
     _schema(receipt, receipt["schemaVersion"])
     return receipt
 
