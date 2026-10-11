@@ -158,8 +158,8 @@ def _dictionary_words(path):
 
 
 # The aligner can place the last interval of a hard-cut chunk a few milliseconds before the end of the
-# previous one when the chunk boundary falls inside a word. Only the final entry of a tier may overlap
-# its predecessor, and by no more than this many seconds; any other overlap stays invalid.
+# previous one when the chunk boundary falls inside a word. Only the final phone reaching the chunk boundary may overlap
+# its predecessor; word tiers and other overlaps retain strict ordering.
 FINAL_ENTRY_OVERLAP_SECONDS = 0.02
 
 
@@ -178,7 +178,9 @@ def _entries(raw, tier, duration):
         if (isinstance(start, bool) or isinstance(end, bool)
                 or not isinstance(start, (int, float)) or not isinstance(end, (int, float))
                 or not math.isfinite(start) or not math.isfinite(end)
-                or start < previous - (FINAL_ENTRY_OVERLAP_SECONDS if index == last_index else 1e-6)
+                or start < previous - (FINAL_ENTRY_OVERLAP_SECONDS + 1e-6
+                    if tier == "phones" and index == last_index and abs(end - duration) <= 0.025
+                    else 1e-6)
                 or end < start or start < 0 or end > duration + 0.025
                 or not isinstance(label, str)):
             raise ValueError(f'Invalid MFA {tier} timing')

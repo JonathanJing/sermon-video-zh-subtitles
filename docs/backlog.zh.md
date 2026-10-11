@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-06。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-10。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -19,6 +19,25 @@ English index: [backlog.md](./backlog.md)
 5. 每周内容运行不在这里逐组打勾；使用 Tracker 的 `L1-01`—`L4-04`。这里管理让这些检查点可重复完成的工程能力。
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
+
+<a id="backlog-status-refresh-20261010"></a>
+
+## 2026-10-10：非报告 PR 合并后的当前状态
+
+核对基线为远端 `dev@704d257235d59df5d6da21262361a912bccc7481`：[整合 PR #332](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/332) 的最终提交 `56514935` 全部 CI 通过，13 个原非运行报告 PR 已合并。本文仅核对已合并代码、合同与既有验收记录，未重新运行模型、部署、设备或现场测试。下面及更新后的当前表行优先于日期章节的旧快照；历史失败和运行身份保留，不重标为当前失败或当前成功。
+
+| 归属／稳定 ID | 当前实现与状态 | 下一可验收结果／边界 |
+|---|---|---|
+| `DEV-L1-001`、`DEV-SPD-004` | 保持 `in_progress`；#331 的 MFA 容差只接受末端距切块结束不超过 25 ms 的最后一个 phone 的至多 20 ms 重叠，word tier 仍严格；#311 的 repair/reopen 绑定完整 meaning-notes canonical hash | 当前来源的完整 Source Package 与 source review 仍须独立验收；不扩大所有 tier 容差，不以字段局部一致复用旧批准。见 [MFA producer](../scripts/mfa_alignment.py)、[meaning-notes](../scripts/source_meaning_machine_adjudication.py) |
+| `DEV-L2-003` 术语影子候选闭环（归 `DEV-L2-001/002`） | P1 / `in_progress`；#329/#332 已合并 execution-v4、request/evidence-v2、terms-only 预检及模式透传脚手架；执行在 transport 前拒绝 | 补影子 candidate schema、pending-term plugin admission、worksheet→人工术语收据→freeze 闭环及离线恢复/下游隔离验收，之后才评估独立预算下的真实调用。当前不能产出可用影子候选。见 [设计与剩余验收](layer2-shadow-candidate-mode.zh.md) |
+| `DEV-L2-004` 默认插件路径的组并行及停止收据（归 `DEV-R242-011`、`DEV-SPD-001`） | P1 / `pending`；#330 交付设计；默认 v1/v2 带插件路径仍串行，v3 failure collector 已有组并行收集，不重复开发 | 若实施新的首拒绝停止语义，须独立执行/停止收据版本，冻结实际派发/在途/未派发集合；API 24 槽仅同一 job root，非账号总上限。真实容量/恢复另验。见 [组并行设计](layer2-plugin-concurrency-design.zh.md) |
+| `DEV-L4-001/005`、`DEV-CICD-001` | 保持 `in_progress`；#314/#323/#332 已合并 Dev app-shell 计划、changedPaths/commit/输入输出字节绑定与独占结果回执；bucket verifier 收据随 staging 复制，并绑定精确 redirect、CSP 和 HTTP 视频字节 | 对当前授权目标分别做 shell-only 与内容更新的实际部署/HTTP/回退验收；软件合并不证明线上已更新。见 [shell updater](../scripts/firebase_dev_app_shell_update.py)、[Dev alignment](../scripts/align_firebase_dev_v3.py) |
+| `DEV-L4-008` 多语言宣传页头来源及渲染验收（归 `DEV-L4-005`） | P2 / `waiting_evidence`；#266/#332 的 renderer 已合并 release/content/source/locale/candidate 绑定和全语言写入前预检；截图须 manifest revision 与 SHA256 绑定，缺 hash 的旧清单拒绝 | 用来源绑定完整的新输入验收渲染及视觉效果，再按实际目标单独授权上传；不提升 iOS 二进制、Store 或页面发布状态。见 [renderer](../scripts/render_tongxing_page_header.py)、[历史页头记录](reports/20261006-tongxing-page-header-animation.zh.md) |
+| `DEV-EXP-005` Agents／Decisions 隔离实验（归 `DEV-SPD-006`、`DEV-R242-022/023`） | P2 / `in_progress`；#259/#285/#332 已合并 runner、失败样例库、评分/计时身份守卫、未知结果停止与预算对账保护 | Agents trials 的 `--backend live` 因缺 canonical budget adapter 关闭；Decisions 实验沿自己的冻结预算与审批合同。E01 完整英文裁判职责、独立 gold、弃权/回退及收益仍需验收；标签分数不等于完整产物质量，不接管生产。见 [Agents trials](agent-api-trials.zh.md)、[Decisions A/B](decision-api-weekly-ab-design.zh.md)、[既有研究结论](reports/20261006-decision-api-weekly-ab-findings.zh.md) |
+| `DEV-EXP-006` Claude CLI 独立语言 A/B（归 `DEV-R242-022/025`） | P2 / `in_progress`；#299/#323/#332 已合并固定模型、单次尝试、输出 cap、preview/cache/transport 指纹、未知 usage 与持久调用标记守卫 | canonical 新 dev/formal 仍用 Sol API；新 Claude production policy freeze 拒绝，旧冻结身份不重标。实验 v3 的同输入质量/速度比较、独立盲评与独立实验政策仍待完成；旧 cache-only 离线兼容不证明真实历史恢复。见 [实验范围](claude-cli-language-backend.zh.md)、[A/B runner](../scripts/experiments/claude_translation_ab.py) |
+| `DEV-SPD-001/005/006` | 保持 `in_progress`；#280 的云资源/整后端设计与 #321 的模型输出速度索引已合并 | 云 worker/存储/lease/预算适配与真实并发未交付；固定 L1 revision/fenced pointer 和插件派发门禁是设计要求。测速保留 API/CLI、总输出/可见输出、turn/process 等不同口径，不声称整周提速。见 [云设计](reports/20261008-full-cloud-backend-orchestration-and-storage.zh.md)、[资源估算](reports/20261007-cloud-gpu-resources-and-concurrency.zh.md)、[速度索引](model-output-speed-index.zh.md) |
+| `DEV-GOV-001` | 保持 `verified_baseline`；#215 的目录布局提案已合并 | 迁移尚未批准或实施，先明确模块依赖及逐批恢复/验收范围；设计合并不是目录迁移。见 [布局提案](design/repository-layout-proposal.zh.md) |
+| `DEV-RUNREPORT-001` | 保持 `waiting_evidence`；脱敏导出与 docs-only 草稿报告流程已有本次手动证据，[报告 #333](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/333) 留在 PR；#285/#332 已扩展实验摘要导出 | 仍需原四项完整验收，手动导出不证明所有驱动自动导出。报告先留草稿，复盘完成后再合并；重复或被替代的旧报告关闭并链接最终报告，不为清空列表批量合并 |
 
 <a id="backlog-run-report-20261008"></a>
 
@@ -49,7 +68,7 @@ English index: [backlog.md](./backlog.md)
 
 | 子任务／归属 | 优先级／状态 | 已有工作与下一验收 | 依赖 |
 |---|---|---|---|
-| `DEV-R242-025` 新模型及CLI迁移验收；`DEV-L1-001/L2-001/SPD-006` | P1 / `in_progress` | 17f7d026已接主要文字入口Sol6.1 high/medium fast与Luna medium fast、ChatGPT CLI/ASR key隔离；487项/214subtests为历史收据。Study v2仍为旧模型/default tier的bounded direct API，schema/参数/CLI adapter迁移未做，归013/025。剩#248合并、远端/定时入口安装与参数回读、新身份完整四层、medium复核和Luna CLI匹配测速；旧模型数字不重标 | [模型策略](production-model-runtime-policy.zh.md)、R242-013/020/022；现有凭据和旧run身份 |
+| `DEV-R242-025` 模型及调用后端迁移验收；`DEV-L1-001/L2-001/SPD-006` | P1 / `in_progress` | 截至2026-10-10，#248已合并；新 dev/formal Layer 2 为 Sol 6.1 high 初译→medium 独立审核，默认 OpenAI API及绑定预算，Supervisor 为 Luna medium fast Codex CLI。旧CLI迁移/487项测试保留历史身份。Luna API/CLI测速已有独立索引，不外推整链；其余文字producer按实际接线核对，Study迁移及新身份完整四层仍待验收。Claude独立实验归EXP-006，不作为生产可选后端 | [当前策略](production-model-runtime-policy.zh.md)、[测速索引](model-output-speed-index.zh.md)、R242-013/020/022 |
 | `DEV-R242-026` CLI严格预算能力；`R242-011/012/022`、`DEV-COST-001` | P0 / `waiting_evidence` | 2026-10-05本地复盘后，standalone transport 与旧文字 Chat 也在 json_request 前拒绝无上限载荷。canonical／Study／来源机审仍须 default 档完成 token 上限。Codex CLI 不能充当带预算 worker。fast 档预算授权、笔记 Responses API 和真实 debit 仍缺，不标 complete | [验收](reports/20261005-p0-gate-acceptance.zh.md)、[严格预算](canonical-layer2-budget-and-migration.zh.md) |
 | `DEV-R242-027` Quota-gated API认证CLI fallback；`DEV-SPD-006`、`DEV-COST-001/002` | P1 / `pending` | f7afa0a5仅交付设计。剩真实额度拒绝分类、共享route/run准入、claim/fencing、授权费用/ASR预留、隔离认证、混合身份接续、额度恢复及小额真实验收；默认关闭，设计批准不授予金额 | 026和明确预算授权；[设计验收矩阵](codex-quota-api-fallback-design.zh.md#实现顺序与验收) |
 | `DEV-R242-028` Spark整轮独占及服务恢复；`R242-012/017/021`、`DEV-DIAG-018` | P0 / `waiting_evidence` | 2026-10-05只读验收：活动session.json为closed，controller SHA与当前spark_exclusive_session.py一致，四unit active，原模型健康，job均terminal且unknown=0。回归确认migration快照不是活动账本，closed后不能开工。下一次真实模型测试仍须新建exclusive_ready | [验收](reports/20261005-p0-gate-acceptance.zh.md)、[独占设计](spark-exclusive-development-session.zh.md) |
@@ -180,7 +199,7 @@ P0内部可并行准备：001/005/006与002/003/004；008→009→010是运行�
 
 | 子任务 / 顶层归属 | 状态 | 剩余交付与验收 | 依赖 |
 |---|---|---|---|
-| `DEV-R242-011` L2正式入口与并发所有权；`DEV-L2-001`、`DEV-SPD-001/004` | `in_progress` | 正式非预算L2 CLI已接；ae7a7fef新增显式controller v2最多3 active locale并共用23业务槽，旧v1仍单locale，unknown占位不变。正式strict预算入口仍发送前阻断；三语138组/276实际译审与全流程验收未做 | 005、009、010 |
+| `DEV-R242-011` L2正式入口与并发所有权；`DEV-L2-001`、`DEV-SPD-001` | `in_progress` | 截至2026-10-10，canonical及授权standalone使用绑定预算的Sol OpenAI API；旧非预算CLI接线只作历史/实验身份。v1单locale、显式v2最多3 active locale保持冻结容量；v3 failure collector已有组并行。默认插件首拒绝停止并行设计归DEV-L2-004，shadow闭环归DEV-L2-003。新完整三语真实译审/恢复与全流程验收仍缺 | 005、009、010；[controller合同](canonical-layer2-controller.zh.md) |
 | `DEV-R242-012` L1/L3 adapter与阶段恢复；`DEV-L1-001`、`DEV-L3-001`、`DEV-DIAG-018` | `in_progress` | Source/L3 adapter、assembly-only、稀疏恢复及配方/输出闭包已合并；ae7a7fef新增Spark诊断受控SSH、8×8 TTS、单ASR batch8、CPU4，551项远端hash仅CPU readiness。剩真实执行、跨job热驻留、ASR精确迁移及GPU乱序补窗；新增独占前置见028 | 003、004、010、011 |
 | `DEV-R242-013` 大纲／默想独立审核与四产物汇合；`DEV-L4-006`、`DEV-REVIEW-001` | `in_progress` | Study v2独立大纲/默想生成、独立人审schema/ingest、source引用和四产物汇合已由#242合并，原生/网页消费亦有离线证据。当前producer仍读取API key直发bounded API，policy只接受旧Astra/Sol及default tier；Sol6.1 fast参数/schema/CLI adapter与严格预算适配未做。另缺新篇真实生成、两份独立人工审核；不用旧音轨outline批准替代 | 008、011、025/026；缺当前独立人审收据保持rejected |
 | `DEV-R242-014` 通用locale增量发布与回滚；`DEV-L4-001/002/004`、`DEV-DIAG-019` | `in_progress` | 增量locale/siblings保护、rollback、远端lease与baseline版本检查已由#242合并。剩授权目标实际发布/竞争/回滚演练；按release plan保持单locale或多语join，旧媒体/catalog保留 | 006、007、012；实际发布授权与目标绑定 |
@@ -562,7 +581,7 @@ D1 合同实现可以开工；真实 A/B 前仍须冻结实际样本、工具/�
 |---|---|---|---|---|
 | `DEV-GOV-001` | 分支、CI 与 Dev→main 晋升 | `verified_baseline` | #115／#116／#118 已完成本轮整合、晋升和回同步；后续功能仍从最新 `dev` 经 required checks 合并，晋升后按受检查 sync PR 回同步，不直接修改受保护分支 | [分支与 Firebase 环境](development-branch-and-firebase-environments.zh.md)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
 | `DEV-L1-001` | Layer 1 完整英文事实与锚点 | `in_progress` | 一篇真实整篇完成媒体／范围／英文逐字／词时间／句界停顿／人工审核的可重复 hash 绑定，并产出 `ready_for_translation` | [Tracker 的 Layer 1 工程项](four-layer-production-tracker.zh.md#layer-1-工程-backlog) |
-| `DEV-L2-001` | Layer 2 每周多语言文字 | `in_progress` | 新run的`zh-Hans`、`ko`、`es`从同一正式Layer 1使用Sol6.1 high fast→medium fast Codex CLI→语言插件→人工批准；历史run保留冻结模型；逐组失败可恢复且不污染其他语言 | [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md#3-layer-2目标语言文字-backlog) |
+| `DEV-L2-001` | Layer 2 每周多语言文字 | `in_progress` | 新run的`zh-Hans`、`ko`、`es`从同一正式Layer 1使用Sol 6.1 high初译→medium独立审核，经OpenAI API及绑定预算→语言插件→独立批准/适用waiver；tier以预算允许值为准。旧run保留冻结模型/后端，不把CLI实验或shadow脚手架计为正式候选；逐组失败可恢复且不污染其他语言 | [当前模型策略](production-model-runtime-policy.zh.md)、[Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md#3-layer-2目标语言文字-backlog) |
 | `DEV-L3-001` | Layer 3 正式整篇音频包 | `in_progress` | 同语言正式 Candidate 经授权音色、自然语速合成、完整解码、回转写、滚动排程、字幕、全文听审与 1 倍速同步形成可移植 Audio Package | [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md#4-layer-3目标语言音频与同步-backlog) |
 | `DEV-L3-002` | 英文声学停顿驱动的自然表达 | `in_progress` | 目标语言完整自然句只在已审英文声学锚点处排程；局部 overrun 返回翻译／句界修订，不以词组拼接或拉伸掩盖 | [多语言 Prosody POC](multilingual-prosody-poc.zh.md) |
 | `DEV-WEEK-001` | 周产交付定义与时长预检 | `in_progress` | 全消费者capability、窗口/媒体/元数据冻结、release intent及预检已由#242实现。剩下一真实周完整视频、三语双端/QR落点矩阵与自然时长通过；不以历史同步例外替代新周目标 | 本节复盘输入；[四层接口合同](multilingual-production-interfaces.zh.md) |
@@ -616,7 +635,7 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 | `DEV-VOICE-001` | Speaker Voice Registry 授权与可移植恢复 | `in_progress` | 每语言 checkpoint 的授权范围、能力、hash、媒体恢复位置和归档验证可在干净环境重建，不依赖原工作站绝对路径 | [Speaker Voice Registry](multilingual-speaker-voice-registry.zh.md) |
 | `DEV-L4-002` | 原子 catalog、单语言回滚与旧资产保护 | `in_progress` | 新语言／周次更新不删除其他 locale 或旧周资产；catalog 最后发布；单 locale 可回滚 | [Layer 4 backlog](multilingual-layer-4-delivery-app-backlog.zh.md#6-layer-4-与-app-改进-backlog) |
 | `DEV-IOS-002` | iOS WebView／CI 偶发空白与系统表面 | `in_progress` | 大纲／默想、显示名称、系统播放控制、全文返回当前句、前台定位反馈及锁屏最近同步字幕已由 #256 整合；锁屏不承诺离线逐句更新。相同 CI 系统和真机稳定显示正文；Now Playing、锁屏、耳机／中断、Live Activity、无障碍与 Duo 姿态仍分别验收（IOS-06—11） | [iOS backlog](../apps/tongxing-ios/BACKLOG.zh.md) |
-| `DEV-CICD-002` | 四类代码改动的 CI 测试路由 | `in_progress` | 固定required checks、四类改动路由与pytest合同已实现；本轮审计2373bfff的root-1失败于evaluate_backend_four_layer_dry_run的四层/安全合同，root-0仍运行。修复沿本项推进，新head单独验，不以其他mock/native通过声称全绿 | [CI/CD backlog](ci-cd-backlog.zh.md)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
+| `DEV-CICD-002` | 四类代码改动的 CI 测试路由 | `in_progress` | 固定required checks与改动路由已实现；2373bfff的root-1失败属于2026-10-05历史。#332最终56514935的Python全部分组/汇总、iOS相关合同与Prefect模拟检查通过后合并dev；不代表iOS真机或merge后dev工作流重新通过。后续变更仍按当前head、触发范围及required checks验收 | [整合检查](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/332)、[CI/CD backlog](ci-cd-backlog.zh.md) |
 | `DEV-CICD-003` | Firebase 页面与后端功能的 Dev→Production 交付 | `in_progress` | guarded publisher及Dev/Production环境绑定入口已存在，历史Dev HTTP有收据；剩服务级页面/API/权限真实smoke及当前Production交付/回退。main push不自动发布，代码晋升不代替部署 | [CI/CD backlog](ci-cd-backlog.zh.md) |
 | `DEV-CICD-004` | iOS 安装包与 TestFlight 交付链 | `in_progress` | 仓库已有 Beta1.26.11（52）、1.26.12（53）及1.26.15（56）的版本化归档／上传／TestFlight 历史读回记录。56绑定冻结源码8c71c02及Apple于2026-10-06 16:18:05 UTC的VALID／IN_BETA_TESTING读回；本次文档候选及冻结后源码不视为已分发。实际安装、真机、App Store／正式发布仍分别待验收，不以历史读回代表当前设备状态 | [Beta52](../apps/tongxing-ios/BETA-RELEASE-1.26.11.zh.md)、[Beta53](../apps/tongxing-ios/BETA-RELEASE-1.26.12.zh.md)、[Beta56](../apps/tongxing-ios/BETA-RELEASE-1.26.15.zh.md)、[真机验收](../apps/tongxing-ios/DEVICE-ACCEPTANCE-1.26.15.zh.md)、[CI/CD backlog](ci-cd-backlog.zh.md) |
 | `DEV-TRK-002` | 第二周真实全流程复现与恢复 | `pending` | 用新周次验证缓存、断点恢复、上游失效、旧资产保留和 ETA 校准，不复用第一周人工结论 | [四层 Tracker](four-layer-production-tracker.zh.md) |

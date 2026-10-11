@@ -25,6 +25,9 @@ MAX_REQUEST_LIMITS = {**DEFAULT_REQUEST_LIMITS, 'maxInputTokens': 16384, 'maxCom
 RUN_TARGET_MICROUSD = 25_000_000
 RUN_HARD_CAP_MICROUSD = 40_000_000
 SUPPORTED_MODELS = ('gpt-6-astra', 'gpt-6-sol', 'gpt-6.1-sol', 'gpt-6-luna')
+# Claude translation is a per-run option. Kept out of SUPPORTED_MODELS so OpenAI
+# diagnostics and adjudicators never iterate it; the bounded budget path accepts both.
+CLAUDE_MODELS = ('claude-opus-5-5',)
 SUPPORTED_REASONING_EFFORTS = ('low', 'medium', 'high', 'xhigh', 'max')
 MODEL_REASONING_EFFORTS = {
     'gpt-6-astra': SUPPORTED_REASONING_EFFORTS,
@@ -32,25 +35,38 @@ MODEL_REASONING_EFFORTS = {
     'gpt-6.1-sol': ('low', 'medium', 'high', 'xhigh', 'max'),
     'gpt-6-luna': ('none', 'low', 'medium', 'high', 'xhigh', 'max'),
 }
+CLAUDE_REASONING_EFFORTS = {'claude-opus-5-5': ('low', 'medium', 'high', 'xhigh', 'max')}
+BUDGET_MODELS = SUPPORTED_MODELS + CLAUDE_MODELS
+
+
+def reasoning_efforts(model):
+    return MODEL_REASONING_EFFORTS[model] if model in MODEL_REASONING_EFFORTS else CLAUDE_REASONING_EFFORTS[model]
 PRICE_VERIFIED_AT = '2026-10-05'
 PRICE_SOURCES = {
     'gpt-6-astra': 'https://developers.openai.com/api/docs/pricing?tab=suite',
     'gpt-6-sol': 'https://developers.openai.com/api/docs/models/gpt-6-sol',
     'gpt-6.1-sol': 'https://developers.openai.com/api/docs/models/gpt-6.1-sol',
     'gpt-6-luna': 'https://developers.openai.com/api/docs/models/gpt-6-luna',
+    # Anthropic list price, read from the first-party pricing page on 2026-10-08.
+    'claude-opus-5-5': 'https://platform.claude.com/docs/en/about-claude/pricing',
 }
 PRICE_ASSUMPTION_VERSION = 'strict-chat-worst-case-2026-10-05-v2'
 PRICE_VERIFIED_AT_BY_MODEL = {model: PRICE_VERIFIED_AT for model in SUPPORTED_MODELS}
 PRICE_ASSUMPTION_VERSION_BY_MODEL = {model: PRICE_ASSUMPTION_VERSION for model in SUPPORTED_MODELS}
 PRICE_VERIFIED_AT_BY_MODEL['gpt-6-luna'] = '2026-10-08'
 PRICE_ASSUMPTION_VERSION_BY_MODEL['gpt-6-luna'] = 'strict-chat-luna-2026-10-08-v1'
+PRICE_VERIFIED_AT_BY_MODEL['claude-opus-5-5'] = '2026-10-08'
+PRICE_ASSUMPTION_VERSION_BY_MODEL['claude-opus-5-5'] = 'strict-claude-list-worst-case-2026-10-08-v1'
 # USD per million tokens equals micro-USD per token. Exact decimal strings avoid
 # float under-reservation; these rates cannot be supplied by a model/caller.
+# Claude input uses the 1-hour cache-write rate ($8): the CLI may write prompt
+# cache, and the reservation must cover the most expensive input class.
 PRICES_USD_PER_MILLION = {
     'gpt-6-astra': {'inputWorstCase': '12.5', 'output': '50'},
     'gpt-6-sol': {'inputWorstCase': '2.5', 'output': '10'},
     'gpt-6.1-sol': {'inputWorstCase': '2.5', 'output': '10'},
     'gpt-6-luna': {'inputWorstCase': '0.125', 'output': '0.5'},
+    'claude-opus-5-5': {'inputWorstCase': '8', 'output': '20'},
 }
 MAX_METRIC = 10**15
 MAX_MESSAGES = 16
@@ -99,10 +115,10 @@ def bounded_payload(payload, limits):
     _require(type(payload) is dict and required <= set(payload) and
              set(payload) <= required | {'max_completion_tokens', 'service_tier'},
              'unsupported_bounded_provider_payload')
-    _require(type(payload['model']) is str and payload['model'] in SUPPORTED_MODELS,
+    _require(type(payload['model']) is str and payload['model'] in BUDGET_MODELS,
              'unsupported_bounded_provider_model')
     _require(type(payload['reasoning_effort']) is str and
-             payload['reasoning_effort'] in MODEL_REASONING_EFFORTS[payload['model']],
+             payload['reasoning_effort'] in reasoning_efforts(payload['model']),
              'unsupported_bounded_reasoning_effort')
     messages = payload['messages']
     _require(type(messages) is list and 1 <= len(messages) <= MAX_MESSAGES, 'invalid_bounded_messages')

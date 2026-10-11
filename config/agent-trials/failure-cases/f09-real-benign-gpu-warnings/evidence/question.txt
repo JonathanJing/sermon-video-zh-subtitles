@@ -1,0 +1,1 @@
+The TTS log from the 2026-10-08 audio run shows 'GPU device discovery failed' and the ASR and TTS logs both warn about CUDA capability 12.1. Did the audio stage fail, and what needs fixing before the next round?
