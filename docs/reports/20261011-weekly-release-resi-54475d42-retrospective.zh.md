@@ -530,3 +530,104 @@
 - 不做服务端匹配：离线、不上传是这个功能的前提。
 - 不按语言分索引：三语共用同一份原声索引是对的。
 
+## 十六、开发前的配置、分支与既有 backlog 的对接
+
+### 现状（2026-10-11 20:40 PDT 核对远端）
+
+| 对象 | 状态 | 含义 |
+|---|---|---|
+| `main` 9e5c42bc | 是 `dev` 的祖先；`dev` 领先 301 提交，`main` 领先 0 | 上一次晋升已回同步，**不需要**先做 `sync/*`，可直接从 `dev` 开功能分支 |
+| `dev` 38e0db93 | 最新 | 所有新分支的基点 |
+| 工作分支 `codex/layer1-human-source-correction` c344d5d8 | 领先 `dev` 40 提交、落后 238；PR #335 `BEHIND`，8 个测试分片全部失败，`unittest` 随之失败 | 本周发布实际运行的代码还没进 `dev`；第十四节 A/B/C/F 改的文件都在这 40 个提交里，**必须先合并它** |
+| 报告分支 `report/20261011-weekly-release-retrospective` | 基于 `dev` tip，PR #337 检查运行中 | 夹具包里的 `tooling/*.py` 不在文档快路径白名单内，所以跑完整测试，属预期 |
+| 24 个 `run-report/*` 草稿 PR（#286–#341） | 未合并 | 都是 docs 快路径，可以成批转 Ready 后 squash；不合并也不阻塞开发 |
+| 本机主 checkout | fetch refspec 只列了 5 个分支，其中 `fix/sermon-pdf-human-review` 远端已删，`git fetch origin` 直接报错；`git worktree list` 有 80 多个条目，多数是旧任务 | 开发前修一次 |
+
+### 第一步：修 PR #335 的 CI（0.5 天，一切开发的前提）
+
+8 个分片失败只有三个根因，都是本周发布期间改代码没同步测试：
+
+| 根因 | 失败用例 | 修法 |
+|---|---|---|
+| `tailOverrunSeconds` 加进了 `DEFAULT_POLICY`，而 `target_audio_timing_plan.plan()` 与 `target_audio_predicted_schedule` 要求 `set(policy) == set(DEFAULT_POLICY)`，所有旧的三字段策略都报 `Invalid schedule policy fields`；按旧字段表取值的地方报 `KeyError` | `test_export_layer3_recovery_intents` 13 例、`test_decision_api_cases_rules` E05、`test_build_multilingual_voice_preview` 的 `8 != 6` | 两处校验改为「三字段必含，`tailOverrunSeconds` 可选、默认 0.0、上限 1.0」；这正是第十四节 F「渲染器直接吃计划」的同一处，F 并入这次修复，不再单开分支。`target_audio_predicted_schedule.py` 在哈希文件集内 |
+| 种子器两次变更（8aeb3dd4、34b1b607）改了 added_content 的拼接文本、swapped_name 适用性消息和 per-kind 低检出消息，测试还在断言旧文本 | `test_machine_quality_waiver` 3 例 | 测试改成新行为；代码行为就是本周发布实际用的，不回退 |
+| 新增的 0.5 s 容差用例依赖第一条 | `test_build_target_language_audio_package.py:744` | 随第一条通过 |
+
+修完后 `git merge origin/dev`（功能 PR 允许 merge commit，最终 squash）→ 本地跑这三个测试文件 + 分片 → 推送 → 绿后 squash 进 `dev`。
+
+### 第二步：一次性配置（约 1 小时）
+
+1. **仓库**：恢复完整 fetch refspec，并清理失效 worktree 记录；不删其他会话仍在用的 worktree。
+
+   ```bash
+   git -C /Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles remote set-branches origin '*'
+   ```
+
+   ```bash
+   git -C /Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles worktree prune
+   ```
+
+2. **运行代码与开发代码分离**：主 checkout 保留本周运行的冻结身份（实现哈希 49f4e9bf）和 `artifacts/`，不在它上面开发。每个功能分支一个 worktree：
+
+   ```bash
+   git -C /Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles worktree add -b codex/w42-release-entry .claude/worktrees/w42-release-entry origin/dev
+   ```
+
+3. **凭据**：开发与测试一律走 `tongxing-dev` 启动器。Spark 上 `~/.config/tongxing/openai-prod.env` 的用途（音频 QC）已结束，现在删除；下周正式运行前再按 runbook 放一次。
+4. **预算**：按第十四节 C，先写好 `api-budget-authorization-2026-W42.json`（请求上限按三语 × 2 轮筛查 + 2 轮校准估），开发期间的测试用 dev 预算，不碰它。
+5. **夹具**：第十三节夹具包（2.4 MB）里测试要用的 JSON 拷到 `tests/fixtures/weekly-20261011/`（timing、audio-qc、publication 收据、cost 四目录），`docs/reports/runs/` 下的那份只作记录；测试按相对路径读取，不引用 `docs/`。
+6. **Spark**：开发期间不开独占会话；周六彩排前 `require_ready`，并确认 `job-reasoning-review.timer` 已在冻结清单里（第十四节 C）。
+
+### 第三步：分支（都从最新 `origin/dev` 建，在 #335 合并之后）
+
+| 分支 | 第十四节 | 主要改动文件 | 哈希集 | 依赖 | 合并顺序 | 预计 |
+|---|---|---|---|---|---|---|
+| `codex/w42-asr-normalization` | B | `target_audio_auto_qc.py`、`auto_qc_text_common.py` | 是 | #335 | 1（哈希集最先稳定） | 1 天 |
+| `codex/w42-release-entry` | A | `build_full_video_app_release.py`、新 `fetch_live_baseline.py`、新 `smoke_published_page.mjs`、`run_multilingual_cd.py` | 否 | #335 | 与 1 并行 | 1 天 |
+| `codex/w42-freeze-guard-spark` | C | QC 驱动入口、`spark_exclusive_session.py`、派发器（把 `layer3-54475d42/tooling/chains/` 里的派发器迁入 `scripts/`） | 否（守卫读哈希） | 1 | 3 | 0.5 天 |
+| `codex/w42-run-journal` | D | 新 `run_journal.py`、新 `record_decision.py`、`sermon_source_budget`、`export_run_digest.py` | 否 | #335 | 4 | 0.5 天 |
+| `codex/w42-listening-sample` | E | 新 `build_listening_sample.py` | 否 | 4 | 5 | 0.5 天 |
+| `codex/w42-quantify-fix-design` | G | 仅文档 | 否 | 无 | 随时 | 0.5 天 |
+
+规则：一分支一 PR，squash 进 `dev`；分支寿命不超过两天；PR 正文写 backlog ID（见下）；每个 PR 本地先跑受影响测试文件和 `git diff --check`；运行期间（周六 19:00 起）不合并任何代码。
+
+**时间线**：周一 #335 修复 + 配置；周二 A 与 B；周三 C 与 D；周四 E、G，23:59 全部进 `dev`；周五开 `dev → main` 晋升 PR（短窗口允许直接 `dev → main`），squash 后立刻用 `sync/main-to-dev-20261017` 的 merge-commit PR 回同步；周六用 `main` tip 建运行专用 worktree `runs/20261018`，先跑 `run_dev_180s_beta_e2e.sh` 彩排，把实现哈希写进运行计划，19:00 正式开始。本周的运行是在功能分支上做的，这不符合「`main` 是可部署代码基线」；下周改为从 `main` tip 运行。
+
+### 第四步：既有 backlog 怎样接进来
+
+`docs/backlog.zh.md` 的维护规则：顶层 ID 和优先级只在那一页维护，新事项先取稳定 ID，`complete` 必须绑定已合并代码、测试和对应证据。本周复盘对它只做三件事，不另开第二套排期：
+
+**1. 本周运行产生的证据，推进哪些行（不标 `complete`）**
+
+| ID | 本周证据 | 处理 |
+|---|---|---|
+| `DEV-L1-001`、`DEV-L2-001`、`DEV-L3-001` | 一篇真实整篇走完四层：461 单元、三语 Sol 6.1 译审、整篇音频包、v3 试听豁免 + 人工接受收据 | 保持 `in_progress`，证据链接到本复盘第一、二节和第十节的摘要 |
+| `DEV-L4-004`、`DEV-R242-007`、`DEV-R242-014` | 正式 v3 周更新真实发布、外壳故障、回滚到 7089e037、再发布，收据齐全 | 回滚演练这一项第一次有真实证据；状态仍 `in_progress`，剩「不出故障的发布」 |
+| `DEV-R242-003` | L3 收据上下文真实复用（ko 不重合成、沿用读音） | 保持 `waiting_evidence` → 可改 `in_progress` 并引用 |
+| `DEV-TRK-002` | 这就是「第二周真实全流程复现」：缓存、断点续跑、上游失效、旧资产保留都碰到了 | `pending` → `in_progress`，不复用第一周人工结论的要求已满足 |
+| `DEV-WEEK-001`、`DEV-R242-004`、`DEV-R242-020` | 窗口未守住（凌晨发布）；同步目标用了 120 s 滞后 + 1 s 片尾容差的用户批准例外；各环节耗时已在第二节 | 和 62 s 一样记为**本次例外**，8 s 仍是目标；020 的整周耗时表第一次有数 |
+| `DEV-RUNREPORT-001` | 11 份脱敏摘要是手动导出；驱动结束自动导出仍未证明 | 保持 `waiting_evidence`，写明缺①④ |
+| `DEV-PROD-001` | 正式发布由另一会话完成，收据在 `publication` 摘要里 | 五项证据是否各自带 sha256 需对照摘要核对后再改状态，不在复盘里改 |
+| `DEV-R242-013` | Study v2 生成器 `provider_input_bound_exceeded`（batchGroups=3 仍超），改走 v1 冻结路径 | 把这个失败写进 013 的剩余交付；修复排 W43 |
+
+**2. 第十四节 A–G 挂到哪个 ID**
+
+| 计划 | 归属 | 是否新 ID |
+|---|---|---|
+| A 发布入口四道门 | 新 `DEV-R242-029`（归 `DEV-L4-004`、`DEV-CICD-003`、`DEV-R242-006/007/014`） | 新，P0 |
+| B ASR 规范化 + 二级 ASR 条件触发 | 新 `DEV-R242-030`（归 `DEV-L3-001`、`DEV-R242-018`） | 新，P0 |
+| C 冻结守卫 / 周预算 / Spark 重试 | `DEV-R242-001`、`DEV-R242-026`、`DEV-R242-028` 各加一行剩余交付 | 否 |
+| D 运行日志 / 决定记录 / 账本成本 | `DEV-R242-016`、`DEV-R242-010/017`、`DEV-RUNREPORT-001` | 否 |
+| E 发布后抽样表 | 新 `DEV-R242-031`（归 `DEV-R242-018`；替代 `DEV-REVIEW-001` 近期范围） | 新，P1 |
+| F 渲染器吃计划策略 | 并入 #335 修复；`DEV-R242-004` 记「策略由运行计划提供，不自动扩大」 | 否 |
+| G 量化 + `fix` 设计 | `DEV-R242-022`（量化）、`DEV-R242-005`/`DEV-SPD-004`（`fix` 设计） | 否 |
+
+**3. 按第十一、十二节的减法，哪些既有项这个月不动**
+
+- `DEV-REVIEW-001` 私有审核后台：E 的抽样表先替代，保持 `pending`。
+- `DEV-R242-024` Temporal、`DEV-R242-027` 额度 fallback、`DEV-R242-021` 容量实验：P2 不变，W42 不排。
+- `SPD6-ARCH-01—04` 三层编排：第九、十二节的「无人值守」方向与之重叠，不另开条目；W42 只做其中确定性的部分（A–F），Decision Agent 等下周数据。
+- `DEV-R242-013` Study v2 的 batchGroups 修复排 W43；本周用 v1 冻结路径。
+
+对应的 backlog 条目已随本 PR 写入 `docs/backlog.zh.md` 的「2026-10-11」节；功能 PR 正文引用这些 ID 即可，不再在报告里重复排期。
+
