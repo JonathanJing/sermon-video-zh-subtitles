@@ -182,7 +182,9 @@ def _audio(target, lane, source, candidate, evidence):
                         'sermon-target-language-audio-human-review-receipt-v4'}, 'unsupported_delivery_audio_review')
     _schema(review, version + '.schema.json')
     screening = evidence.read(lane['screening'], prefix + 'screening') if 'screening' in lane else None
-    if screening is not None: _schema(screening, 'sermon-target-language-audio-screening-v1.schema.json')
+    if screening is not None:
+        require(screening.get('schemaVersion') in handoff.AUDIO_SCREENING_VERSIONS, 'unsupported_delivery_audio_screening')
+        _schema(screening, handoff.audio_screening_schema_file(screening))
     require(audio['status'] == 'human_reviewed' and audio['track'] is not None and audio['voice'] is not None
             and audio['voice']['authorizationStatus'] == 'authorized' and audio['voice']['targetLocaleCapability'] == 'reviewed'
             and audio['humanReview']['status'] == 'approved' and audio['humanReview']['humanApproval'] is True

@@ -62,8 +62,9 @@ def validate_config(config: dict, public: Path):
         'functionId': 'sermon-feedback-api', 'region': 'us-west1'}}
         in site.get('rewrites', []), 'Production API route changed')
     # The existing source-video redirect is part of content delivery, not UI.
-    catalog = public / 'multilingual-v3.json'
-    if catalog.is_file():
+    for catalog in (public / 'multilingual-v3.json', public / 'multilingual-v4.json'):
+        if not catalog.is_file():
+            continue
         for page in hosting.load(catalog).get('pages', []):
             video = page.get('videoDelivery')
             if video:

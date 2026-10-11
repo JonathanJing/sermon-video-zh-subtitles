@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "sermon-english-source-package-v1",
+  "packageId": "english-source-d2362dfe7c5f016398ca8f8b",
+  "sourceLocale": "en",
+  "status": "blocked",
+  "candidateTranslationEligible": false,
+  "translationEligible": false,
+  "implementation": {
+    "builderSha256": "cb6a1697392cef742bdae39c3c6a2e1618f998a27a2b6fab7f30363f1031038f",
+    "anchorGeneratorSha256": "028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45"
+  },
+  "source": {
+    "sourceId": "diagnostic-drive-605s-parent-window-63-665",
+    "sourceUrlHash": "237c82e9c622d461bbb0b1c5de32832ba4e594c02f01bd2e68cc2ae99314b193",
+    "serviceDate": "2026-09-27",
+    "media": {
+      "sha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+      "sizeBytes": 971172781
+    },
+    "approvedWindow": {
+      "startSeconds": 63.32,
+      "endSeconds": 668.820007,
+      "status": "pending",
+      "humanApproval": false,
+      "evidence": null
+    }
+  },
+  "transcript": {
+    "artifact": {
+      "path": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/next-iteration-repair-20261005/samples/drive-605s/aligned-segments.json",
+      "sha256": "1bc2b298eb4b613672729167c471476dc66e86d640812edde21d9725c52d36d0",
+      "jsonSha256": "4d86a42cf21d77f4df98f5431fbf88078e0a754f4cd030ecf0327af68550d894"
+    },
+    "provenance": {
+      "kind": "asr",
+      "model": "unknown"
+    },
+    "completenessReview": "pending"
+  },
+  "alignment": {
+    "provider": "mfa",
+    "timingKind": "mfa_forced_alignment_estimate",
+    "artifact": {
+      "path": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/next-iteration-repair-20261005/samples/drive-605s/aligned-segments.json",
+      "sha256": "1bc2b298eb4b613672729167c471476dc66e86d640812edde21d9725c52d36d0",
+      "jsonSha256": "4d86a42cf21d77f4df98f5431fbf88078e0a754f4cd030ecf0327af68550d894"
+    },
+    "runtime": null,
+    "sourceWordCount": 1844,
+    "issueCount": 0
+  },
+  "anchors": {
+    "artifact": {
+      "path": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/next-concurrency-605s-20261005-r12-source-sample/anchor.json",
+      "sha256": "5feb7eb319297e39bcecb8800764e1ff73718445b505182b14c32a2a0929557f",
+      "jsonSha256": "aa9b07efe4e632b31c40f8841afd02d1f39314de360d6607efca064dbadb9f03"
+    },
+    "schemaVersion": "sermon-sentence-anchor-manifest-v2",
+    "unitPolicy": "clause_stable_v2",
+    "sourceSentenceCount": 114,
+    "sourceUnitCount": 136,
+    "sourceWordCount": 1844,
+    "issueCount": 0
+  },
+  "canonicalEnglishContent": null,
+  "review": {
+    "humanApproval": false,
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewedSourceUnitIds": [],
+    "checks": {
+      "sourceIdentity": "pending",
+      "transcriptCompleteness": "pending",
+      "wordAlignment": "pending",
+      "sentenceAndPauseBoundaries": "pending"
+    },
+    "evidence": null
+  },
+  "issues": [
+    {
+      "stage": "source",
+      "type": "approved_sermon_window_missing"
+    },
+    {
+      "stage": "review",
+      "type": "sourceIdentity_review_pending"
+    },
+    {
+      "stage": "review",
+      "type": "transcriptCompleteness_review_pending"
+    },
+    {
+      "stage": "review",
+      "type": "wordAlignment_review_pending"
+    },
+    {
+      "stage": "review",
+      "type": "sentenceAndPauseBoundaries_review_pending"
+    }
+  ],
+  "downstreamInvalidationKey": "d2362dfe7c5f016398ca8f8b14058df53e7b4286808d9113728544903cdaf61d",
+  "evidence": {
+    "pipelineSummary": {
+      "path": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/next-iteration-repair-20261005/samples/drive-605s/summary.json",
+      "sha256": "c6f0bf8b86ea2c0aab7b32d7f5f2dce8b1b6cae665ce4b704c1448ceb3d96432",
+      "jsonSha256": "945eae194a92dbb0446a8ca3644abbec54d0577188f88b066a8bc804a553e7f4"
+    },
+    "machineJudge": null
+  }
+}

@@ -1,0 +1,116 @@
+"""Overlay the 1.26.16 Web UI on a complete live-bound Hosting snapshot.
+
+No content, review receipts, Hosting configuration or media are changed.
+Publish the generated config through guarded_hosting_publish separately.
+"""
+import argparse
+import hashlib
+from pathlib import Path
+import shutil
+import subprocess
+
+if __package__ in (None, ''):
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from scripts import delivery_contract as contract
+from scripts import prepare_dev_simulated_publication as staging
+from scripts import build_full_video_app_release as builder
+
+UI_FILES = ('index.html', 'style.css', 'app.mjs', 'i18n.mjs',
+            'published-weeks.mjs', 'reading-mode.mjs', 'locales-reader.mjs',
+            'offline.mjs', 'offline-worker.js')
+# Production's deployed reader predates these presentation interfaces. Preserve
+# its media, feedback configuration and acoustic capture/worker implementation.
+PRODUCTION_UI_DEPENDENCIES = (
+    'catalog.mjs', 'content-locales.mjs', 'icons.mjs', 'icons.svg', 'theme.js',
+    'brand-icon.svg', 'brand-icon-light.svg', 'brand-icon.png',
+    'locales-app.mjs', 'locales-interface.mjs', 'locales-feedback.mjs',
+    'locales-ko.mjs', 'locales-es.mjs', 'fingerprint-diagnostics.mjs',
+)
+
+
+def ui_files(environment):
+    staging.hosting_target(environment)
+    return UI_FILES + (PRODUCTION_UI_DEPENDENCIES if environment == 'production' else ())
+
+
+def bound_source(names):
+    """Bind just the copied UI and its read dependency closure to HEAD."""
+    root = Path(builder.ROOT).resolve()
+    commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()
+    files = {}
+    for name in sorted(set(names)):
+        source = builder.RUNTIME_WEB_ROOT / name
+        contract.require(source.is_file() and not source.is_symlink(), 'Missing or unsafe UI source: ' + name)
+        relative = source.resolve().relative_to(root).as_posix()
+        result = subprocess.run(['git', 'show', commit + ':' + relative], cwd=root,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        contract.require(result.returncode == 0
+                         and result.stdout == source.read_bytes(),
+                         'UI source differs from recorded commit: ' + relative)
+        files[name] = hashlib.sha256(result.stdout).hexdigest()
+    return commit, files
+
+
+def prepare(baseline, out, *, environment='dev'):
+    base, out = Path(baseline).resolve(), Path(out).resolve()
+    contract.require(not out.exists() and not out.is_relative_to(base), 'Unsafe UI update output')
+    contract.validate_catalog_snapshot(base)
+    receipt = staging.read(base / 'baseline-receipt.json')
+    deployment_target = staging.hosting_target(environment)
+    contract.require(all(receipt.get(k) == deployment_target[k] for k in ('project', 'site', 'origin')),
+                     'Baseline Hosting target differs')
+    contract.require(receipt.get('status') == 'complete_verified_not_deployed'
+                     and receipt.get('catalogSha256') == staging.digest(base / 'public/multilingual-v3.json')
+                     and receipt.get('baselineVersion', '').startswith('sites/' + deployment_target['site'] + '/versions/'),
+                     'Verified live-bound baseline required')
+    contract.require(receipt.get('firebaseJsonSha256') == staging.digest(base / 'firebase.json'),
+                     'Baseline Hosting configuration differs from receipt')
+    # Resolve all local module imports before staging, including offline helpers.
+    closure = builder.runtime_web_files()
+    source_commit, source_files = bound_source((*ui_files(environment), *closure))
+    out.mkdir(parents=True)
+    shutil.copytree(base / 'public', out / 'public')
+    shutil.copyfile(base / 'firebase.json', out / 'firebase.json')
+    shutil.copyfile(base / 'baseline-receipt.json', out / 'baseline-receipt.json')
+    changed = []
+    for name in ui_files(environment):
+        source = builder.RUNTIME_WEB_ROOT / name
+        target = out / 'public' / name
+        contract.require(source.is_file(), 'Missing UI source: ' + name)
+        if not target.exists() or staging.digest(source) != staging.digest(target):
+            shutil.copyfile(source, target)
+            changed.append('/' + name)
+        contract.require(staging.digest(target) == source_files[name],
+                         'UI source changed during staging: ' + name)
+    before = {row['path']: row for row in staging.files_report(base / 'public')}
+    after = staging.files_report(out / 'public')
+    for row in after:
+        if row['path'] not in changed:
+            contract.require(row == before.get(row['path']), 'Preserved file changed: ' + row['path'])
+    contract.require(set(before).issubset({row['path'] for row in after}), 'Existing file removed')
+    # Check the actual mixed candidate, including preserved production modules.
+    builder.runtime_web_files(out / 'public')
+    staging.write(out / 'seal-report.json', {'catalogSha256': staging.digest(out / 'public/multilingual-v3.json'), 'files': after})
+    contract.validate_catalog_snapshot(out)
+    staging.write(out / 'publish-config.json', staging.publication_config(base, out, environment=environment))
+    staging.write(out / 'ui-update-plan.json', {
+        'status': 'prepared_not_deployed', 'webVersion': '1.26.16',
+        'iosSourceCommit': 'a1e64190f5af33104a3b8839562d8901955031bb',
+        'sourceCommit': source_commit, 'sourceFiles': source_files,
+        'environment': environment, 'project': deployment_target['project'], 'site': deployment_target['site'],
+        'changedPaths': changed, 'preservedFiles': len(before) - sum(path in before for path in changed),
+        'modelCalls': 0, 'catalogUnchanged': True,
+    })
+    return {'status': 'prepared_not_deployed', 'changedPaths': changed, 'publishConfig': str(out / 'publish-config.json')}
+
+
+if __name__ == '__main__':
+    import json
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--baseline', required=True, type=Path)
+    parser.add_argument('--out', required=True, type=Path)
+    parser.add_argument('--environment', choices=('dev', 'production'), default='dev')
+    args = parser.parse_args()
+    print(json.dumps(prepare(args.baseline, args.out, environment=args.environment)))

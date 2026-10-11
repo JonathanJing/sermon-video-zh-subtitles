@@ -42,21 +42,31 @@ snapshot or an explicit `--request-limits` file; limits are never inferred.
 
 The explicit migration retains the original plan bytes, directory, node
 observations and business receipts. It freezes
-`session-binding-migration.json` beside the original plan, mapping the active
-v2 execution binding to that original hash. It permits only the session schema,
-new limits field and session/flow implementation hashes to change; existing
-limits, source evidence, continuation, store, deadline, configuration and all
-input hashes must still match. Repeating the migration must match that same
-receipt. It neither retries provider calls nor extends a budget or clock.
-Normal v2 plans remain immutable and do not use this compatibility path.
+`session-binding-migration-v2.json` beside the original plan (any older v1
+sidecar stays unchanged), mapping the active
+v2 execution binding to that original hash. Existing limits, source evidence,
+store, deadline, configuration and input hashes must still match. All migration
+admission completes before a new immutable limits snapshot is written; a rejected
+limit or outer mock plan cannot poison a later valid resume.
 
-Binding migration does not authorize changed code or continuation identity:
-the existing clean-code/execution-identity, source, ledger and outcome guards
-still apply before model execution. A legacy continuation failing those guards
-requires its existing explicit recovery process; `--resume-plan` cannot bypass
-it. This option migrates the diagnostic Prefect plan only. The separate mock
-TTS wrapper retains its own strict outer code identity and has no wrapper
-migration via this option.
+For a genuine cross-code migration, provide a newly authorized current-code
+`--continuation` and also `--legacy-continuation /absolute/original-continuation.json`.
+The latter must match both original continuation and context hashes. All context
+fields except the authorized continuation code commit remain fixed. The migration
+receipt binds both complete authorizations and the current execution binding;
+current clean-code checks still apply, and the old authorization alone is rejected.
+Validated legacy context remains attached to existing paid locale request/cache
+identities. The strict locale's explicit legacy admission may block reuse when
+its original evidence does not prove the newly required rule consumption.
+
+The mock TTS entry point supports the same options, with `--resume-plan` naming
+`/absolute/run/mock-tts-dag/<original-plan-hash>/plan.json`. Its separate immutable
+migration receipt binds the current wrapper code and nested diagnostic migration,
+while preserving the original mock root, plan hash and recovery request identities.
+The nested legacy diagnostic binding is verified against the original hashed mock
+plan rather than written as a fabricated diagnostic plan. Repeating any migration
+must match its frozen receipt; neither path retries calls nor extends budget or clock.
+Normal v2 plans remain immutable and do not use this compatibility path.
 
 Use the optional environment from `requirements-prefect.txt`. Prefect runs with
 local SQLite, isolated settings and telemetry disabled. Tasks are serial in

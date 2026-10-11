@@ -76,7 +76,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--release-workflow-config", type=Path)
     parser.add_argument("--app-delivery-config", type=Path,
                         help="Opt into deterministic approved App bundle preparation; no source refresh or model turn")
-    parser.add_argument("--agent-backend", choices=("codex-cli", "agents-api", "sdk"), default="agents-api")
+    parser.add_argument("--agent-backend", choices=("codex-cli", "agents-api", "sdk"), default="codex-cli")
     parser.add_argument("--agent-run-dir", type=Path)
     parser.add_argument("--resume-agent-session", action="store_true")
     parser.add_argument("--agent-timeout-seconds", type=float, default=21600)

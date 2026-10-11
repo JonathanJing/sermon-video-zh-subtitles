@@ -46,6 +46,76 @@ class MockTTSDAGComponents(unittest.TestCase):
             current.observed_edges()
         return current.observations
 
+    def test_explicit_v1_migration_keeps_mock_root_and_recovery_identity(self):
+        original = self.make()
+        old = deepcopy(original.binding)
+        old['diagnosticBinding']['sessionBinding']['schemaVersion'] = 'sermon-diagnostic-dag-session-v1'
+        old['diagnosticBinding']['sessionBinding']['implementationSha256'] = 'a'*64
+        old['diagnosticBinding']['codeSha256'] = 'b'*64
+        old['codeFiles'] = {k:'c'*64 for k in old['codeFiles']}
+        old['mockImplementationSha256'] = 'd'*64
+        root = self.f.root/'mock-tts-dag'/c.canonical_sha256(old)
+        root.mkdir(parents=True)
+        from scripts import sermon_public_snapshot as public
+        public.save_once(root/'plan.json', old)
+        saved = (root/'plan.json').read_bytes()
+        marker = root/'original-recovery.json'; marker.write_bytes(b'preserved')
+        limits_path = self.f.root/'continuation-request-limits.json'
+        limits_path.unlink()
+        invalid = deepcopy(old); invalid['permissions']['providerCalls'] = True
+        invalid_root = self.f.root/'mock-tts-dag'/c.canonical_sha256(invalid)
+        invalid_root.mkdir(parents=True); public.save_once(invalid_root/'plan.json', invalid)
+        rejected = DiagnosticSession(self.f.plan,self.f.continuation,
+            offline_transport=self.f.transport, request_limits=self.f.request_limits,
+            resume_binding=invalid['diagnosticBinding']['sessionBinding'])
+        with self.assertRaises(ValueError):
+            dag.MockTTSDAG(rejected,self.f.dag_config(),resume_plan=invalid_root/'plan.json')
+        self.assertFalse(limits_path.exists())
+        active = DiagnosticSession(self.f.plan,self.f.continuation,
+            offline_transport=self.f.transport, request_limits=self.f.request_limits,
+            resume_binding=old['diagnosticBinding']['sessionBinding'])
+        migrated = dag.MockTTSDAG(active,self.f.dag_config(),resume_plan=root/'plan.json')
+        migrated.freeze()
+        self.assertEqual(migrated.root,root)
+        self.assertEqual(migrated.invocation_binding['planSha256'],root.name)
+        self.assertEqual((root/'plan.json').read_bytes(),saved)
+        self.assertEqual(marker.read_bytes(),b'preserved')
+        self.assertEqual(len(self.f.transport.observations),2)
+        receipt = public.read_snapshot(root/'session-binding-migration.json')[0]
+        self.assertFalse(receipt['providerRetry'])
+        receipt['executionBinding']['codeFiles']['scripts/sermon_mock_tts_dag.py'] = 'f'*64
+        migrated._migration = receipt
+        with self.assertRaises(ValueError): migrated._check()
+
+    def test_cross_continuation_v1_resume_reuses_paid_results_and_mock_requests(self):
+        legacy_authority = deepcopy(self.f.continuation)
+        old_session = DiagnosticSession(self.f.plan,legacy_authority,
+            offline_transport=self.f.transport, request_limits=self.f.request_limits)
+        # Reproduce a v1 producer before it added the session schema revision.
+        old_session.binding['schemaVersion'] = 'sermon-diagnostic-dag-session-v1'
+        original = dag.MockTTSDAG(old_session,self.f.dag_config())
+        self.assertTrue(self.execute_components(original)['final.readonly']['readyForDownstream'])
+        before_plan = (original.root/'plan.json').read_bytes()
+        before = {p:p.read_bytes() for p in (original.root/'mock-control/requests').rglob('*') if p.is_file()}
+        calls = len(self.f.transport.observations)
+        current_authority = deepcopy(legacy_authority)
+        new_identity = deepcopy(self.f.execution_identity)
+        new_identity['gitCommit'] = 'a'*40 if new_identity['gitCommit'] != 'a'*40 else 'b'*40
+        current_authority['executionIdentity'] = new_identity
+        current_authority['diagnosticContext']['continuationCodeCommit'] = new_identity['gitCommit']
+        with patch.object(accounting,'execution_identity',return_value=new_identity):
+            current = DiagnosticSession(self.f.plan,current_authority,offline_transport=self.f.transport,
+                resume_binding=original.binding['diagnosticBinding']['sessionBinding'],
+                legacy_continuation=legacy_authority)
+            resumed = dag.MockTTSDAG(current,self.f.dag_config(),resume_plan=original.root/'plan.json')
+            result = self.execute_components(resumed)
+            self.assertTrue(result['final.readonly']['readyForDownstream'],result)
+        self.assertEqual(resumed.root,original.root)
+        self.assertEqual((original.root/'plan.json').read_bytes(),before_plan)
+        self.assertEqual(calls,len(self.f.transport.observations))
+        self.assertEqual(sum(v.get('newDispatch') is True for v in resumed.results.values()),0)
+        self.assertEqual(before,{p:p.read_bytes() for p in (original.root/'mock-control/requests').rglob('*') if p.is_file()})
+
     def test_actual_callbacks_jobs_gate_join_and_normal_repeat_dispatch_nothing(self):
         first = self.make(); result = self.execute_components(first)
         self.assertTrue(result['final.readonly']['readyForDownstream'], result)

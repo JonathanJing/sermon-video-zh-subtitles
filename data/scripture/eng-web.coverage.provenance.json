@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "editionId": "eng-web",
+  "name": "World English Bible (WEB)",
+  "license": "Public Domain",
+  "purpose": "quotation_boundary_coverage_only",
+  "upstreamDetailsUrl": "https://ebible.org/find/details.php?id=eng-web",
+  "sourceRepository": "https://github.com/seven1m/open-bibles",
+  "sourceCommit": "f257a3559025c3f873b48a75019f53a9354ed7de",
+  "sourceUrl": "https://raw.githubusercontent.com/seven1m/open-bibles/f257a3559025c3f873b48a75019f53a9354ed7de/eng-web.usfx.xml",
+  "sourceFile": "eng-web.usfx.xml",
+  "sourceFileSha256": "5ffa2626f170a109a4a96afc90775c06f0821cb4ba81ed34e63663e085708d68",
+  "libraryPath": "data/scripture/eng-web.coverage.json",
+  "libraryFileSha256": "a5d4d239481c82cedbbbbc036eb556b98db8d68b38d6829b88f4fee69da81e31",
+  "libraryContentSha256": "c4f0f1aa5e8e462012441f5ded183d06c5ae8ae2cb397bdae40c9a5548bc03b5",
+  "bookCount": 66,
+  "verseEntryCount": 31098,
+  "normalization": "Footnotes (<f>), cross references (<x>) and published verse numbers (<vp>) removed; every other tag dropped and its text kept; entities unescaped; whitespace collapsed to one space and trimmed. Canonical JSON hash uses UTF-8, ensure_ascii=false, sort_keys=true and compact separators.",
+  "notice": "Used only to judge whether a spoken quotation covers a whole verse. Never displayed, dubbed or translated; the mirror file is not publisher-verified."
+}

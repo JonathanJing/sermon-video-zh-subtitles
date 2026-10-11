@@ -77,11 +77,16 @@ class OpenAILayer2TransportTests(unittest.TestCase):
                 '--anchor', str(root / 'anchor.json'), '--policy', str(root / 'policy.json'),
                 '--plugin', str(fixture.plugin_path), '--out-dir', str(root / 'models'),
                 '--budget-config', str(config.path), '--budget-authorization', str(root / 'budget.json')]
-        for mismatch in (None, '--english-source-package', '--anchor', '--policy', '--plugin', '--out-dir'):
+        from scripts.target_language_policy import canonical_sha256
+        cases = [(workers, mismatch) for workers in (1, 4, 16)
+                 for mismatch in (None, '--english-source-package', '--anchor', '--policy', '--plugin', '--out-dir')]
+        for workers, mismatch in cases:
+            fixture.policy['batching']['workers'] = workers
+            fixture.policy['componentSha256']['batching'] = canonical_sha256(fixture.policy['batching'])
             selected = list(argv)
             if mismatch:
                 selected[selected.index(mismatch) + 1] = str(root / 'other-input')
-            with self.subTest(mismatch=mismatch), patch.object(sys, 'argv', selected), patch.object(
+            with self.subTest(workers=workers, mismatch=mismatch), patch.object(sys, 'argv', selected), patch.object(
                     models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
                     'scripts.run_target_language_models.require_plugin_identity'), patch(
                     'scripts.run_target_language_models.rule_preflight.preflight'), patch(

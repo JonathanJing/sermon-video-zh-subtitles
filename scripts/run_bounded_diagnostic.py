@@ -94,7 +94,7 @@ class BoundedRun:
 
     def run_locale(self, source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *,
                    graph, plugin_path, plugin_sha256, group_plan=None, diagnostic_context=None,
-                   depends_on=None, historical_reuse=None):
+                   depends_on=None, historical_reuse=None, resume_legacy=False):
         verify_source_clip(self.source_clip, self.provider.config['sourceClipSha256'])
         source, policy = map(c.decode_json, (source_bytes, policy_bytes))
         target = policy['targetLocale']
@@ -115,7 +115,7 @@ class BoundedRun:
             historical_reuse.bind_current()
         with bounded_network_only():
             return locale.run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
-                root=self.root / 'locales' / target, store=self.provider.store,
+                root=self.root / 'locales' / target, store=self.provider.store, resume_legacy=resume_legacy,
                 job_root=self.root / 'jobs', production_run_id=self.provider.config['runId'],
                 graph=graph, plugin_path=plugin_path, expected_plugin_sha256=plugin_sha256,
                 api_key=self.key, caller=self.provider, usage_resolver=self.provider.usage_resolver,

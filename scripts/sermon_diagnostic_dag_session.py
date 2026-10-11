@@ -24,7 +24,7 @@ from scripts.sermon_release_workflow import _safe_path
 
 class DiagnosticSession:
     """Trusted fixed callbacks; optional injected key never enters evidence."""
-    def __init__(self, plan, continuation, *, key=None, offline_transport=None, execute=False, request_limits=None):
+    def __init__(self, plan, continuation, *, key=None, offline_transport=None, execute=False, request_limits=None, resume_binding=None, legacy_continuation=None):
         self.offline_fixture = offline_transport is not None
         c.require(type(execute) is bool and (
             (self.offline_fixture and key is None and execute is False and
@@ -48,9 +48,13 @@ class DiagnosticSession:
             c.require(not (self.root / 'offline-business-scope.json').exists(),
                       'diagnostic_dag_fixture_cannot_become_live')
         self.plan, self.continuation = deepcopy(plan), deepcopy(continuation)
+        if request_limits is None and resume_binding is not None:
+            request_limits = resume_binding.get('requestLimits')
         self.root, self.subject, self.context, self.deadline, evidence = entry.prepare_continuation(
             self.plan, self.continuation, request_limits=request_limits)
-        strict.save_once(self.root / 'continuation-request-limits.json', self.subject.limits)
+        self.resume_binding = deepcopy(resume_binding)
+        self.legacy_continuation = deepcopy(legacy_continuation)
+        self._limits_frozen = False
         if self.offline_fixture:
             self.subject.executor = offline_transport
         self.transport, self.marker = self.subject.executor, marker
@@ -67,8 +71,19 @@ class DiagnosticSession:
             'deadlineMonotonic': self.deadline, 'evidenceMode': self.evidence_mode,
             'humanAcceptance': 'pending', 'productionEligible': False,
             'implementationSha256': c.bytes_sha256(Path(__file__).read_bytes())}
+        if resume_binding is not None:
+            validate_legacy_session(resume_binding, self.binding, continuation,
+                                    legacy_continuation=legacy_continuation)
+        else:
+            self.freeze_limits()
+        self.locale_context = deepcopy(legacy_continuation['diagnosticContext']
+            if resume_binding is not None and legacy_continuation is not None else self.context)
         self._locale_results = {}
         self._locale_specs = {}
+
+    def freeze_limits(self):
+        strict.save_once(self.root / 'continuation-request-limits.json', self.subject.limits)
+        self._limits_frozen = True
 
     def _path(self, path, *, plugin=False):
         c.require(Path(path).is_absolute(), 'diagnostic_dag_absolute_path_required')
@@ -88,6 +103,14 @@ class DiagnosticSession:
         c.require(identity[0] is not None and identity[1] is not None,
                   'diagnostic_dag_accounting_required')
         c.require(self.root in self._path(identity[0]).parents, 'diagnostic_dag_accounting_outside_scope')
+        c.require(c.canonical_sha256(self.continuation) == self.binding['continuationSha256']
+                  and c.canonical_sha256(self.context) == self.binding['diagnosticContextSha256']
+                  and self.locale_context == (self.legacy_continuation['diagnosticContext']
+                      if self.resume_binding is not None and self.legacy_continuation is not None else self.context),
+                  'diagnostic_dag_binding_changed')
+        if self.resume_binding is not None:
+            validate_legacy_session(self.resume_binding, self.binding, self.continuation,
+                                    legacy_continuation=self.legacy_continuation)
         current_code, started_code = accounting.execution_identity(), self.continuation['executionIdentity']
         c.require(all(current_code.get(k) == v for k, v in started_code.items()
                       if k != 'loadedProjectCodeSha256') and
@@ -129,14 +152,15 @@ class DiagnosticSession:
         for key in ('source', 'anchor', 'policy', 'rubric'):
             self._path(spec[key])
         self._path(spec['pluginPath'], plugin=True)
-        artifacts, _ = entry.preflight_locale_inputs(self.subject, self.context, spec)
+        artifacts, _ = entry.preflight_locale_inputs(self.subject, self.locale_context, spec)
         c.require(c.decode_json(artifacts[2])['targetLocale'] == locale,
                   'diagnostic_dag_locale_changed')
         with profile.context(workKind='production', productionRunId=self.subject.config['runId']), \
                 offline.no_transport() if self.offline_fixture else nullcontext():
             result = self.runner.run_locale(*artifacts, graph=spec['graph'],
                 plugin_path=Path(spec['pluginPath']), plugin_sha256=spec['pluginSha256'],
-                group_plan=spec['groupPlan'], diagnostic_context=self.context, depends_on=depends_on,
+                group_plan=spec['groupPlan'], diagnostic_context=self.locale_context, depends_on=depends_on,
+                resume_legacy=self.resume_binding is not None,
                 **({'historical_reuse': historical_reuse} if historical_reuse is not None else {}))
         self._locale_specs[locale] = deepcopy(spec)
         self._locale_results[locale] = deepcopy(result)
@@ -173,12 +197,48 @@ class DiagnosticSession:
         c.require(self._path(spec['out']).is_relative_to(self.root / 'diagnostic-previews' / locale),
                   'diagnostic_dag_preview_output_changed')
         with profile.context(workKind='production', productionRunId=self.subject.config['runId']):
-            return worker.launch_preview(self.root, self.subject, self.context, spec,
+            return worker.launch_preview(self.root, self.subject, getattr(self, 'locale_context', self.context), spec,
                                          offline_fixture=self.offline_fixture, depends_on=depends_on,
                                          **({'historical_seed':historical_seed} if historical_seed is not None else {}))
 
     def inspect_delivery(self, previews, expected_locales):
         from scripts import sermon_diagnostic_delivery_preflight as delivery
         self._check()
-        return delivery.inspect_delivery(self.root, self.subject, self.context, previews,
+        return delivery.inspect_delivery(self.root, self.subject, getattr(self, 'locale_context', self.context), previews,
                                          expected_locales=expected_locales)
+
+
+def validate_legacy_session(previous, current, continuation, *, legacy_continuation=None):
+    """Read-only admission; no durable limits are written for a rejected plan."""
+    c.require(previous.get('schemaVersion') == 'sermon-diagnostic-dag-session-v1'
+              and current.get('schemaVersion') == 'sermon-diagnostic-dag-session-v2',
+              'diagnostic_flow_session_migration_version_invalid')
+    ignored = {'schemaVersion', 'requestLimits', 'implementationSha256',
+               'continuationSha256', 'diagnosticContextSha256'}
+    c.require({k:v for k,v in previous.items() if k not in ignored} ==
+              {k:v for k,v in current.items() if k not in ignored}
+              and set(previous) in (set(current), set(current)-{'requestLimits'})
+              and ('requestLimits' not in previous or previous['requestLimits'] == current['requestLimits'])
+              and type(previous.get('implementationSha256')) is str
+              and len(previous['implementationSha256']) == 64
+              and all(ch in '0123456789abcdef' for ch in previous['implementationSha256']),
+              'diagnostic_flow_session_migration_identity_changed')
+    changed = any(previous[k] != current[k] for k in ('continuationSha256','diagnosticContextSha256'))
+    if changed:
+        from scripts import sermon_diagnostic_context as diagnostic
+        c.require(type(legacy_continuation) is dict and
+                  set(legacy_continuation) == set(continuation) and
+                  legacy_continuation['schemaVersion'] == continuation['schemaVersion'] and
+                  c.canonical_sha256(legacy_continuation) == previous['continuationSha256'] and
+                  legacy_continuation['originalPlanSha256'] == previous['originalPlanSha256'] and
+                  c.canonical_sha256(legacy_continuation['diagnosticContext']) == previous['diagnosticContextSha256'],
+                  'diagnostic_flow_legacy_continuation_required')
+        old_context = diagnostic.validate_context(legacy_continuation['diagnosticContext'])
+        new_context = diagnostic.validate_context(continuation['diagnosticContext'])
+        c.require({k:v for k,v in old_context.items() if k != 'continuationCodeCommit'} ==
+                  {k:v for k,v in new_context.items() if k != 'continuationCodeCommit'} and
+                  legacy_continuation['executionIdentity'].get('gitCommit') == old_context['continuationCodeCommit'],
+                  'diagnostic_flow_session_migration_identity_changed')
+    else:
+        c.require(legacy_continuation is None or legacy_continuation == continuation,
+                  'diagnostic_flow_legacy_continuation_changed')

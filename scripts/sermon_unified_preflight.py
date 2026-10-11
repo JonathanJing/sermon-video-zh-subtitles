@@ -13,7 +13,6 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts import canonical_layer2_controller as layer2
-from scripts import canonical_durable_jobs as durable
 from scripts import inspect_canonical_packages as packages
 from scripts import layer2_api_concurrency as capacity
 from scripts import sermon_workflow_jobs as jobs
@@ -54,7 +53,7 @@ def inspect_config(path, *, downstream_inspection=None, expected_code_identity=N
         result['inspectionCoverage'] = view['inspectionCoverage']
         for stage, code in sorted(view['inspectionDiagnostics'].items()):
             block(stage, code)
-        view = durable.project(view, config.job_root, config.run_id)
+        view = layer2.join_jobs(config, view)
         result['stateRevision'] = view['stateRevision']
         result['durableJobInspection'] = view['durableJobInspection']
     except ERRORS as exc:

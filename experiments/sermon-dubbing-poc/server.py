@@ -21,6 +21,7 @@ STATIC.update({f"/{name}": (name, "text/javascript") for name in (
     "icons.mjs", "media-session.mjs", "voice-samples.mjs", "speaker-clip-demos.mjs", "fingerprint-ui.mjs",
     "fingerprint-capture.mjs", "fingerprint-core.mjs", "fingerprint-diagnostics.mjs",
     "fingerprint-worker.mjs", "fingerprint-worklet.mjs",
+    "locales-reader.mjs", "reading-mode.mjs", "offline.mjs", "offline-worker.js",
 )})
 STATIC["/voice-demo.css"] = ("voice-demo.css", "text/css")
 STATIC.update({f"/{name}": (name, "image/svg+xml") for name in (

@@ -172,3 +172,36 @@ test('HTTP publication claim needs evidence and does not imply device acceptance
   assert.throws(() => validateFormalRelease({ ...published,
     httpVerification: { status: 'not_run', evidenceSha256: null } }, page, locale));
 });
+
+
+test('v2 category metadata stays verbatim and preserves source and release identities', async () => {
+  const changed = clone(catalog);
+  changed.pages[0].sourceMediaSha256 = hash('9');
+  changed.pages[0].displayCategory = { schemaVersion: 'sermon-page-display-category-v1',
+    labels: { en: '播客', 'zh-Hans': '🎙'.repeat(48), ko: '<Study>' } };
+  const before = clone(changed);
+  assert.strictEqual(validateFormalCatalog(changed), changed);
+  assert.deepEqual(changed, before);
+  const fetcher = async () => ({ ok: true, status: 200, json: async () => changed });
+  assert.deepEqual(await loadOptionalFormalCatalog(fetcher), before);
+  assert.deepEqual(await loadRequiredFormalCatalog(fetcher), before);
+  assert.deepEqual(formalReleaseView(validateFormalRelease(release, changed.pages[0], locale), changed.pages[0], locale),
+    formalReleaseView(validateFormalRelease(release, page, locale), page, locale));
+});
+
+test('v2 category metadata rejects malformed nested contracts and invalid labels', () => {
+  const valid = { schemaVersion: 'sermon-page-display-category-v1', labels: { en: 'Archive' } };
+  const badLabels = [null, [], {}, { 'zh-Hans': 'Missing English' },
+    { en: 1 }, { en: '' }, { en: '  ' }, { en: 'x'.repeat(49) }, { en: '🎙'.repeat(49) },
+    { en: 'Archive', bad_locale: 'Bad' },
+    { en: 'Archive', ...Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`aa-${i.toString().padStart(2, '0')}`, 'A'])) }];
+  for (const character of ['\u0000', '\n', '\u001f', '\u007f', '\u0085', '\u009f', '\u2028', '\u2029']) {
+    badLabels.push({ en: `before${character}after` });
+  }
+  for (const value of [null, [], {}, { labels: valid.labels }, { ...valid, schemaVersion: 'future-v2' },
+    { ...valid, approval: 'human_reviewed' }, ...badLabels.map(labels => ({ ...valid, labels }))]) {
+    const changed = clone(catalog);
+    changed.pages[0].displayCategory = value;
+    assert.throws(() => validateFormalCatalog(changed), /Invalid formal Dev page/);
+  }
+});
