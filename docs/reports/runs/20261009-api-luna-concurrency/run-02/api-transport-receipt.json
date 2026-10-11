@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "openai-layer2-diagnostic-transport-receipt-v1",
+  "status": "all_responses_received_candidate_rejected",
+  "fixtureManifestSha256": "8c192b7fb13d6b681dc18fd9785a949bbe143d0378f5ec096c6f64e7e2d5d201",
+  "modelConfiguration": {
+    "translator": "gpt-6.1-sol",
+    "reviewer": "gpt-6-luna"
+  },
+  "apiConcurrency": {
+    "requestCount": 26,
+    "modelCounts": {
+      "gpt-6-luna": 13,
+      "gpt-6.1-sol": 13
+    },
+    "maxConcurrentRequests": 4,
+    "measurement": "reconstructed_from_provider_elapsed_seconds_and_response_receipt_mtime",
+    "timingScope": "complete_http_request; receipt-write overhead excluded"
+  },
+  "usage": {
+    "perModel": {
+      "gpt-6-luna": {
+        "requests": 13,
+        "inputTokens": 50673,
+        "outputTokens": 13943,
+        "estimatedUsageCostMicrousd": 13311
+      },
+      "gpt-6.1-sol": {
+        "requests": 13,
+        "inputTokens": 46424,
+        "outputTokens": 8442,
+        "estimatedUsageCostMicrousd": 200484
+      }
+    },
+    "requestCountMissingUsage": 0,
+    "estimatedUsageCostMicrousd": 213795,
+    "estimatedUsageCostUsd": 0.213795,
+    "invoiceVerified": false
+  },
+  "budget": {
+    "hardLimitMicrousd": 40000000,
+    "reservedMicrousd": 956221,
+    "reservationCount": 26,
+    "responseReceivedCount": 26,
+    "unknownCount": 0
+  },
+  "candidateAdmission": {
+    "status": "rejected_by_language_plugin",
+    "failedGroups": [
+      {
+        "groupId": "fresh-g013",
+        "failedChecks": [
+          "number_surface_preservation"
+        ]
+      }
+    ]
+  },
+  "rawContentIncluded": false
+}
