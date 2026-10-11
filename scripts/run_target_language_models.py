@@ -120,8 +120,19 @@ def translator_backend(policy: dict[str, Any]) -> str:
 
 def production_models(policy: dict[str, Any]) -> dict[str, str]:
     """Expected formal model per role for this policy's frozen translator backend."""
-    return {"translator": TRANSLATOR_BACKENDS[translator_backend(policy)][0],
+    require(translator_backend(policy) == "openai_api", "claude_translator_is_experimental_only")
+    return {"translator": MODEL_ROLES["translator"],
             "reviewer": MODEL_ROLES["reviewer"]}
+
+
+def historical_models(policy: dict[str, Any], *, cache_only: bool) -> dict[str, str]:
+    """Validate frozen identities without enabling a new provider dispatch."""
+    for role in MODEL_ROLES:
+        allowed = {MODEL_ROLES[role], HISTORICAL_MODEL_ROLES[role]}
+        if cache_only and role == "translator":
+            allowed.add("claude-opus-5-5")
+        require(policy[role]["model"] in allowed, "unsupported_historical_model_policy")
+    return {role: policy[role]["model"] for role in MODEL_ROLES}
 
 
 def save_new(path: Path, value: object, *, private=False) -> None:
@@ -816,10 +827,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require("simulationOnly" not in request,
                     "Formal group loop cannot consume a simulated request")
         historical_replay = cache_only or getattr(caller, "execution_identity", {}).get("backend") == "fixture_replay"
-        expected_models = ({role: policy[role]["model"] for role in MODEL_ROLES}
+        expected_models = (historical_models(policy, cache_only=cache_only)
                            if historical_replay else production_models(policy))
-        if historical_replay:
-            require(all(policy[role]["model"] in {MODEL_ROLES[role], HISTORICAL_MODEL_ROLES[role]} for role in MODEL_ROLES), "unsupported_historical_model_policy")
         simulation_configuration = policy.get("simulationModelConfiguration")
         if simulation_configuration is not None:
             from scripts.codex_layer2_transport import validate_test_configuration

@@ -83,10 +83,14 @@ def checked_browser_video(public: Path, page_id: str, page: dict, sha256: str) -
         return
     receipt_path = public.parent / "bucket-video-receipt.json"
     receipt = load(receipt_path) if receipt_path.is_file() else {}
-    if (delivery.get("sha256") != sha256 or receipt.get("schemaVersion") != "sermon-bucket-video-receipt-v1"
-            or receipt.get("status") != "verified" or receipt.get("pageId") != page_id
-            or receipt.get("storageUrl") != delivery["storageUrl"] or receipt.get("sha256") != sha256
-            or receipt.get("bytes") != delivery.get("bytes")):
+    verified = receipt.get("videoDelivery") or {}
+    if (delivery.get("sha256") != sha256
+            or receipt.get("schemaVersion") != "sermon-v3-bucket-video-http-verification-v1"
+            or receipt.get("status") != "pass" or receipt.get("pageId") != page_id
+            or any(verified.get(key) != delivery.get(key) for key in ("storageUrl", "sha256", "bytes"))
+            or receipt.get("redirectStatus") != 302 or receipt.get("rangeStatus") != 206
+            or receipt.get("fullGetBytes") != delivery.get("bytes")
+            or receipt.get("fullGetSha256") != sha256):
         raise ValueError(f"Browser video is neither local nor receipt-verified: {page_id}")
 
 
@@ -161,6 +165,9 @@ def prepare(base: Path, production_public: Path, production_config: Path, out: P
     try:
         public = temporary / "public"
         shutil.copytree(base_public, public)
+        if (production_public.parent / "bucket-video-receipt.json").is_file():
+            shutil.copyfile(production_public.parent / "bucket-video-receipt.json",
+                            temporary / "bucket-video-receipt.json")
         for name, source in new.items():
             if name in PRESERVED_DEV:
                 continue
@@ -227,6 +234,8 @@ def prepare_label_update(base: Path, out: Path) -> dict:
     temporary = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
     try:
         shutil.copytree(base / "public", temporary / "public")
+        if (base / "bucket-video-receipt.json").is_file():
+            shutil.copyfile(base / "bucket-video-receipt.json", temporary / "bucket-video-receipt.json")
         shutil.copyfile(DEV_LABEL, temporary / "public/dev-preview-label.mjs")
         shutil.copyfile(base / "firebase.json", temporary / "firebase.json")
         current = inventory(temporary / "public")

@@ -12,6 +12,7 @@ so the existing v3 deploy/verify and the dry-run builder accept it.
 from __future__ import annotations
 
 import argparse
+import hashlib
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -50,6 +51,23 @@ def read_plan(feature_public: Path, plan_path: Path | None) -> dict:
     plan = dev.load(plan_path or feature_public.parent / "ui-update-plan.json")
     if plan.get("environment") != "production" or plan.get("status") != "prepared_not_deployed":
         raise ValueError("Feature must be a prepared Production UI plan")
+    expected_target = {"project": "ai-for-god-caption-dev", "site": "ai-for-god-sermon-audio"}
+    if any(plan.get(key) != value for key, value in expected_target.items()):
+        raise ValueError("Production UI plan target changed")
+    commit = plan.get("sourceCommit", "")
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise ValueError("UI plan source commit missing")
+    source_files = plan.get("sourceFiles") or {}
+    feature = dev.files(feature_public)
+    replaced, _ = shell_names(feature, plan)
+    for name in replaced | DERIVED:
+        if name not in source_files or dev.digest(feature[name]) != source_files[name]:
+            raise ValueError(f"Feature differs from UI plan: {name}")
+        # The producer binds these files under web/ to the recorded Git commit.
+        result = subprocess.run(["git", "show", f"{commit}:experiments/sermon-dubbing-poc/web/{name}"], cwd=ROOT,
+                                capture_output=True)
+        if result.returncode or result.stdout != feature[name].read_bytes():
+            raise ValueError(f"Feature differs from recorded source commit: {name}")
     return plan
 
 
@@ -100,6 +118,11 @@ def prepare(base: Path, feature_public: Path, plan_path: Path | None, out: Path)
     label_sha = dev.digest(base_public / "dev-preview-label.mjs")
     feature = dev.files(feature_public)
     replaced, derived = shell_names(feature, plan)
+    def planned_bytes(name):
+        data = feature[name].read_bytes()
+        if hashlib.sha256(data).hexdigest() != plan["sourceFiles"].get(name):
+            raise ValueError(f"Feature changed during staging: {name}")
+        return data
     if not replaced:
         raise ValueError("No app-shell files selected")
     base_names = set(dev.files(base_public))
@@ -116,15 +139,15 @@ def prepare(base: Path, feature_public: Path, plan_path: Path | None, out: Path)
         for name in sorted(replaced):
             target = public / name
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(feature[name], target)
-        page = feature["index.html"].read_text(encoding="utf-8")
+            target.write_bytes(planned_bytes(name))
+        page = planned_bytes("index.html").decode("utf-8")
         if page.count(MARKER) != 1 or page.count(ENTRY) != 1 or page.count('<meta name="viewport"') != 1:
             raise ValueError("Feature shell insertion points changed")
         page = page.replace(MARKER, MARKER + "\n    " + NOTICE, 1)
         page = page.replace('<meta name="viewport"', '<meta name="robots" content="noindex,nofollow">\n  <meta name="viewport"', 1)
         page = page.replace(ENTRY, ENTRY + "\n  " + LABEL_SCRIPT, 1)
         (public / "index.html").write_text(page, encoding="utf-8")
-        css = feature["style.css"].read_text(encoding="utf-8")
+        css = planned_bytes("style.css").decode("utf-8")
         (public / "style.css").write_text(css + dry.DEV_CSS, encoding="utf-8")
         check_references(public, replaced | derived)
         page_id, locales = dev.validate_published_week(public)
@@ -148,7 +171,8 @@ def prepare(base: Path, feature_public: Path, plan_path: Path | None, out: Path)
         shutil.copyfile(base / "firebase.json", temporary / "firebase.json")
         report = {"schemaVersion": dev.SCHEMA, "status": "validated_not_deployed",
                   "siteId": dev.SITE, "origin": dev.ORIGIN, "pageId": page_id,
-                  "locales": locales, "baseBuildReportSha256": dev.digest(base / "build-report.json"),
+                  "locales": locales, "productionCatalogSha256": dev.digest(public / "multilingual-v3.json"),
+                  "baseBuildReportSha256": dev.digest(base / "build-report.json"),
                   "baseFiles": base_report["files"], "devLabelScriptSha256": label_sha,
                   "firebaseConfigSha256": dev.digest(temporary / "firebase.json"),
                   "appShellUpdate": {
@@ -232,13 +256,20 @@ def main() -> int:
                           "added": result["appShellUpdate"]["addedFiles"],
                           "changed": len(result["appShellUpdate"]["changedFiles"])}))
         return 0
-    if args.command == "preflight":
-        receipt = preflight(args.candidate, args.dev_base_candidate)
-    elif args.command == "deploy":
-        receipt = deploy(args.candidate, args.preflight)
-    else:
-        receipt = dev.verify(args.candidate)
-    args.out.write_text(json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    with args.out.open("x", encoding="utf-8") as output:
+        # Keep a durable failure marker if an operation raises after dispatch.
+        output.write(json.dumps({"status": "operation_in_progress_or_failed", "command": args.command}) + "\n")
+        output.flush()
+        if args.command == "preflight":
+            receipt = preflight(args.candidate, args.dev_base_candidate)
+        elif args.command == "deploy":
+            receipt = deploy(args.candidate, args.preflight)
+        else:
+            receipt = dev.verify(args.candidate)
+        output.seek(0)
+        output.write(json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+        output.truncate()
     print(json.dumps({"status": receipt.get("status"), "out": str(args.out)}))
     return 0
 

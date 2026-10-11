@@ -16,8 +16,9 @@ def page(storage_url=STORAGE, sha=SHA, bytes_=1234):
 
 
 def receipt(**overrides):
-    value = {"schemaVersion": "sermon-bucket-video-receipt-v1", "status": "verified",
-             "pageId": PAGE_ID, "storageUrl": STORAGE, "sha256": SHA, "bytes": 1234}
+    value = {"schemaVersion": "sermon-v3-bucket-video-http-verification-v1", "status": "pass",
+             "pageId": PAGE_ID, "videoDelivery": page()["videoDelivery"],
+             "redirectStatus": 302, "rangeStatus": 206, "fullGetSha256": SHA, "fullGetBytes": 1234}
     value.update(overrides)
     return value
 
@@ -45,7 +46,7 @@ class BucketVideoReceiptTests(unittest.TestCase):
 
     def test_rejects_receipt_for_another_object(self):
         with self.assertRaises(ValueError):
-            self.run_check(receipt(storageUrl=STORAGE + "x"))
+            self.run_check(receipt(videoDelivery={**page()["videoDelivery"], "storageUrl": STORAGE + "x"}))
 
     def test_rejects_unverified_receipt(self):
         with self.assertRaises(ValueError):
@@ -53,7 +54,7 @@ class BucketVideoReceiptTests(unittest.TestCase):
 
     def test_rejects_receipt_with_wrong_size(self):
         with self.assertRaises(ValueError):
-            self.run_check(receipt(bytes=999))
+            self.run_check(receipt(fullGetBytes=999))
 
     def test_local_video_still_checked_by_hash(self):
         with self.assertRaises(ValueError):

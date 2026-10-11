@@ -460,23 +460,14 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 route = selected_route()
                 require(route is not None, 'openai_layer2_requires_explicit_dev_or_prod_launcher')
                 api_key = os.environ['OPENAI_API_KEY']
-                claude_transport = None
-                if models.translator_backend(policy) == 'claude_cli':
-                    from scripts.claude_layer2_transport import ClaudeLayer2Transport
-                    claude_transport = ClaudeLayer2Transport(
-                        model='claude-opus-5-5', effort='high',
-                        timeout_seconds=max(1, budget_binding['limits']['wallTimeMs'] // 1000),
-                        receipts_dir=request_path.parent / 'claude-cli-calls')
-                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
-                                                     claude_transport=claude_transport)
+                # Canonical new dev/formal runs use the production Sol policy.
+                # Claude remains available only to explicit experimental callers.
+                models.production_models(policy)
+                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy)
                 caller.execution_identity = {
                     'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
                     'backend': 'openai_api', 'route': route,
                     'budgetAuthorizationSha256': budget_binding['sha256']}
-                if claude_transport is not None:
-                    # Reviewer stays on OpenAI; only the translator identity is added for Claude runs.
-                    caller.execution_identity['translatorBackend'] = 'claude_cli'
-                    caller.execution_identity['claudeTransport'] = claude_transport.execution_identity
                 caller = spark_admission.SessionBoundCaller(caller)
             elif budget_binding is not None:
                 from scripts.strict_budget_capability import reject_codex_cli_transport
