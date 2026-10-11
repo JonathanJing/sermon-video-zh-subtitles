@@ -74,6 +74,26 @@ def checked(path: Path, sha256: str) -> Path:
     return path
 
 
+def checked_browser_video(public: Path, page_id: str, page: dict, sha256: str) -> None:
+    """Local browser video must match; a bucket-hosted one needs a verified receipt beside public/."""
+    local = public / f"pages/{page_id}/full-video-browser.mp4"
+    delivery = page.get("videoDelivery") or {}
+    if local.exists() or local.is_symlink() or not delivery.get("storageUrl"):
+        checked(local, sha256)
+        return
+    receipt_path = public.parent / "bucket-video-receipt.json"
+    receipt = load(receipt_path) if receipt_path.is_file() else {}
+    verified = receipt.get("videoDelivery") or {}
+    if (delivery.get("sha256") != sha256
+            or receipt.get("schemaVersion") != "sermon-v3-bucket-video-http-verification-v1"
+            or receipt.get("status") != "pass" or receipt.get("pageId") != page_id
+            or any(verified.get(key) != delivery.get(key) for key in ("storageUrl", "sha256", "bytes"))
+            or receipt.get("redirectStatus") != 302 or receipt.get("rangeStatus") != 206
+            or receipt.get("fullGetBytes") != delivery.get("bytes")
+            or receipt.get("fullGetSha256") != sha256):
+        raise ValueError(f"Browser video is neither local nor receipt-verified: {page_id}")
+
+
 def validate_published_week(public: Path) -> tuple[str, list[str]]:
     catalog = load(public / "multilingual-v3.json")
     schema = load(ROOT / "schemas/sermon-multilingual-catalog-v3.schema.json")
@@ -112,7 +132,7 @@ def validate_published_week(public: Path) -> tuple[str, list[str]]:
             checked(public / binding["indexUrl"].lstrip("/"), binding["indexSha256"])
             if binding["trackSha256"] != roles["audio"]["sha256"]:
                 raise ValueError(f"Fingerprint/audio mismatch: {locale}")
-    checked(public / f"pages/{page_id}/full-video-browser.mp4", video_sha)
+    checked_browser_video(public, page_id, page, video_sha)
     for directory in ("english-reference", "alignment"):
         sidecar = load(public / directory / f"{page_id}.json")
         if sidecar["pageId"] != page_id or set(sidecar["targets"]) != set(page["targets"]):
@@ -145,6 +165,9 @@ def prepare(base: Path, production_public: Path, production_config: Path, out: P
     try:
         public = temporary / "public"
         shutil.copytree(base_public, public)
+        if (production_public.parent / "bucket-video-receipt.json").is_file():
+            shutil.copyfile(production_public.parent / "bucket-video-receipt.json",
+                            temporary / "bucket-video-receipt.json")
         for name, source in new.items():
             if name in PRESERVED_DEV:
                 continue
@@ -211,6 +234,8 @@ def prepare_label_update(base: Path, out: Path) -> dict:
     temporary = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
     try:
         shutil.copytree(base / "public", temporary / "public")
+        if (base / "bucket-video-receipt.json").is_file():
+            shutil.copyfile(base / "bucket-video-receipt.json", temporary / "bucket-video-receipt.json")
         shutil.copyfile(DEV_LABEL, temporary / "public/dev-preview-label.mjs")
         shutil.copyfile(base / "firebase.json", temporary / "firebase.json")
         current = inventory(temporary / "public")

@@ -319,6 +319,21 @@ def verify_shadow_term_evidence(policy: dict[str, Any], candidate: dict[str, Any
             raise ValueError("Shadow approval does not cover the unchanged clip-scoped term")
 
 
+# Per-run translator choice. The reviewer is always Sol medium through the OpenAI API;
+# only the translator can differ, and the choice is frozen into the policy hash.
+TRANSLATOR_BACKENDS = {"openai_api": ("gpt-6.1-sol", "high"), "claude_cli": ("claude-opus-5-5", "high")}
+
+
+def apply_translator_backend(draft: dict[str, Any], backend: str) -> dict[str, Any]:
+    """Return a draft whose translator is the requested backend; reviewer is untouched."""
+    if not isinstance(draft, dict) or "componentSha256" in draft:
+        raise ValueError("Translator backend requires an unresolved policy draft without component hashes")
+    if backend not in TRANSLATOR_BACKENDS:
+        raise ValueError(f"Unsupported translator backend: {backend}")
+    model, effort = TRANSLATOR_BACKENDS[backend]
+    return {**draft, "translator": {**draft["translator"], "model": model, "reasoningEffort": effort}}
+
+
 def freeze_policy(draft: dict[str, Any], *, series_table: Path = SERIES_TABLE,
                   shadow_candidate: dict[str, Any] | None = None,
                   content_approval: dict[str, Any] | None = None,
@@ -407,11 +422,16 @@ def main() -> None:
     parser.add_argument("--language-review", choices=LANGUAGE_REVIEW_MODES, default="draft",
                         help="draft: keep the draft's plugin binding (ko/es drafts without one get "
                              "the machine-QC plugin); machine_qc: bind ko/es-weekly-auto-v1")
+    parser.add_argument("--translator-backend", choices=tuple(TRANSLATOR_BACKENDS),
+                        help="Per-run translator for a new freeze; omit to keep the draft's translator "
+                             "(openai_api = gpt-6.1-sol high; claude_cli = claude-opus-5-5 high)")
     args = parser.parse_args()
     policy = json.loads(args.policy.read_text(encoding="utf-8"))
     if args.command == "freeze":
         if not args.out or args.out.exists():
             parser.error("freeze requires a new --out path")
+        if args.translator_backend:
+            policy = apply_translator_backend(policy, args.translator_backend)
         resolved = freeze_policy(
             policy, series_table=args.series_terminology,
             shadow_candidate=json.loads(args.shadow_candidate.read_text(encoding="utf-8"))
