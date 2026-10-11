@@ -278,6 +278,23 @@ class ControllerAutoRepairTests(unittest.TestCase):
             receipt_path.write_text(json.dumps(dict(receipt, reopenedGroups=[other])))
             view = subject.snapshot(config)
         self.assertEqual(view["durableJobInspection"]["diagnostics"], ["unverified_reopen_receipt"])
+        # Metadata outside the normalized note rows is still part of the Layer 1 artifact identity.
+        # A forged receipt for changed bytes must not reuse the completed repair chain.
+        self.assertEqual(ledger[2]["reopenedBy"]["meaningNotesSha256"],
+                         subject.package_view(config)["packageIdentities"]["sourceMeaningNotes"])
+        original_notes_bytes = notes_path.read_bytes()
+        notes_path.write_text(json.dumps({"units": sorted(notes), "notice": "new metadata"}), encoding="utf-8")
+        with patch.object(subject.source_meaning, "load_meaning_notes", return_value=notes):
+            current = subject.package_view(config)
+            metadata_identity = subject.durable.identity(current, config.run_id, "text.zh-Hans")
+            self.assertNotEqual(metadata_identity, following)
+            forged_path = folder / subject.durable.reopen_file(metadata_identity)
+            jobs._persist(forged_path, dict(receipt, nextIdentity=metadata_identity,
+                          meaningNotesSha256=current["packageIdentities"]["sourceMeaningNotes"]))
+            self.assertEqual(subject.snapshot(config)["durableJobInspection"]["diagnostics"],
+                             ["unverified_reopen_receipt"])
+        forged_path.unlink()
+        notes_path.write_bytes(original_notes_bytes)
         # Notes changed after the chain passed cannot borrow the reopen entry written under the earlier
         # notes: a receipt toward the new identity with the same groups is refused.
         receipt_path.write_bytes(written)

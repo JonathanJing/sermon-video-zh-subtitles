@@ -185,3 +185,5 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 ## PR #295 的可共享运行输入
 
 三语言历史 source/anchor/policy、文件哈希、预算及批准缺项见 [四项输入清单](../config/layer2-auto-repair/pr295-inputs/README.md)。这是可供云端检查的诊断输入快照；预算未授权、真实批准收据未提供，不能据此派发付费运行。清单里有按 controller 实际分组算的 605 样本和整篇证道预算（9/27 整篇每语言 924 次调用、最坏 75.69 美元）、待人工填写的批准收据模板和 v3 执行配置模板，以及仍需人或本机补的项。整篇证道走 controller 时用按语言分片的预算账本，并按组并发、三语并行，时间估算见清单。
+
+`reopenedBy.meaningNotesSha256` 绑定完整 meaning-notes JSON 的 canonical hash，与 `packageIdentities.sourceMeaningNotes` 使用同一算法；`notice` 等不进入单位备注投影的字段仍属于输入身份。旧实现只哈希归一化单位备注的重开记录不能冒充完整工件绑定，核对失败时保留原账本并要求 reconciliation，不自动重写历史证据。

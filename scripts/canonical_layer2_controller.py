@@ -252,7 +252,7 @@ def _reopen_verifier(config):
             # earlier notes (whose chain may since have passed) cannot vouch for a receipt toward new ones.
             reopened = entries[sequence]
             require('reopenedBy' in reopened
-                    and reopened['reopenedBy']['meaningNotesSha256'] == auto_repair.json_sha256(notes),
+                    and reopened['reopenedBy']['meaningNotesSha256'] == observed['packageIdentities']['sourceMeaningNotes'],
                     'reopen_entry_notes_changed')
             require(sorted(row['translationGroupId'] for row in reopened['groups']) == groups,
                     'reopen_groups_changed')
@@ -558,12 +558,16 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
                                     completion_spans=completion_spans, failure_collector=collector)
 
     notes = None
+    notes_artifact_sha256 = None
     if config.auto_repair.get('sourceMeaningNotes'):
         # Bound to this run's source and anchor and reproduced from their receipt, or refused before dispatch.
-        notes = source_meaning.load_meaning_notes(Path(config.auto_repair['sourceMeaningNotes']),
-                                                  source=source, anchor=anchor)
+        notes_path = Path(config.auto_repair['sourceMeaningNotes'])
+        notes_artifact_sha256 = jobs._digest(_json(notes_path))
+        notes = source_meaning.load_meaning_notes(notes_path, source=source, anchor=anchor)
+        require(jobs._digest(_json(notes_path)) == notes_artifact_sha256, 'meaning_notes_changed_during_load')
     receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
-                                group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes)
+                                group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
+                                meaning_notes_sha256=notes_artifact_sha256)
     require(receipt['status'] == 'all_groups_passed', 'layer2_auto_repair_stopped')
     final = Path(receipt['finalRunDirectory'])
     require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),
