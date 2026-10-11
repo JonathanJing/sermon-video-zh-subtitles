@@ -6,7 +6,7 @@
 
 | 口径 | 定义 | 边界 |
 |---|---|---|
-| 生成 TPS | 输出 token ÷ 首个输出内容至结束的时间 | 仅 OpenAI 流式 API 探针可取得。 |
+| 生成 TPS | 可见输出 token（completion 减 reasoning）÷ 首个输出内容至结束的时间 | 仅 OpenAI 流式 API 探针可取得。 |
 | 端到端 token/s | 输出 token ÷ 整次请求墙钟 | 含网络、排队和首字前等待（API）。 |
 | 进程／会话输出 token/s | 输出 token ÷ CLI 进程或会话耗时 | 含 CLI 启动、认证、prefill、排队、工具和等待，不是纯生成。 |
 | turn 输出 token/s | 输出 token ÷ `turn.started` 至 `turn.completed` | 仍含 CLI 内部的 prefill 与等待，不是纯生成。 |
@@ -20,18 +20,20 @@ Codex CLI 的 `exec --json` 只输出完整消息，不输出逐 token 时间，
 
 | 路径 | 档位 | 口径 | 吞吐中位数 | 单次范围 | 输出 token 中位数 | 耗时中位数 | 证据 |
 |---|---|---|---:|---|---:|---:|---|
-| OpenAI API（dev） | default | 生成 TPS | **139.6** | 130.9–143.7 | 1,520（推理 268） | 总 14.6 s；首字 3.75 s | [运行报告 PR #319](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/319) |
+| OpenAI API（dev） | default | 生成 TPS | **110.7** | 108.2–119.5 | 1,520（推理 268） | 生成 10.89 s；总 14.6 s；首字 3.75 s | [运行报告 PR #319](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/319) |
 | OpenAI API（dev） | default | 端到端 | 103.8 | — | 同上 | 同上 | 同上 |
-| OpenAI API（dev） | fast | 生成 TPS | **199.0** | 194.1–206.2 | 1,483（推理 216） | 总 9.7 s；首字 2.09 s | 同上 |
+| OpenAI API（dev） | fast | 生成 TPS | **169.8** | 164.4–169.9 | 1,483（推理 216） | 生成 7.41 s；总 9.7 s；首字 2.09 s | 同上 |
 | OpenAI API（dev） | fast | 端到端 | 152.4 | — | 同上 | 同上 | 同上 |
-| Codex CLI | default | turn 输出 | **92.4** | — | 1,365（推理记为 0，见下） | 进程 14.9 s | [运行报告 PR #320](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/320) |
-| Codex CLI | default | 进程输出 | 89.8 | 84.3–92.8 | 同上 | 同上 | 同上 |
-| Codex CLI | fast | turn 输出 | **92.9** | — | 1,551（推理记为 0） | 进程 16.4 s | 同上 |
-| Codex CLI | fast | 进程输出 | 90.6 | 84.9–94.5 | 同上 | 同上 | 同上 |
+| Codex CLI | default | turn 输出 | **92.4** | — | 1,365（推理记为 0，见下） | turn 14.25 s | [运行报告 PR #320](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/320) |
+| Codex CLI | default | 进程输出 | 89.8 | 84.3–92.8 | 同上 | 进程 14.95 s | 同上 |
+| Codex CLI | fast | turn 输出 | **92.9** | — | 1,551（推理记为 0） | turn 15.98 s | 同上 |
+| Codex CLI | fast | 进程输出 | 90.6 | 84.9–94.5 | 同上 | 进程 16.41 s | 同上 |
+
+表中 API 生成行的 token 栏保留 completion 与 reasoning 两项；分子逐次相减，端到端行仍用总 completion。各列分别取中位数，不能用中位 token 除以中位耗时精确重构比率中位数。CLI turn／进程耗时取原始 summary 对应字段。
 
 读法与限制：
 
-- API 上 `fast` 的生成 TPS 约为 `default` 的 1.43 倍；端到端约为 1.47 倍。服务端回传的 applied tier 与请求一致。
+- API 上扣除推理后的可见输出生成 TPS：`fast` 约为 `default` 的 1.53 倍；端到端约为 1.47 倍。原探针的 139.6／199.0 将推理 token 除以首个可见内容之后的窗口，不能作为生成 TPS，本表按逐次收据重算。服务端回传的 applied tier 与请求一致。
 - CLI 上两档几乎无差别。CLI 不回传 applied tier，因此无法确认 `fast` 在 CLI 路径实际生效；测试只证明请求参数被接受。
 - CLI 的 reasoning token 每次都为 0，疑为报告缺口，不代表真的无推理；它的 token 计数口径与 API 不一定一致。
 - CLI 每次调用带约 14.7k 输入 token 的 Codex 自身上下文，API 探针没有。两者的耗时与速度不可直接对比。
@@ -45,7 +47,7 @@ Codex CLI 的 `exec --json` 只输出完整消息，不输出逐 token 时间，
 | `gpt-6.1-sol` high fast | Codex CLI，翻译 A/B | 13 组 | 40.24（扣推理 15.96） | 会话输出，进程 181.6 s | [翻译 A/B](reports/20261005-sol61-high-fast-translation-ab.zh.md) |
 | `gpt-6.1-sol` high default | Codex CLI，翻译 A/B | 13 组 | 22.75（扣推理 9.13） | 同上 | 同上 |
 | `gpt-6.1-sol` low default | Codex CLI，翻译 A/B | 13 组 | 17.96 | 同上 | 同上 |
-| `gpt-6.1-sol` medium fast | Codex CLI，独立审核（固定 180 秒重测） | 13 调用 | 54.72 | 会话输出，进程 172.6 s | [固定 180 秒重测](reports/20261005-sol61-high-fast-fixed-180s-retest.zh.md) |
+| `gpt-6-sol` medium fast | Codex CLI，独立审核（固定 180 秒重测） | 13 调用 | 54.72 | 会话输出，进程 172.6 s | [固定 180 秒重测](reports/20261005-sol61-high-fast-fixed-180s-retest.zh.md) |
 | `gpt-6.1-sol` fast 复核 | Codex CLI，Layer 2 180 秒 | 13 调用 | 57.09 | 会话输出，进程 189.7 s | [Layer 2 180 秒](reports/20261005-codex-cli-layer2-180s.zh.md) |
 | `gpt-6-astra` medium | Codex CLI，翻译 A/B | 13 组 | 20.23 | 会话输出，进程 144.2 s | [翻译 A/B](reports/20261005-sol61-high-fast-translation-ab.zh.md) |
 | `gpt-6-astra` / `gpt-6-sol` | Codex CLI，单次碎片翻译与复核 | 各 1 次 | 30.93（翻译）／24.69（复核） | 进程输出 | [碎片翻译复核](reports/20261005-codex-cli-fragment-translation-review.zh.md) |
@@ -65,13 +67,24 @@ Codex CLI 的 `exec --json` 只输出完整消息，不输出逐 token 时间，
 | Qwen3.5 4B Base BF16 | 29 | 17 |
 | Qwen3.5 9B Base BF16 | 15 | 11 |
 
+## 本地完整翻译基准（2026-09-03）
+
+均完成 239/239 段；以下为报告原生生成吞吐，保留运行时身份，不与 API／CLI 的墙钟指标混排。
+
+| 模型 | MacBook／Ollama tok/s | DGX Spark／llama.cpp 历史参考 tok/s | 证据 |
+|---|---:|---:|---|
+| MiLMMT 4B Q8 | 54.753 | — | [完整报告](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/milmmt-46-4b-v1-q8-ollama-full-20260903/report.md) |
+| Hy-MT2 1.8B Q8 | 106.252 | 101.758 | [完整报告](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/hymt2-1.8b-q8-ollama-full-20260903/report.md) |
+| Qwen3.5 4B Base BF16 | 26.174 | 27.919 | [完整报告](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/qwen35-4b-base-bf16-ollama-full-20260903/report.md) |
+| Qwen3.5 9B Base BF16 | 17.110 | 14.431 | [完整报告](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/qwen35-9b-base-bf16-ollama-full-20260903/report.md) |
+
 ## 未记录或仅为目标值
 
 - Codex CLI 纯生成 TPS：仓库没有任何记录，`codex exec --json` 也无法提供。
 - `gpt-6-luna` 在 Agents API 的同口径 TPS：配对实验只记录了 p50／p95 耗时，未测 TPS（见[速度参考](supervisor-model-speed-reference.zh.md)）。
 - `gpt-6-sol` 的 Agents API 监督：只有耗时，无 TPS。
 - MLX、DGX Spark 上 MilMMT 的 decode：[后训练计划](milmmt-sermon-post-training-plan.zh.md) 中的 `decode ≥ 25 tok/s` 是门禁目标，不是实测。
-- 本地直播翻译基准：文档要求记录 tokens/s，但本次在该文档中未找到数值，故未收录。
+- 本地完整基准已记录生成吞吐，见下列原生指标；不能以三次 decode 推算代替完整基准。
 - Qwen TTS／ASR 的速度记为实时倍数（×实时），不是 token/s，本索引不收录。
 
 ## 维护
