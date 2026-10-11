@@ -124,6 +124,12 @@ class BudgetedCaller:
                  and payload['reasoning_effort'] == self.policy[name]['reasoningEffort']]
         require(len(roles) == 1, 'budgeted_model_role_ambiguous')
         role = roles[0]
+        # Configuration errors are not paid unknown outcomes. Validate the
+        # selected transport before reserving or marking any budget request.
+        if payload['model'] in limits.CLAUDE_MODELS:
+            require(self.transport is None and self.claude_transport is not None and role == 'translator'
+                    and payload['model'] == self.claude_transport.model
+                    and payload['reasoning_effort'] == self.claude_transport.effort, 'claude_transport_required')
         # Separate immutable request chains prevent content revisions from
         # resetting one shared global ledger. Each exact payload is one operation.
         identity = budget.chain_identity({
@@ -153,9 +159,6 @@ class BudgetedCaller:
         # uses the existing isolated, single-attempt, wall-deadline HTTP executor.
         if payload['model'] in limits.CLAUDE_MODELS:
             # Claude is reachable only as the frozen translator, through its subscription CLI.
-            require(self.transport is None and self.claude_transport is not None and role == 'translator'
-                    and payload['model'] == self.claude_transport.model
-                    and payload['reasoning_effort'] == self.claude_transport.effort, 'claude_transport_required')
             from scripts.claude_layer2_transport import chat_envelope
             response = chat_envelope(self.claude_transport('', payload, role=role), payload['model'])
         elif self.transport is None:

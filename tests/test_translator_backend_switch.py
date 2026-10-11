@@ -192,6 +192,29 @@ class ClaudeBudgetedCallerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'claude_transport_required'):
             self.caller(claude_transport=fake)('', self.payload)
 
+    def test_bad_transport_preserves_ledger_and_corrected_retry_succeeds(self):
+        def ledger_snapshot():
+            return {str(path.relative_to(self.h.auth['root'])): path.read_bytes()
+                    for path in self.h.auth['root'].rglob('*') if path.is_file()}
+        invalid = FakeClaudeTransport()
+        invalid.model = 'claude-haiku-5-5'
+        wrong_effort = FakeClaudeTransport()
+        wrong_effort.effort = 'medium'
+        for transport in (None, invalid, wrong_effort):
+            caller = self.caller(claude_transport=transport)
+            before = ledger_snapshot()
+            with self.assertRaisesRegex(ValueError, 'claude_transport_required'):
+                caller('', self.payload)
+            self.assertEqual(ledger_snapshot(), before)
+            if transport is not None:
+                self.assertEqual(transport.calls, [])
+        corrected = FakeClaudeTransport()
+        response = self.caller(claude_transport=corrected)('', self.payload)
+        self.assertEqual(response['model'], CLAUDE)
+        self.assertEqual(corrected.calls, [('', 'translator')])
+        data = jobs._read(self.h.auth['root'] / ledger.STORE_ID / 'state.json')
+        self.assertEqual(len(data['reservations']), 1)
+
     def test_missing_cli_usage_fails_closed_after_request(self):
         broken = cli_result()
         broken['usage']['outputTokens'] = None
