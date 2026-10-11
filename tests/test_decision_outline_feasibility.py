@@ -4,6 +4,9 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from contextlib import nullcontext
+from types import SimpleNamespace
+from unittest.mock import patch
 from scripts.experiments import decision_outline_feasibility as e
 from scripts.experiments import decision_api_weekly_ab as ab
 
@@ -66,4 +69,54 @@ class OutlineFeasibilityTests(unittest.TestCase):
         changed=copy.deepcopy(c);changed["sharedEvidence"]["draft"]["title"]="changed"
         with self.assertRaisesRegex(ValueError,"cached_receipt_identity_changed"):
             ab.measured_attempt(changed,"B",mode="offline",directory=out)
+
+    def test_run_incomplete_receipt_and_cached_failure_exit_nonzero_without_later_dispatch(self):
+        cases = [{"caseId": "failed"}, {"caseId": "pending"}]
+        for restored in (False, True):
+            row = {"status": "invalid_response", "restored": restored}
+            with self.subTest(restored=restored), patch.object(e, "checked_run", return_value=(cases, {})), \
+                    patch.object(ab, "run_lock", return_value=nullcontext()), patch.object(ab, "Ledger"), \
+                    patch.object(ab, "measured_attempt", return_value=row) as attempt, \
+                    patch.object(e, "report", return_value={"status": "incomplete"}), patch("builtins.print"):
+                self.assertEqual(e.run(SimpleNamespace(out=str(self.root))), 2)
+                self.assertEqual(attempt.call_count, 1)
+
+    def test_run_complete_experiment_exits_zero(self):
+        with patch.object(e, "checked_run", return_value=([{"caseId": "done"}], {})), \
+                patch.object(ab, "run_lock", return_value=nullcontext()), patch.object(ab, "Ledger"), \
+                patch.object(ab, "measured_attempt", return_value={"status": "validated", "restored": True}), \
+                patch.object(e, "report", return_value={"status": "complete"}), patch("builtins.print"):
+            self.assertEqual(e.run(SimpleNamespace(out=str(self.root))), 0)
+
+    def test_report_distinguishes_pending_work_from_cached_failure(self):
+        cases, audit = e.build_cases(self.root, self.manifest)
+        out = self.root / "report"
+        ab.atomic(out / "author-expectations.json", audit)
+        ab.atomic(out / "preflight.json", {})
+        bound = {"codeDependencySha256": "frozen"}
+        with patch.object(e, "checked_run", return_value=(cases, bound)), patch.object(ab, "Ledger") as ledger:
+            ledger.return_value.summary.return_value = {"unsettledAttempts": 0}
+            summary = e.report(out)
+            self.assertEqual(summary["status"], "incomplete")
+            self.assertEqual(len(summary["pendingCaseIds"]), 24)
+            self.assertEqual(summary["resumeAction"], "resume_same_frozen_run")
+            c = cases[0]
+            row = {"status": "invalid_response", "caseSha256": ab.digest(c),
+                   "payloadSha256": c["payloadSha256"], "codeDependencySha256": "frozen"}
+            path = out / "live" / "E06" / c["caseId"] / "B" / "receipt.json"
+            ab.atomic(path, row)
+            ab.atomic(out / "ledger.json", {"operations": {c["caseId"] + ".B": {"receiptSha256": ab.digest(row)}}})
+            summary = e.report(out)
+            self.assertEqual(summary["status"], "incomplete")
+            self.assertEqual(summary["nonvalidatedCaseIds"], [c["caseId"]])
+            self.assertEqual(len(summary["pendingCaseIds"]), 23)
+            self.assertEqual(summary["resumeAction"], "reconcile_original_attempt_before_new_authorized_run")
+            self.assertFalse(summary["cachedNonvalidatedReceiptsAreRetried"])
+            self.assertEqual(ab.read(path), row)
+
+    def test_main_propagates_run_exit_code(self):
+        with patch("sys.argv", ["outline", "run", "--out", str(self.root)]), \
+                patch.object(e, "run", return_value=2):
+            self.assertEqual(e.main(), 2)
+
 if __name__=="__main__":unittest.main()

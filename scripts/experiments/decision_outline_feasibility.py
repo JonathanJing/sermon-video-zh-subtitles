@@ -225,7 +225,23 @@ def report(out):
             item.update(labels=row["labels"],authorExpectation=author.get("authorExpectation"),
                         authorFramingExpectation=author.get("authorFramingExpectation"))
         result["caseResults"].append(item)
-    result.update(p50Ms=ab.quantile(times,.5),p95Ms=ab.quantile(times,.95),budget=ledger.summary())
+    budget = ledger.summary()
+    validated = {row["caseId"] for row in result["caseResults"] if row["status"] == "validated"}
+    failed = [row["caseId"] for row in result["caseResults"] if row["status"] != "validated"]
+    observed = {row["caseId"] for row in result["caseResults"]}
+    pending = [case["caseId"] for case in cases if case["caseId"] not in observed]
+    complete = len(validated) == len(cases) and budget["unsettledAttempts"] == 0
+    # measured_attempt restores every immutable receipt, including failures. A
+    # same-root rerun can resume untouched cases only when no failed receipt or
+    # unresolved reservation blocks the sequence; it never retries a failed call.
+    result.update(status="complete" if complete else "incomplete",
+                  plannedCases=len(cases), validatedCases=len(validated),
+                  nonvalidatedCaseIds=failed, pendingCaseIds=pending,
+                  resumeAction="none" if complete else
+                      "reconcile_original_attempt_before_new_authorized_run"
+                      if failed or budget["unsettledAttempts"] else "resume_same_frozen_run",
+                  cachedNonvalidatedReceiptsAreRetried=False,
+                  p50Ms=ab.quantile(times,.5),p95Ms=ab.quantile(times,.95),budget=budget)
     ab.atomic(out/"machine-summary.json",result)
     return result
 
@@ -242,7 +258,9 @@ def run(args):
             print(json.dumps({"caseId":c["caseId"],"status":row["status"],"restored":row["restored"]}),flush=True)
             if row["status"] not in {"validated"}:
                 break
-        print(json.dumps(report(out)),flush=True)
+        summary = report(out)
+        print(json.dumps(summary),flush=True)
+        return 0 if summary["status"] == "complete" else 2
 
 
 def main():
@@ -255,6 +273,7 @@ def main():
     p.add_argument("--authorization-note",default="")
     args=p.parse_args()
     if args.command=="prepare":prepare(args)
-    elif args.command=="run":run(args)
+    elif args.command=="run":return run(args)
     else: print(json.dumps(report(Path(args.out).resolve())))
-if __name__=="__main__":main()
+    return 0
+if __name__=="__main__":sys.exit(main())
