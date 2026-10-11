@@ -84,7 +84,9 @@ class SourceBudget:
 
     @contextmanager
     def _locked(self):
-        for attempt in range(100):
+        # Up to 8 concurrent ASR/judge workers contend for this lock; a 1 s wait made a busy
+        # worker fail before reserving and orphan its started marker. Wait up to 30 s instead.
+        for attempt in range(3000):
             with jobs._lock(self.root, LOCK) as (_, _, held):
                 if held:
                     path = self.root / 'source-budget.json'

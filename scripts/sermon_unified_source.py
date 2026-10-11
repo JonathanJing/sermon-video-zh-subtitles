@@ -470,12 +470,95 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
             'machineJudgeStatus': judged['status']}
 
 
+REBUILD_OVERRIDES_SCHEMA = 'sermon-anchor-boundary-overrides-v3'
+
+
+def rebuild(config_path, base_output, out_dir, overrides_path, authorization_path, *, api_key=None, transport=None):
+    """Rebuild anchors, judge and candidate from a run's frozen alignment; no ASR or MFA.
+
+    The base run's aligned segments, summary and window approval are reused by hash. Boundary
+    overrides (sentence ID -> ordered word IDs to split after) must name the same aligned
+    segments. The judge spends only under its own authorization and budget root.
+    """
+    config_path = _safe_path(Path(config_path).absolute())
+    value = _load(config_path)
+    require(value.get('schemaVersion') in (SCHEMA, SCHEMA_V2), 'invalid_source_preparation_configuration')
+    base_identity = jobs._digest({k: v for k, v in value.items() if k != 'budgetAuthorization'})
+    base, out = _safe_path(Path(base_output).absolute()), _safe_path(Path(out_dir).absolute())
+    aligned_path = base / 'aligned-segments.json'
+    receipt = _load(base / 'alignment-receipt.json')
+    require(receipt['alignedSha256'] == _sha(aligned_path), 'source_alignment_cache_changed')
+    aligned = _load(aligned_path)
+    overrides = _load(_safe_path(Path(overrides_path).absolute()))
+    require(set(overrides) == {'schemaVersion', 'alignedSegmentsSha256', 'overrides'}
+            and overrides['schemaVersion'] == REBUILD_OVERRIDES_SCHEMA
+            and overrides['alignedSegmentsSha256'] == receipt['alignedSha256']
+            and isinstance(overrides['overrides'], dict), 'invalid_boundary_overrides')
+    identity = jobs._digest({'baseConfiguration': base_identity, 'alignedSha256': receipt['alignedSha256'],
+                             'boundaryOverrides': overrides, 'judge': value['judge'],
+                             'maxUnitSeconds': value['anchorPolicy']['maxUnitSeconds']})
+    authorization_path = _safe_path(Path(authorization_path).absolute())
+    auth = _load(authorization_path)
+    budget_root = out.parent / f'.{out.name}.judge-budget'
+    expected = {'productionRunId': value['productionRunId'], 'configurationSha256': identity,
+                'codeIdentitySha256': code.code_identity(), 'budgetRoot': str(budget_root)}
+    require(isinstance(auth, dict) and auth.get('schemaVersion') == 'sermon-source-budget-authorization-v1'
+            and auth.get('binding') == expected, 'source_budget_execution_binding_changed')
+    authority = auth['authority']
+    approval_path = _safe_path(authorization_path.parent / auth['approvalReceipt'])
+    approval = _load(approval_path)
+    require(_sha(approval_path) == authority['approvalSha256']
+            and approval.get('schemaVersion') == 'sermon-source-budget-approval-v1'
+            and approval.get('binding') == {**expected, 'globalBounds': authority['globalBounds'],
+                                            'requestLimits': authority['requestLimits']}
+            and approval.get('humanApproval') is True and approval.get('decision') == 'approved',
+            'source_budget_approval_not_bound')
+    out.mkdir(parents=True, exist_ok=True)
+    manifest = anchors.build_anchor_manifest(aligned, source_path=aligned_path,
+        unit_policy=anchors.UNIT_POLICY_V2, max_unit_seconds=value['anchorPolicy']['maxUnitSeconds'],
+        boundary_overrides=overrides['overrides'])
+    manifest_path = out / 'anchor-manifest.json'
+    _freeze(manifest_path, manifest)
+    _freeze(out / 'summary.json', _load(base / 'summary.json'))
+    caller = budget.SourceBudget(budget_root, authority, verify=lambda: None, transport=transport,
+                                 max_concurrent=value['judge']['workers'])
+    with budget.judge_limits(authority['requestLimits']):
+        judged = judge.run(aligned_path=aligned_path, manifest_path=manifest_path, out=out / 'machine-judge.json',
+            api_key=api_key if api_key is not None else os.environ.get('OPENAI_API_KEY', ''),
+            caller=caller.judge, cache_root=out / 'judge-requests',
+            model=value['judge']['model'], effort=value['judge']['reasoningEffort'],
+            batch_size=value['judge']['batchSize'], workers=value['judge']['workers'])
+    window_receipt = _safe_path(config_path.parent / value['windowApproval'])
+    package = english.build_package(aligned_path, manifest_path, summary_path=out / 'summary.json',
+        approval_evidence_path=window_receipt, machine_judge_path=out / 'machine-judge.json',
+        source_id=value['sourceId'], source_url_hash=value['sourceUrlHash'], service_date=value['serviceDate'])
+    require(package['translationEligible'] is False, 'source_preparation_cannot_grant_human_review')
+    _freeze(out / 'english-source-candidate.json', package)
+    _freeze(out / 'rebuild-receipt.json', {'schemaVersion': 'sermon-source-anchor-rebuild-v1',
+        'baseOutput': str(base), 'baseConfigurationSha256': base_identity, 'rebuildIdentity': identity,
+        'alignedSha256': receipt['alignedSha256'], 'boundaryOverridesSha256': _sha(_safe_path(Path(overrides_path).absolute())),
+        'budgetAuthorizationSha256': _sha(authorization_path), 'asrOrMfaRerun': False})
+    return {'status': 'succeeded' if judged['layer2DevelopmentEligible'] else 'blocked',
+            'kind': 'english_source_candidate',
+            'reason': 'human_source_review_required' if judged['layer2DevelopmentEligible'] else 'source_machine_judge_rejected',
+            'review': 'human_pending', 'productionEligible': False, 'humanApprovalCreated': False,
+            'candidatePath': str(out / 'english-source-candidate.json'), 'candidateSha256': jobs._digest(package),
+            'machineJudgeStatus': judged['status']}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=('inspect', 'execute'))
+    parser.add_argument('command', choices=('inspect', 'execute', 'rebuild'))
     parser.add_argument('--config', required=True, type=Path)
+    parser.add_argument('--base-output', type=Path)
+    parser.add_argument('--out', type=Path)
+    parser.add_argument('--boundary-overrides', type=Path)
+    parser.add_argument('--budget-authorization', type=Path)
     args = parser.parse_args()
-    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+    if args.command == 'rebuild':
+        result = rebuild(args.config, args.base_output, args.out, args.boundary_overrides, args.budget_authorization)
+    else:
+        result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result['status'] in {'ready', 'succeeded'} else 2
 

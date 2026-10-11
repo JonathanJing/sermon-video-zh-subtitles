@@ -187,6 +187,46 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertEqual((provenance['reviewType'], provenance['humanApproval']), ('human', True))
         self.assertFalse(result['productionEligible'])
 
+    def rebuild_inputs(self, aligned_sha):
+        overrides = self.root / 'overrides.json'
+        overrides.write_text(json.dumps({'schemaVersion': subject.REBUILD_OVERRIDES_SCHEMA,
+                                         'alignedSegmentsSha256': aligned_sha, 'overrides': {}}))
+        out = self.root / 'rebuilt'
+        identity = jobs._digest({'baseConfiguration': jobs._digest({k: v for k, v in self.config.items() if k != 'budgetAuthorization'}),
+            'alignedSha256': aligned_sha, 'boundaryOverrides': json.loads(overrides.read_text()),
+            'judge': self.config['judge'], 'maxUnitSeconds': self.config['anchorPolicy']['maxUnitSeconds']})
+        binding = {'productionRunId': 'a'*64, 'configurationSha256': identity, 'codeIdentitySha256': 'c'*64,
+                   'budgetRoot': str(self.root / '.rebuilt.judge-budget')}
+        bounds = {'requests': 20, 'wallTimeMs': 6000000, 'costMicrousd': 10000000}
+        limits = dict(budget.text_limits.DEFAULT_REQUEST_LIMITS)
+        approval = self.root / 'rebuild-approval.json'
+        approval.write_text(json.dumps({'schemaVersion': 'sermon-source-budget-approval-v1',
+            'binding': {**binding, 'globalBounds': bounds, 'requestLimits': limits}, 'humanApproval': True,
+            'decision': 'approved', 'operatorEvidence': 'fixture', 'reviewedBy': 'fixture', 'reviewedAt': '2026-10-04T00:00:00Z'}))
+        authorization = self.root / 'rebuild-budget.json'
+        authorization.write_text(json.dumps({'schemaVersion': 'sermon-source-budget-authorization-v1', 'binding': binding,
+            'authority': {'approvalSha256': subject._sha(approval), 'globalBounds': bounds, 'requestLimits': limits},
+            'approvalReceipt': approval.name}))
+        return overrides, out, authorization
+
+    def test_rebuild_reanchors_and_rejudges_from_frozen_alignment_without_asr(self):
+        self.execute()
+        base = self.root / 'source'
+        aligned_sha = json.loads((base / 'alignment-receipt.json').read_text())['alignedSha256']
+        overrides, out, authorization = self.rebuild_inputs(aligned_sha)
+        self.calls.clear()
+        result = subject.rebuild(self.path, base, out, overrides, authorization, api_key='', transport=self.transport)
+        self.assertTrue(self.calls and all(not c.endswith('/transcriptions') for c in self.calls))
+        self.assertFalse(result['productionEligible'])
+        self.assertTrue((out / 'english-source-candidate.json').is_file())
+        self.assertFalse(json.loads((out / 'rebuild-receipt.json').read_text())['asrOrMfaRerun'])
+
+    def test_rebuild_rejects_overrides_for_another_alignment(self):
+        self.execute()
+        overrides, out, authorization = self.rebuild_inputs('b' * 64)
+        with self.assertRaisesRegex(ValueError, 'invalid_boundary_overrides'):
+            subject.rebuild(self.path, self.root / 'source', out, overrides, authorization, api_key='', transport=self.transport)
+
     def test_legacy_source_configuration_cannot_silently_expand_judge_concurrency(self):
         self.config['judge']['workers'] = 8
         self.path.write_text(json.dumps(self.config))
