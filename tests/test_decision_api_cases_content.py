@@ -116,6 +116,34 @@ class ContentCasesTests(unittest.TestCase):
         write(path, value)
         self.assertEqual(c.build_content_cases(self.root), [])
 
+    def test_completed_pair_from_another_payload_is_rejected_even_when_pair_agrees(self):
+        path, _ = self.translation_fixture()
+        for suffix in ('.json', '.raw.json'):
+            artifact = path.with_name(path.name.removesuffix('.policy-preview.json') + suffix)
+            row = c._load(artifact)
+            row['payloadSha256'] = 'f' * 64
+            write(artifact, row)
+        self.assertEqual(c.build_content_cases(self.root), [])
+
+    def test_completed_pair_binds_preview_and_recorded_transport_identity(self):
+        path, _ = self.translation_fixture()
+        identity = {'backend': 'openai_api', 'runtime': 'fixture-v1'}
+        write(path.parent/'test-context.json', {'modelTransportIdentity': identity})
+        payload = c._load(path)['payload']
+        fingerprint = c.policy_tools.canonical_sha256({'payload': payload, 'modelTransportIdentity': identity})
+        for suffix in ('.json', '.raw.json'):
+            artifact = path.with_name(path.name.removesuffix('.policy-preview.json') + suffix)
+            row = c._load(artifact)
+            row['payloadSha256'] = fingerprint
+            write(artifact, row)
+        cases = c.build_content_cases(self.root)
+        self.assertEqual(len(cases), 1)
+        self.assertEqual(cases[0]['provenance']['originalModelTransportIdentity'], identity)
+        write(path.parent/'test-context.json', {'modelTransportIdentity': {**identity, 'runtime': 'foreign'}})
+        self.assertEqual(c.build_content_cases(self.root), [])
+        (path.parent/'test-context.json').unlink()
+        self.assertEqual(c.build_content_cases(self.root), [])
+
     def test_corrected_final_pass_is_projected_as_repair_not_draft_pass(self):
         _, raw = self.translation_fixture()
         case = c.build_content_cases(self.root)[0]

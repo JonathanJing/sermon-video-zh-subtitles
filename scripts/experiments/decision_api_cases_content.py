@@ -219,7 +219,16 @@ def _translation_cases(root: Path, maximum: int) -> list[dict]:
             # A real completed original request is required, not a mock preview.
             stem = path.name.removesuffix(".policy-preview.json")
             saved, raw = _load(path.with_name(stem + ".json")), _load(path.with_name(stem + ".raw.json"))
-            if saved.get("payloadSha256") != raw.get("payloadSha256") or saved.get("model") != payload["model"]:
+            context_path = path.parent / "test-context.json"
+            transport_identity = _load(context_path).get("modelTransportIdentity") if context_path.is_file() else None
+            if transport_identity is not None and (not isinstance(transport_identity, dict)
+                    or transport_identity.get("backend") not in {"codex_cli", "openai_api"}):
+                raise ValueError("original_transport_identity_unverifiable")
+            fingerprint = policy_tools.canonical_sha256(
+                {"payload": payload, "modelTransportIdentity": transport_identity}
+                if transport_identity is not None else payload)
+            if (saved.get("payloadSha256") != fingerprint or raw.get("payloadSha256") != fingerprint
+                    or saved.get("model") != payload["model"]):
                 raise ValueError("original_completed_request_identity_mismatch")
             response = raw["response"]
             if saved.get("requestId") != response.get("id"):
@@ -231,6 +240,10 @@ def _translation_cases(root: Path, maximum: int) -> list[dict]:
             else:
                 content = translation.completed_response_content(response, payload["model"], "reviewer")
                 original_backend = "openai-api"
+            if ((original_backend == "codex-cli" and (transport_identity or {}).get("backend") != "codex_cli")
+                    or (transport_identity is not None and
+                        transport_identity["backend"] != ("codex_cli" if original_backend == "codex-cli" else "openai_api"))):
+                raise ValueError("original_transport_backend_mismatch")
             parsed = json.loads(content)
             if parsed != saved.get("result"):
                 raise ValueError("original_raw_result_mismatch")
@@ -251,6 +264,7 @@ def _translation_cases(root: Path, maximum: int) -> list[dict]:
                 provenance={"policy": copy.deepcopy(policy), "policySha256": preview["policySha256"],
                     "sourceIdentity": copy.deepcopy(scope), "originalPayloadSha256": preview["payloadSha256"],
                     "originalTransportPayloadSha256": saved["payloadSha256"],
+                    "originalModelTransportIdentity": copy.deepcopy(transport_identity),
                     "originalRawFileSha256": _file_sha(path.with_name(stem + ".raw.json")),
                     "originalResultFileSha256": _file_sha(path.with_name(stem + ".json")),
                     "originalResponseBackend": original_backend,

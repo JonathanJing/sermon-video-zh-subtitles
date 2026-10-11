@@ -219,7 +219,9 @@ class RunnerTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.ledger.finish('one', {'status': 'validated'}, 1)
 
     def test_prior_run_seal_blocks_unknown_and_binds_exact_successor(self):
-        with tempfile.TemporaryDirectory(dir=ab.ROOT/'artifacts') as directory:
+        artifacts = ab.ROOT/'artifacts'
+        artifacts.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=artifacts) as directory:
             prior = Path(directory)/'prior'
             next_run = Path(directory)/'next'
             bound = ab.authority(prior, [self.case], Decimal('20'), 200, 'test')
