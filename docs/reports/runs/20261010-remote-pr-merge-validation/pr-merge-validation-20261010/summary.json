@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "non-report-pr-merge-validation-v1",
+  "requestedBase": "dev",
+  "originalOpenPrCount": 29,
+  "excludedRunReportPrs": [
+    328,
+    320,
+    319,
+    313,
+    312,
+    307,
+    306,
+    305,
+    304,
+    303,
+    302,
+    300,
+    290,
+    289,
+    288,
+    286
+  ],
+  "includedNonReportPrs": [
+    215,
+    259,
+    266,
+    280,
+    285,
+    299,
+    311,
+    314,
+    321,
+    323,
+    329,
+    330,
+    331
+  ],
+  "initialDev": "d57f5966",
+  "externalActions": {
+    "modelCalls": "not_run",
+    "deployment": "not_run",
+    "devicePlayback": "not_run",
+    "venueAcceptance": "not_run"
+  },
+  "localValidation": {
+    "mfa": {
+      "tests": 53,
+      "status": "pass"
+    },
+    "sourceMeaningRepair": {
+      "tests": 51,
+      "status": "pass"
+    },
+    "decisionApiExperiments": {
+      "tests": 51,
+      "status": "pass"
+    },
+    "backendAndDevReceipts": {
+      "tests": 100,
+      "status": "pass"
+    },
+    "devProducerCompatibility": {
+      "tests": 22,
+      "status": "pass"
+    },
+    "shadowScaffolding": {
+      "tests": 53,
+      "status": "pass",
+      "actualShadowDispatch": "blocked_before_transport"
+    },
+    "marketingQuoteGuards": {
+      "tests": 2,
+      "status": "pass"
+    },
+    "claudeAbIdentity": {
+      "tests": 37,
+      "status": "pass"
+    },
+    "integrationBatch1": {
+      "tests": 123,
+      "status": "pass"
+    },
+    "integrationBatch2": {
+      "tests": 187,
+      "status": "pass"
+    },
+    "finalIntegration": {
+      "tests": 316,
+      "modules": 17,
+      "seconds": 19.804,
+      "status": "pass",
+      "head": "46e2a256a2ca810dc387626f20b554b1f5719592"
+    },
+    "dispatchSleepIsolation": {
+      "tests": 38,
+      "seconds": 12.793,
+      "status": "pass",
+      "head": "a1b920d8c8d90c6b9832d986d51f470108c50a0a"
+    },
+    "finalReviewRepairs": {
+      "tests": 29,
+      "seconds": 1.205,
+      "status": "pass",
+      "head": "04d535a2b01a12dd7f69f780426bfb035caa5cec"
+    }
+  },
+  "failuresRetained": [
+    {
+      "stage": "initial_mfa_test",
+      "cause": "system Python missing jsonschema",
+      "resolution": "configured project venv; 53 passed"
+    },
+    {
+      "stage": "backend_extended_test",
+      "cause": "concurrent source edit triggered code_identity guard",
+      "resolution": "stable rerun 100 passed"
+    },
+    {
+      "stage": "decision_experiment_test",
+      "cause": "new worktree missing ignored artifacts directory",
+      "resolution": "created scratch directory; 51 passed"
+    },
+    {
+      "stage": "marketing_guard_test",
+      "cause": "optional renderer numpy absent at import",
+      "resolution": "defer rendering dependencies to main; pure guard tests pass"
+    },
+    {
+      "stage": "firstIntegrationCI",
+      "runId": 38104684280,
+      "job": "test-group (root-4)",
+      "test": "test_dispatch_lock_wait_is_bounded_and_restart_does_not_regain_call_permission",
+      "observedSleepCalls": 989014,
+      "expectedSleepCalls": 99,
+      "cause": "Observed excess sleep mock calls with mark_request bounded at100; consistent with unrelated calls contaminating a shared global time.sleep mock. Specific thread was not identified.",
+      "resolution": "Patch only adapter.time reference with isolated sleep mock, assert real global sleep unchanged; 38 focused tests passed. Final-head CI pending."
+    }
+  ],
+  "whitespaceLimitation": "Two existing sanitized warning-log fixtures in PR285 retain their original trailing whitespace. Source/docs changes pass diff check.",
+  "integrationHead": "04d535a2b01a12dd7f69f780426bfb035caa5cec",
+  "supersededCiCancellationCounts": {
+    "originalBranches": 19,
+    "integrationPreviousHead": 2
+  }
+}

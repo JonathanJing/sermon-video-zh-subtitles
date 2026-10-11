@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261010-remote-pr-merge-validation",
+  "runs": [
+    {
+      "label": "pr-merge-validation-20261010",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/pr-merge-validation-20261010",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "pr-merge-validation-20261010",
+      "path": "failure-receipt.json",
+      "kind": "whole",
+      "bytes": 602,
+      "truncated": false,
+      "sha256": "d8fb7ec7f77b73863e78ffd00c4f476286a9a51d68dfc5238cfb0b37536810dc",
+      "redactions": {}
+    },
+    {
+      "run": "pr-merge-validation-20261010",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 3678,
+      "truncated": false,
+      "sha256": "2b29aedf0462aa60529f0e04b9f5437c062ee6929a26f6b40c6c54dd2948401d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
