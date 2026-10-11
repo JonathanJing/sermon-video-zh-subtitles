@@ -97,7 +97,7 @@
 | 历史 Cloud 架构／部署 | [System Design](system-design.zh.md)、[差距审计](system-design-gap-analysis.zh.md)、[Cloud Run 部署准备](cloud-run-deployment-prep.zh.md)、[旧周日 Cloud Runbook](sunday-live-test-runbook.zh.md)、[旧 Cloud 观测](observability.zh.md)、[Admin 路径](admin-workflow.zh.md) |
 | 历史发布／离线实现 | [2026-07-05 页面发布复盘](post-live-reviewed-sunday-publication.zh.md)、[旧离线字幕实现笔记](weekly-offline-subtitle-generation.zh.md) |
 | 早期调研 | [发现报告](findings-report.zh.md)、[公开视频可行性分析](youtube-sermon-subtitle-pipeline-analysis.zh-en.md)、[直播归档时间证据](offline-live-archive-timing-feasibility.zh.md)、[Provider 对比](model-provider-comparison.zh.md) |
-| Benchmark／训练 Discovery | [实时翻译 Benchmark](live-sermon-translation-benchmark.zh.md)、[本地 ASR](local-asr-benchmark.zh.md)、[MacBook 翻译](macbook-sermon-translation-benchmark.zh.md)、[MiLMMT 后训练计划](milmmt-sermon-post-training-plan.zh.md) |
+| Benchmark／训练 Discovery | [模型输出速度索引](model-output-speed-index.zh.md)、 [实时翻译 Benchmark](live-sermon-translation-benchmark.zh.md)、[本地 ASR](local-asr-benchmark.zh.md)、[MacBook 翻译](macbook-sermon-translation-benchmark.zh.md)、[MiLMMT 后训练计划](milmmt-sermon-post-training-plan.zh.md) |
 | 旧项目记录 | [Development Notes](development-notes.md)、[Review/Test Notes](review-testing.md)；旧 2026-06-22 live-caption backlog 已保留在当前 [Dev Backlog 的历史附录](backlog.zh.md#历史附录2026-06-22-1130-会众中文字幕-backlog) |
 
 对应英文历史稿仍保留在同目录，用于来源追踪和开源阅读；它们不是另一套独立事实来源。

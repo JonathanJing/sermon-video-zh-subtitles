@@ -53,6 +53,8 @@ COMPATIBLE_RUNNER_IDENTITIES = {
 
 MODEL_ROLES = {"translator": "gpt-6.1-sol", "reviewer": "gpt-6.1-sol"}
 MODEL_EFFORTS = {"translator": "high", "reviewer": "medium"}
+# Per-run translator choice, frozen in the translation policy (single source: target_language_policy).
+TRANSLATOR_BACKENDS = policy_tools.TRANSLATOR_BACKENDS
 HISTORICAL_MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
 SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
@@ -104,6 +106,33 @@ def register_prompt_instruction(policy: dict[str, Any]) -> str:
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+def translator_backend(policy: dict[str, Any]) -> str:
+    """Name the translator backend frozen in this policy; anything else is refused."""
+    translator = policy["translator"]
+    for name, (model, effort) in TRANSLATOR_BACKENDS.items():
+        if translator["model"] == model:
+            require(translator["reasoningEffort"] == effort, "translator_backend_effort_changed")
+            return name
+    raise ValueError("unsupported_translator_backend")
+
+
+def production_models(policy: dict[str, Any]) -> dict[str, str]:
+    """Expected formal model per role for this policy's frozen translator backend."""
+    require(translator_backend(policy) == "openai_api", "claude_translator_is_experimental_only")
+    return {"translator": MODEL_ROLES["translator"],
+            "reviewer": MODEL_ROLES["reviewer"]}
+
+
+def historical_models(policy: dict[str, Any], *, cache_only: bool) -> dict[str, str]:
+    """Validate frozen identities without enabling a new provider dispatch."""
+    for role in MODEL_ROLES:
+        allowed = {MODEL_ROLES[role], HISTORICAL_MODEL_ROLES[role]}
+        if cache_only and role == "translator":
+            allowed.add("claude-opus-5-5")
+        require(policy[role]["model"] in allowed, "unsupported_historical_model_policy")
+    return {role: policy[role]["model"] for role in MODEL_ROLES}
 
 
 def save_new(path: Path, value: object, *, private=False) -> None:
@@ -767,6 +796,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
     reports a systemic stop, and ends the run with a failure report rather than
     evidence. It never writes a plugin group stop.
     """
+    require(request.get("candidateMode", "production") == "production",
+            "Shadow execution is not implemented: complete shadow admission is required")
     with accounting.stage(f"layer2.run_admission.{request['targetLocale']}",
                           depends_on=[source_admission_span] if source_admission_span else [],
                           executor_type="deterministic_program",
@@ -798,10 +829,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require("simulationOnly" not in request,
                     "Formal group loop cannot consume a simulated request")
         historical_replay = cache_only or getattr(caller, "execution_identity", {}).get("backend") == "fixture_replay"
-        expected_models = ({role: policy[role]["model"] for role in MODEL_ROLES}
-                           if historical_replay else MODEL_ROLES)
-        if historical_replay:
-            require(all(policy[role]["model"] in {MODEL_ROLES[role], HISTORICAL_MODEL_ROLES[role]} for role in MODEL_ROLES), "unsupported_historical_model_policy")
+        expected_models = (historical_models(policy, cache_only=cache_only)
+                           if historical_replay else production_models(policy))
         simulation_configuration = policy.get("simulationModelConfiguration")
         if simulation_configuration is not None:
             from scripts.codex_layer2_transport import validate_test_configuration
@@ -822,10 +851,14 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require("simulationModelConfiguration" not in request,
                     "Simulation request configuration lacks a bound effective policy")
         for role, expected in expected_models.items():
-            if expected == "gpt-6.1-sol":
+            if expected in {"gpt-6.1-sol", "claude-opus-5-5"}:
                 require(policy[role]["reasoningEffort"] == MODEL_EFFORTS[role], "production_role_effort_changed")
             require(policy[role]["model"] == expected,
                     f"Production {role} model must be {expected}; freeze a new policy")
+        if not historical_replay and simulation_configuration is None:
+            # An OpenAI or Codex caller must never serve a Claude-translator policy, and vice versa.
+            require(getattr(caller, "execution_identity", {}).get("translatorBackend", "openai_api")
+                    == translator_backend(policy), "translator_backend_caller_mismatch")
         workers = policy["batching"].get("workers")
         capacity_profile = getattr(caller, 'execution_identity', {}).get('concurrencyProfile')
         maximum_workers = 16
@@ -1243,7 +1276,9 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   progress_ledger: Path | None = None,
                   cache_only: bool = False, progress_callback=None,
                   predecessor_spans=(), completion_spans: list[str] | None = None,
-                  failure_collector=None) -> dict:
+                  failure_collector=None, candidate_mode: str = "production") -> dict:
+    require(candidate_mode == "production",
+            "Shadow execution is not implemented: candidate schema, plugin admission and human receipt are required")
     require(plugin is not None,
             "Formal Layer 2 requires the frozen language plugin before dispatch")
     locale = policy["targetLocale"]
@@ -1254,7 +1289,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
             with accounting.stage(f"layer2.source_admission.{locale}", depends_on=list(predecessor_spans),
                                   executor_type="deterministic_program",
                                   work_unit_id=f"l2.{locale}.source_admission") as source_span:
-                request = producer.prepare_request(source, anchor, policy)
+                request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
                 plan = group_plan(request, anchor, group_plan_data)
                 window = source["source"]["approvedWindow"]
                 accounting.record_workload("layer2.source_identity", {
@@ -1311,7 +1346,12 @@ def main() -> None:
     source, anchor, policy = (producer._load(path) for path in
                               (args.english_source_package, args.anchor, args.policy))
     # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
-    request = producer.prepare_request(source, anchor, policy)
+    # A bound canonical configuration declares whether this is a non-production shadow candidate.
+    candidate_mode = "production"
+    if args.budget_config is not None:
+        from scripts import canonical_layer2_controller as controller
+        candidate_mode = controller.load_configuration(args.budget_config).candidate_mode
+    request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
     if args.budget_config is None:
         validate_standalone_worker_budget(policy)
     plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))

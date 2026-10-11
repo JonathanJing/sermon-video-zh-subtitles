@@ -138,3 +138,18 @@ def test_prior_unknown_production_outcome_cannot_start_another_publish(tmp_path)
     staging.write(base / 'deployment-attempt-v2.json', {'status': 'outcome_unknown'})
     with pytest.raises(ValueError, match='uncertain or differs'):
         staging.publication_config(base, tmp_path / 'candidate', environment='production')
+
+
+def test_production_overlay_is_accepted_by_dev_shell_without_copying_baseline_modules(tmp_path, monkeypatch):
+    from scripts import firebase_dev_app_shell_update as shell
+    base = baseline(tmp_path)
+    repo, _ = committed_ui(tmp_path, monkeypatch)
+    out = tmp_path / 'candidate'
+    ui.prepare(base, out, environment='production')
+    monkeypatch.setattr(shell, 'ROOT', repo)
+    plan = shell.read_plan(out / 'public', out / 'ui-update-plan.json')
+    replaced, _ = shell.shell_names(shell.dev.files(out / 'public'), plan)
+    assert 'app.mjs' in replaced
+    assert 'fingerprint-worker.mjs' not in replaced
+    assert 'fingerprint-worker.mjs' not in plan['sourceFiles']
+    assert (out / 'public/fingerprint-worker.mjs').read_bytes() == (base / 'public/fingerprint-worker.mjs').read_bytes()

@@ -5,8 +5,7 @@ Runs leave their evidence under ignored ``artifacts/`` on the Mac (and on
 Spark), where a cloud review session cannot read it. This tool copies only the
 files a retrospective needs from one or more run directories:
 
-- ``outcome.json``, ``timings.tsv``, ``summary.json``, ``preflight.json``,
-  trial results (``diagnose.json``, ``refute.json``, ``risk.json``) and ``*receipt*.json``
+- ``outcome.json``, ``timings.tsv``, ``summary.json`` and ``*receipt*.json``
   (whole, when under the size cap);
 - ``*.log`` (first and last lines, with every error line in between).
 
@@ -43,9 +42,12 @@ from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "sermon-run-digest-v1"
-WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json",
-               "diagnose.json", "refute.json", "risk.json"}
+# diagnose/refute/risk.json carry agent-trial rows the run report reviews case by case.
+WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json", "diagnose.json", "refute.json", "risk.json"}
 MAX_WHOLE_BYTES = 256 * 1024
+# Agent-trial result files hold one row per case; one over the cap is exported as row chunks, each under the cap,
+# so case-level evidence is not dropped. The whole-digest cap still bounds the total.
+ROW_NAMES = {"preflight.json", "diagnose.json", "refute.json", "risk.json"}
 MAX_DIGEST_BYTES = 2 * 1024 * 1024
 NAME = re.compile(r"\d{8}-[A-Za-z0-9._-]+")  # Same set publish_run_report.sh accepts
 RETROSPECTIVE_SECTIONS = [
@@ -196,6 +198,16 @@ def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[
         entry = {"run": label, "path": str(rel), "kind": kind, "bytes": path.stat().st_size, "truncated": False}
         if kind == "log":
             text, entry["truncated"] = read_log(path, digest)
+        elif entry["bytes"] > MAX_WHOLE_BYTES and path.name in ROW_NAMES and entry["bytes"] <= MAX_DIGEST_BYTES:
+            raw = path.read_bytes()
+            digest.update(raw)
+            entry["sha256"] = digest.hexdigest()
+            if write_row_chunks(raw, dest / label / rel, secrets, entry):
+                entries.append(entry)
+                continue
+            entry.update(omitted="over_size_cap")
+            entries.append(entry)
+            continue
         elif entry["bytes"] > MAX_WHOLE_BYTES:  # Hash in chunks; never load it.
             with path.open("rb") as stream:
                 for chunk in iter(lambda: stream.read(1 << 20), b""):
@@ -219,11 +231,64 @@ def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[
             text = json.dumps(redact_json(parsed, secrets, entry["redactions"]), ensure_ascii=False, indent=2) + "\n"
         else:
             text, entry["redactions"] = redact(text, secrets)
+        if path.name in ROW_NAMES and len(text.encode("utf-8")) > MAX_WHOLE_BYTES:
+            # Compact source JSON can grow past the cap once indented; the written size decides chunking.
+            if not write_row_chunks(raw, dest / label / rel, secrets, entry):
+                entry.update(omitted="over_size_cap")
+            entries.append(entry)
+            continue
         target = dest / label / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text, encoding="utf-8")
         entries.append(entry)
     return entries, skipped
+
+
+EMPTY_ROWS = len(json.dumps({"rows": []}, indent=2))
+
+
+def write_row_chunks(raw: bytes, target: Path, secrets: list[str], entry: dict) -> bool:
+    """Write a redacted row file as <stem>.rows-NN.json chunks under the whole-file cap. False, with nothing
+    written, when it has no rows or a single row (with the file's other fields) cannot fit under the cap."""
+    try:
+        value = json.loads(raw.decode("utf-8", errors="replace"))
+    except ValueError:
+        return False
+    if not isinstance(value, dict) or not isinstance(value.get("rows"), list):
+        return False
+    entry["redactions"] = {}
+    value = redact_json(value, secrets, entry["redactions"])
+    rest = {k: v for k, v in value.items() if k != "rows"}
+    budget = MAX_WHOLE_BYTES - 4096
+    chunks, current = [], []
+    size = len(json.dumps(rest, ensure_ascii=False, indent=2).encode("utf-8"))  # Metadata rides in the first part.
+    for row in value["rows"]:
+        # Measured at its nesting depth inside "rows", where indentation adds bytes on every line, plus the comma.
+        row_size = len(json.dumps({"rows": [row]}, ensure_ascii=False, indent=2).encode("utf-8")) - EMPTY_ROWS + 2
+        if current and size + row_size > budget:
+            chunks.append(current)
+            current, size = [], 0
+        current.append(row)
+        size += row_size
+    chunks.append(current)
+    parts = {}
+    for index, rows in enumerate(chunks, 1):
+        part = {"source": target.name, "part": index, "parts": len(chunks), **(rest if index == 1 else {}),
+                "rows": rows}
+        text = json.dumps(part, ensure_ascii=False, indent=2) + "\n"
+        if len(text.encode("utf-8")) > MAX_WHOLE_BYTES:
+            return False  # One row alone is over the cap; the file is reported as omitted instead.
+        parts[f"{target.stem}.rows-{index:02d}.json"] = text
+    target.parent.mkdir(parents=True, exist_ok=True)
+    for name, text in parts.items():
+        (target.parent / name).write_text(text, encoding="utf-8")
+    names = list(parts)
+    # The manifest path still opens: it holds a small index naming the parts, so a v1 consumer that reads every
+    # non-omitted path finds valid JSON that points to the rows instead of a missing file.
+    index = {"source": target.name, "chunked": True, "rowCount": len(value["rows"]), "parts": names}
+    target.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    entry["chunks"] = names
+    return True
 
 
 def read_json(path: Path) -> dict | None:

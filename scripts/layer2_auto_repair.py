@@ -569,7 +569,7 @@ def _affordable_repairs(entries: list[dict]) -> tuple[int, str]:
 
 
 def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], value: dict, ledger_root: Path,
-                      meaning_notes: dict | None) -> dict | None:
+                      meaning_notes: dict | None, meaning_notes_sha256: str | None = None) -> dict | None:
     """Reopen a chain stopped for source review once meaning notes settle those groups' units.
 
     Audio adjudication normally becomes available after a locale has stopped with
@@ -633,14 +633,15 @@ def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], val
         "evidenceSha256": None, "failureReportSha256": None,
         "spend": {"calls": 0, "tokens": 0, "callsWithoutUsage": 0}, "groups": rows,
         "outcome": "repairing" if failures else "stopped", "stopped": stopped, "nextBrief": next_brief,
-        "reopenedBy": {"evidence": "source_meaning_notes", "meaningNotesSha256": json_sha256(meaning_notes),
+        "reopenedBy": {"evidence": "source_meaning_notes", "meaningNotesSha256": meaning_notes_sha256 or json_sha256(meaning_notes),
                        "units": units,
                        "failureReports": [{"sequence": sequence, "failureReportSha256": digest}
                                           for sequence, digest in sorted(origins.items())]}})
 
 
 def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Path,
-          ledger_root: Path, *, group_workers: int = 1, meaning_notes: dict | None = None) -> dict:
+          ledger_root: Path, *, group_workers: int = 1, meaning_notes: dict | None = None,
+          meaning_notes_sha256: str | None = None) -> dict:
     """Run rounds until every group passes or repair stops; write and return a receipt.
 
     ``run_round(out, reuse_from, brief, collector)`` returns evidence when every
@@ -657,7 +658,7 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
     out_root = Path(out_root)
     entries = load_ledger(ledger_root, value)
     if entries and entries[-1]["outcome"] != "repairing":
-        reopened = _reopen_for_notes(request, total_groups, entries, value, ledger_root, meaning_notes)
+        reopened = _reopen_for_notes(request, total_groups, entries, value, ledger_root, meaning_notes, meaning_notes_sha256)
         if reopened is not None:
             entries.append(reopened)
         if entries[-1]["outcome"] != "repairing":

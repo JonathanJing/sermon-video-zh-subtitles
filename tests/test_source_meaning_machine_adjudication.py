@@ -841,16 +841,18 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             changed['units'][0][key] = value
             with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_verdict_not_from_model'):
                 machine.validate_receipt(changed, anchor=self.anchor, cache=cache)
-        # The receipt names the tier its request was asked under: another supported tier, an unsupported
-        # one, or (under a budget) a tier other than the approved one is refused.
+        # The receipt names the one tier its run could use: an unbound run's is the default tier, whole.
+        # Another supported tier, even one whose payload is the same (a larger input cap, another wall
+        # time), an unsupported one, or (under a budget) a tier other than the approved one is refused.
+        self.assertEqual(receipt['adjudicator']['requestLimits'], limits.DEFAULT_REQUEST_LIMITS)
         larger = dict(receipt['adjudicator']['requestLimits'], maxCompletionTokens=8192)
-        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_runtime_changed'):
-            machine.validate_receipt(dict(receipt, adjudicator=dict(receipt['adjudicator'], requestLimits=larger)),
-                                     anchor=self.anchor, cache=cache)
-        flex = dict(receipt['adjudicator']['requestLimits'], serviceTier='flex')
-        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_adjudicator_runtime'):
-            machine.validate_receipt(dict(receipt, adjudicator=dict(receipt['adjudicator'], requestLimits=flex)),
-                                     anchor=self.anchor, cache=cache)
+        for changed in (larger, dict(larger, maxCompletionTokens=4096, maxInputTokens=16384),
+                        dict(larger, maxCompletionTokens=4096, wallTimeMs=120000),
+                        dict(receipt['adjudicator']['requestLimits'], serviceTier='flex')):
+            with self.subTest(limits=changed), \
+                    self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_adjudicator_runtime'):
+                machine.validate_receipt(dict(receipt, adjudicator=dict(receipt['adjudicator'], requestLimits=changed)),
+                                         anchor=self.anchor, cache=cache)
         budget = {'schemaVersion': machine.BUDGET_SCHEMA, 'authorizationSha256': 'a' * 64, 'approvalSha256': 'b' * 64,
                   'budgetRoot': str((self.out / machine.BUDGET_DIR).resolve()),
                   'globalBounds': {metric: 1000 for metric in source_budget.METRICS}, 'requestLimits': larger}
@@ -859,6 +861,10 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_adjudicator_runtime'):
                 machine.validate_receipt(dict(receipt, budget=budget, adjudicator=adjudicator),
                                          anchor=self.anchor, cache=cache)
+        # The budget's own tier, with a payload its cache was not asked under, is refused at the cache.
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_runtime_changed'):
+            machine.validate_receipt(dict(receipt, budget=budget, adjudicator=dict(
+                receipt['adjudicator'], route=route, requestLimits=larger)), anchor=self.anchor, cache=cache)
         # A cached response rewritten to match the edit no longer hashes to what the row names.
         path = Path(row['request']['path'])
         cached = json.loads(path.read_text(encoding='utf-8'))

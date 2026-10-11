@@ -476,18 +476,18 @@ class SolAdjudicator:
 
     def __init__(self, *, api_key: str, cache: Path, model: str = MODEL, effort: str = EFFORT,
                  caller: Callable[..., dict[str, Any]] | None = None, max_calls: int | None = None,
-                 budget: dict[str, Any] | None = None, request_limits: dict[str, Any] | None = None):
+                 budget: dict[str, Any] | None = None):
         _require(model in ADJUDICATOR_MODELS and effort in limits.MODEL_REASONING_EFFORTS[model],
                  'unsupported_adjudicator_model')
         _require(max_calls is None or (type(max_calls) is int and max_calls >= 0), 'adjudicator_call_cap')
         # The authorization pays for the model and effort it was approved for, and nothing else.
         _require(budget is None or budget.get('adjudicator') == {'model': model, 'reasoningEffort': effort},
                  'budget_authorization_binding_changed')
-        # The request limits come from the bound budget's approved tier unless a test pins them.
+        # The request limits are the bound budget's approved tier; an unbound run (cache replay only)
+        # always uses the default tier, which is what its receipt must then record.
         self.budget = budget
         self.limits = limits.validate_request_limits(
-            request_limits if request_limits is not None
-            else budget['requestLimits'] if budget is not None else limits.DEFAULT_REQUEST_LIMITS)
+            budget['requestLimits'] if budget is not None else limits.DEFAULT_REQUEST_LIMITS)
         if caller is None:
             # A new paid request dispatches only through the bound budget's ledger; with no budget the
             # default caller refuses before any transport exists, so a cache miss cannot spend.
@@ -1044,8 +1044,10 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
 
 
 def _adjudicator_runtime(adjudicator: Any, budget: dict[str, Any] | None) -> None:
-    """A v2 adjudicator identity names a route the environment launcher could select and a supported
-    request tier, under a budget the tier that budget approved; each cached request is then held to both
+    """A v2 adjudicator identity names a route the environment launcher could select and the one tier
+    the run could have used: the tier its budget approved, or the default tier of an unbound run. The
+    cache shows a request's completion cap and service tier but not its input cap or wall time, so the
+    whole tier is held to the value the run had to use; each cached request is then held to both
     (``_verify_model_verdict``), so a receipt cannot claim another Project or tier than its cache was
     asked under."""
     from scripts import sermon_openai_runtime as runtime
@@ -1059,8 +1061,10 @@ def _adjudicator_runtime(adjudicator: Any, budget: dict[str, Any] | None) -> Non
         tier = limits.validate_request_limits(adjudicator.get('requestLimits'))
     except ValueError as exc:
         raise SourceAdjudicationError('receipt_adjudicator_runtime') from exc
-    # A budget exists only under the launcher and pays for the tier it approved, nothing else.
-    _require(budget is None or (route is not None and tier == budget['requestLimits']), 'receipt_adjudicator_runtime')
+    # A budget exists only under the launcher and pays for the tier it approved, nothing else; without
+    # one, SolAdjudicator uses the default tier.
+    _require(tier == (limits.DEFAULT_REQUEST_LIMITS if budget is None else budget['requestLimits'])
+             and (budget is None or route is not None), 'receipt_adjudicator_runtime')
 
 
 def _verify_model_verdict(row: dict[str, Any], adjudicator: dict[str, Any], cache: Path,
