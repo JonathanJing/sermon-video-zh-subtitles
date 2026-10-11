@@ -132,6 +132,29 @@ class RunnerTests(unittest.TestCase):
             self.assertEqual(ab.run(args), 2)
         self.assertEqual(measured.call_count, 1)
 
+    def test_other_stage_unknown_preflight_and_cached_refusal_stop_nonzero_without_calls(self):
+        ab.atomic(self.root/'cases.json', [self.case])
+        ab.atomic(self.root/'authority.json', self.bound)
+        self.ledger.reserve('other-stage.B', {'stage': 'other'}, {'costMicrousd': 123})
+        args = SimpleNamespace(out=str(self.root), mode='live', stage=self.case['stageId'],
+                               timeout=1, authorization_note='user test authority')
+        original = ab.measured_attempt
+        dispatcher = Mock(side_effect=AssertionError('no network'))
+        def offline_dispatch(*args, **kwargs):
+            return original(*args, **kwargs, dispatcher=dispatcher)
+        with patch.object(ab, 'measured_attempt', side_effect=offline_dispatch), patch('builtins.print'):
+            self.assertEqual(ab.run(args), 2)
+            self.assertEqual(ab.run(args), 2)  # Cached preflight refusal remains terminal.
+        summary = ab.read(self.root/'live'/(self.case['stageId']+'-summary.json'))
+        self.assertTrue(summary['stoppedOnProviderOrUnknown'])
+        self.assertEqual(summary['stopReasonCode'], 'experiment_outcome_requires_reconciliation')
+        receipt = ab.read(self.root/'live'/self.case['stageId']/self.case['caseId']/'B'/'receipt.json')
+        self.assertEqual(receipt['status'], 'preflight_blocked')
+        self.assertEqual(receipt['reasonCode'], 'experiment_outcome_requires_reconciliation')
+        self.assertEqual(self.ledger.summary()['networkAttempts'], 1)
+        self.assertEqual(self.ledger.summary()['estimatedOrReservedMicrousd'], 123)
+        dispatcher.assert_not_called()
+
     def test_budget_cannot_be_overbooked_or_changed(self):
         tiny = {**self.bound, 'maxCostMicrousd': 10}
         ledger = ab.Ledger(self.root, tiny)

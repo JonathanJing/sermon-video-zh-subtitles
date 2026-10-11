@@ -512,7 +512,10 @@ def measured_attempt(case, arm, *, mode, directory, ledger=None, dispatcher=disp
                         "codeDependencySha256": ledger.authority["codeDependencySha256"]}
             require(all(previous.get(key) == value for key, value in identity.items())
                     and previous.get("backend") == kind, "cached_receipt_identity_changed")
-            ledger.verify_restored(case["caseId"] + "." + arm, identity, bounds, previous)
+            # A preflight refusal never settled a network operation; restoring
+            # that refusal must still stop the run, without inventing settlement.
+            if previous["status"] != "preflight_blocked":
+                ledger.verify_restored(case["caseId"] + "." + arm, identity, bounds, previous)
         return {**previous, "restored": True}
     started = time.monotonic()
     row = {"schemaVersion": VERSION, "caseId": case["caseId"], "stageId": case["stageId"],
@@ -572,7 +575,12 @@ def measured_attempt(case, arm, *, mode, directory, ledger=None, dispatcher=disp
     try:
         reserved, prior = ledger.reserve(operation, identity, bounds)
     except ValueError as error:
-        row.update(status="preflight_blocked", reasonCode="budget_unavailable_or_identity_changed")
+        reason = str(error)
+        known = {"experiment_outcome_requires_reconciliation", "experiment_budget_unavailable",
+                 "experiment_operation_identity_changed", "experiment_observed_bound_exceeded",
+                 "previous_ledger_sealed"}
+        row.update(status="preflight_blocked", reasonCode=reason if reason in known
+                   else "budget_unavailable_or_identity_changed")
         return finish()
     if not reserved:
         # Missing durable receipt cannot turn an old reservation into another request.
@@ -723,7 +731,7 @@ def run(args):
                           bound.get("previousBudget", {}).get("root"))
         require(current==bound,"authority_or_code_changed")
         ledger=Ledger(root,bound)
-    rows=[]; stopped=False
+    rows=[]; stopped=False; stop_reason=None
     stage_cases = [c for c in cases if c["stageId"] == args.stage]
     random.Random(20261006).shuffle(stage_cases)
     for index, case in enumerate(stage_cases):
@@ -736,13 +744,14 @@ def run(args):
             print(json.dumps({"stage":args.stage,"caseId":case["caseId"],"arm":arm,
                               "status":row["status"],"effectiveDecisionMs":row["timings"]["effectiveDecisionMs"],
                               "restored":row["restored"]}),flush=True)
-            if row["status"] in {"outcome_unknown", "budget_bound_exceeded", "blocked_prior_operation"} or row["status"]=="http_error" and row.get("httpStatus") in {400,401,403,404,429}:
+            if row["status"] in {"outcome_unknown", "budget_bound_exceeded", "blocked_prior_operation", "preflight_blocked"} or row["status"]=="http_error" and row.get("httpStatus") in {400,401,403,404,429}:
                 stopped=True
+                stop_reason=row.get("reasonCode", row["status"])
                 break
         if stopped:
             break
     summary=summarize([c for c in cases if c["stageId"]==args.stage],rows)
-    summary.update(stage=args.stage,stoppedOnProviderOrUnknown=stopped,
+    summary.update(stage=args.stage,stoppedOnProviderOrUnknown=stopped, stopReasonCode=stop_reason,
                    budget=ledger.summary() if ledger else None)
     atomic(root/args.mode/(args.stage+"-summary.json"),summary)
     return 2 if stopped else 0
