@@ -76,13 +76,16 @@ ACTIONS = {
     # AGENTS.md: a Sol issue or uncertainty also starts a new repair revision.
     "review_uncertainty": "repair_translation",
     "review_issue_open": "repair_translation",
-    "language_plugin_failed": "escalate_engineering",
+    # A deterministic language check names its own finding (an over-long utterance,
+    # a forbidden register form); one repair carries it, a repeat goes to engineering.
+    "language_plugin_failed": "repair_translation",
 }
 # What a repeated failure becomes once a repair made no progress on it.
 REPEATED_FAILURE_ACTIONS = {
     "quotation_attribution_error": "request_source_review",  # points at the source, not the wording
     "review_uncertainty": "request_human_review",
     "review_issue_open": "request_human_review",
+    "language_plugin_failed": "escalate_engineering",
 }
 INSTRUCTIONS = {
     "meaning_omission": "Restore every meaning the English source states; the prior translation omitted some.",
@@ -94,6 +97,9 @@ INSTRUCTIONS = {
     "meaning_shift": "Restore the meaning of the English source; the prior translation shifted it.",
     "review_uncertainty": "Resolve the reviewer's stated uncertainty from the English source and its context.",
     "review_issue_open": "Resolve the reviewer's open issue from the English source.",
+    "language_plugin_failed": ("Fix the deterministic language check finding below without changing meaning: "
+                               "keep each utterance at most 180 characters (split at natural clause boundaries), "
+                               "use the policy register, and keep every number, name and reference the English says."),
 }
 SYSTEMIC_MINIMUM_GROUPS = 3
 SYSTEMIC_FRACTION = 0.01
@@ -134,7 +140,8 @@ def classify_review(semantic: dict) -> tuple[list[str], str]:
 # Umbrella codes lump unrelated defects (one group a negation, another a number,
 # a third a name). They stop dispatch only when consecutive, never by scattered
 # count at the end of a round.
-UMBRELLA_CODES = frozenset({"negation_number_name_error", "review_issue_open", "review_uncertainty"})
+UMBRELLA_CODES = frozenset({"negation_number_name_error", "review_issue_open", "review_uncertainty",
+                            "language_plugin_failed"})
 # Repository waiver policy: at most four repairs per English source unit.
 MAX_REPAIRS_PER_SOURCE_UNIT = 4
 
@@ -445,7 +452,7 @@ def decide(failure: dict, history: list[dict], value: dict, *, noted: bool = Fal
     if current in seen:
         repeated = {REPEATED_FAILURE_ACTIONS[code] for code in failure["failureCodes"]
                     if code in REPEATED_FAILURE_ACTIONS}
-        for action in ("request_source_review", "request_human_review"):
+        for action in ("request_source_review", "request_human_review", "escalate_engineering"):
             if action in repeated:
                 if action == "request_source_review" and noted \
                         and not any("source_meaning_noted" in row["decisions"] for row in history):
@@ -472,8 +479,10 @@ def repair_row(failure: dict, meaning_notes: dict | None = None) -> dict:
     if noted:
         # The frozen English of these units is what was said: translate it literally, add no meaning.
         instruction += " " + noted
-    instruction += (" Machine-written repair instruction from a failed independent review; "
-                    "check every point against the English source. Reviewer finding: " + reason)
+    finding = ("Language check finding: " if "language_plugin_failed" in failure["failureCodes"]
+               else "Reviewer finding: ")
+    instruction += (" Machine-written repair instruction from a failed machine check; "
+                    "check every point against the English source. " + finding + reason)
     return {"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
             "failedRole": "reviewer", "failedCacheSha256": failure["reviewerCacheSha256"],
             "failureReason": reason, "instruction": instruction[:2000]}
