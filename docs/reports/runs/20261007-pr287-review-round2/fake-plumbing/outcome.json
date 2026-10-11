@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "agent-api-trials all",
+  "status": "succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-10-08T05:34:03.229106+00:00",
+  "endedAt": "2026-10-08T05:34:03.267346+00:00"
+}

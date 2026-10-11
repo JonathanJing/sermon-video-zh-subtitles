@@ -1,0 +1,604 @@
+{
+  "rows": [
+    {
+      "case": "f01-plugin-identity",
+      "arm": "raw",
+      "sessionId": "sess_fake_1",
+      "status": "completed",
+      "toolCalls": 2,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f01-plugin-identity",
+      "arm": "timeline",
+      "sessionId": "sess_fake_2",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f02-preempt-authorization",
+      "arm": "raw",
+      "sessionId": "sess_fake_3",
+      "status": "completed",
+      "toolCalls": 2,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.0,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f02-preempt-authorization",
+      "arm": "timeline",
+      "sessionId": "sess_fake_4",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f03-relative-out",
+      "arm": "raw",
+      "sessionId": "sess_fake_5",
+      "status": "completed",
+      "toolCalls": 2,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.0,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": false,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f03-relative-out",
+      "arm": "timeline",
+      "sessionId": "sess_fake_6",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": false,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f04-missing-terminology",
+      "arm": "raw",
+      "sessionId": "sess_fake_7",
+      "status": "completed",
+      "toolCalls": 2,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.0,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f04-missing-terminology",
+      "arm": "timeline",
+      "sessionId": "sess_fake_8",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f05-asr-symlink-mount",
+      "arm": "raw",
+      "sessionId": "sess_fake_9",
+      "status": "completed",
+      "toolCalls": 2,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f05-asr-symlink-mount",
+      "arm": "timeline",
+      "sessionId": "sess_fake_10",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f06-zero-inference-seconds",
+      "arm": "raw",
+      "sessionId": "sess_fake_11",
+      "status": "completed",
+      "toolCalls": 2,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.0,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "abstainedCorrectly": false,
+        "categoryOk": false,
+        "confidence": 0.1,
+        "lowConfidence": true,
+        "missingEvidenceAcknowledged": true,
+        "uncertaintyAcknowledged": false,
+        "validCitations": 0,
+        "invalidCitations": []
+      }
+    },
+    {
+      "case": "f06-zero-inference-seconds",
+      "arm": "timeline",
+      "sessionId": "sess_fake_12",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "abstainedCorrectly": false,
+        "categoryOk": false,
+        "confidence": 0.1,
+        "lowConfidence": true,
+        "missingEvidenceAcknowledged": true,
+        "uncertaintyAcknowledged": false,
+        "validCitations": 0,
+        "invalidCitations": []
+      }
+    },
+    {
+      "case": "f07-services-not-yet-restored",
+      "arm": "raw",
+      "sessionId": "sess_fake_13",
+      "status": "completed",
+      "toolCalls": 2,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.0,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f07-services-not-yet-restored",
+      "arm": "timeline",
+      "sessionId": "sess_fake_14",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f08-monitor-bad-substitution",
+      "arm": "raw",
+      "sessionId": "sess_fake_15",
+      "status": "completed",
+      "toolCalls": 2,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.0,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    },
+    {
+      "case": "f08-monitor-bad-substitution",
+      "arm": "timeline",
+      "sessionId": "sess_fake_16",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "category": "other",
+        "confidence": 0.1,
+        "evidence": [],
+        "fix": "none",
+        "root_cause": "fake plumbing",
+        "summary_zh": "假数据，仅验证接线。",
+        "unknowns": [
+          "fake backend"
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": false,
+        "fixOk": false,
+        "validCitations": 0,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.1,
+        "citedFiles": []
+      }
+    }
+  ],
+  "byArm": {
+    "raw": {
+      "cases": 8,
+      "correct": 0,
+      "fixOk": 0,
+      "meanToolCalls": 2.0,
+      "meanSeconds": 0.0,
+      "inputTokens": 8000,
+      "outputTokens": 800,
+      "wrong": [
+        "f01-plugin-identity",
+        "f02-preempt-authorization",
+        "f03-relative-out",
+        "f04-missing-terminology",
+        "f05-asr-symlink-mount",
+        "f06-zero-inference-seconds",
+        "f07-services-not-yet-restored",
+        "f08-monitor-bad-substitution"
+      ]
+    },
+    "timeline": {
+      "cases": 8,
+      "correct": 0,
+      "fixOk": 0,
+      "meanToolCalls": 3.0,
+      "meanSeconds": 0.0,
+      "inputTokens": 8000,
+      "outputTokens": 800,
+      "wrong": [
+        "f01-plugin-identity",
+        "f02-preempt-authorization",
+        "f03-relative-out",
+        "f04-missing-terminology",
+        "f05-asr-symlink-mount",
+        "f06-zero-inference-seconds",
+        "f07-services-not-yet-restored",
+        "f08-monitor-bad-substitution"
+      ]
+    }
+  }
+}
