@@ -83,7 +83,7 @@ class ClaudeLayer2Transport:
         self.model, self.effort = model, effort
         self.timeout_seconds = timeout_seconds
         self.receipts_dir = Path(receipts_dir) if receipts_dir is not None else None
-        self.env = child_environment()
+        self.env = {**child_environment(), 'DISABLE_AUTOUPDATER': '1'}
         status = json.loads(subprocess.check_output([str(self.cli_path), 'auth', 'status'],
                                                     env=self.env, text=True, timeout=30))
         method = str(status.get('authMethod', ''))
@@ -103,6 +103,7 @@ class ClaudeLayer2Transport:
             'singleAttemptEnvironment': {'CLAUDE_CODE_MAX_RETRIES': '0',
                 'MAX_STRUCTURED_OUTPUT_RETRIES': '1'},
             'outputCapSource': 'payload.max_completion_tokens',
+            'disableAutoUpdater': True, 'maxStructuredOutputTurns': 2,
             'outputSchemaSha256': {role: _hash(output_schema(role)) for role in ('translator', 'reviewer')},
         }
 
@@ -166,6 +167,9 @@ class ClaudeLayer2Transport:
             if process.returncode or result.get('is_error') is not False or result.get('subtype') != 'success' \
                     or result.get('permission_denials') or content is None:
                 raise RuntimeError('claude_language_terminal_failure_inspect_receipt')
+            # One task turn plus the StructuredOutput finalizer; retries add turns.
+            if type(result.get('num_turns')) is not int or not 1 <= result['num_turns'] <= 2:
+                raise RuntimeError('claude_language_unexpected_turn_count')
             if set(model_usage) != {self.model}:
                 raise RuntimeError('claude_language_model_identity_missing')
             jsonschema.validate(content, output_schema(role))
