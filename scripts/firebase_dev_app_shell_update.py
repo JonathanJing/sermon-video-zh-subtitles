@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Update only the App shell of the isolated Firebase Dev site.
 
-The shell is the feature JavaScript/MJS set plus the shell static files that the
-Production UI plan marks as changed. index.html and style.css are derived from the
+The shell is the JavaScript/MJS and static file set that the Production UI
+plan marks as changed. Baseline modules outside that plan stay in Dev. index.html and style.css are derived from the
 feature shell with the same Dev-only additions used by the v3 alignment (noindex,
 DEV notice, dev label script, dev notice CSS). Dev data, Dev config, Dev-only
 modules and all pages stay byte-identical. The output is an alignment-v1 candidate,
@@ -75,7 +75,7 @@ def shell_names(feature: dict[str, Path], plan: dict) -> tuple[set[str], set[str
     changed = {path.lstrip("/") for path in plan["changedPaths"]}
     if not changed <= set(feature):
         raise ValueError(f"Plan names files missing from feature: {sorted(changed - set(feature))}")
-    code = {name for name in feature if name.endswith((".js", ".mjs"))}
+    code = {name for name in changed if name.endswith((".js", ".mjs"))}
     static = {name for name in changed if Path(name).suffix in SHELL_SUFFIXES - {".js", ".mjs", ".html"}}
     replaced = (code | static) - DERIVED - PRESERVED
     return replaced, changed & DERIVED
@@ -154,7 +154,11 @@ def prepare(base: Path, feature_public: Path, plan_path: Path | None, out: Path)
         if page_id != dev.validate_published_week(base_public)[0]:
             raise ValueError("Default Dev sample changed")
         dev.old_dev.verify_dev_poc_assets(public)
-        dry.feature_parity(public, feature_public)
+        # Only the source-bound plan overlay is a feature update. Production
+        # baseline modules outside it may intentionally differ from Dev.
+        for name in replaced:
+            if dev.digest(public / name) != plan["sourceFiles"][name]:
+                raise ValueError(f"Staged app-shell file differs from plan: {name}")
         before = {item["path"]: item for item in base_report["files"]}
         after = {item["path"]: item for item in dev.inventory(public)}
         if set(before) - set(after):
