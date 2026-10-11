@@ -241,12 +241,32 @@ class ScoringTests(unittest.TestCase):
         guess = {'category': 'other', 'root_cause': 'timer bug', 'evidence': [], 'fix': '', 'confidence': 0.9}
         self.assertFalse(trials.score_diagnosis(guess, expected, evidence)['correct'])
         self.assertFalse(trials.score_diagnosis({**guess, 'confidence': 0.3}, expected, evidence)['correct'])
-        abstain = {**guess, 'category': 'insufficient_evidence', 'confidence': 0.2, 'unknowns': ['no timer source']}
+        abstain = {**guess, 'category': 'insufficient_evidence', 'root_cause': trials.ABSTENTION_CAUSE,
+                   'confidence': 0.2, 'unknowns': ['no timer source']}
         self.assertTrue(trials.score_diagnosis(abstain, expected, evidence)['correct'])
         # The category alone is not an abstention: confidence stays high or no open question is named.
         self.assertFalse(trials.score_diagnosis({**abstain, 'confidence': 0.9}, expected, evidence)['correct'])
         self.assertFalse(trials.score_diagnosis({**abstain, 'unknowns': []}, expected, evidence)['correct'])
         self.assertFalse(trials.score_diagnosis({**abstain, 'confidence': -99}, expected, evidence)['correct'])
+
+    def test_abstention_rejects_speculative_cause_despite_low_confidence_and_unknowns(self):
+        expected = self.cases['f06-zero-inference-seconds']
+        evidence = trials.CASES / 'f06-zero-inference-seconds/evidence'
+        report = {'category': 'insufficient_evidence', 'root_cause': trials.ABSTENTION_CAUSE,
+                  'confidence': 0.2, 'unknowns': ['Missing timer implementation and inference trace'],
+                  'evidence': [], 'fix': 'inspect the timer source'}
+        self.assertTrue(trials.score_diagnosis(report, expected, evidence)['correct'])
+        for cause in ('timer bug', '', 'unknown',
+                      trials.ABSTENTION_CAUSE + ' The root cause is a timer bug.'):
+            with self.subTest(cause=cause):
+                score = trials.score_diagnosis({**report, 'root_cause': cause}, expected, evidence)
+                self.assertFalse(score['correct'])
+                self.assertFalse(score['causeUndetermined'])
+        for patch in ({'confidence': False}, {'unknowns': 'no timer source'}, {'unknowns': [None]},
+                      {'evidence': [{'file': 'fake.log', 'quote': 'timer bug confirmed'}]}):
+            with self.subTest(patch=patch):
+                self.assertFalse(trials.score_diagnosis({**report, **patch}, expected, evidence)['correct'])
+        self.assertIn(trials.ABSTENTION_CAUSE, trials.DIAGNOSE_INSTRUCTIONS)
 
     def test_citation_paths_drop_only_a_leading_dot_slash(self):
         evidence = trials.CASES / 'f06-zero-inference-seconds/evidence'

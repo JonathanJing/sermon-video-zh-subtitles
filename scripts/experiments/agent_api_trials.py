@@ -735,13 +735,18 @@ def preflight_check(plan_root, name, arguments):
 
 # ---------------------------------------------------------------- prompts
 
-DIAGNOSE_INSTRUCTIONS = """You are a read-only failure investigator for a sermon subtitle/dubbing pipeline
+ABSTENTION_CAUSE = "The cause cannot be determined from the supplied evidence."
+
+DIAGNOSE_INSTRUCTIONS = f"""You are a read-only failure investigator for a sermon subtitle/dubbing pipeline
 (Mac controller, DGX Spark for TTS/ASR, OpenAI and Codex CLI for translation).
 You receive the redacted evidence of one run or incident. Investigate only with the tools.
 Rules:
-- Cite evidence: every claim in root_cause must be backed by a quoted line from a file.
+- Cite evidence: every asserted causal claim in root_cause must be backed by a quoted line from a file.
 - Prefer the explanation the evidence proves over a plausible guess. If the evidence cannot prove a
   cause, choose category insufficient_evidence, keep confidence below 0.5, and list what is missing.
+  In that case root_cause must be exactly "{ABSTENTION_CAUSE}". Do not append a plausible cause.
+  Put observed facts in evidence with verbatim citations and missing causal evidence in unknowns.
+  A reported symptom alone does not establish its cause.
 - If the evidence shows nothing actually failed, choose not_a_failure and explain the sequence.
 - The fix is a recommendation only; you cannot change anything.
 - Write summary_zh in Simplified Chinese, two sentences at most.
@@ -806,13 +811,21 @@ def score_diagnosis(report, expected, evidence):
     text = _text(report.get('root_cause')) + quotes
     category_ok = report.get('category') in [expected['category'], *expected.get('acceptableCategories', [])]
     if expected.get('abstain'):
-        # Abstaining means saying so: the category, low confidence, and the open questions named.
+        # A deterministic abstention contract avoids crediting a speculative
+        # causal claim merely because it is paired with low confidence/unknowns.
         confidence = report.get('confidence')
+        cause_undetermined = report.get('root_cause') == ABSTENTION_CAUSE
+        unknowns = report.get('unknowns')
         abstained = (report.get('category') == 'insufficient_evidence'
-                     and isinstance(confidence, (int, float)) and 0 <= confidence < 0.5
-                     and bool([u for u in report.get('unknowns') or [] if str(u).strip()]))
+                     and isinstance(confidence, (int, float)) and not isinstance(confidence, bool)
+                     and math.isfinite(confidence) and 0 <= confidence < 0.5
+                     and cause_undetermined and not invalid
+                     and isinstance(unknowns, list) and bool(unknowns)
+                     and all(isinstance(u, str) and u.strip() for u in unknowns))
         return {'submitted': True, 'correct': abstained, 'abstainedCorrectly': abstained,
                 'categoryOk': category_ok, 'confidence': report.get('confidence'),
+                'causeUndetermined': cause_undetermined,
+                'validCitations': len(valid), 'invalidCitations': invalid,
                 'fixOk': _groups_match(_text(report.get('fix')), expected.get('fixKeywords', []))}
     cause_ok = _groups_match(text, expected['causeKeywords'])
     # At least one cause term must come from a verified quote, so an unrelated real quote cannot carry the cause.
@@ -1606,8 +1619,8 @@ def _scorer_identity(stage):
     tool_definitions = [FILE_TOOLS, TIMELINE_TOOL, PREFLIGHT_TOOLS, MAX_READ_CHARS]
     timeline_patterns = [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern]
     constants = {'timeline': timeline_patterns,
-                 'diagnose': [*tool_definitions, *timeline_patterns, CATEGORIES, SCHEMA_TYPES],
-                 'refute': [*tool_definitions, *timeline_patterns, CATEGORIES, SCHEMA_TYPES],
+                 'diagnose': [*tool_definitions, *timeline_patterns, CATEGORIES, SCHEMA_TYPES, ABSTENTION_CAUSE],
+                 'refute': [*tool_definitions, *timeline_patterns, CATEGORIES, SCHEMA_TYPES, ABSTENTION_CAUSE],
                  'preflight': [*tool_definitions, ARGUMENT_FREE_TERMS, CHECK_VERDICT, SCHEMA_TYPES, CHECK_INPUTS],
                  'risk': [TIERS, DECISION_QUESTIONS]}[stage]
     # The stage method assembles the payload text and the projection a later stage sees, so it is bound too.
