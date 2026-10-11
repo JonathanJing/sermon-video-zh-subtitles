@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "spark-diagnostic-audio-preflight-v1",
+  "status": "ready_for_explicit_dispatch",
+  "targetLocale": "zh-Hans",
+  "sourceUnits": 39,
+  "groups": 13,
+  "sourceMediaSha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+  "sourceWindow": {
+    "startSeconds": 60.0,
+    "endSeconds": 240.0
+  },
+  "fixtureSha256": "8c192b7fb13d6b681dc18fd9785a949bbe143d0378f5ec096c6f64e7e2d5d201",
+  "candidateFileSha256": "f7adeb8c28a5fced3c7b6a94170122cdf45bd79cac78d701ed1dbeb052e46d55",
+  "evidenceFileSha256": "6d989b14353957d8ca3420aa97a16ee238cbf4ab5f63e02384fa90faeeafc1bc",
+  "languageReceiptSha256": "910c598cc7fad5e0bd2b735c08351b6f96f0d483ae8526d255921b0ed237cf21",
+  "sourcePackageJsonSha256": "bb2c522b63e273d76ca45706e47b541b690a24b716d3c392cdbacfacdccba7e9",
+  "anchorManifestSha256": "654595456c38c3356d1e841a71ed7a83ccca7cd54be9eb4273d67d0199c76a65",
+  "checkpointSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+  "speakerCapabilityStatus": "human_reviewed",
+  "modelLanguage": "Chinese",
+  "ttsReplicas": 8,
+  "ttsBatchSize": 8,
+  "cpuWorkers": 4,
+  "backAsrReplicas": 1,
+  "backAsrBatchSize": 8,
+  "sparkSessionRequiredForExecution": true,
+  "realModelCalls": 0,
+  "productionEligible": false,
+  "humanApproval": false,
+  "releaseEligible": false
+}

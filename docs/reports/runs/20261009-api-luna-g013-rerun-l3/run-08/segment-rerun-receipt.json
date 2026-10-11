@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "api-luna-diagnostic-layer2-rerun-summary-v1",
+  "status": "diagnostic_candidate_admitted_human_pending",
+  "targetLocale": "zh-Hans",
+  "sourceUnits": 39,
+  "groups": 13,
+  "repairedGroup": "fresh-g013",
+  "repairedSourceUnitIds": [
+    "fresh-diagnostic-u037",
+    "fresh-diagnostic-u038",
+    "fresh-diagnostic-u039"
+  ],
+  "semanticReview": "pass",
+  "languagePlugin": "pass",
+  "requiredArabicDigitSurface": "4_preserved",
+  "newApiRequests": 2,
+  "newReservedMicrousd": 75736,
+  "historicalReservedMicrousd": 956221,
+  "combinedReservedMicrousd": 1031957,
+  "budgetHardLimitMicrousd": 40000000,
+  "reusedCompletedGroups": 12,
+  "reusedPriorModelResponses": 24,
+  "candidateSha256": "b27b461dbb062f709602e04d75434e84a9a801701e233f70b4f5a80e55af1d16",
+  "candidateAdmission": "diagnostic_only",
+  "simulationOnly": true,
+  "productionEligible": false,
+  "humanApproval": false,
+  "releaseEligible": false
+}

@@ -1,0 +1,463 @@
+{
+  "schemaVersion": "sermon-workflow-accounting-v3",
+  "generatedAt": "2026-10-09T01:37:47.526789+00:00",
+  "runs": [
+    {
+      "runId": "61f384e39f5149f2a26b7b05c619a166",
+      "status": "failed",
+      "workflow": "codex_layer2_diagnostic_test",
+      "startedAt": "2026-10-09T01:37:47.450674+00:00",
+      "metadata": {
+        "targetLocale": "zh-Hans"
+      },
+      "workloads": [
+        {
+          "stage": "layer2.rule_preflight",
+          "metrics": {
+            "ruleBundleSha256": "db2cef472e66e59f19189aa567ac9376771796162eb2b5c66305dec6713b4ed2",
+            "humanApproval": false
+          }
+        }
+      ],
+      "diagnostics": [
+        {
+          "runId": "61f384e39f5149f2a26b7b05c619a166",
+          "workflowId": "887e56b96bb049419c31440b361b444c",
+          "stage": "layer2.run_admission.zh-Hans",
+          "spanId": "ab14ac6eb61b4d8f870bcd6abac7affa",
+          "attemptId": "f6d37eb02bc240dd8779a033eea87e4d",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-09T01:37:47.522669+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.027314,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 872,
+              "function": "_run_prepared_groups"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 406,
+              "function": "validate_partial_repair_brief"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 106,
+              "function": "require"
+            }
+          ]
+        },
+        {
+          "runId": "61f384e39f5149f2a26b7b05c619a166",
+          "workflowId": "887e56b96bb049419c31440b361b444c",
+          "stage": "codex_layer2_diagnostic_test",
+          "spanId": "8cb65f2ddead4ccbb84d72ca213adb4d",
+          "attemptId": "195f47ab05b244b29a110cde97b25b0d",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-09T01:37:47.523818+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.029167,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 591,
+              "function": "accounting_session"
+            },
+            {
+              "file": "scripts/run_codex_layer2_test.py",
+              "line": 166,
+              "function": "run_diagnostic_test"
+            },
+            {
+              "file": "scripts/codex_layer2_diagnostic.py",
+              "line": 240,
+              "function": "run_chain"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 872,
+              "function": "_run_prepared_groups"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 406,
+              "function": "validate_partial_repair_brief"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 106,
+              "function": "require"
+            }
+          ]
+        },
+        {
+          "runId": "61f384e39f5149f2a26b7b05c619a166",
+          "workflowId": "887e56b96bb049419c31440b361b444c",
+          "stage": null,
+          "spanId": null,
+          "attemptId": null,
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-09T01:37:47.525172+00:00",
+          "event": "workflow_finished",
+          "code": "workflow_finished",
+          "level": "ERROR"
+        },
+        {
+          "runId": "61f384e39f5149f2a26b7b05c619a166",
+          "workflowId": "887e56b96bb049419c31440b361b444c",
+          "stage": null,
+          "spanId": null,
+          "attemptId": null,
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-09T01:37:47.525430+00:00",
+          "event": "run_finished",
+          "code": "run_finished",
+          "level": "ERROR"
+        }
+      ],
+      "completedAt": "2026-10-09T01:37:47.525430+00:00",
+      "wallSeconds": 0.074756,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "apiAttempts": 0,
+      "usageReceipts": 0,
+      "usageReceiptCoverage": null,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "workflows": [
+        {
+          "workflowId": "887e56b96bb049419c31440b361b444c",
+          "runId": "61f384e39f5149f2a26b7b05c619a166",
+          "workflow": "codex_layer2_diagnostic_test",
+          "parentWorkflowId": null,
+          "status": "failed",
+          "startedAt": "2026-10-09T01:37:47.492231+00:00",
+          "completedAt": "2026-10-09T01:37:47.525172+00:00",
+          "metadata": {
+            "targetLocale": "zh-Hans"
+          },
+          "executionIdentity": {
+            "gitCommit": "1cec688a9320dcf068d1b527fb85e0861f22aa08",
+            "trackedWorkingTreeDirty": true,
+            "loadedProjectCodeSha256": {
+              "scripts/run_codex_layer2_test.py": "bfa4af820703a81b10ea5044edcaf2d4d0d51b0a0280401552fd398021097ea4",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/sermon_clock_evidence.py": "72228a1b1babd9196aee394d696a17cdbffbc9a05dc339b28ffe51c0a5d6e465",
+              "scripts/sermon_dispatch_observation.py": "95c57dd365394bb7e7fa668f67fc0445ec3d31d8a8197dc07586497aa7e204b2",
+              "scripts/sermon_log_contract.py": "fd3829cc86c38d3a576a2b1ec415a4546943f8f8dc540e6b46c666f239bd7a05",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_workflow_jobs.py": "60c12804264b445b67a5f9ffdd20d5fcef4e7f677d1ca0e8c7662d73628b24aa",
+              "scripts/sermon_release_workflow.py": "bdcdf7d9d2237304b114757f060681eb5ee48fc879618238bc305d60e0f705b6",
+              "scripts/sermon_log_outbox.py": "45e037f7e2541197d9423f9d37a05a7e89bdeb8d6c5fecbd99da6fccfe23be95",
+              "scripts/sermon_log_profile.py": "f3fda90bd257a628bca8554601800d01b3b62a81ba2196a2b93384e1725af9ed",
+              "scripts/sermon_accounting.py": "b6b626eb2c6c810d1377168d86b6d7186226b720251c1e426c9146810c00fadb",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/machine_quality_waiver.py": "fa528645eff8d219faedb5558dba698823f8758b2d2cc10d41a0b73213ed9785",
+              "scripts/machine_repair_ledger.py": "bb4bd1691196b93c007e391cf6f0b205a20ad2376a464bc3ca71060abdf0a8c0",
+              "scripts/machine_quality_release_basis.py": "b0d0af5f22eb68d80ac014a638dc31af116e521fd0fe99de3044d36a4bd30b71",
+              "scripts/sermon_sentence_interpretation.py": "62e891ade1cf77eeb528c38a77073dde09ce900dfabc79a81b172e1c96c02ed0",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/target_language_policy.py": "3931a35d5c161c9bb6add35ca9878364d77dc2e190dcb41cccb304ac07489ed0",
+              "scripts/clip_timeline_map.py": "a2c2823a42e0d67b457a9b4509edba147d4aef841c3b083a12444f43bc6d4ef5",
+              "scripts/prepare_target_language_speech_job.py": "e5d3e599bdbe3a6980cbcd7f19dd55749126468e07dc067e005ad0ad43b8af8c",
+              "scripts/build_english_source_package.py": "57292807e8527af7a6321082ccb0c0d2f521063d4cc70d3f6e0a55557383cee6",
+              "scripts/produce_target_language_candidate.py": "380d04d1b7802f980a9900717180019d8f19d9f6c3fb7c62497670dd208fd7e1",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/production_spark_admission.py": "b99ec57f746d4f78b6ab9c4e6f2cbc2742a1ee58057d4ea41506a797101b0c36",
+              "scripts/sermon_pipeline.py": "4ce4254a6f219cd564ce5ded30e12089340317d56369a5175df6cd8c1cc23459",
+              "scripts/target_language_policy_preview.py": "2878e45d80b0896507184d7632fe56ab10a298ad39a6d2f54e6e11436ea2773b",
+              "scripts/target_language_rule_preflight.py": "60310945267ca5deccb64e0d9943b70c91fd5c1ade8c5f05424f356c5969721c",
+              "scripts/migrate_target_language_model_cache.py": "2fd38dd78433a564cdc72b9d3b9cf7379cc04558dd3670aaec92775849fb16b2",
+              "scripts/run_target_language_models.py": "24ee6a7285e99848820ed18e4aefb74e77bba951c1b9a4c60c81e70d61c99378",
+              "scripts/sermon_model_call_observation.py": "355a2aba0d5d76c21c44c97696e01141ed4d8fb7876f285e7eb535f91f899b84",
+              "scripts/sermon_unified/__init__.py": "8613cd2b08729770fa90b406a3e2acdd4ea2d3c106592e101e60ac06b7537e7b",
+              "scripts/sermon_unified/contracts.py": "236faaa5062c1c1c67d04cc3da76cb04f8e573f70fbafb52c25e81a77ff216f8",
+              "scripts/sermon_unified/resources.py": "6e230fd185b180df772905624357021ebcf92a14d6efc35bad688986a6db6d46",
+              "scripts/production_concurrency_profile.py": "ccf8083253a83168a5170b0c39e8d214930e6ad195347f854c2fc6c10e2014d3",
+              "scripts/codex_layer2_resources.py": "b4aa9692b8016f6fc7c0ddee9533a746ded39519bab940e58adb10836f7cca51",
+              "scripts/codex_layer2_transport.py": "03269d022c42e1a36d5b03ff69420a392802581e6dc4f65977dee3f62fac0390",
+              "scripts/outcome_marker.py": "dce37ef9e97f395bffeb35ade7005881312918d1919ef2c0de4f470b725fda6b",
+              "scripts/sermon_review_contracts.py": "71e7fa802fad3cac9788b1163907da3b908d4410777552333d46034754db89f2",
+              "scripts/sermon_diagnostic_context.py": "6af31378cfa0cf353f3a5e4aff519085bd6252a8f86e73570614709cfb890383",
+              "scripts/codex_layer2_diagnostic.py": "2c85b752f580dc368d051ed2685dca04c4b9efbd4e6c6920d7b501c7ad35c35b",
+              "scripts/language_review_plugins/__init__.py": "a9ebaffbd59256031995f10e2f0722f64cf4e4613400a4f8382567271992a00c",
+              "scripts/language_review_plugins/common.py": "bed66c6245610450b27874e39c47eed32fbc757abf94d199fe9d476fdf5d68ea",
+              "scripts/language_review_plugins/diagnostic_structural.py": "e54b4d81c00482693f7eddac750fbe303d76e8af5597adad66757096a23f34e6",
+              "scripts/language_review_plugins/diagnostic_pinned_quotes.py": "5d697286e642e3c85ba8886b081b620604a2ff8db42c312cd0feb8abc6e6b155",
+              "scripts/spark_exclusive_session.py": "743854293e8cfe86ca24ac28a4c77115c1af9e071b581bcb16135a4601c96e71",
+              "scripts/sermon_provider_limits.py": "4decb8094c0344808a58623b6e43c6960342f89948088a6bc9d3495d2587d590",
+              "scripts/openai_layer2_diagnostic_transport.py": "dd2349f2a271f00bb7885494a9fbc3db781db71418ea2d894cca85d4f046e936"
+            },
+            "pythonVersion": "3.13.15",
+            "platform": "darwin",
+            "architecture": "arm64",
+            "scope": "Loaded project Python modules at workflow start; unimported modules and remote code require their own receipts."
+          },
+          "resourcesBefore": {
+            "processPeakRssBytes": 40452096,
+            "processUserCpuSeconds": 0.14582299999999998,
+            "processSystemCpuSeconds": 0.041520999999999995,
+            "finishedChildUserCpuSeconds": 0.027646,
+            "finishedChildSystemCpuSeconds": 0.040188999999999996,
+            "diskFreeBytes": 350671917056,
+            "gpuPeakBytes": null,
+            "scope": "Process-lifetime RSS high-water mark and CPU counters; child CPU includes finished children only. GPU allocation not exposed by this local collector."
+          },
+          "resourcesAfter": {
+            "processPeakRssBytes": 40910848,
+            "processUserCpuSeconds": 0.169683,
+            "processSystemCpuSeconds": 0.048031,
+            "finishedChildUserCpuSeconds": 0.027646,
+            "finishedChildSystemCpuSeconds": 0.040188999999999996,
+            "diskFreeBytes": 350671896576,
+            "gpuPeakBytes": null,
+            "scope": "Process-lifetime RSS high-water mark and CPU counters; child CPU includes finished children only. GPU allocation not exposed by this local collector."
+          },
+          "evidenceBefore": {
+            "schemaVersion": "sermon-workflow-evidence-v1",
+            "workflow": "codex_layer2_diagnostic_test",
+            "observedAt": "2026-10-09T01:37:47.493192+00:00",
+            "evidenceScope": "existing_files_snapshot",
+            "currentRunExecutionProven": false,
+            "artifacts": [],
+            "errors": [],
+            "missingCategories": [
+              "companion_pdf_qa",
+              "context_pack",
+              "generation",
+              "reading",
+              "reading_pdf_qa",
+              "summary",
+              "window_approval"
+            ],
+            "limits": {
+              "maxJsonBytes": 1048576,
+              "maxWeekEntries": 128,
+              "lookup": "fixed_relative_paths_and_sermon_prefix_direct_children_only"
+            },
+            "sourceIdentityClaims": [],
+            "sourceFingerprint": null,
+            "sourceFingerprintMeaning": "digest_of_reported_identity_claims_not_media_verification",
+            "evidenceFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "reportedBlockers": [],
+            "missingCategoryMeaning": "not_found_in_bounded_lookup_not_proof_of_failed_or_required_stage",
+            "status": "evidence_gaps"
+          },
+          "evidenceAfter": {
+            "schemaVersion": "sermon-workflow-evidence-v1",
+            "workflow": "codex_layer2_diagnostic_test",
+            "observedAt": "2026-10-09T01:37:47.524019+00:00",
+            "evidenceScope": "existing_files_snapshot",
+            "currentRunExecutionProven": false,
+            "artifacts": [],
+            "errors": [],
+            "missingCategories": [
+              "companion_pdf_qa",
+              "context_pack",
+              "generation",
+              "reading",
+              "reading_pdf_qa",
+              "summary",
+              "window_approval"
+            ],
+            "limits": {
+              "maxJsonBytes": 1048576,
+              "maxWeekEntries": 128,
+              "lookup": "fixed_relative_paths_and_sermon_prefix_direct_children_only"
+            },
+            "sourceIdentityClaims": [],
+            "sourceFingerprint": null,
+            "sourceFingerprintMeaning": "digest_of_reported_identity_claims_not_media_verification",
+            "evidenceFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "reportedBlockers": [],
+            "missingCategoryMeaning": "not_found_in_bounded_lookup_not_proof_of_failed_or_required_stage",
+            "status": "evidence_gaps"
+          }
+        }
+      ],
+      "sdkCalls": [],
+      "duplicateSdkInvocations": 0,
+      "unpricedSdkInvocations": 0,
+      "overallCostStatus": "recorded_api_only",
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0
+    }
+  ],
+  "stages": [
+    {
+      "runId": "61f384e39f5149f2a26b7b05c619a166",
+      "stage": "layer2.run_admission.zh-Hans",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.027314,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "61f384e39f5149f2a26b7b05c619a166",
+      "stage": "codex_layer2_diagnostic_test",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.029167,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    }
+  ],
+  "ledgerIntegrity": {
+    "status": "readable",
+    "damagedEvents": [],
+    "unattributedCostUnknown": false,
+    "originalBytesPreserved": true
+  },
+  "receiptIntegrity": {
+    "status": "consistent",
+    "conflicts": [],
+    "equivalentDuplicatesIgnored": 0
+  },
+  "unfinishedApiAttempts": [],
+  "unfinishedStages": [],
+  "notes": [
+    "Parent and child elapsed times overlap: do not sum all stages as wall time.",
+    "Known USD is an API list-price estimate, not an invoice or complete project cost.",
+    "Local compute, storage, network and in-conversation Codex costs are not allocated.",
+    "Missing usage/cost remains unknown; caches do not re-bill old responses."
+  ],
+  "modelCallReport": {
+    "schemaVersion": "sermon-model-call-report-v2",
+    "calls": [],
+    "totals": [],
+    "groups": [],
+    "creditUsage": null,
+    "equivalentDuplicatesIgnored": 0,
+    "coverage": {
+      "callCount": 0,
+      "conflictCallCount": 0,
+      "missingOutputTokenCalls": 0
+    }
+  },
+  "stageAttempts": [
+    {
+      "runId": "61f384e39f5149f2a26b7b05c619a166",
+      "workflowId": "887e56b96bb049419c31440b361b444c",
+      "stage": "codex_layer2_diagnostic_test",
+      "spanId": "8cb65f2ddead4ccbb84d72ca213adb4d",
+      "parentSpanId": null,
+      "startedAt": "2026-10-09T01:37:47.494323+00:00",
+      "finishedAt": "2026-10-09T01:37:47.523818+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.029167,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "61f384e39f5149f2a26b7b05c619a166",
+      "workflowId": "887e56b96bb049419c31440b361b444c",
+      "stage": "layer2.run_admission.zh-Hans",
+      "spanId": "ab14ac6eb61b4d8f870bcd6abac7affa",
+      "parentSpanId": "8cb65f2ddead4ccbb84d72ca213adb4d",
+      "startedAt": "2026-10-09T01:37:47.494990+00:00",
+      "finishedAt": "2026-10-09T01:37:47.522669+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.027314,
+      "cacheHit": false,
+      "billing": "local"
+    }
+  ]
+}

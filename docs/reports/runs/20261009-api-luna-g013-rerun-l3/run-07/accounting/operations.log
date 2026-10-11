@@ -1,0 +1,13 @@
+2026-10-09T01:38:34.537547+00:00 INFO run=f18afa5de0ed44d496def6cffd744de9 run_started workflowId=2fed419ac0dc41a0a83c9dded8623710
+2026-10-09T01:38:34.577954+00:00 INFO run=f18afa5de0ed44d496def6cffd744de9 workflow_started workflowId=2fed419ac0dc41a0a83c9dded8623710
+2026-10-09T01:38:34.579874+00:00 INFO run=f18afa5de0ed44d496def6cffd744de9 workflow_evidence workflowId=2fed419ac0dc41a0a83c9dded8623710
+2026-10-09T01:38:34.580218+00:00 INFO run=f18afa5de0ed44d496def6cffd744de9 stage_started workflowId=2fed419ac0dc41a0a83c9dded8623710 stage=codex_layer2_diagnostic_test spanId=008216a794a148dd85d454682205f623 attemptId=532b6fb7dcf94c9dae1743a804311d05
+2026-10-09T01:38:34.580430+00:00 INFO run=f18afa5de0ed44d496def6cffd744de9 workload workflowId=2fed419ac0dc41a0a83c9dded8623710 stage=timing.inline_dispatch_v1 spanId=008216a794a148dd85d454682205f623
+2026-10-09T01:38:34.580904+00:00 INFO run=f18afa5de0ed44d496def6cffd744de9 stage_started workflowId=2fed419ac0dc41a0a83c9dded8623710 stage=layer2.run_admission.zh-Hans spanId=b467e181ccda4ce1bf61fe5bc25fb0d2 attemptId=9393776bad4746a8aca17fed57da6e6a
+2026-10-09T01:38:34.581073+00:00 INFO run=f18afa5de0ed44d496def6cffd744de9 workload workflowId=2fed419ac0dc41a0a83c9dded8623710 stage=timing.inline_dispatch_v1 spanId=b467e181ccda4ce1bf61fe5bc25fb0d2
+2026-10-09T01:38:34.589803+00:00 INFO run=f18afa5de0ed44d496def6cffd744de9 workload workflowId=2fed419ac0dc41a0a83c9dded8623710 stage=layer2.rule_preflight spanId=b467e181ccda4ce1bf61fe5bc25fb0d2
+2026-10-09T01:38:34.604893+00:00 ERROR run=f18afa5de0ed44d496def6cffd744de9 stage_finished workflowId=2fed419ac0dc41a0a83c9dded8623710 stage=layer2.run_admission.zh-Hans spanId=b467e181ccda4ce1bf61fe5bc25fb0d2 attemptId=9393776bad4746a8aca17fed57da6e6a status=failed elapsedSeconds=0.023791 errorType=ValueError at=scripts/run_target_language_models.py:106
+2026-10-09T01:38:34.606332+00:00 ERROR run=f18afa5de0ed44d496def6cffd744de9 stage_finished workflowId=2fed419ac0dc41a0a83c9dded8623710 stage=codex_layer2_diagnostic_test spanId=008216a794a148dd85d454682205f623 attemptId=532b6fb7dcf94c9dae1743a804311d05 status=failed elapsedSeconds=0.025876 errorType=ValueError at=scripts/run_target_language_models.py:106
+2026-10-09T01:38:34.607402+00:00 INFO run=f18afa5de0ed44d496def6cffd744de9 workflow_evidence workflowId=2fed419ac0dc41a0a83c9dded8623710
+2026-10-09T01:38:34.607589+00:00 ERROR run=f18afa5de0ed44d496def6cffd744de9 workflow_finished workflowId=2fed419ac0dc41a0a83c9dded8623710 status=failed
+2026-10-09T01:38:34.607747+00:00 ERROR run=f18afa5de0ed44d496def6cffd744de9 run_finished workflowId=2fed419ac0dc41a0a83c9dded8623710 status=failed

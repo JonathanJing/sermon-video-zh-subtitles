@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "api-luna-single-group-rerun-preflight-v1",
+  "fixtureManifestSha256": "6d3f269936c63c25e7ccd348d17a19410415ad8e6ee2f02e8fc45c31604592f0",
+  "failedGroup": "fresh-g013",
+  "priorRun": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/run-02",
+  "outputDirectory": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/run-06",
+  "budgetConfigDirectory": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/run-06-budget",
+  "budgetConfigSha256": "0a0257e6d408fc9580d9302cf66aa7f0968d7c17bcfcef7c4d1e5c2d46eb3f90",
+  "priorTransportIdentitySha256": "974e886a9633a47a9fd3ad3037dd6aa4d65830dc8887a8dec6a2ea9d3c36b3b7",
+  "historicalReservedMicrousd": 956221,
+  "newApiRequests": 2,
+  "newWorstCaseReservedMicrousd": 72501,
+  "combinedWorstCaseReservedMicrousd": 1028722,
+  "userBudgetCapMicrousd": 40000000,
+  "reusedCompletedGroups": 12,
+  "reusedPriorModelResponses": 24,
+  "timeoutSeconds": 300,
+  "providerAccessTested": false
+}
