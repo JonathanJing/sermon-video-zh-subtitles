@@ -639,5 +639,7 @@
 | squash 进 `dev` | **未完成**：权限分类器拒绝由会话执行 `gh pr merge`，需要用户自己合并 | 本节 |
 | 一次性配置 | fetch refspec 已恢复为全部分支，`worktree prune` 已做；主 checkout 冻在 c344d5d8（detached） | `git config --get-all remote.origin.fetch` |
 | B ASR 规范化 | 完成，PR #342（草稿，base 暂为 #335 分支）；实测 42 → 22、101 → 66，二级 ASR 条件触发复核后不做 | `tests/test_screen_transcript_folding.py` |
-| A 发布入口 | 进行中：外壳闭包从 3 个模块扩到 42 个文件并在 verify／seal 核对与代码库同哈希；浏览器冒烟脚本 `scripts/smoke_published_page.py` 对线上本周页实跑：三语标题、字幕、全文正常，零 console error，`/api/session` 返回 400 `unknown_source`（反馈目录未同步，与复盘一致）；`deploy_feedback.py --v4-sealed` 为 v4 页面生成反馈来源。线上基线不需要新脚本：`prepare_dev_simulated_publication.py baseline --environment production` 已具备，问题是没在发布前当场跑 | A 分支 `codex/w42-release-entry` |
+| A 发布入口 | 完成，PR #343（草稿，base 暂为 #335 分支）：外壳闭包从 24 个模块扩到 42 个文件并在 verify／seal 核对与代码库同哈希；浏览器冒烟 `scripts/smoke_published_page.py` 对线上本周页实跑：三语标题、字幕、全文正常，零 console error，`/api/session` 返回 400 `unknown_source`；`deploy_feedback.py --v4-sealed`／`--previous-runtime` 干跑得到 21 个反馈来源，其中 12 个是 v4（**9-27 以来四个 v4 周次都从未进过反馈目录**，不只本周）；旧版 9-14 听译 release 已过不了今天的校验器，所以保留线上目录改用 `--previous-runtime`。线上基线不需要新脚本：`baseline --environment production` 已具备，问题是没在发布前当场跑，runbook 已写死 | PR #343 |
+| C 冻结守卫／Spark | 完成，PR #344：两个 QC 驱动加 `--expected-implementation`（代码不符退出码 2，先于任何模型调用）；独占会话把 `job-reasoning-review.timer` 最先停、最后恢复；`scripts/spark_wait_ready.py` 对会自行消退的状态轮询等待；周预算规则写进 runbook。派发器仍在 `artifacts/` 下，未迁入 `scripts/` | PR #344 |
+| D 运行日志／决定／账本 | 完成，PR #345：`run_journal.py`（阶段事件 + 计算／等待／返工汇总）、`record_decision.py`（替代 `*.evidence.txt`，文件证据按哈希绑定）、账本每条已返回请求带 `settlement`（供应商 token 数 × 冻结费率，缺则 `unknown`），摘要收录 journal／decisions／各类收据并对 JSON 键也脱敏（本周漏出的内网 IP 就在键里）。驱动尚未自动调用 journal | PR #345 |
 
