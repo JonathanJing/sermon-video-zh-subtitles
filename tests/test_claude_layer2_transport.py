@@ -117,6 +117,14 @@ class ClaudeTransportTests(unittest.TestCase):
                 with self.assertRaises(Exception):
                     self.transport()('', PAYLOAD)
 
+    def test_unexpected_turn_count_is_rejected(self):
+        self.set_state(result(num_turns=3))
+        with self.assertRaisesRegex(RuntimeError, 'turn_count'):
+            self.transport()('', PAYLOAD)
+
+    def test_auto_updates_disabled_for_auth_and_dispatch(self):
+        self.assertEqual(self.transport().env['DISABLE_AUTOUPDATER'], '1')
+
     def test_unsupported_model_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'configuration'):
             ClaudeLayer2Transport(self.cli, model='claude-fable-5-1')
