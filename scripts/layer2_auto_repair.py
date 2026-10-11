@@ -565,7 +565,11 @@ def reopenable_groups(entries: list[dict], meaning_notes: dict | None) -> dict[s
         history = unit_history(entries, row["sourceUnitIds"])
         fresh = {unit for unit in row["sourceUnitIds"] if unit in meaning_notes} \
             - noted_units(entries, row["sourceUnitIds"])
-        if row["reasonCode"] == "request_source_review" and fresh \
+        # A human ruling also answers a request_human_review stop for the units it covers.
+        answered = row["reasonCode"] == "request_source_review" or (
+            row["reasonCode"] == "request_human_review" and fresh
+            and all(meaning_notes[unit].get("humanRuling") for unit in fresh))
+        if answered and fresh \
                 and sum(item["repaired"] for item in history) < MAX_REPAIRS_PER_SOURCE_UNIT:
             eligible[row["translationGroupId"]] = row
     return eligible

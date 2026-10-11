@@ -238,7 +238,9 @@ def _reopen_verifier(config):
         head = entries[sequence - 1] if sequence <= len(entries) else None
         require(head is not None and auto_repair.json_sha256(head) == receipt['repairLedgerHeadSha256']
                 and head['outcome'] == 'stopped', 'reopen_ledger_head_changed')
-        held = {row['translationGroupId'] for row in head['stopped'] if row['reasonCode'] == 'request_source_review'}
+        # A human ruling (layer2_human_ruling) may also answer a request_human_review stop.
+        reasons = {'request_source_review', 'request_human_review'}
+        held = {row['translationGroupId'] for row in head['stopped'] if row['reasonCode'] in reasons}
         require(set(groups) <= held, 'reopen_group_not_stopped_for_source_review')
         if receipt['nextIdentity'] != expected:
             return
