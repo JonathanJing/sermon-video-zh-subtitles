@@ -451,11 +451,21 @@ def build_package(
     # A long intact clause is a latency warning when both reviews explicitly
     # accept this exact manifest. Keep the warning in the bound anchor manifest.
     accepted_anchor_warnings = machine_judge_pass and review["humanApproval"]
+    # A word-duration outlier clears only when the judge receipt's operator acceptance
+    # names that exact word and the human source review approves the same manifest.
+    accepted_outliers = set()
+    if accepted_anchor_warnings and machine_judge_path is not None:
+        acceptance = read_object(machine_judge_path.resolve(), "English source machine judge receipt").get("operatorAcceptance")
+        accepted_outliers = {(item.get("sourceSentenceId"), item.get("wordId"))
+                             for item in (acceptance or {}).get("items", [])
+                             if item.get("issueType") == "alignment_word_duration_outlier"}
     issues: list[dict[str, Any]] = [
         {"stage": "anchors", "type": str(item.get("type", "unknown_anchor_issue")), "detail": item}
         for item in manifest_issues if isinstance(item, dict)
         and not (accepted_anchor_warnings
-                 and item.get("type") in MACHINE_AND_HUMAN_REVIEWABLE_ANCHOR_ISSUES)
+                 and (item.get("type") in MACHINE_AND_HUMAN_REVIEWABLE_ANCHOR_ISSUES
+                      or (item.get("type") == "alignment_word_duration_outlier"
+                          and (item.get("sourceSentenceId"), item.get("wordId")) in accepted_outliers)))
     ]
     issues.extend(source_gate_issues(media, start, end, approval_pass))
     for name, value in review["checks"].items():
