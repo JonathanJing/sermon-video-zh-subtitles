@@ -32,9 +32,11 @@ LOCALE_LEDGER_MAX_BYTES = 8 * 1024 * 1024
 # Busy only ever delays admission, settlement or a replayed result; it never
 # repeats an external request, so waiting longer is safe under group concurrency.
 LEDGER_BUSY_WAIT_SECONDS = 120
-# A provider error document with one of these statuses means no completion was
-# produced (the 2026-10-11 run lost three whole-sermon locale jobs to single 503s).
-RETRYABLE_PROVIDER_STATUSES = frozenset({500, 502, 503, 504})
+# These statuses arrive without a completion document: OpenAI's own 500/502/503/504,
+# and Cloudflare's 520-523 when the origin answered with nothing usable (the
+# 2026-10-11 run lost four whole-sermon locale jobs to single 503s and one 520).
+# 524 (origin timeout) is left out: the origin may still have completed the call.
+RETRYABLE_PROVIDER_STATUSES = frozenset({500, 502, 503, 504, 520, 521, 522, 523})
 PROVIDER_RETRY_ATTEMPTS = 5
 
 

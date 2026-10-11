@@ -94,6 +94,8 @@ class ProviderRetryTests(unittest.TestCase):
         slept = []
         self.assertEqual(budget.execute_with_provider_retry("req", 300, executor=executor, sleep=slept.append), {"ok": True})
         self.assertEqual((len(calls), slept), (3, [1, 2]))
+        self.assertIn(520, budget.RETRYABLE_PROVIDER_STATUSES)
+        self.assertNotIn(524, budget.RETRYABLE_PROVIDER_STATUSES)
 
         def bad(req, wall, *, deadline):
             raise urllib.error.HTTPError("https://api", 400, "err", {}, None)
