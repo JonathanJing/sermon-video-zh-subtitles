@@ -2,6 +2,10 @@
   "id": "f05-asr-symlink-mount",
   "reconstructedFrom": "docs/reports/20261007-haiku-180s-8x8-spark-diagnostic-retrospective.zh.md #5",
   "category": "mount_or_environment",
+  "acceptableCategories": [
+    "path_handling"
+  ],
+  "acceptableCategoriesReason": "The cause is a container mount that breaks relative symlink paths; both labels describe it. Scoring still requires the symlink and mount cause.",
   "abstain": false,
   "causeKeywords": [
     [
