@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 import subprocess
 from typing import Any
+import wave
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -19,6 +20,7 @@ except ImportError:
 
 CLIP_SCHEMA = "sermon-clip-timeline-map-v1"
 COMPLETE_MEDIA_SCHEMA = "sermon-clip-timeline-map-v2"
+UNIFIED_SOURCE_SCHEMA = "sermon-clip-timeline-map-v4"
 EPSILON = 0.025
 MAX_TRAILING_SILENCE_SECONDS = 0.25
 
@@ -183,10 +185,130 @@ def validate_derived_window(value: dict[str, Any], source: dict[str, Any], ancho
     return 0.0
 
 
+def _bound_json(bound: dict[str, Any], label: str) -> dict[str, Any]:
+    path = Path(bound["path"])
+    require(path.is_file() and interpretation.sha256(path) == bound["sha256"], f"Unified timeline {label} hash mismatch")
+    value = read_object(path)
+    require(interpretation.json_sha256(value) == bound["jsonSha256"], f"Unified timeline {label} JSON hash mismatch")
+    return value
+
+
+def wav_duration(path: Path) -> float:
+    try:
+        with wave.open(str(path), "rb") as handle:
+            frames, rate = handle.getnframes(), handle.getframerate()
+    except (OSError, EOFError, wave.Error) as exc:
+        raise ValueError(f"Cannot read unified source clip: {path}: {exc}") from exc
+    require(frames > 0 and rate > 0, "Unified source clip is empty")
+    return frames / rate
+
+
+def validate_unified_source_clip(value: dict[str, Any], source: dict[str, Any], anchor: dict[str, Any]) -> float:
+    """Window-relative anchors played against the clip unified source preparation cut.
+
+    The operator approves a window inside a full recording. Its media identity is
+    bound through the approval's timeline report, not copied into the approval.
+    """
+    schema = read_object(Path(__file__).parents[1] / f"schemas/{UNIFIED_SOURCE_SCHEMA}.schema.json")
+    errors = list(Draft202012Validator(schema).iter_errors(value))
+    require(not errors, f"Unified timeline schema error: {errors[0].message if errors else ''}")
+    require(value["englishSourcePackageJsonSha256"] == interpretation.json_sha256(source)
+            and value["anchorManifestJsonSha256"] == interpretation.json_sha256(anchor)
+            and source.get("anchors", {}).get("artifact", {}).get("jsonSha256") == interpretation.json_sha256(anchor),
+            "Unified timeline source/anchor mismatch")
+    media = source["source"]["media"]
+    source_media = value["sourceMedia"]
+    source_path = Path(source_media["path"])
+    require(source_path.is_file() and interpretation.sha256(source_path) == source_media["sha256"] == media["sha256"]
+            and source_path.stat().st_size == source_media["sizeBytes"] == media["sizeBytes"]
+            and abs(source_media["durationSeconds"] - media["durationSeconds"]) <= EPSILON,
+            "Unified timeline source media mismatch")
+    window = source["source"]["approvedWindow"]
+    start, end = value["approvedWindow"]["startSeconds"], value["approvedWindow"]["endSeconds"]
+    require(window.get("status") == "approved" and window.get("humanApproval") is True
+            and start == window["startSeconds"] and end == window["endSeconds"]
+            and 0 <= start < end <= source_media["durationSeconds"] + EPSILON,
+            "Unified timeline approved window mismatch")
+    evidence = window["evidence"]
+    approval = _bound_json(value["windowApproval"], "window approval")
+    require(value["windowApproval"]["sha256"] == evidence["sha256"]
+            and value["windowApproval"]["jsonSha256"] == evidence["jsonSha256"]
+            and approval.get("humanApproval") is True and approval.get("status") == "approved"
+            and not approval.get("originalRecordingWindow")
+            and abs(seconds(approval["startTime"]) - start) <= EPSILON
+            and abs(seconds(approval["endTime"]) - end) <= EPSILON, "Unified timeline approval identity mismatch")
+    report = _bound_json(value["timelineReport"], "timeline report")
+    require(approval.get("timelineReportSha256") == value["timelineReport"]["jsonSha256"]
+            and report.get("audioSha256") == media["sha256"]
+            and report.get("audioSizeBytes") == media["sizeBytes"],
+            "Unified timeline report does not bind the approved source media")
+    identity = _bound_json(value["sourceClipIdentity"], "source clip identity")
+    clip = value["clipMedia"]
+    clip_path = Path(clip["path"])
+    fields = identity.get("identity", {})
+    require(clip_path.is_file() and interpretation.sha256(clip_path) == clip["sha256"] == identity.get("sha256")
+            and clip_path.stat().st_size == clip["sizeBytes"]
+            and fields.get("mediaSha256") == media["sha256"]
+            and fields.get("startSeconds") == start
+            and abs(fields.get("durationSeconds", -1) - (end - start)) <= EPSILON,
+            "Unified timeline clip identity mismatch")
+    duration = wav_duration(clip_path)
+    require(abs(duration - value["clipDurationSeconds"]) <= 1e-6
+            and abs(duration - (end - start)) <= EPSILON, "Unified timeline clip duration mismatch")
+    units = anchor.get("sourceUnits", [])
+    require(bool(units) and abs(units[0]["start"] - value["anchorFirstStartSeconds"]) <= EPSILON
+            and abs(units[-1]["end"] - value["anchorLastEndSeconds"]) <= EPSILON,
+            "Unified timeline anchor endpoints mismatch")
+    previous = 0
+    for unit in units:
+        require(0 <= unit["start"] < unit["end"] <= value["clipDurationSeconds"] + EPSILON
+                and unit["start"] + EPSILON >= previous, "Unified timeline source units outside approved clip")
+        previous = unit["end"]
+    return 0.0
+
+
+def prepare_unified(source_path: Path, anchor_path: Path, clip_path: Path, clip_identity_path: Path,
+                    timeline_report_path: Path, out: Path) -> dict[str, Any]:
+    require(not out.exists(), "Clip timeline map is immutable; choose a new path")
+    source, anchor = read_object(source_path), read_object(anchor_path)
+    window = source["source"]["approvedWindow"]
+    media = source["source"]["media"]
+    report = read_object(timeline_report_path)
+
+    def bound(path: Path) -> dict[str, str]:
+        return {"path": str(path.resolve()), "sha256": interpretation.sha256(path),
+                "jsonSha256": interpretation.json_sha256(read_object(path))}
+
+    value = {
+        "schemaVersion": UNIFIED_SOURCE_SCHEMA,
+        "timebase": "anchor_window_relative_to_unified_source_clip",
+        "englishSourcePackageJsonSha256": interpretation.json_sha256(source),
+        "anchorManifestJsonSha256": interpretation.json_sha256(anchor),
+        "sourceMedia": {"path": str(Path(report["mediaPath"]).resolve()), "sha256": media["sha256"],
+                        "sizeBytes": media["sizeBytes"], "durationSeconds": media["durationSeconds"]},
+        "approvedWindow": {"startSeconds": window["startSeconds"], "endSeconds": window["endSeconds"]},
+        "windowApproval": window["evidence"],
+        "timelineReport": bound(timeline_report_path),
+        "sourceClipIdentity": bound(clip_identity_path),
+        "clipMedia": {"path": str(clip_path.resolve()), "sha256": interpretation.sha256(clip_path),
+                      "sizeBytes": clip_path.stat().st_size},
+        "clipDurationSeconds": wav_duration(clip_path),
+        "anchorOffsetSeconds": 0,
+        "anchorFirstStartSeconds": anchor["sourceUnits"][0]["start"],
+        "anchorLastEndSeconds": anchor["sourceUnits"][-1]["end"],
+    }
+    validate(value, source, anchor)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    interpretation.write_json(out, value)
+    return value
+
+
 def validate(value: dict[str, Any], source: dict[str, Any], anchor: dict[str, Any]) -> float:
     version = value.get("schemaVersion")
     if version == "sermon-clip-timeline-map-v3":
         return validate_derived_window(value, source, anchor)
+    if version == UNIFIED_SOURCE_SCHEMA:
+        return validate_unified_source_clip(value, source, anchor)
     require(version in {CLIP_SCHEMA, COMPLETE_MEDIA_SCHEMA},
             "Unsupported clip timeline map schema")
     schema = read_object(Path(__file__).parents[1] / "schemas" /
@@ -318,9 +440,19 @@ def main() -> None:
     parser.add_argument("--clip-media", type=Path, required=True)
     parser.add_argument("--anchor-offset-seconds", type=float,
                         help="Required for extracted clips; complete media derives its source origin")
+    parser.add_argument("--source-clip-identity", type=Path,
+                        help="Unified source preparation clip identity; writes a v4 map with --timeline-report")
+    parser.add_argument("--timeline-report", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    value = prepare(args.source, args.anchor, args.clip_media, args.anchor_offset_seconds, args.out)
+    if args.source_clip_identity is not None or args.timeline_report is not None:
+        require(args.source_clip_identity is not None and args.timeline_report is not None
+                and args.anchor_offset_seconds is None,
+                "A unified source clip map needs --source-clip-identity and --timeline-report, without an offset")
+        value = prepare_unified(args.source, args.anchor, args.clip_media, args.source_clip_identity,
+                                args.timeline_report, args.out)
+    else:
+        value = prepare(args.source, args.anchor, args.clip_media, args.anchor_offset_seconds, args.out)
     print(json.dumps({"status": "clip_timebase_bound", "anchorOffsetSeconds": value["anchorOffsetSeconds"],
                       "map": str(args.out)}, ensure_ascii=False))
 
