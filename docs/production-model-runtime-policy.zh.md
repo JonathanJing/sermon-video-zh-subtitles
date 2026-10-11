@@ -8,6 +8,14 @@
 | Layer 2 独立审核 | `gpt-6.1-sol` | `medium` | 批准的 tier（目前 `default`）；无授权 standalone `fast` 发送前拒绝 | OpenAI API |
 | dev 与正式生产 Supervisor | `gpt-6-luna` | `medium` | `fast` | ChatGPT-authenticated Codex CLI |
 
+## 显式实验翻译后端
+
+新 dev 与正式 canonical Layer 2 只接受 `openai_api`（`gpt-6.1-sol` high），独立审核使用 Sol medium。`target_language_policy.py --translator-backend claude_cli` 仅为独立实验准备政策草稿，不授权正式派发；canonical worker 和生产模型验证会拒绝 Claude 政策。
+
+Claude CLI transport 仅保留独立实验入口，经订阅登录运行，隔离 OpenAI／Anthropic 凭据与路由覆盖；每次调用必须传入 `max_completion_tokens`，显式关闭 API 与结构化输出重试，拒绝出现其他模型的返回。它不证明 CLI 整个 agent session 的调用次数可受 canonical API 预算约束，因此不接入新 canonical 运行。
+
+原 Claude 冻结运行已经返回的付费结果允许 `cache_only` 恢复，恢复仍禁止派发。预算响应记录按模型选择价格版本；Claude 对应 `strict-claude-list-worst-case-2026-10-08-v1`，列价等价不是订阅实际收费。没有真实 Claude Layer 2 运行或部署证据。
+
 来源 ASR、OpenAI 音频、MFA、Spark Qwen TTS／回转写 ASR、ImageGen 继续使用各自入口。其他文字入口保留其实际接线范围；本次修复不证明所有旧 producer 已消费此策略。
 
 配音精简（`scripts/run_spoken_condensation.py`）沿用 Layer 2 初译的 `gpt-6.1-sol` `high`，与机器质检回译（`scripts/run_machine_qc_clip_test.py`，`gpt-6.1-sol` `medium`）一样经 ChatGPT 登录的本机 Codex CLI（requested tier `fast`）调用，不用 API key；两者各用自己的缓存命名空间，按请求和 transport 身份（CLI 版本、CLI／二进制／适配器哈希）缓存。精简不是 Layer 2 翻译入口：它只产出精简记录和 revision brief，口播候选仍经 Layer 2 链按上表生成。
