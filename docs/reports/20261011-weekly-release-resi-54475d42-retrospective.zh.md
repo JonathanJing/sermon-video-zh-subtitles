@@ -407,3 +407,95 @@
 
 本周 34 个预算账本的 27 292 条原始模型回复（含 usage）、`live-owners/` 与账本 JSON 打包为 `model-responses-20261011.tar.zst`（11.3 MB，解压 66 MB），存放在项目私有产物桶 `gs://sermon-zh-artifacts-ai-for-god/runs/20261011-weekly-resi-54475d42/model-responses/`，桶无公开绑定。归档哈希、对象路径、各账本文件数与恢复命令见 [`cost/model-responses-archive.json`](runs/20261011-weekly-fixtures/cost/model-responses-archive.json)。按恢复命令解到 `artifacts/weekend-live` 后，文字 QC 驱动会直接命中缓存，本周的任何重筛或校准回放都不再产生 API 调用——这是把校准改为「按模型版本离线做」时最直接的回放数据。
 
+## 十四、再审核：删改清单复核，以及下周的设计与测试计划
+
+### 复核原则
+
+只做两类事：**本周真正让用户或操作者受损的**，以及**改动小、收益确定的**。凡是需要改收据 schema、改多个消费者、或收益要等几周才能验证的，一律推迟。复核后第十一、十二节的清单改动如下。
+
+| 原提案 | 复核结论 | 理由 |
+|---|---|---|
+| 删 1× 同步硬门禁 | **改为计划参数，本周做** | 代码已有 `--max-end-lag-seconds` 与 `tailOverrunSeconds`，只差渲染器 CLI 直接吃计划；省掉压缩器的 4 轮往返 |
+| 校准改为按模型版本 | **推迟** | 校准绑定候选的规则在哈希文件集内，改它等于重新基线化整套豁免。本周校准的真实开销来自哈希翻转导致的重签，先冻结代码即可消除，每语一次校准约 5 分钟可接受 |
+| 实现哈希改绑运行开始时的冻结身份 | **改为「运行前冻结 + 守卫」，本周做** | 不改哈希算法，只加一个 10 行守卫：驱动启动时核对哈希文件集与运行计划记录的代码身份，不一致就拒绝启动并说明；配合「只在 worktree 跑」的规则 |
+| 删逐轮预算批准文件 | **改为一周一份授权，本周做** | 账本已支持跨轮复用（v14/v15 复用了 v13 的账本）；只需把请求上限设对、写进 runbook，无代码 |
+| 二级 ASR 条件触发 | **本周做，排在规范化之后** | 42 次付费复核零改变结论；依赖第 6 项 |
+| ASR 评分数字/同音字规范化 | **本周做，优先级最高** | 直接把 42 个标记降到约 6 个，逐句人工接受从 42 次变成几次 |
+| TTS 口播规则（韩语章号） | **推迟** | 需要新的 `textPolicy` 与多处消费者改动；本周 5 句用修订路径处理 |
+| 删 Layer 1 / Layer 3 人工门 | **撤回** | Layer 3 门已放宽，Layer 1 的接受收据不再阻塞，零成本，不动 |
+| 删语言插件检查 | **撤回** | 误报已修，检查不花钱，保留 |
+| 收据 schema 收敛 | **推迟** | 纯重构，无即时收益 |
+| 版本目录爆炸 | **只定命名规则** | 驱动本已原地续跑；爆炸来自输入变化，不值得改工具 |
+| 第二模型复核留废 | **本周只做量化** | 用夹具里的 12 条修复记录出一张表，下周决定 |
+| Spark 常驻服务 + 队列 | **缩小为两项** | 独占会话冻结 `job-reasoning-review.timer`；派发器对 `competing_service_active` 与内存保护退出自动等待重试。常驻 worker 推迟 |
+| 发布单入口四道门 | **本周做，优先级最高** | 本周唯一两处用户可见故障（外壳不全、反馈 API 未同步）都在这里 |
+| 发布后抽样表 | **本周做（简版）** | 替代凌晨「人工试听通过」的声明，10 分钟/周 |
+| 运行日志 / 决定记录 / 账本成本 | **本周做** | 三个小改动，复盘从 3 小时翻文件变成读一份 NDJSON |
+| `fix` 单句修正命令 | **本周只写设计** | 牵动单元身份、包、发布三层；先用「新修订 + 续跑」走通一次 ko 的 5 句，记录耗时，再决定 |
+| 周六小样本彩排 | **本周做，零开发** | 用现成 `run_dev_180s_beta_e2e.sh` 在冻结代码上跑，写进 runbook |
+| 漏词检测器 | **推迟** | 人工抽样替代后不在关键路径 |
+
+### 设计（按优先级，含改动点与工作量）
+
+**A. 发布入口（预计 1 天）**
+
+1. 外壳闭包：`build_full_video_app_release.py` 的 `runtime_web_files()` 不再用固定三文件清单，而是从 `index.html` 解析 `script src`、`link href`、`<use href>`、worker 路径，递归收集 `import` 依赖，全部冻结进 `runtimeAssets`；`seal` 时断言闭包内每个文件与 `experiments/sermon-dubbing-poc/web` 同哈希。
+2. 线上基线：新增 `scripts/fetch_live_baseline.py`：从 Hosting API 取当前版本文件清单，与本地快照按 gzip 哈希比对，缺失文件按 HTTP 取回并校验，写出带 `seal-report.json` 的基线目录（本周手工做过一次，脚本化即可）。
+3. 浏览器冒烟：`scripts/smoke_published_page.mjs`（Playwright，Chromium 已在环境里）：打开 `?week=<pageId>&contentLang=<locale>`，三语各一次，断言标题非「正在读取」、字幕区有文本、`console.error` 为零、`/api/session` 返回 200。发 Dev 后必跑，发生产后必跑。
+4. 反馈目录：把 `feedback-catalog` 的生成与反馈 API 部署写进 `run_multilingual_cd.py` 的生产步骤，或至少作为冒烟检查项（上一条已覆盖检测）。
+
+**B. ASR 评分规范化 + 二级 ASR 条件触发（预计 1 天）**
+
+- `target_audio_auto_qc.transcript_similarity/transcript_agrees` 前加按语言的折叠：韩语汉字数词/固有数词/阿拉伯数字互折（삼분의 일 ↔ 3분의 1、여덟 장 ↔ 8장 **不**折，章节读法另算）、空格差异；中文仅折同音同调字对（她/他/它/祂、忿怒/愤怒、作出/做出、支/只），**不**折不同调（义/一、宜/一）；西语 `un/una/1`、重音符、标点。
+- 二级 ASR 只在一级相似度 < 0.6，或差异涉及否定词/数字时调用。
+- 这是哈希文件集内的改动：在下周运行开始前合并，运行中不再动。
+
+**C. 冻结守卫 + 周预算 + Spark 重试（预计 0.5 天）**
+
+- 驱动入口加 `--expected-implementation <sha>`（由运行计划记录）；不一致即退出 2 并打印差异文件。
+- runbook：每周一份 `api-budget-authorization-<week>.json`，请求上限按「三语 × 2 轮筛查 + 2 轮校准」估算。
+- `spark_exclusive_session.py` 的冻结清单加入 `job-reasoning-review.timer`；派发器对 `competing_service_active` 与 `MemAvailable` 退出自动等待（30 s 轮询，上限 30 分钟）后续跑。
+
+**D. 运行日志与决定记录（预计 0.5 天）**
+
+- `scripts/run_journal.py append --stage --outcome --waiting-on --cost`：各驱动与派发器在起止处调用，写 `artifacts/weekend-live/<run>/journal.ndjson`。
+- `scripts/record_decision.py --question --choice --evidence`：替代手写 `*.evidence.txt`，写 `decisions.ndjson`。
+- `sermon_source_budget` 在回复返回时把 `usage` 折算进 `costMicrousd`（现在恒为 0）。
+- `export_run_digest.py`：收录 `journal.ndjson`、`decisions.ndjson`、`*acceptance*.json`、`*approval*.json`；补内网 IP 规则。
+
+**E. 发布后抽样表（预计 0.5 天）**
+
+- `scripts/build_listening_sample.py`：每语随机 10 句 + 全部 ASR 标记句，生成 Markdown（每句：译文、英文、单句音频路径、勾选框）；操作者填完后 `record_decision.py` 写回。周一执行，不阻塞发布。
+
+**F. 渲染器直接吃计划（预计 0.25 天）**
+
+- 渲染器 CLI 加 `--tail-overrun-seconds`，与压缩器共用同一策略对象；运行计划的 `audioPolicy` 段直接喂两者。
+
+**G. 量化与设计文档（预计 0.5 天）**
+
+- 用 `layer2/reviewer-repair-records.json` 出一张「12 条修复各改了什么」的表。
+- `fix` 命令设计稿：输入 pageId、locale、groupIds、修改类型（文字/读音种子），输出新 job 修订与新发布版本；本周先用现有路径手工走通 ko 5 句，记录每步耗时。
+
+合计约 4.25 天开发，全部在下周运行**之前**完成并合并；运行期间不改代码。
+
+### 测试计划
+
+| 层 | 测试 | 夹具（第十三节） | 断言 |
+|---|---|---|---|
+| 单元 | 外壳闭包 | 仓库 `web/index.html` | 闭包 ⊇ 本周线上 193 文件中的外壳集合；删掉 `icons.svg` 时 seal 失败 |
+| 单元 | 线上基线重建 | `publication/live-baseline-7089e037__baseline-receipt.json` | 156 文件与线上清单逐一哈希相等；多/少任一文件即拒绝 |
+| 单元 | ASR 规范化 | `audio-qc/failed-units.json`（42）、`audio-qc/screening-flags.json` | 规范化后标记 ≤ 6，且 ko 5 句章号与 참혹합니다 仍被标记；`义人/一人`、`合宜/合一` 仍被标记 |
+| 单元 | 二级 ASR 触发 | 同上 | 对 42 句只触发 ≤ 8 次 |
+| 单元 | 排程政策 | `timing/anchor-units.json`、`timing/schedules.json` | 默认政策 zh 455 条超限；120 s + 1 s 容差 0 条；1 s 容差 + 0 s 滞后仍失败 |
+| 单元 | 冻结守卫 | 运行计划 + 篡改任一哈希文件 | 驱动退出码 2，输出差异文件名 |
+| 单元 | 账本成本 | `cost/token-usage-by-ledger.json` | 重放缓存回复后账本 `costMicrousd` > 0 且与 token 数一致 |
+| 单元 | 决定记录 | — | `record_decision.py` 写入的行可被 `export_run_digest.py` 收录并脱敏 |
+| 单元 | 会话冻结定时器 | 假 inventory | 定时器 active 时 `begin` 拒绝；`require_ready` 报 `competing_timer_active` |
+| 集成 | 浏览器冒烟 | Dev 站本周页 | 三语各：标题正确、字幕非空、零 console.error、`/api/session` 200 |
+| 集成 | 周六彩排 | 上周三分钟片段 | `run_dev_180s_beta_e2e.sh` 在冻结代码上 15 分钟内到 Dev 站，冒烟通过 |
+| 验收 | 周日运行 | 本周真实源 | 人工介入 ≤ 3 次；无返工轮次；journal 能算出计算/等待/返工三段时长；周一抽样表 10 分钟内填完 |
+
+### 明确不做
+
+收据 schema 收敛、校准按模型版本、Spark 常驻 worker、`fix` 命令实现、TTS 口播规则、漏词检测器、第二模型复核去留——都等下周的数据再定。
+
