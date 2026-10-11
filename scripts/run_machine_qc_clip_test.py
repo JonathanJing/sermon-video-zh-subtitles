@@ -669,10 +669,6 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
     qc_binding = json_sha256({"groups": groups, "policy": policy, "identity": judge.identity,
                               "implementation": basis.waiver.implementation_sha256()})
     qc = load_once(head_path, qc_binding) if head is not None else None
-    if qc is None and human_acceptance is not None and head is not None:
-        # A person accepted the failed groups of the head receipt: keep that exact
-        # receipt; never screen the same text again under another judge.
-        qc = head
     if qc is None:
         # The receipt is written before its ledger entry. A receipt past the ledger
         # head is from an interrupted run: append it if it still binds these inputs,

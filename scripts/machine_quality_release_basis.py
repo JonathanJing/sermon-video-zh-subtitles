@@ -263,6 +263,8 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
     if condensed and (not full_sha or (calibration.get("inputs") or {}).get("candidateJsonSha256") != full_sha):
         inputs.append("calibration does not bind the condensation's full candidate; recalibrate")
     _require(not inputs, "Calibration does not cover this text: " + "; ".join(inputs))
+    # Only groups that failed this QC and were accepted are marked human_accepted.
+    accepted = {row["groupId"] for row in results if row["groupId"] in accepted and row.get("status") != "pass"}
     receipt = {
         "schemaVersion": TEXT_WAIVER_SCHEMA_V2 if accepted else TEXT_WAIVER_SCHEMA,
         "reviewKind": REVIEW_KIND, "humanApproval": False,
@@ -289,8 +291,9 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
         receipt["humanAcceptance"] = {
             "schemaVersion": human_acceptance["schemaVersion"], "jsonSha256": json_sha256(human_acceptance),
             "decidedBy": human_acceptance["decidedBy"], "decidedAt": human_acceptance["decidedAt"],
-            "userStatement": human_acceptance["userStatement"], "textQcJsonSha256": json_sha256(text_qc),
-            "groupIds": [gid for gid in group_ids if gid in accepted]}
+            "userStatement": human_acceptance["userStatement"],
+            "textQcJsonSha256": human_acceptance["textQcJsonSha256"],
+            "groupIds": [row["groupId"] for row in results if row["groupId"] in accepted and row.get("status") != "pass"]}
     _schema(receipt, receipt["schemaVersion"])
     return receipt
 

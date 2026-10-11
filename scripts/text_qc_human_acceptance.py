@@ -42,7 +42,11 @@ def build(*, candidate: dict, text_qc: dict, decided_by: str, decided_at: str, u
 
 
 def check(acceptance: dict, *, candidate: dict, text_qc: dict) -> set[str]:
-    """The group IDs this acceptance clears in exactly this candidate and QC receipt."""
+    """The group IDs this acceptance clears in exactly this candidate.
+
+    The acceptance names the QC receipt the person reviewed. A later screen of
+    the same candidate (another runtime) may reuse it for any group whose exact
+    English and target text the person accepted; new failures stay failures."""
     _require(isinstance(acceptance, dict) and acceptance.get("schemaVersion") == SCHEMA
              and acceptance.get("humanApproval") is True and acceptance.get("decidedByRole") == "human_operator"
              and isinstance(acceptance.get("decidedBy"), str) and acceptance["decidedBy"].strip()
@@ -54,14 +58,13 @@ def check(acceptance: dict, *, candidate: dict, text_qc: dict) -> set[str]:
         raise ValueError("human_acceptance_identity") from exc
     _require(acceptance.get("targetLocale") == candidate["targetLocale"]
              and acceptance.get("candidateJsonSha256") == _sha(candidate)
-             and acceptance.get("textQcJsonSha256") == _sha(text_qc), "human_acceptance_binding_changed")
+             and isinstance(acceptance.get("textQcJsonSha256"), str), "human_acceptance_binding_changed")
     texts = {group["translationGroupId"]: group["targetText"] for group in candidate["groups"]}
     rows = {row["groupId"]: row for row in text_qc["results"]}
     accepted = set()
     for item in acceptance.get("groups") or []:
         gid = item.get("groupId")
         _require(gid in rows and gid in texts and gid not in accepted and item.get("decision") == "accepted"
-                 and rows[gid]["status"] != "pass"
                  and item.get("targetTextSha256") == rows[gid]["targetTextSha256"] == _text_sha(texts[gid])
                  and item.get("englishSha256") == rows[gid]["englishSha256"], "human_acceptance_group_changed")
         accepted.add(gid)
