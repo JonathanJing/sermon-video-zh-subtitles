@@ -94,10 +94,37 @@ class OutlineReviewProtocolTests(unittest.TestCase):
     def test_same_source_roles_do_not_overlap_even_on_different_items(self):
         c = cases()[0]
         rows = [gold(c, "g1"), gold(c, "g2")]
-        assignments = [{"caseId": "different-item", "sourceId": c["sourceId"], "reviewerId": "g1"}]
-        self.assertIn("gold_timed_same_source", str(p.validate_gold([c], rows, humans(), assignments)))
+        other = {**c, "caseId": "different-item"}
+        data = [c, other]
+        assignments = [{"caseId": other["caseId"], "sourceId": c["sourceId"],
+                        "payloadSha256": other["payloadSha256"], "reviewerId": "g1", "arm": "A"}]
+        self.assertIn("gold_timed_same_source", str(p.validate_gold(data, rows, humans(), assignments)))
         assignments[0]["reviewerId"] = "writer"
-        self.assertIn("author_timed_same_source", str(p.validate_gold([c], rows, humans(), assignments)))
+        self.assertIn("author_timed_same_source", str(p.validate_gold(data, rows, humans(), assignments)))
+
+    def test_timed_assignment_identity_cannot_hide_source_role_overlap(self):
+        c = cases()[0]
+        rows = [gold(c, "g1"), gold(c, "g2")]
+        assignment = {"caseId": c["caseId"], "sourceId": c["sourceId"],
+                      "payloadSha256": c["payloadSha256"], "reviewerId": "g1", "arm": "A"}
+        for key, value in (("sourceId", "invented-source"), ("payloadSha256", "wrong"),
+                           ("caseId", "unknown-case"), ("reviewerId", ""), ("arm", "X")):
+            with self.subTest(key=key):
+                result = p.validate_gold([c], rows, humans(), [{**assignment, key: value}])
+                self.assertEqual(result["status"], "incomplete")
+                self.assertIn("timed_assignment_", str(result["errors"]))
+        self.assertIn("gold_timed_same_source", str(p.validate_gold([c], rows, humans(), [assignment])))
+
+    def test_completed_without_timed_interval_is_not_success(self):
+        data = cases()
+        assignments = p.allocate_timed_reviews(data, ["t1", "t2"])
+        event = {**assignments[0], "type": "completed", "timestampSeconds": 10}
+        with self.assertRaisesRegex(ValueError, "completed_requires_closed_active_interval"):
+            p.summarize_timing(data, assignments, [event])
+        # Explicitly incomplete, untimed reviews remain in the denominator.
+        result = p.summarize_timing(data, assignments, [{**event, "type": "incomplete"}])
+        self.assertFalse(result["assignments"][0]["completed"])
+        self.assertTrue(result["assignments"][0]["censored"])
 
     def test_disagreement_needs_third_independent_human_adjudication(self):
         c = cases()[0]

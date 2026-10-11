@@ -130,7 +130,19 @@ def validate_gold(cases, gold_records, reviewer_identities, timed_assignments=No
     by_case = {key: [] for key in by_id}
     timed_by_source = {}
     for row in timed_assignments or []:
-        timed_by_source.setdefault(row.get("sourceId"), set()).add(row.get("reviewerId"))
+        # Bind isolation to the frozen case, never to an assignment's claimed
+        # source: an invented source would otherwise hide a reused reviewer.
+        case = by_id.get(row.get("caseId")) if isinstance(row, dict) else None
+        if (case is None or not isinstance(row.get("reviewerId"), str)
+                or not row["reviewerId"].strip() or row.get("arm") not in {"A", "B"}):
+            errors.append({"caseId": row.get("caseId") if isinstance(row, dict) else None,
+                           "error": "timed_assignment_invalid"})
+            continue
+        if (row.get("sourceId") != case["sourceId"]
+                or row.get("payloadSha256") != case["payloadSha256"]):
+            errors.append({"caseId": case["caseId"], "error": "timed_assignment_identity_mismatch"})
+            continue
+        timed_by_source.setdefault(case["sourceId"], set()).add(row["reviewerId"])
     authors_by_source = {}
     for case in cases:
         authors_by_source.setdefault(case["sourceId"], set()).update([case["authorId"]] if case.get("authorId") else [])
@@ -204,7 +216,7 @@ def summarize_timing(cases, assignments, events, observation_limit_seconds=480):
         if source_key in source_arms and source_arms[source_key] != row["arm"]:
             raise ValueError("reviewer_source_cross_arm")
         source_arms[source_key] = row["arm"]
-        states[key] = {"assignment": row, "active": 0.0, "start": None, "last": None, "first": None, "terminal": None}
+        states[key] = {"assignment": row, "active": 0.0, "closedIntervals": 0, "start": None, "last": None, "first": None, "terminal": None}
     for event in events:
         key = (event.get("reviewerId"), event.get("caseId"))
         if key not in states:
@@ -226,10 +238,13 @@ def summarize_timing(cases, assignments, events, observation_limit_seconds=480):
             if s["start"] is None:
                 raise ValueError("active_stop_without_start")
             s["active"] += t - s["start"]
+            s["closedIntervals"] += 1
             s["start"] = None
         elif kind in {"completed", "incomplete"}:
             if s["start"] is not None:
                 raise ValueError("terminal_requires_stopped_active_timer")
+            if kind == "completed" and s["closedIntervals"] == 0:
+                raise ValueError("completed_requires_closed_active_interval")
             s["terminal"] = kind
         else:
             raise ValueError("event_type_invalid")
