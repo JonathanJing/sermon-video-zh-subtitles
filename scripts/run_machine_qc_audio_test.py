@@ -330,8 +330,17 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, asr: tup
             return {**result, "status": "blocked_prior_failure",
                     "reason": f"the audio repair ledger head failed and its QC receipt is missing from {head_path}"}
         current = {(unit["groupId"], transports._sha(unit["wav"])) for unit in units}
+        # A person's acceptance of the exact failed audio of this head counts as the repair.
+        person_accepted = set()
+        if human_acceptance is not None:
+            from scripts import audio_qc_human_acceptance as acceptance_rules
+            try:
+                person_accepted = acceptance_rules.check(human_acceptance, package=package, audio_qc=head)
+            except ValueError:
+                person_accepted = set()
         unrepaired = [row["groupId"] for row in head["results"]
-                      if row["status"] == "fail" and (row["groupId"], row["audioSha256"]) in current]
+                      if row["status"] == "fail" and (row["groupId"], row["audioSha256"]) in current
+                      and row["groupId"] not in person_accepted]
         if unrepaired:
             return {**result, "status": "blocked_prior_failure", "failedGroups": unrepaired,
                     "reason": "failed units still have the same audio; re-render them (new seed or revised text) first"}
