@@ -218,3 +218,19 @@
 
 按这个设计，周六晚放入源视频后，周日早上应该看到：三语已在 Dev 站可播放；一份计划外的人工决定清单（通常 0–3 项）；一条「放行到生产」的确认。人只在白天做三次决定，其余时间流程自己走。
 
+## 十、脱敏运行摘要（可在云端直接读）
+
+用 `scripts/export_run_digest.py` 按运行目录导出，每份都经 `--verify` 复查；Layer 1 摘要里 11 处对齐收据/summary 的内网地址由会话手动替换为 `[redacted-private-ip]`，并记入各自 `manifest.json` 的 `manualRedactions`。日志只保留开头 40 行、结尾 200 行和中间错误行；媒体与模型输出一律不含。`manifest.json` 记录原文件路径与哈希，可据此核对本机证据。
+
+| 摘要 | 内容 |
+|---|---|
+| [20261011-weekly-layer1](runs/20261011-weekly-layer1/INDEX.md) | 源文本修正、冻结对齐重建、机器裁判、源审核的收据与执行日志（含 5 次失败尝试） |
+| [20261011-weekly-layer2-top](runs/20261011-weekly-layer2-top/INDEX.md) | Layer 2 r1–r12 的执行记录、预算批准/授权与运行日志 |
+| [20261011-weekly-layer2-zh-r12](runs/20261011-weekly-layer2-zh-r12/INDEX.md) · [layer2-recovered](runs/20261011-weekly-layer2-recovered/INDEX.md) | 三语最终候选的收据 |
+| [20261011-weekly-text-qc](runs/20261011-weekly-text-qc/INDEX.md) | 文字 QC 全部 41 轮的日志、预检、校准与豁免收据、逐句验收记录、预算授权 |
+| [20261011-weekly-layer3-top](runs/20261011-weekly-layer3-top/INDEX.md) · [zh](runs/20261011-weekly-layer3-zh/INDEX.md) · [ko](runs/20261011-weekly-layer3-ko/INDEX.md) · [es](runs/20261011-weekly-layer3-es/INDEX.md) | 派发链日志、六次失败尝试、压静音/筛查/音频包收据、渲染诊断 |
+| [20261011-weekly-audio-qc](runs/20261011-weekly-audio-qc/INDEX.md) | 试听豁免链各次运行的 summary、整轨核对、预检、驱动日志、逐句接受记录 |
+| [20261011-weekly-layer4](runs/20261011-weekly-layer4/INDEX.md) | 元数据、发布计划、HTTP 核验、封存报告、外壳覆盖报告 |
+
+分析入口建议：先读各 `INDEX.md` 的结束状态与阶段耗时，再按本文第四节的编号到对应目录找原始行。
+
