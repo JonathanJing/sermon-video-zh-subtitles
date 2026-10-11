@@ -52,6 +52,19 @@ class SparkAudioWrapperTests(unittest.TestCase):
         self.assertEqual(tts[tts.index('--entrypoint') + 1], '/usr/bin/python')
         self.assertIn(subject.IMAGES['tts'], tts)
         self.assertIn(subject.IMAGES['asr'], asr)
+        # Snapshot files are symlinks into ../../blobs: mount the model repo, not the snapshot.
+        self.assertIn(subject.ASR_HUB + ':/asr-hub:ro', asr)
+        self.assertTrue(asr[asr.index('--model-path') + 1].startswith('/asr-hub/snapshots/'))
+
+    def test_cwd_relative_out_reaches_code_check(self):
+        self.args.out = Path(os.path.relpath(self.args.out, Path.cwd()))
+        self.assertFalse(self.args.out.is_absolute())
+        response = subprocess.CompletedProcess([], 0, stdout=json.dumps({'files': {
+            'scripts/experiments/run_spark_diagnostic_audio.py': '0' * 64}}))
+        with patch.object(subject, 'preflight', return_value=self.proof), \
+             patch.object(subject, 'run', return_value=response):
+            with self.assertRaisesRegex(ValueError, 'remote_code_differs'):
+                subject.execute(self.args)
 
     def test_pending_layer2_starts_no_remote_or_local_dispatch(self):
         with patch.object(subject, 'preflight', return_value={**self.proof, 'status': 'awaiting_layer2'}), \

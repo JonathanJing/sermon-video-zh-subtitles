@@ -1,0 +1,5 @@
+2026-10-08T02:49:10Z $ systemctl is-active spark-api spark-agent collector llama-server
+active
+active
+active
+active

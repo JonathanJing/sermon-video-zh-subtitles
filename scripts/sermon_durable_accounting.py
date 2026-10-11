@@ -92,7 +92,7 @@ def _ledger_rows(fd):
         raise ValueError('durable_ledger_size_limit')
     os.lseek(fd, 0, os.SEEK_SET)
     rows = []
-    with os.fdopen(os.dup(fd), 'rb') as stream:
+    with os.fdopen(os.dup(fd), 'rb') as stream, contract.schema_batch():
         while True:
             line = stream.readline(contract.MAX_EVENT_BYTES + 1)
             if not line:

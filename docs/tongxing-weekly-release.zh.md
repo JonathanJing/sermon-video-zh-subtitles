@@ -6,13 +6,17 @@
 
 ## 每周路径
 
-来源完整可用 → 现有流程生成候选 → 内容审阅与对应音轨收据 → 自动生成并绑定听音定位指纹 → 在正式站完整快照上追加 v2 Release／v3 Catalog 候选 → 检查历史文件与目录差异 → 资产先发、v3 目录最后发 → HTTP 文件核验 → Firebase App 和同版本 iOS App 刷新选页／播放验收 → 本周海报交付（分别验收）。每周只更新内容；客户端出现不支持的新 schema、语言或能力时才安排 App 版本更新。
+来源完整可用 → 现有流程生成候选 → 内容审阅与对应音轨收据 → 自动生成并绑定听音定位指纹 → 在正式站完整快照上追加 v2 Release／v3 Catalog 候选 → 检查历史文件与目录差异 → 资产先发、v3 目录最后发 → HTTP 文件核验 → Firebase App 和同版本 iOS App 刷新选页／播放验收 → 三语页面发布与 HTTP 核验阶段完成后，制作中／韩／西三语海报（分别验收）。每周只更新内容；客户端出现不支持的新 schema、语言或能力时才安排 App 版本更新。
 
 对听众而言，每周目标是从 App 的“选择证道”进入本周内容，在原有界面中观看视频、切换已发布语言、收听配音和阅读文稿；单独的 `/pages/<pageId>/index.html` 只是资产地址与浏览器兼容入口。HTTP 核验可先记录 `published_http_verified`，但本周 App 交付须另外核对 Web App 根路径及原生 iOS 的目录展示、页内播放，并在实际安装版本上验收。未分发的新二进制不能视作用户手机已经拥有本周页面。
 
 周次、source route 和 source ID 共同决定内容项。同一周的直播归档与独立 YouTube 视频分别保留。已存在的源身份不能借同一个 page ID 改写。音频与审核声明沿用各页原始数据，不因进入发行清单而升级。
 
 正式多语言目录的页面名称采用默认内容语言已批准的「系列名 · 本篇标题」，例如「启示录：耶稣带来的安慰与盼望 · 耶稣配得」。`multilingual-v3.json` 的 `pages[].title` 供 iOS 选页列表和本周页头直接读取；只改目录元数据即可让已安装的 App 在刷新目录后显示新名称。每周发布前用同语言 `content/<pageId>/<locale>.json` 的 `series`、`title` 校验该字段，不能只写简称或从未审核文字另造系列名。
+
+### 机器质检周次：v4 目录与 v3 投影
+
+按 [机器质检豁免](machine-quality-waiver.zh.md) 自动发布的语言走四层封存（`build_full_video_app_release.py seal` 与托管发布），不走下面的 v3 组装器。封存写出 `/releases-v4/<pageId>/<locale>.json`、`/multilingual-v4.json`，并把 `/multilingual-v3.json` 写成 v4 去掉机器质检语言后的投影：旧版 iOS 看到的目录与上周相同，新版网页和 iOS 先读 v4，显示“机器质检”标签和披露文案。两份目录一起比较交换、一起回读；只会改 v3 的旧组装器遇到带 v4 的基线会拒绝。字段见 [四产物公开交付](layer4-four-product-public-delivery.zh.md#机器质检发布release-v4--catalog-v4)。
 
 ### v3 周更发布清单与验收
 
@@ -177,11 +181,15 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 
 ## 每周海报交付
 
+新增海报采用用户已确认的 [格式规范 v1](tongxing-weekly-poster-format.zh.md)：2:3 竖版、App 系统字体、两个独立二维码和 App 原文免责声明。多语言入口 `build_multilingual_sermon_posters.py` 默认使用新模板。下方 `build_sermon_poster.py` 示例仅保留旧 `weekly.json` 单语言兼容流程，不能作为新模板入口。
+
+海报生成是 Layer 4 页面发布后的收尾步骤，默认先完成中／韩／西三种语言的内容页面与逐语言 HTTP 核验，再制作三种语言海报；详细步骤见 [Layer 4 收尾顺序](multilingual-production-interfaces.zh.md#layer-4-收尾先三语页面再三语海报)。页面的设备／现场验收独立记录，不要求等现场完成才做海报。
+
 海报是每周内容发行后的默认交付环节，无需用户每周重复要求。先完成本周内容的发布与 HTTP 核验，再以对应本地发行包、明确的页面 ID 和站点 origin 制作；海报交付不自动向聊天群、邮件或其他渠道发送，也不自动上传到站点。
 
 1. 从发行包 `public/weekly.json` 中精确选取 `page-id`，使用该页的中文主题、日期、经文与讲员。不得依据“最新一周”、文件夹名称或图像模型的自由生成文字猜测这些信息。保留该发行包及目录哈希、页面 ID、origin、主视觉文件和最终产物的绑定证据。
 2. 由 Codex 使用内置 ImageGen 制作与主题相符的主视觉，预留文字和二维码区域；二维码使用真实编码器生成，不要求图像模型绘制。合成脚本只使用已有主视觉，不自动调用付费 API。生成失败或工具不可用时记录待完成，不伪称图像已生成。
-3. 用本地脚本合成可分享海报；二维码必须编码选定站点的精确 `?week=<page-id>` 地址。海报上的主题、日期、经文与讲员使用 catalog 数据，不能靠宣传措辞把候选页升级为正式发布、人工听审通过或现场同步已验收，也不得暗示教会官方背书。
+3. 用本地脚本合成可分享海报。新格式（多语言入口）的网页版二维码必须编码正式站点带语言绑定的完整地址 `?week=<page-id>&contentLang=<locale>&lang=<interfaceLang>`（中文为 `contentLang=zh-Hans&lang=zh`），并另外加入固定正式 App Store 下载二维码；只有下方旧单语言兼容流程仍编码 `?week=<page-id>`。海报上的主题、日期、经文与讲员使用 catalog 数据，不能靠宣传措辞把候选页升级为正式发布、人工听审通过或现场同步已验收，也不得暗示教会官方背书。
 
 不传 `--art` 时，只生成供 Codex 使用的 brief 和 prompt；据此使用内置 ImageGen 生成主视觉，不会由脚本自动调用图像 API。最终渲染必须绑定已通过的 HTTP 核验文件：用 `--verification` 显式指定，或使用发行包内默认的 `http-verification.json`。
 
@@ -212,13 +220,38 @@ python3 scripts/build_sermon_poster.py \
 4. 独立解码最终 PNG 与分享缩略图中的二维码，二者必须与目标完整 URL 逐字一致；检查目标页仍可访问且显示正确周次。还须目视检查两种尺寸的中文、日期、经文、讲员、留白、裁切和二维码清晰度。只验证二维码源文件或仅看合成前主视觉不能代替最终产物验收。
 5. Codex 完成两张图片的目视检查后，用完全相同的渲染参数追加 `--visual-reviewed`，把此次图片目视验收记入收据，保持 `humanApproval: false`；不能预先传该参数代替实际看图，也不修改音频人工听审状态。在任务中交付 `poster.png`、`poster-preview.png` 及 `poster-receipt.json`，保存本次输入绑定、二维码解码与目视 QA 结果。机器目视检查保持机器标记，不能记为人工批准；页面发布、音频听审、现场同步、海报 QA 和外部发送分别记录。用户未要求发送时，交付到当前任务即止。
 
-### 多语言已发布页面海报
+### 多语言已发布页面海报（新模板默认入口）
 
-对于 v3 目录中的多语言正式页面，使用 `scripts/build_multilingual_sermon_posters.py`，从同一发布目录中按 page ID 读取每个 locale 的已发布包和完整文稿，沿用已审标题、系列、日期、讲员与经文。中文、韩语和西班牙语各交付完整 PNG、分享预览及收据，复用同一 ImageGen 主视觉。该适配器不改变旧中文周次的海报路径。
+对于 v3 或 v4 目录中的多语言正式页面，使用 `scripts/build_multilingual_sermon_posters.py`，从同一发布目录中按 page ID 读取每个 locale 的已发布包和完整文稿，沿用发布包里的标题、系列、日期、讲员与经文。发布目录有 `multilingual-v4.json` 时读 v4；机器质检的语言把审核标签换成对应说明（例如“译文与配音经机器质检 · 未经人工审核”），并要求发布包带同语言的披露文案。中文、韩语和西班牙语各交付 1200 × 1800 PNG、600 × 900 预览及收据，复用同一 ImageGen 主视觉。新渲染器使用系统字体、官方语言徽章、正式 App Store 下载码和本周网页码，最终两尺寸各验证两个码。传入绑定原始来源和中文文稿的 `--english-reference` 时，同时自动排版英语参考海报；它的 `targetLocale` 保持 zh-Hans，manifest 标为不适用 App announcement。该适配器不改变旧中文周次的海报路径。
 
-二维码固定指向原 App 根路径：`?week=<pageId>&contentLang=<zh-Hans|ko|es>&lang=<zh|ko|es>`。`contentLang` 选择文稿及音轨，`lang` 明确选择界面语言；两者独立。客户端允许有效 `lang` 参数优先于浏览器记住的语言，无有效参数时保持原有偏好。最终 PNG 与预览仍须独立解码，且浏览器核验正确周次、内容语言、界面语言和音轨。
+```bash
+# 页面先发布并 HTTP 验证；不传 art 时准备来源绑定的各语言 brief。
+python3 scripts/build_multilingual_sermon_posters.py \
+  --release artifacts/weekly-release/new-release \
+  --page-id '<本周完整 pageId>' \
+  --origin https://ai-for-god-sermon-audio.web.app \
+  --out artifacts/sermon-poster/YYYY-MM-DD/multilingual
 
-既有 Supervisor 和发行 CLI 不会因这项流程约定自动调用 ImageGen 或发送海报。续跑时复用已验证主视觉和发行包；若页面或链接变化，重新绑定并核验最终图，保留旧版证据。
+# ImageGen 主视觉完成后：自动合成三语；加入英语参考 JSON 则合成四语。
+python3 scripts/build_multilingual_sermon_posters.py \
+  --release artifacts/weekly-release/new-release \
+  --page-id '<本周完整 pageId>' \
+  --origin https://ai-for-god-sermon-audio.web.app \
+  --english-reference /path/to/english-reference.json \
+  --art /path/to/shared-art.png \
+  --art-prompt /path/to/exact-imagegen-prompt.txt \
+  --out artifacts/sermon-poster/YYYY-MM-DD/four-locale
+```
+
+默认只为本页实际发布的语言生成海报，按 release plan 的语言范围收尾（例如只发布中文的单语计划只需中文海报）；用 `--locales zh-Hans,ko` 可显式缩小范围。当前海报文案承诺收听与合成音频，所以按 `audio_unavailable` 发布的纯文字语言不生成海报：用 `--locales` 排除它，该语言海报记为待完成，直到有纯文字海报文案。v1 海报只接受正式 origin `https://ai-for-god-sermon-audio.web.app`；Beta／Dev 打样须加 `--non-production-proof`，scope、manifest 和输出状态都会标为非正式。
+
+英语参考 JSON 必须含 `pageId`、`sourceIdentitySha256`、`contentSha256`（精确绑定中文来源和文稿），以及已核对的 `title`、`series`、`scripture` 英文文案。标题不能由渲染器凭空翻译。准备和渲染必须使用同一语言范围和输出目录；添加英语时使用新的四语目录或从准备阶段就传该参数。
+
+官方徽章首次从 Apple 获取并缓存；收据保存徽章、主视觉、prompt、生成器与模板 SHA。修改其中任一项、改动已存图片或更换语言范围会拒绝覆盖，要求新目录。查看每语言两尺寸后，以完全相同命令追加 `--visual-reviewed` 记录机器目视 QA；manifest 列出内容语言和 App announcement 适用性。上传继续使用既有带环境绑定与完整文件保留的发布流程，英语参考图单独上传、不创建英语内容包。
+
+网页版二维码固定指向原 App 根路径：`?week=<pageId>&contentLang=<zh-Hans|ko|es>&lang=<zh|ko|es>`。`contentLang` 选择文稿及音轨，`lang` 明确选择界面语言；两者独立。客户端允许有效 `lang` 参数优先于浏览器记住的语言，无有效参数时保持原有偏好。最终 PNG 与预览仍须独立解码，且浏览器核验正确周次、内容语言、界面语言和音轨。
+
+主视觉仍由 Codex 按当周内容 brief 调用内置 ImageGen 生成一次；CLI 自动完成多语合成与最终二维码检查，不自行调用付费图像 API或发送海报。续跑时复用已验证主视觉和发行包；若页面或链接变化，重新绑定并核验最终图，保留旧版证据。
 
 ## 历史与恢复
 

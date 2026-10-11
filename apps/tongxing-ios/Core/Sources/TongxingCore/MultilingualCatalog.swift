@@ -7,6 +7,9 @@ public enum LanguageCapability: String, Codable, CaseIterable, Sendable {
 public struct MultilingualCatalog: Codable, Sendable, Equatable {
     public static let supportedSchemaVersion = "sermon-multilingual-catalog-v2"
     public static let dualScriptSchemaVersion = "sermon-multilingual-catalog-v3"
+    /// v3 plus machine-checked targets under /releases-v4/. /multilingual-v3.json
+    /// stays the human-only projection for clients that predate v4.
+    public static let machineCheckedSchemaVersion = "sermon-multilingual-catalog-v4"
     public static let productionSchemaVersion = dualScriptSchemaVersion
     public let schemaVersion: String
     public let generatedAt: String
@@ -15,20 +18,26 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
 
     public var defaultPage: MultilingualPage { pages.first { $0.id == defaultPageId }! }
 
+    /// v3 and v4 catalogs both carry titled dual-script pages for the native reader.
+    public var isDualScript: Bool {
+        schemaVersion == Self.dualScriptSchemaVersion || schemaVersion == Self.machineCheckedSchemaVersion
+    }
+
     public static func decode(_ data: Data, allowDevCandidates: Bool = false) throws -> Self {
         let value = try JSONDecoder().decode(Self.self, from: data)
         // Validate the entire wire catalog before projecting the visible locales.
-        // A machine-reviewed locale never becomes a published target.
+        // A machine-reviewed locale never becomes a published target; a
+        // machine-checked locale is published but never a human approval.
         try value.validate(allowDevCandidates: true)
         if allowDevCandidates { return value }
         let pages = value.pages.compactMap { page -> MultilingualPage? in
             guard page.diagnosticOnly != true, page.simulationOnly != true else { return nil }
-            let targets = page.targets.filter { $0.value.contentStatus == "human_reviewed" && $0.value.diagnosticOnly != true && $0.value.simulationOnly != true }
+            let targets = page.targets.filter { $0.value.isPublishedContent && $0.value.diagnosticOnly != true && $0.value.simulationOnly != true }
             guard !targets.isEmpty else { return nil }
             let locale = targets[page.defaultTargetLocale] != nil ? page.defaultTargetLocale : targets.keys.sorted().first!
             return MultilingualPage(id: page.id, title: page.title, date: page.date,
                 sourceLocale: page.sourceLocale, sourceIdentitySha256: page.sourceIdentitySha256,
-                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, defaultTargetLocale: locale, targets: targets,
+                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, displayCategory: page.displayCategory, defaultTargetLocale: locale, targets: targets,
                 diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly)
         }
         let projected = Self(schemaVersion: value.schemaVersion, generatedAt: value.generatedAt,
@@ -41,17 +50,28 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
     /// Retain independently verified human locales after the repository checks
     /// immutable release bytes and publication status. This creates no approval.
     public func retainingHumanLocales(_ localesByPage: [String: Set<String>]) throws -> Self {
+        try retaining(localesByPage) { $0.contentStatus == "human_reviewed" }
+    }
+
+    /// Retain independently verified published locales: human-reviewed and
+    /// machine-checked targets, never dev-only machine-reviewed candidates.
+    /// Machine-checked locales stay machine-checked; this creates no approval.
+    public func retainingPublishedLocales(_ localesByPage: [String: Set<String>]) throws -> Self {
+        try retaining(localesByPage) { $0.isPublishedContent }
+    }
+
+    private func retaining(_ localesByPage: [String: Set<String>], where admitted: (PageTarget) -> Bool) throws -> Self {
         let selected = pages.compactMap { page -> MultilingualPage? in
             guard page.diagnosticOnly != true, page.simulationOnly != true else { return nil }
             let targets = page.targets.filter { locale, target in
-                localesByPage[page.id]?.contains(locale) == true && target.contentStatus == "human_reviewed"
+                localesByPage[page.id]?.contains(locale) == true && admitted(target)
                     && target.diagnosticOnly != true && target.simulationOnly != true
             }
             guard !targets.isEmpty else { return nil }
             let locale = targets[page.defaultTargetLocale] != nil ? page.defaultTargetLocale : targets.keys.sorted().first!
             return MultilingualPage(id: page.id, title: page.title, date: page.date,
                 sourceLocale: page.sourceLocale, sourceIdentitySha256: page.sourceIdentitySha256,
-                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, defaultTargetLocale: locale, targets: targets,
+                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, displayCategory: page.displayCategory, defaultTargetLocale: locale, targets: targets,
                 diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly)
         }
         let result = Self(schemaVersion: schemaVersion, generatedAt: generatedAt,
@@ -61,7 +81,7 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
     }
 
     public func validate(allowDevCandidates: Bool = false) throws {
-        guard [Self.supportedSchemaVersion, Self.dualScriptSchemaVersion].contains(schemaVersion) else {
+        guard [Self.supportedSchemaVersion, Self.dualScriptSchemaVersion, Self.machineCheckedSchemaVersion].contains(schemaVersion) else {
             throw CatalogError.invalid("不支持的多语言目录版本")
         }
         guard !pages.isEmpty, pages.count <= 104 else { throw CatalogError.invalid("多语言目录页数无效") }
@@ -72,6 +92,22 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
 }
 
 public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
+    /// Source category only, not a statement of publication or review approval.
+    /// Older catalogs retain confirmed archive IDs and explicit podcast type.
+    public var displayEdition: String? { displayEdition(locale: "zh-Hans") }
+
+    public func displayEdition(locale: String) -> String? {
+        guard diagnosticOnly != true, simulationOnly != true else { return nil }
+        if let displayCategory { return displayCategory.label(locale: locale) }
+        if mediaType == "podcast" { return "播客" }
+        switch id {
+        case "2026-09-27-weekend-sermon-drive-530", "resi-20261004-69ba7a66":
+            return "正式播放版"
+        default:
+            return nil
+        }
+    }
+
     public let id: String
     public let title: String?
     public let date: String
@@ -79,6 +115,7 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
     public let sourceIdentitySha256: String
     public let sourceMediaSha256: String?
     public let mediaType: String?
+    public var displayCategory: PageDisplayCategory? = nil
     public let defaultTargetLocale: String
     public let targets: [String: PageTarget]
     public let diagnosticOnly: Bool?
@@ -96,10 +133,12 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
               title.map({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) ?? true,
               !targets.isEmpty, targets.count <= 16, targets[defaultTargetLocale] != nil
         else { throw CatalogError.invalid("多语言页面来源、日期或默认语言无效") }
-        if catalogSchemaVersion == MultilingualCatalog.dualScriptSchemaVersion {
+        if catalogSchemaVersion == MultilingualCatalog.dualScriptSchemaVersion
+            || catalogSchemaVersion == MultilingualCatalog.machineCheckedSchemaVersion {
             guard let title, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   title.count <= 180 else { throw CatalogError.invalid("双稿页面缺少有效标题") }
         }
+        try displayCategory?.validate()
         for (locale, target) in targets {
             guard Validation.locale(locale) else { throw CatalogError.invalid("目标语言代码无效") }
             try target.validate(pageID: id, locale: locale, catalogSchemaVersion: catalogSchemaVersion,
@@ -112,10 +151,65 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
         }
     }
 
+    /// Production-visible targets: human-reviewed and machine-checked.
     public var publishedTargets: [(locale: String, target: PageTarget)] {
-        targets.filter { $0.value.contentStatus == "human_reviewed" }
+        targets.filter { $0.value.isPublishedContent }
             .sorted { $0.key.localizedStandardCompare($1.key) == .orderedAscending }
             .map { (locale: $0.key, target: $0.value) }
+    }
+}
+
+/// Versioned catalog presentation metadata; independent of review and playback.
+public struct PageDisplayCategory: Codable, Sendable, Equatable {
+    public static let supportedSchemaVersion = "sermon-page-display-category-v1"
+    public let schemaVersion: String
+    public let labels: [String: String]
+
+    public init(schemaVersion: String, labels: [String: String]) {
+        self.schemaVersion = schemaVersion
+        self.labels = labels
+    }
+
+    private struct Field: CodingKey {
+        let stringValue: String
+        init?(stringValue: String) { self.stringValue = stringValue }
+        var intValue: Int? { nil }
+        init?(intValue: Int) { return nil }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let fields = try decoder.container(keyedBy: Field.self)
+        guard Set(fields.allKeys.map(\.stringValue)) == ["schemaVersion", "labels"] else {
+            throw CatalogError.invalid("页面类别显示元数据包含未知或缺失字段")
+        }
+        schemaVersion = try fields.decode(String.self, forKey: Field(stringValue: "schemaVersion")!)
+        labels = try fields.decode([String: String].self, forKey: Field(stringValue: "labels")!)
+    }
+
+    public func validate() throws {
+        guard schemaVersion == Self.supportedSchemaVersion,
+              (1...16).contains(labels.count), labels["en"] != nil,
+              labels.allSatisfy({ locale, label in
+                  Validation.locale(locale) && (1...48).contains(label.unicodeScalars.count)
+                      && !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                      && !label.unicodeScalars.contains(where: { $0.value < 32 || (127...159).contains($0.value) || [0x2028, 0x2029].contains($0.value) })
+              }) else { throw CatalogError.invalid("页面类别显示元数据无效") }
+    }
+
+    /// Interface locale, never audio/content locale. English is required fallback.
+    public func label(locale: String) -> String? {
+        let requested = locale.replacingOccurrences(of: "_", with: "-").lowercased()
+        func value(_ key: String) -> String? {
+            labels.keys.sorted().first { $0.lowercased() == key }.flatMap { labels[$0] }
+        }
+        if let exact = value(requested) { return exact }
+        if ["zh-cn", "zh-sg", "zh-hans"].contains(requested) || requested.hasPrefix("zh-hans-") {
+            for alias in ["zh-hans", "zh-cn", "zh-sg", "zh"] {
+                if let match = value(alias) { return match }
+            }
+        }
+        let base = requested.split(separator: "-").first.map(String.init) ?? requested
+        return value(base) ?? value("en")
     }
 }
 
@@ -129,24 +223,50 @@ public struct PageTarget: Codable, Sendable, Equatable {
     public let diagnosticOnly: Bool?
     public let simulationOnly: Bool?
 
+    /// A bound machine quality waiver admitted the text or the audio. This is
+    /// production visible but never a human approval; readers show the disclosure.
+    public var isMachineChecked: Bool { contentStatus == "machine_checked" || audioStatus == "machine_checked" }
+    /// Production-visible text: human-reviewed or machine-checked, never dev-only machine_reviewed.
+    public var isPublishedContent: Bool { contentStatus == "human_reviewed" || contentStatus == "machine_checked" }
+    /// Same-locale audio that may be downloaded and played (human-reviewed or machine-checked).
+    public var hasPublishedAudio: Bool { audioStatus == "human_reviewed" || audioStatus == "machine_checked" }
+
     public func validate(pageID: String, locale: String,
                          catalogSchemaVersion: String = MultilingualCatalog.supportedSchemaVersion,
                          allowDevCandidates: Bool = false) throws {
         guard allowDevCandidates || (diagnosticOnly != true && simulationOnly != true) else {
             throw CatalogError.invalid("开发语言需要明确的 Dev 上下文")
         }
-        let directory = catalogSchemaVersion == MultilingualCatalog.dualScriptSchemaVersion ? "releases-v2" : "releases"
+        // Only a v4 catalog may route a machine-checked target, and only to /releases-v4/.
+        let machineChecked = catalogSchemaVersion == MultilingualCatalog.machineCheckedSchemaVersion && isMachineChecked
+        let directory: String
+        if machineChecked {
+            directory = "releases-v4"
+        } else if catalogSchemaVersion == MultilingualCatalog.dualScriptSchemaVersion
+                    || catalogSchemaVersion == MultilingualCatalog.machineCheckedSchemaVersion {
+            directory = "releases-v2"
+        } else {
+            directory = "releases"
+        }
         let expected = "/\(directory)/\(pageID)/\(locale).json"
-        guard releasePackageUrl == expected, Validation.sha256(releasePackageJsonSha256),
-              (contentStatus == "human_reviewed" || (allowDevCandidates && contentStatus == "machine_reviewed")),
-              ["unavailable", "human_reviewed"].contains(audioStatus),
+        let statusesValid: Bool
+        if machineChecked {
+            // Machine-checked delivery always carries text, captions and audio.
+            statusesValid = ["human_reviewed", "machine_checked"].contains(contentStatus)
+                && ["human_reviewed", "machine_checked"].contains(audioStatus)
+                && capabilities.contains(.captions) && capabilities.contains(.audio)
+        } else {
+            statusesValid = (contentStatus == "human_reviewed" || (allowDevCandidates && contentStatus == "machine_reviewed"))
+                && ["unavailable", "human_reviewed"].contains(audioStatus)
+        }
+        guard releasePackageUrl == expected, Validation.sha256(releasePackageJsonSha256), statusesValid,
               capabilities.contains(.text), Set(capabilities.map(\.rawValue)).count == capabilities.count,
-              (audioStatus == "human_reviewed") == capabilities.contains(.audio),
+              hasPublishedAudio == capabilities.contains(.audio),
               (audioFingerprint != nil) == capabilities.contains(.alignment)
         else { throw CatalogError.invalid("目标语言发布引用或能力无效") }
         if let audioFingerprint {
             try audioFingerprint.validate()
-            guard audioFingerprint.pageId == pageID, audioStatus == "human_reviewed" else {
+            guard audioFingerprint.pageId == pageID, hasPublishedAudio else {
                 throw CatalogError.invalid("目标语言声音指纹与页面不符")
             }
         }
@@ -161,6 +281,9 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
     public static let supportedSchemaVersion = "sermon-target-language-release-package-v1"
     public static let dualScriptSchemaVersion = "sermon-target-language-release-package-v2"
     public static let fourProductSchemaVersion = "sermon-target-language-release-package-v3"
+    /// v3 four-product release with at least one machine-checked product,
+    /// published at /releases-v4/. A waiver is never a human approval.
+    public static let machineCheckedSchemaVersion = "sermon-target-language-release-package-v4"
     public static let productionSchemaVersion = dualScriptSchemaVersion
     public let schemaVersion: String
     public let packageId: String
@@ -185,6 +308,24 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
     public let deviceAcceptance: ReleaseAcceptance
     public let venueAcceptance: ReleaseAcceptance
     public let issues: [JSONValue]
+    /// v4 only: how the full text, spoken script and audio were admitted.
+    public let reviewBasis: ReleaseReviewBasis?
+    /// v4 only: the same-locale statement every reader must show.
+    public let disclosure: MachineCheckedDisclosure?
+    /// v4 only: what the dubbed captions display, "full_text" or "spoken_text".
+    /// Absent means the spoken script, as in every earlier release.
+    public let captionText: String?
+    /// v4 only: the dub was condensed like simultaneous interpretation.
+    /// Its captions keep the dub's timing and show the full translation.
+    public let spokenCondensation: SpokenCondensation?
+
+    /// Dubbed captions show the full translation of each group, on the dub's timing.
+    public var captionsShowFullText: Bool { captionText == "full_text" }
+
+    /// At least one product was admitted by a machine quality waiver, not a human review.
+    public var isMachineChecked: Bool { contentStatus == "machine_checked" || audioStatus == "machine_checked" }
+    /// Same-locale audio that may be downloaded and played (human-reviewed or machine-checked).
+    public var hasPublishedAudio: Bool { audioStatus == "human_reviewed" || audioStatus == "machine_checked" }
 
     public static func decode(_ data: Data, allowDevCandidate: Bool = false) throws -> Self {
         let value = try JSONDecoder().decode(Self.self, from: data)
@@ -196,17 +337,45 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
         let published = status == "published_http_verified" && httpVerification.status == "pass"
         let devCandidate = allowDevCandidate && status == "candidate" && httpVerification.status == "not_run"
         let machineCandidate = devCandidate && schemaVersion == Self.dualScriptSchemaVersion && contentStatus == "machine_reviewed"
-        guard [Self.supportedSchemaVersion, Self.dualScriptSchemaVersion, Self.fourProductSchemaVersion].contains(schemaVersion),
+        let machineCheckedRelease = schemaVersion == Self.machineCheckedSchemaVersion
+        let fourProductRelease = schemaVersion == Self.fourProductSchemaVersion || machineCheckedRelease
+        guard [Self.supportedSchemaVersion, Self.dualScriptSchemaVersion, Self.fourProductSchemaVersion,
+               Self.machineCheckedSchemaVersion].contains(schemaVersion),
               !packageId.isEmpty, // Opaque schema ID; producer suffix can exceed the page ID limit.
               Validation.identifier(pageId), sourceLocale == "en", Validation.locale(targetLocale),
               Validation.sha256(targetLanguageCandidateJsonSha256),
-              (contentStatus == "human_reviewed" || machineCandidate),
+              (contentStatus == "human_reviewed" || machineCandidate || (machineCheckedRelease && contentStatus == "machine_checked")),
               (interfaceLocale == targetLocale || (machineCandidate && interfaceLocale == "zh-Hans")),
               (!machineCandidate || audioHumanReviewReceiptJsonSha256.map(Validation.sha256) == true),
               contentLocale == targetLocale, issues.isEmpty,
               !assets.isEmpty
         else { throw CatalogError.invalid("目标语言发布包状态或绑定无效") }
-        if schemaVersion == Self.dualScriptSchemaVersion || schemaVersion == Self.fourProductSchemaVersion {
+        if machineCheckedRelease {
+            // All-human releases stay on v3. v4 is published only and always carries
+            // audio; each status must agree with the bound review basis.
+            guard published, let reviewBasis, let disclosure,
+                  ["human_reviewed", "machine_checked"].contains(contentStatus),
+                  ["human_reviewed", "machine_checked"].contains(audioStatus),
+                  isMachineChecked,
+                  [reviewBasis.fullText, reviewBasis.spokenText, reviewBasis.audio].allSatisfy(\.isValid),
+                  (contentStatus == "machine_checked") == reviewBasis.fullText.isMachineQualityWaiver,
+                  (audioStatus == "human_reviewed") == (reviewBasis.spokenText.isHumanReview && reviewBasis.audio.isHumanReview),
+                  !reviewBasis.audio.isMachineQualityWaiver || reviewBasis.spokenText.isMachineQualityWaiver
+            else { throw CatalogError.invalid("机器质检发布包状态、审核依据或说明无效") }
+            try disclosure.validate(locale: targetLocale)
+            // A condensed dub is machine checked and its captions must show the full text.
+            guard captionText == nil || captionText == "full_text" || captionText == "spoken_text",
+                  spokenCondensation.map({ $0.isValid && captionsShowFullText && audioStatus == "machine_checked"
+                      && reviewBasis.spokenText.isMachineQualityWaiver }) ?? true
+            else { throw CatalogError.invalid("配音字幕文本或精简记录无效") }
+            let roles: Set<ReleaseAsset.Role> = [.page, .content, .audio, .captions, .outline, .meditation, .productManifest]
+            guard assets.count == roles.count, Set(assets.map(\.role)) == roles else {
+                throw CatalogError.invalid("机器质检发布包资产不完整")
+            }
+        } else if reviewBasis != nil || disclosure != nil || captionText != nil || spokenCondensation != nil {
+            throw CatalogError.invalid("旧版本发布包不能声明机器质检依据")
+        }
+        if schemaVersion == Self.dualScriptSchemaVersion || fourProductRelease {
             guard spokenTargetLanguageCandidateJsonSha256.map(Validation.sha256) == true else {
                 throw CatalogError.invalid("双稿发布包缺少短口播候选绑定")
             }
@@ -220,7 +389,7 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
                     throw CatalogError.invalid("双稿发布资产路径与语言不符")
                 }
             }
-            if audioStatus == "human_reviewed" {
+            if hasPublishedAudio {
                 let audioPaths = assets.filter { $0.role == .audio }.map(\.path)
                 let acceptedExtensions = devCandidate ? ["mp3", "wav", "m4a"] : ["mp3"]
                 let acceptedAudioPaths = acceptedExtensions.map { "/media/\(pageId)/\(targetLocale).\($0)" }
@@ -231,12 +400,12 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
         } else if spokenTargetLanguageCandidateJsonSha256 != nil {
             throw CatalogError.invalid("单稿发布包包含短口播绑定")
         }
-        if schemaVersion == Self.fourProductSchemaVersion {
+        if fourProductRelease {
             guard let sourceIdentity, let fourProducts,
                   englishSourcePackageJsonSha256 == fourProducts.sourcePackageSha256,
                   targetLanguageCandidateJsonSha256 == fourProducts.textCandidateSha256,
                   targetLanguageAudioPackageJsonSha256 == fourProducts.audioPackageSha256,
-                  contentStatus == "human_reviewed"
+                  contentStatus == "human_reviewed" || machineCheckedRelease
             else { throw CatalogError.invalid("四产物发布缺少来源或文字音频绑定") }
             try sourceIdentity.validate()
             try fourProducts.validate()
@@ -266,7 +435,8 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
                   !assets.contains(where: { $0.role == .audio })
             else { throw CatalogError.invalid("无音频语言暴露了音频资产") }
         } else {
-            guard audioStatus == "human_reviewed", audioLocale == targetLocale,
+            guard audioStatus == "human_reviewed" || (machineCheckedRelease && audioStatus == "machine_checked"),
+                  audioLocale == targetLocale,
                   targetLanguageAudioPackageJsonSha256.map(Validation.sha256) == true,
                   assets.contains(where: { $0.role == .audio })
             else { throw CatalogError.invalid("音频语言或审核状态无效") }
@@ -317,6 +487,52 @@ public struct ReleaseAcceptance: Codable, Sendable, Equatable {
         guard ["not_run", "pass", "fail"].contains(status),
               status == "not_run" ? evidenceSha256 == nil : evidenceSha256.map(Validation.sha256) == true
         else { throw CatalogError.invalid("发布验收状态缺少匹配证据") }
+    }
+}
+
+/// How each v4 product was admitted: a human review or a bound machine quality
+/// waiver. A waiver receipt is never a human approval.
+public struct ReleaseReviewBasis: Codable, Sendable, Equatable {
+    public struct Entry: Codable, Sendable, Equatable {
+        public let kind: String
+        public let receiptSha256: String
+
+        public var isHumanReview: Bool { kind == "human_review" }
+        public var isMachineQualityWaiver: Bool { kind == "machine_quality_waiver" }
+        var isValid: Bool { (isHumanReview || isMachineQualityWaiver) && Validation.sha256(receiptSha256) }
+    }
+    public let fullText: Entry
+    public let spokenText: Entry
+    public let audio: Entry
+}
+
+/// The condensation behind a dub shortened like simultaneous interpretation.
+/// Omissions are recorded and core meaning is machine checked; captions and the
+/// reading text keep the full translation.
+public struct SpokenCondensation: Codable, Sendable, Equatable {
+    public let condensationRecordJsonSha256: String
+    public let condensationBindingJsonSha256: String
+    public let condensedGroupIds: [String]
+
+    var isValid: Bool {
+        Validation.sha256(condensationRecordJsonSha256) && Validation.sha256(condensationBindingJsonSha256)
+            && !condensedGroupIds.isEmpty && Set(condensedGroupIds).count == condensedGroupIds.count
+            && condensedGroupIds.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
+}
+
+/// The statement shown with every machine-checked product, in the target locale
+/// with an English equivalent. Readers require it to match the content locale.
+public struct MachineCheckedDisclosure: Codable, Sendable, Equatable {
+    public let locale: String
+    public let text: String
+    public let english: String
+
+    func validate(locale expected: String) throws {
+        guard locale == expected,
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !english.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { throw CatalogError.invalid("机器质检说明缺失或语言不符") }
     }
 }
 

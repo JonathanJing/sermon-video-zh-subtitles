@@ -28,9 +28,19 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
     /// Duration of the target-language audio timeline used by spoken captions.
     public let audioDurationSeconds: Double
     public let contentStatus: String
+    /// Release audio status; `machine_checked` audio was admitted by a waiver, not a human listening review.
+    public let audioStatus: String
     public let releaseStatus: String
+    /// The verified v4 release's same-locale disclosure; nil for human-only releases.
+    public let disclosure: MachineCheckedDisclosure?
+    /// The dub was condensed like simultaneous interpretation; `captions` keep
+    /// the dub's timing but show the full translation of each group.
+    public let isCondensedDub: Bool
     public let fullText: [PublishedTranscriptCue]
     public let captions: [PublishedTranscriptCue]
+
+    /// At least one product of this release is machine-checked; never a human approval.
+    public var isMachineChecked: Bool { contentStatus == "machine_checked" || audioStatus == "machine_checked" }
 
     /// Call after verifying the two asset byte hashes against the catalog-bound
     /// release. Optional English failures leave the verified target text usable.
@@ -38,7 +48,8 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
                               package: TargetLanguageReleasePackage, page: MultilingualPage,
                               allowDevCandidate: Bool = false) throws -> Self {
         try package.validate(allowDevCandidate: allowDevCandidate)
-        guard [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion].contains(package.schemaVersion),
+        guard [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion,
+               TargetLanguageReleasePackage.machineCheckedSchemaVersion].contains(package.schemaVersion),
               package.pageId == page.id, let target = page.targets[package.targetLocale],
               package.contentStatus == target.contentStatus, package.audioStatus == target.audioStatus else {
             throw CatalogError.invalid("文稿与发布语言不符")
@@ -46,17 +57,23 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
         let source = try JSONDecoder().decode(FullContent.self, from: content)
         let spoken = try JSONDecoder().decode(CaptionContent.self, from: captions)
         let candidate = allowDevCandidate && package.status == "candidate" &&
-            package.schemaVersion != TargetLanguageReleasePackage.fourProductSchemaVersion
+            package.schemaVersion != TargetLanguageReleasePackage.fourProductSchemaVersion &&
+            package.schemaVersion != TargetLanguageReleasePackage.machineCheckedSchemaVersion
+        // Content v3 is read only through a v4 release, whose content status it must equal.
+        let machineCheckedRelease = package.schemaVersion == TargetLanguageReleasePackage.machineCheckedSchemaVersion
         let validContentSchema = candidate
             ? (source.schemaVersion == "sermon-formal-dev-content-v1" ||
                (package.contentStatus == "machine_reviewed" && source.schemaVersion == "sermon-dev-podcast-candidate-content-v2"))
-            : ["sermon-full-video-text-content-v1", "sermon-full-video-text-content-v2"].contains(source.schemaVersion)
+            : (["sermon-full-video-text-content-v1", "sermon-full-video-text-content-v2"].contains(source.schemaVersion)
+               || (machineCheckedRelease && source.schemaVersion == PublishedContentReview.machineCheckedSchemaVersion))
+        let validContentStatus = source.status == package.contentStatus
+            && (source.status == "human_reviewed" || source.schemaVersion == PublishedContentReview.machineCheckedSchemaVersion)
         guard validContentSchema,
               source.pageId == page.id, source.sourceLocale == "en",
               (candidate ? source.locale : source.targetLocale) == package.targetLocale,
               (candidate ? source.contentStatus == package.contentStatus && source.audioStatus == package.audioStatus &&
                   source.targetLanguageAudioPackageJsonSha256 == package.targetLanguageAudioPackageJsonSha256 &&
-                  source.date == page.date : source.status == "human_reviewed"),
+                  source.date == page.date : validContentStatus),
               source.englishSourcePackageJsonSha256 == page.sourceIdentitySha256,
               source.targetLanguageCandidateJsonSha256 == package.targetLanguageCandidateJsonSha256,
               (candidate ? true : source.sourceMediaSha256.map(Validation.sha256) == true),
@@ -67,6 +84,18 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
         }
         guard source.schemaVersion != "sermon-full-video-text-content-v2" || source.audioDurationSeconds != nil else {
             throw CatalogError.invalid("新版文稿缺少音轨时长")
+        }
+        if source.schemaVersion == PublishedContentReview.machineCheckedSchemaVersion {
+            // v3 adds the formal-only review statement and, when machine-checked,
+            // the same-locale disclosure. Simulation content stays on v2.
+            let review = try PublishedContentReview.decode(content)
+            // Machine-checked text repeats the release disclosure it was published under.
+            guard review.pageId == page.id, review.targetLocale == package.targetLocale,
+                  review.status == package.contentStatus,
+                  review.status != "machine_checked" || review.disclosure == package.disclosure,
+                  page.simulationOnly != true, target.simulationOnly != true else {
+                throw CatalogError.invalid("机器质检文稿与发布包不符")
+            }
         }
         if source.schemaVersion == "sermon-full-video-text-content-v2" {
             guard source.reviewMode == "formal" || source.reviewMode == "simulation" else {
@@ -101,12 +130,21 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
               Set(source.cues.map(\.textGroupId)) == Set(spoken.cues.map(\.textGroupId)) else {
             throw CatalogError.invalid("口播字幕与全文组不符")
         }
+        let fullTextByGroup = Dictionary(uniqueKeysWithValues: source.cues.map { ($0.textGroupId, $0.text) })
+        guard (package.spokenCondensation?.condensedGroupIds ?? []).allSatisfy({ fullTextByGroup[$0] != nil }) else {
+            throw CatalogError.invalid("精简组与全文组不符")
+        }
         let english = (candidate ? nil : englishReference).flatMap {
             try? EnglishReference.validated($0, source: source, package: package, page: page)
         } ?? [:]
         func convert(_ cue: RawCue) -> PublishedTranscriptCue {
             .init(id: cue.textGroupId, text: cue.text, start: cue.start, end: cue.end,
                   english: english[cue.textGroupId])
+        }
+        // captionText full_text keeps the dub's timing and shows each group's full translation.
+        func caption(_ cue: RawCue) -> PublishedTranscriptCue {
+            .init(id: cue.textGroupId, text: package.captionsShowFullText ? fullTextByGroup[cue.textGroupId] ?? cue.text : cue.text,
+                  start: cue.start, end: cue.end, english: english[cue.textGroupId])
         }
         let reviewed = package.contentStatus == "human_reviewed"
         func nonempty(_ value: String?) -> String? {
@@ -125,8 +163,70 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
                      summary: reviewed ? nonempty(source.summary) : nil, outline: outline,
                      questions: reviewed ? (source.questions ?? []).filter { nonempty($0) != nil } : [],
                      durationSeconds: source.durationSeconds, audioDurationSeconds: audioDuration, contentStatus: package.contentStatus,
-                     releaseStatus: package.status, fullText: source.cues.map(convert),
-                     captions: spoken.cues.map(convert))
+                     audioStatus: package.audioStatus, releaseStatus: package.status, disclosure: package.disclosure,
+                     isCondensedDub: package.spokenCondensation != nil,
+                     fullText: source.cues.map(convert),
+                     captions: spoken.cues.map(caption))
+    }
+}
+
+/// Review statement of full reading content v3. `machine_checked` means a bound
+/// machine quality waiver admitted the full text; it is never a human approval,
+/// so the content must carry its same-locale disclosure, and human-reviewed
+/// content must not. Read only through a v4 release with the same content status.
+public struct PublishedContentReview: Decodable, Sendable, Equatable {
+    public static let machineCheckedSchemaVersion = "sermon-full-video-text-content-v3"
+    public let schemaVersion: String
+    public let pageId: String
+    public let targetLocale: String
+    public let sourceLocale: String
+    public let status: String
+    public let durationSeconds: Double
+    public let audioDurationSeconds: Double
+    public let reviewMode: String
+    public let disclosure: MachineCheckedDisclosure?
+    public let cueCount: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, pageId, targetLocale, sourceLocale, status, durationSeconds
+        case audioDurationSeconds, reviewMode, disclosure, cues
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try c.decode(String.self, forKey: .schemaVersion)
+        pageId = try c.decode(String.self, forKey: .pageId)
+        targetLocale = try c.decode(String.self, forKey: .targetLocale)
+        sourceLocale = try c.decode(String.self, forKey: .sourceLocale)
+        status = try c.decode(String.self, forKey: .status)
+        durationSeconds = try c.decode(Double.self, forKey: .durationSeconds)
+        audioDurationSeconds = try c.decode(Double.self, forKey: .audioDurationSeconds)
+        reviewMode = try c.decode(String.self, forKey: .reviewMode)
+        // A present key must be a complete disclosure; explicit null is not absence.
+        disclosure = c.contains(.disclosure)
+            ? try c.decode(MachineCheckedDisclosure.self, forKey: .disclosure) : nil
+        cueCount = try c.decode([JSONValue].self, forKey: .cues).count
+    }
+
+    public static func decode(_ data: Data) throws -> Self {
+        let value = try JSONDecoder().decode(Self.self, from: data)
+        try value.validate()
+        return value
+    }
+
+    public func validate() throws {
+        guard schemaVersion == Self.machineCheckedSchemaVersion, !pageId.isEmpty, !targetLocale.isEmpty,
+              sourceLocale == "en", ["human_reviewed", "machine_checked"].contains(status),
+              durationSeconds.isFinite, durationSeconds > 0, durationSeconds <= 24 * 60 * 60,
+              audioDurationSeconds.isFinite, audioDurationSeconds > 0, audioDurationSeconds <= 24 * 60 * 60,
+              reviewMode == "formal", cueCount > 0
+        else { throw CatalogError.invalid("文稿版本、审核状态或时长无效") }
+        if status == "machine_checked" {
+            guard let disclosure else { throw CatalogError.invalid("机器质检文稿缺少说明") }
+            try disclosure.validate(locale: targetLocale)
+        } else if disclosure != nil {
+            throw CatalogError.invalid("人工审核文稿不能声明机器质检说明")
+        }
     }
 }
 
