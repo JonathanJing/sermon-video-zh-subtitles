@@ -1,9 +1,14 @@
-"""One command after a human-signed adjudication receipt: validate, freeze, verify.
+"""One command after a signed adjudication receipt: validate, freeze, verify.
 
 Steps, in order, each refusing before the next:
-1. Validate the receipt against the frozen source fixture (human role, approved,
-   bindings, exact CUV text, coverage of every flagged unit).
+1. Validate the receipt against the frozen source fixture (human or machine
+   role, approved, bindings, exact CUV text, coverage of every flagged unit).
+   A machine receipt is machine evidence: the report records it as such and
+   carries no human approval.
 2. Freeze the admitted-quote plugin and a new fixture that carries the receipt.
+   Flagged units the receipt settles as the speaker's words (paraphrase or
+   reference only) are frozen beside the admitted quotations and take the
+   plain translation path; a receipt with no quotation at all still runs.
 3. Load the fixture back through the same gate used before any dispatch.
 4. Optionally (--run-models) open an exclusive Spark session, run the diagnostic
    Layer 2 CLI and the Spark TTS/ASR, then close the session in the same
@@ -16,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -48,8 +54,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     source, anchor, plan = (_load(source_dir / name) for name in ('source.json', 'anchor.json', 'group-plan.json'))
     bindings = {name: manifest['files'][name] for name in adjudication.BINDING_KEYS}
     receipt = _load(Path(args.receipt))
-    summary = adjudication.validate_receipt(receipt, target_locale=TARGET_LOCALE,
-                                            bindings=bindings, flagged_units=flagged)
+    summary = adjudication.validate_receipt(receipt, target_locale=TARGET_LOCALE, bindings=bindings,
+                                            flagged_units=flagged, machine_inputs={
+                                                'source.json': source, 'anchor.json': anchor, 'group-plan.json': plan})
     out.mkdir(parents=True)
     baseline = _load(Path(args.baseline_policy))
     policy = admitted.freeze_admitted_plugin(summary, source, anchor, plan, baseline, out / 'plugin.py')
@@ -66,7 +73,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
               'admittedQuotes': [{'candidateId': q['candidateId'], 'classification': q['classification'],
                                   'canonicalRef': q['canonicalRef'], 'editionId': q['editionId'],
                                   'editionVerification': q['editionVerification']} for q in summary['quotes']],
-              'fixture': str(fixture), 'modelCalls': 0, 'humanApproval': 'from_receipt_only',
+              'speakerWordsUnits': summary['speakerWordsUnits'],
+              'fixture': str(fixture), 'modelCalls': 0,
+              'adjudicationKind': summary['adjudicationKind'],
+              'humanApproval': 'from_receipt_only' if summary['humanApproval'] else False,
               'productionEligible': False}
     if args.run_models:
         report.update(run_models(args, fixture, out))
@@ -94,15 +104,19 @@ def run_models(args: argparse.Namespace, fixture: Path, out: Path) -> dict[str, 
                            cwd=ROOT, capture_output=True, text=True)
     if begin.returncode:
         raise SystemExit('exclusive session did not start; nothing was run: ' + begin.stderr.strip()[:300])
+    # The L2 CLI and the Spark runner both require the session identity in the environment.
+    environment = dict(os.environ, SPARK_EXCLUSIVE_SESSION_ID=args.spark_session_id,
+                       SPARK_EXCLUSIVE_SESSION_OWNER=args.spark_session_owner)
     run_result = subprocess.run(['scripts/experiments/spark_session_round.sh', args.spark_session_id,
-                                 args.spark_session_owner, '--', 'sh', '-c', chain], cwd=ROOT)
+                                 args.spark_session_owner, '--', 'sh', '-c', chain], cwd=ROOT, env=environment)
     return {'modelRun': 'completed' if run_result.returncode == 0 else 'failed',
             'modelRunExitCode': run_result.returncode, 'publication': 'not_run'}
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--receipt', type=Path, required=True, help='Human-signed adjudication receipt')
+    parser.add_argument('--receipt', type=Path, required=True,
+                        help='Adjudication receipt signed by a human reviewer or by scripture_machine_adjudication')
     parser.add_argument('--source-fixture', type=Path, required=True, help='Frozen zh-Hans 605 fixture (source of inputs)')
     parser.add_argument('--baseline-policy', type=Path, required=True, help='Pre-adjudication baseline policy')
     parser.add_argument('--out-root', type=Path, required=True, help='New directory for this round')
@@ -118,7 +132,7 @@ def main(argv: list[str] | None = None) -> int:
     report = run(args)
     print(json.dumps({'status': report['status'], 'fixture': report['fixture'],
                       'modelRun': report.get('modelRun', 'not_requested')}, ensure_ascii=False))
-    return 0
+    return 1 if report.get('modelRun') == 'failed' else 0
 
 
 if __name__ == '__main__':

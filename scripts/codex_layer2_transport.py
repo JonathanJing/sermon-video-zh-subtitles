@@ -26,12 +26,16 @@ EFFORTS = {'translator': 'high', 'reviewer': 'medium'}
 TEST_CONFIGURATION = {'schemaVersion': 'codex-layer2-simulation-models-v1',
     'simulationOnly': True, 'translator': {'model': 'gpt-6.1-sol', 'reasoningEffort': 'high', 'serviceTier': 'fast'},
     'reviewer': {'model': 'gpt-6.1-sol', 'reasoningEffort': 'medium', 'serviceTier': 'fast'}}
+API_LUNA_TEST_CONFIGURATION = {'schemaVersion': 'codex-layer2-simulation-models-v1',
+    'simulationOnly': True, 'apiExperimentOnly': True,
+    'translator': {'model': 'gpt-6.1-sol', 'reasoningEffort': 'high', 'serviceTier': 'default'},
+    'reviewer': {'model': 'gpt-6-luna', 'reasoningEffort': 'medium', 'serviceTier': 'default'}}
 
 HISTORICAL_TEST_CONFIGURATION = json.loads(json.dumps(TEST_CONFIGURATION))
 HISTORICAL_TEST_CONFIGURATION['reviewer']['model'] = 'gpt-6-sol'
 
 def validate_test_configuration(configuration):
-    if configuration not in (TEST_CONFIGURATION, HISTORICAL_TEST_CONFIGURATION):
+    if configuration not in (TEST_CONFIGURATION, HISTORICAL_TEST_CONFIGURATION, API_LUNA_TEST_CONFIGURATION):
         raise ValueError('unsupported_codex_simulation_model_configuration')
     return json.loads(json.dumps(configuration))
 

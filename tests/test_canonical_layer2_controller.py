@@ -295,6 +295,17 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         self.assertEqual(result['nodes']['text.zh-Hans']['status'], 'blocked')
         self.assertIsNone(result['proposedWorkUnit'])
 
+    def test_outputs_cannot_overlap_derived_durable_roots(self):
+        for suffix in ('layer2-repair', 'layer2-budget'):
+            for output in (f'.jobs.{suffix}', f'.jobs.{suffix}/nested'):
+                with self.subTest(output=output):
+                    self.config_data['locales']['zh-Hans']['outputDirectory'] = output
+                    self.save_config()
+                    before = self.files()
+                    with self.assertRaisesRegex(ValueError, 'execution_paths_overlap'):
+                        subject.load_configuration(self.path)
+                    self.assertEqual(self.files(), before)
+
     def test_unknown_fields_and_overlapping_outputs_are_rejected(self):
         base = copy.deepcopy(self.config_data)
         for key, value in [('command', ['sh','-c','anything']), ('apiKey','must-not-be-stored'), ('mode','execute')]:

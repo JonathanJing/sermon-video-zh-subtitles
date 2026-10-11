@@ -112,6 +112,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--glossary", type=Path)
     parser.add_argument("--source-text-review", type=Path, help="Hash-bound English source corrections; preserves the original ASR evidence.")
+    parser.add_argument("--source-text-review-package", type=Path,
+                        help="Directory with the source.json and anchor.json a machine audio adjudication review's receipt adjudicated.")
     parser.add_argument("--export-sunday-context", action="store_true")
     parser.add_argument("--source-service-date", help="Verified source date (YYYY-MM-DD); otherwise use archive release timestamp.")
     parser.add_argument("--zh-model", default="gpt-6.1-sol")
@@ -806,6 +808,8 @@ def build_pipeline_command(
         command.extend(["--glossary", str(args.glossary)])
     if getattr(args, "source_text_review", None):
         command.extend(["--source-text-review", str(args.source_text_review)])
+        if getattr(args, "source_text_review_package", None):
+            command.extend(["--source-text-review-package", str(args.source_text_review_package)])
     return command
 
 
@@ -1310,7 +1314,12 @@ def source_review_cache_ready(args: argparse.Namespace, pipeline_outdir: Path) -
     from scripts.sermon_source_text_review import apply_review
 
     raw_segments = json.loads(raw_path.read_text(encoding="utf-8"))
-    corrected, _ = apply_review(raw_segments, review, audio_path, asr_path)
+    package_dir = getattr(args, "source_text_review_package", None)
+    adjudicated_package = None
+    if package_dir:
+        adjudicated_package = {name: json.loads((Path(package_dir) / f"{name}.json").read_text(encoding="utf-8"))
+                               for name in ("source", "anchor")}
+    corrected, _ = apply_review(raw_segments, review, audio_path, asr_path, adjudicated_package=adjudicated_package)
     from scripts.sermon_pipeline import clean_text, ffprobe_duration, reference_chunks_to_reading_segments
 
     asr = json.loads(asr_path.read_text(encoding="utf-8"))
@@ -1424,6 +1433,10 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
         }
     if getattr(args, "source_text_review", None):
         identity["sourceTextReview"] = file_content_identity(args.source_text_review)
+        package_dir = getattr(args, "source_text_review_package", None)
+        if package_dir:
+            identity["sourceTextReviewPackage"] = {
+                name: file_content_identity(Path(package_dir) / f"{name}.json") for name in ("source", "anchor")}
     return identity
 
 

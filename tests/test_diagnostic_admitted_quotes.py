@@ -36,6 +36,23 @@ def summary():
                                          flagged_units=UNITS, library=LIBRARY)
 
 
+def speaker_words_receipt(quoted=True):
+    """A receipt settling UNITS[1] (and, without a quotation, UNITS[0] too) as the speaker's words."""
+    rows = [{'candidateId': 'p2', 'sourceUnitIds': [UNITS[1]], 'classification': 'speaker_paraphrase',
+             'reference': None, 'editionId': None, 'exactSentence': None}]
+    if quoted:
+        rows.insert(0, receipt()['candidates'][0])
+    else:
+        rows.insert(0, {'candidateId': 'r1', 'sourceUnitIds': [UNITS[0]], 'classification': 'reference_only',
+                        'reference': 'REV 4:2-3', 'editionId': None, 'exactSentence': None})
+    return dict(receipt(), candidates=rows)
+
+
+def speaker_words_summary(quoted=True):
+    return adjudication.validate_receipt(speaker_words_receipt(quoted), target_locale='zh-Hans', bindings=BINDINGS,
+                                         flagged_units=UNITS, library=LIBRARY)
+
+
 def units():
     return [{'sourceUnitId': UNITS[0], 'english': 'Verse two and three, John says the throne was in heaven.'},
             {'sourceUnitId': UNITS[1], 'english': 'The one seated had the appearance of jasper.'}]
@@ -106,6 +123,43 @@ class FrozenPluginTests(unittest.TestCase):
         self.assertEqual(policy['scripture']['citationUseStatus'], 'project_source_reviewed')
         self.assertEqual(policy['languageReview']['pluginId'], helper.PLUGIN_ID)
         self.assertEqual(policy['componentSha256']['scripture'], policies.canonical_sha256(policy['scripture']))
+
+    def test_speaker_words_units_are_frozen_beside_the_quotations_and_take_the_plain_path(self):
+        mixed = speaker_words_summary()
+        self.assertEqual(mixed['speakerWordsUnits'], [UNITS[1]])
+        policy = helper.freeze_admitted_plugin(mixed, None, None, None, self.baseline, self.root / 'plugin.py')
+        facts = preflight._literals(self.root / 'plugin.py')
+        self.assertEqual(facts['SPEAKER_WORDS_UNITS'], [UNITS[1]])
+        self.assertEqual([row['candidateId'] for row in facts['ADMITTED_QUOTES']], ['q1'])
+        request = {'sourceUnits': units()}
+        plan = [{'translationGroupId': 'g1', 'sourceUnitIds': UNITS}]
+        quotes = preflight._quoted_rules(facts, request, policy, plan)
+        self.assertEqual([q['reference'] for q in quotes], ['REV 4:2-3'])  # no rule pins the speaker's words
+        exact = helper._exact_result(UNITS, REV + ' 他说那位坐着的好像碧玉。', facts['ADMITTED_QUOTES'],
+                                     facts['SPEAKER_WORDS_UNITS'])
+        self.assertEqual(exact['status'], 'pass')
+        self.assertIn("speaker's words, translated as spoken with no pinned sentence: " + UNITS[1], exact['evidence'])
+        self.assertEqual(helper._exact_result(UNITS, '译文没有引文', facts['ADMITTED_QUOTES'],
+                                              facts['SPEAKER_WORDS_UNITS'])['status'], 'fail')
+        # A receipt with no admitted quotation at all still freezes: every flagged unit is routed as spoken.
+        plain = speaker_words_summary(quoted=False)
+        self.assertEqual((plain['admitted'], plain['speakerWordsUnits']), ([], sorted(UNITS)))
+        policy = helper.freeze_admitted_plugin(plain, None, None, None, self.baseline, self.root / 'plain.py')
+        facts = preflight._literals(self.root / 'plain.py')
+        self.assertEqual((facts['ADMITTED_QUOTES'], facts['SPEAKER_WORDS_UNITS']), ([], sorted(UNITS)))
+        self.assertEqual(policy['scripture']['editionId'], 'CUV')
+        self.assertEqual(policy['componentSha256']['scripture'], policies.canonical_sha256(policy['scripture']))
+        self.assertEqual(preflight._quoted_rules(facts, request, policy, plan), [])
+        exact = helper._exact_result(UNITS, '他说宝座在天上。', [], sorted(UNITS))
+        self.assertEqual(exact['status'], 'pass')
+        self.assertIn(','.join(sorted(UNITS)), exact['evidence'])
+        # Nothing routed at all, or a unit routed both ways, is refused.
+        with self.assertRaisesRegex(ValueError, 'admitted_quotes_missing'):
+            helper.freeze_admitted_plugin(dict(plain, admitted=[], speakerWordsUnits=[]), None, None, None,
+                                          self.baseline, self.root / 'none.py')
+        with self.assertRaisesRegex(ValueError, 'speaker_words_units_invalid'):
+            helper.review_group(policy, units(), group('x'), diagnostic_context={},
+                                admitted_quotes=summary()['admitted'], speaker_words_units=[UNITS[0]])
 
     def test_freeze_refuses_to_overwrite_an_existing_plugin(self):
         self.freeze()

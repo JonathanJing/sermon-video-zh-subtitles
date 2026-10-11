@@ -4,12 +4,55 @@ import XCTest
 /// No fixture, microphone capture, audio generation, or audition playback is used.
 @MainActor
 final class AppStoreScreenshotUITests: XCTestCase {
+    func testCaptureChineseProductionWeeklyPoster() throws {
+        try captureProductionWeeklyPoster(language: .chinese)
+    }
+
+    func testCaptureEnglishProductionWeeklyPoster() throws {
+        try captureProductionWeeklyPoster(language: .english)
+    }
+
     func testCaptureProductionStoreScreenshots() throws {
         try captureProduction(language: .chinese)
     }
 
     func testCaptureEnglishProductionStoreScreenshots() throws {
         try captureProduction(language: .english)
+    }
+
+    private func captureProductionWeeklyPoster(language interfaceLanguage: CaptureLanguage) throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", interfaceLanguage.appleLanguages,
+                               "-AppleLocale", interfaceLanguage.appleLocale]
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer { app.terminate() }
+
+        XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 45))
+        let interface = element("app-language-menu", in: app)
+        try reveal(interface, in: app, towardTop: true)
+        interface.tap()
+        let selectedInterface = app.buttons[interfaceLanguage.menuTitle]
+        XCTAssertTrue(selectedInterface.waitForExistence(timeout: 5))
+        selectedInterface.tap()
+
+        let language = app.buttons["choose-content-language"]
+        try reveal(language, in: app, towardTop: true)
+        language.tap()
+        let chineseContent = app.buttons["content-language-zh-Hans"]
+        XCTAssertTrue(chineseContent.waitForExistence(timeout: 15))
+        chineseContent.tap()
+
+        let newPoster = app.buttons["weekly-update-open"]
+        let seenPoster = app.buttons["weekly-update-reopen"]
+        let entry = newPoster.waitForExistence(timeout: 45) ? newPoster : seenPoster
+        XCTAssertTrue(entry.waitForExistence(timeout: 10), "A published production poster is available.")
+        capture("store-weekly-poster-home-\(interfaceLanguage.rawValue)", app: app)
+        entry.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertTrue(app.staticTexts["weekly-update-title"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.images["weekly-update-poster"].waitForExistence(timeout: 15))
+        capture("store-weekly-poster-detail-\(interfaceLanguage.rawValue)", app: app)
     }
 
     private func captureProduction(language interfaceLanguage: CaptureLanguage) throws {
