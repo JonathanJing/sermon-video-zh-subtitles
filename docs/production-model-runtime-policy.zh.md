@@ -10,7 +10,7 @@
 
 ## 显式实验翻译后端
 
-新 dev 与正式 canonical Layer 2 只接受 `openai_api`（`gpt-6.1-sol` high），独立审核使用 Sol medium。`target_language_policy.py --translator-backend claude_cli` 仅为独立实验准备政策草稿，不授权正式派发；canonical worker 和生产模型验证会拒绝 Claude 政策。
+新 dev 与正式 canonical Layer 2 只接受 `openai_api`（`gpt-6.1-sol` high），独立审核使用 Sol medium。`target_language_policy.py freeze --translator-backend claude_cli` 以及手工写入 Claude model 的新 draft 均在冻结前拒绝，等待独立实验政策契约；不能生成普通 production-ready Claude 政策。独立 A/B transport 仍可使用原 Sol 基线 prompts，canonical worker 和生产模型验证持续拒绝 Claude 政策。已有冻结政策字节、哈希及 cache-only replay 验证规则不变。
 
 Claude CLI transport 仅保留独立实验入口，经订阅登录运行，隔离 OpenAI／Anthropic 凭据与路由覆盖；每次调用必须传入 `max_completion_tokens`，显式关闭 API 与结构化输出重试，拒绝出现其他模型的返回。它不证明 CLI 整个 agent session 的调用次数可受 canonical API 预算约束，因此不接入新 canonical 运行。
 

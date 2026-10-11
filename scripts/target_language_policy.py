@@ -340,6 +340,12 @@ def freeze_policy(draft: dict[str, Any], *, series_table: Path = SERIES_TABLE,
                   language_review: str | None = None) -> dict[str, Any]:
     if not isinstance(draft, dict) or "componentSha256" in draft:
         raise ValueError("Freeze requires an unresolved policy draft without component hashes")
+    # Claude remains an independent experiment transport, not a new production
+    # policy. Keep validation of already-frozen identities unchanged for replay;
+    # reject both the CLI backend selector and manually edited drafts at freeze.
+    if any(str(draft.get(role, {}).get("model", "")).startswith("claude-")
+           for role in ("translator", "reviewer")):
+        raise ValueError("Claude policy freeze is unavailable until a separate experimental policy contract exists")
     policy = dict(bind_language_review(draft, language_review))
     if policy.get("schemaVersion") == POLICY_V2 and policy["sourceScope"]["termApprovalEvidence"]:
         if shadow_candidate is None or content_approval is None:
@@ -424,7 +430,7 @@ def main() -> None:
                              "the machine-QC plugin); machine_qc: bind ko/es-weekly-auto-v1")
     parser.add_argument("--translator-backend", choices=tuple(TRANSLATOR_BACKENDS),
                         help="Per-run translator for a new freeze; omit to keep the draft's translator "
-                             "(openai_api = gpt-6.1-sol high; claude_cli = claude-opus-5-5 high)")
+                             "(openai_api = gpt-6.1-sol high; claude_cli freeze is blocked pending an experimental contract)")
     args = parser.parse_args()
     policy = json.loads(args.policy.read_text(encoding="utf-8"))
     if args.command == "freeze":
