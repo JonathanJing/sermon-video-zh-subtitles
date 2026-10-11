@@ -62,5 +62,18 @@ class TargetFormTests(unittest.TestCase):
         self.assertTrue(rules.scripture_reference_problems("in Luke 15,", "en Lucas 16,", "es"))
 
 
+    def test_spanish_wrong_book_seed_plants_on_a_bare_chapter_and_is_caught(self):
+        from scripts import auto_qc_seeded_errors as seeds
+        english, target = "in Luke 15,", "en Lucas 15,"
+        mutated = seeds.mutate_text({"english": english, "targetText": target}, "wrong_book", "es", None)
+        self.assertEqual(mutated, "en Juan 15,")
+        self.assertTrue(rules.scripture_reference_problems(english, mutated, "es"))
+
+    def test_driver_treats_only_a_siteless_role_swap_as_not_applicable(self):
+        import inspect
+        from scripts import run_machine_qc_clip_test as driver
+        self.assertIn('kind != "swapped_name"', inspect.getsource(driver.calibration_coverage))
+
+
 if __name__ == "__main__":
     unittest.main()

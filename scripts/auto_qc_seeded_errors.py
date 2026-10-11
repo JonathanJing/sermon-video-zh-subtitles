@@ -190,6 +190,18 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None,
             if (chapter, verse) in cited:
                 john, romans = OTHER_BOOK[locale]
                 return text[:start] + (romans if code == "JOH" else john) + text[end:]
+        if locale == "es":
+            # Spanish often names a said chapter without "capitulo" ("Lucas 15").
+            john, romans = OTHER_BOOK[locale]
+            folded = "".join(rules._fold(char)[:1] or " " for char in text)
+            for code, chapter, verse in rules.english_book_citations(english):
+                if code is None or verse is not None:
+                    continue
+                names = [name for (_, name), book in rules._ES_BOOK_CODES.items() if book == code]
+                for name in names:
+                    match = re.search(r"\b" + re.escape(name) + r"(?=\s+(?:capitulo\s+)?" + str(chapter) + r"\b)", folded)
+                    if match:
+                        return text[:match.start()] + (romans if code == "JOH" else john) + text[match.end():]
         return None
     if kind == "english_leak":
         return english if len(re.findall(r"[A-Za-z]+", english)) >= 6 else None

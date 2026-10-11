@@ -218,7 +218,10 @@ def calibration_coverage(groups: list[dict], locale: str, policy: dict | None,
             1 for group in spoken_groups if group.get("condensation")
             and seeded.mutate_spoken(group, kind, locale, spoken_groups) not in (None, group["targetText"]))
             for kind in seeded.SPOKEN_KINDS})
-    return {"applicableGroups": counts, "untestableKinds": [kind for kind, count in counts.items() if not count]}
+    # The waiver exempts a role swap with no site (calibration_kind_not_applicable);
+    # every other kind must be calibrated on this text.
+    return {"applicableGroups": counts, "untestableKinds": [kind for kind, count in counts.items()
+                                                           if not count and kind != "swapped_name"]}
 
 
 def resolve_spoken(index: dict, binding_file: Path, override: Path | None,
