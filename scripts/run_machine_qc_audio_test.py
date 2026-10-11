@@ -471,6 +471,11 @@ def main(argv=None) -> int:
                         help="Cap on new paid gpt-transcribe requests per locale in this process")
     parser.add_argument("--workers", type=int, default=4, help="Parallel back-translation and secondary ASR calls")
     parser.add_argument("--preflight-only", action="store_true", help="Stop before any model call")
+    parser.add_argument("--text-backend", choices=("codex", "api"), default="codex",
+                        help="Back-translation judge for text-kind calibration: local Codex CLI or the OpenAI API")
+    parser.add_argument("--api-budget-authorization", type=Path,
+                        help="Bound budget for --text-backend api (sermon-machine-qc-api-budget-authorization-v1); "
+                             "reuse the text driver's to replay its cached judgements")
     args = parser.parse_args(argv)
     locales = [locale for locale in args.locales.split(",") if locale]
     if not locales or set(locales) - set(LOCALES):
@@ -479,6 +484,8 @@ def main(argv=None) -> int:
         parser.error(f"--workers must be between 1 and {MAX_WORKERS}")
     if args.max_api_calls < 0:
         parser.error("--max-api-calls must not be negative")
+    if args.text_backend == "api" and args.backend == "real" and not args.preflight_only and not args.api_budget_authorization:
+        parser.error("--text-backend api needs --api-budget-authorization (sermon-machine-qc-api-budget-authorization-v1)")
     real = args.backend == "real"
     if real and not args.preflight_only:
         if not args.state_dir:
@@ -542,7 +549,13 @@ def main(argv=None) -> int:
         return 0 if len(resolved) == len(locales) else 2
     groups = {locale: text_driver.qc_groups(read(Path(paths["candidate"])), read(Path(paths["anchor"])))
               for locale, paths in resolved.items()}
-    judge = text_driver.CodexJudge(state / "codex-calls") if real else text_driver.FakeJudge(groups)
+    if not real:
+        judge = text_driver.FakeJudge(groups)
+    elif args.text_backend == "api":
+        # Text-kind calibration replays the text driver's API judge cache when the same budget is reused.
+        judge = text_driver.ApiJudge(args.api_budget_authorization.resolve())
+    else:
+        judge = text_driver.CodexJudge(state / "codex-calls")
     for locale, paths in resolved.items():
         uncertain = judge.uncertain() + uncertain_calls(state)
         if uncertain:
