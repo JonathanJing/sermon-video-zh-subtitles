@@ -642,4 +642,46 @@
 | A 发布入口 | 完成，PR #343（草稿，base 暂为 #335 分支）：外壳闭包从 24 个模块扩到 42 个文件并在 verify／seal 核对与代码库同哈希；浏览器冒烟 `scripts/smoke_published_page.py` 对线上本周页实跑：三语标题、字幕、全文正常，零 console error，`/api/session` 返回 400 `unknown_source`；`deploy_feedback.py --v4-sealed`／`--previous-runtime` 干跑得到 21 个反馈来源，其中 12 个是 v4（**9-27 以来四个 v4 周次都从未进过反馈目录**，不只本周）；旧版 9-14 听译 release 已过不了今天的校验器，所以保留线上目录改用 `--previous-runtime`。线上基线不需要新脚本：`baseline --environment production` 已具备，问题是没在发布前当场跑，runbook 已写死 | PR #343 |
 | C 冻结守卫／Spark | 完成，PR #344：两个 QC 驱动加 `--expected-implementation`（代码不符退出码 2，先于任何模型调用）；独占会话把 `job-reasoning-review.timer` 最先停、最后恢复；`scripts/spark_wait_ready.py` 对会自行消退的状态轮询等待；周预算规则写进 runbook。派发器仍在 `artifacts/` 下，未迁入 `scripts/` | PR #344 |
 | D 运行日志／决定／账本 | 完成，PR #345：`run_journal.py`（阶段事件 + 计算／等待／返工汇总）、`record_decision.py`（替代 `*.evidence.txt`，文件证据按哈希绑定）、账本每条已返回请求带 `settlement`（供应商 token 数 × 冻结费率，缺则 `unknown`），摘要收录 journal／decisions／各类收据并对 JSON 键也脱敏（本周漏出的内网 IP 就在键里）。驱动尚未自动调用 journal | PR #345 |
+| E 发布后抽样表 | 完成，PR #346：`build_listening_sample.py` 每语言列出机器标记的全部句子 + 随机 10 句（种子默认音频包哈希），带译文、冻结英文、单句音频路径与空白结论格；候选与每句文字哈希绑定；填完用 `record_decision.py` 记录 | PR #346 |
+| G 量化 + `fix` 设计 | 完成（本节下方第十七节，仅文档）；ko 5 句的手工修订计时未做，等用户决定是否修 | 第十七节 |
+
+## 十七、G 项：第二模型复核留废的量化，与 `fix` 命令设计
+
+### 12 条修复记录各改了什么
+
+来源：夹具 `layer2/reviewer-repair-records.json`（本周 Layer 2 独立复核触发的全部自动修复记录）。
+
+| 账本 | 作业 | 轮 | 组数 | 判定 | 失败码 | 结果 |
+|---|---|---|---|---|---|---|
+| r4 | zh 8f4aeb66 | 1 | 14 | `systemic_rule_or_policy_issue` | 全部 `language_plugin_failed` | 语言插件误报（当晚修的 bug），无修复 |
+| r4 | ko／es 9c8a7603 | 1 | 15 | 同上 | 同上 | 同上 |
+| r4 | ko／es 82ca6203 | 1 | 25 | 同上 | 同上 | 同上 |
+| r5 | 5ce8825a | 1 | 2 | `repairable_content_failure` | u023：`meaning_addition`＋`meaning_omission`＋`review_uncertainty`；u036：插件 | **一处真实语义问题** |
+| r5 | 5ce8825a | 2 | 0 | 修复完成 | — | 带 `evidenceSha256`，修复落地 |
+| r5 | 4a9b2d71 | 1 | 4 | `repairable_content_failure` | 全部插件 | 插件误报 |
+| r5 | 4a9b2d71 | 2 | 0 | 修复完成 | — | 落地 |
+| r6-zh | zh 8f4aeb66 | 1 | 3 | `repairable_content_failure` | u008、u025 插件；u004 `meaning_omission`＋`review_uncertainty` | **一处真实语义问题** |
+| r6-zh | zh 8f4aeb66 | 2 | 1 | `request_human_review` | u004 同上 | 复核模型自己修不了，转人 |
+| r6-zh | zh 8f4aeb66 | 3 | 1 | `source_meaning_noted`（重开） | u004 | 人注明原文含义后放行 |
+| r12-zh | zh 8f4aeb66 | 1 | 1 | `repairable_content_failure` | u004 三码 | 新运行里同一组再次被标 |
+| r12-zh | zh 8f4aeb66 | 2 | 0 | 修复完成 | — | 落地 |
+
+**结论。** 三语 1383 组里，独立复核真正抓到语义问题 **2 组（0.14%）**：ko／es 的 u023 一轮自动修好；zh 的 u004 模型修不了，最终靠人注明原文含义，且换一次运行它又被标一次。其余 **60 处标记全部是语言插件的同一个误报**，与复核模型无关。复核的 token 开销在 Layer 2 账本里没法单独拆出（约 220 次请求、50 万 token 里含译与审），按请求数估不到总量的 2%。
+
+**建议（下周数据再定，不在 W42 改）：** 保留第二模型复核，它便宜且确实抓到了漏译；但对机器豁免语言，只有 `meaning_omission`／`meaning_addition` 应阻塞发布，单独的 `review_uncertainty` 改为进周一抽样表（E 项）而不是开新修订轮。这一条要改 `layer2_auto_repair` 的路由，放到 W43。
+
+### `fix` 单句修正命令：设计稿
+
+**输入：** `pageId`、`locale`、`groupIds`、修改类型（`text`：新的译文；`reading`：同一文字换 TTS 种子或读法指令）。**输出：** 新的候选修订（text）或新的 speech job 修订（reading），新的音频包，新的发布版本，以及反馈目录与冒烟结果。
+
+**步骤与复用边界：**
+
+1. **冻结身份核对。** 读运行计划，`--expected-implementation` 守卫通过；读当前已发布 release 包，确认 `pageId`／`locale` 与候选哈希。
+2. **文字改动（text）。** 只对 `groupIds` 生成新候选修订：译者→复核→语言插件只跑受改组（`run()` 的 partial repair 已支持）；文字 QC 校准复用（校准绑定候选哈希，候选变了要重算——这是本周的真实开销，约 5 分钟／语言，可接受）；文字豁免重签。
+3. **读法改动（reading）。** 候选不变；新 speech job 修订只对受改单元换种子／指令，`--reuse-from` 上一 job 复用其余单元的 WAV（单元缓存已支持）；压缩、筛查只对受改单元重算；音频 QC 全量重跑（它便宜，且整轨核对要全轨）。
+4. **接受收据继承。** 新音频包里哈希未变的单元，其 `audio_qc_human_acceptance` 自动继承（接受收据按单元 audioSha256＋textSha256 绑定，已满足）；只有受改单元需要新的接受或通过校准。这一条需要给 `machine_audio_waiver_acceptance.build` 加「从旧收据继承未变单元」的入口，约 0.5 天。
+5. **Layer 4。** 以新包 prepare→HTTP 验证→seal→publish 一个新版本；默认周不变；`deploy_feedback.py --previous-runtime … --v4-sealed <新 sealed>` 同步反馈目录（新音轨 sha 是新的来源）；`smoke_published_page.py` 三语冒烟。
+6. **日志。** 全程 `run_journal.py`，决定进 `record_decision.py`。
+
+**预计一次 `fix`（reading，5 句）的机器时间：** TTS 5 句 < 1 分钟，压缩＋筛查 2 分钟，音频 QC 约 5 分钟，Layer 4 约 10 分钟，共约 20 分钟；人工只在第 4 步听 5 句。**真实耗时未测**：按第十四节 G 的要求先用现有路径手工走通 ko 5 句并计时，等用户决定是否修本周的 ko 后再做；在那之前不开发 `fix`。
 
