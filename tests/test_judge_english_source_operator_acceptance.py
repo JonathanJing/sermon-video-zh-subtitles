@@ -65,5 +65,22 @@ class OperatorAcceptanceTests(unittest.TestCase):
                                        [row("c-s001", ["timelineCoherent"])])
 
 
+    def test_builder_accepts_only_timing_failures_covered_by_operator_acceptance(self):
+        acceptance = {"schemaVersion": judge.OPERATOR_ACCEPTANCE_SCHEMA, "acceptedBy": "operator",
+                      "acceptedSentenceIds": ["c-s001"],
+                      "items": [{"sourceSentenceId": "c-s001", "issueType": "alignment_word_duration_outlier"}]}
+        manifest_issues = self.manifest["issues"]
+        sentence = row("c-s001", ["timelineCoherent"])
+        semantic = row("c-s001", ["timelineCoherent", "quotationAndClauseIntegrity"])
+        self.assertTrue(layer1._accepted_timing_failure(sentence, {"c-s001"}))
+        self.assertFalse(layer1._accepted_timing_failure(semantic, {"c-s001"}))
+        self.assertFalse(layer1._accepted_timing_failure(sentence, set()))
+        self.assertEqual(layer1._operator_accepted_ids(acceptance, manifest_issues), {"c-s001"})
+        with self.assertRaisesRegex(ValueError, "operator acceptance is invalid"):
+            layer1._operator_accepted_ids({**acceptance, "items": [{"sourceSentenceId": "c-s009",
+                                                                     "issueType": "alignment_word_duration_outlier"}]},
+                                          manifest_issues)
+
+
 if __name__ == "__main__":
     unittest.main()
