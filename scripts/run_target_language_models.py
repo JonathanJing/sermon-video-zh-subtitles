@@ -767,6 +767,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
     reports a systemic stop, and ends the run with a failure report rather than
     evidence. It never writes a plugin group stop.
     """
+    require(request.get("candidateMode", "production") == "production",
+            "Shadow execution is not implemented: complete shadow admission is required")
     with accounting.stage(f"layer2.run_admission.{request['targetLocale']}",
                           depends_on=[source_admission_span] if source_admission_span else [],
                           executor_type="deterministic_program",
@@ -1244,6 +1246,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   cache_only: bool = False, progress_callback=None,
                   predecessor_spans=(), completion_spans: list[str] | None = None,
                   failure_collector=None, candidate_mode: str = "production") -> dict:
+    require(candidate_mode == "production",
+            "Shadow execution is not implemented: candidate schema, plugin admission and human receipt are required")
     require(plugin is not None,
             "Formal Layer 2 requires the frozen language plugin before dispatch")
     locale = policy["targetLocale"]

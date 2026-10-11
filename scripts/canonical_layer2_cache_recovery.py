@@ -20,8 +20,8 @@ from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path
 
 
-def _returned_cache_files(lane, source, anchor, policy):
-    request = layer2.producer.prepare_request(source, anchor, policy)
+def _returned_cache_files(lane, source, anchor, policy, *, candidate_mode="production"):
+    request = layer2.producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
     plan = layer2.models.group_plan(request, anchor)
     output = lane['output']
     files = [output / 'request.json', output / 'run-identity.json']
@@ -112,13 +112,13 @@ def recover(config_path, locale, expected_revision):
                     with accounting.stage('layer2.cache_admission.' + locale, depends_on=[],
                             executor_type='deterministic_program', work_unit_id='l2.' + locale + '.cache_admission') as admission_span:
                         source, anchor, policy = current_inputs()
-                        hashes = _returned_cache_files(lane, source, anchor, policy)
+                        hashes = _returned_cache_files(lane, source, anchor, policy, candidate_mode=config.candidate_mode)
                     def forbidden_call(*_args):
                         raise AssertionError('cache_only_transport_must_never_be_called')
                     model_completion = []
                     evidence = layer2.models.run_accounted(source, anchor, policy, lane['output'], '',
                         forbidden_call, None, lane['plugin'], None, None, cache_only=True,
-                        predecessor_spans=[admission_span], completion_spans=model_completion)
+                        predecessor_spans=[admission_span], completion_spans=model_completion, candidate_mode=config.candidate_mode)
                     with accounting.stage('layer2.cache_binding.' + locale, depends_on=model_completion,
                             executor_type='deterministic_program', work_unit_id='l2.' + locale + '.cache_binding') as binding_span:
                         current_inputs()

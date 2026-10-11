@@ -45,6 +45,7 @@ CONCURRENT_SCHEMA = 'sermon-canonical-layer2-execution-v2'
 # locale jobs at once. It does not accept the v2 Codex CLI concurrency profile;
 # API requests still share the job root's 24 in-flight slots.
 AUTO_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v3'
+SHADOW_SCHEMA = 'sermon-canonical-layer2-execution-v4'
 MAX_AUTO_REPAIR_LOCALES = 3
 
 
@@ -110,20 +111,20 @@ def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _json(path)
     required_keys = {'schemaVersion', 'productionRunId', 'inspectionConfig', 'jobRoot', 'locales'}
-    # candidateMode is an optional v3 field: absent means production; 'shadow' marks the non-production
-    # terminology-review candidate mode (docs/layer2-shadow-candidate-mode.zh.md).
+    # v1-v3 remain production contracts; shadow has a distinct v4 identity.
     candidate_mode = value.get('candidateMode', 'production') if isinstance(value, dict) else 'production'
     require(((set(value) == required_keys and value['schemaVersion'] == SCHEMA)
              or (set(value) == required_keys | {'concurrencyProfile', 'resourcePolicy'}
                  and value['schemaVersion'] == CONCURRENT_SCHEMA)
-             or (required_keys | {'layer2AutoRepair'} <= set(value) <= required_keys | {'layer2AutoRepair', 'candidateMode'}
-                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA
-                 and candidate_mode in {'production', 'shadow'}))
+             or (set(value) == required_keys | {'layer2AutoRepair'}
+                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA)
+             or (set(value) == required_keys | {'layer2AutoRepair', 'candidateMode'}
+                 and value['schemaVersion'] == SHADOW_SCHEMA and candidate_mode == 'shadow'))
             and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
     repair_binding = (_auto_repair_binding(value['layer2AutoRepair'])
-                      if value['schemaVersion'] == AUTO_REPAIR_SCHEMA else None)
+                      if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA} else None)
     inspection_path = _path(path.parent, value['inspectionConfig'])
     inspection = _json(inspection_path)
     require(inspection.get('schemaVersion') == packages.SCHEMA

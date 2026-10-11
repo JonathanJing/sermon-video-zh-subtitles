@@ -148,6 +148,9 @@ def inspect_configuration(root, config, *, candidate_mode='production'):
         except (ValueError, TypeError, KeyError, OSError):
             diagnostics[text] = 'policy_not_validated'
             continue
+        if candidate_mode == 'shadow':
+            diagnostics[text] = 'shadow_execution_not_implemented'
+            continue
         if 'candidate' not in lane:
             continue
         try:
