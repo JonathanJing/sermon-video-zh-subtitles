@@ -145,7 +145,9 @@ def write_catalogs(public, catalogs, page_id):
         staged.write_text(json.dumps(catalogs[name], ensure_ascii=False, indent=2) + '\n')
         os.replace(staged, output)
         rows.append(dict(catalogPath=str(output), beforeSha256=before, afterSha256=digest(output), pageId=page_id,
-                         locales=list(next(p for p in catalogs[name]['pages'] if p['id'] == page_id)['targets'])))
+                         # A page with only machine-checked locales is absent from the v3 projection.
+                         locales=list(next((p for p in catalogs[name]['pages'] if p['id'] == page_id),
+                                           {'targets': {}})['targets'])))
     return rows
 
 
