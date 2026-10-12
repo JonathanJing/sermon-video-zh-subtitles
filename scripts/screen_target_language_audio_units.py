@@ -35,8 +35,17 @@ except ImportError:
 # v2 records the ASR runtime settings behind every score (v1 receipts stay readable).
 SCHEMA = "sermon-target-language-audio-screening-v2"
 # How a recognized text is scored against the expected text; part of the recorded runtime.
-SCORING = ("token-sequence-ratio-v3; short units (<4 tokens) must match exactly; "
+# Scoring identities. A receipt records the one it was scored under; v3 is the original
+# unfolded scoring and stays reproducible so old receipts rescore exactly as recorded.
+SCORING_V3 = ("token-sequence-ratio-v3; short units (<4 tokens) must match exactly; "
+              "no negation, number or protected name may differ; numbers and names keep their order")
+SCORING = ("token-sequence-ratio-v4; readings a listener cannot tell apart are folded first "
+           "(spelled numbers and digits, same-pinyin-same-tone Chinese characters in fixed contexts, "
+           "Spanish diacritic function words, Korean spacing; digit strings are not positional numbers; "
+           "a Korean native numeral before a Sino counter is not folded); "
+           "short units (<4 tokens) must match exactly; "
            "no negation, number or protected name may differ; numbers and names keep their order")
+KNOWN_SCORINGS = (SCORING_V3, SCORING)
 MODEL = "Qwen/Qwen3-ASR-0.6B"
 BATCH_SIZES = (1, 2, 4, 8)
 
@@ -143,10 +152,14 @@ def korean_number_spans(text: str) -> list[tuple[int, int]]:
                               if not any(start < span[1] and span[0] < end for start, end in native))})
 
 
-def protected_text_agrees(expected: str, recognized: str, locale: str) -> bool:
+def protected_text_agrees(expected: str, recognized: str, locale: str, *, strip_punctuation: bool = False) -> bool:
     """Check whole numeral forms and names that cannot be identified from a partial diff."""
     from scripts.language_review_plugins import auto_qc_text_common as rules
-    left, right = (unicodedata.normalize("NFC", rules._fold(text)) for text in (expected, recognized))
+    # Scoring v4 turns punctuation into a space (apostrophes stay for can't / won't): ASR drops
+    # commas, and a Sino numeral check that sees "일 그" on one side and "일, 그" on the other
+    # would otherwise disagree. v3 receipts are rescored without it.
+    left, right = (unicodedata.normalize("NFC", re.sub(r"[^\w\s'’]", " ", rules._fold(text)) if strip_punctuation
+                                         else rules._fold(text)) for text in (expected, recognized))
     if locale == "en" and len(re.findall(r"\b[a-z]+n['’]t\b", left)) != len(re.findall(r"\b[a-z]+n['’]t\b", right)):
         return False
     if locale in {"zh-Hans", "ko", "es"}:
@@ -192,8 +205,293 @@ def protected_text_agrees(expected: str, recognized: str, locale: str) -> bool:
     return re.findall(pattern, left) == re.findall(pattern, right)
 
 
-def score(expected: str, recognized: str, locale: str, min_similarity: float) -> tuple[float, list[dict], bool]:
-    """``(similarity, differences, passed)`` for one unit, as recorded in the receipt."""
+# --- Reading-equivalent folding ----------------------------------------------------
+# An ASR transcript is compared with what a listener hears, so spellings a listener
+# cannot tell apart are folded to one form before scoring: spelled numbers and digits
+# (二十七亿 / 27亿, 삼분의 일 / 3분의 1, diez / 10), Chinese characters that share
+# pinyin and tone, Spanish diacritic function words (él / el) and Korean spacing.
+#
+# The rule for every fold is the same: it must never merge two readings a listener can
+# tell apart. So a fold applies only where the reading is unambiguous:
+#   - Chinese 地/得/的 are not folded (土地 and 得到 are dì and dé);
+#   - 只 becomes 支 only as a measure word after a numeral (七只号角), not in 只是;
+#   - Spanish accents are removed only on the function-word pairs that differ only by
+#     the diacritic tilde, never on stress accents (practicó / práctico stay apart);
+#   - Spanish and Chinese scales nest by multiplication (dos mil millones, 万亿);
+#   - a run of digit syllables is never read as a positional number (십일 vs 일일);
+#   - a Korean native numeral before a Sino-read counter (여덟 장 for 8장) is a misread
+#     chapter, not a spelling, and stays as the ASR heard it.
+
+_ZH_DIGIT_VALUES = {"〇": 0, "零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4,
+                    "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+_ZH_SMALL_UNITS = {"十": 10, "百": 100, "千": 1000}
+_ZH_BIG_UNITS = {"万": 10_000, "亿": 100_000_000}
+_ZH_NUMERAL_CHARS = "".join(_ZH_DIGIT_VALUES) + "".join(_ZH_SMALL_UNITS) + "".join(_ZH_BIG_UNITS)
+_ZH_NUMERAL_RUN = re.compile("[" + _ZH_NUMERAL_CHARS + "]+")
+_ZH_DIGITS_WITH_UNIT = re.compile(r"(\d+)([万亿])")
+# Same pinyin and tone, no polyphone among them: a dub cannot voice the difference.
+_ZH_HOMOPHONES = str.maketrans({"她": "他", "它": "他", "祂": "他", "牠": "他", "忿": "愤", "再": "在"})
+# Context-bound folds: 作出/做出 (zuò), and 只 as the measure word zhī after a numeral.
+_ZH_CONTEXT_FOLDS = ((re.compile("作出"), "做出"), (re.compile(r"(?<=[0-9])只"), "支"))
+
+_KO_SINO_VALUES = {"영": 0, "공": 0, "일": 1, "이": 2, "삼": 3, "사": 4, "오": 5,
+                   "육": 6, "칠": 7, "팔": 8, "구": 9}
+_KO_SINO_SMALL = {"십": 10, "백": 100, "천": 1000}
+_KO_SINO_BIG = {"만": 10_000, "억": 100_000_000}
+_KO_SINO_CHARS = "".join(_KO_SINO_VALUES) + "".join(_KO_SINO_SMALL) + "".join(_KO_SINO_BIG)
+_KO_SINO_RUN = re.compile("[" + _KO_SINO_CHARS + "]+")
+# Counters read with Sino numerals (삼장, 일 년, 이억 명); a native numeral before one of
+# these is a misreading and is never folded.
+_KO_SINO_COUNTERS = ("장", "절", "년", "월", "일", "분", "초", "층", "배", "회", "퍼센트", "주", "권", "세",
+                     "억", "만", "학년", "교시", "원", "도", "호", "편", "항")
+# 이 is also "this", so it counts only before a counter that cannot follow 이-the-word.
+_KO_I_COUNTERS = ("년", "월", "장", "절", "층", "배", "초", "회", "퍼센트", "억", "만", "학년", "교시", "호", "편", "항")
+# What may follow a complete Sino number besides a counter or a space: a particle.
+_KO_PARTICLES = ("은", "는", "을", "를", "의", "에", "도", "만", "로", "으로", "부터", "까지", "과", "와", "이나", "이면")
+# Counters read with native numerals (두 명, 세 사람, 네 번째, 열 가지).
+_KO_NATIVE_COUNTERS = ("명", "개", "사람", "가지", "살", "시", "번", "달", "마리", "잔", "병",
+                       "송이", "켤레", "그릇", "조각", "군데", "차례", "줄", "통")
+_KO_NATIVE_VALUES = {"하나": 1, "한": 1, "둘": 2, "두": 2, "셋": 3, "세": 3, "석": 3, "넷": 4, "네": 4, "넉": 4,
+                     "다섯": 5, "여섯": 6, "일곱": 7, "여덟": 8, "아홉": 9}
+_KO_NATIVE_TENS_VALUES = {"열": 10, "스물": 20, "스무": 20, "서른": 30, "마흔": 40, "쉰": 50,
+                          "예순": 60, "일흔": 70, "여든": 80, "아흔": 90}
+_KO_FRACTION = re.compile(r"(\d+|[" + _KO_SINO_CHARS + r"]+?)\s*분의\s*(\d+|[영일이삼사오육칠팔구](?:십[영일이삼사오육칠팔구]?)?|십[영일이삼사오육칠팔구]?)")
+_KO_DIGITS_WITH_UNIT = re.compile(r"(\d+)\s*([만억])")
+
+_ES_UNIT_VALUES = {"cero": 0, "uno": 1, "un": 1, "una": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5,
+                   "seis": 6, "siete": 7, "ocho": 8, "nueve": 9, "diez": 10, "once": 11, "doce": 12,
+                   "trece": 13, "catorce": 14, "quince": 15, "dieciseis": 16, "diecisiete": 17,
+                   "dieciocho": 18, "diecinueve": 19, "veinte": 20, "veintiuno": 21, "veintiun": 21,
+                   "veintiuna": 21, "veintidos": 22, "veintitres": 23, "veinticuatro": 24,
+                   "veinticinco": 25, "veintiseis": 26, "veintisiete": 27, "veintiocho": 28, "veintinueve": 29}
+_ES_TENS_VALUES = {"treinta": 30, "cuarenta": 40, "cincuenta": 50, "sesenta": 60, "setenta": 70,
+                   "ochenta": 80, "noventa": 90}
+_ES_HUNDREDS_VALUES = {"cien": 100, "ciento": 100, "doscientos": 200, "doscientas": 200, "trescientos": 300,
+                       "trescientas": 300, "cuatrocientos": 400, "cuatrocientas": 400, "quinientos": 500,
+                       "quinientas": 500, "seiscientos": 600, "seiscientas": 600, "setecientos": 700,
+                       "setecientas": 700, "ochocientos": 800, "ochocientas": 800, "novecientos": 900,
+                       "novecientas": 900}
+# Words that differ from their unaccented twin only by the diacritic tilde. ASR spells the
+# tilde inconsistently and the segments are the same. Stress accents (practicó / práctico,
+# está / esta) are not here: they change the word a listener hears.
+_ES_DIACRITIC_PAIRS = {"él": "el", "tú": "tu", "mí": "mi", "sí": "si", "té": "te", "dé": "de", "sé": "se",
+                       "más": "mas", "aún": "aun", "qué": "que", "quién": "quien", "quiénes": "quienes",
+                       "cuál": "cual", "cuáles": "cuales", "cómo": "como", "cuándo": "cuando",
+                       "cuánto": "cuanto", "cuánta": "cuanta", "cuántos": "cuantos", "cuántas": "cuantas",
+                       "dónde": "donde", "adónde": "adonde"}
+
+
+def _unaccent(word: str) -> str:
+    return "".join(char for char in unicodedata.normalize("NFKD", word) if not unicodedata.combining(char))
+
+
+def _positional_value(run: str, digit_values: dict, small_units: dict, big_units: dict, *,
+                      nested_big: bool = False) -> int | None:
+    """Value of a Chinese or Sino-Korean numeral run (二十七亿, 八十一, 삼백), or ``None``
+    when the run is not one positional number.
+
+    A run of two or more digit syllables with no unit (一一, 일일) is a digit string, not a
+    positional number, and is refused so it can never equal 十一 / 십일. A big unit applies
+    to the digits before it; written directly after another big unit with no digits it
+    multiplies what came before (万亿 = 10¹²) when ``nested_big`` allows it. Big units must
+    descend (一亿一万), and a run may not start with one.
+    """
+    total = section = 0
+    digits = ""
+    last_big = None
+    has_unit = False
+    previous_big = False
+    for char in run:
+        if char in digit_values:
+            if digit_values[char] == 0 and (total or section):
+                continue  # 零 inside a positional number only marks a skipped place (一百零五).
+            digits += str(digit_values[char])
+            previous_big = False
+        elif char in small_units:
+            if len(digits) > 1:
+                return None
+            section += (int(digits) if digits else 1) * small_units[char]
+            digits, has_unit, previous_big = "", True, False
+        else:
+            unit = big_units[char]
+            has_unit = True
+            if digits or section:
+                if len(digits) > 1 and not section:
+                    return None
+                section += int(digits) if digits else 0
+                if last_big is not None and unit >= last_big:
+                    return None
+                total += section * unit
+                section, digits, last_big, previous_big = 0, "", unit, True
+            elif nested_big and previous_big and last_big is not None and unit > last_big:
+                total *= unit
+                last_big = unit
+            else:
+                return None
+    if not has_unit:
+        return int(digits) if len(digits) == 1 else None
+    return total + section + (int(digits) if digits else 0)
+
+
+def _fold_chinese(text: str) -> str:
+    from scripts.language_review_plugins import auto_qc_text_common as rules
+    text = _ZH_DIGITS_WITH_UNIT.sub(lambda m: str(int(m.group(1)) * _ZH_BIG_UNITS[m.group(2)]), text)
+
+    def numeral(match: re.Match) -> str:
+        run, rest = match.group(), text[match.end():]
+        if len(run) == 1 and run not in _ZH_DIGIT_VALUES:
+            return run  # A lone unit (十分, 万一) is a word, not a number.
+        if len(run) == 1 and not re.match(rules._ZH_MEASURE_WORDS, rest):
+            return run  # A lone digit is a number only before a measure word (一名, 两个).
+        if len(run) == 4 and rest.startswith("年") and run[0] in "二一" and all(c in _ZH_DIGIT_VALUES for c in run):
+            return "".join(str(_ZH_DIGIT_VALUES[c]) for c in run)  # 二〇二六年: years are read digit by digit.
+        value = _positional_value(run, _ZH_DIGIT_VALUES, _ZH_SMALL_UNITS, _ZH_BIG_UNITS, nested_big=True)
+        return run if value is None else str(value)
+    text = _ZH_NUMERAL_RUN.sub(numeral, text).translate(_ZH_HOMOPHONES)
+    for pattern, replacement in _ZH_CONTEXT_FOLDS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
+def _ko_followed_by(text: str, end: int, counters) -> bool:
+    rest = text[end:].lstrip()
+    return any(rest.startswith(counter) for counter in counters)
+
+
+def _ko_native_pattern() -> re.Pattern:
+    units = "|".join(sorted(_KO_NATIVE_VALUES, key=len, reverse=True))
+    tens = "|".join(sorted(_KO_NATIVE_TENS_VALUES, key=len, reverse=True))
+    # 열다섯, 열 다섯, 스무, 마흔네: a tens form, a unit form, or both, then a native counter.
+    return re.compile(r"(?<![가-힣])(?:(" + tens + r")\s*(" + units + r")?|(" + units + r"))"
+                      r"(?=\s*(?:" + "|".join(_KO_NATIVE_COUNTERS) + "))")
+
+
+def _fold_korean(text: str) -> str:
+    def sino_value(part: str) -> str | None:
+        if part.isdigit():
+            return part
+        value = _positional_value(part, _KO_SINO_VALUES, _KO_SINO_SMALL, _KO_SINO_BIG)
+        return None if value is None else str(value)
+
+    def fraction(match: re.Match) -> str:
+        parts = [sino_value(match.group(1)), sino_value(match.group(2))]
+        return match.group() if None in parts else f"{parts[0]}분의 {parts[1]}"
+    text = _KO_FRACTION.sub(fraction, text)
+    text = _KO_DIGITS_WITH_UNIT.sub(lambda m: str(int(m.group(1)) * _KO_SINO_BIG[m.group(2)]), text)
+
+    def sino(match: re.Match) -> str:
+        run, start, end = match.group(), match.start(), match.end()
+        if start and "가" <= text[start - 1] <= "힣":
+            return run  # Inside a word (사람이, 위의): not a numeral.
+        has_unit = any(char in _KO_SINO_SMALL or char in _KO_SINO_BIG for char in run)
+        counters = _KO_I_COUNTERS if run == "이" else _KO_SINO_COUNTERS
+        following = text[end:end + 1]
+        inside_word = bool(following) and "가" <= following <= "힣" and not _ko_followed_by(
+            text, end, _KO_SINO_COUNTERS + _KO_PARTICLES)
+        if inside_word:
+            return run  # 천사 (angel) is not 1004; 사람 is not 4람.
+        if (has_unit and len(run) > 1) or _ko_followed_by(text, end, counters):
+            value = sino_value(run)
+            return run if value is None else value
+        return run
+    text = _KO_SINO_RUN.sub(sino, text)
+
+    def native(match: re.Match) -> str:
+        tens, unit, lone = match.groups()
+        return str(_KO_NATIVE_TENS_VALUES.get(tens, 0) + _KO_NATIVE_VALUES.get(unit or lone or "", 0))
+    return _ko_native_pattern().sub(native, text)
+
+
+def _take_spanish_cardinal(pieces: list[str], index: int) -> tuple[int | None, int]:
+    """``(value, stop)`` for the digits or spelled cardinal starting at ``pieces[index]``
+    (doscientos millones, treinta y uno, 10, una), or ``(None, index)``.
+
+    Scales nest the Spanish way: ``mil`` multiplies the hundreds before it, and
+    ``millón/millones`` multiplies everything counted before it in that group, so
+    ``dos mil millones`` is 2 000 000 000 and ``un millón dos mil`` is 1 002 000.
+    ``stop`` follows the last number word, never a trailing space or a dangling ``y``.
+    """
+    i, total, thousands, section = index, 0, 0, 0
+    consumed = after_y = thousands_used = millions_used = False
+    stop = index
+    while i < len(pieces):
+        piece = pieces[i]
+        word = _unaccent(piece.casefold())
+        if consumed and re.fullmatch(r"\s+", piece):
+            i += 1
+            continue
+        if word.isdigit() and not consumed:
+            section = int(word)
+        elif word in _ES_HUNDREDS_VALUES and section == 0 and not after_y:
+            section = _ES_HUNDREDS_VALUES[word]
+        elif word in _ES_TENS_VALUES and section % 100 == 0 and not after_y:
+            section += _ES_TENS_VALUES[word]
+        elif word in _ES_UNIT_VALUES and (after_y and 1 <= _ES_UNIT_VALUES[word] <= 9
+                                          or not after_y and section % 100 == 0):
+            section += _ES_UNIT_VALUES[word]
+            after_y = False
+        elif word == "y" and consumed and not after_y and section % 10 == 0 and 30 <= section % 100 <= 90:
+            after_y = True
+            i += 1
+            continue
+        elif word == "mil" and not after_y and not thousands_used:
+            thousands, section, thousands_used = (section or 1) * 1000, 0, True
+        elif word in ("millon", "millones") and not after_y and not millions_used and (consumed or word == "millon"):
+            total += ((thousands + section) or 1) * 1_000_000
+            thousands = section = 0
+            thousands_used, millions_used = False, True
+        else:
+            break
+        consumed = True
+        i += 1
+        stop = i
+    if not consumed:
+        return None, index
+    return total + thousands + section, stop
+
+
+def _fold_spanish(text: str) -> str:
+    text = re.sub(r"(\d+)\s*%", r"\1 por 100", text)  # 10% is read "diez por ciento".
+    pieces = re.findall(r"[^\W_]+|[\W_]+", text)
+    index, out = 0, []
+    while index < len(pieces):
+        value, stop = _take_spanish_cardinal(pieces, index)
+        if value is None:
+            piece = pieces[index]
+            out.append(_ES_DIACRITIC_PAIRS.get(piece.casefold(), piece))
+            index += 1
+        else:
+            out.append(str(value))
+            index = stop
+    return "".join(out)
+
+
+def fold_transcript(text: str, locale: str) -> str:
+    """One spelling for readings a listener cannot tell apart; see the notes above."""
+    text = unicodedata.normalize("NFKC", text)
+    if locale == "zh-Hans":
+        return _fold_chinese(text)
+    if locale == "ko":
+        return _fold_korean(text)
+    if locale == "es":
+        return _fold_spanish(text)
+    return text
+
+
+def score(expected: str, recognized: str, locale: str, min_similarity: float,
+          scoring: str | None = None) -> tuple[float, list[dict], bool]:
+    """``(similarity, differences, passed)`` for one unit, as recorded in the receipt.
+
+    ``scoring`` names the scoring identity of the receipt being reproduced; the default
+    is the current one. A receipt recorded under an earlier identity is rescored by that
+    identity, so reading old evidence never silently applies newer folding.
+    """
+    scoring = SCORING if scoring is None else scoring
+    if scoring not in KNOWN_SCORINGS:
+        raise ValueError("Unknown ASR scoring identity: " + str(scoring))
+    folded = scoring == SCORING
+    if folded:
+        expected, recognized = fold_transcript(expected, locale), fold_transcript(recognized, locale)
     expected_tokens, actual_tokens = tokens(expected, locale), tokens(recognized, locale)
     matcher = difflib.SequenceMatcher(None, expected_tokens, actual_tokens, autojunk=False)
     similarity = round(matcher.ratio(), 6)
@@ -207,7 +505,7 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float) ->
     passed = (similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
               and not any(key_word(row["expected"], locale) or key_word(row["recognized"], locale)
                           for row in differences)
-              and protected_text_agrees(expected, recognized, locale))
+              and protected_text_agrees(expected, recognized, locale, strip_punctuation=folded))
     return similarity, differences, passed
 
 
