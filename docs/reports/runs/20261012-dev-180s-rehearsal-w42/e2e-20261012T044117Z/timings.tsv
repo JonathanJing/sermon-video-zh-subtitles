@@ -1,0 +1,8 @@
+stage	status	seconds
+verify-clip	pass	4
+build-inputs	pass	4
+baseline	pass	8
+delivery-preflight	pass	2
+delivery-execute	outcome_unknown_then_reconciled_deployed	156
+delivery-reconcile	pass	-
+browser-smoke-no-session	pass	-
