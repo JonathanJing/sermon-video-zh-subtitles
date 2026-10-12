@@ -131,6 +131,8 @@ python scripts/run_with_openai_environment.py --environment dev -- python script
 - **冻结 policy：** 新的韩/西 v2–v4 policy 草稿不写插件绑定（`pluginId`、`pluginImplementationSha256`、`implementationStatus`、`requiredChecks` 都省略）时，`target_language_policy.py freeze` 自动选择 `ko-weekly-auto-v1` / `es-weekly-auto-v1`：实现 hash 按插件与共享规则（`common.py`、`auto_qc_text_common.py`）计算，`implementationStatus=verified`，`requiredChecks` 设为 `auto_qc_text_common.REQUIRED`；从带插件绑定的模板改用时显式传 `--language-review machine_qc`。中文沿用原插件。policy 格式不变，已冻结的 policy（含 `config/target-language-policies/*.json`，仍为 `ko-sermon-v1` / `es-sermon-v1`）不重新绑定，字节与 hash 不变。
 - **运行驱动：** 文字链 `run_machine_qc_clip_test.py`（回译走本机 Codex CLI）、精简 `run_spoken_condensation.py`（本机 Codex CLI）和试听链 `run_machine_qc_audio_test.py`（二级 ASR 为 `gpt-transcribe`，漏词音频用 speech job 的 TTS）都可在已有 Dev 运行上执行，见上面的组件表和命令。
 
+第 2 版文字豁免和第 3 版试听豁免可以带**人的逐单元接受**：人读完或听完 QC 失败的组（`text_qc_human_acceptance`）或单元（`audio_qc_human_acceptance`，ASR 两边都把同一段正确读出的音频判成不一致，或决定照现状发布的读法），逐个接受确切的译文或音频；接受记录绑定候选或音频包、那份 QC 收据以及每个被接受单元的英文、译文和音频字节哈希。收据仍是机器豁免：`humanApproval=false`，其余单元必须照常通过，披露照常显示。接受模块在豁免实现文件集之外，不改变已签发的豁免。
+
 第 1 版豁免只放行**每一句都通过**的语言：有句子要只显字幕或改显英文时，收据不会生成，这个语言仍走人工路径。
 
 **还没有接上：**

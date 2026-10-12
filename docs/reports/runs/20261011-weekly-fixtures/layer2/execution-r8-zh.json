@@ -1,0 +1,18 @@
+{
+ "schemaVersion": "sermon-canonical-layer2-execution-v3",
+ "productionRunId": "f349a735a5ab2563ccee4070b613181c301d1a70d87d00ca77b5c0a39a4f7962",
+ "inspectionConfig": "inspection-r5.json",
+ "jobRoot": "layer2-jobs-r8-zh",
+ "locales": {
+  "zh-Hans": {
+   "outputDirectory": "text-r8/zh-Hans",
+   "plugin": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/plugins/zh_hans_weekly_auto_54475d42.py"
+  }
+ },
+ "layer2AutoRepair": {
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "groupWorkers": 8,
+  "maxActiveLocales": 1,
+  "sourceMeaningNotes": "human-ruling-r6-zh/meaning-notes.json"
+ }
+}

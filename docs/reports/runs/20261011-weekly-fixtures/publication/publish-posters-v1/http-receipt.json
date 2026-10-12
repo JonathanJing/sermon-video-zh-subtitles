@@ -1,0 +1,83 @@
+{
+  "status": "published_http_verified",
+  "version": "sites/ai-for-god-sermon-audio/versions/23e73e929047d76a",
+  "origin": "https://ai-for-god-sermon-audio.web.app",
+  "files": [
+    {
+      "path": "/posters/resi-20261011-54475d42/zh-Hans-f0edf7eab5b3cde7ec3b683e90853b31a761016ece482b2342f702ba720f9611.png",
+      "sha256": "f0edf7eab5b3cde7ec3b683e90853b31a761016ece482b2342f702ba720f9611",
+      "bytes": 2034591,
+      "passed": true
+    },
+    {
+      "path": "/posters/resi-20261011-54475d42/zh-Hans-preview-25cccc7f4b98337db1aab688e805b6b1c2f4d94074c70111718c5c6a43290455.png",
+      "sha256": "25cccc7f4b98337db1aab688e805b6b1c2f4d94074c70111718c5c6a43290455",
+      "bytes": 621687,
+      "passed": true
+    },
+    {
+      "path": "/posters/resi-20261011-54475d42/ko-0d298c3bca3d4ad60a633b11e07ca89a701a3047e658201ccbe5b6dc7df7e23b.png",
+      "sha256": "0d298c3bca3d4ad60a633b11e07ca89a701a3047e658201ccbe5b6dc7df7e23b",
+      "bytes": 2044445,
+      "passed": true
+    },
+    {
+      "path": "/posters/resi-20261011-54475d42/ko-preview-fe82e5a76183c5575bc8ea59655d249ad31820d8f728871b29cba606989a2285.png",
+      "sha256": "fe82e5a76183c5575bc8ea59655d249ad31820d8f728871b29cba606989a2285",
+      "bytes": 625734,
+      "passed": true
+    },
+    {
+      "path": "/posters/resi-20261011-54475d42/es-395dd1afece977903bdf3fac970f0772d0c8e9cc2a42f9dd906376b94bb7648e.png",
+      "sha256": "395dd1afece977903bdf3fac970f0772d0c8e9cc2a42f9dd906376b94bb7648e",
+      "bytes": 2062610,
+      "passed": true
+    },
+    {
+      "path": "/posters/resi-20261011-54475d42/es-preview-d0bf68a72e71b7ac0226363e97ee2eda3a0125567c2a99cfad0274662f16413e.png",
+      "sha256": "d0bf68a72e71b7ac0226363e97ee2eda3a0125567c2a99cfad0274662f16413e",
+      "bytes": 631492,
+      "passed": true
+    },
+    {
+      "path": "/weekly-announcements-v1.json",
+      "sha256": "9938d6780c9a5e34e2d5c6309bc61364666fbd92cb44fe81ae79db01d5e28b5d",
+      "bytes": 4319,
+      "passed": true
+    },
+    {
+      "path": "/multilingual-v4.json",
+      "sha256": "bc9ea1b3a0ef57998927b9fdb36fd7ad34c9bb60415717c586bdbae4a308cc86",
+      "bytes": 15106,
+      "passed": true
+    },
+    {
+      "path": "/multilingual-v3.json",
+      "sha256": "7a0dda6c3311067bc409b775a3fdb20f54c39e3cd5824d54c1715ce28c5825fc",
+      "bytes": 10834,
+      "passed": true
+    }
+  ],
+  "announcements": [
+    {
+      "locale": "zh-Hans",
+      "title": "耶稣警告",
+      "url": "https://ai-for-god-sermon-audio.web.app/posters/resi-20261011-54475d42/zh-Hans-f0edf7eab5b3cde7ec3b683e90853b31a761016ece482b2342f702ba720f9611.png",
+      "releaseSHA256": "2503ca70abb2372d513bd9a14603d42b5aac6401d5cc0e635dbc988ec8c84e51"
+    },
+    {
+      "locale": "ko",
+      "title": "예수님은 경고하십니다",
+      "url": "https://ai-for-god-sermon-audio.web.app/posters/resi-20261011-54475d42/ko-0d298c3bca3d4ad60a633b11e07ca89a701a3047e658201ccbe5b6dc7df7e23b.png",
+      "releaseSHA256": "0c9e90e0d9554252ad62fe124c7637f7485a45d0583b2cd044686e456711e1c6"
+    },
+    {
+      "locale": "es",
+      "title": "Jesús advierte",
+      "url": "https://ai-for-god-sermon-audio.web.app/posters/resi-20261011-54475d42/es-395dd1afece977903bdf3fac970f0772d0c8e9cc2a42f9dd906376b94bb7648e.png",
+      "releaseSHA256": "bbaf5a8576efb00708d27f0016936f4f9493f3d42c4d55a053de8cab5158576c"
+    }
+  ],
+  "nativeDeviceDisplay": "not_run",
+  "externalNotification": "not_sent"
+}

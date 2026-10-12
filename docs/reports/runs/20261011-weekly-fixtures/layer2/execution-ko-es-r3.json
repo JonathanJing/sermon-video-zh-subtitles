@@ -1,0 +1,21 @@
+{
+ "schemaVersion": "sermon-canonical-layer2-execution-v3",
+ "productionRunId": "3f681d492b8419a1fcc50a12e540ccb952ec5a80b14c773139058e921260f127",
+ "inspectionConfig": "inspection.json",
+ "jobRoot": "layer2-jobs-r3",
+ "locales": {
+  "ko": {
+   "outputDirectory": "text-r3/ko",
+   "plugin": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/scripts/language_review_plugins/ko_weekly_auto.py"
+  },
+  "es": {
+   "outputDirectory": "text-r3/es",
+   "plugin": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/scripts/language_review_plugins/es_weekly_auto.py"
+  }
+ },
+ "layer2AutoRepair": {
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "groupWorkers": 8,
+  "maxActiveLocales": 2
+ }
+}

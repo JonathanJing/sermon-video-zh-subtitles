@@ -37,6 +37,8 @@ python3 scripts/run_with_openai_environment.py --environment dev -- \
 
 ## 费用合同与云端
 
+常规阶段不新建额外 key，整套 supervisor／controller 在显式启动器下启动，不靠替换旧 `.env` 里的 key 来切换环境。已在运行的任务保留原凭据与后端身份。
+
 使用 `sermon-cost-isolation-v2`，每个环境的 transcription／translation／reviewer 指向同一个 `tongxing-dev-runtime` 或 `tongxing-prod-runtime` 别名；两个环境必须使用不同 Project 和凭据。v1 保留旧的严格用途拆分规则，旧证据无需重写。Project ID 和安全别名可以入账，key 原值不入账。
 
 离线对账配置模板为 [openai-cost-isolation-minimal.example.json](../config/openai-cost-isolation-minimal.example.json)，将两个 `REPLACE_…` 替换为真实 Project ID 后使用；这个 JSON 不存 key，也不会自动发起模型请求。显式环境下的 direct API／SDK 账本事件自动增加 `openaiRoute`，逐调用报告及 CSV 保留该字段：environment、projectId、credentialAlias 和 `identitySource=configured_runtime`。该归因来自调用配置，不冒充 provider 账单或 API key ID；Codex 的订阅登录、其他 provider 和旧调用无此配置时保持未知。
