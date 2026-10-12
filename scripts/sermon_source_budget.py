@@ -27,11 +27,62 @@ JUDGE_LIMITS = ContextVar('source_judge_request_limits', default=None)
 METRICS = ('requests', 'wallTimeMs', 'costMicrousd')
 LOCK = jobs._digest({'purpose': 'source-budget-v1'})
 LEDGER_V2 = 'sermon-source-budget-ledger-v2'
+# v3 is v2 plus a measured ``settlement`` on every returned row. v2 stays exactly
+# as its frozen readers expect: new code never writes settlement into a v2 ledger,
+# and only migrate_to_v3() upgrades one. New ledgers start at v3.
+LEDGER_V3 = 'sermon-source-budget-ledger-v3'
+CONCURRENT_LEDGERS = (LEDGER_V2, LEDGER_V3)
+SETTLEMENT_STATUSES = {'estimated_upper_bound', 'unknown'}
 
 
 def require(ok, code):
     if not ok:
         raise ValueError(code)
+
+
+def settlement(identity, response, elapsed):
+    """What a returned response actually used, next to the reservation it was booked under.
+
+    The ledger row's ``bounds.costMicrousd`` is the worst-case reservation; until now
+    nothing recorded the measured tokens, so every retrospective summed them by hand
+    from cached responses. This records the provider's token counts and prices them
+    at the requested model's frozen rate (``sermon_provider_limits._cost``). A
+    response without usable usage, or for a model without a price, settles as
+    ``unknown`` with the reason; nothing is invented and no row is settled to zero.
+    """
+    usage = response.get('usage') if isinstance(response, dict) else None
+    model = identity.get('model') if isinstance(identity, dict) else None
+    result = {'costStatus': 'unknown', 'costMicrousd': None, 'usage': None, 'reasonCode': None,
+              'requestedModel': model, 'providerModel': response.get('model') if isinstance(response, dict) else None,
+              'elapsedSeconds': elapsed, 'priceBasis': 'requested_model_frozen_worst_case_rate', 'invoiceVerified': False}
+    if not isinstance(usage, dict):
+        return dict(result, reasonCode='missing_provider_usage')
+    inputs = usage.get('prompt_tokens', usage.get('input_tokens'))
+    outputs = usage.get('completion_tokens', usage.get('output_tokens'))
+    if not all(type(value) is int and value >= 0 for value in (inputs, outputs)):
+        return dict(result, reasonCode='missing_or_invalid_token_counts')
+    details_in = usage.get('prompt_tokens_details') if isinstance(usage.get('prompt_tokens_details'), dict) else {}
+    details_out = usage.get('completion_tokens_details') if isinstance(usage.get('completion_tokens_details'), dict) else {}
+    result['usage'] = {'inputTokens': inputs, 'outputTokens': outputs,
+                       'cachedInputTokens': details_in.get('cached_tokens'),
+                       'reasoningTokens': details_out.get('reasoning_tokens'),
+                       'totalTokens': usage.get('total_tokens', inputs + outputs)}
+    if model not in text_limits.PRICES_USD_PER_MILLION:
+        return dict(result, reasonCode='no_frozen_price_for_model')
+    return dict(result, costStatus='estimated_upper_bound', costMicrousd=text_limits._cost(model, inputs, outputs))
+
+
+def saved_settlement(saved):
+    """The settlement recorded with a saved response, or one computed from it when the file predates settlement."""
+    recorded = saved.get('settlement')
+    if isinstance(recorded, dict) and recorded.get('costStatus') in SETTLEMENT_STATUSES:
+        return recorded
+    return settlement(saved.get('requestIdentity'), saved.get('response'), saved.get('elapsedSeconds'))
+
+
+def _valid_settlement(value):
+    return (isinstance(value, dict) and value.get('costStatus') in SETTLEMENT_STATUSES
+            and (value.get('costMicrousd') is None or type(value['costMicrousd']) is int and value['costMicrousd'] >= 0))
 
 
 @contextmanager
@@ -93,19 +144,21 @@ class SourceBudget:
                     if path.exists():
                         ledger = jobs._read(path)
                         version = ledger.get('schemaVersion')
-                        require(version in ('sermon-source-budget-ledger-v1', LEDGER_V2)
+                        require(version in ('sermon-source-budget-ledger-v1', *CONCURRENT_LEDGERS)
                                 and ledger.get('authority') == self.authority
                                 and isinstance(ledger.get('requests'), dict)
-                                and set(ledger) == ({'schemaVersion', 'authority', 'requests'} if version != LEDGER_V2
+                                and set(ledger) == ({'schemaVersion', 'authority', 'requests'} if version not in CONCURRENT_LEDGERS
                                     else {'schemaVersion', 'authority', 'requests', 'maxConcurrent', 'resourcePolicySha256'})
-                                and (version != LEDGER_V2 or (ledger['maxConcurrent'] == self.max_concurrent
+                                and (version not in CONCURRENT_LEDGERS or (ledger['maxConcurrent'] == self.max_concurrent
                                     and ledger['resourcePolicySha256'] == self._resource_identity())), 'source_budget_identity_changed')
                         for operation, row in ledger['requests'].items():
                             require(isinstance(operation, str) and re.fullmatch(r'(asr\.[0-9]{4}|judge\.[a-f0-9]{64})', operation)
                                     and isinstance(row, dict) and row.get('status') in {'returned', 'started_response_unconfirmed', 'live_started'}
                                     and set(row) - {'resourceBinding'} == ({'identitySha256', 'bounds', 'status', 'responseSha256'}
+                                        | ({'settlement'} if version == LEDGER_V3 else set())
                                         if row.get('status') == 'returned' else {'identitySha256', 'bounds', 'status', 'dispatchOwner'}
-                                        if row.get('status') == 'live_started' and version == LEDGER_V2 else {'identitySha256', 'bounds', 'status'})
+                                        if row.get('status') == 'live_started' and version in CONCURRENT_LEDGERS
+                                        else {'identitySha256', 'bounds', 'status'})
                                     and isinstance(row.get('identitySha256'), str)
                                     and re.fullmatch('[a-f0-9]{64}', row['identitySha256'])
                                     and isinstance(row.get('bounds'), dict) and set(row['bounds']) == set(METRICS)
@@ -115,6 +168,9 @@ class SourceBudget:
                             if row['status'] == 'returned':
                                 require(isinstance(row.get('responseSha256'), str)
                                     and re.fullmatch('[a-f0-9]{64}', row['responseSha256']), 'source_budget_ledger_corrupt')
+                            if 'settlement' in row:
+                                # v3 only, every returned row: measured usage, with whether a price applied.
+                                require(_valid_settlement(row['settlement']), 'source_budget_ledger_corrupt')
                             if 'resourceBinding' in row:
                                 require(self.resource_policy is not None
                                     and row['resourceBinding'] == self._resource_binding(operation, row['identitySha256']),
@@ -127,7 +183,7 @@ class SourceBudget:
                                     row['status'] = 'started_response_unconfirmed'
                                     row.pop('dispatchOwner')
                                     jobs._persist(path, ledger)
-                        if version != LEDGER_V2:
+                        if version not in CONCURRENT_LEDGERS:
                             # Serial v1 jobs upgrade conservatively. Unknown rows
                             # stay unknown; explicit migration is required before
                             # changing concurrency or attaching a broker.
@@ -135,7 +191,7 @@ class SourceBudget:
                                     'source_budget_v1_explicit_migration_required')
                             ledger.update(schemaVersion=LEDGER_V2, maxConcurrent=1, resourcePolicySha256=None)
                     else:
-                        ledger = {'schemaVersion': LEDGER_V2, 'authority': self.authority, 'requests': {},
+                        ledger = {'schemaVersion': LEDGER_V3, 'authority': self.authority, 'requests': {},
                                   'maxConcurrent': self.max_concurrent, 'resourcePolicySha256': self._resource_identity()}
                     yield ledger, path
                     return
@@ -267,13 +323,16 @@ class SourceBudget:
         def returned(response, call_id=None, elapsed=None):
             saved = {'identitySha256': fingerprint, 'requestIdentity': identity, 'response': response,
                      'modelCallId': call_id, 'elapsedSeconds': elapsed,
-                     'reservationBounds': bounds, 'invoiceVerified': False}
+                     'reservationBounds': bounds, 'invoiceVerified': False,
+                     'settlement': settlement(identity, response, elapsed)}
             immutable._atomic(response_path, saved)
             self.verify()
             with self._locked() as (ledger, path):
                 row = ledger['requests'][operation]
                 require(row['identitySha256'] == fingerprint, 'source_call_binding_changed')
                 row.update(status='returned', responseSha256=jobs._digest(saved))
+                if ledger['schemaVersion'] == LEDGER_V3:
+                    row['settlement'] = saved['settlement']
                 row.pop('dispatchOwner', None)
                 jobs._persist(path, ledger)
                 self._release_resource(row)
@@ -312,10 +371,47 @@ class SourceBudget:
             else:
                 require(row['status'] != 'live_started', 'source_operation_live')
                 row.update(status='returned', responseSha256=jobs._digest(saved))
+                if ledger['schemaVersion'] == LEDGER_V3:
+                    # The crash fell between saving the response and booking it; book what it used too.
+                    row['settlement'] = saved_settlement(saved)
                 jobs._persist(ledger_path, ledger)
             self._release_resource(row)
         return {'status': 'returned_response_reconciled', 'operation': operation,
                 'modelCalls': 0, 'humanApproval': False, 'reservationReleased': False}
+
+    def migrate_to_v3(self):
+        """Explicitly upgrade a v2 ledger to v3, settling every returned row from its saved response.
+
+        A v2 ledger is never widened in place: a run resumed with its frozen
+        implementation keeps reading v2. This is the one path to v3. It refuses
+        while a dispatch is live or when a saved response no longer matches its
+        booked hash, and changes nothing in that case. No provider is called.
+        """
+        self.verify()
+        with self._locked() as (ledger, path):
+            version = ledger['schemaVersion']
+            if version == LEDGER_V3:
+                return {'status': 'already_v3', 'settledRows': 0}
+            require(version == LEDGER_V2 and path.exists(), 'source_budget_v2_ledger_required')
+            rows = ledger['requests']
+            require(all(row['status'] != 'live_started' for row in rows.values()), 'source_operation_live')
+            settled = {}
+            for operation, row in rows.items():
+                if row['status'] != 'returned':
+                    continue
+                response_path = self._response_path(operation, row['identitySha256'])
+                require(response_path.is_file(), 'source_returned_response_required')
+                saved = jobs._read(response_path)
+                require(saved.get('identitySha256') == row['identitySha256']
+                        and jobs._digest(saved) == row['responseSha256'], 'source_response_identity_changed')
+                settled[operation] = saved_settlement(saved)
+            for operation, value in settled.items():
+                rows[operation]['settlement'] = value
+            ledger['schemaVersion'] = LEDGER_V3
+            jobs._persist(path, ledger)
+        return {'status': 'migrated', 'from': LEDGER_V2, 'to': LEDGER_V3, 'settledRows': len(settled),
+                'unknownCostRows': sum(value['costStatus'] == 'unknown' for value in settled.values()),
+                'modelCalls': 0}
 
     def transcribe(self, operation, audio_bytes, audio_sha256, api_key):
         prepared = transcription.build_request(audio_bytes, audio_sha256)
