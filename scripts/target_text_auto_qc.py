@@ -158,13 +158,15 @@ def back_translation_requests(group: dict, locale: str) -> dict:
 
 # Korean and Chinese leave plural number unmarked on most nouns: "나팔" or "号角" is read back as
 # "the trumpet" even when the English says "the trumpets" (2026-10-12 Korean clip test). Grammatical
-# number alone is not a fact a listener loses; a changed numeral, count, quantity word or ordinal is.
+# plural-to-singular ambiguity alone can be minor; added plural meaning and changed counts are not.
 UNMARKED_PLURAL_LOCALES = frozenset({"ko", "zh-Hans"})
 UNMARKED_PLURAL_NOTE = (
     " {language} does not require plural marking on nouns: when the back-translation reads a noun as "
-    "singular where ORIGINAL has it plural (or the reverse), and no numeral, count, quantity word, ordinal "
+    "singular where ORIGINAL has it plural, and no numeral, count, quantity word, ordinal "
     "or 'each/every/all/both' changes, that is at most a minor number issue. A changed or dropped numeral, "
-    "count, quantity word or ordinal is still a major number issue.")
+    "count, quantity word or ordinal is still a major number issue. This exception is one-way: "
+    "when ORIGINAL is singular but BACK-TRANSLATION is plural, treat the added plural meaning as a major "
+    "number issue; do not assume an unmarked target noun without evidence.")
 
 
 def comparison_system(locale: str, *, spoken: bool = False) -> str:
