@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261012-pr360-pr362-offline-review-fixes",
+  "runs": [
+    {
+      "label": "pr362-offline-review-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-offline-review-20261012",
+      "skipped": {}
+    },
+    {
+      "label": "20261012-pr360-margin-validation",
+      "source": "/private/tmp/sermon-fix-360/artifacts/run/20261012-pr360-margin-validation",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr362-offline-review-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 34,
+      "truncated": false,
+      "sha256": "dee0764a81f96e76c29c02bc9e93d64f218e4d3a1bb7885726819b550a9ddc3f",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-offline-review-20261012",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 263,
+      "truncated": false,
+      "sha256": "38867213b45a61de5381095fc69a5d80f39cdfa4f5901274cd9853fa8eee6cf0",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-offline-review-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1744,
+      "truncated": false,
+      "sha256": "8cbbc62feb43b410ad477795f61a6ad06eca3356d1169b48301ad31213482a57",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "pr362-offline-review-20261012",
+      "path": "symbol-guard-tests.log",
+      "kind": "log",
+      "bytes": 197,
+      "truncated": false,
+      "sha256": "5217ba584372a786591dc8aea9fe9ff07110c0d50f38d64c5d9284488a4a5dbd",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-offline-review-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 117,
+      "truncated": false,
+      "sha256": "b2cb6c8bf5f9807597d9c15c1f1fe5fc4bbe1bb03420c12654debf407d7602da",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr360-margin-validation",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 96,
+      "truncated": false,
+      "sha256": "e1fa4e68d6f8b585b45eda5d2719ad8a8ca1564c9aaa164d9f30b41dd82dd17a",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr360-margin-validation",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 100,
+      "truncated": false,
+      "sha256": "f50b4337c4b976745382862fb1ec9ae7983f763165073e58218de7a1b5d42697",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr360-margin-validation",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 704,
+      "truncated": false,
+      "sha256": "c7125812d7eb6e55da4fa84e8ba8063acdfc1ce85f2cbfa0e41efaea9c698a05",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr360-margin-validation",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 46,
+      "truncated": false,
+      "sha256": "ab7b31f9896a2b7cdff3cc3fa89de1ec266345b8ced90d3e46b862ca6cd64c03",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
