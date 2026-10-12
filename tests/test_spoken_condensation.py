@@ -293,7 +293,7 @@ class BindTests(unittest.TestCase):
             condensation.revision_brief(self.record, edited)
 
 
-SPOKEN_SYSTEM = text_qc.SPOKEN_COMPARE_SYSTEM.format(language=text_qc.LANGUAGE_NAMES[LOCALE])
+SPOKEN_SYSTEM = text_qc.comparison_system(LOCALE, spoken=True)
 CONDENSED_ENGLISH = "Jesus has not forgotten you, not for a single moment."
 
 
