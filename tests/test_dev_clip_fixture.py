@@ -248,3 +248,15 @@ def test_source_package_cannot_be_replaced_by_an_unrelated_binding(weekly, field
     with pytest.raises(ValueError, match=message):
         fixture.weekly_clip(spec, root / 'clip')
     assert not (root / 'clip').exists()
+
+
+def test_the_tail_margin_can_differ_from_the_head(weekly):
+    spec, root = weekly
+    clip = fixture.weekly_clip(dict(spec, marginSeconds={'before': 0.5, 'after': 1.0}), root / 'clip-asym')
+    # Units 2 and 3 span 5.0-8.5 s of the sermon: 0.5 s before, 1.0 s after.
+    assert clip['scope']['sermonRelativeWindowSeconds'] == [4.5, 9.5]
+    assert clip['anchor']['sourceUnits'][0]['start'] == 0.5
+    with pytest.raises(ValueError, match='exactly before and after'):
+        fixture.weekly_clip(dict(spec, marginSeconds={'after': 1.0}), root / 'clip-bad')
+    with pytest.raises(ValueError, match='must not be negative'):
+        fixture.weekly_clip(dict(spec, marginSeconds={'before': -1, 'after': 1.0}), root / 'clip-neg')

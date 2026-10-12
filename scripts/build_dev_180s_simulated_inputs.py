@@ -218,9 +218,17 @@ def weekly_clip(spec, clip_dir):
     sentences = {unit['sourceSentenceId'] for unit in units[lo:hi]}
     contract.require(not any(unit['sourceSentenceId'] in sentences for unit in units[:lo] + units[hi:]),
                      'Clip unit range must retain complete source sentences')
-    margin = float(spec.get('marginSeconds', 1.0))
-    start = max(0.0, units[lo]['start'] - margin)
-    end = units[hi - 1]['end'] + margin
+    # A number pads both ends; {"before": s, "after": s} pads them separately. A dub usually runs longer
+    # than its English, so the tail needs room the head does not (2026-10-12 Korean clip: 3 s past a 1 s tail).
+    margin = spec.get('marginSeconds', 1.0)
+    if isinstance(margin, dict):
+        contract.require(set(margin) == {'before', 'after'}, 'marginSeconds needs exactly before and after')
+        before, after = float(margin['before']), float(margin['after'])
+    else:
+        before = after = float(margin)
+    contract.require(before >= 0 and after >= 0, 'Clip margins must not be negative')
+    start = max(0.0, units[lo]['start'] - before)
+    end = units[hi - 1]['end'] + after
     window_start = float(spec['approvedWindowStartSeconds'])
     clip_dir.mkdir(parents=True)
     media = clip_dir / 'source.mp4'
