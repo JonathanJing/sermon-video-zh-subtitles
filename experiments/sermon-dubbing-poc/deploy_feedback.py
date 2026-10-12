@@ -12,6 +12,8 @@ from deploy_firebase import verify_release
 from poc import sha256, write_json
 
 HERE = Path(__file__).resolve().parent
+RUNTIME_FILES = ("index.mjs", "core.mjs", "usage-core.mjs", "listening-core.mjs", "firestore-store.mjs",
+                 "package.json", "package-lock.json")
 PROJECT = "ai-for-god-caption-dev"
 REGION = "us-west1"
 DATABASE = "sermon-dubbing-feedback"
@@ -157,7 +159,9 @@ def prepare(release, out, previous_releases=()):
         raise ValueError("Use a new API output directory to preserve earlier deployments")
     catalog, current, compatible = merge_release_catalogs(release, previous_releases)
     out.mkdir(parents=True)
-    for name in ["index.mjs", "core.mjs", "usage-core.mjs", "firestore-store.mjs", "package.json", "package-lock.json"]:
+    # core.mjs imports listening-core.mjs; the live revision 00013 ships it, so a staged
+    # source without it would fail at start-up.
+    for name in RUNTIME_FILES:
         shutil.copyfile(HERE / "feedback-api" / name, out / name)
     write_json(out / "catalog.json", catalog)
     config = json.loads((HERE / "feedback-api/server-config.example.json").read_text())
