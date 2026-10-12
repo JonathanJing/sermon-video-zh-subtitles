@@ -216,7 +216,7 @@ def verified_runtime_catalog(api_source):
                      "sourceManifestSha256": sha256(manifest_path), "sourceCount": len(catalog["sources"])}
 
 
-def merge_release_catalogs(release=None, previous_releases=(), v4_snapshots=(), previous_runtimes=()):
+def merge_catalogs(release=None, previous_releases=(), v4_snapshots=(), previous_runtimes=()):
     """Keep old open pages working only for explicitly verified prior releases or
     an earlier deployed runtime catalog, and add every v4 page of the given sealed
     four-layer snapshots. ``release`` (a legacy listening release) is optional once
@@ -286,10 +286,19 @@ def merge_release_catalogs(release=None, previous_releases=(), v4_snapshots=(), 
     return result, current, compatible, snapshots, runtimes
 
 
+def merge_release_catalogs(release, previous_releases=()):
+    """Keep old open pages working only for explicitly verified prior releases.
+
+    The original contract, ``(catalog, current, compatible)``; ``merge_catalogs`` adds
+    four-layer snapshots and earlier runtime catalogs."""
+    catalog, current, compatible, _snapshots, _runtimes = merge_catalogs(release, previous_releases)
+    return catalog, current, compatible
+
+
 def prepare(release, out, previous_releases=(), v4_snapshots=(), previous_runtimes=()):
     if out.exists():
         raise ValueError("Use a new API output directory to preserve earlier deployments")
-    catalog, current, compatible, snapshots, runtimes = merge_release_catalogs(
+    catalog, current, compatible, snapshots, runtimes = merge_catalogs(
         release, previous_releases, v4_snapshots, previous_runtimes)
     out.mkdir(parents=True)
     for name in ["index.mjs", "core.mjs", "usage-core.mjs", "firestore-store.mjs", "package.json", "package-lock.json"]:

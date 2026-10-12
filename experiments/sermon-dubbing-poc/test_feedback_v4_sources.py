@@ -89,7 +89,7 @@ class V4FeedbackSourceTests(unittest.TestCase):
             legacy = release_fixture(root, "legacy")
             snapshot = v4_snapshot_fixture(root)
             with patch.object(deploy, "validate_catalog_snapshot", lambda path: None):
-                catalog, current, compatible, snapshots, runtimes = deploy.merge_release_catalogs(legacy, [], [snapshot])
+                catalog, current, compatible, snapshots, runtimes = deploy.merge_catalogs(legacy, [], [snapshot])
             self.assertEqual(len(catalog["sources"]), 3)
             self.assertEqual((compatible, runtimes), ([], []))
             self.assertEqual(snapshots[0]["addedSourceCount"], 2)
@@ -126,7 +126,7 @@ class V4FeedbackSourceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "differs from its source manifest"):
                 deploy.verified_runtime_catalog(root / "api-1")
             with self.assertRaisesRegex(ValueError, "would be empty"):
-                deploy.merge_release_catalogs(None)
+                deploy.merge_catalogs(None)
 
     def test_v4_snapshot_is_validated_as_a_sealed_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -135,7 +135,7 @@ class V4FeedbackSourceTests(unittest.TestCase):
             snapshot = v4_snapshot_fixture(root)
             # The fixture is not a real sealed snapshot, so the contract check must refuse it.
             with self.assertRaises(Exception):
-                deploy.merge_release_catalogs(legacy, [], [snapshot])
+                deploy.merge_catalogs(legacy, [], [snapshot])
 
 
 if __name__ == "__main__":
