@@ -6,6 +6,7 @@ with the expected text and what the ASR heard. Folding spellings a listener cann
 tell apart must clear the number/homophone/accent flags and keep every material
 difference, so the remaining sets are asserted exactly.
 """
+import hashlib
 import json
 import unittest
 from pathlib import Path
@@ -34,9 +35,9 @@ class FoldTranscriptTests(unittest.TestCase):
             ("ko", "2억 명으로 이루어진 군대"): "200000000 명으로",
             ("ko", "초등학교 이학년 때"): "2학년",
             ("ko", "나팔 일곱 개가, 스무 살, 열다섯 명, 네 번째"): "7 개가, 20살, 15 명, 4 번째",
-            ("es", "orar por mí durante diez años"): "10 anos",
-            ("es", "un ejército de doscientos millones"): "1 ejercito de 200000000",
-            ("es", "treinta y uno días, veintiún días, mil gracias"): "31 dias, 21 dias, 1000 gracias",
+            ("es", "orar por mí durante diez años"): "10 años",
+            ("es", "un ejército de doscientos millones"): "1 ejército de 200000000",
+            ("es", "treinta y uno días, veintiún días, mil gracias"): "31 días, 21 días, 1000 gracias",
             ("es", "no el 99% de sus pecados, sino el cien por ciento"): "99 por 100 de sus pecados, sino el 100 por 100",
         }
         for (locale, text), fragment in cases.items():
@@ -94,6 +95,118 @@ class FoldTranscriptTests(unittest.TestCase):
         self.assertIn("token-sequence-ratio-v4", subject.SCORING)
 
 
+class ReviewCounterexampleTests(unittest.TestCase):
+    """Each review finding on PR 342: a fold must never merge readings a listener can tell apart."""
+
+    def distinct(self, locale, left, right):
+        self.assertNotEqual(subject.fold_transcript(left, locale), subject.fold_transcript(right, locale), (left, right))
+
+    def same(self, locale, left, right):
+        self.assertEqual(subject.fold_transcript(left, locale), subject.fold_transcript(right, locale), (left, right))
+
+    def test_spanish_scales_nest_by_multiplication(self):
+        self.distinct("es", "dos mil millones", "un millón dos mil")
+        self.assertEqual(subject.fold_transcript("dos mil millones de personas", "es"), "2000000000 de personas")
+        self.assertEqual(subject.fold_transcript("un millón dos mil", "es"), "1002000")
+        self.assertEqual(subject.fold_transcript("mil millones", "es"), "1000000000")
+        self.assertEqual(subject.fold_transcript("ciento veinte mil", "es"), "120000")
+        self.assertEqual(subject.fold_transcript("doscientos millones", "es"), "200000000")
+        self.same("es", "doscientos millones", "200 millones")
+        self.same("es", "treinta y uno años", "31 años")
+        self.assertEqual(subject.fold_transcript("veintiún días y", "es"), "21 días y")  # a dangling y stays text
+
+    def test_spanish_stress_accents_stay_but_diacritic_pairs_fold(self):
+        self.distinct("es", "practicó", "práctico")
+        self.distinct("es", "está", "esta")
+        self.distinct("es", "papá", "papa")
+        self.same("es", "él", "el")
+        self.same("es", "aún", "aun")
+        self.same("es", "qué", "que")
+        self.assertEqual(subject.fold_transcript("él sí sabe, más aún", "es"), "el si sabe, mas aun")
+        # In a long unit one differing word still scores under the threshold, but it is reported
+        # as a difference instead of folding into a perfect match.
+        similarity, differences, _ = subject.score("Ya practicó mucho esta semana con todos los hermanos de la iglesia.",
+                                                  "Ya práctico mucho esta semana con todos los hermanos de la iglesia.", "es", 0.88)
+        self.assertLess(similarity, 1.0)
+        self.assertEqual(differences, [{"kind": "replace", "expected": ["practicó"], "recognized": ["práctico"]}])
+
+    def test_chinese_polyphones_fold_only_in_their_context(self):
+        for text in ("土地", "得到", "只是", "地球", "作坊"):
+            self.assertEqual(subject.fold_transcript(text, "zh-Hans"), text, text)
+        self.distinct("zh-Hans", "土地得到", "土的的到")
+        self.distinct("zh-Hans", "只是", "支是")
+        self.same("zh-Hans", "七只号角", "七支号角")      # measure word after a numeral
+        self.same("zh-Hans", "作出回应", "做出回应")
+        self.same("zh-Hans", "祂也有忿怒", "他也有愤怒")
+        self.same("zh-Hans", "再来", "在来")
+
+    def test_chinese_big_units_nest_and_must_descend(self):
+        self.assertEqual(subject.fold_transcript("一万亿", "zh-Hans"), "1000000000000")
+        self.assertEqual(subject.fold_transcript("一亿一万", "zh-Hans"), "100010000")
+        self.distinct("zh-Hans", "一万亿", "一亿一万")
+        self.assertEqual(subject.fold_transcript("三千万亿", "zh-Hans"), "3000000000000000")
+        for invalid in ("万一", "一万一亿", "万"):
+            self.assertEqual(subject.fold_transcript(invalid, "zh-Hans"), invalid, invalid)
+
+    def test_digit_strings_never_equal_positional_numerals(self):
+        self.distinct("zh-Hans", "十一", "一一")
+        self.distinct("zh-Hans", "十二月", "一二月")
+        self.distinct("ko", "십일 년", "일일 년")
+        self.distinct("ko", "십이 년", "일이 년")
+        self.assertEqual(subject.fold_transcript("십일 년", "ko"), "11 년")
+        self.assertEqual(subject.fold_transcript("일일 년", "ko"), "일일 년")
+        # A spoken year is the one digit-by-digit reading that is folded.
+        self.same("zh-Hans", "二〇二六年", "2026年")
+        self.assertEqual(subject.fold_transcript("二〇二六", "zh-Hans"), "二〇二六")
+        self.assertFalse(passes("今年是十一周年纪念，我们要一起感谢神的恩典。", "今年是一一周年纪念，我们要一起感谢神的恩典。", "zh-Hans"))
+
+    def test_common_measure_words_fold_lone_numerals(self):
+        for left, right in (("教会里有1名牧师", "教会里有一名牧师"), ("读了3本书", "读了三本书"),
+                            ("说了1句话", "说了一句话"), ("1位弟兄", "一位弟兄")):
+            self.same("zh-Hans", left, right)
+        self.assertTrue(passes("教会里有1名牧师一直忠心服事", "教会里有一名牧师一直忠心服事", "zh-Hans"))
+        self.assertEqual(subject.fold_transcript("一直一样一起", "zh-Hans"), "一直一样一起")
+
+    def test_a_receipt_is_rescored_by_the_scoring_identity_it_recorded(self):
+        expected, heard = "我们读了第八十一页的内容，谢谢大家的参与和支持。", "我们读了第81页的内容，谢谢大家的参与和支持。"
+        v3 = subject.score(expected, heard, "zh-Hans", 0.88, subject.SCORING_V3)
+        v4 = subject.score(expected, heard, "zh-Hans", 0.88)
+        self.assertEqual(v4[0], 1.0)
+        self.assertLess(v3[0], 1.0)  # unfolded: the number spelling counts as a difference
+        self.assertFalse(v3[2])
+        self.assertTrue(v4[2])
+        self.assertEqual(subject.score(expected, heard, "zh-Hans", 0.88, subject.SCORING), v4)
+        with self.assertRaisesRegex(ValueError, "Unknown ASR scoring identity"):
+            subject.score(expected, heard, "zh-Hans", 0.88, "token-sequence-ratio-v9")
+
+    def test_release_basis_rescoring_follows_the_receipt(self):
+        from scripts import machine_quality_release_basis as basis
+        text = "我们读了第八十一页的内容，谢谢大家的参与和支持。"
+        heard = "我们读了第81页的内容，谢谢大家的参与和支持。"
+        candidate = {"groups": [{"translationGroupId": "g1", "targetText": text}]}
+
+        def receipt(scoring):
+            similarity, differences, passed = subject.score(text, heard, "zh-Hans", 0.88, scoring)
+            return {"targetLocale": "zh-Hans", "minSimilarity": 0.88, "asrSettings": {"scoring": scoring},
+                    "results": [{"textGroupId": "g1", "targetTextSha256": hashlib.sha256(text.encode()).hexdigest(),
+                                 "recognized": heard, "similarity": similarity, "differences": differences,
+                                 "status": "pass" if passed else "requires_review"}]}
+        for scoring in (subject.SCORING_V3, subject.SCORING):
+            self.assertEqual(basis.screening_score_problems(receipt(scoring), candidate), [], scoring)
+        # A v3 receipt cannot be passed off as v4, nor the reverse.
+        mislabeled = receipt(subject.SCORING_V3)
+        mislabeled["asrSettings"]["scoring"] = subject.SCORING
+        self.assertEqual(len(basis.screening_score_problems(mislabeled, candidate)), 1)
+        unknown = receipt(subject.SCORING)
+        unknown["asrSettings"]["scoring"] = "token-sequence-ratio-v9"
+        self.assertEqual(basis.screening_score_problems(unknown, candidate),
+                         ["screening was scored under an unknown scoring identity"])
+        # Without a recorded identity the receipt predates folding.
+        legacy = receipt(subject.SCORING_V3)
+        legacy.pop("asrSettings")
+        self.assertEqual(basis.screening_score_problems(legacy, candidate), [])
+
+
 class Weekly20261011FixtureTests(unittest.TestCase):
     """The run's real flags: what folding clears and what it must keep."""
 
@@ -110,7 +223,7 @@ class Weekly20261011FixtureTests(unittest.TestCase):
     # Five misread Korean chapter numbers and 참혹합니다 must never be folded away.
     MUST_KEEP = {"translation-chunk-0001-u039", "translation-chunk-0005-u007", "translation-chunk-0005-u016",
                  "translation-chunk-0008-u026", "translation-chunk-0009-u021", "translation-chunk-0002-u023"}
-    STILL_FLAGGED = {"zh-Hans": 10, "ko": 31, "es": 25}
+    STILL_FLAGGED = {"zh-Hans": 10, "ko": 31, "es": 27}
 
     def test_failed_units_keep_exactly_the_material_differences(self):
         failed = json.loads((FIXTURES / "failed-units.json").read_text(encoding="utf-8"))
