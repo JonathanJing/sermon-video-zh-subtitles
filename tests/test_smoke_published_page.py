@@ -28,9 +28,17 @@ for loc in ("zh-Hans", "ko"):
     DOCUMENTS[ORIGIN + f"/captions/{PAGE}/{loc}.json"] = CAPTIONS[loc]
 
 
+SRC = {loc: smoke.track_source(CATALOG["pages"][0], loc, "c" * 64) for loc in ("zh-Hans", "ko")}
+ANCHOR = SRC["zh-Hans"]  # the default page in its default locale
+
+
+def sessions(*sources, status=200):
+    return [{"method": "POST", "status": status, "source": source} for source in sources]
+
+
 def observation(locale="zh-Hans", **changes):
     first = CONTENT[locale]["cues"][0]["text"]
-    value = {"status": "ok", "elapsedMs": 5000, "consoleErrors": [], "sessionRequests": [{"method": "POST", "status": 200}],
+    value = {"status": "ok", "elapsedMs": 5000, "consoleErrors": [], "sessionRequests": sessions(SRC[locale], ANCHOR),
              "dom": {"title": f"{CONTENT[locale]['title']} · 同行 · 证道中文听译", "week": PAGE, "contentLang": locale,
                      "contentLanguage": locale, "audioSrc": f"/media/{PAGE}/{locale}.mp3", "captionText": first,
                      "fullReading": "完整文稿 00:05 " + first}}
@@ -49,7 +57,7 @@ REQUIRED = {f"/media/{PAGE}/zh-Hans.mp3", "/app.mjs", "/index.html"}
 
 class EvaluateTests(unittest.TestCase):
     def check(self, observed, locale="zh-Hans", **kwargs):
-        return smoke.evaluate(expected(locale), observed, required_paths=REQUIRED, **kwargs)
+        return smoke.evaluate(expected(locale), observed, required_paths=REQUIRED, anchor=ANCHOR, **kwargs)
 
     def test_correct_page_passes(self):
         self.assertEqual(self.check(observation()), ([], []))
@@ -81,14 +89,29 @@ class EvaluateTests(unittest.TestCase):
         self.assertEqual(warnings, ["optional resource failed: /alignment/other-page.json: 404"])
 
     def test_the_pages_own_session_requests_are_required_and_must_succeed(self):
-        self.assertIn("/api/session answered 200, 400", self.check(observation(sessionRequests=[{"status": 200}, {"status": 400}]))[0])
+        failed = sessions(SRC["zh-Hans"]) + sessions(ANCHOR, status=400)
+        self.assertIn("/api/session answered 200, 400", self.check(observation(sessionRequests=failed))[0])
         self.assertIn("the page made no /api/session request", self.check(observation(sessionRequests=[]))[0])
-        limited = observation(sessionRequests=[{"status": 429}, {"status": 200}],
+        limited = observation(sessionRequests=sessions(SRC["zh-Hans"], status=429) + sessions(ANCHOR),
                               consoleErrors=[{"kind": "log.network", "message": "429", "source": "https://x.web.app/api/session"}])
         problems, warnings = self.check(limited)
         self.assertEqual(problems, ["/api/session rate-limited (429): too many sessions from this address; rerun one smoke at a time"])
         self.assertEqual(warnings, [])
         self.assertEqual(self.check(observation(sessionRequests=[]), check_session=False), ([], []))
+
+    def test_session_requests_must_name_this_releases_track(self):
+        # Review finding: a stale identity (the previous locale's track) still answers 200.
+        stale = observation("ko", sessionRequests=sessions(SRC["zh-Hans"], ANCHOR))
+        problems, _ = self.check(stale, "ko")
+        self.assertEqual(problems, ["no /api/session request names this release's track"])
+        other = dict(SRC["ko"], trackId="resi-20261004-69ba7a66-ko-804c81b719c0", week="2026-10-04")
+        problems, _ = self.check(observation("ko", sessionRequests=sessions(SRC["ko"], other)), "ko")
+        self.assertEqual(problems, ["/api/session names another track: 2026-10-04 resi-20261004-69ba7a66-ko-804c81b719c0"])
+        unseen = observation(sessionRequests=[{"method": "POST", "status": 200, "source": None}] + sessions(SRC["zh-Hans"]))
+        self.assertEqual(self.check(unseen)[0], ["an /api/session request body was not observed"])
+        # The usage anchor is allowed beside this release's track, and on the default page they coincide.
+        self.assertEqual(self.check(observation("ko", sessionRequests=sessions(SRC["ko"], ANCHOR, ANCHOR)), "ko"), ([], []))
+        self.assertEqual(self.check(observation(sessionRequests=sessions(SRC["zh-Hans"]))), ([], []))
 
     def test_a_browser_that_misses_the_deadline_fails(self):
         problems, _ = self.check({"status": "timeout", "reason": "no result within 60000 ms"})

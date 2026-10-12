@@ -92,7 +92,14 @@ async function main() {
       observation.consoleErrors.push({ kind: `log.${params.entry.source}`, message: params.entry.text.slice(0, 500),
         source: params.entry.url ?? null, line: params.entry.lineNumber ?? null });
     } else if (method === 'Network.requestWillBeSent' && new URL(params.request.url).pathname === '/api/session') {
-      sessions.set(params.requestId, { method: params.request.method, status: null });
+      // The identity the page asks the API to bind: week, track and audio hash.
+      const row = { method: params.request.method, status: null, source: null };
+      const keep = body => { try { const value = JSON.parse(body);
+        row.source = { week: value.week ?? null, trackId: value.trackId ?? null, audioSha256: value.audioSha256 ?? null }; } catch {} };
+      if (params.request.postData) keep(params.request.postData);
+      else if (params.request.hasPostData) send('Network.getRequestPostData', { requestId: params.requestId })
+        .then(result => keep(result.postData)).catch(() => {});
+      sessions.set(params.requestId, row);
     } else if (method === 'Network.responseReceived' && sessions.has(params.requestId)) {
       sessions.get(params.requestId).status = params.response.status;
     } else if (method === 'Network.loadingFailed' && sessions.has(params.requestId)) {
@@ -101,11 +108,11 @@ async function main() {
     }
     for (const waiter of waiters.splice(0)) waiter(message);
   };
-  const send = (method, params = {}) => new Promise((resolve, reject) => {
+  function send(method, params = {}) { return new Promise((resolve, reject) => {
     const id = ++nextId;
     pending.set(id, { resolve, reject });
     socket.send(JSON.stringify({ id, method, params }));
-  });
+  }); }
   const loaded = new Promise(resolve => {
     const watch = message => (message.method === 'Page.loadEventFired' ? resolve() : waiters.push(watch));
     waiters.push(watch);

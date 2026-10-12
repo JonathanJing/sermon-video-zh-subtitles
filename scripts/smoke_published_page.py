@@ -14,7 +14,10 @@ protocol and sends no request of its own. The smoke requires, for that locale:
 - no ``console.error``/``console.assert`` call, no uncaught exception, and no
   failed load of a shell file or of this release's assets;
 - the page's own ``/api/session`` requests all answer 200 (the 2026-10-11 release
-  failed here: its feedback catalog was never synced);
+  failed here: its feedback catalog was never synced), and each names either this
+  release's track (week, track ID, audio hash) or the reader's usage anchor, the
+  default page's default-locale track; at least one names this release's track, so
+  feedback and listening statistics cannot be attributed to another track;
 - the browser finished within the deadline.
 
 Failed loads of other resources (optional probes such as another page's alignment
@@ -55,6 +58,23 @@ def fetch_json(url: str, timeout: float) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
+def track_source(page: dict, locale: str, audio_sha256: str) -> dict:
+    """The feedback identity the reader sends for a v4 track (published-weeks.mjs, engagementWeek)."""
+    return {"week": page["date"], "trackId": f"{page['id']}-{locale}-{audio_sha256[:12]}", "audioSha256": audio_sha256}
+
+
+def usage_anchor(origin: str, catalog: dict, fetch, timeout: float) -> dict | None:
+    """usage.mjs anchors its sessions on the reader catalog's first week with tracks: the
+    default page in its default locale."""
+    page = next((row for row in catalog.get("pages", []) if row.get("id") == catalog.get("defaultPageId")), None)
+    target = (page or {}).get("targets", {}).get((page or {}).get("defaultTargetLocale"))
+    if not target:
+        return None
+    release = fetch(origin + target["releasePackageUrl"], timeout)
+    audio = next((row["sha256"] for row in release.get("assets", []) if row.get("role") == "audio"), None)
+    return track_source(page, page["defaultTargetLocale"], audio) if audio else None
+
+
 def expected_identity(origin: str, page: dict, locale: str, release: dict, fetch, timeout: float) -> dict:
     """What a correct rendering of this page in this locale must show, read from its release."""
     assets = {row["role"]: row for row in release.get("assets", []) if isinstance(row, dict)}
@@ -64,13 +84,16 @@ def expected_identity(origin: str, page: dict, locale: str, release: dict, fetch
     content = fetch(origin + assets["content"]["path"], timeout)
     captions = fetch(origin + assets["captions"]["path"], timeout)
     texts = [cue.get("text", "").strip() for cue in content.get("cues", []) + captions.get("cues", [])]
+    audio = assets["audio"]["sha256"]
     return {"pageId": page["id"], "locale": locale, "title": content.get("title", "").strip(),
+            "source": track_source(page, locale, audio),
             "audioPath": assets["audio"]["path"], "cueTexts": {text for text in texts if text},
             "firstCueTexts": [cue.get("text", "").strip() for cue in content.get("cues", [])[:3]],
             "requiredPaths": {row["path"] for row in assets.values()} | {"/multilingual-v4.json"}}
 
 
-def evaluate(expected: dict, observed: dict, *, required_paths: set[str], check_session: bool = True) -> tuple[list[str], list[str]]:
+def evaluate(expected: dict, observed: dict, *, required_paths: set[str], check_session: bool = True,
+             anchor: dict | None = None) -> tuple[list[str], list[str]]:
     """``(problems, warnings)`` for one locale's observation."""
     problems, warnings = [], []
     if observed.get("status") != "ok":
@@ -104,6 +127,13 @@ def evaluate(expected: dict, observed: dict, *, required_paths: set[str], check_
         sessions = observed.get("sessionRequests") or []
         if not sessions:
             problems.append("the page made no /api/session request")
+        elif any(row.get("source") is None for row in sessions):
+            problems.append("an /api/session request body was not observed")
+        elif any(row["source"] not in (expected["source"], anchor) for row in sessions):
+            stray = next(row["source"] for row in sessions if row["source"] not in (expected["source"], anchor))
+            problems.append(f"/api/session names another track: {stray.get('week')} {stray.get('trackId')}")
+        elif not any(row["source"] == expected["source"] for row in sessions):
+            problems.append("no /api/session request names this release's track")
         elif any(row.get("status") == 429 for row in sessions):
             problems.append("/api/session rate-limited (429): too many sessions from this address; rerun one smoke at a time")
         elif any(row.get("status") != 200 for row in sessions):
@@ -133,6 +163,7 @@ def smoke(origin: str, page_id: str, locales, *, browser: str, settle_ms: int = 
     if page is None:
         raise ValueError(f"Page {page_id} is not in the live v4 catalog")
     shell_files = shell()
+    anchor = usage_anchor(origin, catalog, fetch, timeout)
     results = []
     for locale in locales:
         target = page["targets"].get(locale)
@@ -143,14 +174,14 @@ def smoke(origin: str, page_id: str, locales, *, browser: str, settle_ms: int = 
         expected = expected_identity(origin, page, locale, release, fetch, timeout)
         url = f"{origin}/?week={page_id}&contentLang={locale}"
         observed = loader(browser, url, settle_ms=settle_ms, deadline_ms=deadline_ms)
-        problems, warnings = evaluate(expected, observed, check_session=check_session,
+        problems, warnings = evaluate(expected, observed, check_session=check_session, anchor=anchor,
                                       required_paths=expected["requiredPaths"] | {target["releasePackageUrl"]} | shell_files)
         dom = observed.get("dom") or {}
         results.append({"locale": locale, "url": url, "status": "pass" if not problems else "fail",
                         "problems": problems, "warnings": warnings, "browserStatus": observed.get("status"),
                         "elapsedMs": observed.get("elapsedMs"), "title": dom.get("title"), "audioSrc": dom.get("audioSrc"),
                         "captionText": (dom.get("captionText") or "")[:120], "consoleErrors": observed.get("consoleErrors", []),
-                        "sessionRequests": observed.get("sessionRequests", [])})
+                        "sessionRequests": observed.get("sessionRequests", []), "usageAnchor": anchor})
     return {"schemaVersion": SCHEMA, "checkedAt": datetime.now(timezone.utc).isoformat(), "origin": origin,
             "pageId": page_id, "browser": browser, "settleMs": settle_ms, "deadlineMs": deadline_ms,
             "status": "pass" if all(row["status"] == "pass" for row in results) else "fail",
