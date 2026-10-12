@@ -9,7 +9,7 @@ from scripts import build_listening_sample as subject
 from scripts import sermon_sentence_interpretation as identity
 
 
-def fixtures(root: Path, count=30, *, screening_flags=(9, 4), qc_fail=4, qc_pass=(7, 9)):
+def fixtures(root: Path, count=30, *, screening_flags=(9, 4), qc_fail=4):
     """A candidate, its anchor manifest, a package with real unit files, its screening receipt and one audio QC entry."""
     groups = [{"translationGroupId": f"translation-chunk-0000-u{i:03d}", "sourceUnitIds": [f"chunk-0000-u{i:03d}"],
                "targetText": f"译文第{i}句。"} for i in range(1, count + 1)]
@@ -37,10 +37,11 @@ def fixtures(root: Path, count=30, *, screening_flags=(9, 4), qc_fail=4, qc_pass
                  "results": [{"textGroupId": u["textGroupId"], "targetTextSha256": u["targetTextSha256"],
                               "audioSha256": u["audio"]["sha256"],
                               "status": "requires_review" if i in screening_flags else "pass"} for i, u in enumerate(units)]}
-    qc_rows = [(qc_fail, "fail", ["asr_mismatch_confirmed"])] + [(i, "pass", []) for i in qc_pass]
+    # Audio QC passes u010, which the screening flagged; it fails u005.
     qc = {"schemaVersion": "sermon-target-audio-auto-qc-v1", "locale": "zh-Hans", "results": [
-        {"groupId": units[i]["textGroupId"], "status": status, "issues": issues, "audioSha256": units[i]["audio"]["sha256"],
-         "textSha256": units[i]["targetTextSha256"]} for i, status, issues in qc_rows]}
+        {"groupId": u["textGroupId"], "status": "fail" if i == qc_fail else "pass",
+         "issues": ["asr_mismatch_confirmed"] if i == qc_fail else [], "audioSha256": u["audio"]["sha256"],
+         "textSha256": u["targetTextSha256"]} for i, u in enumerate(units)]}
     return package, candidate, anchors, screening, qc
 
 
@@ -95,13 +96,22 @@ class ListeningSampleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "row for translation-chunk-0000-u004 names other text"):
             self.build(screening=swapped)
 
-    def test_an_audio_qc_receipt_must_name_this_packages_audio(self):
+    def test_an_audio_qc_receipt_must_cover_this_package_exactly(self):
         stale = copy.deepcopy(self.qc)
-        stale["results"][0]["audioSha256"] = "0" * 64  # QC of an earlier render
+        stale["results"][4]["audioSha256"] = "0" * 64  # QC of an earlier render
         with self.assertRaisesRegex(ValueError, "checked other audio or text for translation-chunk-0000-u005"):
             self.build(audio_qc=[stale])
         with self.assertRaisesRegex(ValueError, "another locale"):
             self.build(audio_qc=[dict(self.qc, locale="ko")])
+        # Review finding: a truncated or partial receipt let a failed unit drop off the sheet.
+        without_failure = dict(self.qc, results=[row for row in self.qc["results"] if row["status"] == "pass"])
+        with self.assertRaisesRegex(ValueError, "does not cover every unit"):
+            self.build(audio_qc=[without_failure])
+        reordered = dict(self.qc, results=[self.qc["results"][1], self.qc["results"][0], *self.qc["results"][2:]])
+        with self.assertRaisesRegex(ValueError, "does not list translation-chunk-0000-u001 in package order"):
+            self.build(audio_qc=[reordered])
+        with self.assertRaisesRegex(ValueError, "is not sermon-target-audio-auto-qc-v1"):
+            self.build(audio_qc=[dict(self.qc, schemaVersion="sermon-target-language-audio-screening-v2")])
 
     def test_the_anchor_manifest_must_be_the_one_the_candidate_names(self):
         # Review finding: another run's manifest with reused group IDs showed the wrong English.
@@ -123,7 +133,7 @@ class ListeningSampleTests(unittest.TestCase):
     def test_the_manifest_reports_how_many_units_were_actually_sampled(self):
         # Review finding: 12 units with 5 flagged sampled 7 but claimed 10.
         root = self.root / "small"
-        package, candidate, anchors, screening, qc = fixtures(root, count=12, screening_flags=(0, 1, 2, 3, 4), qc_fail=4, qc_pass=())
+        package, candidate, anchors, screening, qc = fixtures(root, count=12, screening_flags=(0, 1, 2, 3, 4), qc_fail=4)
         sample = subject.build(package, candidate, anchors=anchors, screening=screening, audio_qc=[qc], sample_size=10)
         self.assertEqual((sample["sampleSizeRequested"], sample["sampleSize"], sample["unflaggedCount"]), (10, 7, 7))
         self.assertEqual(len(sample["rows"]), 12)
@@ -213,6 +223,29 @@ class SheetAndVerdictTests(unittest.TestCase):
         sheet.write_text("\n".join(line for line in text.splitlines() if f"`{first_group}`" not in line) + "\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "lost rows"):
             subject.verdicts(self.out)
+
+    def test_only_the_verdict_cell_may_change(self):
+        # Review finding: an edited translation, English, audio path, duration or source cell was accepted.
+        self.assertEqual(self.cli("--sample-size", "5"), 0)
+        self.fill(lambda n: "通过")
+        sheet = self.out / subject.SHEET
+        text = sheet.read_text(encoding="utf-8")
+        row = json.loads((self.out / subject.MANIFEST).read_text(encoding="utf-8"))["rows"][0]
+        number = row["index"] + 1
+        line = next(line for line in text.splitlines() if f"`{row['groupId']}`" in line)
+        cells = subject.row_cells(row)
+        edits = {"译文": (cells[2], "改过的译文"), "英文": (cells[3], "Other English."), "音频": (cells[4], "`/elsewhere/unit.wav`"),
+                 "秒": (f"| {cells[5]} |", "| 9.9 |"), "来源": (f"| {cells[6]} |", "| 其他 |")}
+        for column, (before, after) in edits.items():
+            with self.subTest(column):
+                sheet.write_text(text.replace(line, line.replace(before, after, 1)), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, f"Sheet row {number} changed {column}; only the verdict"):
+                    subject.verdicts(self.out)
+        sheet.write_text(text.replace("| 通过 |", "| 问题：前半 | 后半 |", 1), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, f"Sheet row {number} has 9 cells"):
+            subject.verdicts(self.out)
+        sheet.write_text(text.replace("| 通过 |", "| 问题：前半 \\| 后半 |", 1), encoding="utf-8")
+        self.assertEqual(subject.verdicts(self.out)["rows"][0]["note"], "前半 \\| 后半")
 
 
 if __name__ == "__main__":

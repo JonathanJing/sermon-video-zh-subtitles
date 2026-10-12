@@ -27,13 +27,15 @@ Everything is checked before anything is written:
   (speech job, locale, track, and every unit's group, text and audio hash);
   without it, units the screening flagged and audio QC later passed would drop
   out of a sheet that claims to list every flagged unit;
-- each audio QC receipt names this package's audio and text for every group;
+- each audio QC receipt covers this package exactly: every unit's group, audio
+  and text in order, so a failed unit cannot drop out of a truncated receipt;
 - every listed unit's audio file still hashes to the package's value, so the
   operator hears the bytes the package bound.
 The manifest records each input's hash and the number of units actually sampled.
 
-``verdicts`` reads the filled sheet, requires a verdict on every row, and writes
-listening-verdicts.json bound to the sheet and the manifest; that is the file
+``verdicts`` reads the filled sheet, requires a verdict on every row and every
+other cell exactly as built, and writes listening-verdicts.json bound to the
+sheet and the manifest; that is the file
 record_decision.py binds. Neither file is a receipt: they change no package or
 waiver, and humanApproval stays false.
 """
@@ -56,7 +58,9 @@ except ImportError:  # pragma: no cover - direct CLI runs from scripts/
 SCHEMA = "sermon-listening-sample-v1"
 VERDICTS_SCHEMA = "sermon-listening-verdicts-v1"
 SCREENING_PREFIX = "sermon-target-language-audio-screening-"
+AUDIO_QC_SCHEMA = "sermon-target-audio-auto-qc-v1"
 SHEET, MANIFEST, VERDICTS = "listening-sample.md", "listening-sample.json", "listening-verdicts.json"
+COLUMNS = ("序", "组", "译文", "英文", "音频", "秒", "来源")
 PASS_WORDS = {"通过", "pass"}
 ISSUE = re.compile(r"^(?:问题|issue)\s*[:：]?\s*(.+)$", re.I)
 
@@ -100,15 +104,20 @@ def check_screening(package: dict, screening: dict) -> None:
 
 
 def check_audio_qc(package: dict, receipt: dict) -> None:
-    """Each audio QC row must name this package's audio and text for its group."""
-    units = {unit["textGroupId"]: unit for unit in package["units"]}
+    """An audio QC receipt must cover this package exactly: one row per unit, in order, with its audio and text."""
+    units = package["units"]
+    results = receipt.get("results")
+    if receipt.get("schemaVersion") != AUDIO_QC_SCHEMA:
+        raise ValueError(f"An audio QC receipt is not {AUDIO_QC_SCHEMA}")
     if receipt.get("locale") != package.get("targetLocale"):
         raise ValueError("An audio QC receipt is for another locale")
-    for row in receipt.get("results") or []:
-        unit = units.get(row.get("groupId")) if isinstance(row, dict) else None
-        if unit is None or (row.get("audioSha256"), row.get("textSha256")) != (unit["audio"]["sha256"], unit["targetTextSha256"]):
-            name = row.get("groupId") if isinstance(row, dict) else row
-            raise ValueError(f"An audio QC receipt checked other audio or text for {name}")
+    if not isinstance(results, list) or len(results) != len(units):
+        raise ValueError("An audio QC receipt does not cover every unit of the audio package")
+    for row, unit in zip(results, units):
+        if not isinstance(row, dict) or row.get("groupId") != unit["textGroupId"]:
+            raise ValueError(f"An audio QC receipt does not list {unit['textGroupId']} in package order")
+        if (row.get("audioSha256"), row.get("textSha256")) != (unit["audio"]["sha256"], unit["targetTextSha256"]):
+            raise ValueError(f"An audio QC receipt checked other audio or text for {unit['textGroupId']}")
 
 
 def flagged_groups(receipts) -> dict[str, list[str]]:
@@ -196,12 +205,17 @@ def markdown(sample: dict) -> str:
              f"`{VERDICTS}`；再用 `record_decision.py --governs {package} --evidence <本目录>/{VERDICTS}` 记录。"
              "本表是复核辅助，不是收据。", "",
              "| 序 | 组 | 译文 | 英文 | 音频 | 秒 | 来源 | 结论 |", "|---|---|---|---|---|---|---|---|"]
-    cell = lambda value: str(value).replace("|", "\\|").replace("\n", " ")
     for row in sample["rows"]:
-        source = "机器标记：" + "；".join(row["flags"]) if row["reason"] == "flagged" else "随机"
-        lines.append(f"| {row['index'] + 1} | `{row['groupId']}` | {cell(row['text'])} | {cell(row['english'])} | "
-                     f"`{row['audioPath']}` | {row['durationSeconds']} | {cell(source)} | [ ] |")
+        lines.append("| " + " | ".join([*row_cells(row), "[ ]"]) + " |")
     return "\n".join(lines) + "\n"
+
+
+def row_cells(row: dict) -> list[str]:
+    """A sheet row's cells before the verdict, exactly as written; ``verdicts`` requires them unchanged."""
+    cell = lambda value: str(value).replace("|", "\\|").replace("\n", " ")
+    source = "机器标记：" + "；".join(row["flags"]) if row["reason"] == "flagged" else "随机"
+    return [str(row["index"] + 1), f"`{row['groupId']}`", cell(row["text"]), cell(row["english"]),
+            f"`{row['audioPath']}`", str(row["durationSeconds"]), cell(source)]
 
 
 def verdicts(sheet_dir: Path, now=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")) -> dict:
@@ -215,12 +229,17 @@ def verdicts(sheet_dir: Path, now=lambda: datetime.now(timezone.utc).isoformat(t
     found, missing = {}, []
     for line in sheet_bytes.decode("utf-8").splitlines():
         cells = [cell.strip() for cell in re.split(r"(?<!\\)\|", line.strip())[1:-1]]
-        if len(cells) < 8 or not cells[0].isdigit():
+        if len(cells) < 2 or not cells[0].isdigit():
             continue  # title, prose, header and separator lines
         number, group = int(cells[0]), cells[1].strip("`")
         row = expected.get(number)
         if row is None or row["groupId"] != group or number in found:
             raise ValueError(f"Sheet row {number} ({group}) is not a row of this sample")
+        if len(cells) != 8:
+            raise ValueError(f"Sheet row {number} has {len(cells)} cells, not 8; write a verdict without an unescaped |")
+        changed = [name for name, seen, built in zip(COLUMNS, cells[:-1], row_cells(row)) if seen != built.strip()]
+        if changed:
+            raise ValueError(f"Sheet row {number} changed {', '.join(changed)}; only the verdict cell may be edited")
         answer = re.sub(r"^\[[ xX]?\]\s*", "", cells[-1]).strip()
         issue = ISSUE.match(answer)
         if answer.lower() in PASS_WORDS:
