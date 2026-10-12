@@ -18,7 +18,7 @@
 1. **一次运行对应一份报告。** 报告名为 `YYYYMMDD-<简称>`，目录结构固定：
    - `INDEX.md`：自动生成，包括结束状态、各阶段耗时、失败阶段和错误行。
    - `manifest.json`：原文件路径、哈希、截断和脱敏次数。云端可以据此核对本机证据，不需要原文件。
-   - 运行目录的副本：只含 `outcome.json`、`timings.tsv`、`summary.json`、`preflight.json`、`*receipt*.json`；`*.log` 只保留开头 40 行、结尾 200 行和中间的错误行。
+   - 运行目录的副本：只含 `outcome.json`、`timings.tsv`、`summary.json`、`preflight.json`、`journal.ndjson`、`decisions.ndjson` 和 `*receipt*.json`；`source-budget.json` 只导出结算摘要（`source-budget.settlement.json`：请求数、预留与估算费用、token、成本未知的原因），不导出账本本身；`*.log` 只保留开头 40 行、结尾 200 行和中间的错误行。名字含 `evidence`、`acceptance`、`approval` 的文件不复制：Layer 2 的 `evidence.json` 和人工验收文件可能含讲道原文或译文。人工验收和批准以文件哈希的形式进入决定记录。JSON 的键和值都脱敏（2026-10-11 以 `user@内网IP` 为键的主机表曾漏出），脱敏后撞名的键加 `#2`、`#3` 保留。
    - `RETROSPECTIVE.md`：按下面的复盘清单生成的骨架，由本地或云端的 agent 填写。
 2. **两步，分开生成和公开。** `export_run_digest.py` 只在被忽略的 `artifacts/run-reports/` 下生成报告，不碰 Git；`publish_run_report.sh` 先复查脱敏，再公开。生成可以无条件自动执行，公开是一个单独、可检查的动作。
 3. **报告单独走 PR。** 公开脚本从 `origin/dev` 切出 `run-report/<name>` 分支，在临时 worktree 里把报告加成 `docs/reports/runs/<name>/`，推送并开草稿 PR。当前检出和分支都不动。报告 PR 只含文档，走 CI 的文档快速路径；修复另开 PR，引用报告路径。这样报告不会被代码评审卡住，修复也不会混进证据。
@@ -35,6 +35,8 @@
 
    其他入口（每周正式生产、Spark 诊断等）由执行运行的 agent 在结束时手动导出，见 [AGENTS.md](../AGENTS.md) 和[本地生产 runbook](codex-local-production-runbook.zh.md#运行报告)。
 6. **云端怎么用。** 云端会话读报告 PR 的文件，填写或评审 `RETROSPECTIVE.md`，问题另开修复 PR。复盘填好后合并报告 PR；跨轮比较就读 `docs/reports/runs/` 下的历次 `INDEX.md`。
+
+7. **运行日志与决定记录（2026-10-11 复盘 D 项）。** 复盘不该靠翻派发日志重建时间线。每个驱动和派发器在起止处调用 `scripts/run_journal.py append --run-dir <运行目录> --stage <阶段> --event started|finished|failed|waiting|resumed`（`waiting` 必须带 `--waiting-on`，说明等的是人、服务还是凭据），`run_journal.py summary` 直接给出每阶段和整轮的计算／等待／返工时长与结算成本；返工只算重复轮次里扣掉等待后的计算时间。日志不写机器名，只写 `hostId`：用本轮随机盐（`.journal-host-salt`，不导出）算出的代号，同一轮里能区分 Mac 和 Spark。操作者的每个决定用 `scripts/record_decision.py --run-dir <运行目录> --question … --choice … --decided-by "Jony (chat)" --governs <决定所针对的文件> --evidence <原话或文件路径>` 记成一行，替代手写的 `*.evidence.txt`。`--governs` 的文件必须存在，按当时的 SHA-256 绑定，这一行是 `artifact_bound`，只对这些字节成立；`record_decision.py --run-dir <运行目录> --check` 列出每条决定 `applies`、`stale`（所绑文件已变或已删）还是 `unbound`。不带 `--governs` 的行是 `unbound_note`，只记录说过什么，不能当任何产物的批准。来源预算账本升为 `sermon-source-budget-ledger-v3`：每条已返回的请求带 `settlement`，即供应商报告的 token 数和按所请求模型冻结费率估算的 `costMicrousd`（`estimated_upper_bound`），缺用量或无价格时记 `unknown` 与原因，不再恒为 0；预留上限 `bounds.costMicrousd` 原样保留。崩溃后用 `reconcile_returned` 补记的请求也补上结算。新账本从 v3 开始；已有的 v2 账本保持 v2、不写结算，冻结实现照常续跑；要补结算只能显式调用 `SourceBudget.migrate_to_v3()`，它从已保存的返回逐条结算，派发中或返回被改动时拒绝且不改账本。这三样都进摘要。
 
 ## 命令
 
