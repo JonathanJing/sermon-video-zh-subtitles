@@ -1,53 +1,53 @@
-/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning: 
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
     Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
     Minimum and Maximum cuda capability supported by this version of PyTorch is
     (8.0) - (12.0)
-    
+
   queued_call()
-/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning: 
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
     Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
     Minimum and Maximum cuda capability supported by this version of PyTorch is
     (8.0) - (12.0)
-    
+
   queued_call()
-/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning: 
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
     Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
     Minimum and Maximum cuda capability supported by this version of PyTorch is
     (8.0) - (12.0)
-    
+
   queued_call()
 [0;93m2026-10-12 21:57:25.606257227 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
 [0;93m2026-10-12 21:57:25.703056142 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
-/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning: 
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
     Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
     Minimum and Maximum cuda capability supported by this version of PyTorch is
     (8.0) - (12.0)
-    
+
   queued_call()
-/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning: 
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
     Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
     Minimum and Maximum cuda capability supported by this version of PyTorch is
     (8.0) - (12.0)
-    
+
   queued_call()
-/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning: 
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
     Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
     Minimum and Maximum cuda capability supported by this version of PyTorch is
     (8.0) - (12.0)
-    
+
   queued_call()
 [0;93m2026-10-12 21:57:26.216286620 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
-/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning: 
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
     Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
     Minimum and Maximum cuda capability supported by this version of PyTorch is
     (8.0) - (12.0)
-    
+
   queued_call()
-/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning: 
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
     Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
     Minimum and Maximum cuda capability supported by this version of PyTorch is
     (8.0) - (12.0)
-    
+
   queued_call()
 [0;93m2026-10-12 21:57:26.428640042 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
 [0;93m2026-10-12 21:57:26.435363188 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m

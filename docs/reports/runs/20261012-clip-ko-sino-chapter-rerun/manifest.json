@@ -75,7 +75,12 @@
       "bytes": 5939,
       "truncated": false,
       "sha256": "d729c4c0ebb6bbf3151c68bf5f41fa0f33bd8f91d5756e870835228f68d7991f",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "b8cda61411ed0d022ed088f369fc634a5f8fd31024e7a270766b953a498d8d0b",
+        "bytes": 5899,
+        "normalization": "strip_line_end_whitespace"
+      }
     },
     {
       "run": "l3e",
