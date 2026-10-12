@@ -35,6 +35,27 @@ python3 scripts/run_with_openai_environment.py --environment dev -- \
 
 长期 supervisor／controller 应在启动整个进程时选定环境，切换环境要重启。已有持久任务不自动迁移到新凭据；需检查其实际 worker 启动方式，不能仅改变父 shell 就宣称续跑已切换。当前启动器只保证直接子进程及正常继承环境的后代，不改 Cloud Run 或持久 job 的凭据配置。
 
+## Spark 上的副本（2026-10-12 起长期保存）
+
+Spark 上的 GPU 任务（例如音频质检的二级转写）也要调 OpenAI API，所以 Spark 长期保存一份与 Mac 相同的凭据文件：`~/.config/tongxing/openai.env`，含 dev 和 prod 两套四个字段，目录权限 700、文件权限 600，不进 Git、不进日志、不在命令行上传 key。同一个启动器按 `--environment dev|prod` 从中选环境，测试和实验用 dev，正式内容用 prod：
+
+```sh
+# 在 Spark 上只检查配置，不请求 OpenAI。
+python3 scripts/run_with_openai_environment.py --environment dev --env-file ~/.config/tongxing/openai.env --check
+python3 scripts/run_with_openai_environment.py --environment prod --env-file ~/.config/tongxing/openai.env --check
+```
+
+派发到容器时把这个文件只读挂进去，在容器里经启动器选环境；不要另建只含 prod 的文件。旧路径 `~/.config/tongxing/openai-prod.env` 已废弃，10-11 运行目录里的音频质检派发脚本仍写着它，那是冻结证据，下一轮派发改读本文件。
+
+**轮换 key 时两处一起换。** Mac 的 `.env.openai` 和 Spark 的 `openai.env` 需同时更新（由操作者执行，本会话的拷贝会被权限检查拦下）：
+
+```sh
+scp -p .env.openai achillesjing@192.168.1.152:.config/tongxing/openai.env
+ssh achillesjing@192.168.1.152 'chmod 600 ~/.config/tongxing/openai.env'
+```
+
+只换了一处时，另一台机器上的任务会用旧 key 失败，不会悄悄切到别的环境。
+
 ## 费用合同与云端
 
 常规阶段不新建额外 key，整套 supervisor／controller 在显式启动器下启动，不靠替换旧 `.env` 里的 key 来切换环境。已在运行的任务保留原凭据与后端身份。
