@@ -75,7 +75,12 @@
       "bytes": 5939,
       "truncated": false,
       "sha256": "855da832acbeac0c9e98a58a2246a33292b5d061fc7d10a38f2b4036eb154637",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "1d0c214d60162d4404807b5a1b6cbd6db0ffc14ed11ca96dc74f3896eb70a652",
+        "bytes": 5899,
+        "normalization": "strip_line_end_whitespace"
+      }
     },
     {
       "run": "l3d",
