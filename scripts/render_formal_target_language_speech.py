@@ -33,6 +33,7 @@ try:
     from scripts import render_multilingual_voice_demos as demos
     from scripts import sermon_accounting as accounting
     from scripts import sermon_sentence_interpretation as identity
+    from scripts import ko_spoken_numerals
     from scripts import validate_target_language_audio_unit as integrity
     from scripts import dev_audio_test_profile as dev_profile
     from scripts import target_audio_recovery as recovery
@@ -47,6 +48,7 @@ except ImportError:
     import render_multilingual_voice_demos as demos
     import sermon_accounting as accounting
     import sermon_sentence_interpretation as identity
+    import ko_spoken_numerals
     import validate_target_language_audio_unit as integrity
     import dev_audio_test_profile as dev_profile
     import target_audio_recovery as recovery
@@ -540,8 +542,11 @@ def _generation_batch_matches(commit: dict[str, Any], intent: dict[str, Any]) ->
     return policy in {intent.get("batchSeedPolicy"), LEGACY_BATCH_SEED_POLICY, BATCH_SEED_POLICY}
 
 
-def _spoken_equivalent(approved: str, spoken: str) -> bool:
-    """Allow only punctuation and the confirmed Revelation 3:16 reading."""
+def _spoken_equivalent(approved: str, spoken: str, locale: str = "zh-Hans") -> bool:
+    """Allow only punctuation and the confirmed Revelation 3:16 reading (zh-Hans), or the
+    Sino-Korean reading of chapter and verse numbers (ko: 8장 spoken 팔장)."""
+    if locale == "ko":
+        return ko_spoken_numerals.equivalent(approved, spoken)
     def normalized(value: str) -> str:
         value = re.sub(r"第3章第16节|3:16|第三章第十六节", "第三章第十六节", value)
         return "".join(char for char in value if char.isalnum())
@@ -552,7 +557,11 @@ def unit_instructions(job: dict[str, Any], path: Path | None) -> dict[str, dict[
     if path is None:
         return {}
     document = package.read_object(path)
-    require(document.get("schemaVersion") == "sermon-unit-delivery-instructions-v1"
+    # v1: every row carries a delivery instruction; only zh-Hans may add a spoken form.
+    # v2: a row may carry only a spoken form, which keeps the run's default instruction,
+    # and ko may give the Sino reading of chapter and verse numbers.
+    version = document.get("schemaVersion")
+    require(version in ("sermon-unit-delivery-instructions-v1", "sermon-unit-delivery-instructions-v2")
             and document.get("targetLocale") == job["targetLocale"]
             and document.get("speechJobJsonSha256") == identity.json_sha256(job)
             and isinstance(document.get("units"), list)
@@ -562,17 +571,19 @@ def unit_instructions(job: dict[str, Any], path: Path | None) -> dict[str, dict[
     for row in document["units"]:
         group = row.get("translationGroupId")
         instruction = row.get("instruction")
+        spoken = row.get("spokenText")
+        optional = version == "sermon-unit-delivery-instructions-v2" and spoken is not None
         require(group in allowed and group not in result
                 and row.get("approvedTextSha256") == hashlib.sha256(allowed[group]["text"].encode()).hexdigest()
-                and isinstance(instruction, str) and instruction.strip()
+                and ((instruction is None and optional) or (isinstance(instruction, str) and instruction.strip()))
                 and isinstance(row.get("operatorEvidence"), str) and row["operatorEvidence"].strip(),
                 "Unit delivery instruction lacks approved text or operator evidence")
-        spoken = row.get("spokenText")
         if spoken is not None:
-            require(job["targetLocale"] == "zh-Hans" and isinstance(spoken, str)
-                    and spoken.strip() and _spoken_equivalent(allowed[group]["text"], spoken),
+            locales = ("zh-Hans", "ko") if version == "sermon-unit-delivery-instructions-v2" else ("zh-Hans",)
+            require(job["targetLocale"] in locales and isinstance(spoken, str) and spoken.strip()
+                    and _spoken_equivalent(allowed[group]["text"], spoken, job["targetLocale"]),
                     "Spoken form changes approved words or unsupported locale")
-        result[group] = {"instruction": instruction.strip()}
+        result[group] = {} if instruction is None else {"instruction": instruction.strip()}
         if spoken is not None:
             result[group]["spokenText"] = spoken.strip()
     return result

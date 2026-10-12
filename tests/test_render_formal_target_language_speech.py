@@ -418,6 +418,45 @@ class FormalRenderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Spoken form changes"):
             subject.unit_instructions(self.context["job"], map_path)
 
+    def test_korean_chapter_numbers_are_spoken_with_sino_numerals(self):
+        from scripts import ko_spoken_numerals
+        approved = "예를 들어 하박국 2장을 보십시오."
+        spoken = "예를 들어 하박국 이장을 보십시오."
+        self.assertEqual(ko_spoken_numerals.spoken_form(approved), spoken)
+        self.assertTrue(subject._spoken_equivalent(approved, spoken, "ko"))
+        self.assertFalse(subject._spoken_equivalent(approved, "예를 들어 하박국 두 장을 보십시오.", "ko"))
+        self.assertFalse(subject._spoken_equivalent(approved, "예를 들어 하박국 삼장을 보십시오.", "ko"))
+
+        job = self.context["job"]
+        job["units"][0]["text"] = approved
+        document = ko_spoken_numerals.build(job)
+        self.assertEqual([row["translationGroupId"] for row in document["units"]],
+                         [job["units"][0]["translationGroupId"]])
+        self.assertNotIn("instruction", document["units"][0])
+        map_path = self.root.parent / "ko-spoken-instructions.json"
+        map_path.write_text(json.dumps(document))
+        overrides = subject.unit_instructions(job, map_path)
+        self.assertEqual(overrides, {job["units"][0]["translationGroupId"]: {"spokenText": spoken}})
+        subject.render_units(self.context, self.paths, self.root, self.root / "checkpoint-map.json",
+                             instructions_by_group=overrides, synth_factory=FakeSynth)
+        self.assertEqual(FakeSynth.calls[0][0], spoken)
+        intent = subject.package.read_object(self.root / "receipts/unit-0000.intent.json")
+        self.assertEqual(intent["textSha256"], hashlib.sha256(approved.encode()).hexdigest())
+        self.assertEqual(intent["spokenTextSha256"], hashlib.sha256(spoken.encode()).hexdigest())
+
+        # v1 keeps its meaning: an instruction on every row and no Korean spoken form.
+        for version, row, message in (
+                ("sermon-unit-delivery-instructions-v1", {}, "operator evidence"),
+                ("sermon-unit-delivery-instructions-v1", {"instruction": "Read clearly."}, "unsupported locale"),
+                ("sermon-unit-delivery-instructions-v2", {"spokenText": "예를 들어 하박국 두 장을 보십시오."},
+                 "Spoken form changes"),
+                ("sermon-unit-delivery-instructions-v2", {"spokenText": None}, "operator evidence")):
+            changed = dict(document, schemaVersion=version,
+                           units=[{**document["units"][0], **row}])
+            map_path.write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError, message):
+                subject.unit_instructions(job, map_path)
+
     def test_tampered_audio_and_orphan_are_rejected(self):
         rows = self.render_units()
         (self.root / rows[0]["audio"]["path"]).write_bytes(b"tampered")

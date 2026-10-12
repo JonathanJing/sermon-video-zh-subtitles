@@ -6,7 +6,7 @@
 
 ### 单元口播指令输入
 
-`--unit-instructions <JSON 文件>` 接受现有 `sermon-unit-delivery-instructions-v1` 输入，由 [renderer 的 unit_instructions](../scripts/render_formal_target_language_speech.py) 校验。它绑定完整 speech job 的 JSON 身份、locale 和已批准文字；不能借口播指令更改批准文本或授予音色／发布资格。可只列需要覆盖的单元，但 `units` 必须是非空数组。
+`--unit-instructions <JSON 文件>` 接受 `sermon-unit-delivery-instructions-v1` 或 `-v2` 输入，由 [renderer 的 unit_instructions](../scripts/render_formal_target_language_speech.py) 校验。它绑定完整 speech job 的 JSON 身份、locale 和已批准文字；不能借口播指令更改批准文本或授予音色／发布资格。可只列需要覆盖的单元，但 `units` 必须是非空数组。
 
 ```json
 {
@@ -29,13 +29,21 @@
 
 | 字段／规则 | 现有校验与拒绝条件 |
 | --- | --- |
-| `schemaVersion`、`targetLocale`、`speechJobJsonSha256` | 必须分别匹配上述版本、job locale 与完整 job 的 JSON hash；错版本、错语言或旧 job 绑定均拒绝 |
+| `schemaVersion`、`targetLocale`、`speechJobJsonSha256` | 必须分别为 v1 或 v2、job locale 与完整 job 的 JSON hash；错版本、错语言或旧 job 绑定均拒绝 |
 | `translationGroupId` | 必须存在于 job，且同一输入内不重复；未知或重复组拒绝 |
 | `approvedTextSha256` | 必须匹配该组原始批准 text 的 UTF-8 SHA-256；旧稿或任意改字拒绝 |
-| `instruction`、`operatorEvidence` | 均须为非空字符串，纯空白拒绝；instruction 去除首尾空白后使用。操作员依据不代替既有独立人审收据 |
-| `spokenText`（可选） | 仅 `zh-Hans` 支持，且须为非空字符串，通过现有 `_spoken_equivalent`；其他 locale 或不等价文字拒绝 |
+| `instruction`、`operatorEvidence` | 均须为非空字符串，纯空白拒绝；instruction 去除首尾空白后使用。v2 中带 `spokenText` 的行可省略 `instruction`，该单元沿用全局 `--instruct`。操作员依据不代替既有独立人审收据 |
+| `spokenText`（可选） | v1 仅 `zh-Hans`；v2 支持 `zh-Hans` 与 `ko`。须为非空字符串并通过 `_spoken_equivalent`；其他 locale 或不等价文字拒绝 |
 
 当前等价检查移除非字母数字字符，并将 `第3章第16节`、`3:16`、`第三章第十六节` 归一为相同形式，用于已确认的启示录 3:16 读法。这是既有检查的描述，不扩大任意换词、改数字、增删内容或一般经文读法的权限；批准文字仍原样保留，口播形式另绑定 `spokenTextSha256`。
+
+韩语等价检查只允许 [ko_spoken_numerals](../scripts/ko_spoken_numerals.py) 的 `ko-sino-chapter-verse-numerals-v1`：`장`、`절`、`편` 前的阿拉伯数字（含 `16-17절` 这样的范围）读作汉字词数字，例如 `8장` 读作 `팔장`、`하박국 2장` 读作 `이장`，此外只忽略标点和空格。Qwen TTS 常把这些数字读成固有词（`여덟 장`、`두 장`），2026-10-11 周更和 10-12 片段测试的音频质检都因此判为需要修复。`3:16`、`3,000장`、`1.5장` 等不改。韩语正式渲染前生成输入，并把它传给 `--unit-instructions`：
+
+```sh
+.venv/bin/python scripts/ko_spoken_numerals.py --job <韩语 speech job.json> --out <新的 unit-instructions.json>
+```
+
+没有需要改读的单元时脚本输出 `no_change` 且不写文件，此时不传 `--unit-instructions`。字幕、阅读文本和批准文字仍保留阿拉伯数字；ASR 初筛和音频质检把汉字词数字折回阿拉伯数字比较，固有词读法仍会被标出。改读会改变受影响单元的声音身份，需在新的 render 目录重新合成。
 
 列出的单元以其 `instruction` 覆盖全局 `--instruct`；未列出的单元继续使用全局指令。指令或口播形式变化时用新 job／render 目录，重新生成输入绑定，保留原 intent、commit、WAV 和收据。batch>1 的窗口身份包含邻组输入：一个单元的指令变化可能使整个窗口的声音身份变化，不承诺只重合成该单元。
 
