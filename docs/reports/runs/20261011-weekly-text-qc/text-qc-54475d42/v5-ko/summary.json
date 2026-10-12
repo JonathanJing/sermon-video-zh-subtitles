@@ -1,0 +1,97 @@
+{
+  "implementationSha256": "833f97bc8bf505fa5948d17bbe0291b308951a39ff36557be250e1de7593880b",
+  "locales": {
+    "ko": {
+      "calibration": {
+        "cleanFalsePositiveRate": 0.017354,
+        "detected": 201,
+        "overallDetectionRate": 0.758491,
+        "trials": 265
+      },
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 461,
+          "added_number": 385,
+          "added_reference": 454,
+          "dropped_half": 337,
+          "dropped_name": 12,
+          "english_leak": 367,
+          "placeholder": 461,
+          "semantic_negation": 9,
+          "swapped_name": 0,
+          "swapped_quantity": 4,
+          "wrong_book": 5,
+          "wrong_number": 27,
+          "wrong_ordinal": 438
+        },
+        "untestableKinds": []
+      },
+      "calibrationMisses": {
+        "text.added_content": {
+          "detected": 0,
+          "missedGroupIds": [
+            "translation-chunk-0000-u001",
+            "translation-chunk-0000-u002",
+            "translation-chunk-0000-u003",
+            "translation-chunk-0000-u004",
+            "translation-chunk-0000-u005"
+          ],
+          "rate": 0.0,
+          "trials": 30
+        },
+        "text.swapped_name": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_quantity": {
+          "detected": 1,
+          "missedGroupIds": [
+            "translation-chunk-0007-u022"
+          ],
+          "rate": 0.5,
+          "trials": 2
+        },
+        "text.wrong_ordinal": {
+          "detected": 0,
+          "missedGroupIds": [
+            "translation-chunk-0000-u001",
+            "translation-chunk-0000-u002",
+            "translation-chunk-0000-u003",
+            "translation-chunk-0000-u004",
+            "translation-chunk-0000-u005"
+          ],
+          "rate": 0.0,
+          "trials": 30
+        }
+      },
+      "candidateJsonSha256": "efc5043b3a57ec3973245163a88d40139a4cc9a1c15aef482b4a587b69da1a1b",
+      "failedGroups": [
+        "translation-chunk-0003-u044",
+        "translation-chunk-0004-u013",
+        "translation-chunk-0005-u032",
+        "translation-chunk-0007-u008",
+        "translation-chunk-0008-u022",
+        "translation-chunk-0008-u023",
+        "translation-chunk-0009-u002",
+        "translation-chunk-0010-u007"
+      ],
+      "locale": "ko",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-54475d42/output4-rebuild2/anchor-manifest.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/recovered/ko/candidate.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/policies/ko-policy-frozen-r5.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-54475d42/formal/english-source-package.json"
+      },
+      "problems": [],
+      "reason": "Calibration does not allow a waiver: seeded-error detection below minimum for ['text.added_content', 'text.swapped_quantity', 'text.wrong_ordinal']; overall seeded-error detection below minimum",
+      "status": "waiver_refused",
+      "textQc": "requires_repair",
+      "textQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-54475d42/state-v2/qc-receipts/text/ko/c41c57f4ea3676df82f616ffcf6c2c4d7ca92f560f594d069b9ecee4bbb37aec/entry-000002.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live",
+  "textBackend": "api"
+}

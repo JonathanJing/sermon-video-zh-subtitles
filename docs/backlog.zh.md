@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-10。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-11。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -19,6 +19,42 @@ English index: [backlog.md](./backlog.md)
 5. 每周内容运行不在这里逐组打勾；使用 Tracker 的 `L1-01`—`L4-04`。这里管理让这些检查点可重复完成的工程能力。
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
+
+<a id="backlog-w42-plan-20261011"></a>
+
+## 2026-10-11：周产复盘证据与 W42 开发计划
+
+来源：[2026-10-11 周发布复盘](reports/20261011-weekly-release-resi-54475d42-retrospective.zh.md)（第十四节设计与测试计划、第十六节配置与分支）。本节只做三件事：把本周真实运行的证据挂到既有 ID，为复盘新增的三项工作取稳定 ID，并写明按复盘减法这个月不动的条目。不把任何行改为 `complete`；涉及发布状态的行待对照脱敏摘要核对后再改。开发分支、合并顺序和冻结时间线以复盘第十六节为准，PR 正文引用本节 ID。
+
+### 本周真实运行推进的既有条目
+
+| ID | 本周证据 | 状态处理 |
+|---|---|---|
+| `DEV-L1-001`、`DEV-L2-001`、`DEV-L3-001` | 一篇真实整篇（461 单元、2131 s）走完四层：三语 Sol 6.1 高/中 译审、整篇音频包、v3 试听豁免与人工接受收据；证据见复盘第一、二、十节 | 保持 `in_progress`；L3 的试听豁免首次有真实运行 |
+| `DEV-L4-004`、`DEV-R242-007`、`DEV-R242-014` | 正式 v3 周更新真实发布；外壳不完整导致线上故障；回滚到 7089e037 后重新发布；attempt/回滚收据齐全 | 回滚演练首次有真实证据；保持 `in_progress`，剩余目标是不出故障的发布（见 `DEV-R242-029`） |
+| `DEV-R242-003` | ko 不重合成、沿用既有读音，L3 收据上下文真实复用 | `waiting_evidence` → `in_progress`，引用复盘第四节 |
+| `DEV-TRK-002` | 第二周真实全流程：缓存复用、断点续跑、上游失效、旧资产保留均在本周发生 | `pending` → `in_progress` |
+| `DEV-WEEK-001`、`DEV-R242-004`、`DEV-R242-020` | 发布落在凌晨，窗口未守住；同步用了用户批准的 120 s 滞后 + 1 s 片尾容差；各环节耗时首次成表（复盘第二节） | 120 s 与 62 s 一样记为本次绑定版本的例外，8 s 仍是目标；排程策略由运行计划提供，不自动扩大 |
+| `DEV-RUNREPORT-001` | 11 份脱敏摘要与报告 PR 均为手动导出 | 保持 `waiting_evidence`，缺①驱动结束自动导出、④云端填写复盘 |
+| `DEV-PROD-001` | 正式发布收据在 `publication` 摘要 | 五项证据是否各自带 sha256 待核对，本节不改状态 |
+| `DEV-R242-013` | Study v2 生成器 `provider_input_bound_exceeded`（batchGroups=3 仍超），改走 v1 冻结路径 | 加入剩余交付：分批上限修复排 W43 |
+
+### 新增稳定 ID（W42）
+
+| 子任务／归属 | 优先级／状态 | 交付与验收 | 依赖 |
+|---|---|---|---|
+| `DEV-R242-029` 发布入口四道门；归 `DEV-L4-004`、`DEV-CICD-003`、`DEV-R242-006/007/014` | P0 / `pending` | 外壳闭包从 `index.html` 解析并冻结进 `runtimeAssets`，`seal` 断言与 web 目录同哈希；`fetch_live_baseline.py` 从 Hosting API 重建线上基线并出 `seal-report.json`；Playwright 冒烟 `smoke_published_page.mjs` 三语各一次（标题、字幕非空、零 `console.error`、`/api/session` 200），发 Dev 与发生产后必跑；反馈目录生成与反馈 API 部署进生产步骤。验收：删掉 `icons.svg` 时 seal 失败；本周 156 文件基线逐一哈希相等；Dev 站本周页三语冒烟通过 | PR #335 合并；夹具 `publication/` |
+| `DEV-R242-030` ASR 评分规范化与二级 ASR 条件触发；归 `DEV-L3-001`、`DEV-R242-018` | P0 / `pending` | `transcript_similarity/transcript_agrees` 前按语言折叠：韩语数词/阿拉伯数字互折但章节读法不折、空格；中文仅同音同调字对；西语 `un/una/1`、重音、标点。二级 ASR 只在一级相似度 < 0.6 或差异涉及否定词/数字时调用。实测（PR #342，2026-10-11 夹具）：试听链判失败的 42 句折叠后剩 22 句真实差异（zh 2、ko 14、es 6），一级筛查 101 个标记降到 66；ko 5 句章号、`참혹합니다`、`义人/一人`、`合宜/合一` 全部仍被标记。原估的“≤ 6”过于乐观，剩余多为人名／固有词的 ASR 听错。二级 ASR 条件触发复核后不做：每次调用成本可忽略，改收据合同不值。哈希文件集内改动，须在下周运行前合并 | PR #335 合并；夹具 `audio-qc/` |
+| `DEV-R242-031` 发布后抽样听审表；归 `DEV-R242-018`，替代 `DEV-REVIEW-001` 近期范围 | P1 / `pending` | `build_listening_sample.py` 每语随机 10 句 + 全部 ASR 标记句生成 Markdown（译文、英文、单句音频路径、勾选框）；填完由 `record_decision.py` 写回 `decisions.ndjson`。周一执行，不阻塞发布。验收：10 分钟内填完，结果可被 `export_run_digest.py` 收录 | `DEV-R242-016` 的决定记录 |
+
+复盘其余计划不另取 ID：冻结守卫归 `DEV-R242-001`，周预算一份授权归 `DEV-R242-026`，Spark 定时器冻结与派发器等待重试归 `DEV-R242-028`；运行日志 `run_journal.py`、决定记录 `record_decision.py` 归 `DEV-R242-016`，账本 `costMicrousd` 折算归 `DEV-R242-010/017`，摘要收录归 `DEV-RUNREPORT-001`；渲染器直接吃运行计划策略并入 PR #335 的 CI 修复并记在 `DEV-R242-004`；12 条修复记录量化归 `DEV-R242-022`，`fix` 单句修正命令设计归 `DEV-R242-005`／`DEV-SPD-004`。
+
+### 按复盘减法这个月不动的条目
+
+- `DEV-REVIEW-001`：抽样表（031）先替代，保持 `pending`。
+- `DEV-R242-021/024/027`：容量实验、Temporal、额度 fallback 保持 P2，W42 不排。
+- `SPD6-ARCH-01—04`：复盘第九、十二节的无人值守方向与之重叠，不另开条目；W42 只做确定性部分（029/030/031 与上述归属项），Decision Agent 等下周数据。
+- 收据 schema 收敛、校准按模型版本、Spark 常驻 worker、TTS 口播规则、漏词检测器：复盘第十四节「明确不做」。
 
 <a id="backlog-status-refresh-20261010"></a>
 

@@ -1,0 +1,561 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-weekly-audio-qc",
+  "runs": [
+    {
+      "label": "audio-qc-54475d42",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/audio-qc-54475d42",
+      "skipped": {
+        ".json": 50,
+        ".lock": 9
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "audio-qc-54475d42",
+      "path": "attempts/a1-ko-stale-marker/dispatch.log",
+      "kind": "log",
+      "bytes": 809,
+      "truncated": false,
+      "sha256": "b7a9b9ef6b2ac9b9989560f7576f8b98ad36e4750bb9edc5516c1445f5932656",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "attempts/a1-ko-stale-marker/spark-driver.log",
+      "kind": "log",
+      "bytes": 393,
+      "truncated": false,
+      "sha256": "7d65aa67359164431b3c482593d8989f901aba81a42dfc98cab64513128f21e9",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "attempts/a1-zh-stale-marker/dispatch.log",
+      "kind": "log",
+      "bytes": 809,
+      "truncated": false,
+      "sha256": "b7a9b9ef6b2ac9b9989560f7576f8b98ad36e4750bb9edc5516c1445f5932656",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "attempts/a1-zh-stale-marker/spark-driver.log",
+      "kind": "log",
+      "bytes": 403,
+      "truncated": false,
+      "sha256": "28d8f6e33ef8c2e29d64b6afc2cdd9382b1ba70b497f123159948b65dbc1f3e9",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "chain-a1-competing-service.log",
+      "kind": "log",
+      "bytes": 213,
+      "truncated": false,
+      "sha256": "59c047c92e467e56a7283940c665d0d8071f411a8ace6f33921a87023bd448a5",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "chain-accept.log",
+      "kind": "log",
+      "bytes": 980,
+      "truncated": false,
+      "sha256": "414dee2bf0a3ee3ed94aa97acd5a2e3fb75ec833add788c571e4e45df69263cf",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "chain-accept2.log",
+      "kind": "log",
+      "bytes": 980,
+      "truncated": false,
+      "sha256": "30514f7973262fdbc318a5ce895b0de913da1ce83160ee9fd15f10108b841e0e",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "chain-zh-es.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "chain.log",
+      "kind": "log",
+      "bytes": 645,
+      "truncated": false,
+      "sha256": "11b2d9c976fc21586a663bb51ebf8275bb1fe063731bae9a81fe81a84c35448c",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-c5/dispatch.log",
+      "kind": "log",
+      "bytes": 842,
+      "truncated": false,
+      "sha256": "8b7e6370a1f47d2cb7ee3cb608793e84729d67c9d8389e1fd44ff475bcefe7a5",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-c5a/dispatch.log",
+      "kind": "log",
+      "bytes": 809,
+      "truncated": false,
+      "sha256": "b7a9b9ef6b2ac9b9989560f7576f8b98ad36e4750bb9edc5516c1445f5932656",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-c5a/es/preflight.json",
+      "kind": "whole",
+      "bytes": 3602,
+      "truncated": false,
+      "sha256": "0934c63c0f3cc1096eeab0803110724d894f49294918d1e128ea0926b4dd1ac1",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-c5a/spark-driver.log",
+      "kind": "log",
+      "bytes": 415,
+      "truncated": false,
+      "sha256": "61eb8800fdbec63285bd853fd54fe28a76e7d06860e641cb3d3452794e1f51b0",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-c5a/summary.json",
+      "kind": "whole",
+      "bytes": 7821,
+      "truncated": false,
+      "sha256": "e3951162551a524b63ed2d6fd66a1ec1137c6f5683ec127e833872a1c9130afa",
+      "redactions": {
+        "home_dir": 11
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-c5a/timings.tsv",
+      "kind": "whole",
+      "bytes": 110,
+      "truncated": false,
+      "sha256": "3e5957be31cd474c9bdbb2916552b463df31d98bfdc4a46cd4385ace8df2bcff",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-v1/dispatch-a1.log",
+      "kind": "log",
+      "bytes": 1181,
+      "truncated": false,
+      "sha256": "871ab3882ed68d00c0f5bd9b710ba36e0f280a899d53b00926bf38c6bfa563a4",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-v1/dispatch.log",
+      "kind": "log",
+      "bytes": 53,
+      "truncated": false,
+      "sha256": "4861e33549eef3155b1db3f2031e5e70ab5d2be36f34ae5e00f52aa76610161f",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-v1/es/preflight.json",
+      "kind": "whole",
+      "bytes": 3602,
+      "truncated": false,
+      "sha256": "f519a49657aaac8dab42c41acf1f11a53199de72fdadebd0f51c86126e9f230d",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-v1/spark-driver.log",
+      "kind": "log",
+      "bytes": 342,
+      "truncated": false,
+      "sha256": "8be8b3263b8a0d1e6998a49eeb2cfd0dcec302ec25d50f24baf3ceb4b3492cbe",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-v1/summary.json",
+      "kind": "whole",
+      "bytes": 4603,
+      "truncated": false,
+      "sha256": "0a5b3a40bb34102e07c7d635d531bb7b27a3db8bd039d2acc6f729584be4eacf",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "es-v1/timings.tsv",
+      "kind": "whole",
+      "bytes": 82,
+      "truncated": false,
+      "sha256": "9f3f5c63cc1d8d9df780312142ef6ba96fc1bc10dbc01c51b6d9cd11b76b22ed",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5/dispatch.log",
+      "kind": "log",
+      "bytes": 53,
+      "truncated": false,
+      "sha256": "89135804e2b16c84ba097db2810e42515965a0e3791c61b26e9552b9bdbc0b8e",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 3636,
+      "truncated": false,
+      "sha256": "c92eafccc264e958d25bf3a16c6c6515d5494444234dcbc0a2d3a3b769623f86",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5/spark-driver.log",
+      "kind": "log",
+      "bytes": 415,
+      "truncated": false,
+      "sha256": "b154bd28236917dcde0cbafc34e6cf408c487111414cf60ad5ca3fcd3f24f13d",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5/summary.json",
+      "kind": "whole",
+      "bytes": 8615,
+      "truncated": false,
+      "sha256": "b879fd6343d89426d8f730a9d7c218a1e342d63c9a9856cee84fe44ad67fe71d",
+      "redactions": {
+        "home_dir": 11
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5/timings.tsv",
+      "kind": "whole",
+      "bytes": 110,
+      "truncated": false,
+      "sha256": "13d7ea6a054f0b8ec617c2823a78601962d7447d9fb0724c280f6f7f7ba7273d",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5a/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 3636,
+      "truncated": false,
+      "sha256": "c92eafccc264e958d25bf3a16c6c6515d5494444234dcbc0a2d3a3b769623f86",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5a/summary.json",
+      "kind": "whole",
+      "bytes": 5465,
+      "truncated": false,
+      "sha256": "f5f7d9907ac30f796b0bc5451ef823b71e696a5409fdc988309830989ad2dfc8",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5a/timings.tsv",
+      "kind": "whole",
+      "bytes": 64,
+      "truncated": false,
+      "sha256": "fb84a57c16e626081c4e9f6c146d2810214e45e053147965c2457bf51a817d40",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5b/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 3636,
+      "truncated": false,
+      "sha256": "c92eafccc264e958d25bf3a16c6c6515d5494444234dcbc0a2d3a3b769623f86",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5b/spark-driver.log",
+      "kind": "log",
+      "bytes": 4437,
+      "truncated": false,
+      "sha256": "8a2686ec0f2c1e69e01784d50bebe441c0206177ca1824c6fc2f91b90cfcee15",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5b/summary.json",
+      "kind": "whole",
+      "bytes": 9236,
+      "truncated": false,
+      "sha256": "e2e7adf1b8abaf7816d3f5c1b843a516d7439092ec33bdc0ba82926494976c50",
+      "redactions": {
+        "home_dir": 11
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5b/timings.tsv",
+      "kind": "whole",
+      "bytes": 150,
+      "truncated": false,
+      "sha256": "74d0daeb35f62004263138d16d234eefdfb95f086cf575dbc958f21626a827a4",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-c5b.dispatch.log",
+      "kind": "log",
+      "bytes": 53,
+      "truncated": false,
+      "sha256": "89135804e2b16c84ba097db2810e42515965a0e3791c61b26e9552b9bdbc0b8e",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-v1/dispatch-a1.log",
+      "kind": "log",
+      "bytes": 1181,
+      "truncated": false,
+      "sha256": "871ab3882ed68d00c0f5bd9b710ba36e0f280a899d53b00926bf38c6bfa563a4",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-v1/dispatch.log",
+      "kind": "log",
+      "bytes": 1181,
+      "truncated": false,
+      "sha256": "871ab3882ed68d00c0f5bd9b710ba36e0f280a899d53b00926bf38c6bfa563a4",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-v1/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 3636,
+      "truncated": false,
+      "sha256": "335fa02bf828b693531daf39bb343d420f2e00e19266e1b1f6e99ec1c6b93a8a",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-v1/spark-driver.log",
+      "kind": "log",
+      "bytes": 342,
+      "truncated": false,
+      "sha256": "14244d209b3874a0be2a015cdf93d0a48b6d7cec1904a18cf6339b8d03ed019d",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-v1/summary.json",
+      "kind": "whole",
+      "bytes": 4641,
+      "truncated": false,
+      "sha256": "c40fbfeb47d3b02c980cd3e2b23159e64bcb8fde15036b8e5529d542f0770e90",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "ko-v1/timings.tsv",
+      "kind": "whole",
+      "bytes": 82,
+      "truncated": false,
+      "sha256": "bfa536434ec2df1235bacad2bb30e66e1bb4ce64fcb7dcf6a0a2efeda89f7d7b",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-c5/dispatch.log",
+      "kind": "log",
+      "bytes": 58,
+      "truncated": false,
+      "sha256": "ebad4354ee57d2fd072c7579b4e0c1848a40f745e861a16a58bfc3d2a7ab9f90",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-c5/spark-driver.log",
+      "kind": "log",
+      "bytes": 435,
+      "truncated": false,
+      "sha256": "e130d3cf8bf59767a4674e622fc098422ac6548ec640e855f877a784a6f75414",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-c5/summary.json",
+      "kind": "whole",
+      "bytes": 6242,
+      "truncated": false,
+      "sha256": "c1ea495f56efac4cd78ec3c3c62b93630629e5a4a38d92425444dfc4237205f1",
+      "redactions": {
+        "home_dir": 11
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-c5/timings.tsv",
+      "kind": "whole",
+      "bytes": 125,
+      "truncated": false,
+      "sha256": "97bf5fde2113adef303012a0f4403d8731a9f318228812f2aa39a50f8455fdf5",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-c5/zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 2966,
+      "truncated": false,
+      "sha256": "b524477f843efe83c27b638d0cefbba9f920c956d4c28b0b7ceb8e25bf0236d9",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-c5a/summary.json",
+      "kind": "whole",
+      "bytes": 4418,
+      "truncated": false,
+      "sha256": "8b501daefd36707df0d760472454d606a29282352378fc0c5e10d6a490d8a25f",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-c5a/timings.tsv",
+      "kind": "whole",
+      "bytes": 69,
+      "truncated": false,
+      "sha256": "b474d3eee551525f616412514641516c42742c05c2ee105abf9cb0f5f84102e1",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-c5a/zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 2966,
+      "truncated": false,
+      "sha256": "b524477f843efe83c27b638d0cefbba9f920c956d4c28b0b7ceb8e25bf0236d9",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-v1/dispatch-a1.log",
+      "kind": "log",
+      "bytes": 1181,
+      "truncated": false,
+      "sha256": "871ab3882ed68d00c0f5bd9b710ba36e0f280a899d53b00926bf38c6bfa563a4",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-v1/dispatch.log",
+      "kind": "log",
+      "bytes": 1181,
+      "truncated": false,
+      "sha256": "871ab3882ed68d00c0f5bd9b710ba36e0f280a899d53b00926bf38c6bfa563a4",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-v1/spark-driver.log",
+      "kind": "log",
+      "bytes": 352,
+      "truncated": false,
+      "sha256": "3532ca1da16255d406b966e170d74f815c1617a502117218dc686783538c3f42",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-v1/summary.json",
+      "kind": "whole",
+      "bytes": 3906,
+      "truncated": false,
+      "sha256": "a24cd83a031bda48fccc2dbe14d8f2543b15eb886290e971ca508e9156ac0bd1",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-v1/timings.tsv",
+      "kind": "whole",
+      "bytes": 87,
+      "truncated": false,
+      "sha256": "edc6aa09a73079e81219f0b0b49bfc998bed784fc8fb4fc6c4c469b6c81ce2be",
+      "redactions": {}
+    },
+    {
+      "run": "audio-qc-54475d42",
+      "path": "zh-Hans-v1/zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 2966,
+      "truncated": false,
+      "sha256": "992bbcff1f0e5bd7924507984d9c8483040cb90c29a29ca1108db113ec138fe1",
+      "redactions": {
+        "home_dir": 8
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

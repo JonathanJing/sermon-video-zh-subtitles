@@ -1,0 +1,22 @@
+{
+ "baselineVersion": "sites/ai-for-god-sermon-audio/versions/7089e0378ae6b7e7",
+ "reconstructedFrom": "web-ios-12616-production-20261007/baseline + live HTTP fetch",
+ "fetched": [
+  "/posters/resi-20261004-69ba7a66/en-1dc7480b17ce70dbf9f835af318d2e542d6983913cf8c18ad111652fb14823b5.png",
+  "/posters/resi-20261004-69ba7a66/en-preview-59302a7a513d9c0338343f749b750a0dc94f98c942bad1241ca682d00614ccdd.png",
+  "/posters/resi-20261004-69ba7a66/es-8047c6384035f83b3bfe71de7ba99e376f89d424e4d87e7013ed02a0e4229112.png",
+  "/posters/resi-20261004-69ba7a66/es-preview-696581f6257d7f4116f36467de599434b6022c3b4a011da9bb72517140fb59b3.png",
+  "/posters/resi-20261004-69ba7a66/ko-80d73dea581798eee7b8d1200c6dc54c60a8425d93116cc0ba6d23a0ab50c7d9.png",
+  "/posters/resi-20261004-69ba7a66/ko-c88dbc1fa70c0216140d8d738122e07433330cd681b146dd4ca924b8faa65262.png",
+  "/posters/resi-20261004-69ba7a66/ko-preview-0cac2b0234e87f2420dd5d791a4516b427fbe991ae4522ab4ead3b82fa86602c.png",
+  "/posters/resi-20261004-69ba7a66/ko-preview-cec24a8e4e42d11e8a2dcc07f341a770d4333d2f89b2973054a3c7d90638a094.png",
+  "/posters/resi-20261004-69ba7a66/zh-Hans-36f7f483b56db4dfe0e282c2edebaab9cae4c618fd57085d789786f932bc9beb.png",
+  "/posters/resi-20261004-69ba7a66/zh-Hans-d6f8f9f07fc672daa99abb1d03f1d91e00310bc50b56cdd827544ef3c8a41698.png",
+  "/posters/resi-20261004-69ba7a66/zh-Hans-preview-d1f5bc5ee42e671b551f4dfe4acb66b72cb0d09e51fcac91ae51f4ec3349cf47.png",
+  "/posters/resi-20261004-69ba7a66/zh-Hans-preview-d881e8c10ffa6f007f59fd51d81a76e1d5762f807d6367621ca5533ca7ceb6f0.png",
+  "/weekly-announcements-v1.json"
+ ],
+ "verification": "every file matched the live version file list by gzip(level 9, mtime 0) SHA-256",
+ "files": 156,
+ "catalogSha256": "03adb35eccd495624542182bb1e3a77e4edc441999ac4db5b526f599a41949e6"
+}
