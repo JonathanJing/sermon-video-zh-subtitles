@@ -155,6 +155,27 @@ def test_simulated_page_joins_v4_so_v3_stays_its_human_projection(tmp_path):
         publication.with_simulated_page(v4, catalog, 'dev-run')
 
 
+def test_a_test_page_newer_than_every_reviewed_page_never_becomes_the_default():
+    # Found on Dev 2026-10-12: the v4 default was machine-checked, so the v3 projection moved the default to the
+    # newest human page, which was a weekly clip test page dated 2026-10-11. Production pages carry no flags.
+    human = {'releasePackageUrl': '/releases-v2/x/zh-Hans.json', 'releasePackageJsonSha256': 'a' * 64,
+             'contentStatus': 'human_reviewed', 'audioStatus': 'human_reviewed', 'capabilities': ['text', 'captions', 'audio']}
+    machine = {**human, 'releasePackageUrl': '/releases-v4/x/ko.json', 'contentStatus': 'machine_checked', 'audioStatus': 'machine_checked'}
+    page = lambda page_id, date, targets, **flags: {'id': page_id, 'date': date, 'title': page_id, 'sourceLocale': 'en',
+        'sourceIdentitySha256': 'c' * 64, 'defaultTargetLocale': next(iter(targets)), 'targets': targets, **flags}
+    v4 = {'schemaVersion': 'sermon-multilingual-catalog-v4', 'generatedAt': 'g', 'defaultPageId': 'machine-week',
+          'pages': [page('machine-week', '2026-10-11', {'ko': machine}), page('human-week', '2026-10-04', {'zh-Hans': human}),
+                    page('dev-clip', '2026-10-11', {'zh-Hans': {**human, 'simulationOnly': True, 'diagnosticOnly': True}},
+                         simulationOnly=True, diagnosticOnly=True)]}
+    assert contract.project_human_catalog(v4)['defaultPageId'] == 'human-week'
+    # Unflagged, the newest human page still wins, as before.
+    plain = copy.deepcopy(v4); plain['pages'][2] = page('real-week', '2026-10-11', {'zh-Hans': human})
+    assert contract.project_human_catalog(plain)['defaultPageId'] == 'real-week'
+    # Only test pages left: one of them is still chosen rather than none.
+    only = copy.deepcopy(v4); only['pages'] = [v4['pages'][0], v4['pages'][2]]
+    assert contract.project_human_catalog(only)['defaultPageId'] == 'dev-clip'
+
+
 def test_catalog_report_adds_the_v4_hash_only_once_published(tmp_path):
     (tmp_path / 'multilingual-v3.json').write_text('{}')
     assert set(publication.catalog_report(tmp_path)) == {'catalogSha256'}

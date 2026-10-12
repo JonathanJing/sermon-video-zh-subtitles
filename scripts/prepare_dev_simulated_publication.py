@@ -396,12 +396,17 @@ def overlay(baseline_path, overlay_public, catalog_path, out):
     old_pages = {p['id']: p for p in before['pages']}
     new_pages = {p['id']: p for p in catalog['pages']}
     contract.require(len(new_pages) == len(catalog['pages']) and set(old_pages) <= set(new_pages), 'Missing or duplicate sibling pages')
-    contract.require(catalog['defaultPageId'] == before['defaultPageId'] and all(new_pages[k] == v for k, v in old_pages.items()), 'Default or existing page changed')
     added = [p for p in catalog['pages'] if p['id'] not in old_pages]
     contract.require(len(added) == 1 and added[0]['id'].startswith(('mockup-', 'dryrun-', 'dev-')), 'Exactly one isolated test page is required')
     added[0].update(simulationOnly=True, diagnosticOnly=True)
     for target in added[0]['targets'].values():
         target.update(simulationOnly=True, diagnosticOnly=True)
+    if catalog['defaultPageId'] == added[0]['id']:
+        # Sealing projects v3 from a v4 catalog whose default is machine-checked; that projection moves
+        # the default to the newest human page, which is this test page when it is dated after the rest.
+        # Flagged now, it is never the default; the v4 projection check below proves the same choice.
+        catalog['defaultPageId'] = before['defaultPageId']
+    contract.require(catalog['defaultPageId'] == before['defaultPageId'] and all(new_pages[k] == v for k, v in old_pages.items()), 'Default or existing page changed')
     contract.require(set(added[0]['targets']) == {'zh-Hans', 'ko', 'es'}, 'Three locale test coverage required')
     out.mkdir(parents=True)
     shutil.copytree(base / 'public', out / 'public')

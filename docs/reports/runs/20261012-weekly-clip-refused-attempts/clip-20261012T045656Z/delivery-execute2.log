@@ -1,0 +1,26 @@
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_dev_simulated_delivery.py", line 270, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_dev_simulated_delivery.py", line 266, in main
+    print(json.dumps(run(args), ensure_ascii=False))
+                     ~~~^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_dev_simulated_delivery.py", line 255, in run
+    return _run(args)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_dev_simulated_delivery.py", line 216, in _run
+    journal.stage('prepare_assets', lambda: preparation.asset_first(base, prepared, first, args.source_video),
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                  [first / 'seal-report.json', first / 'publish-config.json'], lambda: contract.validate_catalog_snapshot(first))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_dev_simulated_delivery.py", line 97, in stage
+    action()
+    ~~~~~~^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_dev_simulated_delivery.py", line 216, in <lambda>
+    journal.stage('prepare_assets', lambda: preparation.asset_first(base, prepared, first, args.source_video),
+                                            ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/prepare_dev_simulated_publication.py", line 360, in asset_first
+    contract.require(not target.exists(), 'Source-video collision')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/delivery_contract.py", line 18, in require
+    raise ValueError(message)
+ValueError: Source-video collision

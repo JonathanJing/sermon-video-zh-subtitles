@@ -23,6 +23,8 @@
 | 转写、翻译、复核 API | 继续当前周次的生产 policy；迁移机器只迁移调用与账本，不更换内容模型和人审要求 |
 | FFmpeg、打包、hash、发布 | 选靠近输入的 CPU worker，减少媒体搬运；发布目标及 HTTP、设备、现场证据保持各自边界 |
 
+Spark 上需要调 OpenAI API 的任务读 `~/.config/tongxing/openai.env`（dev 与 prod 同一文件，权限 600，经启动器选环境），见 [OpenAI 凭据](openai-minimal-project-setup.zh.md#spark-上的副本2026-10-12-起长期保存)。
+
 这是项目默认选择与已接入口的策略；不声称所有 canonical producer 已由统一控制器自动完成 Spark→MacBook 切换。
 
 ## 为什么优先 Spark
