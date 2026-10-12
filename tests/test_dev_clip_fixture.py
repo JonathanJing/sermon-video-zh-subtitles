@@ -103,6 +103,7 @@ def test_a_unit_range_is_cut_and_rebased_with_its_text_and_audio(weekly):
     assert zh['candidate']['modelReview']['reviewedGroupIds'] == ['translation-chunk-0000-u002', 'translation-chunk-0000-u003']
     assert [w.name for w in zh['wavs']] == ['unit-0002.wav', 'unit-0003.wav']
     assert abs(fixture.duration(zh['track']) - 1.0) < 0.1
+    assert clip['window_media_bound'] is True  # the clip's window approval names its media for Layer 3
 
 
 def test_the_inputs_must_be_the_ones_the_spec_and_the_anchor_name(weekly):

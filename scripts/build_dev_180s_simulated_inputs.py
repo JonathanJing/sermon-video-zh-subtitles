@@ -297,6 +297,8 @@ def weekly_clip(spec, clip_dir):
             'label': '本周片段', 'proposal_title': '本周片段 %d 句' % len(selected), 'title': title,
             'scripture': spec.get('scripture', '片段经文未单独标注'), 'outline': spec.get('outline', title),
             'summary': '沿用本周已发布的译文和单句音频', 'meditation': CLIP_MEDITATION_PROMPT,
+            # Layer 3's clip timeline map requires the window approval to name the media it approves.
+            'window_media_bound': True,
             'scope': {'originalSourceWindowSeconds': [round(window_start + start, 3), round(window_start + end, 3)],
                       'sermonRelativeWindowSeconds': [round(start, 3), round(end, 3)], 'unitRange': [lo, hi],
                       'clipSpecSha256': contract.sha(spec), 'sourcePageId': spec.get('pageId'),
@@ -304,7 +306,7 @@ def weekly_clip(spec, clip_dir):
 
 
 def assemble(out, run_id, page_id, *, media, segments, anchor, locales, source_url, source_id, service_date, label,
-             proposal_title, title, scripture, outline, summary, meditation, scope):
+             proposal_title, title, scripture, outline, summary, meditation, scope, window_media_bound=False):
     contract.require(set(locales) == set(LOCALES), 'Rehearsal requires exactly zh-Hans, ko and es')
     template = ROOT / 'artifacts/unified-cli-acceptance/native-four-product-fixture-v2'
     media_duration = duration(media)
@@ -321,7 +323,8 @@ def assemble(out, run_id, page_id, *, media, segments, anchor, locales, source_u
         'pipelineInputIdentity': {'sourceAudio': {'sha256': sha(media), 'sizeBytes': media.stat().st_size}}})
     approval = save(out / 'window-review.json', {'status': 'approved', 'humanApproval': True,
         'sourceUrlHash': url_sha, 'approvedBy': SIM, 'approvalText': SIM,
-        'startTime': '00:00:00', 'endTime': clock(media_duration)})
+        'startTime': '00:00:00', 'endTime': clock(media_duration),
+        **({'sourceMediaSha256': sha(media)} if window_media_bound else {})})
     english_review = save(out / 'english-review.json', {
         'schemaVersion': 'sermon-english-source-review-v1', 'alignedSegmentsSha256': sha(aligned),
         'anchorManifestJsonSha256': contract.sha(anchor), 'humanApproval': True,
