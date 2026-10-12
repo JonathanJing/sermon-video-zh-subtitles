@@ -183,6 +183,12 @@ Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider
 9. 仅对人工文字批准的 locale 生成自然语速音频、排程和字幕，完整听审后冻结 Audio Package；可以显式选择纯文字发布。
 10. 按 `pageId + targetLocale` 生成 Release Package，再发布并分别记录 HTTP、设备和现场验收。9 月 20 日 2:58 三语样片的正式 producer 已实跑；本周新整篇须逐层重新取得来源与人审证据，再按[合并 main 前检查](multilingual-production-premerge-2026-09-23.zh.md)准备完整 Production 候选。遇到未实现的周更入口或缺失门禁，停在对应层并报告 blocker，不用 legacy `complete` 越过。
 
+### 运行前冻结与等待（2026-10-11 复盘 C 项）
+
+- **代码身份冻结。** 运行开始时在运行计划里记下 `machine_quality_waiver.implementation_sha256()`（`python3 -c "from scripts import machine_quality_waiver as w; print(w.implementation_sha256())"`），之后每次调用 `run_machine_qc_clip_test.py`／`run_machine_qc_audio_test.py` 都带 `--expected-implementation <该值>`；代码不一致时驱动在任何模型调用之前以退出码 2 拒绝并打印各哈希文件的当前哈希。运行期间不改哈希文件集里的代码；要改就开新运行计划。2026-10-11 两次未察觉的改动让已签发的豁免失效，重签了两轮。
+- **一周一份预算授权。** `api-budget-authorization-<ISO 周>.json` 只写一份，筛查、校准、重签都复用它和同一账本（账本本就支持跨轮复用）；请求上限按三语 × 一次筛查 + 一次校准估，本周账本 27,292 次请求里 Layer 2 只占约 220 次，其余是哈希翻转导致的重签。超限即停并通知，不自动续。
+- **Spark 独占会话冻结定时器，派发前等待。** `spark_exclusive_session.py begin` 现在把 `job-reasoning-review.timer` 一起停掉、结束时最后恢复（主机上没有该定时器时记为 `not-found`）。派发链在每次派发前运行 `python3 scripts/spark_wait_ready.py --poll-seconds 30 --max-minutes 30`：只对 `competing_service_active:*`、`competing_launcher_active`、`insufficient_available_memory` 等会自行消退的状态轮询，其他错误立即返回；退出码 0 就绪、3 超时、1 需要人处理。
+
 ## CUV 证据与生产收尾
 
 直接读经、讲员概述、混合引述与未决来源先分类，冻结精确范围及证据后才翻译；实际投影图与共享经节须进入相关审校 payload，不能只给本地路径。新建 CUV run 默认先作本地结构与媒体预检，在全篇独立审校后冻结 `quotation-preflight.json` 再翻译；结构分类不替代语义裁定。遇到阻断先区分内容裁定、来源证据、程序错误与 API 错误，按原请求身份复用成功缓存并保留最后全篇审核。具体规则及接口见[CUV 生产流程](sermon-cuv-production.zh.md#引用先分类定位冻结再翻译)。
