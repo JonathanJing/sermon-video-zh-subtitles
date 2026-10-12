@@ -59,25 +59,59 @@ PAGE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,159}$")
 RUNTIME_WEB_ROOT = ROOT / 'experiments/sermon-dubbing-poc/web'
 
 
+# The reader's shell is the page plus everything it loads locally: ES modules,
+# the theme script, styles, the icon sprite and brand images, the offline service
+# worker and the fingerprint worker/worklet. Freezing only the module closure
+# left a live index.html older than the new app.mjs on 2026-10-11, and the page
+# failed on an element the code expected; the whole closure ships together now.
+SHELL_ENTRY = 'index.html'
+SHELL_MODULE_ROOTS = ('app.mjs', 'published-weeks.mjs', 'content-locales.mjs')
+SHELL_SUFFIXES = ('.html', '.mjs', '.js', '.css', '.svg', '.png', '.ico', '.webmanifest')
+_SHELL_IMPORT = re.compile(r"(?:\bfrom\s*|\bimport\s*(?:\(\s*)?)[\"']([./][^\"']+\.mjs)[\"']")
+_SHELL_ATTRIBUTE = re.compile(r"""(?:\bhref|\bsrc)\s*=\s*["'](/[^"'#?]*)""")
+_SHELL_LITERAL = re.compile(r"""["'](/[A-Za-z0-9_./-]+\.(?:mjs|js|css|svg|png|ico|webmanifest))["']""")
+_SHELL_RELATIVE_URL = re.compile(r"""new URL\(\s*["'](\.{1,2}/[A-Za-z0-9_./-]+)["']\s*,\s*import\.meta\.url""")
+_SHELL_CSS_URL = re.compile(r"""url\(\s*["']?(/[^"')?#]+)["']?\s*\)""")
+
+
+def _shell_references(path: Path, text: str) -> list[str]:
+    if path.suffix in ('.mjs', '.js'):
+        return _SHELL_IMPORT.findall(text) + _SHELL_LITERAL.findall(text) + _SHELL_RELATIVE_URL.findall(text)
+    if path.suffix == '.html':
+        return _SHELL_ATTRIBUTE.findall(text) + _SHELL_LITERAL.findall(text)
+    if path.suffix == '.css':
+        return _SHELL_CSS_URL.findall(text)
+    return []
+
+
 def runtime_web_files(root=RUNTIME_WEB_ROOT):
-    """Freeze the reader's complete local ES-module import closure."""
-    pending = ['app.mjs', 'published-weeks.mjs', 'content-locales.mjs']
-    found = set()
-    imports = re.compile(r"(?:\bfrom\s*|\bimport\s*(?:\(\s*)?)[\"']([./][^\"']+\.mjs)[\"']")
+    """Freeze the reader's complete local shell closure: the page (when the root
+    has one), every ES module it imports and every local script, style, worker,
+    worklet and image those files reference. Data files such as /weekly.json are
+    published content, not shell, and are left out."""
     root = Path(root).resolve()
+    pending = list(SHELL_MODULE_ROOTS) + ([SHELL_ENTRY] if (root / SHELL_ENTRY).is_file() else [])
+    found = set()
     while pending:
         name = pending.pop()
         if name in found:
             continue
         path = (root / name).resolve()
-        if not path.is_relative_to(root) or path.suffix != '.mjs' or not path.is_file():
-            raise ValueError('Reader module dependency is missing or outside the Web root: ' + name)
+        if not path.is_relative_to(root) or path.suffix not in SHELL_SUFFIXES or not path.is_file():
+            raise ValueError('Reader shell dependency is missing or outside the Web root: ' + name)
         found.add(name)
-        for specifier in imports.findall(path.read_text()):
+        if path.suffix in ('.svg', '.png', '.ico', '.webmanifest'):
+            continue
+        for specifier in _shell_references(path, path.read_text(encoding='utf-8')):
+            specifier = specifier.split('#', 1)[0].split('?', 1)[0]
+            if not specifier.strip('/') or specifier.startswith(('//', 'http:', 'https:', 'data:')):
+                continue
             dependency = (root / specifier.lstrip('/')) if specifier.startswith('/') else path.parent / specifier
             dependency = dependency.resolve()
             if not dependency.is_relative_to(root):
                 raise ValueError('Reader dependency escapes Web root')
+            if dependency.suffix not in SHELL_SUFFIXES:
+                continue
             pending.append(dependency.relative_to(root).as_posix())
     return tuple(sorted(found))
 
@@ -591,6 +625,11 @@ def verified_assets(prepared: Path) -> tuple[dict, list[dict]]:
         require(len(runtime) == len(RUNTIME_WEB_FILES)
                 and {row['path'] for row in runtime} == {'/' + name for name in RUNTIME_WEB_FILES},
                 'Four-product reader runtime assets required')
+        # The shell that ships must be the shell this code was checked in with: a
+        # release prepared before a web change cannot be verified or sealed after it.
+        for row in runtime:
+            require(digest(RUNTIME_WEB_ROOT / row['path'].lstrip('/')) == row['sha256'],
+                    'Reader runtime asset differs from the checked-in web shell: ' + row['path'])
         assets = assets + runtime
     for row in assets:
         path = public / row["path"].lstrip("/")
