@@ -1,122 +1,53 @@
 #!/usr/bin/env python3
 """Browser smoke for a published week: open the reader for each locale in a real
-headless Chrome, and check what a visitor would see.
+headless Chrome, watch what the page actually did, and bind it to the requested
+release.
 
 For every locale the page is loaded as ``<origin>/?week=<pageId>&contentLang=<locale>``
-and the smoke requires: the document title names the sermon (not only the brand),
-the subtitle area or the full reading list carries text, Chrome logged no
-console error, and ``/api/session`` accepts the reader's own feedback source for
-that locale's audio (the 2026-10-11 release failed exactly here: the shell was
-stale and the feedback catalog was never synced). The ``/api/session`` check
-mints one anonymous feedback session per locale, as a visitor's first page view
-does.
+by ``scripts/smoke_browser_cdp.mjs``, which observes the browser over the DevTools
+protocol and sends no request of its own. The smoke requires, for that locale:
 
-The report is evidence of the deployed page in a browser; it is not device or
-venue acceptance and does not replace HTTP asset verification.
+- the page is the requested one: the URL keeps ``week`` and ``contentLang``, the
+  content-language selector shows the locale, the ``<audio>`` source is the
+  release's own audio asset, the title starts with that locale's content title,
+  and the rendered caption and full text come from that locale's cues;
+- no ``console.error``/``console.assert`` call, no uncaught exception, and no
+  failed load of a shell file or of this release's assets;
+- the page's own ``/api/session`` requests all answer 200 (the 2026-10-11 release
+  failed here: its feedback catalog was never synced);
+- the browser finished within the deadline.
+
+Failed loads of other resources (optional probes such as another page's alignment
+index) are reported as warnings, not hidden. The report is evidence of the deployed
+page in one browser; it is not device or venue acceptance and does not replace
+HTTP asset verification.
 """
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import os
-import re
-import signal
 import subprocess
 import sys
-import tempfile
-import urllib.error
 import urllib.request
 from datetime import datetime, timezone
-from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import urlsplit
 
-SCHEMA = "sermon-published-page-browser-smoke-v1"
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+SCHEMA = "sermon-published-page-browser-smoke-v2"
 DEFAULT_BROWSER = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+CDP_OBSERVER = ROOT / "scripts" / "smoke_browser_cdp.mjs"
 LOCALES = ("zh-Hans", "ko", "es")
-# What the reader shows before any cue is loaded; the smoke must see something else.
+# What the reader shows before any cue is loaded.
 CAPTION_PLACEHOLDERS = ("配音就绪后，字幕会显示在这里。", "")
-CONSOLE_ERROR = re.compile(r':ERROR:CONSOLE\(\d+\)\]\s*"(.*)"(?:, source: (\S+) \((\d+)\))?')
 
 
-class _Text(HTMLParser):
-    """Collect the text of <title> and of a few elements by id."""
-
-    def __init__(self, ids):
-        super().__init__()
-        self.wanted = set(ids)
-        self.text = {name: "" for name in ids}
-        self.title = ""
-        self._stack = []
-        self._in_title = False
-
-    def handle_starttag(self, tag, attrs):
-        attributes = dict(attrs)
-        if tag == "title":
-            self._in_title = True
-        element = attributes.get("id")
-        self._stack.append(element if element in self.wanted else None)
-        # Count how deep we are inside a wanted element; nested wanted ids are rare.
-
-    def handle_endtag(self, tag):
-        if tag == "title":
-            self._in_title = False
-        if self._stack:
-            self._stack.pop()
-
-    def handle_data(self, data):
-        if self._in_title:
-            self.title += data
-        for element in self._stack:
-            if element:
-                self.text[element] += data
-
-
-def inspect_dom(document: str) -> dict:
-    """Title and the visible text of the subtitle area and full reading list."""
-    parser = _Text(("current-text", "full-reading-list", "edition-label"))
-    parser.feed(document)
-    caption = " ".join(parser.text["current-text"].split())
-    reading = " ".join(parser.text["full-reading-list"].split())
-    return {"title": " ".join(parser.title.split()), "captionText": caption[:120],
-            "fullReadingChars": len(reading), "editionLabel": " ".join(parser.text["edition-label"].split())}
-
-
-def console_errors(log: str) -> list[dict]:
-    """Chrome's stderr console errors: ``[pid:tid:date:ERROR:CONSOLE(line)] "message", source: url (line)``."""
-    errors = []
-    for line in log.splitlines():
-        match = CONSOLE_ERROR.search(line)
-        if match:
-            message, source, line_number = match.groups()
-            errors.append({"message": message[:500], "source": source, "line": int(line_number) if line_number else None})
-    return errors
-
-
-def feedback_source(catalog: dict, release: dict, engagement: dict, locale: str) -> dict:
-    """The source the reader posts to /api/session: published-weeks.mjs builds the
-    track id as ``<pageId>-<locale>-<first 12 hex of the audio sha>``, feedback
-    keeps the week date, and appVersion comes from /engagement.json."""
-    page = next(page for page in catalog["pages"] if page["id"] == release["pageId"])
-    audio = next(row for row in release["assets"] if row["role"] == "audio")
-    if not re.fullmatch(r"[a-f0-9]{64}", audio["sha256"]) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", page["date"]):
-        raise ValueError("Release package does not carry a bound audio hash and week date")
-    return {"schemaVersion": 1, "week": page["date"], "trackId": f"{page['id']}-{locale}-{audio['sha256'][:12]}",
-            "audioSha256": audio["sha256"], "appVersion": engagement["appVersion"]}
-
-
-def evaluate(dom: dict, errors: list[dict], session_status: int | None, brand: str = "同行") -> list[str]:
-    problems = []
-    title = dom["title"]
-    if not title or title.replace(brand, "").strip(" ·") == "" or "正在" in title:
-        problems.append(f"title does not name the sermon: {title!r}")
-    if dom["captionText"] in CAPTION_PLACEHOLDERS and dom["fullReadingChars"] == 0:
-        problems.append("no subtitle or full reading text was rendered")
-    if errors:
-        problems.append(f"{len(errors)} console error(s): " + "; ".join(e["message"][:120] for e in errors[:3]))
-    if session_status is not None and session_status != 200:
-        problems.append(f"/api/session answered HTTP {session_status}")
-    return problems
+def shell_paths() -> set[str]:
+    """The reader shell a release ships (see build_full_video_app_release.runtime_web_files)."""
+    from scripts.build_full_video_app_release import RUNTIME_WEB_FILES
+    return {"/", "/index.html"} | {"/" + name for name in RUNTIME_WEB_FILES}
 
 
 def fetch_json(url: str, timeout: float) -> dict:
@@ -124,60 +55,104 @@ def fetch_json(url: str, timeout: float) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
-def post_session(origin: str, source: dict, timeout: float) -> int:
-    # The API only serves its own origin, so the smoke speaks as the page would.
-    request = urllib.request.Request(origin + "/api/session", data=json.dumps(source).encode("utf-8"),
-                                     headers={"Content-Type": "application/json", "Origin": origin,
-                                              "Referer": origin + "/"}, method="POST")
+def expected_identity(origin: str, page: dict, locale: str, release: dict, fetch, timeout: float) -> dict:
+    """What a correct rendering of this page in this locale must show, read from its release."""
+    assets = {row["role"]: row for row in release.get("assets", []) if isinstance(row, dict)}
+    if release.get("pageId") != page["id"] or release.get("targetLocale") != locale or any(
+            role not in assets for role in ("audio", "content", "captions")):
+        raise ValueError(f"Release for {page['id']} {locale} lacks its identity or audio, content and captions")
+    content = fetch(origin + assets["content"]["path"], timeout)
+    captions = fetch(origin + assets["captions"]["path"], timeout)
+    texts = [cue.get("text", "").strip() for cue in content.get("cues", []) + captions.get("cues", [])]
+    return {"pageId": page["id"], "locale": locale, "title": content.get("title", "").strip(),
+            "audioPath": assets["audio"]["path"], "cueTexts": {text for text in texts if text},
+            "firstCueTexts": [cue.get("text", "").strip() for cue in content.get("cues", [])[:3]],
+            "requiredPaths": {row["path"] for row in assets.values()} | {"/multilingual-v4.json"}}
+
+
+def evaluate(expected: dict, observed: dict, *, required_paths: set[str], check_session: bool = True) -> tuple[list[str], list[str]]:
+    """``(problems, warnings)`` for one locale's observation."""
+    problems, warnings = [], []
+    if observed.get("status") != "ok":
+        return [f"browser did not finish: {observed.get('status')} ({observed.get('reason', 'no reason')})"], warnings
+    dom = observed.get("dom") or {}
+    if dom.get("week") != expected["pageId"] or dom.get("contentLang") != expected["locale"]:
+        problems.append(f"page left the requested week/locale: week={dom.get('week')!r} contentLang={dom.get('contentLang')!r}")
+    if dom.get("contentLanguage") not in (None, expected["locale"]):
+        problems.append(f"content language selector shows {dom.get('contentLanguage')!r}")
+    audio = urlsplit(dom.get("audioSrc") or "").path
+    if audio != expected["audioPath"]:
+        problems.append(f"audio is {audio or 'missing'!s}, not this release's {expected['audioPath']}")
+    title = (dom.get("title") or "").strip()
+    if not expected["title"] or not title.startswith(expected["title"] + " · "):
+        problems.append(f"title {title!r} does not name this locale's sermon {expected['title']!r}")
+    caption = (dom.get("captionText") or "").strip()
+    if caption not in CAPTION_PLACEHOLDERS and caption not in expected["cueTexts"]:
+        problems.append(f"caption {caption[:40]!r} is not one of this release's cues")
+    reading = dom.get("fullReading") or ""
+    if not any(text and text in reading for text in expected["firstCueTexts"]):
+        problems.append("full text does not show this release's opening cues")
+    for error in observed.get("consoleErrors", []):
+        path = urlsplit(error.get("source") or "").path
+        if path == "/api/session":
+            continue  # judged from the session responses below
+        if error.get("kind", "").startswith("log.") and error.get("kind") != "log.javascript" and path not in required_paths:
+            warnings.append(f"optional resource failed: {path or error.get('source')}: {error.get('message', '')[:80]}")
+        else:
+            problems.append(f"{error.get('kind')}: {error.get('message', '')[:120]} ({path or 'no source'})")
+    if check_session:
+        sessions = observed.get("sessionRequests") or []
+        if not sessions:
+            problems.append("the page made no /api/session request")
+        elif any(row.get("status") == 429 for row in sessions):
+            problems.append("/api/session rate-limited (429): too many sessions from this address; rerun one smoke at a time")
+        elif any(row.get("status") != 200 for row in sessions):
+            problems.append("/api/session answered " + ", ".join(str(row.get("status")) for row in sessions))
+    return problems, warnings
+
+
+def load_in_browser(browser: str, url: str, *, settle_ms: int, deadline_ms: int) -> dict:
+    """The CDP observer's JSON; a crash or unparsable output is an error observation."""
+    command = ["node", str(CDP_OBSERVER), "--browser", browser, "--url", url,
+               "--settle-ms", str(settle_ms), "--deadline-ms", str(deadline_ms)]
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            return response.status
-    except urllib.error.HTTPError as error:
-        return error.code
+        completed = subprocess.run(command, capture_output=True, text=True, timeout=deadline_ms / 1000 + 15)
+    except subprocess.TimeoutExpired:
+        return {"status": "timeout", "reason": "observer did not exit"}
+    try:
+        return json.loads(completed.stdout.strip().splitlines()[-1])
+    except (ValueError, IndexError):
+        return {"status": "error", "reason": f"observer exit {completed.returncode}: {completed.stderr.strip()[:200]}"}
 
 
-def load_in_browser(browser: str, url: str, *, budget_ms: int, timeout: float) -> tuple[str, str]:
-    """``(dom, log)`` after Chrome ran the page for ``budget_ms`` of virtual time."""
-    with tempfile.TemporaryDirectory(prefix="sermon-smoke-") as profile:
-        command = [browser, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
-                   "--disable-background-networking", "--disable-sync", "--disable-extensions",
-                   "--enable-logging=stderr", "--v=0", f"--virtual-time-budget={budget_ms}",
-                   "--user-data-dir=" + profile, "--dump-dom", url]
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
-        try:
-            out, err = process.communicate(timeout=timeout)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGKILL)
-            out, err = process.communicate()
-            err += b"\n[smoke] browser deadline exceeded"
-        return out.decode("utf-8", "replace"), err.decode("utf-8", "replace")
-
-
-def smoke(origin: str, page_id: str, locales, *, browser: str, budget_ms: int = 20000, timeout: float = 90,
-          check_session: bool = True, loader=load_in_browser, fetch=fetch_json, post=post_session) -> dict:
+def smoke(origin: str, page_id: str, locales, *, browser: str, settle_ms: int = 4000, deadline_ms: int = 60000,
+          timeout: float = 60, check_session: bool = True, loader=load_in_browser, fetch=fetch_json,
+          shell=shell_paths) -> dict:
     catalog = fetch(origin + "/multilingual-v4.json", timeout)
-    engagement = fetch(origin + "/engagement.json", timeout) if check_session else None
     page = next((row for row in catalog.get("pages", []) if row.get("id") == page_id), None)
     if page is None:
         raise ValueError(f"Page {page_id} is not in the live v4 catalog")
+    shell_files = shell()
     results = []
     for locale in locales:
         target = page["targets"].get(locale)
         if target is None:
-            results.append({"locale": locale, "status": "fail", "problems": ["locale is not published for this page"]})
+            results.append({"locale": locale, "status": "fail", "problems": ["locale is not published for this page"], "warnings": []})
             continue
         release = fetch(origin + target["releasePackageUrl"], timeout)
+        expected = expected_identity(origin, page, locale, release, fetch, timeout)
         url = f"{origin}/?week={page_id}&contentLang={locale}"
-        dom_text, log = loader(browser, url, budget_ms=budget_ms, timeout=timeout)
-        dom = inspect_dom(dom_text)
-        errors = console_errors(log)
-        session_status = post(origin, feedback_source(catalog, release, engagement, locale), timeout) if check_session else None
-        problems = evaluate(dom, errors, session_status)
-        results.append({"locale": locale, "url": url, "status": "pass" if not problems else "fail", **dom,
-                        "consoleErrors": errors, "sessionStatus": session_status, "problems": problems,
-                        "domSha256": hashlib.sha256(dom_text.encode("utf-8")).hexdigest()})
+        observed = loader(browser, url, settle_ms=settle_ms, deadline_ms=deadline_ms)
+        problems, warnings = evaluate(expected, observed, check_session=check_session,
+                                      required_paths=expected["requiredPaths"] | {target["releasePackageUrl"]} | shell_files)
+        dom = observed.get("dom") or {}
+        results.append({"locale": locale, "url": url, "status": "pass" if not problems else "fail",
+                        "problems": problems, "warnings": warnings, "browserStatus": observed.get("status"),
+                        "elapsedMs": observed.get("elapsedMs"), "title": dom.get("title"), "audioSrc": dom.get("audioSrc"),
+                        "captionText": (dom.get("captionText") or "")[:120], "consoleErrors": observed.get("consoleErrors", []),
+                        "sessionRequests": observed.get("sessionRequests", [])})
     return {"schemaVersion": SCHEMA, "checkedAt": datetime.now(timezone.utc).isoformat(), "origin": origin,
-            "pageId": page_id, "browser": browser, "virtualTimeBudgetMs": budget_ms,
+            "pageId": page_id, "browser": browser, "settleMs": settle_ms, "deadlineMs": deadline_ms,
             "status": "pass" if all(row["status"] == "pass" for row in results) else "fail",
             "locales": results, "scope": "browser_render_and_feedback_session_only"}
 
@@ -188,9 +163,9 @@ def main(argv=None) -> int:
     parser.add_argument("--page-id", required=True)
     parser.add_argument("--locale", action="append", default=[], help="Repeatable; default zh-Hans, ko, es")
     parser.add_argument("--browser", default=DEFAULT_BROWSER, help="Chrome or Chromium binary")
-    parser.add_argument("--virtual-time-budget-ms", type=int, default=20000)
-    parser.add_argument("--timeout-seconds", type=float, default=90)
-    parser.add_argument("--no-session", action="store_true", help="Skip the /api/session check")
+    parser.add_argument("--settle-ms", type=int, default=4000, help="Wait after the load event before reading the page")
+    parser.add_argument("--deadline-ms", type=int, default=60000, help="Hard limit per locale; exceeding it fails the smoke")
+    parser.add_argument("--no-session", action="store_true", help="Do not require the page's /api/session requests to answer 200")
     parser.add_argument("--out", type=Path, required=True, help="JSON report; refuses to overwrite")
     args = parser.parse_args(argv)
     if args.out.exists():
@@ -200,13 +175,14 @@ def main(argv=None) -> int:
     origin = args.origin.rstrip("/")
     if not origin.startswith("https://"):
         parser.error("origin must be https://")
-    report = smoke(origin, args.page_id, args.locale or LOCALES, browser=args.browser,
-                   budget_ms=args.virtual_time_budget_ms, timeout=args.timeout_seconds,
-                   check_session=not args.no_session)
+    report = smoke(origin, args.page_id, args.locale or LOCALES, browser=args.browser, settle_ms=args.settle_ms,
+                   deadline_ms=args.deadline_ms, check_session=not args.no_session)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     for row in report["locales"]:
-        print(f"{row['locale']}\t{row['status']}\t{row.get('title', '')}\t{'; '.join(row['problems'])}")
+        print(f"{row['locale']}\t{row['status']}\t{row.get('title') or ''}\t{'; '.join(row['problems'])}")
+        for warning in row.get("warnings", []):
+            print(f"\twarning: {warning}")
     print(json.dumps({"status": report["status"], "report": str(args.out)}, ensure_ascii=False))
     return 0 if report["status"] == "pass" else 1
 

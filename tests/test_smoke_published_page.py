@@ -1,95 +1,136 @@
+import copy
 import unittest
 
 from scripts import smoke_published_page as smoke
 
-SHA = "e16380a609b2dc75059a12b7ad3cfedc304b73ac4aa49578e9264de6ba22d1b7"
-CATALOG = {"schemaVersion": "sermon-multilingual-catalog-v4", "defaultPageId": "resi-20261011-54475d42",
-           "pages": [{"id": "resi-20261011-54475d42", "date": "2026-10-11", "defaultTargetLocale": "zh-Hans",
-                      "targets": {"zh-Hans": {"releasePackageUrl": "/releases-v4/resi-20261011-54475d42/zh-Hans.json"},
-                                  "ko": {"releasePackageUrl": "/releases-v4/resi-20261011-54475d42/ko.json"}}}]}
-RELEASE = {"pageId": "resi-20261011-54475d42", "targetLocale": "zh-Hans",
-           "assets": [{"role": "content", "path": "/content/x/zh-Hans.json", "sha256": "a" * 64},
-                      {"role": "audio", "path": "/media/x/zh-Hans.mp3", "sha256": SHA}]}
-ENGAGEMENT = {"schemaVersion": 1, "enabled": True, "appVersion": "8e1b4c2d9f0a7b65"}
-GOOD_DOM = ('<html><head><title>启示录：耶稣带来的安慰与盼望 · 耶稣警告 · 同行</title></head><body>'
-            '<span id="edition-label">机器检查版</span><p id="current-text" class="current-text">弟兄姊妹，很高兴能和大家在一起。</p>'
-            '<div id="full-reading-list"><div>弟兄姊妹</div><div>我是这里的牧师之一。</div></div></body></html>')
-STALE_DOM = ('<html><head><title>同行</title></head><body><p id="current-text">配音就绪后，字幕会显示在这里。</p>'
-             '<div id="full-reading-list"></div></body></html>')
-CHROME_LOG = ('[61275:259:1011/222314.102938:INFO:CONSOLE(12)] "ready", source: https://x.web.app/app.mjs (12)\n'
-              '[61275:259:1011/222315.000000:ERROR:CONSOLE(208)] "Uncaught TypeError: Cannot read properties of null '
-              '(reading \'addEventListener\')", source: https://x.web.app/app.mjs (208)\n'
-              '[61275:259:1011/222316.000000:WARNING:CONSOLE(5)] "deprecated", source: https://x.web.app/theme.js (5)\n')
+ORIGIN = "https://x.web.app"
+PAGE = "resi-20261011-54475d42"
+CATALOG = {"schemaVersion": "sermon-multilingual-catalog-v4", "defaultPageId": PAGE,
+           "pages": [{"id": PAGE, "date": "2026-10-11", "defaultTargetLocale": "zh-Hans",
+                      "targets": {"zh-Hans": {"releasePackageUrl": f"/releases-v4/{PAGE}/zh-Hans.json"},
+                                  "ko": {"releasePackageUrl": f"/releases-v4/{PAGE}/ko.json"}}}]}
 
 
-class DomAndLogTests(unittest.TestCase):
-    def test_dom_inspection_reads_title_caption_and_full_reading(self):
-        dom = smoke.inspect_dom(GOOD_DOM)
-        self.assertEqual(dom["title"], "启示录：耶稣带来的安慰与盼望 · 耶稣警告 · 同行")
-        self.assertEqual(dom["captionText"], "弟兄姊妹，很高兴能和大家在一起。")
-        self.assertGreater(dom["fullReadingChars"], 0)
-        self.assertEqual(dom["editionLabel"], "机器检查版")
+def release(locale):
+    return {"pageId": PAGE, "targetLocale": locale,
+            "assets": [{"role": "content", "path": f"/content/{PAGE}/{locale}.json", "sha256": "a" * 64},
+                       {"role": "captions", "path": f"/captions/{PAGE}/{locale}.json", "sha256": "b" * 64},
+                       {"role": "audio", "path": f"/media/{PAGE}/{locale}.mp3", "sha256": "c" * 64}]}
 
-    def test_console_errors_keep_only_error_level_lines(self):
-        errors = smoke.console_errors(CHROME_LOG)
-        self.assertEqual(len(errors), 1)
-        self.assertEqual(errors[0]["source"], "https://x.web.app/app.mjs")
-        self.assertEqual(errors[0]["line"], 208)
-        self.assertIn("Cannot read properties of null", errors[0]["message"])
 
-    def test_evaluation_names_each_visible_failure(self):
-        self.assertEqual(smoke.evaluate(smoke.inspect_dom(GOOD_DOM), [], 200), [])
-        problems = smoke.evaluate(smoke.inspect_dom(STALE_DOM), smoke.console_errors(CHROME_LOG), 400)
-        self.assertEqual(len(problems), 4)
-        self.assertTrue(problems[0].startswith("title does not name the sermon"))
-        self.assertIn("no subtitle", problems[1])
-        self.assertIn("console error", problems[2])
-        self.assertIn("HTTP 400", problems[3])
+CONTENT = {"zh-Hans": {"title": "耶稣警告", "cues": [{"text": "弟兄姊妹，很高兴能和大家在一起。"}, {"text": "我是这里的牧师之一。"}]},
+           "ko": {"title": "예수님은 경고하십니다", "cues": [{"text": "교회 공동체 여러분, 함께하게 되어 기쁩니다."}]}}
+CAPTIONS = {"zh-Hans": {"cues": [{"text": "弟兄姊妹，很高兴能和大家在一起。"}]}, "ko": {"cues": [{"text": "교회 공동체 여러분."}]}}
+DOCUMENTS = {ORIGIN + "/multilingual-v4.json": CATALOG}
+for loc in ("zh-Hans", "ko"):
+    DOCUMENTS[ORIGIN + f"/releases-v4/{PAGE}/{loc}.json"] = release(loc)
+    DOCUMENTS[ORIGIN + f"/content/{PAGE}/{loc}.json"] = CONTENT[loc]
+    DOCUMENTS[ORIGIN + f"/captions/{PAGE}/{loc}.json"] = CAPTIONS[loc]
 
-    def test_feedback_source_matches_the_reader_track_identity(self):
-        source = smoke.feedback_source(CATALOG, RELEASE, ENGAGEMENT, "zh-Hans")
-        self.assertEqual(source, {"schemaVersion": 1, "week": "2026-10-11",
-                                  "trackId": "resi-20261011-54475d42-zh-Hans-" + SHA[:12],
-                                  "audioSha256": SHA, "appVersion": ENGAGEMENT["appVersion"]})
-        with self.assertRaisesRegex(ValueError, "bound audio hash"):
-            smoke.feedback_source(CATALOG, {**RELEASE, "assets": [{"role": "audio", "path": "/m.mp3", "sha256": "xyz"}]},
-                                  ENGAGEMENT, "zh-Hans")
+
+def observation(locale="zh-Hans", **changes):
+    first = CONTENT[locale]["cues"][0]["text"]
+    value = {"status": "ok", "elapsedMs": 5000, "consoleErrors": [], "sessionRequests": [{"method": "POST", "status": 200}],
+             "dom": {"title": f"{CONTENT[locale]['title']} · 同行 · 证道中文听译", "week": PAGE, "contentLang": locale,
+                     "contentLanguage": locale, "audioSrc": f"/media/{PAGE}/{locale}.mp3", "captionText": first,
+                     "fullReading": "完整文稿 00:05 " + first}}
+    dom_changes = changes.pop("dom", {})
+    value.update(changes)
+    value["dom"].update(dom_changes)
+    return value
+
+
+def expected(locale="zh-Hans"):
+    return smoke.expected_identity(ORIGIN, CATALOG["pages"][0], locale, release(locale), lambda url, timeout: DOCUMENTS[url], 5)
+
+
+REQUIRED = {f"/media/{PAGE}/zh-Hans.mp3", "/app.mjs", "/index.html"}
+
+
+class EvaluateTests(unittest.TestCase):
+    def check(self, observed, locale="zh-Hans", **kwargs):
+        return smoke.evaluate(expected(locale), observed, required_paths=REQUIRED, **kwargs)
+
+    def test_correct_page_passes(self):
+        self.assertEqual(self.check(observation()), ([], []))
+        self.assertEqual(self.check(observation("ko"), "ko"), ([], []))
+
+    def test_a_shell_that_falls_back_to_another_sermon_or_language_fails(self):
+        # Review finding: the page rendered something, just not the requested release.
+        cases = {
+            "another week": dict(dom={"week": "resi-20261004-69ba7a66"}),
+            "chinese instead of korean": dict(dom={"contentLang": "zh-Hans"}),
+            "selector on chinese": dict(dom={"contentLanguage": "zh-Hans"}),
+            "another audio": dict(dom={"audioSrc": f"/media/{PAGE}/zh-Hans.mp3"}),
+            "another title": dict(dom={"title": "耶稣警告 · 同行 · 证道中文听译"}),
+            "another caption": dict(dom={"captionText": "弟兄姊妹，很高兴能和大家在一起。"}),
+            "another full text": dict(dom={"fullReading": "弟兄姊妹，很高兴能和大家在一起。"}),
+        }
+        for name, change in cases.items():
+            with self.subTest(name):
+                problems, _ = self.check(observation("ko", **copy.deepcopy(change)), "ko")
+                self.assertEqual(len(problems), 1, problems)
+
+    def test_console_errors_exceptions_and_required_loads_fail_but_optional_loads_warn(self):
+        errors = [{"kind": "console.error", "message": "boom", "source": "https://x.web.app/app.mjs", "line": 3},
+                  {"kind": "exception", "message": "TypeError: null", "source": "https://x.web.app/app.mjs", "line": 208},
+                  {"kind": "log.network", "message": "404", "source": f"https://x.web.app/media/{PAGE}/zh-Hans.mp3"},
+                  {"kind": "log.network", "message": "404", "source": "https://x.web.app/alignment/other-page.json"}]
+        problems, warnings = self.check(observation(consoleErrors=errors))
+        self.assertEqual(len(problems), 3)
+        self.assertEqual(warnings, ["optional resource failed: /alignment/other-page.json: 404"])
+
+    def test_the_pages_own_session_requests_are_required_and_must_succeed(self):
+        self.assertIn("/api/session answered 200, 400", self.check(observation(sessionRequests=[{"status": 200}, {"status": 400}]))[0])
+        self.assertIn("the page made no /api/session request", self.check(observation(sessionRequests=[]))[0])
+        limited = observation(sessionRequests=[{"status": 429}, {"status": 200}],
+                              consoleErrors=[{"kind": "log.network", "message": "429", "source": "https://x.web.app/api/session"}])
+        problems, warnings = self.check(limited)
+        self.assertEqual(problems, ["/api/session rate-limited (429): too many sessions from this address; rerun one smoke at a time"])
+        self.assertEqual(warnings, [])
+        self.assertEqual(self.check(observation(sessionRequests=[]), check_session=False), ([], []))
+
+    def test_a_browser_that_misses_the_deadline_fails(self):
+        problems, _ = self.check({"status": "timeout", "reason": "no result within 60000 ms"})
+        self.assertEqual(problems, ["browser did not finish: timeout (no result within 60000 ms)"])
+        self.assertTrue(self.check({"status": "error", "reason": "observer exit 1"})[0])
 
 
 class SmokeFlowTests(unittest.TestCase):
-    def run_smoke(self, dom, log, status):
-        documents = {"https://x.web.app/multilingual-v4.json": CATALOG, "https://x.web.app/engagement.json": ENGAGEMENT,
-                     "https://x.web.app/releases-v4/resi-20261011-54475d42/zh-Hans.json": RELEASE,
-                     "https://x.web.app/releases-v4/resi-20261011-54475d42/ko.json": {**RELEASE, "targetLocale": "ko"}}
-        posted = []
-        return smoke.smoke("https://x.web.app", "resi-20261011-54475d42", ("zh-Hans", "ko", "es"), browser="/fake/chrome",
-                           loader=lambda browser, url, budget_ms, timeout: (dom, log),
-                           fetch=lambda url, timeout: documents[url],
-                           post=lambda origin, source, timeout: posted.append(source) or status), posted
+    def run_smoke(self, loader):
+        return smoke.smoke(ORIGIN, PAGE, ("zh-Hans", "ko", "es"), browser="/fake/chrome", loader=loader,
+                           fetch=lambda url, timeout: DOCUMENTS[url], shell=lambda: {"/app.mjs"})
 
-    def test_passing_page_reports_every_locale_and_posts_one_session_each(self):
-        report, posted = self.run_smoke(GOOD_DOM, "", 200)
+    def test_each_locale_is_loaded_once_and_judged_against_its_release(self):
+        calls = []
+        def loader(browser, url, settle_ms, deadline_ms):
+            calls.append(url)
+            return observation("ko" if url.endswith("contentLang=ko") else "zh-Hans")
+        report = self.run_smoke(loader)
         self.assertEqual(report["schemaVersion"], smoke.SCHEMA)
         self.assertEqual([row["status"] for row in report["locales"]], ["pass", "pass", "fail"])
-        self.assertEqual(report["status"], "fail")  # es is not published for this page
         self.assertEqual(report["locales"][2]["problems"], ["locale is not published for this page"])
-        self.assertEqual(len(posted), 2)
-        self.assertEqual(report["locales"][0]["url"], "https://x.web.app/?week=resi-20261011-54475d42&contentLang=zh-Hans")
+        self.assertEqual(calls, [f"{ORIGIN}/?week={PAGE}&contentLang=zh-Hans", f"{ORIGIN}/?week={PAGE}&contentLang=ko"])
 
-    def test_stale_shell_and_unsynced_feedback_fail_the_smoke(self):
-        report, _ = self.run_smoke(STALE_DOM, CHROME_LOG, 400)
-        row = report["locales"][0]
-        self.assertEqual(row["status"], "fail")
-        self.assertEqual(row["sessionStatus"], 400)
-        self.assertEqual(len(row["consoleErrors"]), 1)
-        self.assertEqual(len(row["problems"]), 4)
+    def test_a_stale_shell_showing_chinese_for_korean_fails_korean_only(self):
+        report = self.run_smoke(lambda browser, url, settle_ms, deadline_ms: observation("zh-Hans"))
+        self.assertEqual(report["locales"][0]["status"], "pass")
+        self.assertEqual(report["locales"][1]["status"], "fail")
+        self.assertGreaterEqual(len(report["locales"][1]["problems"]), 4)
 
     def test_unknown_page_is_refused_before_any_browser_run(self):
         with self.assertRaisesRegex(ValueError, "not in the live v4 catalog"):
-            smoke.smoke("https://x.web.app", "missing", ("zh-Hans",), browser="/fake/chrome",
+            smoke.smoke(ORIGIN, "missing", ("zh-Hans",), browser="/fake/chrome",
                         loader=lambda *a, **k: self.fail("browser must not run"),
-                        fetch=lambda url, timeout: CATALOG if url.endswith("v4.json") else ENGAGEMENT,
-                        post=lambda *a: 200)
+                        fetch=lambda url, timeout: DOCUMENTS[url], shell=set)
+
+    def test_observer_output_that_is_not_json_is_an_error(self):
+        from unittest.mock import patch
+        import subprocess
+        with patch.object(smoke.subprocess, "run", return_value=subprocess.CompletedProcess([], 1, "", "crash")):
+            self.assertEqual(smoke.load_in_browser("/b", "https://x", settle_ms=1, deadline_ms=1000)["status"], "error")
+        with patch.object(smoke.subprocess, "run", side_effect=subprocess.TimeoutExpired("node", 1)):
+            self.assertEqual(smoke.load_in_browser("/b", "https://x", settle_ms=1, deadline_ms=1000)["status"], "timeout")
 
 
 if __name__ == "__main__":
