@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-feedback-api-deploy-r14",
+  "runs": [
+    {
+      "label": "evidence",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/feedback-api-20261012/evidence",
+      "skipped": {
+        ".md": 1
+      }
+    }
+  ],
+  "files": [],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
