@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "sermon-layer2-candidate-recovery-v1",
+  "recoveredAt": "2026-10-11T06:42:11Z",
+  "authorizedBy": "Jony",
+  "userStatement": "用 A，恢复完直接开始文字质检",
+  "targetLocale": "ko",
+  "modelCalls": 0,
+  "humanApproval": false,
+  "reason": "Canonical worker finished all groups and repair rounds; candidate admission rejected the v4 policy schema.",
+  "originalJob": {
+    "jobId": "8bb2db035d7ea40e8e87c9fc901dc0739995f20cf75d022fdc51c1de4707bd35",
+    "status": "failed",
+    "reason": "command_completed",
+    "codeIdentitySha256": "89afe3af1fc237e505ace7a5fbfac7a0d1f7bc7e428dc9a0e8feeda78ba1698e"
+  },
+  "admissionCode": {
+    "commit": "e3d78de16b4c7b1e72365ab1ae944c66f4f8581a",
+    "codeIdentitySha256": "8b2eea352f3df7cc2e5eba117827af2db2d16e0d7891de4d75dbde3f847154b7"
+  },
+  "autoRepairReceipt": {
+    "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r5/ko/repair-rounds/auto-repair-receipt-002.json",
+    "sha256": "c290c493b679701012df49815eefaca14a5a3b82899783364331a81df5565389"
+  },
+  "evidenceSha256": "9439c95782b8c51040bc3798644027f8a68d800091c130009cb90389528239b4",
+  "policy": {
+    "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/policies/ko-policy-frozen-r5.json",
+    "jsonSha256": "d209b51f648e15b0f9986638ff379a1b325fc6b18e1f4a81a18c348d3fe4fc21"
+  },
+  "candidate": {
+    "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/recovered/ko/candidate.json",
+    "jsonSha256": "efc5043b3a57ec3973245163a88d40139a4cc9a1c15aef482b4a587b69da1a1b"
+  },
+  "languageReview": {
+    "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/recovered/ko/language-review.json",
+    "jsonSha256": "c205f8708dd9958209051a5e9f7aa1ab4b4c07dc700366b1e53a37f10eb8e168"
+  }
+}

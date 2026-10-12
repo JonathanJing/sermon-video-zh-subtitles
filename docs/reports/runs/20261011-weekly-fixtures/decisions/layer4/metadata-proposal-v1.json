@@ -1,0 +1,34 @@
+{
+ "schemaVersion": "sermon-formal-metadata-proposal-draft-v1",
+ "pageId": "resi-20261011-54475d42",
+ "date": "2026-10-11",
+ "sourceId": "resi-weekend-live-54475d42-20261011",
+ "englishTitleObserved": "Jesus warns",
+ "note": "Official English title 'Jesus warns' (Mariners Church channel, supplied by the operator 2026-10-11); translated following last week's pattern (Jesus judges and keeps → 耶稣审判并保守 / 예수님은 심판하시고 지키십니다 / Jesús juzga y guarda). Operator chose 耶稣警告 for zh-Hans (chat 2026-10-11: '同意，耶稣警告在前'); approval recorded (sermon-formal-dev-metadata-approval-v2).",
+ "locales": {
+  "zh-Hans": {
+   "series": "启示录：耶稣带来的安慰与盼望",
+   "title": "耶稣警告",
+   "speaker": "Steve Bang Lee",
+   "scripture": "启示录 8–9 章",
+   "summary": "译文与配音经机器质检（未经人工审核）。神借着七号向悖逆的世界发出警告——不是残忍，而是因为祂的爱要求回应、祂的圣洁完全无瑕。我们受邀做一个为世界祷告的哥哥，并仰望为我们承受那一锤的长兄耶稣。",
+   "outline": []
+  },
+  "ko": {
+   "series": "요한계시록: 예수님이 주시는 위로와 소망",
+   "title": "예수님은 경고하십니다",
+   "speaker": "Steve Bang Lee",
+   "scripture": "요한계시록 8–9장",
+   "summary": "번역과 음성은 기계 품질 검사를 거쳤으며 사람의 검토는 받지 않았습니다. 하나님은 일곱 나팔로 반역하는 세상에 경고하십니다. 그것은 잔인함이 아니라, 반응을 요구하는 사랑과 완전한 거룩함에서 나옵니다. 우리는 세상을 위해 기도하는 형이 되고, 우리 대신 망치를 맞으신 맏형 예수를 바라보도록 초대받습니다.",
+   "outline": []
+  },
+  "es": {
+   "series": "Apocalipsis: El consuelo y la esperanza que Jesús trae",
+   "title": "Jesús advierte",
+   "speaker": "Steve Bang Lee",
+   "scripture": "Apocalipsis 8–9",
+   "summary": "Traducción y audio con control de calidad automático, sin revisión humana. Dios advierte a un mundo rebelde con las siete trompetas: no por crueldad, sino porque su amor exige una respuesta y su santidad es perfecta. Se nos invita a ser el hermano mayor que ora por el mundo y a mirar a Jesús, el hermano mayor que recibió el martillo por nosotros.",
+   "outline": []
+  }
+ }
+}

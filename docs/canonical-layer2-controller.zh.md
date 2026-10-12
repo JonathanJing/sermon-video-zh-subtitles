@@ -87,3 +87,7 @@ job evidence。正式 CLI 只在实际生产 gate 后读取既有 `OPENAI_API_KE
 ## 运行心跳边界
 
 固定执行路径绑定[专项心跳与无进展超时](canonical-layer2-liveness.zh.md)：command startup 60 秒、heartbeat 30/90 秒、no-progress 900 秒，以及原总上限。超时仍是需要对账的未知结果，不重新派发；默认 shadow 保持只读。L1/3/4、全局资源与真实吞吐验收没有因此完成。
+
+## 并发上限
+
+每个生产 run 默认只有一个活动 locale 作业；显式 execution-v2 搭配冻结的并发 profile 最多三个。owner 状态不确定时，整个 run 的新派发被阻塞，直到对账。已有作业的限额不得原地提高，新的上限要走[预算与迁移](canonical-layer2-budget-and-migration.zh.md)的新身份。

@@ -1,0 +1,17 @@
+{
+  "status": "published_http_verified_apns_accepted",
+  "pageId": "resi-20261011-54475d42",
+  "devVersion": "57bbf4a0e7886f1d",
+  "preservedPages": 7,
+  "verifiedHTTPFiles": 38,
+  "posterLocaleBindings": 3,
+  "apnsAccepted": true,
+  "sendCount": 1,
+  "apnsID": "4bc2ab5b-dfc3-4284-a516-f84faaa72721",
+  "senderCommit": "d55c8c32ec7ee32032bfbb2030de7c30726e3f7d",
+  "targetedTestsPassed": 8,
+  "deviceDisplayed": "not_run",
+  "contentOpened": "not_run",
+  "posterVerified": "not_run",
+  "productionPush": "not_sent"
+}

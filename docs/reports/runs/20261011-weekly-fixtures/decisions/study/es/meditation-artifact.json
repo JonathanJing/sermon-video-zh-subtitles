@@ -1,0 +1,117 @@
+{
+ "schemaVersion": "sermon-study-artifact-v1",
+ "kind": "meditation",
+ "pageId": "resi-20261011-54475d42",
+ "locale": "es",
+ "sourcePackageSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+ "textCandidateSha256": "1df43ebdafb507f988b907b4f4afe02e453f51967262af568f19c2d6f45b8ad9",
+ "producerIdentity": "delegated-agent-draft:claude-fable-5.1:2026-10-11 (user delegation '大纲，默想…同步做'; v2 API generator refused: provider_input_bound_exceeded at batchGroups=3)",
+ "sections": [
+  {
+   "title": "Meditación 1: Una advertencia significa que a alguien le importas",
+   "body": "El padre del predicador advirtió con calma a su hijo menor y, tres meses después, realmente tomó el martillo. No perdió el control: le importaba. El martillo reveló un corazón amoroso. Las trompetas de Dios son así: advierte a este mundo rebelde porque no lo ha abandonado.\n\nPiensa: ¿hubo en tu vida una «advertencia» que entonces te dolió y que hoy reconoces como la manera en que Dios te cuidaba? ¿Puedes darle gracias hoy por esa experiencia?",
+   "sourceUnitIds": [
+    "chunk-0000-u013",
+    "chunk-0000-u016",
+    "chunk-0001-u010",
+    "chunk-0001-u012",
+    "chunk-0004-u007",
+    "chunk-0004-u008",
+    "chunk-0004-u010",
+    "chunk-0006-u006",
+    "chunk-0006-u007"
+   ]
+  },
+  {
+   "title": "Meditación 2: Amor e ira, dos caras de la misma moneda",
+   "body": "Solemos pensar que quien ama no se enoja, pero el predicador dice: el amor exige una respuesta y se opone a lo que daña a quien amamos; cuanto más amas, mayor es tu capacidad de enojarte. Lo opuesto al amor no es la ira, sino la indiferencia. La ira de Dios no es un estallido de mal humor, sino su firme oposición al cáncer del pecado que corroe a quienes él ama.\n\nMedita: cuando lees sobre la ira de Dios, ¿qué Dios aparece en tu mente? Pídele hoy que corrija tu imagen de él: el Dios que, porque ama profundamente, no puede ser indiferente al pecado.",
+   "sourceUnitIds": [
+    "chunk-0003-u016",
+    "chunk-0003-u019",
+    "chunk-0003-u020",
+    "chunk-0003-u022",
+    "chunk-0003-u024",
+    "chunk-0003-u025",
+    "chunk-0004-u004",
+    "chunk-0004-u014",
+    "chunk-0004-u015"
+   ]
+  },
+  {
+   "title": "Meditación 3: En silencio ante el Dios santo",
+   "body": "Antes de las trompetas, el cielo guardó silencio como media hora, y hubo truenos, relámpagos y un terremoto: Dios mostró primero su santidad. Habacuc dice: el Señor está en su santo templo; calle delante de él toda la tierra. Dios es completamente santo, y todo lo que hace, incluidas sus advertencias, es moralmente perfecto.\n\nPráctica: aparta hoy unos minutos para callar delante del Dios santo, sin hablar ni pedir nada. Que su santidad, y no tu ansiedad, defina este día.",
+   "sourceUnitIds": [
+    "chunk-0005-u010",
+    "chunk-0005-u013",
+    "chunk-0005-u014",
+    "chunk-0005-u015",
+    "chunk-0005-u017",
+    "chunk-0005-u020",
+    "chunk-0005-u021",
+    "chunk-0005-u024",
+    "chunk-0005-u036"
+   ]
+  },
+  {
+   "title": "Meditación 4: El dolor es el megáfono de Dios",
+   "body": "C. S. Lewis dijo que Dios nos susurra en nuestros placeres, habla en nuestra conciencia y grita en nuestro dolor; el dolor es su megáfono para despertar a un mundo sordo. El predicador ha visto que para muchos el punto de giro fue una crisis; no culpan a Dios, pero agradecen que por medio de ella los acercó a sí. Dios se contiene: solo se afecta un tercio.\n\nMedita: ¿qué «grito» estás escuchando tú o alguien cercano en este momento? Pide a Dios que lo use para despertar y no para destruir, y ora por quienes sufren y aún no han oído su voz.",
+   "sourceUnitIds": [
+    "chunk-0006-u014",
+    "chunk-0006-u016",
+    "chunk-0006-u018",
+    "chunk-0006-u023",
+    "chunk-0006-u024",
+    "chunk-0006-u025",
+    "chunk-0006-u026",
+    "chunk-0006-u029",
+    "chunk-0006-u032"
+   ]
+  },
+  {
+   "title": "Meditación 5: Sé el hermano mayor que ora",
+   "body": "El predicador confiesa que fue un mal hermano mayor: se sentía justo y no sintió el dolor de su padre por su hermano. El hermano mayor de Lucas 15 también. Pero en Apocalipsis 8 el pueblo de Dios no se queja ni critica al mundo: ora por él, y las oraciones de los santos suben como incienso ante Dios. Un hombre que huyó de Dios durante décadas volvió porque su hermana oró por él durante diez años, sin sermonearlo ni mirarlo desde arriba, solo orando.\n\nAcción: escribe el nombre de una persona y pégalo en el refrigerador o guárdalo en tu teléfono. Cada vez que pases, haz una breve oración por ella, porque tenemos un Jesús que se deleita en salvar.",
+   "sourceUnitIds": [
+    "chunk-0008-u019",
+    "chunk-0008-u020",
+    "chunk-0008-u022",
+    "chunk-0008-u024",
+    "chunk-0008-u026",
+    "chunk-0008-u030",
+    "chunk-0009-u005",
+    "chunk-0009-u007",
+    "chunk-0009-u010",
+    "chunk-0009-u013",
+    "chunk-0009-u014",
+    "chunk-0009-u023",
+    "chunk-0009-u027",
+    "chunk-0009-u028",
+    "chunk-0009-u029",
+    "chunk-0009-u032",
+    "chunk-0009-u033",
+    "chunk-0010-u001"
+   ]
+  },
+  {
+   "title": "Meditación 6: El martillo cayó sobre la cruz",
+   "body": "El martillo al final cayó, pero no sobre nosotros, los hermanos menores rebeldes y pecadores, sino sobre Jesús en la cruz, nuestro hermano mayor. Él es perfectamente justo pero no se cree justo; entregó su vida para hacernos justos en él. En la cruz el amor y la santidad se encuentran perfectamente. Nuestra boleta espiritual rota fue clavada en la cruz y, por la fe, Jesús puso su boleta perfecta en nuestro expediente; el Padre te mira ahora a través de la justicia de Cristo. El perdón no es del 99 %, sino del 100 %.\n\nRespuesta: si hoy sigues revisando tu «boleta espiritual» y oyes la voz de la condenación, suéltala y mira a Jesús. Con fe, esperanza y gozo, alábalo por todo lo que ha hecho.",
+   "sourceUnitIds": [
+    "chunk-0010-u004",
+    "chunk-0010-u007",
+    "chunk-0010-u008",
+    "chunk-0010-u009",
+    "chunk-0010-u011",
+    "chunk-0010-u012",
+    "chunk-0010-u014",
+    "chunk-0010-u016",
+    "chunk-0011-u001",
+    "chunk-0011-u008",
+    "chunk-0011-u010",
+    "chunk-0011-u011",
+    "chunk-0011-u012",
+    "chunk-0011-u013",
+    "chunk-0011-u019",
+    "chunk-0011-u020"
+   ]
+  }
+ ]
+}
