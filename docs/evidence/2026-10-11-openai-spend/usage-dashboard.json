@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "sermon-openai-spend-observation-v1",
+  "pageId": "resi-20261011-54475d42",
+  "recordedAt": "2026-10-12T04:55:00Z",
+  "source": {
+    "kind": "openai_usage_dashboard_screenshot",
+    "providedBy": "operator (chat, 2026-10-11 PDT)",
+    "view": "Total Spend, grouped by Line Item, 1d buckets, range Oct 05 to Oct 12 2026",
+    "projectFilter": "not visible in the screenshot",
+    "invoiceVerified": false,
+    "note": "Dashboard figures, not an invoice. Not admitted by scripts/import_openai_costs.py, which needs native Costs API pages grouped by project_id."
+  },
+  "currency": "USD",
+  "rangeTotal": "128.38",
+  "day": {
+    "utcDate": "2026-10-11",
+    "total": "128.07",
+    "lineItems": [
+      {
+        "model": "gpt-6_1-sol",
+        "lineItem": "cache writes",
+        "usd": "41.99"
+      },
+      {
+        "model": "gpt-6_1-sol",
+        "lineItem": "cached input",
+        "usd": "0.28"
+      },
+      {
+        "model": "gpt-6_1-sol",
+        "lineItem": "input",
+        "usd": "14.31"
+      },
+      {
+        "model": "gpt-6_1-sol",
+        "lineItem": "output",
+        "usd": "45.68"
+      },
+      {
+        "model": "gpt-6-astra",
+        "lineItem": "cache writes",
+        "usd": "10.72"
+      },
+      {
+        "model": "gpt-6-astra",
+        "lineItem": "input",
+        "usd": "<0.01"
+      },
+      {
+        "model": "gpt-6-astra",
+        "lineItem": "output",
+        "usd": "13.75"
+      },
+      {
+        "model": "gpt-transcribe",
+        "lineItem": "all",
+        "usd": "1.33"
+      }
+    ]
+  },
+  "rangeLegend": [
+    {
+      "model": "gpt-6_1-sol",
+      "lineItem": "output",
+      "usd": "45.827"
+    },
+    {
+      "model": "gpt-6_1-sol",
+      "lineItem": "cache writes",
+      "usd": "42.151"
+    }
+  ],
+  "byModelOn20261011": {
+    "gpt-6_1-sol": "102.26",
+    "gpt-6-astra": "24.47",
+    "gpt-transcribe": "1.33"
+  },
+  "stageAttribution": {
+    "basis": "which model each stage called this week; not measured per request",
+    "gpt-6-astra": "Layer 1 English source judge",
+    "gpt-transcribe": "Layer 1 reference ASR (other same-day users, if any, are not excluded)",
+    "gpt-6_1-sol": "Layer 2 translation and review, and text QC back-translation run with --text-backend api"
+  },
+  "ledgerReconciliation": {
+    "method": "copies of all six Layer 1 source-budget ledgers migrated to v3 with SourceBudget.migrate_to_v3 (no provider calls); originals unchanged",
+    "gpt-6-astra": {
+      "returnedCalls": 284,
+      "inputTokens": 858263,
+      "outputTokens": 275097,
+      "estimatedUsd": "24.48",
+      "reservedUsd": "99.53",
+      "billedUsd": "24.47",
+      "finding": "Estimate matches the bill. The frozen worst-case input rate (12.5 USD per million) is Astra's cache-write rate, and the bill books essentially all input as cache writes."
+    },
+    "gpt-transcribe": {
+      "returnedCalls": 48,
+      "reservedUsd": "0.65",
+      "estimatedUsd": null,
+      "billedUsd": "1.33",
+      "finding": "Billed exceeds the 48 calls' reservation. Settlement reads token counts, but ASR responses report usage as {type: duration, seconds}, so every ASR row settles unknown. Whether the excess is another same-day caller or a price above the frozen assumption is not established."
+    },
+    "gpt-6_1-sol": {
+      "finding": "Not reconciled per request: its ledgers are the canonical Layer 2 budget and the text QC API ledger. Cache writes are 41% of the Sol spend. The frozen worst-case input rate (2.5) equals Sol 6.1's cache-write rate, so worst-case estimates cover caching.",
+      "impliedMillionTokens": {
+        "cache writes": "16.80",
+        "cached input": "2.80",
+        "input": "7.16",
+        "output": "4.57"
+      },
+      "impliedRatesUsdPerMillion": {
+        "cache writes": "2.5",
+        "input": "2",
+        "cached input": "0.1",
+        "output": "10"
+      },
+      "ratesSource": "scripts/experiments/benchmark_layer2_bounded.py PRICES (repository table, not re-verified against the price page)",
+      "comparison": "The retrospective's tally from cached replies (text QC 8.74M + Layer 2 0.5M tokens) is about a third of the roughly 31M tokens these line items imply."
+    }
+  }
+}
