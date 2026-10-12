@@ -114,7 +114,16 @@
         "output": "10"
       },
       "ratesSource": "scripts/experiments/benchmark_layer2_bounded.py PRICES (repository table, not re-verified against the price page)",
-      "comparison": "The retrospective's tally from cached replies (text QC 8.74M + Layer 2 0.5M tokens) is about a third of the roughly 31M tokens these line items imply."
+      "comparison": "The retrospective's section 11 figure for Layer 2 (220 calls, 0.5M tokens) undercounts: the budget records hold 9,622 unique responses and 22.3M tokens. The remainder of the Sol bill, about 24 USD, fits the text QC API backend.",
+      "layer2FromBudgetRecords": {
+        "method": "provider responses saved under layer2-54475d42/.layer2-jobs*.layer2-budget, deduplicated by response id; no provider calls",
+        "uniqueResponses": 9622,
+        "inputTokens": 19423516,
+        "outputTokens": 2924923,
+        "cachedInputTokens": 2739891,
+        "estimatedUsdAtWorstCaseRates": "77.81",
+        "finding": "Layer 2 is about three quarters of the Sol bill. Across 12 Layer 2 job rounds it averaged about 7 calls per translation group (461 groups x 3 locales)."
+      }
     }
   }
 }
