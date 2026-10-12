@@ -1,0 +1,34 @@
+{
+  "calibrationCoverage": {
+    "applicableGroups": {
+      "added_content": 26,
+      "added_number": 17,
+      "added_reference": 23,
+      "dropped_half": 18,
+      "dropped_name": 2,
+      "english_leak": 20,
+      "placeholder": 26,
+      "semantic_negation": 0,
+      "swapped_name": 0,
+      "swapped_quantity": 0,
+      "wrong_book": 1,
+      "wrong_number": 6,
+      "wrong_ordinal": 25
+    },
+    "notApplicableKinds": [
+      "semantic_negation",
+      "swapped_quantity",
+      "swapped_name"
+    ],
+    "untestableKinds": []
+  },
+  "candidateJsonSha256": "d50031479033dbfa0c415afbf49e8005c343cf7749826fc2d769cfd1f2e85c57",
+  "locale": "es",
+  "paths": {
+    "anchor": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/dev-real/textqc-run/anchor.json",
+    "candidate": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/dev-real/textqc-run/es/candidate.json",
+    "policy": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/dev-real/textqc-run/policies/es-policy-frozen-r5.json",
+    "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/dev-real/textqc-run/source.json"
+  },
+  "problems": []
+}
