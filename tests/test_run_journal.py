@@ -77,6 +77,57 @@ class RunJournalTests(unittest.TestCase):
         self.assertEqual(result["totals"]["waitingSeconds"], 2 * 3600)
         self.assertEqual(result["openStages"], ["layer4.publish"])
 
+    def test_rework_excludes_the_repeat_rounds_own_waiting(self):
+        # Review finding: a repeat that ran 10 min and then waited 30 min counted as 40 min of rework.
+        self.event("audio-qc.es", "started", "2026-10-18T03:00:00+00:00")
+        self.event("audio-qc.es", "failed", "2026-10-18T03:05:00+00:00")
+        self.event("audio-qc.es", "started", "2026-10-18T03:05:00+00:00")
+        self.event("audio-qc.es", "waiting", "2026-10-18T03:15:00+00:00", waiting_on="credential")
+        self.event("audio-qc.es", "finished", "2026-10-18T03:45:00+00:00")
+        stage = journal.summary(self.run)["stages"]["audio-qc.es"]
+        self.assertEqual((stage["computeSeconds"], stage["waitingSeconds"], stage["reworkSeconds"]), (15 * 60, 30 * 60, 10 * 60))
+
+    def test_an_open_stage_does_not_shrink_closed_compute(self):
+        self.event("layer2.es", "started", "2026-10-18T03:00:00+00:00")
+        self.event("layer2.es", "finished", "2026-10-18T03:20:00+00:00")
+        self.event("layer2.es", "started", "2026-10-18T03:20:00+00:00")
+        self.event("layer2.es", "waiting", "2026-10-18T03:21:00+00:00", waiting_on="quota")
+        self.event("layer2.es", "resumed", "2026-10-18T04:21:00+00:00")  # still running when the summary is read
+        stage = journal.summary(self.run)["stages"]["layer2.es"]
+        self.assertEqual((stage["computeSeconds"], stage["waitingSeconds"], stage["status"]), (20 * 60, 3600, "running"))
+
+    def test_rows_name_the_host_by_a_per_run_token_not_its_name(self):
+        # Review finding: the journal is published, and a bare machine name can name a person.
+        from unittest.mock import patch
+        with patch.object(journal.socket, "gethostname", return_value="Jony-MacBook-Pro"):
+            first = self.event("layer1", "started", "2026-10-18T03:00:00+00:00")
+            second = self.event("layer1", "finished", "2026-10-18T03:01:00+00:00")
+        with patch.object(journal.socket, "gethostname", return_value="spark-dgx"):
+            other = self.event("layer3", "started", "2026-10-18T03:02:00+00:00")
+        self.assertNotIn("host", first)
+        self.assertRegex(first["hostId"], r"^host-[0-9a-f]{12}$")
+        self.assertEqual(first["hostId"], second["hostId"])
+        self.assertNotEqual(first["hostId"], other["hostId"])
+        self.assertNotIn("Jony", (self.run / journal.FILE_NAME).read_text(encoding="utf-8"))
+        # Another run gets another salt, so tokens do not link runs to each other or to a name.
+        elsewhere = Path(self.temp.name) / "other-run"
+        with patch.object(journal.socket, "gethostname", return_value="Jony-MacBook-Pro"):
+            self.assertNotEqual(journal.append(elsewhere, "layer1", "started")["hostId"], first["hostId"])
+        self.assertEqual(sorted(path.name for path in self.run.iterdir()), [journal.SALT_NAME, journal.FILE_NAME])
+
+    def test_the_digest_exports_the_journal_but_not_its_salt(self):
+        from scripts import export_run_digest as digest
+        self.event("layer1", "started", "2026-10-18T03:00:00+00:00")
+        out = Path(self.temp.name) / "reports"
+        self.assertEqual(digest.main([str(self.run), "--name", "20261018-journal", "--out", str(out)]), 0)
+        report = out / "20261018-journal"
+        exported = sorted(path.name for path in report.rglob("*") if path.is_file())
+        self.assertIn(journal.FILE_NAME, exported)
+        self.assertNotIn(journal.SALT_NAME, exported)
+        # The host ID survives redaction, so the report can still tell hosts apart.
+        row = json.loads(next(report.rglob(journal.FILE_NAME)).read_text(encoding="utf-8"))
+        self.assertRegex(row["hostId"], r"^host-[0-9a-f]{12}$")
+
     def test_empty_journal_summarizes_to_nothing(self):
         result = journal.summary(self.run)
         self.assertEqual((result["events"], result["wallSeconds"], result["stages"], result["openStages"]), (0, 0.0, {}, []))
