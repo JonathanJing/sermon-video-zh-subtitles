@@ -37,11 +37,11 @@
 
 当前等价检查移除非字母数字字符，并将 `第3章第16节`、`3:16`、`第三章第十六节` 归一为相同形式，用于已确认的启示录 3:16 读法。这是既有检查的描述，不扩大任意换词、改数字、增删内容或一般经文读法的权限；批准文字仍原样保留，口播形式另绑定 `spokenTextSha256`。
 
-韩语等价检查只允许 [ko_spoken_numerals](../scripts/ko_spoken_numerals.py) 的 `ko-sino-chapter-verse-numerals-v1`：`장`、`절`、`편` 前的阿拉伯数字（含 `16-17절` 这样的范围）读作汉字词数字，例如 `8장` 读作 `팔장`、`하박국 2장` 读作 `이장`，此外只忽略标点和空格。Qwen TTS 常把这些数字读成固有词（`여덟 장`、`두 장`），2026-10-11 周更和 10-12 片段测试的音频质检都因此判为需要修复。`3:16`、`3,000장`、`1.5장` 等不改。字幕、阅读文本和批准文字仍保留阿拉伯数字；ASR 初筛和音频质检把汉字词数字折回阿拉伯数字比较，固有词读法仍会被标出。
+韩语等价检查只允许 [ko_spoken_numerals](../scripts/ko_spoken_numerals.py) 的 `ko-sino-chapter-verse-numerals-v2`：仅明确韩文圣经书名紧接的引用链，将 `장`、`절`（`시편` 另含 `편`）前的阿拉伯数字读作汉字词数字；例如 `하박국 2장` 读作 `하박국 이장`，`요한복음 3장16-17절` 连写也完整转换。裸 `8장`、`16-17절` 不推断上下文，`사진 2장`、`영화 2편` 不转换；书名后的引用上下文不跨越普通文字。等价检查只忽略列明的停顿标点和空格，保留数字间小数点及分隔标点、`%`、金额、数学、比例及范围符号，不能删除可发声的符号。Qwen TTS 常把这些数字读成固有词（`여덟 장`、`두 장`），2026-10-11 周更和 10-12 片段测试的音频质检都因此判为需要修复。`3:16`、`3,000장`、`1.5장` 等不改。字幕、阅读文本和批准文字仍保留阿拉伯数字；ASR 初筛和音频质检把汉字词数字折回阿拉伯数字比较，固有词读法仍会被标出。
 
 ### 规范化策略 v2：周更自动口播形式
 
-新的周更 Layer 3 使用仓库内的 [config/layer3-audio-operation-policies.json](../config/layer3-audio-operation-policies.json) 和 [config/layer3-adapters/](../config/layer3-adapters/) 的三个 adapter。其 normalization 策略为 v2 `exact_approved_text_with_registered_spoken_forms`，为 `ko` 登记上述规则；adapter 的 `normalizationPolicySha256` 绑定它，`prepare_target_language_speech_job.py` 再把该哈希冻结进 speech job。renderer 发现 job 绑定 v2 时，按规则为韩语单元自动生成口播形式，不需要 `--unit-instructions` 文件，因此调度器无需额外步骤；恢复导出与统一音频 adapter 使用同一推导。显式指令文件仍可为同一单元加 `instruction`，但给出不同 `spokenText` 会被拒绝。`zh-Hans`、`es` 在 v2 下没有登记规则，合成文字不变。
+新的周更 Layer 3 使用仓库内的 [config/layer3-audio-operation-policies.json](../config/layer3-audio-operation-policies.json) 和 [config/layer3-adapters/](../config/layer3-adapters/) 的三个 adapter。其 normalization 策略为 v2 `exact_approved_text_with_registered_spoken_forms`，为 `ko` 登记上述规则 v2；规则 v1 的实验策略哈希不复用，新 adapter 的 normalization hash 随规则版本变化，旧实验 job 不静默迁移。adapter 的 `normalizationPolicySha256` 绑定它，`prepare_target_language_speech_job.py` 再把该哈希冻结进 speech job。renderer 发现 job 绑定 v2 时，按规则为韩语单元自动生成口播形式，不需要 `--unit-instructions` 文件，因此调度器无需额外步骤；恢复导出与统一音频 adapter 使用同一推导。显式指令文件仍可为同一单元加 `instruction`，但给出不同 `spokenText` 会被拒绝。`zh-Hans`、`es` 在 v2 下没有登记规则，合成文字不变。
 
 已绑定 v1 `exact_human_approved_target_text_no_rewrite` 的旧 job 不迁移，声音身份不变；需要为这类韩语 job 改读时，用下面的命令生成 v2 指令文件并传给 `--unit-instructions`（没有需要改读的单元时输出 `no_change` 且不写文件）：
 

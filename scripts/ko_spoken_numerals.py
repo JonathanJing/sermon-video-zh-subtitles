@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Korean spoken form for chapter, verse and psalm numbers.
 
-Korean reads the number before 장, 절 and 편 with Sino-Korean numerals
+In explicit Bible-book citations Korean reads 장, 절 and Psalm 편 with Sino-Korean numerals
 (8장 = 팔 장, 하박국 2장 = 이 장). The TTS voice often reads Arabic digits with
 native numerals instead (여덟 장, 두 장), which changes the meaning a listener
 hears. ``spoken_form`` spells those numbers out in Sino-Korean for the dub only;
@@ -20,16 +20,26 @@ from pathlib import Path
 
 try:
     from scripts import sermon_sentence_interpretation as identity
-    from scripts.language_review_plugins.auto_qc_text_common import korean_sino
+    from scripts.language_review_plugins.auto_qc_text_common import korean_sino, _KO_BOOK_CODES
 except ModuleNotFoundError:  # run as scripts/ko_spoken_numerals.py
     import sermon_sentence_interpretation as identity
-    from language_review_plugins.auto_qc_text_common import korean_sino
+    from language_review_plugins.auto_qc_text_common import korean_sino, _KO_BOOK_CODES
 
-RULE = "ko-sino-chapter-verse-numerals-v1"
+RULE = "ko-sino-chapter-verse-numerals-v2"
 INSTRUCTIONS_SCHEMA = "sermon-unit-delivery-instructions-v2"
-# A digit run, or a range of two, directly before a Sino-read scripture counter: 8장, 3장 16절,
-# 16-17절, 시편 23편. A digit run inside a larger number (3,000장, 1.5장, 3:16) is left alone.
-_REFERENCE = re.compile(r"(?<![\d.,:])(\d{1,3})(?:(\s*[-~–]\s*)(\d{1,3}))?(\s*)(장|절|편)(?![\d])")
+# Only an explicit Bible book anchors a citation. Keep subsequent adjacent
+# chapter/verse/psalm numbers in that chain; never infer context across prose.
+# Ordinary counters (photos 장, films 편) and bare numbers remain unchanged.
+_NUMBER = r"\d{1,3}(?:\s*[-~–]\s*\d{1,3})?\s*"
+_BOOK = "|".join(re.escape(name) for name in sorted(_KO_BOOK_CODES, key=len, reverse=True) if name != "시편")
+_CHAIN = r"(?:\s*(?:과|와|및|,)?\s*" + _NUMBER + r"{counter})*(?![\d])"
+_CITATIONS = (
+    re.compile(r"(?<![가-힣A-Za-z0-9])(?:" + _BOOK + r")\s*" + _NUMBER
+               + r"(?:장|절)" + _CHAIN.replace("{counter}", r"(?:장|절)")),
+    re.compile(r"(?<![가-힣A-Za-z0-9])시편\s*" + _NUMBER
+               + r"(?:장|절|편)" + _CHAIN.replace("{counter}", r"(?:장|절|편)")),
+)
+_REFERENCE = re.compile(r"(\d{1,3})(?:(\s*[-~–]\s*)(\d{1,3}))?(\s*)(장|절|편)")
 
 
 def spoken_form(text: str) -> str:
@@ -37,13 +47,24 @@ def spoken_form(text: str) -> str:
         first, dash, second, space, counter = match.groups()
         numbers = korean_sino(int(first)) + (dash + korean_sino(int(second)) if second else "")
         return numbers + space + counter
-    return _REFERENCE.sub(spell, text)
+    for citation in _CITATIONS:
+        text = citation.sub(lambda match: _REFERENCE.sub(spell, match.group()), text)
+    return text
 
 
 def equivalent(approved: str, spoken: str) -> bool:
     """True when ``spoken`` is ``approved`` with only this rule applied, ignoring punctuation and spacing."""
     def normalized(value: str) -> str:
-        return "".join(char for char in value if char.isalnum())
+        # A punctuation allowlist keeps audible symbols such as %, +, $, /,
+        # and range/ratio markers significant, even when Unicode calls them
+        # punctuation (for example % is category Po).
+        punctuation = ".,!?;…，。！？；、\"'“”‘’「」『』()[]（）"
+        def numeric_separator(index, char):
+            return (char in ".,，．٫٬" and value[:index].rstrip()[-1:].isdigit()
+                    and value[index + 1:].lstrip()[:1].isdigit())
+        return "".join(char for index, char in enumerate(value)
+                       if numeric_separator(index, char)
+                       or (not char.isspace() and char not in punctuation))
     return normalized(spoken_form(approved)) == normalized(spoken) and spoken_form(approved) != approved
 
 

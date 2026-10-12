@@ -457,6 +457,27 @@ class FormalRenderTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, message):
                 subject.unit_instructions(job, map_path)
 
+    def test_korean_spoken_overrides_preserve_audible_symbols(self):
+        from scripts import ko_spoken_numerals
+        job = self.context["job"]
+        approved = "요한복음 3장과 50%를 읽습니다."
+        job["units"][0]["text"] = approved
+        document = ko_spoken_numerals.build(job)
+        document["units"][0]["spokenText"] = "요한복음 삼장과 50를 읽습니다."
+        map_path = self.root.parent / "invalid-symbol-instructions.json"
+        map_path.write_text(json.dumps(document))
+        with self.assertRaisesRegex(ValueError, "Spoken form changes"):
+            subject.unit_instructions(job, map_path)
+
+    def test_automatic_korean_policy_leaves_bare_and_ordinary_counters_exact(self):
+        job = self.context["job"]
+        job["adapter"]["normalizationPolicySha256"] = subject.identity.json_sha256(
+            subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
+        for text in ("사진 2장과 영화 2편", "8장을 보십시오."):
+            with self.subTest(text=text):
+                job["units"][0]["text"] = text
+                self.assertEqual(subject.unit_instructions(job, None), {})
+
     def test_the_spoken_forms_policy_speaks_korean_chapter_numbers_without_a_file(self):
         job = self.context["job"]
         approved = "예를 들어 하박국 2장을 보십시오."
