@@ -457,6 +457,51 @@ class FormalRenderTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, message):
                 subject.unit_instructions(job, map_path)
 
+    def test_the_spoken_forms_policy_speaks_korean_chapter_numbers_without_a_file(self):
+        job = self.context["job"]
+        approved = "예를 들어 하박국 2장을 보십시오."
+        job["units"][0]["text"] = approved
+        group = job["units"][0]["translationGroupId"]
+        # A job bound to the exact-text policy keeps its identity: no spoken form.
+        self.assertEqual(subject.unit_instructions(job, None), {})
+        job["adapter"]["normalizationPolicySha256"] = subject.identity.json_sha256(
+            subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
+        overrides = subject.unit_instructions(job, None)
+        self.assertEqual(overrides, {group: {"spokenText": "예를 들어 하박국 이장을 보십시오."}})
+        subject.render_units(self.context, self.paths, self.root, self.root / "checkpoint-map.json",
+                             instructions_by_group=overrides, synth_factory=FakeSynth)
+        self.assertEqual(FakeSynth.calls[0][0], "예를 들어 하박국 이장을 보십시오.")
+
+        # A file may add an instruction to the same unit but not a different spoken form.
+        document = {"schemaVersion": "sermon-unit-delivery-instructions-v1", "targetLocale": "ko",
+                    "speechJobJsonSha256": subject.identity.json_sha256(job),
+                    "units": [{"translationGroupId": group,
+                               "approvedTextSha256": hashlib.sha256(approved.encode()).hexdigest(),
+                               "instruction": "Read clearly.", "operatorEvidence": "Operator note"}]}
+        map_path = self.root.parent / "policy-instructions.json"
+        map_path.write_text(json.dumps(document))
+        self.assertEqual(subject.unit_instructions(job, map_path)[group],
+                         {"instruction": "Read clearly.", "spokenText": "예를 들어 하박국 이장을 보십시오."})
+        document["schemaVersion"] = "sermon-unit-delivery-instructions-v2"
+        document["units"][0]["spokenText"] = "예를 들어 하박국 이 장을 보십시오."
+        map_path.write_text(json.dumps(document))
+        with self.assertRaisesRegex(ValueError, "differs from the normalization policy"):
+            subject.unit_instructions(job, map_path)
+
+    def test_tracked_layer3_adapters_bind_the_tracked_policies(self):
+        config = Path(subject.__file__).resolve().parents[1] / "config"
+        policies = subject.package.read_object(config / "layer3-audio-operation-policies.json")
+        self.assertEqual(policies["normalization"], subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
+        for locale in ("zh-Hans", "ko", "es"):
+            adapter = subject.package.read_object(config / f"layer3-adapters/adapter-{locale}.json")
+            self.assertEqual(adapter["targetLocale"], locale)
+            for name, field in (("normalization", "normalizationPolicySha256"),
+                                ("asrScreening", "asrScreeningPolicySha256"),
+                                ("subtitle", "subtitlePolicySha256")):
+                self.assertEqual(adapter[field], subject.identity.json_sha256(policies[name]))
+            self.assertEqual(adapter["registryJsonSha256"], subject.identity.json_sha256(
+                subject.package.read_object(config / "speaker-voice-registry.json")))
+
     def test_tampered_audio_and_orphan_are_rejected(self):
         rows = self.render_units()
         (self.root / rows[0]["audio"]["path"]).write_bytes(b"tampered")
