@@ -157,7 +157,7 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py prepare \
 
 ## 发布与核验
 
-使用既有发布程序及对应站点的已有授权。若启用反馈功能，须按既有反馈部署流程同步新包中的 `feedback-catalog.json`；四层 v4 周次改用 `deploy_feedback.py --v4-sealed <sealed 快照>` 同步（见[Layer 4 发布入口](layer4-four-product-public-delivery.zh.md#封存发布与端点)），不同步则 `/api/session` 对新周返回 400。本模块不自动修改反馈服务、发布 Hosting 或授权消息推送。发布后还要跑一次浏览器冒烟 `scripts/smoke_published_page.py`，三语标题、字幕、零 console error 和反馈会话全部通过才算页面可见。
+使用既有发布程序及对应站点的已有授权。若启用反馈功能，须按既有反馈部署流程同步新包中的 `feedback-catalog.json`；四层 v4 周次用 `scripts/build_language_listening_catalog.py` 生成来源目录并按线上参数重新部署反馈函数（见[Layer 4 发布入口](layer4-four-product-public-delivery.zh.md#封存发布与端点)），不同步则该周的反馈和收听统计都返回 400。本模块不自动修改反馈服务、发布 Hosting 或授权消息推送。发布后还要跑一次浏览器冒烟 `scripts/smoke_published_page.py`，三语标题、字幕、零 console error 和反馈会话全部通过才算页面可见。
 
 发布后立即执行：
 
