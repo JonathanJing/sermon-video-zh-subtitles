@@ -18,7 +18,7 @@
 
 每周正式运行前，用同一份代码对上周的片段跑一遍（2026-10-11 复盘第九节第 4 条）。`build_dev_180s_simulated_inputs.py --clip-spec <spec.json>` 从周更运行的冻结产物里切一段连续的英文单元：源视频按时间剪下并重新编码，对齐分段和锚点的时间平移到片段起点，每个语言保留这些单元对应的候选组和单句音频，音轨由单句音频按顺序拼成。审核仍是醒目标记的模拟，不调用模型。
 
-`sermon-dev-clip-spec-v1` 写明：`englishSourcePackage`（冻结英文源包的 `path` 和 `jsonSha256`）、`media`（剪片视频及 SHA-256）、`englishSourceMedia`（源包绑定的媒体哈希与时长）、`alignedSegments`、`anchor`（路径与规范 JSON 哈希）、`approvedWindowStartSeconds`、`unitRange`（半开区间）、`marginSeconds`，以及恰好 `zh-Hans`、`ko`、`es` 三个语言的 `candidate` 与 `audioPackage`。英文源包必须绑定当前锚点、对齐分段、源媒体、日期和窗口起点；每个候选与音频包必须绑定该源包，候选还须绑定原始锚点，音频包须绑定原始候选，不能靠重写哈希接纳其他周的产物。
+`sermon-dev-clip-spec-v2` 写明：`englishSourcePackage`（冻结英文源包的 `path` 和 `jsonSha256`）、`media`（剪片视频及 SHA-256）、`englishSourceMedia`（源包绑定的媒体哈希与时长）、`alignedSegments`、`anchor`（路径与规范 JSON 哈希）、`approvedWindowStartSeconds`、`unitRange`（半开区间）、`marginSeconds`（必填 `{"before": …, "after": …}`，分别设定前后留白；配音通常比英文长，结尾要留更多，例如前 1 秒、后 8 秒，并让结尾落在静默里），以及恰好 `zh-Hans`、`ko`、`es` 三个语言的 `candidate` 与 `audioPackage`。旧的 `sermon-dev-clip-spec-v1` 仍可读取：其 `marginSeconds` 只能是一个数（缺省 1 秒），读取时在内存中迁移为前后相同的 v2；片段记录的 `clipSpecSha256` 仍是原文件的哈希。v1 文件里写对象会被拒绝，需改为 v2。英文源包必须绑定当前锚点、对齐分段、源媒体、日期和窗口起点；每个候选与音频包必须绑定该源包，候选还须绑定原始锚点，音频包须绑定原始候选，不能靠重写哈希接纳其他周的产物。
 
 视频若不是源包绑定的同一文件，`englishSourceMedia.path` 必须指向哈希匹配的源媒体，并且视频与它的完整音频解码到 16 kHz 单声道 PCM 后 SHA-256 相同；时长仍须相差不超过 0.1 秒。仅自报哈希或时长不足以证明同一录音；经过降噪、裁剪或有损重编码导致解码音频不同的文件会被拒绝，需使用可验证一致的源文件。片段必须保留完整的 `sourceSentenceId`，跨越片段边界的句子或翻译组会被拒绝；每个保留单元还须有片段内的对齐分段覆盖，否则应扩大 margin 或调整范围。
 

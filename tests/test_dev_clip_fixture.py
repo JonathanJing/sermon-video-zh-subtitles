@@ -72,7 +72,7 @@ def weekly(tmp_path):
             'englishSourceMedia': source['source']['media'],
             'englishSourcePackage': {'path': str(source_path), 'jsonSha256': contract.sha(source)},
             'alignedSegments': {'path': str(aligned)}, 'anchor': {'path': str(anchor_path), 'jsonSha256': contract.sha(anchor)},
-            'approvedWindowStartSeconds': 2.0, 'unitRange': [2, 4], 'marginSeconds': 0.5,
+            'approvedWindowStartSeconds': 2.0, 'unitRange': [2, 4], 'marginSeconds': {'before': 0.5, 'after': 0.5},
             'locales': {locale: {'candidate': str(candidate_path), 'audioPackage': str(package)} for locale in fixture.LOCALES}}
     return spec, tmp_path
 
@@ -248,3 +248,61 @@ def test_source_package_cannot_be_replaced_by_an_unrelated_binding(weekly, field
     with pytest.raises(ValueError, match=message):
         fixture.weekly_clip(spec, root / 'clip')
     assert not (root / 'clip').exists()
+
+
+def test_the_tail_margin_can_differ_from_the_head(weekly):
+    spec, root = weekly
+    clip = fixture.weekly_clip(dict(spec, marginSeconds={'before': 0.5, 'after': 1.0}), root / 'clip-asym')
+    # Units 2 and 3 span 5.0-8.5 s of the sermon: 0.5 s before, 1.0 s after.
+    assert clip['scope']['sermonRelativeWindowSeconds'] == [4.5, 9.5]
+    assert clip['anchor']['sourceUnits'][0]['start'] == 0.5
+    with pytest.raises(ValueError, match='exactly before and after'):
+        fixture.weekly_clip(dict(spec, marginSeconds={'after': 1.0}), root / 'clip-bad')
+    with pytest.raises(ValueError, match='must not be negative'):
+        fixture.weekly_clip(dict(spec, marginSeconds={'before': -1, 'after': 1.0}), root / 'clip-neg')
+
+
+def test_a_v1_spec_is_migrated_with_one_margin_for_both_ends(weekly):
+    spec, root = weekly
+    v1 = dict(spec, schemaVersion=fixture.CLIP_SPEC_SCHEMA_V1, marginSeconds=0.5)
+    migrated = fixture.migrate_clip_spec(v1)
+    assert migrated['schemaVersion'] == fixture.CLIP_SPEC_SCHEMA
+    assert migrated['marginSeconds'] == {'before': 0.5, 'after': 0.5}
+    assert fixture.migrate_clip_spec({k: v for k, v in v1.items() if k != 'marginSeconds'})['marginSeconds'] == {
+        'before': 1.0, 'after': 1.0}
+    clip = fixture.weekly_clip(v1, root / 'clip-v1')
+    assert clip['scope']['sermonRelativeWindowSeconds'] == [4.5, 9.0]
+    # The recorded hash is the spec as given, not its in-memory migration.
+    assert clip['scope']['clipSpecSha256'] == contract.sha(v1)
+    with pytest.raises(ValueError, match='use v2 for separate margins'):
+        fixture.migrate_clip_spec(dict(v1, marginSeconds={'before': 0.5, 'after': 1.0}))
+    with pytest.raises(ValueError, match='exactly before and after'):
+        fixture.migrate_clip_spec(dict(spec, marginSeconds=0.5))
+
+
+@pytest.mark.parametrize('bad', [False, True, '8', None, [], {}, float('nan'), float('inf'),
+                               -float('inf'), 10 ** 400])
+@pytest.mark.parametrize('side', ['before', 'after'])
+def test_v2_rejects_malformed_margins_before_reading_inputs(tmp_path, bad, side):
+    margin = {'before': 0.0, 'after': 8.0, side: bad}
+    spec = {'schemaVersion': fixture.CLIP_SPEC_SCHEMA, 'marginSeconds': margin}
+    with pytest.raises(ValueError, match='finite numbers'):
+        fixture.weekly_clip(spec, tmp_path / 'clip')
+    assert not (tmp_path / 'clip').exists()
+
+
+@pytest.mark.parametrize('bad', [float('nan'), float('inf'), -float('inf'), 10 ** 400])
+def test_v1_rejects_nonfinite_margins(tmp_path, bad):
+    spec = {'schemaVersion': fixture.CLIP_SPEC_SCHEMA_V1, 'marginSeconds': bad}
+    with pytest.raises(ValueError, match='finite numbers'):
+        fixture.weekly_clip(spec, tmp_path / 'clip')
+    assert not (tmp_path / 'clip').exists()
+
+
+@pytest.mark.parametrize('schema,margin', [
+    (fixture.CLIP_SPEC_SCHEMA_V1, 0),
+    (fixture.CLIP_SPEC_SCHEMA, {'before': 0, 'after': 8.5}),
+])
+def test_zero_and_finite_numeric_margins_remain_valid(schema, margin):
+    migrated = fixture.migrate_clip_spec({'schemaVersion': schema, 'marginSeconds': margin})
+    assert migrated['marginSeconds'] == ({'before': 0, 'after': 0} if schema == fixture.CLIP_SPEC_SCHEMA_V1 else margin)
