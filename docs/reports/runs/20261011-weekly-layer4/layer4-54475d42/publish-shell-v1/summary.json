@@ -1,0 +1,20 @@
+{
+  "status": "published_http_verified",
+  "pageId": "resi-20261011-54475d42",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "hostingVersion": "sites/ai-for-god-sermon-audio/versions/8639e35c137b1398",
+  "webVersion": "1.26.16",
+  "publicFilesHashPassed": 198,
+  "weeklyAudioRangePassed": 3,
+  "legacyVoiceDemoRangeWarnings": 12,
+  "priorBaseline": "7089e0378ae6b7e7",
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run",
+  "poster": "three locales generated; 12 QR decodes passed",
+  "authorization": "<redacted>",
+  "browserEntry": "failed: optional sourceVideoUrl rejected; fix in progress"
+}

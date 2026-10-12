@@ -1,0 +1,130 @@
+{
+ "schemaVersion": "sermon-text-qc-human-acceptance-v1",
+ "targetLocale": "ko",
+ "candidateJsonSha256": "efc5043b3a57ec3973245163a88d40139a4cc9a1c15aef482b4a587b69da1a1b",
+ "textQcJsonSha256": "b5e049f7bc308d18f2ec2655291a35f9f6cd0fa8dc892970b2c68f688a336da4",
+ "decidedBy": "Jony",
+ "decidedByRole": "human_operator",
+ "humanApproval": true,
+ "decidedAt": "2026-10-11T07:56:54Z",
+ "userStatement": "按建议 / Ship as-is, fix later: accept all 13 current Korean sentences; rows 1 (translation-chunk-0000-u040, 'it' -> 그것) and 4 (translation-chunk-0002-u024, 'intense' -> 강렬합니다) to be corrected in a post-release revision.",
+ "groups": [
+  {
+   "groupId": "translation-chunk-0000-u040",
+   "englishSha256": "a99c00b161d3062c80349260896a03ac3ff2cb75ac24ca0b66094cc1ffd7991d",
+   "targetTextSha256": "a5ff5d4bb019949569da9c2c3c27802ee6a19a8379a9b4a20fa268a8371fdf51",
+   "problems": [
+    "back_translation number: he brings it to my dad -> they bring those things to my father"
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0001-u010",
+   "englishSha256": "cfdd0cb5bc90cdfd84c5480a06c9b3466205248b9cef18f3cd258fb470089142",
+   "targetTextSha256": "96a5d6e69861cd32b681d3c7979a9d13ad61e8f876a6a9fe51f660b0d39585d0",
+   "problems": [
+    "back_translation number: we're going to see God give warnings -> we will see God giving a warning"
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0001-u036",
+   "englishSha256": "8b195dc821dce20293c2b38b71980c0c48aff993234b7ef3674e051455c4f482",
+   "targetTextSha256": "698ce65ee608cec5f2b391b3ac9af54d0540cdeab7a08b43e5c42c12d22aae9f",
+   "problems": [
+    "back_translation number: The trumpets -> that trumpet"
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0002-u024",
+   "englishSha256": "d00d51032077cde1f381f30c05df856b701c49ec5e524088189f6d3be7e2eb48",
+   "targetTextSha256": "80812db4a65d6bc752874d27b5e7cb44fb3e5102f6678c755ba21558754fbb4b",
+   "problems": [
+    "back_translation meaning_shift: It is intense. -> It is truly amazing."
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0003-u044",
+   "englishSha256": "ac3cf641c9d7c9fd0bc83f60242064d197429388a2c3d04f96849b21ff78b0e7",
+   "targetTextSha256": "391bed1c4386fae78e96c916207294e2525d9eee5e1bdac3aca48b3fd830388d",
+   "problems": [
+    "back_translation meaning_shift: He called me names. -> That kid swore at me."
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0004-u013",
+   "englishSha256": "479e04a9b8f8865fc2282880a91bbea7a9e51feae67cbf7978ca5f22fa331403",
+   "targetTextSha256": "508144aee9d583ca4709cb0534180a860d8497b6fa9076b1710192824d15c374",
+   "problems": [
+    "Hangul share 0.59 < 0.60"
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0005-u032",
+   "englishSha256": "f44e0aeca610ad042cc25872848d29162c23da0f1e965c113d8dbdfc166c27d8",
+   "targetTextSha256": "507d1977014b6e095d1772b2f3843c7e044f9e500481d769b8b6e86bf133af8a",
+   "problems": [
+    "back_translation number: Trumpets. -> It is a trumpet."
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0007-u008",
+   "englishSha256": "7038b61f37cf01c1b2a7cff7fac34ab50ad02fce7212a739ecadaac61f94394c",
+   "targetTextSha256": "b8e1e0b4457ebe8c66a44b2aae20823ca76e6504ac486a722226ab877461d6bb",
+   "problems": [
+    "back_translation meaning_shift: a plague -> disasters"
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0008-u008",
+   "englishSha256": "01b3a0eeb22da006abeb12069a361d3d138e54242fe1c1731bb07a25bbd41b1d",
+   "targetTextSha256": "b4620ebc1ac4055c9f9f04bba315c4362ef2fcb51aad117a3994663ead3ea39d",
+   "problems": [
+    "back_translation meaning_shift: our world today can often choose ... to spend all our energy curating our image -> We are putting all our energy into polishing our image"
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0008-u022",
+   "englishSha256": "5d5378a334ef16a8e9113976099f4a99a7cc18489dafbe777c39dd8ff86144e6",
+   "targetTextSha256": "c3b7115a91c968458550a1ed0495d756f2accb380b60c2c3e853410dffee7b73",
+   "problems": [
+    "back_translation meaning_shift: My dad's heart was aching for my brother. -> My father was heartbroken because of my younger sibling."
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0008-u023",
+   "englishSha256": "94eb3a4981fab9c8b8cea4a9cc8f40e063f542613f97a9a8d6ab854ab88942dc",
+   "targetTextSha256": "55b3aa47c61de8ffe81b0cd66c3ac53c8bd452cba917d328ea77d7dae78478c3",
+   "problems": [
+    "back_translation meaning_shift: but I missed it -> but I failed to understand his feelings"
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0009-u002",
+   "englishSha256": "01e7aa5b7ca7211dfbf67dada095f6cc291098bf9bde1abeeb4beb1a7ef7c21d",
+   "targetTextSha256": "ba765dc69b3012e68ab25348eacad63d14f66e3ec23bfb84520a59b26802b127",
+   "problems": [
+    "back_translation addition: drop the hammer on you -> punishes you without mercy"
+   ],
+   "decision": "accepted"
+  },
+  {
+   "groupId": "translation-chunk-0010-u007",
+   "englishSha256": "d194886c3c08f2c65b767408b8ee51cfe3cb8b9b5a2b1c938e090cfe4b3f1e30",
+   "targetTextSha256": "13b148da13208ece25a2dfee68b9aea44603080f4188ebcd10ca575d39b2bfea",
+   "problems": [
+    "back_translation meaning_shift: he was not self-righteous -> he did not assert his own righteousness"
+   ],
+   "decision": "accepted"
+  }
+ ]
+}

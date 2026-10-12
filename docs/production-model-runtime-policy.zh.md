@@ -30,6 +30,10 @@ Canonical worker 使用绑定 Project 与预算授权的 OpenAI API transport，
 
 Supervisor 默认与后端生成命令均选择 `codex-cli`。旧 Agents API 会话使用显式 `--agent-backend agents-api` 按原身份恢复；未决工具先对账，SDK 新会话继续禁用。模型或 reasoning 变化需新的冻结 policy、payload 和运行身份，不重标旧批准候选或缓存。
 
+## Layer 2 角色与返修
+
+新 dev 和正式 run 的翻译（Sol 6.1 high）与独立复核（Sol 6.1 medium）在同一份冻结英文单元上按组运行，常规路径不增加 Astra 或 Gemini 第三轮门禁。Sol 标出失败、问题或不确定时，保留该证据并开新修订做返修，重跑该修订规定的译者、复核者、语言插件和候选准入链；模型复核仍只是机器证据，schema 里的人工译文批准独立存在。Gemini A/B 评审属实验，除非该次运行的政策明确要求。互相独立的组或 locale 在 producer 支持时可有界并行；Supervisor 的有状态转移和写入由 lease 保护。已有 run 保留其冻结政策，不按本节改写。
+
 ## API key 与 fallback
 
 剩余 OpenAI API 调用使用[双 Project 环境启动器](openai-minimal-project-setup.zh.md)：dev／Beta／实验选 `tongxing-dev-runtime`，正式内容选 `tongxing-prod-runtime`。key 值只保存在忽略的 `.env.openai`，不入日志。已有任务保留原凭据；云端 Secret Manager 配置沿用服务现状直至专门迁移。

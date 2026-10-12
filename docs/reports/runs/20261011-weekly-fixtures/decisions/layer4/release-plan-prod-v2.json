@@ -1,0 +1,17 @@
+{
+ "schemaVersion": "sermon-locale-release-plan-v1",
+ "baselineCatalogSha256": "925370ed1e1f9dbd8713255a9ac1e1b7ddd08181f6f15d07983dd70de8dc7c2b",
+ "baselineVersion": "sites/ai-for-god-sermon-audio/versions/7089e0378ae6b7e7",
+ "pageId": "resi-20261011-54475d42",
+ "locales": [
+  "es",
+  "ko",
+  "zh-Hans"
+ ],
+ "requiredLocales": [
+  "es",
+  "ko",
+  "zh-Hans"
+ ],
+ "mode": "joined"
+}

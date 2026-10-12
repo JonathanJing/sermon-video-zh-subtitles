@@ -1,0 +1,5 @@
+stage	status	seconds
+discover	pass	9.2
+ko.track-check	pass	7.4
+ko.secondary-asr	pass	7.1
+ko.audio-qc	pass	8.1
