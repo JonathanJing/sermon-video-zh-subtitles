@@ -18,6 +18,7 @@ import ast
 import copy
 import hashlib
 import json
+import math
 import re
 from datetime import datetime, timezone
 from uuid import uuid4
@@ -186,12 +187,23 @@ def migrate_clip_spec(spec):
         margin = spec.get('marginSeconds')
         contract.require(isinstance(margin, dict) and set(margin) == {'before', 'after'},
                          'marginSeconds needs exactly before and after')
-        return spec
-    contract.require(version == CLIP_SPEC_SCHEMA_V1, 'Unsupported clip spec')
-    margin = spec.get('marginSeconds', 1.0)
-    contract.require(isinstance(margin, (int, float)) and not isinstance(margin, bool),
-                     'A v1 clip spec takes one number for marginSeconds; use v2 for separate margins')
-    return dict(spec, schemaVersion=CLIP_SPEC_SCHEMA, marginSeconds={'before': margin, 'after': margin})
+        migrated = spec
+    else:
+        contract.require(version == CLIP_SPEC_SCHEMA_V1, 'Unsupported clip spec')
+        margin = spec.get('marginSeconds', 1.0)
+        contract.require(isinstance(margin, (int, float)) and not isinstance(margin, bool),
+                         'A v1 clip spec takes one number for marginSeconds; use v2 for separate margins')
+        migrated = dict(spec, schemaVersion=CLIP_SPEC_SCHEMA, marginSeconds={'before': margin, 'after': margin})
+    for margin in migrated['marginSeconds'].values():
+        contract.require(isinstance(margin, (int, float)) and not isinstance(margin, bool),
+                         'Clip margins must be finite numbers')
+        try:
+            finite = math.isfinite(float(margin))
+        except OverflowError:
+            finite = False
+        contract.require(finite, 'Clip margins must be finite numbers')
+        contract.require(margin >= 0, 'Clip margins must not be negative')
+    return migrated
 
 
 def weekly_clip(spec, clip_dir):
@@ -238,7 +250,6 @@ def weekly_clip(spec, clip_dir):
     # A dub usually runs longer than its English, so the tail needs room the head does not
     # (2026-10-12 Korean clip: 3 s past a 1 s tail).
     before, after = float(spec['marginSeconds']['before']), float(spec['marginSeconds']['after'])
-    contract.require(before >= 0 and after >= 0, 'Clip margins must not be negative')
     start = max(0.0, units[lo]['start'] - before)
     end = units[hi - 1]['end'] + after
     window_start = float(spec['approvedWindowStartSeconds'])
