@@ -6,7 +6,7 @@
 
 ## 结果和结束信号
 
-`outcome.json` 为 pass／exit 0。`tests.log` 记录 53 tests、46 subtests 通过，代码版本为 `793b68b2862054a99fb871b886be853d08105d57`，已合入 dev `a217924050d4a101e707de3ed02715331cd6b5d7`。首次修复基线的定向测试为 26 tests、20 subtests 通过；数字属于不同验证范围，不相加。
+`outcome.json` 为 pass／exit 0。`tests.log` 记录 53 tests、46 subtests 通过，代码版本为 `793b68b2862054a99fb871b886be853d08105d57`，工作分支已合入 dev 基线 `a217924050d4a101e707de3ed02715331cd6b5d7`。首次修复基线的定向测试为 26 tests、20 subtests 通过；数字属于不同验证范围，不相加。
 
 ## 耗时
 
