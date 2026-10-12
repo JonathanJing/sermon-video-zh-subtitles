@@ -170,21 +170,54 @@ def _shift_segment(segment, offset):
     return segment
 
 
+def _audio_digest(path):
+    """Compare the full recording's decoded audio on a common PCM clock."""
+    return subprocess.check_output([
+        'ffmpeg', '-v', 'error', '-i', str(path), '-map', '0:a:0',
+        '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le',
+        '-f', 'hash', '-hash', 'sha256', '-'], text=True).strip()
+
+
 def weekly_clip(spec, clip_dir):
     """Cut a contiguous run of English units, with each locale's text and unit audio, from a weekly run."""
     contract.require(spec.get('schemaVersion') == CLIP_SPEC_SCHEMA, 'Unsupported clip spec')
+    contract.require(set(spec.get('locales', {})) == set(LOCALES),
+                     'Clip rehearsal requires exactly zh-Hans, ko and es')
     lo, hi = spec['unitRange']
     anchor_full = read(spec['anchor']['path'])
     contract.require(contract.sha(anchor_full) == spec['anchor']['jsonSha256'], 'Anchor manifest differs from the clip spec')
     contract.require(sha(spec['alignedSegments']['path']) == anchor_full['input']['mfaSegmentsSha256'],
                      'Aligned segments are not the ones the anchor manifest binds')
     contract.require(sha(spec['media']['path']) == spec['media']['sha256'], 'Source media differs from the clip spec')
-    # The clip is cut from a video; the English package may bind the cleaned audio of the same recording.
-    # Their clocks must agree, or the rebased anchors would point at the wrong moment.
+    source_full = read(spec['englishSourcePackage']['path'])
+    source_sha = contract.sha(source_full)
+    contract.require(source_sha == spec['englishSourcePackage']['jsonSha256'], 'English source package differs from the clip spec')
+    contract.require(source_full['anchors']['artifact']['jsonSha256'] == contract.sha(anchor_full),
+                     'English source package and anchor manifest differ')
+    contract.require(source_full['transcript']['artifact']['sha256'] == sha(spec['alignedSegments']['path']),
+                     'English source package and aligned segments differ')
+    source_media = source_full['source']['media']
+    contract.require(spec['englishSourceMedia']['sha256'] == source_media['sha256']
+                     and spec['englishSourceMedia']['durationSeconds'] == source_media['durationSeconds'],
+                     'English source media differs from the bound source package')
+    contract.require(float(spec['approvedWindowStartSeconds']) == source_full['source']['approvedWindow']['startSeconds'],
+                     'Clip window differs from the bound English source window')
+    contract.require(spec['serviceDate'] == source_full['source']['serviceDate'],
+                     'Clip service date differs from the bound English source')
+    if spec['media']['sha256'] != source_media['sha256']:
+        source_audio = spec['englishSourceMedia'].get('path')
+        contract.require(source_audio is not None and sha(source_audio) == source_media['sha256'],
+                         'A different video requires the hash-bound English source media file')
+        contract.require(_audio_digest(spec['media']['path']) == _audio_digest(source_audio),
+                         'Clip video audio differs from the bound English source media')
+    # Audio identity alone is insufficient if the recording clocks differ.
     contract.require(abs(duration(spec['media']['path']) - float(spec['englishSourceMedia']['durationSeconds'])) <= 0.1,
                      'The clip video and the English source media are not the same recording timeline')
     units = anchor_full['sourceUnits']
     contract.require(isinstance(lo, int) and isinstance(hi, int) and 0 <= lo < hi <= len(units), 'Invalid unit range')
+    sentences = {unit['sourceSentenceId'] for unit in units[lo:hi]}
+    contract.require(not any(unit['sourceSentenceId'] in sentences for unit in units[:lo] + units[hi:]),
+                     'Clip unit range must retain complete source sentences')
     margin = float(spec.get('marginSeconds', 1.0))
     start = max(0.0, units[lo]['start'] - margin)
     end = units[hi - 1]['end'] + margin
@@ -222,11 +255,20 @@ def weekly_clip(spec, clip_dir):
     segments = [_shift_segment(segment, start) for segment in read(spec['alignedSegments']['path'])
                 if float(segment['start']) >= start - 1e-6 and float(segment['end']) <= end + 1e-6]
     contract.require(segments, 'No aligned segment lies inside the clip')
+    contract.require(all(any(float(segment['start']) <= unit['start'] + 1e-6
+                                 and float(segment['end']) >= unit['end'] - 1e-6
+                                 for segment in segments) for unit in selected),
+                     'Clip margin omits an aligned segment for a retained source unit')
     groups_wanted = [row['translationGroupId'] for row in requests]
     locales = {}
     for locale, paths in spec['locales'].items():
         candidate = read(paths['candidate'])
         package = read(paths['audioPackage'])
+        contract.require(candidate.get('anchorManifestSha256') == contract.sha(anchor_full),
+                         locale + ': candidate belongs to another anchor manifest')
+        contract.require(candidate.get('englishSourcePackageJsonSha256') == source_sha
+                         and package.get('englishSourcePackageJsonSha256') == source_sha,
+                         locale + ': candidate or audio belongs to another English source package')
         contract.require(contract.sha(candidate) == package['targetLanguageCandidateJsonSha256'],
                          locale + ': the audio package was not rendered from this candidate')
         by_group = {group['translationGroupId']: group for group in candidate['groups']}
@@ -263,6 +305,7 @@ def weekly_clip(spec, clip_dir):
 
 def assemble(out, run_id, page_id, *, media, segments, anchor, locales, source_url, source_id, service_date, label,
              proposal_title, title, scripture, outline, summary, meditation, scope):
+    contract.require(set(locales) == set(LOCALES), 'Rehearsal requires exactly zh-Hans, ko and es')
     template = ROOT / 'artifacts/unified-cli-acceptance/native-four-product-fixture-v2'
     media_duration = duration(media)
     aligned = save(out / 'aligned-segments.json', segments)
