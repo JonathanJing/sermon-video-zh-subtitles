@@ -156,10 +156,27 @@ def back_translation_requests(group: dict, locale: str) -> dict:
     return {"backTranslation": back, "backTranslationRequestSha256": _sha(back)}
 
 
+# Korean and Chinese leave plural number unmarked on most nouns: "나팔" or "号角" is read back as
+# "the trumpet" even when the English says "the trumpets" (2026-10-12 Korean clip test). Grammatical
+# number alone is not a fact a listener loses; a changed numeral, count, quantity word or ordinal is.
+UNMARKED_PLURAL_LOCALES = frozenset({"ko", "zh-Hans"})
+UNMARKED_PLURAL_NOTE = (
+    " {language} does not require plural marking on nouns: when the back-translation reads a noun as "
+    "singular where ORIGINAL has it plural (or the reverse), and no numeral, count, quantity word, ordinal "
+    "or 'each/every/all/both' changes, that is at most a minor number issue. A changed or dropped numeral, "
+    "count, quantity word or ordinal is still a major number issue.")
+
+
+def comparison_system(locale: str, *, spoken: bool = False) -> str:
+    system = SPOKEN_COMPARE_SYSTEM if spoken else COMPARE_SYSTEM
+    if locale in UNMARKED_PLURAL_LOCALES:
+        system = system.replace(" status is fail", UNMARKED_PLURAL_NOTE + " status is fail", 1)
+    return system.format(language=LANGUAGE_NAMES[locale])
+
+
 def comparison_request(group: dict, locale: str, back_translation: str) -> dict:
-    system = SPOKEN_COMPARE_SYSTEM if group.get("condensation") else COMPARE_SYSTEM
     request = {"role": "back_translation_judge",
-               "system": system.format(language=LANGUAGE_NAMES[locale]),
+               "system": comparison_system(locale, spoken=bool(group.get("condensation"))),
                "user": json.dumps({"ORIGINAL": group["english"], "BACK-TRANSLATION": back_translation,
                                    **({"CONTEXT": group["contextEnglish"]} if group.get("contextEnglish") else {})},
                                   ensure_ascii=False),
