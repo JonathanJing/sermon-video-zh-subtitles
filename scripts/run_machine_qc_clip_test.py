@@ -68,7 +68,7 @@ REPORT_DIRS: list[Path] = []
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCALES = ("zh-Hans", "ko", "es")
-MAX_WORKERS = 8  # Codex CLI calls this driver may run at once
+MAX_WORKERS = 16  # parallel judge calls (Codex CLI or API) this driver may run at once
 CANDIDATE_SCHEMA_PREFIX = "sermon-target-language-candidate"
 CANDIDATE_SCHEMA = "sermon-target-language-candidate-v2"  # the version the waiver path accepts
 CACHE_NAMESPACE = "machine-qc-clip-test-v1"
@@ -191,9 +191,18 @@ def candidate_problems(candidate: dict) -> list[str]:
 
 
 def qc_groups(candidate: dict, anchor: dict) -> list[dict]:
-    english = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}
+    units = anchor["sourceUnits"]
+    english = {unit["sourceUnitId"]: unit["english"] for unit in units}
+    order = {unit["sourceUnitId"]: index for index, unit in enumerate(units)}
+
+    def context(unit_ids):
+        # The same surrounding English the Layer 2 translator saw: three units before, two after.
+        first, last = order[unit_ids[0]], order[unit_ids[-1]]
+        return {"before": " ".join(unit["english"] for unit in units[max(0, first - 3):first]),
+                "after": " ".join(unit["english"] for unit in units[last + 1:last + 3])}
     return [{"groupId": group["translationGroupId"],
              "english": " ".join(english[unit_id] for unit_id in group["sourceUnitIds"]),
+             "contextEnglish": context(group["sourceUnitIds"]),
              "targetText": group["targetText"], "sourceUnitIds": group["sourceUnitIds"]}
             for group in candidate["groups"]]
 
@@ -218,7 +227,12 @@ def calibration_coverage(groups: list[dict], locale: str, policy: dict | None,
             1 for group in spoken_groups if group.get("condensation")
             and seeded.mutate_spoken(group, kind, locale, spoken_groups) not in (None, group["targetText"]))
             for kind in seeded.SPOKEN_KINDS})
-    return {"applicableGroups": counts, "untestableKinds": [kind for kind, count in counts.items() if not count]}
+    # The waiver exempts a role swap with no site (calibration_kind_not_applicable);
+    # every other kind must be calibrated on this text.
+    # A kind with no site in the whole candidate is not applicable (the waiver records it
+    # with an empty applicableGroupIds); nothing here is untestable any more.
+    return {"applicableGroups": counts, "notApplicableKinds": [kind for kind, count in counts.items() if not count],
+            "untestableKinds": []}
 
 
 def resolve_spoken(index: dict, binding_file: Path, override: Path | None,
@@ -410,6 +424,118 @@ class CodexJudge:
                                     output_dir=self.cache / self.key(role, system, user, schema))
 
 
+class ApiJudge:
+    """``call(role, system, user, schema)`` through the OpenAI API under a bound source budget.
+
+    Same model and effort as the Codex judge. Every request reserves its worst-case
+    cost in the budget ledger, the raw response is kept before parsing, and a
+    returned response replays for free. An unknown outcome stops new dispatch.
+    """
+
+    def __init__(self, authorization: Path, *, reasoning: str = "medium", cache_namespace: str = CACHE_NAMESPACE):
+        from scripts import sermon_source_budget as budget
+        from scripts import sermon_provider_limits as limits
+        from scripts.sermon_openai_runtime import selected_route
+        value = read(authorization)
+        receipt = authorization.parent / value["approvalReceipt"]
+        approval = read(receipt)
+        if not (value.get("schemaVersion") == "sermon-machine-qc-api-budget-authorization-v1"
+                and value["authority"]["approvalSha256"] == file_sha256(receipt)
+                and approval.get("humanApproval") is True and approval.get("decision") == "approved"
+                and approval.get("binding") == {"budgetRoot": value["budgetRoot"], **value["authority"]["bounds"]}):
+            raise ValueError("Machine QC API budget authorization is not bound to its approval")
+        route = selected_route()
+        if route is None:
+            raise ValueError("Machine QC API calls need the dev or prod OpenAI launcher")
+        self.limits = limits
+        self.request_limits = value["authority"]["requestLimits"]
+        # API-only calls use no Spark compute: the process verifies the exclusive session
+        # before its first call and again each minute, instead of a hold per request.
+        from scripts.production_spark_admission import require_session
+        self._session_checked, self._session_lock = 0.0, threading.Lock()
+
+        def verify():
+            with self._session_lock:
+                if time.monotonic() - self._session_checked > 60:
+                    require_session()
+                    self._session_checked = time.monotonic()
+        verify()
+        wall = self.request_limits["wallTimeMs"] / 1000
+
+        def transport(endpoint, request, content_type, api_key):
+            import urllib.error
+            import urllib.request
+            call = urllib.request.Request(endpoint, data=request, method="POST",
+                                          headers={"Authorization": "Bearer " + api_key, "Content-Type": content_type})
+            # 429 and 5xx come back before any completion is produced; retry them with backoff.
+            for attempt in range(5):
+                try:
+                    with urllib.request.urlopen(call, timeout=wall) as response:
+                        return json.loads(response.read())
+                except urllib.error.HTTPError as error:
+                    if error.code != 429 and error.code < 500 or attempt == 4:
+                        raise
+                    time.sleep(2 ** attempt)
+        self.ledger = budget.SourceBudget(value["budgetRoot"], {
+            "approvalSha256": value["authority"]["approvalSha256"],
+            "globalBounds": value["authority"]["bounds"]["globalBounds"], "requestLimits": self.request_limits},
+            verify=verify, transport=transport, max_concurrent=16)
+        self.api_key = os.environ["OPENAI_API_KEY"]
+        self.reasoning = reasoning
+        self.identity = {"backend": "openai_api", "model": "gpt-6.1-sol", "modelRevision": "openai-api",
+                         "cacheNamespace": cache_namespace,
+                         "settings": {"reasoningEffort": reasoning, "serviceTier": self.request_limits["serviceTier"],
+                                      "promptFormat": "system-user-json-v1",
+                                      "maxCompletionTokens": self.request_limits["maxCompletionTokens"],
+                                      "route": {k: route.get(k) for k in ("environment", "credentialAlias")},
+                                      "transport": {"adapterSha256": file_sha256(Path(__file__)),
+                                                    "sessionCheck": "per_process_60s"}}}
+
+    def key(self, role, system, user, schema) -> str:
+        return json_sha256({"role": role, "system": system, "user": user, "schema": schema,
+                            "identity": self.identity})
+
+    def _payload(self, role, system, user, schema):
+        return {"model": "gpt-6.1-sol", "reasoning_effort": self.reasoning,
+                "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+                "response_format": {"type": "json_schema", "json_schema": {"name": "machine_qc_" + role.replace(".", "_"),
+                                                                           "strict": True, "schema": schema}},
+                "max_completion_tokens": self.request_limits["maxCompletionTokens"],
+                "service_tier": self.request_limits["serviceTier"]}
+
+    def _operation(self, role, system, user, schema):
+        return "judge." + self.key(role, system, user, schema)
+
+    def cached(self, role, system, user, schema):
+        payload = self._payload(role, system, user, schema)
+        return self(role, system, user, schema) if self.ledger.returned(self._operation(role, system, user, schema), payload) else None
+
+    def uncertain(self) -> list[str]:
+        path = Path(self.ledger.root) / "source-budget.json"
+        if not path.exists():
+            return []
+        rows = read(path).get("requests", {})
+        return sorted(key for key, row in rows.items() if row.get("status") == "started_response_unconfirmed")
+
+    def __call__(self, role, system, user, schema):
+        import jsonschema
+        payload = self._payload(role, system, user, schema)
+        inputs = self.limits._input_upper_bound(payload)
+        if inputs > self.request_limits["maxInputTokens"]:
+            raise ValueError("machine_qc_api_input_bound_exceeded")
+        bounds = {"requests": 1, "wallTimeMs": self.request_limits["wallTimeMs"],
+                  "costMicrousd": self.limits._cost(payload["model"], inputs, self.request_limits["maxCompletionTokens"])}
+        response = self.ledger.call(operation=self._operation(role, system, user, schema), identity=payload, bounds=bounds,
+                                    request=json.dumps(payload, ensure_ascii=False).encode(), api_key=self.api_key,
+                                    content_type="application/json", endpoint="https://api.openai.com/v1/chat/completions")
+        choice = (response.get("choices") or [{}])[0]
+        if choice.get("finish_reason") != "stop":
+            raise ValueError("machine_qc_api_response_incomplete")
+        value = json.loads(choice["message"]["content"])
+        jsonschema.validate(value, schema)
+        return value
+
+
 class FakeJudge:
     """Plumbing-only judge: back-translation is exact for the clean texts it was given.
 
@@ -486,7 +612,8 @@ def screened_groups(paths: dict) -> tuple[list[dict], list[dict] | None]:
     return spoken, qc_groups(read(Path(paths["fullCandidate"])), anchor)
 
 
-def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings: Timings, workers: int) -> dict:
+def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings: Timings, workers: int,
+               human_acceptance: dict | None = None) -> dict:
     source, anchor = read(Path(paths["source"])), read(Path(paths["anchor"]))
     candidate, policy = read(Path(paths["candidate"])), read(Path(paths["policy"]))
     groups, full_groups = screened_groups(paths)
@@ -524,7 +651,11 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
                       if row["status"] != "pass"
                       and (key := (tuple(row["sourceUnitIds"]), row["targetTextSha256"])) in current
                       and still_failing(row, current[key])]
-        if unrepaired:
+        accepted = set()
+        if unrepaired and human_acceptance is not None:
+            from scripts import text_qc_human_acceptance as acceptance_rules
+            accepted = acceptance_rules.check(human_acceptance, candidate=candidate, text_qc=head)
+        if unrepaired and not set(unrepaired) <= accepted:
             return {"status": "blocked_prior_failure", "failedGroups": unrepaired,
                     "reason": "failed groups are unchanged; repair them in a new candidate revision"}
     # Past the repair ladder a unit falls back to English, which waiver v1 cannot
@@ -566,7 +697,11 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         result.update(status="source_text_fallback", fallbackGroups=qc["sourceTextFallbackGroupIds"],
                       reason="the repair limit is used up; waiver v1 cannot release an English fallback")
         return result
-    if qc["status"] != "pass":
+    accepted_groups = set()
+    if qc["status"] != "pass" and human_acceptance is not None:
+        from scripts import text_qc_human_acceptance as acceptance_rules
+        accepted_groups = acceptance_rules.check(human_acceptance, candidate=candidate, text_qc=qc)
+    if qc["status"] != "pass" and not set(result["failedGroups"]) <= accepted_groups:
         # Calibration binds this candidate, which a repair replaces anyway.
         result.update(status="requires_repair", reason="text QC failed; repair the failed groups in a new candidate revision")
         return result
@@ -593,7 +728,8 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
     entries = ledger.load(ledger_root, lineage)
     waiver_binding = json_sha256({"calibration": calibration_binding, "qc": json_sha256(qc),
                                   "calibrationReceipt": json_sha256(calibration), "ledger": entries,
-                                  **({"condensationBinding": json_sha256(binding)} if spoken else {})})
+                                  **({"condensationBinding": json_sha256(binding)} if spoken else {}),
+                                  **({"humanAcceptance": json_sha256(human_acceptance)} if accepted_groups else {})})
     waiver_path = folder / f"{'spoken-' if spoken else ''}text-waiver-{waiver_binding[:16]}.json"
     if not isinstance(judge, FakeJudge):
         saved = load_once(waiver_path, waiver_binding)
@@ -603,7 +739,8 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
             return result
     try:
         waiver = timings.run(f"{locale}.text-waiver", lambda: basis.build_text_waiver(
-            source, anchor, candidate, qc, calibration, repair_ledger=entries, condensation_binding=binding))
+            source, anchor, candidate, qc, calibration, repair_ledger=entries, condensation_binding=binding,
+            human_acceptance=human_acceptance if accepted_groups else None))
     except ValueError as error:
         result.update(status="waiver_refused", reason=str(error))
         return result
@@ -647,16 +784,22 @@ def main(argv=None) -> int:
                         help="Use this candidate instead of searching the run")
     parser.add_argument("--spoken-binding", action="append", default=[], metavar="LOCALE=PATH",
                         help="Screen the condensed spoken script this spoken_condensation binding names")
-    parser.add_argument("--text-backend", choices=("codex", "fake"), default="codex")
+    parser.add_argument("--text-backend", choices=("codex", "api", "fake"), default="codex")
     parser.add_argument("--workers", type=int, default=4, help="Parallel Codex CLI calls")
     parser.add_argument("--preflight-only", action="store_true", help="Stop before any model call")
+    parser.add_argument("--human-acceptance", action="append", default=[], metavar="LOCALE=PATH",
+                        help="A person's acceptance of failed groups in the head text QC (text_qc_human_acceptance)")
+    parser.add_argument("--api-budget-authorization", type=Path,
+                        help="Bound budget for --text-backend api (sermon-machine-qc-api-budget-authorization-v1)")
     args = parser.parse_args(argv)
     locales = [locale for locale in args.locales.split(",") if locale]
     if not locales or set(locales) - set(LOCALES):
         parser.error(f"--locales must name one or more of {', '.join(LOCALES)}")
     if not 1 <= args.workers <= MAX_WORKERS:
         parser.error(f"--workers must be between 1 and {MAX_WORKERS}")
-    if args.text_backend == "codex" and not args.preflight_only and not args.state_dir:
+    if args.text_backend == "api" and not args.preflight_only and not args.api_budget_authorization:
+        parser.error("--text-backend api requires --api-budget-authorization")
+    if args.text_backend in ("codex", "api") and not args.preflight_only and not args.state_dir:
         # The repair ledger must outlive any one OUT, or each revision would restart the repair cap.
         parser.error("real runs need --state-dir: the run's persistent state dir holding its repair ledger")
     if args.text_backend == "fake" and args.state_dir:
@@ -726,6 +869,8 @@ def main(argv=None) -> int:
         return 0 if len(resolved) == len(locales) else 2
     if args.text_backend == "codex":
         judge = CodexJudge(state / "codex-calls")
+    elif args.text_backend == "api":
+        judge = ApiJudge(args.api_budget_authorization.resolve())
     else:
         judge = FakeJudge({locale: [group for part in screened_groups(paths) for group in part or []]
                            for locale, paths in resolved.items()})
@@ -738,7 +883,9 @@ def main(argv=None) -> int:
                        "reason": f"model calls with an unknown outcome in {state / 'codex-calls'}; reconcile them first"}
         else:
             try:
-                outcome = run_locale(locale, paths, out, state, judge, timings, args.workers)
+                acceptance = next((read(Path(item.partition("=")[2])) for item in args.human_acceptance
+                                   if item.partition("=")[0] == locale), None)
+                outcome = run_locale(locale, paths, out, state, judge, timings, args.workers, human_acceptance=acceptance)
             except Exception as error:  # The receipt says what failed.
                 outcome = {"status": "error", "reason": f"{type(error).__name__}: {error}"}
         summary["locales"][locale].update(outcome)

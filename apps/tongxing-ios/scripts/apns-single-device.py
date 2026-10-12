@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 import time
 import urllib.request
+import urllib.error
 import uuid
 
 class TestValidationError(ValueError):
@@ -56,6 +57,45 @@ def fetch_json(url, limit=2_000_000):
     if len(raw) > limit:
         raise TestValidationError("Content exceeds size limit")
     return json.loads(raw), raw
+
+
+def load_catalog():
+    try:
+        catalog, _ = fetch_json(ORIGIN + "/multilingual-v4.json")
+        expected = "sermon-multilingual-catalog-v4"
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            raise
+        catalog, _ = fetch_json(ORIGIN + "/multilingual-v3.json")
+        expected = "sermon-multilingual-catalog-v3"
+    if catalog.get("schemaVersion") != expected:
+        raise TestValidationError("Catalog endpoint schema does not match")
+    return catalog
+
+
+def verified_notice(catalog, page_id, locale):
+    payload, target = notice_payload(catalog, page_id, locale)
+    notice = payload["tongxing"]
+    machine = "machine_checked" in (target.get("contentStatus"), target.get("audioStatus"))
+    if machine and catalog.get("schemaVersion") != "sermon-multilingual-catalog-v4":
+        raise TestValidationError("Machine-checked content requires catalog v4")
+    version = "v4" if machine else "v2"
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", notice["pageID"]):
+        raise TestValidationError("Invalid page identifier")
+    expected_path = f"/releases-{version}/{notice['pageID']}/{locale}.json"
+    if target.get("releasePackageUrl") != expected_path:
+        raise TestValidationError("Only the bound same-origin published release is accepted")
+    release, raw = fetch_json(ORIGIN + expected_path)
+    if hashlib.sha256(raw).hexdigest() != notice["releaseSHA256"]:
+        raise TestValidationError("Current release hash does not match")
+    if (release.get("schemaVersion") != "sermon-target-language-release-package-" + version
+            or release.get("status") != "published_http_verified"
+            or release.get("httpVerification", {}).get("status") != "pass"
+            or release.get("pageId") != notice["pageID"] or release.get("targetLocale") != locale
+            or release.get("contentStatus") != target.get("contentStatus")
+            or release.get("audioStatus") != target.get("audioStatus")):
+        raise TestValidationError("Page release must match its HTTP-verified catalog binding")
+    return payload
 
 
 def notice_payload(catalog, page_id, locale):
@@ -183,16 +223,8 @@ def main():
         if not re.fullmatch(r"[A-Z0-9]{10}", args.key_id) or not re.fullmatch(r"[A-Z0-9]{10}", args.team_id):
             raise TestValidationError("Invalid key/team identifier")
         device = device_receipt(args.device)
-        catalog, _ = fetch_json(ORIGIN + "/multilingual-v3.json")
-        payload, target = notice_payload(catalog, args.page_id, device["locale"])
-        release_url = target.get("releasePackageUrl", "")
-        if not isinstance(release_url, str) or not release_url.startswith("/releases-v2/") or ".." in release_url or "?" in release_url:
-            raise TestValidationError("Only same-origin published releases are accepted")
-        release, raw = fetch_json(ORIGIN + release_url)
-        if hashlib.sha256(raw).hexdigest() != payload["tongxing"]["releaseSHA256"]:
-            raise TestValidationError("Current release hash does not match")
-        if release.get("status") != "published_http_verified" or release.get("httpVerification", {}).get("status") != "pass" or release.get("pageId") != payload["tongxing"]["pageID"] or release.get("targetLocale") != device["locale"]:
-            raise TestValidationError("Page release must be HTTP verified")
+        catalog = load_catalog()
+        payload = verified_notice(catalog, args.page_id, device["locale"])
         jwt = provider_token(args.key_file, args.key_id, args.team_id)
         if not args.execute:
             print(json.dumps({"dryRun": True, "environment": device["environment"], "notice": payload["tongxing"]}))

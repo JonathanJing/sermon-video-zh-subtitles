@@ -1203,6 +1203,10 @@ def load_meaning_notes(path: Path, *, source: dict[str, Any], anchor: dict[str, 
     decision or note off as machine audio adjudication."""
     path = Path(path)
     notes = _load(path)
+    from scripts import layer2_human_ruling as human_ruling
+    if isinstance(notes, dict) and notes.get('schemaVersion') == human_ruling.SCHEMA:
+        # A person's ruling on a request_human_review stop, never machine audio evidence.
+        return human_ruling.load(path, source=source, anchor=anchor)
     _require(isinstance(notes, dict) and notes.get('schemaVersion') == NOTES_SCHEMA, 'meaning_notes_schema')
     _require(notes.get('bindings') == {'source.json': policies.canonical_sha256(source),
                                        'anchor.json': policies.canonical_sha256(anchor)}, 'meaning_notes_binding_changed')
@@ -1234,8 +1238,10 @@ def load_meaning_notes(path: Path, *, source: dict[str, Any], anchor: dict[str, 
 
 def repair_instruction(notes: dict[str, dict[str, Any]], source_unit_ids: list[str]) -> str:
     """What a Layer 2 repair brief appends for a group that holds noted units; empty when it holds none."""
-    return ' '.join(f"Source unit {uid} ({notes[uid]['decision'].replace('_', ' ')} by machine audio adjudication): "
-                    f"{notes[uid]['meaningNote']}" for uid in source_unit_ids if uid in notes)
+    return ' '.join((f"Source unit {uid} (human ruling by {notes[uid]['decidedBy']}; follow it): "
+                     if notes[uid].get('humanRuling') else
+                     f"Source unit {uid} ({notes[uid]['decision'].replace('_', ' ')} by machine audio adjudication): ")
+                    + notes[uid]['meaningNote'] for uid in source_unit_ids if uid in notes)
 
 
 # ---------------------------------------------------------------- CLI

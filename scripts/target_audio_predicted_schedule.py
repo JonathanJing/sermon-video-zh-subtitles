@@ -150,7 +150,9 @@ def budget(source_seconds: float, groups: list[dict], rate: dict, policy: dict |
     if rate.get("synthesisIdentity") != synthesis_identity:
         raise ValueError("Speech rate was fitted under another synthesis identity; refit it for this job")
     policy = dict(formal.DEFAULT_POLICY if policy is None else policy)
-    if set(policy) != set(formal.DEFAULT_POLICY):
+    required = set(formal.DEFAULT_POLICY) - {"tailOverrunSeconds"}
+    if (not required <= set(policy) <= set(formal.DEFAULT_POLICY)
+            or policy.get("tailOverrunSeconds", 0.0) > formal.MAX_TAIL_OVERRUN_SECONDS):
         raise ValueError("Invalid schedule policy fields")
     if not groups:
         raise ValueError("Groups are required")

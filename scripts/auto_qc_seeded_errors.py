@@ -116,10 +116,14 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None,
     if kind == "added_content":
         # An ordinary sentence from elsewhere in the sermon, appended: the shortest
         # one without a number, so that only the back-translation check can see it.
-        pool = sorted((row["targetText"] for row in others
+        # Prefer the shortest sentence that still states something (at least six
+        # English words): a two-word interjection reads as filler, not as a claim.
+        pool = sorted((row for row in others
                        if row["groupId"] != group.get("groupId") and row["targetText"] not in text
-                       and not rules.english_number_values(row["english"])), key=len)
-        return None if not pool else text + ("" if locale == "zh-Hans" else " ") + pool[0]
+                       and not rules.english_number_values(row["english"])), key=lambda row: len(row["targetText"]))
+        claims = [row for row in pool if len(re.findall(r"[A-Za-z']+", row["english"])) >= 6]
+        chosen = (claims or pool)[0]["targetText"] if pool else None
+        return None if chosen is None else text + ("" if locale == "zh-Hans" else " ") + chosen
     if kind == "semantic_negation":
         # Flip a target negation without changing names, numbers, references or
         # script. Only groups with source negation supply this semantic trial.
@@ -190,6 +194,30 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None,
             if (chapter, verse) in cited:
                 john, romans = OTHER_BOOK[locale]
                 return text[:start] + (romans if code == "JOH" else john) + text[end:]
+        if locale == "zh-Hans":
+            # Chinese writes a said chapter as 《启示录》第八章; swap the book inside the brackets.
+            john, romans = OTHER_BOOK[locale]
+            for code, chapter, verse in rules.english_book_citations(english):
+                if code is None or verse is not None:
+                    continue
+                for name, book in rules._ZH_BOOK_CODES.items():
+                    if book != code:
+                        continue
+                    match = re.search("《" + re.escape(name) + "》(?=\\s*第)", text)
+                    if match:
+                        return text[:match.start()] + "《" + (romans if code == "JOH" else john) + "》" + text[match.end():]
+        if locale == "es":
+            # Spanish often names a said chapter without "capitulo" ("Lucas 15").
+            john, romans = OTHER_BOOK[locale]
+            folded = "".join(rules._fold(char)[:1] or " " for char in text)
+            for code, chapter, verse in rules.english_book_citations(english):
+                if code is None or verse is not None:
+                    continue
+                names = [name for (_, name), book in rules._ES_BOOK_CODES.items() if book == code]
+                for name in names:
+                    match = re.search(r"\b" + re.escape(name) + r"(?=\s+(?:capitulo\s+)?" + str(chapter) + r"\b)", folded)
+                    if match:
+                        return text[:match.start()] + (romans if code == "JOH" else john) + text[match.end():]
         return None
     if kind == "english_leak":
         return english if len(re.findall(r"[A-Za-z]+", english)) >= 6 else None
@@ -346,9 +374,10 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
     for kind in TEXT_KINDS:
         # Applicability searches the complete bound candidate, before trial caps
         # and surface screens; zero executed trials alone never grants an exemption.
-        applicable = ([group["groupId"] for group in groups
-                       if mutate_text(group, kind, locale, policy, groups) is not None]
-                      if kind == "swapped_name" else None)
+        # Every kind records where it could be seeded in the complete candidate; a kind
+        # with no site anywhere is not applicable to this text (zero trials alone never is).
+        applicable = [group["groupId"] for group in groups
+                      if mutate_text(group, kind, locale, policy, groups) is not None]
         trials = detected = 0
         misses = []
         for group in groups:

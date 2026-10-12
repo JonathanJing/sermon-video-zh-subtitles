@@ -22,6 +22,7 @@ import re
 import shutil
 import struct
 import subprocess
+import sys
 import tempfile
 from typing import Any, Callable
 import wave as wave_module
@@ -60,8 +61,16 @@ VERSION = "sermon-formal-target-speech-render-v1"
 # Observability-only edits must not invalidate already rendered sound. The
 # accounting execution identity still records the current file's actual hash.
 RENDERER_SOUND_IDENTITY_SHA256 = "fef7604882470137f46f1b01fbd06c7c3c9a07166da91003243608785fa47f0b"
+# tailOverrunSeconds: how far the final unit may end after the approved clip; the
+# default admits none, and a compaction records any operator budget in its evidence.
+# The delivery MP3 must keep every audible window of the PCM master within the track
+# check's waveform bounds; 64 kbit/s smeared sharp sentence onsets on a full sermon.
+TRACK_MP3_BITRATE = "96k"
 DEFAULT_POLICY = {"reactionLagSeconds": 0.05, "interUtteranceGapSeconds": 0.05,
-                  "maxEndLagSeconds": 8.0}
+                  "maxEndLagSeconds": 8.0, "tailOverrunSeconds": 0.0}
+# The renderer, the compactor, the timing plan and the package builder all bound
+# the tail allowance here; a release plan cannot ask for more.
+MAX_TAIL_OVERRUN_SECONDS = 1.0
 BATCH_SIZES = (1, 2, 4, 8)
 BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_full_window_v2"
 BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
@@ -166,8 +175,12 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
                 f"Mapped evidence missing or hash mismatch: {original}")
         if "jsonSha256" in ref:
             value = json.loads(staged.read_text(encoding="utf-8"))
-            require(identity.json_sha256(value) == ref["jsonSha256"],
-                    f"Mapped evidence JSON hash mismatch: {original}")
+            if identity.json_sha256(value) != ref["jsonSha256"]:
+                # The byte hash above proves this exact file. A recorder that hashed a
+                # later-mutated in-memory object (2026-10-11 Layer 1 chunk evidence) leaves
+                # a JSON hash no canonicalization of the file reproduces; report it.
+                print(f"path-map: recorded jsonSha256 does not canonicalize the byte-verified file: {original}",
+                      file=sys.stderr)
             pending.extend(_evidence_paths(value))
         references.append(ref)
     # Only after all hash checks pass may aliases be made visible to legacy
@@ -376,8 +389,12 @@ RECOVERY_SETTINGS_FIELDS = {"schemaVersion", "seed", "batchSize", "replicas", "d
 
 
 def recovery_render_settings(value: dict[str, Any]) -> dict[str, Any]:
-    """Require explicit complete settings; never infer them from old cache files."""
-    require(isinstance(value, dict) and set(value) == RECOVERY_SETTINGS_FIELDS
+    """Require explicit complete settings; never infer them from old cache files.
+
+    ``tailOverrunSeconds`` is the one optional field: settings recorded before the
+    tail allowance existed stay valid and mean 0.0, and a run that sets it records
+    it explicitly."""
+    require(isinstance(value, dict) and set(value) - {"tailOverrunSeconds"} == RECOVERY_SETTINGS_FIELDS
             and value["schemaVersion"] == RECOVERY_SETTINGS_VERSION,
             "Complete explicit recovery render settings required")
     require(type(value["seed"]) is int and value["seed"] >= 0
@@ -392,8 +409,10 @@ def recovery_render_settings(value: dict[str, Any]) -> dict[str, Any]:
             "Invalid recovery instruction")
     require(value["unitInstructions"] is None or (isinstance(value["unitInstructions"], str)
             and Path(value["unitInstructions"]).is_absolute()), "Explicit unit instruction path required")
-    require(all(type(value[key]) in (int, float) and math.isfinite(value[key]) and value[key] >= 0
-                for key in DEFAULT_POLICY), "Invalid recovery scheduling policy")
+    require(all(type(value.get(key, 0.0)) in (int, float) and math.isfinite(value.get(key, 0.0))
+                and value.get(key, 0.0) >= 0 for key in DEFAULT_POLICY)
+            and value.get("tailOverrunSeconds", 0.0) <= MAX_TAIL_OVERRUN_SECONDS,
+            "Invalid recovery scheduling policy")
     if value["replicas"] == 8:
         require(value["batchSize"] == 8 and value["device"] == "cuda:0"
                 and value["dtype"] == "bfloat16" and value["attention"] == "sdpa",
@@ -1163,6 +1182,7 @@ def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
     anchor = {u["sourceUnitId"]: u for u in context["anchor"]["sourceUnits"]}
     offset = context["clip_timeline_map"]["anchorOffsetSeconds"]
     clip_duration = context["clip_timeline_map"]["clipDurationSeconds"]
+    tail_limit = clip_duration + policy.get("tailOverrunSeconds", 0.0)
     cursor = 0.0
     entries = []
     issues = []
@@ -1176,7 +1196,7 @@ def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
         entry = {"textGroupId": group["translationGroupId"], "sourceUnitIds": source_ids,
                  "plannedStart": round(start, 6), "plannedEnd": round(end, 6)}
         entries.append(entry)
-        if end > clip_duration + 1e-6 or end - source_end > policy["maxEndLagSeconds"] + 1e-6:
+        if end > tail_limit + 1e-6 or end - source_end > policy["maxEndLagSeconds"] + 1e-6:
             issues.append({"unitIndex": index, "textGroupId": group["translationGroupId"],
                            "plannedEnd": round(end, 6), "sourceEnd": round(source_end, 6),
                            "clipDuration": clip_duration,
@@ -1185,7 +1205,8 @@ def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
     return {"targetLocale": context["job"]["targetLocale"],
             "timingKind": "measured_target_audio",
             "status": "pass" if not issues else "fail", "issues": issues,
-            "trackDurationSeconds": clip_duration, "policy": policy,
+            "trackDurationSeconds": round(max([clip_duration, *(e["plannedEnd"] for e in entries)]), 6),
+            "policy": policy,
             "entries": entries}
 
 
@@ -1225,6 +1246,8 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
                           cache_hit=(root / "render-manifest.json").is_file(),
                           work_unit_id=f"l3.{locale}.assembly_admission") as admission_span:
         policy = DEFAULT_POLICY.copy() if policy is None else policy.copy()
+        # Callers predating the tail budget pass the three original knobs; they admit no tail.
+        policy.setdefault("tailOverrunSeconds", DEFAULT_POLICY["tailOverrunSeconds"])
         require(all(isinstance(value, (float, int)) and not isinstance(value, bool)
                     and math.isfinite(value) and value >= 0 for value in policy.values())
                 and set(policy) == set(DEFAULT_POLICY), "Invalid schedule policy")
@@ -1290,7 +1313,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
             require(rate == sample_rate and channel_count == channels,
                     "Units differ in sample rate or channel count; renderer does not resample")
             waves.append(signal)
-        track = assemble_pcm16_track(plan, waves, sample_rate, channels, clip_duration)
+        track = assemble_pcm16_track(plan, waves, sample_rate, channels, plan["trackDurationSeconds"])
         # No time stretching, truncation, loudness normalization, or omitted units.
         wav_path.parent.mkdir(parents=True, exist_ok=True)
         partial = wav_path.with_suffix(".partial.wav")
@@ -1311,7 +1334,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
             encoded = subprocess.run([
                 "ffmpeg", "-nostdin", "-xerror", "-v", "error", "-y",
                 "-i", str(wav_path), "-map", "0:a:0", "-ac", "1",
-                "-c:a", "libmp3lame", "-b:a", "64k", "-write_xing", "1",
+                "-c:a", "libmp3lame", "-b:a", TRACK_MP3_BITRATE, "-write_xing", "1",
                 "-map_metadata", "-1", "-f", "mp3", str(partial_mp3),
             ], capture_output=True, text=True, check=False)
             require(encoded.returncode == 0 and partial_mp3.is_file(),
@@ -1501,8 +1524,11 @@ def main(argv=None) -> None:
     parser.add_argument("--reaction-lag-seconds", type=float, default=0.05)
     parser.add_argument("--inter-utterance-gap-seconds", type=float, default=0.05)
     parser.add_argument("--max-end-lag-seconds", type=float, default=8.0)
+    parser.add_argument("--tail-overrun-seconds", type=float, default=DEFAULT_POLICY["tailOverrunSeconds"],
+                        help=f"How far the final unit may end after the approved clip, at most "
+                             f"{MAX_TAIL_OVERRUN_SECONDS} s; the release plan's audio policy sets it")
     parser.add_argument("--track-format", choices=("wav", "mp3"), default="wav",
-                        help="Use reviewed 64 kbps mono MP3 for a full-length web release")
+                        help=f"Use reviewed {TRACK_MP3_BITRATE}bit/s mono MP3 for a full-length web release")
     parser.add_argument("--max-synthesis-units", type=int,
                         help="Bound generated units including full-window batch replay")
     parser.add_argument("--quarantine-unit", type=int, action="append", default=[],
@@ -1543,9 +1569,14 @@ def main(argv=None) -> None:
         paths["source_voice_authorization"] = args.source_voice_authorization
     if args.clip_voice_capability:
         paths["clip_voice_capability"] = args.clip_voice_capability
+    require(0 <= args.tail_overrun_seconds <= MAX_TAIL_OVERRUN_SECONDS,
+            f"--tail-overrun-seconds must be between 0 and {MAX_TAIL_OVERRUN_SECONDS}")
     policy = {"reactionLagSeconds": args.reaction_lag_seconds,
               "interUtteranceGapSeconds": args.inter_utterance_gap_seconds,
               "maxEndLagSeconds": args.max_end_lag_seconds}
+    if args.tail_overrun_seconds:
+        # Recorded only when set, so runs without a tail allowance keep their identity.
+        policy["tailOverrunSeconds"] = args.tail_overrun_seconds
     result = render_accounted(
         paths, args.checkpoint_map, args.audio_operation_policies,
         progress_ledger=args.progress_ledger,

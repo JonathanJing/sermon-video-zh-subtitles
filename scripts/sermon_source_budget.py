@@ -70,7 +70,7 @@ class SourceBudget:
     def __init__(self, root, authority, *, verify, transport=None, max_concurrent=1, resource_policy=None):
         self.root, self.authority, self.verify = Path(root), authority, verify
         self.transport = transport
-        require(type(max_concurrent) is int and 1 <= max_concurrent <= 8, 'invalid_source_concurrency')
+        require(type(max_concurrent) is int and 1 <= max_concurrent <= 16, 'invalid_source_concurrency')
         self.max_concurrent = max_concurrent
         self.resource_policy = None
         if resource_policy is not None:
@@ -84,7 +84,9 @@ class SourceBudget:
 
     @contextmanager
     def _locked(self):
-        for attempt in range(100):
+        # Up to 8 concurrent ASR/judge workers contend for this lock; a 1 s wait made a busy
+        # worker fail before reserving and orphan its started marker. Wait up to 30 s instead.
+        for attempt in range(3000):
             with jobs._lock(self.root, LOCK) as (_, _, held):
                 if held:
                     path = self.root / 'source-budget.json'
