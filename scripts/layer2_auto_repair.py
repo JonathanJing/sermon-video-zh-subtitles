@@ -73,7 +73,7 @@ ACTIONS = {
     "quotation_attribution_error": "repair_translation",
     "scripture_reference_error": "repair_translation",
     "meaning_shift": "repair_translation",
-    # AGENTS.md: a Sol issue or uncertainty also starts a new repair revision.
+    # docs/production-model-runtime-policy.zh.md (Layer 2 角色与返修): a Sol issue or uncertainty also starts a new repair revision.
     "review_uncertainty": "repair_translation",
     "review_issue_open": "repair_translation",
     # A deterministic language check names its own finding (an over-long utterance,
@@ -130,7 +130,7 @@ def classify_review(semantic: dict) -> tuple[list[str], str]:
     """Failure codes and action for a Sol review that did not pass.
 
     Every Sol failure, uncertainty or open issue starts a new repair revision
-    (AGENTS.md). Uncertainty or an open issue that repeats after a repair goes
+    (docs/production-model-runtime-policy.zh.md). Uncertainty or an open issue that repeats after a repair goes
     to a person instead (REPEATED_FAILURE_ACTIONS).
     """
     checks = semantic.get("checks") or {}

@@ -1,0 +1,31 @@
+{
+ "schemaVersion": "sermon-production-catalog-http-verification-v1",
+ "origin": "https://ai-for-god-sermon-audio.web.app",
+ "liveVersion": "sites/ai-for-god-sermon-audio/versions/1ea558bb78ff32a6",
+ "verifiedAt": "2026-10-11T15:21:58Z",
+ "files": 186,
+ "passed": 186,
+ "failed": [],
+ "catalogSha256": "7a0dda6c3311067bc409b775a3fdb20f54c39e3cd5824d54c1715ce28c5825fc",
+ "catalogV4Sha256": "3eeef37f4fc4178a19082456f6677690a2d3738caca7ff3d9755e4645ba9d319",
+ "audioRange": [
+  [
+   "zh-Hans",
+   206,
+   "bytes 0-1023/25579341"
+  ],
+  [
+   "ko",
+   206,
+   "bytes 0-1023/25573005"
+  ],
+  [
+   "es",
+   206,
+   "bytes 0-1023/25578765"
+  ]
+ ],
+ "status": "published_http_verified",
+ "deviceAcceptance": "not_run",
+ "venueAcceptance": "not_run"
+}

@@ -73,6 +73,7 @@ PDF 不进入该身份。静态 HTML 包含 `study-outline` 和 `study-meditatio
 
 ## 旧版本迁移
 
+- 旧版（legacy）工具保留其文档化范围，不能替代本路径；纯文字语言经 `audio_unavailable` 发布，仅当发布计划、producer 与客户端都支持。
 - 没有 require_study 的旧 builder 路径继续产生 release v2；旧 snapshot、catalog-v3、Web v2 页面继续可读。
 - v2 没有独立学习资源，不授予四产物资格，不能将旧 content.outline 当成 v3 的独立 outline。
 - 将旧页面升级到 v3，必须提供同一 source/text 身份下的新独立学习产物和两份人审 receipt，重新 prepare、HTTP 验证、seal，并取得绑定新候选的发布授权。不能原地改旧 release schemaVersion。

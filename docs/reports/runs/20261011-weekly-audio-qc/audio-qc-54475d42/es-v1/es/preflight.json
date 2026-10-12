@@ -1,0 +1,85 @@
+{
+  "calibrationCoverage": {
+    "audio": {
+      "droppedKeyWordTrials": 9,
+      "untestableKinds": [],
+      "wrongSentenceUnits": 30
+    },
+    "text": {
+      "applicableGroups": {
+        "added_content": 461,
+        "added_number": 385,
+        "added_reference": 454,
+        "dropped_half": 337,
+        "dropped_name": 12,
+        "english_leak": 367,
+        "placeholder": 461,
+        "semantic_negation": 26,
+        "swapped_name": 0,
+        "swapped_quantity": 4,
+        "wrong_book": 5,
+        "wrong_number": 38,
+        "wrong_ordinal": 453
+      },
+      "notApplicableKinds": [
+        "swapped_name"
+      ],
+      "untestableKinds": []
+    }
+  },
+  "flaggedGroups": [
+    "translation-chunk-0000-u002",
+    "translation-chunk-0000-u021",
+    "translation-chunk-0000-u022",
+    "translation-chunk-0000-u027",
+    "translation-chunk-0000-u035",
+    "translation-chunk-0000-u043",
+    "translation-chunk-0001-u014",
+    "translation-chunk-0001-u020",
+    "translation-chunk-0002-u020",
+    "translation-chunk-0003-u003",
+    "translation-chunk-0003-u005",
+    "translation-chunk-0003-u008",
+    "translation-chunk-0003-u009",
+    "translation-chunk-0004-u013",
+    "translation-chunk-0004-u038",
+    "translation-chunk-0005-u013",
+    "translation-chunk-0005-u026",
+    "translation-chunk-0005-u027",
+    "translation-chunk-0005-u029",
+    "translation-chunk-0006-u015",
+    "translation-chunk-0006-u022",
+    "translation-chunk-0006-u023",
+    "translation-chunk-0006-u025",
+    "translation-chunk-0006-u033",
+    "translation-chunk-0006-u039",
+    "translation-chunk-0006-u040",
+    "translation-chunk-0007-u017",
+    "translation-chunk-0007-u033",
+    "translation-chunk-0008-u017",
+    "translation-chunk-0008-u018",
+    "translation-chunk-0008-u026",
+    "translation-chunk-0009-u011",
+    "translation-chunk-0009-u015",
+    "translation-chunk-0009-u021",
+    "translation-chunk-0009-u028",
+    "translation-chunk-0009-u031",
+    "translation-chunk-0010-u002",
+    "translation-chunk-0010-u005",
+    "translation-chunk-0011-u019",
+    "translation-chunk-0011-u023"
+  ],
+  "locale": "es",
+  "packageJsonSha256": "a7740e06407b630afeefc4428801663dfd64023b02be8408bf3eab7fb502ace1",
+  "paths": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-54475d42/output4-rebuild4/anchor-manifest.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/recovered/es/candidate.json",
+    "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-54475d42/es/spark-es-v2-c2/speech-job/job.json",
+    "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-54475d42/es/audio-package-c4.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/policies/es-policy-frozen-r5.json",
+    "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-54475d42/es/spark-es-v2-c4/speech-job/asr-screening-receipt-c4.json",
+    "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-54475d42/formal/english-source-package.json",
+    "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-54475d42/v15-es/es/text-waiver-7a18087538a44402.json"
+  },
+  "problems": []
+}
