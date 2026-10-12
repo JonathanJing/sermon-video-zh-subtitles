@@ -1,6 +1,6 @@
 {
   "schemaVersion": "sermon-run-digest-v1",
-  "name": "20261011-feedback-api-deploy-r14",
+  "name": "20261011-feedback-api-deploy-r14-verified",
   "runs": [
     {
       "label": "evidence",
@@ -10,7 +10,17 @@
       }
     }
   ],
-  "files": [],
+  "files": [
+    {
+      "run": "evidence",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 712,
+      "truncated": false,
+      "sha256": "73eddf870fc6935a14e036fa801e275ff8cb078052e84b2c964d0545a1a4dfbb",
+      "redactions": {}
+    }
+  ],
   "limits": {
     "maxWholeBytes": 262144,
     "logHead": 40,

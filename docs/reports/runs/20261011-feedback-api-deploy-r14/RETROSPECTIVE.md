@@ -1,4 +1,4 @@
-# 复盘：20261011-feedback-api-deploy-r14
+# 复盘：20261011-feedback-api-deploy-r14-verified
 
 数据见同目录 INDEX.md 和 manifest.json。未填写的小节删掉前请写明原因。
 
