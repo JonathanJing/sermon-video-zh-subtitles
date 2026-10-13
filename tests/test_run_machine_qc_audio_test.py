@@ -163,6 +163,18 @@ class MachineQcAudioDriverTests(unittest.TestCase):
     def fake_row(self):
         return json.loads((self.root / "audio/fake-plumbing/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
 
+    def test_all_short_chinese_coverage_blocks_before_model_work(self):
+        self.build()
+        short_job = {"units": [{"text": "一"}, {"text": "二"}]}
+        coverage = driver.audio_coverage(short_job, "zh-Hans")
+        with patch.object(driver, "audio_coverage", return_value=coverage), \
+                patch.object(driver, "make_transports") as make, \
+                patch.object(text_driver, "FakeJudge") as judge:
+            self.assertEqual(self.fake(), 2)
+            self.assertIn("audio.truncated", " ".join(self.fake_row()["problems"]))
+            make.assert_not_called()
+            judge.assert_not_called()
+
     def test_preflight_finds_everything_by_hash(self):
         self.build()
         self.assertEqual(self.fake("--preflight-only"), 0, self.fake_row()["problems"])

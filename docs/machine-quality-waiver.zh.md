@@ -48,7 +48,7 @@
 - 校准时回译检查实际参与了（`semanticChecksIncluded=true`），且 `text.semantic_negation`、`text.added_number`（在英文不含数字的组里加一个用目标语言写出的人数）、`text.wrong_ordinal` 注错必须新增明确的回译问题；`text.dropped_half`（删掉半句）也只认回译问题，长度检查同时判失败不算，因为在长度范围内的小删减只有回译能发现（序数没有可靠的表面检查：first 常译成“起初/처음/en primer lugar”）；确定性规则发现的表面错误不能计为这一类的检出。
 - 本次 QC 用的回译运行身份 `semanticIdentity` 必须包含非空 `backend`、`model`、`modelRevision`、`cacheNamespace` 和非空 `settings` 对象（声明实际解码、推理等设置）。规范化 JSON 后绑定哈希，拒绝非有限数值。该身份、ASR 模型和两级 ASR 的设置哈希（校准记录为 `asrSettingsSha256`）必须与校准时一致；改变设置、缓存命名空间、模型修订或后端，必须重新校准。
 - 按本次交付所需注错类别的计数重算总检出率 ≥ 95%，每类 ≥ 90%。收据中每类及总体的计数与预存比率必须一致；布尔值、负计数或检出数大于试验数均拒绝。每一类适用注错都必须实际试过（`trials > 0`）；缺一类或某类零样本都算校准不足。唯一例外为 `text.swapped_name`：注错器先扫描完整绑定候选（不受试验上限影响），只对英文中明确的定向关系及译文中唯一出现的两个人名注错；并列、互相动作或未知语法不注错。v2 收据该行必须显式记录 `applicableGroupIds=[]`、零试验和零检出才能标记不适用；字段缺失或有适用组却零试验仍拒绝。此项属于 v2 的新增证据字段，旧实现哈希下的校准仍须重新生成。发布摘要只对适用类别计算最低检出率。要发配音时，校准还必须包含音频各类；只发文字时，音频类的结果不影响放行。QC 判过精简组时，校准还必须包含口播各类（`spokenIncluded=true`）。
-- 校准必须是在本次放行的成品上注错（校准收据 `sermon-auto-qc-calibration-v2` 的 `inputs`）：按组 ID、冻结源句 ID、英文、译文和精简模式哈希算出的组列表必须等于本次文字 QC 筛过的组（精简口播稿的 QC 对应 `spokenGroupsSha256`，完整译文对应 `textGroupsSha256`），翻译策略哈希必须等于 QC 用的策略；发配音时，按组 ID、音频、文本哈希和冻结源时长算出的单元列表必须等于本次音频 QC 筛过的单元（`audioUnitsSha256`）。别的讲道、挑选过的样例或修订前的版本做的校准都不能签豁免；成品一改（修复出新 revision、重新合成配音），就要在新成品上重新校准。v1 校准收据没有 `inputs`，必须重新校准。 调用 `calibrate(..., candidate=full_candidate, spoken_candidate=spoken_candidate)` 记录冻结源包、锚点及完整／口播候选身份；签发时必须匹配，精简稿的完整候选还必须与精简绑定一致。缺少这些身份的旧 v2 校准也需针对当前产物重新生成。
+- 校准必须是在本次放行的成品上注错（校准收据 `sermon-auto-qc-calibration-v3` 的 `inputs`）：按组 ID、冻结源句 ID、英文、译文和精简模式哈希算出的组列表必须等于本次文字 QC 筛过的组（精简口播稿的 QC 对应 `spokenGroupsSha256`，完整译文对应 `textGroupsSha256`），翻译策略哈希必须等于 QC 用的策略；发配音时，按组 ID、音频、文本哈希和冻结源时长算出的单元列表必须等于本次音频 QC 筛过的单元（`audioUnitsSha256`）。别的讲道、挑选过的样例或修订前的版本做的校准都不能签豁免；成品一改（修复出新 revision、重新合成配音），就要在新成品上重新校准。v1 校准收据没有 `inputs`，必须重新校准。 调用 `calibrate(..., candidate=full_candidate, spoken_candidate=spoken_candidate)` 记录冻结源包、锚点及完整／口播候选身份；签发时必须匹配，精简稿的完整候选还必须与精简绑定一致。缺少这些身份的旧 v2 校准也需针对当前产物重新生成。
 - 干净样例误报率按 `cleanFalsePositives / cleanChecked` 重算并核对，必须 ≤ 10%，且实际检查至少一个干净样例。
 
 ASR 还保护完整韩文数字词、已知书卷名和常用人名，以及冻结稿中大写的拉丁字母专名，并要求它们的先后顺序不变（“두 아들과 세 딸”听成“세 아들과 두 딸”判不一致）。西语 un/una/uno 多半是冠词，un 和 una 互换不算差异，但个数必须一致（“tienes una vida”掉了 una 判不一致）。中文、韩文没有大写可以识别其他专名（如亚伯拉罕），ASR 这一步不保护这类名字，由文字 QC 的术语检查和回译把关。标点、大小写不影响匹配；数字写法变化可能保守地要求二次识别。这些表面检查不等于任意语义变化的模型判读。
@@ -152,3 +152,9 @@ python scripts/run_with_openai_environment.py --environment dev -- python script
 独立单句音频 QC 必须显式提供冻结 `--speech-job`；收据 `durationNormalization` 绑定 job JSON hash 与 normalization policy hash，试听豁免签发核对同一 job。历史 raw-text 调用须显式 `--legacy-raw-text`，其收据不能支持 normalization-v2 job；旧 v1 无该字段的收据只保留原 raw-text 语义。`--track-package` 整轨路径不需要此参数。
 
 注错校准从已冻结 `renderIdentity.synthesis.normalizationPolicySha256` 派生相同口播长度，干净与注错 WAV 均使用该上下文。其内部 QC 标记 `calibration_policy_context`，不伪造真实 speech job hash，也不能替代实际成品 QC 的 job-bound 收据。
+
+### 校准 v3 与旧收据兼容
+
+新校准输出 `sermon-auto-qc-calibration-v3`。仅中文截断注错跳过不足 8 个 speech units 的单元；`audio.truncated.excludedShortGroupIds` 记录扫描时排除的组，跳过不消耗 max_trials 名额，继续扫描至试验名额满或输入耗尽。其他注错与语言不改变。全短中文输入在音频驱动预检拒绝，不先执行回译、ASR 或 TTS。
+
+v2 保持原计数语义：没有排除字段的旧收据仍可读取并按原门禁验证，全部 implementation/runtime/input 哈希仍须匹配；v2 携带排除字段会拒绝。v1 继续拒绝。不存在改 schema 标签的迁移：需要 v3 语义时，对当前绑定产物重新校准并出新收据，旧收据保持不可变；本次代码变更不替旧真实运行建立新校准证据。

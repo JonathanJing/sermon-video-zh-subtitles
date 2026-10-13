@@ -447,6 +447,13 @@ def drop_key_word(text: str, locale: str) -> str | None:
     return re.sub(r"\s{2,}", " ", text[:start] + text[end:]).strip()
 
 
+def truncation_eligible(text: str, locale: str) -> bool:
+    """Whether a seeded truncation can be audible under the locale's frozen rule."""
+    from scripts.target_audio_predicted_schedule import speech_units
+    minimum = TRUNCATION_MIN_SPEECH_UNITS.get(locale)
+    return minimum is None or speech_units(text, locale) >= minimum
+
+
 def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, max_trials: int = 30,
                     normalization_policy_sha256: str | None = None) -> dict:
     """``asr(role, wav, text, locale) -> opinion`` (see ``target_audio_auto_qc.asr_opinion``)
@@ -471,14 +478,15 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, ma
 
     for row in clean:
         note_runtime(row)
-    from scripts.target_audio_predicted_schedule import speech_units
-    minimum = TRUNCATION_MIN_SPEECH_UNITS.get(locale)
     too_short = {index for index, unit in enumerate(units)
-                 if minimum is not None and speech_units(unit["text"], locale) < minimum}
+                 if not truncation_eligible(unit["text"], locale)}
     for kind in AUDIO_KINDS:
         trials = detected = 0
         misses, excluded = [], []
-        for index, (samples, rate) in enumerate(decoded[:max_trials]):
+        candidates = decoded if kind == "truncated" else decoded[:max_trials]
+        for index, (samples, rate) in enumerate(candidates):
+            if trials >= max_trials:
+                break
             if kind == "truncated" and index in too_short:
                 excluded.append(units[index]["groupId"])
                 continue
