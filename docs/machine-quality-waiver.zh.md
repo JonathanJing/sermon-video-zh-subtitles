@@ -68,7 +68,7 @@ python scripts/target_audio_predicted_schedule.py budget --input groups.json --r
 # 每个 ASR 结果为 {similarity, recognized, audioSha256, textSha256, model, modelRevision?, settings, settingsSha256}，
 # similarity 由 asr_opinion 按筛查算法从 recognized 算出）；
 # 失败次数取自音频修复账本，本次结果随即追加进去
-python scripts/target_audio_auto_qc.py --input units.json --repair-ledger-root run/repair-ledger \
+python scripts/target_audio_auto_qc.py --input units.json --speech-job speech-job.json --repair-ledger-root run/repair-ledger \
   --source source-package.json --anchor anchor.json --out audio-qc.json
 # 整轨核对（读取音频包里的排程、单句音频和音轨；MP3 需要 ffmpeg 和同名 .wav 母带）
 python scripts/target_audio_auto_qc.py --track-package audio-package.json --out track-check.json
@@ -145,3 +145,7 @@ python scripts/run_with_openai_environment.py --environment dev -- python script
 6. 严格链（`sermon_strict_candidate_bridge` / `sermon_strict_gate_admission`）的门禁决定把收据记为人工批准，所以严格链目前只收人工收据，遇到译文豁免会以 `strict_bridge_requires_human_receipt` 拒绝。译文豁免目前只能走 `prepare_target_language_speech_job.py --text-release-basis`；严格链要接受豁免，门禁决定需要单独记录豁免状态。
 
 当前 v5 另外保护书名锚定韩语引用整链、范围端点结构和完整 counter 助词。v5 的 `implementationSha256` 为 screen、ko_spoken_numerals、auto_qc_text_common 与 common 四文件闭包，缓存、primary runtime 与重评分均核对当前闭包；仅含 screen 单文件 hash 的旧实验 v5 收据需显式重新筛查，不静默迁移。QC/calibration/waiver 闭包也纳入 ko_spoken_numerals，代码变化使旧校准和豁免失效。v4/v3 历史评分语义保留，但不因此成为当前校准或发布依据。上述 2026-10-11 的样本统计以及 #361/#363 的真实音频 QC 属于历史实现，不验证新 v5；本 PR 只执行离线合同测试，未重跑模型、音频或校准。
+
+独立单句音频 QC 必须显式提供冻结 `--speech-job`；收据 `durationNormalization` 绑定 job JSON hash 与 normalization policy hash，试听豁免签发核对同一 job。历史 raw-text 调用须显式 `--legacy-raw-text`，其收据不能支持 normalization-v2 job；旧 v1 无该字段的收据只保留原 raw-text 语义。`--track-package` 整轨路径不需要此参数。
+
+注错校准从已冻结 `renderIdentity.synthesis.normalizationPolicySha256` 派生相同口播长度，干净与注错 WAV 均使用该上下文。其内部 QC 标记 `calibration_policy_context`，不伪造真实 speech job hash，也不能替代实际成品 QC 的 job-bound 收据。

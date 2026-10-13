@@ -73,3 +73,81 @@ def test_screen_decodes_audio_and_consumes_frozen_spoken_policy():
     assert not any(issue.startswith("truncated:") for issue in current["issues"])
     assert any(issue.startswith("truncated:") for issue in legacy["issues"])
     assert current["status"] == "pending_primary_asr"  # duration is not content acceptance
+
+
+
+def test_standalone_qc_cli_requires_and_binds_policy_job(tmp_path, monkeypatch):
+    import json
+    import sys
+    from tests.auto_qc_fixtures import speech_wav
+    wav = tmp_path / "unit.wav"
+    wav.write_bytes(speech_wav(1))
+    input_path, job_path, output = (tmp_path / name for name in ("units.json", "job.json", "qc.json"))
+    input_path.write_text(json.dumps({"locale": "ko", "units": [{"groupId": "g1", "text": TEXT,
+        "sourceSeconds": 20, "wavPath": str(wav)}]}))
+    frozen = job()
+    job_path.write_text(json.dumps(frozen))
+    base = ["qc", "--input", str(input_path), "--out", str(output)]
+    monkeypatch.setattr(sys, "argv", base)
+    with pytest.raises(SystemExit) as rejected:
+        qc.main()
+    assert rejected.value.code == 2
+    assert not output.exists()
+    monkeypatch.setattr(sys, "argv", base + ["--speech-job", str(job_path)])
+    qc.main()
+    receipt = json.loads(output.read_text())
+    assert receipt["durationNormalization"] == qc.duration_normalization_binding(frozen)
+    assert qc.duration_binding_problems(receipt, frozen) == []
+    assert qc.duration_binding_problems({**receipt, "durationNormalization": {"mode": "legacy_raw_text"}}, frozen)
+    changed = {**frozen, "operatorNote": "changed job"}
+    assert qc.duration_binding_problems(receipt, changed)
+    output.unlink()
+    monkeypatch.setattr(sys, "argv", base + ["--legacy-raw-text"])
+    qc.main()
+    legacy = json.loads(output.read_text())
+    assert legacy["durationNormalization"] == {"mode": "legacy_raw_text"}
+    assert qc.duration_binding_problems(legacy, frozen)
+    assert qc.duration_binding_problems(legacy, job(False)) == []
+    assert qc.duration_binding_problems({}, job(False)) == []
+
+
+def test_audio_waiver_rejects_unbound_or_other_job_duration_qc():
+    from scripts import machine_quality_release_basis as basis
+    from tests.test_machine_quality_release_basis import audio_fixture
+    package, screening, receipt, text = audio_fixture()
+    frozen = job()
+    for binding in (None, {"mode": "legacy_raw_text"}, qc.duration_normalization_binding({**frozen, "note": "other"})):
+        changed = dict(receipt)
+        if binding is not None:
+            changed["durationNormalization"] = binding
+        with pytest.raises(ValueError, match="duration normalization"):
+            basis.build_audio_waiver(package, screening, changed, text, {}, anchor={}, candidate={},
+                                     repair_ledger=[], speech_job=frozen)
+
+
+
+def test_real_calibration_entry_uses_policy_context_without_claiming_job_binding(monkeypatch):
+    from scripts import auto_qc_seeded_errors as seeded
+    from tests import auto_qc_fixtures as fixtures
+    units = [{"groupId": f"g{i}", "text": "가" * 10, "sourceSeconds": 20,
+              "wav": fixtures.speech_wav(1)} for i in range(5)]
+    raw, spoken = (predicted.speech_units(t, "ko") for t in (TEXT, SPOKEN))
+    units.append({"groupId": "citation", "text": TEXT, "sourceSeconds": 20,
+                  "wav": fixtures.speech_wav(.1 * qc.THRESHOLDS["minRatePerMedian"] * (raw + spoken) / 2)})
+    receipts = []
+    original = qc.screen
+    def observed(*args, **kwargs):
+        receipt = original(*args, **kwargs)
+        receipts.append(receipt)
+        return receipt
+    monkeypatch.setattr(qc, "screen", observed)
+    identity = {**fixtures.RENDER_IDENTITY, "synthesis": synthesis()}
+    seeded.calibrate("ko", [], units, render=lambda *args: fixtures.speech_wav(1),
+                     render_identity=identity, max_trials=1)
+    assert len(receipts) > 1  # clean and actual seeded audio both traverse QC
+    assert not any(i.startswith("truncated:") for i in receipts[0]["results"][-1]["issues"])
+    for receipt in receipts:
+        assert receipt["durationNormalization"] == {"mode": "calibration_policy_context",
+            "normalizationPolicySha256": synthesis()["normalizationPolicySha256"]}
+        assert "speechJobJsonSha256" not in receipt["durationNormalization"]
+        assert qc.duration_binding_problems(receipt, job())

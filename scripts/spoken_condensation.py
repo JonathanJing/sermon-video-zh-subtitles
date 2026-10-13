@@ -102,6 +102,16 @@ def condenser_identity(identity: dict) -> dict:
         raise ValueError(message) from error
 
 
+def _speech_units(request: dict, text: str, locale: str) -> float:
+    """A request's frozen synthesis identity selects spoken length; old standalone requests stay raw."""
+    synthesis = request.get("synthesisIdentity")
+    if synthesis is not None:
+        predicted._check_identity(synthesis, locale)
+    policy_sha = synthesis["normalizationPolicySha256"] if synthesis is not None else None
+    spoken = predicted.policy_texts([text], locale, policy_sha)[0]
+    return predicted.speech_units(spoken, locale)
+
+
 def requests(anchor: dict, candidate: dict, budget: dict) -> dict:
     """The condensation requests for one full candidate and its pre-TTS budget.
 
@@ -119,9 +129,12 @@ def requests(anchor: dict, candidate: dict, budget: dict) -> dict:
     groups, planned = candidate["groups"], budget["groups"]
     if [row["gid"] for row in planned] != [group["translationGroupId"] for group in groups]:
         raise ValueError("Budget groups differ from the candidate's groups")
+    synthesis = budget["rate"]["synthesisIdentity"]
+    predicted._check_identity(synthesis, locale)
+    length_request = {"synthesisIdentity": synthesis}
     out, cannot_fit = [], []
     for group, row in zip(groups, planned):
-        if row["speechUnits"] != predicted.speech_units(group["targetText"], locale):
+        if row["speechUnits"] != _speech_units(length_request, group["targetText"], locale):
             raise ValueError(f"Budget was computed from other text: {group['translationGroupId']}")
         if row["action"] == "cannot_fit":
             cannot_fit.append(group["translationGroupId"])
@@ -131,6 +144,7 @@ def requests(anchor: dict, candidate: dict, budget: dict) -> dict:
                     "englishUnits": [{"sourceUnitId": unit_id, "english": english[unit_id]}
                                      for unit_id in group["sourceUnitIds"]],
                     "fullTargetText": group["targetText"], "fullSpeechUnits": row["speechUnits"],
+                    "synthesisIdentity": dict(synthesis),
                     "maxSpeechUnits": row["maxSpeechUnits"], "allowedSeconds": row["allowedSeconds"]})
     frozen = frozen_timing_problems(anchor, candidate, budget)
     if frozen:
@@ -190,7 +204,7 @@ def spoken_problems(request: dict, spoken: str, omissions: list[dict] | None, lo
         return ["spoken text is empty"]
     if spoken.strip() == request["fullTargetText"].strip():
         problems.append("spoken text is the full translation")
-    units = predicted.speech_units(spoken, locale)
+    units = _speech_units(request, spoken, locale)
     if units > request["maxSpeechUnits"]:
         problems.append(f"{units:g} speech units exceed the budget of {request['maxSpeechUnits']}")
     if not isinstance(omissions, list):
@@ -218,11 +232,11 @@ def spoken_problems(request: dict, spoken: str, omissions: list[dict] | None, lo
                     problems.append(f"omission declared twice or overlapping another: {span!r}")
                 else:
                     claimed.append((free[0], free[0] + len(span)))
-                    declared += predicted.speech_units(span, locale)
+                    declared += _speech_units(request, span, locale)
         # The declared spans must account for what was removed; an undeclared cut
         # (a call, an attribution) cannot hide behind an unrelated declared span.
-        removed = predicted.speech_units(full, locale) - units
-        slack = max(UNDECLARED_SLACK_UNITS, UNDECLARED_SLACK_SHARE * predicted.speech_units(full, locale))
+        removed = _speech_units(request, full, locale) - units
+        slack = max(UNDECLARED_SLACK_UNITS, UNDECLARED_SLACK_SHARE * _speech_units(request, full, locale))
         if not problems and removed > declared + slack:
             problems.append(f"{removed:g} speech units removed but only {declared:g} declared")
     group = {"english": " ".join(unit["english"] for unit in request["englishUnits"]), "targetText": spoken}
@@ -243,7 +257,7 @@ def _condense_one(request: dict, locale: str, policy: dict | None, call) -> dict
         problems = spoken_problems(request, output["spokenText"], output["omissions"], locale, policy)
         if not problems:
             return {"status": "condensed", "attempts": attempt, "spokenText": output["spokenText"],
-                    "spokenSpeechUnits": predicted.speech_units(output["spokenText"], locale),
+                    "spokenSpeechUnits": _speech_units(request, output["spokenText"], locale),
                     "omissions": [{"fullTextSpan": row["fullTextSpan"], "kind": row["kind"]}
                                   for row in output["omissions"]], "problems": []}
     return {"status": "failed", "attempts": MAX_ATTEMPTS, "spokenText": None, "spokenSpeechUnits": None,
@@ -332,7 +346,7 @@ def bind_spoken_candidate(record: dict, anchor: dict, candidate: dict, spoken: d
                 issues.append(f"{group_id}: an uncondensed group differs from the full translation")
             continue
         request = {"translationGroupId": group_id, "fullTargetText": full["targetText"],
-                   "maxSpeechUnits": row["maxSpeechUnits"],
+                   "maxSpeechUnits": row["maxSpeechUnits"], "synthesisIdentity": record["synthesisIdentity"],
                    "englishUnits": [{"sourceUnitId": unit_id, "english": english[unit_id]}
                                     for unit_id in full["sourceUnitIds"]]}
         problems = spoken_problems(request, text, row.get("omissions"), locale, policy)
@@ -340,7 +354,7 @@ def bind_spoken_candidate(record: dict, anchor: dict, candidate: dict, spoken: d
             problems.append("review changed the spoken text; a renewed condensation record is required")
         issues += [f"{group_id}: {problem}" for problem in problems]
         rows.append({"translationGroupId": group_id, "finalSpokenTextSha256": _text_sha(text),
-                     "finalSpeechUnits": predicted.speech_units(text, locale),
+                     "finalSpeechUnits": _speech_units(request, text, locale),
                      "changedByReview": text != row["spokenText"], "problems": problems})
     return {"schemaVersion": BINDING_SCHEMA, "targetLocale": locale, "status": "fail" if issues else "pass",
             "issues": issues, "condensationRecordJsonSha256": _sha(record),

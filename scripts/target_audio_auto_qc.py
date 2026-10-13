@@ -125,13 +125,34 @@ def signal_metrics(samples: list[float], rate: int, thresholds: dict = THRESHOLD
     }
 
 
+def duration_normalization_binding(speech_job: dict | None) -> dict:
+    if speech_job is None:
+        return {"mode": "legacy_raw_text"}
+    return {"mode": "speech_job_policy", "speechJobJsonSha256": waiver.json_sha256(speech_job),
+            "normalizationPolicySha256": (speech_job.get("adapter") or {}).get("normalizationPolicySha256")}
+
+
+def duration_binding_problems(receipt: dict, speech_job: dict) -> list[str]:
+    from scripts import render_formal_target_language_speech as formal
+    binding = receipt.get("durationNormalization")
+    current = (speech_job.get("adapter") or {}).get("normalizationPolicySha256") == waiver.json_sha256(
+        formal.SPOKEN_FORMS_NORMALIZATION_POLICY)
+    # Historical v1 receipts without a duration-policy field retain raw semantics.
+    if not current and binding in (None, {"mode": "legacy_raw_text"}):
+        return []
+    return [] if binding == duration_normalization_binding(speech_job) else [
+        "Audio QC duration normalization is not bound to the speech job policy"]
+
+
 def unit_issues(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
-                speech_job: dict | None = None) -> list[list[str]]:
+                speech_job: dict | None = None, calibration_policy_sha256: str | None = None) -> list[list[str]]:
     """Issues per unit; an optional frozen job selects the synthesized spoken forms."""
     if speech_job is not None and speech_job.get("targetLocale") != locale:
         raise ValueError("Speech job belongs to another locale")
+    if speech_job is not None and calibration_policy_sha256 is not None:
+        raise ValueError("A duration check cannot mix job and calibration policy contexts")
     policy_sha = ((speech_job.get("adapter") or {}).get("normalizationPolicySha256")
-                  if speech_job is not None else None)
+                  if speech_job is not None else calibration_policy_sha256)
     counts = [speech_units(text, locale) for text in policy_texts(
         [unit["text"] for unit in units], locale, policy_sha)]
     rates = []
@@ -350,7 +371,8 @@ def next_action(failed_attempts: int) -> str:
 
 
 def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
-           repair_position: dict | None = None, speech_job: dict | None = None) -> dict:
+           repair_position: dict | None = None, speech_job: dict | None = None,
+           calibration_policy_sha256: str | None = None) -> dict:
     """Screen one render attempt. Each unit: ``{groupId, text, sourceSeconds,
     wav (bytes), asr: {primary, secondary?}, sourceUnitIds?}``,
     where each ASR opinion comes from :func:`asr_opinion`.
@@ -380,7 +402,8 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
         if isinstance(source, bool) or not isinstance(source, (int, float)) or not math.isfinite(source) or source <= 0:
             raise ValueError(f"Unit source span must be a positive number of seconds: {unit.get('groupId')}")
         rows.append({**unit, "metrics": signal_metrics(*decode_pcm16(unit["wav"]), thresholds)})
-    all_issues = unit_issues(rows, locale, thresholds, speech_job=speech_job)
+    all_issues = unit_issues(rows, locale, thresholds, speech_job=speech_job,
+                             calibration_policy_sha256=calibration_policy_sha256)
     results = []
     for row, issues in zip(rows, all_issues):
         issues = list(issues)
@@ -427,6 +450,9 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
                         "nextAction": action, "metrics": row["metrics"]})
     return {"schemaVersion": SCHEMA, "locale": locale, "thresholds": thresholds,
             "implementationSha256": waiver.implementation_sha256(),
+            "durationNormalization": (duration_normalization_binding(speech_job) if calibration_policy_sha256 is None
+                                      else {"mode": "calibration_policy_context",
+                                            "normalizationPolicySha256": calibration_policy_sha256}),
             "maxRepairAttempts": MAX_REPAIR_ATTEMPTS, "repairLedger": repair_position,
             "status": "pass" if all(r["status"] == "pass" for r in results) else "requires_repair",
             "subtitleOnlyGroupIds": [r["groupId"] for r in results if r["nextAction"] == "subtitle_only"],
@@ -588,7 +614,8 @@ def main() -> None:
                         help="{locale, units:[{groupId, text, sourceSeconds, wavPath, asr:{primary, "
                              "secondary?}, sourceUnitIds}]}; each ASR opinion is {similarity, recognized, "
                              "audioSha256, textSha256, model, modelRevision?, settings, settingsSha256}")
-    parser.add_argument("--speech-job", type=Path, help="Frozen synthesis job; applies its spoken normalization to duration QC")
+    parser.add_argument("--speech-job", type=Path, help="Frozen synthesis job; required for policy-bound unit QC")
+    parser.add_argument("--legacy-raw-text", action="store_true", help="Explicit historical raw-text QC; cannot validate a v2 speech job")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--repair-ledger-root", type=Path,
                         help="Durable repair ledger root; with --source and --anchor, counts failed attempts "
@@ -606,6 +633,8 @@ def main() -> None:
             stream.write("\n")
         print(json.dumps({key: result[key] for key in ("status", "issues")}))
         return
+    if (args.speech_job is None) == (not args.legacy_raw_text):
+        parser.error("unit QC needs exactly one of --speech-job or --legacy-raw-text")
     value = json.loads(args.input.read_text(encoding="utf-8"))
     units = []
     for unit in value["units"]:

@@ -497,7 +497,9 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     _require(audio_qc.get("status") == "pass" and not audio_qc.get("subtitleOnlyGroupIds")
              and all(row.get("status") == "pass" and row.get("nextAction") == "keep" for row in results),
              "Every unit must pass audio QC; subtitle-only units are not wired yet")
-    from scripts.target_audio_auto_qc import THRESHOLDS
+    from scripts.target_audio_auto_qc import THRESHOLDS, duration_binding_problems
+    binding_problems = duration_binding_problems(audio_qc, speech_job)
+    _require(not binding_problems, "; ".join(binding_problems))
     _require(audio_qc.get("thresholds") == THRESHOLDS,
              "Audio QC thresholds differ from the calibrated release thresholds")
     # The source-ratio check is only as good as the span the QC caller supplied.
