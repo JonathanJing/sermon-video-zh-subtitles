@@ -29,10 +29,14 @@ LOCK = jobs._digest({'purpose': 'source-budget-v1'})
 LEDGER_V2 = 'sermon-source-budget-ledger-v2'
 # v3 is v2 plus a measured ``settlement`` on every returned row. v2 stays exactly
 # as its frozen readers expect: new code never writes settlement into a v2 ledger,
-# and only migrate_to_v3() upgrades one. New ledgers start at v3.
+# and only migrate_to_v3() upgrades one. New ledgers start at v4.
 LEDGER_V3 = 'sermon-source-budget-ledger-v3'
-CONCURRENT_LEDGERS = (LEDGER_V2, LEDGER_V3)
-SETTLEMENT_STATUSES = {'estimated_upper_bound', 'unknown'}
+LEDGER_V4 = 'sermon-source-budget-ledger-v4'
+CONCURRENT_LEDGERS = (LEDGER_V2, LEDGER_V3, LEDGER_V4)
+SETTLED_LEDGERS = (LEDGER_V3, LEDGER_V4)
+# 'reused': a response another approved budget root already paid for; it costs nothing here.
+SETTLEMENT_STATUSES_V3 = {'estimated_upper_bound', 'unknown'}
+SETTLEMENT_STATUSES = SETTLEMENT_STATUSES_V3 | {'reused'}
 
 
 def require(ok, code):
@@ -80,8 +84,10 @@ def saved_settlement(saved):
     return settlement(saved.get('requestIdentity'), saved.get('response'), saved.get('elapsedSeconds'))
 
 
-def _valid_settlement(value):
-    return (isinstance(value, dict) and value.get('costStatus') in SETTLEMENT_STATUSES
+def _valid_settlement(value, *, version=LEDGER_V4):
+    statuses = SETTLEMENT_STATUSES if version == LEDGER_V4 else SETTLEMENT_STATUSES_V3
+    return (isinstance(value, dict) and value.get('costStatus') in statuses
+            and (value.get('costStatus') != 'reused' or type(value.get('costMicrousd')) is int and value['costMicrousd'] == 0)
             and (value.get('costMicrousd') is None or type(value['costMicrousd']) is int and value['costMicrousd'] >= 0))
 
 
@@ -118,8 +124,14 @@ def bounded_source_judge_payload(payload, limits):
 
 
 class SourceBudget:
-    def __init__(self, root, authority, *, verify, transport=None, max_concurrent=1, resource_policy=None):
+    def __init__(self, root, authority, *, verify, transport=None, max_concurrent=1, resource_policy=None,
+                 reuse_roots=()):
         self.root, self.authority, self.verify = Path(root), authority, verify
+        # Earlier budget roots of the same run whose returned responses this root may reuse,
+        # as named by its approval. Read-only: nothing is written to them.
+        self.reuse_roots = tuple(Path(root_).resolve() for root_ in reuse_roots)
+        require(all(root_.resolve() != self.root.resolve() for root_ in self.reuse_roots)
+                and len({root_.resolve() for root_ in self.reuse_roots}) == len(self.reuse_roots), 'invalid_source_reuse_roots')
         self.transport = transport
         require(type(max_concurrent) is int and 1 <= max_concurrent <= 16, 'invalid_source_concurrency')
         self.max_concurrent = max_concurrent
@@ -148,14 +160,16 @@ class SourceBudget:
                                 and ledger.get('authority') == self.authority
                                 and isinstance(ledger.get('requests'), dict)
                                 and set(ledger) == ({'schemaVersion', 'authority', 'requests'} if version not in CONCURRENT_LEDGERS
-                                    else {'schemaVersion', 'authority', 'requests', 'maxConcurrent', 'resourcePolicySha256'})
+                                    else {'schemaVersion', 'authority', 'requests', 'maxConcurrent', 'resourcePolicySha256'}
+                                        | ({'reuseBudgetRoots'} if version == LEDGER_V4 else set()))
+                                and (version != LEDGER_V4 or ledger['reuseBudgetRoots'] == [str(root) for root in self.reuse_roots])
                                 and (version not in CONCURRENT_LEDGERS or (ledger['maxConcurrent'] == self.max_concurrent
                                     and ledger['resourcePolicySha256'] == self._resource_identity())), 'source_budget_identity_changed')
                         for operation, row in ledger['requests'].items():
                             require(isinstance(operation, str) and re.fullmatch(r'(asr\.[0-9]{4}|judge\.[a-f0-9]{64})', operation)
                                     and isinstance(row, dict) and row.get('status') in {'returned', 'started_response_unconfirmed', 'live_started'}
                                     and set(row) - {'resourceBinding'} == ({'identitySha256', 'bounds', 'status', 'responseSha256'}
-                                        | ({'settlement'} if version == LEDGER_V3 else set())
+                                        | ({'settlement'} if version in SETTLED_LEDGERS else set())
                                         if row.get('status') == 'returned' else {'identitySha256', 'bounds', 'status', 'dispatchOwner'}
                                         if row.get('status') == 'live_started' and version in CONCURRENT_LEDGERS
                                         else {'identitySha256', 'bounds', 'status'})
@@ -170,7 +184,26 @@ class SourceBudget:
                                     and re.fullmatch('[a-f0-9]{64}', row['responseSha256']), 'source_budget_ledger_corrupt')
                             if 'settlement' in row:
                                 # v3 only, every returned row: measured usage, with whether a price applied.
-                                require(_valid_settlement(row['settlement']), 'source_budget_ledger_corrupt')
+                                require(_valid_settlement(row['settlement'], version=version), 'source_budget_ledger_corrupt')
+                            if (row.get('settlement') or {}).get('costStatus') == 'reused':
+                                try:
+                                    saved = jobs._read(self._response_path(operation, row['identitySha256']))
+                                    provenance = saved['reusedFrom']
+                                    require(jobs._digest(saved) == row['responseSha256']
+                                            and saved.get('settlement') == row['settlement']
+                                            and saved.get('identitySha256') == row['identitySha256']
+                                            and jobs._digest(saved.get('requestIdentity')) == row['identitySha256']
+                                            and saved.get('reservationBounds') == row['bounds']
+                                            and provenance.get('budgetRoot') in ledger['reuseBudgetRoots']
+                                            and provenance.get('operation') == operation
+                                            and re.fullmatch('[a-f0-9]{64}', provenance.get('responseSha256', ''))
+                                            and re.fullmatch('[a-f0-9]{64}', provenance.get('sourceAuthoritySha256', ''))
+                                            and provenance.get('sourceLedgerVersion') in
+                                                ('sermon-source-budget-ledger-v1', *CONCURRENT_LEDGERS)
+                                            and _valid_settlement(provenance.get('originalSettlement')),
+                                            'source_reused_provenance_changed')
+                                except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+                                    raise ValueError('source_reused_provenance_changed') from error
                             if 'resourceBinding' in row:
                                 require(self.resource_policy is not None
                                     and row['resourceBinding'] == self._resource_binding(operation, row['identitySha256']),
@@ -191,8 +224,9 @@ class SourceBudget:
                                     'source_budget_v1_explicit_migration_required')
                             ledger.update(schemaVersion=LEDGER_V2, maxConcurrent=1, resourcePolicySha256=None)
                     else:
-                        ledger = {'schemaVersion': LEDGER_V3, 'authority': self.authority, 'requests': {},
-                                  'maxConcurrent': self.max_concurrent, 'resourcePolicySha256': self._resource_identity()}
+                        ledger = {'schemaVersion': LEDGER_V4, 'authority': self.authority, 'requests': {},
+                                  'maxConcurrent': self.max_concurrent, 'resourcePolicySha256': self._resource_identity(),
+                                  'reuseBudgetRoots': [str(root) for root in self.reuse_roots]}
                     yield ledger, path
                     return
             time.sleep(.01)
@@ -236,6 +270,55 @@ class SourceBudget:
         path = self.root / 'responses' / (jobs._digest(operation) + '-' + fingerprint + '.json')
         legacy = self.root / 'responses' / (fingerprint + '.json')
         return legacy if not path.exists() and legacy.exists() else path
+
+    def _reusable(self, operation, fingerprint):
+        """Inspect approved roots read-only; a known or uncertain call is never a cache miss."""
+        candidate = None
+        for root in self.reuse_roots:
+            try:
+                ledger = jobs._read(root / 'source-budget.json')
+                require(isinstance(ledger, dict) and ledger.get('schemaVersion') in
+                        ('sermon-source-budget-ledger-v1', *CONCURRENT_LEDGERS)
+                        and isinstance(ledger.get('requests'), dict)
+                        and isinstance(ledger.get('authority'), dict)
+                        and set(ledger['authority']) == {'approvalSha256', 'globalBounds', 'requestLimits'}
+                        and re.fullmatch('[a-f0-9]{64}', ledger['authority'].get('approvalSha256', ''))
+                        and isinstance(ledger['authority'].get('globalBounds'), dict)
+                        and set(ledger['authority']['globalBounds']) == set(METRICS)
+                        and all(type(value) is int and 0 < value <= 10**15
+                                for value in ledger['authority']['globalBounds'].values()),
+                        'source_reuse_ledger_corrupt')
+                row = ledger['requests'].get(operation)
+            except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+                raise ValueError('source_reuse_ledger_reconciliation_required') from error
+            if row is None:
+                continue
+            require(isinstance(row, dict) and isinstance(row.get('identitySha256'), str)
+                    and re.fullmatch('[a-f0-9]{64}', row['identitySha256']), 'source_reuse_ledger_reconciliation_required')
+            if row['identitySha256'] != fingerprint:
+                continue
+            require(row.get('status') == 'returned', 'source_provider_outcome_unknown')
+            path = root / 'responses' / (jobs._digest(operation) + '-' + fingerprint + '.json')
+            if not path.exists():
+                path = root / 'responses' / (fingerprint + '.json')
+            try:
+                saved = jobs._read(path)
+                valid = (isinstance(saved, dict) and saved.get('identitySha256') == fingerprint
+                         and jobs._digest(saved.get('requestIdentity')) == fingerprint
+                         and jobs._digest(saved) == row.get('responseSha256')
+                         and saved.get('reservationBounds') == row.get('bounds')
+                         and isinstance(saved.get('response'), dict)
+                         and (ledger['schemaVersion'] not in SETTLED_LEDGERS or
+                              _valid_settlement(row.get('settlement'), version=ledger['schemaVersion'])
+                              and row['settlement'] == saved_settlement(saved)))
+            except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+                raise ValueError('source_reuse_response_reconciliation_required') from error
+            require(valid, 'source_reuse_response_reconciliation_required')
+            # Check every root before returning: a later unknown/damaged matching
+            # row must not be hidden by an earlier successful cache candidate.
+            if candidate is None:
+                candidate = root, saved, row, ledger
+        return candidate
 
     def returned(self, operation, identity):
         """Whether the ledger already holds this operation's returned response for exactly this identity.
@@ -295,6 +378,33 @@ class SourceBudget:
                         and jobs._digest(saved) == previous['responseSha256'], 'source_response_identity_changed')
                 self._release_resource(previous)
                 return saved['response']
+            require(not self.reuse_roots or ledger['schemaVersion'] == LEDGER_V4,
+                    'source_budget_v4_explicit_migration_required')
+            reusable = self._reusable(operation, fingerprint) if self.reuse_roots else None
+            if reusable is not None:
+                # Already paid under another approved root of this run: copy it here at no cost.
+                source_root, source_saved, source_row, source_ledger = reusable
+                previous_settlement = saved_settlement(source_saved)
+                saved = {'identitySha256': fingerprint, 'requestIdentity': identity, 'response': source_saved['response'],
+                         'modelCallId': source_saved.get('modelCallId'), 'elapsedSeconds': 0.0,
+                         'reservationBounds': bounds, 'invoiceVerified': False,
+                         'reusedFrom': {'budgetRoot': str(source_root), 'operation': operation,
+                                        'responseSha256': source_row['responseSha256'],
+                                        'originalSettlement': previous_settlement,
+                                        'sourceAuthoritySha256': jobs._digest(source_ledger['authority']),
+                                        'sourceLedgerVersion': source_ledger['schemaVersion']},
+                         'settlement': {'costStatus': 'reused', 'costMicrousd': 0,
+                                        'usage': previous_settlement.get('usage'), 'reasonCode': 'reused_paid_response',
+                                        'requestedModel': previous_settlement.get('requestedModel'),
+                                        'providerModel': previous_settlement.get('providerModel'),
+                                        'elapsedSeconds': 0.0, 'priceBasis': 'reused_from_approved_budget_root',
+                                        'invoiceVerified': False}}
+                response_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+                immutable._atomic(response_path, saved)
+                ledger['requests'][operation] = {'identitySha256': fingerprint, 'bounds': bounds, 'status': 'returned',
+                                                 'responseSha256': jobs._digest(saved), 'settlement': saved['settlement']}
+                jobs._persist(path, ledger)
+                return saved['response']
             require(self.transport is not None or (isinstance(api_key, str) and bool(api_key)
                     and '\n' not in api_key and '\r' not in api_key), 'OPENAI_API_KEY_is_not_configured')
             # Unknown outcomes stop the source lane; they do not buy a fresh
@@ -303,7 +413,9 @@ class SourceBudget:
                     'source_provider_outcome_unknown')
             require(sum(row['status'] == 'live_started' for row in ledger['requests'].values()) < self.max_concurrent,
                     'source_concurrency_busy')
-            used = {key: sum(row['bounds'][key] for row in ledger['requests'].values()) for key in METRICS}
+            # A reused response reserved nothing and cost nothing, so it does not count against the cap.
+            used = {key: sum(row['bounds'][key] for row in ledger['requests'].values()
+                             if (row.get('settlement') or {}).get('costStatus') != 'reused') for key in METRICS}
             require(all(used[key] + bounds[key] <= self.authority['globalBounds'][key] for key in METRICS),
                     'source_budget_exhausted')
             if self.transport is None:
@@ -331,7 +443,7 @@ class SourceBudget:
                 row = ledger['requests'][operation]
                 require(row['identitySha256'] == fingerprint, 'source_call_binding_changed')
                 row.update(status='returned', responseSha256=jobs._digest(saved))
-                if ledger['schemaVersion'] == LEDGER_V3:
+                if ledger['schemaVersion'] in SETTLED_LEDGERS:
                     row['settlement'] = saved['settlement']
                 row.pop('dispatchOwner', None)
                 jobs._persist(path, ledger)
@@ -371,9 +483,11 @@ class SourceBudget:
             else:
                 require(row['status'] != 'live_started', 'source_operation_live')
                 row.update(status='returned', responseSha256=jobs._digest(saved))
-                if ledger['schemaVersion'] == LEDGER_V3:
+                if ledger['schemaVersion'] in SETTLED_LEDGERS:
                     # The crash fell between saving the response and booking it; book what it used too.
                     row['settlement'] = saved_settlement(saved)
+                    require(_valid_settlement(row['settlement'], version=ledger['schemaVersion']),
+                            'source_budget_ledger_corrupt')
                 jobs._persist(ledger_path, ledger)
             self._release_resource(row)
         return {'status': 'returned_response_reconciled', 'operation': operation,
@@ -405,6 +519,7 @@ class SourceBudget:
                 require(saved.get('identitySha256') == row['identitySha256']
                         and jobs._digest(saved) == row['responseSha256'], 'source_response_identity_changed')
                 settled[operation] = saved_settlement(saved)
+                require(_valid_settlement(settled[operation], version=LEDGER_V3), 'source_budget_ledger_corrupt')
             for operation, value in settled.items():
                 rows[operation]['settlement'] = value
             ledger['schemaVersion'] = LEDGER_V3
@@ -412,6 +527,41 @@ class SourceBudget:
         return {'status': 'migrated', 'from': LEDGER_V2, 'to': LEDGER_V3, 'settledRows': len(settled),
                 'unknownCostRows': sum(value['costStatus'] == 'unknown' for value in settled.values()),
                 'modelCalls': 0}
+
+    def migrate_to_v4(self):
+        """Explicit atomic v2/v3 upgrade, retaining bounds/outcomes and binding reuse roots.
+
+        Source roots are never migrated. No provider is called, no unknown row is
+        cleared, and a missing/damaged returned receipt leaves the ledger intact.
+        """
+        self.verify()
+        with self._locked() as (ledger, path):
+            version = ledger['schemaVersion']
+            if version == LEDGER_V4:
+                return {'status': 'already_v4', 'modelCalls': 0}
+            require(version in (LEDGER_V2, LEDGER_V3) and path.exists(), 'source_budget_old_ledger_required')
+            require(all(row['status'] != 'live_started' for row in ledger['requests'].values()), 'source_operation_live')
+            settled = {}
+            for operation, row in ledger['requests'].items():
+                if row['status'] != 'returned':
+                    continue
+                try:
+                    saved = jobs._read(self._response_path(operation, row['identitySha256']))
+                except (OSError, ValueError, TypeError) as error:
+                    raise ValueError('source_response_identity_changed') from error
+                require(saved.get('identitySha256') == row['identitySha256']
+                        and jobs._digest(saved.get('requestIdentity')) == row['identitySha256']
+                        and saved.get('reservationBounds') == row['bounds']
+                        and jobs._digest(saved) == row['responseSha256'], 'source_response_identity_changed')
+                value = saved_settlement(saved)
+                require(_valid_settlement(value, version=LEDGER_V3)
+                        and (version != LEDGER_V3 or row['settlement'] == value), 'source_budget_ledger_corrupt')
+                settled[operation] = value
+            for operation, value in settled.items():
+                ledger['requests'][operation]['settlement'] = value
+            ledger.update(schemaVersion=LEDGER_V4, reuseBudgetRoots=[str(root) for root in self.reuse_roots])
+            jobs._persist(path, ledger)
+        return {'status': 'migrated', 'from': version, 'to': LEDGER_V4, 'settledRows': len(settled), 'modelCalls': 0}
 
     def transcribe(self, operation, audio_bytes, audio_sha256, api_key):
         prepared = transcription.build_request(audio_bytes, audio_sha256)

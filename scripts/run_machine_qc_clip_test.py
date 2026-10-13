@@ -437,13 +437,22 @@ class ApiJudge:
         from scripts import sermon_source_budget as budget
         from scripts import sermon_provider_limits as limits
         from scripts.sermon_openai_runtime import selected_route
+        authorization_sha = file_sha256(authorization)
         value = read(authorization)
         receipt = authorization.parent / value["approvalReceipt"]
         approval = read(receipt)
+        # Optional earlier roots of this run whose paid responses may be reused; the approval
+        # must name the same list, so reuse is never inferred from the file system.
+        reuse_roots = value.get("reuseBudgetRoots", [])
+        binding = {"budgetRoot": value["budgetRoot"], **value["authority"]["bounds"],
+                   **({"reuseBudgetRoots": reuse_roots} if reuse_roots else {})}
         if not (value.get("schemaVersion") == "sermon-machine-qc-api-budget-authorization-v1"
+                and Path(value["budgetRoot"]).is_absolute()
+                and value["authority"]["requestLimits"] == value["authority"]["bounds"]["requestLimits"]
+                and isinstance(reuse_roots, list) and all(isinstance(root, str) and Path(root).is_absolute() for root in reuse_roots)
                 and value["authority"]["approvalSha256"] == file_sha256(receipt)
                 and approval.get("humanApproval") is True and approval.get("decision") == "approved"
-                and approval.get("binding") == {"budgetRoot": value["budgetRoot"], **value["authority"]["bounds"]}):
+                and approval.get("binding") == binding):
             raise ValueError("Machine QC API budget authorization is not bound to its approval")
         route = selected_route()
         if route is None:
@@ -456,6 +465,14 @@ class ApiJudge:
         self._session_checked, self._session_lock = 0.0, threading.Lock()
 
         def verify():
+            try:
+                same = (file_sha256(authorization) == authorization_sha
+                        and file_sha256(receipt) == value["authority"]["approvalSha256"]
+                        and selected_route() == route)
+            except OSError as error:
+                raise ValueError("Machine QC API budget authorization changed after admission") from error
+            if not same:
+                raise ValueError("Machine QC API budget authorization changed after admission")
             with self._session_lock:
                 if time.monotonic() - self._session_checked > 60:
                     require_session()
@@ -480,7 +497,7 @@ class ApiJudge:
         self.ledger = budget.SourceBudget(value["budgetRoot"], {
             "approvalSha256": value["authority"]["approvalSha256"],
             "globalBounds": value["authority"]["bounds"]["globalBounds"], "requestLimits": self.request_limits},
-            verify=verify, transport=transport, max_concurrent=16)
+            verify=verify, transport=transport, max_concurrent=16, reuse_roots=reuse_roots)
         self.api_key = os.environ["OPENAI_API_KEY"]
         self.reasoning = reasoning
         self.identity = {"backend": "openai_api", "model": "gpt-6.1-sol", "modelRevision": "openai-api",
