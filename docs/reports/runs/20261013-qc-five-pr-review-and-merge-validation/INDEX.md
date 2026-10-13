@@ -171,3 +171,15 @@ Timings `timings.tsv`:
 | stage | status | seconds |
 |---|---|---|
 | context_final_combined_pytest | pass | 44.07 |
+
+# 追加：最终 CI 与 dev 合并终态
+
+# Run digest 20261013-pr374-terminal-append
+
+Generated 2026-10-13T15:37:51+00:00. Redacted copies only; source hashes are in manifest.json.
+
+## 20261013-pr374-terminal-receipt
+
+Source: `/private/tmp/sermon-report-375/artifacts/run/20261013-pr374-terminal-receipt`
+
+- outcome `outcome.json`: **merged_ci_verified** exit 0 (? → ?)

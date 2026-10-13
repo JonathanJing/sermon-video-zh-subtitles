@@ -66,3 +66,13 @@
 新整合 head **`a0eaf047caab7dc36b7839a7a0ffa81c7a3ea7ff`** 的组合离线测试 **735 passed／25 subtests，44.07 秒，exit 0**，具体范围与 QC／scoring 完整身份见 `20261013-five-pr-context-final/summary.json`。QC implementation SHA256 为 `02c34f07cadd06d2ddb3c97a8a6f7c24a98d3d9e27d70e01999c45ea5627fae0`。旧 693／3 只绑定前一个 `5cbe6844`，旧 647／3 只绑定 `97835708`，不能外推新 head。
 
 本次追加时新 head CI 仍 pending，不能声称 required checks 已通过或代码已合并。原 `5cbe6844` local-mock 失败和 root cause unknown 调查不撤回；本次为实际 review 修复后新 head 的独立 CI，不是重试旧 job。所有新增测试仍为离线软件验证，0 真实模型、0 部署，不证明真实音频 QC／新 waiver 或设备／现场验收。正式校准与新 artifact-bound waiver 仍 waiting_evidence；报告继续 draft，待新 CI 终态再追加。
+
+## 最终 CI、合并与远端读回（2026-10-13 15:37 UTC）
+
+最终代码 head `a0eaf047caab7dc36b7839a7a0ffa81c7a3ea7ff` 的 #374 CI 终态为 **18 SUCCESS／2 SKIPPED**，包括 local-mock SUCCESS；四条 review threads 全部 resolved。#374 已按正常合并路径于 **2026-10-13T15:36:37Z** 合入 dev，merge commit **`f7490d0ea2f23d37bcc4ff669944b32053ba91a1`**。fetch 的 origin/dev 与 ls-remote 读回同一提交；原 #366／#367／#369／#370／#371 均由 live API 核验为 MERGED。完整终态快照见 `20261013-pr374-terminal-receipt/summary.json`。此前各节 pending 是对应追加时间的历史状态，不作为当前终态。
+
+原 `5cbe6844` local-mock 失败仍保留；隔离复现的结论仍为 not reproduced／root cause unknown，不能因为新 head CI 成功就宣称原根因已经定位、修复或属于 flake。新 head 包含实际 review 修复，独立运行 CI，没有通过重试旧 job 改写历史失败。
+
+远端 dev 的 backlog 已包含 `DEV-QC-001`，**P0／waiting_evidence**。代码合并及上述软件检查没有执行最终实施下的真实重新校准，没有签发新的 artifact-bound waiver，没有部署、通知、TestFlight、设备或现场验收。用户此前未推送本地组合的真实运行、旧 waiver 及旧阶段测试仍不能授权当前最终代码正式生产。
+
+报告 #375 已独立创建并 attach，继续保持 **OPEN draft，不合并**。本次仅追加脱敏终态收据和复盘，没有重跑代码测试或模型、没有部署。

@@ -59,6 +59,11 @@
       "label": "20261013-five-pr-context-final",
       "source": "~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-five-pr-context-final",
       "skipped": {}
+    },
+    {
+      "label": "20261013-pr374-terminal-receipt",
+      "source": "/private/tmp/sermon-report-375/artifacts/run/20261013-pr374-terminal-receipt",
+      "skipped": {}
     }
   ],
   "files": [
@@ -598,6 +603,24 @@
       "bytes": 62,
       "truncated": false,
       "sha256": "439f446bd15a5a5cab0bcefb71dad11474d691dfbc323a2e5d1a81f90b5cda5e",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr374-terminal-receipt",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 45,
+      "truncated": false,
+      "sha256": "829abe5693d6a25589916d3f6fa4dae6c8efe4a7b76b9da0d1c9cd6d3c8ddea1",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr374-terminal-receipt",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1130,
+      "truncated": false,
+      "sha256": "5f35413fefe8657013adce5635e3c996c899defc8809fc6a2bfd18f5efdb6f63",
       "redactions": {}
     }
   ],
