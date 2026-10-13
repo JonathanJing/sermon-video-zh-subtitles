@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "sermon-weekly-run-profile-v1",
+  "documentation": "docs/weekly-run-profile.zh.md",
+  "measuredFrom": ["2026-10-11 full week (461 sentences, three locales)", "2026-10-12/13 clip E2E and profile test (16 sentences, three locales)"],
+  "layer2": {
+    "requestLimits": {"schemaVersion": "sermon-openai-chat-request-limits-v1", "maxInputTokens": 16384, "maxCompletionTokens": 2048,
+                      "wallTimeMs": 300000, "serviceTier": "default"},
+    "groupWorkers": 8,
+    "maxActiveLocales": {"formal": 3, "dev": 1},
+    "limits": {"contentRevisions": 2, "reviewAttemptsPerRevision": 2, "decisionProposals": 1},
+    "boundsPerLocale": {"requests": 400, "inputTokens": 4000000, "outputTokens": 1200000, "wallTimeMs": 120000000},
+    "capUsdPerLocale": {"clip": 1.5, "week": 5.0}
+  },
+  "qc": {
+    "comment": "One root per locale shared by text QC, calibration and audio QC; its ledger is the judge response cache.",
+    "requestLimits": {"schemaVersion": "sermon-openai-chat-request-limits-v1", "maxInputTokens": 16384, "maxCompletionTokens": 512,
+                      "wallTimeMs": 300000, "serviceTier": "default"},
+    "requests": {"clip": 800, "week": 4000},
+    "wallTimeMs": 600000000,
+    "capUsdPerLocale": {"clip": 3.5, "week": 30.0}
+  }
+}
