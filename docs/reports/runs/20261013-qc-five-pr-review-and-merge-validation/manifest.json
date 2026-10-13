@@ -1,0 +1,269 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261013-qc-five-pr-review-and-merge-validation",
+  "runs": [
+    {
+      "label": "20261013-pr367-screening-review",
+      "source": "/private/tmp/sermon-fix-367/artifacts/run/20261013-pr367-screening-review",
+      "skipped": {}
+    },
+    {
+      "label": "20261013-pr369-review-fixes",
+      "source": "/private/tmp/sermon-fix-369/artifacts/run/20261013-pr369-review-fixes",
+      "skipped": {
+        ".md": 1
+      }
+    },
+    {
+      "label": "pr370-offline-fix",
+      "source": "/private/tmp/sermon-fix-370/artifacts/pr370-offline-fix",
+      "skipped": {}
+    },
+    {
+      "label": "20261013-pr371-page-id-preflight",
+      "source": "/private/tmp/sermon-fix-371/artifacts/run/20261013-pr371-page-id-preflight",
+      "skipped": {}
+    },
+    {
+      "label": "20261013-five-pr-merge-validation",
+      "source": "~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-five-pr-merge-validation",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261013-pr367-screening-review",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr367-screening-review",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 100,
+      "truncated": false,
+      "sha256": "d9e6e8c13cd453f769b72ac7ed82b525d08a13fad146e44b46547d1d47a97a1b",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr367-screening-review",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 592,
+      "truncated": false,
+      "sha256": "04d5997571c3bd4a96995ac311a909561918eae950f559b5bb07948cdd112acb",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr367-screening-review",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 46,
+      "truncated": false,
+      "sha256": "bc6c4d58300c3153e5df65d8fd2288c78fa49072a6b5b60a18adbd0330e5ae6b",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr369-review-fixes",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 444,
+      "truncated": false,
+      "sha256": "9bc74087b0f1791c2078015bed97fbcbd382ab02399c2a33ced4ffdc89572ac9",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr369-review-fixes",
+      "path": "pytest-initial-fail-interrupted.log",
+      "kind": "log",
+      "bytes": 6636,
+      "truncated": false,
+      "sha256": "e08d6db31fbbc0fd3865348ca9283022fa8160c8cbba371ee96e76baba06d4b5",
+      "redactions": {
+        "secret_field": 2,
+        "email": 1
+      },
+      "exportedCopy": {
+        "sha256": "d46bc89964f04e067995976da13782982214bac5a4b41bf5ddf3af62b6c0344e",
+        "bytes": 6596,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261013-pr369-review-fixes",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 827,
+      "truncated": false,
+      "sha256": "0bf59647313792b7c87e29e785ed128c5dcc39323cb85c731b65ae525c5f9a1a",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr369-review-fixes",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 78,
+      "truncated": false,
+      "sha256": "6647a492f22d7d7d50d8d985025881e772d916b635a09ad3e92e292972ff5db2",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr369-review-fixes",
+      "path": "transport.log",
+      "kind": "log",
+      "bytes": 113,
+      "truncated": false,
+      "sha256": "70a44b48a2874320e83db8a9a82395a013c13de2cd88a21c7673a33bfb89761d",
+      "redactions": {}
+    },
+    {
+      "run": "pr370-offline-fix",
+      "path": "compatibility.log",
+      "kind": "log",
+      "bytes": 98,
+      "truncated": false,
+      "sha256": "7fefcaf66f6e7137767bc25d16d128cbf7b8617ad0b6f14fbf9a0b8e7fdd81cd",
+      "redactions": {}
+    },
+    {
+      "run": "pr370-offline-fix",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr370-offline-fix",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 240,
+      "truncated": false,
+      "sha256": "8a2bcb53db13e9d5878048c02b5916da71faaffae393cf08ee803bf380b36f1a",
+      "redactions": {}
+    },
+    {
+      "run": "pr370-offline-fix",
+      "path": "short-focused-initial-assertion.log",
+      "kind": "log",
+      "bytes": 1496,
+      "truncated": false,
+      "sha256": "920ed0c5636008393306f988c8a0a5c73eea2af07a5b8f79f60055397cec57cd",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "d2cbc249c4c1e053fa324aca55b869f606f92b315cca41fb9a3ba0aa26208f0a",
+        "bytes": 1487,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "pr370-offline-fix",
+      "path": "short-focused.log",
+      "kind": "log",
+      "bytes": 99,
+      "truncated": false,
+      "sha256": "89493c0d3beaeb4663d726530470659f26cbc634c8c75d2e021101b36bb1abcf",
+      "redactions": {}
+    },
+    {
+      "run": "pr370-offline-fix",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 875,
+      "truncated": false,
+      "sha256": "b5febc4ea3efb8ecc66f4c1ea99d105fafbce645c36aacc906d87de9dd475d2b",
+      "redactions": {}
+    },
+    {
+      "run": "pr370-offline-fix",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "febc113d0c646671820396abbc537c7dfa1d55c1659a927e71795574873cf88b",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr371-page-id-preflight",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr371-page-id-preflight",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 99,
+      "truncated": false,
+      "sha256": "f479f3e2ad3297ddfb2ee50892445b1e61a0ad45e1de28783b792c066a2c97be",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr371-page-id-preflight",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 476,
+      "truncated": false,
+      "sha256": "4037567bea1f0b6b7d3c82bbf6f6b7a49d381183a29d7f5198d0ab6cb2d6bee6",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr371-page-id-preflight",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 45,
+      "truncated": false,
+      "sha256": "17d69e5248cd222d0542459a87d94fb934349c1b279982b6e0c0806691e90a8c",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-merge-validation",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 209,
+      "truncated": false,
+      "sha256": "a929deecb9ee631824cddc741bf8627859a5d4c401d08bc3cee613b189ef9c0b",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-merge-validation",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 837,
+      "truncated": false,
+      "sha256": "c3e11c4f94b6247d25b6b4725b69f326b4f91b1db6d97a56a2b5a9aaefc9d26b",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-merge-validation",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 420,
+      "truncated": false,
+      "sha256": "8c37988137021f4c7b0236a3d031c784cd959e8d1b46f8b9bdb4444508fcf106",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-merge-validation",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 57,
+      "truncated": false,
+      "sha256": "4031efc82275957ca39681c0bcbdf5991b34376fdab6c3ffcf1f927067401729",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
