@@ -85,3 +85,7 @@ commit `cc353091b501f3cd32df5a2c169d4e8fdde779aa` 添加合法完整助词 이�
 新 review 指出 과／이나 的语义替换可能在相似度门槛下通过，以及 `시편 백 십구 편` 未整体折为 119。commit `ca535487` 让书名锚定结构保留所有 lexical citation connector 与 range marker，拒替换、删除、插入；新增 book-scope 分隔式 Sino 折叠，并要求去空白拼写为 canonical korean_sino(value)，拒重复／升序 unit 与端点合并。初轮 246／34（1.11 秒），严格拼写补例 249／34（1.10 秒），插入矩阵后 264／34（1.11 秒）均通过，分别为开发阶段，不能相加。
 
 父审裁定逗号沿既有停顿标点可忽略政策。追加 commit `2165db49` 仅从结构签名排除 comma，保留 lexical connector／dash；测试加入 comma 插删通过与 lexical 插删拒绝对照。最终三文件 263 passed／34 subtests（1.12 秒），默认 diff check 通过。完整 consumer 131／64 仍只绑定 cc353091，没有重跑十五分钟矩阵；v4/v3 旧评分路径未变。两条已实质修复线程已 resolve，无评论。脱敏日志实际入 Git，规范化副本记录 exportedCopy；没有模型、Spark、部署或真实音频 QC。新 head CI 独立判断合并，报告仍 draft。
+
+## 已知书名内部 ASR 空格
+
+新增 review 指出 `요한 복음 삼-사장` 因书名空格而失去锚点，范围首端无法折回数字。commit `306d57ba` 仅在 ASR folding 的已知圣经书名模式内允许内部空白，并只 canonicalize 匹配的书名，不全局删除空格。书名后仍需有明确相邻引用；普通照片词、书名后缀、词内前缀与跨正文引用不获得该解释。新增复合书名、Psalm、错误端点及普通字符串负例。最终三文件 273 passed／34 subtests（1.17 秒），默认 diff check 通过；这次没有重跑完整 consumer 或模型／Spark／部署。此前阶段不是此 head 的全量验证，最终 GitHub CI 单独核对。报告保持 draft。

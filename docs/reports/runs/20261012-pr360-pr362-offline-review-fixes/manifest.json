@@ -51,6 +51,11 @@
       "label": "pr362-connectors-spaced-sino-20261012",
       "source": "/private/tmp/sermon-fix-362/artifacts/pr362-connectors-spaced-sino-20261012",
       "skipped": {}
+    },
+    {
+      "label": "pr362-split-book-anchor-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-split-book-anchor-20261012",
+      "skipped": {}
     }
   ],
   "files": [
@@ -626,6 +631,42 @@
       "bytes": 83,
       "truncated": false,
       "sha256": "1b617001e0e196eab6271441b4f74c8319fcb305240f15f21738281ea17f9ec8",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-split-book-anchor-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-split-book-anchor-20261012",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 406,
+      "truncated": false,
+      "sha256": "a9e0231951ad6300403c48412b1e9216eb67f7c43a5bb3f512ace3d95032746f",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-split-book-anchor-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 294,
+      "truncated": false,
+      "sha256": "cdbffd7e906b01586dc973b9b2834843fa35521061c5035c5b61279a2f737b89",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-split-book-anchor-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 44,
+      "truncated": false,
+      "sha256": "ca440ff0cb0c6297e90888c31d1c819b136d232c8b69e22040e7c6238efe5161",
       "redactions": {}
     }
   ],

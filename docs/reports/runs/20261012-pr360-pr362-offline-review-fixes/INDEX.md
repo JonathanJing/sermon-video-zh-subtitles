@@ -170,3 +170,10 @@ Error-like log lines (first 5 per log):
 - [pytest.log](pr362-connectors-spaced-sino-20261012/pytest.log)
 - [summary.json](pr362-connectors-spaced-sino-20261012/summary.json)
 - [timings.tsv](pr362-connectors-spaced-sino-20261012/timings.tsv)
+
+## Split known Bible book ASR anchors
+
+- [outcome.json](pr362-split-book-anchor-20261012/outcome.json)
+- [pytest.log](pr362-split-book-anchor-20261012/pytest.log)
+- [summary.json](pr362-split-book-anchor-20261012/summary.json)
+- [timings.tsv](pr362-split-book-anchor-20261012/timings.tsv)
