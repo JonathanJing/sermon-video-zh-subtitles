@@ -266,13 +266,13 @@ def test_shared_existing_alternative_and_range_connectors(connector, spacing):
     assert subject.spoken_form(prose) == prose.replace("요한복음 3장", "요한복음 삼장")
 
 
-@pytest.mark.parametrize("connector", ["과", "와", "및", "이나", "이든", "부터", "에서", "에서부터", "부터는", "부터만", "부터도", ",", "-", "~", "–"])
+@pytest.mark.parametrize("connector", ["과", "와", "및", "이나", "이든", "부터", "에서", "에서부터", "부터는", "부터만", "부터도", "-", "~", "–"])
 def test_every_citation_connector_is_meaning_protected(connector):
     from scripts import screen_target_language_audio_units as screen
     approved = f"오늘 함께 읽는 말씀은 요한복음 3장{connector} 4장입니다."
     spoken = subject.spoken_form(approved)
     assert screen.score(approved, spoken, "ko", 0.88)[2]
-    for other in ["과", "이나", "이든", "부터", "에서부터", ",", ""]:
+    for other in ["과", "이나", "이든", "부터", "에서부터", ""]:
         if other == connector:
             continue
         assert not screen.score(approved, spoken.replace(connector, other, 1) if connector else spoken, "ko", 0.88)[2]
@@ -308,9 +308,17 @@ def test_spaced_sino_never_merges_or_changes_endpoints(approved, wrong):
     assert not screen.score(approved, wrong, "ko", 0.88)[2]
 
 
-@pytest.mark.parametrize("connector", ["과", "와", "및", "이나", "이든", "부터", "에서", "에서부터", "부터는", "부터만", "부터도", ",", "-", "~", "–"])
+@pytest.mark.parametrize("connector", ["과", "와", "및", "이나", "이든", "부터", "에서", "에서부터", "부터는", "부터만", "부터도", "-", "~", "–"])
 def test_inserting_citation_connector_is_rejected(connector):
     from scripts import screen_target_language_audio_units as screen
     approved = "오늘 함께 읽는 말씀은 요한복음 3장 4장입니다."
     spoken = subject.spoken_form(approved).replace("삼장 ", "삼장" + connector + " ")
     assert not screen.score(approved, spoken, "ko", 0.88)[2]
+
+
+def test_citation_comma_pause_remains_reading_equivalent():
+    from scripts import screen_target_language_audio_units as screen
+    assert screen.score("요한복음 3장,4장", "요한복음 삼장사장", "ko", 0.88)[2]
+    assert screen.score("요한복음 3장4장", "요한복음 삼장,사장", "ko", 0.88)[2]
+    assert not screen.score("요한복음 3장과4장", "요한복음 삼장사장", "ko", 0.88)[2]
+    assert not screen.score("요한복음 3장4장", "요한복음 삼장이나사장", "ko", 0.88)[2]

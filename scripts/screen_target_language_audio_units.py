@@ -578,7 +578,7 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
         spans = sorted((match.start(), with_terminal_marker(match)) for pattern in _CITATIONS
                        for match in pattern.finditer(text))
         return [["-" if item in "-~–" else item
-                 for item in re.findall(r"\d+|(?:까지)(?:는|만|도)?|" + _CONNECTOR + r"|장|절|편", citation)]
+                 for item in re.findall(r"\d+|(?:까지)(?:는|만|도)?|" + _CONNECTOR + r"|장|절|편", citation) if item != ","]
                 for _, citation in spans]
     structure_agrees = (scoring != SCORING or locale != "ko"
                         or number_structure(expected) == number_structure(recognized))
