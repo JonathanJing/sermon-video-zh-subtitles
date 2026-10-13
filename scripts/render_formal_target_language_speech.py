@@ -624,6 +624,13 @@ def _file_unit_instructions(job: dict[str, Any], path: Path) -> dict[str, dict[s
             require(job["targetLocale"] in locales and isinstance(spoken, str) and spoken.strip()
                     and _spoken_equivalent(allowed[group]["text"], spoken, job["targetLocale"]),
                     "Spoken form changes approved words or unsupported locale")
+            if job["targetLocale"] == "ko":
+                # An external override is not part of the legacy synthesis identity.
+                # Duration budgets/QC consume the frozen policy, so only its identical
+                # registered form can be used on this path.
+                require((job.get("adapter") or {}).get("normalizationPolicySha256")
+                        == identity.json_sha256(SPOKEN_FORMS_NORMALIZATION_POLICY),
+                        "Korean spoken overrides require a new job frozen with normalization-v2; legacy jobs stay raw")
         result[group] = {} if instruction is None else {"instruction": instruction.strip()}
         if spoken is not None:
             result[group]["spokenText"] = spoken.strip()

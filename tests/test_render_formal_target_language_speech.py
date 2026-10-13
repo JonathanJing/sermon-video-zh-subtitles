@@ -418,6 +418,24 @@ class FormalRenderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Spoken form changes"):
             subject.unit_instructions(self.context["job"], map_path)
 
+    def test_legacy_korean_job_refuses_external_spoken_override_but_keeps_delivery_instructions(self):
+        from scripts import ko_spoken_numerals
+        job = self.context["job"]
+        job["units"][0]["text"] = "시편 101편을 읽습니다."
+        document = ko_spoken_numerals.build(job)
+        path = self.root.parent / "legacy-ko-instructions.json"
+        path.write_text(json.dumps(document))
+        with self.assertRaisesRegex(ValueError, "new job frozen with normalization-v2"):
+            subject.unit_instructions(job, path)
+        self.assertEqual(subject.unit_instructions(job, None), {})
+        document["schemaVersion"] = "sermon-unit-delivery-instructions-v1"
+        row = document["units"][0]
+        row.pop("spokenText")
+        row["instruction"] = "Read clearly."
+        path.write_text(json.dumps(document))
+        self.assertEqual(subject.unit_instructions(job, path), {
+            job["units"][0]["translationGroupId"]: {"instruction": "Read clearly."}})
+
     def test_korean_chapter_numbers_are_spoken_with_sino_numerals(self):
         from scripts import ko_spoken_numerals
         approved = "예를 들어 하박국 2장을 보십시오."
@@ -429,6 +447,8 @@ class FormalRenderTests(unittest.TestCase):
 
         job = self.context["job"]
         job["units"][0]["text"] = approved
+        job["adapter"]["normalizationPolicySha256"] = subject.identity.json_sha256(
+            subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
         document = ko_spoken_numerals.build(job)
         self.assertEqual([row["translationGroupId"] for row in document["units"]],
                          [job["units"][0]["translationGroupId"]])
@@ -462,6 +482,8 @@ class FormalRenderTests(unittest.TestCase):
         job = self.context["job"]
         approved = "요한복음 3장과 50%를 읽습니다."
         job["units"][0]["text"] = approved
+        job["adapter"]["normalizationPolicySha256"] = subject.identity.json_sha256(
+            subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
         document = ko_spoken_numerals.build(job)
         document["units"][0]["spokenText"] = "요한복음 삼장과 50를 읽습니다."
         map_path = self.root.parent / "invalid-symbol-instructions.json"

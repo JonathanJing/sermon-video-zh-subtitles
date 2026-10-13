@@ -43,7 +43,7 @@
 
 新的周更 Layer 3 使用仓库内的 [config/layer3-audio-operation-policies.json](../config/layer3-audio-operation-policies.json) 和 [config/layer3-adapters/](../config/layer3-adapters/) 的三个 adapter。其 normalization 策略为 v2 `exact_approved_text_with_registered_spoken_forms`，为 `ko` 登记上述规则 v2；规则 v1 的实验策略哈希不复用，新 adapter 的 normalization hash 随规则版本变化，旧实验 job 不静默迁移。adapter 的 `normalizationPolicySha256` 绑定它，`prepare_target_language_speech_job.py` 再把该哈希冻结进 speech job。renderer 发现 job 绑定 v2 时，按规则为韩语单元自动生成口播形式，不需要 `--unit-instructions` 文件，因此调度器无需额外步骤；恢复导出与统一音频 adapter 使用同一推导。显式指令文件仍可为同一单元加 `instruction`，但给出不同 `spokenText` 会被拒绝。`zh-Hans`、`es` 在 v2 下没有登记规则，合成文字不变。
 
-已绑定 v1 `exact_human_approved_target_text_no_rewrite` 的旧 job 不迁移，声音身份不变；需要为这类韩语 job 改读时，用下面的命令生成 v2 指令文件并传给 `--unit-instructions`（没有需要改读的单元时输出 `no_change` 且不写文件）：
+已绑定 v1 `exact_human_approved_target_text_no_rewrite` 的旧 job 保持原文与声音身份，不原地迁移。旧 job 的显式韩语 Sino spokenText override 不在 synthesisIdentity 内，无法绑定对应预算／压缩／时长 QC，因此 renderer 与统一 adapter 在合成或冻结 plan 前拒绝该组合；旧 v1 instruction-only 配音指令及其他语言原有角色保留。需要韩语改读时，先按 v2 normalization 重新冻结新 job；下面的命令只为该新 job 生成与 policy 完全相同的可选 v2 指令文件，再传给 `--unit-instructions`（没有需要改读的单元时输出 `no_change` 且不写文件）：
 
 ```sh
 .venv/bin/python scripts/ko_spoken_numerals.py --job <韩语 speech job.json> --out <新的 unit-instructions.json>
@@ -125,7 +125,7 @@ docker run --rm --gpus all --ipc=host --read-only --network none \
 
 引用 counter 后须为词边界、相邻完整引用或列明且完整的韩文助词后缀（含 `에는`、`입니다` 等）；`3장면`、`2편지`、`2편의점` 不转换，不从任意 Hangul 前缀推断引用。scoring v5 仅在书名锚定引用片段内（含紧接的范围终结标记）额外比较有序完整数字串、范围标记与引用 counter/范围助词结构，拒绝 `12-3` 与 `1-23` 的字符摊平等价及范围连接符插删；旧 v4/v3 路径保持原样。
 
-实现身份：当前 screening v5 的 implementation hash 覆盖 screen、ko_spoken_numerals、auto_qc_text_common 与 common；单文件 hash 的旧实验 v5 收据需重新筛查，不能重标。QC/calibration/waiver 的实现闭包也含该韩语 helper。统一 audio adapter 对韩语 registered-normalization-v2，以及旧 normalization job 使用显式 unit-instructions-v2 两条新路径，把 helper／共享规则加入 inspect plan code hash；依赖变化后 execute 在 dispatch 前拒绝旧 plan。exact-text v1 未使用新指令时不加这些依赖；renderer 的实际 spokenTextSha256 声音身份仍保留。合法完整助词 `이`／`이라고` 在生成和 ASR 引用边界采用相同规则。
+实现身份：当前 screening v5 的 implementation hash 覆盖 screen、ko_spoken_numerals、auto_qc_text_common 与 common；单文件 hash 的旧实验 v5 收据需重新筛查，不能重标。QC/calibration/waiver 的实现闭包也含该韩语 helper。统一 audio adapter 对韩语 registered-normalization-v2（含与 policy 一致的显式 unit-instructions-v2），把 helper／共享规则加入 inspect plan code hash；依赖变化后 execute 在 dispatch 前拒绝旧 plan。exact-text v1 未使用新指令时不加这些依赖；renderer 的实际 spokenTextSha256 声音身份仍保留。合法完整助词 `이`／`이라고` 在生成和 ASR 引用边界采用相同规则。
 
 引用链连接词由 generator 与 ASR 共用 `_CONNECTOR`：原有连接、三种横线及列明的 `이나`／`이든` 替代连接、`에서부터`／`부터는`／`부터만`／`부터도` 范围连接，允许空格或连写，但仍不跨正文、不应用于普通计数。
 

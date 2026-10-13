@@ -48,6 +48,8 @@ class UnifiedAudioTests(unittest.TestCase):
 
     def test_explicit_v2_korean_instruction_plan_binds_rule_dependency(self):
         job = self.f.context['job']
+        job['adapter']['normalizationPolicySha256'] = audio.identity.json_sha256(
+            audio.renderer.SPOKEN_FORMS_NORMALIZATION_POLICY)
         job['units'][0]['text'] = '하박국 2장을 보십시오.'
         document = audio.renderer.ko_spoken_numerals.build(job)
         path = self.f.root/'instructions.json'
@@ -66,6 +68,21 @@ class UnifiedAudioTests(unittest.TestCase):
                 patch.object(audio.renderer, 'render_accounted') as dispatch:
             with self.assertRaisesRegex(ValueError, 'plan identity changed'):
                 audio.execute(config_path, self.f.root/'result.json', expected_plan_hash=plan['planHash'])
+            dispatch.assert_not_called()
+
+    def test_legacy_korean_spoken_override_cannot_freeze_a_plan(self):
+        job = self.f.context['job']
+        job['units'][0]['text'] = '시편 101편을 읽습니다.'
+        document = audio.renderer.ko_spoken_numerals.build(job)
+        path = self.f.root/'legacy-instructions.json'
+        path.write_text(json.dumps(document))
+        config = dict(self.value, unitInstructions=str(path))
+        config.pop('inputSnapshotSha256', None)
+        draft = self.f.root/'legacy-explicit-draft.json'
+        draft.write_text(json.dumps(config))
+        with patch.object(audio.renderer, 'render_accounted') as dispatch:
+            with self.assertRaisesRegex(ValueError, 'new job frozen with normalization-v2'):
+                audio.freeze(draft, self.f.root/'legacy-explicit-frozen.json')
             dispatch.assert_not_called()
 
     def test_exact_text_plan_does_not_add_registered_rule_dependency(self):
