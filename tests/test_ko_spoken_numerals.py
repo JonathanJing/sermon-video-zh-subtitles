@@ -95,3 +95,60 @@ def test_numeric_separators_cannot_be_removed_or_replaced(number):
 ])
 def test_range_particles_do_not_expand_book_anchored_scope(text, spoken):
     assert subject.spoken_form(text) == spoken
+
+
+@pytest.mark.parametrize("dash", ["-", "~", "–"])
+@pytest.mark.parametrize("start, end", [(3, 4), (16, 27), (3, 17), (16, 3)])
+@pytest.mark.parametrize("template", ["요한복음 {start}{dash}{end}장", "요한복음 {start}장{dash}{end}장", "창세기 1장{start}절{dash}{end}절", "창세기 1장 {start}{dash}{end}절"])
+def test_citation_ranges_generate_fold_and_score(template, start, end, dash):
+    from scripts import screen_target_language_audio_units as screen
+    approved = template.format(start=start, end=end, dash=dash)
+    spoken = subject.spoken_form(approved)
+    assert spoken != approved
+    assert not any(char.isdigit() for char in spoken)
+    assert screen.fold_transcript(spoken, "ko") == approved
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    wrong = spoken.replace(subject.korean_sino(end), subject.korean_sino(end + 1))
+    assert not screen.score(approved, wrong, "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("connector", ["부터", "에서"])
+@pytest.mark.parametrize("start, end", [(3, 4), (16, 27)])
+def test_particle_ranges_generate_fold_and_score(connector, start, end):
+    from scripts import screen_target_language_audio_units as screen
+    approved = f"창세기 1장 {start}절{connector} {end}절까지"
+    spoken = subject.spoken_form(approved)
+    assert screen.fold_transcript(spoken, "ko") == approved
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.replace(subject.korean_sino(end), subject.korean_sino(end + 1)), "ko", 0.88)[2]
+
+
+def test_range_folding_keeps_legacy_scoring_and_non_citations():
+    from scripts import screen_target_language_audio_units as screen
+    approved = "요한복음 3-4장"
+    spoken = subject.spoken_form(approved)
+    assert not screen.score(approved, spoken, "ko", 0.88, screen.SCORING_V4)[2]
+    assert not screen.score(approved, spoken, "ko", 0.88, screen.SCORING_V3)[2]
+    assert screen.fold_transcript("삼-사장", "ko") == "삼-4장"
+    for text in ["사진 2장-4장", "영화 2편~3편", "요한복음 3장 읽고 사진 2장-4장"]:
+        expected = text.replace("요한복음 3장", "요한복음 삼장")
+        assert subject.spoken_form(text) == expected
+    assert not screen.score(approved, "요한복음 세-네장", "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("approved", [
+    "요한복음 3장16절", "요한복음3장16절", "요한복음 3장 16절",
+    "요한복음 3장16-17절", "요한복음3장16절~27절",
+    "시편 1-2편", "시편1편–2편", "시편 16편부터 27편까지",
+])
+def test_adjacent_and_psalm_citations_generate_fold_and_score(approved):
+    from scripts import screen_target_language_audio_units as screen
+    spoken = subject.spoken_form(approved)
+    assert spoken != approved
+    assert not any(char.isdigit() for char in spoken)
+    assert screen.fold_transcript(spoken, "ko") == approved
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    # Deliberately change every endpoint, never relax protected-number checks.
+    for numeral in ["삼", "십육", "십칠", "일", "이", "이십칠"]:
+        if numeral in spoken:
+            assert not screen.score(approved, spoken.replace(numeral, "구십구"), "ko", 0.88)[2]

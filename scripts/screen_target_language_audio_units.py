@@ -39,13 +39,15 @@ SCHEMA = "sermon-target-language-audio-screening-v2"
 # unfolded scoring and stays reproducible so old receipts rescore exactly as recorded.
 SCORING_V3 = ("token-sequence-ratio-v3; short units (<4 tokens) must match exactly; "
               "no negation, number or protected name may differ; numbers and names keep their order")
-SCORING = ("token-sequence-ratio-v4; readings a listener cannot tell apart are folded first "
+SCORING_V4 = ("token-sequence-ratio-v4; readings a listener cannot tell apart are folded first "
            "(spelled numbers and digits, same-pinyin-same-tone Chinese characters in fixed contexts, "
            "Spanish diacritic function words, Korean spacing; digit strings are not positional numbers; "
            "a Korean native numeral before a Sino counter is not folded); "
            "short units (<4 tokens) must match exactly; "
            "no negation, number or protected name may differ; numbers and names keep their order")
-KNOWN_SCORINGS = (SCORING_V3, SCORING)
+SCORING = SCORING_V4.replace("token-sequence-ratio-v4", "token-sequence-ratio-v5") + (
+    "; book-anchored Korean scripture range endpoints are folded together")
+KNOWN_SCORINGS = (SCORING_V3, SCORING_V4, SCORING)
 MODEL = "Qwen/Qwen3-ASR-0.6B"
 BATCH_SIZES = (1, 2, 4, 8)
 
@@ -366,7 +368,7 @@ def _ko_native_pattern() -> re.Pattern:
                       r"(?=\s*(?:" + "|".join(_KO_NATIVE_COUNTERS) + "))")
 
 
-def _fold_korean(text: str) -> str:
+def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
     def sino_value(part: str) -> str | None:
         if part.isdigit():
             return part
@@ -376,6 +378,23 @@ def _fold_korean(text: str) -> str:
     def fraction(match: re.Match) -> str:
         parts = [sino_value(match.group(1)), sino_value(match.group(2))]
         return match.group() if None in parts else f"{parts[0]}분의 {parts[1]}"
+    if citation_ranges:
+        # Fold only a complete, book-anchored citation chain. In a single-counter
+        # range 삼-사장 the first one-syllable endpoint has no counter of its own.
+        # Do not grant that interpretation to bare words or ordinary counters.
+        from scripts.language_review_plugins import auto_qc_text_common as rules
+        books = "|".join(re.escape(name) for name in sorted(rules._KO_BOOK_CODES, key=len, reverse=True))
+        number = r"(?:\d{1,3}|[" + _KO_SINO_CHARS + r"]+)"
+        def citation_pattern(book, counter):
+            reference = number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter
+            return re.compile(r"(?<![가-힣A-Za-z0-9])(" + book + r")(\s*" + reference
+                              + r"(?:\s*(?:과|와|및|,|부터|에서|[-~–])?\s*" + reference + r")*)")
+        def fold_citation(match):
+            return match.group(1) + _KO_SINO_RUN.sub(
+                lambda numeral: sino_value(numeral.group()) or numeral.group(), match.group(2))
+        text = citation_pattern(books, r"(?:장|절)").sub(fold_citation, text)
+        text = citation_pattern("시편", r"(?:장|절|편)").sub(fold_citation, text)
+
     text = _KO_FRACTION.sub(fraction, text)
     text = _KO_DIGITS_WITH_UNIT.sub(lambda m: str(int(m.group(1)) * _KO_SINO_BIG[m.group(2)]), text)
 
@@ -466,13 +485,13 @@ def _fold_spanish(text: str) -> str:
     return "".join(out)
 
 
-def fold_transcript(text: str, locale: str) -> str:
+def fold_transcript(text: str, locale: str, *, citation_ranges: bool = True) -> str:
     """One spelling for readings a listener cannot tell apart; see the notes above."""
     text = unicodedata.normalize("NFKC", text)
     if locale == "zh-Hans":
         return _fold_chinese(text)
     if locale == "ko":
-        return _fold_korean(text)
+        return _fold_korean(text, citation_ranges=citation_ranges)
     if locale == "es":
         return _fold_spanish(text)
     return text
@@ -489,9 +508,10 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
     scoring = SCORING if scoring is None else scoring
     if scoring not in KNOWN_SCORINGS:
         raise ValueError("Unknown ASR scoring identity: " + str(scoring))
-    folded = scoring == SCORING
+    folded = scoring != SCORING_V3
     if folded:
-        expected, recognized = fold_transcript(expected, locale), fold_transcript(recognized, locale)
+        expected, recognized = (fold_transcript(text, locale, citation_ranges=scoring == SCORING)
+                                for text in (expected, recognized))
     expected_tokens, actual_tokens = tokens(expected, locale), tokens(recognized, locale)
     matcher = difflib.SequenceMatcher(None, expected_tokens, actual_tokens, autojunk=False)
     similarity = round(matcher.ratio(), 6)

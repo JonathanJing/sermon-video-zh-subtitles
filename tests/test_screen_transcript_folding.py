@@ -92,7 +92,7 @@ class FoldTranscriptTests(unittest.TestCase):
                                 "Solo tienes vida y debes permanecer fiel cada día.", "es"))
         self.assertFalse(passes("今天我们看见教会门口有十二个人一直在等待牧师走出来。",
                                 "今天我们看见教会门口有十个人一直在等待牧师走出来。", "zh-Hans"))
-        self.assertIn("token-sequence-ratio-v4", subject.SCORING)
+        self.assertIn("token-sequence-ratio-v5", subject.SCORING)
 
 
 class ReviewCounterexampleTests(unittest.TestCase):
