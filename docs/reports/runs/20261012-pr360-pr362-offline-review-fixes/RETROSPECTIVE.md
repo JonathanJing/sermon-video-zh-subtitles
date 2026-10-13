@@ -79,3 +79,9 @@ commit `cc353091b501f3cd32df5a2c169d4e8fdde779aa` 添加合法完整助词 이�
 ## 导出日志副本规范化
 
 补交日志后发现 pytest traceback 副本含行末空白，默认 diff gate 会拒绝。仅清理报告日志副本的行末空白；manifest 的 sha256／bytes 保留原来源身份，新增 exportedCopy 绑定规范化副本的 hash、字节数与处理方式。原运行日志未修改，未重跑模型或测试。默认 git diff --check 和 exporter 脱敏验证通过。
+
+## 引用连接词语义与分隔式 Sino 数词
+
+新 review 指出 과／이나 的语义替换可能在相似度门槛下通过，以及 `시편 백 십구 편` 未整体折为 119。commit `ca535487` 让书名锚定结构保留所有 lexical citation connector 与 range marker，拒替换、删除、插入；新增 book-scope 分隔式 Sino 折叠，并要求去空白拼写为 canonical korean_sino(value)，拒重复／升序 unit 与端点合并。初轮 246／34（1.11 秒），严格拼写补例 249／34（1.10 秒），插入矩阵后 264／34（1.11 秒）均通过，分别为开发阶段，不能相加。
+
+父审裁定逗号沿既有停顿标点可忽略政策。追加 commit `2165db49` 仅从结构签名排除 comma，保留 lexical connector／dash；测试加入 comma 插删通过与 lexical 插删拒绝对照。最终三文件 263 passed／34 subtests（1.12 秒），默认 diff check 通过。完整 consumer 131／64 仍只绑定 cc353091，没有重跑十五分钟矩阵；v4/v3 旧评分路径未变。两条已实质修复线程已 resolve，无评论。脱敏日志实际入 Git，规范化副本记录 exportedCopy；没有模型、Spark、部署或真实音频 QC。新 head CI 独立判断合并，报告仍 draft。

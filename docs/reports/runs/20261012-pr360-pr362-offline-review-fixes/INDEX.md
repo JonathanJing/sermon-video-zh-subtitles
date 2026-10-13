@@ -160,3 +160,13 @@ Error-like log lines (first 5 per log):
 - `token-final-tests.log`: [line 66] scripts/screen_target_language_audio_units.py:426: NameError
 - `token-final-tests.log`: [line 126] E           NameError: name '_CONNECTOR' is not defined
 - `token-final-tests.log`: [line 128] scripts/screen_target_language_audio_units.py:426: NameError
+
+## Connector semantics and spaced Sino followup
+
+- [comma-final.log](pr362-connectors-spaced-sino-20261012/comma-final.log)
+- [contract-final.log](pr362-connectors-spaced-sino-20261012/contract-final.log)
+- [final-tests.log](pr362-connectors-spaced-sino-20261012/final-tests.log)
+- [outcome.json](pr362-connectors-spaced-sino-20261012/outcome.json)
+- [pytest.log](pr362-connectors-spaced-sino-20261012/pytest.log)
+- [summary.json](pr362-connectors-spaced-sino-20261012/summary.json)
+- [timings.tsv](pr362-connectors-spaced-sino-20261012/timings.tsv)
