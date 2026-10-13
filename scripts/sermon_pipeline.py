@@ -259,14 +259,23 @@ def request_json(req, retries=3, *, response_observer=None, request_executor=Non
                 result = request_executor(req)
             else:
                 with urllib.request.urlopen(req, timeout=300) as response:
-                    result = json.loads(response.read().decode())
+                    raw_body = response.read()
+                    if api_cli_outcomes.observing():
+                        api_cli_outcomes.observed_response(raw_body, http_status=response.status)
+                    result = json.loads(raw_body.decode())
         except PreDispatchRejection as exc:
+            api_cli_outcomes.observed_no_dispatch(exc.reason_code)
             exc.bind_attempt(attempt_id)
             _finalize(lambda: record_api_attempt(getattr(req, "accounting_model", "unknown"), None,
                 time.monotonic() - started, "failed", type(exc).__name__,
                 attempt_id=attempt_id, not_dispatched_reason=exc.reason_code), exc)
             raise
         except urllib.error.HTTPError as exc:
+            if api_cli_outcomes.observing():
+                raw_error = exc.read()
+                api_cli_outcomes.observed_response(raw_error, http_status=exc.code)
+                from scripts import sermon_provider_error as provider_errors
+                exc.safe_diagnostic = provider_errors.diagnostic(exc.code, raw_error)
             if response_observer is not None and exc.code in KNOWN_REQUEST_REJECTIONS:
                 rejection = TransportRejection(exc.code, _http_error_diagnostic(exc))
                 if hasattr(response_observer, "request_rejected"):
@@ -997,6 +1006,9 @@ def chunk_text_for_window(chunks, start, end):
 
 
 def chat_json(api_key, payload, retries=1, *, session_verifier=None):
+    from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+    from scripts.strict_budget_capability import require_bounded_api_payload
+    require_bounded_api_payload(payload, DEFAULT_REQUEST_LIMITS, surface="legacy_text_api")
     return spark_admission.SessionBoundCaller(_chat_json, verifier=session_verifier,
         purpose="production-text-call", requires_spark=False)(api_key, payload, retries=retries)
 

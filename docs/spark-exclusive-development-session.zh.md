@@ -78,3 +78,5 @@ begin 部分失败按逐项 intent 对账；能确认未启动本轮作业且变
 旧阅读稿、笔记及通用 API helper 使用当前 accounting 输出目录下的 `api-cli-outcomes`，调用前持久化 started，返回值持久化后才交还调用方。此目录内调用串行；started/unknown 会阻止后续 dispatch，重启、换 key 或新 accounting run ID 不会解除。缺少 accounting context 在 dispatch 前拒绝。新运行使用新输出目录，不复用历史 cache；未知运行不能通过换目录重试。canonical Layer 2、source budget 与 Supervisor 保留各自原有预算和核对 gate。
 
 核对已收到的真实 terminal response 后，用 `python -m scripts.api_cli_outcomes --directory <accounting>/api-cli-outcomes --request-sha256 <receipt中的hash> --response <observed-response.json> --evidence <evidence.json>` 录入；evidence 必须含非空 `terminalResponseEvidence` 来源指针。该命令不调用模型、不批准预算，也不提供“清空未知后重发”功能；没有可确认的响应就保持阻断。收据只记录请求 hash，不记录凭据或 prompt；响应仅留在 ignored 运行目录。
+
+API/CLI outcome 新收据使用 v2；既有 v1 返回仍按原请求与响应 hash 核验后只读重放。v2 的 received 保存完整原响应字节及 hash，returned 才可作为成功结果；HTTP 拒绝、完整收到后的解码失败及可信预派发拒绝记 terminal_failure，同请求重放错误、修正请求可继续，不据此推断费用为零。真正未知的传输仍阻断整个目录。人工核对失败终态时，上述 reconciliation 命令增加 `--terminal-failure`，记录失败证据而不创建成功响应。对旧未知收据的显式核对写 v2 并保留来源 schema 标记。

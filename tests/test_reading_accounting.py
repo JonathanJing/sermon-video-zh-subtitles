@@ -77,18 +77,19 @@ class ReadingAccountingTests(unittest.TestCase):
                 run.assert_called_once_with(args)
 
     def test_codex_failure_is_scoped_without_api_billing(self):
-        with tempfile.TemporaryDirectory() as temp, mock.patch.object(reading.subprocess, "run", return_value=argparse.Namespace(returncode=1, stderr="failed", stdout="")), mock.patch.object(reading, "stage", return_value=contextlib.nullcontext()) as stages:
+        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ, {"SERMON_ACCOUNTING_DIR": temp}), mock.patch.object(reading.subprocess, "run", return_value=argparse.Namespace(returncode=1, stderr="failed", stdout="")), mock.patch.object(reading, "stage", return_value=contextlib.nullcontext()) as stages:
+            Path(temp, "schema.json").write_text("{}")
             with self.assertRaises(RuntimeError):
-                reading.codex_json({"messages": [{"content": "system"}, {"content": "user"}]}, codex_cli=Path("unused"), model="test", reasoning_effort="medium", schema_path=Path("unused"), output_path=Path(temp)/"result.json", session_verifier=lambda: {"status":"offline_test"})
+                reading.codex_json({"messages": [{"content": "system"}, {"content": "user"}]}, codex_cli=Path("unused"), model="test", reasoning_effort="medium", schema_path=Path(temp)/"schema.json", output_path=Path(temp)/"result.json", session_verifier=lambda: {"status":"offline_test"})
         stages.assert_called_once_with("reading.codex_call", billing="codex")
 
 
 class NotesAttemptAccountingTests(unittest.TestCase):
     def test_success_records_one_raw_usage_response(self):
         body = {"id": "response-test", "usage": {"input_tokens": 17, "output_tokens": 5}, "output_text": "{}"}
-        response = mock.Mock(status_code=200)
+        response = mock.Mock(status_code=200, content=b"{}")
         response.json.return_value = body
-        with mock.patch.object(notes.requests, "post", return_value=response), mock.patch.object(notes, "record_api_attempt") as record:
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {"SERMON_ACCOUNTING_DIR": tmp}), mock.patch.object(notes.requests, "post", return_value=response), mock.patch.object(notes, "record_api_attempt") as record:
             self.assertIs(notes.request_openai_notes({"model": "test"}, "private", session_verifier=lambda: {"status":"offline_test"}), body)
         record.assert_called_once()
         self.assertIs(record.call_args.kwargs["response"], body)
@@ -121,17 +122,20 @@ class NotesAttemptAccountingTests(unittest.TestCase):
             self.assertTrue((root/"notes.qa.json").exists())
 
     def test_network_http_and_decode_failures_record_once(self):
-        bad_http = mock.Mock(status_code=429)
+        bad_http = mock.Mock(status_code=429, content=b'{"error":"retry later"}')
         bad_http.json.return_value = {"error": {"message": "retry later"}}
-        bad_json = mock.Mock(status_code=200)
+        bad_json = mock.Mock(status_code=200, content=b"not json")
         bad_json.json.side_effect = ValueError("invalid JSON")
         cases = [(requests.Timeout("sensitive transport detail"), None, requests.Timeout, "Timeout"),
                  (None, bad_http, SystemExit, "HTTP429"),
                  (None, bad_json, ValueError, "ValueError")]
         for failure, response, expected, error_type in cases:
-            with self.subTest(error_type=error_type), mock.patch.object(notes.requests, "post", side_effect=failure, return_value=response), mock.patch.object(notes, "record_api_attempt") as record:
+            with self.subTest(error_type=error_type), tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {"SERMON_ACCOUNTING_DIR": tmp}), mock.patch.object(notes.requests, "post", side_effect=failure, return_value=response), mock.patch.object(notes, "record_api_attempt") as record:
                 with self.assertRaises(expected):
                     notes.request_openai_notes({"model": "test"}, "private", session_verifier=lambda: {"status":"offline_test"})
+                rows = list((Path(tmp)/'api-cli-outcomes').glob('*/outcome.json'))
+                self.assertEqual(json.loads(rows[0].read_text())['status'],
+                                 'unknown' if failure else 'terminal_failure')
                 record.assert_called_once()
                 kwargs = record.call_args.kwargs
                 self.assertEqual(kwargs["status"], "failed")

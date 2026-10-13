@@ -128,7 +128,8 @@ class SourceBudget:
                  reuse_roots=()):
         self.root, self.authority, self.verify = Path(root), authority, verify
         # Earlier budget roots of the same run whose returned responses this root may reuse,
-        # as named by its approval. Read-only: nothing is written to them.
+        # as named by its approval. Their ledgers/responses are read-only;
+        # operation-lock metadata coordinates cache decisions with source workers.
         self.reuse_roots = tuple(Path(root_).resolve() for root_ in reuse_roots)
         require(all(root_.resolve() != self.root.resolve() for root_ in self.reuse_roots)
                 and len({root_.resolve() for root_ in self.reuse_roots}) == len(self.reuse_roots), 'invalid_source_reuse_roots')
@@ -200,7 +201,7 @@ class SourceBudget:
                                             and re.fullmatch('[a-f0-9]{64}', provenance.get('sourceAuthoritySha256', ''))
                                             and provenance.get('sourceLedgerVersion') in
                                                 ('sermon-source-budget-ledger-v1', *CONCURRENT_LEDGERS)
-                                            and _valid_settlement(provenance.get('originalSettlement')),
+                                            and _valid_settlement(provenance.get('originalSettlement'), version=LEDGER_V3),
                                             'source_reused_provenance_changed')
                                 except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
                                     raise ValueError('source_reused_provenance_changed') from error
@@ -238,10 +239,32 @@ class SourceBudget:
         from scripts.sermon_unified import resources
         return resources._identity(self.resource_policy)
 
-    def _operation_path(self, operation):
-        directory = self.root / 'live-owners'
+    def _operation_path(self, operation, *, root=None):
+        directory = (self.root if root is None else root) / 'live-owners'
         directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         return directory / (jobs._digest(operation) + '.lock')
+
+    @contextmanager
+    def _operation_fences(self, operation):
+        # The same per-operation OS locks used by source workers must span the
+        # cache-miss decision, local reservation, dispatch and durable receipt.
+        # Source business artifacts remain read-only. A missing lock file is
+        # coordination metadata, never a reservation or ledger migration.
+        handles = []
+        try:
+            for root in sorted({self.root.resolve(), *self.reuse_roots}, key=str):
+                handle = self._operation_path(operation, root=root).open('a')
+                try:
+                    fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    handle.close()
+                    raise ValueError('source_operation_live') from None
+                handles.append(handle)
+            yield
+        finally:
+            for handle in reversed(handles):
+                fcntl.flock(handle, fcntl.LOCK_UN)
+                handle.close()
 
     def _operation_is_live(self, operation):
         with self._operation_path(operation).open('a') as handle:
@@ -295,8 +318,7 @@ class SourceBudget:
                 continue
             require(isinstance(row, dict) and isinstance(row.get('identitySha256'), str)
                     and re.fullmatch('[a-f0-9]{64}', row['identitySha256']), 'source_reuse_ledger_reconciliation_required')
-            if row['identitySha256'] != fingerprint:
-                continue
+            require(row['identitySha256'] == fingerprint, 'source_reuse_identity_changed')
             require(row.get('status') == 'returned', 'source_provider_outcome_unknown')
             path = root / 'responses' / (jobs._digest(operation) + '-' + fingerprint + '.json')
             if not path.exists():
@@ -314,10 +336,20 @@ class SourceBudget:
             except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
                 raise ValueError('source_reuse_response_reconciliation_required') from error
             require(valid, 'source_reuse_response_reconciliation_required')
+            # Approving an intermediate root does not approve its paid ancestor.
+            # Only a direct paid receipt may become a new reuse provenance root.
+            require('reusedFrom' not in saved
+                    and saved_settlement(saved).get('costStatus') != 'reused'
+                    and (row.get('settlement') or {}).get('costStatus') != 'reused',
+                    'source_reuse_requires_direct_paid_root')
             # Check every root before returning: a later unknown/damaged matching
             # row must not be hidden by an earlier successful cache candidate.
             if candidate is None:
                 candidate = root, saved, row, ledger
+        # Source business state is read-only: there is no durable cross-root
+        # paid reservation on a miss. A later source/destination could otherwise
+        # pay again after our fence is released, so reuse never buys a new call.
+        require(candidate is not None, 'source_reuse_operation_missing')
         return candidate
 
     def returned(self, operation, identity):
@@ -333,11 +365,7 @@ class SourceBudget:
         self.verify()
         require(isinstance(operation, str) and re.fullmatch(r'(asr\.[0-9]{4}|judge\.[a-f0-9]{64})', operation),
                 'invalid_source_operation')
-        with self._operation_path(operation).open('a') as handle:
-            try:
-                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError:
-                raise ValueError('source_operation_live') from None
+        with self._operation_fences(operation):
             owner = {'token': uuid.uuid4().hex, 'pid': os.getpid()}
             try:
                 return self._call(operation=operation, identity=identity, bounds=bounds, request=request,
@@ -350,8 +378,6 @@ class SourceBudget:
                         row.pop('dispatchOwner')
                         jobs._persist(path, ledger)
                 raise
-            finally:
-                fcntl.flock(handle, fcntl.LOCK_UN)
 
     def _call(self, *, operation, identity, bounds, request, api_key, content_type, endpoint, owner):
         self.verify()
