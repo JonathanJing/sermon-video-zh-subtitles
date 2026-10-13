@@ -39,7 +39,8 @@ from scripts import target_audio_predicted_schedule as predicted
 from scripts import target_text_auto_qc as text_qc
 from scripts.language_review_plugins import auto_qc_text_common as rules
 
-SCHEMA = "sermon-spoken-condensation-record-v1"
+LEGACY_SCHEMA = "sermon-spoken-condensation-record-v1"
+SCHEMA = "sermon-spoken-condensation-record-v2"
 # v2 records the QC implementation that rechecked the spoken text; a waiver
 # accepts only a binding checked by its own implementation.
 BINDING_SCHEMA = "sermon-spoken-condensation-binding-v2"
@@ -296,8 +297,12 @@ def condense(anchor: dict, candidate: dict, budget: dict, *, call, identity: dic
 
 
 def _check_record(record: dict, candidate: dict) -> None:
-    if record.get("schemaVersion") != SCHEMA or record.get("humanApproval") is not False:
+    if record.get("schemaVersion") not in (LEGACY_SCHEMA, SCHEMA) or record.get("humanApproval") is not False:
         raise ValueError("Unsupported condensation record")
+    if record.get("schemaVersion") == SCHEMA and not isinstance(record.get("synthesisIdentity"), dict):
+        raise ValueError("Condensation record v2 requires its frozen synthesis identity")
+    if record.get("synthesisIdentity") is not None:
+        predicted._check_identity(record["synthesisIdentity"], record.get("targetLocale"))
     if record.get("fullCandidateJsonSha256") != _sha(candidate):
         raise ValueError("Condensation record belongs to another full candidate")
 
@@ -346,7 +351,7 @@ def bind_spoken_candidate(record: dict, anchor: dict, candidate: dict, spoken: d
                 issues.append(f"{group_id}: an uncondensed group differs from the full translation")
             continue
         request = {"translationGroupId": group_id, "fullTargetText": full["targetText"],
-                   "maxSpeechUnits": row["maxSpeechUnits"], "synthesisIdentity": record["synthesisIdentity"],
+                   "maxSpeechUnits": row["maxSpeechUnits"], "synthesisIdentity": record.get("synthesisIdentity"),
                    "englishUnits": [{"sourceUnitId": unit_id, "english": english[unit_id]}
                                     for unit_id in full["sourceUnitIds"]]}
         problems = spoken_problems(request, text, row.get("omissions"), locale, policy)

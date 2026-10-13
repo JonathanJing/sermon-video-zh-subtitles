@@ -33,9 +33,12 @@ INSTRUCTIONS_SCHEMA = "sermon-unit-delivery-instructions-v2"
 _NUMBER = r"\d{1,3}(?:\s*[-~–]\s*\d{1,3})?\s*"
 _BOOK = "|".join(re.escape(name) for name in sorted(_KO_BOOK_CODES, key=len, reverse=True) if name != "시편")
 _DELIMITERS = (("", ""), ("(", ")"), ("[", "]"), ("（", "）"), ("［", "］"))
-_COPULAR_ENDINGS = r"(?:이다|이었다|이었다고|이었지만|이었는데|이었으나|이었으면|이었어요|이었죠|이었네요|이었으므로|이었으니까|이었으며|이겠다|이겠습니다|이겠지만|이겠죠|이겠네요|이더라|이더라도|이라|이니|인가|인가요|인데요|인지|이냐|이라고|입니다|이라면|인데|이고|이지만|이라서|이에요|이죠|이네요|이어서|이니까|이므로|이며|이었고|이었습니다|이야|이라고는)"
+_COPULAR_ENDINGS = r"(?:입니까|이었습니까|이다|이었다|이었다고|이었지만|이었는데|이었으나|이었으면|이었어요|이었죠|이었네요|이었으므로|이었으니까|이었으며|이겠다|이겠습니다|이겠지만|이겠죠|이겠네요|이더라|이더라도|이라|이니|인가|인가요|인데요|인지|이냐|이라고|입니다|이라면|인데|이고|이지만|이라서|이에요|이죠|이네요|이어서|이니까|이므로|이며|이었고|이었습니다|이야|이라고는)"
 _PARTICLES = r"(?:" + _COPULAR_ENDINGS + r"|이든|이|처럼|마저|조차|마다|에서는|에서도|에서부터|부터는|부터만|부터도|까지는|까지만|까지도|에는|에도|으로는|으로도|에서|부터|까지|으로|이나|과|와|및|을|를|의|은|는|에|도|만|로)(?![가-힣A-Za-z])"
-_RANGE_PARTICLE = r"(?:부터|에서|까지)(?:\s*(?:" + _COPULAR_ENDINGS + r"|였어요|였다|였고|였지만|였는데|예요|라고|의|를|을|은|는|도|만))?(?![가-힣A-Za-z])"
+# Contract the complete registered copula family, rather than enumerating
+# individual past endings after each range marker (이었습니다 -> 였습니다).
+_RANGE_COPULAR_ENDINGS = _COPULAR_ENDINGS.replace("이었", "였").replace("이에요", "예요").replace("이라고", "라고")
+_RANGE_PARTICLE = r"(?:부터|에서|까지)(?:\s*(?:" + _COPULAR_ENDINGS + "|" + _RANGE_COPULAR_ENDINGS + r"|의|를|을|은|는|도|만))?(?![가-힣A-Za-z])"
 _PARTICLES = r"(?:" + _RANGE_PARTICLE + "|" + _PARTICLES + ")"
 _COUNTER_END = r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|" + _NUMBER + r"(?:장|절|편))"
 _CONNECTOR = r"(?:에서부터|부터는|부터만|부터도|이나|이든|과|와|및|부터|에서|,|[-~–])"

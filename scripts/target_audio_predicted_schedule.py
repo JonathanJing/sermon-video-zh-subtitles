@@ -28,7 +28,14 @@ from scripts import render_formal_target_language_speech as formal
 from scripts import target_audio_timing_plan as timing
 
 SCHEMA = "sermon-target-audio-predicted-schedule-v1"
-RATE_SCHEMA = "sermon-target-speech-rate-v1"
+RATE_SCHEMA_V1 = "sermon-target-speech-rate-v1"
+RATE_SCHEMA = "sermon-target-speech-rate-v2"
+RATE_IMPLEMENTATION_FILES = (
+    "target_audio_predicted_schedule.py", "render_formal_target_language_speech.py",
+    "ko_spoken_numerals.py", "sermon_sentence_interpretation.py",
+    "language_review_plugins/auto_qc_text_common.py",
+    "language_review_plugins/common.py",
+)
 EPSILON = 1e-6
 # Speech-job adapter fields that change how long the same text sounds. A rate
 # fitted under one identity is never used to budget another.
@@ -53,6 +60,27 @@ def _check_identity(identity: dict, locale: str) -> None:
         raise ValueError("Synthesis identity must carry exactly the speech-job identity fields")
     if identity["targetLocale"] != locale:
         raise ValueError("Synthesis identity belongs to another locale")
+
+
+def rate_implementation_sha256() -> str:
+    """Bind the rate's fitting/counting code and complete spoken-rule dependency closure."""
+    root = Path(__file__).resolve().parent
+    files = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in RATE_IMPLEMENTATION_FILES}
+    return hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def validate_rate(rate: dict) -> None:
+    version = rate.get("schemaVersion")
+    if version not in (RATE_SCHEMA_V1, RATE_SCHEMA):
+        raise ValueError("Unsupported speech-rate artifact")
+    synthesis = rate.get("synthesisIdentity")
+    _check_identity(synthesis, rate.get("locale"))
+    if version == RATE_SCHEMA:
+        if rate.get("rateImplementationSha256") != rate_implementation_sha256():
+            raise ValueError("Speech-rate implementation identity is missing or stale; refit the measured audio")
+    elif synthesis["normalizationPolicySha256"] == formal.identity.json_sha256(
+            formal.SPOKEN_FORMS_NORMALIZATION_POLICY):
+        raise ValueError("Legacy speech rate lacks the spoken-rule implementation identity; refit the measured audio")
 
 
 def policy_texts(texts: list[str], locale: str, normalization_policy_sha256: str | None) -> list[str]:
@@ -125,16 +153,19 @@ def fit_rate(rows: list[dict], locale: str, *, synthesis_identity: dict) -> dict
             "interceptSeconds": round(intercept, 6), "p90Factor": round(max(1.0, p90), 6),
             "fittedUnits": len(inliers), "excludedOutliers": len(points) - len(inliers),
             "synthesisIdentity": dict(synthesis_identity), "measurementSha256": measurement_sha,
+            "rateImplementationSha256": rate_implementation_sha256(),
             "measuredUnits": len(measurements)}
 
 
 def predict_seconds(text: str, rate: dict, *, conservative: bool = True) -> float:
+    validate_rate(rate)
     spoken = policy_texts([text], rate["locale"], rate["synthesisIdentity"]["normalizationPolicySha256"])[0]
     seconds = rate["interceptSeconds"] + rate["secondsPerUnit"] * speech_units(spoken, rate["locale"])
     return seconds * (rate["p90Factor"] if conservative else 1.0)
 
 
 def max_units_for(seconds: float, rate: dict) -> int:
+    validate_rate(rate)
     usable = seconds / rate["p90Factor"] - rate["interceptSeconds"]
     return max(0, math.floor(usable / rate["secondsPerUnit"]))
 
@@ -155,8 +186,7 @@ def budget(source_seconds: float, groups: list[dict], rate: dict, policy: dict |
     ``synthesis_identity`` is the identity of the job being budgeted; a rate
     fitted under any other identity is refused.
     """
-    if rate.get("schemaVersion") != RATE_SCHEMA:
-        raise ValueError("Unsupported speech-rate artifact")
+    validate_rate(rate)
     _check_identity(synthesis_identity, rate.get("locale"))
     if rate.get("synthesisIdentity") != synthesis_identity:
         raise ValueError("Speech rate was fitted under another synthesis identity; refit it for this job")

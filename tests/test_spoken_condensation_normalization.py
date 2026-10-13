@@ -20,7 +20,8 @@ def inputs(v2=True):
                             {"translationGroupId": "g2", "sourceUnitIds": ["u2"], "targetText": BASE}]}
     identity = synthesis(v2)
     rate = {"schemaVersion": predicted.RATE_SCHEMA, "locale": "ko", "secondsPerUnit": .25,
-            "interceptSeconds": 0, "p90Factor": 1, "synthesisIdentity": identity}
+            "interceptSeconds": 0, "p90Factor": 1, "synthesisIdentity": identity,
+            "rateImplementationSha256": predicted.rate_implementation_sha256()}
     groups = [{"gid": g["translationGroupId"], "sourceStart": u["start"], "sourceEnd": u["end"], "text": g["targetText"]}
               for g, u in zip(candidate["groups"], anchor["sourceUnits"])]
     # Give the first group 4.5 s / 18 spoken units: v2 output fits, raw digits do not.
@@ -71,3 +72,31 @@ def test_v2_output_and_binding_recheck_normalized_length_and_legacy_is_raw():
     legacy_anchor, legacy_candidate, legacy_plan = inputs(False)
     legacy_request = condensation.requests(legacy_anchor, legacy_candidate, legacy_plan)["requests"][0]
     assert legacy_request["fullSpeechUnits"] == predicted.speech_units(candidate["groups"][0]["targetText"], "ko")
+
+
+
+def test_record_v2_identity_is_required_but_legacy_v1_absence_preserves_raw_binding():
+    anchor, candidate, plan = inputs(False)
+    request = condensation.requests(anchor, candidate, plan)["requests"][0]
+    spoken = BASE
+    omissions = [{"fullTextSpan": REPEAT, "kind": "repetition"}] * 5
+    runtime = {"backend": "fake", "model": "fake", "modelRevision": "1", "cacheNamespace": "test",
+               "settings": {"temperature": 0}}
+    record = condensation.condense(anchor, candidate, plan, call=lambda *args: {
+        "translationGroupId": "g1", "spokenText": spoken, "omissions": omissions}, identity=runtime)
+    assert record["schemaVersion"] == condensation.SCHEMA
+    revised = copy.deepcopy(candidate)
+    revised["groups"][0]["targetText"] = spoken
+    missing = copy.deepcopy(record)
+    missing.pop("synthesisIdentity")
+    with pytest.raises(ValueError, match="v2 requires.*synthesis identity"):
+        condensation.bind_spoken_candidate(missing, anchor, candidate, revised)
+    invalid = copy.deepcopy(record)
+    invalid["synthesisIdentity"] = {}
+    with pytest.raises(ValueError):
+        condensation.bind_spoken_candidate(invalid, anchor, candidate, revised)
+    legacy = {**missing, "schemaVersion": condensation.LEGACY_SCHEMA}
+    binding = condensation.bind_spoken_candidate(legacy, anchor, candidate, revised)
+    assert binding["status"] == "pass"
+    assert binding["groups"][0]["finalSpeechUnits"] == predicted.speech_units(spoken, "ko")
+    assert condensation.revision_brief(legacy, candidate)["groups"]

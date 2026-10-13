@@ -411,3 +411,14 @@ def test_balanced_book_citation_delimiters(opening, closing, reference):
     assert not screen.score(approved, spoken.replace("삼", "오"), "ko", 0.88)[2]
     for text in ["사진" + opening + reference + closing, "요한복음" + opening + reference, "요한복음" + opening + reference + ("]" if closing != "]" else ")"), "요한복음" + opening + "사진 " + reference + closing]:
         assert subject.spoken_form(text) == text
+
+
+@pytest.mark.parametrize("ending", ["였습니다", "였습니까", "였다", "였다고", "였지만", "였는데", "였으나", "였으면", "였어요", "였죠", "였네요", "였으므로", "였으니까", "였으며", "였고"])
+def test_stacked_range_uses_complete_registered_past_copula_family(ending):
+    from scripts import screen_target_language_audio_units as screen
+    approved = "요한복음 3장부터4장까지" + ending
+    spoken = subject.spoken_form(approved)
+    assert spoken == "요한복음 삼장부터사장까지" + ending
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.replace("사장", "오장"), "ko", 0.88)[2]
+    assert subject.spoken_form(approved + "상점") == "요한복음 삼장부터4장까지" + ending + "상점"
