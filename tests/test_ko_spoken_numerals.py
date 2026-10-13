@@ -71,8 +71,8 @@ def test_build_lists_only_changed_units_and_binds_the_job(tmp_path):
 def test_context_does_not_leak_from_a_citation_to_an_ordinary_counter():
     text = "요한복음 3장16절을 읽고 사진 2장과 영화 2편을 봅니다."
     assert subject.spoken_form(text) == "요한복음 삼장십육절을 읽고 사진 2장과 영화 2편을 봅니다."
-    # v3: not a book, but a bare chapter in prose is still read as a chapter.
-    assert subject.spoken_form("새요한복음 3장") == "새요한복음 삼장"
+    # An unknown word followed by a counter is ambiguous, not a book anchor.
+    assert subject.spoken_form("새요한복음 3장") == "새요한복음 3장"
 
 
 @pytest.mark.parametrize("symbol", ["%", "+", "$", "₩", "/", "=", "°", "&", "#", ":", "-", "~", "–"])
@@ -137,7 +137,8 @@ def test_range_folding_keeps_legacy_scoring_and_non_citations():
     spoken = subject.spoken_form(approved)
     assert not screen.score(approved, spoken, "ko", 0.88, screen.SCORING_V4)[2]
     assert not screen.score(approved, spoken, "ko", 0.88, screen.SCORING_V3)[2]
-    assert screen.fold_transcript("삼-사장", "ko") == "삼-4장"
+    assert screen.fold_transcript("삼-사장", "ko") == "3-4장"
+    assert screen.fold_transcript("삼-사장", "ko", citation_ranges=False) == "삼-4장"
     for text in ["사진 2장-4장", "영화 2편~3편", "요한복음 3장 읽고 사진 2장-4장"]:
         expected = text.replace("요한복음 3장", "요한복음 삼장")
         assert subject.spoken_form(text) == expected

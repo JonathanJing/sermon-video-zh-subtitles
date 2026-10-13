@@ -79,3 +79,49 @@ def test_fractions_and_operator_quantities_keep_complete_numeric_expression(expr
                                           ("3 - 4장", "삼 - 사장"), ("3~4절", "삼~사절"), ("3–4장", "삼–사장")])
 def test_numeric_guard_retains_ordinary_bare_chapter_and_range_readings(text, spoken):
     assert ko.spoken_form(text) == spoken
+
+
+@pytest.mark.parametrize("noun", ["서류", "문서", "복사본", "봉투", "스티커", "인쇄물", "서류는", "문서가", "봉투를"])
+def test_arbitrary_noun_counter_is_conservative_and_not_admitted_as_sino(tmp_path, noun):
+    text = noun + " 2장부터 4장까지"
+    assert ko.spoken_form(text) == text
+    assert ko.spoken_form(noun + " (2-3장)") == noun + " (2-3장)"
+    job = {"targetLocale": "ko", "adapter": {"normalizationPolicySha256": formal.identity.json_sha256(formal.SPOKEN_FORMS_NORMALIZATION_POLICY)},
+           "units": [{"translationGroupId": "g1", "text": text}]}
+    assert formal.policy_spoken_forms(job) == {}
+    assert ko.build(job) is None
+    assert formal.unit_instructions(job, None) == {}
+    document = {"schemaVersion": ko.INSTRUCTIONS_SCHEMA, "targetLocale": "ko", "speechJobJsonSha256": ko.identity.json_sha256(job),
+                "units": [{"translationGroupId": "g1", "approvedTextSha256": ko.hashlib.sha256(text.encode()).hexdigest(),
+                           "operatorEvidence": "test", "spokenText": noun + " 이장부터 사장까지"}]}
+    path = tmp_path / "bad-instructions.json"
+    path.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match="Spoken form changes"):
+        formal.unit_instructions(job, path)
+
+
+@pytest.mark.parametrize("text,spoken", [("그래서 8장을 보면 정말 놀랍습니다.", "그래서 팔장을 보면 정말 놀랍습니다."),
+                                          ("8장의 맨 첫 절", "팔장의 맨 첫 절"), ("(3-4장)", "(삼-사장)"),
+                                          ("이제 3장부터4장까지", "이제 삼장부터사장까지")])
+def test_explicit_bare_chapter_contexts_still_generate_and_screen(text, spoken):
+    from scripts import screen_target_language_audio_units as screen
+    assert ko.spoken_form(text) == spoken
+    assert ko.equivalent(text, spoken)
+    assert screen.score(text, spoken, "ko", .88)[2]
+
+
+@pytest.mark.parametrize("expected,wrong", [("12-3장", "1-23장"), ("1-23절", "12-3절"), ("3-4장", "34장"),
+                                          ("34장", "3-4장"), ("3-4장", "4-3장"), ("3장과4장", "3장이나4장"),
+                                          ("3장부터4장까지", "3장4장까지"), ("3장4장", "3장-4장"),
+                                          ("3장4절", "3절4장")])
+def test_current_bare_reference_structure_rejects_wrong_digit_runs_and_connectors(expected, wrong):
+    from scripts import screen_target_language_audio_units as screen
+    assert not screen.score(expected, wrong, "ko", .88)[2]
+    assert screen.score(expected, ko.spoken_form(expected), "ko", .88)[2]
+
+
+def test_previous_asr_scoring_keeps_its_recorded_bare_range_semantics():
+    from scripts import screen_target_language_audio_units as screen
+    for version in [screen.SCORING_V3, screen.SCORING_V4]:
+        assert screen.score("12-3장", "1-23장", "ko", .88, scoring=version)[2]
+    assert not screen.score("12-3장", "1-23장", "ko", .88)[2]
