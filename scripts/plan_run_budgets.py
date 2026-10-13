@@ -56,11 +56,11 @@ def qc_files(out, locale, profile, scale, *, approved_by, evidence, reviewed_at,
     binding = {"budgetRoot": root, "globalBounds": bounds, "requestLimits": limits,
                "qcContext": context, **({"reuseBudgetRoots": reuse} if reuse else {})}
     approval = write_new(directory / "api-budget-approval.json", {
-        "schemaVersion": auth.APPROVAL_V3, "binding": binding,
+        "schemaVersion": auth.APPROVAL_V4, "binding": binding,
         "humanApproval": True, "decision": "approved", "reviewedBy": approved_by,
         "reviewedAt": reviewed_at, "operatorEvidence": evidence})
     authorization = write_new(directory / "api-budget-authorization.json", {
-        "schemaVersion": auth.AUTH_V3, "budgetRoot": root, "qcContext": context,
+        "schemaVersion": auth.AUTH_V4, "budgetRoot": root, "qcContext": context,
         "authority": {"approvalSha256": file_sha256(approval), "bounds": {
             "globalBounds": bounds, "requestLimits": limits}, "requestLimits": limits},
         "approvalReceipt": approval.name, **({"reuseBudgetRoots": reuse} if reuse else {})})

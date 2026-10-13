@@ -76,7 +76,7 @@
 
 本页的原始测量来自 #376 的运行配置文档；#382 将其作为机器配置的所属文档纳入。历史 75 次调用／语言不是当前逐句分组的容量保证。周更授权使用已有 `sermon-canonical-layer2-budget-authorization-v2`，`ledgerScope=locale`，每语使用 8 MiB 账本；每语请求维度为 4,000，输入／输出维度按同一容量设置。金额仍保留用户给定的 5 美元建议，工具不擅自提高它：若实际执行配置的分组数连首次翻译＋复核的输出预留下界都超过此金额，规划在写任何授权前拒绝，需操作者提供另行明确批准的 profile 和总额。请求额度够不等于美元额度够，也不承诺所有修复都完成。
 
-新 QC 授权 v3／context v2 绑定一语的来源包、anchor、语言政策、环境、完整 OpenAI 路由（project ID、credential alias 及 configured-runtime 身份）、当前质检实现哈希及来源哈希运行身份。`--qc-inputs` 指向 `sermon-machine-qc-inputs-v2` JSON（字段 `environment`、`openaiRoute`、`source`、`anchor`、`policies`；`openaiRoute` 使用显式 launcher 的非秘密 `sermon-openai-runtime-route-v1` 五字段路由）；路径相对此 JSON，实际消费者从解析后的输入重算身份。文本和音频 QC 使用同一语言、同一根；不能用一语授权启动默认三语，也不能把它用于其他来源。
+新 QC 授权 v4／context v3 绑定一语的来源包、anchor、语言政策、环境、完整 OpenAI 路由（project ID、credential alias 及 configured-runtime 身份）、实际凭据的非秘密 SHA-256 指纹、当前质检实现哈希及来源哈希运行身份。`--qc-inputs` 指向 `sermon-machine-qc-inputs-v3` JSON（字段 `environment`、`openaiRoute`、`credentialSha256`、`source`、`anchor`、`policies`；`openaiRoute` 使用显式 launcher 的非秘密 `sermon-openai-runtime-route-v1` 五字段路由）；路径相对此 JSON，实际消费者从解析后的输入重算身份。文本和音频 QC 使用同一语言、同一根；不能用一语授权启动默认三语，也不能把它用于其他来源。
 
 QC 上限还计入二级 `gpt-transcribe` 的保守预留：按已冻结的 transcription-request-v1 最多 180 秒／请求、每分钟 4,500 microusd 整分钟预留，片段 150 次另计 2.025 美元，周更 1,500 次另计 20.25 美元。它们与评判请求共用该语言的持久硬金额／请求／时限账本；不把进程内调用计数当总费用上限，也不把预留当实际账单。实际所有新 paid 请求均受合计 cap 约束。
 
@@ -86,4 +86,6 @@ QC 上限还计入二级 `gpt-transcribe` 的保守预留：按已冻结的 tran
 
 计划 v3 的 `plan-approval.json` 冻结完整计划（包括总额、已结算费用、选定阶段及各授权哈希），`plan.json` 绑定该批准文件的哈希。修改总额、减少已用费用或重排阶段后，不能沿用旧批准；须明确重新规划与批准。预检核对整份 binding，不只重算一张可编辑的 schedule。
 
-旧 scoped QC 授权 v2／inputs v1 保留原证据，须显式重新规划为 v3／inputs v2，不自动补 project 身份或重标旧收据。启动与每次调用按实际 launcher 路由复验；项目或凭据别名变化须重新批准，不能沿用原授权重新购买同一质检请求。legacy unscoped v1 仅保留原合同，不称作新的 route-bound 计划。
+旧 scoped QC 授权 v2/v3／inputs v1/v2 保留原证据，须显式重新规划为 v4／inputs v3，不自动补 project 身份或重标旧收据。启动与每次调用按实际 launcher 路由复验；项目、凭据别名或凭据指纹变化须重新批准，不能沿用原授权重新购买同一质检请求。legacy unscoped v1 仅保留原合同，不称作新的 route-bound 计划。
+
+`credentialSha256` 只记录已选择运行凭据的 SHA-256 指纹，不记录 key 值；可在显式 launcher 环境中用 `machine_qc_budget_authorization.credential_fingerprint` 生成。规划工具读取该非秘密指纹，真实消费者用当前环境中的凭据重新计算核对；不要将 `.env.openai` 或 key 值写入 inputs。

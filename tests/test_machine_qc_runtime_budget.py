@@ -43,17 +43,17 @@ def scoped_paths(tmp_path):
 
 
 def authorization(tmp_path, paths=None, *, global_bounds=None):
-    context = auth.context_from_paths(paths, 'zh-Hans', 'dev',route=OPENAI_ROUTE) if paths else None
+    context = auth.context_from_paths(paths, 'zh-Hans', 'dev',route=OPENAI_ROUTE,credential_sha256=auth.credential_fingerprint(OPENAI_ENV["OPENAI_API_KEY"])) if paths else None
     bounds = {'globalBounds': {**AUTHORITY['globalBounds'], **(global_bounds or {})}, 'requestLimits': AUTHORITY['requestLimits']}
     binding = {'budgetRoot': str(tmp_path/'budget'), **bounds}
     if context:
         binding['qcContext'] = context
-    approval = {'schemaVersion': auth.APPROVAL_V3 if context else auth.APPROVAL_V1,
+    approval = {'schemaVersion': auth.APPROVAL_V4 if context else auth.APPROVAL_V1,
                 'humanApproval': True, 'decision':'approved', 'binding':binding}
     if context:
         approval.update(reviewedBy='Fixture', reviewedAt='2026-10-13T00:00:00Z', operatorEvidence='Offline only')
     receipt = write(tmp_path/'approval.json', approval)
-    value = {'schemaVersion': auth.AUTH_V3 if context else auth.AUTH_V1, 'budgetRoot':binding['budgetRoot'],
+    value = {'schemaVersion': auth.AUTH_V4 if context else auth.AUTH_V1, 'budgetRoot':binding['budgetRoot'],
              'approvalReceipt':receipt.name, 'authority':{'approvalSha256':hashlib.sha256(receipt.read_bytes()).hexdigest(),
                'bounds':bounds, 'requestLimits':AUTHORITY['requestLimits']}}
     if context:
@@ -68,7 +68,7 @@ def source_store(root, send, *, bounds=None, reuse=()):
     return budget.SourceBudget(root, authority, verify=lambda: None, transport=send, reuse_roots=reuse)
 
 
-@pytest.mark.parametrize('wrong', ['locale', 'default_locales', 'environment', 'project', 'policy', 'source'])
+@pytest.mark.parametrize('wrong', ['locale', 'default_locales', 'environment', 'project', 'credential', 'policy', 'source'])
 def test_scoped_runtime_refuses_other_artifacts_or_default_three_locales(tmp_path, scoped_paths, wrong):
     path = authorization(tmp_path, scoped_paths)
     selected = {'zh-Hans':scoped_paths}
@@ -78,6 +78,8 @@ def test_scoped_runtime_refuses_other_artifacts_or_default_three_locales(tmp_pat
         selected = {'ko':scoped_paths}; requested = ['ko']
     elif wrong == 'default_locales':
         requested = ['zh-Hans','ko','es']
+    elif wrong == 'credential':
+        environment.update(OPENAI_API_KEY='a-different-synthetic-credential')
     elif wrong == 'project':
         environment.update(OPENAI_PROJECT_ID='proj_unapproved_fixture')
     elif wrong == 'environment':
@@ -94,7 +96,7 @@ def test_valid_scoped_runtime_rechecks_files_without_gpu_session(tmp_path, scope
     path = authorization(tmp_path, scoped_paths)
     with patch.dict('os.environ', OPENAI_ENV), patch('scripts.production_spark_admission.require_session', side_effect=AssertionError('GPU')):
         judge = text.api_judge_for_resolved(path, {'zh-Hans':scoped_paths}, requested_locales=['zh-Hans'])
-        assert judge.identity['settings']['qcContext'] == auth.context_from_paths(scoped_paths,'zh-Hans','dev',route=OPENAI_ROUTE)
+        assert judge.identity['settings']['qcContext'] == auth.context_from_paths(scoped_paths,'zh-Hans','dev',route=OPENAI_ROUTE,credential_sha256=auth.credential_fingerprint(OPENAI_ENV["OPENAI_API_KEY"]))
         assert judge.ledger.qc_context == judge.identity['settings']['qcContext']
         value = json.loads(Path(scoped_paths['source']).read_text()); value['reviewProbe']='changed'
         write(Path(scoped_paths['source']),value)

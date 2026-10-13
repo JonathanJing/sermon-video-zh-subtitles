@@ -39,10 +39,12 @@ class PlanTests(unittest.TestCase):
         for locale in plan.LOCALES:
             policy=json.loads(json.dumps(self.policy));policy['targetLocale']=locale
             write(self.base/f'{locale}.json',policy)
+        from tests.test_run_machine_qc_audio_test import OPENAI_ENV
         self.manifest = write(self.base / 'inputs.json', {
-            'schemaVersion':'sermon-machine-qc-inputs-v2', 'environment':'dev',
+            'schemaVersion':'sermon-machine-qc-inputs-v3', 'environment':'dev',
             'openaiRoute':{'schemaVersion':'sermon-openai-runtime-route-v1','environment':'dev','projectId':'proj_fixture',
-                           'credentialAlias':'tongxing-dev-runtime','identitySource':'configured_runtime'}, 'source':'source.json',
+                           'credentialAlias':'tongxing-dev-runtime','identitySource':'configured_runtime'},
+            'credentialSha256':auth.credential_fingerprint(OPENAI_ENV['OPENAI_API_KEY']), 'source':'source.json',
             'anchor':'anchor.json','policies':{locale:f'{locale}.json' for locale in plan.LOCALES}})
 
     def args(self, name='run', locales='ko', total='20', extra=()):
@@ -63,6 +65,9 @@ class PlanTests(unittest.TestCase):
             judge=driver.api_judge_for_resolved(Path(stage['authorization']),{'ko':paths},requested_locales=['ko'])
             self.assertEqual(judge.ledger.qc_context['openaiRoute']['projectId'],'proj_fixture')
             with mock.patch.dict('os.environ',{'OPENAI_PROJECT_ID':'proj_unapproved'}):
+                with self.assertRaisesRegex(ValueError,'qc_budget_context_changed'):
+                    driver.api_judge_for_resolved(Path(stage['authorization']),{'ko':paths},requested_locales=['ko'])
+            with mock.patch.dict('os.environ',{'OPENAI_API_KEY':'different-synthetic-key'}):
                 with self.assertRaisesRegex(ValueError,'qc_budget_context_changed'):
                     driver.api_judge_for_resolved(Path(stage['authorization']),{'ko':paths},requested_locales=['ko'])
         self.assertFalse((Path(stage['budgetRoot'])/'source-budget.json').exists())
