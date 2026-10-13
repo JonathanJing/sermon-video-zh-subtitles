@@ -147,3 +147,9 @@ commit `0ef25fe0` 修复独立unit QC默认无job而raw计数的问题：CLI必�
 Fitted rate新v2要求rateImplementationSha256，闭包六文件含计数schedule、formal、ko、terminology、common与policyactivationhelper；predict／budget／max_units_for共用校验。旧ratev1只兼容raw策略，registeredspoken-v2必须refit，不能把旧系数配新规则。静态旧rawfixture明确v1，新v2fixture绑定currenthash。独立rate矩阵53passed／53deselected／41subtests（11.71秒）；先前broad78passed／41subtests（96.67秒）因不必要慢校准中断，保留日志但不声明完整pass。
 
 最终冻结字节统一443passed／75subtests（15.51秒），包含grammar三文件、完整SpokenMode、condensation三文件、rateidentity、spokenlength和原PredictedSchedule／AudioQc类。阶段重叠不能相加；没有模型／Spark／部署或完整consumer重跑。默认整PRdiffcheck／脱敏verify通过，报告保持draft，最终head CI独立核验。
+
+## 最终代码合并终态
+
+GitHub当前核对：#362最终代码head `e173a663c26cf7a28c5ab32eb9c2c5b90f2a8ce9` 的CI为18 SUCCESS、2 SKIPPED，无未解决review线程（主Agent已核验）。PR状态MERGED，mergedAt `2026-10-13T03:42:44Z`，mergeCommit `c1719208edd37073201efd3c827e1afd7e4cc62a`；远端dev的ls-remote同为该commit，主Agent的fetch核验一致。其余本次请求PR #360／#359／#361／#363已由主Agent核验合并。
+
+这次只补终态文档，没有重跑代码测试、模型、Spark、部署或真实重新校准。代码合并及CI是代码证据，不表示新规则真实音频、当前生产calibration、Firebase／App、设备或现场验收通过。#364保持独立docs-only draft，未合并。此前各阶段失败／通过证据按各自head保留，不改写为一次最终全套本地测试。
