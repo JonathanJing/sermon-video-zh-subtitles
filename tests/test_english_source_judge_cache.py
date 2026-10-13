@@ -118,3 +118,33 @@ class JudgeSingleFlightTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unknown L1 request outcome'):
             self.call()
         self.assertEqual(self.calls, [])
+
+    def test_durable_api_return_recovers_before_source_marker_without_dispatch(self):
+        from unittest.mock import patch
+        from scripts.production_spark_admission import SessionBoundCaller
+        wrapped=SessionBoundCaller(self.provider,requires_spark=False,outcome_directory=self.root/'api-cli-outcomes')
+        original=cache._atomic
+        def crash(path,value):
+            if path.parent.name=='cache' and not path.name.endswith('.started.json'):
+                raise OSError('crash before source cache receipt')
+            original(path,value)
+        with patch.object(cache,'_atomic',side_effect=crash):
+            with self.assertRaises(OSError):self.call(caller=wrapped)
+        self.assertEqual(self.calls,[0])
+        result,_=self.call(caller=wrapped)
+        self.assertEqual(result,{'ok':True});self.assertEqual(self.calls,[0])
+
+    def test_wrong_request_marker_does_not_recover_another_return(self):
+        from unittest.mock import patch
+        from scripts.production_spark_admission import SessionBoundCaller
+        wrapped=SessionBoundCaller(self.provider,requires_spark=False,outcome_directory=self.root/'api-cli-outcomes')
+        original=cache._atomic
+        def crash(path,value):
+            if path.parent.name=='cache' and not path.name.endswith('.started.json'):raise OSError('crash')
+            original(path,value)
+        with patch.object(cache,'_atomic',side_effect=crash):
+            with self.assertRaises(OSError):self.call(caller=wrapped)
+        marker=next((self.root/'cache').glob('*.started.json'))
+        row=json.loads(marker.read_text());row['request']['payload']['group']=1;marker.write_text(json.dumps(row))
+        with self.assertRaisesRegex(ValueError,'Unknown L1'):self.call(caller=wrapped)
+        self.assertEqual(self.calls,[0])

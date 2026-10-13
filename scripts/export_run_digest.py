@@ -150,11 +150,46 @@ def redact(text: str, secrets: list[str]) -> tuple[str, dict[str, int]]:
     return text, counts
 
 
+PRIVATE_OUTCOME_PREFIX = 'sermon-api-cli-outcome-v'
+PRIVATE_OUTCOME_FIELDS = {'response', 'rawBodyBase64', 'failure', 'executionBinding'}
+
+def private_outcome(value, path):
+    return (isinstance(value, dict) and (str(value.get('schemaVersion','')).startswith(PRIVATE_OUTCOME_PREFIX)
+                                           or 'rawBodyBase64' in value)
+            or 'api-cli-outcomes' in path.parts)
+
+def outcome_metadata(value):
+    allowed = {'schemaVersion','status','purpose','requestSha256','responseSha256',
+               'rawBodySha256','httpStatus','failureType','notDispatchedReason',
+               'executionBindingSha256','reconciliationEvidenceSha256','reconciledFromSchemaVersion'}
+    return {**{key:value[key] for key in allowed if key in value},
+            'privateResponseOmitted':True, 'exportSchemaVersion':'sermon-api-cli-outcome-metadata-v1'}
+
+
+def private_response_nodes(value):
+    if isinstance(value,dict):
+        if private_outcome(value,Path()) and PRIVATE_OUTCOME_FIELDS & set(value): return True
+        return any(private_response_nodes(child) for child in value.values())
+    if isinstance(value,list):return any(private_response_nodes(child) for child in value)
+    return False
+
+def public_metadata_tree(value):
+    if isinstance(value,dict):
+        if private_outcome(value,Path()):return outcome_metadata(value)
+        return {key:public_metadata_tree(child) for key,child in value.items()}
+    if isinstance(value,list):return [public_metadata_tree(child) for child in value]
+    return value
+
+
 def verify(dest: Path, secrets: list[str]) -> list[str]:
     """Return files that still hold a value the redaction rules would change."""
     leaks = []
     for path in sorted(p for p in dest.rglob("*") if p.is_file() and p.suffix != ".zip"):
         text = path.read_text(encoding="utf-8", errors="replace")
+        try: parsed = json.loads(text)
+        except ValueError: parsed = None
+        if (private_outcome(parsed,path) and (not isinstance(parsed,dict) or PRIVATE_OUTCOME_FIELDS & set(parsed))) or private_response_nodes(parsed):
+            leaks.append(f"{path.relative_to(dest)}: private_model_response")
         hits = [name for name, pattern, _ in REDACTIONS if name != "secret_field" and pattern.search(text)]
         # A secret field counts unless its value is the placeholder or a plain count
         # (the manifest's own redaction counters, e.g. "env_secret": 1).
@@ -286,7 +321,14 @@ def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[
                 parsed = json.loads(text)
             except ValueError:
                 parsed = None
+        if private_outcome(parsed,rel):
+            if not isinstance(parsed,dict):
+                entry.update(omitted='private_api_cli_outcome');entries.append(entry);continue
+            parsed = outcome_metadata(parsed)
+            entry['privateResponseOmitted'] = True
         if parsed is not None:
+            if private_response_nodes(parsed): entry['privateResponseOmitted'] = True
+            parsed = public_metadata_tree(parsed)
             entry["redactions"] = {}
             text = json.dumps(redact_json(parsed, secrets, entry["redactions"]), ensure_ascii=False, indent=2) + "\n"
         else:

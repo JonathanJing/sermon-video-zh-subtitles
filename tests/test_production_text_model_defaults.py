@@ -27,13 +27,26 @@ class TextRoleDefaultTests(unittest.TestCase):
         self.assertEqual(notes.DEFAULT_REASONING_EFFORT, 'high')
         self.assertEqual(source_review.SUPPORTED_MODELS, {'gpt-6-astra', 'gpt-6.1-sol'})
 
-    def test_migrated_chat_refuses_uncapped_sol_before_api(self):
-        payload = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high', 'messages': []}
-        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_ACCOUNTING_DIR':tmp}), patch.object(sermon_pipeline, 'json_request', side_effect=AssertionError('dispatched')) as api:
-            with self.assertRaisesRegex(ValueError, 'unsupported_budget_capability'):
-                sermon_pipeline.chat_json('unrelated-asr-key', payload, session_verifier=lambda: {'status': 'offline_test'})
-            api.assert_not_called()
-            self.assertFalse((Path(tmp)/'api-cli-outcomes').exists())
+    def test_migrated_legacy_chat_caps_valid_copy_without_mutating_input(self):
+        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+        payload={'model':'gpt-6.1-sol','reasoning_effort':'high',
+                 'messages':[{'role':'user','content':'synthetic'}], 'response_format':{'type':'json_object'}}
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_ACCOUNTING_DIR':tmp}), patch.object(sermon_pipeline,'json_request',return_value={'ok':True}) as api:
+            sermon_pipeline.chat_json('synthetic-key',payload)
+        self.assertNotIn('max_completion_tokens',payload)
+        sent=api.call_args.args[2]
+        self.assertEqual(sent['max_completion_tokens'],DEFAULT_REQUEST_LIMITS['maxCompletionTokens'])
+        self.assertEqual(sent['service_tier'],'default')
+        self.assertEqual(sent['messages'],payload['messages'])
+
+    def test_already_supplied_cap_is_not_increased_or_silently_changed(self):
+        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+        payload={'model':'gpt-6.1-sol','reasoning_effort':'high',
+                 'messages':[{'role':'user','content':'synthetic'}], 'response_format':{'type':'json_object'},
+                 'max_completion_tokens':DEFAULT_REQUEST_LIMITS['maxCompletionTokens']-1}
+        with patch.object(sermon_pipeline,'json_request') as api:
+            with self.assertRaises(ValueError):sermon_pipeline.chat_json('synthetic-key',payload)
+        api.assert_not_called()
 
     def test_supervisor_defaults_cli_and_preserves_explicit_historical_api(self):
         from scripts import run_sermon_production_supervisor_agent as agent
@@ -53,3 +66,28 @@ class TextRoleDefaultTests(unittest.TestCase):
         api.assert_called_once()
         self.assertEqual(json.loads(notes.extract_response_text(result)), {'summaryZh': 'sample'})
         self.assertEqual(api.call_args.kwargs['json']['reasoning']['effort'], 'high')
+
+    def test_actual_legacy_builders_pass_validated_caps_to_offline_transport(self):
+        from scripts import build_sermon_reading_edition_with_openai as reading
+        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+        sent=[]
+        def respond(url,key,payload,**kwargs):
+            sent.append(payload)
+            user=payload['messages'][1]['content']
+            if '<timed_segments>' in user:result={'segments':[{'id':0,'text':'Hello.'}]}
+            elif '<context>' in user:result={'id':0,'zh':'您好。'}
+            else:result={'blocks':[{'id':0,'zh':'您好。'}]}
+            return {'model':payload['model'],'choices':[{'message':{'content':json.dumps(result)}}]}
+        with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch.object(sermon_pipeline,'json_request',side_effect=respond):
+            root=Path(tmp);segments=[{'id':0,'start':0.0,'end':1.0,'text':'Hello.'}]
+            sermon_pipeline.correct_english('synthetic-key',segments,[],root/'correct','gpt-6.1-sol',{},30)
+            sermon_pipeline.translate_chinese('synthetic-key',segments,root/'translate','gpt-6.1-sol',{})
+            blocks=[{'id':0,'start':0.0,'end':1.0,'en':'Hello.','zh':'您好。'}]
+            for qa in (False,True):
+                reading.edit_batch('synthetic-key',blocks,blocks,0,root/'reading',model='gpt-6.1-sol',
+                    reasoning_effort='high',qa_pass=qa,provider='openai',codex_cli=Path('unused'),schema_path=Path('unused'))
+        self.assertEqual(len(sent),4)
+        for payload in sent:
+            self.assertEqual(payload['max_completion_tokens'],DEFAULT_REQUEST_LIMITS['maxCompletionTokens'])
+            self.assertEqual(payload['service_tier'],'default')
+            self.assertEqual(payload['reasoning_effort'],'high')
