@@ -675,7 +675,7 @@ def transcribe_openai_audio(
     session_verifier=None,
 ):
     return spark_admission.SessionBoundCaller(multipart_request, verifier=session_verifier,
-        purpose="source-audio-api")(
+        purpose="source-audio-api", requires_spark=False)(
         TRANSCRIBE_URL,
         api_key,
         transcription_request_fields(
@@ -995,7 +995,7 @@ def chunk_text_for_window(chunks, start, end):
 
 def chat_json(api_key, payload, retries=1, *, session_verifier=None):
     return spark_admission.SessionBoundCaller(_chat_json, verifier=session_verifier,
-        purpose="production-text-call")(api_key, payload, retries=retries)
+        purpose="production-text-call", requires_spark=False)(api_key, payload, retries=retries)
 
 
 def _chat_json(api_key, payload, retries=1):

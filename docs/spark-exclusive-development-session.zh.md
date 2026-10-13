@@ -4,6 +4,8 @@
 
 2026-10-05 用户修正：页面制作拥有高优先级，不等待其他任务自然空闲。先保存其他任务状态，再暂停入口并中断竞争工作负载；不支持检查点的任务允许保存参数和产物后中断，结束后从已有产物重跑。未知 API 调用先对账，不自动重发。此处“恢复”包括服务重启和从已有产物重新执行，不能宣称任意 GPU 进程都能恢复到同一条指令。
 
+2026-10-13 用户决定：**只调 API 的环节不占 Spark 会话**。Layer 2 翻译与复核、文本质检（回译评判）、Codex Supervisor、学习笔记、英文机器审核、阅读版本、旧页面文本与源音频转写都只调远程 API 或 Mac 本地 Codex CLI，不再检查独占会话，也不再为每次调用建立 Spark job hold（`SessionBoundCaller(..., requires_spark=False)`）。这些环节进行时 Spark 上的服务照常运行；进程异常退出也不会让会话进入 `reconcile_required`。GPU 环节不变：TTS 渲染、配音初筛 ASR、音频质检、MFA 和本地模型调用仍要求会话及 job hold。周更只在 Spark 环节期间 begin 会话，结束后 finish。
+
 ## 当前发现
 
 核验主机 `achillesjing@192.168.1.152`：Docker 所有容器均已停止，但 GPU 上仍有 `llama-server.service` 的 llama-server 进程，报告 35,695 MiB（约 34.9 GiB）。主机 MemAvailable 为 76,301,090,816 bytes（约 71.1 GiB）。这些是调查时刻的读数，不是未来开跑保证。

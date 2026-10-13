@@ -554,7 +554,8 @@ def codex_json(
     session_verifier=None,
 ) -> dict[str, Any]:
     from scripts.production_spark_admission import SessionBoundCaller
-    return SessionBoundCaller(_codex_json, verifier=session_verifier, purpose="production-reading-edition")(
+    return SessionBoundCaller(_codex_json, verifier=session_verifier, purpose="production-reading-edition",
+                              requires_spark=False)(
         payload, codex_cli=codex_cli, model=model, reasoning_effort=reasoning_effort,
         schema_path=schema_path, output_path=output_path)
 

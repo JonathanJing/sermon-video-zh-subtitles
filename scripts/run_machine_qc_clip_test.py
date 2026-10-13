@@ -450,17 +450,9 @@ class ApiJudge:
             raise ValueError("Machine QC API calls need the dev or prod OpenAI launcher")
         self.limits = limits
         self.request_limits = value["authority"]["requestLimits"]
-        # API-only calls use no Spark compute: the process verifies the exclusive session
-        # before its first call and again each minute, instead of a hold per request.
-        from scripts.production_spark_admission import require_session
-        self._session_checked, self._session_lock = 0.0, threading.Lock()
-
+        # API-only calls use no Spark compute and take no Spark session (2026-10-13).
         def verify():
-            with self._session_lock:
-                if time.monotonic() - self._session_checked > 60:
-                    require_session()
-                    self._session_checked = time.monotonic()
-        verify()
+            return None
         wall = self.request_limits["wallTimeMs"] / 1000
 
         def transport(endpoint, request, content_type, api_key):
@@ -490,7 +482,7 @@ class ApiJudge:
                                       "maxCompletionTokens": self.request_limits["maxCompletionTokens"],
                                       "route": {k: route.get(k) for k in ("environment", "credentialAlias")},
                                       "transport": {"adapterSha256": file_sha256(Path(__file__)),
-                                                    "sessionCheck": "per_process_60s"}}}
+                                                    "sessionCheck": "none_api_only"}}}
 
     def key(self, role, system, user, schema) -> str:
         return json_sha256({"role": role, "system": system, "user": user, "schema": schema,

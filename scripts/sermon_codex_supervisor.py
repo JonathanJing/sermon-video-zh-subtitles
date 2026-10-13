@@ -21,7 +21,7 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
     real_caller = call_json is None
     if real_caller:
         from scripts.sermon_codex_transport import call_json
-        call_json = spark_admission.SessionBoundCaller(call_json, purpose="production-supervisor")
+        call_json = spark_admission.SessionBoundCaller(call_json, purpose="production-supervisor", requires_spark=False)
     timeout = getattr(args, 'agent_timeout_seconds', 21600)
     if not math.isfinite(timeout) or timeout <= 0 or not 1 <= args.max_turns <= 100:
         raise AgentsAPIError('invalid_supervisor_limits')
@@ -104,8 +104,6 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
             prompt = instructions + '\nThe host already performed inspection. Return JSON with tool and arguments only; no shell tools.\n' + json.dumps({
                 'state': snapshot, 'tools': definitions, 'attemptedStages': tools.state['attemptedStages'],
                 'mode': args.mode}, ensure_ascii=False)
-            if real_caller:
-                spark_admission.require_session()
             state.update(pending=True, turns=state['turns'] + 1)
             state['dispatchAttempts'] = state.get('dispatchAttempts', state['turns'] - 1) + 1
             _write_json(directory / 'codex-state.json', state)

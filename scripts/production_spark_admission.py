@@ -69,17 +69,23 @@ def require_bound_model_session(*, verifier=None):
 
 
 class SessionBoundCaller:
-    """Keep transport protocol attributes and check before new real work."""
-    def __init__(self, caller, *, verifier=None, purpose="production-model-call"):
+    """Keep transport protocol attributes and check before new real work.
+
+    ``requires_spark=False`` marks a caller that only reaches a remote API or the local
+    Codex CLI: it takes no Spark session check and no durable Spark job hold (user
+    decision 2026-10-13: only GPU stages occupy Spark). Local model callers keep the default."""
+    def __init__(self, caller, *, verifier=None, purpose="production-model-call", requires_spark=True):
         self.caller = caller
         self.verifier = verifier
         self.purpose = purpose
+        self.requires_spark = requires_spark
 
     def __getattr__(self, name):
         return getattr(self.caller, name)
 
     def admit_resource(self, payload):
-        require_session(verifier=self.verifier)
+        if self.requires_spark:
+            require_session(verifier=self.verifier)
         admit = getattr(self.caller, "admit_resource", None)
         return admit(payload) if admit is not None else None
 
@@ -91,6 +97,8 @@ class SessionBoundCaller:
         except (TypeError, ValueError) as exc:
             from scripts.spark_exclusive_session import SessionError
             raise SessionError("model_caller_arguments_invalid_before_dispatch") from exc
+        if not self.requires_spark:
+            return self.caller(*args, **kwargs)
         if self.verifier is not None:
             require_session(verifier=self.verifier)
             return self.caller(*args, **kwargs)
