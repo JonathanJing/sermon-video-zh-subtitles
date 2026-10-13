@@ -235,6 +235,42 @@ def test_production_baseline_acquires_frozen_version_and_config(tmp_path, monkey
     assert publication.read(out / 'firebase.json')['hosting']['rewrites'][0]['run'] == config['rewrites'][0]['run']
 
 
+
+def test_baseline_waits_for_a_freshly_deployed_file_to_propagate(tmp_path, monkeypatch):
+    # 2026-10-13 Dev: a file of a version deployed 3.5 s earlier answered 404 and the refresh failed.
+    from urllib.error import HTTPError
+    target = publication.hosting_target('production')
+    version = 'sites/' + target['site'] + '/versions/fresh'
+    raw = b'{"pages": []}'
+    compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+    sha = hashlib.sha256(compressed).hexdigest()
+    def request(method, url):
+        if url.endswith('/files?pageSize=1000'):
+            return {'files': [{'path': '/multilingual-v3.json', 'status': 'ACTIVE', 'hash': sha}]}
+        return {'status': 'FINALIZED', 'config': {}}
+    class Response(io.BytesIO):
+        status = 200
+        headers = {'Content-Encoding': 'gzip', 'Etag': '"' + sha + '"'}
+    answers = ['404', 'stale', 'fresh']
+    def download(req, timeout):
+        answer = answers.pop(0)
+        if answer == '404':
+            raise HTTPError(req.full_url, 404, 'Not Found', {}, None)
+        return Response(gzip.compress(b'{"old": 1}', mtime=0) if answer == 'stale' else compressed)
+    monkeypatch.setattr(publication.publisher, 'authenticated_transport', lambda: request)
+    monkeypatch.setattr(publication.publisher, 'live_version', lambda req, site: version)
+    monkeypatch.setattr(publication, 'urlopen', download)
+    monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 60.0)
+    monkeypatch.setattr(publication.publisher.time, 'sleep', lambda seconds: None)
+    out = tmp_path / 'baseline'
+    assert publication.baseline(out, environment='production')['status'] == 'complete_verified_not_deployed'
+    assert (out / 'public/multilingual-v3.json').read_bytes() == raw and answers == []
+    # Without time to propagate, the read still fails rather than accepting other bytes.
+    monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 0.0)
+    answers[:] = ['stale']
+    with pytest.raises(ValueError, match='no longer matches frozen version'):
+        publication.baseline(tmp_path / 'baseline-2', environment='production')
+
 def test_gzip_identity_hash_rejects_changed_bytes(tmp_path):
     path = tmp_path / 'raw'
     path.write_bytes(b'known media bytes')

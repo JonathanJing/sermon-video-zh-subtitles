@@ -201,29 +201,37 @@ def baseline(out, *, cache_public=None, cache_receipt=None, environment='dev'):
             raw_sha = prior['rawSha256']
         else:
             compressed = target.with_suffix(target.suffix + '.download')
-            h = hashlib.sha256()
-            with urlopen(Request(origin + '/' + quote(str(relative), safe='/'), headers={'Accept-Encoding': 'gzip', 'Cache-Control': 'no-cache'}), timeout=120) as response:
-                contract.require(response.status == 200, 'Live file GET failed')
-                encoding = response.headers.get('Content-Encoding')
-                etag = response.headers.get('Etag')
-                with compressed.open('xb') as stream:
-                    for chunk in iter(lambda: response.read(1024 * 1024), b''):
-                        h.update(chunk)
-                        stream.write(chunk)
-            if encoding == 'gzip':
-                contract.require(h.hexdigest() == row['hash'], 'Live file no longer matches frozen version: ' + row['path'])
-                with gzip.open(compressed, 'rb') as source, target.open('xb') as dest:
-                    shutil.copyfileobj(source, dest)
-                compressed.unlink()
-            else:
-                contract.require(encoding in (None, 'identity'), 'Unsupported live content encoding')
-                contract.require(etag == '"' + row['hash'] + '"'
-                                 and row['hash'] in firebase_cli_gzip_hashes(compressed),
-                                 'Identity response no longer matches frozen gzip version: ' + row['path'])
-                compressed.rename(target)
-            mode = ('live_get_version_hash_verified' if encoding == 'gzip'
-                    else 'live_get_identity_exact_gzip_version_hash_reconstructed')
-            raw_sha = digest(target)
+            # A file of a version deployed seconds ago may 404 or still serve the previous bytes.
+            return publisher.await_propagation(lambda: fetch(row, relative, target, compressed, managed))
+        return {'path': row['path'], 'rawSha256': raw_sha, 'rawBytes': target.stat().st_size,
+                'liveGzipSha256': row['hash'], 'sourceKind': mode, 'managed': managed}
+
+    def fetch(row, relative, target, compressed, managed):
+        for leftover in (compressed, target):
+            leftover.unlink(missing_ok=True)
+        h = hashlib.sha256()
+        with urlopen(Request(origin + '/' + quote(str(relative), safe='/'), headers={'Accept-Encoding': 'gzip', 'Cache-Control': 'no-cache'}), timeout=120) as response:
+            contract.require(response.status == 200, 'Live file GET failed')
+            encoding = response.headers.get('Content-Encoding')
+            etag = response.headers.get('Etag')
+            with compressed.open('xb') as stream:
+                for chunk in iter(lambda: response.read(1024 * 1024), b''):
+                    h.update(chunk)
+                    stream.write(chunk)
+        if encoding == 'gzip':
+            contract.require(h.hexdigest() == row['hash'], 'Live file no longer matches frozen version: ' + row['path'])
+            with gzip.open(compressed, 'rb') as source, target.open('xb') as dest:
+                shutil.copyfileobj(source, dest)
+            compressed.unlink()
+        else:
+            contract.require(encoding in (None, 'identity'), 'Unsupported live content encoding')
+            contract.require(etag == '"' + row['hash'] + '"'
+                             and row['hash'] in firebase_cli_gzip_hashes(compressed),
+                             'Identity response no longer matches frozen gzip version: ' + row['path'])
+            compressed.rename(target)
+        mode = ('live_get_version_hash_verified' if encoding == 'gzip'
+                else 'live_get_identity_exact_gzip_version_hash_reconstructed')
+        raw_sha = digest(target)
         return {'path': row['path'], 'rawSha256': raw_sha, 'rawBytes': target.stat().st_size,
                 'liveGzipSha256': row['hash'], 'sourceKind': mode, 'managed': managed}
 

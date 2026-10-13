@@ -233,3 +233,47 @@ def test_published_v4_readback_must_match_the_sealed_catalog(tmp_path, monkeypat
     with pytest.raises(ValueError, match='Published v4 catalog readback differs'):
         p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
+
+
+def test_await_propagation_retries_reads_until_they_pass_or_the_deadline():
+    now, sleeps, calls = [0.0], [], []
+    def clock(): return now[0]
+    def sleep(seconds): sleeps.append(seconds); now[0] += seconds
+    def eventually():
+        calls.append(1)
+        p.contract.require(len(calls) >= 3, 'stale')
+        return 'fresh'
+    assert p.await_propagation(eventually, timeout=30, interval=5, sleep=sleep, clock=clock) == 'fresh'
+    assert sleeps == [5, 5]
+    calls.clear(); sleeps.clear(); now[0] = 0.0
+    def never(): calls.append(1); raise ValueError('still stale')
+    with pytest.raises(ValueError, match='still stale'):
+        p.await_propagation(never, timeout=12, interval=5, sleep=sleep, clock=clock)
+    assert sleeps == [5, 5] and len(calls) == 3
+
+
+def test_a_v4_catalog_that_reads_back_stale_at_first_is_deployed_once_it_propagates(tmp_path, monkeypatch):
+    # 2026-10-13 Dev: the v4 catalog read back stale right after a successful deploy and the
+    # attempt was left outcome_unknown, needing a manual reconcile.
+    monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot: None)
+    monkeypatch.setattr(p, 'PROPAGATION_TIMEOUT_SECONDS', 60.0)
+    monkeypatch.setattr(p.time, 'sleep', lambda seconds: None)
+    intent, data, sha = setup(tmp_path); remote = Remote()
+    v4 = b'{"schemaVersion": "sermon-multilingual-catalog-v4"}'
+    report = json.loads((tmp_path / 'seal-report.json').read_text())
+    report['catalogV4Sha256'] = hashlib.sha256(v4).hexdigest()
+    (tmp_path / 'seal-report.json').write_text(json.dumps(report))
+    reads = {'v4': 0}
+    def reader(url):
+        if url.endswith('/multilingual-v4.json'):
+            reads['v4'] += 1
+            # Before the deploy: none yet. Just after: the CDN still serves an older v4 twice.
+            if remote.version != 'new':
+                return 404, b''
+            return (200, b'{"stale": true}') if reads['v4'] <= 3 else (200, v4)
+        return 200, data
+    def deploy(*args, **kwargs): remote.version = 'new'
+    receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                        baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
+    assert receipt['status'] == 'deployed' and receipt['newVersion'] == 'sites/site/versions/new'
+    assert reads['v4'] >= 4

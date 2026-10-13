@@ -121,6 +121,30 @@ class RemoteLease:
         self.request('DELETE', self.object_url + '?ifGenerationMatch=' + self.generation)
 
 
+# Hosting serves a new version through its CDN a little after the deploy returns: on
+# 2026-10-13 a file 404'd 3.5 s after an asset deploy and the v4 catalog read back stale,
+# leaving a deployment that had succeeded marked outcome_unknown. Read-only checks of a
+# fresh deployment are therefore repeated until they pass or this deadline passes.
+PROPAGATION_TIMEOUT_SECONDS = 120.0
+PROPAGATION_INTERVAL_SECONDS = 5.0
+
+
+def await_propagation(check, *, timeout=None, interval=None, sleep=time.sleep, clock=time.monotonic):
+    """Run a read-only ``check`` until it returns; after the deadline its last failure is raised.
+
+    Only for reads (HTTP GETs, hash comparisons): repeating them never changes the site."""
+    timeout = PROPAGATION_TIMEOUT_SECONDS if timeout is None else timeout
+    interval = PROPAGATION_INTERVAL_SECONDS if interval is None else interval
+    deadline = clock() + timeout
+    while True:
+        try:
+            return check()
+        except (ValueError, OSError):
+            if clock() + interval > deadline:
+                raise
+            sleep(interval)
+
+
 def live_version(request, site):
     result = request('GET', 'https://firebasehosting.googleapis.com/v1beta1/sites/' + quote(site, safe='') + '/channels/live')
     # Site release lists include preview channels; Channel.release is the actual live head.
@@ -200,10 +224,14 @@ def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha
                 cwd=snapshot, check=True, stdout=log, stderr=subprocess.STDOUT, timeout=3600)
         progress.update('verifying_readback')
         lease.check()
-        version = live_version(request, intent['site'])
-        contract.require(version != baseline_version, 'No new Hosting version observed')
-        contract.require(public_catalog(reader, intent['origin']) == attempt['catalogSha256'], 'Published catalog readback differs')
-        contract.require(public_catalog_v4(reader, intent['origin']) == report.get('catalogV4Sha256'), 'Published v4 catalog readback differs')
+
+        def readback():
+            version = live_version(request, intent['site'])
+            contract.require(version != baseline_version, 'No new Hosting version observed')
+            contract.require(public_catalog(reader, intent['origin']) == attempt['catalogSha256'], 'Published catalog readback differs')
+            contract.require(public_catalog_v4(reader, intent['origin']) == report.get('catalogV4Sha256'), 'Published v4 catalog readback differs')
+            return version
+        version = await_propagation(readback)
         attempt.update(newVersion=version, completedAt=datetime.now(timezone.utc).isoformat(), status='deployed')
         atomic_json(receipt_path, attempt)
         lease.release()
@@ -248,10 +276,13 @@ def _reconcile(snapshot, *, request, reader, confirmed_version):
     lease.check()
     observed = live_version(request, attempt['intent']['site'])
     contract.require(observed == confirmed_version and observed != attempt['baselineVersion'], 'Explicit confirmed new version differs')
-    contract.require(public_catalog(reader, attempt['intent']['origin']) == attempt['catalogSha256'], 'Remote catalog differs; manual recovery required')
     report = json.loads((Path(snapshot) / 'seal-report.json').read_text())
-    contract.require(public_catalog_v4(reader, attempt['intent']['origin']) == report.get('catalogV4Sha256'),
-                     'Remote v4 catalog differs; manual recovery required')
+
+    def catalogs():
+        contract.require(public_catalog(reader, attempt['intent']['origin']) == attempt['catalogSha256'], 'Remote catalog differs; manual recovery required')
+        contract.require(public_catalog_v4(reader, attempt['intent']['origin']) == report.get('catalogV4Sha256'),
+                         'Remote v4 catalog differs; manual recovery required')
+    await_propagation(catalogs)
     attempt.update(status='deployed', newVersion=observed, completedAt=datetime.now(timezone.utc).isoformat())
     atomic_json(path, attempt)
     lease.release()
