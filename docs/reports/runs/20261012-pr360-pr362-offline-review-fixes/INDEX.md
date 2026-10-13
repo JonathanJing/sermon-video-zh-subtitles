@@ -189,3 +189,11 @@ Error-like log lines (first 5 per log):
 - [pytest.log](pr362-copula-connector-padding-20261012/pytest.log)
 - [summary.json](pr362-copula-connector-padding-20261012/summary.json)
 - [timings.tsv](pr362-copula-connector-padding-20261012/timings.tsv)
+
+## Calibration spoken policy and cache binding
+
+- [contract-final.log](pr362-calibration-spoken-policy-20261012/contract-final.log)
+- [outcome.json](pr362-calibration-spoken-policy-20261012/outcome.json)
+- [pytest.log](pr362-calibration-spoken-policy-20261012/pytest.log)
+- [summary.json](pr362-calibration-spoken-policy-20261012/summary.json)
+- [timings.tsv](pr362-calibration-spoken-policy-20261012/timings.tsv)

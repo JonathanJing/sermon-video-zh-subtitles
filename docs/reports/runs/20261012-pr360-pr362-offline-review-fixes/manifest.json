@@ -61,6 +61,11 @@
       "label": "pr362-copula-connector-padding-20261012",
       "source": "/private/tmp/sermon-fix-362/artifacts/pr362-copula-connector-padding-20261012",
       "skipped": {}
+    },
+    {
+      "label": "pr362-calibration-spoken-policy-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-calibration-spoken-policy-20261012",
+      "skipped": {}
     }
   ],
   "files": [
@@ -761,6 +766,51 @@
       "bytes": 154,
       "truncated": false,
       "sha256": "debf2f04cda97754fc5a8d79b315fa7746b2db5f8402bec687ffe2dfa6672ec3",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-calibration-spoken-policy-20261012",
+      "path": "contract-final.log",
+      "kind": "log",
+      "bytes": 113,
+      "truncated": false,
+      "sha256": "3d9c904573e0005c37768a4079e0eb8f30107ecf911caaecab65415f0c3cb7ab",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-calibration-spoken-policy-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-calibration-spoken-policy-20261012",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 113,
+      "truncated": false,
+      "sha256": "f9c79a0bf13d4cdd1c80d86844403eb61859051ef7feeedb30ce73618c1f5174",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-calibration-spoken-policy-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 316,
+      "truncated": false,
+      "sha256": "7d5f61133a8db7bdc39773d1453a49a6d8215016e1a203e048570ffe2b77707a",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-calibration-spoken-policy-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 75,
+      "truncated": false,
+      "sha256": "a0d47f0083939c0def85b36677dc0fa3496a44ba4702608cbad753cdfa4731ab",
       "redactions": {}
     }
   ],

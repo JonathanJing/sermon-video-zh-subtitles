@@ -97,3 +97,9 @@ commit `4d8cc087` 扩展明确列举的完整 copular endings（인데／이고�
 首轮 293／34 通过（1.33 秒）；扩展 terminal 矩阵暴露 4 个失败（detached 만／suffix），修正后剩 2 个 suffix 删除误过，进一步纳入完整 marker+suffix。最终三文件 312 passed／34 subtests（1.29 秒），所有失败阶段日志保留，不把中间统计相加。
 
 实际 GitHub root-1 CI 在 head 306d57ba 记录 3 failed、78 passed、3 errors、5 subtests（批次24.25秒）：machine-checked delivery fixture 使用 dummy d*64 screening hash，被 current v5 closure gate 正确拒绝。本次仅改 fixture 使用实际 implementation_sha256，不放宽生产校验、阈值或结果断言。完整该测试文件离线 8 passed（3.30 秒）。CI 脱敏摘录已附，最终 head CI 独立核对。完整 consumer 131／64 仍属于 cc353091，没有重跑；没有模型／Spark／部署。报告继续 draft，默认 diff check 与脱敏验证通过，副本规范化保留 source hash 并绑定 exportedCopy。
+
+## 校准 TTS 消费冻结口播策略
+
+commit `f08720bf` 修复 Qwen 校准 transport 对变异文本直接合成 Arabic 数字、与正式 v2 Sino 路径不一致的问题。调用在合成及缓存 lookup 前使用 formal.policy_spoken_forms 与 job 冻结 normalization hash；v1 保留 raw，v2 request／record 绑定实际 spokenTextSha256，缓存读回核对 approved text／spoken binding。不存在的校准 unit 用独立合成单元查询同一策略，不把变异文本误当原 job 固定句。
+
+离线注入 Synth 的定向 transport 测试最终 2 passed、12 deselected（0.32 秒）：验证 v1 raw、v2 Sino、cache reuse、规则派生文本变化 cache miss 和 spoken hash 篡改拒绝，以及 primary ASR 合同。首轮单测 1 passed／13 deselected（0.18 秒），不相加。没有模型／Spark／部署或真实重新校准，完整 consumer 未重跑，旧真实校准不能外推新口播实现。新 head CI 单独核对，报告仍 draft。
