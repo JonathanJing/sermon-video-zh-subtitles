@@ -8,6 +8,7 @@ All paths in the render manifest are relative to its artifact root.
 from __future__ import annotations
 
 import argparse
+import difflib
 from datetime import datetime
 import hashlib
 import json
@@ -340,6 +341,21 @@ def validate_captions(captions: dict[str, Any], candidate: dict[str, Any],
         previous_end = end
 
 
+def legacy_v1_screening_score(expected: str, recognized: str, locale: str,
+                              min_similarity: float) -> tuple[float, list[dict], bool]:
+    """Reproduce the v1 producer: unfolded ratio and short-unit exactness only.
+
+    Keyword/protected-text checks were introduced with v2; adding them when
+    reading v1 would change frozen historical evidence.
+    """
+    left, right = audio_screen.tokens(expected, locale), audio_screen.tokens(recognized, locale)
+    matcher = difflib.SequenceMatcher(None, left, right, autojunk=False)
+    similarity = round(matcher.ratio(), 6)
+    differences = [{"kind": kind, "expected": left[start:end], "recognized": right[other_start:other_end]}
+                   for kind, start, end, other_start, other_end in matcher.get_opcodes() if kind != "equal"]
+    return similarity, differences, similarity >= min_similarity and (len(left) >= 4 or not differences)
+
+
 def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_root: Path, *,
                   strict_rubric: dict[str, Any] | None = None) -> dict[str, Any]:
     source, anchor, candidate, job, adapter, policy, human_receipt, registry, clip_timeline = (
@@ -564,13 +580,20 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
                 "Machine screening receipt does not cover this exact audio set")
         require(len(screening["results"]) == len(units),
                 "Machine screening result count differs from audio units")
-        # Rescore under the identity the receipt was screened with: v2 receipts record it
-        # (folded scoring since v4); v1 receipts were scored by the unfolded v3 ratio.
-        scoring = (screening.get("asrSettings") or {}).get("scoring", audio_screen.SCORING_V3)
+        # Check the complete v2 settings/implementation identity before any score runs.
+        # Legacy v1 has its own historical ratio rule, predating v2's protected checks.
+        scoring = None
+        if screening["schemaVersion"] == "sermon-target-language-audio-screening-v2":
+            from scripts.target_audio_auto_qc import screening_asr_settings
+            scoring = screening_asr_settings(screening)["scoring"]
         for index, (result, unit, job_unit) in enumerate(zip(
                 screening["results"], units, job["units"])):
-            similarity, differences, passed = audio_screen.score(
-                job_unit["text"], result["recognized"], locale, screening["minSimilarity"], scoring=scoring)
+            if scoring is None:
+                similarity, differences, passed = legacy_v1_screening_score(
+                    job_unit["text"], result["recognized"], locale, screening["minSimilarity"])
+            else:
+                similarity, differences, passed = audio_screen.score(
+                    job_unit["text"], result["recognized"], locale, screening["minSimilarity"], scoring=scoring)
             require(result["textGroupId"] == unit["textGroupId"]
                     and result["targetTextSha256"] == unit["targetTextSha256"]
                     and result["audioSha256"] == unit["audio"]["sha256"]

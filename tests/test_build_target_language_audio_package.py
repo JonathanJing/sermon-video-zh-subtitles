@@ -673,24 +673,64 @@ class AudioPackageTests(unittest.TestCase):
         write_json(self.asset_root / rel, self.screening)
         self.manifest["machineScreeningReceipt"] = self.artifact(rel, json_artifact=True)
 
+    def use_v2_screening(self):
+        settings = {"protocol": "formal-back-asr-batch-v1", "model": self.screening["model"],
+                    "modelRevision": self.screening["modelRevision"], "language": "ko", "batchSize": 1,
+                    "minSimilarity": self.screening["minSimilarity"], "scoring": subject.audio_screen.SCORING,
+                    "implementationSha256": subject.audio_screen.implementation_sha256(),
+                    "runtime": {"backend": "fixture-asr"}}
+        self.screening.update(schemaVersion="sermon-target-language-audio-screening-v2",
+                              asrSettings=settings, asrSettingsSha256=subject.json_sha256(settings))
+        self.write_screening()
+
     def test_screening_results_are_rescored_under_the_receipts_own_scoring(self):
-        # 2026-10-12 Chinese clip: the screener folded 他/它 to similarity 1.0 under its
-        # recorded scoring, and the builder's unfolded rescoring (0.93) refused the package.
+        with mock.patch.object(subject.audio_screen, "score", side_effect=AssertionError("v1 is not v3")):
+            self.assertEqual(self.build()["status"], "machine_screened")
+        self.use_v2_screening()
         original, seen = subject.audio_screen.score, []
         def spy(*args, **kwargs):
             seen.append(kwargs.get("scoring"))
             return original(*args, **kwargs)
         with mock.patch.object(subject.audio_screen, "score", side_effect=spy):
-            self.build()
-        self.assertEqual(set(seen), {subject.audio_screen.SCORING_V3})
-        settings = {"scoring": subject.audio_screen.SCORING}
-        self.screening.update(schemaVersion="sermon-target-language-audio-screening-v2",
-                              asrSettings=settings, asrSettingsSha256=subject.json_sha256(settings))
-        self.write_screening()
-        seen.clear()
-        with mock.patch.object(subject.audio_screen, "score", side_effect=spy):
             self.assertEqual(self.build()["status"], "machine_screened")
         self.assertEqual(set(seen), {subject.audio_screen.SCORING})
+
+    def test_v2_rejects_settings_digest_or_current_closure_before_scoring(self):
+        self.use_v2_screening()
+        pristine = copy.deepcopy(self.screening)
+        for mutation in ("digest", "closure", "scoring"):
+            self.screening = copy.deepcopy(pristine)
+            if mutation == "digest":
+                self.screening["asrSettingsSha256"] = "0" * 64
+            elif mutation == "scoring":
+                self.screening["asrSettings"]["scoring"] = subject.audio_screen.SCORING_V3
+            else:
+                self.screening["asrSettings"]["implementationSha256"] = "0" * 64
+                self.screening["asrSettingsSha256"] = subject.json_sha256(self.screening["asrSettings"])
+            self.write_screening()
+            with mock.patch.object(subject.audio_screen, "score") as score:
+                with self.assertRaisesRegex(ValueError, "runtime settings disagree|dependency closure"):
+                    self.build()
+                score.assert_not_called()
+        self.screening = pristine
+        self.write_screening()
+        self.assertEqual(self.build()["status"], "machine_screened")
+
+    def test_legacy_v1_ratio_pass_is_not_upgraded_to_protected_text_checks(self):
+        result = self.screening["results"][0]
+        text = self.job["units"][0]["text"]
+        recognized = text + " 2"
+        similarity, differences, passed = subject.legacy_v1_screening_score(text, recognized, "ko", .88)
+        self.assertTrue(passed)
+        self.assertFalse(subject.audio_screen.score(text, recognized, "ko", .88, subject.audio_screen.SCORING_V3)[2])
+        result.update(recognized=recognized, similarity=similarity, differences=differences)
+        self.write_screening()
+        self.assertEqual(self.build()["status"], "machine_screened")
+
+    def test_legacy_v1_still_requires_threshold_and_short_exactness(self):
+        for expected, recognized, threshold in [("하나", "하나 둘", .5), ("one two three", "one two four", .5),
+                                                 ("we read this long passage", "completely different words", .88)]:
+            self.assertFalse(subject.legacy_v1_screening_score(expected, recognized, "ko" if expected == "하나" else "en", threshold)[2])
 
     def test_a_recorded_similarity_must_match_the_rescoring(self):
         self.screening["results"][0]["similarity"] = 0.99
