@@ -1,0 +1,292 @@
+..................................................FFFFFFFFFFFFFFFFFFFFFF [ 32%]
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF........FFFFFFFFFFF.............. [ 65%]
+......FFFFFFFFFFFFFFFFFFFFFFFF...FFFFFFFFFFFF.FF.F......F...FF.F..FF.F..F.F                                    [100%]
+=================================== FAILURES ===================================
+_ test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-4--] _
+
+template = '요한복음 {start}{dash}{end}장', start = 3, end = 4, dash = '-'
+
+    @pytest.mark.parametrize("dash", ["-", "~", "–"])
+    @pytest.mark.parametrize("start, end", [(3, 4), (16, 27), (3, 17), (16, 3)])
+    @pytest.mark.parametrize("template", ["요한복음 {start}{dash}{end}장", "요한복음 {start}장{dash}{end}장", "창세기 1장{start}절{dash}{end}절", "창세기 1장 {start}{dash}{end}절"])
+    def test_citation_ranges_generate_fold_and_score(template, start, end, dash):
+        from scripts import screen_target_language_audio_units as screen
+        approved = template.format(start=start, end=end, dash=dash)
+        spoken = subject.spoken_form(approved)
+        assert spoken != approved
+        assert not any(char.isdigit() for char in spoken)
+>       assert screen.fold_transcript(spoken, "ko") == approved
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_ko_spoken_numerals.py:109: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/screen_target_language_audio_units.py:531: in fold_transcript
+    return _fold_korean(text, citation_ranges=citation_ranges)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+text = '요한복음 삼-사장', citation_ranges = True
+
+    def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
+        def sino_value(part: str) -> str | None:
+            if part.isdigit():
+                return part
+            value = _positional_value(part, _KO_SINO_VALUES, _KO_SINO_SMALL, _KO_SINO_BIG)
+            return None if value is None else str(value)
+    
+        def fraction(match: re.Match) -> str:
+            parts = [sino_value(match.group(1)), sino_value(match.group(2))]
+            return match.group() if None in parts else f"{parts[0]}분의 {parts[1]}"
+        if citation_ranges:
+... 8402 lines omitted; 272 error-like lines, 50 kept below ...
+[line 64] E           NameError: name '_CONNECTOR' is not defined
+[line 66] scripts/screen_target_language_audio_units.py:426: NameError
+[line 126] E           NameError: name '_CONNECTOR' is not defined
+[line 128] scripts/screen_target_language_audio_units.py:426: NameError
+[line 188] E           NameError: name '_CONNECTOR' is not defined
+[line 190] scripts/screen_target_language_audio_units.py:426: NameError
+[line 250] E           NameError: name '_CONNECTOR' is not defined
+[line 252] scripts/screen_target_language_audio_units.py:426: NameError
+[line 312] E           NameError: name '_CONNECTOR' is not defined
+[line 314] scripts/screen_target_language_audio_units.py:426: NameError
+[line 374] E           NameError: name '_CONNECTOR' is not defined
+[line 376] scripts/screen_target_language_audio_units.py:426: NameError
+[line 436] E           NameError: name '_CONNECTOR' is not defined
+[line 438] scripts/screen_target_language_audio_units.py:426: NameError
+[line 498] E           NameError: name '_CONNECTOR' is not defined
+[line 500] scripts/screen_target_language_audio_units.py:426: NameError
+[line 560] E           NameError: name '_CONNECTOR' is not defined
+[line 562] scripts/screen_target_language_audio_units.py:426: NameError
+[line 622] E           NameError: name '_CONNECTOR' is not defined
+[line 624] scripts/screen_target_language_audio_units.py:426: NameError
+[line 684] E           NameError: name '_CONNECTOR' is not defined
+[line 686] scripts/screen_target_language_audio_units.py:426: NameError
+[line 746] E           NameError: name '_CONNECTOR' is not defined
+[line 748] scripts/screen_target_language_audio_units.py:426: NameError
+[line 808] E           NameError: name '_CONNECTOR' is not defined
+[line 810] scripts/screen_target_language_audio_units.py:426: NameError
+[line 870] E           NameError: name '_CONNECTOR' is not defined
+[line 872] scripts/screen_target_language_audio_units.py:426: NameError
+[line 932] E           NameError: name '_CONNECTOR' is not defined
+[line 934] scripts/screen_target_language_audio_units.py:426: NameError
+[line 994] E           NameError: name '_CONNECTOR' is not defined
+[line 996] scripts/screen_target_language_audio_units.py:426: NameError
+[line 1056] E           NameError: name '_CONNECTOR' is not defined
+[line 1058] scripts/screen_target_language_audio_units.py:426: NameError
+[line 1118] E           NameError: name '_CONNECTOR' is not defined
+[line 1120] scripts/screen_target_language_audio_units.py:426: NameError
+[line 1180] E           NameError: name '_CONNECTOR' is not defined
+[line 1182] scripts/screen_target_language_audio_units.py:426: NameError
+[line 1242] E           NameError: name '_CONNECTOR' is not defined
+[line 1244] scripts/screen_target_language_audio_units.py:426: NameError
+[line 1304] E           NameError: name '_CONNECTOR' is not defined
+[line 1306] scripts/screen_target_language_audio_units.py:426: NameError
+[line 1366] E           NameError: name '_CONNECTOR' is not defined
+[line 1368] scripts/screen_target_language_audio_units.py:426: NameError
+[line 1428] E           NameError: name '_CONNECTOR' is not defined
+[line 1430] scripts/screen_target_language_audio_units.py:426: NameError
+[line 1490] E           NameError: name '_CONNECTOR' is not defined
+[line 1492] scripts/screen_target_language_audio_units.py:426: NameError
+[line 1552] E           NameError: name '_CONNECTOR' is not defined
+[line 1554] scripts/screen_target_language_audio_units.py:426: NameError
+... end of omitted section ...
+    def test_v5_settings_reject_changed_dependency_and_legacy_single_file_digest(self):
+        import copy
+        from unittest.mock import patch
+        from scripts.target_audio_auto_qc import screening_asr_settings
+>       receipt, _ = self.run_screen([unit["text"] for unit in self.job["units"]])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_screen_target_language_audio_units.py:162: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_screen_target_language_audio_units.py:120: in run_screen
+    return subject.screen(
+scripts/screen_target_language_audio_units.py:700: in screen
+    similarity, differences, passed = score(unit["text"], recognized, locale, min_similarity)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/screen_target_language_audio_units.py:550: in score
+    expected, recognized = (fold_transcript(text, locale, citation_ranges=scoring == SCORING)
+    ^^^^^^^^^^^^^^^^^^^^
+scripts/screen_target_language_audio_units.py:550: in <genexpr>
+    expected, recognized = (fold_transcript(text, locale, citation_ranges=scoring == SCORING)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/screen_target_language_audio_units.py:531: in fold_transcript
+    return _fold_korean(text, citation_ranges=citation_ranges)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+text = '세 가지 무기', citation_ranges = True
+
+    def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
+        def sino_value(part: str) -> str | None:
+            if part.isdigit():
+                return part
+            value = _positional_value(part, _KO_SINO_VALUES, _KO_SINO_SMALL, _KO_SINO_BIG)
+            return None if value is None else str(value)
+    
+        def fraction(match: re.Match) -> str:
+            parts = [sino_value(match.group(1)), sino_value(match.group(2))]
+            return match.group() if None in parts else f"{parts[0]}분의 {parts[1]}"
+        if citation_ranges:
+            # Fold only a complete, book-anchored citation chain. In a single-counter
+            # range 삼-사장 the first one-syllable endpoint has no counter of its own.
+            # Do not grant that interpretation to bare words or ordinary counters.
+            from scripts.language_review_plugins import auto_qc_text_common as rules
+            books = "|".join(re.escape(name) for name in sorted(rules._KO_BOOK_CODES, key=len, reverse=True))
+            number = r"(?:\d{1,3}|[" + _KO_SINO_CHARS + r"]+)"
+            def citation_pattern(book, counter):
+                from scripts.ko_spoken_numerals import _PARTICLES, _CONNECTOR
+                boundary = (r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|" + _CONNECTOR + r"?\s*"
+                            + number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter + r")")
+                reference = number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter + boundary
+                return re.compile(r"(?<![가-힣A-Za-z0-9])(" + book + r")(\s*" + reference
+                                  + r"(?:\s*" + _CONNECTOR + r"?\s*" + reference + r")*)")
+            citation_number = re.compile(r"(" + number + r")(?:(\s*[-~–]\s*)(" + number + r"))?(\s*)(장|절|편)")
+            def fold_number(match):
+                first, dash, second, space, counter = match.groups()
+                left = sino_value(first)
+                right = sino_value(second) if second else None
+                if left is None or second and right is None:
+                    return match.group()
+                return left + ((dash + right) if second else "") + space + counter
+>           citation_atom = re.compile(_CONNECTOR + "|" + citation_number.pattern)
+                                       ^^^^^^^^^^
+E           NameError: name '_CONNECTOR' is not defined
+
+scripts/screen_target_language_audio_units.py:426: NameError
+=========================== short test summary info ============================
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-4--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-4-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-4-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-27--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-27-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-27-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-17--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-17-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-17-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-3--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-3-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-3-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-4--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-4-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-4-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-27--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-27-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-27-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-17--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-17-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-17-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-3--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-3-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-3-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-4--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-4-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-4-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-27--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-27-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-27-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-17--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-17-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-17-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-3--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-3-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-3-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-4--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-4-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-4-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-27--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-27-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-27-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-17--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-17-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-17-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-3--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-3-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-3-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_particle_ranges_generate_fold_and_score[3-4-\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_particle_ranges_generate_fold_and_score[3-4-\uc5d0\uc11c]
+FAILED tests/test_ko_spoken_numerals.py::test_particle_ranges_generate_fold_and_score[16-27-\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_particle_ranges_generate_fold_and_score[16-27-\uc5d0\uc11c]
+FAILED tests/test_ko_spoken_numerals.py::test_range_folding_keeps_legacy_scoring_and_non_citations
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a516\uc808]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c3\uc7a516\uc808]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a5 16\uc808]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a516-17\uc808]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c3\uc7a516\uc808~27\uc808]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc2dc\ud3b8 1-2\ud3b8]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc2dc\ud3b81\ud3b8\u20132\ud3b8]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc2dc\ud3b8 16\ud3b8\ubd80\ud130 27\ud3b8\uae4c\uc9c0]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_rejects_changed_numeric_segments_and_range_structure[\uc694\ud55c\ubcf5\uc74c 12-3\uc7a5-\uc694\ud55c\ubcf5\uc74c \uc77c-\uc774\uc2ed\uc0bc\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_rejects_changed_numeric_segments_and_range_structure[\uc694\ud55c\ubcf5\uc74c 1-23\uc7a5-\uc694\ud55c\ubcf5\uc74c \uc2ed\uc774-\uc0bc\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_rejects_changed_numeric_segments_and_range_structure[\uc694\ud55c\ubcf5\uc74c 12-3\uc7a5-\uc694\ud55c\ubcf5\uc74c \ubc31\uc774\uc2ed\uc0bc\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_rejects_changed_numeric_segments_and_range_structure[\uc694\ud55c\ubcf5\uc74c 12-3\uc7a5-\uc694\ud55c\ubcf5\uc74c 12,3\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_rejects_changed_numeric_segments_and_range_structure[\uc694\ud55c\ubcf5\uc74c 3\uc7a5\ubd80\ud130 4\uc7a5\uae4c\uc9c0-\uc694\ud55c\ubcf5\uc74c \uc0bc\uc7a5\ubd80\ud130 \uc0ac\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_rejects_changed_numeric_segments_and_range_structure[\uc694\ud55c\ubcf5\uc74c 3\uc7a5\ubd80\ud130 4\uc7a5-\uc694\ud55c\ubcf5\uc74c \uc0bc\uc7a5\ubd80\ud130 \uc0ac\uc7a5\uae4c\uc9c0]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_rejects_changed_numeric_segments_and_range_structure[\uc694\ud55c\ubcf5\uc74c 3\uc7a5 4\uc7a5-\uc694\ud55c\ubcf5\uc74c \uc0bc\uc7a5-\uc0ac\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_rejects_changed_numeric_segments_and_range_structure[\uc694\ud55c\ubcf5\uc74c 12-3\uc7a5-\uc694\ud55c\ubcf5\uc74c \uc2ed\uc774 \uc0bc\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_rejects_changed_numeric_segments_and_range_structure[\uc694\ud55c\ubcf5\uc74c 12\uc7a5-3\uc7a5-\uc694\ud55c\ubcf5\uc74c \uc2ed\uc774\uc7a5-\uc0bc\uc808]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_rejects_changed_numeric_segments_and_range_structure[\uc694\ud55c\ubcf5\uc74c 3\uc7a512-3\uc808-\uc694\ud55c\ubcf5\uc74c \uc0bc\uc7a5\uc77c-\uc774\uc2ed\uc0bc\uc808]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_rejects_changed_numeric_segments_and_range_structure[\uc2dc\ud3b8 12-3\ud3b8-\uc2dc\ud3b8 \uc77c-\uc774\uc2ed\uc0bc\ud3b8]
+FAILED tests/test_ko_spoken_numerals.py::test_digit_segmentation_guard_does_not_rewrite_v4_receipts
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc694\ud55c\ubcf5\uc74c-\uc7a5-\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc694\ud55c\ubcf5\uc74c-\uc7a5-\uc5d0\uc11c]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc694\ud55c\ubcf5\uc74c-\uc7a5-\uacfc]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc694\ud55c\ubcf5\uc74c-\uc7a5-\uc640]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc694\ud55c\ubcf5\uc74c-\uc7a5-\ubc0f]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc2dc\ud3b8-\ud3b8-\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc2dc\ud3b8-\ud3b8-\uc5d0\uc11c]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc2dc\ud3b8-\ud3b8-\uacfc]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc2dc\ud3b8-\ud3b8-\uc640]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc2dc\ud3b8-\ud3b8-\ubc0f]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_structure_guard_does_not_change_non_citation_v4_behavior[COVID-19-COVID19]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_structure_guard_does_not_change_non_citation_v4_behavior[\uc0ac\uc9c4 12\uc7a5-\uc0ac\uc9c4 1 2\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_v5_structure_guard_does_not_change_non_citation_v4_behavior[\uc601\ud654 12\ud3b8-\uc601\ud654 1 2\ud3b8]
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_range_marker_spacing_and_compounds_remain_protected[ \uae4c\uc9c0]
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_range_marker_spacing_and_compounds_remain_protected[\uae4c\uc9c0\ub294]
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_range_marker_spacing_and_compounds_remain_protected[\uae4c\uc9c0\ub9cc]
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_range_marker_spacing_and_compounds_remain_protected[\uae4c\uc9c0\ub3c4]
+FAILED tests/test_ko_spoken_numerals.py::test_added_subject_and_quotation_particles_have_symmetric_asr_boundaries[\uc774]
+FAILED tests/test_ko_spoken_numerals.py::test_added_subject_and_quotation_particles_have_symmetric_asr_boundaries[\uc774\ub77c\uace0]
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a5\uc774\ub098 4\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a5\uc774\ub0984\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc2dc\ud3b8 3\ud3b8\uc774\ub098 4\ud3b8]
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc2dc\ud3b8 3\ud3b8\uc774\ub0984\ud3b8]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\uc774\ub098]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\uc774\ub4e0]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\uc5d0\uc11c\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\ubd80\ud130\ub294]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\ubd80\ud130\ub9cc]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\ubd80\ud130\ub3c4]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\uc774\ub098]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\uc774\ub4e0]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\uc5d0\uc11c\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\ubd80\ud130\ub294]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\ubd80\ud130\ub9cc]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\ubd80\ud130\ub3c4]
+FAILED tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_existing_protections_survive_folding
+FAILED tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_korean_native_numeral_before_sino_counter_is_not_folded
+SUBFAILED(text='땅의 약 삼분의 일과') tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_numbers_fold_to_digits_by_value
+SUBFAILED(text='삼 분의 일을 정복합니다') tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_numbers_fold_to_digits_by_value
+SUBFAILED(text='여러분은 일 년 전이나') tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_numbers_fold_to_digits_by_value
+SUBFAILED(text='요한계시록 8장과 구 장에서') tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_numbers_fold_to_digits_by_value
+SUBFAILED(text='2억 명으로 이루어진 군대') tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_numbers_fold_to_digits_by_value
+SUBFAILED(text='초등학교 이학년 때') tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_numbers_fold_to_digits_by_value
+SUBFAILED(text='나팔 일곱 개가, 스무 살, 열다섯 명, 네 번째') tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_numbers_fold_to_digits_by_value
+FAILED tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_punctuation_does_not_change_protected_numeral_matching
+SUBFAILED(text='그 천사들에게') tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_words_that_merely_contain_numerals_stay_words
+SUBFAILED(text='사람이 많군요') tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_words_that_merely_contain_numerals_stay_words
+SUBFAILED(text='수십 년 전에') tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_words_that_merely_contain_numerals_stay_words
+SUBFAILED(text='그 한 가지 일, 그 실수') tests/test_screen_transcript_folding.py::FoldTranscriptTests::test_words_that_merely_contain_numerals_stay_words
+FAILED tests/test_screen_transcript_folding.py::ReviewCounterexampleTests::test_digit_strings_never_equal_positional_numerals
+FAILED tests/test_screen_transcript_folding.py::Weekly20261011FixtureTests::test_failed_units_keep_exactly_the_material_differences
+FAILED tests/test_screen_transcript_folding.py::Weekly20261011FixtureTests::test_screening_flags_drop_to_the_measured_counts
+FAILED tests/test_screen_transcript_folding.py::test_v5_rescore_rejects_stale_closure_before_scoring
+FAILED tests/test_screen_target_language_audio_units.py::FormalAudioScreenTests::test_exact_two_unit_audio_gets_source_bound_machine_pass_only
+FAILED tests/test_screen_target_language_audio_units.py::FormalAudioScreenTests::test_korean_quantities_cannot_swap
+SUBFAILED(locale='ko', omitted='않') tests/test_screen_target_language_audio_units.py::FormalAudioScreenTests::test_long_units_preserve_negations_numbers_and_names
+SUBFAILED(locale='ko', omitted='일') tests/test_screen_target_language_audio_units.py::FormalAudioScreenTests::test_long_units_preserve_negations_numbers_and_names
+SUBFAILED(locale='ko', omitted='사') tests/test_screen_target_language_audio_units.py::FormalAudioScreenTests::test_long_units_preserve_negations_numbers_and_names
+FAILED tests/test_screen_target_language_audio_units.py::FormalAudioScreenTests::test_missing_word_stays_in_review_queue
+FAILED tests/test_screen_target_language_audio_units.py::FormalAudioScreenTests::test_receipt_v2_records_the_asr_runtime_behind_every_score
+FAILED tests/test_screen_target_language_audio_units.py::FormalAudioScreenTests::test_v5_settings_reject_changed_dependency_and_legacy_single_file_digest
+134 failed, 99 passed, 20 subtests passed in 3.42s

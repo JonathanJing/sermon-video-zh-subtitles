@@ -1,0 +1,292 @@
+........................................................................ [ 22%]
+........................................................................ [ 45%]
+.......................................................FFFFF.....F.....................FFF.FFFFFFF.FFFFFF.......................................... [ 91%]
+.
+=================================== FAILURES ===================================
+_ MachineQcAudioDriverTests.test_a_confirmed_mismatch_needs_a_re_render_before_rescreening _
+
+self = <test_run_machine_qc_audio_test.MachineQcAudioDriverTests testMethod=test_a_confirmed_mismatch_needs_a_re_render_before_rescreening>
+
+    def test_a_confirmed_mismatch_needs_a_re_render_before_rescreening(self):
+        self.build()
+        stack, argv = self.real_looking()
+        mishears = lambda asr, wav: "다른 문장"  # The strong ASR also disagrees on the flagged unit.
+        with stack:
+            with patch.object(transports.FakeSecondaryAsr, "transcribe", mishears):
+>               self.assertEqual(driver.main(argv), 1)
+E               AssertionError: 2 != 1
+
+tests/test_run_machine_qc_audio_test.py:257: AssertionError
+----------------------------- Captured stdout call -----------------------------
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.1
+ko.calibration	pass	0.1
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+... 481 lines omitted; 61 error-like lines, 50 kept below ...
+[line 56] E           AssertionError: 2 != 0
+[line 58] tests/test_run_machine_qc_audio_test.py:237: AssertionError
+[line 96]         with stack, patch.object(driver, "run_locale", side_effect=AssertionError("dispatched")):
+[line 98] E           AssertionError: 2 != 1
+[line 100] tests/test_run_machine_qc_audio_test.py:275: AssertionError
+[line 143] E           AssertionError: 2 != 0
+[line 145] tests/test_run_machine_qc_audio_test.py:184: AssertionError
+[line 180] E       AssertionError: 2 != 0 : ['screening scoring implementation differs; rescreen with the current dependency closure', 'screening scoring implementation differs; rescreen with the current dependency closure']
+[line 182] tests/test_run_machine_qc_audio_test.py:168: AssertionError
+[line 248]             raise ValueError("ASR screening does not record its runtime settings; rescreen with screening v2")
+[line 256]             raise ValueError("ASR screening runtime settings disagree with the receipt")
+[line 258]             raise ValueError("ASR screening does not record its runtime backend; rescreen with an inference identity")
+[line 262] >           raise ValueError("; ".join(problems))
+[line 263] E           ValueError: screening scoring implementation differs; rescreen with the current dependency closure
+[line 265] scripts/target_audio_auto_qc.py:306: ValueError
+[line 290] >           raise ValueError(message)
+[line 291] E           ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+[line 293] scripts/machine_quality_release_basis.py:57: ValueError
+[line 294] _________ AudioWaiverTests.test_audio_qc_from_older_qc_code_is_refused _________
+[line 295] ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+[line 297] During handling of the above exception, another exception occurred:
+[line 299] self = <test_machine_quality_release_basis.AudioWaiverTests testMethod=test_audio_qc_from_older_qc_code_is_refused>
+[line 301]     def test_audio_qc_from_older_qc_code_is_refused(self):
+[line 304] >       with self.assertRaisesRegex(ValueError, "implementation other than the calibrated one"):
+[line 306] E       AssertionError: "implementation other than the calibrated one" does not match "ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure"
+[line 308] tests/test_machine_quality_release_basis.py:689: AssertionError
+[line 322]             with self.assertRaisesRegex(ValueError, "thresholds differ"):
+[line 342] >           raise ValueError(message)
+[line 343] E           ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+[line 345] scripts/machine_quality_release_basis.py:57: ValueError
+[line 374] >           raise ValueError(message)
+[line 375] E           ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+[line 377] scripts/machine_quality_release_basis.py:57: ValueError
+[line 379] ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+[line 381] During handling of the above exception, another exception occurred:
+[line 390] >       with self.assertRaisesRegex(ValueError, "audio checks"):
+[line 392] E       AssertionError: "audio checks" does not match "ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure"
+[line 394] tests/test_machine_quality_release_basis.py:706: AssertionError
+[line 425] >           raise ValueError(message)
+[line 426] E           ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+[line 428] scripts/machine_quality_release_basis.py:57: ValueError
+[line 454] >           raise ValueError(message)
+[line 455] E           ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+[line 457] scripts/machine_quality_release_basis.py:57: ValueError
+[line 459] ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+[line 461] During handling of the above exception, another exception occurred:
+[line 467] >       with self.assertRaisesRegex(ValueError, "CLI label differs"):
+[line 469] E       AssertionError: "CLI label differs" does not match "ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure"
+[line 471] tests/test_machine_quality_release_basis.py:719: AssertionError
+[line 498] >           raise ValueError(message)
+... end of omitted section ...
+        cal = seeded_into(calibration(), audio=failed, candidate=candidate, condensed=False)
+>       receipt = v3.build_audio_waiver(
+            package, screening, failed, text, cal, human_acceptance=acceptance, anchor=anchor, candidate=candidate,
+            repair_ledger=bound_ledger("audio", failed, "ko", package["englishSourcePackageJsonSha256"],
+                                       basis.json_sha256(anchor), candidate["groups"]),
+            speech_job=fixtures.speech_job("ko"), track_check=track_check(package))
+
+tests/test_machine_quality_release_basis.py:788: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/machine_audio_waiver_acceptance.py:77: in build_audio_waiver
+    _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = 'ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure'
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+
+scripts/machine_quality_release_basis.py:57: ValueError
+_ AudioWaiverTests.test_secondary_identity_keeps_the_calibrated_revision_and_checks_unit_binding _
+
+self = <test_machine_quality_release_basis.AudioWaiverTests testMethod=test_secondary_identity_keeps_the_calibrated_revision_and_checks_unit_binding>
+
+    def test_secondary_identity_keeps_the_calibrated_revision_and_checks_unit_binding(self):
+        package, screening, qc, text = audio_fixture(flagged=True)
+        identity = {"model": "gpt-transcribe", "modelRevision": "release-r2"}
+        qc["results"][1]["asrSecondaryModel"] = identity
+        cal = calibration(asrIdentity={"primary": PRIMARY_ASR, "secondary": identity})
+>       receipt = issue_audio(package, screening, qc, text, cal,
+                                          track_check=track_check(package),
+                                          anchor=audio_sources()[0], candidate=audio_sources()[1])
+
+tests/test_machine_quality_release_basis.py:746: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_machine_quality_release_basis.py:138: in issue_audio
+    return basis.build_audio_waiver(package, screening, qc, text, cal, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/machine_quality_release_basis.py:508: in build_audio_waiver
+    _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = 'ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure'
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+
+scripts/machine_quality_release_basis.py:57: ValueError
+____ AudioWaiverTests.test_secondary_score_is_rescored_from_its_transcript _____
+ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+
+During handling of the above exception, another exception occurred:
+
+self = <test_machine_quality_release_basis.AudioWaiverTests testMethod=test_secondary_score_is_rescored_from_its_transcript>
+
+    def test_secondary_score_is_rescored_from_its_transcript(self):
+        # A permissive secondary transport cannot pass a unit it misheard.
+        package, screening, qc, text = audio_fixture(flagged=True)
+        qc["results"][1]["asrSecondaryRecognized"] = "내가 함께"
+>       with self.assertRaisesRegex(ValueError, "not the score of its transcript"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: "not the score of its transcript" does not match "ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure"
+
+tests/test_machine_quality_release_basis.py:738: AssertionError
+_______ AudioWaiverTests.test_unified_audio_review_reports_machine_kind ________
+
+self = <test_machine_quality_release_basis.AudioWaiverTests testMethod=test_unified_audio_review_reports_machine_kind>
+
+    def test_unified_audio_review_reports_machine_kind(self):
+        import tempfile
+        package, screening, qc, text = audio_fixture()
+>       receipt = self.build(package, screening, qc, text)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_machine_quality_release_basis.py:859: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_machine_quality_release_basis.py:557: in build
+    return issue_audio(package, screening, qc, text, calibration(),
+tests/test_machine_quality_release_basis.py:138: in issue_audio
+    return basis.build_audio_waiver(package, screening, qc, text, cal, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/machine_quality_release_basis.py:508: in build_audio_waiver
+    _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = 'ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure'
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+
+scripts/machine_quality_release_basis.py:57: ValueError
+_______ AudioWaiverTests.test_waiver_is_bound_to_exact_package_and_audio _______
+
+self = <test_machine_quality_release_basis.AudioWaiverTests testMethod=test_waiver_is_bound_to_exact_package_and_audio>
+
+    def test_waiver_is_bound_to_exact_package_and_audio(self):
+        package, screening, qc, text = audio_fixture()
+>       receipt = self.build(package, screening, qc, text)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_machine_quality_release_basis.py:828: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_machine_quality_release_basis.py:557: in build
+    return issue_audio(package, screening, qc, text, calibration(),
+tests/test_machine_quality_release_basis.py:138: in issue_audio
+    return basis.build_audio_waiver(package, screening, qc, text, cal, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/machine_quality_release_basis.py:508: in build_audio_waiver
+    _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = 'ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure'
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+
+scripts/machine_quality_release_basis.py:57: ValueError
+___ AudioWaiverTests.test_waiver_needs_a_passing_track_check_of_this_package ___
+
+self = <test_machine_quality_release_basis.AudioWaiverTests testMethod=test_waiver_needs_a_passing_track_check_of_this_package>
+
+    def test_waiver_needs_a_passing_track_check_of_this_package(self):
+        package, screening, qc, text = audio_fixture()
+>       receipt = self.build(package, screening, qc, text)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_machine_quality_release_basis.py:592: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_machine_quality_release_basis.py:557: in build
+    return issue_audio(package, screening, qc, text, calibration(),
+tests/test_machine_quality_release_basis.py:138: in issue_audio
+    return basis.build_audio_waiver(package, screening, qc, text, cal, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/machine_quality_release_basis.py:508: in build_audio_waiver
+    _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = 'ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure'
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+
+scripts/machine_quality_release_basis.py:57: ValueError
+__ AudioWaiverTests.test_waiver_needs_the_calibrated_and_screened_asr_models ___
+ValueError: ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure
+
+During handling of the above exception, another exception occurred:
+
+self = <test_machine_quality_release_basis.AudioWaiverTests testMethod=test_waiver_needs_the_calibrated_and_screened_asr_models>
+
+    def test_waiver_needs_the_calibrated_and_screened_asr_models(self):
+        package, screening, qc, text = audio_fixture(flagged=True)
+        other_secondary = copy.deepcopy(qc)
+        other_secondary["results"][1]["asrSecondaryModel"] = {"model": "tiny-asr", "modelRevision": None}
+>       with self.assertRaisesRegex(ValueError, "secondary ASR model differs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: "secondary ASR model differs" does not match "ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure"
+
+tests/test_machine_quality_release_basis.py:849: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_run_machine_qc_audio_test.py::MachineQcAudioDriverTests::test_a_confirmed_mismatch_needs_a_re_render_before_rescreening
+FAILED tests/test_run_machine_qc_audio_test.py::MachineQcAudioDriverTests::test_a_real_looking_run_issues_and_then_reuses_its_waiver
+FAILED tests/test_run_machine_qc_audio_test.py::MachineQcAudioDriverTests::test_an_unknown_paid_call_outcome_stops_new_dispatch
+FAILED tests/test_run_machine_qc_audio_test.py::MachineQcAudioDriverTests::test_fake_backend_proves_the_path_but_never_saves_a_waiver
+FAILED tests/test_run_machine_qc_audio_test.py::MachineQcAudioDriverTests::test_preflight_finds_everything_by_hash
+FAILED tests/test_run_machine_qc_audio_test.py::TransportTests::test_primary_asr_reuses_the_screening_and_proves_its_runtime_for_new_audio
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_asr_runtime_settings_must_match_screening_and_calibration
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_audio_qc_from_older_qc_code_is_refused
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_audio_qc_must_use_calibrated_release_thresholds
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_audio_waiver_binds_a_condensed_text_waiver
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_audio_waiver_needs_audio_calibration
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_calibration_must_have_rendered_with_the_packages_voice
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_clean_package_waives_listening_without_human_approval
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_flagged_unit_needs_secondary_asr
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_legacy_audio_waivers_are_supported_only_without_secondary_evidence
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_person_may_accept_failed_units_as_waiver_v3
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_secondary_identity_keeps_the_calibrated_revision_and_checks_unit_binding
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_secondary_score_is_rescored_from_its_transcript
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_unified_audio_review_reports_machine_kind
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_waiver_is_bound_to_exact_package_and_audio
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_waiver_needs_a_passing_track_check_of_this_package
+FAILED tests/test_machine_quality_release_basis.py::AudioWaiverTests::test_waiver_needs_the_calibrated_and_screened_asr_models
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/re/_compiler.py:277: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+22 failed, 270 passed, 69 subtests passed in 159.03s (0:02:39)

@@ -1,0 +1,187 @@
+........................................................................ [ 32%]
+........................................................................ [ 65%]
+..........................FFFF...FF..F.FF..................................                                    [100%]
+=================================== FAILURES ===================================
+_ test_book_anchored_alternatives_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a5\uc774\ub098 4\uc7a5] _
+
+approved = '요한복음 3장이나 4장'
+
+    @pytest.mark.parametrize("approved", ["요한복음 3장이나 4장", "요한복음 3장이나4장", "시편 3편이나 4편", "시편 3편이나4편"])
+    def test_book_anchored_alternatives_generate_fold_and_score(approved):
+        from scripts import screen_target_language_audio_units as screen
+        spoken = subject.spoken_form(approved)
+        assert not any(char.isdigit() for char in spoken)
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음 3장2나 4장' == '요한복음 3장이나 4장'
+E         
+E         - 요한복음 3장이나 4장
+E         ?        ^
+E         + 요한복음 3장2나 4장
+E         ?        ^
+
+tests/test_ko_spoken_numerals.py:239: AssertionError
+_ test_book_anchored_alternatives_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a5\uc774\ub0984\uc7a5] _
+
+approved = '요한복음 3장이나4장'
+
+    @pytest.mark.parametrize("approved", ["요한복음 3장이나 4장", "요한복음 3장이나4장", "시편 3편이나 4편", "시편 3편이나4편"])
+    def test_book_anchored_alternatives_generate_fold_and_score(approved):
+        from scripts import screen_target_language_audio_units as screen
+        spoken = subject.spoken_form(approved)
+        assert not any(char.isdigit() for char in spoken)
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음 3장2나4장' == '요한복음 3장이나4장'
+E         
+E         - 요한복음 3장이나4장
+E         ?        ^
+E         + 요한복음 3장2나4장
+E         ?        ^
+
+tests/test_ko_spoken_numerals.py:239: AssertionError
+_ test_book_anchored_alternatives_generate_fold_and_score[\uc2dc\ud3b8 3\ud3b8\uc774\ub098 4\ud3b8] _
+
+approved = '시편 3편이나 4편'
+
+    @pytest.mark.parametrize("approved", ["요한복음 3장이나 4장", "요한복음 3장이나4장", "시편 3편이나 4편", "시편 3편이나4편"])
+    def test_book_anchored_alternatives_generate_fold_and_score(approved):
+        from scripts import screen_target_language_audio_units as screen
+        spoken = subject.spoken_form(approved)
+        assert not any(char.isdigit() for char in spoken)
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '시편 3편2나 4편' == '시편 3편이나 4편'
+E         
+E         - 시편 3편이나 4편
+E         ?      ^
+E         + 시편 3편2나 4편
+E         ?      ^
+
+tests/test_ko_spoken_numerals.py:239: AssertionError
+_ test_book_anchored_alternatives_generate_fold_and_score[\uc2dc\ud3b8 3\ud3b8\uc774\ub0984\ud3b8] _
+
+approved = '시편 3편이나4편'
+
+    @pytest.mark.parametrize("approved", ["요한복음 3장이나 4장", "요한복음 3장이나4장", "시편 3편이나 4편", "시편 3편이나4편"])
+    def test_book_anchored_alternatives_generate_fold_and_score(approved):
+        from scripts import screen_target_language_audio_units as screen
+        spoken = subject.spoken_form(approved)
+        assert not any(char.isdigit() for char in spoken)
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '시편 3편2나4편' == '시편 3편이나4편'
+E         
+E         - 시편 3편이나4편
+E         ?      ^
+E         + 시편 3편2나4편
+E         ?      ^
+
+tests/test_ko_spoken_numerals.py:239: AssertionError
+_____ test_shared_existing_alternative_and_range_connectors[-\uc774\ub098] _____
+
+connector = '이나', spacing = ''
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음 3장2나4장까지' == '요한복음 3장이나4장까지'
+E         
+E         - 요한복음 3장이나4장까지
+E         ?        ^
+E         + 요한복음 3장2나4장까지
+E         ?        ^
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+_____ test_shared_existing_alternative_and_range_connectors[-\uc774\ub4e0] _____
+
+connector = '이든', spacing = ''
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음 3장2든4장까지' == '요한복음 3장이든4장까지'
+E         
+E         - 요한복음 3장이든4장까지
+E         ?        ^
+E         + 요한복음 3장2든4장까지
+E         ?        ^
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+__ test_shared_existing_alternative_and_range_connectors[-\ubd80\ud130\ub9cc] __
+
+connector = '부터만', spacing = ''
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음 3장부터만사장까지' == '요한복음 3장부터만4장까지'
+E         
+E         - 요한복음 3장부터만4장까지
+E         ?           ^
+E         + 요한복음 3장부터만사장까지
+E         ?           ^
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+____ test_shared_existing_alternative_and_range_connectors[ -\uc774\ub098] _____
+
+connector = '이나', spacing = ' '
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음 3장2나 4장까지' == '요한복음 3장이나 4장까지'
+E         
+E         - 요한복음 3장이나 4장까지
+E         ?        ^
+E         + 요한복음 3장2나 4장까지
+E         ?        ^
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+____ test_shared_existing_alternative_and_range_connectors[ -\uc774\ub4e0] _____
+
+connector = '이든', spacing = ' '
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음 3장2든 4장까지' == '요한복음 3장이든 4장까지'
+E         
+E         - 요한복음 3장이든 4장까지
+E         ?        ^
+E         + 요한복음 3장2든 4장까지
+E         ?        ^
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a5\uc774\ub098 4\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a5\uc774\ub0984\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc2dc\ud3b8 3\ud3b8\uc774\ub098 4\ud3b8]
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc2dc\ud3b8 3\ud3b8\uc774\ub0984\ud3b8]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\uc774\ub098]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\uc774\ub4e0]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\ubd80\ud130\ub9cc]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\uc774\ub098]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\uc774\ub4e0]
+9 failed, 210 passed, 34 subtests passed in 1.06s

@@ -1,0 +1,27 @@
+........................................................................ [ 32%]
+........................................................................ [ 65%]
+.....................................F.....................................                                    [100%]
+=================================== FAILURES ===================================
+__ test_shared_existing_alternative_and_range_connectors[-\ubd80\ud130\ub9cc] __
+
+connector = '부터만', spacing = ''
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음 3장부터만사장까지' == '요한복음 3장부터만4장까지'
+E         
+E         - 요한복음 3장부터만4장까지
+E         ?           ^
+E         + 요한복음 3장부터만사장까지
+E         ?           ^
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\ubd80\ud130\ub9cc]
+1 failed, 218 passed, 34 subtests passed in 1.02s
