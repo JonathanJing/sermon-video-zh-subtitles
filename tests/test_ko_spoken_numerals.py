@@ -208,3 +208,13 @@ def test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned(connec
 def test_v5_structure_guard_does_not_change_non_citation_v4_behavior(approved, recognized):
     from scripts import screen_target_language_audio_units as screen
     assert screen.score(approved, recognized, "ko", 0.88) == screen.score(approved, recognized, "ko", 0.88, screen.SCORING_V4)
+
+
+@pytest.mark.parametrize("terminal", [" 까지", "까지는", "까지만", "까지도"])
+def test_terminal_range_marker_spacing_and_compounds_remain_protected(terminal):
+    from scripts import screen_target_language_audio_units as screen
+    prefix = "오늘 우리는 이 말씀을 자세히 함께 읽습니다. "
+    approved = prefix + "요한복음 3장부터 4장" + terminal
+    spoken = subject.spoken_form(approved)
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.removesuffix(terminal), "ko", 0.88)[2]

@@ -530,8 +530,8 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
     def number_structure(text):
         from scripts.ko_spoken_numerals import _CITATIONS
         def with_terminal_marker(match):
-            marker = re.match(r"(?:부터|에서|까지)(?![가-힣A-Za-z])", text[match.end():])
-            return match.group() + (marker.group() if marker else "")
+            marker = re.match(r"\s*(부터|에서|까지)(?:는|만|도)?(?![가-힣A-Za-z])", text[match.end():])
+            return match.group() + (marker.group(1) if marker else "")
         spans = sorted((match.start(), with_terminal_marker(match)) for pattern in _CITATIONS
                        for match in pattern.finditer(text))
         return [["-" if item in "-~–" else item
