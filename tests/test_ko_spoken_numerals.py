@@ -16,6 +16,8 @@ ROOT = Path(__file__).resolve().parents[1]
     ("요한복음 3장 16절", "요한복음 삼장 십육절"),
     ("시편 23편과 119편", "시편 이십삼편과 백십구편"),
     ("요한복음 3장16-17절", "요한복음 삼장십육-십칠절"),
+    ("요한복음 3장부터 4장까지", "요한복음 삼장부터 사장까지"),
+    ("창세기 1장 1절에서 3절", "창세기 일장 일절에서 삼절"),
     ("하박국 2 장", "하박국 이 장"),
     ("요한복음 3장16절", "요한복음 삼장십육절"),
 ])
@@ -83,3 +85,13 @@ def test_numeric_separators_cannot_be_removed_or_replaced(number):
     separator = next(char for char in number if not char.isdigit() and not char.isspace())
     assert not subject.equivalent(approved, spoken.replace(separator, ""))
     assert not subject.equivalent(approved, spoken.replace(separator, ":"))
+
+
+@pytest.mark.parametrize("text, spoken", [
+    ("사진 2장부터 4장까지", "사진 2장부터 4장까지"),
+    ("영화 2편에서 3편까지", "영화 2편에서 3편까지"),
+    ("요한복음 3장부터 읽고 사진 4장까지 봅니다.", "요한복음 삼장부터 읽고 사진 4장까지 봅니다."),
+    ("창세기 1장 1절에서 배운 뒤 3절을 읽습니다.", "창세기 일장 일절에서 배운 뒤 3절을 읽습니다."),
+])
+def test_range_particles_do_not_expand_book_anchored_scope(text, spoken):
+    assert subject.spoken_form(text) == spoken

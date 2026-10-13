@@ -32,7 +32,7 @@ INSTRUCTIONS_SCHEMA = "sermon-unit-delivery-instructions-v2"
 # Ordinary counters (photos 장, films 편) and bare numbers remain unchanged.
 _NUMBER = r"\d{1,3}(?:\s*[-~–]\s*\d{1,3})?\s*"
 _BOOK = "|".join(re.escape(name) for name in sorted(_KO_BOOK_CODES, key=len, reverse=True) if name != "시편")
-_CHAIN = r"(?:\s*(?:과|와|및|,)?\s*" + _NUMBER + r"{counter})*(?![\d])"
+_CHAIN = r"(?:\s*(?:과|와|및|,|부터|에서)?\s*" + _NUMBER + r"{counter})*(?![\d])"
 _CITATIONS = (
     re.compile(r"(?<![가-힣A-Za-z0-9])(?:" + _BOOK + r")\s*" + _NUMBER
                + r"(?:장|절)" + _CHAIN.replace("{counter}", r"(?:장|절)")),
