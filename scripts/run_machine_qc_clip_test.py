@@ -444,14 +444,14 @@ class ApiJudge:
         approval = read(receipt)
         route = selected_route()
         from scripts import machine_qc_budget_authorization as qc_authorization
-        scoped = value.get("schemaVersion") == qc_authorization.AUTH_V2
+        scoped = value.get("schemaVersion") == qc_authorization.AUTH_V3
         context = None
         if scoped:
             if route is None:
                 raise ValueError("Machine QC API calls need the dev or prod OpenAI launcher")
             if qc_paths is None or locale is None:
                 raise ValueError("Scoped QC authorization requires resolved source/anchor/policy paths and locale")
-            context = qc_authorization.context_from_paths(qc_paths, locale, route["environment"])
+            context = qc_authorization.context_from_paths(qc_paths, locale, route["environment"], route=route)
             qc_authorization.validate(authorization, context=context, require_scope=True)
         # Optional earlier roots of this run whose paid responses may be reused; the approval
         # must name the same list, so reuse is never inferred from the file system.
@@ -481,7 +481,7 @@ class ApiJudge:
             if not same:
                 raise ValueError("Machine QC API budget authorization changed after admission")
             if scoped:
-                actual = qc_authorization.context_from_paths(qc_paths, locale, route["environment"])
+                actual = qc_authorization.context_from_paths(qc_paths, locale, route["environment"], route=route)
                 qc_authorization.validate(authorization, context=actual, require_scope=True)
         verify()
         wall = self.request_limits["wallTimeMs"] / 1000
@@ -811,7 +811,7 @@ def api_judge_for_resolved(authorization: Path, resolved: dict, *, requested_loc
     """A scoped approval names one locale; never silently apply it to a three-locale default."""
     from scripts import machine_qc_budget_authorization as qc_authorization
     value = read(authorization)
-    if value.get("schemaVersion") == qc_authorization.AUTH_V2:
+    if value.get("schemaVersion") == qc_authorization.AUTH_V3:
         if len(resolved) != 1 or set(requested_locales or resolved) != {value["qcContext"]["targetLocale"]}:
             raise ValueError("Scoped QC authorization requires exactly one requested locale")
         locale, paths = next(iter(resolved.items()))

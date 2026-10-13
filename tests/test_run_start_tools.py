@@ -40,7 +40,9 @@ class PlanTests(unittest.TestCase):
             policy=json.loads(json.dumps(self.policy));policy['targetLocale']=locale
             write(self.base/f'{locale}.json',policy)
         self.manifest = write(self.base / 'inputs.json', {
-            'schemaVersion':'sermon-machine-qc-inputs-v1', 'environment':'dev', 'source':'source.json',
+            'schemaVersion':'sermon-machine-qc-inputs-v2', 'environment':'dev',
+            'openaiRoute':{'schemaVersion':'sermon-openai-runtime-route-v1','environment':'dev','projectId':'proj_fixture',
+                           'credentialAlias':'tongxing-dev-runtime','identitySource':'configured_runtime'}, 'source':'source.json',
             'anchor':'anchor.json','policies':{locale:f'{locale}.json' for locale in plan.LOCALES}})
 
     def args(self, name='run', locales='ko', total='20', extra=()):
@@ -50,6 +52,20 @@ class PlanTests(unittest.TestCase):
 
     def load(self, name='run'):
         return json.loads((self.base/name/'plan.json').read_text())
+
+    def test_planned_approval_is_consumed_only_under_its_approved_project(self):
+        from scripts import run_machine_qc_clip_test as driver
+        from tests.test_run_machine_qc_audio_test import OPENAI_ENV
+        run_plan(*self.args());stage=self.load()['stages'][0]
+        paths={'source':str(self.base/'source.json'),'anchor':str(self.base/'anchor.json'),'policy':str(self.base/'ko.json')}
+        environment={**OPENAI_ENV,'OPENAI_PROJECT_ID':'proj_fixture'}
+        with mock.patch.dict('os.environ',environment),mock.patch('urllib.request.urlopen',side_effect=AssertionError('paid dispatch')):
+            judge=driver.api_judge_for_resolved(Path(stage['authorization']),{'ko':paths},requested_locales=['ko'])
+            self.assertEqual(judge.ledger.qc_context['openaiRoute']['projectId'],'proj_fixture')
+            with mock.patch.dict('os.environ',{'OPENAI_PROJECT_ID':'proj_unapproved'}):
+                with self.assertRaisesRegex(ValueError,'qc_budget_context_changed'):
+                    driver.api_judge_for_resolved(Path(stage['authorization']),{'ko':paths},requested_locales=['ko'])
+        self.assertFalse((Path(stage['budgetRoot'])/'source-budget.json').exists())
 
     def test_serial_recommendation_issues_no_authority_until_one_stage_selected(self):
         code, output = run_plan(*self.args(locales='ko,es',total='10'))

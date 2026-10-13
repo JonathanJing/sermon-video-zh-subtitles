@@ -18,6 +18,10 @@ from tests.test_source_budget_settlement import AUTHORITY, BOUNDS
 from tests.test_run_machine_qc_audio_test import OPENAI_ENV
 from tests.auto_qc_fixtures import speech_wav
 
+OPENAI_ROUTE={'schemaVersion':'sermon-openai-runtime-route-v1','environment':'dev',
+              'projectId':OPENAI_ENV['OPENAI_PROJECT_ID'],'credentialAlias':'tongxing-dev-runtime',
+              'identitySource':'configured_runtime'}
+
 
 def write(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -39,17 +43,17 @@ def scoped_paths(tmp_path):
 
 
 def authorization(tmp_path, paths=None, *, global_bounds=None):
-    context = auth.context_from_paths(paths, 'zh-Hans', 'dev') if paths else None
+    context = auth.context_from_paths(paths, 'zh-Hans', 'dev',route=OPENAI_ROUTE) if paths else None
     bounds = {'globalBounds': {**AUTHORITY['globalBounds'], **(global_bounds or {})}, 'requestLimits': AUTHORITY['requestLimits']}
     binding = {'budgetRoot': str(tmp_path/'budget'), **bounds}
     if context:
         binding['qcContext'] = context
-    approval = {'schemaVersion': auth.APPROVAL_V2 if context else auth.APPROVAL_V1,
+    approval = {'schemaVersion': auth.APPROVAL_V3 if context else auth.APPROVAL_V1,
                 'humanApproval': True, 'decision':'approved', 'binding':binding}
     if context:
         approval.update(reviewedBy='Fixture', reviewedAt='2026-10-13T00:00:00Z', operatorEvidence='Offline only')
     receipt = write(tmp_path/'approval.json', approval)
-    value = {'schemaVersion': auth.AUTH_V2 if context else auth.AUTH_V1, 'budgetRoot':binding['budgetRoot'],
+    value = {'schemaVersion': auth.AUTH_V3 if context else auth.AUTH_V1, 'budgetRoot':binding['budgetRoot'],
              'approvalReceipt':receipt.name, 'authority':{'approvalSha256':hashlib.sha256(receipt.read_bytes()).hexdigest(),
                'bounds':bounds, 'requestLimits':AUTHORITY['requestLimits']}}
     if context:
@@ -64,7 +68,7 @@ def source_store(root, send, *, bounds=None, reuse=()):
     return budget.SourceBudget(root, authority, verify=lambda: None, transport=send, reuse_roots=reuse)
 
 
-@pytest.mark.parametrize('wrong', ['locale', 'default_locales', 'environment', 'policy', 'source'])
+@pytest.mark.parametrize('wrong', ['locale', 'default_locales', 'environment', 'project', 'policy', 'source'])
 def test_scoped_runtime_refuses_other_artifacts_or_default_three_locales(tmp_path, scoped_paths, wrong):
     path = authorization(tmp_path, scoped_paths)
     selected = {'zh-Hans':scoped_paths}
@@ -74,6 +78,8 @@ def test_scoped_runtime_refuses_other_artifacts_or_default_three_locales(tmp_pat
         selected = {'ko':scoped_paths}; requested = ['ko']
     elif wrong == 'default_locales':
         requested = ['zh-Hans','ko','es']
+    elif wrong == 'project':
+        environment.update(OPENAI_PROJECT_ID='proj_unapproved_fixture')
     elif wrong == 'environment':
         environment.update(SERMON_OPENAI_ENVIRONMENT='prod', SERMON_OPENAI_CREDENTIAL_ALIAS='tongxing-prod-runtime')
     else:
@@ -88,7 +94,7 @@ def test_valid_scoped_runtime_rechecks_files_without_gpu_session(tmp_path, scope
     path = authorization(tmp_path, scoped_paths)
     with patch.dict('os.environ', OPENAI_ENV), patch('scripts.production_spark_admission.require_session', side_effect=AssertionError('GPU')):
         judge = text.api_judge_for_resolved(path, {'zh-Hans':scoped_paths}, requested_locales=['zh-Hans'])
-        assert judge.identity['settings']['qcContext'] == auth.context_from_paths(scoped_paths,'zh-Hans','dev')
+        assert judge.identity['settings']['qcContext'] == auth.context_from_paths(scoped_paths,'zh-Hans','dev',route=OPENAI_ROUTE)
         assert judge.ledger.qc_context == judge.identity['settings']['qcContext']
         value = json.loads(Path(scoped_paths['source']).read_text()); value['reviewProbe']='changed'
         write(Path(scoped_paths['source']),value)
@@ -243,6 +249,14 @@ def test_judge_request_identity_separates_selected_projects(tmp_path, scoped_pat
     path=authorization(tmp_path,scoped_paths)
     with patch.dict('os.environ',OPENAI_ENV):
         first=text.api_judge_for_resolved(path,{'zh-Hans':scoped_paths},requested_locales=['zh-Hans'])
-    with patch.dict('os.environ',{**OPENAI_ENV,'OPENAI_PROJECT_ID':'proj_another_fixture'}):
-        second=text.api_judge_for_resolved(path,{'zh-Hans':scoped_paths},requested_locales=['zh-Hans'])
-    assert first.key('review','system','user',{})!=second.key('review','system','user',{})
+    with patch.dict('os.environ',{**OPENAI_ENV,'OPENAI_PROJECT_ID':'proj_another_fixture'}), \
+            patch('urllib.request.urlopen',side_effect=AssertionError('paid dispatch')):
+        with pytest.raises(ValueError,match='qc_budget_context_changed'):
+            text.api_judge_for_resolved(path,{'zh-Hans':scoped_paths},requested_locales=['zh-Hans'])
+
+
+def test_older_scoped_version_cannot_acquire_new_route_binding_implicitly(tmp_path,scoped_paths):
+    path=authorization(tmp_path,scoped_paths)
+    value=json.loads(path.read_text());value['schemaVersion']=auth.AUTH_V2;write(path,value)
+    with patch.dict('os.environ',OPENAI_ENV),patch('urllib.request.urlopen',side_effect=AssertionError('paid dispatch')):
+        with pytest.raises(ValueError):text.api_judge_for_resolved(path,{'zh-Hans':scoped_paths},requested_locales=['zh-Hans'])

@@ -1,6 +1,6 @@
 """Read-only QC approval validation and artifact-bound scope for planned runs.
 
-Legacy v1 approvals retain their original contract. New v2 approvals bind one
+Legacy v1 approvals retain their original contract. New v3 approvals bind one
 locale, environment and frozen source/anchor/policy; drivers must supply that
 same context before constructing any paid transport.
 """
@@ -12,9 +12,11 @@ from pathlib import Path
 
 AUTH_V1 = "sermon-machine-qc-api-budget-authorization-v1"
 AUTH_V2 = "sermon-machine-qc-api-budget-authorization-v2"
+AUTH_V3 = "sermon-machine-qc-api-budget-authorization-v3"
 APPROVAL_V1 = "sermon-machine-qc-api-budget-approval-v1"
 APPROVAL_V2 = "sermon-machine-qc-api-budget-approval-v2"
-CONTEXT_SCHEMA = "sermon-machine-qc-budget-context-v1"
+APPROVAL_V3 = "sermon-machine-qc-api-budget-approval-v3"
+CONTEXT_SCHEMA = "sermon-machine-qc-budget-context-v2"
 
 
 def canonical_sha(value):
@@ -26,9 +28,12 @@ def read(path):
     return json.loads(Path(path).read_text())
 
 
-def context_from_paths(paths, locale, environment):
+def context_from_paths(paths, locale, environment, *, route):
     if locale not in {"zh-Hans", "ko", "es"} or environment not in {"dev", "prod"}:
         raise ValueError("invalid_qc_budget_context")
+    from scripts.sermon_openai_runtime import safe_route
+    if not isinstance(route,dict) or safe_route(route) != route or route['environment'] != environment:
+        raise ValueError('invalid_qc_budget_runtime_route')
     source, anchor, policy = (read(paths[name]) for name in ("source", "anchor", "policy"))
     from scripts import produce_target_language_candidate as producer, target_language_policy as policies
     producer.validate_source_for_translation(source, anchor)
@@ -39,7 +44,7 @@ def context_from_paths(paths, locale, environment):
     if policy.get("targetLocale") != locale:
         raise ValueError("qc_budget_policy_locale_changed")
     return {"schemaVersion": CONTEXT_SCHEMA, "runId": source_sha, "environment": environment,
-            "targetLocale": locale, "englishSourcePackageJsonSha256": source_sha,
+            "targetLocale": locale, "openaiRoute": dict(route), "englishSourcePackageJsonSha256": source_sha,
             "anchorManifestJsonSha256": canonical_sha(anchor),
             "targetLanguagePolicyJsonSha256": canonical_sha(policy),
             "qcImplementationSha256": waiver.implementation_sha256()}
@@ -48,14 +53,14 @@ def context_from_paths(paths, locale, environment):
 def contexts_from_manifest(path, locales):
     path = Path(path).resolve()
     value = read(path)
-    if (value.get("schemaVersion") != "sermon-machine-qc-inputs-v1"
-            or set(value) != {"schemaVersion", "environment", "source", "anchor", "policies"}
+    if (value.get("schemaVersion") != "sermon-machine-qc-inputs-v2"
+            or set(value) != {"schemaVersion", "environment", "openaiRoute", "source", "anchor", "policies"}
             or not set(locales) <= set(value["policies"])):
         raise ValueError("invalid_qc_inputs_manifest")
     def local(name):
         return str((path.parent / name).resolve())
     return {locale: context_from_paths({"source": local(value["source"]), "anchor": local(value["anchor"]),
-                                      "policy": local(value["policies"][locale])}, locale, value["environment"])
+                                      "policy": local(value["policies"][locale])}, locale, value["environment"], route=value["openaiRoute"])
             for locale in locales}
 
 
@@ -63,8 +68,8 @@ def validate(path, *, context=None, require_scope=False):
     from scripts.sermon_provider_limits import validate_request_limits
     path = Path(path).resolve()
     value = read(path)
-    scoped = value.get("schemaVersion") == AUTH_V2
-    if value.get("schemaVersion") not in {AUTH_V1, AUTH_V2} or require_scope and not scoped:
+    scoped = value.get("schemaVersion") == AUTH_V3
+    if value.get("schemaVersion") not in {AUTH_V1, AUTH_V3} or require_scope and not scoped:
         raise ValueError("invalid_qc_budget_authorization_version")
     keys = {"schemaVersion", "budgetRoot", "authority", "approvalReceipt"}
     if scoped:
@@ -94,12 +99,16 @@ def validate(path, *, context=None, require_scope=False):
             binding["reuseBudgetRoots"] = roots
     if scoped:
         observed = value["qcContext"]
-        required = {"schemaVersion", "runId", "environment", "targetLocale", "englishSourcePackageJsonSha256",
+        from scripts.sermon_openai_runtime import safe_route
+        required = {"schemaVersion", "runId", "environment", "targetLocale", "openaiRoute", "englishSourcePackageJsonSha256",
                     "anchorManifestJsonSha256", "targetLanguagePolicyJsonSha256", "qcImplementationSha256"}
         if (not isinstance(observed, dict) or set(observed) != required
                 or observed["schemaVersion"] != CONTEXT_SCHEMA
                 or observed["environment"] not in {"dev", "prod"}
                 or observed["targetLocale"] not in {"zh-Hans", "ko", "es"}
+                or not isinstance(observed["openaiRoute"],dict)
+                or safe_route(observed["openaiRoute"]) != observed["openaiRoute"]
+                or observed["openaiRoute"]["environment"] != observed["environment"]
                 or any(not isinstance(observed[k], str) or len(observed[k]) != 64
                        or any(c not in "0123456789abcdef" for c in observed[k])
                        for k in ("runId", "englishSourcePackageJsonSha256", "anchorManifestJsonSha256",
@@ -110,7 +119,7 @@ def validate(path, *, context=None, require_scope=False):
         if context is not None and observed != context:
             raise ValueError("qc_budget_context_changed")
     if (authority["approvalSha256"] != hashlib.sha256(receipt.read_bytes()).hexdigest()
-            or scoped and approval.get("schemaVersion") != APPROVAL_V2
+            or scoped and approval.get("schemaVersion") != APPROVAL_V3
             or approval.get("binding") != binding or approval.get("humanApproval") is not True
             or approval.get("decision") != "approved"
             or scoped and (not approval.get("reviewedBy") or not approval.get("reviewedAt") or not approval.get("operatorEvidence"))):

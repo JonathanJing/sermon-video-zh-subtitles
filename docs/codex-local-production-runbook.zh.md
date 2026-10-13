@@ -10,6 +10,8 @@
 .venv/bin/python scripts/plan_run_budgets.py --out <新目录> --scale clip|week --total-usd <批准总额> --settled-usd <已结算> --approved-by <批准人> --evidence <出处> [--stage qc.ko|layer2] [--qc-inputs <inputs.json>] [--layer2-execution <execution.json>] [--reuse-from <上一份计划目录>]
 ```
 
+QC 的 inputs v2 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVersion、environment、projectId、credentialAlias、identitySource）；授权 v3 将完整路由冻结到批准收据，启动与每次调用复验，不能仅改 project ID 后沿用原批准。旧 scoped v2/inputs v1 须显式重规划；不把旧收据重标为新身份。
+
 2. 开工前一次检查所有条件，只读，不开会话、不派发：代码是否干净并对上提交、质检实现哈希、dev/prod 凭据启动器、预算计划是否完整未改、Spark 主机与已部署代码目录、输出目录是否为新、测试页 ID 是否已在线上。只调 API 的环节不需要 Spark 会话；进入 GPU 环节前加 `--spark-stages` 再查一次。
 
 ```sh
