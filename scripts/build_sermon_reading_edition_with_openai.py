@@ -614,13 +614,27 @@ def _codex_json(payload, *, codex_cli, model, reasoning_effort, schema_path, out
     with stage("reading.codex_call", billing="codex"):
         completed = subprocess.run(
             command,
-            input=prompt,
-            text=True,
+            input=prompt.encode("utf-8"),
+            text=False,
             capture_output=True,
             cwd=REPO_ROOT,
         )
+        # A returned process is terminal even if decoding/validation below fails.
+        # Timeouts/interruptions never reach this observation.
+        from scripts import api_cli_outcomes
+        try:
+            output_bytes = output_path.read_bytes()
+        except OSError:
+            output_bytes = None
+        api_cli_outcomes.observed_cli_terminal(
+            returncode=completed.returncode,
+            stdout=completed.stdout.encode() if isinstance(completed.stdout, str) else completed.stdout or b'',
+            stderr=completed.stderr.encode() if isinstance(completed.stderr, str) else completed.stderr or b'',
+            output=output_bytes)
         if completed.returncode != 0:
             detail = (completed.stderr or completed.stdout)[-3000:]
+            if isinstance(detail, bytes):
+                detail = detail.decode("utf-8", errors="replace")
             raise RuntimeError(f"Codex reading edit failed ({completed.returncode}): {detail}")
         return parse_json_message(output_path.read_text(encoding="utf-8"))
 

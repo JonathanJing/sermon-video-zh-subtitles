@@ -14,7 +14,7 @@ from contextlib import contextmanager
 import fcntl
 import hashlib
 import inspect
-import marshal
+import types
 import shutil
 import json
 import os
@@ -25,8 +25,12 @@ _active = ContextVar('api_cli_outcome_admitted', default=False)
 SCHEMA = 'sermon-api-cli-outcome-v3'
 V2_SCHEMA = 'sermon-api-cli-outcome-v2'
 LEGACY_SCHEMA = 'sermon-api-cli-outcome-v1'
+RECONCILIATION_EVIDENCE_SCHEMA = 'sermon-api-cli-reconciliation-evidence-v1'
 _observer = ContextVar('api_cli_outcome_observer', default=None)
 _before_dispatch = ContextVar('api_cli_before_dispatch', default=None)
+_cli_observer = ContextVar('api_cli_terminal_observer', default=None)
+CLI_TERMINAL_SCHEMA = 'sermon-cli-terminal-v1'
+RAW_FAILURE_SCHEMA = 'sermon-api-cli-raw-failure-v1'
 
 
 class TerminalOutcomeError(RuntimeError):
@@ -37,6 +41,39 @@ def observed_response(body, *, http_status=200):
     observer = _observer.get()
     if observer is not None:
         observer(body, http_status, None)
+
+
+def observed_cli_terminal(*, returncode, stdout, stderr, output=None):
+    """Observe actual completed subprocess bytes before decoding; never a timeout."""
+    observer = _cli_observer.get()
+    if observer is None:
+        return
+    if type(returncode) is not int or not isinstance(stdout, bytes) or not isinstance(stderr, bytes) or (
+            output is not None and not isinstance(output, bytes)):
+        raise ValueError('api_cli_terminal_observation_invalid')
+    def body(value):
+        return None if value is None else {'rawBodyBase64': base64.b64encode(value).decode('ascii'),
+                                           'rawBodySha256': hashlib.sha256(value).hexdigest()}
+    observer({'schemaVersion': CLI_TERMINAL_SCHEMA, 'returncode': returncode,
+              'stdout': body(stdout), 'stderr': body(stderr), 'output': body(output)})
+
+
+def _validate_cli_terminal(envelope):
+    if (not isinstance(envelope, dict)
+            or set(envelope) != {'schemaVersion', 'returncode', 'stdout', 'stderr', 'output'}
+            or envelope.get('schemaVersion') != CLI_TERMINAL_SCHEMA
+            or type(envelope.get('returncode')) is not int):
+        raise ValueError('api_cli_terminal_observation_invalid')
+    for name in ('stdout', 'stderr', 'output'):
+        body = envelope[name]
+        if name == 'output' and body is None:
+            continue
+        if (not isinstance(body, dict) or set(body) != {'rawBodyBase64', 'rawBodySha256'}
+                or not isinstance(body.get('rawBodyBase64'), str)):
+            raise ValueError('api_cli_terminal_observation_invalid')
+        raw = base64.b64decode(body['rawBodyBase64'], validate=True)
+        if hashlib.sha256(raw).hexdigest() != body['rawBodySha256']:
+            raise ValueError('api_cli_terminal_response_identity_mismatch')
 
 
 def observed_no_dispatch(reason):
@@ -67,6 +104,43 @@ def executable_identity(value):
     return identity
 
 
+def _code_identity(code):
+    """Canonical code structure; marshal's internal string refs change on use."""
+    def constant(value):
+        if value is None:
+            return ['none']
+        if value is Ellipsis:
+            return ['ellipsis']
+        if type(value) is bool:
+            return ['bool', value]
+        if type(value) is int:
+            return ['int', str(value)]
+        if type(value) is float:
+            return ['float', value.hex()]
+        if type(value) is complex:
+            return ['complex', value.real.hex(), value.imag.hex()]
+        if type(value) is str:
+            return ['str', value]
+        if type(value) is bytes:
+            return ['bytes', value.hex()]
+        if type(value) is tuple:
+            return ['tuple', [constant(item) for item in value]]
+        if type(value) is frozenset:
+            items = [constant(item) for item in value]
+            return ['frozenset', sorted(items, key=lambda item: json.dumps(item, sort_keys=True))]
+        if isinstance(value, types.CodeType):
+            return ['code', _code_identity(value)]
+        raise ValueError('api_cli_code_constant_identity_unsupported')
+    return {'schemaVersion': 'sermon-python-code-identity-v1',
+            'code': code.co_code.hex(), 'constants': [constant(value) for value in code.co_consts],
+            'names': list(code.co_names), 'varnames': list(code.co_varnames),
+            'freevars': list(code.co_freevars), 'cellvars': list(code.co_cellvars),
+            'argcount': code.co_argcount, 'posonlyargcount': code.co_posonlyargcount,
+            'kwonlyargcount': code.co_kwonlyargcount, 'nlocals': code.co_nlocals,
+            'stacksize': code.co_stacksize, 'flags': code.co_flags,
+            'exceptiontable': getattr(code, 'co_exceptiontable', b'').hex()}
+
+
 def execution_binding(caller, arguments):
     from scripts.sermon_openai_runtime import selected_route
     function = inspect.unwrap(caller)
@@ -86,7 +160,7 @@ def execution_binding(caller, arguments):
             'executables':executables,
             'caller':{'module':function.__module__, 'qualname':function.__qualname__,
                       'sourceSha256':hashlib.sha256(Path(source).read_bytes()).hexdigest() if source and Path(source).is_file() else None,
-                      'bytecodeSha256':hashlib.sha256(marshal.dumps(code)).hexdigest() if code else None},
+                      'bytecodeSha256':_digest(_code_identity(code)) if code else None},
             'transport':transport if isinstance(transport,(dict,str)) else None}
 
 
@@ -108,6 +182,20 @@ def _validate(row, identity, purpose=None, binding=None):
         raise ValueError('api_cli_receipt_binding_mismatch')
     if row['schemaVersion'] == LEGACY_SCHEMA and row['status'] not in {'started', 'unknown', 'returned'}:
         raise ValueError('api_cli_receipt_binding_mismatch')
+    if 'cliTerminal' in row:
+        _validate_cli_terminal(row['cliTerminal'])
+        if (row.get('cliTerminalSha256') != _digest(row['cliTerminal']) or 'rawBodyBase64' in row):
+            raise ValueError('api_cli_terminal_response_identity_mismatch')
+    if 'reconciliationBinding' in row:
+        reconciliation = row['reconciliationBinding']
+        response = row.get('failure') if row['status'] == 'terminal_failure' else row.get('response')
+        if (not isinstance(reconciliation, dict)
+                or reconciliation.get('schemaVersion') != RECONCILIATION_EVIDENCE_SCHEMA
+                or reconciliation.get('requestSha256') != identity
+                or reconciliation.get('responseSha256') != _digest(response)
+                or type(reconciliation.get('terminalFailure')) is not bool
+                or reconciliation['terminalFailure'] != (row['status'] == 'terminal_failure')):
+            raise ValueError('api_cli_reconciliation_binding_mismatch')
     if 'rawBodyBase64' in row:
         raw = base64.b64decode(row['rawBodyBase64'], validate=True)
         if hashlib.sha256(raw).hexdigest() != row.get('rawBodySha256'):
@@ -261,6 +349,13 @@ def call(caller, args, kwargs, *, purpose, directory=None, guarded=False):
                 rawBodySha256=hashlib.sha256(body).hexdigest(), httpStatus=http_status)
             if no_dispatch_reason is not None: received['notDispatchedReason'] = no_dispatch_reason
             _write(path, {**row, **received, 'status':'received'})
+        def observe_cli(envelope):
+            _validate_cli_terminal(envelope)
+            if 'rawBodyBase64' in received:
+                raise ValueError('api_cli_mixed_response_formats')
+            received.update(cliTerminal=envelope, cliTerminalSha256=_digest(envelope))
+            _write(path, {**row, **received, 'status': 'received'})
+        cli_token = _cli_observer.set(observe_cli)
         observer_token = _observer.set(observe)
         token = _active.set(True)
         try:
@@ -283,7 +378,7 @@ def call(caller, args, kwargs, *, purpose, directory=None, guarded=False):
                 pass  # The durable started/received proof still blocks; preserve original error.
             raise
         finally:
-            _active.reset(token); _observer.reset(observer_token)
+            _active.reset(token); _observer.reset(observer_token); _cli_observer.reset(cli_token)
 
 
 def reconcile(directory, request_sha256, response, evidence, *, terminal_failure=False):
@@ -300,12 +395,54 @@ def reconcile(directory, request_sha256, response, evidence, *, terminal_failure
         _validate(row, request_sha256)
         if row['status'] not in {'started', 'unknown', 'received'}:
             raise ValueError('api_cli_outcome_not_unknown')
+        binding = {}
+        if row['schemaVersion'] == SCHEMA or evidence.get('schemaVersion') is not None:
+            if (not isinstance(evidence.get('terminalResponseEvidence'), str)
+                    or not evidence['terminalResponseEvidence'].strip()):
+                raise ValueError('api_cli_terminal_evidence_required')
+            if (evidence.get('schemaVersion') != RECONCILIATION_EVIDENCE_SCHEMA
+                    or evidence.get('requestSha256') != request_sha256
+                    or evidence.get('responseSha256') != _digest(response)
+                    or type(evidence.get('terminalFailure')) is not bool
+                    or evidence['terminalFailure'] != terminal_failure):
+                raise ValueError('api_cli_reconciliation_evidence_binding_mismatch')
+            binding = {'reconciliationBinding': {key: evidence[key] for key in
+                       ('schemaVersion', 'requestSha256', 'responseSha256', 'terminalFailure')}}
+        if 'cliTerminal' in row:
+            # This envelope proves process completion, not the caller's parsed
+            # response schema. Normal successful calls already persist returned.
+            # Without the specific parser contract, a received CLI envelope may
+            # only be explicitly closed as the exact recorded terminal failure.
+            if not terminal_failure:
+                raise ValueError('api_cli_cli_terminal_requires_failure_reconciliation')
+            if _digest(response) != row['cliTerminalSha256']:
+                raise ValueError('api_cli_reconciliation_recorded_response_mismatch')
+        elif 'rawBodyBase64' in row:
+            raw = base64.b64decode(row['rawBodyBase64'], validate=True)
+            try:
+                decoded_hash = _digest(json.loads(raw.decode('utf-8')))
+            except (UnicodeError, ValueError) as error:
+                if not terminal_failure:
+                    raise ValueError('api_cli_recorded_response_not_json_reconciliation_required') from error
+                expected_failure = {'schemaVersion': RAW_FAILURE_SCHEMA,
+                    'requestSha256': request_sha256, 'rawBodySha256': row['rawBodySha256'],
+                    'httpStatus': row.get('httpStatus'), 'notDispatchedReason': row.get('notDispatchedReason')}
+                if _digest(response) != _digest(expected_failure):
+                    raise ValueError('api_cli_reconciliation_raw_failure_binding_mismatch') from error
+            else:
+                if decoded_hash != _digest(response):
+                    raise ValueError('api_cli_reconciliation_recorded_response_mismatch')
+            if not terminal_failure and (type(row.get('httpStatus')) is not int
+                    or not 200 <= row['httpStatus'] < 300 or row.get('notDispatchedReason')):
+                raise ValueError('api_cli_recorded_failure_cannot_be_success')
+        elif row['status'] == 'received':
+            raise ValueError('api_cli_received_response_bytes_required')
         _write(path, {**row, 'schemaVersion': SCHEMA if row['schemaVersion']==SCHEMA else V2_SCHEMA,
                      **({'reconciledFromSchemaVersion':LEGACY_SCHEMA} if row['schemaVersion']==LEGACY_SCHEMA else {}),
                      'status': 'terminal_failure' if terminal_failure else 'returned',
                      **({'failure':response} if terminal_failure else
                         {'response':response, 'responseSha256':_digest(response)}),
-                     'reconciliationEvidenceSha256':_digest(evidence)})
+                     'reconciliationEvidenceSha256':_digest(evidence), **binding})
 
 
 if __name__ == '__main__':
