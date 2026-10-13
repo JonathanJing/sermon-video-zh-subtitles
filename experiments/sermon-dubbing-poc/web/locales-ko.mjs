@@ -156,9 +156,9 @@ export const messages = Object.freeze({
   'theme.toLight': '라이트 모드로 전환',
   'theme.toDark': '다크 모드로 전환',
 
-  'app.brand': '동행',
-  'app.brand.ko': '동행',
-  'app.brand.es': '동행',
+  'app.brand': '동행 · 설교 중국어 통역',
+  'app.brand.ko': '동행 · 설교 한국어 통역',
+  'app.brand.es': '동행 · 설교 스페인어 통역',
   'app.audio.loading': '오디오 불러오는 중',
   'app.audio.playing': '재생 중',
   'app.audio.paused': '일시 정지',

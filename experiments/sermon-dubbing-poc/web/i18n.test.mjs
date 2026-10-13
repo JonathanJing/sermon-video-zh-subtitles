@@ -156,7 +156,7 @@ test('every page language names each sermon language in the brand', async () => 
     for (const key of ['app.tagline', 'app.title', 'app.home', 'app.brand']) {
       const names = ['', '.ko', '.es'].map(suffix => dictionary[`${key}${suffix}`]);
       assert.ok(names.every(Boolean), `${page} is missing a ${key} sermon-language variant`);
-      if (!(page === 'ko' && key === 'app.brand')) assert.equal(new Set(names).size, 3, `${page} ${key} must differ by sermon language`);
+      assert.equal(new Set(names).size, 3, `${page} ${key} must differ by sermon language`);
     }
   }
   assert.equal(messages.zh['app.tagline.ko'], '证道韩语听译');
