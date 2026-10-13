@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-11。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-13。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -21,6 +21,18 @@ English index: [backlog.md](./backlog.md)
 7. 查某个 ID 或前缀当前在哪几行、状态是什么：`python3 scripts/backlog_ids.py DEV-R242-011`（或 `DEV-R242`）；文件越靠前的小节越新。
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
+
+<a id="backlog-qc-merge-20261013"></a>
+
+## 2026-10-13：五项质检与 Dev 交付合并
+
+[合并验证 #374](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/374) 保留并整合 #366、#367、#369、#370、#371 的原提交：听众指向话语标记的文字质检；按收据的冻结身份重评音频；韩语裸章／节号口播及旧 v2 策略兼容；中文极短句的截短校准排除、有效样本额度与提前预检；隔离的机器质检 Dev 页面交付。分别归既有 `DEV-L2-001`、`DEV-L3-001`／`DEV-R242-030` 和 `DEV-L4-005`，不以代码合并关闭整层验收。
+
+用户此前的真实模型测试使用五项改动的**未推送本地合并版**，不能视为最终 Dev 代码的放行证明。本次合并验证另有代码／离线测试和 CI 身份；本次没有执行正式内容生成、部署、设备播放或现场验收。既有测试页面的 HTTP 结果保留原运行身份。
+
+| 新增验收项／归属 | 优先级／状态 | 完成条件 |
+|---|---|---|
+| `DEV-QC-001` 最终 Dev 代码的重新校准与放行；归 `DEV-L2-001`、`DEV-L3-001`、`DEV-R242-018` | P0 / `waiting_evidence` | 正式运行前冻结最终 Dev commit、质检实现哈希、模型／运行设置、来源、候选和音频；按该身份重新执行所需文字与音频校准、质检，重新生成对应放行／waiver 收据并通过正式消费者校验。#366、#369、#370 改变质检实现哈希，本轮旧校准与放行证明不能直接复用、改标签或替换哈希冒充新证明。旧任务保留原冻结身份；新策略使用新任务／revision。发布 HTTP、设备与现场状态另行验收。 |
 
 <a id="backlog-w42-plan-20261011"></a>
 
@@ -46,7 +58,7 @@ English index: [backlog.md](./backlog.md)
 | 子任务／归属 | 优先级／状态 | 交付与验收 | 依赖 |
 |---|---|---|---|
 | `DEV-R242-029` 发布入口四道门；归 `DEV-L4-004`、`DEV-CICD-003`、`DEV-R242-006/007/014` | P0 / `pending` | 外壳闭包从 `index.html` 解析并冻结进 `runtimeAssets`，`seal` 断言与 web 目录同哈希；`fetch_live_baseline.py` 从 Hosting API 重建线上基线并出 `seal-report.json`；Playwright 冒烟 `smoke_published_page.mjs` 三语各一次（标题、字幕非空、零 `console.error`、`/api/session` 200），发 Dev 与发生产后必跑；反馈目录生成与反馈 API 部署进生产步骤。验收：删掉 `icons.svg` 时 seal 失败；本周 156 文件基线逐一哈希相等；Dev 站本周页三语冒烟通过 | PR #335 合并；夹具 `publication/` |
-| `DEV-R242-030` ASR 评分规范化与二级 ASR 条件触发；归 `DEV-L3-001`、`DEV-R242-018` | P0 / `pending` | `transcript_similarity/transcript_agrees` 前按语言折叠：韩语数词/阿拉伯数字互折但章节读法不折、空格；中文仅同音同调字对；西语 `un/una/1`、重音、标点。二级 ASR 只在一级相似度 < 0.6 或差异涉及否定词/数字时调用。实测（PR #342，2026-10-11 夹具）：试听链判失败的 42 句折叠后剩 22 句真实差异（zh 2、ko 14、es 6），一级筛查 101 个标记降到 66；ko 5 句章号、`참혹합니다`、`义人/一人`、`合宜/合一` 全部仍被标记。原估的“≤ 6”过于乐观，剩余多为人名／固有词的 ASR 听错。二级 ASR 条件触发复核后不做：每次调用成本可忽略，改收据合同不值。哈希文件集内改动，须在下周运行前合并 | PR #335 合并；夹具 `audio-qc/` |
+| `DEV-R242-030` ASR 评分规范化与二级 ASR 条件触发；归 `DEV-L3-001`、`DEV-R242-018` | P0 / `in_progress` | `transcript_similarity/transcript_agrees` 前按语言折叠：韩语数词/阿拉伯数字互折但章节读法不折、空格；中文仅同音同调字对；西语 `un/una/1`、重音、标点。二级 ASR 只在一级相似度 < 0.6 或差异涉及否定词/数字时调用。实测（PR #342，2026-10-11 夹具）：试听链判失败的 42 句折叠后剩 22 句真实差异（zh 2、ko 14、es 6），一级筛查 101 个标记降到 66；ko 5 句章号、`참혹합니다`、`义人/一人`、`合宜/合一` 全部仍被标记。原估的“≤ 6”过于乐观，剩余多为人名／固有词的 ASR 听错。二级 ASR 条件触发复核后不做：每次调用成本可忽略，改收据合同不值。2026-10-13：#367/#369 由 #374 整合评分身份校验、冻结 v2 兼容与裸章／节规则；新实现的正式校准及放行仍待 `DEV-QC-001`，旧实测不能外推 | PR #335 合并；夹具 `audio-qc/`；[合并验证 #374](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/374) |
 | `DEV-R242-031` 发布后抽样听审表；归 `DEV-R242-018`，替代 `DEV-REVIEW-001` 近期范围 | P1 / `pending` | `build_listening_sample.py` 每语随机 10 句 + 全部 ASR 标记句生成 Markdown（译文、英文、单句音频路径、勾选框）；填完由 `record_decision.py` 写回 `decisions.ndjson`。周一执行，不阻塞发布。验收：10 分钟内填完，结果可被 `export_run_digest.py` 收录 | `DEV-R242-016` 的决定记录 |
 
 复盘其余计划不另取 ID：冻结守卫归 `DEV-R242-001`，周预算一份授权归 `DEV-R242-026`，Spark 定时器冻结与派发器等待重试归 `DEV-R242-028`；运行日志 `run_journal.py`、决定记录 `record_decision.py` 归 `DEV-R242-016`，账本 `costMicrousd` 折算归 `DEV-R242-010/017`，摘要收录归 `DEV-RUNREPORT-001`；渲染器直接吃运行计划策略并入 PR #335 的 CI 修复并记在 `DEV-R242-004`；12 条修复记录量化归 `DEV-R242-022`，`fix` 单句修正命令设计归 `DEV-R242-005`／`DEV-SPD-004`。
