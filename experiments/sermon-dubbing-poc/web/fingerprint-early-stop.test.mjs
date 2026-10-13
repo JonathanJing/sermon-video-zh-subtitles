@@ -56,14 +56,14 @@ test('capture forwards prefixes only after recording starts and still resolves t
 function harness({ answers, autoApply = true } = {}) {
   const context = { week: { id: 'week', sourceStartSeconds: 1749, audioFingerprint: { ...metadata } }, track: { id: 'synced', sha256: trackSha, durationSeconds: 2131 }, generation: 1, ready: true };
   let clock = 50000, captureSignal, onCheckpoint, finish, fail;
-  const states = [], seeks = [], matched = [], jobs = [];
+  const states = [], seeks = [], matched = [], jobs = [], shadowRequests = [];
   const timers = { setTimeout(fn, ms) { const job = { fn, ms }; jobs.push(job); return job; }, clearTimeout(job) { if (job) job.cancelled = true; } };
   const controller = createFingerprintController({ context: () => context, pause() {}, seek: x => { seeks.push(x); return true; }, play: async () => {}, position: () => NaN,
     prepare: async () => ({ close() {} }), now: () => clock, timers, supported: () => true, autoApply, onState: s => states.push(s),
     capture: options => { captureSignal = options.signal; onCheckpoint = options.onCheckpoint; options.onRecording(); return new Promise((resolve, reject) => { finish = resolve; fail = reject; options.signal.addEventListener('abort', () => reject(new DOMException('stop', 'AbortError'))); }); },
-    match: async recording => { matched.push(recording.durationSeconds); const next = answers.shift(); return typeof next === 'function' ? next() : next; } });
+    match: async (recording, _metadata, _signal, options) => { matched.push(recording.durationSeconds); shadowRequests.push(options?.shadow === true); const next = answers.shift(); return typeof next === 'function' ? next() : next; } });
   const prefix = seconds => ({ samples: new Float32Array(8000 * seconds), sampleRate: 8000, durationSeconds: seconds, endedAt: clock });
-  return { controller, states, seeks, matched, jobs, prefix, get signal() { return captureSignal; },
+  return { controller, states, seeks, matched, jobs, prefix, shadowRequests, get signal() { return captureSignal; },
     checkpoint: seconds => onCheckpoint(prefix(seconds)), finish: () => finish(prefix(15)), fail: error => fail(error), tick: ms => { clock += ms; } };
 }
 const miss = { result: { matched: false, diagnostics: { reason: 'low_confidence' } }, summary: { level: 'low', fractionBand: '0_045_to_0_055' } };
@@ -85,6 +85,7 @@ test('every checkpoint and the final 15 s buffer missing leaves playback untouch
   for (const seconds of [7, 10, 12]) { await settle(); h.checkpoint(seconds); await settle(); }
   h.finish(); await pending; await settle();
   assert.deepEqual(h.matched, [7, 10, 12, 15]); assert.deepEqual(h.seeks, []);
+  assert.deepEqual(h.shadowRequests, [false, false, false, true], 'only the final buffer pays for the shadow comparison');
   assert.equal(h.states.at(-1).phase, 'no_match'); assert.equal(h.states.at(-1).reason, 'low_confidence');
 });
 
