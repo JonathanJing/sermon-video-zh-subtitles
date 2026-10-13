@@ -92,4 +92,4 @@ QC 上限还计入二级 `gpt-transcribe` 的保守预留：按已冻结的 tran
 
 Layer 2 计划中的 `sizing.<locale>.initialReservation` 是按当前分组、翻译与复核角色及 `requestLimits` 计算的初始完整轮次保守上界，不是实测用量、提供商报价或账单。每次请求都预留完整 `maxInputTokens`（复核包含尚未生成的候选、规则、上下文与 JSON 序列化开销），以及输出与时间上限，再按冻结价格假设计入输入和输出费用。请求数、输入、输出、时间、费用任一维不足，规划器在写任何授权前拒绝；超大实际 payload 仍由运行时逐请求准入检查拒绝。规划器不会自动增加现有预算；需要缩小分组范围或提供明确批准的新 profile。
 
-新 Layer 2 授权 v3 必须在显式 `run_with_openai_environment.py` launcher 内离线生成，绑定完整 `openaiRoute` 和实际凭据指纹。控制器启动、缓存读取及派发前均核验；跨环境、项目或 key 不能沿用原批准或响应。旧 Layer 2 授权 v1/v2 保持原冻结合同，不自动补字段。规划器 `--reuse-from` 作用于 QC 的明确批准预算根，不隐式迁移 Layer 2 缓存。
+新 Layer 2 授权 v3 必须在显式 `run_with_openai_environment.py` launcher 内离线生成，绑定完整 `openaiRoute` 和实际凭据指纹。控制器启动、缓存读取及派发前均核验；跨环境、项目或 key 不能沿用原批准或响应。旧 Layer 2 授权 v1/v2 保持原冻结合同，不自动补字段。规划器 `--reuse-from` 仅对 QC 的明确批准预算根只读重放已有响应，不补付缺失操作、不隐式迁移 Layer 2 缓存；部分 QC 使用互斥的 `--resume-qc-authorization` 继续原 v4 授权、原根和原额度，见[恢复合同](canonical-layer2-budget-and-migration.zh.md#qc-部分运行继续原授权与跨根只读重放分开)。

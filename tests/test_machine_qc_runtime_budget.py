@@ -65,7 +65,12 @@ def source_store(root, send, *, bounds=None, reuse=()):
     authority = copy.deepcopy(AUTHORITY)
     if bounds:
         authority['globalBounds'].update(bounds)
-    return budget.SourceBudget(root, authority, verify=lambda: None, transport=send, reuse_roots=reuse)
+    store = budget.SourceBudget(root, authority, verify=lambda: None, transport=send, reuse_roots=reuse)
+    # Trusted synthetic already-scoped ledger seam; actual AUTH v4 admission is tested separately.
+    store.qc_context = {'schemaVersion': auth.CONTEXT_SCHEMA, 'targetLocale': 'ko', 'environment': 'dev',
+                        'openaiRoute': OPENAI_ROUTE,
+                        'credentialSha256': auth.credential_fingerprint(OPENAI_ENV['OPENAI_API_KEY'])}
+    return store
 
 
 @pytest.mark.parametrize('wrong', ['locale', 'default_locales', 'environment', 'project', 'credential', 'policy', 'source'])
@@ -262,3 +267,32 @@ def test_older_scoped_version_cannot_acquire_new_route_binding_implicitly(tmp_pa
     value=json.loads(path.read_text());value['schemaVersion']=auth.AUTH_V2;write(path,value)
     with patch.dict('os.environ',OPENAI_ENV),patch('urllib.request.urlopen',side_effect=AssertionError('paid dispatch')):
         with pytest.raises(ValueError):text.api_judge_for_resolved(path,{'zh-Hans':scoped_paths},requested_locales=['zh-Hans'])
+
+
+def test_new_audio_helper_rejects_legacy_before_ledger_construction(tmp_path):
+    path = authorization(tmp_path)
+    with patch.dict('os.environ', OPENAI_ENV), patch.object(budget, 'SourceBudget', side_effect=AssertionError('ledger constructed')):
+        with pytest.raises(ValueError, match='authorization_version'):
+            audio.audio_api_judge_for_resolved(path, {'ko': {}}, requested_locales=['ko'])
+    assert not (tmp_path/'budget').exists()
+
+
+def test_legacy_text_judge_remains_supported_but_cannot_supply_secondary_scope(tmp_path):
+    path = authorization(tmp_path)
+    with patch.dict('os.environ', OPENAI_ENV):
+        judge = text.api_judge_for_resolved(path, {'ko': {}})
+        assert judge.ledger.qc_context is None
+        with pytest.raises(ValueError, match='scoped v4 audio'):
+            transports.OpenAiTranscribeSecondary('ko', cache=tmp_path/'cache', max_calls=1, budget=judge.ledger)
+    assert not (tmp_path/'cache').exists()
+    assert not (tmp_path/'budget').exists()
+
+
+def test_audio_helper_accepts_matching_v4_and_rejects_wrong_locale_before_ledger(tmp_path, scoped_paths):
+    path = authorization(tmp_path, scoped_paths)
+    with patch.dict('os.environ', OPENAI_ENV):
+        judge = audio.audio_api_judge_for_resolved(path, {'zh-Hans': scoped_paths}, requested_locales=['zh-Hans'])
+        assert judge.ledger.qc_context['targetLocale'] == 'zh-Hans'
+        with patch.object(budget, 'SourceBudget', side_effect=AssertionError('ledger constructed')):
+            with pytest.raises(ValueError, match='exactly one requested locale'):
+                audio.audio_api_judge_for_resolved(path, {'ko': scoped_paths}, requested_locales=['ko'])

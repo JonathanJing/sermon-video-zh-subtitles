@@ -351,8 +351,10 @@ class OpenAiTranscribeSecondary(_Asr):
         if type(max_calls) is not int or max_calls < 0:
             raise ValueError("Invalid secondary ASR call cap")
         context = getattr(budget, "qc_context", None)
-        from scripts.machine_qc_budget_authorization import credential_fingerprint
-        if context is not None and (context.get("targetLocale") != locale or context.get("environment") != route["environment"] or context.get("openaiRoute") != route or context.get("credentialSha256") != credential_fingerprint(os.environ.get("OPENAI_API_KEY"))):
+        from scripts.machine_qc_budget_authorization import credential_fingerprint, CONTEXT_SCHEMA
+        if not isinstance(context, dict) or context.get("schemaVersion") != CONTEXT_SCHEMA:
+            raise ValueError("Secondary ASR requires scoped v4 audio budget authorization context")
+        if (context.get("targetLocale") != locale or context.get("environment") != route["environment"] or context.get("openaiRoute") != route or context.get("credentialSha256") != credential_fingerprint(os.environ.get("OPENAI_API_KEY"))):
             raise ValueError("Secondary ASR budget context does not match locale/runtime")
         self.locale, self.max_calls, self.calls = locale, max_calls, 0
         self.budget, self.route = budget, route

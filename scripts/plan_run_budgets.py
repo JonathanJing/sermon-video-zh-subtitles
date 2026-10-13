@@ -68,8 +68,37 @@ def qc_files(out, locale, profile, scale, *, approved_by, evidence, reviewed_at,
     return {"stage": f"qc.{locale}", "authorization": str(authorization),
             "authorizationSha256": file_sha256(authorization), "approvalSha256": file_sha256(approval),
             "budgetRoot": root, "capUsd": cap, "reuseBudgetRoots": reuse, "qcContext": context,
+            "executionMode": "replay_only" if reuse else "new_authority",
             "secondaryAsr": {"requests": secondary["requests"][scale],
                              "capUsd": secondary["capUsdPerLocale"][scale]}}
+
+
+def resume_qc_stage(path, context):
+    """Reference an unchanged prior authority; never grant missing replay-root calls."""
+    from scripts import machine_qc_budget_authorization as auth
+    from scripts import canonical_layer2_budget as l2
+    from scripts.check_run_start import inspect_source_root
+    value = auth.validate(path, context=context, require_scope=True)
+    if value.get('reuseBudgetRoots'):
+        raise ValueError('Replay-only QC roots cannot resume unfinished paid work; use the original paid authority')
+    actual = l2.selected_runtime_identity()
+    if actual != {'openaiRoute': context['openaiRoute'], 'credentialSha256': context['credentialSha256']}:
+        raise ValueError('QC resume launcher identity changed')
+    root = Path(value['budgetRoot'])
+    authority = {'approvalSha256': value['authority']['approvalSha256'],
+                 'globalBounds': value['authority']['bounds']['globalBounds'],
+                 'requestLimits': value['authority']['requestLimits']}
+    inspect_source_root(root, required=True, expected=authority, reuse_roots=[])
+    ledger = json.loads((root / 'source-budget.json').read_text())
+    remaining = {key: bound - sum(row['bounds'][key] for row in ledger['requests'].values())
+                 for key, bound in authority['globalBounds'].items()}
+    if any(value <= 0 for value in remaining.values()):
+        raise ValueError('QC prior authority exhausted; cannot approve unfinished paid work')
+    return {'stage': 'qc.' + context['targetLocale'], 'authorization': str(Path(path).resolve()),
+            'authorizationSha256': file_sha256(path), 'approvalSha256': authority['approvalSha256'],
+            'budgetRoot': str(root), 'capUsd': authority['globalBounds']['costMicrousd'] / 1_000_000,
+            'reuseBudgetRoots': [], 'qcContext': context,
+            'executionMode': 'resume_prior_authority', 'remainingReservationBounds': remaining}
 
 
 def layer2_spec(execution, locales, profile, scale):
@@ -181,10 +210,15 @@ def main(argv=None):
     parser.add_argument("--evidence", required=True)
     parser.add_argument("--layer2-execution", type=Path)
     parser.add_argument("--qc-inputs", type=Path, help="Frozen source, anchor and per-locale policy manifest")
-    parser.add_argument("--reuse-from", type=Path, action="append", default=[])
+    parser.add_argument("--reuse-from", type=Path, action="append", default=[],
+                        help="QC replay-only roots: missing operations refuse payment; not partial-run continuation")
+    parser.add_argument("--resume-qc-authorization", type=Path, action="append", default=[],
+                        help="Resume unfinished QC under unchanged original v4 authority/root; repeat per locale. Mutually exclusive with --reuse-from")
     parser.add_argument("--profile", type=Path, default=PROFILE)
     args = parser.parse_args(argv)
     from scripts import machine_qc_budget_authorization as auth
+    if args.reuse_from and args.resume_qc_authorization:
+        parser.error("Choose replay-only --reuse-from or --resume-qc-authorization, not both")
     from scripts.sermon_provider_limits import validate_request_limits
     profile = json.loads(args.profile.read_text())
     if profile.get("schemaVersion") != PROFILE_SCHEMA:
@@ -209,7 +243,7 @@ def main(argv=None):
         parser.error("Selected stage is not in this plan")
     selected = [s for s in available if not args.stage or s["stage"] in args.stage]
     planned = schedule(selected, total=args.total_usd, settled=args.settled_usd)
-    if not planned["fits"]:
+    if not planned["fits"] and not args.resume_qc_authorization:
         print(json.dumps(planned)); return 1
     qc_locales = [s["stage"].split(".")[1] for s in selected if s["stage"].startswith("qc.")]
     if qc_locales and not args.qc_inputs:
@@ -222,6 +256,21 @@ def main(argv=None):
     contexts = auth.contexts_from_manifest(args.qc_inputs, qc_locales) if qc_locales else {}
     prepared = (layer2_spec(args.layer2_execution.resolve(), locales, profile, args.scale)
                 if any(s["stage"] == "layer2" for s in selected) else None)
+    resumes = {}
+    for path in args.resume_qc_authorization:
+        previous = auth.validate(path, require_scope=True)
+        locale = previous['qcContext']['targetLocale']
+        if locale not in contexts or locale in resumes:
+            parser.error('Resume authority must name one distinct selected QC locale')
+        resumes[locale] = resume_qc_stage(path, contexts[locale])
+    if args.resume_qc_authorization and set(resumes) != set(qc_locales):
+        parser.error('Resume mode requires an original authority for every selected QC locale')
+    for stage in selected:
+        if stage['stage'].startswith('qc.') and stage['stage'].split('.')[1] in resumes:
+            stage['capUsd'] = resumes[stage['stage'].split('.')[1]]['capUsd']
+    planned = schedule(selected, total=args.total_usd, settled=args.settled_usd)
+    if not planned['fits']:
+        print(json.dumps(planned)); return 1
     reuse = {locale: [] for locale in qc_locales}
     for prior in args.reuse_from:
         prior_plan = json.loads((prior / "plan.json").read_text())
@@ -233,6 +282,8 @@ def main(argv=None):
             root = str(Path(previous["budgetRoot"]).resolve())
             if not (Path(root) / "source-budget.json").is_file():
                 parser.error("Reuse root has no paid ledger to reconcile")
+            from scripts.check_run_start import inspect_source_root
+            inspect_source_root(Path(root), required=True, as_reuse_source=True)
             if root in reuse[locale]:
                 parser.error("Duplicate reuse root; list each approved source only once")
             reuse[locale].append(root)
@@ -245,7 +296,8 @@ def main(argv=None):
                                        prepared=prepared, **common))
         else:
             locale = stage["stage"].split(".")[1]
-            stages.append(qc_files(args.out, locale, profile, args.scale, reuse=reuse[locale], context=contexts[locale], **common))
+            stages.append(resumes[locale] if locale in resumes else qc_files(
+                args.out, locale, profile, args.scale, reuse=reuse[locale], context=contexts[locale], **common))
     from scripts import machine_quality_waiver as waiver
     plan = {"schemaVersion": PLAN_SCHEMA, "createdAt": now, "scale": args.scale, "locales": locales,
             "profileSha256": file_sha256(args.profile), "profile": str(args.profile.resolve()),

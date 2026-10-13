@@ -419,7 +419,7 @@ def main(argv=None) -> int:
     parser.add_argument("--spark-code-dir", help="Staged code directory on Spark, e.g. <stage>/repo-<commit>")
     parser.add_argument("--fresh-dir", type=Path, action="append", default=[])
     parser.add_argument("--page-id")
-    parser.add_argument("--origin", default=DEV_ORIGIN)
+    parser.add_argument("--origin", help="Explicit Hosting origin required with --page-id (dev or prod).")
     parser.add_argument("--out", type=Path, help="Also write the report here")
     args = parser.parse_args(argv)
     identity_problems=[]
@@ -448,16 +448,20 @@ def main(argv=None) -> int:
     checks.append(checked('spark',lambda:check_spark(args.spark_host, args.spark_stages, args.spark_code_dir))
                   if args.spark or args.spark_stages or args.spark_code_dir else result("spark", "skip"))
     checks.append(checked('outputs',lambda:check_fresh(args.fresh_dir)) if args.fresh_dir else result("outputs", "skip"))
-    checks.append(checked('page',lambda:check_page(args.page_id, args.origin)) if args.page_id else result("page", "skip"))
+    if args.page_id and not args.origin:
+        checks.append(result('page', 'fail', pageId=args.page_id,
+                             problems=['--page-id requires an explicit --origin for the target Hosting environment']))
+    else:
+        checks.append(checked('page',lambda:check_page(args.page_id, args.origin)) if args.page_id else result("page", "skip"))
     if args.openai_environment and args.budget_plan:
         checks.append(check_launcher_binding(args.budget_plan, args.openai_environment, args.env_file))
     elif args.budget_plan and not args.env_file:
-        def require_layer2_launcher():
+        def require_planned_launcher():
             stages = json.loads((args.budget_plan / 'plan.json').read_text())['stages']
-            if any(stage['stage'] == 'layer2' for stage in stages):
-                return result('environment_binding', 'fail', problems=['Layer 2 plan requires --openai-environment'])
+            if any(stage['stage'] == 'layer2' or stage['stage'].startswith('qc.') for stage in stages):
+                return result('environment_binding', 'fail', problems=['Layer 2 or QC plan requires --openai-environment'])
             return result('environment_binding', 'skip')
-        checks.append(checked('environment_binding', require_layer2_launcher))
+        checks.append(checked('environment_binding', require_planned_launcher))
     failed = [check["check"] for check in checks if check["status"] == "fail"]
     report = {"schemaVersion": "sermon-run-start-check-v1", "status": "fail" if failed else "pass",
               "failed": failed, "checks": checks}

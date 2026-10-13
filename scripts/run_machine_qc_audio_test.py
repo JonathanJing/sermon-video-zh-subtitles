@@ -250,6 +250,13 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
 
 # ---------------------------------------------------------------- transports
 
+def audio_api_judge_for_resolved(authorization: Path, resolved: dict, *, requested_locales=None):
+    """New audio/secondary-ASR work requires scoped v4 before ledger creation."""
+    from scripts import machine_qc_budget_authorization as qc_authorization
+    qc_authorization.validate(authorization, require_scope=True)
+    return text_driver.api_judge_for_resolved(authorization, resolved, requested_locales=requested_locales)
+
+
 def make_transports(backend: str, args, state: Path, *, locale: str, screening: dict, job: dict,
                     package: dict, budget=None) -> tuple:
     """``(primary, secondary, tts)`` for one locale."""
@@ -259,9 +266,9 @@ def make_transports(backend: str, args, state: Path, *, locale: str, screening: 
         return (transports.FakePrimaryAsr(screening, tts), transports.FakeSecondaryAsr(locale, texts, tts), tts)
     if budget is None:
         raise ValueError("Real secondary ASR requires an approved SourceBudget ledger")
-    primary = transports.QwenPrimaryAsr(screening, cache=state / "asr-calls" / "primary", model_path=args.asr_model_path)
     secondary = transports.OpenAiTranscribeSecondary(locale, cache=state / "asr-calls" / "secondary",
                                                      max_calls=args.max_api_calls, budget=budget)
+    primary = transports.QwenPrimaryAsr(screening, cache=state / "asr-calls" / "primary", model_path=args.asr_model_path)
     checkpoint = transports.checkpoint_path(job, read(args.tts_checkpoint_map))
     tts = transports.QwenTtsRender(job, checkpoint=checkpoint, cache=state / "tts-renders", seed=args.tts_seed,
                                    device=args.tts_device, dtype=args.tts_dtype,
@@ -549,6 +556,14 @@ def main(argv=None) -> int:
                          "scripts/run_with_openai_environment.py --environment dev (prod for formal content)")
     if not real and args.state_dir:
         parser.error("--backend fake never writes to a persistent state dir")
+    if real and not args.preflight_only:
+        # Validate the new audio authorization before creating any output/state
+        # or constructing a text judge. Legacy authority remains text-only.
+        from scripts import machine_qc_budget_authorization as qc_authorization
+        try:
+            qc_authorization.validate(args.api_budget_authorization.resolve(), require_scope=True)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            parser.error(f"secondary ASR requires scoped v4 audio authorization: {error}")
     acceptances = {}
     for item in args.human_acceptance:
         locale, _, path = item.partition("=")
@@ -606,14 +621,14 @@ def main(argv=None) -> int:
         judge = text_driver.FakeJudge(groups)
     elif args.text_backend == "api":
         # Text-kind calibration replays the text driver's API judge cache when the same budget is reused.
-        judge = text_driver.api_judge_for_resolved(args.api_budget_authorization.resolve(), resolved, requested_locales=locales)
+        judge = audio_api_judge_for_resolved(args.api_budget_authorization.resolve(), resolved, requested_locales=locales)
     else:
         judge = text_driver.CodexJudge(state / "codex-calls")
     secondary_budget = getattr(judge, "ledger", None)
     if real and secondary_budget is None:
         if not args.api_budget_authorization:
             parser.error("Real secondary ASR requires --api-budget-authorization")
-        secondary_budget = text_driver.api_judge_for_resolved(args.api_budget_authorization.resolve(), resolved, requested_locales=locales).ledger
+        secondary_budget = audio_api_judge_for_resolved(args.api_budget_authorization.resolve(), resolved, requested_locales=locales).ledger
     for locale, paths in resolved.items():
         uncertain = judge.uncertain() + uncertain_calls(state)
         if secondary_budget is not None:
