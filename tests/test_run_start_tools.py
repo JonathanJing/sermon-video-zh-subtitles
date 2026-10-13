@@ -201,6 +201,42 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(check.check_budget(self.base/'run')['status'],'fail')
         self.assertEqual(path.read_text(),'{bad-json')
 
+    def test_paid_metadata_migration_and_reuse_provenance_never_false_green(self):
+        from scripts import sermon_source_budget as source,sermon_workflow_jobs as jobs
+        from tests.test_source_budget_settlement import IDENTITY,BOUNDS,OPERATION,USAGE
+        run_plan(*self.args());first=self.load()['stages'][0];v=auth.validate(first['authorization'])
+        authority={'approvalSha256':v['authority']['approvalSha256'],
+                   'globalBounds':v['authority']['bounds']['globalBounds'],'requestLimits':v['authority']['requestLimits']}
+        def store(root,authority,reuse=()):
+            return source.SourceBudget(root,authority,verify=lambda:None,max_concurrent=16,reuse_roots=reuse,
+                transport=lambda *args:{'model':'gpt-6.1-sol','usage':USAGE})
+        def call(ledger):
+            return ledger.call(operation=OPERATION,identity=IDENTITY,bounds=BOUNDS,request=b'{}',api_key='fixture',content_type='application/json',endpoint='https://example.invalid')
+        call(store(v['budgetRoot'],authority));path=Path(v['budgetRoot'])/'source-budget.json';saved=json.loads(path.read_text())
+        self.assertEqual(check.check_budget(self.base/'run')['status'],'pass')
+        for kind in ('concurrency','extra','resource'):
+            damaged=json.loads(json.dumps(saved))
+            if kind=='concurrency':damaged['maxConcurrent']=2
+            elif kind=='extra':damaged['extra']=True
+            else:damaged['resourcePolicySha256']='a'*64
+            write(path,damaged);before=path.read_bytes()
+            self.assertEqual(check.check_budget(self.base/'run')['status'],'fail')
+            self.assertEqual(path.read_bytes(),before)
+        write(path,saved)
+        run_plan(*self.args('run2',extra=['--reuse-from',str(self.base/'run')]))
+        v2=auth.validate(self.load('run2')['stages'][0]['authorization'])
+        a2={**authority,'approvalSha256':v2['authority']['approvalSha256']}
+        dest=store(v2['budgetRoot'],a2,[v['budgetRoot']]);call(dest)
+        self.assertEqual(check.check_budget(self.base/'run2')['status'],'pass')
+        response=next((dest.root/'responses').iterdir());body=json.loads(response.read_text())
+        body.pop('reusedFrom');write(response,body)
+        ledger_path=dest.root/'source-budget.json';value=json.loads(ledger_path.read_text())
+        value['requests'][OPERATION]['responseSha256']=jobs._digest(body);write(ledger_path,value)
+        self.assertEqual(check.check_budget(self.base/'run2')['status'],'fail')
+        # A legacy destination with valid content still needs explicit v4 migration for reuse.
+        value['schemaVersion']=source.LEDGER_V3;value.pop('reuseBudgetRoots');write(ledger_path,value)
+        self.assertEqual(check.check_budget(self.base/'run2')['status'],'fail')
+
     def test_layer2_policy_bytes_and_locale_shard_pending_calls_are_checked(self):
         from tests.test_canonical_layer2_controller import CanonicalLayer2ControllerTests
         from scripts import canonical_layer2_controller as controller,canonical_layer2_budget as l2

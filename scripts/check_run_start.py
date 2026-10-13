@@ -76,7 +76,7 @@ def check_openai(environment, env_file):
                   exitCode=done.returncode)
 
 
-def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False):
+def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False, as_reuse_source=False):
     """Read-only counterpart of durable source admission; never opens/migrates a ledger."""
     from scripts import sermon_source_budget as source, sermon_workflow_jobs as jobs
     root = Path(root)
@@ -89,13 +89,43 @@ def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False
     version = value.get('schemaVersion')
     if version not in {'sermon-source-budget-ledger-v1', *source.CONCURRENT_LEDGERS} or not isinstance(value.get('requests'),dict):
         raise ValueError('source budget ledger corrupt')
+    keys={'schemaVersion','authority','requests'}
+    if version in source.CONCURRENT_LEDGERS:
+        keys|={'maxConcurrent','resourcePolicySha256'}
+    if version==source.LEDGER_V4:
+        keys.add('reuseBudgetRoots')
+    if set(value)!=keys:
+        raise ValueError('source ledger metadata changed')
+    concurrency=value.get('maxConcurrent',1)
+    roots=value.get('reuseBudgetRoots',[])
+    source.SourceBudget(root,value['authority'],verify=lambda:None,max_concurrent=concurrency,reuse_roots=roots)
+    if (not re.fullmatch('[a-f0-9]{64}',value['authority'].get('approvalSha256',''))
+            or any(not isinstance(name,str) or not Path(name).is_absolute() for name in roots)):
+        raise ValueError('invalid source ledger authority or reuse roots')
+    if expected is not None:
+        if version not in source.CONCURRENT_LEDGERS or concurrency!=16 or value.get('resourcePolicySha256') is not None:
+            raise ValueError('QC ledger runtime metadata changed; explicit migration required')
+        if reuse_roots and version!=source.LEDGER_V4:
+            raise ValueError('source_budget_v4_explicit_migration_required')
+    elif value.get('resourcePolicySha256') is not None:
+        # This planner has no resource-policy input with which to verify a broker-bound root.
+        raise ValueError('resource-bound reuse root requires explicit reconciliation')
     if expected is not None and value.get('authority') != expected:
         raise ValueError('budget root already belongs to another approval')
     if version == source.LEDGER_V4 and reuse_roots is not None and value.get('reuseBudgetRoots') != reuse_roots:
         raise ValueError('source reuse identity changed')
     for operation,row in value['requests'].items():
+        if not isinstance(operation,str) or not re.fullmatch(r'(asr\.[0-9]{4}|judge\.[a-f0-9]{64})',operation):
+            raise ValueError('invalid source operation')
         if row.get('status') != 'returned':
             raise ValueError('source provider outcome unknown; reconcile before dispatch')
+        row_keys={'identitySha256','bounds','status','responseSha256'}
+        if version in source.SETTLED_LEDGERS:row_keys.add('settlement')
+        bounds=row.get('bounds',{})
+        if (set(row)!=row_keys or set(bounds)!=set(source.METRICS) or bounds.get('requests')!=1
+                or any(type(n) is not int or not 0<n<=10**15 for n in bounds.values())
+                or not re.fullmatch('[a-f0-9]{64}',row.get('identitySha256',''))):
+            raise ValueError('invalid source returned row')
         fingerprint=row['identitySha256']
         response=root/'responses'/(jobs._digest(operation)+'-'+fingerprint+'.json')
         if not response.exists():response=root/'responses'/(fingerprint+'.json')
@@ -106,6 +136,18 @@ def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False
             raise ValueError('damaged paid receipt; reconcile before dispatch')
         if version in source.SETTLED_LEDGERS and not source._valid_settlement(row.get('settlement'),version=version):
             raise ValueError('invalid paid settlement')
+        reused=row.get('settlement',{}).get('costStatus')=='reused'
+        if as_reuse_source and (reused or 'reusedFrom' in saved):
+            raise ValueError('reuse requires a direct paid source root')
+        if reused:
+            provenance=saved.get('reusedFrom',{})
+            if (version!=source.LEDGER_V4 or saved.get('settlement')!=row['settlement']
+                    or provenance.get('budgetRoot') not in roots or provenance.get('operation')!=operation
+                    or provenance.get('sourceLedgerVersion') not in {'sermon-source-budget-ledger-v1',*source.CONCURRENT_LEDGERS}
+                    or not source._valid_settlement(provenance.get('originalSettlement'),version=source.LEDGER_V3)
+                    or any(not re.fullmatch('[a-f0-9]{64}',provenance.get(key,''))
+                           for key in ('responseSha256','sourceAuthoritySha256'))):
+                raise ValueError('source_reused_provenance_changed')
 
 
 def inspect_layer2_root(root, authority, *, locale_scope):
@@ -169,7 +211,7 @@ def check_budget(plan_dir: Path):
                 inspect_source_root(Path(stage['budgetRoot']),expected=expected,
                                     reuse_roots=admitted.get('reuseBudgetRoots',[]))
                 for root in admitted.get('reuseBudgetRoots',[]):
-                    inspect_source_root(Path(root),required=True)
+                    inspect_source_root(Path(root),required=True,as_reuse_source=True)
             elif stage["stage"] == "layer2":
                 execution = Path(stage["execution"])
                 if sha256(execution) != stage["executionSha256"]:
