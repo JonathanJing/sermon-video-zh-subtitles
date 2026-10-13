@@ -407,7 +407,9 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
         # Do not grant that interpretation to bare words or ordinary counters.
         from scripts.language_review_plugins import auto_qc_text_common as rules
         from scripts.ko_spoken_numerals import _PARTICLES, _CONNECTOR
-        books = "|".join(re.escape(name) for name in sorted(rules._KO_BOOK_CODES, key=len, reverse=True))
+        def asr_book(name):
+            return r"\s*".join(re.escape(char) for char in name)
+        books = "|".join(asr_book(name) for name in sorted(rules._KO_BOOK_CODES, key=len, reverse=True))
         number = r"(?:\d{1,3}|[" + _KO_SINO_CHARS + r"]+(?:\s+[" + _KO_SINO_CHARS + r"]+)*)"
         def citation_pattern(book, counter):
             boundary = (r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|" + _CONNECTOR + r"?\s*"
@@ -436,10 +438,10 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
         def fold_citation(match):
             # Consume complete connectors before numeric atoms: 이나/이든 and
             # 부터만 must not turn their 이/만 syllables into numbers.
-            return match.group(1) + citation_atom.sub(
+            return re.sub(r"\s+", "", match.group(1)) + citation_atom.sub(
                 lambda atom: atom.group() if atom.group(1) is None else fold_number(atom), match.group(2))
         text = citation_pattern(books, r"(?:장|절)").sub(fold_citation, text)
-        text = citation_pattern("시편", r"(?:장|절|편)").sub(fold_citation, text)
+        text = citation_pattern(asr_book("시편"), r"(?:장|절|편)").sub(fold_citation, text)
 
     text = _KO_FRACTION.sub(fraction, text)
     text = _KO_DIGITS_WITH_UNIT.sub(lambda m: str(int(m.group(1)) * _KO_SINO_BIG[m.group(2)]), text)

@@ -322,3 +322,22 @@ def test_citation_comma_pause_remains_reading_equivalent():
     assert screen.score("요한복음 3장4장", "요한복음 삼장,사장", "ko", 0.88)[2]
     assert not screen.score("요한복음 3장과4장", "요한복음 삼장사장", "ko", 0.88)[2]
     assert not screen.score("요한복음 3장4장", "요한복음 삼장이나사장", "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("approved,spoken", [
+    ("요한복음 3-4장", "요한 복음 삼-사장"),
+    ("요한복음 3장16-17절", "요 한 복 음 삼장십육-십칠절"),
+    ("사도행전 12-13장", "사도 행전 십이-십삼장"),
+    ("고린도전서 3장이나4장", "고린도 전서 삼장이나사장"),
+    ("시편 119-120편", "시 편 백 십 구-백 이 십 편"),
+])
+def test_known_book_internal_asr_spaces_preserve_citation_scope(approved, spoken):
+    from scripts import screen_target_language_audio_units as screen
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.replace("삼", "오", 1) if "삼" in spoken else spoken.replace("십", "이십", 1), "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("text", ["사진 삼-사장", "요한의 복음 삼-사장", "요한 복음서 삼-사장", "메요한 복음 삼-사장", "요한 복음 읽고 사진 삼-사장"])
+def test_asr_book_spaces_do_not_merge_ordinary_strings_into_citations(text):
+    from scripts import screen_target_language_audio_units as screen
+    assert "삼-" in screen.fold_transcript(text, "ko")
