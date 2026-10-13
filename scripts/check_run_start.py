@@ -22,6 +22,9 @@ import argparse
 import hashlib
 import json
 import os
+import re
+import shlex
+from urllib.error import HTTPError
 from pathlib import Path
 import subprocess
 import sys
@@ -56,9 +59,9 @@ def check_code(expected_commit, expected_implementation):
     problems = []
     if dirty:
         problems.append(f"{len(dirty)} tracked file(s) modified")
-    if expected_commit and not head.startswith(expected_commit):
+    if not expected_commit or not re.fullmatch(r"[a-f0-9]{40}", expected_commit) or head != expected_commit:
         problems.append(f"HEAD {head[:12]} is not {expected_commit}")
-    if expected_implementation and implementation != expected_implementation:
+    if not expected_implementation or implementation != expected_implementation:
         problems.append("QC implementation hash differs: existing waivers would not apply")
     return result("code", "fail" if problems else "pass", head=head, qcImplementationSha256=implementation,
                   problems=problems)
@@ -73,31 +76,128 @@ def check_openai(environment, env_file):
                   exitCode=done.returncode)
 
 
+def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False):
+    """Read-only counterpart of durable source admission; never opens/migrates a ledger."""
+    from scripts import sermon_source_budget as source, sermon_workflow_jobs as jobs
+    root = Path(root)
+    path = root / 'source-budget.json'
+    if not path.exists():
+        if required or root.exists() and any(root.iterdir()):
+            raise ValueError('source budget evidence missing; reconcile existing root')
+        return
+    value = json.loads(path.read_text())
+    version = value.get('schemaVersion')
+    if version not in {'sermon-source-budget-ledger-v1', *source.CONCURRENT_LEDGERS} or not isinstance(value.get('requests'),dict):
+        raise ValueError('source budget ledger corrupt')
+    if expected is not None and value.get('authority') != expected:
+        raise ValueError('budget root already belongs to another approval')
+    if version == source.LEDGER_V4 and reuse_roots is not None and value.get('reuseBudgetRoots') != reuse_roots:
+        raise ValueError('source reuse identity changed')
+    for operation,row in value['requests'].items():
+        if row.get('status') != 'returned':
+            raise ValueError('source provider outcome unknown; reconcile before dispatch')
+        fingerprint=row['identitySha256']
+        response=root/'responses'/(jobs._digest(operation)+'-'+fingerprint+'.json')
+        if not response.exists():response=root/'responses'/(fingerprint+'.json')
+        saved=json.loads(response.read_text())
+        if (jobs._digest(saved)!=row.get('responseSha256') or saved.get('identitySha256')!=fingerprint
+                or jobs._digest(saved.get('requestIdentity'))!=fingerprint
+                or saved.get('reservationBounds')!=row.get('bounds')):
+            raise ValueError('damaged paid receipt; reconcile before dispatch')
+        if version in source.SETTLED_LEDGERS and not source._valid_settlement(row.get('settlement'),version=version):
+            raise ValueError('invalid paid settlement')
+
+
+def inspect_layer2_root(root, authority, *, locale_scope):
+    from scripts import sermon_review_budget as ledger, sermon_workflow_jobs as jobs
+    store=ledger.BudgetStore(root,authority,max_ledger_bytes=8*1024*1024 if locale_scope else None)
+    _,folder,_=jobs._paths(store.root,ledger.STORE_ID)
+    path=folder/'state.json'
+    if not folder.exists():return
+    value,_=ledger.read_snapshot(path,max_bytes=store.max_ledger_bytes)
+    if (set(value)!={'schemaVersion','authority','storeSha256','reservations'}
+            or value['schemaVersion']!=ledger.SCHEMA or value['authority']!=store.authority
+            or value['storeSha256']!=store.store_sha256 or not isinstance(value['reservations'],dict)):
+        raise ValueError('Layer 2 budget identity changed')
+    for key,row in value['reservations'].items():
+        store._validate_row(key,row)
+        if row['phase']!='result' or row['result']['executionStatus']=='outcome_unknown':
+            raise ValueError('Layer 2 budget has unresolved reservations; reconcile before dispatch')
+
+
 def check_budget(plan_dir: Path):
-    plan = json.loads((plan_dir / "plan.json").read_text())
+    from scripts import machine_qc_budget_authorization as qc_auth
+    from scripts import plan_run_budgets as planner
+    from scripts import canonical_layer2_budget as l2_budget, canonical_layer2_controller as controller
     problems = []
-    for stage in plan["stages"]:
-        authorization = Path(stage["authorization"])
-        value = json.loads(authorization.read_text())
-        receipt = authorization.parent / value["approvalReceipt"]
-        if not receipt.is_file():
-            problems.append(f"{stage['stage']}: approval missing")
-            continue
-        if sha256(receipt) != value["authority"]["approvalSha256"]:
-            problems.append(f"{stage['stage']}: approval changed since its authorization")
-        root = Path(stage["budgetRoot"])
-        ledger = root / "source-budget.json"
-        if ledger.exists():
-            authority = json.loads(ledger.read_text()).get("authority", {})
-            if authority.get("approvalSha256") != value["authority"]["approvalSha256"]:
-                problems.append(f"{stage['stage']}: budget root already belongs to another approval")
-        for reuse in stage.get("reuseBudgetRoots") or []:
-            if not (Path(reuse) / "source-budget.json").is_file():
-                problems.append(f"{stage['stage']}: reuse root {reuse} has no ledger")
-    if not plan["schedule"]["fits"]:
-        problems.append("planned worst case exceeds the approved total")
-    return result("budget", "fail" if problems else "pass", plan=str(plan_dir / "plan.json"),
-                  schedule=plan["schedule"], stages=[(s["stage"], s["capUsd"]) for s in plan["stages"]], problems=problems)
+    try:
+        plan = json.loads((plan_dir / "plan.json").read_text())
+        if plan.get("schemaVersion") != planner.PLAN_SCHEMA:
+            raise ValueError("Unsupported old plan: re-plan explicitly under the current contract")
+        if not plan.get('stages') or len({stage['stage'] for stage in plan['stages']})!=len(plan['stages']):
+            raise ValueError('Empty or duplicate planned stages')
+        if sha256(Path(plan["profile"])) != plan["profileSha256"]:
+            raise ValueError("profile changed since approval planning")
+        observed = planner.schedule(plan["stages"], total=plan["totalUsd"], settled=plan["settledUsd"])
+        if observed != plan["schedule"] or not observed["fits"]:
+            raise ValueError("stage caps do not fit or schedule changed")
+        for stage in plan["stages"]:
+            authorization = Path(stage["authorization"])
+            if sha256(authorization) != stage["authorizationSha256"]:
+                raise ValueError(f"{stage['stage']}: authorization changed since planning")
+            value = json.loads(authorization.read_text())
+            receipt = authorization.parent / value["approvalReceipt"]
+            if sha256(receipt) != stage["approvalSha256"] or stage["approvalSha256"] != value["authority"]["approvalSha256"]:
+                raise ValueError(f"{stage['stage']}: approval changed since planning")
+            if stage["stage"].startswith("qc."):
+                locale = stage["stage"].split(".")[1]
+                if locale not in plan["locales"]:
+                    raise ValueError("QC locale is not planned")
+                manifest = Path(plan["qcInputs"]["path"])
+                if sha256(manifest) != plan["qcInputs"]["sha256"]:
+                    raise ValueError("QC input manifest changed")
+                context = qc_auth.contexts_from_manifest(manifest, [locale])[locale]
+                admitted = qc_auth.validate(authorization, context=context, require_scope=True)
+                if (stage["budgetRoot"] != admitted["budgetRoot"] or stage["qcContext"] != context
+                        or stage.get("reuseBudgetRoots", []) != admitted.get("reuseBudgetRoots", [])
+                        or planner.micro(stage["capUsd"]) != admitted["authority"]["bounds"]["globalBounds"]["costMicrousd"]):
+                    raise ValueError("QC stage and approval differ")
+                ledger = Path(stage["budgetRoot"]) / "source-budget.json"
+                expected = {"approvalSha256": admitted["authority"]["approvalSha256"],
+                            "globalBounds": admitted["authority"]["bounds"]["globalBounds"],
+                            "requestLimits": admitted["authority"]["requestLimits"]}
+                inspect_source_root(Path(stage['budgetRoot']),expected=expected,
+                                    reuse_roots=admitted.get('reuseBudgetRoots',[]))
+                for root in admitted.get('reuseBudgetRoots',[]):
+                    inspect_source_root(Path(root),required=True)
+            elif stage["stage"] == "layer2":
+                execution = Path(stage["execution"])
+                if sha256(execution) != stage["executionSha256"]:
+                    raise ValueError("Layer 2 execution changed")
+                config = controller.load_configuration(execution)
+                for row in stage['inputFiles']:
+                    if sha256(Path(row['path']))!=row['sha256']:
+                        raise ValueError('Layer 2 frozen input changed')
+                _,_,sizing=planner.layer2_spec(execution,stage['locales'],json.loads(Path(plan['profile']).read_text()),plan['scale'])
+                if sizing!=stage['sizing']:
+                    raise ValueError('Layer 2 group sizing changed')
+                checked = l2_budget.load_authorization(config, authorization, controller.code_identity(), stage["authorizationSha256"])
+                roots=([l2_budget.ledger_root(checked,locale) for locale in config.lanes]
+                       if checked['scope']=='locale' else [checked['root']])
+                for root in roots:
+                    inspect_layer2_root(root,checked['value']['authority'],locale_scope=checked['scope']=='locale')
+                cap = checked["value"]["authority"]["globalBounds"]["costMicrousd"]
+                if checked["scope"] == "locale":
+                    cap *= len(config.lanes)
+                if planner.micro(stage["capUsd"]) != cap or str(checked["root"]) != stage["budgetRoot"]:
+                    raise ValueError("Layer 2 stage and approval differ")
+            else:
+                raise ValueError("Unknown stage")
+        return result("budget", "pass", plan=str(plan_dir / "plan.json"), schedule=observed,
+                      stages=[(s["stage"], s["capUsd"]) for s in plan["stages"]], problems=[])
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+        problems.append(f"Invalid budget plan: {error}")
+        return result("budget", "fail", plan=str(plan_dir / "plan.json"), problems=problems)
 
 
 def ssh(command: str, host: str) -> subprocess.CompletedProcess:
@@ -125,7 +225,7 @@ def check_spark(host, spark_stages, code_dir):
     if code_dir:
         from scripts import machine_quality_waiver as waiver
         files = [str(path) for path in waiver.IMPLEMENTATION_FILES]
-        remote = ssh("cd " + code_dir + " && sha256sum " + " ".join(files), host)
+        remote = ssh("cd " + shlex.quote(code_dir) + " && sha256sum " + " ".join(shlex.quote(path) for path in files), host)
         local = {path: sha256(ROOT / path) for path in files}
         observed = dict(reversed(line.split(None, 1)) for line in remote.stdout.splitlines() if line.strip())
         differing = [path for path in files if observed.get(path) != local[path]]
@@ -143,13 +243,24 @@ def check_fresh(paths):
 
 def check_page(page_id, origin):
     seen = []
-    for name in ("multilingual-v3.json", "multilingual-v4.json"):
-        with urlopen(Request(origin + "/" + name, headers={"Cache-Control": "no-cache"}), timeout=60) as response:
-            pages = json.loads(response.read()).get("pages", [])
-        if any(page.get("id") == page_id for page in pages):
-            seen.append(name)
-    return result("page", "fail" if seen else "pass", pageId=page_id, origin=origin,
-                  problems=[f"{page_id} already in {name}" for name in seen])
+    try:
+        for name in ("multilingual-v3.json", "multilingual-v4.json"):
+            try:
+                with urlopen(Request(origin + "/" + name, headers={"Cache-Control": "no-cache"}), timeout=60) as response:
+                    pages = json.loads(response.read())["pages"]
+            except HTTPError as error:
+                if name == "multilingual-v4.json" and error.code == 404:
+                    continue
+                raise
+            if not isinstance(pages, list) or any(not isinstance(page, dict) for page in pages):
+                raise ValueError("Invalid catalog pages")
+            if any(page.get("id") == page_id for page in pages):
+                seen.append(name)
+        return result("page", "fail" if seen else "pass", pageId=page_id, origin=origin,
+                      problems=[f"{page_id} already in {name}" for name in seen])
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+        return result("page", "fail", pageId=page_id, origin=origin,
+                      problems=[f"Catalog check failed: {type(error).__name__}"])
 
 
 def main(argv=None) -> int:
@@ -168,14 +279,37 @@ def main(argv=None) -> int:
     parser.add_argument("--origin", default=DEV_ORIGIN)
     parser.add_argument("--out", type=Path, help="Also write the report here")
     args = parser.parse_args(argv)
-    checks = [check_code(args.expected_commit, args.expected_implementation)]
-    checks.append(check_openai(args.openai_environment, args.env_file) if args.openai_environment
+    identity_problems=[]
+    if args.budget_plan:
+        try:
+            frozen = json.loads((args.budget_plan / "plan.json").read_text())
+            if ((args.expected_commit and args.expected_commit!=frozen['expectedCommit'])
+                    or (args.expected_implementation and args.expected_implementation!=frozen['expectedImplementation'])):
+                identity_problems.append('Explicit expected identities differ from the frozen plan')
+            args.expected_commit = args.expected_commit or frozen["expectedCommit"]
+            args.expected_implementation = args.expected_implementation or frozen["expectedImplementation"]
+        except (OSError, ValueError, KeyError, TypeError):
+            pass  # Missing identities fail the code check and are included in the report.
+    def checked(name,function):
+        try:return function()
+        except Exception as error:
+            return result(name,'fail',problems=[type(error).__name__])
+    checks = [checked('code',lambda:check_code(args.expected_commit, args.expected_implementation))]
+    if identity_problems:checks.append(result('identity_binding','fail',problems=identity_problems))
+    checks.append(checked('openai',lambda:check_openai(args.openai_environment, args.env_file)) if args.openai_environment
                   else result("openai", "skip"))
-    checks.append(check_budget(args.budget_plan) if args.budget_plan else result("budget", "skip"))
-    checks.append(check_spark(args.spark_host, args.spark_stages, args.spark_code_dir)
+    checks.append(checked('budget',lambda:check_budget(args.budget_plan)) if args.budget_plan else result("budget", "skip"))
+    checks.append(checked('spark',lambda:check_spark(args.spark_host, args.spark_stages, args.spark_code_dir))
                   if args.spark or args.spark_stages or args.spark_code_dir else result("spark", "skip"))
-    checks.append(check_fresh(args.fresh_dir) if args.fresh_dir else result("outputs", "skip"))
-    checks.append(check_page(args.page_id, args.origin) if args.page_id else result("page", "skip"))
+    checks.append(checked('outputs',lambda:check_fresh(args.fresh_dir)) if args.fresh_dir else result("outputs", "skip"))
+    checks.append(checked('page',lambda:check_page(args.page_id, args.origin)) if args.page_id else result("page", "skip"))
+    if args.openai_environment and args.budget_plan:
+        try:
+            planned=json.loads((args.budget_plan/'plan.json').read_text())
+            if any(s.get('qcContext',{}).get('environment',args.openai_environment)!=args.openai_environment for s in planned['stages']):
+                checks.append(result('environment_binding','fail',problems=['OpenAI environment differs from QC approval']))
+        except (OSError,ValueError,KeyError,TypeError):
+            checks.append(result('environment_binding','fail',problems=['Cannot verify planned environment']))
     failed = [check["check"] for check in checks if check["status"] == "fail"]
     report = {"schemaVersion": "sermon-run-start-check-v1", "status": "fail" if failed else "pass",
               "failed": failed, "checks": checks}

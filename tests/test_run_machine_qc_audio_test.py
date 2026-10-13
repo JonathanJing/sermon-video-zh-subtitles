@@ -217,8 +217,11 @@ class MachineQcAudioDriverTests(unittest.TestCase):
         stack = ExitStack()
         stack.enter_context(patch.dict(os.environ, OPENAI_ENV))
         real_make = driver.make_transports
-        stack.enter_context(patch.object(driver, "make_transports",
-                                         lambda backend, *a, **k: real_make("fake", *a, **k)))
+        def bounded_fake(backend, *args, **kwargs):
+            from scripts.sermon_source_budget import SourceBudget
+            self.assertIsInstance(kwargs.get("budget"), SourceBudget)
+            return real_make("fake", *args, **kwargs)
+        stack.enter_context(patch.object(driver, "make_transports", bounded_fake))
         stack.enter_context(patch.object(transports.QwenPrimaryAsr, "runtime_problems", lambda self: []))
         groups = text_driver.qc_groups(json.loads((self.run_dir / "diagnostic-previews/ko/native-1/candidate.json")
                                                   .read_text(encoding="utf-8")),
@@ -229,9 +232,20 @@ class MachineQcAudioDriverTests(unittest.TestCase):
 
         stack.enter_context(patch.object(text_driver, "CodexJudge", lambda cache: RealLooking({LOCALE: groups})))
         map_path = write(self.root / "ckpt-map.json", {})
+        # Real audio paths now require an approved secondary-ASR ledger even
+        # when this fixture substitutes fake audio transports.
+        from tests.test_source_budget_settlement import AUTHORITY
+        bounds = {"globalBounds": AUTHORITY["globalBounds"], "requestLimits": AUTHORITY["requestLimits"]}
+        approval = {"schemaVersion": "sermon-machine-qc-api-budget-approval-v1", "humanApproval": True,
+                    "decision": "approved", "binding": {"budgetRoot": str(self.root / "secondary-budget"), **bounds}}
+        approval_path = write(self.root / "secondary-approval.json", approval)
+        authorization = write(self.root / "secondary-authorization.json", {
+            "schemaVersion": "sermon-machine-qc-api-budget-authorization-v1", "budgetRoot": str(self.root / "secondary-budget"),
+            "approvalReceipt": approval_path.name, "authority": {"approvalSha256": sha(approval_path.read_bytes()),
+                "bounds": bounds, "requestLimits": AUTHORITY["requestLimits"]}})
         argv = ["--run-dir", str(self.run_dir), "--out", str(self.root / "audio-real"), "--locales", LOCALE,
                 "--state-dir", str(self.state), "--asr-model-path", str(self.root / "asr"),
-                "--tts-checkpoint-map", str(map_path)]
+                "--tts-checkpoint-map", str(map_path), "--api-budget-authorization", str(authorization)]
         return stack, argv
 
     def real_row(self):
@@ -337,6 +351,17 @@ class TransportTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "run_with_openai_environment"):
                 transports.OpenAiTranscribeSecondary(LOCALE, cache=self.root, max_calls=5)
 
+    def secondary_budget(self, executor, name="secondary-budget"):
+        from scripts import sermon_source_budget as source_budget
+        from scripts.sermon_openai_runtime import project_headers
+        from tests.test_source_budget_settlement import AUTHORITY
+        import urllib.request
+        def transport(endpoint, body, content_type, key):
+            request = urllib.request.Request(endpoint, data=body, method="POST", headers={
+                "Authorization": "Bearer " + key, "Content-Type": content_type, **project_headers(key)})
+            return executor(request)
+        return source_budget.SourceBudget(self.root / name, AUTHORITY, verify=lambda: None, transport=transport)
+
     def test_secondary_asr_sends_audio_only_and_caches_by_audio(self):
         sent = []
 
@@ -348,7 +373,7 @@ class TransportTests(unittest.TestCase):
         wav = qc_fixtures.speech_wav(1.0)
         with patch.dict(os.environ, OPENAI_ENV):
             asr = transports.OpenAiTranscribeSecondary(LOCALE, cache=self.root / "calls", max_calls=1,
-                                                       request_executor=executor)
+                                                       budget=self.secondary_budget(executor))
             opinion = asr.opinion(wav, text, LOCALE)
             again = asr.opinion(wav, "다른 기대 문장", LOCALE)
         self.assertEqual(len(sent), 1)
@@ -380,15 +405,15 @@ class TransportTests(unittest.TestCase):
         wav = qc_fixtures.speech_wav(1.0)
         with patch.dict(os.environ, OPENAI_ENV):
             asr = transports.OpenAiTranscribeSecondary(LOCALE, cache=self.root / "calls", max_calls=5,
-                                                       request_executor=executor)
+                                                       budget=self.secondary_budget(executor))
             with self.assertRaises(TimeoutError):
                 asr.transcribe(wav)
-            with self.assertRaises(transports.UnknownOutcome):
+            with self.assertRaisesRegex(ValueError, "source_provider_outcome_unknown"):
                 asr.transcribe(wav)
             self.assertEqual(len(calls), 1)
             self.assertEqual(len(asr.uncertain()), 1)
             capped = transports.OpenAiTranscribeSecondary(LOCALE, cache=self.root / "other", max_calls=0,
-                                                          request_executor=executor)
+                                                          budget=self.secondary_budget(executor, "other-budget"))
             with self.assertRaisesRegex(ValueError, "call cap"):
                 capped.transcribe(wav)
         self.assertEqual(len(calls), 1)

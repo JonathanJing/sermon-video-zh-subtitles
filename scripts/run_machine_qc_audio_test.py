@@ -251,15 +251,17 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
 # ---------------------------------------------------------------- transports
 
 def make_transports(backend: str, args, state: Path, *, locale: str, screening: dict, job: dict,
-                    package: dict) -> tuple:
+                    package: dict, budget=None) -> tuple:
     """``(primary, secondary, tts)`` for one locale."""
     if backend == "fake":
         tts = transports.FakeTts(job)
         texts = {unit["audio"]["sha256"]: job_unit["text"] for unit, job_unit in zip(package["units"], job["units"])}
         return (transports.FakePrimaryAsr(screening, tts), transports.FakeSecondaryAsr(locale, texts, tts), tts)
+    if budget is None:
+        raise ValueError("Real secondary ASR requires an approved SourceBudget ledger")
     primary = transports.QwenPrimaryAsr(screening, cache=state / "asr-calls" / "primary", model_path=args.asr_model_path)
     secondary = transports.OpenAiTranscribeSecondary(locale, cache=state / "asr-calls" / "secondary",
-                                                     max_calls=args.max_api_calls)
+                                                     max_calls=args.max_api_calls, budget=budget)
     checkpoint = transports.checkpoint_path(job, read(args.tts_checkpoint_map))
     tts = transports.QwenTtsRender(job, checkpoint=checkpoint, cache=state / "tts-renders", seed=args.tts_seed,
                                    device=args.tts_device, dtype=args.tts_dtype,
@@ -603,18 +605,30 @@ def main(argv=None) -> int:
         judge = text_driver.FakeJudge(groups)
     elif args.text_backend == "api":
         # Text-kind calibration replays the text driver's API judge cache when the same budget is reused.
-        judge = text_driver.ApiJudge(args.api_budget_authorization.resolve())
+        judge = text_driver.api_judge_for_resolved(args.api_budget_authorization.resolve(), resolved, requested_locales=locales)
     else:
         judge = text_driver.CodexJudge(state / "codex-calls")
+    secondary_budget = getattr(judge, "ledger", None)
+    if real and secondary_budget is None:
+        if not args.api_budget_authorization:
+            parser.error("Real secondary ASR requires --api-budget-authorization")
+        secondary_budget = text_driver.api_judge_for_resolved(args.api_budget_authorization.resolve(), resolved, requested_locales=locales).ledger
     for locale, paths in resolved.items():
         uncertain = judge.uncertain() + uncertain_calls(state)
+        if secondary_budget is not None:
+            ledger_path = secondary_budget.root / "source-budget.json"
+            if ledger_path.exists():
+                uncertain += [operation for operation, row in read(ledger_path).get("requests", {}).items()
+                              if row.get("status") == "started_response_unconfirmed"]
+            uncertain = sorted(set(uncertain))
         if uncertain:
             outcome = {"status": "blocked_unknown_outcome", "uncertainCalls": uncertain,
                        "reason": f"model calls with an unknown outcome under {state}; reconcile them first"}
         else:
             try:
                 asr = make_transports(args.backend, args, state, locale=locale, screening=read(Path(paths["screening"])),
-                                      job=read(Path(paths["job"])), package=read(Path(paths["package"])))
+                                      job=read(Path(paths["job"])), package=read(Path(paths["package"])),
+                                      budget=secondary_budget)
                 outcome = run_locale(locale, paths, out, state, judge, asr, timings, args.workers, fake=not real,
                                      human_acceptance=acceptances.get(locale))
             except Exception as error:  # The summary says what failed.
