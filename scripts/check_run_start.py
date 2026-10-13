@@ -76,6 +76,45 @@ def check_openai(environment, env_file):
                   exitCode=done.returncode)
 
 
+
+def selected_launcher_identity(environment, env_file):
+    """Resolve the real launcher file read-only; retain only non-secret identity."""
+    from scripts import run_with_openai_environment as launcher
+    from scripts.machine_qc_budget_authorization import credential_fingerprint
+    from scripts.sermon_openai_runtime import safe_route
+    selected = launcher.child_environment(Path(env_file) if env_file else ROOT / '.env.openai',
+                                          environment, inherited={})
+    route = safe_route({'schemaVersion': 'sermon-openai-runtime-route-v1',
+                       'environment': selected['SERMON_OPENAI_ENVIRONMENT'],
+                       'projectId': selected['OPENAI_PROJECT_ID'],
+                       'credentialAlias': selected['SERMON_OPENAI_CREDENTIAL_ALIAS'],
+                       'identitySource': 'configured_runtime'})
+    if route is None:
+        raise ValueError('invalid_selected_openai_runtime')
+    return {'openaiRoute': route, 'credentialSha256': credential_fingerprint(selected['OPENAI_API_KEY'])}
+
+
+def check_launcher_binding(plan_dir, environment, env_file):
+    from scripts import machine_qc_budget_authorization as auth
+    try:
+        planned = json.loads((plan_dir / 'plan.json').read_text())
+        stages = [stage for stage in planned['stages'] if stage['stage'].startswith('qc.')]
+        if not stages:
+            return result('environment_binding', 'pass', qcStages=0, problems=[])
+        selected = selected_launcher_identity(environment, env_file)
+        for stage in stages:
+            admitted = auth.validate(Path(stage['authorization']), require_scope=True)
+            context = admitted['qcContext']
+            if (context['environment'] != environment or
+                    context['openaiRoute'] != selected['openaiRoute'] or
+                    context['credentialSha256'] != selected['credentialSha256']):
+                raise ValueError('launcher_identity_changed')
+        return result('environment_binding', 'pass', qcStages=len(stages), problems=[])
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, UnicodeError):
+        # No key material or parser exception text enters the public preflight.
+        return result('environment_binding', 'fail',
+                      problems=['Selected launcher route or credential differs from QC approval, or binding cannot be verified'])
+
 def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False, as_reuse_source=False):
     """Read-only counterpart of durable source admission; never opens/migrates a ledger."""
     from scripts import sermon_source_budget as source, sermon_workflow_jobs as jobs
@@ -347,6 +386,9 @@ def main(argv=None) -> int:
             return result(name,'fail',problems=[type(error).__name__])
     checks = [checked('code',lambda:check_code(args.expected_commit, args.expected_implementation))]
     if identity_problems:checks.append(result('identity_binding','fail',problems=identity_problems))
+    if args.env_file and not args.openai_environment:
+        checks.append(result('environment_binding', 'fail',
+                             problems=['--env-file requires --openai-environment']))
     checks.append(checked('openai',lambda:check_openai(args.openai_environment, args.env_file)) if args.openai_environment
                   else result("openai", "skip"))
     checks.append(checked('budget',lambda:check_budget(args.budget_plan)) if args.budget_plan else result("budget", "skip"))
@@ -355,12 +397,7 @@ def main(argv=None) -> int:
     checks.append(checked('outputs',lambda:check_fresh(args.fresh_dir)) if args.fresh_dir else result("outputs", "skip"))
     checks.append(checked('page',lambda:check_page(args.page_id, args.origin)) if args.page_id else result("page", "skip"))
     if args.openai_environment and args.budget_plan:
-        try:
-            planned=json.loads((args.budget_plan/'plan.json').read_text())
-            if any(s.get('qcContext',{}).get('environment',args.openai_environment)!=args.openai_environment for s in planned['stages']):
-                checks.append(result('environment_binding','fail',problems=['OpenAI environment differs from QC approval']))
-        except (OSError,ValueError,KeyError,TypeError):
-            checks.append(result('environment_binding','fail',problems=['Cannot verify planned environment']))
+        checks.append(check_launcher_binding(args.budget_plan, args.openai_environment, args.env_file))
     failed = [check["check"] for check in checks if check["status"] == "fail"]
     report = {"schemaVersion": "sermon-run-start-check-v1", "status": "fail" if failed else "pass",
               "failed": failed, "checks": checks}

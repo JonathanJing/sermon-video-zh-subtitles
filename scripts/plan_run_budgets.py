@@ -91,15 +91,31 @@ def layer2_spec(execution, locales, profile, scale):
             raise ValueError('Layer 2 policy locale differs from its execution lane')
         request = controller.producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode)
         groups = len(controller.models.group_plan(request, anchor))
-        calls = 2 * groups
-        output_tokens = calls * layer2["requestLimits"]["maxCompletionTokens"]
-        output_cost = groups * sum(limits._cost(policy[role]["model"], 0,
-                        layer2["requestLimits"]["maxCompletionTokens"]) for role in ("translator", "reviewer"))
-        if bounds["requests"] < calls or bounds["outputTokens"] < output_tokens or bounds["costMicrousd"] < output_cost:
-            raise ValueError(f"Layer 2 {locale} cap cannot cover even the initial {calls} calls; "
-                             "use an explicitly approved profile, do not inflate authority implicitly")
-        sizing[locale] = {"groups": groups, "initialRequests": calls,
-                          "initialOutputReservationMicrousd": output_cost}
+        # The runner bounds *each* translator and reviewer payload, including
+        # serialized source/context/rules and the reviewer's generated draft.
+        # The draft is not known at planning time: reserve the full admitted
+        # input ceiling rather than assuming zero inputs or guessing bytes from
+        # completion tokens. Oversize payloads still fail the runner's gate.
+        selected = limits.validate_request_limits(layer2["requestLimits"])
+        initial = {"requests": 2 * groups,
+                   "inputTokens": 2 * groups * selected["maxInputTokens"],
+                   "outputTokens": 2 * groups * selected["maxCompletionTokens"],
+                   "wallTimeMs": 2 * groups * selected["wallTimeMs"],
+                   "costMicrousd": groups * sum(limits._cost(policy[role]["model"],
+                       selected["maxInputTokens"], selected["maxCompletionTokens"])
+                       for role in ("translator", "reviewer"))}
+        for dimension, required in initial.items():
+            available = bounds.get(dimension)
+            if type(available) is not int or not 0 < available <= limits.MAX_METRIC or available < required:
+                raise ValueError(f"Layer 2 {locale} {dimension} cap cannot cover even the initial "
+                                 f"{initial['requests']} calls; use an explicitly approved profile, "
+                                 "do not inflate authority implicitly")
+        sizing[locale] = {"groups": groups, "initialRequests": initial["requests"],
+                          "initialOutputReservationMicrousd": groups * sum(
+                              limits._cost(policy[role]["model"], 0, selected["maxCompletionTokens"])
+                              for role in ("translator", "reviewer")),
+                          "initialReservation": initial,
+                          "inputReservationBasis": "full-bounded-payload-ceiling-per-role"}
     return config, bounds, sizing
 
 

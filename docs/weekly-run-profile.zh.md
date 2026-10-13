@@ -89,3 +89,5 @@ QC 上限还计入二级 `gpt-transcribe` 的保守预留：按已冻结的 tran
 旧 scoped QC 授权 v2/v3／inputs v1/v2 保留原证据，须显式重新规划为 v4／inputs v3，不自动补 project 身份或重标旧收据。启动与每次调用按实际 launcher 路由复验；项目、凭据别名或凭据指纹变化须重新批准，不能沿用原授权重新购买同一质检请求。legacy unscoped v1 仅保留原合同，不称作新的 route-bound 计划。
 
 `credentialSha256` 只记录已选择运行凭据的 SHA-256 指纹，不记录 key 值；可在显式 launcher 环境中用 `machine_qc_budget_authorization.credential_fingerprint` 生成。规划工具读取该非秘密指纹，真实消费者用当前环境中的凭据重新计算核对；不要将 `.env.openai` 或 key 值写入 inputs。
+
+Layer 2 计划中的 `sizing.<locale>.initialReservation` 是按当前分组、翻译与复核角色及 `requestLimits` 计算的初始完整轮次保守上界，不是实测用量、提供商报价或账单。每次请求都预留完整 `maxInputTokens`（复核包含尚未生成的候选、规则、上下文与 JSON 序列化开销），以及输出与时间上限，再按冻结价格假设计入输入和输出费用。请求数、输入、输出、时间、费用任一维不足，规划器在写任何授权前拒绝；超大实际 payload 仍由运行时逐请求准入检查拒绝。规划器不会自动增加现有预算；需要缩小分组范围或提供明确批准的新 profile。
