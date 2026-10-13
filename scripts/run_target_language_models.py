@@ -267,7 +267,11 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
             raw = producer._load(previous_raw)
             require(raw.get('payloadSha256') == fingerprint and isinstance(raw.get('response'),dict),
                     f"Reusable {role} raw response belongs to different inputs: {previous_raw}")
-            save_new(output.with_suffix('.raw.json'),raw,private=True)
+            destination_raw=output.with_suffix('.raw.json')
+            if destination_raw.exists():
+                require(producer._load(destination_raw)==raw,'Reusable destination raw response changed')
+            else:
+                save_new(destination_raw,raw,private=True)
         if reuse_from.is_file():
             cached=producer._load(reuse_from)
             require(cached.get('payloadSha256')==fingerprint and cached.get('model')==model

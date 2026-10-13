@@ -76,6 +76,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
         ):
             with self.subTest(target=target), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp); (root/'schema.json').write_text('{}')
+                (root/'cli').write_text('#!/bin/sh\nexit 0\n');(root/'cli').chmod(0o700)
                 with patch.dict('os.environ', {'SERMON_ACCOUNTING_DIR':tmp}), \
                      patch.object(module, target, side_effect=TimeoutError('unknown')) as transport:
                     with self.assertRaises(TimeoutError): invoke(root)
@@ -224,3 +225,18 @@ class ApiCliOutcomeTests(unittest.TestCase):
                         with self.assertRaisesRegex(ValueError,'frozen_execution_binding_changed'):
                             SessionBoundCaller(caller,requires_spark=False,outcome_directory=tmp)(key,{'request':1})
                         self.assertEqual(len(calls),before)
+
+    def test_codex_upgrade_same_path_and_symlink_target_bytes_cannot_replay(self):
+        calls=[]
+        def invoke(*,codex_cli):calls.append(1);return {'ok':True}
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);binary=root/'binary';binary.write_text('#!/bin/sh\nexit 0\n');binary.chmod(0o700)
+            link=root/'codex';link.symlink_to(binary)
+            wrapped=SessionBoundCaller(invoke,requires_spark=False,outcome_directory=root/'outcomes')
+            wrapped(codex_cli=link)
+            old=outcomes.request_identity(invoke,(),{'codex_cli':link},wrapped.purpose)
+            binary.write_text('#!/bin/sh\nexit 1\n')
+            self.assertNotEqual(old,outcomes.request_identity(invoke,(),{'codex_cli':link},wrapped.purpose))
+            with self.assertRaisesRegex(ValueError,'frozen_execution_binding_changed'):
+                wrapped(codex_cli=link)
+            self.assertEqual(calls,[1])
