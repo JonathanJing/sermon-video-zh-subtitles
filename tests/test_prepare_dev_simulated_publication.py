@@ -266,7 +266,7 @@ def test_baseline_waits_for_a_freshly_deployed_file_to_propagate(tmp_path, monke
     assert publication.baseline(out, environment='production')['status'] == 'complete_verified_not_deployed'
     assert (out / 'public/multilingual-v3.json').read_bytes() == raw and answers == []
     # Without time to propagate, the read still fails rather than accepting other bytes.
-    monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 0.0)
+    monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 1.0)
     answers[:] = ['stale']
     with pytest.raises(ValueError, match='no longer matches frozen version'):
         publication.baseline(tmp_path / 'baseline-2', environment='production')
@@ -279,3 +279,35 @@ def test_gzip_identity_hash_rejects_changed_bytes(tmp_path):
     assert expected in publication.firebase_cli_gzip_hashes(path)
     path.write_bytes(b'different media bytes')
     assert expected not in publication.firebase_cli_gzip_hashes(path)
+
+
+def test_baseline_retries_incomplete_http_reads_with_remaining_budget(tmp_path, monkeypatch):
+    import http.client
+    import io
+    from types import SimpleNamespace
+    target = publication.hosting_target('production')
+    version = 'sites/' + target['site'] + '/versions/fresh'
+    raw = b'{"pages": []}'
+    compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+    digest = hashlib.sha256(compressed).hexdigest()
+    def request(method, url):
+        if url.endswith('/files?pageSize=1000'): return {'files': [{'path': '/multilingual-v3.json', 'hash': digest, 'status': 'ACTIVE'}]}
+        return {'config': {}, 'status': 'FINALIZED'}
+    now, timeouts = [0.0], []
+    class Response(io.BytesIO):
+        status = 200
+        headers = {'Content-Encoding': 'gzip'}
+    def download(req, *, timeout):
+        timeouts.append(timeout)
+        if len(timeouts) == 1: raise http.client.IncompleteRead(b'partial', 10)
+        return Response(compressed)
+    monkeypatch.setattr(publication.publisher, 'authenticated_transport', lambda: request)
+    monkeypatch.setattr(publication.publisher, 'live_version', lambda req, site: version)
+    monkeypatch.setattr(publication, 'urlopen', download)
+    monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 12)
+    monkeypatch.setattr(publication.publisher, 'time', SimpleNamespace(
+        monotonic=lambda: now[0], sleep=lambda seconds: now.__setitem__(0, now[0] + seconds)))
+    out = tmp_path/'baseline'
+    assert publication.baseline(out, environment='production')['status'] == 'complete_verified_not_deployed'
+    assert (out/'public/multilingual-v3.json').read_bytes() == raw
+    assert timeouts == [12, 7]

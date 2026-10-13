@@ -210,12 +210,13 @@ def baseline(out, *, cache_public=None, cache_receipt=None, environment='dev'):
         for leftover in (compressed, target):
             leftover.unlink(missing_ok=True)
         h = hashlib.sha256()
-        with urlopen(Request(origin + '/' + quote(str(relative), safe='/'), headers={'Accept-Encoding': 'gzip', 'Cache-Control': 'no-cache'}), timeout=120) as response:
+        with urlopen(Request(origin + '/' + quote(str(relative), safe='/'), headers={'Accept-Encoding': 'gzip', 'Cache-Control': 'no-cache'}), timeout=publisher.remaining_read_timeout(120)) as response:
             contract.require(response.status == 200, 'Live file GET failed')
             encoding = response.headers.get('Content-Encoding')
             etag = response.headers.get('Etag')
             with compressed.open('xb') as stream:
                 for chunk in iter(lambda: response.read(1024 * 1024), b''):
+                    publisher.remaining_read_timeout(120)
                     h.update(chunk)
                     stream.write(chunk)
         if encoding == 'gzip':

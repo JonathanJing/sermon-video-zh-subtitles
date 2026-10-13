@@ -8,6 +8,9 @@ version is checked again before and after deployment.
 from __future__ import annotations
 import argparse
 import hashlib
+import http.client
+import inspect
+from contextvars import ContextVar
 import fcntl
 import os
 import socket
@@ -89,8 +92,8 @@ def authenticated_transport():
     from google.auth.transport.requests import AuthorizedSession
     credentials, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/cloud-platform'])
     session = AuthorizedSession(credentials)
-    def request(method, url, *, data=None, headers=None):
-        response = session.request(method, url, data=data, headers=headers, timeout=60)
+    def request(method, url, *, data=None, headers=None, timeout=60):
+        response = session.request(method, url, data=data, headers=headers, timeout=timeout)
         # Never return authentication headers or provider error bodies.
         if response.status_code not in (200, 201, 204):
             raise ValueError(f'Remote operation rejected: HTTP {response.status_code}')
@@ -129,24 +132,63 @@ PROPAGATION_TIMEOUT_SECONDS = 120.0
 PROPAGATION_INTERVAL_SECONDS = 5.0
 
 
-def await_propagation(check, *, timeout=None, interval=None, sleep=time.sleep, clock=time.monotonic):
-    """Run a read-only ``check`` until it returns; after the deadline its last failure is raised.
+_READ_DEADLINE = ContextVar('hosting_read_deadline', default=None)
 
-    Only for reads (HTTP GETs, hash comparisons): repeating them never changes the site."""
+
+class PublicationVersionChanged(ValueError):
+    """A competing version cannot become this attempt's publication evidence."""
+
+
+def remaining_read_timeout(maximum):
+    budget = _READ_DEADLINE.get()
+    if budget is None:
+        return maximum
+    deadline, clock = budget
+    remaining = deadline - clock()
+    if remaining <= 0:
+        raise TimeoutError('Hosting propagation deadline expired')
+    return min(maximum, remaining)
+
+
+def _read_with_budget(read, *args):
+    # Production transports accept timeout. Legacy injected readers may not; their
+    # result still must complete before the outer deadline to be accepted.
+    timeout = remaining_read_timeout(60)
+    if _READ_DEADLINE.get() is not None:
+        parameters = inspect.signature(read).parameters.values()
+        if any(p.name == 'timeout' or p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters):
+            return read(*args, timeout=timeout)
+    return read(*args)
+
+
+def await_propagation(check, *, timeout=None, interval=None, sleep=None, clock=None):
+    """Retry reads only within one deadline, including completed-result validation."""
     timeout = PROPAGATION_TIMEOUT_SECONDS if timeout is None else timeout
     interval = PROPAGATION_INTERVAL_SECONDS if interval is None else interval
+    sleep = time.sleep if sleep is None else sleep
+    clock = time.monotonic if clock is None else clock
+    contract.require(timeout > 0 and interval > 0, 'Propagation timeout and interval must be positive')
     deadline = clock() + timeout
-    while True:
-        try:
-            return check()
-        except (ValueError, OSError):
-            if clock() + interval > deadline:
+    token = _READ_DEADLINE.set((deadline, clock))
+    try:
+        while True:
+            remaining_read_timeout(timeout)
+            try:
+                result = check()
+                remaining_read_timeout(timeout)  # Never accept success completed after expiry.
+                return result
+            except PublicationVersionChanged:
                 raise
-            sleep(interval)
+            except (ValueError, OSError, http.client.HTTPException):
+                if clock() + interval >= deadline:
+                    raise
+                sleep(interval)
+    finally:
+        _READ_DEADLINE.reset(token)
 
 
 def live_version(request, site):
-    result = request('GET', 'https://firebasehosting.googleapis.com/v1beta1/sites/' + quote(site, safe='') + '/channels/live')
+    result = _read_with_budget(request, 'GET', 'https://firebasehosting.googleapis.com/v1beta1/sites/' + quote(site, safe='') + '/channels/live')
     # Site release lists include preview channels; Channel.release is the actual live head.
     name = result.get('release', {}).get('version', {}).get('name')
     contract.require(isinstance(name, str) and name.startswith('sites/' + site + '/versions/'), 'Live Hosting version unavailable')
@@ -154,7 +196,7 @@ def live_version(request, site):
 
 
 def public_catalog(reader, origin):
-    status, data = reader(origin + '/multilingual-v3.json')
+    status, data = _read_with_budget(reader, origin + '/multilingual-v3.json')
     contract.require(status == 200, 'Live catalog cannot be read')
     return hashlib.sha256(data).hexdigest()
 
@@ -163,7 +205,7 @@ def public_catalog_v4(reader, origin):
     """Live v4 catalog hash, or None while the site has never published one."""
     from urllib.error import HTTPError
     try:
-        status, data = reader(origin + '/multilingual-v4.json')
+        status, data = _read_with_budget(reader, origin + '/multilingual-v4.json')
     except HTTPError as error:
         status, data = error.code, b''
     if status == 404:
@@ -227,9 +269,17 @@ def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha
 
         def readback():
             version = live_version(request, intent['site'])
-            contract.require(version != baseline_version, 'No new Hosting version observed')
+            if attempt.get('newVersion'):
+                if version != attempt['newVersion']:
+                    raise PublicationVersionChanged('Live Hosting version changed during propagation')
+            else:
+                contract.require(version != baseline_version, 'No new Hosting version observed')
+                attempt['newVersion'] = version
+                atomic_json(receipt_path, attempt)
             contract.require(public_catalog(reader, intent['origin']) == attempt['catalogSha256'], 'Published catalog readback differs')
             contract.require(public_catalog_v4(reader, intent['origin']) == report.get('catalogV4Sha256'), 'Published v4 catalog readback differs')
+            if live_version(request, intent['site']) != attempt['newVersion']:
+                raise PublicationVersionChanged('Live Hosting version changed during catalog readback')
             return version
         version = await_propagation(readback)
         attempt.update(newVersion=version, completedAt=datetime.now(timezone.utc).isoformat(), status='deployed')
@@ -274,14 +324,20 @@ def _reconcile(snapshot, *, request, reader, confirmed_version):
         lease.release()
         return attempt
     lease.check()
+    contract.require((attempt.get('newVersion') or confirmed_version) == confirmed_version,
+                     'Confirmed version differs from first observed deployment version')
     observed = live_version(request, attempt['intent']['site'])
     contract.require(observed == confirmed_version and observed != attempt['baselineVersion'], 'Explicit confirmed new version differs')
     report = json.loads((Path(snapshot) / 'seal-report.json').read_text())
 
     def catalogs():
+        if live_version(request, attempt['intent']['site']) != confirmed_version:
+            raise PublicationVersionChanged('Live Hosting version changed during reconciliation')
         contract.require(public_catalog(reader, attempt['intent']['origin']) == attempt['catalogSha256'], 'Remote catalog differs; manual recovery required')
         contract.require(public_catalog_v4(reader, attempt['intent']['origin']) == report.get('catalogV4Sha256'),
                          'Remote v4 catalog differs; manual recovery required')
+        if live_version(request, attempt['intent']['site']) != confirmed_version:
+            raise PublicationVersionChanged('Live Hosting version changed during reconciliation')
     await_propagation(catalogs)
     attempt.update(status='deployed', newVersion=observed, completedAt=datetime.now(timezone.utc).isoformat())
     atomic_json(path, attempt)
@@ -301,8 +357,8 @@ def main():
         print(json.dumps({'status': 'validated_not_deployed'}))
         return
     import urllib.request
-    def reader(url):
-        with urllib.request.urlopen(urllib.request.Request(url, headers={'Cache-Control': 'no-cache'}), timeout=60) as response:
+    def reader(url, *, timeout=60):
+        with urllib.request.urlopen(urllib.request.Request(url, headers={'Cache-Control': 'no-cache'}), timeout=timeout) as response:
             return response.status, response.read()
     result = publish(**config, request=authenticated_transport(), reader=reader)
     print(json.dumps(result))

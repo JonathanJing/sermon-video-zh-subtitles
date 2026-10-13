@@ -113,8 +113,8 @@ class Journal:
         return {str(Path(p).relative_to(self.root)): preparation.digest(p) for p in paths}
 
 
-def reader(url):
-    with urlopen(Request(url, headers={'Cache-Control': 'no-cache'}), timeout=120) as response:
+def reader(url, *, timeout=120):
+    with urlopen(Request(url, headers={'Cache-Control': 'no-cache'}), timeout=timeout) as response:
         return response.status, response.read()
 
 
