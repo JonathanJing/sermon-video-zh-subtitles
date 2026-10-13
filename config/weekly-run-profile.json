@@ -38,7 +38,7 @@
       }
     },
     "capUsdPerLocale": {
-      "clip": 1.5,
+      "clip": 2.0,
       "week": 5.0
     }
   },

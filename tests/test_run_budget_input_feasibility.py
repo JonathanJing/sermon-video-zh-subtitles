@@ -99,3 +99,62 @@ class RunBudgetInputFeasibilityTests(unittest.TestCase):
         self.assertEqual(saved['stages'][0]['sizing']['zh-Hans']['initialReservation'], initial)
         authorization = json.loads(Path(saved['stages'][0]['authorization']).read_text())
         self.assertEqual(authorization['authority']['globalBounds'], initial)
+
+    def bind_real_groups(self, count):
+        """Build reviewed Layer 1 through actual builders, not a mocked group count."""
+        from tests import test_build_english_source_package as sf
+        from scripts import build_english_source_package as english, sermon_sentence_interpretation as anchors
+        from scripts import target_language_policy as policies
+        source=sf.EnglishSourcePackageTests();source.setUp();self.addCleanup(source.doCleanups)
+        segments=[]
+        for index in range(count):
+            row=copy.deepcopy(source.segments[0]);offset=index*2.0
+            row.update(id=index,referenceChunkId=f'block-{index:04d}',start=offset,end=offset+1.9)
+            for word in row['wordTimes']:word['start']+=offset;word['end']+=offset
+            segments.append(row)
+        sf.write_json(source.segments_path,segments)
+        anchor=anchors.build_anchor_manifest(segments,source_path=source.segments_path,unit_policy=anchors.UNIT_POLICY_V2)
+        sf.write_json(source.manifest_path,anchor)
+        summary=json.loads(source.summary_path.read_text());summary.update(sourceDurationSeconds=count*2+20,
+            sermonEndSeconds=count*2+10)
+        sf.write_json(source.summary_path,summary)
+        review=source.root/'review.json'
+        sf.write_json(review,{'schemaVersion':english.REVIEW_SCHEMA_VERSION,
+            'alignedSegmentsSha256':english.file_sha256(source.segments_path),
+            'anchorManifestJsonSha256':english.json_sha256(anchor),'humanApproval':True,
+            'reviewedBy':'Offline fixture','reviewedAt':'2026-10-13T00:00:00Z',
+            'reviewedSourceUnitIds':[u['sourceUnitId'] for u in anchor['sourceUnits']],
+            'checks':{key:'approved' for key in english.APPROVED_CHECKS}})
+        package=source.build(review_path=review)
+        policy=copy.deepcopy(self.fixture.fixture.fixture.policy);policy.pop('componentSha256')
+        policy['sourceScope'].update(englishSourcePackageJsonSha256=english.json_sha256(package),
+            anchorManifestSha256=english.json_sha256(anchor))
+        policy=policies.freeze_policy(policy)
+        for name,value in (('source',package),('anchor',anchor),('policy',policy)):
+            self.fixture.fixture.write(name+'.json',value)
+
+    def test_real_sixteen_group_clip_default_covers_initial_bounds_without_raising_existing_authority(self):
+        self.bind_real_groups(16)
+        _,_,sizing=self.spec();initial=sizing['zh-Hans']['initialReservation']
+        self.assertEqual(sizing['zh-Hans']['groups'],16)
+        self.assertEqual(initial['requests'],32)
+        self.assertEqual(initial['costMicrousd'],1_966_080)
+        self.assertEqual(self.profile['layer2']['capUsdPerLocale']['clip'],2.0)
+        historical=copy.deepcopy(self.profile);historical['layer2']['capUsdPerLocale']['clip']=1.5
+        with self.assertRaisesRegex(ValueError,'costMicrousd'):
+            self.invoke(historical,'old-clip')
+        self.assertFalse((self.fixture.root/'old-clip').exists())
+        code,out=self.invoke(self.profile,'current-clip');self.assertEqual(code,0)
+        approval=(out/'layer2/budget-authorization.json').read_bytes()
+        denied=self.fixture.root/'low-total'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(plan.main(['--out',str(denied),'--scale','clip','--locales','zh-Hans',
+                '--stage','layer2','--total-usd','1.5','--approved-by','Fixture','--evidence','Offline',
+                '--layer2-execution',str(self.execution)]),1)
+        self.assertFalse(denied.exists());self.assertEqual((out/'layer2/budget-authorization.json').read_bytes(),approval)
+
+    def test_real_week_groups_still_require_explicit_approved_profile(self):
+        self.bind_real_groups(461)
+        with self.assertRaisesRegex(ValueError,'costMicrousd.*initial 922 calls'):
+            plan.layer2_spec(self.execution,self.locales,self.profile,'week')
+        self.assertEqual(self.profile['layer2']['capUsdPerLocale']['week'],5.0)

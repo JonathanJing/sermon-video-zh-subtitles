@@ -207,6 +207,8 @@ def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False
                            for key in ('responseSha256','sourceAuthoritySha256'))):
                 raise ValueError('source_reused_provenance_changed')
 
+    return value
+
 
 def inspect_layer2_root(root, authority, *, locale_scope):
     from scripts import sermon_review_budget as ledger, sermon_workflow_jobs as jobs
@@ -264,6 +266,7 @@ def check_budget(plan_dir: Path):
     from scripts import plan_run_budgets as planner
     from scripts import canonical_layer2_budget as l2_budget, canonical_layer2_controller as controller
     problems = []
+    resume_remaining = {}
     try:
         plan = json.loads((plan_dir / "plan.json").read_text())
         if plan.get("schemaVersion") != planner.PLAN_SCHEMA:
@@ -309,8 +312,17 @@ def check_budget(plan_dir: Path):
                 expected = {"approvalSha256": admitted["authority"]["approvalSha256"],
                             "globalBounds": admitted["authority"]["bounds"]["globalBounds"],
                             "requestLimits": admitted["authority"]["requestLimits"]}
-                inspect_source_root(Path(stage['budgetRoot']),expected=expected,
-                                    reuse_roots=admitted.get('reuseBudgetRoots',[]))
+                resuming = stage.get('executionMode') == 'resume_prior_authority'
+                current = inspect_source_root(Path(stage['budgetRoot']), expected=expected,
+                                              reuse_roots=admitted.get('reuseBudgetRoots', []), required=resuming)
+                if resuming:
+                    paid_rows = [row for row in current['requests'].values()
+                                 if (row.get('settlement') or {}).get('costStatus') != 'reused']
+                    remaining = {key: limit - sum(row['bounds'][key] for row in paid_rows)
+                                 for key, limit in expected['globalBounds'].items()}
+                    if any(amount <= 0 for amount in remaining.values()):
+                        raise ValueError('QC resume authority exhausted; reconcile unfinished paid work before dispatch')
+                    resume_remaining[stage['stage']] = remaining
                 for root in admitted.get('reuseBudgetRoots',[]):
                     inspect_source_root(Path(root),required=True,as_reuse_source=True)
                 if 'reuseSources' in stage:
@@ -347,7 +359,8 @@ def check_budget(plan_dir: Path):
             else:
                 raise ValueError("Unknown stage")
         return result("budget", "pass", plan=str(plan_dir / "plan.json"), schedule=observed,
-                      stages=[(s["stage"], s["capUsd"]) for s in plan["stages"]], problems=[])
+                      stages=[(s["stage"], s["capUsd"]) for s in plan["stages"]], problems=[],
+                      **({"observedResumeRemainingReservationBounds": resume_remaining} if resume_remaining else {}))
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
         problems.append(f"Invalid budget plan: {error}")
         return result("budget", "fail", plan=str(plan_dir / "plan.json"), problems=problems)

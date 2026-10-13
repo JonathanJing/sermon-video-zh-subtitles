@@ -71,7 +71,7 @@ python scripts/migrate_target_language_model_cache.py \
 
 `plan_run_budgets.py --reuse-from <旧计划目录>` 只给新 QC 根批准 `replay_only`：仅完整身份匹配的直接已付回复可重放，缺失操作仍报 `source_reuse_operation_missing`，绝不自动用新预算付费。规划时尚无 QC 全部动态请求（比较输入可能依赖前一回复），因此不把“旧根有部分 returned”宣称为整轮可重用；实际缺失操作继续 fail-closed。旧、新根之间没有变更所有权或隐式委托协议。
 
-要完成同一次部分 QC，使用 `--resume-qc-authorization <原v4授权文件>`（多语言按选定 locale 重复传），不要换预算根。规划器验证当前输入、实现、完整路由和实际 key 指纹，与原 context 一致；只读核对原账本所有 returned 响应与原 authority，无 live/unknown、损坏或未对账行，且每维尚有预留余额，才输出 `resume_prior_authority` stage。stage 引用原 authorization/approval/root/hash/cap，不另写 QC 授权，不增加原上限；计划总额仍保守计完整原 cap；若 `--settled-usd` 已含该根的结算花费，两者会保守重复计入，规划可能拒绝，绝不据此增加原授权或释放预留。`remainingReservationBounds` 仅是规划时快照，运行时每个新请求仍由原 SourceBudget 按原完整 bounds 准入。已耗尽的恢复支付计划会被拒；只读重放原已完成结果不受新规划授权，仍可通过原授权的缓存路径核验。复用专用根不能用此模式补全，须返回原直接付费授权。两种 planner 参数互斥。
+要完成同一次部分 QC，使用 `--resume-qc-authorization <原v4授权文件>`（多语言按选定 locale 重复传），不要换预算根。规划器验证当前输入、实现、完整路由和实际 key 指纹，与原 context 一致；只读核对原账本所有 returned 响应与原 authority，无 live/unknown、损坏或未对账行，且每维尚有预留余额，才输出 `resume_prior_authority` stage。stage 引用原 authorization/approval/root/hash/cap，不另写 QC 授权，不增加原上限；计划总额仍保守计完整原 cap；若 `--settled-usd` 已含该根的结算花费，两者会保守重复计入，规划可能拒绝，绝不据此增加原授权或释放预留。`remainingReservationBounds` 仅是规划时快照。启动预检针对 unfinished paid work 重新只读核对原账本，实时重算 requests、wallTimeMs、costMicrousd 的预留余额；任一维已耗尽则拒绝，原根缺失也拒绝。余额较快照降低但仍全部为正，不要求与旧快照精确相等，并记录本次观察值；运行时每个新请求仍由原 SourceBudget 按原完整 bounds 准入。已耗尽的恢复支付计划会被拒；只读重放原已完成结果不受新规划授权，仍可通过原授权的缓存路径核验。复用专用根不能用此模式补全，须返回原直接付费授权。两种 planner 参数互斥。
 
 在原显式环境启动器中生成恢复计划（输入、旧 out/state 和批准代码必须保持一致）：
 
