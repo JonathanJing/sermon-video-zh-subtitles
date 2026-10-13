@@ -58,3 +58,11 @@
 相同隔离 runtime 下，current `5cbe6844` 的定向测试 1 passed／42.158 秒，base `c1719208edd37073201efd3c827e1afd7e4cc62a` 的同一测试 1 passed／37.703 秒，两者观测到的三次 CLI 返回值均为 `[0,0,2]`。19 个 runtime 闭包文件及目标测试（共 20 文件）字节一致；这只界定已比较的闭包，不能证明整个仓库没有差异。调查没有修改源码或调用真实模型。
 
 结论严格为 **failure not reproduced／root cause unknown**：没有证据证明改动回归，也没有证据将其称为既有 flake。Mac／Python 3.11 隔离复现不等同 CI Linux／Python 3.12，原失败临时证据缺失是具体限制。完整摘要和两阶段时间见 `report-input/summary.json`、`timings.tsv`。后续实际 review 修复会形成新 head，并独立运行新 head CI；不是重试旧 job 来改写原失败。本报告继续保留原失败，等待新 head 和 CI 终态追加。
+
+## 裸章引用上下文、结构评分与新组合 head
+
+#369 追加修复 commit `88230743` 针对普通未知名词数量的保守保留，以及无书名裸章引用的数字／counter／connector 顺序结构比较。supported context 才转写裸章；不扩大 arbitrary noun+counter，显式 Sino override 也不能改写普通计数。新 v5 对裸章和书名引用比较完整有序数字链；v3/v4 保持冻结行为。该阶段四文件 **685 passed／14 subtests，31.89 秒**，原日志和 outcome 保留，不与此前 635／619 相加。
+
+新整合 head **`a0eaf047caab7dc36b7839a7a0ffa81c7a3ea7ff`** 的组合离线测试 **735 passed／25 subtests，44.07 秒，exit 0**，具体范围与 QC／scoring 完整身份见 `20261013-five-pr-context-final/summary.json`。QC implementation SHA256 为 `02c34f07cadd06d2ddb3c97a8a6f7c24a98d3d9e27d70e01999c45ea5627fae0`。旧 693／3 只绑定前一个 `5cbe6844`，旧 647／3 只绑定 `97835708`，不能外推新 head。
+
+本次追加时新 head CI 仍 pending，不能声称 required checks 已通过或代码已合并。原 `5cbe6844` local-mock 失败和 root cause unknown 调查不撤回；本次为实际 review 修复后新 head 的独立 CI，不是重试旧 job。所有新增测试仍为离线软件验证，0 真实模型、0 部署，不证明真实音频 QC／新 waiver 或设备／现场验收。正式校准与新 artifact-bound waiver 仍 waiting_evidence；报告继续 draft，待新 CI 终态再追加。

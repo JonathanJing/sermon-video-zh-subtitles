@@ -47,6 +47,18 @@
       "skipped": {
         ".json": 6
       }
+    },
+    {
+      "label": "20261013-pr369-bare-context-structure",
+      "source": "/private/tmp/sermon-fix-369/artifacts/run/20261013-pr369-bare-context-structure",
+      "skipped": {
+        ".md": 1
+      }
+    },
+    {
+      "label": "20261013-five-pr-context-final",
+      "source": "~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-five-pr-context-final",
+      "skipped": {}
     }
   ],
   "files": [
@@ -523,6 +535,69 @@
       "bytes": 89,
       "truncated": false,
       "sha256": "c10a21d7bc841e499bfc15e83720d53bc580e082a6c4f8401b98ad274e0bdaa0",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr369-bare-context-structure",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 231,
+      "truncated": false,
+      "sha256": "3f739747f660d15d8dff67bfa5ca1d28ddecaf63a6beed231f9caec1edb4143c",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr369-bare-context-structure",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 827,
+      "truncated": false,
+      "sha256": "5ea874505c7ef8a0eb5e1f1c8c85bb9f49d3b940f4e798be6fc923151194dd2f",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr369-bare-context-structure",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 46,
+      "truncated": false,
+      "sha256": "7f0e2ff1816788ad06d1442eb64b83c3aea4320d988ab4fc633440ed4b80c026",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-context-final",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 508,
+      "truncated": false,
+      "sha256": "96015e8a310d915741e7c28667306040b2e9bd037c5114dae6ab586b0fbba919",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-context-final",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 896,
+      "truncated": false,
+      "sha256": "5625cc087c80600a4c6fab68ead9d268118999f892ce593ed6d5acabb6dc03cb",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-context-final",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 782,
+      "truncated": false,
+      "sha256": "ad5be709a329c0ae2f019a1ba6048cf847f2aaee588b23c9bdada6caa8e58170",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-context-final",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 62,
+      "truncated": false,
+      "sha256": "439f446bd15a5a5cab0bcefb71dad11474d691dfbc323a2e5d1a81f90b5cda5e",
       "redactions": {}
     }
   ],

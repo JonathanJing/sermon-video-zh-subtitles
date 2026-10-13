@@ -138,3 +138,36 @@ Error-like log lines (first 5 per log):
 - `runtime-install.log`: + exceptiongroup==1.3.1
 
 Not copied: 6 .json
+
+# 追加：裸章引用上下文与新组合测试
+
+# Run digest 20261013-context-final-append
+
+Generated 2026-10-13T15:19:29+00:00. Redacted copies only; source hashes are in manifest.json.
+
+## 20261013-pr369-bare-context-structure
+
+Source: `/private/tmp/sermon-fix-369/artifacts/run/20261013-pr369-bare-context-structure`
+
+- outcome `outcome.json`: **pass** exit ? (? → ?)
+
+Timings `timings.tsv`:
+
+| stage | status | elapsedSeconds |
+|---|---|---|
+| pytest | pass | 31.89 |
+
+Not copied: 1 .md
+
+## 20261013-five-pr-context-final
+
+Source: `~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-five-pr-context-final`
+
+- outcome `outcome.json`: **pass** exit 0 (? → ?)
+- summary `summary.json`: **pass**
+
+Timings `timings.tsv`:
+
+| stage | status | seconds |
+|---|---|---|
+| context_final_combined_pytest | pass | 44.07 |
