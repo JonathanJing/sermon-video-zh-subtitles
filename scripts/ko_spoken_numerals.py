@@ -26,6 +26,7 @@ except ModuleNotFoundError:  # run as scripts/ko_spoken_numerals.py
     import sermon_sentence_interpretation as identity
     from language_review_plugins.auto_qc_text_common import korean_sino, _KO_BOOK_CODES
 
+RULE_V2 = "ko-sino-chapter-verse-numerals-v2"
 RULE = "ko-sino-chapter-verse-numerals-v3"
 INSTRUCTIONS_SCHEMA = "sermon-unit-delivery-instructions-v2"
 # Only an explicit Bible book anchors a citation. Keep subsequent adjacent
@@ -59,28 +60,45 @@ _COUNTED_NOUNS = ("사진", "종이", "편지", "카드", "표", "티켓", "지�
 _BARE = re.compile(r"(?<![\d.,:．٫٬，A-Za-z가-힣])(?<!(?:" + "|".join(n for n in _COUNTED_NOUNS if len(n) == 2) + r") )"
                    r"(?<!(?:" + "|".join(n for n in _COUNTED_NOUNS if len(n) == 1) + r") )"
                    + _NUMBER + r"(?:장|절)" + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절)"))
-_COUNTED = re.compile(r"(?<![가-힣A-Za-z0-9])(?:" + "|".join(_COUNTED_NOUNS) + r")\s*[(\[（［]?\s*" + _NUMBER
+_COUNTED = re.compile(r"(?<![가-힣A-Za-z0-9])(?:" + "|".join(_COUNTED_NOUNS)
+                      + r")(?:은|는|이|가|을|를|도|만|의|에서|에는|에도|으로|로)?\s*[(\[（［]?\s*" + _NUMBER
                       + r"(?:장|절|편)" + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절|편)")
                       + r"(?:\s*" + _RANGE_PARTICLE + r")?\s*[)\]）］]?")
 
 
+_NUMERIC_TOKEN = re.compile(r"\d+(?:\s*[.,:．٫٬，]\s*\d+)+\s*(?:장|절)"
+                            + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절)"))
+
+
+def spoken_form_v2(text: str) -> str:
+    """Frozen book-anchored v2 behavior for existing normalization-policy jobs."""
+    return _spoken_form(text, bare_chapters=False)
+
+
 def spoken_form(text: str) -> str:
+    return _spoken_form(text, bare_chapters=True)
+
+
+def _spoken_form(text: str, *, bare_chapters: bool) -> str:
     def spell(match: re.Match) -> str:
         first, dash, second, space, counter = match.groups()
         numbers = korean_sino(int(first)) + (dash + korean_sino(int(second)) if second else "")
         return numbers + space + counter
     for citation in _CITATIONS:
         text = citation.sub(lambda match: _REFERENCE.sub(spell, match.group()), text)
+    if not bare_chapters:
+        return text
     # A count after a counted-object noun keeps its whole chain: 사진 2장부터 4장까지, 사진(3-4장).
     counted = [match.span() for match in _COUNTED.finditer(text)]
+    numeric_tokens = [match.span() for match in _NUMERIC_TOKEN.finditer(text)]
     def bare(match: re.Match) -> str:
-        if any(start <= match.start() < end for start, end in counted):
+        if any(start <= match.start() < end for start, end in counted + numeric_tokens):
             return match.group()
         return _REFERENCE.sub(spell, match.group())
     return _BARE.sub(bare, text)
 
 
-def equivalent(approved: str, spoken: str) -> bool:
+def equivalent(approved: str, spoken: str, *, rule: str = RULE) -> bool:
     """True when ``spoken`` is ``approved`` with only this rule applied, ignoring punctuation and spacing."""
     def normalized(value: str) -> str:
         # A punctuation allowlist keeps audible symbols such as %, +, $, /,
@@ -93,21 +111,26 @@ def equivalent(approved: str, spoken: str) -> bool:
         return "".join(char for index, char in enumerate(value)
                        if numeric_separator(index, char)
                        or (not char.isspace() and char not in punctuation))
-    return normalized(spoken_form(approved)) == normalized(spoken) and spoken_form(approved) != approved
+    spell = {RULE_V2: spoken_form_v2, RULE: spoken_form}[rule]
+    return normalized(spell(approved)) == normalized(spoken) and spell(approved) != approved
 
 
 def build(job: dict) -> dict | None:
     """The unit instructions for a Korean speech job, or ``None`` when no unit changes."""
     if job.get("targetLocale") != "ko":
         raise ValueError("Sino chapter numerals apply to Korean speech jobs only")
+    old_policy = {"version": "v2", "policy": "exact_approved_text_with_registered_spoken_forms",
+                  "spokenForms": {"ko": RULE_V2}}
+    frozen_v2 = (job.get("adapter") or {}).get("normalizationPolicySha256") == identity.json_sha256(old_policy)
+    spell, rule = (spoken_form_v2, RULE_V2) if frozen_v2 else (spoken_form, RULE)
     units = []
     for unit in job["units"]:
-        spoken = spoken_form(unit["text"])
+        spoken = spell(unit["text"])
         if spoken != unit["text"]:
             units.append({"translationGroupId": unit["translationGroupId"],
                           "approvedTextSha256": hashlib.sha256(unit["text"].encode()).hexdigest(),
                           "spokenText": spoken,
-                          "operatorEvidence": f"{RULE}: deterministic Sino-Korean reading of chapter/verse numbers"})
+                          "operatorEvidence": f"{rule}: deterministic Sino-Korean reading of chapter/verse numbers"})
     if not units:
         return None
     return {"schemaVersion": INSTRUCTIONS_SCHEMA, "targetLocale": "ko",

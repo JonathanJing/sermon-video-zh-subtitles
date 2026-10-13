@@ -41,7 +41,7 @@
 
 ### 规范化策略 v2：周更自动口播形式
 
-新的周更 Layer 3 使用仓库内的 [config/layer3-audio-operation-policies.json](../config/layer3-audio-operation-policies.json) 和 [config/layer3-adapters/](../config/layer3-adapters/) 的三个 adapter。其 normalization 策略为 v2 `exact_approved_text_with_registered_spoken_forms`，为 `ko` 登记上述规则 v2；规则 v1 的实验策略哈希不复用，新 adapter 的 normalization hash 随规则版本变化，旧实验 job 不静默迁移。adapter 的 `normalizationPolicySha256` 绑定它，`prepare_target_language_speech_job.py` 再把该哈希冻结进 speech job。renderer 发现 job 绑定 v2 时，按规则为韩语单元自动生成口播形式，不需要 `--unit-instructions` 文件，因此调度器无需额外步骤；恢复导出与统一音频 adapter 使用同一推导。显式指令文件仍可为同一单元加 `instruction`，但给出不同 `spokenText` 会被拒绝。`zh-Hans`、`es` 在 v2 下没有登记规则，合成文字不变。
+新的周更 Layer 3 使用仓库内的 [config/layer3-audio-operation-policies.json](../config/layer3-audio-operation-policies.json) 和 [config/layer3-adapters/](../config/layer3-adapters/) 的三个 adapter。其 normalization 策略为 v2 `exact_approved_text_with_registered_spoken_forms`，为 `ko` 登记上述规则 v3；已冻结的规则 v2 策略（`5c8e7ac6…`）仍按原书名锚定规则恢复，三语旧 job 均可使用其原策略，不重标为新规则；新 adapter 的 normalization hash 随规则版本变化，旧实验 job 不静默迁移。adapter 的 `normalizationPolicySha256` 绑定它，`prepare_target_language_speech_job.py` 再把该哈希冻结进 speech job。renderer 发现 job 绑定 v2 时，按规则为韩语单元自动生成口播形式，不需要 `--unit-instructions` 文件，因此调度器无需额外步骤；恢复导出与统一音频 adapter 使用同一推导。显式指令文件仍可为同一单元加 `instruction`，但给出不同 `spokenText` 会被拒绝。`zh-Hans`、`es` 在 v2 下没有登记规则，合成文字不变。
 
 已绑定 v1 `exact_human_approved_target_text_no_rewrite` 的旧 job 保持原文与声音身份，不原地迁移。旧 job 的显式韩语 Sino spokenText override 不在 synthesisIdentity 内，无法绑定对应预算／压缩／时长 QC，因此 renderer 与统一 adapter 在合成或冻结 plan 前拒绝该组合；旧 v1 instruction-only 配音指令及其他语言原有角色保留。需要韩语改读时，先按 v2 normalization 重新冻结新 job；下面的命令只为该新 job 生成与 policy 完全相同的可选 v2 指令文件，再传给 `--unit-instructions`（没有需要改读的单元时输出 `no_change` 且不写文件）：
 
@@ -121,7 +121,7 @@ docker run --rm --gpus all --ipc=host --read-only --network none \
 
 中文已有全局人审能力时可省略 `--clip-voice-capability`。以上命令是路径模板；2026-09-23 的真实结果见 [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md)。`build_target_language_audio_package.py` 以 renderer 的 manifest 构建最高为 `candidate` 的 Layer 3 包。三语均有完整 Qwen3-ASR 筛查收据，机器结果仍为 `requires_review`。`review_target_language_audio.py prepare` 从候选包和同一整轨／单元 hash 的筛查收据生成待审工作表；只在真人完成全文 1 倍速播放、视频同步及每个 ASR 疑点的显式裁决后，`approve` 才能产出 `human_reviewed` 包与 v2 人审收据。Dev staging 继续核对该收据及原机器筛查，不把机器状态改写为通过。
 
-韩文引用的 ASR 初筛以 scoring v5 按书名锚定的完整引用链折叠汉字词数字，含单 counter 范围首端、连写章/节及 Psalm `편`；普通词内不放宽。旧 v4/v3 收据按原评分语义重评分，不自动升级。新实现改变初筛身份，旧 #361/#363 的真实音频 QC 不验证此 v5；新规则的真实模型/音频/校准尚未重跑。口播规则仍为本 PR 未合并的规则 v2，normalization policy hash 不另改；ASR runtime scoring 和实现 hash 与口播 policy hash 分别绑定。
+韩文引用的 ASR 初筛以 scoring v5 按书名锚定的完整引用链折叠汉字词数字，含单 counter 范围首端、连写章/节及 Psalm `편`；普通词内不放宽。旧 v4/v3 收据按原评分语义重评分，不自动升级。新实现改变初筛身份，旧 #361/#363 的真实音频 QC 不验证此 v5；新规则的真实模型/音频/校准尚未重跑。新 job 的口播规则为 v3，normalization 策略本身仍为 v2，policy hash 随登记规则变更；旧规则 v2 的冻结 hash 保留独立分派，不静默改写；ASR runtime scoring 和实现 hash 与口播 policy hash 分别绑定。
 
 引用 counter 后须为词边界、相邻完整引用或列明且完整的韩文助词后缀（含 `에는`、`입니다` 等）；`3장면`、`2편지`、`2편의점` 不转换，不从任意 Hangul 前缀推断引用。scoring v5 仅在书名锚定引用片段内（含紧接的范围终结标记）额外比较有序完整数字串、范围标记与引用 counter/范围助词结构，拒绝 `12-3` 与 `1-23` 的字符摊平等价及范围连接符插删；旧 v4/v3 路径保持原样。
 
