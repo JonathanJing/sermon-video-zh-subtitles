@@ -13,6 +13,7 @@ Node.js 22 / Cloud Functions v2，导出 `sermonFeedback`（`us-west1`）。同�
 | `feedback` | 每会话一条赞踩、多个独立问题，处理状态及修复版本 | 最后更新后 365 天 |
 | `listeningSessions` | 实际收听秒数、已播放区间、累计操作计数 | 最后更新后 30 天 |
 | `usageSessions` | 秒级操作事件、页面日期会话、每日浏览器哈希 | 最后更新后 30 天 |
+| `alignmentUsageSessions30d` | 听声定位每次触发的结束状态、匹配原因、匹配比例区间和耗时区间 | 最后更新后 30 天 |
 | `weeklyMetrics` | 每周/音轨/音频版本汇总，无会话标识与文本 | 长期保留 |
 | `apiSessions` | 随机凭据的 SHA-256 索引、来源、序列号和速率窗口 | 创建后 24 小时 |
 | `feedbackSequences` | 问题删除后防旧请求复活的序列号 | 会话到期后 24 小时 |
@@ -127,3 +128,32 @@ node admin.mjs listening --from 2026-09-27 --to 2026-09-27 --out /private/path/l
 - **完播率**：满 30 秒的片段会话中、不重复覆盖达到全长 90% 的比例；不将拖动到结尾算作完播。
 - **界面访问**：打开及切换形成的访问会话，同日匿名设备去重，与是否播放无关。一个设备使用多种界面语言会出现在多个语言分组。
 - 仅统计成功上报、未撤回且最近 30 天未过期的数据；旧客户端、关闭统计和未送达内容无法回填。查询分页并限量，截断时报告须按部分样本解释。
+
+## 听声定位统计（alignment v1）
+
+2026-10-13 起新增 `POST /api/alignment-usage`，集合 `alignmentUsageSessions30d`，须启用 `expiresAt` TTL。凭据、公共字段、`day/clientId/platform/interfaceLocale/contentLocale`、来源绑定、序号、幂等重试和撤回规则都与 `/api/listening` 相同；撤回后返回 `alignment_withdrawn`。
+
+`upsert` 另带 `attempts`：本凭据下的全部定位尝试，只能追加，最多 40 条，满了由客户端换新凭据。每条只允许以下字段：
+
+| 字段 | 取值 |
+|---|---|
+| `at` | 尝试结束时的毫秒时间，取整到秒；不早于凭据签发前 10 分钟 |
+| `outcome` | `applied`（已跳转并开始播放）、`matched`、`play_failed`、`play_blocked`、`no_match`、`expired`、`timeout`、`cancelled`、`error`、`permission_denied`、`unavailable`、`unsupported` |
+| `stage` | 最远到达的步骤：`opened`、`index_ready`、`recording`、`matched_audio` |
+| `reason` | 匹配器原因枚举；只有 `matched_audio` 可以非空 |
+| `errorCode` | 既有诊断错误码枚举或 null，不收原始错误文本 |
+| `level` | 既有音量区间枚举或 null |
+| `fractionBand` | `below_0_03`、`0_03_to_0_045`、`0_045_to_0_055`、`at_least_0_055` 或 null |
+| `captureSeconds` | 7、10、12、15 或 null |
+| `totalMs` | 整次操作耗时，100 ms 取整，≤600000，或 null |
+| `shadow` | null 或 `{profile:"cmn-v1", matched, agrees}`：生产匹配失败后本机候选查询的结果，只记录不跳转 |
+
+结果与阶段必须一致（例如 `applied` 必须是 `matched_audio` + `matched`）。不收录音、特征、设备名、路由或播放位置。
+
+```sh
+GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev \
+FEEDBACK_DATABASE_ID=sermon-dubbing-feedback \
+node admin.mjs alignment --from 2026-10-18 --to 2026-10-18 --out /private/path/alignment-20261018
+```
+
+报表给出触发次数、已录音、匹配到、成功跳转、成功率（÷已录音、÷触发），按平台、内容语言、页面、日期和洛杉矶小时分组，以及结束状态、未匹配原因、匹配比例区间、错误码和影子对照命中数。

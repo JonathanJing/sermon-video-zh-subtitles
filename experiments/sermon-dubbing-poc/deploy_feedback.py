@@ -12,7 +12,7 @@ from deploy_firebase import verify_release
 from poc import sha256, write_json
 
 HERE = Path(__file__).resolve().parent
-RUNTIME_FILES = ("index.mjs", "core.mjs", "usage-core.mjs", "listening-core.mjs", "firestore-store.mjs",
+RUNTIME_FILES = ("index.mjs", "core.mjs", "usage-core.mjs", "listening-core.mjs", "alignment-core.mjs", "firestore-store.mjs",
                  "package.json", "package-lock.json")
 PROJECT = "ai-for-god-caption-dev"
 REGION = "us-west1"
