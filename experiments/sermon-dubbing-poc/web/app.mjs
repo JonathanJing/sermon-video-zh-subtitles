@@ -71,7 +71,7 @@ const alignmentDiagnostics = $("fingerprint-diagnostics")?.closest?.("details");
 if (alignmentDiagnostics && typeof fieldAlignment.getDiagnostics !== "function") alignmentDiagnostics.hidden = true;
 const mediaSession = createMediaSession({
   audio,
-  getSelection: () => activeView !== "tab-voices" && week && track ? { week, track } : null,
+  getSelection: () => activeView !== "tab-voices" && week && track ? { week, track, album: t(brandKey("app.brand")) } : null,
   play: () => { if (audio.paused && !playPending) void togglePlay(); },
   pause: () => { if (!audio.paused) audio.pause(); },
   seek: time => setPosition(time),
@@ -96,17 +96,43 @@ function diagnosticNotice() {
   const state = diagnosticPresentation(week);
   return state ? `${t(state.statusKey)}${state.reasonCode ? ` · ${state.reasonCode}` : ''}` : null;
 }
+// The brand names the sermon language; Chinese keeps the original keys.
+const brandKey = key => ["ko", "es"].includes(contentLocale) ? `${key}.${contentLocale}` : key;
+function renderBrand() {
+  for (const [id, attribute, key] of [["brand-tagline", "data-i18n", "app.tagline"], ["footer-title", "data-i18n", "app.title"], ["brand-link", "data-i18n-aria-label", "app.home"]]) {
+    $(id).setAttribute(attribute, brandKey(key));
+    localizeDOM($(id));
+  }
+}
+// Native names stay readable whatever the page language is.
+const contentLanguages = [["zh-Hans", "中文"], ["ko", "한국어"], ["es", "Español"]];
+const pageLanguages = [["zh", "中", "中文", "zh-Hans"], ["en", "EN", "English", "en"], ["ko", "KO", "한국어", "ko"], ["es", "ES", "Español", "es"]];
 function renderContentLanguages() {
   const available = week?.contentVariants || { "zh-Hans": week };
   const picker = $("content-language");
   picker.replaceChildren();
-  for (const [locale, label] of [["zh-Hans", "中文"], ["ko", "한국어"], ["es", "Español"]]) {
+  for (const [locale, label] of contentLanguages) {
     const option = document.createElement("option");
     option.value = locale; option.textContent = label;
     option.disabled = !available[locale];
     picker.append(option);
   }
   picker.value = contentLocale;
+  $("sermon-language-options").replaceChildren(...contentLanguages.filter(([locale]) => available[locale]).map(([locale, label]) => {
+    const button = document.createElement("button");
+    button.type = "button"; button.className = "sermon-language-option"; button.dataset.locale = locale;
+    button.setAttribute("aria-pressed", String(locale === contentLocale));
+    if (locale === contentLocale) { const check = document.createElement("span"); check.className = "sermon-language-check"; setIcon(check, "checkmark"); button.append(check); }
+    const name = document.createElement("span"); name.lang = locale; name.textContent = label; button.append(name);
+    // A text-only locale says so before the listener expects narration.
+    if (!available[locale].tracks?.length) { const note = document.createElement("small"); note.textContent = t("language.textOnly"); button.append(note); }
+    button.addEventListener("click", () => {
+      selectContentLocale(locale);
+      $("sermon-language-options").querySelector?.('[aria-pressed="true"]')?.focus();
+    });
+    return button;
+  }));
+  $("sermon-language").hidden = !week;
   $("content-language-note").textContent = t(week?.contentVariants ? "app.content.available" : "app.content.legacy");
   for (const id of ["series", "title", "speaker", "scripture", "central-message", "current-text", "next-text", "transcript-list", "outline-meta", "outline-summary", "outline-content", "reflection-questions"]) {
     $(id).lang = contentLocale;
@@ -163,7 +189,8 @@ function renderWeekLabels() {
   setButtonLabel($("source-link"), view.sourceLabel ? t("app.source.link", { label: view.sourceLabel }) : t("app.source.open"));
   for (const button of $("variants").children) button.textContent = isFormalPlayback(week) ? t("app.release.formal") : getLocale() !== "zh" ? t("app.voice.active", { speaker: week.speaker }) : week.tracks.find(item => item.id === button.dataset.id)?.label || "";
   $("subtitle-note").textContent = t("app.subtitle.follow");
-  document.title = `${activeView === "tab-voices" ? t("app.voices.title") : view.title} · ${t("app.brand")}`;
+  renderBrand();
+  document.title = `${activeView === "tab-voices" ? t("app.voices.title") : view.title} · ${t(brandKey("app.brand"))}`;
 }
 
 function displayCategoryLabel(item) {
@@ -354,7 +381,7 @@ function selectTab(id, focus = false, scroll = false) {
   if (id === "tab-listen") url.searchParams.delete("tab");
   else url.searchParams.set("tab", id.replace("tab-", ""));
   history.replaceState(null, "", url);
-  if (week) document.title = `${voices ? t("app.voices.title") : displayWeek().title} · ${t("app.brand")}`;
+  if (week) document.title = `${voices ? t("app.voices.title") : displayWeek().title} · ${t(brandKey("app.brand"))}`;
   for (const tab of tabs) {
     const selected = tab.id === id;
     if (tab.getAttribute("role") === "tab") {
@@ -789,11 +816,12 @@ async function togglePlay(fromAlignment = false) {
 function seek(delta, fine = false) { setPosition(audio.currentTime + delta, { fine }); }
 audio.addEventListener("play", () => fieldAlignment.playbackStarted());
 $("week-select").addEventListener("change", event => selectWeek(event.target.value));
-$("content-language").addEventListener("change", event => {
-  if (!week?.contentVariants?.[event.target.value]) return;
-  contentLocale = event.target.value;
+function selectContentLocale(locale) {
+  if (!week?.contentVariants?.[locale] || locale === contentLocale) return;
+  contentLocale = locale;
   selectWeek(week.id);
-});
+}
+$("content-language").addEventListener("change", event => selectContentLocale(event.target.value));
 $("play").addEventListener("click", togglePlay);
 document.querySelectorAll("[data-play-toggle]").forEach(button => button.addEventListener("click", togglePlay));
 $("resume-position").addEventListener("click", restorePosition);
@@ -922,12 +950,55 @@ async function initializeEngagement() {
     }
   } catch { /* Optional feedback must never prevent playback. */ }
 }
-$("language-toggle").addEventListener("click", () => {
-  const locales = ["zh", "en", "ko", "es"];
-  setLocale(locales[(locales.indexOf(getLocale()) + 1) % locales.length]);
+function renderPageLanguages() {
+  const [, code, name] = pageLanguages.find(([locale]) => locale === getLocale()) || pageLanguages[0];
+  $("language-label").textContent = code;
+  $("language-toggle").setAttribute("aria-label", `${t("language.choose")} · ${name}`);
+  $("language-toggle").title = `${t("language.choose")} · ${name}`;
+  $("page-language-menu").replaceChildren(...pageLanguages.map(([locale, itemCode, itemName, lang]) => {
+    const item = document.createElement("button");
+    item.type = "button"; item.tabIndex = -1; item.dataset.locale = locale;
+    item.setAttribute("role", "menuitemradio");
+    item.setAttribute("aria-checked", String(locale === getLocale()));
+    const codeLabel = document.createElement("span"); codeLabel.className = "locale-code"; codeLabel.textContent = itemCode;
+    const nameLabel = document.createElement("span"); nameLabel.lang = lang; nameLabel.textContent = itemName;
+    const check = document.createElement("span"); check.className = "locale-check";
+    if (locale === getLocale()) setIcon(check, "checkmark");
+    item.append(codeLabel, nameLabel, check);
+    item.addEventListener("click", () => { setPageLanguageMenu(false); setLocale(locale); $("language-toggle").focus(); });
+    return item;
+  }));
+}
+function setPageLanguageMenu(open) {
+  $("page-language-popover").hidden = !open;
+  $("language-toggle").setAttribute("aria-expanded", String(open));
+  if (open) $("page-language-menu").querySelector?.('[aria-checked="true"]')?.focus();
+}
+$("language-toggle").addEventListener("click", () => setPageLanguageMenu($("language-toggle").getAttribute("aria-expanded") !== "true"));
+$("page-language-control").addEventListener("keydown", event => {
+  if ($("page-language-popover").hidden) return;
+  const items = [...$("page-language-menu").children];
+  const current = items.indexOf(document.activeElement);
+  if (event.key === "Escape") { event.preventDefault(); setPageLanguageMenu(false); $("language-toggle").focus(); return; }
+  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1
+    : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+  items[next].focus();
+});
+// Tabbing away closes the menu; a pointer press without a new focus target does not.
+$("page-language-control").addEventListener("focusout", event => {
+  if (event.relatedTarget && !$("page-language-control").contains(event.relatedTarget)) setPageLanguageMenu(false);
+});
+document.addEventListener("pointerdown", event => {
+  if (!$("page-language-popover").hidden && !event.target.closest?.("#page-language-control")) setPageLanguageMenu(false);
 });
 onLocaleChange(() => {
   $("interface-language").value = getLocale();
+  renderPageLanguages();
+  // A shared link's page language follows the listener's later choice on reload.
+  const url = new URL(location.href);
+  if (url.searchParams.has("lang")) { url.searchParams.set("lang", getLocale()); history.replaceState(null, "", url); }
   updateLanguageControl(); renderReadingMode(); renderOfflineStatus(); renderDockLabels();
   if (!catalog || !week) return;
   renderWeekOptions(); renderWeekLabels(); renderOutline(); renderProduction(); renderDownloads();
@@ -940,6 +1011,7 @@ onLocaleChange(() => {
 });
 $("interface-language").value = getLocale();
 $("interface-language").addEventListener("change", event => setLocale(event.target.value));
+renderPageLanguages();
 localizeDOM();
 void registerOfflineReading({onStatus: state => { offlineState = state; renderOfflineStatus(); }});
 try {
