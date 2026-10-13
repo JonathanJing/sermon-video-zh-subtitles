@@ -458,6 +458,33 @@ class TransportTests(unittest.TestCase):
         audio_qc.decode_pcm16(first)
         self.assertEqual(basis.waiver.render_identity_problems(render.identity), [])
         self.assertEqual(render.identity["checkpointSha256"], sha(b"tts weights"))
+        from scripts import render_formal_target_language_speech as formal
+        # Legacy normalization retains the raw calibration text.
+        legacy = render("요한복음 03-04장", LOCALE)
+        self.assertEqual(said[-1][0], "요한복음 03-04장")
+        v2_job = json.loads(json.dumps(job))
+        v2_job["adapter"]["normalizationPolicySha256"] = basis.json_sha256(formal.SPOKEN_FORMS_NORMALIZATION_POLICY)
+        normalized = transports.QwenTtsRender(v2_job, checkpoint=checkpoint, cache=self.root / "tts", synth_factory=Synth)
+        normalized("요한복음 03-04장", LOCALE)
+        self.assertEqual(said[-1][0], "요한복음 삼-사장")
+        count = len(said)
+        normalized("요한복음 03-04장", LOCALE)
+        self.assertEqual(len(said), count)
+        records = [json.loads(p.read_text()) for p in (self.root / "tts").glob("*/record.json")]
+        record = next(r for r in records if r.get("spokenTextSha256") == sha("요한복음 삼-사장".encode()))
+        self.assertEqual(record["textSha256"], sha("요한복음 03-04장".encode()))
+        with patch.dict(formal.SPOKEN_FORM_RULES, {formal.ko_spoken_numerals.RULE: ("ko", lambda text: "changed spoken form")}):
+            normalized("요한복음 03-04장", LOCALE)
+        self.assertEqual(said[-1][0], "changed spoken form")
+        self.assertEqual(len(said), count + 1)
+        record_path = next(p for p in (self.root / "tts").glob("*/record.json")
+                           if json.loads(p.read_text()).get("spokenTextSha256") == sha("요한복음 삼-사장".encode()))
+        changed = json.loads(record_path.read_text())
+        changed["spokenTextSha256"] = "0" * 64
+        record_path.write_text(json.dumps(changed))
+        with self.assertRaisesRegex(ValueError, "spoken normalization binding"):
+            normalized("요한복음 03-04장", LOCALE)
+        self.assertNotIn("spokenTextSha256", next(r for r in records if r["textSha256"] == sha("두 사람".encode())))
         mapping["checkpoints"][0]["checkpointRef"] = "other"
         with self.assertRaises(ValueError):
             transports.checkpoint_path(job, mapping)
