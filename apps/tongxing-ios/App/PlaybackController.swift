@@ -129,16 +129,27 @@ final class PlaybackController: ObservableObject {
 
     func flushStatistics() { Task { await statistics?.flush() } }
 
-    private func sampleStatistics(playing: Bool? = nil, clearing: Bool = false) {
-        guard let statistics else { return }
-        let source: ListeningSource?
+    private var statisticsSource: ListeningSource? {
         switch loadedSource {
         case .legacy(let week, let track, _):
-            source = ListeningSource(week: week.date, trackId: track.id, audioSha256: track.sha256)
+            return ListeningSource(week: week.date, trackId: track.id, audioSha256: track.sha256)
         case .published(let audio):
-            source = .published(pageID: audio.pageID, locale: audio.locale, sha256: audio.sha256)
-        case nil: source = nil
+            return .published(pageID: audio.pageID, locale: audio.locale, sha256: audio.sha256)
+        case nil: return nil
         }
+    }
+
+    /// One anonymous count per sound-alignment press, under the same opt-in
+    /// statistics switch and withdrawal as listening time.
+    func recordAlignmentAttempt(_ attempt: AlignmentAttemptRecord) {
+        guard let statistics, let source = statisticsSource else { return }
+        let ui = statisticsInterfaceLocale, content = statisticsContentLocale
+        Task { await statistics.recordAlignment(attempt, source: source, interfaceLocale: ui, contentLocale: content) }
+    }
+
+    private func sampleStatistics(playing: Bool? = nil, clearing: Bool = false) {
+        guard let statistics else { return }
+        let source = statisticsSource
         let observedPosition = currentPosition(), observedDuration = duration
         let observedPlaying = playing ?? (player.timeControlStatus == .playing && pendingSeek == nil)
         let uptime = ProcessInfo.processInfo.systemUptime

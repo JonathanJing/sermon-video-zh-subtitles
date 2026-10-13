@@ -2,6 +2,7 @@ import Foundation
 import AVFoundation
 import CryptoKit
 import TongxingCore
+import TongxingInfrastructure
 import XCTest
 @testable import Tongxing
 
@@ -636,12 +637,85 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(f.phases.last, .cancelled)
     }
 
+    func testEachPressReportsOneAttemptRecord() async throws {
+        let counter = CallCounter()
+        let hit = try Fixture(matcher: { _, _ in counter.increment(); return counter.count == 1 ? Self.noMatch : Self.match })
+        hit.controller.start()
+        try await eventually { !hit.controller.busy }
+        XCTAssertEqual(hit.attempts.count, 1)
+        XCTAssertEqual(hit.attempts.first?.outcome, .applied)
+        XCTAssertEqual(hit.attempts.first?.stage, .matchedAudio)
+        XCTAssertEqual(hit.attempts.first?.reason, "matched")
+        XCTAssertEqual(hit.attempts.first?.captureSeconds, 10, "locked at the 10 s checkpoint")
+
+        let miss = try Fixture(matcher: { _, _ in Self.noMatch })
+        miss.controller.start()
+        try await eventually { !miss.controller.busy }
+        XCTAssertEqual(miss.attempts.map(\.outcome), [.noMatch])
+        XCTAssertEqual(miss.attempts.first?.captureSeconds, 15)
+        XCTAssertEqual(miss.attempts.first?.reason, "unknown", "non-whitelisted matcher text never leaves the device")
+
+        let denied = try Fixture()
+        denied.capture.failure = AudioAlignmentError.permissionDenied
+        denied.controller.start()
+        try await eventually { !denied.controller.busy }
+        XCTAssertEqual(denied.attempts.map(\.outcome), [.permissionDenied])
+        XCTAssertEqual(denied.attempts.first?.errorCode, "MIC_PERMISSION")
+        XCTAssertEqual(denied.attempts.first?.stage, .indexReady)
+
+        let gate = ResultGate()
+        let slow = try Fixture(deadline: .milliseconds(40), matcher: { _, _ in await gate.result() })
+        slow.controller.start()
+        try await eventually { !slow.controller.busy }
+        await gate.finish(Self.match)
+        try await Task.sleep(for: .milliseconds(20))
+        XCTAssertEqual(slow.attempts.map(\.outcome), [.timeout])
+
+        let cancelGate = ResultGate()
+        let cancelled = try Fixture(matcher: { _, _ in await cancelGate.result() })
+        cancelled.controller.start()
+        try await cancelGate.waitUntilStarted()
+        cancelled.controller.cancel()
+        await cancelGate.finish(Self.match)
+        try await Task.sleep(for: .milliseconds(20))
+        XCTAssertEqual(cancelled.attempts.map(\.outcome), [.cancelled])
+
+        let none = try Fixture()
+        none.selection = nil
+        none.controller.start()
+        XCTAssertEqual(none.attempts.map(\.outcome), [.unavailable])
+        XCTAssertEqual(none.attempts.first?.stage, .opened)
+    }
+
+    func testListeningHintsAreLocalizedForEveryCheckpoint() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("lang.json")
+        let localization = AppLocalization(preferenceURL: url)
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let keys = [7.0, 10, 12].map(AudioAlignmentController.listeningMoreStatus(afterSeconds:)) + ["正在听原声，最长约 15 秒；请保持 App 前台。"]
+        for language in [AppLanguage.english, .korean, .spanish, .vietnamese] {
+            localization.setPreference(language)
+            for key in keys { XCTAssertNotEqual(localization.text(key), key, "\(language) \(key)") }
+        }
+    }
+
+    func testContinuousSessionStartupStallStopsBeforePCMBudget() async throws {
+        var restores = 0
+        let session = ContinuousCaptureSession(owner: nil, token: UUID(),
+            engineSetup: {}, restorePlayback: { _ in restores += 1 })
+        let start = ContinuousClock.now
+        try session.startEngine(maxSeconds: 15, startupSeconds: 0.05)
+        do { try await session.waitUntil(seconds: 7); XCTFail("A session without buffers must not wait for the PCM budget") }
+        catch { XCTAssertEqual(error as? AudioAlignmentError, .invalidCapture) }
+        XCTAssertLessThan(start.duration(to: .now), .seconds(1))
+        XCTAssertEqual(restores, 1)
+    }
+
     func testContinuousSessionWithoutBuffersStopsAtWallBudget() async throws {
         var restores = 0
         let session = ContinuousCaptureSession(owner: nil, token: UUID(),
             engineSetup: {}, restorePlayback: { _ in restores += 1 })
         let start = ContinuousClock.now
-        try session.startEngine(maxSeconds: 0.03)
+        try session.startEngine(maxSeconds: 0.03, startupSeconds: 0.03)
         do { try await session.waitUntil(seconds: 7); XCTFail("No-buffer capture must fail") }
         catch { XCTAssertEqual(error as? AudioAlignmentError, .invalidCapture) }
         XCTAssertTrue(session.isFinished)
@@ -712,6 +786,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         var failures: [String] = []
         var phases: [ListeningAlignmentPhase] = []
         var resultPosition: Double?
+        var attempts: [AlignmentAttemptRecord] = []
         var controller: AudioAlignmentController!
 
         init(playing: Bool = false, result: FingerprintMatchResult = AudioAlignmentControllerTests.match,
@@ -772,7 +847,8 @@ final class AudioAlignmentControllerTests: XCTestCase {
                     self!.start.advanced(by: .seconds(self!.elapsed))
                 }, deadline: deadline, matchBudget: matchBudget, onState: { [weak self] status, _, position in self?.status = status; self?.resultPosition = position },
                 onFailure: { [weak self] message in self?.failures.append(message) },
-                onPhase: { [weak self] phase in self?.phases.append(phase) })
+                onPhase: { [weak self] phase in self?.phases.append(phase) },
+                onAttempt: { [weak self] attempt in self?.attempts.append(attempt) })
         }
     }
 
