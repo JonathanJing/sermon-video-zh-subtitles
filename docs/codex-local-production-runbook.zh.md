@@ -2,6 +2,28 @@
 
 当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
 
+### 开工前：预算文件与开工检查（2026-10-13 起）
+
+1. 按[运行配置](../config/weekly-run-profile.json)为当前选定阶段写出预算文件：每种语言一个质检预算根（文本质检、校准、音频质检共用），以及绑定已有 Layer 2 执行配置的预算。`--approved-by`／`--evidence` 写明实际批准人和出处，工具不代写批准；任一环节上限加已结算超过总额时不写任何文件。全部 cap 超过总额时必须显式选择 `--stage`，未选不写授权。前一阶段先结算与对账；同一冻结代码身份换预算根时才可用 `--reuse-from <上一份计划目录>`，该模式只重放已有响应，缺失操作拒绝付费。部分 QC 使用 `--resume-qc-authorization <原v4授权>` 在原根、原额度下继续；两模式互斥，见[恢复合同](canonical-layer2-budget-and-migration.zh.md#qc-部分运行继续原授权与跨根只读重放分开)。#380 合并后的首次运行禁止复用旧身份缓存。
+
+```sh
+.venv/bin/python scripts/run_with_openai_environment.py --environment dev -- \
+  .venv/bin/python scripts/plan_run_budgets.py --out <新目录> --scale clip|week --total-usd <批准总额> --settled-usd <已结算> --approved-by <批准人> --evidence <出处> [--stage qc.ko|layer2] [--qc-inputs <inputs.json>] [--layer2-execution <execution.json>] [--reuse-from <上一份计划目录>]
+```
+
+新 Layer 2 计划在显式 launcher 中离线签发授权 v3／批准 v2，冻结实际完整 OpenAI 路由与凭据 SHA-256；不调用模型。控制器在启动、缓存读取和每次派发前核对，项目或 key 改变需重新批准。正式内容将上述 launcher 的环境改为 prod；旧授权不原地重标。
+
+QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVersion、environment、projectId、credentialAlias、identitySource）及实际凭据的非秘密 `credentialSha256`；授权 v4 将完整路由冻结到批准收据，启动与每次调用复验，不能仅改 project ID 或凭据后沿用原批准。旧 scoped v2/v3 与 inputs v1/v2 须显式重规划；不把旧收据重标为新身份。
+
+2. 开工前一次检查所有条件，只读，不开会话、不派发：代码是否干净并对上提交、质检实现哈希、dev/prod 凭据启动器、预算计划是否完整未改、Spark 主机与已部署代码目录、输出目录是否为新、测试页 ID 是否已在线上。只调 API 的环节不需要 Spark 会话；进入 GPU 环节前加 `--spark-stages` 再查一次。
+
+含 QC 或 Layer 2 的预算计划必须显式传 `--openai-environment`，不能只检查预算文件后跳过 launcher。只传 `--env-file` 也不会选择环境。传 `--page-id` 时必须显式传目标 Hosting 的 `--origin`；production 使用对应 production origin，预检不再默认检查 Dev。没有 launcher 或页面输入的 code-only 检查仍将这些项记为 skip。
+
+```sh
+.venv/bin/python scripts/check_run_start.py --expected-commit <冻结的完整40位commit> --expected-implementation <冻结的实现哈希> --openai-environment dev --env-file .env.openai --budget-plan <计划目录> --spark --spark-code-dir <Spark 上的 repo 目录> --fresh-dir <输出目录> --page-id <测试页 ID> --origin https://ai-for-god-sermon-audio-dev.web.app --out <报告.json>
+```
+
+
 额度耗尽时的后续方向见[API fallback 设计](codex-quota-api-fallback-design.zh.md)：需要明确拒绝证据、独立调用身份、入口验收和绑定预算；目前没有实现或启用。不能通过更换环境变量、认证或删除 started marker 将未决调用转到 API。
 
 真实Dev音频测试按[已接入的参数入口](local-production-next-dev-test-parameters.zh.md#已接入的音频入口)运行`python -m scripts.run_dev_local_audio_test tts|back-asr`：自动读取profile选配音batch2、回转写batch4，显式batch1作基线、回转写8作对照。此入口保留正式producer门禁与独立回执；合并dev和CI不会自动运行GPU或付费模型。

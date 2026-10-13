@@ -356,6 +356,8 @@ class Controller:
         self.mode = mode
         self.budget_authorization = (budget_tools.load_authorization(
             self.config, budget_authorization, self.code_sha) if budget_authorization is not None else None)
+        if self.budget_authorization is not None:
+            budget_tools.verify_runtime(self.budget_authorization)
 
     def _result(self, status, reason, **fields):
         return {'schemaVersion': 'sermon-canonical-layer2-controller-result-v1',
@@ -373,6 +375,7 @@ class Controller:
         if self.budget_authorization is not None:
             budget_tools.load_authorization(current, self.budget_authorization['path'], self.code_sha,
                                             self.budget_authorization['sha256'])
+            budget_tools.verify_runtime(self.budget_authorization)
         return current, snapshot(current)
 
     def _capacity_full(self, view):
@@ -478,10 +481,11 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 # Claude remains available only to explicit experimental callers.
                 models.production_models(policy)
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy)
-                caller.execution_identity = {
-                    'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
-                    'backend': 'openai_api', 'route': route,
-                    'budgetAuthorizationSha256': budget_binding['sha256']}
+                if budget_binding.get('runtimeIdentity') is None:
+                    caller.execution_identity = {
+                        'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
+                        'backend': 'openai_api', 'route': route,
+                        'budgetAuthorizationSha256': budget_binding['sha256']}
                 caller = spark_admission.SessionBoundCaller(caller, requires_spark=False, outcome_guarded=True)
             elif budget_binding is not None:
                 from scripts.strict_budget_capability import reject_codex_cli_transport
@@ -504,7 +508,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     return caller(key, payload)
             # Preserve terminal decoding and transport identity through the
             # state-binding wrapper. A CLI envelope is not an API response.
-            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing'):
+            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing', 'verify_execution'):
                 if hasattr(caller, attribute):
                     setattr(bound_call, attribute, getattr(caller, attribute))
             model_completion = []

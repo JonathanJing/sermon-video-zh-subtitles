@@ -113,7 +113,8 @@ python scripts/build_full_video_app_release.py prepare ... --condensation-bindin
 # 在已有 Dev 运行上一次跑完整条试听链（预检、整轨核对、音频 QC、注错校准、试听豁免），见 [机器试听豁免驱动](machine-qc-audio-driver.zh.md)
 python scripts/run_with_openai_environment.py --environment dev -- python scripts/run_machine_qc_audio_test.py \
   --run-dir <run> --out artifacts/machine-qc-audio/<run> --state-dir <文字驱动的状态目录> \
-  --asr-model-path <Qwen3-ASR 目录> --tts-checkpoint-map <checkpoint map>
+  --asr-model-path <Qwen3-ASR 目录> --tts-checkpoint-map <checkpoint map> --locales ko \
+  --api-budget-authorization <已批准的计划中 qc.ko 授权 v4 路径>
 ```
 
 新语速文件使用 `sermon-target-speech-rate-v2`，以 `rateImplementationSha256` 绑定拟合／长度模块、正式口语策略入口、韩语规则、共享经文／数字规则及 JSON 身份函数的实现闭包。预测、预算及单位上限反算均核验当前闭包；缺失或变化时必须用原始已测音频数据重新拟合，不重标旧系数。旧 rate v1 仅保留 raw-text normalization 的历史兼容；已冻结 spoken-forms-v2 的 job 不能消费缺少实现身份的 v1 rate。
