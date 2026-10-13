@@ -100,7 +100,7 @@ def audio_run(test, run: Path, text_waiver_path: Path, *, job_schema=driver.MACH
                 "modelRevision": "model.safetensors:sha256:" + "a" * 64, "language": LOCALE, "batchSize": 1,
                 "maxNewTokens": 2048, "dtype": "bfloat16", "executionDevice": "cuda:0",
                 "runtime": {"backend": "qwen-asr-local", "torchVersion": "test"},
-                "implementationSha256": transports.file_sha256(transports.SCREENER),
+                "implementationSha256": audio_screen.implementation_sha256(),
                 "minSimilarity": 0.88, "scoring": audio_screen.SCORING}
     screening = {"schemaVersion": screening_schema, "targetLocale": LOCALE,
                  "targetLanguageSpeechJobJsonSha256": basis.json_sha256(job),
@@ -386,7 +386,7 @@ class TransportTests(unittest.TestCase):
         settings = {"protocol": "formal-back-asr-batch-v1", "model": audio_screen.MODEL, "modelRevision": revision,
                     "language": LOCALE, "batchSize": 1, "maxNewTokens": 2048, "dtype": "bfloat16",
                     "executionDevice": "cuda:0", "runtime": {"backend": "qwen-asr-local", "torchVersion": "t"},
-                    "implementationSha256": transports.file_sha256(transports.SCREENER), "minSimilarity": 0.88,
+                    "implementationSha256": audio_screen.implementation_sha256(), "minSimilarity": 0.88,
                     "scoring": audio_screen.SCORING}
         return wav, {"schemaVersion": "sermon-target-language-audio-screening-v2", "targetLocale": LOCALE,
                      "model": audio_screen.MODEL, "modelRevision": revision, "minSimilarity": 0.88,

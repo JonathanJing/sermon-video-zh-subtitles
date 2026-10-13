@@ -179,7 +179,7 @@ def test_v5_rejects_changed_numeric_segments_and_range_structure(approved, wrong
     assert screen.score(approved, subject.spoken_form(approved), "ko", 0.88)[2]
 
 
-@pytest.mark.parametrize("particle", ["을", "의", "은", "에", "에서", "부터", "까지", "으로", "과", "도", "에는", "입니다", "마저", "조차", "이든", "처럼", "이라면", "마다"])
+@pytest.mark.parametrize("particle", ["을", "의", "은", "에", "에서", "부터", "까지", "으로", "과", "도", "에는", "입니다", "마저", "조차", "이든", "처럼", "이라면", "마다", "이", "이라고"])
 def test_explicit_counter_particles_remain_supported(particle):
     text = f"요한복음 3장{particle} 읽습니다."
     assert subject.spoken_form(text) == f"요한복음 삼장{particle} 읽습니다."
@@ -220,3 +220,12 @@ def test_terminal_range_marker_spacing_and_compounds_remain_protected(terminal):
     assert not screen.score(approved, spoken.removesuffix(terminal), "ko", 0.88)[2]
     if terminal[-1] in "는만도":
         assert not screen.score(approved, spoken[:-1], "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("particle", ["이", "이라고"])
+def test_added_subject_and_quotation_particles_have_symmetric_asr_boundaries(particle):
+    from scripts import screen_target_language_audio_units as screen
+    approved = f"요한복음 3장{particle} 읽습니다."
+    spoken = subject.spoken_form(approved)
+    assert screen.fold_transcript(spoken, "ko") == approved
+    assert screen.score(approved, spoken, "ko", 0.88)[2]

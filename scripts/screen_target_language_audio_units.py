@@ -85,6 +85,29 @@ def file_sha(path: Path) -> str:
     return digest.hexdigest()
 
 
+SCORING_IMPLEMENTATION_FILES = (
+    "scripts/screen_target_language_audio_units.py",
+    "scripts/ko_spoken_numerals.py",
+    "scripts/language_review_plugins/auto_qc_text_common.py",
+    "scripts/language_review_plugins/common.py",
+)
+
+
+def implementation_sha256(root: Path | None = None) -> str:
+    """Current scoring closure; v5 single-file receipts require explicit rescreening."""
+    root = root or Path(__file__).resolve().parents[1]
+    digest = hashlib.sha256()
+    for name in SCORING_IMPLEMENTATION_FILES:
+        digest.update(name.encode() + b"\0" + (root / name).read_bytes() + b"\0")
+    return digest.hexdigest()
+
+
+def current_scoring_identity_problems(settings: dict) -> list[str]:
+    if settings.get("scoring") == SCORING and settings.get("implementationSha256") != implementation_sha256():
+        return ["screening scoring implementation differs; rescreen with the current dependency closure"]
+    return []
+
+
 def tokens(value: str, locale: str) -> list[str]:
     folded = unicodedata.normalize("NFKC", value).casefold()
     if locale in {"zh-Hans", "ko"}:
@@ -602,7 +625,7 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
             "speechJobJsonSha256": job_hash, "model": model, "modelRevision": model_revision,
             "batchSize": batch_size, "maxNewTokens": 2048,
             "dtype": "bfloat16", "executionDevice": "cuda:0",
-            "implementationSha256": file_sha(Path(__file__)),
+            "implementationSha256": implementation_sha256(),
             "runtime": copy.deepcopy(inference_identity or {}),
             "protocol": "formal-back-asr-batch-v1"}})
     require(len({row["identity"]["textGroupId"] for row in requests}) == len(requests),
@@ -679,7 +702,7 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
     asr_settings = {"protocol": "formal-back-asr-batch-v1", "model": model, "modelRevision": model_revision,
                     "language": locale, "batchSize": batch_size, "maxNewTokens": 2048, "dtype": "bfloat16",
                     "executionDevice": "cuda:0", "runtime": copy.deepcopy(inference_identity or {}),
-                    "implementationSha256": file_sha(Path(__file__)), "minSimilarity": min_similarity,
+                    "implementationSha256": implementation_sha256(), "minSimilarity": min_similarity,
                     "scoring": SCORING}
     receipt = {
         "schemaVersion": SCHEMA,

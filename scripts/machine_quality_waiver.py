@@ -54,6 +54,7 @@ IMPLEMENTATION_FILES = (
     "scripts/spoken_condensation.py",
     # Scores every ASR transcript the audio QC and the waivers rescore.
     "scripts/screen_target_language_audio_units.py",
+    "scripts/ko_spoken_numerals.py",
     # The gates that admit candidates and issue or accept waivers on calibrated evidence.
     "scripts/machine_quality_waiver.py",
     "scripts/machine_quality_release_basis.py",

@@ -300,6 +300,10 @@ def screening_asr_settings(screening: dict) -> dict:
         raise ValueError("ASR screening runtime settings disagree with the receipt")
     if asr_runtime_problems(settings.get("runtime")):
         raise ValueError("ASR screening does not record its runtime backend; rescreen with an inference identity")
+    from scripts.screen_target_language_audio_units import current_scoring_identity_problems
+    problems = current_scoring_identity_problems(settings)
+    if problems:
+        raise ValueError("; ".join(problems))
     return settings
 
 

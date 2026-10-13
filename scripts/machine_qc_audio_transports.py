@@ -254,7 +254,10 @@ class QwenPrimaryAsr(_Asr):
         weights = self.model_path / "model.safetensors"
         if not weights.is_file() or self.model_revision != f"model.safetensors:sha256:{file_sha256(weights)}":
             problems.append("live Qwen3-ASR weights differ from the screening's modelRevision")
-        if self.settings.get("implementationSha256") != file_sha256(SCREENER):
+        from scripts.screen_target_language_audio_units import SCORING, implementation_sha256
+        expected_implementation = (implementation_sha256() if self.settings.get("scoring") == SCORING
+                                   else file_sha256(SCREENER))
+        if self.settings.get("implementationSha256") != expected_implementation:
             problems.append("the screener changed since this screening; rescreen with the current code")
         if (self.settings.get("executionDevice"), self.settings.get("dtype")) != ("cuda:0", "bfloat16"):
             problems.append("screening ran on another device or precision")

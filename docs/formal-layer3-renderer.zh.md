@@ -124,3 +124,5 @@ docker run --rm --gpus all --ipc=host --read-only --network none \
 韩文引用的 ASR 初筛以 scoring v5 按书名锚定的完整引用链折叠汉字词数字，含单 counter 范围首端、连写章/节及 Psalm `편`；普通词内不放宽。旧 v4/v3 收据按原评分语义重评分，不自动升级。新实现改变初筛身份，旧 #361/#363 的真实音频 QC 不验证此 v5；新规则的真实模型/音频/校准尚未重跑。口播规则仍为本 PR 未合并的规则 v2，normalization policy hash 不另改；ASR runtime scoring 和实现 hash 与口播 policy hash 分别绑定。
 
 引用 counter 后须为词边界、相邻完整引用或列明且完整的韩文助词后缀（含 `에는`、`입니다` 等）；`3장면`、`2편지`、`2편의점` 不转换，不从任意 Hangul 前缀推断引用。scoring v5 仅在书名锚定引用片段内（含紧接的范围终结标记）额外比较有序完整数字串、范围标记与引用 counter/范围助词结构，拒绝 `12-3` 与 `1-23` 的字符摊平等价及范围连接符插删；旧 v4/v3 路径保持原样。
+
+实现身份：当前 screening v5 的 implementation hash 覆盖 screen、ko_spoken_numerals、auto_qc_text_common 与 common；单文件 hash 的旧实验 v5 收据需重新筛查，不能重标。QC/calibration/waiver 的实现闭包也含该韩语 helper。统一 audio adapter 对韩语 registered-normalization-v2，以及旧 normalization job 使用显式 unit-instructions-v2 两条新路径，把 helper／共享规则加入 inspect plan code hash；依赖变化后 execute 在 dispatch 前拒绝旧 plan。exact-text v1 未使用新指令时不加这些依赖；renderer 的实际 spokenTextSha256 声音身份仍保留。合法完整助词 `이`／`이라고` 在生成和 ASR 引用边界采用相同规则。

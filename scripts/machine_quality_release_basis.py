@@ -373,13 +373,16 @@ def screening_queue(package: dict, screening: dict) -> list[str]:
 def screening_score_problems(screening: dict, candidate: dict) -> list[str]:
     """Rescore each ASR result against the candidate text, as the screener does."""
     # Lazy, as in _asr_threshold: the screener imports the speech-job module.
-    from scripts.screen_target_language_audio_units import KNOWN_SCORINGS, SCORING_V3, score
+    from scripts.screen_target_language_audio_units import KNOWN_SCORINGS, SCORING_V3, score, current_scoring_identity_problems
     locale = screening["targetLocale"]
     # A receipt is rescored by the scoring identity it recorded, so reading evidence from an
     # earlier run never applies newer folding; one without a recorded identity predates v4.
     scoring = (screening.get("asrSettings") or {}).get("scoring", SCORING_V3)
     if scoring not in KNOWN_SCORINGS:
         return ["screening was scored under an unknown scoring identity"]
+    implementation_problems = current_scoring_identity_problems(screening.get("asrSettings") or {})
+    if implementation_problems:
+        return implementation_problems
     groups = candidate.get("groups") or []
     if [group.get("translationGroupId") for group in groups] != [row["textGroupId"] for row in screening["results"]]:
         return ["screening results differ from the spoken candidate groups"]
