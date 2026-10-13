@@ -14,6 +14,9 @@ from tests import test_canonical_layer2_controller as controller_fixtures
 
 class RunBudgetInputFeasibilityTests(unittest.TestCase):
     def setUp(self):
+        from tests.test_run_machine_qc_audio_test import OPENAI_ENV
+        environment = mock.patch.dict('os.environ', {**OPENAI_ENV, 'OPENAI_PROJECT_ID': 'proj_fixture'})
+        environment.start(); self.addCleanup(environment.stop)
         self.fixture = controller_fixtures.CanonicalLayer2ControllerTests()
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)

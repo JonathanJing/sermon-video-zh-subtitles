@@ -56,3 +56,12 @@ python scripts/migrate_target_language_model_cache.py \
 新政策的 plugin 和候选准入重新执行。原始目录保持不变，生成新 `migration.json` 记录 source/cache/evidence 与 request IDs。即使旧候选已获人工批准，新候选仍保持 `human_review_pending`、`releaseEligible=false`；后续批准绑定和发布由各自正式 validator 决定。
 
 本入口覆盖「完整成功旧运行＋实际 payload 相同」的明确迁移。内容修改仍走既有新 revision/partial repair；不把失败或 unknown 响应迁为成功。模型政策预览与路径级 changed set 见 `target_language_policy_preview.py`；自动复用权限始终由本执行验证决定，不能仅凭分类标签跳过门禁。
+
+
+## 新规划授权 v3：冻结 API 路由与凭据身份
+
+新 `plan_run_budgets.py` 生成 `sermon-canonical-layer2-budget-authorization-v3`，配套批准收据为 `sermon-canonical-layer2-budget-approval-v2`。v3 显式写 `ledgerScope: run|locale`，并在授权及批准 binding 中精确绑定 `runtimeIdentity`：完整 `openaiRoute`（schemaVersion/environment/projectId/credentialAlias/identitySource）与当前实际 API key 的 SHA-256 `credentialSha256`。不保存 key 值。规划 Layer 2 authority 须在显式 dev/prod launcher 环境内运行；纯分组/预算计算和结构校验不需要调用 API。
+
+控制器启动、刷新、每次派发及 parsed/raw 缓存读取前，都核对当前 launcher 与实际传入 key；同一 dev 别名换项目或 key 也拒绝，拒绝发生在预留和派发前。新默认与注入预算 caller 的 transport/cache identity 都含冻结 runtimeIdentity 和授权哈希，因此新批准身份不能复用旧身份缓存。开工检查也独立解析 `--openai-environment` 和 `--env-file` 的 launcher 身份，与 Layer 2 授权逐字段比较；Layer 2 计划不能省略 launcher 选择而得到整体通过。
+
+旧 v1/v2 授权及 approval-v1 保持其冻结 exact-field 合同，不添加 runtimeIdentity、不自动改版本或迁移已付结果。新计划需用当前 execution/code、明确运行环境和实际凭据重新批准 v3，并使用新的输出与预算身份；历史缓存迁移仍遵守原有显式工具的限制，不放宽跨凭据缓存搬运。统一 continuation 接收 v3 时也需要已验证的 configuration 输入，按其显式 run/locale 范围计算总额，完整校验新批准 binding；旧 v1/v2 的接收规则不变。

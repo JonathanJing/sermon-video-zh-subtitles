@@ -7,8 +7,11 @@
 1. 按[运行配置](../config/weekly-run-profile.json)为当前选定阶段写出预算文件：每种语言一个质检预算根（文本质检、校准、音频质检共用），以及绑定已有 Layer 2 执行配置的预算。`--approved-by`／`--evidence` 写明实际批准人和出处，工具不代写批准；任一环节上限加已结算超过总额时不写任何文件。全部 cap 超过总额时必须显式选择 `--stage`，未选不写授权。前一阶段先结算与对账；同一冻结代码身份换预算根时才可用 `--reuse-from <上一份计划目录>`，#380 合并后的首次运行禁止复用旧身份缓存。
 
 ```sh
-.venv/bin/python scripts/plan_run_budgets.py --out <新目录> --scale clip|week --total-usd <批准总额> --settled-usd <已结算> --approved-by <批准人> --evidence <出处> [--stage qc.ko|layer2] [--qc-inputs <inputs.json>] [--layer2-execution <execution.json>] [--reuse-from <上一份计划目录>]
+.venv/bin/python scripts/run_with_openai_environment.py --environment dev -- \
+  .venv/bin/python scripts/plan_run_budgets.py --out <新目录> --scale clip|week --total-usd <批准总额> --settled-usd <已结算> --approved-by <批准人> --evidence <出处> [--stage qc.ko|layer2] [--qc-inputs <inputs.json>] [--layer2-execution <execution.json>] [--reuse-from <上一份计划目录>]
 ```
+
+新 Layer 2 计划在显式 launcher 中离线签发授权 v3／批准 v2，冻结实际完整 OpenAI 路由与凭据 SHA-256；不调用模型。控制器在启动、缓存读取和每次派发前核对，项目或 key 改变需重新批准。正式内容将上述 launcher 的环境改为 prod；旧授权不原地重标。
 
 QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVersion、environment、projectId、credentialAlias、identitySource）及实际凭据的非秘密 `credentialSha256`；授权 v4 将完整路由冻结到批准收据，启动与每次调用复验，不能仅改 project ID 或凭据后沿用原批准。旧 scoped v2/v3 与 inputs v1/v2 须显式重规划；不把旧收据重标为新身份。
 

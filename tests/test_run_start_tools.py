@@ -30,6 +30,9 @@ class PlanTests(unittest.TestCase):
     def setUp(self):
         directory = tempfile.TemporaryDirectory(); self.addCleanup(directory.cleanup)
         self.base = Path(directory.name)
+        from tests.test_run_machine_qc_audio_test import OPENAI_ENV
+        environment = mock.patch.dict('os.environ', {**OPENAI_ENV, 'OPENAI_PROJECT_ID': 'proj_fixture'})
+        environment.start(); self.addCleanup(environment.stop)
         from tests.test_canonical_layer2_controller import CanonicalLayer2ControllerTests
         fixture=CanonicalLayer2ControllerTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         values=fixture.fixture.fixture
@@ -193,7 +196,7 @@ class PlanTests(unittest.TestCase):
         stage=plan.layer2_files(self.base/'week',fixture.path,selected,profile,'week',approved_by='Fixture',
                                evidence='Offline only',reviewed_at='2026-10-13T00:00:00Z')
         value=json.loads(Path(stage['authorization']).read_text())
-        self.assertEqual(value['schemaVersion'],budget.LOCALE_SCHEMA)
+        self.assertEqual(value['schemaVersion'],budget.RUNTIME_SCHEMA)
         self.assertEqual(value['ledgerScope'],'locale')
         admitted=budget.load_authorization(config,stage['authorization'],controller.code_identity())
         self.assertEqual(admitted['scope'],'locale')

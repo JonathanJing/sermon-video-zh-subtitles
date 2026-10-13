@@ -98,18 +98,28 @@ def check_launcher_binding(plan_dir, environment, env_file):
     from scripts import machine_qc_budget_authorization as auth
     try:
         planned = json.loads((plan_dir / 'plan.json').read_text())
-        stages = [stage for stage in planned['stages'] if stage['stage'].startswith('qc.')]
+        stages = [stage for stage in planned['stages'] if stage['stage'].startswith('qc.') or stage['stage'] == 'layer2']
         if not stages:
-            return result('environment_binding', 'pass', qcStages=0, problems=[])
+            return result('environment_binding', 'pass', qcStages=0, layer2Stages=0, problems=[])
         selected = selected_launcher_identity(environment, env_file)
+        qc_count = l2_count = 0
         for stage in stages:
-            admitted = auth.validate(Path(stage['authorization']), require_scope=True)
-            context = admitted['qcContext']
-            if (context['environment'] != environment or
-                    context['openaiRoute'] != selected['openaiRoute'] or
-                    context['credentialSha256'] != selected['credentialSha256']):
-                raise ValueError('launcher_identity_changed')
-        return result('environment_binding', 'pass', qcStages=len(stages), problems=[])
+            if stage['stage'] == 'layer2':
+                from scripts import canonical_layer2_budget as l2, canonical_layer2_controller as controller
+                config = controller.load_configuration(Path(stage['execution']))
+                admitted = l2.load_authorization(config, Path(stage['authorization']), controller.code_identity(), stage['authorizationSha256'])
+                if admitted.get('runtimeIdentity') != selected or stage.get('runtimeIdentity') != selected:
+                    raise ValueError('launcher_identity_changed')
+                l2_count += 1
+            else:
+                admitted = auth.validate(Path(stage['authorization']), require_scope=True)
+                context = admitted['qcContext']
+                if (context['environment'] != environment or
+                        context['openaiRoute'] != selected['openaiRoute'] or
+                        context['credentialSha256'] != selected['credentialSha256']):
+                    raise ValueError('launcher_identity_changed')
+                qc_count += 1
+        return result('environment_binding', 'pass', qcStages=qc_count, layer2Stages=l2_count, problems=[])
     except (OSError, ValueError, KeyError, TypeError, AttributeError, UnicodeError):
         # No key material or parser exception text enters the public preflight.
         return result('environment_binding', 'fail',
@@ -206,6 +216,40 @@ def inspect_layer2_root(root, authority, *, locale_scope):
             raise ValueError('Layer 2 budget has unresolved reservations; reconcile before dispatch')
 
 
+
+def inspect_layer2_calls(config):
+    """Do not infer runner recovery from a settled budget row; inspect lane files."""
+    for locale, lane in config.lanes.items():
+        output = Path(lane['output'])
+        if not output.is_dir():
+            continue
+        policy = json.loads(Path(lane['policy']).read_text())
+        for marker in output.rglob('group-*.started.json'):
+            try:
+                started = json.loads(marker.read_text())
+                role, fingerprint = started['role'], started['payloadSha256']
+                if (role not in {'translator', 'reviewer'} or
+                        started['status'] != 'started_response_unconfirmed' or
+                        not isinstance(fingerprint, str) or not re.fullmatch('[a-f0-9]{64}', fingerprint)):
+                    raise ValueError('invalid marker')
+                stem = marker.name.removesuffix('.started.json')
+                cache, raw = marker.with_name(stem + '.json'), marker.with_name(stem + '.raw.json')
+                if cache.is_file():
+                    saved = json.loads(cache.read_text())
+                    valid = (saved.get('payloadSha256') == fingerprint and
+                             saved.get('model') == policy[role]['model'] and
+                             isinstance(saved.get('requestId'), str) and bool(saved['requestId']) and
+                             isinstance(saved.get('result'), dict))
+                elif raw.is_file():
+                    saved = json.loads(raw.read_text())
+                    valid = saved.get('payloadSha256') == fingerprint and isinstance(saved.get('response'), dict)
+                else:
+                    valid = False
+                if not valid:
+                    raise ValueError('unrecovered or mismatched return')
+            except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+                raise ValueError(f'Layer 2 {locale} call marker requires reconciliation before dispatch: {marker.name}') from error
+
 def check_budget(plan_dir: Path):
     from scripts import machine_qc_budget_authorization as qc_auth
     from scripts import plan_run_budgets as planner
@@ -272,6 +316,9 @@ def check_budget(plan_dir: Path):
                 if sizing!=stage['sizing']:
                     raise ValueError('Layer 2 group sizing changed')
                 checked = l2_budget.load_authorization(config, authorization, controller.code_identity(), stage["authorizationSha256"])
+                if checked.get('runtimeIdentity') is None or stage.get('runtimeIdentity') != checked['runtimeIdentity']:
+                    raise ValueError('Layer 2 runtime binding requires explicit v3 re-plan')
+                inspect_layer2_calls(config)
                 roots=([l2_budget.ledger_root(checked,locale) for locale in config.lanes]
                        if checked['scope']=='locale' else [checked['root']])
                 for root in roots:
@@ -296,6 +343,12 @@ def ssh(command: str, host: str) -> subprocess.CompletedProcess:
 
 
 def check_spark(host, spark_stages, code_dir):
+    if spark_stages:
+        from scripts.spark_exclusive_session import DEFAULT_HOST
+        session_host = os.environ.get('SPARK_EXCLUSIVE_HOST', DEFAULT_HOST)
+        if host != session_host:
+            return result('spark', 'fail', host=host,
+                          problems=['Selected Spark host differs from the exclusive session host'])
     reachable = ssh("hostname", host)
     if reachable.returncode != 0:
         return result("spark", "fail", host=host, problems=["Spark host does not answer over SSH"])
@@ -398,6 +451,13 @@ def main(argv=None) -> int:
     checks.append(checked('page',lambda:check_page(args.page_id, args.origin)) if args.page_id else result("page", "skip"))
     if args.openai_environment and args.budget_plan:
         checks.append(check_launcher_binding(args.budget_plan, args.openai_environment, args.env_file))
+    elif args.budget_plan and not args.env_file:
+        def require_layer2_launcher():
+            stages = json.loads((args.budget_plan / 'plan.json').read_text())['stages']
+            if any(stage['stage'] == 'layer2' for stage in stages):
+                return result('environment_binding', 'fail', problems=['Layer 2 plan requires --openai-environment'])
+            return result('environment_binding', 'skip')
+        checks.append(checked('environment_binding', require_layer2_launcher))
     failed = [check["check"] for check in checks if check["status"] == "fail"]
     report = {"schemaVersion": "sermon-run-start-check-v1", "status": "fail" if failed else "pass",
               "failed": failed, "checks": checks}

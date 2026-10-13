@@ -8,6 +8,8 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 import hashlib
 import json
+import os
+import re
 from pathlib import Path
 import time
 import urllib.error
@@ -26,7 +28,9 @@ SCHEMA = 'sermon-canonical-layer2-budget-authorization-v1'
 # run's budget root, and every bound in the authority applies per locale. The
 # approval binding names that scope, so a person signs per-locale amounts.
 LOCALE_SCHEMA = 'sermon-canonical-layer2-budget-authorization-v2'
-LEDGER_SCOPES = {SCHEMA: 'run', LOCALE_SCHEMA: 'locale'}
+RUNTIME_SCHEMA = 'sermon-canonical-layer2-budget-authorization-v3'
+RUNTIME_APPROVAL_SCHEMA = 'sermon-canonical-layer2-budget-approval-v2'
+LEDGER_SCOPES = {SCHEMA: 'run', LOCALE_SCHEMA: 'locale', RUNTIME_SCHEMA: None}
 # A locale shard holds a whole sermon plus repairs: about 4,900 reservations.
 LOCALE_LEDGER_MAX_BYTES = 8 * 1024 * 1024
 # Busy only ever delays admission, settlement or a replayed result; it never
@@ -69,6 +73,34 @@ def require(ok, code):
         raise ValueError(code)
 
 
+def selected_runtime_identity(key=None):
+    from scripts.sermon_openai_runtime import selected_route
+    route = selected_route()
+    require(route is not None, 'layer2_runtime_requires_explicit_launcher')
+    actual = os.environ.get('OPENAI_API_KEY')
+    require(isinstance(actual, str) and bool(actual) and (key is None or key == actual),
+            'layer2_runtime_credential_changed')
+    return {'openaiRoute': route, 'credentialSha256': hashlib.sha256(actual.encode()).hexdigest()}
+
+
+def validate_runtime_identity(value):
+    from scripts.sermon_openai_runtime import safe_route
+    require(type(value) is dict and set(value) == {'openaiRoute', 'credentialSha256'}
+            and safe_route(value['openaiRoute']) is not None
+            and safe_route(value['openaiRoute']) == value['openaiRoute']
+            and isinstance(value['credentialSha256'], str)
+            and re.fullmatch('[a-f0-9]{64}', value['credentialSha256']) is not None,
+            'invalid_layer2_runtime_identity')
+    return value
+
+
+def verify_runtime(authorization, key=None):
+    frozen = authorization.get('runtimeIdentity')
+    if frozen is not None:
+        require(selected_runtime_identity(key) == frozen, 'layer2_runtime_identity_changed')
+    return frozen
+
+
 def load_authorization(config, path, code_identity, expected_sha=None):
     path = _safe_path(Path(path).absolute())
     actual_sha = sha(path)
@@ -76,11 +108,14 @@ def load_authorization(config, path, code_identity, expected_sha=None):
     value = jobs._read(path)
     base_keys = {'schemaVersion', 'productionRunId', 'configurationSha256', 'codeIdentitySha256',
                  'requestLimits', 'authority', 'approvalReceipt'}
+    extra = ({'ledgerScope', 'runtimeIdentity'} if isinstance(value, dict) and value.get('schemaVersion') == RUNTIME_SCHEMA
+             else set() if isinstance(value, dict) and value.get('schemaVersion') == SCHEMA else {'ledgerScope'})
     require(isinstance(value, dict) and value.get('schemaVersion') in LEDGER_SCOPES
-            and set(value) == (base_keys if value['schemaVersion'] == SCHEMA else base_keys | {'ledgerScope'}),
+            and set(value) == base_keys | extra,
             'invalid_budget_authorization')
-    scope = LEDGER_SCOPES[value['schemaVersion']]
-    require(scope == 'run' or value['ledgerScope'] == 'locale', 'invalid_budget_authorization')
+    runtime = (validate_runtime_identity(value['runtimeIdentity']) if value['schemaVersion'] == RUNTIME_SCHEMA else None)
+    scope = value['ledgerScope'] if runtime is not None else LEDGER_SCOPES[value['schemaVersion']]
+    require(scope in ('run', 'locale') and (scope == 'run' or value['ledgerScope'] == 'locale'), 'invalid_budget_authorization')
     require(value['productionRunId'] == config.run_id
             and value['configurationSha256'] == config.sha256
             and value['codeIdentitySha256'] == code_identity, 'budget_execution_binding_changed')
@@ -93,15 +128,17 @@ def load_authorization(config, path, code_identity, expected_sha=None):
                 'codeIdentitySha256': code_identity, 'budgetRoot': str(root),
                 'requestLimits': selected, 'globalBounds': authority['globalBounds'],
                 'unitBounds': authority['unitBounds'], 'limits': authority['limits']}
-    if scope == 'locale':
-        expected['ledgerScope'] = 'locale'
+    if scope == 'locale' or runtime is not None:
+        expected['ledgerScope'] = scope
+    if runtime is not None:
+        expected['runtimeIdentity'] = runtime
     require(sha(receipt_path) == authority['approvalSha256']
-            and receipt.get('schemaVersion') == 'sermon-canonical-layer2-budget-approval-v1'
+            and receipt.get('schemaVersion') == (RUNTIME_APPROVAL_SCHEMA if runtime is not None else 'sermon-canonical-layer2-budget-approval-v1')
             and receipt.get('binding') == expected and receipt.get('humanApproval') is True
             and receipt.get('decision') == 'approved' and receipt.get('operatorEvidence')
             and receipt.get('reviewedBy') and receipt.get('reviewedAt'), 'budget_approval_not_bound')
     return {'path': path, 'sha256': actual_sha, 'value': value, 'root': root, 'limits': selected,
-            'scope': scope}
+            'scope': scope, **({'runtimeIdentity': runtime} if runtime is not None else {})}
 
 
 def ledger_root(authorization, locale):
@@ -125,6 +162,11 @@ def request_limits(selected):
 class BudgetedCaller:
     def __init__(self, authorization, config, source, anchor, policy, *, transport=None, claude_transport=None):
         self.auth, self.config, self.policy = authorization, config, policy
+        verify_runtime(authorization)
+        if authorization.get('runtimeIdentity') is not None:
+            self.execution_identity = {'schemaVersion': 'openai-layer2-budget-transport-identity-v2',
+                'backend': 'openai_api', 'runtimeIdentity': authorization['runtimeIdentity'],
+                'budgetAuthorizationSha256': authorization['sha256']}
         self.source, self.anchor = source, anchor
         require(authorization.get('scope', 'run') == 'run' or policy['targetLocale'] in config.lanes,
                 'budget_locale_not_registered')
@@ -136,7 +178,12 @@ class BudgetedCaller:
         # Subscription-login Claude CLI for the translator only; never the reviewer.
         self.claude_transport = claude_transport
 
+    def verify_execution(self, key):
+        load_authorization(self.config, self.auth['path'], self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
+        verify_runtime(self.auth, key)
+
     def __call__(self, key, payload):
+        self.verify_execution(key)
         from scripts.sermon_openai_runtime import project_headers
         selected_headers = project_headers(key)
         load_authorization(self.config, self.auth['path'],
@@ -145,7 +192,8 @@ class BudgetedCaller:
         require_bounded_api_payload(payload, self.auth['limits'], surface='canonical_api')
         capped = limits.bounded_payload(payload, self.auth['limits'])
         require(capped == payload, 'model_payload_must_be_bounded_before_cache_identity')
-        fingerprint = jobs._digest(payload)
+        fingerprint = jobs._digest({'payload': payload, 'runtimeIdentity': self.auth['runtimeIdentity']}
+                                   if self.auth.get('runtimeIdentity') is not None else payload)
         roles = [name for name in ('translator', 'reviewer')
                  if payload['model'] == self.policy[name]['model']
                  and payload['reasoning_effort'] == self.policy[name]['reasoningEffort']]

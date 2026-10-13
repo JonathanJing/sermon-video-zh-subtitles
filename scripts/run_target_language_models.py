@@ -240,6 +240,9 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
                 reuse_from: Path | None = None, *, cache_only: bool = False,
                 response_observer=None, request_limits=None, rule_receipt=None) -> dict[str, Any]:
+    verifier = getattr(caller, 'verify_execution', None)
+    if verifier is not None:
+        verifier(api_key)  # Includes cache hits: changed route/key cannot consume old results.
     if rule_receipt is not None:
         rule_preflight.verify_model_prompt(role, prompt, rule_receipt, policy)
     model = policy[role]["model"]

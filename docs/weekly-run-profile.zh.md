@@ -63,7 +63,7 @@
 - **开工前跑一次检查。** 用 `scripts/check_run_start.py`（PR #382）一次查完代码与质检实现哈希、凭据启动器、预算计划、Spark 主机和已部署代码、输出目录、测试页 ID；预算文件用 `scripts/plan_run_budgets.py` 按 `config/weekly-run-profile.json` 生成，不再手写。
 - **只有 GPU 环节占用 Spark 会话**（PR #380 合并后）：Layer 2、文本质检等只调 API 的环节不检查会话、不建 job hold，Spark 服务照常运行；渲染、初筛、音频质检前才 `spark_exclusive_session.py begin`，用完 `finish`。合并前的代码里 Layer 2 仍要求会话（`spark_exclusive_session_required`）。
 - **GPU 环节的会话出状况时**（job 异常退出后变成 `reconcile_required`）：先确认派发进程已退出、账本里没有 intent 状态的请求，再 `reconcile --job-id … --confirm-dispatcher-terminal`，最后 `resume-begin`。
-- **换预算根时复用已付回复**（PR #381 合并后）：新授权明确批准 `reuseBudgetRoots`，只复用完整身份匹配、已返回的直接付费响应；复用未命中时拒绝新增付费。
+- **QC 换预算根时复用已付回复**（PR #381 合并后）：新授权明确批准 `reuseBudgetRoots`，只复用完整身份匹配、已返回的直接付费响应；复用未命中时拒绝新增付费。
 - **开跑前冻结代码。** 质检、校准、读法规则、截短校准都在机器质检实现哈希里。运行中途改代码，已签发的文本和音频放行证明就作废，所有语言都要重签。片段测试第二轮因此多花约 2.5 美元。
 - **质检规则改变后，用新的 state 目录。** 修复账本会拒绝原样重筛已失败的候选（`blocked_prior_failure`），旧 state 留作证据。
 - **同一候选不要反复重跑质检直到通过。** 质检失败的组，开新修订（Layer 2 重新翻译）后再质检。
@@ -74,7 +74,7 @@
 
 ## 规划器 v3 的可执行边界（#382）
 
-本页的原始测量来自 #376 的运行配置文档；#382 将其作为机器配置的所属文档纳入。历史 75 次调用／语言不是当前逐句分组的容量保证。周更授权使用已有 `sermon-canonical-layer2-budget-authorization-v2`，`ledgerScope=locale`，每语使用 8 MiB 账本；每语请求维度为 4,000，输入／输出维度按同一容量设置。金额仍保留用户给定的 5 美元建议，工具不擅自提高它：若实际执行配置的分组数连首次完整翻译＋复核轮次的五维保守预留都超过此金额，规划在写任何授权前拒绝，需操作者提供另行明确批准的 profile 和总额。请求额度够不等于美元额度够，也不承诺所有修复都完成。
+本页的原始测量来自 #376 的运行配置文档；#382 将其作为机器配置的所属文档纳入。历史 75 次调用／语言不是当前逐句分组的容量保证。新周更授权使用 `sermon-canonical-layer2-budget-authorization-v3`／批准 v2，`ledgerScope=locale`，每语使用 8 MiB 账本；每语请求维度为 4,000，输入／输出维度按同一容量设置。金额仍保留用户给定的 5 美元建议，工具不擅自提高它：若实际执行配置的分组数连首次完整翻译＋复核轮次的五维保守预留都超过此金额，规划在写任何授权前拒绝，需操作者提供另行明确批准的 profile 和总额。请求额度够不等于美元额度够，也不承诺所有修复都完成。
 
 新 QC 授权 v4／context v3 绑定一语的来源包、anchor、语言政策、环境、完整 OpenAI 路由（project ID、credential alias 及 configured-runtime 身份）、实际凭据的非秘密 SHA-256 指纹、当前质检实现哈希及来源哈希运行身份。`--qc-inputs` 指向 `sermon-machine-qc-inputs-v3` JSON（字段 `environment`、`openaiRoute`、`credentialSha256`、`source`、`anchor`、`policies`；`openaiRoute` 使用显式 launcher 的非秘密 `sermon-openai-runtime-route-v1` 五字段路由）；路径相对此 JSON，实际消费者从解析后的输入重算身份。文本和音频 QC 使用同一语言、同一根；不能用一语授权启动默认三语，也不能把它用于其他来源。
 
@@ -91,3 +91,5 @@ QC 上限还计入二级 `gpt-transcribe` 的保守预留：按已冻结的 tran
 `credentialSha256` 只记录已选择运行凭据的 SHA-256 指纹，不记录 key 值；可在显式 launcher 环境中用 `machine_qc_budget_authorization.credential_fingerprint` 生成。规划工具读取该非秘密指纹，真实消费者用当前环境中的凭据重新计算核对；不要将 `.env.openai` 或 key 值写入 inputs。
 
 Layer 2 计划中的 `sizing.<locale>.initialReservation` 是按当前分组、翻译与复核角色及 `requestLimits` 计算的初始完整轮次保守上界，不是实测用量、提供商报价或账单。每次请求都预留完整 `maxInputTokens`（复核包含尚未生成的候选、规则、上下文与 JSON 序列化开销），以及输出与时间上限，再按冻结价格假设计入输入和输出费用。请求数、输入、输出、时间、费用任一维不足，规划器在写任何授权前拒绝；超大实际 payload 仍由运行时逐请求准入检查拒绝。规划器不会自动增加现有预算；需要缩小分组范围或提供明确批准的新 profile。
+
+新 Layer 2 授权 v3 必须在显式 `run_with_openai_environment.py` launcher 内离线生成，绑定完整 `openaiRoute` 和实际凭据指纹。控制器启动、缓存读取及派发前均核验；跨环境、项目或 key 不能沿用原批准或响应。旧 Layer 2 授权 v1/v2 保持原冻结合同，不自动补字段。规划器 `--reuse-from` 作用于 QC 的明确批准预算根，不隐式迁移 Layer 2 缓存。

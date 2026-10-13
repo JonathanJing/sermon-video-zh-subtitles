@@ -124,6 +124,7 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
     from scripts import canonical_layer2_controller as controller
     config, per_locale, sizing = prepared or layer2_spec(execution, locales, profile, scale)
     layer2 = profile["layer2"]
+    runtime_identity = budget_tools.selected_runtime_identity()
     sharded = scale == "week"
     bounds = per_locale if sharded else {k: v * len(locales) for k, v in per_locale.items()}
     limits, rules = layer2["requestLimits"], layer2["limits"]
@@ -132,22 +133,22 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
     binding = {"productionRunId": config.run_id, "configurationSha256": config.sha256,
                "codeIdentitySha256": controller.code_identity(), "budgetRoot": str(root),
                "requestLimits": limits, "globalBounds": bounds, "unitBounds": bounds, "limits": rules,
-               **({"ledgerScope": "locale"} if sharded else {})}
+               "ledgerScope": "locale" if sharded else "run", "runtimeIdentity": runtime_identity}
     approval = write_new(directory / "budget-approval.json", {
-        "schemaVersion": "sermon-canonical-layer2-budget-approval-v1", "binding": binding,
+        "schemaVersion": budget_tools.RUNTIME_APPROVAL_SCHEMA, "binding": binding,
         "humanApproval": True, "decision": "approved", "reviewedBy": approved_by,
         "reviewedAt": reviewed_at, "operatorEvidence": evidence})
     authorization = write_new(directory / "budget-authorization.json", {
-        "schemaVersion": budget_tools.LOCALE_SCHEMA if sharded else budget_tools.SCHEMA,
+        "schemaVersion": budget_tools.RUNTIME_SCHEMA,
         "productionRunId": config.run_id, "configurationSha256": config.sha256,
         "codeIdentitySha256": binding["codeIdentitySha256"], "requestLimits": limits,
         "authority": {"approvalSha256": file_sha256(approval), "globalBounds": bounds,
                       "unitBounds": bounds, "limits": rules}, "approvalReceipt": approval.name,
-        **({"ledgerScope": "locale"} if sharded else {})})
+        "ledgerScope": "locale" if sharded else "run", "runtimeIdentity": runtime_identity})
     budget_tools.load_authorization(config, authorization, binding["codeIdentitySha256"])
     return {"stage": "layer2", "authorization": str(authorization),
             "authorizationSha256": file_sha256(authorization), "approvalSha256": file_sha256(approval),
-            "budgetRoot": str(root), "capUsd": layer2["capUsdPerLocale"][scale] * len(locales),
+            "budgetRoot": str(root), "runtimeIdentity": runtime_identity, "capUsd": layer2["capUsdPerLocale"][scale] * len(locales),
             "execution": str(execution), "executionSha256": file_sha256(execution), "locales": locales,
             "sizing": sizing, "inputFiles": [
                 {"path":str(path),"sha256":file_sha256(path)} for path in [
