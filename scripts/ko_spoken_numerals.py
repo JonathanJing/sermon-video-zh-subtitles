@@ -73,7 +73,11 @@ _NUMERIC_TOKEN = re.compile(r"(?:\d+(?:\s*[.,:．٫٬，/／⁄∕+＋*＊×÷=�
 
 # A bare counter after an arbitrary noun is ambiguous (서류 2장, not chapter 2).
 # Keep the supported sermon entry points explicit rather than growing a noun blacklist.
-_BARE_INTRODUCERS = {"그래서", "그러므로", "그리고", "이제", "먼저", "본문"}
+# Connectives and adverbs never count objects, so a number right after one is a chapter
+# ("그렇기 때문에 8장을 보면", 2026-10-13 clip run).
+_BARE_INTRODUCERS = {"그래서", "그러므로", "그리고", "이제", "먼저", "본문", "본문은", "본문도",
+                     "때문에", "따라서", "그러니까", "그런데", "하지만", "그러나", "또", "또한", "다시",
+                     "이어서", "계속해서"}
 
 
 def bare_context_allowed(text: str, start: int, end: int) -> bool:

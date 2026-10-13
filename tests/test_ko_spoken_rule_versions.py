@@ -102,7 +102,11 @@ def test_arbitrary_noun_counter_is_conservative_and_not_admitted_as_sino(tmp_pat
 
 @pytest.mark.parametrize("text,spoken", [("그래서 8장을 보면 정말 놀랍습니다.", "그래서 팔장을 보면 정말 놀랍습니다."),
                                           ("8장의 맨 첫 절", "팔장의 맨 첫 절"), ("(3-4장)", "(삼-사장)"),
-                                          ("이제 3장부터4장까지", "이제 삼장부터사장까지")])
+                                          ("이제 3장부터4장까지", "이제 삼장부터사장까지"),
+                                          ("그렇기 때문에 8장을 보면 참으로 놀랍습니다.", "그렇기 때문에 팔장을 보면 참으로 놀랍습니다."),
+                                          ("따라서 3장 16절을 보십시오.", "따라서 삼장 십육절을 보십시오."),
+                                          ("본문은 8장입니다.", "본문은 팔장입니다."),
+                                          ("하지만 다시 2장으로 돌아가 봅시다.", "하지만 다시 이장으로 돌아가 봅시다.")])
 def test_explicit_bare_chapter_contexts_still_generate_and_screen(text, spoken):
     from scripts import screen_target_language_audio_units as screen
     assert ko.spoken_form(text) == spoken
@@ -125,3 +129,9 @@ def test_previous_asr_scoring_keeps_its_recorded_bare_range_semantics():
     for version in [screen.SCORING_V3, screen.SCORING_V4]:
         assert screen.score("12-3장", "1-23장", "ko", .88, scoring=version)[2]
     assert not screen.score("12-3장", "1-23장", "ko", .88)[2]
+
+
+
+@pytest.mark.parametrize("text", ["그래서 서류 2장을 냈습니다", "또 사진 2장을 보냈습니다", "하지만 봉투 3장이 남았습니다"])
+def test_a_connective_before_a_counted_noun_keeps_the_count(text):
+    assert ko.spoken_form(text) == text
