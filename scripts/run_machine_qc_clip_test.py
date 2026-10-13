@@ -437,6 +437,7 @@ class ApiJudge:
         from scripts import sermon_source_budget as budget
         from scripts import sermon_provider_limits as limits
         from scripts.sermon_openai_runtime import selected_route
+        authorization_sha = file_sha256(authorization)
         value = read(authorization)
         receipt = authorization.parent / value["approvalReceipt"]
         approval = read(receipt)
@@ -446,7 +447,9 @@ class ApiJudge:
         binding = {"budgetRoot": value["budgetRoot"], **value["authority"]["bounds"],
                    **({"reuseBudgetRoots": reuse_roots} if reuse_roots else {})}
         if not (value.get("schemaVersion") == "sermon-machine-qc-api-budget-authorization-v1"
-                and isinstance(reuse_roots, list) and all(isinstance(root, str) and root for root in reuse_roots)
+                and Path(value["budgetRoot"]).is_absolute()
+                and value["authority"]["requestLimits"] == value["authority"]["bounds"]["requestLimits"]
+                and isinstance(reuse_roots, list) and all(isinstance(root, str) and Path(root).is_absolute() for root in reuse_roots)
                 and value["authority"]["approvalSha256"] == file_sha256(receipt)
                 and approval.get("humanApproval") is True and approval.get("decision") == "approved"
                 and approval.get("binding") == binding):
@@ -462,6 +465,14 @@ class ApiJudge:
         self._session_checked, self._session_lock = 0.0, threading.Lock()
 
         def verify():
+            try:
+                same = (file_sha256(authorization) == authorization_sha
+                        and file_sha256(receipt) == value["authority"]["approvalSha256"]
+                        and selected_route() == route)
+            except OSError as error:
+                raise ValueError("Machine QC API budget authorization changed after admission") from error
+            if not same:
+                raise ValueError("Machine QC API budget authorization changed after admission")
             with self._session_lock:
                 if time.monotonic() - self._session_checked > 60:
                     require_session()

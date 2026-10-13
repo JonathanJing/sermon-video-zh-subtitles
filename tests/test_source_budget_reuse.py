@@ -30,7 +30,7 @@ class ReuseTests(unittest.TestCase):
         self.assertEqual(row["status"], "returned")
         self.assertEqual((row["settlement"]["costStatus"], row["settlement"]["costMicrousd"]), ("reused", 0))
         saved = jobs._read(next((self.audio / "responses").iterdir()))
-        self.assertEqual(saved["reusedFrom"]["budgetRoot"], str(self.text))
+        self.assertEqual(saved["reusedFrom"]["budgetRoot"], str(self.text.resolve()))
         self.assertEqual(saved["reusedFrom"]["responseSha256"], ledger(self.text)["requests"][OPERATION]["responseSha256"])
         self.assertEqual(saved["reusedFrom"]["originalSettlement"]["costStatus"], "estimated_upper_bound")
         # A replay in the reusing root reads its own copy; the source root is untouched.
@@ -54,14 +54,15 @@ class ReuseTests(unittest.TestCase):
         audio.call(operation=OPERATION.replace("c", "e"), identity=changed, bounds=BOUNDS, request=b"fixture",
                    api_key="", content_type="fixture", endpoint="fixture")
         self.assertEqual(dispatched, [1])
-        # A tampered source response is not reused: the call is paid instead.
+        # A matching paid receipt that was damaged blocks reconciliation; it is never re-bought.
         response = next((self.text / "responses").iterdir())
         saved = jobs._read(response); saved["response"] = {"model": "forged"}
         response.write_text(__import__("json").dumps(saved))
         fresh = Path(self.audio.parent) / "fresh"
         dispatched.clear()
-        call(store(fresh, reuse=[self.text], transport=lambda *args: dispatched.append(1) or {"model": "gpt-6.1-sol", "usage": USAGE}))
-        self.assertEqual(dispatched, [1])
+        with self.assertRaisesRegex(ValueError, "source_reuse_response_reconciliation_required"):
+            call(store(fresh, reuse=[self.text], transport=lambda *args: dispatched.append(1)))
+        self.assertEqual(dispatched, [])
 
     def test_without_reuse_roots_the_call_is_paid_as_before(self):
         dispatched = []
