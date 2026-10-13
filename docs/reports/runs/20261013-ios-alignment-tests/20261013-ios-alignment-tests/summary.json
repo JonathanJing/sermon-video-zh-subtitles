@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "ios-alignment-tests-v1",
+  "status": "pass",
+  "commit": "a84ca4f8f558bdded19dc559fd50b9724d1349af",
+  "pr": 395,
+  "swiftPackage": {
+    "filter": "ListeningStatisticsTests",
+    "result": "10 passed, 1 live test skipped"
+  },
+  "scope": "simulator_and_host_unit_tests_not_device_testflight_or_venue",
+  "runs": [
+    {
+      "action": "test",
+      "started": "2026-10-13T15:44:55.158016-07:00",
+      "finished": "2026-10-13T15:46:04.991874-07:00",
+      "exit_status": 0,
+      "only_testing": [
+        "TongxingTests/AudioAlignmentControllerTests"
+      ],
+      "configuration": "Debug",
+      "simulator": "iPhone 16 iOS-18-0",
+      "result": "42 executed, 40 passed, 2 skipped (Beta identity, frozen assets), 0 failed"
+    },
+    {
+      "action": "test",
+      "started": "2026-10-13T15:46:16.969992-07:00",
+      "finished": "2026-10-13T15:46:59.471575-07:00",
+      "exit_status": 0,
+      "only_testing": [
+        "TongxingTests"
+      ],
+      "configuration": "Debug",
+      "simulator": "iPhone 16 iOS-18-0",
+      "result": "130 executed, 114 passed, 16 skipped (environment-gated), 0 failed"
+    }
+  ]
+}
