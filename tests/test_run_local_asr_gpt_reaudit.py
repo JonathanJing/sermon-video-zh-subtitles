@@ -9,6 +9,9 @@ from scripts import run_local_asr_gpt_reaudit as subject
 
 
 class AsrReauditOutcomeTests(unittest.TestCase):
+    def setUp(self):
+        (subject.REPO_ROOT/'artifacts').mkdir(parents=True,exist_ok=True)
+
     def fixture(self, root):
         audio=root/'audio.bin';audio.write_bytes(b'synthetic audio fixture')
         item={'id':'unit1','audioPath':str(audio.relative_to(subject.REPO_ROOT)),
