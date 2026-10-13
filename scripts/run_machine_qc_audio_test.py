@@ -513,8 +513,8 @@ def main(argv=None) -> int:
     parser.add_argument("--text-backend", choices=("codex", "api"), default="codex",
                         help="Back-translation judge for text-kind calibration: local Codex CLI or the OpenAI API")
     parser.add_argument("--api-budget-authorization", type=Path,
-                        help="Bound budget for --text-backend api (sermon-machine-qc-api-budget-authorization-v1); "
-                             "reuse the text driver's to replay its cached judgements")
+                        help="Required for every real run, including --text-backend codex: planned per-locale "
+                             "QC authorization v4 for judge/secondary ASR; use the same locale and budget as the text driver")
     freeze.add_argument(parser)
     args = parser.parse_args(argv)
     if args.expected_implementation:
@@ -530,8 +530,9 @@ def main(argv=None) -> int:
         parser.error(f"--workers must be between 1 and {MAX_WORKERS}")
     if args.max_api_calls < 0:
         parser.error("--max-api-calls must not be negative")
-    if args.text_backend == "api" and args.backend == "real" and not args.preflight_only and not args.api_budget_authorization:
-        parser.error("--text-backend api needs --api-budget-authorization (sermon-machine-qc-api-budget-authorization-v1)")
+    if args.backend == "real" and not args.preflight_only and not args.api_budget_authorization:
+        parser.error("real audio runs require --api-budget-authorization (planned per-locale QC authorization v4), "
+                     "including --text-backend codex for the secondary ASR budget")
     real = args.backend == "real"
     if real and not args.preflight_only:
         if not args.state_dir:

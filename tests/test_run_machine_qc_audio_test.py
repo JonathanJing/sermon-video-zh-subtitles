@@ -537,5 +537,24 @@ class TransportTests(unittest.TestCase):
             transports.checkpoint_path(job, mapping)
 
 
+class AudioBudgetCliContractTests(unittest.TestCase):
+    def test_real_codex_and_api_require_budget_before_reading_artifacts(self):
+        from contextlib import redirect_stderr
+        from io import StringIO
+        for backend in ("codex", "api"):
+            with self.subTest(backend=backend), tempfile.TemporaryDirectory() as folder:
+                out = Path(folder) / "must-not-be-created"
+                with patch.object(text_driver, "index_run") as discover, \
+                        patch.object(text_driver, "CodexJudge") as judge, redirect_stderr(StringIO()) as error:
+                    with self.assertRaises(SystemExit) as failure:
+                        driver.main(["--out", str(out), "--backend", "real", "--text-backend", backend,
+                                     "--locales", "ko"])
+                self.assertEqual(failure.exception.code, 2)
+                self.assertIn("real audio runs require --api-budget-authorization", error.getvalue())
+                discover.assert_not_called()
+                judge.assert_not_called()
+                self.assertFalse(out.exists())
+
+
 if __name__ == "__main__":
     unittest.main()
