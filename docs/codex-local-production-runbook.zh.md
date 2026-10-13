@@ -2,6 +2,8 @@
 
 当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
 
+并发、请求上限和新计划预算的当前规则见[周更运行配置](weekly-run-profile.zh.md)；既有运行保留冻结授权与缓存身份，API-only 阶段不占 Spark，GPU 阶段按原准入门执行。
+
 ### 开工前：预算文件与开工检查（2026-10-13 起）
 
 1. 按[运行配置](../config/weekly-run-profile.json)为当前选定阶段写出预算文件：每种语言一个质检预算根（文本质检、校准、音频质检共用），以及绑定已有 Layer 2 执行配置的预算。`--approved-by`／`--evidence` 写明实际批准人和出处，工具不代写批准；任一环节上限加已结算超过总额时不写任何文件。全部 cap 超过总额时必须显式选择 `--stage`，未选不写授权。前一阶段先结算与对账；同一冻结代码身份换预算根时才可用 `--reuse-from <上一份计划目录>`，该模式只重放已有响应，缺失操作拒绝付费。部分 QC 使用 `--resume-qc-authorization <原v4授权>` 在原根、原额度下继续；两模式互斥，见[恢复合同](canonical-layer2-budget-and-migration.zh.md#qc-部分运行继续原授权与跨根只读重放分开)。#380 合并后的首次运行禁止复用旧身份缓存。
