@@ -207,3 +207,14 @@ Error-like log lines (first 5 per log):
 - [summary.json](pr362-copula-calibration-closure-20261012/summary.json)
 - [timings.tsv](pr362-copula-calibration-closure-20261012/timings.tsv)
 - [transport-final.log](pr362-copula-calibration-closure-20261012/transport-final.log)
+
+## Balanced citations, stacked particles and spoken length integration
+
+- [complete-stacks.log](pr362-delimiter-stacked-particles-20261012/complete-stacks.log)
+- [grammar-final.log](pr362-delimiter-stacked-particles-20261012/grammar-final.log)
+- [grammar-pass.log](pr362-delimiter-stacked-particles-20261012/grammar-pass.log)
+- [initial.log](pr362-delimiter-stacked-particles-20261012/initial.log)
+- [integrated-final.log](pr362-delimiter-stacked-particles-20261012/integrated-final.log)
+- [outcome.json](pr362-delimiter-stacked-particles-20261012/outcome.json)
+- [summary.json](pr362-delimiter-stacked-particles-20261012/summary.json)
+- [timings.tsv](pr362-delimiter-stacked-particles-20261012/timings.tsv)

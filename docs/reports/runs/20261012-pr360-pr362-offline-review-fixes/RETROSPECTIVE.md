@@ -109,3 +109,11 @@ commit `f08720bf` 修复 Qwen 校准 transport 对变异文本直接合成 Arabi
 commit `57cb5840` 补齐明确枚举的现在／过去／将来／条件 copular endings（含이다／이었다及常用conjugations），保持完整后缀边界，普通词前缀不放开。校准／waiver implementation identity 纳入实际 driver→transport→formal spoken policy 调用路径，以及 policy activation 使用的 sermon_sentence_interpretation.json_sha256；ko helper／terminology／common 已在闭包。未把无关 batch／recovery imports 扩入整个仓库。每个新增文件 mutation 后 hash 改变、旧 calibration receipt 被拒，恢复字节后旧收据重新有效。
 
 开发首轮 1 failed、338 passed／34 subtests（1.49秒），原因是负例拼接后变成已支持的合法이라면；改为普通词尾상점。最终含activation helper闭包的三文件 339 passed／34 subtests（1.47秒），transport合同 2 passed／12 deselected（0.33秒），分别记录，不相加。此前339／34（1.67秒）为未加activation helper的中间阶段。全部离线，无模型／Spark／部署或真实重新校准；完整 consumer 未重跑，最终 CI 独立核验。报告保持 draft，默认diff check／脱敏验证通过。
+
+## 配对引用括号、叠加范围助词与口播长度集成
+
+commit `daadac90` 让范围 marker 共用已注册完整系词 grammar，覆盖까지입니다／까지였어요／까지라고／까지의／까지를等，counter 普通词边界不放宽。明确书名可紧接配对半角／全角括号，引用链完整处于同一对 delimiter 内；未闭合／错配／普通照片词／跨正文负例不转换。ASR 在相同 book scope 内折叠并保护端点、connector 和完整 marker+suffix。
+
+并行独立修复语速拟合／预测／预算与音频时长QC：使用 job-bound formal.policy_spoken_forms，QC driver实际传 speech_job，CLI提供--speech-job；无job或v1保留原文计数。ASR／text hashes继续绑定批准文本。新增实际消费依赖 schedule／audio_qc／formal／driver／ko／terminology／activation helper 均已在当前waiver闭包，无需whole-repo扩张。
+
+开发阶段refactor错误删除book与citation之间空格，85 failed／254 passed／34 subtests（1.93秒），修复后terminal内部空格8 failed／350 passed／34 subtests（1.79秒），均保留日志。grammar阶段358／34（1.71秒）、完整共享copula stacks364／34（1.79秒）通过。最终统一集成390 passed／49 subtests（14.55秒），范围为grammar三文件、新spoken-length实际WAV screen例、原PredictedScheduleTests／AudioQcTests、machine_checked_delivery。独立shadow报告两阶段17 passed／15 subtests（11.32秒）以及5 passed／13 deselected（47.61秒，含真实fake driver入口），与集成阶段重叠，不能相加，原日志待独立证据路径返回时补入。未重跑完整consumer或模型／Spark／部署；最终head CI独立核验，三线程resolve，无评论，报告仍draft。

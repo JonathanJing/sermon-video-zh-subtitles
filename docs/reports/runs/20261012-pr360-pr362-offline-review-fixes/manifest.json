@@ -71,6 +71,11 @@
       "label": "pr362-copula-calibration-closure-20261012",
       "source": "/private/tmp/sermon-fix-362/artifacts/pr362-copula-calibration-closure-20261012",
       "skipped": {}
+    },
+    {
+      "label": "pr362-delimiter-stacked-particles-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-delimiter-stacked-particles-20261012",
+      "skipped": {}
     }
   ],
   "files": [
@@ -884,6 +889,83 @@
       "bytes": 113,
       "truncated": false,
       "sha256": "bd95d2584457f3e04e7b6674b2154ea3ca4a61d608af06842d80699af3b3bad1",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-delimiter-stacked-particles-20261012",
+      "path": "complete-stacks.log",
+      "kind": "log",
+      "bytes": 478,
+      "truncated": false,
+      "sha256": "e15d5438a817155b6c37288dd63cdc516ddcba3bf97f9f4a0b4f6a98e1b6fee9",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-delimiter-stacked-particles-20261012",
+      "path": "grammar-final.log",
+      "kind": "log",
+      "bytes": 6818,
+      "truncated": false,
+      "sha256": "55c19c7191dad7825fc4999e6b80df862c580cc5b4c613c1883c385a058a3c61",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-delimiter-stacked-particles-20261012",
+      "path": "grammar-pass.log",
+      "kind": "log",
+      "bytes": 486,
+      "truncated": false,
+      "sha256": "20453af536a2a1e22259c7291dc14a7256905780190715ffe7ec15539c179248",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-delimiter-stacked-particles-20261012",
+      "path": "initial.log",
+      "kind": "log",
+      "bytes": 106272,
+      "truncated": true,
+      "sha256": "2c91cf8504673bcde63b3f244217fb8353ac8b35e8e37ee5c2dd71d766702212",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "fab7561a615ac85aa1ca17058eecfef946e6e7c0b266dcf1e63eb29f2b0ce19f",
+        "bytes": 24638,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "pr362-delimiter-stacked-particles-20261012",
+      "path": "integrated-final.log",
+      "kind": "log",
+      "bytes": 544,
+      "truncated": false,
+      "sha256": "cce5b1ba1a57f366996b5d811e4551082945d4958d465b18b3760a5e8dffb99c",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-delimiter-stacked-particles-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-delimiter-stacked-particles-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 871,
+      "truncated": false,
+      "sha256": "be1c8c517e2be32ac4da3df618e2847a04d8a837dd982dc350aa9119952d876d",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-delimiter-stacked-particles-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 197,
+      "truncated": false,
+      "sha256": "72e2b23fca2a05b49491ccbbebbdd0e4b00101d9f8b4729fb4b59cf4f15b8506",
       "redactions": {}
     }
   ],
