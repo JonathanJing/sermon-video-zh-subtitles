@@ -27,6 +27,24 @@ class TextRoleDefaultTests(unittest.TestCase):
         self.assertEqual(notes.DEFAULT_REASONING_EFFORT, 'high')
         self.assertEqual(source_review.SUPPORTED_MODELS, {'gpt-6-astra', 'gpt-6.1-sol'})
 
+    def test_subtitle_reviewer_defaults_to_current_independent_review_policy(self):
+        from scripts import review_sermon_subtitles_with_openai as review
+        with patch.object(sys, 'argv', ['review', '--outdir', 'unused']):
+            args = review.parse_args()
+        self.assertEqual(args.model, 'gpt-6.1-sol')
+        self.assertEqual(args.reasoning_effort, 'medium')
+        rows=[{'id':0,'text':'Hello.','zh':'你好。'}]
+        response={'choices':[{'message':{'content':json.dumps({'segments':[{'id':0,'zh':'您好。'}]})}}]}
+        with tempfile.TemporaryDirectory() as tmp,patch.object(review,'chat_json',return_value=response) as transport:
+            review.review_batch('synthetic',rows,rows,0,Path(tmp),args.model,args.reasoning_effort)
+            sent=transport.call_args.args[1]
+            self.assertEqual(sent['model'],'gpt-6.1-sol')
+            self.assertEqual(sent['reasoning_effort'],'medium')
+            self.assertEqual(sent['service_tier'],'default')
+            with self.assertRaisesRegex(ValueError,'unsupported_bounded_provider_model'):
+                review.review_batch('synthetic',rows,rows,0,Path(tmp),'gpt-5.6','medium')
+            transport.assert_called_once()
+
     def test_migrated_legacy_chat_caps_valid_copy_without_mutating_input(self):
         from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
         payload={'model':'gpt-6.1-sol','reasoning_effort':'high',
@@ -170,3 +188,87 @@ class LegacyBoundedCacheIdentityTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'api_cli_outcome_reconciliation_required'):
                 reading.edit_batch('synthetic',[block],[block],0,Path(tmp)/'reading',model='gpt-6.1-sol',reasoning_effort='high',qa_pass=False,provider='openai',codex_cli=Path('unused'),schema_path=Path('unused'))
             api.assert_called_once()
+
+
+class LegacyExecutionCacheIdentityTests(unittest.TestCase):
+    def test_all_api_cache_readers_bind_project_credential_and_transport_before_lookup(self):
+        from scripts import build_sermon_reading_edition_with_openai as reading
+        from scripts import review_sermon_subtitles_with_openai as review
+        from scripts import run_sentence_interpretation_models as sentence
+        segment={'id':0,'start':0.,'end':1.,'text':'Hello.'}
+        block={**segment,'en':'Hello.','zh':'你好。'}
+        route={'environment':'dev','projectId':'proj_a','credentialAlias':'tongxing-dev-runtime','identitySource':'configured_runtime'}
+        with tempfile.TemporaryDirectory() as tmp:
+            for role in ('correction','translation','subtitle','sentence','reading-edit','reading-qa'):
+                with self.subTest(role=role):
+                    root=Path(tmp)/role;calls=[]
+                    def fake(api_key,payload):
+                        calls.append(payload)
+                        if role=='correction':result={'segments':[{'id':0,'text':'NEW'}]}
+                        elif role=='translation':result={'id':0,'zh':'新'}
+                        elif role=='subtitle':result={'segments':[{'id':0,'zh':'新'}]}
+                        elif role=='sentence':result={'text':'NEW'}
+                        else:result={'blocks':[{'id':0,'zh':'新'}]}
+                        return {'model':'gpt-6.1-sol','choices':[{'finish_reason':'stop','message':{'content':json.dumps(result)}}]}
+                    def run(key):
+                        if role=='correction':return sermon_pipeline.correct_english(key,[segment],[],root,'gpt-6.1-sol',{},30)
+                        if role=='translation':return sermon_pipeline.translate_chinese(key,[segment],root,'gpt-6.1-sol',{})
+                        if role=='subtitle':return review.review_batch(key,[block],[block],0,root,'gpt-6.1-sol','medium')
+                        if role=='sentence':return sentence.cached_call(out=root,stage='test',payload={'model':'gpt-6.1-sol','reasoning_effort':'high','messages':[{'role':'user','content':'synthetic'}],'response_format':{'type':'json_object'}},api_key=key,requested_model='gpt-6.1-sol',caller=fake)
+                        return reading.edit_batch(key,[block],[block],0,root,model='gpt-6.1-sol',reasoning_effort='high',qa_pass=role=='reading-qa',provider='openai',codex_cli=Path('unused'),schema_path=Path('unused'))
+                    with patch('scripts.sermon_openai_runtime.selected_route',return_value=route),patch.object(sermon_pipeline,'chat_json',side_effect=fake),patch.object(review,'chat_json',side_effect=fake),patch.object(reading,'chat_json',side_effect=fake):
+                        run('synthetic-key-a');run('synthetic-key-a');self.assertEqual(len(calls),1)
+                        run('synthetic-key-b');self.assertEqual(len(calls),2)
+                        with patch('scripts.sermon_openai_runtime.selected_route',return_value={**route,'projectId':'proj_b'}):run('synthetic-key-a')
+                        self.assertEqual(len(calls),3)
+                        fake.execution_identity={'revision':'changed'}
+                        with patch.object(sermon_pipeline._chat_json,'execution_identity',{'revision':'changed'},create=True):run('synthetic-key-a')
+                        self.assertEqual(len(calls),4)
+                        # The key contains non-secret hashes, never the raw credential.
+                        for path in root.rglob('*.json'):
+                            self.assertNotIn('synthetic-key-a',path.read_text())
+                            self.assertNotIn('synthetic-key-b',path.read_text())
+
+    def test_existing_derived_cache_cannot_hide_unrelated_unknown_outcome(self):
+        from scripts import build_sermon_reading_edition_with_openai as reading
+        block={'id':0,'start':0.,'end':1.,'en':'Hello.','zh':'你好。'}
+        response={'model':'gpt-6.1-sol','choices':[{'message':{'content':json.dumps({'blocks':[{'id':0,'zh':'您好。'}]})}}]}
+        payload={'model':'gpt-6.1-sol','reasoning_effort':'high','messages':[{'role':'user','content':'other synthetic request'}],'response_format':{'type':'json_object'}}
+        with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch.object(sermon_pipeline,'json_request',side_effect=[response,TimeoutError('synthetic unknown')]) as provider:
+            kwargs=dict(model='gpt-6.1-sol',reasoning_effort='high',qa_pass=False,provider='openai',codex_cli=Path('unused'),schema_path=Path('unused'))
+            reading.edit_batch('synthetic',[block],[block],0,Path(tmp)/'reading',**kwargs)
+            self.assertEqual(len(list((Path(tmp)/'reading').glob('*.json'))),1)
+            with self.assertRaises(TimeoutError):sermon_pipeline.chat_json('synthetic',payload)
+            with self.assertRaisesRegex(ValueError,'api_cli_outcome_reconciliation_required'):
+                reading.edit_batch('synthetic',[block],[block],0,Path(tmp)/'reading',**kwargs)
+            self.assertEqual(provider.call_count,2)
+
+    def test_subtitle_and_sentence_outer_callers_use_actual_stage_identity_and_defaults(self):
+        from scripts import api_cli_outcomes as outcomes
+        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import review_sermon_subtitles_with_openai as review
+        from scripts import run_sentence_interpretation_models as sentence
+        rows=[{'id':0,'text':'Hello.','zh':'你好。'}]
+        with tempfile.TemporaryDirectory() as tmp:
+            for role,purpose in [('subtitle','subtitle-review'),('sentence','sentence-interpretation')]:
+                with self.subTest(role=role):
+                    root=Path(tmp)/role;calls=[]
+                    def actual(api_key,payload,retries=1):
+                        calls.append(payload)
+                        result={'segments':[{'id':0,'zh':'您好。'}]} if role=='subtitle' else {'text':'NEW'}
+                        return {'model':'gpt-6.1-sol','choices':[{'finish_reason':'stop','message':{'content':json.dumps(result)}}]}
+                    caller=SessionBoundCaller(actual,purpose=purpose,requires_spark=False,outcome_directory=root/'outcomes')
+                    payload=(review.batch_payload(rows,rows,0,'gpt-6.1-sol','medium') if role=='subtitle' else {'model':'gpt-6.1-sol','reasoning_effort':'high','messages':[{'role':'user','content':'synthetic'}],'response_format':{'type':'json_object'}})
+                    bounded=sermon_pipeline.bounded_legacy_chat_payload(payload)
+                    identity=sermon_pipeline.legacy_text_execution_identity('synthetic',bounded,caller=caller)
+                    self.assertEqual(identity['outcomeRequestSha256'],outcomes.request_identity(actual,('synthetic',bounded),{},purpose))
+                    def run():
+                        if role=='subtitle':return review.review_batch('synthetic',rows,rows,0,root/'cache','gpt-6.1-sol','medium',caller=caller)
+                        return sentence.cached_call(out=root,stage='test',payload=payload,api_key='synthetic',requested_model='gpt-6.1-sol',caller=caller)
+                    run();run();self.assertEqual(len(calls),1)
+                    receipt=root/'outcomes'/identity['outcomeRequestSha256']/'outcome.json'
+                    self.assertTrue(receipt.is_file())
+                    self.assertEqual(json.loads(receipt.read_text())['purpose'],purpose)
+                    actual.execution_identity={'transport':'changed'}
+                    with self.assertRaisesRegex(ValueError,'api_cli_frozen_execution_binding_changed'):run()
+                    self.assertEqual(len(calls),1)

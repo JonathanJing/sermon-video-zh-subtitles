@@ -431,9 +431,10 @@ def edit_batch(
         qa_pass=qa_pass,
     )
     if provider == "openai":
-        from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract
+        from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract, legacy_text_execution_identity
         payload = bounded_legacy_chat_payload(payload)
-        cache_contract = legacy_text_cache_contract()
+        cache_contract = {**legacy_text_cache_contract(),
+                          "executionIdentity": legacy_text_execution_identity(api_key, payload)}
     else:
         cache_contract = None  # Preserve the frozen Codex request/cache policy.
     input_hash = hashlib.sha256(

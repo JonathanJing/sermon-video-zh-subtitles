@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import fcntl
+import inspect
 import json
 import os
 from pathlib import Path
@@ -43,6 +44,12 @@ def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
     if isinstance(caller,SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
         outcome_identity = outcomes.request_identity(caller.caller,(api_key,payload),{},caller.purpose)
         request['apiCliRequestSha256'] = outcome_identity
+        # A valid local cache does not waive an unresolved sibling operation.
+        # Check the shared scope read-only before creating cache metadata.
+        arguments = inspect.signature(caller.caller).bind(api_key, payload)
+        arguments.apply_defaults()
+        outcomes.assert_replay_admitted(caller.outcome_directory, purpose=caller.purpose,
+            binding=outcomes.execution_binding(caller.caller, arguments.arguments))
     request_hash = contract.json_sha256(request)
     directory = out.resolve() / 'cache'
     directory.mkdir(parents=True, exist_ok=True)
@@ -66,9 +73,18 @@ def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
                 admission = getattr(caller, 'admit_resource', None)
                 if admission is not None:
                     admission(payload)
-                _atomic(marker, {'requestSha256': request_hash, 'request': request,
-                                 'status': 'started_response_unconfirmed'})
-                response = caller(api_key, payload)
+                def mark_started():
+                    _atomic(marker, {'requestSha256': request_hash, 'request': request,
+                                     'status': 'started_response_unconfirmed'})
+                if outcome_identity is not None:
+                    # Shared unknowns can refuse this request before dispatch.
+                    # Only admitted new work gets a marker; returned replay does
+                    # not need one, and genuine unknowns keep their marker.
+                    with outcomes.before_dispatch(mark_started):
+                        response = caller(api_key, payload)
+                else:
+                    mark_started()
+                    response = caller(api_key, payload)
             # Save before parsing: an invalid returned response cannot trigger a
             # second paid call. A crash before this save leaves the marker unknown.
             receipt = {'schemaVersion': RUN_SCHEMA, 'request': request,

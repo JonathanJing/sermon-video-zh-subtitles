@@ -8,6 +8,34 @@ from scripts.production_spark_admission import SessionBoundCaller
 
 
 class ApiCliOutcomeTests(unittest.TestCase):
+    def test_replay_gate_is_read_only_and_checks_unknown_frozen_and_legacy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'outcomes'
+            def provider(payload): return {'ok': payload}
+            binding = outcomes.execution_binding(provider, {'payload': 1})
+            outcomes.assert_replay_admitted(root, purpose='test', binding=binding)
+            self.assertFalse(root.exists())
+            SessionBoundCaller(provider, purpose='test', requires_spark=False, outcome_directory=root)(1)
+            def snapshot():
+                return {str(p.relative_to(root)): (p.read_bytes(), p.stat().st_mtime_ns)
+                        for p in root.rglob('*') if p.is_file()}
+            before = snapshot()
+            outcomes.assert_replay_admitted(root, purpose='test', binding=binding)
+            self.assertEqual(snapshot(), before)
+            changed = dict(binding, runtimeRoute={'different': True})
+            with self.assertRaisesRegex(ValueError, 'frozen_execution_binding_changed'):
+                outcomes.assert_replay_admitted(root, purpose='test', binding=changed)
+            path = next(root.glob('*/outcome.json')); row = json.loads(path.read_text())
+            row['status'] = 'unknown'; outcomes._write(path, row)
+            before = snapshot()
+            with self.assertRaisesRegex(ValueError, 'reconciliation_required'):
+                outcomes.assert_replay_admitted(root, purpose='test', binding=binding)
+            self.assertEqual(snapshot(), before)
+            row.update(schemaVersion=outcomes.V2_SCHEMA, status='returned')
+            outcomes._write(path, row)
+            with self.assertRaisesRegex(ValueError, 'legacy_execution_binding_requires_explicit_reconciliation'):
+                outcomes.assert_replay_admitted(root, purpose='test', binding=binding)
+
     def test_missing_context_rejects_before_dispatch(self):
         caller = Mock()
         with patch.dict('os.environ', {}, clear=True):

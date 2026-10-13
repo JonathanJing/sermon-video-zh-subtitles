@@ -114,9 +114,6 @@ class SentenceInterpretationModelRunnerTests(unittest.TestCase):
             path.read_text(encoding="utf-8") for path in out.rglob("*.json")
         ))
 
-        def no_call(*_args, **_kwargs):
-            raise AssertionError("cache should avoid a second model request")
-
         cached = runner.run(
             manifest_path=self.manifest_path,
             out=out,
@@ -124,10 +121,11 @@ class SentenceInterpretationModelRunnerTests(unittest.TestCase):
             effort="medium",
             batch_size=1,
             workers=1,
-            api_key="different-secret",
-            caller=no_call,
+            api_key="test-secret-key",
+            caller=self.fake_call,
         )
         self.assertEqual(cached["independentReviewSha256"], result["independentReviewSha256"])
+        self.assertEqual(len(self.calls), 2)
 
     def test_bad_review_fails_closed(self):
         def bad_call(api_key, payload):
