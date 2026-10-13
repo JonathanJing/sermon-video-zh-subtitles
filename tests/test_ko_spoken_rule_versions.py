@@ -62,3 +62,20 @@ def test_complete_numeric_token_with_spaces_is_not_a_bare_chapter(token):
     assert ko.spoken_form(token) == token
     assert ko.spoken_form("본문 " + token + "부터 7장까지") == "본문 " + token + "부터 7장까지"
     assert ko.spoken_form(token + ". 8장을 보세요.") == token + ". 팔장을 보세요."
+
+
+@pytest.mark.parametrize("expression", ["1/2", "1 / 2", "3／4", "3⁄4", "3∕4", "1+2", "1 + 2", "2*3",
+                                      "2＊3", "2×3", "6÷3", "1+2=3", "2^3", "7%3", "7％3", "5−2", "+2", "-2", "−2"])
+@pytest.mark.parametrize("counter", ["장", "절"])
+def test_fractions_and_operator_quantities_keep_complete_numeric_expression(expression, counter):
+    text = expression + counter
+    assert ko.spoken_form(text) == text
+    assert ko.spoken_form(text + "부터 7장까지") == text + "부터 7장까지"
+    assert ko.spoken_form("사진은 " + text) == "사진은 " + text
+    assert ko.spoken_form(text + ". 8장을 보세요.") == text + ". 팔장을 보세요."
+
+
+@pytest.mark.parametrize("text, spoken", [("2장", "이장"), ("(2절)", "(이절)"), ("3-4장", "삼-사장"),
+                                          ("3 - 4장", "삼 - 사장"), ("3~4절", "삼~사절"), ("3–4장", "삼–사장")])
+def test_numeric_guard_retains_ordinary_bare_chapter_and_range_readings(text, spoken):
+    assert ko.spoken_form(text) == spoken
