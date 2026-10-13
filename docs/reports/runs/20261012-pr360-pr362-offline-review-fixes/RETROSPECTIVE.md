@@ -135,3 +135,15 @@ commit `0ef25fe0` 修复独立unit QC默认无job而raw计数的问题：CLI必�
 另一项legacy normalization-v1＋显式韩文spokenText没有可冻结口播长度身份，按父裁定在renderer指令校验和adapter planfreeze／dispatch前拒绝，要求冻结新registered-v2job。只拒该组合；旧v1 raw／instruction-only、其他语言既有角色及registered-v2匹配指令保留。docs与body旧兼容声明已纠正；历史阶段对旧组合的测试不能冒充最终仍支持。
 
 最终字节整合39 passed／12 subtests（5.26秒），范围为新human gate、AudioWaiverTests、job-boundQC与delivery；独立完整renderer＋adapter44 passed／14 subtests（34.28秒），原日志已导出入Git。先前两次human gate24／12（0.93／0.90秒）为重叠阶段，后者包含valid人接受负例，不能相加。没有模型／Spark／部署或完整consumer重跑。默认整PRdiffcheck／脱敏verify通过，日志forceadd并保留来源hash，报告仍draft，最终head CI独立判断合并。
+
+## 实际CI旧record兼容错误及版本化rate身份
+
+实际head01bb67a4的root-0／root-6 CI分别跑650／685 tests（384.376／438.417秒），各有1error、3skipped，均因SpokenModeTests的手造legacy condensationrecord没有synthesisIdentity而KeyError；两个原始CI日志已脱敏摘录入Git。本次`e173a663`将新producer记录升级recordv2，必须valid冻结synthesisIdentity；legacyrecordv1缺字段仅保留raw长度，有身份时仍验证并消费。revisionbrief／bind读两版本，候选hash、source、omission、预算proof未放宽。两个旧fixture显式标legacyv1，不伪装新v2。新增v2删除／损坏身份拒绝、legacy缺字段raw绑定回归。
+
+初轮33passed／26subtests加1个macOS路径别名失败（/private/var对/var），实际spokenwaiver已经签发；仅将路径断言两边resolve后，完整SpokenModeTests＋condensation相关文件34passed／26subtests（0.97秒）。普通production路径未改。
+
+同轮formalpast范围结尾由完整copula family作 contraction（이었습니다→였습니다，이었습니까→였습니까），不是逐词allowlist补丁；15个family正负例，grammar三文件379passed／34subtests（1.96秒）。
+
+Fitted rate新v2要求rateImplementationSha256，闭包六文件含计数schedule、formal、ko、terminology、common与policyactivationhelper；predict／budget／max_units_for共用校验。旧ratev1只兼容raw策略，registeredspoken-v2必须refit，不能把旧系数配新规则。静态旧rawfixture明确v1，新v2fixture绑定currenthash。独立rate矩阵53passed／53deselected／41subtests（11.71秒）；先前broad78passed／41subtests（96.67秒）因不必要慢校准中断，保留日志但不声明完整pass。
+
+最终冻结字节统一443passed／75subtests（15.51秒），包含grammar三文件、完整SpokenMode、condensation三文件、rateidentity、spokenlength和原PredictedSchedule／AudioQc类。阶段重叠不能相加；没有模型／Spark／部署或完整consumer重跑。默认整PRdiffcheck／脱敏verify通过，报告保持draft，最终head CI独立核验。

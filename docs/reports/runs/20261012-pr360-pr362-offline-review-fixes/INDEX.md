@@ -245,3 +245,19 @@ Error-like log lines (first 5 per log):
 - [20261012-pr362-legacy-spoken-failclosed/outcome.json](20261012-pr362-legacy-spoken-failclosed/outcome.json)
 - [20261012-pr362-legacy-spoken-failclosed/pytest.log](20261012-pr362-legacy-spoken-failclosed/pytest.log)
 - [20261012-pr362-legacy-spoken-failclosed/timings.tsv](20261012-pr362-legacy-spoken-failclosed/timings.tsv)
+
+## Legacy record compatibility, complete past family and fitted-rate code identity
+
+- [pr362-condensation-record-compat-20261012/ci-root0.log](pr362-condensation-record-compat-20261012/ci-root0.log)
+- [pr362-condensation-record-compat-20261012/ci-root6.log](pr362-condensation-record-compat-20261012/ci-root6.log)
+- [pr362-condensation-record-compat-20261012/final.log](pr362-condensation-record-compat-20261012/final.log)
+- [pr362-condensation-record-compat-20261012/grammar-past.log](pr362-condensation-record-compat-20261012/grammar-past.log)
+- [pr362-condensation-record-compat-20261012/integrated-final.log](pr362-condensation-record-compat-20261012/integrated-final.log)
+- [pr362-condensation-record-compat-20261012/outcome.json](pr362-condensation-record-compat-20261012/outcome.json)
+- [pr362-condensation-record-compat-20261012/pytest.log](pr362-condensation-record-compat-20261012/pytest.log)
+- [pr362-condensation-record-compat-20261012/summary.json](pr362-condensation-record-compat-20261012/summary.json)
+- [pr362-condensation-record-compat-20261012/timings.tsv](pr362-condensation-record-compat-20261012/timings.tsv)
+- [20261012-pr362-rate-implementation/outcome.json](20261012-pr362-rate-implementation/outcome.json)
+- [20261012-pr362-rate-implementation/pytest-broad-interrupted.log](20261012-pr362-rate-implementation/pytest-broad-interrupted.log)
+- [20261012-pr362-rate-implementation/pytest.log](20261012-pr362-rate-implementation/pytest.log)
+- [20261012-pr362-rate-implementation/timings.tsv](20261012-pr362-rate-implementation/timings.tsv)

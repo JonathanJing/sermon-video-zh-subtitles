@@ -100,6 +100,18 @@
       "skipped": {
         ".md": 1
       }
+    },
+    {
+      "label": "pr362-condensation-record-compat-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-condensation-record-compat-20261012",
+      "skipped": {}
+    },
+    {
+      "label": "20261012-pr362-rate-implementation",
+      "source": "/private/tmp/sermon-fix-362/artifacts/run/20261012-pr362-rate-implementation",
+      "skipped": {
+        ".md": 1
+      }
     }
   ],
   "files": [
@@ -1189,6 +1201,134 @@
       "bytes": 46,
       "truncated": false,
       "sha256": "dcd69235bc64f41efe8b0fe2146e0b037ae5061c1bfa979915d57d86ef57bc9e",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-condensation-record-compat-20261012",
+      "path": "ci-root0.log",
+      "kind": "log",
+      "bytes": 135447,
+      "truncated": true,
+      "sha256": "49b78fef50b9f8666f71cba3d5da15c9e74d0bc56b2f99505f35ab7951a17f7b",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 13
+      }
+    },
+    {
+      "run": "pr362-condensation-record-compat-20261012",
+      "path": "ci-root6.log",
+      "kind": "log",
+      "bytes": 147014,
+      "truncated": true,
+      "sha256": "d0cdca31e569d1a365a077396f819377f3881eeaeb713c9e6b7b3a99e5da19fe",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 15
+      },
+      "exportedCopy": {
+        "sha256": "babc664c4738d70655965fe7f1a0933be3eac3f34e522f3b5563a3d1bc078239",
+        "bytes": 21064,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "pr362-condensation-record-compat-20261012",
+      "path": "final.log",
+      "kind": "log",
+      "bytes": 93,
+      "truncated": false,
+      "sha256": "8ff091c6c10ba5d99365be053ddbdf286561277820ca912a087d69de057a1f91",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-condensation-record-compat-20261012",
+      "path": "grammar-past.log",
+      "kind": "log",
+      "bytes": 478,
+      "truncated": false,
+      "sha256": "2ade92c5701d6839dba0c181601da5d0771bc4e71490950f2b6043ca324d6b15",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-condensation-record-compat-20261012",
+      "path": "integrated-final.log",
+      "kind": "log",
+      "bytes": 582,
+      "truncated": false,
+      "sha256": "c3b124c10acb1a2ec51150da1d8ecae27cfc13d17b55c88cbd913f3b4f0336d9",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-condensation-record-compat-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-condensation-record-compat-20261012",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 2146,
+      "truncated": false,
+      "sha256": "50b21a04925e99295dd10eed1bcde81ef82fcb230cde028fd99d5e7d5f731f06",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-condensation-record-compat-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 899,
+      "truncated": false,
+      "sha256": "be66b9b65c05246aa476d9df291a7afc8f34768fa75b2391a77c580a7554ab01",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-condensation-record-compat-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 97,
+      "truncated": false,
+      "sha256": "17e95ce8ee361699a09fcb34ab2a9f497699314d7647e4b3c929347df26d0e0c",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr362-rate-implementation",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 440,
+      "truncated": false,
+      "sha256": "bf613f431ac7e4c7e0bc76b58d04a6c7aac4382df8903e157c8395bbf95d1848",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr362-rate-implementation",
+      "path": "pytest-broad-interrupted.log",
+      "kind": "log",
+      "bytes": 365,
+      "truncated": false,
+      "sha256": "739c2c4bcf66a0181c330106dcda7637f7504757850e0c4031d76d5f36a9307e",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr362-rate-implementation",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 166,
+      "truncated": false,
+      "sha256": "c5042e5cb20e7d6e5cc166b8c4b2294b87957bf754a25a42d76588f53429e961",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr362-rate-implementation",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 82,
+      "truncated": false,
+      "sha256": "90ea11fa34c3f600c1d090b3bd39ccc4940608db04b38c382a0ef0899291e4e7",
       "redactions": {}
     }
   ],
