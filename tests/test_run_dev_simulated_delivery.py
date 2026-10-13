@@ -123,6 +123,7 @@ def test_chain_resumes_http_failure_without_repeating_asset_publication(tmp_path
     assets = [{'role': 'content', 'path': '/content.json'}] * 3
     monkeypatch.setattr(runner.builder, 'verified_assets', lambda path: (manifest, assets))
     monkeypatch.setattr(runner.contract, 'validate_catalog_snapshot', lambda path: {'pages': []})
+    monkeypatch.setattr(runner.contract, 'snapshot_catalog_v4', lambda path: pytest.fail('Simulation must use v3'))
     events = []
 
     def snapshot(out):
@@ -263,6 +264,7 @@ def test_each_mode_refuses_the_other_modes_content(tmp_path, monkeypatch):
         {'pageId': 'mockup-x', 'releases': {'zh-Hans': {}, 'ko': {}, 'es': {}}},
         [{'role': 'content', 'path': f'c{i}.json'} for i in range(3)]))
     monkeypatch.setattr(runner.contract, 'validate_catalog_snapshot', lambda path: {'pages': []})
+    monkeypatch.setattr(runner.contract, 'snapshot_catalog_v4', lambda path: {'pages': []})
     for content, flag, message in ((machine, False, 'Explicit simulated content required'),
                                    (simulated, True, 'Explicit machine-checked content required')):
         monkeypatch.setattr(runner.preparation, 'read', lambda path, content=content: content)
@@ -275,3 +277,36 @@ def test_each_mode_refuses_the_other_modes_content(tmp_path, monkeypatch):
                                      monitor_metrics=None, execute=False, machine_checked=True)
     with pytest.raises(ValueError, match='publish no source video'):
         runner._run(args)
+
+
+@pytest.mark.parametrize("machine", [True, False])
+def test_existing_mode_catalog_page_is_refused_before_any_publication_or_seal(tmp_path, monkeypatch, machine):
+    from unittest.mock import Mock
+    base, prepared, out = (tmp_path / name for name in ("baseline", "prepared", "workflow"))
+    (base / "public").mkdir(parents=True)
+    prepared.mkdir()
+    page_id = "dev-already-existing"
+    (base / "public/multilingual-v4.json").write_text(json.dumps({"pages": [{"id": page_id}]}))
+    # The baseline is valid, with a machine-only ID absent from its v3 projection.
+    validate = Mock(return_value={"pages": [] if machine else [{"id": page_id}]})
+    monkeypatch.setattr(runner.contract, "validate_catalog_snapshot", validate)
+    v4 = Mock(wraps=runner.contract.snapshot_catalog_v4)
+    monkeypatch.setattr(runner.contract, "snapshot_catalog_v4", v4)
+    monkeypatch.setattr(runner.builder, "verified_assets", lambda path: (
+        {"pageId": page_id, "releases": {locale: {} for locale in ("zh-Hans", "ko", "es")}}, []))
+    publish, seal, assets = Mock(), Mock(), Mock()
+    monkeypatch.setattr(runner.publisher, "publish", publish)
+    monkeypatch.setattr(runner.builder, "seal", seal)
+    monkeypatch.setattr(runner.preparation, "asset_first", assets)
+    args = argparse.Namespace(baseline=base, prepared=prepared, out=out, source_video=None,
+                              monitor_metrics=None, execute=True, machine_checked=machine)
+    with pytest.raises(ValueError, match="Test page already exists"):
+        runner.run(args)
+    validate.assert_called_once_with(base.resolve())
+    if machine:
+        v4.assert_called_once_with(base.resolve())
+    else:
+        v4.assert_not_called()
+    publish.assert_not_called()
+    seal.assert_not_called()
+    assets.assert_not_called()
