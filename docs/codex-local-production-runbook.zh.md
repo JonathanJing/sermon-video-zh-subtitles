@@ -2,6 +2,8 @@
 
 当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
 
+并发、请求上限和各环节预算预留按[周更运行配置](weekly-run-profile.zh.md)设定：Layer 2 输出上限 2048、各语言预算上限按实测预留表、开工前取得 Spark 独占会话并冻结代码。
+
 额度耗尽时的后续方向见[API fallback 设计](codex-quota-api-fallback-design.zh.md)：需要明确拒绝证据、独立调用身份、入口验收和绑定预算；目前没有实现或启用。不能通过更换环境变量、认证或删除 started marker 将未决调用转到 API。
 
 真实Dev音频测试按[已接入的参数入口](local-production-next-dev-test-parameters.zh.md#已接入的音频入口)运行`python -m scripts.run_dev_local_audio_test tts|back-asr`：自动读取profile选配音batch2、回转写batch4，显式batch1作基线、回转写8作对照。此入口保留正式producer门禁与独立回执；合并dev和CI不会自动运行GPU或付费模型。

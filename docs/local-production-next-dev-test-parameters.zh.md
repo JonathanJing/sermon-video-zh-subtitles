@@ -12,7 +12,7 @@
 | 正式多语言配音 | Dev入口自动batch2；显式 `--batch-size 1` 作基线 | 新身份、新目录；正式生产省略Dev标志时仍默认1。此项与legacy中文renderer默认batch4不是同一路径 |
 | 正式配音回转写 | Dev入口自动batch4；显式 `--batch-size 8` 作对照，1作基线 | 同WAV、各档独立receipt/cache；正式生产默认仍1。识别可因batch变化，已有疑点持续保留 |
 | legacy CPU保存 | `--cpu-workers 1 --cpu-queue-batches 2` | 输出正确性通过；尚未证明worker2稳定提速。只适用于legacy renderer，不能传给正式renderer |
-| 受限API适配器 | `maxInputTokens=16384`、`maxCompletionTokens=4096`、`wallTimeMs=300000`、`serviceTier=default` | input是本地保守预检，避免8247被8192误拦；保留该次总调用/token/费用硬上限。小样本completion2048不推广到长分组；普通runner不会自动套用这组限制，需由受限调用适配器实际传入并写回执 |
+| 受限API适配器 | `maxInputTokens=16384`、`maxCompletionTokens=4096`、`wallTimeMs=300000`、`serviceTier=default` | input是本地保守预检，避免8247被8192误拦；保留该次总调用/token/费用硬上限。小样本completion2048不推广到长分组；普通runner不会自动套用这组限制，需由受限调用适配器实际传入并写回执（2026-10-13 起被[周更运行配置](weekly-run-profile.zh.md)取代：329 次 Sol 调用最大输出 623 tokens，Layer 2 改用 2048） |
 
 三个locale使用各自worker3，并发数是每个producer的上限。下一次先顺序运行locale，避免把三语同时启动变成9个在途组；同一Spark一次只运行一个本轮GPU工作。正式文字模型仍为 `gpt-6-astra` / `gpt-6-sol`，reasoning为medium。
 
