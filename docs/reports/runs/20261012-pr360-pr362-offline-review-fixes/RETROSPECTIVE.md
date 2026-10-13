@@ -47,3 +47,9 @@
 ## 引用范围终点追加修复
 
 最终基线 CI 13 项成功后，新增 review 指出 `부터`／`에서` 范围终点数字未转换。修复 commit `1df273e3` 仅扩展既有书名锚定的相邻引用链，不跨普通正文；普通照片/电影 counter 仍不转换。两个正例和普通 counter／跨正文负例定向测试所在 numeral 文件 50 passed in 0.23 秒，diff check 通过。正常 push 后由新 head CI 再判断可合并性；此前 13 项成功不代表新 head 已通过。没有调用模型或部署，报告保持 draft。
+
+## 生成到 ASR 评分全链范围追加修复
+
+前一 head CI 13 项成功后，新增 review 发现重复 counter 横线范围漏终点，以及单 counter 范围首端无法折回数字。commit `81773fee` 增加三种横线连接，并以 scoring v5 按书名锚定完整引用链折叠；同时修复连写章/节和无空格书名，Psalm `편` 走同一链。v4/v3 收据仍按原语义评分，普通词内保护不放宽。口播规则仍为本 PR 未合并的 v2，normalization policy hash 不另改；ASR runtime scoring 和实现 hash 单独绑定。
+
+最终三文件合同回归 138 tests、34 subtests passed，0.83 秒；覆盖生成→fold→score、单/重复 counter、三种横线、particles、单/多音节端点、空格/连写/Psalm，以及错误数字和固有词拒绝。diff check 通过；独立只读审阅未发现新增具体阻塞。初步两文件阶段 120 tests、22 subtests passed，0.71 秒，不与最终统计相加。未重跑模型、音频或部署；旧 #361/#363 的真实 QC 不验证新折叠实现或校准。正常 push 后等待新 head required CI，报告保持 draft。

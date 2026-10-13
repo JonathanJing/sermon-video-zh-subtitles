@@ -21,6 +21,11 @@
       "label": "pr362-range-chain-review-20261012",
       "source": "/private/tmp/sermon-fix-362/artifacts/pr362-range-chain-review-20261012",
       "skipped": {}
+    },
+    {
+      "label": "pr362-range-fold-contract-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-range-fold-contract-20261012",
+      "skipped": {}
     }
   ],
   "files": [
@@ -177,6 +182,51 @@
       "bytes": 45,
       "truncated": false,
       "sha256": "d15f56666514455faa8febeeadb4cd8354fa3b5e4388484701f6e92ba5fadb89",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-range-fold-contract-20261012",
+      "path": "final-tests.log",
+      "kind": "log",
+      "bytes": 246,
+      "truncated": false,
+      "sha256": "e6b415e9bf356b4be1a668727c4fcb5542af29b245ea65efcf05121d89c30760",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-range-fold-contract-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-range-fold-contract-20261012",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 178,
+      "truncated": false,
+      "sha256": "332dc1a04c873aebe4dffe48ac2d2da3beca5c85f7d685cd5536dc8b1a64d54a",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-range-fold-contract-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 429,
+      "truncated": false,
+      "sha256": "abd4b1c13221371b7203b35b4b6da1dd92ac00ad0289261d307711e89653faa9",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-range-fold-contract-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 45,
+      "truncated": false,
+      "sha256": "c212636fe03fdcbedefa78311d172d8e64c119d64ad50af10d37777c8f22b3f7",
       "redactions": {}
     }
   ],
