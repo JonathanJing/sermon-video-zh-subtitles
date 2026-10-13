@@ -94,7 +94,8 @@ def prepare(baseline, out, *, environment='dev'):
     contract.require(set(before).issubset({row['path'] for row in after}), 'Existing file removed')
     # Check the actual mixed candidate, including preserved production modules.
     builder.runtime_web_files(out / 'public')
-    staging.write(out / 'seal-report.json', {'catalogSha256': staging.digest(out / 'public/multilingual-v3.json'), 'files': after})
+    # A live site with a machine-checked v4 catalog seals both catalog hashes.
+    staging.write(out / 'seal-report.json', {**staging.catalog_report(out / 'public'), 'files': after})
     contract.validate_catalog_snapshot(out)
     staging.write(out / 'publish-config.json', staging.publication_config(base, out, environment=environment))
     staging.write(out / 'ui-update-plan.json', {
