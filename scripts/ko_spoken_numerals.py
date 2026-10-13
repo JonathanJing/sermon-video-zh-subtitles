@@ -71,6 +71,34 @@ _NUMERIC_TOKEN = re.compile(r"(?:\d+(?:\s*[.,:．٫٬，/／⁄∕+＋*＊×÷=�
                             + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절)"))
 
 
+# A bare counter after an arbitrary noun is ambiguous (서류 2장, not chapter 2).
+# Keep the supported sermon entry points explicit rather than growing a noun blacklist.
+_BARE_INTRODUCERS = {"그래서", "그러므로", "그리고", "이제", "먼저", "본문"}
+
+
+def bare_context_allowed(text: str, start: int, end: int) -> bool:
+    prefix = text[:start].rstrip()
+    if not prefix or prefix[-1] in ".!?。！？;；":
+        return True
+    # Opening quotation/bracket may delimit a chapter, but does not erase a noun.
+    prefix = prefix.rstrip("(（[［\"'“‘ ")
+    if not prefix or prefix[-1] in ".!?。！？;；":
+        return True
+    previous = re.search(r"([가-힣A-Za-z]+)$", prefix)
+    word = previous.group(1) if previous else ""
+    if word in _BARE_INTRODUCERS or word in _KO_BOOK_CODES:
+        return True
+    # These existing sermon forms explicitly identify a verse/chapter context.
+    return bool(re.match(r"의\s+맨\s+첫\s+절", text[end:])) or (word == "뒤" and text[start:end].endswith("절"))
+
+
+def bare_citation_matches(text: str):
+    protected = [match.span() for pattern in (_COUNTED, _NUMERIC_TOKEN) for match in pattern.finditer(text)]
+    return [match for match in _BARE.finditer(text)
+            if not any(start <= match.start() < end for start, end in protected)
+            and bare_context_allowed(text, match.start(), match.end())]
+
+
 def spoken_form_v2(text: str) -> str:
     """Frozen book-anchored v2 behavior for existing normalization-policy jobs."""
     return _spoken_form(text, bare_chapters=False)
@@ -89,14 +117,9 @@ def _spoken_form(text: str, *, bare_chapters: bool) -> str:
         text = citation.sub(lambda match: _REFERENCE.sub(spell, match.group()), text)
     if not bare_chapters:
         return text
-    # A count after a counted-object noun keeps its whole chain: 사진 2장부터 4장까지, 사진(3-4장).
-    counted = [match.span() for match in _COUNTED.finditer(text)]
-    numeric_tokens = [match.span() for match in _NUMERIC_TOKEN.finditer(text)]
-    def bare(match: re.Match) -> str:
-        if any(start <= match.start() < end for start, end in counted + numeric_tokens):
-            return match.group()
-        return _REFERENCE.sub(spell, match.group())
-    return _BARE.sub(bare, text)
+    matches = {match.span() for match in bare_citation_matches(text)}
+    return _BARE.sub(lambda match: _REFERENCE.sub(spell, match.group())
+                     if match.span() in matches else match.group(), text)
 
 
 def equivalent(approved: str, spoken: str, *, rule: str = RULE) -> bool:
