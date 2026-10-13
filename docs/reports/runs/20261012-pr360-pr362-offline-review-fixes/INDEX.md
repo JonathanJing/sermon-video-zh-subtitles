@@ -1,6 +1,6 @@
 # Run digest 20261012-pr360-pr362-offline-review-fixes
 
-Generated 2026-10-13T00:34:29+00:00. Redacted copies only; source hashes are in manifest.json.
+Generated 2026-10-13T00:47:42+00:00. Redacted copies only; source hashes are in manifest.json.
 
 ## 20261012-pr360-margin-validation
 
@@ -63,3 +63,23 @@ Timings `timings.tsv`:
 | stage | status | elapsedSeconds |
 |---|---|---|
 | pytest | pass | 0.83 |
+
+## pr362-counter-structure-contract-20261012
+
+Source: `/private/tmp/sermon-fix-362/artifacts/pr362-counter-structure-contract-20261012`
+
+- outcome `outcome.json`: **pass** exit 0 (? → ?)
+
+Timings `timings.tsv`:
+
+| stage | status | elapsedSeconds |
+|---|---|---|
+| pytest | pass | 0.95 |
+
+Error-like log lines (first 5 per log):
+
+- `pytest.log`: E       AssertionError: assert '요한복음 3장십육-17절' == '요한복음 3장16-17절'
+- `pytest.log`: tests/test_ko_spoken_numerals.py:149: AssertionError
+- `pytest.log`: E       AssertionError: assert '요한복음 3장16절벽' == '요한복음 삼장16절벽'
+- `pytest.log`: tests/test_ko_spoken_numerals.py:160: AssertionError
+- `pytest.log`: tests/test_ko_spoken_numerals.py:175: AssertionError

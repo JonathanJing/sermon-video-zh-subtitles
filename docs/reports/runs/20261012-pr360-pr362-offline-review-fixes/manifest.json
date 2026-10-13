@@ -26,6 +26,11 @@
       "label": "pr362-range-fold-contract-20261012",
       "source": "/private/tmp/sermon-fix-362/artifacts/pr362-range-fold-contract-20261012",
       "skipped": {}
+    },
+    {
+      "label": "pr362-counter-structure-contract-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-counter-structure-contract-20261012",
+      "skipped": {}
     }
   ],
   "files": [
@@ -227,6 +232,96 @@
       "bytes": 45,
       "truncated": false,
       "sha256": "c212636fe03fdcbedefa78311d172d8e64c119d64ad50af10d37777c8f22b3f7",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-counter-structure-contract-20261012",
+      "path": "boundary-final-tests.log",
+      "kind": "log",
+      "bytes": 246,
+      "truncated": false,
+      "sha256": "820441465db2541d53c8133137bd2f800d582975651db10f1abefc37fbf9bfa8",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-counter-structure-contract-20261012",
+      "path": "final-tests.log",
+      "kind": "log",
+      "bytes": 246,
+      "truncated": false,
+      "sha256": "47f49366f9030f37cb090a230bb356474f6d49a87509c241b2c43dced087472a",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-counter-structure-contract-20261012",
+      "path": "identity-final-tests.log",
+      "kind": "log",
+      "bytes": 246,
+      "truncated": false,
+      "sha256": "a9aa9042f7b6e74e74084985d2f961a93097389843ffbf9b637bbf36c1f7a9ce",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-counter-structure-contract-20261012",
+      "path": "mirror-final-tests.log",
+      "kind": "log",
+      "bytes": 326,
+      "truncated": false,
+      "sha256": "c5acc611a28ba04083b68c05c12b48ab854a82979f021acb034f5a2bacd4a419",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-counter-structure-contract-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-counter-structure-contract-20261012",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 3905,
+      "truncated": false,
+      "sha256": "36002a61e7efdf83c324d3e3d6adc50af7329f37e06e4af5d381903378861780",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-counter-structure-contract-20261012",
+      "path": "scoped-final-tests.log",
+      "kind": "log",
+      "bytes": 326,
+      "truncated": false,
+      "sha256": "4ce4ee7a5682282101e0379afd0d0d157b28f2c9b5d79425a0ea8840b9796978",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-counter-structure-contract-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 490,
+      "truncated": false,
+      "sha256": "aad49ed977ea0b26653902fdda91eee34bce9404a6786aaf58e7c4f026fc1c70",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-counter-structure-contract-20261012",
+      "path": "terminal-final-tests.log",
+      "kind": "log",
+      "bytes": 318,
+      "truncated": false,
+      "sha256": "9ee920535d38ecb298dcd804c8364d12050849de222f46986bce49cb80dd92e1",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-counter-structure-contract-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 45,
+      "truncated": false,
+      "sha256": "0c3cb197878f451c12db38be5af5d0dda49ab4284a1b481990591d133a05b367",
       "redactions": {}
     }
   ],
