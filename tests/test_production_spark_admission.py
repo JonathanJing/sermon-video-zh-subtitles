@@ -126,7 +126,7 @@ class ProductionSessionCallTests(unittest.TestCase):
             self.assertEqual(notes.request_openai_notes({"model": "test"}, "test-only"), {"ok": 1})
             self.assertEqual(reading.codex_json({"messages": []}, codex_cli=Path("unused"), model="test",
                 reasoning_effort="medium", schema_path=Path(directory, "input"), output_path=Path("unused")), {"ok": 2})
-            self.assertEqual(pipeline.chat_json("test-only", {"model": "gpt-6-astra"}), {"ok": 3})
+            self.assertEqual(pipeline.chat_json("test-only", budgets.text_limits.bounded_payload({"model": "gpt-6-astra", "messages":[{"role":"user","content":"synthetic"}], "reasoning_effort":"medium", "response_format":{"type":"json_object"}}, budgets.text_limits.DEFAULT_REQUEST_LIMITS)), {"ok": 3})
             self.assertEqual(pipeline.transcribe_openai_audio("test-only", "gpt-transcribe", "source", Path(directory, "input")), {"ok": 4})
         spark.assert_not_called()
         for called in (notes_api, reading_cli, text, audio):

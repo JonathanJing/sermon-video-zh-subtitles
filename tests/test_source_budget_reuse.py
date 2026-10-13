@@ -39,21 +39,24 @@ class ReuseTests(unittest.TestCase):
 
     def test_a_reused_response_does_not_count_against_the_cap(self):
         tight = dict(AUTHORITY, globalBounds={"requests": 1, "wallTimeMs": 10 ** 9, "costMicrousd": 10 ** 9})
+        other = dict(IDENTITY, index=2)
+        store(self.text).call(operation="judge." + "d" * 64, identity=other, bounds=BOUNDS, request=b"fixture",
+                             api_key="", content_type="fixture", endpoint="fixture")
         audio = store(self.audio, reuse=[self.text], authority=tight)
         call(audio)  # reused, free
-        other = dict(IDENTITY, index=2)
         audio.call(operation="judge." + "d" * 64, identity=other, bounds=BOUNDS, request=b"fixture", api_key="",
-                   content_type="fixture", endpoint="fixture")  # the one paid request still fits
+                   content_type="fixture", endpoint="fixture")  # a second free reuse still fits
         rows = ledger(self.audio)["requests"]
-        self.assertEqual(sorted(row["settlement"]["costStatus"] for row in rows.values()), ["estimated_upper_bound", "reused"])
+        self.assertEqual(sorted(row["settlement"]["costStatus"] for row in rows.values()), ["reused", "reused"])
 
     def test_only_an_identical_request_with_an_intact_response_is_reused(self):
         dispatched = []
         audio = store(self.audio, reuse=[self.text], transport=lambda *args: dispatched.append(1) or {"model": "gpt-6.1-sol", "usage": USAGE})
         changed = dict(IDENTITY, index=9)
-        audio.call(operation=OPERATION.replace("c", "e"), identity=changed, bounds=BOUNDS, request=b"fixture",
-                   api_key="", content_type="fixture", endpoint="fixture")
-        self.assertEqual(dispatched, [1])
+        with self.assertRaisesRegex(ValueError, "source_reuse_operation_missing"):
+            audio.call(operation=OPERATION.replace("c", "e"), identity=changed, bounds=BOUNDS, request=b"fixture",
+                       api_key="", content_type="fixture", endpoint="fixture")
+        self.assertEqual(dispatched, [])
         # A matching paid receipt that was damaged blocks reconciliation; it is never re-bought.
         response = next((self.text / "responses").iterdir())
         saved = jobs._read(response); saved["response"] = {"model": "forged"}

@@ -6,6 +6,10 @@
 
 2026-10-13 用户决定：**只调 API 的环节不占 Spark 会话**。Layer 2 翻译与复核、文本质检（回译评判）、Codex Supervisor、学习笔记、英文机器审核、阅读版本、旧页面文本与源音频转写都只调远程 API 或 Mac 本地 Codex CLI，不再检查独占会话，也不再为每次调用建立 Spark job hold（`SessionBoundCaller(..., requires_spark=False)`）。这些环节进行时 Spark 上的服务照常运行；进程异常退出也不会让会话进入 `reconcile_required`。GPU 环节不变：TTS 渲染、配音初筛 ASR、音频质检、MFA 和本地模型调用仍要求会话及 job hold。周更只在 Spark 环节期间 begin 会话，结束后 finish。
 
+### 合并后的首次运行与缓存身份
+
+PR #380 将 API 质检评判的 `sessionCheck` 改为 `none_api_only`，属于新的评判身份。合并后的第一次运行必须冻结最终 commit 和质检实现哈希，使用新的 QC state、评判缓存及响应目录，不复用旧缓存，也不通过 `reuseBudgetRoots` 引入旧评判身份的回复；旧目录保留作证据。按最终代码重新校准、质检和生成放行证明后，后续同一冻结身份才可按 #381 的已批准来源复用合同恢复。API 不占 Spark 不等于未知结果可以重发：独立 API/CLI outcome 收据或原有预算账本仍须先对账。
+
 ## 当前发现
 
 核验主机 `achillesjing@192.168.1.152`：Docker 所有容器均已停止，但 GPU 上仍有 `llama-server.service` 的 llama-server 进程，报告 35,695 MiB（约 34.9 GiB）。主机 MemAvailable 为 76,301,090,816 bytes（约 71.1 GiB）。这些是调查时刻的读数，不是未来开跑保证。
@@ -74,3 +78,5 @@ begin 部分失败按逐项 intent 对账；能确认未启动本轮作业且变
 旧阅读稿、笔记及通用 API helper 使用当前 accounting 输出目录下的 `api-cli-outcomes`，调用前持久化 started，返回值持久化后才交还调用方。此目录内调用串行；started/unknown 会阻止后续 dispatch，重启、换 key 或新 accounting run ID 不会解除。缺少 accounting context 在 dispatch 前拒绝。新运行使用新输出目录，不复用历史 cache；未知运行不能通过换目录重试。canonical Layer 2、source budget 与 Supervisor 保留各自原有预算和核对 gate。
 
 核对已收到的真实 terminal response 后，用 `python -m scripts.api_cli_outcomes --directory <accounting>/api-cli-outcomes --request-sha256 <receipt中的hash> --response <observed-response.json> --evidence <evidence.json>` 录入；evidence 必须含非空 `terminalResponseEvidence` 来源指针。该命令不调用模型、不批准预算，也不提供“清空未知后重发”功能；没有可确认的响应就保持阻断。收据只记录请求 hash，不记录凭据或 prompt；响应仅留在 ignored 运行目录。
+
+API/CLI outcome 新收据使用 v2；既有 v1 返回仍按原请求与响应 hash 核验后只读重放。v2 的 received 保存完整原响应字节及 hash，returned 才可作为成功结果；HTTP 拒绝、完整收到后的解码失败及可信预派发拒绝记 terminal_failure，同请求重放错误、修正请求可继续，不据此推断费用为零。真正未知的传输仍阻断整个目录。人工核对失败终态时，上述 reconciliation 命令增加 `--terminal-failure`，记录失败证据而不创建成功响应。对旧未知收据的显式核对写 v2 并保留来源 schema 标记。

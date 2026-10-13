@@ -113,6 +113,50 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         return {"id": f"response-{len(self.calls)}", "model": payload["model"],
                 "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(result)}}]}
 
+    def test_standalone_recovers_durable_outcome_before_raw_marker_without_redispatch(self):
+        from unittest.mock import patch
+        from scripts.production_spark_admission import SessionBoundCaller
+        f=self.fixture
+        wrapped=SessionBoundCaller(self.fake_call,requires_spark=False,
+                                   outcome_directory=self.out/'accounting'/'api-cli-outcomes')
+        save=subject.save_new
+        def fail_raw(path, value, **kwargs):
+            if str(path).endswith('group-0001-astra.raw.json'):
+                raise OSError('injected crash after durable API return')
+            return save(path,value,**kwargs)
+        with patch.object(subject,'save_new',side_effect=fail_raw):
+            with self.assertRaisesRegex(OSError,'injected crash'):
+                subject.run(f.source,f.anchor,f.policy,self.out,'fixture-key',wrapped,plugin_path=f.plugin_path)
+        self.assertEqual(len(self.calls),1)
+        self.assertTrue((self.out/'group-0001-astra.started.json').exists())
+        self.assertFalse((self.out/'group-0001-astra.raw.json').exists())
+        subject.run(f.source,f.anchor,f.policy,self.out,'fixture-key',wrapped,plugin_path=f.plugin_path)
+        self.assertEqual(len(self.calls),4)
+        self.assertTrue((self.out/'group-0001-astra.raw.json').exists())
+
+    def test_standalone_returned_receipt_from_another_request_is_refused(self):
+        from unittest.mock import patch
+        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import api_cli_outcomes as outcomes
+        f=self.fixture; root=self.out/'accounting'/'api-cli-outcomes'
+        wrapped=SessionBoundCaller(self.fake_call,requires_spark=False,outcome_directory=root)
+        save=subject.save_new
+        def fail_raw(path,value,**kwargs):
+            if str(path).endswith('group-0001-astra.raw.json'): raise OSError('injected crash')
+            return save(path,value,**kwargs)
+        with patch.object(subject,'save_new',side_effect=fail_raw):
+            with self.assertRaises(OSError):
+                subject.run(f.source,f.anchor,f.policy,self.out,'fixture-key',wrapped,plugin_path=f.plugin_path)
+        response_row=json.loads(next(root.glob('*/outcome.json')).read_text())
+        other_payload=copy.deepcopy(self.calls[0]);other_payload['messages'][1]['content'] += ' changed request'
+        wrong=outcomes.request_identity(self.fake_call,('fixture-key',other_payload),{},wrapped.purpose)
+        outcomes._write(root/wrong/'outcome.json',{**response_row,'requestSha256':wrong})
+        marker=self.out/'group-0001-astra.started.json';row=json.loads(marker.read_text())
+        row['apiCliRequestSha256']=wrong;marker.write_text(json.dumps(row))
+        with self.assertRaisesRegex(ValueError,'marker request binding changed'):
+            subject.run(f.source,f.anchor,f.policy,self.out,'fixture-key',wrapped,plugin_path=f.plugin_path)
+        self.assertEqual(len(self.calls),1)
+
     def simulation_configuration_fixture(self):
         from scripts.codex_layer2_transport import TEST_CONFIGURATION
         policy = copy.deepcopy(self.fixture.policy)

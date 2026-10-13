@@ -19,6 +19,7 @@ import shutil
 from typing import Any, Callable
 
 try:
+    from scripts import production_spark_admission as spark_admission
     from scripts import four_layer_measure as measure
     from scripts import produce_target_language_candidate as producer
     from scripts import sermon_accounting as accounting
@@ -30,6 +31,7 @@ try:
     from scripts.migrate_target_language_model_cache import migration_cache
     from scripts import sermon_workflow_jobs as jobs
 except ImportError:
+    import production_spark_admission as spark_admission
     import four_layer_measure as measure
     import produce_target_language_candidate as producer
     import sermon_accounting as accounting
@@ -271,6 +273,16 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
         return saved
     marker = output.with_suffix(".started.json")
     raw_path = output.with_suffix(".raw.json")
+    if marker.exists() and isinstance(caller, spark_admission.SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
+        from scripts import api_cli_outcomes as outcomes
+        marker_data = producer._load(marker)
+        if 'apiCliRequestSha256' in marker_data:
+            require(marker_data.get('payloadSha256') == fingerprint and marker_data.get('role') == role
+                    and marker_data['apiCliRequestSha256'] == outcomes.request_identity(
+                        caller.caller, (api_key, payload), {}, caller.purpose),
+                    "Standalone API outcome marker request binding changed")
+    if marker.exists() and not raw_path.exists():
+        recover_api_outcome(marker, raw_path, caller=caller)
     recovered_raw = raw_path.exists()
     if recovered_raw:
         raw = producer._load(raw_path)
@@ -286,8 +298,14 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
         resource_admission = getattr(caller, "admit_resource", None)
         if resource_admission is not None:
             resource_admission(payload)
+        outcome_binding = {}
+        if isinstance(caller, spark_admission.SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
+            from scripts import api_cli_outcomes as outcomes
+            outcome_binding = {"apiCliOutcomeRoot":str(outcomes.receipt_root(caller.outcome_directory).resolve()),
+                "apiCliRequestSha256":outcomes.request_identity(caller.caller, (api_key, payload), {}, caller.purpose),
+                "apiCliPurpose":caller.purpose}
         save_new(marker, {"role": role, "payloadSha256": fingerprint,
-                          "status": "started_response_unconfirmed"}, **save_options)
+                          "status": "started_response_unconfirmed", **outcome_binding}, **save_options)
         if response_observer is None:
             response = caller(api_key, payload)
         else:
@@ -699,7 +717,22 @@ def validate_standalone_worker_budget(policy: dict) -> None:
             "Standalone production runner requires batchSize=1 and workers=1..3")
 
 
-def require_reconciled_requests(*directories: Path | None) -> None:
+def recover_api_outcome(marker, raw_path, *, caller):
+    """Recover only a bound durable return; this path cannot dispatch anything."""
+    if not isinstance(caller, spark_admission.SessionBoundCaller) or caller.requires_spark or caller.outcome_guarded:
+        return
+    from scripts import api_cli_outcomes as outcomes
+    saved = producer._load(marker)
+    identity = saved.get("apiCliRequestSha256")
+    if identity is None: return  # Older markers remain uncertain, never redispatch.
+    require(saved.get("apiCliOutcomeRoot") == str(outcomes.receipt_root(caller.outcome_directory).resolve())
+            and saved.get("apiCliPurpose") == caller.purpose,
+            "Standalone API outcome marker binding changed")
+    response = outcomes.recover(caller.outcome_directory, identity, caller.purpose)
+    save_new(raw_path, {"payloadSha256":saved["payloadSha256"], "response":response}, private=True)
+
+
+def require_reconciled_requests(*directories: Path | None, caller=None) -> None:
     """Block the whole dispatch before any group can replay an unknown call.
 
     Returned raw responses and validated caches remain recoverable. A marker
@@ -713,6 +746,9 @@ def require_reconciled_requests(*directories: Path | None) -> None:
         for marker in sorted(directory.glob("group-*.started.json")):
             stem = marker.name.removesuffix(".started.json")
             role = {"astra": "translator", "sol": "reviewer"}.get(stem.rsplit("-", 1)[-1], "model")
+            raw_path = directory / f"{stem}.raw.json"
+            if not (directory / f"{stem}.json").is_file() and not raw_path.is_file():
+                recover_api_outcome(marker, raw_path, caller=caller)
             require((directory / f"{stem}.json").is_file()
                     or (directory / f"{stem}.raw.json").is_file(),
                     f"Uncertain paid {role} call; inspect before retry or dispatch: {marker}")
@@ -977,7 +1013,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 require(producer._load(receipt_path) == rule_receipt, "Frozen rule preflight changed")
             else:
                 save_new(receipt_path, rule_receipt, private=True)
-        require_reconciled_requests(out, reuse_from, resume_cache_from)
+        require_reconciled_requests(out, reuse_from, resume_cache_from, caller=caller)
         if repairs or carried:
             effective_path = out / "effective-repairs.json"
             effective = {**carried, **repairs}

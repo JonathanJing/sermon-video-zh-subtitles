@@ -1,5 +1,8 @@
 """New production role defaults and API dispatch; no model executions."""
 import json
+import os
+import tempfile
+from pathlib import Path
 import sys
 import unittest
 from unittest.mock import Mock, patch
@@ -26,10 +29,11 @@ class TextRoleDefaultTests(unittest.TestCase):
 
     def test_migrated_chat_refuses_uncapped_sol_before_api(self):
         payload = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high', 'messages': []}
-        with patch.object(sermon_pipeline, 'json_request', side_effect=AssertionError('dispatched')) as api:
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_ACCOUNTING_DIR':tmp}), patch.object(sermon_pipeline, 'json_request', side_effect=AssertionError('dispatched')) as api:
             with self.assertRaisesRegex(ValueError, 'unsupported_budget_capability'):
                 sermon_pipeline.chat_json('unrelated-asr-key', payload, session_verifier=lambda: {'status': 'offline_test'})
             api.assert_not_called()
+            self.assertFalse((Path(tmp)/'api-cli-outcomes').exists())
 
     def test_supervisor_defaults_cli_and_preserves_explicit_historical_api(self):
         from scripts import run_sermon_production_supervisor_agent as agent
@@ -41,10 +45,10 @@ class TextRoleDefaultTests(unittest.TestCase):
 
     def test_notes_api_preserves_response_shape(self):
         envelope = {'model': 'gpt-6.1-sol', 'output_text': '{"summaryZh":"sample"}', 'usage': {'total_tokens': 12}}
-        response = Mock(status_code=200)
+        response = Mock(status_code=200, content=json.dumps(envelope).encode())
         response.json.return_value = envelope
         payload = {'model': 'gpt-6.1-sol', 'reasoning': {'effort': 'high'}, 'input': [{'role': 'user', 'content': [{'type': 'input_text', 'text': 'source'}]}]}
-        with patch.object(notes.requests, 'post', return_value=response) as api, patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_ACCOUNTING_DIR':tmp}), patch.object(notes.requests, 'post', return_value=response) as api, patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
             result = notes.request_openai_notes(payload, 'synthetic-key', session_verifier=lambda: {'status':'offline_test'})
         api.assert_called_once()
         self.assertEqual(json.loads(notes.extract_response_text(result)), {'summaryZh': 'sample'})

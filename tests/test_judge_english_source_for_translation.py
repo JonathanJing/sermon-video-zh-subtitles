@@ -49,6 +49,18 @@ class EnglishSourceMachineJudgeTests(unittest.TestCase):
         self.manifest_path = self.root / "anchor-manifest.json"
         write_json(self.manifest_path, self.manifest)
 
+    def test_standalone_real_caller_binds_durable_directory_without_accounting_env(self):
+        import os
+        from unittest.mock import patch
+        with patch.dict(os.environ,{},clear=True), patch.object(subject,'chat_json',side_effect=self.fake_caller) as call:
+            result=subject.run(aligned_path=self.aligned_path,manifest_path=self.manifest_path,
+                out=self.root/'review.json',cache_root=self.root/'cache',api_key='test-only')
+        self.assertEqual(result['status'],'approved_for_layer2_shadow')
+        self.assertEqual(call.call_count,1)
+        rows=list((self.root/'cache'/'api-cli-outcomes').glob('*/outcome.json'))
+        self.assertEqual(len(rows),1)
+        self.assertEqual(json.loads(rows[0].read_text())['status'],'returned')
+
     def fake_caller(self, _api_key, payload):
         request = json.loads(payload["messages"][1]["content"])
         rows = []

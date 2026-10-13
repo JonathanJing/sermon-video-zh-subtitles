@@ -201,6 +201,7 @@ jobs:
           tests/test_delivery_contract.py
           tests/test_guarded_hosting_publish.py
           tests/test_machine_qc_runtime_budget.py
+          tests/test_source_budget_reuse_safety.py
           tests/test_sermon_unified_delivery.py
           tests/test_sermon_unified_reviews.py
           tests/test_sermon_unified_capabilities.py
