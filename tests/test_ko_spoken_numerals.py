@@ -341,3 +341,48 @@ def test_known_book_internal_asr_spaces_preserve_citation_scope(approved, spoken
 def test_asr_book_spaces_do_not_merge_ordinary_strings_into_citations(text):
     from scripts import screen_target_language_audio_units as screen
     assert "삼-" in screen.fold_transcript(text, "ko")
+
+
+@pytest.mark.parametrize("ending", ["인데", "이고", "이지만", "이라서", "이에요", "이죠", "이네요", "이어서", "이니까", "이므로", "이며", "이었고", "이었습니다", "이야", "이라고는"])
+def test_common_complete_copular_endings(ending):
+    from scripts import screen_target_language_audio_units as screen
+    approved = f"요한복음 3장{ending} 함께 읽습니다."
+    spoken = subject.spoken_form(approved)
+    assert spoken == approved.replace("3", "삼")
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert subject.spoken_form(f"요한복음 3장{ending}면") == f"요한복음 3장{ending}면"
+
+
+@pytest.mark.parametrize("connector", ["에서부터", "부터는", "부터만", "부터도", "이나", "이든", "과", "와", "및", "부터", "에서"])
+def test_registered_connector_internal_asr_spaces(connector):
+    from scripts import screen_target_language_audio_units as screen
+    spaced = " ".join(connector)
+    approved = f"요한복음 3장{connector}4장입니다."
+    spoken = f"요한 복음 삼장{spaced}사장입니다."
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.replace("사장", "오장"), "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.replace(spaced, "이 나" if connector != "이나" else "과"), "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("approved,spoken", [("요한복음 03장", "요한복음 삼장"), ("시편 001편", "시편 일편"), ("요한복음 03-04장", "요한복음 삼-사장"), ("요한복음 03장016절", "요한복음 삼장십육절")])
+def test_citation_digit_padding_is_reading_equivalent(approved, spoken):
+    from scripts import screen_target_language_audio_units as screen
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.replace("삼", "오") if "삼" in spoken else spoken.replace("일", "이"), "ko", 0.88)[2]
+
+
+def test_padding_and_connector_space_changes_remain_citation_scoped():
+    from scripts import screen_target_language_audio_units as screen
+    assert screen.fold_transcript("사진 03장", "ko") == "사진 03장"
+    assert screen.fold_transcript("사진 삼장부터 는 사장", "ko") == screen.fold_transcript("사진 삼장부터 는 사장", "ko", citation_ranges=False)
+    for text in ["요한복음 3장면", "시편 2편지", "시편 2편의점"]:
+        assert subject.spoken_form(text) == text
+
+
+@pytest.mark.parametrize("terminal", ["부터는", "부터만", "부터도", "에서는", "에서도", "까지는", "까지만", "까지도"])
+def test_terminal_compound_marker_asr_space(terminal):
+    from scripts import screen_target_language_audio_units as screen
+    approved = "요한복음 3장부터4장" + terminal
+    spoken = "요한복음 삼장부터사장" + terminal[:-1] + " " + terminal[-1]
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.removesuffix(" " + terminal[-1]), "ko", 0.88)[2]

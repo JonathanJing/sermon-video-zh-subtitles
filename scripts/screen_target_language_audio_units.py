@@ -407,22 +407,25 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
         # Do not grant that interpretation to bare words or ordinary counters.
         from scripts.language_review_plugins import auto_qc_text_common as rules
         from scripts.ko_spoken_numerals import _PARTICLES, _CONNECTOR
+        # ASR may space an already registered compound connector internally.
+        asr_connector = re.sub(r"(?<=[가-힣])(?=[가-힣])", lambda _: r"\s*", _CONNECTOR)
         def asr_book(name):
             return r"\s*".join(re.escape(char) for char in name)
         books = "|".join(asr_book(name) for name in sorted(rules._KO_BOOK_CODES, key=len, reverse=True))
         number = r"(?:\d{1,3}|[" + _KO_SINO_CHARS + r"]+(?:\s+[" + _KO_SINO_CHARS + r"]+)*)"
         def citation_pattern(book, counter):
-            boundary = (r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|" + _CONNECTOR + r"?\s*"
+            boundary = (r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|" + asr_connector + r"?\s*"
                         + number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter + r")")
             reference = number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter + boundary
             return re.compile(r"(?<![가-힣A-Za-z0-9])(" + book + r")(\s*" + reference
-                              + r"(?:\s*" + _CONNECTOR + r"?\s*" + reference + r")*)")
+                              + r"(?:\s*" + asr_connector + r"?\s*" + reference + r")*)"
+                              + r"(\s*(?:부터|에서|까지)(?:\s*(?:는|만|도))?(?![가-힣A-Za-z]))?")
         citation_number = re.compile(r"(" + number + r")(?:(\s*[-~–]\s*)(" + number + r"))?(\s*)(장|절|편)")
         def fold_number(match):
             first, dash, second, space, counter = match.groups()
             def spaced_value(part):
                 compact = re.sub(r"\s+", "", part)
-                value = sino_value(compact)
+                value = str(int(compact)) if compact.isdigit() else sino_value(compact)
                 # New spaced spellings must be one canonical positional number,
                 # never additive malformed units or a sequence of endpoints.
                 if value is not None and compact != part and not compact.isdigit():
@@ -434,12 +437,12 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
             if left is None or second and right is None:
                 return match.group()
             return left + ((dash + right) if second else "") + space + counter
-        citation_atom = re.compile(_CONNECTOR + "|" + citation_number.pattern)
+        citation_atom = re.compile(asr_connector + "|" + citation_number.pattern)
         def fold_citation(match):
             # Consume complete connectors before numeric atoms: 이나/이든 and
             # 부터만 must not turn their 이/만 syllables into numbers.
             return re.sub(r"\s+", "", match.group(1)) + citation_atom.sub(
-                lambda atom: atom.group() if atom.group(1) is None else fold_number(atom), match.group(2))
+                lambda atom: re.sub(r"\s+", "", atom.group()) if atom.group(1) is None else fold_number(atom), match.group(2)) + re.sub(r"\s+", "", match.group(3) or "")
         text = citation_pattern(books, r"(?:장|절)").sub(fold_citation, text)
         text = citation_pattern(asr_book("시편"), r"(?:장|절|편)").sub(fold_citation, text)
 
@@ -575,12 +578,12 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
     def number_structure(text):
         from scripts.ko_spoken_numerals import _CITATIONS, _CONNECTOR
         def with_terminal_marker(match):
-            marker = re.match(r"\s*((?:부터|에서|까지)(?:는|만|도)?)(?![가-힣A-Za-z])", text[match.end():])
-            return match.group() + (marker.group(1) if marker else "")
+            marker = re.match(r"\s*((?:부터|에서|까지)(?:\s*(?:는|만|도))?)(?![가-힣A-Za-z])", text[match.end():])
+            return match.group() + (re.sub(r"\s+", "", marker.group(1)) if marker else "")
         spans = sorted((match.start(), with_terminal_marker(match)) for pattern in _CITATIONS
                        for match in pattern.finditer(text))
         return [["-" if item in "-~–" else item
-                 for item in re.findall(r"\d+|(?:까지)(?:는|만|도)?|" + _CONNECTOR + r"|장|절|편", citation) if item != ","]
+                 for item in re.findall(r"\d+|(?:부터|에서|까지)(?:는|만|도)|" + _CONNECTOR + r"|까지|장|절|편", citation) if item != ","]
                 for _, citation in spans]
     structure_agrees = (scoring != SCORING or locale != "ko"
                         or number_structure(expected) == number_structure(recognized))
