@@ -273,6 +273,23 @@ def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
     helper = tmp_path / "scripts/ko_spoken_numerals.py"
     helper.write_bytes(helper.read_bytes() + b"\n# changed rule\n")
     assert waiver.implementation_sha256(tmp_path) != original_waiver
+    helper.write_bytes((root / "scripts/ko_spoken_numerals.py").read_bytes())
+    from tests.test_machine_quality_release_basis import calibration
+    receipt = calibration(implementationSha256=original_waiver)
+    assert waiver.calibration_problems(receipt, "ko", original_waiver, require_audio=True) == []
+    for name in ("scripts/render_formal_target_language_speech.py",
+                 "scripts/machine_qc_audio_transports.py", "scripts/run_machine_qc_audio_test.py",
+                 "scripts/sermon_sentence_interpretation.py"):
+        assert name in waiver.IMPLEMENTATION_FILES
+        path = tmp_path / name
+        original = path.read_bytes()
+        path.write_bytes(original + b"\n# changed calibration call path\n")
+        changed = waiver.implementation_sha256(tmp_path)
+        assert changed != original_waiver
+        assert "QC implementation changed since calibration" in waiver.calibration_problems(
+            receipt, "ko", changed, require_audio=True)
+        path.write_bytes(original)
+        assert waiver.calibration_problems(receipt, "ko", waiver.implementation_sha256(tmp_path), require_audio=True) == []
 
 
 def test_v5_rescore_rejects_stale_closure_before_scoring(monkeypatch):

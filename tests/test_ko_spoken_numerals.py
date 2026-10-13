@@ -343,14 +343,14 @@ def test_asr_book_spaces_do_not_merge_ordinary_strings_into_citations(text):
     assert "삼-" in screen.fold_transcript(text, "ko")
 
 
-@pytest.mark.parametrize("ending", ["인데", "이고", "이지만", "이라서", "이에요", "이죠", "이네요", "이어서", "이니까", "이므로", "이며", "이었고", "이었습니다", "이야", "이라고는"])
+@pytest.mark.parametrize("ending", ['이다', '이었다', '이었다고', '이었지만', '이었는데', '이었으나', '이었으면', '이었어요', '이었죠', '이었네요', '이었으므로', '이었으니까', '이었으며', '이겠다', '이겠습니다', '이겠지만', '이겠죠', '이겠네요', '이더라', '이더라도', '이라', '이니', '인가', '인가요', '인데요', '인지', '이냐', "인데", "이고", "이지만", "이라서", "이에요", "이죠", "이네요", "이어서", "이니까", "이므로", "이며", "이었고", "이었습니다", "이야", "이라고는"])
 def test_common_complete_copular_endings(ending):
     from scripts import screen_target_language_audio_units as screen
     approved = f"요한복음 3장{ending} 함께 읽습니다."
     spoken = subject.spoken_form(approved)
     assert spoken == approved.replace("3", "삼")
     assert screen.score(approved, spoken, "ko", 0.88)[2]
-    assert subject.spoken_form(f"요한복음 3장{ending}면") == f"요한복음 3장{ending}면"
+    assert subject.spoken_form(f"요한복음 3장{ending}상점") == f"요한복음 3장{ending}상점"
 
 
 @pytest.mark.parametrize("connector", ["에서부터", "부터는", "부터만", "부터도", "이나", "이든", "과", "와", "및", "부터", "에서"])

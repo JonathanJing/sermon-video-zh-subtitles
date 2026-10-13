@@ -55,6 +55,11 @@ IMPLEMENTATION_FILES = (
     # Scores every ASR transcript the audio QC and the waivers rescore.
     "scripts/screen_target_language_audio_units.py",
     "scripts/ko_spoken_numerals.py",
+    # Calibration executes these paths to derive and synthesize registered spoken forms.
+    "scripts/render_formal_target_language_speech.py",
+    "scripts/machine_qc_audio_transports.py",
+    "scripts/run_machine_qc_audio_test.py",
+    "scripts/sermon_sentence_interpretation.py",
     # The gates that admit candidates and issue or accept waivers on calibrated evidence.
     "scripts/machine_quality_waiver.py",
     "scripts/machine_quality_release_basis.py",
