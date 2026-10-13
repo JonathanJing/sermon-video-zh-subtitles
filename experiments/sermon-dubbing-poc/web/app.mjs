@@ -71,7 +71,7 @@ const alignmentDiagnostics = $("fingerprint-diagnostics")?.closest?.("details");
 if (alignmentDiagnostics && typeof fieldAlignment.getDiagnostics !== "function") alignmentDiagnostics.hidden = true;
 const mediaSession = createMediaSession({
   audio,
-  getSelection: () => activeView !== "tab-voices" && week && track ? { week, track } : null,
+  getSelection: () => activeView !== "tab-voices" && week && track ? { week, track, album: t(brandKey("app.brand")) } : null,
   play: () => { if (audio.paused && !playPending) void togglePlay(); },
   pause: () => { if (!audio.paused) audio.pause(); },
   seek: time => setPosition(time),
@@ -95,6 +95,14 @@ function editionLabel() {
 function diagnosticNotice() {
   const state = diagnosticPresentation(week);
   return state ? `${t(state.statusKey)}${state.reasonCode ? ` · ${state.reasonCode}` : ''}` : null;
+}
+// The brand names the sermon language; Chinese keeps the original keys.
+const brandKey = key => ["ko", "es"].includes(contentLocale) ? `${key}.${contentLocale}` : key;
+function renderBrand() {
+  for (const [id, attribute, key] of [["brand-tagline", "data-i18n", "app.tagline"], ["footer-title", "data-i18n", "app.title"], ["brand-link", "data-i18n-aria-label", "app.home"]]) {
+    $(id).setAttribute(attribute, brandKey(key));
+    localizeDOM($(id));
+  }
 }
 // Native names stay readable whatever the page language is.
 const contentLanguages = [["zh-Hans", "中文"], ["ko", "한국어"], ["es", "Español"]];
@@ -181,7 +189,8 @@ function renderWeekLabels() {
   setButtonLabel($("source-link"), view.sourceLabel ? t("app.source.link", { label: view.sourceLabel }) : t("app.source.open"));
   for (const button of $("variants").children) button.textContent = isFormalPlayback(week) ? t("app.release.formal") : getLocale() !== "zh" ? t("app.voice.active", { speaker: week.speaker }) : week.tracks.find(item => item.id === button.dataset.id)?.label || "";
   $("subtitle-note").textContent = t("app.subtitle.follow");
-  document.title = `${activeView === "tab-voices" ? t("app.voices.title") : view.title} · ${t("app.brand")}`;
+  renderBrand();
+  document.title = `${activeView === "tab-voices" ? t("app.voices.title") : view.title} · ${t(brandKey("app.brand"))}`;
 }
 
 function displayCategoryLabel(item) {
@@ -372,7 +381,7 @@ function selectTab(id, focus = false, scroll = false) {
   if (id === "tab-listen") url.searchParams.delete("tab");
   else url.searchParams.set("tab", id.replace("tab-", ""));
   history.replaceState(null, "", url);
-  if (week) document.title = `${voices ? t("app.voices.title") : displayWeek().title} · ${t("app.brand")}`;
+  if (week) document.title = `${voices ? t("app.voices.title") : displayWeek().title} · ${t(brandKey("app.brand"))}`;
   for (const tab of tabs) {
     const selected = tab.id === id;
     if (tab.getAttribute("role") === "tab") {

@@ -148,6 +148,21 @@ test('all marked static strings have matching Chinese, English and Korean POC di
 });
 
 
+test('every page language names each sermon language in the brand', async () => {
+  const { messages: appMessages } = await import('./locales-app.mjs');
+  const { messages: spanishMessages } = await import('./locales-es.mjs');
+  const pages = { zh: { ...messages.zh, ...appMessages.zh }, en: { ...messages.en, ...appMessages.en }, ko: koreanMessages, es: spanishMessages };
+  for (const [page, dictionary] of Object.entries(pages)) {
+    for (const key of ['app.tagline', 'app.title', 'app.home', 'app.brand']) {
+      const names = ['', '.ko', '.es'].map(suffix => dictionary[`${key}${suffix}`]);
+      assert.ok(names.every(Boolean), `${page} is missing a ${key} sermon-language variant`);
+      if (!(page === 'ko' && key === 'app.brand')) assert.equal(new Set(names).size, 3, `${page} ${key} must differ by sermon language`);
+    }
+  }
+  assert.equal(messages.zh['app.tagline.ko'], '证道韩语听译');
+  assert.equal(spanishMessages['app.tagline.es'], 'Sermones en español');
+});
+
 const themeSource = await readFile(new URL('./theme.js', import.meta.url), 'utf8');
 function executeTheme(doc) {
   runInNewContext(themeSource, { document: doc, localStorage: globalThis.localStorage, CustomEvent: globalThis.CustomEvent });

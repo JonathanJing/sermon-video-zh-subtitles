@@ -711,6 +711,11 @@ test('published week switches language in the existing player and keeps full rea
   assert.deepEqual(sermonLanguages().map(button => button.getAttribute('aria-pressed')), ['true', 'false', 'false']);
   sermonLanguages().find(button => button.dataset.locale === 'ko').click();
   assert.equal(h.get('content-language').value, 'ko', 'the settings select follows the visible sermon-language buttons');
+  assert.equal(h.get('brand-tagline').getAttribute('data-i18n'), 'app.tagline.ko', 'the subtitle names the sermon language');
+  assert.equal(h.get('footer-title').getAttribute('data-i18n'), 'app.title.ko');
+  assert.equal(h.get('brand-link').getAttribute('data-i18n-aria-label'), 'app.home.ko');
+  assert.equal(h.document.title, 'Title ko · 同行 · 证道韩语听译');
+  assert.equal(h.mediaSessions[0].getSelection().album, '同行 · 证道韩语听译', 'the lock screen names the sermon language too');
   assert.deepEqual(sermonLanguages().map(button => button.getAttribute('aria-pressed')), ['false', 'true', 'false']);
   assert.equal(h.audio.paused, true, 'old audio stops when the content language changes');
   assert.equal(h.audio.src, `https://example.test/media/${id}/ko.mp3`);
@@ -734,6 +739,7 @@ test('published week switches language in the existing player and keeps full rea
   assert.equal(h.get('content-language').value, 'zh-Hans');
   assert.equal(h.get('content-language').children.find(option => option.value === 'ko').disabled, true);
   assert.deepEqual(sermonLanguages().map(button => button.dataset.locale), ['zh-Hans'], 'a single-language week offers only its published language');
+  assert.equal(h.get('brand-tagline').getAttribute('data-i18n'), 'app.tagline', 'Chinese keeps the original subtitle');
 });
 
 
