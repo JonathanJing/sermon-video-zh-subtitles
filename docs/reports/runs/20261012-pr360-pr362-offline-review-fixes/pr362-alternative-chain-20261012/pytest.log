@@ -14,7 +14,7 @@ approved = '요한복음 3장이나 4장'
         assert not any(char.isdigit() for char in spoken)
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '요한복음 3장2나 4장' == '요한복음 3장이나 4장'
-E         
+E
 E         - 요한복음 3장이나 4장
 E         ?        ^
 E         + 요한복음 3장2나 4장
@@ -32,7 +32,7 @@ approved = '요한복음 3장이나4장'
         assert not any(char.isdigit() for char in spoken)
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '요한복음 3장2나4장' == '요한복음 3장이나4장'
-E         
+E
 E         - 요한복음 3장이나4장
 E         ?        ^
 E         + 요한복음 3장2나4장
@@ -50,7 +50,7 @@ approved = '시편 3편이나 4편'
         assert not any(char.isdigit() for char in spoken)
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '시편 3편2나 4편' == '시편 3편이나 4편'
-E         
+E
 E         - 시편 3편이나 4편
 E         ?      ^
 E         + 시편 3편2나 4편
@@ -68,7 +68,7 @@ approved = '시편 3편이나4편'
         assert not any(char.isdigit() for char in spoken)
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '시편 3편2나4편' == '시편 3편이나4편'
-E         
+E
 E         - 시편 3편이나4편
 E         ?      ^
 E         + 시편 3편2나4편

@@ -75,3 +75,7 @@ commit `cc353091b501f3cd32df5a2c169d4e8fdde779aa` 添加合法完整助词 이�
 最终代码 head `471fd2c5` 针对新 review 的 이나，并统一已有完整 citation connector：이나／이든／에서부터／부터는／부터만／부터도 与原连接词，在 generator、ASR 边界和引用链共用语法。不扩大一般助词或跨正文上下文。数字折叠先消费完整连接词再处理 reference numeric atoms，避免把连接词的 이／만 当数词。
 
 开发阶段依次发现 connector syllable 误折、无空格 부터만 吞 syllable、一次移动 import 后的作用域 NameError（134 failed），均保留日志与统计。修正后最终三文件合同 219 passed／34 subtests（1.01 秒），diff check 通过；覆盖生成→fold→score、无空格／空格替代和 compound 范围、错误端点拒绝、普通 counter 与跨正文负例。该结果绑定 `471fd2c5`；此前完整 consumer 131／64 只绑定 `cc353091`，本次 connector-only followup 没有重跑其十五分钟矩阵。GitHub CI 按最终 head 独立核对；报告继续 draft，不表示代码已合并或真实 QC／设备／现场通过。
+
+## 导出日志副本规范化
+
+补交日志后发现 pytest traceback 副本含行末空白，默认 diff gate 会拒绝。仅清理报告日志副本的行末空白；manifest 的 sha256／bytes 保留原来源身份，新增 exportedCopy 绑定规范化副本的 hash、字节数与处理方式。原运行日志未修改，未重跑模型或测试。默认 git diff --check 和 exporter 脱敏验证通过。

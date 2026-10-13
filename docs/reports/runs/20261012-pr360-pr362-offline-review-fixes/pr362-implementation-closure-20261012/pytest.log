@@ -97,11 +97,11 @@ discover	pass	0.0
                                        basis.json_sha256(anchor), candidate["groups"]),
             speech_job=fixtures.speech_job("ko"), track_check=track_check(package))
 
-tests/test_machine_quality_release_basis.py:788: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_machine_quality_release_basis.py:788:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 scripts/machine_audio_waiver_acceptance.py:77: in build_audio_waiver
     _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 condition = False
 message = 'ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure'
@@ -125,14 +125,14 @@ self = <test_machine_quality_release_basis.AudioWaiverTests testMethod=test_seco
                                           track_check=track_check(package),
                                           anchor=audio_sources()[0], candidate=audio_sources()[1])
 
-tests/test_machine_quality_release_basis.py:746: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_machine_quality_release_basis.py:746:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 tests/test_machine_quality_release_basis.py:138: in issue_audio
     return basis.build_audio_waiver(package, screening, qc, text, cal, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 scripts/machine_quality_release_basis.py:508: in build_audio_waiver
     _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 condition = False
 message = 'ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure'
@@ -169,8 +169,8 @@ self = <test_machine_quality_release_basis.AudioWaiverTests testMethod=test_unif
 >       receipt = self.build(package, screening, qc, text)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/test_machine_quality_release_basis.py:859: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_machine_quality_release_basis.py:859:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 tests/test_machine_quality_release_basis.py:557: in build
     return issue_audio(package, screening, qc, text, calibration(),
 tests/test_machine_quality_release_basis.py:138: in issue_audio
@@ -178,7 +178,7 @@ tests/test_machine_quality_release_basis.py:138: in issue_audio
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 scripts/machine_quality_release_basis.py:508: in build_audio_waiver
     _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 condition = False
 message = 'ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure'
@@ -198,8 +198,8 @@ self = <test_machine_quality_release_basis.AudioWaiverTests testMethod=test_waiv
 >       receipt = self.build(package, screening, qc, text)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/test_machine_quality_release_basis.py:828: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_machine_quality_release_basis.py:828:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 tests/test_machine_quality_release_basis.py:557: in build
     return issue_audio(package, screening, qc, text, calibration(),
 tests/test_machine_quality_release_basis.py:138: in issue_audio
@@ -207,7 +207,7 @@ tests/test_machine_quality_release_basis.py:138: in issue_audio
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 scripts/machine_quality_release_basis.py:508: in build_audio_waiver
     _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 condition = False
 message = 'ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure'
@@ -227,8 +227,8 @@ self = <test_machine_quality_release_basis.AudioWaiverTests testMethod=test_waiv
 >       receipt = self.build(package, screening, qc, text)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/test_machine_quality_release_basis.py:592: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_machine_quality_release_basis.py:592:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 tests/test_machine_quality_release_basis.py:557: in build
     return issue_audio(package, screening, qc, text, calibration(),
 tests/test_machine_quality_release_basis.py:138: in issue_audio
@@ -236,7 +236,7 @@ tests/test_machine_quality_release_basis.py:138: in issue_audio
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 scripts/machine_quality_release_basis.py:508: in build_audio_waiver
     _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 condition = False
 message = 'ASR screening does not rescore: screening scoring implementation differs; rescreen with the current dependency closure'

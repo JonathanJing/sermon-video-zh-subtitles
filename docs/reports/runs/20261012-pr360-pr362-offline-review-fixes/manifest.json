@@ -301,7 +301,12 @@
       "bytes": 3905,
       "truncated": false,
       "sha256": "36002a61e7efdf83c324d3e3d6adc50af7329f37e06e4af5d381903378861780",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "d08e95ce54f916803608e91911448bd11b9edc7326cdf35c112cc7bb4e5676e9",
+        "bytes": 3887,
+        "normalization": "strip_line_end_whitespace"
+      }
     },
     {
       "run": "pr362-counter-structure-contract-20261012",
@@ -429,6 +434,11 @@
       "sha256": "1197b1d33f4e6b1b96bfe4504b57ff5f7e3848aedbe017a8880260a5f3e10c39",
       "redactions": {
         "email": 1
+      },
+      "exportedCopy": {
+        "sha256": "7623dff1dae5f5dedcae31cc62a179c0486c549663d7c3fadefc845e477929b2",
+        "bytes": 20218,
+        "normalization": "strip_line_end_whitespace"
       }
     },
     {
@@ -465,7 +475,12 @@
       "bytes": 1641,
       "truncated": false,
       "sha256": "69f44ac8424e624e9287eadebd4c379f958debb07f400509b2a283bf69b5cdd9",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "51f5b8f025a297d8d04eb0fd9fb6e519394cbb385dc6c3e7e92135caca53c919",
+        "bytes": 1632,
+        "normalization": "strip_line_end_whitespace"
+      }
     },
     {
       "run": "pr362-alternative-chain-20261012",
@@ -492,7 +507,12 @@
       "bytes": 4624,
       "truncated": false,
       "sha256": "d690c23f09418516b7c5b16bde6c9814155be97dbf6d725f52df8dfeddb841d5",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "9101c63c61e6afd11ba4a7f9761b909c586b3b80905f9bb9a8ecdaf9d011afff",
+        "bytes": 4588,
+        "normalization": "strip_line_end_whitespace"
+      }
     },
     {
       "run": "pr362-alternative-chain-20261012",
@@ -501,7 +521,12 @@
       "bytes": 10243,
       "truncated": false,
       "sha256": "62003a0e1bcf9dab04398eb981485c6e8338f5e5b3bc318abc68221b9574367c",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "2daaa2cba2279c5c86e0cd7771e4cdeaa443ba0923fdbf072b53aa26878ece78",
+        "bytes": 10162,
+        "normalization": "strip_line_end_whitespace"
+      }
     },
     {
       "run": "pr362-alternative-chain-20261012",
@@ -528,7 +553,12 @@
       "bytes": 557645,
       "truncated": true,
       "sha256": "6e606c4c851b13c78da3fe6c325d6df5286eb166dcfc73a27a739e0810758221",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "53647393e8add05cd6a7335d6ba28e5fb9bf96fd38bfe6d36766dffae798d3b3",
+        "bytes": 29625,
+        "normalization": "strip_line_end_whitespace"
+      }
     }
   ],
   "limits": {

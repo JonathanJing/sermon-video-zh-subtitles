@@ -15,7 +15,7 @@ connector = '부터만', spacing = ''
         assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '요한복음 3장부터만사장까지' == '요한복음 3장부터만4장까지'
-E         
+E
 E         - 요한복음 3장부터만4장까지
 E         ?           ^
 E         + 요한복음 3장부터만사장까지

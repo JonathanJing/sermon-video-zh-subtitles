@@ -18,12 +18,12 @@ template = '요한복음 {start}{dash}{end}장', start = 3, end = 4, dash = '-'
 >       assert screen.fold_transcript(spoken, "ko") == approved
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/test_ko_spoken_numerals.py:109: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_ko_spoken_numerals.py:109:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 scripts/screen_target_language_audio_units.py:531: in fold_transcript
     return _fold_korean(text, citation_ranges=citation_ranges)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 text = '요한복음 삼-사장', citation_ranges = True
 
@@ -33,7 +33,7 @@ text = '요한복음 삼-사장', citation_ranges = True
                 return part
             value = _positional_value(part, _KO_SINO_VALUES, _KO_SINO_SMALL, _KO_SINO_BIG)
             return None if value is None else str(value)
-    
+
         def fraction(match: re.Match) -> str:
             parts = [sino_value(match.group(1)), sino_value(match.group(2))]
             return match.group() if None in parts else f"{parts[0]}분의 {parts[1]}"
@@ -97,8 +97,8 @@ text = '요한복음 삼-사장', citation_ranges = True
 >       receipt, _ = self.run_screen([unit["text"] for unit in self.job["units"]])
                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/test_screen_target_language_audio_units.py:162: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_screen_target_language_audio_units.py:162:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 tests/test_screen_target_language_audio_units.py:120: in run_screen
     return subject.screen(
 scripts/screen_target_language_audio_units.py:700: in screen
@@ -113,7 +113,7 @@ scripts/screen_target_language_audio_units.py:550: in <genexpr>
 scripts/screen_target_language_audio_units.py:531: in fold_transcript
     return _fold_korean(text, citation_ranges=citation_ranges)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 text = '세 가지 무기', citation_ranges = True
 
@@ -123,7 +123,7 @@ text = '세 가지 무기', citation_ranges = True
                 return part
             value = _positional_value(part, _KO_SINO_VALUES, _KO_SINO_SMALL, _KO_SINO_BIG)
             return None if value is None else str(value)
-    
+
         def fraction(match: re.Match) -> str:
             parts = [sino_value(match.group(1)), sino_value(match.group(2))]
             return match.group() if None in parts else f"{parts[0]}분의 {parts[1]}"

@@ -13,7 +13,7 @@ approved = '요한복음 3장이나 4장'
         assert not any(char.isdigit() for char in spoken)
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '요한복음 3장2나 4장' == '요한복음 3장이나 4장'
-E         
+E
 E         - 요한복음 3장이나 4장
 E         ?        ^
 E         + 요한복음 3장2나 4장
@@ -31,7 +31,7 @@ approved = '요한복음 3장이나4장'
         assert not any(char.isdigit() for char in spoken)
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '요한복음 3장2나4장' == '요한복음 3장이나4장'
-E         
+E
 E         - 요한복음 3장이나4장
 E         ?        ^
 E         + 요한복음 3장2나4장
@@ -49,7 +49,7 @@ approved = '시편 3편이나 4편'
         assert not any(char.isdigit() for char in spoken)
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '시편 3편2나 4편' == '시편 3편이나 4편'
-E         
+E
 E         - 시편 3편이나 4편
 E         ?      ^
 E         + 시편 3편2나 4편
@@ -67,7 +67,7 @@ approved = '시편 3편이나4편'
         assert not any(char.isdigit() for char in spoken)
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '시편 3편2나4편' == '시편 3편이나4편'
-E         
+E
 E         - 시편 3편이나4편
 E         ?      ^
 E         + 시편 3편2나4편
@@ -87,7 +87,7 @@ connector = '이나', spacing = ''
         assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '요한복음 3장2나4장까지' == '요한복음 3장이나4장까지'
-E         
+E
 E         - 요한복음 3장이나4장까지
 E         ?        ^
 E         + 요한복음 3장2나4장까지
@@ -107,7 +107,7 @@ connector = '이든', spacing = ''
         assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '요한복음 3장2든4장까지' == '요한복음 3장이든4장까지'
-E         
+E
 E         - 요한복음 3장이든4장까지
 E         ?        ^
 E         + 요한복음 3장2든4장까지
@@ -127,7 +127,7 @@ connector = '부터만', spacing = ''
         assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '요한복음 3장부터만사장까지' == '요한복음 3장부터만4장까지'
-E         
+E
 E         - 요한복음 3장부터만4장까지
 E         ?           ^
 E         + 요한복음 3장부터만사장까지
@@ -147,7 +147,7 @@ connector = '이나', spacing = ' '
         assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '요한복음 3장2나 4장까지' == '요한복음 3장이나 4장까지'
-E         
+E
 E         - 요한복음 3장이나 4장까지
 E         ?        ^
 E         + 요한복음 3장2나 4장까지
@@ -167,7 +167,7 @@ connector = '이든', spacing = ' '
         assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
 >       assert screen.fold_transcript(spoken, "ko") == approved
 E       AssertionError: assert '요한복음 3장2든 4장까지' == '요한복음 3장이든 4장까지'
-E         
+E
 E         - 요한복음 3장이든 4장까지
 E         ?        ^
 E         + 요한복음 3장2든 4장까지
