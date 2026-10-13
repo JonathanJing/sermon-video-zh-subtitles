@@ -233,3 +233,15 @@ Error-like log lines (first 5 per log):
 - [20261012-pr362-condensation-normalization/pytest-reference-fixture-fail.log](20261012-pr362-condensation-normalization/pytest-reference-fixture-fail.log)
 - [20261012-pr362-condensation-normalization/pytest.log](20261012-pr362-condensation-normalization/pytest.log)
 - [20261012-pr362-condensation-normalization/timings.tsv](20261012-pr362-condensation-normalization/timings.tsv)
+
+## Accepted waiver duration gate and explicit legacy speech rejection
+
+- [pr362-human-waiver-explicit-spoken-20261012/human-accepted-negative.log](pr362-human-waiver-explicit-spoken-20261012/human-accepted-negative.log)
+- [pr362-human-waiver-explicit-spoken-20261012/human-gate.log](pr362-human-waiver-explicit-spoken-20261012/human-gate.log)
+- [pr362-human-waiver-explicit-spoken-20261012/integrated-final.log](pr362-human-waiver-explicit-spoken-20261012/integrated-final.log)
+- [pr362-human-waiver-explicit-spoken-20261012/outcome.json](pr362-human-waiver-explicit-spoken-20261012/outcome.json)
+- [pr362-human-waiver-explicit-spoken-20261012/summary.json](pr362-human-waiver-explicit-spoken-20261012/summary.json)
+- [pr362-human-waiver-explicit-spoken-20261012/timings.tsv](pr362-human-waiver-explicit-spoken-20261012/timings.tsv)
+- [20261012-pr362-legacy-spoken-failclosed/outcome.json](20261012-pr362-legacy-spoken-failclosed/outcome.json)
+- [20261012-pr362-legacy-spoken-failclosed/pytest.log](20261012-pr362-legacy-spoken-failclosed/pytest.log)
+- [20261012-pr362-legacy-spoken-failclosed/timings.tsv](20261012-pr362-legacy-spoken-failclosed/timings.tsv)

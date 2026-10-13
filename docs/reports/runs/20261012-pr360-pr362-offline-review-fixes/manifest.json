@@ -88,6 +88,18 @@
       "skipped": {
         ".md": 1
       }
+    },
+    {
+      "label": "pr362-human-waiver-explicit-spoken-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-human-waiver-explicit-spoken-20261012",
+      "skipped": {}
+    },
+    {
+      "label": "20261012-pr362-legacy-spoken-failclosed",
+      "source": "/private/tmp/sermon-fix-362/artifacts/run/20261012-pr362-legacy-spoken-failclosed",
+      "skipped": {
+        ".md": 1
+      }
     }
   ],
   "files": [
@@ -1096,6 +1108,87 @@
       "bytes": 45,
       "truncated": false,
       "sha256": "e1670aabca2289c28c67e91eb019a4ca9d0b3b3099a5262e29298cb184aedf87",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-human-waiver-explicit-spoken-20261012",
+      "path": "human-accepted-negative.log",
+      "kind": "log",
+      "bytes": 107,
+      "truncated": false,
+      "sha256": "bc87b8ad2214c48e1a970863770f005122cb6afe3aa8bf9a2051d8acf3f21e69",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-human-waiver-explicit-spoken-20261012",
+      "path": "human-gate.log",
+      "kind": "log",
+      "bytes": 107,
+      "truncated": false,
+      "sha256": "5d95b4832a9f5b69f7b3b3a272c3d2f72241a8b53325c079e81e1343f44e4882",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-human-waiver-explicit-spoken-20261012",
+      "path": "integrated-final.log",
+      "kind": "log",
+      "bytes": 107,
+      "truncated": false,
+      "sha256": "efea508fc2707321e15558fbc7dae0044b2799a3594b1cf8fb4c61d285edd44e",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-human-waiver-explicit-spoken-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-human-waiver-explicit-spoken-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 668,
+      "truncated": false,
+      "sha256": "eb3d59750f4d886c048eae7771002eefc14c90476108554e60a51e98ec7bf3da",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-human-waiver-explicit-spoken-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 140,
+      "truncated": false,
+      "sha256": "ebb33cfa4a88f795c01d95c42dd7cb0e6bf29e15af983ad9e4734c4434e6d706",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr362-legacy-spoken-failclosed",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 253,
+      "truncated": false,
+      "sha256": "ba931dcf9f79d0771988d7787bfe9108efb77fcdb6337478d679dbe625fbf02c",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr362-legacy-spoken-failclosed",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 106,
+      "truncated": false,
+      "sha256": "baf0f2ba47f25cda6a51421855621e10a5fa0817ab1e2e1e6b063d0c1b77cdb1",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr362-legacy-spoken-failclosed",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 46,
+      "truncated": false,
+      "sha256": "dcd69235bc64f41efe8b0fe2146e0b037ae5061c1bfa979915d57d86ef57bc9e",
       "redactions": {}
     }
   ],

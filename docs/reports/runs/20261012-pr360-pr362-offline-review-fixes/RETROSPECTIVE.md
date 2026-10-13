@@ -127,3 +127,11 @@ commit `0ef25fe0` 修复独立unit QC默认无job而raw计数的问题：CLI必�
 沿实际校准入口额外发现clean／seeded audio QC仍raw计数，已从renderIdentity.synthesis.normalizationPolicySha256传入显式calibration_policy_context；不伪造完整jobhash，该内部收据不能支持真实v2job豁免。新增测试调用实际seeded.calibrate与fake WAV／render，验证clean边界不误报、多个实际seeded QC都消费同上下文、且不被当成成品job绑定。
 
 定向QC13项（3.35秒）、追加waiver拒绝后14项（3.43秒），校准修复前集成62 passed／38 subtests（4.29秒），最终含校准的集成63 passed／38 subtests（5.74秒），各阶段重叠不能相加。最终范围：实际QC CLI、AudioWaiverTests、machine_checked_delivery与condensation三个文件。全部离线，无模型／Spark／部署或真实重新校准；完整consumer未重跑。默认整PRdiffcheck、脱敏verify通过，日志forceadd／副本规范化保留sourcehash，报告仍draft，最终CI独立核验。
+
+## 人接受收据不能绕过时长身份与旧显式口播拒绝
+
+最终 commit `01bb67a4` 为human-accepted audio waiver v3接上与普通v2相同的duration_binding_problems。负例先构造并验证真正有效的人接受收据，再调用实际v3build：无绑定、legacy raw、calibrationcontext或另一个job绑定均拒绝；有效jobbinding会进入独立human-acceptance gate。两处生产build_audio_waiver入口均已核对，真实QC driver及calibration调用分别使用actualjob与显式calibrationcontext。
+
+另一项legacy normalization-v1＋显式韩文spokenText没有可冻结口播长度身份，按父裁定在renderer指令校验和adapter planfreeze／dispatch前拒绝，要求冻结新registered-v2job。只拒该组合；旧v1 raw／instruction-only、其他语言既有角色及registered-v2匹配指令保留。docs与body旧兼容声明已纠正；历史阶段对旧组合的测试不能冒充最终仍支持。
+
+最终字节整合39 passed／12 subtests（5.26秒），范围为新human gate、AudioWaiverTests、job-boundQC与delivery；独立完整renderer＋adapter44 passed／14 subtests（34.28秒），原日志已导出入Git。先前两次human gate24／12（0.93／0.90秒）为重叠阶段，后者包含valid人接受负例，不能相加。没有模型／Spark／部署或完整consumer重跑。默认整PRdiffcheck／脱敏verify通过，日志forceadd并保留来源hash，报告仍draft，最终head CI独立判断合并。
