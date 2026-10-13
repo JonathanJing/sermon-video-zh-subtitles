@@ -6,6 +6,10 @@
 
 2026-10-13 用户决定：**只调 API 的环节不占 Spark 会话**。Layer 2 翻译与复核、文本质检（回译评判）、Codex Supervisor、学习笔记、英文机器审核、阅读版本、旧页面文本与源音频转写都只调远程 API 或 Mac 本地 Codex CLI，不再检查独占会话，也不再为每次调用建立 Spark job hold（`SessionBoundCaller(..., requires_spark=False)`）。这些环节进行时 Spark 上的服务照常运行；进程异常退出也不会让会话进入 `reconcile_required`。GPU 环节不变：TTS 渲染、配音初筛 ASR、音频质检、MFA 和本地模型调用仍要求会话及 job hold。周更只在 Spark 环节期间 begin 会话，结束后 finish。
 
+### 合并后的首次运行与缓存身份
+
+PR #380 将 API 质检评判的 `sessionCheck` 改为 `none_api_only`，属于新的评判身份。合并后的第一次运行必须冻结最终 commit 和质检实现哈希，使用新的 QC state、评判缓存及响应目录，不复用旧缓存，也不通过 `reuseBudgetRoots` 引入旧评判身份的回复；旧目录保留作证据。按最终代码重新校准、质检和生成放行证明后，后续同一冻结身份才可按 #381 的已批准来源复用合同恢复。API 不占 Spark 不等于未知结果可以重发：独立 API/CLI outcome 收据或原有预算账本仍须先对账。
+
 ## 当前发现
 
 核验主机 `achillesjing@192.168.1.152`：Docker 所有容器均已停止，但 GPU 上仍有 `llama-server.service` 的 llama-server 进程，报告 35,695 MiB（约 34.9 GiB）。主机 MemAvailable 为 76,301,090,816 bytes（约 71.1 GiB）。这些是调查时刻的读数，不是未来开跑保证。
