@@ -176,6 +176,15 @@ def check_budget(plan_dir: Path):
         plan = json.loads((plan_dir / "plan.json").read_text())
         if plan.get("schemaVersion") != planner.PLAN_SCHEMA:
             raise ValueError("Unsupported old plan: re-plan explicitly under the current contract")
+        approval_path = plan_dir / plan['approvalReceipt']
+        approval = json.loads(approval_path.read_text())
+        binding = {key:value for key,value in plan.items() if key not in {'approvalReceipt','approvalSha256'}}
+        if (sha256(approval_path)!=plan['approvalSha256']
+                or approval.get('schemaVersion')!='sermon-run-budget-plan-approval-v1'
+                or approval.get('humanApproval') is not True or approval.get('decision')!='approved'
+                or not approval.get('reviewedBy') or not approval.get('operatorEvidence')
+                or approval.get('binding')!=binding):
+            raise ValueError('Aggregate total, prior spend or stage plan changed since approval')
         if not plan.get('stages') or len({stage['stage'] for stage in plan['stages']})!=len(plan['stages']):
             raise ValueError('Empty or duplicate planned stages')
         if sha256(Path(plan["profile"])) != plan["profileSha256"]:

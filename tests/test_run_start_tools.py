@@ -110,6 +110,20 @@ class PlanTests(unittest.TestCase):
         with self.assertRaises(ValueError):run_plan(*self.args(extra=['--profile',str(path)]))
         self.assertFalse((self.base/'run').exists())
 
+    def test_aggregate_total_settlement_and_stage_schedule_are_approval_bound(self):
+        for field in ('totalUsd','settledUsd','schedule'):
+            name='aggregate-'+field;run_plan(*self.args(name,extra=['--settled-usd','1']))
+            self.assertEqual(check.check_budget(self.base/name)['status'],'pass')
+            value=self.load(name)
+            if field=='totalUsd':value[field]+=100
+            elif field=='settledUsd':value[field]=0
+            else:value[field]['mode']='edited'
+            if field!='schedule':value['schedule']=plan.schedule(value['stages'],total=value['totalUsd'],settled=value['settledUsd'])
+            write(self.base/name/'plan.json',value)
+            result=check.check_budget(self.base/name)
+            self.assertEqual(result['status'],'fail')
+            self.assertIn('Aggregate',result['problems'][0])
+
     def test_no_stage_fits_and_existing_output_are_refused(self):
         code,_=run_plan(*self.args(total='1'));self.assertEqual(code,1)
         self.assertFalse((self.base/'run').exists())

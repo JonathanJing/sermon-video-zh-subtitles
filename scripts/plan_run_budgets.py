@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 PROFILE = ROOT / "config/weekly-run-profile.json"
 PROFILE_SCHEMA = "sermon-weekly-run-profile-v2"
-PLAN_SCHEMA = "sermon-run-budget-plan-v2"
+PLAN_SCHEMA = "sermon-run-budget-plan-v3"
 LOCALES = ("zh-Hans", "ko", "es")
 
 
@@ -237,6 +237,11 @@ def main(argv=None):
             "qcInputs": {"path": str(args.qc_inputs.resolve()), "sha256": file_sha256(args.qc_inputs)} if qc_locales else None,
             "expectedCommit": __import__('subprocess').check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip(),
             "expectedImplementation": waiver.implementation_sha256()}
+    approval = write_new(args.out / "plan-approval.json", {
+        "schemaVersion": "sermon-run-budget-plan-approval-v1", "binding": plan,
+        "humanApproval": True, "decision": "approved", "reviewedBy": args.approved_by,
+        "reviewedAt": now, "operatorEvidence": args.evidence})
+    plan = {**plan, "approvalReceipt": approval.name, "approvalSha256": file_sha256(approval)}
     write_new(args.out / "plan.json", plan)
     print(json.dumps({"plan": str(args.out / 'plan.json'), "schedule": plan['schedule']}))
     return 0
