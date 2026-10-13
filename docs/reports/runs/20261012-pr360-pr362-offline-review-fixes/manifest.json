@@ -31,6 +31,11 @@
       "label": "pr362-counter-structure-contract-20261012",
       "source": "/private/tmp/sermon-fix-362/artifacts/pr362-counter-structure-contract-20261012",
       "skipped": {}
+    },
+    {
+      "label": "pr362-terminal-compound-contract-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-terminal-compound-contract-20261012",
+      "skipped": {}
     }
   ],
   "files": [
@@ -322,6 +327,51 @@
       "bytes": 45,
       "truncated": false,
       "sha256": "0c3cb197878f451c12db38be5af5d0dda49ab4284a1b481990591d133a05b367",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-terminal-compound-contract-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-terminal-compound-contract-20261012",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 318,
+      "truncated": false,
+      "sha256": "33125800f4a3013a3ea697dbc2757c6615c66d25aedfcd6dd91616203809b33c",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-terminal-compound-contract-20261012",
+      "path": "suffix-final-tests.log",
+      "kind": "log",
+      "bytes": 318,
+      "truncated": false,
+      "sha256": "f0cd5500ef527a75bfbd279b8c9ae9a92d70985bf9d3f48de23a0d393cce1125",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-terminal-compound-contract-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 382,
+      "truncated": false,
+      "sha256": "a9f39204acd61840ffc899e3ce022a97362dfc9dac9627f1cdc2b5daeb594609",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-terminal-compound-contract-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 45,
+      "truncated": false,
+      "sha256": "359b12fd0fa388177d6f1ecae6986c9cf31b140a9552934215e5afe6ecd47f8f",
       "redactions": {}
     }
   ],
