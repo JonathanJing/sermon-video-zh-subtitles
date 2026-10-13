@@ -132,15 +132,19 @@ def publish_once(snapshot):
                              request=publisher.authenticated_transport(), reader=reader)
 
 
-def live_readback(snapshot, page_id, out):
-    catalog_file = snapshot / 'public/multilingual-v3.json'
-    status, data = reader(preparation.ORIGIN + '/multilingual-v3.json')
+def live_readback(snapshot, page_id, out, machine_checked=False):
+    # A machine-checked test page is listed only in v4; v3 is its human-only projection.
+    name = contract.CATALOG_FILES[contract.CATALOG_V4 if machine_checked else contract.CATALOG_V3]
+    catalog_file = snapshot / 'public' / name
+    status, data = reader(preparation.ORIGIN + '/' + name)
     contract.require(status == 200 and hashlib.sha256(data).hexdigest() == preparation.digest(catalog_file),
                      'Live catalog differs from deployed snapshot')
     catalog = json.loads(data)
     page = next(p for p in catalog['pages'] if p['id'] == page_id)
     expected_files = {row['path']: row for row in preparation.read(snapshot / 'seal-report.json')['files']}
-    contract.require(page.get('simulationOnly') and page.get('diagnosticOnly'), 'Missing test isolation')
+    isolated = lambda entry: (entry.get('diagnosticOnly') is True and
+                              (entry.get('simulationOnly') is not True if machine_checked else entry.get('simulationOnly') is True))
+    contract.require(isolated(page), 'Missing test isolation')
     def check_asset(asset):
         # Stream audio/media; do not retain large remote binaries in memory.
         with urlopen(Request(preparation.ORIGIN + asset['path'], headers={'Cache-Control': 'no-cache'}), timeout=120) as response:
@@ -155,7 +159,7 @@ def live_readback(snapshot, page_id, out):
 
     observations = {}
     for locale, target in page['targets'].items():
-        contract.require(target.get('simulationOnly') and target.get('diagnosticOnly'), 'Missing locale isolation')
+        contract.require(isolated(target), 'Missing locale isolation')
         status, raw = reader(preparation.ORIGIN + target['releasePackageUrl'])
         contract.require(status == 200 and hashlib.sha256(raw).hexdigest() == target['releasePackageJsonSha256'],
                          'Live release hash differs')
@@ -166,7 +170,8 @@ def live_readback(snapshot, page_id, out):
         for asset in release['assets']:
             checked.append(check_asset(asset))
         observations[locale] = checked
-    source_video = check_asset(expected_files['/media/' + page_id + '/source.mp4'])
+    video_path = '/media/' + page_id + '/source.mp4'
+    source_video = check_asset(expected_files[video_path]) if not machine_checked else None
     preparation.write(out, {'schemaVersion': 'sermon-dev-diagnostic-live-readback-v1',
         'status': 'pass', 'checkedAt': now(), 'pageId': page_id, 'locales': observations,
         'sourceVideo': source_video,
@@ -177,6 +182,11 @@ def _run(args):
     base, prepared, root = (p.resolve() for p in (args.baseline, args.prepared, args.out))
     manifest, assets = builder.verified_assets(prepared)
     baseline_catalog = contract.validate_catalog_snapshot(base)
+    machine = bool(getattr(args, 'machine_checked', False))
+    if machine:
+        # v3 is only the human projection: a machine-only page may exist solely
+        # in v4. Refuse its ID before asset publication or any later sealing.
+        baseline_catalog = contract.snapshot_catalog_v4(base)
     page_id = manifest['pageId']
     contract.require(page_id.startswith(('mockup-', 'dryrun-', 'dev-')), 'Diagnostic page ID required')
     contract.require(set(manifest['releases']) == {'zh-Hans', 'ko', 'es'}, 'Three locales required')
@@ -184,9 +194,18 @@ def _run(args):
                      'Test page already exists; build a new run-specific page ID')
     contents = [preparation.read(prepared / 'public' / preparation.safe_relative(row['path']))
                 for row in assets if row['role'] == 'content']
-    contract.require(len(contents) == 3 and all(c.get('reviewMode') == 'simulation' for c in contents),
-                     'Explicit simulated content required')
-    for content in contents:
+    if machine:
+        # Real machine-checked content on an isolated test page: formal v3 content with its
+        # disclosure, published without the source video (content v3 does not bind one).
+        contract.require(len(contents) == 3 and all(
+            c.get('schemaVersion') == 'sermon-full-video-text-content-v3' and c.get('status') == contract.MACHINE_CHECKED
+            and c.get('reviewMode') == 'formal' and c.get('disclosure') for c in contents),
+            'Explicit machine-checked content required')
+        contract.require(args.source_video is None, 'Machine-checked test pages publish no source video')
+    else:
+        contract.require(len(contents) == 3 and all(c.get('reviewMode') == 'simulation' for c in contents),
+                         'Explicit simulated content required')
+    for content in ([] if machine else contents):
         relative = preparation.safe_relative(content['sourceVideoUrl'])
         contract.require(str(relative) == 'media/' + page_id + '/source.mp4', 'Source video page binding differs')
         source = args.source_video if args.source_video else base / 'public' / relative
@@ -204,7 +223,8 @@ def _run(args):
                 'implementationSha256s': {Path(module.__file__).name: preparation.digest(module.__file__)
                     for module in (builder, preparation, publisher, contract)},
                 'executorSha256': preparation.digest(Path(__file__)),
-                'target': {'site': preparation.SITE, 'origin': preparation.ORIGIN}}
+                'target': {'site': preparation.SITE, 'origin': preparation.ORIGIN},
+                'contentMode': 'machine_checked' if machine else 'simulation'}
     plan = {'status': 'validated_not_deployed', 'inputs': identity, 'modelApiRequests': 0,
             'deploymentChannel': 'dev', 'betaBuild': 'not_run', 'playback': 'not_run'}
     metrics = monitor_metrics(args.monitor_metrics)
@@ -224,12 +244,14 @@ def _run(args):
     journal.stage('release_plan', lambda: preparation.release_plan(live, prepared, release_plan), [release_plan])
     journal.stage('seal', lambda: builder.seal(argparse.Namespace(prepared=prepared, baseline=live, release_plan=release_plan,
                   http_verification=verification, out=sealed)), [sealed / 'seal-report.json'], lambda: contract.validate_catalog_snapshot(sealed))
-    journal.stage('prepare_overlay', lambda: preparation.overlay(live, sealed / 'public', sealed / 'public/multilingual-v3.json', final),
+    overlay = (lambda: preparation.machine_checked_overlay(live, sealed / 'public', sealed / 'public/multilingual-v4.json', final)) if machine \
+        else (lambda: preparation.overlay(live, sealed / 'public', sealed / 'public/multilingual-v3.json', final))
+    journal.stage('prepare_overlay', overlay,
                   [final / 'seal-report.json', final / 'publish-config.json'], lambda: contract.validate_catalog_snapshot(final))
     journal.stage('publish_catalog', lambda: publish_once(final), [final / 'deployment-attempt-v2.json'])
     # Always rerun external verification on resume: cached HTTP evidence is historical.
     readback = root / ('live-readback-' + str(time.time_ns()) + '.json')
-    journal.stage('live_readback', lambda: live_readback(final, page_id, readback), [readback], always=True)
+    journal.stage('live_readback', lambda: live_readback(final, page_id, readback, machine), [readback], always=True)
     result = {**plan, 'status': 'diagnostic_dev_http_verified', 'monitorMetrics': metrics,
               'modelApiTokens': 0, 'modelApiCostUsd': 0, 'formalContentApproval': False,
               'readback': str(readback), 'deploymentReceipt': str(final / 'deployment-attempt-v2.json'),
@@ -261,6 +283,8 @@ def main():
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--source-video', type=Path)
     parser.add_argument('--monitor-metrics', type=Path, help='Observed Codex output usage and generation time; omit to report TPS as null')
+    parser.add_argument('--machine-checked', action='store_true',
+                        help='Publish real machine-checked content (v3 content with disclosure) on the isolated test page')
     parser.add_argument('--execute', action='store_true')
     args = parser.parse_args()
     print(json.dumps(run(args), ensure_ascii=False))

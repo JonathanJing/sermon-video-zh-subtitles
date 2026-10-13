@@ -163,6 +163,18 @@ class MachineQcAudioDriverTests(unittest.TestCase):
     def fake_row(self):
         return json.loads((self.root / "audio/fake-plumbing/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
 
+    def test_all_short_chinese_coverage_blocks_before_model_work(self):
+        self.build()
+        short_job = {"units": [{"text": "一"}, {"text": "二"}]}
+        coverage = driver.audio_coverage(short_job, "zh-Hans")
+        with patch.object(driver, "audio_coverage", return_value=coverage), \
+                patch.object(driver, "make_transports") as make, \
+                patch.object(text_driver, "FakeJudge") as judge:
+            self.assertEqual(self.fake(), 2)
+            self.assertIn("audio.truncated", " ".join(self.fake_row()["problems"]))
+            make.assert_not_called()
+            judge.assert_not_called()
+
     def test_preflight_finds_everything_by_hash(self):
         self.build()
         self.assertEqual(self.fake("--preflight-only"), 0, self.fake_row()["problems"])
@@ -462,6 +474,16 @@ class TransportTests(unittest.TestCase):
         # Legacy normalization retains the raw calibration text.
         legacy = render("요한복음 03-04장", LOCALE)
         self.assertEqual(said[-1][0], "요한복음 03-04장")
+        frozen_job = json.loads(json.dumps(job))
+        frozen_job["adapter"]["normalizationPolicySha256"] = basis.json_sha256(formal.FROZEN_V2_NORMALIZATION_POLICY)
+        frozen = transports.QwenTtsRender(frozen_job, checkpoint=checkpoint, cache=self.root / "tts", synth_factory=Synth)
+        frozen("하박국 2장을 읽고 8장", LOCALE)
+        self.assertEqual(said[-1][0], "하박국 이장을 읽고 8장")
+        frozen_count = len(said)
+        frozen("하박국 2장을 읽고 8장", LOCALE)
+        self.assertEqual(len(said), frozen_count)
+        frozen_records = [json.loads(p.read_text()) for p in (self.root / "tts").glob("*/record.json")]
+        self.assertTrue(any(r.get("spokenTextSha256") == sha("하박국 이장을 읽고 8장".encode()) for r in frozen_records))
         v2_job = json.loads(json.dumps(job))
         v2_job["adapter"]["normalizationPolicySha256"] = basis.json_sha256(formal.SPOKEN_FORMS_NORMALIZATION_POLICY)
         normalized = transports.QwenTtsRender(v2_job, checkpoint=checkpoint, cache=self.root / "tts", synth_factory=Synth)

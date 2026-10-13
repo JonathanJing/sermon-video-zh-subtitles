@@ -78,8 +78,7 @@ def validate_rate(rate: dict) -> None:
     if version == RATE_SCHEMA:
         if rate.get("rateImplementationSha256") != rate_implementation_sha256():
             raise ValueError("Speech-rate implementation identity is missing or stale; refit the measured audio")
-    elif synthesis["normalizationPolicySha256"] == formal.identity.json_sha256(
-            formal.SPOKEN_FORMS_NORMALIZATION_POLICY):
+    elif formal.registered_normalization_policy({"adapter": synthesis}) is not None:
         raise ValueError("Legacy speech rate lacks the spoken-rule implementation identity; refit the measured audio")
 
 

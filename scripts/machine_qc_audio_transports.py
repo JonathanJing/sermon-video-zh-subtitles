@@ -465,8 +465,7 @@ class QwenTtsRender:
             {"translationGroupId": "calibration", "text": text}]})
         spoken = forms.get("calibration", text)
         spoken_binding = ({"spokenTextSha256": _sha(spoken.encode("utf-8"))}
-                          if self.adapter.get("normalizationPolicySha256") == json_sha256(
-                              formal.SPOKEN_FORMS_NORMALIZATION_POLICY) else {})
+                          if formal.registered_normalization_policy(self.job) is not None else {})
         key = json_sha256({"text": text, "identity": self.identity, "settings": self.settings,
                            "cacheNamespace": CACHE_NAMESPACE, **spoken_binding})
         folder = self.cache / key

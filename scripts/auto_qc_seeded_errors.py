@@ -47,6 +47,11 @@ from scripts.language_review_plugins import auto_qc_text_common as rules
 
 TEXT_KINDS = waiver.TEXT_KINDS
 AUDIO_KINDS = waiver.AUDIO_KINDS
+# A very short Chinese sentence gives the duration check no reliable expectation: a
+# quarter-length cut of 静默 or 第一，是通过静默 stays within natural variation
+# (2026-10-12 clip test). Per the user's decision such sentences get no truncation
+# trial; they are recorded as excluded, and the ASR still checks every sentence.
+TRUNCATION_MIN_SPEECH_UNITS = {"zh-Hans": 8}
 SPOKEN_KINDS = waiver.SPOKEN_KINDS
 # The first negation found is removed or reversed (않으십니다 -> 으십니다 reads as an affirmation).
 NEGATIONS = {"zh-Hans": (("没有", "有"), ("不", "")),
@@ -442,6 +447,13 @@ def drop_key_word(text: str, locale: str) -> str | None:
     return re.sub(r"\s{2,}", " ", text[:start] + text[end:]).strip()
 
 
+def truncation_eligible(text: str, locale: str) -> bool:
+    """Whether a seeded truncation can be audible under the locale's frozen rule."""
+    from scripts.target_audio_predicted_schedule import speech_units
+    minimum = TRUNCATION_MIN_SPEECH_UNITS.get(locale)
+    return minimum is None or speech_units(text, locale) >= minimum
+
+
 def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, max_trials: int = 30,
                     normalization_policy_sha256: str | None = None) -> dict:
     """``asr(role, wav, text, locale) -> opinion`` (see ``target_audio_auto_qc.asr_opinion``)
@@ -466,10 +478,18 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, ma
 
     for row in clean:
         note_runtime(row)
+    too_short = {index for index, unit in enumerate(units)
+                 if not truncation_eligible(unit["text"], locale)}
     for kind in AUDIO_KINDS:
         trials = detected = 0
-        misses = []
-        for index, (samples, rate) in enumerate(decoded[:max_trials]):
+        misses, excluded = [], []
+        candidates = decoded if kind == "truncated" else decoded[:max_trials]
+        for index, (samples, rate) in enumerate(candidates):
+            if trials >= max_trials:
+                break
+            if kind == "truncated" and index in too_short:
+                excluded.append(units[index]["groupId"])
+                continue
             rows = list(base)
             if kind == "wrong_sentence":
                 # Another sentence's audio; identical bytes would not be a wrong sentence.
@@ -503,6 +523,8 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, ma
                 misses.append(units[index]["groupId"])
         kinds[kind] = {"trials": trials, "detected": detected, "rate": _rate(detected, trials),
                        "missedGroupIds": misses}
+        if excluded:
+            kinds[kind]["excludedShortGroupIds"] = excluded
     if any(len(values) > 1 for values in models.values()):
         raise ValueError("ASR transport reported more than one model or runtime per role during calibration")
     runtime = {role: json.loads(next(iter(values))) if values else [None, None] for role, values in models.items()}

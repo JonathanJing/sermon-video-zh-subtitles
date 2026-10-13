@@ -384,6 +384,74 @@ def with_simulated_page(v4, catalog, page_id):
     return v4
 
 
+def machine_checked_overlay(baseline_path, overlay_public, catalog_path, out):
+    """Overlay one isolated machine-checked test page from a sealed v4 catalog.
+
+    Machine-checked targets exist only in v4; the human-only v3 projection must be
+    unchanged, so only the v4 catalog and the page's own assets change."""
+    base, incoming, out = map(lambda p: Path(p).resolve(), (baseline_path, overlay_public, out))
+    contract.require(not out.exists() and not out.is_relative_to(base) and not out.is_relative_to(incoming), 'Unsafe overlay output')
+    from scripts import build_full_video_app_release as builder
+    before_v3 = contract.validate_catalog_snapshot(base)
+    receipt = read(base / 'baseline-receipt.json')
+    contract.require(receipt['project'] == PROJECT and receipt['site'] == SITE and receipt['origin'] == ORIGIN, 'Dev target only')
+    before = contract.snapshot_catalog_v4(base)
+    catalog = read(catalog_path)
+    contract.require(catalog['schemaVersion'] == contract.CATALOG_V4, 'Machine-checked overlay needs the sealed v4 catalog')
+    old_pages = {p['id']: p for p in before['pages']}
+    new_pages = {p['id']: p for p in catalog['pages']}
+    contract.require(len(new_pages) == len(catalog['pages']) and set(old_pages) <= set(new_pages), 'Missing or duplicate sibling pages')
+    added = [p for p in catalog['pages'] if p['id'] not in old_pages]
+    contract.require(len(added) == 1 and added[0]['id'].startswith(('mockup-', 'dryrun-', 'dev-')), 'Exactly one isolated test page is required')
+    contract.require(set(added[0]['targets']) == {'zh-Hans', 'ko', 'es'}
+                     and all(t.get('contentStatus') == t.get('audioStatus') == contract.MACHINE_CHECKED
+                             for t in added[0]['targets'].values()), 'Three machine-checked locale targets required')
+    # Real (formal) content is diagnostic, never a simulation: readers refuse formal content on a
+    # simulationOnly page, and a diagnostic page is never the default.
+    added[0].update(diagnosticOnly=True)
+    for target in added[0]['targets'].values():
+        target.update(diagnosticOnly=True)
+    catalog['defaultPageId'] = before['defaultPageId']
+    # v3 stays byte-identical, so v4 keeps the generation time it projects to.
+    catalog['generatedAt'] = before_v3['generatedAt']
+    contract.require(all(new_pages[k] == v for k, v in old_pages.items()), 'Existing page changed')
+    contract.require(contract.project_human_catalog(catalog) == before_v3, 'Machine-checked test page would change the v3 catalog')
+    out.mkdir(parents=True)
+    shutil.copytree(base / 'public', out / 'public')
+    shutil.copyfile(base / 'firebase.json', out / 'firebase.json')
+    changed = []
+    for src in sorted(incoming.rglob('*')):
+        if not src.is_file():
+            continue
+        relative = src.relative_to(incoming)
+        contract.require(not src.is_symlink() and relative.parts[0] != '__', 'Unsafe or managed overlay file')
+        if str(relative) in contract.CATALOG_FILES.values():
+            continue
+        target = out / 'public' / relative
+        if target.exists() and digest(target) == digest(src):
+            continue
+        contract.require(not target.exists() or str(relative) in builder.RUNTIME_WEB_FILES, 'Existing immutable resource overwrite refused: ' + str(relative))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, target)
+        changed.append('/' + str(relative))
+    v4_path = out / 'public' / contract.CATALOG_FILES[contract.CATALOG_V4]
+    if v4_path.exists():
+        v4_path.unlink()
+    write(v4_path, catalog)
+    report = {**catalog_report(out / 'public'), 'files': files_report(out / 'public')}
+    write(out / 'seal-report.json', report)
+    contract.validate_catalog_snapshot(out)
+    publish_config = publication_config(base, out)
+    shutil.copyfile(base / 'baseline-receipt.json', out / 'baseline-receipt.json')
+    write(out / 'publish-config.json', publish_config)
+    write(out / 'simulation-publication-plan.json', {'schemaVersion': 'sermon-dev-simulated-publication-plan-v1',
+          'publication': 'not_started', 'productionEligible': False, 'pageId': added[0]['id'], 'contentMode': 'machine_checked',
+          'changedPaths': changed + ['/multilingual-v4.json'], 'originalDefaultPageId': before['defaultPageId'],
+          'siblingsPreserved': len(old_pages), 'managedFilesPreservedByFirebase': [r for r in receipt['rows'] if r['managed']],
+          'hostingConfigPreservedSha256': digest(out / 'firebase.json'), 'modelCalls': 0})
+    return {'status': 'prepared_not_deployed', 'publishConfig': str(out / 'publish-config.json'), 'pageId': added[0]['id']}
+
+
 def overlay(baseline_path, overlay_public, catalog_path, out):
     base, incoming, out = map(lambda p: Path(p).resolve(), (baseline_path, overlay_public, out))
     contract.require(not out.exists() and not out.is_relative_to(base) and not out.is_relative_to(incoming), 'Unsafe overlay output')
