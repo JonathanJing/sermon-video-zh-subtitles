@@ -460,3 +460,123 @@ def test_single_version_array_cli_receipt_is_accepted(tmp_path):
     path = tmp_path / 'result.json'
     path.write_text(json.dumps({'status': 'success', 'result': {'hosting': ['sites/site/versions/new']}}))
     assert p.deployed_version(path, site='site', baseline_version='sites/site/versions/old') == 'sites/site/versions/new'
+
+
+def pending_cli_attempt(tmp_path, monkeypatch, *, observed=False):
+    """One fake deploy, then a crash before readback or after observing own head."""
+    intent, data, sha = setup(tmp_path); remote = Remote(); deployments = []
+    def deploy(*args, **kwargs):
+        deployments.append(1); write_deploy_result(kwargs)
+        if observed:
+            remote.version = 'new'
+    with monkeypatch.context() as patch:
+        def interrupted(check):
+            if observed:
+                # Observe the owned head, then crash while fetching its catalog.
+                check()
+            raise TimeoutError('process interrupted before observation')
+        patch.setattr(p, 'await_propagation', interrupted)
+        def reader(url):
+            if observed and remote.version == 'new':
+                saved = json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())
+                assert saved['versionPropagation']['ownedVersionObserved'] is True
+                raise TimeoutError('crash after durable observation')
+            return v3_only(data)(url)
+        with pytest.raises(TimeoutError):
+            p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                      baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
+    saved = json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())
+    assert saved['versionPropagation']['ownedVersionObserved'] is observed
+    assert remote.held and deployments == [1]
+    return remote, data, deployments
+
+
+def fake_propagation_clock(monkeypatch, on_sleep=lambda: None):
+    now, sleeps = [0.0], []
+    def sleep(seconds):
+        now[0] += seconds; sleeps.append(seconds); on_sleep()
+    monkeypatch.setattr(p.time, 'monotonic', lambda: now[0])
+    monkeypatch.setattr(p.time, 'sleep', sleep)
+    monkeypatch.setattr(p, 'PROPAGATION_TIMEOUT_SECONDS', 12)
+    return now, sleeps
+
+
+def test_reconcile_waits_for_pinned_owned_version_without_deploying_again(tmp_path, monkeypatch):
+    remote, data, deployments = pending_cli_attempt(tmp_path, monkeypatch)
+    _, sleeps = fake_propagation_clock(monkeypatch, lambda: setattr(remote, 'version', 'new'))
+    result = p.reconcile(tmp_path, request=remote, reader=v3_only(data), confirmed_version='sites/site/versions/new')
+    assert result['status'] == 'deployed' and result['versionPropagation']['ownedVersionObserved'] is True
+    assert sleeps == [5] and deployments == [1] and remote.deleted
+
+
+def test_reconcile_baseline_deadline_keeps_unknown_lease_and_single_deploy(tmp_path, monkeypatch):
+    remote, data, deployments = pending_cli_attempt(tmp_path, monkeypatch)
+    _, sleeps = fake_propagation_clock(monkeypatch)
+    with pytest.raises(ValueError, match='not propagated'):
+        p.reconcile(tmp_path, request=remote, reader=v3_only(data), confirmed_version='sites/site/versions/new')
+    assert sleeps == [5, 5] and remote.held and not remote.deleted and deployments == [1]
+    saved = json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())
+    assert saved['status'] == 'outcome_unknown' and saved['versionPropagation']['ownedVersionObserved'] is False
+
+
+@pytest.mark.parametrize('observed,version', [(False, 'external'), (True, 'old'), (True, 'external')])
+def test_reconcile_conflicts_never_retry_even_across_observed_crash(tmp_path, monkeypatch, observed, version):
+    remote, data, deployments = pending_cli_attempt(tmp_path, monkeypatch, observed=observed)
+    remote.version = version
+    _, sleeps = fake_propagation_clock(monkeypatch)
+    with pytest.raises(p.PublicationVersionChanged):
+        p.reconcile(tmp_path, request=remote, reader=v3_only(data), confirmed_version='sites/site/versions/new')
+    assert sleeps == [] and remote.held and not remote.deleted and deployments == [1]
+
+
+@pytest.mark.parametrize('mutation', ['legacy', 'null', 'copied-attempt', 'wrong-owned', 'invalid-boolean', 'unknown-schema'])
+def test_propagation_state_cannot_upgrade_legacy_or_change_its_pinned_version(tmp_path, monkeypatch, mutation):
+    remote, data, deployments = pending_cli_attempt(tmp_path, monkeypatch)
+    path = tmp_path / 'deployment-attempt-v2.json'; saved = json.loads(path.read_text())
+    if mutation == 'legacy':
+        saved.pop('versionPropagation')
+    elif mutation == 'null':
+        saved['versionPropagation'] = None
+    elif mutation == 'copied-attempt':
+        saved['versionPropagation']['attemptId'] = 'another-attempt'
+    elif mutation == 'wrong-owned':
+        saved['versionPropagation']['ownedVersion'] = 'sites/site/versions/external'
+    elif mutation == 'invalid-boolean':
+        saved['versionPropagation']['ownedVersionObserved'] = 0
+    else:
+        saved['versionPropagation']['schemaVersion'] = 'unknown'
+    path.write_text(json.dumps(saved)); _, sleeps = fake_propagation_clock(monkeypatch)
+    with pytest.raises(ValueError):
+        p.reconcile(tmp_path, request=remote, reader=v3_only(data), confirmed_version='sites/site/versions/new')
+    with pytest.raises(ValueError, match='recorded deployment version'):
+        p.reconcile(tmp_path, request=remote, reader=v3_only(data), confirmed_version='sites/site/versions/external')
+    assert sleeps == [] and deployments == [1] and remote.held
+    assert json.loads(path.read_text()) == saved
+
+
+@pytest.mark.parametrize('recovery', [False, True])
+def test_deployed_receipt_directory_is_synced_before_lease_release(tmp_path, monkeypatch, recovery):
+    persisted = []
+    original = p._persist_attempt
+    def persist(path, attempt):
+        original(path, attempt)
+        persisted.append(attempt['status'])
+    if recovery:
+        remote, data, _ = pending_cli_attempt(tmp_path, monkeypatch)
+        remote.version = 'new'
+    else:
+        intent, data, sha = setup(tmp_path); remote = Remote()
+    monkeypatch.setattr(p, '_persist_attempt', persist)
+    original_release = p.RemoteLease.release
+    def release(lease):
+        assert persisted[-1] == 'deployed'
+        assert json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())['status'] == 'deployed'
+        original_release(lease)
+    monkeypatch.setattr(p.RemoteLease, 'release', release)
+    if recovery:
+        p.reconcile(tmp_path, request=remote, reader=v3_only(data), confirmed_version='sites/site/versions/new')
+    else:
+        def deploy(*args, **kwargs): remote.version = 'new'; write_deploy_result(kwargs)
+        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                  baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
+    assert remote.deleted

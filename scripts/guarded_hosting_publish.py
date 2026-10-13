@@ -240,6 +240,52 @@ def deployed_version(result_path, *, site, baseline_version):
     return version
 
 
+PROPAGATION_STATE_SCHEMA = 'sermon-hosting-version-propagation-v1'
+
+
+def _persist_attempt(path, attempt):
+    atomic_json(path, attempt)
+    # The observed flag must survive a crash before any retry/reconciliation.
+    fd = os.open(Path(path).parent, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def _propagation_state(snapshot, attempt):
+    if 'versionPropagation' not in attempt:
+        return None  # Legacy attempts retain strict live-head matching.
+    state = attempt['versionPropagation']
+    receipt = Path(snapshot) / 'hosting-deploy-result.json'
+    contract.require(type(state) is dict and set(state) == {
+        'schemaVersion', 'attemptId', 'baselineVersion', 'ownedVersion',
+        'cliReceiptSha256', 'ownedVersionObserved'}
+        and state['schemaVersion'] == PROPAGATION_STATE_SCHEMA
+        and state['attemptId'] == attempt['attemptId']
+        and state['baselineVersion'] == attempt['baselineVersion']
+        and state['ownedVersion'] == attempt['newVersion']
+        and type(state['ownedVersionObserved']) is bool,
+        'Invalid persisted Hosting propagation state')
+    contract.require(hashlib.sha256(receipt.read_bytes()).hexdigest() == state['cliReceiptSha256']
+        and deployed_version(receipt, site=attempt['intent']['site'],
+                             baseline_version=attempt['baselineVersion']) == state['ownedVersion'],
+        'Propagation state differs from CLI deployment receipt')
+    return state
+
+
+def _observe_owned_version(request, attempt, path, state):
+    version = live_version(request, attempt['intent']['site'])
+    if state is not None and version == attempt['baselineVersion'] and not state['ownedVersionObserved']:
+        raise ValueError('Deployed Hosting version has not propagated')
+    if version != attempt['newVersion']:
+        raise PublicationVersionChanged('Live Hosting version differs from deployment receipt')
+    if state is not None and not state['ownedVersionObserved']:
+        state['ownedVersionObserved'] = True
+        _persist_attempt(path, attempt)
+    return version
+
+
 def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
             lease_bucket, request, reader, run=subprocess.run, heartbeat_interval=5,
             baseline_catalog_v4_sha=None):
@@ -292,21 +338,19 @@ def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha
             run(['firebase', 'deploy', '--only', 'hosting', '--project', intent['project'], '--config', str(bound_config.resolve()), '--non-interactive', '--json'],
                 cwd=snapshot, check=True, stdout=output, stderr=log, timeout=3600)
         attempt['newVersion'] = deployed_version(result_path, site=intent['site'], baseline_version=baseline_version)
-        atomic_json(receipt_path, attempt)
+        attempt['versionPropagation'] = {
+            'schemaVersion': PROPAGATION_STATE_SCHEMA, 'attemptId': attempt['attemptId'],
+            'baselineVersion': baseline_version, 'ownedVersion': attempt['newVersion'],
+            'cliReceiptSha256': hashlib.sha256(result_path.read_bytes()).hexdigest(),
+            'ownedVersionObserved': False}
+        _persist_attempt(receipt_path, attempt)
         progress.update('verifying_readback')
         lease.check()
 
-        owned_version_observed = False
+        state = _propagation_state(snapshot, attempt)
 
         def readback():
-            nonlocal owned_version_observed
-            version = live_version(request, intent['site'])
-            if version == baseline_version and not owned_version_observed:
-                # The control-plane live channel may still be on its old head.
-                contract.require(False, 'Deployed Hosting version has not propagated')
-            if version != attempt['newVersion']:
-                raise PublicationVersionChanged('Live Hosting version differs from deployment receipt')
-            owned_version_observed = True
+            version = _observe_owned_version(request, attempt, receipt_path, state)
             contract.require(public_catalog(reader, intent['origin']) == attempt['catalogSha256'], 'Published catalog readback differs')
             contract.require(public_catalog_v4(reader, intent['origin']) == report.get('catalogV4Sha256'), 'Published v4 catalog readback differs')
             if live_version(request, intent['site']) != attempt['newVersion']:
@@ -314,7 +358,7 @@ def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha
             return version
         version = await_propagation(readback)
         attempt.update(newVersion=version, completedAt=datetime.now(timezone.utc).isoformat(), status='deployed')
-        atomic_json(receipt_path, attempt)
+        _persist_attempt(receipt_path, attempt)
         lease.release()
         progress.update('completed', outcome=attempt['status'])
         return attempt
@@ -357,13 +401,22 @@ def _reconcile(snapshot, *, request, reader, confirmed_version):
     lease.check()
     contract.require((attempt.get('newVersion') or confirmed_version) == confirmed_version,
                      'Confirmed version differs from recorded deployment version (first observed for legacy attempts)')
-    observed = live_version(request, attempt['intent']['site'])
-    contract.require(observed == confirmed_version and observed != attempt['baselineVersion'], 'Explicit confirmed new version differs')
+    state = _propagation_state(snapshot, attempt)
+    if state is None:
+        # No historical durable observation flag exists: never infer false.
+        observed = live_version(request, attempt['intent']['site'])
+        contract.require(observed == confirmed_version and observed != attempt['baselineVersion'],
+                         'Explicit confirmed new version differs')
+    else:
+        observed = confirmed_version
     report = json.loads((Path(snapshot) / 'seal-report.json').read_text())
 
     def catalogs():
-        if live_version(request, attempt['intent']['site']) != confirmed_version:
-            raise PublicationVersionChanged('Live Hosting version changed during reconciliation')
+        if state is None:
+            if live_version(request, attempt['intent']['site']) != confirmed_version:
+                raise PublicationVersionChanged('Live Hosting version changed during reconciliation')
+        else:
+            _observe_owned_version(request, attempt, path, state)
         contract.require(public_catalog(reader, attempt['intent']['origin']) == attempt['catalogSha256'], 'Remote catalog differs; manual recovery required')
         contract.require(public_catalog_v4(reader, attempt['intent']['origin']) == report.get('catalogV4Sha256'),
                          'Remote v4 catalog differs; manual recovery required')
@@ -371,7 +424,7 @@ def _reconcile(snapshot, *, request, reader, confirmed_version):
             raise PublicationVersionChanged('Live Hosting version changed during reconciliation')
     await_propagation(catalogs)
     attempt.update(status='deployed', newVersion=observed, completedAt=datetime.now(timezone.utc).isoformat())
-    atomic_json(path, attempt)
+    _persist_attempt(path, attempt)
     lease.release()
     return attempt
 
