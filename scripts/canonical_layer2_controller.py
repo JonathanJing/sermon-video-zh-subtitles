@@ -469,7 +469,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
         with liveness.report(request_path.parent, request) as progress:
             if caller is None:
                 require(budget_binding is not None, 'bound_budget_authorization_required')
-                spark_admission.require_session()
+                # OpenAI API only: no Spark session (2026-10-13; only GPU stages occupy Spark).
                 from scripts.sermon_openai_runtime import selected_route
                 route = selected_route()
                 require(route is not None, 'openai_layer2_requires_explicit_dev_or_prod_launcher')
@@ -482,7 +482,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
                     'backend': 'openai_api', 'route': route,
                     'budgetAuthorizationSha256': budget_binding['sha256']}
-                caller = spark_admission.SessionBoundCaller(caller)
+                caller = spark_admission.SessionBoundCaller(caller, requires_spark=False, outcome_guarded=True)
             elif budget_binding is not None:
                 from scripts.strict_budget_capability import reject_codex_cli_transport
                 reject_codex_cli_transport(caller)

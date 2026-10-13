@@ -108,29 +108,38 @@ class ProductionSessionCallTests(unittest.TestCase):
         client.require_ready.assert_called_once_with()
         client.start_job.assert_not_called(); client.end_job.assert_not_called()
 
-    def test_legacy_notes_and_reading_cli_deny_before_side_effects(self):
+    def test_api_and_cli_callers_never_consult_spark(self):
+        # 2026-10-13 user decision: only GPU stages occupy Spark. API and Codex CLI callers
+        # neither check the exclusive session nor take a durable Spark job hold.
         from scripts import generate_notes_with_openai as notes
         from scripts import build_sermon_reading_edition_with_openai as reading
-        client = self.client(); client.start_job.side_effect = sessions.SessionError("session_not_ready")
-        with patch.object(sessions.Client, "from_environment", return_value=client), \
-             patch.object(notes.requests, "post") as notes_api, patch.object(reading.subprocess, "run") as reading_cli:
-            with self.assertRaisesRegex(sessions.SessionError, "session_not_ready"):
-                notes.request_openai_notes({"model":"test"}, "test-only")
-            with self.assertRaisesRegex(sessions.SessionError, "session_not_ready"):
-                reading.codex_json({"messages":[]}, codex_cli=Path("unused"), model="test",
-                    reasoning_effort="medium", schema_path=Path("unused"), output_path=Path("unused"))
-        notes_api.assert_not_called(); reading_cli.assert_not_called()
-
-    def test_legacy_page_text_and_source_audio_deny_before_side_effects(self):
         from scripts import sermon_pipeline as pipeline
+        spark = Mock(side_effect=AssertionError("API-only caller consulted Spark"))
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.dict("os.environ", {"SERMON_ACCOUNTING_DIR": directory}), \
+             patch.object(sessions.Client, "from_environment", spark), \
+             patch.object(notes, "_request_openai_notes", return_value={"ok": 1}) as notes_api, \
+             patch.object(reading, "_codex_json", return_value={"ok": 2}) as reading_cli, \
+             patch.object(pipeline, "_chat_json", return_value={"ok": 3}) as text, \
+             patch.object(pipeline, "multipart_request", return_value={"ok": 4}) as audio:
+            Path(directory, "input").write_text("{}")
+            Path(directory,"codex").write_text("#!/bin/sh\nexit 0\n");Path(directory,"codex").chmod(0o700)
+            self.assertEqual(notes.request_openai_notes({"model": "test"}, "test-only"), {"ok": 1})
+            self.assertEqual(reading.codex_json({"messages": []}, codex_cli=Path(directory,"codex"), model="test",
+                reasoning_effort="medium", schema_path=Path(directory, "input"), output_path=Path("unused")), {"ok": 2})
+            self.assertEqual(pipeline.chat_json("test-only", budgets.text_limits.bounded_payload({"model": "gpt-6-astra", "messages":[{"role":"user","content":"synthetic"}], "reasoning_effort":"medium", "response_format":{"type":"json_object"}}, budgets.text_limits.DEFAULT_REQUEST_LIMITS)), {"ok": 3})
+            self.assertEqual(pipeline.transcribe_openai_audio("test-only", "gpt-transcribe", "source", Path(directory, "input")), {"ok": 4})
+        spark.assert_not_called()
+        for called in (notes_api, reading_cli, text, audio):
+            called.assert_called_once()
+
+    def test_a_local_model_caller_still_requires_the_session(self):
         client = self.client(); client.start_job.side_effect = sessions.SessionError("session_not_ready")
-        with patch.object(sessions.Client, "from_environment", return_value=client), \
-             patch.object(pipeline, "json_request") as text, patch.object(pipeline, "multipart_request") as audio:
+        local = Mock()
+        with patch.object(sessions.Client, "from_environment", return_value=client):
             with self.assertRaisesRegex(sessions.SessionError, "session_not_ready"):
-                pipeline.chat_json("test-only", {"model":"gpt-6-astra"})
-            with self.assertRaisesRegex(sessions.SessionError, "session_not_ready"):
-                pipeline.transcribe_openai_audio("test-only", "gpt-transcribe", "source", Path("nonexistent"))
-        text.assert_not_called(); audio.assert_not_called()
+                admission.SessionBoundCaller(local, purpose="voice-demo-render")()
+        local.assert_not_called()
 
     def test_qwen_constructors_deny_before_import_or_model_load(self):
         def denied():raise sessions.SessionError('session_not_ready')
@@ -142,21 +151,21 @@ class ProductionSessionCallTests(unittest.TestCase):
         with self.assertRaisesRegex(sessions.SessionError, "session_not_ready"):
             LocalASR(Path("nonexistent"), device="cuda:0", session_verifier=denied)
 
-    def test_source_budget_denies_before_budget_started_or_network(self):
+    def test_source_budget_api_calls_take_no_spark_session(self):
         authority = {'approvalSha256': 'a' * 64,
             'globalBounds': {'requests': 2, 'wallTimeMs': 2000, 'costMicrousd': 2000},
             'requestLimits': dict(budgets.text_limits.DEFAULT_REQUEST_LIMITS)}
         with tempfile.TemporaryDirectory() as directory:
             store = budgets.SourceBudget(Path(directory), authority, verify=lambda: None)
-            with patch.object(budgets.spark_admission, 'require_session', side_effect=sessions.SessionError('session_not_ready')), \
-                 patch.object(budgets.http, 'execute') as network:
-                with self.assertRaisesRegex(sessions.SessionError, 'session_not_ready'):
+            with patch.object(budgets.spark_admission, 'require_session', side_effect=AssertionError('Spark consulted')), \
+                 patch.object(sessions.Client, 'from_environment', side_effect=AssertionError('Spark consulted')), \
+                 patch.object(budgets.http, 'execute', side_effect=OSError('network refused in test')) as network:
+                with self.assertRaises(Exception) as caught:
                     store.call(operation='asr.0000', identity={'model':'gpt-transcribe'},
                         bounds={'requests':1,'wallTimeMs':1000,'costMicrousd':1000}, request=b'audio',
                         api_key='test-only-not-a-secret', content_type='audio/wav', endpoint='https://invalid.example/audio')
-                network.assert_not_called()
-            ledger = Path(directory) / 'source-budget.json'
-            self.assertFalse(ledger.exists(), 'Admission denial must not reserve provider budget')
+                self.assertNotIsInstance(caught.exception, AssertionError)
+                network.assert_called()
 
     def test_mfa_alignment_denies_before_ssh_and_keeps_preflight_readonly(self):
         options = dict(host='user@spark', python='/env/bin/python', root='/jobs',
@@ -177,19 +186,16 @@ class ProductionSessionCallTests(unittest.TestCase):
             transport.assert_not_called()
 
 
-def test_normal_supervisor_default_cli_denies_before_pending_or_model(tmp_path):
+def test_normal_supervisor_default_cli_takes_no_spark_session(tmp_path):
     from scripts import sermon_codex_supervisor as supervisor
     from scripts import sermon_codex_transport as transport
     from tests import test_sermon_codex_supervisor as support
     from scripts.run_sermon_production_supervisor_agent import SupervisorDecision, supervisor_instructions, verify_decision
     args, config = support.setup(tmp_path)
     with patch.object(supervisor.workflow, 'snapshot', return_value=support.state('request_window_approval', True)), \
-         patch.object(supervisor.spark_admission, 'require_session', side_effect=sessions.SessionError('session_not_ready')), \
-         patch.object(transport, 'call_json') as real:
-        result = supervisor.session_report(args, config, supervisor_instructions('agents-api'),
+         patch.object(supervisor.spark_admission, 'require_session', side_effect=AssertionError('Spark consulted')), \
+         patch.object(sessions.Client, 'from_environment', side_effect=AssertionError('Spark consulted')), \
+         patch.object(transport, 'call_json', side_effect=RuntimeError('model call reached')) as real:
+        supervisor.session_report(args, config, supervisor_instructions('agents-api'),
             SupervisorDecision, verify_decision)
-        real.assert_not_called()
-    assert result['status'] == 'failed'
-    directory = Path(result['agentSession']['runDirectory'])
-    state = supervisor.guarded.read_object(directory / 'codex-state.json')
-    assert state['pending'] is False and state['turns'] == 0
+    real.assert_called()

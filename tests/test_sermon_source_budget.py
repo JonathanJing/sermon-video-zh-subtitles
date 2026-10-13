@@ -85,7 +85,7 @@ class SourceBudgetConcurrencyTests(unittest.TestCase):
             calls.append(1)
             barrier.wait(timeout=5)
             ledger = jobs._read(self.root / 'source-budget.json')
-            self.assertEqual(ledger['schemaVersion'], subject.LEDGER_V3)
+            self.assertEqual(ledger['schemaVersion'], subject.LEDGER_V4)
             self.assertEqual(sum(r['status'] == 'live_started' for r in ledger['requests'].values()), 4)
             self.assertEqual(sum(r['bounds']['costMicrousd'] for r in ledger['requests'].values()), 4000)
             barrier.wait(timeout=5)
