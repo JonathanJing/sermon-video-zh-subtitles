@@ -80,3 +80,23 @@ test('report counts presses, recordings, jumps, reasons and shadow rescues', () 
   const html = renderAlignmentHtml(report);
   assert.ok(html.includes('33.3%')); assert.equal(html.includes('<script'), false);
 });
+
+test('a full 40-attempt list with every field at its longest stays well under the request limit', async () => {
+  const longest = (at) => ({ at, outcome: 'play_blocked', stage: 'matched_audio', reason: 'matched', errorCode: 'MIC_START_TIMEOUT', level: 'very_low',
+    fractionBand: '0_045_to_0_055', captureSeconds: 15, totalMs: 600000, shadow: { profile: 'cmn-v1', matched: false, agrees: null } });
+  // The catalog admits page and track ids of at most 160 characters each.
+  const long = { ...source, pageId: 'p'.repeat(160), trackId: 't'.repeat(160) };
+  let time = start, data = new Map();
+  const service = createService({ catalog: { schemaVersion: 1, sources: [long] }, origins: ['https://app.example.com'], now: () => time, ipLimiter: () => {}, store: { async transaction(callback) {
+    const working = new Map(data); const result = await callback({ async get(path) { return working.get(path) || null; }, set(path, value) { working.set(path, value); }, delete(path) { working.delete(path); } });
+    data = working; return result;
+  } } });
+  const head = { schemaVersion: 1, week: long.week, trackId: long.trackId, audioSha256: long.audioSha256, appVersion: '1.26.99-beta.999' };
+  const request = (path, body, token) => service({ method: 'POST', path, body, rawBytes: Buffer.byteLength(JSON.stringify(body)), origin: 'https://app.example.com', contentType: 'application/json', authorization: token ? `Bearer ${token}` : undefined });
+  const { token } = await request('/api/session', head); time += 600000;
+  const body = { ...head, action: 'upsert', seq: 1, day: '2026-10-11', platform: 'web', clientId, interfaceLocale: 'zh-Hans', contentLocale: 'zh-Hans',
+    attempts: Array.from({ length: 40 }, (_, i) => longest(start + i * 1000)) };
+  const bytes = Buffer.byteLength(JSON.stringify(body));
+  assert.ok(bytes <= 16384 * .8, `worst-case alignment upload is ${bytes} bytes; keep 20% headroom under the 16384-byte limit`);
+  assert.equal((await request('/api/alignment-usage', body, token)).accepted, true);
+});
