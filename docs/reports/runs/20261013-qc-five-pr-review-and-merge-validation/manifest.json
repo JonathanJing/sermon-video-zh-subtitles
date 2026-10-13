@@ -40,6 +40,13 @@
       "label": "20261013-five-pr-final-validation",
       "source": "~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-five-pr-final-validation",
       "skipped": {}
+    },
+    {
+      "label": "report-input",
+      "source": "~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-pr374-pilot-investigation/report-input",
+      "skipped": {
+        ".json": 6
+      }
     }
   ],
   "files": [
@@ -333,6 +340,189 @@
       "bytes": 54,
       "truncated": false,
       "sha256": "8a0e0742bd204a8b77ebbd2d7df0dd5f4ac4b9bed7e323ce89fa5bbb09b23744",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "base-cli-0.stderr.log",
+      "kind": "log",
+      "bytes": 1308,
+      "truncated": false,
+      "sha256": "5d874eead70972814d5ad0a1c3dc4fffb2cd7869c378b3cc593aeb11e4aeb200",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "base-cli-0.stdout.log",
+      "kind": "log",
+      "bytes": 10120,
+      "truncated": false,
+      "sha256": "30f6f50d9acd18f790a5f99ccefb5020418f74606d5146de3787384b426acbaf",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "base-cli-1.stderr.log",
+      "kind": "log",
+      "bytes": 1311,
+      "truncated": false,
+      "sha256": "6b1bbea60af87d6f50e05d14e674f0cbdbaf1bd69c8803e6dd0ed5413790361c",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "base-cli-1.stdout.log",
+      "kind": "log",
+      "bytes": 10120,
+      "truncated": false,
+      "sha256": "1fa9cb175e1b79de846db66877544d9904d62e991560c033b33253526fecdd70",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "base-cli-2.stderr.log",
+      "kind": "log",
+      "bytes": 1314,
+      "truncated": false,
+      "sha256": "b80e548272391e0c592f9f487b70ff24ab74c0344f52a351bb86231b2c8c3005",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "base-cli-2.stdout.log",
+      "kind": "log",
+      "bytes": 8742,
+      "truncated": false,
+      "sha256": "aec3b4450b55f1a0b828124397d3ce7a256f9fc36cb4166d15aafa23ffba7054",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "base-repro.log",
+      "kind": "log",
+      "bytes": 269,
+      "truncated": false,
+      "sha256": "10af00ec3e31a64cabaa6786ce39c222521cf97e29e3870e53724c0360c61e65",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "current-cli-0.stderr.log",
+      "kind": "log",
+      "bytes": 1314,
+      "truncated": false,
+      "sha256": "8a1b5c8ace7e0ff1e4c57afc595491d08fdf5c7c8cba7edbdac94120f49e5476",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "current-cli-0.stdout.log",
+      "kind": "log",
+      "bytes": 10120,
+      "truncated": false,
+      "sha256": "1ccab08070732286d691b69f249ca8c2d91467fce151b0067a23a4d1c815e932",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "current-cli-1.stderr.log",
+      "kind": "log",
+      "bytes": 1314,
+      "truncated": false,
+      "sha256": "ef9444103f8561a57c15150fac46e6d9363766b58624ebb9e6bb27a3dd71f484",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "current-cli-1.stdout.log",
+      "kind": "log",
+      "bytes": 10120,
+      "truncated": false,
+      "sha256": "2777c9d6e611d3aa6df4b66f9f659b76846887c894ffb8d7d5a588fe48c397ce",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "current-cli-2.stderr.log",
+      "kind": "log",
+      "bytes": 1323,
+      "truncated": false,
+      "sha256": "d755007473ba0595843aa46e0b85a0857f0136a8dd40e938a9c82b9e9585c6e5",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "current-cli-2.stdout.log",
+      "kind": "log",
+      "bytes": 8742,
+      "truncated": false,
+      "sha256": "60896932c923da9fb2e46b9feb85611897eee05ace8f6f9516ea7d7ad77d40f8",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "current-repro.log",
+      "kind": "log",
+      "bytes": 269,
+      "truncated": false,
+      "sha256": "5bd4753a978a84861ba9ac20cf8995b3911a05045d8988525699446ef9ab77c1",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "original-ci-localmock.log",
+      "kind": "log",
+      "bytes": 122875,
+      "truncated": true,
+      "sha256": "e45e79e91bc12d78adcca800fc90ceb2bde55ea0c884701d51ffa16146081510",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 14
+      },
+      "exportedCopy": {
+        "sha256": "df5489fce8fe4e4d2c8b18902a67fbd45131048f0fd489dae425256b8c8089da",
+        "bytes": 29091,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "report-input",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 85,
+      "truncated": false,
+      "sha256": "f8e1ce9b9bebb9a5c3bddf4ac92538d54b7457877a0f493cdbfd1f987c6bfa54",
+      "redactions": {}
+    },
+    {
+      "run": "report-input",
+      "path": "runtime-install.log",
+      "kind": "log",
+      "bytes": 3229,
+      "truncated": false,
+      "sha256": "ef256d5665f8d457c3fe5c2ae2a498f243186adae9b9430f3f1559b8d7603da4",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "report-input",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1365,
+      "truncated": false,
+      "sha256": "32ae4b06491e73fe4aefebf170ed0d6d9d11b7750d65224eb87c735551238b1a",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "report-input",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 89,
+      "truncated": false,
+      "sha256": "c10a21d7bc841e499bfc15e83720d53bc580e082a6c4f8401b98ad274e0bdaa0",
       "redactions": {}
     }
   ],

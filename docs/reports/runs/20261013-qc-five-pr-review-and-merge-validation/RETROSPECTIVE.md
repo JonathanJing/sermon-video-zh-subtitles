@@ -50,3 +50,11 @@
 五 PR 整合最终源码 head `5cbe68443d89e547769b5bd0a1cfa741aafbae36` 的离线定向组合测试为 **693 passed／3 subtests，41.77 秒，exit 0**。本轮最终测试范围与完整实现身份见 `20261013-five-pr-final-validation/summary.json`；旧 `97835708` 的 647／3 只作旧阶段证据，不外推到新代码。当前 QC implementation SHA256 为 `8daff00357a597d704d262c8e734d2aa086e3104bc8bd557a6b83bc08399e6d3`，scoring hash 由同一 summary 记录；代码最终 hash、模型实际运行身份与 waiver 产物 hash 是不同证据。
 
 本次追加时 #374 CI 为 14 queued／1 success／1 skipped，尚未终态，不能称全部 CI 通过或整合已合并。backlog `DEV-QC-001` 保持 waiting_evidence：最终实施下的真实校准、新 artifact-bound waiver 与正式发布仍未执行；用户此前未推送本地组合的真实运行不补作最终身份验收。报告继续 draft，不合并。
+
+## 原 CI local-mock 失败及隔离调查
+
+`5cbe6844` 的 Actions run `38417312621` 出现 local-mock 失败：complete pilot CLI 返回 2，原测试未保存其 stdout／pilot 临时 root，不能还原具体业务失败原因。原 CI 日志已作为脱敏副本 `report-input/original-ci-localmock.log` 保留；下载到的 mock-TTS artifact 属于其他 mock 测试，不包含失败 pilot root。此前 693 项离线通过不覆盖这一 CI 结果，不能写全部 CI 通过。
+
+相同隔离 runtime 下，current `5cbe6844` 的定向测试 1 passed／42.158 秒，base `c1719208edd37073201efd3c827e1afd7e4cc62a` 的同一测试 1 passed／37.703 秒，两者观测到的三次 CLI 返回值均为 `[0,0,2]`。19 个 runtime 闭包文件及目标测试（共 20 文件）字节一致；这只界定已比较的闭包，不能证明整个仓库没有差异。调查没有修改源码或调用真实模型。
+
+结论严格为 **failure not reproduced／root cause unknown**：没有证据证明改动回归，也没有证据将其称为既有 flake。Mac／Python 3.11 隔离复现不等同 CI Linux／Python 3.12，原失败临时证据缺失是具体限制。完整摘要和两阶段时间见 `report-input/summary.json`、`timings.tsv`。后续实际 review 修复会形成新 head，并独立运行新 head CI；不是重试旧 job 来改写原失败。本报告继续保留原失败，等待新 head 和 CI 终态追加。

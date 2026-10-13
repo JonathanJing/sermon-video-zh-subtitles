@@ -108,3 +108,33 @@ Timings `timings.tsv`:
 | stage | status | seconds |
 |---|---|---|
 | final_combined_pytest | pass | 41.77 |
+
+# 追加：Prefect local-mock CI 调查
+
+# Run digest 20261013-pr374-pilot-investigation
+
+Generated 2026-10-13T15:14:01+00:00. Redacted copies only; source hashes are in manifest.json.
+
+## report-input
+
+Source: `~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-pr374-pilot-investigation/report-input`
+
+- outcome `outcome.json`: **investigated_not_reproduced** exit ? (? → ?)
+
+Timings `timings.tsv`:
+
+| stage | status | elapsedSeconds |
+|---|---|---|
+| current_target_test | pass | 42.158 |
+| base_target_test | pass | 37.703 |
+
+Error-like log lines (first 5 per log):
+
+- `original-ci-localmock.log`: ... 946 lines omitted; 5 error-like lines, 5 kept below ...
+- `original-ci-localmock.log`: [line 201] 2026-10-13T14:57:39.7913951Z Collecting exceptiongroup>=1.0.0 (from prefect==3.8.7->-r requirements-prefect.txt (line 2))
+- `original-ci-localmock.log`: [line 202] 2026-10-13T14:57:39.7926205Z   Using cached exceptiongroup-1.3.1-py3-none-any.whl.metadata (6.7 kB)
+- `original-ci-localmock.log`: [line 429] 2026-10-13T14:57:43.4051108Z Using cached exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+- `original-ci-localmock.log`: [line 482] 2026-10-13T14:57:44.0435252Z Installing collected packages: text-unidecode, pytz, websockets, urllib3, uncalled-for, tzlocal, tzdata, typing-extensions, toml, sniffio, six, shellingham, sem
+- `runtime-install.log`: + exceptiongroup==1.3.1
+
+Not copied: 6 .json
