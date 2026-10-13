@@ -110,7 +110,7 @@ async function prepareIndex(m) {
 self.onmessage = async ({ data }) => {
   const timings = {};
   try {
-    const { samples, sampleRate, metadata: m, requestId, operation } = data;
+    const { samples, sampleRate, metadata: m, requestId, operation, shadow: shadowRequested } = data;
     const cached = operation === 'match' ? prepared : await prepareIndex(m);
     if (!cached || cached.binding !== identity(m)) bindingError();
     timings.indexMs = cached.indexMs;
@@ -127,9 +127,10 @@ self.onmessage = async ({ data }) => {
     const result = matchFingerprint(query, cached.index);
     timings.matchMs = performance.now() - matchStart;
     // Shadow-only FIELD-10 comparison after a production miss: reported as a
-    // count, never used to seek. Success keeps its original latency.
+    // count, never used to seek. The controller requests it only for the final
+    // buffer, so it never delays an earlier checkpoint or a successful match.
     let shadow = null;
-    if (result.matched !== true && result.diagnostics?.reason !== 'silence') {
+    if (shadowRequested === true && result.matched !== true && result.diagnostics?.reason !== 'silence') {
       try { shadow = { profile: 'cmn-v1', matched: matchFingerprint(fingerprintProfile(samples, sampleRate, 'cmn-v1'), cached.index).matched === true, agrees: null }; } catch { shadow = null; }
     }
     samples.fill(0);

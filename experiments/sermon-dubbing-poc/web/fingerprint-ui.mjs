@@ -71,8 +71,8 @@ export async function prepareInWorker(metadata, signal, WorkerClass = globalThis
   try {
     const result = await request('prepare');
     if (result.ready !== true) throw new Error('index_binding');
-    return { timings: result.timings, close, match: recording => request('match',
-      { samples: recording.samples, sampleRate: recording.sampleRate }, [recording.samples.buffer]) };
+    return { timings: result.timings, close, match: (recording, { shadow = false } = {}) => request('match',
+      { samples: recording.samples, sampleRate: recording.sampleRate, shadow: shadow === true }, [recording.samples.buffer]) };
   } catch (error) { close(error); throw error; }
 }
 
@@ -263,11 +263,13 @@ export function createFingerprintController({ context, pause, seek, play, positi
           await new Promise(resolve => { wake = resolve; });
           continue;
         }
+        // The candidate-profile shadow runs only on the final buffer (FIELD-10).
+        const finalBuffer = next !== pending;
         if (next === pending) pending = null; else final = null;
         if (!Number.isFinite(next.endedAt) || !Number.isFinite(next.durationSeconds) || next.durationSeconds < CAPTURE_CHECKPOINTS[0] - .1 || next.durationSeconds > CAPTURE_SECONDS + .1 || next.endedAt > now() + 50) throw new Error('capture_failed');
         if (captureDone) emit({ phase: 'matching' });
         const workerStarted = now();
-        answer = await (match ? match(next, binding.metadata, controller.signal) : prepared.match(next));
+        answer = await (match ? match(next, binding.metadata, controller.signal, { shadow: finalBuffer }) : prepared.match(next, { shadow: finalBuffer }));
         if (!valid(token, binding)) return;
         if (controller.signal.aborted) throw abortError();
         observation.timings.workerMs += elapsedMs(workerStarted);

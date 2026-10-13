@@ -65,7 +65,7 @@ test('a throwing statistics sink never changes alignment', async () => {
   assert.equal(h.controller.getState().phase, 'applied');
 });
 
-test('worker runs the shadow profile only after a production miss and still zeroes PCM', async () => {
+test('worker runs the shadow profile only when requested after a production miss and still zeroes PCM', async () => {
   const code = fs.readFileSync(new URL('./fingerprint-worker.mjs', import.meta.url), 'utf8').replace(/^import .*;\n/gm, '');
   const index = { schemaVersion: 'sermon-landmark-index-v1', algorithmVersion: CONFIG.algorithmVersion, pageId: 'week', sourceSha256: sha, trackSha256: trackSha, sourceStartSeconds: 20, sourceEndSeconds: 220, durationSeconds: 200, sampleRate: 8000, hopSize: 256, postings: { 123: [1, 20] } };
   const bytes = new TextEncoder().encode(JSON.stringify(index)), replies = [];
@@ -78,11 +78,14 @@ test('worker runs the shadow profile only after a production miss and still zero
   vm.runInNewContext(code, scope);
   await scope.self.onmessage({ data: { operation: 'prepare', metadata: binding, requestId: 1 } });
   let seed = 3; const noise = Float32Array.from({ length: 80000 }, () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 2 ** 32 - .5) * .2);
-  await scope.self.onmessage({ data: { operation: 'match', metadata: binding, requestId: 2, samples: noise, sampleRate: 8000 } });
+  const unrequested = Float32Array.from(noise);
+  await scope.self.onmessage({ data: { operation: 'match', metadata: binding, requestId: 2, samples: unrequested, sampleRate: 8000 } });
+  assert.equal(replies.at(-1).shadow, null, 'checkpoint prefixes never pay for the shadow'); assert.equal(profiles, 0); assert.ok(unrequested.every(v => v === 0));
+  await scope.self.onmessage({ data: { operation: 'match', metadata: binding, requestId: 2, samples: noise, sampleRate: 8000, shadow: true } });
   const reply = replies.at(-1);
   assert.equal(reply.result.matched, false); assert.equal(JSON.stringify(reply.shadow), JSON.stringify({ profile: 'cmn-v1', matched: false, agrees: null }));
   assert.equal(profiles, 1); assert.ok(noise.every(v => v === 0));
-  await scope.self.onmessage({ data: { operation: 'match', metadata: binding, requestId: 3, samples: new Float32Array(80000), sampleRate: 8000 } });
+  await scope.self.onmessage({ data: { operation: 'match', metadata: binding, requestId: 3, samples: new Float32Array(80000), sampleRate: 8000, shadow: true } });
   assert.equal(replies.at(-1).shadow, null); assert.equal(profiles, 1);
 });
 
