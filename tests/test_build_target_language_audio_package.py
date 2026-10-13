@@ -668,6 +668,36 @@ class AudioPackageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exact audio set"):
             self.build()
 
+    def write_screening(self):
+        rel = self.manifest["machineScreeningReceipt"]["path"]
+        write_json(self.asset_root / rel, self.screening)
+        self.manifest["machineScreeningReceipt"] = self.artifact(rel, json_artifact=True)
+
+    def test_screening_results_are_rescored_under_the_receipts_own_scoring(self):
+        # 2026-10-12 Chinese clip: the screener folded 他/它 to similarity 1.0 under its
+        # recorded scoring, and the builder's unfolded rescoring (0.93) refused the package.
+        original, seen = subject.audio_screen.score, []
+        def spy(*args, **kwargs):
+            seen.append(kwargs.get("scoring"))
+            return original(*args, **kwargs)
+        with mock.patch.object(subject.audio_screen, "score", side_effect=spy):
+            self.build()
+        self.assertEqual(set(seen), {subject.audio_screen.SCORING_V3})
+        settings = {"scoring": subject.audio_screen.SCORING}
+        self.screening.update(schemaVersion="sermon-target-language-audio-screening-v2",
+                              asrSettings=settings, asrSettingsSha256=subject.json_sha256(settings))
+        self.write_screening()
+        seen.clear()
+        with mock.patch.object(subject.audio_screen, "score", side_effect=spy):
+            self.assertEqual(self.build()["status"], "machine_screened")
+        self.assertEqual(set(seen), {subject.audio_screen.SCORING})
+
+    def test_a_recorded_similarity_must_match_the_rescoring(self):
+        self.screening["results"][0]["similarity"] = 0.99
+        self.write_screening()
+        with self.assertRaisesRegex(ValueError, "incomplete or below threshold: 0"):
+            self.build()
+
     def test_machine_screening_cannot_claim_another_delivered_track(self):
         rel = self.manifest["track"]["path"]
         path = self.asset_root / rel

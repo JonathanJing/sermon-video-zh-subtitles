@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
-import difflib
 import hashlib
 import json
 import math
@@ -565,19 +564,19 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
                 "Machine screening receipt does not cover this exact audio set")
         require(len(screening["results"]) == len(units),
                 "Machine screening result count differs from audio units")
+        # Rescore under the identity the receipt was screened with: v2 receipts record it
+        # (folded scoring since v4); v1 receipts were scored by the unfolded v3 ratio.
+        scoring = (screening.get("asrSettings") or {}).get("scoring", audio_screen.SCORING_V3)
         for index, (result, unit, job_unit) in enumerate(zip(
                 screening["results"], units, job["units"])):
-            expected_tokens = audio_screen.tokens(job_unit["text"], locale)
-            actual_tokens = audio_screen.tokens(result["recognized"], locale)
-            similarity = round(difflib.SequenceMatcher(
-                None, expected_tokens, actual_tokens, autojunk=False).ratio(), 6)
+            similarity, differences, passed = audio_screen.score(
+                job_unit["text"], result["recognized"], locale, screening["minSimilarity"], scoring=scoring)
             require(result["textGroupId"] == unit["textGroupId"]
                     and result["targetTextSha256"] == unit["targetTextSha256"]
                     and result["audioSha256"] == unit["audio"]["sha256"]
                     and result["status"] == "pass"
                     and result["similarity"] == similarity
-                    and similarity >= screening["minSimilarity"]
-                    and (len(expected_tokens) >= 4 or expected_tokens == actual_tokens),
+                    and passed,
                     f"Machine screening result is incomplete or below threshold: {index}")
     else:
         require(screen.get("status") != "fail", "Failed machine screening cannot produce package")
