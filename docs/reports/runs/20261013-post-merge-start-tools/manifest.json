@@ -1,0 +1,1084 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261013-post-merge-start-tools",
+  "runs": [
+    {
+      "label": "clip-test-20261013-merged",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-merged",
+      "skipped": {
+        ".lock": 787,
+        ".json": 2912,
+        ".sh": 2,
+        ".txt": 2,
+        ".py": 5,
+        ".jsonl": 7,
+        ".csv": 21,
+        "(none)": 1,
+        ".sha256": 112,
+        ".wav": 215,
+        ".mp3": 167,
+        ".js": 11,
+        ".html": 71,
+        ".mjs": 75,
+        ".png": 21,
+        ".svg": 6,
+        ".srt": 2,
+        ".pdf": 4,
+        ".mp4": 19,
+        ".jpg": 1,
+        ".css": 6,
+        ".err": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/es/es/preflight.json",
+      "kind": "whole",
+      "bytes": 2239,
+      "truncated": false,
+      "sha256": "3b4927c0b131b4daf9a68dcbbbf44fd18aa46d9e9ffa97b5dbe5334d64310518",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/es/spark-driver.log",
+      "kind": "log",
+      "bytes": 2314,
+      "truncated": false,
+      "sha256": "a519382725003810e72edd47df76b34b31d5a81355aba5869d8a40d8b8cc7032",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/es/summary.json",
+      "kind": "whole",
+      "bytes": 4364,
+      "truncated": false,
+      "sha256": "d9547a0c5d8ad6f86c0475c24d854a85ea834d38d2abfbd82594f5c55b59520c",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/es/timings.tsv",
+      "kind": "whole",
+      "bytes": 194,
+      "truncated": false,
+      "sha256": "22c3ac6241793b58f4b900c7677cf5fdcf87dbc415e7e2e73858bee415ab0da5",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/es.log",
+      "kind": "log",
+      "bytes": 53,
+      "truncated": false,
+      "sha256": "96701ee8e81e792ea53ead23b40061061eef0a9dc058aa059b04a28187d0f31f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/ko/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 2239,
+      "truncated": false,
+      "sha256": "e3f7d09a0d949218671f7eb5ead1352611ba81d372245bd77d6b9babfcb633a3",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/ko/spark-driver.log",
+      "kind": "log",
+      "bytes": 415,
+      "truncated": false,
+      "sha256": "f13ce2cb215bd85f8d79a1695d817b06cbd58b6b9fecf704e4b985fa0b7f6448",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/ko/summary.json",
+      "kind": "whole",
+      "bytes": 3679,
+      "truncated": false,
+      "sha256": "b34f647315f5329db5087c8da9abba3cd0db2fa3ce93a469cbb85e794424ebfe",
+      "redactions": {
+        "home_dir": 11
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/ko/timings.tsv",
+      "kind": "whole",
+      "bytes": 110,
+      "truncated": false,
+      "sha256": "1aea954a04e35c0d6b219f2d1359c5aa83fc7fafd3bec07aa9cb57d17e5d8385",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/ko.log",
+      "kind": "log",
+      "bytes": 53,
+      "truncated": false,
+      "sha256": "89135804e2b16c84ba097db2810e42515965a0e3791c61b26e9552b9bdbc0b8e",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/run-es/l3/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 10909,
+      "truncated": false,
+      "sha256": "a31eb8793cbefc92d0a8f7deffe53dd7ce775c92948a0db4f3c7f81b951e37af",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/run-ko/l3/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 11100,
+      "truncated": false,
+      "sha256": "59835608a936c73e3554f11b3959c733cb06914127167aa45c21213554fcb417",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/run-zh-Hans/l3/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 10811,
+      "truncated": false,
+      "sha256": "784dd7141ba37161bbd279dadfee27fd06eea873e62095b658f08da0a0798652",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/zh-Hans/spark-driver.log",
+      "kind": "log",
+      "bytes": 3463,
+      "truncated": false,
+      "sha256": "d3866f66f490bdf1ef8af8f062fa0576d64da997aa26b41c4fb29f94abbb0800",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/zh-Hans/summary.json",
+      "kind": "whole",
+      "bytes": 4363,
+      "truncated": false,
+      "sha256": "4315d9be9453461eb4f7f67336ec7756c27eea2c6b41a8f2f825a537b43f03b8",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/zh-Hans/timings.tsv",
+      "kind": "whole",
+      "bytes": 193,
+      "truncated": false,
+      "sha256": "6994ca1bc83b6dbda797b54413daea0b3cdf43ecec96e4ab39ba42a0c27ae2aa",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/zh-Hans/zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 2251,
+      "truncated": false,
+      "sha256": "2985f16e21ccb7f6b3daa66119e0a1108bb007da6cac6cf0e358011de5600898",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "aqc/zh-Hans.log",
+      "kind": "log",
+      "bytes": 58,
+      "truncated": false,
+      "sha256": "5debf72cc7b1e4978355328be71eddd7209ec93ac018b68f9e24778c597bf5cc",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "chain-merged-es.log",
+      "kind": "log",
+      "bytes": 1177,
+      "truncated": false,
+      "sha256": "ecff84db1d6ed544d75f5ef7dbccbfdffb3176115404541f3abd94662c9605d6",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "chain-merged-koes.log",
+      "kind": "log",
+      "bytes": 1050,
+      "truncated": false,
+      "sha256": "a32a1059e817e6f75b782ccb6adafc665f9c62ed00372b3fd60cfaee2f85db98",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "chain-merged-zh.log",
+      "kind": "log",
+      "bytes": 338,
+      "truncated": false,
+      "sha256": "cd869d921308f277515831cff4ecfc05897662dcf6ad04d14e9d213e7b5c8301",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "chain-merged.log",
+      "kind": "log",
+      "bytes": 747,
+      "truncated": false,
+      "sha256": "8c5a8cd8413af4b0947aac32d5915e7aa81725a4d593506edb6384a31a53c816",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "chain-resume-zh.log",
+      "kind": "log",
+      "bytes": 730,
+      "truncated": false,
+      "sha256": "50fa471cc8ae2bdee134002dff27f16ca76810f25c31679fd92783994a50c9e5",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/layer2-jobs/89f366e360c0a45f3ac3c23d30a61a29e4fdb9ac75e8683118b5228eec428177/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "e3655c6dd6fa2fcc6551c4a4ba464a323337f63565cd7384754c1a99808bf92c",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/layer2-jobs/d70865a9fa7d7daadf66a722f318550a07c5dff6320f1a3c7612fbe3c76cf9ea/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "d8c1985267807a3e68f66ff7eff0557d7538fa13cc844eff75457788dd50ba91",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/layer2-jobs/dd9d42049503a91200f5c2ad91ceeb440838f6fc98b72ecbc0c403589fcebcdc/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "6d3488567b4e6128590885bce4b5b7567f5349b92742b786f36ffceae82d75ed",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/text/es/accounting/operations.log",
+      "kind": "log",
+      "bytes": 99647,
+      "truncated": true,
+      "sha256": "dac7bba75dcc735039d39316f746093e76c170db521cf0c104732031b602f475",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/text/es/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 271562,
+      "truncated": false,
+      "sha256": "08e44ad4c0c79aae95ce796a1d4142acd6a0a41b922fae17c6d76ed6ac2dc893",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/text/es/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1350,
+      "truncated": false,
+      "sha256": "f31a19ac4930701133ec0195e7035c29adeae60d937cc9281ee6806979a0d53c",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/text/ko/accounting/operations.log",
+      "kind": "log",
+      "bytes": 99658,
+      "truncated": true,
+      "sha256": "cf5038e4f18882caeac0134fd56e11503303811cbe359d2782dd57d5a58b0970",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/text/ko/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 271632,
+      "truncated": false,
+      "sha256": "4446bedceed5dcb51f764a27592e3a921dc98bfb1390f5405948a35c0641eb6f",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/text/ko/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1350,
+      "truncated": false,
+      "sha256": "599d23ed1cb1cc6e4adfd0810b730dedbacd00fabaff82488f1ad887c6be03d4",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/text/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 100993,
+      "truncated": true,
+      "sha256": "523fe21be0805a7997aa66e57f6d1da4b1d1d6c8e8ac67f85f88f8b0f24818e1",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/text/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 272874,
+      "truncated": false,
+      "sha256": "91439d589bd4a3c8b2af59a17d1878c7b106056064bb34946206d4f5ec587652",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2/text/zh-Hans/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1360,
+      "truncated": false,
+      "sha256": "b625dafa5bba4547b36de550993d879c8ad9d5ac708a9827524705de6d825da9",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2-zh-r2/layer2-jobs/a5041b7a8b4c6466dcb74ff0183e77402185dfc95dc85ab5111eddf7731c6ca7/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "50459898a18f915fb2eb46eb4cdf36f50ffbcfd10b5e6cc91419396f75eb74dd",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2-zh-r2/text/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 100996,
+      "truncated": true,
+      "sha256": "0933ac7fdd477781fe2f4ac1fc8f33af9be7c57af26713e683aa409fa2f0ce64",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2-zh-r2/text/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 272862,
+      "truncated": false,
+      "sha256": "dd63ae3d341b9e97b010022c0534e3518f8a4d198cb782f5eff2a94967ea34ce",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l2-zh-r2/text/zh-Hans/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1372,
+      "truncated": false,
+      "sha256": "74dfdc75bacbd1d087cd559625f3b67066a15a878285fe75e52f3e26bdc4b890",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/es/compact.log",
+      "kind": "log",
+      "bytes": 52,
+      "truncated": false,
+      "sha256": "2a26a05dac6ea49e846a84af98dbd978065987cb0b664f007149cfe948cbea7a",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/es/package.log",
+      "kind": "log",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "31882c05e076ecace40a11c763398adbbaef2ec3343c139ba63b48cae911b79a",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/es/render.log",
+      "kind": "log",
+      "bytes": 128,
+      "truncated": false,
+      "sha256": "6db819f4100d30014ca9eac39ea860fa95f386fbd183dc03138d07ae6919a8bb",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/es/screen.log",
+      "kind": "log",
+      "bytes": 55,
+      "truncated": false,
+      "sha256": "e76f6e92087c8b4c5624444fd75d23d67a122c085e95b8dc3c91ae4504863613",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/es/spark-es-c-m/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "28852d87da704ed06c2e1e03b710b75208772b556f6c6f42eac69a8b1d5af1be",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/es/spark-es-c-m/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "28852d87da704ed06c2e1e03b710b75208772b556f6c6f42eac69a8b1d5af1be",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/es/spark-es-c-m/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 1944,
+      "truncated": false,
+      "sha256": "81d17c113d46a1180029d620568a064e119df381b94a14401e4f44a91eaa9596",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/es/spark-es-c-m/spark-output/speech-job/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 10909,
+      "truncated": false,
+      "sha256": "a31eb8793cbefc92d0a8f7deffe53dd7ce775c92948a0db4f3c7f81b951e37af",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/es/spark-output/render.log",
+      "kind": "log",
+      "bytes": 5939,
+      "truncated": false,
+      "sha256": "9ba838b8580b8860eddf3f6ff2c10ffdf64704e69fdfeceb4004a98c836ad750",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/es/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 81300,
+      "truncated": true,
+      "sha256": "a38c25ee4e6a2444f77142d8a61a8059334b9e5c79fb417ac76eded90f3a88f4",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/es/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 207073,
+      "truncated": false,
+      "sha256": "a2b9e9e60b4835a8e646f92b38fdaea923fc883c2974a278cb4940253c38d84a",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/ko/compact.log",
+      "kind": "log",
+      "bytes": 52,
+      "truncated": false,
+      "sha256": "26e0221cf2a91f61c2d0dcc73b3d01dfe74d62688e8fc2a53d0a5ce846218e9f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/ko/package.log",
+      "kind": "log",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "3dbe5ceab15635eeb42a97eead6012799aa3020e4bd650cf6d6615a70350d157",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/ko/render.log",
+      "kind": "log",
+      "bytes": 128,
+      "truncated": false,
+      "sha256": "40074dd28e0ed47cab5ee70516cf4eef9160a8c28769a5b74f090d9496353307",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/ko/screen.log",
+      "kind": "log",
+      "bytes": 55,
+      "truncated": false,
+      "sha256": "c966b8a7c195ae3ae512c7da7f9d90f9811c85be64ea8beb1cd2dba46d108868",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/ko/spark-ko-c-m/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "630b912c537a14ccc5d443a2adb9580a559fddfe61b3829cad86388969c12e26",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/ko/spark-ko-c-m/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "630b912c537a14ccc5d443a2adb9580a559fddfe61b3829cad86388969c12e26",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/ko/spark-ko-c-m/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 1944,
+      "truncated": false,
+      "sha256": "bb6e1307591b7ced2a4e3b60c86078b84fb4868e363928ca351a2667eb9fb7f7",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/ko/spark-ko-c-m/spark-output/speech-job/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 11100,
+      "truncated": false,
+      "sha256": "59835608a936c73e3554f11b3959c733cb06914127167aa45c21213554fcb417",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/ko/spark-output/render.log",
+      "kind": "log",
+      "bytes": 5939,
+      "truncated": false,
+      "sha256": "5f1d65f698b9d5a0767b35a7b90963a7fb6afca2432ba77539ab33a7aa15eebc",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/ko/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 81297,
+      "truncated": true,
+      "sha256": "39787353e47c28583c36094df50069ce0ff572b3b7c913a17bfc1b4981149b77",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/ko/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 207074,
+      "truncated": false,
+      "sha256": "b09e0d507c18cf3fcccc0d4d2938d76806ea7735491b8ea1afb2a1d8bdc3e86f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/zh-Hans/compact.log",
+      "kind": "log",
+      "bytes": 57,
+      "truncated": false,
+      "sha256": "1ed2a7a64bb04ba9d9789ff6f76c6a851520379b66fda692f89bf20acb34a58d",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/zh-Hans/package.log",
+      "kind": "log",
+      "bytes": 213,
+      "truncated": false,
+      "sha256": "fee0ea45b1690777eab34e9c68858db4f76aa6a7717f925a8715b1a29820d120",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/zh-Hans/render.log",
+      "kind": "log",
+      "bytes": 133,
+      "truncated": false,
+      "sha256": "9756c49817fb15e3b32a009d1ffdd6d5398dfabba134e2e34aeb60cc321b9294",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/zh-Hans/screen.log",
+      "kind": "log",
+      "bytes": 60,
+      "truncated": false,
+      "sha256": "31c1bdc2652bfcbedfc830eb6525ff005d5f255ea2b7a1436336051717d81376",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/zh-Hans/spark-output/render.log",
+      "kind": "log",
+      "bytes": 5939,
+      "truncated": false,
+      "sha256": "e48c866955b9e7d19a3d7cf31beebb6afba0d60bd28f27016310deb29f1b3eb3",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/zh-Hans/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 82351,
+      "truncated": true,
+      "sha256": "660a52f5b62cb9c7997631716a4d81d0d083ac1f1ffd054ae2535f049b5ed89f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/zh-Hans/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 208116,
+      "truncated": false,
+      "sha256": "e67cb89e1e7343e3cc3d1d9b09ed0f013d7c6c6c10529cd33ce290d69831ce3b",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/zh-Hans/spark-zh-Hans-c-m/compact.log",
+      "kind": "log",
+      "bytes": 199,
+      "truncated": false,
+      "sha256": "0710130abb1544c2738e011e60b5997ca4e36db4ecbd2f53162df7bc70f3d631",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/zh-Hans/spark-zh-Hans-c-m/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 199,
+      "truncated": false,
+      "sha256": "0710130abb1544c2738e011e60b5997ca4e36db4ecbd2f53162df7bc70f3d631",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/zh-Hans/spark-zh-Hans-c-m/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 1904,
+      "truncated": false,
+      "sha256": "32e35a5b1a1e1d632d56ece59d1978b0f6081c54af2431980d326825a8976488",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l3/zh-Hans/spark-zh-Hans-c-m/spark-output/speech-job/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 10811,
+      "truncated": false,
+      "sha256": "784dd7141ba37161bbd279dadfee27fd06eea873e62095b658f08da0a0798652",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l4/baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 279131,
+      "truncated": false,
+      "sha256": "d2737c24c82828344d890994d0ec9d51d62df3087429b760690edfcb9f8f1428",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l4/baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l4-baseline.log",
+      "kind": "log",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "5c5a41b5d310bf10c0980a6c3e56d6b540afe8976146f7fca3feadd314cac657",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l4-prepare.log",
+      "kind": "log",
+      "bytes": 241,
+      "truncated": false,
+      "sha256": "c9ffd5e6ccd557fca402ce26f17452cae134ab9bd1280e82ae2358fa3b3a5b4c",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "l4-publish.log",
+      "kind": "log",
+      "bytes": 1526,
+      "truncated": false,
+      "sha256": "2f340ebae04c9a85a4756a7cb0aa740b899878bb3764aaef97cf5b38f7e4e21f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "plans/qc-es/qc-es/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 226102,
+      "truncated": false,
+      "source": "plans/qc-es/qc-es/.api-budget/source-budget.json",
+      "sha256": "06f811dad515cad913a992c7c437b721a90ce595b3fa1b67bb5ad051dc3b91e1",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "plans/qc-ko/qc-ko/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 205253,
+      "truncated": false,
+      "source": "plans/qc-ko/qc-ko/.api-budget/source-budget.json",
+      "sha256": "e00639cb07e941002bf3134c074107e22c3115ac25d2beb96289132a9a88b7df",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "plans/qc-zh-Hans/qc-zh-Hans/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 244464,
+      "truncated": false,
+      "source": "plans/qc-zh-Hans/qc-zh-Hans/.api-budget/source-budget.json",
+      "sha256": "c91dc22af37b6af70af08129fa4c54aa1ba9c16ab0636499089e624020b089a6",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-es/out/es/preflight.json",
+      "kind": "whole",
+      "bytes": 1332,
+      "truncated": false,
+      "sha256": "04bd3af7095389eef4b2cf8e50c6d15b87e41c0a47fcaa580e1d5286dae00886",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-es/out/summary.json",
+      "kind": "whole",
+      "bytes": 3023,
+      "truncated": false,
+      "sha256": "4b9e86b9c7d3876a2f73c51363a7114600fe1238a24e0975b7d3e1200d2b2db9",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-es/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 171,
+      "truncated": false,
+      "sha256": "f7a0552626dcb75ecb2d942518e2680a128a7970f146c59b9ceaa53adda9ccec",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-es/state/asr-calls/primary/326763a3984e94d52538203e5ea0472d1e013c30f783dadf9dc82c73126f491a/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "1048588fc9e531958ef9ee5aa0cf0c12c086f44b57004283d89b09db24f2c1b1",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-es/state/asr-calls/primary/39ecd75897c84a78bca8597da50bb180461e99872b15edd383d1f299ad74029c/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "5f17a82a70dffc25983f0430a7c194ddee2395bd85feee8508022a16e16d3e1b",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-es/state/asr-calls/primary/5cd26f994bff54df88b0f0a09d62e56d67819ff7a1694985aa8b103abfd304f1/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "412e0769c63b466516ec3d5f4e2a3462bf1f4c4fd292cbe35bee4daaa4904429",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-es/state/asr-calls/primary/9d4ae260153806a13edc101468f9635538741680c851748f852a6fd1004e8590/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "1682b62a32a891918f5aa8bc87d9503aa13bb56fd8c0e31c8c2e61cbb42b07e1",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-es/textqc.log",
+      "kind": "log",
+      "bytes": 735,
+      "truncated": false,
+      "sha256": "1430f5063df2adef0728aec21653061829dc4ddb4bf30a98dd40a59cc5bd2cf8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-ko/out/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 1332,
+      "truncated": false,
+      "sha256": "1290616415d91cb0a6697b6aecaacc8eae73ec1bdc6f0280199aff071166b6e9",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-ko/out/summary.json",
+      "kind": "whole",
+      "bytes": 3023,
+      "truncated": false,
+      "sha256": "a6710ce0ebc9b05fb5e5f60f556446d726cb8ed00d38591431f56a80c5ef7b12",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-ko/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 171,
+      "truncated": false,
+      "sha256": "42000a4a7beae87ada155813710e1060bf3ed793b4e1f1e481dd610251448209",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-ko/textqc.log",
+      "kind": "log",
+      "bytes": 735,
+      "truncated": false,
+      "sha256": "62ccde1d89db4f8e89b2103540316ddf6c6127390d211fb58de29836d2ca8b03",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/out/summary.json",
+      "kind": "whole",
+      "bytes": 2321,
+      "truncated": false,
+      "sha256": "b40528c922b516b2f6f701c8766c675bff1cddfc5431fbb88107d3faea527cd6",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 99,
+      "truncated": false,
+      "sha256": "b4bd0ed7f5f61eb8cdc5c5cf16d388e405aea7d4edd7f68e32f311d5dc2f64d1",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/out/zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 1389,
+      "truncated": false,
+      "sha256": "01ebcdf440245a2b0c360a88955812325bfba80cdfbaf3e718e2430ecab96963",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/18c52d57881d7deb6a2a5b41366438fafc897e1b0d765ce43548dca98b7c690c/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "77489dea67e401f570c5aff98b2cea043436be99868f23f1f0534de44f290889",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/337f9a0712fedb279acbc260da356087d9019e7ef9e6bd67fb8101dc1191b9ab/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "47b32e9b52422ada992b3c95b630df159834655c39acc582974b208255e876ec",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/420965a7fb96ec75533c81a25b25a1c479af06d5510b2d4d07a294743b6e1458/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "e7486a425d776c20941b30ec19f7012adb36276f08dba572a9f829c497589663",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/5a24e5a26784edb908c31e3b32cd49e15e3b5429f81f00b8b40ba18f6339b2dc/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "d6fb6d26165cc3a887cd584e2c1c092381e35744a46385d3d596ec07a84c9259",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/6b1aadc59d7b50d79585a6e21288eda1c5520e8d0caec162ea6f5eec5b81599d/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "a673f9c7ef65b366381525356c2c18d036a50694634a96f01c5426d421e07cba",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/7ca60f2ef521ef97dc4f61596395e6d762608983663f06797e0d89d3fd85148a/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "757595302a3aeea9d4728815fc9040c193bbb2f0e70209f4aa4510984720aa9c",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/890998ce56ff051c6d66a84afedec96dde5b4ba2ae09bcf76a21f178dcc02d14/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "bffbb0c88a72d4984bbef28aaacec8d46a77355c4dd403e9eb665288a2fe3e3b",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/a24c24e6f63beb3b7dd83b4c4a68719610540135f4d590e9900eef84acbb117e/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "974a3a8eef6de5d448b47bc8ce1c959bbc4e635bcba97877b3a7e1a62d97c8cd",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/d8a82f2ef2e9ff50bfe9d04e4386f536ecff1c3056a4010e95187c865895c97c/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "5c701f3fd7fe71bb1a7b59921888a6fd327e37bf4020a804fce2fe4fe9bf4036",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans/textqc.log",
+      "kind": "log",
+      "bytes": 615,
+      "truncated": false,
+      "sha256": "539fd1ce9c84a4dc8b5f7a767db7d4a529d58f775cb9b09a9a6489faec889e28",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans-r2/out/summary.json",
+      "kind": "whole",
+      "bytes": 3106,
+      "truncated": false,
+      "sha256": "da4f832ad8c4da027c72cf4647af0c005167af4bf5528932c37f01db34998e25",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans-r2/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "605d9d6a722947accf097b1fb5f9cc92de181f723dff3c0cf4fe7d3a4e4308b8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans-r2/out/zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 1379,
+      "truncated": false,
+      "sha256": "c7364998d131a05e44f8ee5f83b4bf81f18d420ca38fa49e57fa383d8b1226a5",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "textqc-zh-Hans-r2/textqc.log",
+      "kind": "log",
+      "bytes": 765,
+      "truncated": false,
+      "sha256": "385c1a859f1eae42c9ebf2f8f9a0493f84fd717d8aaab9a45ad04e1bd94f1161",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-merged",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 528,
+      "truncated": false,
+      "sha256": "1a83662b8c5fe5629260a9ab43a9c9188e6b35ef75908a1c399f7d1a7c39d313",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
