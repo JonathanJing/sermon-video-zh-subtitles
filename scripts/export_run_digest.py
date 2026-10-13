@@ -215,6 +215,9 @@ def budget_summary(ledger) -> dict:
     rows = [row for row in rows.values() if isinstance(row, dict)]
     returned = [row for row in rows if row.get("status") == "returned"]
     settled = [row["settlement"] for row in returned if isinstance(row.get("settlement"), dict)]
+    # Reused responses were paid under another root: they reserve and cost nothing here.
+    reused = [s for s in settled if s.get("costStatus") == "reused"]
+    settled = [s for s in settled if s.get("costStatus") != "reused"]
     priced = [s for s in settled if s.get("costStatus") == "estimated_upper_bound" and type(s.get("costMicrousd")) is int]
     by_model: dict[str, dict] = {}
     for item in settled:
@@ -227,8 +230,10 @@ def budget_summary(ledger) -> dict:
               for key in ("inputTokens", "outputTokens", "cachedInputTokens", "reasoningTokens")}
     return {"schemaVersion": BUDGET_SUMMARY_SCHEMA, "status": "summarized", "ledgerSchemaVersion": ledger.get("schemaVersion"),
             "requests": len(rows), "statuses": dict(Counter(str(row.get("status")) for row in rows)),
-            "reservedMicrousd": sum((row.get("bounds") or {}).get("costMicrousd") or 0 for row in rows),
-            "returned": len(returned), "withoutSettlement": len(returned) - len(settled),
+            "reservedMicrousd": sum((row.get("bounds") or {}).get("costMicrousd") or 0 for row in rows
+                                    if ((row.get("settlement") or {}).get("costStatus")) != "reused"),
+            "reused": len(reused),
+            "returned": len(returned), "withoutSettlement": len(returned) - len(settled) - len(reused),
             "priced": len(priced), "estimatedMicrousd": sum(item["costMicrousd"] for item in priced),
             "unknownCost": dict(Counter(str(item.get("reasonCode")) for item in settled if item not in priced)),
             "tokens": tokens, "byModel": by_model, "invoiceVerified": False}
