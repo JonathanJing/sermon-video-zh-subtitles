@@ -218,3 +218,5 @@ def test_terminal_range_marker_spacing_and_compounds_remain_protected(terminal):
     spoken = subject.spoken_form(approved)
     assert screen.score(approved, spoken, "ko", 0.88)[2]
     assert not screen.score(approved, spoken.removesuffix(terminal), "ko", 0.88)[2]
+    if terminal[-1] in "는만도":
+        assert not screen.score(approved, spoken[:-1], "ko", 0.88)[2]
