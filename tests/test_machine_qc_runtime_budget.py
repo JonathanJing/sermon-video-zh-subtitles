@@ -237,3 +237,12 @@ def test_current_qc_implementation_change_invalidates_scoped_runtime_approval(tm
         with patch.object(waiver,'implementation_sha256',return_value='0'*64):
             with pytest.raises(ValueError,match='qc_budget_context_changed'):
                 judge.ledger.verify()
+
+
+def test_judge_request_identity_separates_selected_projects(tmp_path, scoped_paths):
+    path=authorization(tmp_path,scoped_paths)
+    with patch.dict('os.environ',OPENAI_ENV):
+        first=text.api_judge_for_resolved(path,{'zh-Hans':scoped_paths},requested_locales=['zh-Hans'])
+    with patch.dict('os.environ',{**OPENAI_ENV,'OPENAI_PROJECT_ID':'proj_another_fixture'}):
+        second=text.api_judge_for_resolved(path,{'zh-Hans':scoped_paths},requested_locales=['zh-Hans'])
+    assert first.key('review','system','user',{})!=second.key('review','system','user',{})

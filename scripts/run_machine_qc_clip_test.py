@@ -516,7 +516,7 @@ class ApiJudge:
                          "settings": {"reasoningEffort": reasoning, "serviceTier": self.request_limits["serviceTier"],
                                       "promptFormat": "system-user-json-v1",
                                       "maxCompletionTokens": self.request_limits["maxCompletionTokens"],
-                                      "route": {k: route.get(k) for k in ("environment", "credentialAlias")},
+                                      "route": {k: route.get(k) for k in ("environment", "projectId", "credentialAlias")},
                                       "transport": {"adapterSha256": file_sha256(Path(__file__)),
                                                     "sessionCheck": "none_api_only"}}}
 
