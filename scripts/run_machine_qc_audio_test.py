@@ -149,7 +149,11 @@ def audio_coverage(job: dict, locale: str) -> dict:
     dropped = sum(seeded.drop_key_word(text, locale) is not None for text in texts)
     untestable = [kind for kind, count in (("dropped_key_word", dropped), ("wrong_sentence", len(set(texts)) - 1))
                   if count < 1]
-    return {"droppedKeyWordTrials": dropped, "wrongSentenceUnits": len(texts), "untestableKinds": untestable}
+    truncated = min(MAX_TRIALS, sum(seeded.truncation_eligible(unit["text"], locale) for unit in job["units"]))
+    if not truncated:
+        untestable.append("truncated")
+    return {"droppedKeyWordTrials": dropped, "wrongSentenceUnits": len(texts),
+            "truncationEligibleTrials": truncated, "untestableKinds": untestable}
 
 
 def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | None) -> dict:
