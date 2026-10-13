@@ -91,3 +91,82 @@ class TextRoleDefaultTests(unittest.TestCase):
             self.assertEqual(payload['max_completion_tokens'],DEFAULT_REQUEST_LIMITS['maxCompletionTokens'])
             self.assertEqual(payload['service_tier'],'default')
             self.assertEqual(payload['reasoning_effort'],'high')
+
+
+class LegacyBoundedCacheIdentityTests(unittest.TestCase):
+    """Seed the actual pre-cap cache names, then exercise production readers."""
+    def test_old_uncapped_cache_is_not_relabelled_and_new_caps_are_reusable(self):
+        import hashlib
+        from scripts import build_sermon_reading_edition_with_openai as reading
+        from scripts import review_sermon_subtitles_with_openai as review
+        from scripts import run_sentence_interpretation_models as sentence
+        from scripts import sermon_provider_limits as limits
+        segment={'id':0,'start':0.,'end':1.,'text':'Hello.'}
+        block={**segment,'en':'Hello.','zh':'你好。'}
+        glossary={}
+        def digest(v):return hashlib.sha256(json.dumps(v,ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+        def seed(p,v):sermon_pipeline.write_json(p,v);return p
+        def reply(value):return {'model':'gpt-6.1-sol','choices':[{'finish_reason':'stop','message':{'content':json.dumps(value)}}]}
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); model='gpt-6.1-sol';effort='high'
+            for role in ('correction','translation','subtitle','sentence','reading-edit','reading-qa'):
+                with self.subTest(role=role):
+                    out=root/role;out.mkdir()
+                    if role in ('correction','translation'):
+                        correction=role=='correction'
+                        prompt=(sermon_pipeline.review_prompts.ENGLISH_CORRECTION_PROMPT_VERSION if correction else sermon_pipeline.review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION)
+                        old_identity=hashlib.sha256(f'{prompt}|{model}|{effort}'.encode()).hexdigest()[:12]
+                        old_input=({'batch':[segment],'reference':'','glossary':glossary} if correction else {'segment':segment,'previous':'','next':'','glossary':glossary})
+                        old_path=out/('correction_windows' if correction else 'translation_segments')/((f'window_0000_0000.{old_identity}.' if correction else f'seg_0000.{old_identity}.')+sermon_pipeline.json_sha256(old_input)[:12]+'.json')
+                        seed(old_path,{'segments':[{'id':0,'text':'OLD'}]} if correction else {'id':0,'zh':'旧'})
+                        version={'promptVersion':prompt,'model':model,'reasoningEffort':effort,'inputSha256':sermon_pipeline.json_sha256({'segments':[segment],'referenceChunks':[],'glossary':glossary} if correction else {'segments':[segment],'glossary':glossary})}
+                        seed(out/('english_correction_prompt.json' if correction else 'chinese_translation_prompt.json'),version)
+                        seed(out/('segments_timed_en_corrected.json' if correction else 'segments_timed_zh.json'),[{'id':0,'text':'OLD','zh':'旧'}])
+                        response=reply({'segments':[{'id':0,'text':'NEW'}]} if correction else {'id':0,'zh':'新'})
+                        invoke=(lambda:sermon_pipeline.correct_english('synthetic',[segment],[],out,model,glossary,30)) if correction else (lambda:sermon_pipeline.translate_chinese('synthetic',[segment],out,model,glossary))
+                        module=sermon_pipeline
+                    elif role=='subtitle':
+                        payload=review.batch_payload([block],[block],0,model,effort)
+                        old_identity=digest({'promptVersion':review.PROMPT_VERSION,'payload':payload})
+                        old_path=seed(out/f'review_0000_0000.{old_identity}.json',{'segments':[{'id':0,'zh':'旧'}]})
+                        response=reply({'segments':[{'id':0,'zh':'新'}]})
+                        invoke=lambda:review.review_batch('synthetic',[block],[block],0,out,model,effort)
+                        module=review
+                    elif role=='sentence':
+                        payload={'model':model,'reasoning_effort':effort,'messages':[{'role':'user','content':'synthetic'}],'response_format':{'type':'json_object'}}
+                        request={'schemaVersion':sentence.RUN_SCHEMA,'stage':'test','payload':payload};old_hash=sentence.contract.json_sha256(request)
+                        old_path=seed(out/'cache'/f'test-{old_hash}.json',{'request':request,'requestSha256':old_hash,'response':reply({'text':'OLD'})})
+                        response=reply({'text':'NEW'})
+                        invoke=lambda:sentence.cached_call(out=out,stage='test',payload=payload,api_key='synthetic',requested_model=model,caller=api)
+                        module=None
+                    else:
+                        qa=role=='reading-qa';payload=reading.request_payload([block],[block],0,model=model,reasoning_effort=effort,qa_pass=qa)
+                        prompt=reading.QA_PROMPT_VERSION if qa else reading.PROMPT_VERSION
+                        old_identity=hashlib.sha256(f'{prompt}|openai|{model}|{effort}'.encode()).hexdigest()[:12]
+                        old_path=seed(out/f'{"qa" if qa else "edit"}_000_000.{old_identity}.{digest(payload)[:12]}.json',{'blocks':[{'id':0,'zh':'旧'}]})
+                        response=reply({'blocks':[{'id':0,'zh':'新'}]})
+                        invoke=lambda:reading.edit_batch('synthetic',[block],[block],0,out,model=model,reasoning_effort=effort,qa_pass=qa,provider='openai',codex_cli=Path('unused'),schema_path=Path('unused'))
+                        module=reading
+                    before=old_path.read_bytes()
+                    api=Mock(return_value=response)
+                    with (patch.object(module,'chat_json',api) if module else patch.object(sentence,'RUN_SCHEMA',sentence.RUN_SCHEMA)):
+                        first=invoke();second=invoke()
+                        self.assertEqual(first,second)
+                        self.assertEqual(api.call_count,1)
+                        self.assertEqual(api.call_args.args[1]['max_completion_tokens'],limits.DEFAULT_REQUEST_LIMITS['maxCompletionTokens'])
+                        self.assertEqual(api.call_args.args[1]['service_tier'],'default')
+                        changed={**limits.DEFAULT_REQUEST_LIMITS,'maxCompletionTokens':2048}
+                        with patch.object(limits,'DEFAULT_REQUEST_LIMITS',changed):invoke()
+                        self.assertEqual(api.call_count,2)
+                        self.assertEqual(api.call_args.args[1]['max_completion_tokens'],2048)
+                    self.assertEqual(old_path.read_bytes(),before)
+
+    def test_new_cache_miss_keeps_directory_unknown_gate(self):
+        from scripts import build_sermon_reading_edition_with_openai as reading
+        payload={'model':'gpt-6.1-sol','reasoning_effort':'high','messages':[{'role':'user','content':'synthetic'}],'response_format':{'type':'json_object'}}
+        block={'id':0,'start':0.,'end':1.,'en':'Hello.','zh':'你好。'}
+        with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch.object(sermon_pipeline,'json_request',side_effect=TimeoutError('synthetic unknown')) as api:
+            with self.assertRaises(TimeoutError):sermon_pipeline.chat_json('synthetic',payload)
+            with self.assertRaisesRegex(ValueError,'api_cli_outcome_reconciliation_required'):
+                reading.edit_batch('synthetic',[block],[block],0,Path(tmp)/'reading',model='gpt-6.1-sol',reasoning_effort='high',qa_pass=False,provider='openai',codex_cli=Path('unused'),schema_path=Path('unused'))
+            api.assert_called_once()

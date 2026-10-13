@@ -175,3 +175,56 @@ def test_bad_paid_response_migration_preserves_old_ledger_bytes(tmp_path, versio
     with pytest.raises(ValueError, match='source_response_identity_changed'):
         store(root).migrate_to_v4()
     assert (root/'source-budget.json').read_bytes() == before
+
+
+@pytest.mark.parametrize('version', ['sermon-source-budget-ledger-v1', budget.LEDGER_V2])
+@pytest.mark.parametrize('damaged_settlement', [
+    {'costStatus': 'estimated_upper_bound', 'costMicrousd': -1},
+    {'costStatus': 'estimated_upper_bound', 'costMicrousd': True},
+    {'costStatus': 'unknown', 'costMicrousd': 'invalid'},
+    {'costStatus': 'invalid', 'costMicrousd': 0},
+    [], None,
+])
+def test_invalid_legacy_settlement_cannot_enter_reused_provenance(tmp_path, version, damaged_settlement):
+    source, dest = tmp_path/'source', tmp_path/'dest'
+    call(store(source))
+    response = next((source/'responses').iterdir())
+    saved = jobs._read(response)
+    saved['settlement'] = damaged_settlement
+    jobs._persist(response, saved)
+    value = ledger(source)
+    value.update(schemaVersion=version)
+    value.pop('reuseBudgetRoots')
+    if version == 'sermon-source-budget-ledger-v1':
+        value.pop('maxConcurrent'); value.pop('resourcePolicySha256')
+    value['requests'][OPERATION].pop('settlement')
+    # Even a consistent updated response digest cannot bless bad settlement.
+    value['requests'][OPERATION]['responseSha256'] = jobs._digest(saved)
+    jobs._persist(source/'source-budget.json', value)
+    before = snapshot(source)
+    with pytest.raises(ValueError, match='source_reuse_response_reconciliation_required'):
+        call(store(dest, reuse=[source], transport=lambda *args: pytest.fail('redispatched')))
+    assert snapshot(source) == before
+    assert not (dest/'source-budget.json').exists()
+    assert not (dest/'responses').exists()
+
+
+@pytest.mark.parametrize('version', ['sermon-source-budget-ledger-v1', budget.LEDGER_V2])
+def test_legacy_response_without_settlement_computes_valid_direct_provenance(tmp_path, version):
+    source, dest = tmp_path/'source', tmp_path/'dest'
+    paid = call(store(source))
+    response = next((source/'responses').iterdir())
+    saved = jobs._read(response); saved.pop('settlement')
+    jobs._persist(response, saved)
+    value = ledger(source); value.update(schemaVersion=version); value.pop('reuseBudgetRoots')
+    if version == 'sermon-source-budget-ledger-v1':
+        value.pop('maxConcurrent'); value.pop('resourcePolicySha256')
+    value['requests'][OPERATION].pop('settlement')
+    value['requests'][OPERATION]['responseSha256'] = jobs._digest(saved)
+    jobs._persist(source/'source-budget.json', value)
+    before = snapshot(source)
+    assert call(store(dest, reuse=[source], transport=lambda *args: pytest.fail('redispatched'))) == paid
+    assert call(store(dest, reuse=[source], transport=lambda *args: pytest.fail('redispatched'))) == paid
+    assert snapshot(source) == before
+    reused = jobs._read(next((dest/'responses').iterdir()))
+    assert budget._valid_settlement(reused['reusedFrom']['originalSettlement'], version=budget.LEDGER_V3)

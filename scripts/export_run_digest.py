@@ -53,7 +53,8 @@ WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json", 
                "journal.ndjson", "decisions.ndjson"}
 BUDGET_LEDGER = "source-budget.json"
 BUDGET_SUMMARY_NAME = "source-budget.settlement.json"
-BUDGET_SUMMARY_SCHEMA = "sermon-run-digest-budget-settlement-v1"
+BUDGET_SUMMARY_SCHEMA_V1 = "sermon-run-digest-budget-settlement-v1"
+BUDGET_SUMMARY_SCHEMA = "sermon-run-digest-budget-settlement-v2"
 MAX_BUDGET_LEDGER_BYTES = 32 * 1024 * 1024
 MAX_WHOLE_BYTES = 256 * 1024
 # Agent-trial result files hold one row per case; one over the cap is exported as row chunks, each under the cap,
@@ -471,10 +472,15 @@ def index_markdown(name: str, dest: Path, entries: list[dict], runs: list[dict])
 
 def budget_line(source: str, record: dict) -> str:
     usd = lambda micro: f"US${micro / 1_000_000:.2f}"
+    version=record.get("schemaVersion")
+    if version not in {BUDGET_SUMMARY_SCHEMA_V1,BUDGET_SUMMARY_SCHEMA}:
+        return f"- source budget `{source}`: unsupported settlement summary schema"
     if record.get("status") != "summarized":
         return f"- source budget `{source}`: unreadable ledger"
     line = (f"- source budget `{source}`: {record['returned']} of {record['requests']} requests returned; "
             f"reserved {usd(record['reservedMicrousd'])}")
+    if version==BUDGET_SUMMARY_SCHEMA and record.get("reused",0):
+        line += f"; {record['reused']} reused without new reservation"
     if record["priced"]:
         line += f"; estimated {usd(record['estimatedMicrousd'])} over {record['priced']} priced"
     if record["unknownCost"]:

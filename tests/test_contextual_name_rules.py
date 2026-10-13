@@ -61,7 +61,7 @@ class ContextualNameRulesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, patch.object(mod, "chat_json", side_effect=response) as request:
             for text in ("First sermon", "First sermon", "Another sermon"):
                 rows = [{"id": 8, "text": text}]
-                result = mod.review_batch("fixture", rows, rows, 0, Path(temp), "fixture", "low")
+                result = mod.review_batch("fixture", rows, rows, 0, Path(temp), "gpt-6.1-sol", "low")
                 self.assertEqual(result["segments"][0]["zh"], text)
             self.assertEqual(request.call_count, 2)
 
@@ -71,9 +71,9 @@ class ContextualNameRulesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, patch.object(mod, "chat_json") as request:
             request.side_effect = [{"choices": [{"message": {"content": json.dumps(result)}}]} for result in responses]
             with self.assertRaises(RuntimeError):
-                mod.review_batch("fixture", rows, rows, 0, Path(temp), "fixture", "low")
+                mod.review_batch("fixture", rows, rows, 0, Path(temp), "gpt-6.1-sol", "low")
             self.assertEqual(list(Path(temp).iterdir()), [])
-            result = mod.review_batch("fixture", rows, rows, 0, Path(temp), "fixture", "low")
+            result = mod.review_batch("fixture", rows, rows, 0, Path(temp), "gpt-6.1-sol", "low")
             self.assertEqual(result["segments"][0]["zh"], "另一篇讲道")
             self.assertEqual(len(list(Path(temp).iterdir())), 1)
 
