@@ -80,3 +80,5 @@ begin 部分失败按逐项 intent 对账；能确认未启动本轮作业且变
 核对已收到的真实 terminal response 后，用 `python -m scripts.api_cli_outcomes --directory <accounting>/api-cli-outcomes --request-sha256 <receipt中的hash> --response <observed-response.json> --evidence <evidence.json>` 录入；evidence 必须含非空 `terminalResponseEvidence` 来源指针。该命令不调用模型、不批准预算，也不提供“清空未知后重发”功能；没有可确认的响应就保持阻断。收据只记录请求 hash，不记录凭据或 prompt；响应仅留在 ignored 运行目录。
 
 API/CLI outcome 新收据使用 v2；既有 v1 返回仍按原请求与响应 hash 核验后只读重放。v2 的 received 保存完整原响应字节及 hash，returned 才可作为成功结果；HTTP 拒绝、完整收到后的解码失败及可信预派发拒绝记 terminal_failure，同请求重放错误、修正请求可继续，不据此推断费用为零。真正未知的传输仍阻断整个目录。人工核对失败终态时，上述 reconciliation 命令增加 `--terminal-failure`，记录失败证据而不创建成功响应。对旧未知收据的显式核对写 v2 并保留来源 schema 标记。
+
+新 API/CLI outcome v3 将当前 runtime route（含 project/credential alias）、非明文 credential 指纹、caller 源码/bytecode 和 transport execution identity 纳入请求身份。同一 scope 的 route 或同用途实现/凭据变化拒绝；未知 outcome 仍先阻断整个目录。旧 v1/v2 没有该绑定，不能自动迁作新调用；保留原冻结实现，或按旧 request identity 显式只读恢复/核对，不能改目录重复购买未知调用。报告导出对 outcome 仅保留状态/hash 元数据；完整 response/raw body/执行绑定不会进入公开 run digest，verify 也拒绝已有含私有响应的导出。

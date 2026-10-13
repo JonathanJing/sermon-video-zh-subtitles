@@ -157,6 +157,38 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             subject.run(f.source,f.anchor,f.policy,self.out,'fixture-key',wrapped,plugin_path=f.plugin_path)
         self.assertEqual(len(self.calls),1)
 
+    def test_explicit_prior_root_recovers_paid_raw_into_new_run_without_redispatch(self):
+        from unittest.mock import patch
+        from scripts.production_spark_admission import SessionBoundCaller
+        prior=self.out.parent/'prior';prior_root=prior/'accounting'/'api-cli-outcomes'
+        old=SessionBoundCaller(self.fake_call,requires_spark=False,outcome_directory=prior_root)
+        prompt={'instruction':'Return synthetic JSON.', 'input':{'translationGroupId':self.fixture.evidence['groups'][0]['translationGroupId']}}
+        old_cache=prior/'group-0001-astra.json';save=subject.save_new
+        def crash(path,value,**kwargs):
+            if path==old_cache.with_suffix('.raw.json'):raise OSError('injected crash')
+            return save(path,value,**kwargs)
+        with patch.object(subject,'save_new',side_effect=crash):
+            with self.assertRaises(OSError):
+                subject._model_call('translator',prompt,self.fixture.policy,old_cache,'fixture-key',old)
+        marker=old_cache.with_suffix('.started.json')
+        current=SessionBoundCaller(self.fake_call,requires_spark=False,
+            outcome_directory=self.out/'accounting'/'api-cli-outcomes')
+        with self.assertRaisesRegex(ValueError,'marker binding changed'):
+            subject.recover_api_outcome(marker,old_cache.with_suffix('.raw.json'),caller=current)
+        before=next(prior_root.glob('*/outcome.json')).read_bytes()
+        subject.require_reconciled_requests(prior,caller=current,allowed_prior_roots=[prior])
+        reusable=subject.reusable_cache(prior,'group-0001','astra')
+        saved=subject._model_call('translator',prompt,self.fixture.policy,self.out/'group-0001-astra.json',
+                                  'fixture-key',current,reuse_from=reusable)
+        self.assertEqual(saved['result']['translationGroupId'],prompt['input']['translationGroupId'])
+        self.assertEqual(len(self.calls),1)
+        self.assertEqual(next(prior_root.glob('*/outcome.json')).read_bytes(),before)
+        changed=json.loads(marker.read_text());changed['apiCliOutcomeRoot']=str(self.out.parent/'unapproved')
+        marker.write_text(json.dumps(changed))
+        with self.assertRaisesRegex(ValueError,'marker binding changed'):
+            subject.recover_api_outcome(marker,self.out/'unapproved.raw.json',caller=current,allowed_prior_roots=[prior])
+        self.assertEqual(len(self.calls),1)
+
     def simulation_configuration_fixture(self):
         from scripts.codex_layer2_transport import TEST_CONFIGURATION
         policy = copy.deepcopy(self.fixture.policy)

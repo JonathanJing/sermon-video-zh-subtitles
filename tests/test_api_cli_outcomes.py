@@ -32,16 +32,14 @@ class ApiCliOutcomeTests(unittest.TestCase):
             self.assertNotIn('key1', path.read_text())
             outcomes.reconcile(root, row['requestSha256'], {'recovered':True},
                                {'terminalResponseEvidence':'provider-receipt-local.json'})
-            # Same stable signature/key rotation replays the reconciled response.
-            def returned(api_key, payload):
-                self.fail('reconciled response redispatched')
-            self.assertEqual(SessionBoundCaller(returned, requires_spark=False,
-                outcome_directory=root)('key2', {'model':'test'}), {'recovered':True})
+            # Only the original frozen caller and credential can replay this response.
+            self.assertEqual(SessionBoundCaller(fail, requires_spark=False,
+                outcome_directory=root)('key1', {'model':'test'}), {'recovered':True})
 
     def test_started_crash_blocks_and_evidence_required(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); row = root / ('a'*64) / 'outcome.json'
-            outcomes._write(row, {'schemaVersion':outcomes.SCHEMA, 'requestSha256':'a'*64,'purpose':'production-model-call','status':'started'})
+            outcomes._write(row, {'schemaVersion':outcomes.V2_SCHEMA, 'requestSha256':'a'*64,'purpose':'production-model-call','status':'started'})
             with self.assertRaisesRegex(ValueError, 'reconciliation_required'):
                 SessionBoundCaller(lambda: None, requires_spark=False, outcome_directory=root)()
             with self.assertRaisesRegex(ValueError, 'terminal_evidence_required'):
@@ -89,7 +87,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
         import sys
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            outcomes._write(root/('a'*64)/'outcome.json', {'schemaVersion':outcomes.SCHEMA,'requestSha256':'a'*64,'purpose':'production-model-call','status':'started'})
+            outcomes._write(root/('a'*64)/'outcome.json', {'schemaVersion':outcomes.V2_SCHEMA,'requestSha256':'a'*64,'purpose':'production-model-call','status':'started'})
             result = subprocess.run([sys.executable, '-c',
                 'from scripts.production_spark_admission import SessionBoundCaller; '
                 'import sys; SessionBoundCaller(lambda: print("DISPATCHED"), '
@@ -107,7 +105,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
              patch.object(pipeline, 'json_request', side_effect=TimeoutError('unknown')) as request, \
              patch.object(pipeline.time, 'sleep'):
             with self.assertRaises(TimeoutError):
-                pipeline.chat_json('secret', {'model':'test'}, retries=3)
+                pipeline.chat_json('secret', {'model':'gpt-6-astra','reasoning_effort':'medium', 'messages':[{'role':'user','content':'synthetic'}], 'response_format':{'type':'json_object'}}, retries=3)
             self.assertEqual(request.call_count, 1)
 
     def test_cache_binding_damage_or_wrong_directory_never_replays(self):
@@ -133,9 +131,9 @@ class ApiCliOutcomeTests(unittest.TestCase):
             wrapped = SessionBoundCaller(rejected, requires_spark=False, outcome_directory=tmp)
             with self.assertRaises(urllib.error.HTTPError): wrapped({'request':1})
             with self.assertRaises(outcomes.TerminalOutcomeError): wrapped({'request':1})
-            def corrected(payload): return {'ok':True}
-            self.assertEqual(SessionBoundCaller(corrected, requires_spark=False,
-                outcome_directory=tmp)({'request':2}), {'ok':True})
+            with self.assertRaisesRegex(ValueError,'frozen_execution_binding_changed'):
+                SessionBoundCaller(lambda payload: {'ok':True}, requires_spark=False,
+                    outcome_directory=tmp)({'request':2})
 
     def test_raw_decode_failure_body_bound_and_failure_reconciliation_not_success(self):
         import base64
@@ -164,7 +162,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
             wrapped(); path=next(Path(tmp).glob('*/outcome.json'))
             row=json.loads(path.read_text());row['schemaVersion']=outcomes.LEGACY_SCHEMA
             path.write_text(json.dumps(row))
-            self.assertEqual(wrapped(),{'ok':True})
+            self.assertEqual(outcomes.recover(tmp,row['requestSha256'],'production-model-call'),{'ok':True})
 
     def test_confirmed_no_dispatch_terminal_failure_preserves_reason(self):
         from scripts.sermon_pipeline import PreDispatchRejection
@@ -200,6 +198,29 @@ class ApiCliOutcomeTests(unittest.TestCase):
             outcomes.reconcile(tmp,row['requestSha256'],{'httpStatus':503},
                 {'terminalResponseEvidence':'provider-terminal-rejection'},terminal_failure=True)
             saved=json.loads(path.read_text())
-            self.assertEqual(saved['schemaVersion'],outcomes.SCHEMA)
+            self.assertEqual(saved['schemaVersion'],outcomes.V2_SCHEMA)
             self.assertEqual(saved['reconciledFromSchemaVersion'],outcomes.LEGACY_SCHEMA)
-            with self.assertRaises(outcomes.TerminalOutcomeError):wrapped()
+            with self.assertRaises(outcomes.TerminalOutcomeError):
+                outcomes.recover(tmp,row['requestSha256'],'production-model-call')
+
+    def test_route_credential_and_implementation_changes_cannot_replay_or_dispatch(self):
+        route={'schemaVersion':'sermon-openai-runtime-route-v1','environment':'dev',
+               'projectId':'proj_test','credentialAlias':'tongxing-dev-runtime','identitySource':'configured_runtime'}
+        calls=[]
+        def first(api_key,payload):calls.append(1);return {'old':True}
+        def changed(api_key,payload):calls.append(2);return {'new':True}
+        for kind in ('route','key','implementation'):
+            with self.subTest(kind=kind),tempfile.TemporaryDirectory() as tmp:
+                with patch('scripts.sermon_openai_runtime.selected_route',return_value=route):
+                    wrapped=SessionBoundCaller(first,requires_spark=False,outcome_directory=tmp)
+                    wrapped('secret-original',{'request':1})
+                    old=outcomes.request_identity(first,('secret-original',{'request':1}),{},wrapped.purpose)
+                    newroute={**route,'environment':'prod','credentialAlias':'tongxing-prod-runtime'} if kind=='route' else route
+                    with patch('scripts.sermon_openai_runtime.selected_route',return_value=newroute):
+                        caller=changed if kind=='implementation' else first
+                        key='secret-changed' if kind=='key' else 'secret-original'
+                        self.assertNotEqual(old,outcomes.request_identity(caller,(key,{'request':1}),{},wrapped.purpose))
+                        before=len(calls)
+                        with self.assertRaisesRegex(ValueError,'frozen_execution_binding_changed'):
+                            SessionBoundCaller(caller,requires_spark=False,outcome_directory=tmp)(key,{'request':1})
+                        self.assertEqual(len(calls),before)

@@ -13,13 +13,15 @@ from contextvars import ContextVar
 import fcntl
 import hashlib
 import inspect
+import marshal
 import json
 import os
 from pathlib import Path
 import tempfile
 
 _active = ContextVar('api_cli_outcome_admitted', default=False)
-SCHEMA = 'sermon-api-cli-outcome-v2'
+SCHEMA = 'sermon-api-cli-outcome-v3'
+V2_SCHEMA = 'sermon-api-cli-outcome-v2'
 LEGACY_SCHEMA = 'sermon-api-cli-outcome-v1'
 _observer = ContextVar('api_cli_outcome_observer', default=None)
 
@@ -42,16 +44,40 @@ def observed_no_dispatch(reason):
 def request_identity(caller, args, kwargs, purpose):
     bound = inspect.signature(caller).bind(*args, **kwargs)
     bound.apply_defaults()
-    return _digest({'purpose': purpose, 'arguments': _safe(bound.arguments)})
+    return _digest({'purpose': purpose, 'arguments': _safe(bound.arguments),
+                    'executionBinding': execution_binding(caller, bound.arguments)})
 
 
-def _validate(row, identity, purpose=None):
-    if (not isinstance(row, dict) or row.get('schemaVersion') not in {SCHEMA, LEGACY_SCHEMA}
+def execution_binding(caller, arguments):
+    from scripts.sermon_openai_runtime import selected_route
+    function = inspect.unwrap(caller)
+    if not inspect.isfunction(function) and not inspect.ismethod(function):
+        function = type(caller).__call__
+    source = inspect.getsourcefile(function)
+    code = getattr(function, '__code__', None)
+    transport = getattr(caller, 'execution_identity', None)
+    credentials = {key: hashlib.sha256(value.encode()).hexdigest()
+                   for key, value in arguments.items()
+                   if key.lower() in {'api_key', 'authorization', 'access_token'} and isinstance(value,str) and value}
+    return {'runtimeRoute':selected_route(), 'credentialFingerprints':credentials,
+            'caller':{'module':function.__module__, 'qualname':function.__qualname__,
+                      'sourceSha256':hashlib.sha256(Path(source).read_bytes()).hexdigest() if source and Path(source).is_file() else None,
+                      'bytecodeSha256':hashlib.sha256(marshal.dumps(code)).hexdigest() if code else None},
+            'transport':transport if isinstance(transport,(dict,str)) else None}
+
+
+def _validate(row, identity, purpose=None, binding=None):
+    if (not isinstance(row, dict) or row.get('schemaVersion') not in {SCHEMA, V2_SCHEMA, LEGACY_SCHEMA}
             or row.get('requestSha256') != identity
             or not isinstance(row.get('purpose'), str) or not row['purpose']
             or (purpose is not None and row['purpose'] != purpose)
             or row.get('status') not in {'started', 'unknown', 'received', 'returned', 'terminal_failure'}):
         raise ValueError('api_cli_receipt_binding_mismatch')
+    if row['schemaVersion'] == SCHEMA and (
+            not isinstance(row.get('executionBinding'), dict) or
+            row.get('executionBindingSha256') != _digest(row['executionBinding']) or
+            (binding is not None and row['executionBinding'] != binding)):
+        raise ValueError('api_cli_execution_binding_mismatch')
     if row['status'] == 'terminal_failure' and not (
             isinstance(row.get('failureType'), str) or
             ('failure' in row and isinstance(row.get('reconciliationEvidenceSha256'), str))):
@@ -141,6 +167,8 @@ def call(caller, args, kwargs, *, purpose, directory=None, guarded=False):
         try: return caller(*args, **kwargs)
         finally: _active.reset(token)
     identity = request_identity(caller, args, kwargs, purpose)
+    arguments = inspect.signature(caller).bind(*args, **kwargs); arguments.apply_defaults()
+    binding = execution_binding(caller, arguments.arguments)
     root = receipt_root(directory)
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     with (root / 'lock').open('a+b') as lock:
@@ -150,14 +178,21 @@ def call(caller, args, kwargs, *, purpose, directory=None, guarded=False):
             _validate(saved, path.parent.name)
             if saved['status'] not in {'returned', 'terminal_failure'}:
                 raise ValueError('api_cli_outcome_reconciliation_required')
+            if saved['schemaVersion']==SCHEMA and (
+                    saved['executionBinding']['runtimeRoute'] != binding['runtimeRoute'] or
+                    (saved['purpose']==purpose and saved['executionBinding'] != binding)):
+                raise ValueError('api_cli_frozen_execution_binding_changed')
         path = root / identity / 'outcome.json'
+        if any(json.loads(p.read_text()).get('schemaVersion') != SCHEMA for p in root.glob('*/outcome.json')):
+            raise ValueError('api_cli_legacy_execution_binding_requires_explicit_reconciliation')
         if path.exists():
             row = json.loads(path.read_text())
-            _validate(row, identity, purpose)
+            _validate(row, identity, purpose, binding=binding)
             if row['status'] == 'terminal_failure':
                 raise TerminalOutcomeError('api_cli_terminal_failure_replayed')
             return row['response']
         row = {'schemaVersion': SCHEMA, 'requestSha256': identity, 'purpose': purpose,
+               'executionBinding':binding, 'executionBindingSha256':_digest(binding),
                'status': 'started'}
         _write(path, row)
         received = {}
@@ -203,7 +238,7 @@ def reconcile(directory, request_sha256, response, evidence, *, terminal_failure
         _validate(row, request_sha256)
         if row['status'] not in {'started', 'unknown', 'received'}:
             raise ValueError('api_cli_outcome_not_unknown')
-        _write(path, {**row, 'schemaVersion': SCHEMA,
+        _write(path, {**row, 'schemaVersion': SCHEMA if row['schemaVersion']==SCHEMA else V2_SCHEMA,
                      **({'reconciledFromSchemaVersion':LEGACY_SCHEMA} if row['schemaVersion']==LEGACY_SCHEMA else {}),
                      'status': 'terminal_failure' if terminal_failure else 'returned',
                      **({'failure':response} if terminal_failure else

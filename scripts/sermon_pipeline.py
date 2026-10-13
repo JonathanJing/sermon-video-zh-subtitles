@@ -1006,8 +1006,9 @@ def chunk_text_for_window(chunks, start, end):
 
 
 def chat_json(api_key, payload, retries=1, *, session_verifier=None):
-    from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+    from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS, bounded_payload
     from scripts.strict_budget_capability import require_bounded_api_payload
+    payload = bounded_payload(payload, DEFAULT_REQUEST_LIMITS)
     require_bounded_api_payload(payload, DEFAULT_REQUEST_LIMITS, surface="legacy_text_api")
     return spark_admission.SessionBoundCaller(_chat_json, verifier=session_verifier,
         purpose="production-text-call", requires_spark=False)(api_key, payload, retries=retries)
@@ -1049,6 +1050,7 @@ def correct_english(
     window_seconds,
     reasoning_effort=None,
 ):
+    reasoning_effort = reasoning_effort or "high"
     output = outdir / "segments_timed_en_corrected.json"
     version_file = outdir / "english_correction_prompt.json"
     version = {
@@ -1129,8 +1131,7 @@ def correct_english(
                     },
                 ],
             }
-            if reasoning_effort:
-                payload["reasoning_effort"] = reasoning_effort
+            payload["reasoning_effort"] = reasoning_effort or "high"
             result = chat_json(api_key, payload)
             parsed = json.loads(result["choices"][0]["message"]["content"])
             parsed["_model"] = result.get("model", model)
@@ -1267,6 +1268,7 @@ def translate_chinese(
     reasoning_effort=None,
     workers=1,
 ):
+    reasoning_effort = reasoning_effort or "high"
     record_workload("pipeline.translate", {"inputSegments": len(segments), "inputCharacters": sum(len(x.get("text", "")) for x in segments), "workers": workers})
     output = outdir / "segments_timed_zh.json"
     version_file = outdir / "chinese_translation_prompt.json"
@@ -1327,8 +1329,7 @@ def translate_chinese(
                     },
                 ],
             }
-            if reasoning_effort:
-                payload["reasoning_effort"] = reasoning_effort
+            payload["reasoning_effort"] = reasoning_effort or "high"
             result = chat_json(api_key, payload)
             parsed = json.loads(result["choices"][0]["message"]["content"])
             parsed["_model"] = result.get("model", model)

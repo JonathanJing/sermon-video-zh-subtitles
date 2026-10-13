@@ -6,6 +6,11 @@ import time
 from scripts import guarded_hosting_publish as p
 
 
+def write_deploy_result(kwargs, version='sites/site/versions/new'):
+    """Injected run follows the real firebase --json stdout contract."""
+    json.dump({'status': 'success', 'result': {'hosting': version}}, kwargs['stdout'])
+
+
 def setup(tmp_path):
     public = tmp_path / 'public'; public.mkdir()
     data = b'{"pages": []}'
@@ -40,7 +45,7 @@ class Remote:
 
 def test_remote_lease_success_and_repeat_refusal(tmp_path):
     intent, data, sha = setup(tmp_path); remote = Remote()
-    def run(*args, **kwargs): remote.version = 'new'
+    def run(*args, **kwargs): remote.version = 'new'; write_deploy_result(kwargs)
     args = dict(intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old', baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
     receipt = p.publish(tmp_path, **args)
     assert receipt['status'] == 'deployed' and remote.deleted
@@ -60,7 +65,7 @@ def test_concurrent_version_change_rebuilds_without_deployment(tmp_path):
 def test_unknown_deploy_retains_lease_and_reconciles_explicitly(tmp_path):
     intent, data, sha = setup(tmp_path); remote = Remote()
     def run(*args, **kwargs):
-        remote.version = 'new'
+        remote.version = 'new'; write_deploy_result(kwargs)
         raise TimeoutError('unknown remote outcome')
     with pytest.raises(TimeoutError):
         p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old', baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
@@ -103,7 +108,7 @@ def test_live_deployment_heartbeats_and_refuses_reconciliation(tmp_path):
                       baseline_version='sites/site/versions/old', baseline_catalog_sha=sha,
                       lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
         assert remote.held and not remote.deleted
-        remote.version = 'new'
+        remote.version = 'new'; write_deploy_result(kwargs)
 
     receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent},
                         baseline_version='sites/site/versions/old', baseline_catalog_sha=sha,
@@ -159,7 +164,7 @@ def test_process_crash_releases_local_lock_but_needs_explicit_remote_reconciliat
     intent, data, sha = setup(tmp_path)
     remote = Remote()
     def interrupted(*args, **kwargs):
-        remote.version = 'new'
+        remote.version = 'new'; write_deploy_result(kwargs)
         raise TimeoutError('unknown')
     with pytest.raises(TimeoutError):
         p.publish(tmp_path, intent=intent, routes={'dev': intent},
@@ -211,7 +216,7 @@ def test_v4_catalog_is_compare_and_swapped_alongside_v3(tmp_path, monkeypatch):
     (tmp_path / 'deployment-attempt-v2.json').unlink()
     live['v4'] = None
     def deploy(*args, **kwargs):
-        remote.version = 'new'; live['v4'] = v4
+        remote.version = 'new'; write_deploy_result(kwargs); live['v4'] = v4
     receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                         baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
     assert receipt['status'] == 'deployed'
@@ -229,7 +234,7 @@ def test_published_v4_readback_must_match_the_sealed_catalog(tmp_path, monkeypat
     report = json.loads((tmp_path / 'seal-report.json').read_text())
     report['catalogV4Sha256'] = 'f' * 64
     (tmp_path / 'seal-report.json').write_text(json.dumps(report))
-    def deploy(*args, **kwargs): remote.version = 'new'
+    def deploy(*args, **kwargs): remote.version = 'new'; write_deploy_result(kwargs)
     with pytest.raises(ValueError, match='Published v4 catalog readback differs'):
         p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
@@ -272,7 +277,7 @@ def test_a_v4_catalog_that_reads_back_stale_at_first_is_deployed_once_it_propaga
                 return 404, b''
             return (200, b'{"stale": true}') if reads['v4'] <= 3 else (200, v4)
         return 200, data
-    def deploy(*args, **kwargs): remote.version = 'new'
+    def deploy(*args, **kwargs): remote.version = 'new'; write_deploy_result(kwargs)
     receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                         baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
     assert receipt['status'] == 'deployed' and receipt['newVersion'] == 'sites/site/versions/new'
@@ -328,7 +333,7 @@ def test_external_version_race_keeps_first_version_unknown_and_never_redeploys(t
     intent, data, sha = setup(tmp_path); remote = Remote(); deployments = []
     monkeypatch.setattr(p, 'PROPAGATION_TIMEOUT_SECONDS', 30)
     monkeypatch.setattr(p.time, 'sleep', lambda seconds: None)
-    def deploy(*args, **kwargs): deployments.append(1); remote.version = 'new'
+    def deploy(*args, **kwargs): deployments.append(1); remote.version = 'new'; write_deploy_result(kwargs)
     def reader(url, *, timeout=60):
         if remote.version == 'new' and url.endswith('/multilingual-v3.json'):
             remote.version = 'old' if race == 'to_baseline' else 'external'
@@ -351,7 +356,7 @@ def test_incomplete_read_retries_catalog_get_without_repeating_deploy(tmp_path, 
     intent, data, sha = setup(tmp_path); remote = Remote(); deployments, failures = [], []
     monkeypatch.setattr(p, 'PROPAGATION_TIMEOUT_SECONDS', 30)
     monkeypatch.setattr(p.time, 'sleep', lambda seconds: None)
-    def deploy(*args, **kwargs): deployments.append(1); remote.version = 'new'
+    def deploy(*args, **kwargs): deployments.append(1); remote.version = 'new'; write_deploy_result(kwargs)
     def reader(url, *, timeout=60):
         if remote.version == 'new' and not failures:
             failures.append(1); raise http.client.IncompleteRead(b'partial', 20)
@@ -368,7 +373,7 @@ def test_publish_late_read_success_retains_unknown_and_lease(tmp_path, monkeypat
     monkeypatch.setattr(p, 'time', SimpleNamespace(sleep=lambda seconds: None, monotonic=lambda: now[0]))
     monkeypatch.setattr(p, 'PROPAGATION_TIMEOUT_SECONDS', 10)
     intent, data, sha = setup(tmp_path); remote = Remote(); deployments = []
-    def deploy(*args, **kwargs): deployments.append(1); remote.version = 'new'
+    def deploy(*args, **kwargs): deployments.append(1); remote.version = 'new'; write_deploy_result(kwargs)
     def reader(url, *, timeout=60):
         if remote.version == 'new': now[0] = 11
         return v3_only(data)(url)
@@ -388,7 +393,7 @@ def test_zero_budget_does_not_start_a_read():
 
 def test_reconciliation_rejects_version_change_after_catalog_read(tmp_path, monkeypatch):
     intent, data, sha = setup(tmp_path); remote = Remote()
-    def deploy(*args, **kwargs): remote.version = 'new'; raise TimeoutError('unknown')
+    def deploy(*args, **kwargs): remote.version = 'new'; write_deploy_result(kwargs); raise TimeoutError('unknown')
     with pytest.raises(TimeoutError):
         p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
@@ -396,3 +401,62 @@ def test_reconciliation_rejects_version_change_after_catalog_read(tmp_path, monk
     with pytest.raises(p.PublicationVersionChanged):
         p.reconcile(tmp_path, request=remote, reader=reader, confirmed_version='sites/site/versions/new')
     assert remote.held and json.loads((tmp_path/'deployment-attempt-v2.json').read_text())['status'] == 'outcome_unknown'
+
+
+def test_external_deploy_before_first_readback_cannot_be_claimed(tmp_path, monkeypatch):
+    intent, data, sha = setup(tmp_path); remote = Remote(); deployments = []
+    def deploy(*args, **kwargs):
+        deployments.append(1)
+        write_deploy_result(kwargs)  # Our CLI produced new; a console publisher wins immediately afterward.
+        remote.version = 'external'
+    def request(method, url, **kwargs):
+        if '/channels/live' in url and remote.version == 'external':
+            receipt = json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())
+            assert receipt['newVersion'] == 'sites/site/versions/new'
+        return remote(method, url, **kwargs)
+    monkeypatch.setattr(p.time, 'sleep', lambda seconds: pytest.fail('Version conflict is not retryable'))
+    with pytest.raises(p.PublicationVersionChanged, match='deployment receipt'):
+        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                  baseline_catalog_sha=sha, lease_bucket='bucket', request=request, reader=v3_only(data), run=deploy)
+    receipt = json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())
+    assert receipt['status'] == 'outcome_unknown' and receipt['newVersion'] == 'sites/site/versions/new'
+    assert deployments == [1] and remote.held and not remote.deleted
+    with pytest.raises(ValueError, match='recorded deployment version'):
+        p.reconcile(tmp_path, request=remote, reader=v3_only(data), confirmed_version='sites/site/versions/external')
+
+
+@pytest.mark.parametrize('output', [None, {}, {'status': 'error', 'result': {'hosting': 'sites/site/versions/new'}},
+    {'status': 'success', 'result': {}},
+    {'status': 'success', 'result': {'hosting': ['sites/site/versions/new', 'sites/other/versions/other']}},
+    {'status': 'success', 'result': {'hosting': 'sites/other/versions/new'}},
+    {'status': 'success', 'result': {'hosting': 'sites/site/versions/old'}},
+    {'status': 'success', 'result': {'hosting': 'sites/site/versions/'}}])
+def test_missing_or_invalid_cli_identity_keeps_unknown_without_claiming_live_version(tmp_path, output):
+    intent, data, sha = setup(tmp_path); remote = Remote(); deployments = []
+    def deploy(*args, **kwargs):
+        deployments.append(1); remote.version = 'new'
+        if output is not None: json.dump(output, kwargs['stdout'])
+    with pytest.raises(ValueError, match='receipt|Exactly one'):
+        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                  baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
+    receipt = json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())
+    assert receipt['status'] == 'outcome_unknown' and receipt['newVersion'] is None
+    assert deployments == [1] and remote.held
+
+
+def test_cli_owned_version_can_wait_for_baseline_control_plane_propagation(tmp_path, monkeypatch):
+    intent, data, sha = setup(tmp_path); remote = Remote(); deployments, sleeps = [], []
+    monkeypatch.setattr(p, 'PROPAGATION_TIMEOUT_SECONDS', 30)
+    def sleep(seconds): sleeps.append(seconds); remote.version = 'new'
+    monkeypatch.setattr(p.time, 'sleep', sleep)
+    def deploy(*args, **kwargs): deployments.append(1); write_deploy_result(kwargs)
+    receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                        baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
+    assert receipt['status'] == 'deployed' and receipt['newVersion'] == 'sites/site/versions/new'
+    assert deployments == [1] and sleeps == [5]
+
+
+def test_single_version_array_cli_receipt_is_accepted(tmp_path):
+    path = tmp_path / 'result.json'
+    path.write_text(json.dumps({'status': 'success', 'result': {'hosting': ['sites/site/versions/new']}}))
+    assert p.deployed_version(path, site='site', baseline_version='sites/site/versions/old') == 'sites/site/versions/new'

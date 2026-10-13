@@ -255,6 +255,25 @@ class ExportRunDigestTests(unittest.TestCase):
             self.assertEqual(digest.main([str(self.run), "--out", str(self.out), "--name", "20261007-big"]), 1)
         self.assertFalse((self.out / "20261007-big").exists())
 
+    def test_private_api_outcomes_export_metadata_only_and_verify_old_exports(self):
+        import base64
+        private={'schemaVersion':'sermon-api-cli-outcome-v3','status':'returned','requestSha256':'a'*64,
+                 'purpose':'synthetic','response':{'output_text':'DO-NOT-PUBLISH-MODEL-TEXT'},
+                 'rawBodyBase64':base64.b64encode(b'DO-NOT-PUBLISH-MODEL-TEXT').decode(),
+                 'rawBodySha256':'b'*64,'executionBinding':{'private':'not-public'}}
+        directory=self.run/'accounting'/'api-cli-outcomes'/('a'*64);directory.mkdir(parents=True)
+        (directory/'outcome.json').write_text(json.dumps(private))
+        (self.run/'summary.json').write_text(json.dumps({'nested':private}))
+        dest=self.export()
+        public=json.loads((dest/self.run.name/'accounting'/'api-cli-outcomes'/('a'*64)/'outcome.json').read_text())
+        self.assertTrue(public['privateResponseOmitted'])
+        self.assertNotIn('response',public);self.assertNotIn('rawBodyBase64',public)
+        self.assertEqual(digest.verify(dest,[]),[])
+        self.assertNotIn('DO-NOT-PUBLISH',(dest/self.run.name/'summary.json').read_text())
+        old=dest/'old-outcome.json';old.write_text(json.dumps(private))
+        self.assertTrue(any('private_model_response' in item for item in digest.verify(dest,[])))
+
+
 
 if __name__ == "__main__":
     unittest.main()

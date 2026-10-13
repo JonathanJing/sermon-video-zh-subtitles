@@ -214,6 +214,32 @@ def public_catalog_v4(reader, origin):
     return hashlib.sha256(data).hexdigest()
 
 
+def deployed_version(result_path, *, site, baseline_version):
+    """Parse firebase-tools deploy --json's own single-site version receipt.
+
+    firebase-tools 15.30.2 lib/deploy/index.js returns {hosting: versionName}
+    (an array for multiple sites); lib/command.js wraps it in status/result.
+    Injected subprocess runners must write this same JSON to their stdout file.
+    An observed live head is never evidence of which version this command made.
+    """
+    try:
+        receipt = json.loads(Path(result_path).read_text())
+    except (OSError, ValueError) as error:
+        raise ValueError('Deployment version receipt unavailable; explicit reconciliation required') from error
+    contract.require(isinstance(receipt, dict) and receipt.get('status') == 'success'
+                     and isinstance(receipt.get('result'), dict), 'Invalid deployment version receipt')
+    version = receipt['result'].get('hosting')
+    if isinstance(version, list):
+        contract.require(len(version) == 1, 'Exactly one deployed Hosting version required')
+        version = version[0]
+    prefix = 'sites/' + site + '/versions/'
+    contract.require(isinstance(version, str) and version.startswith(prefix)
+                     and bool(version[len(prefix):]) and '/' not in version[len(prefix):]
+                     and not any(character.isspace() for character in version)
+                     and version != baseline_version, 'Deployment version receipt differs from intended site or baseline')
+    return version
+
+
 def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
             lease_bucket, request, reader, run=subprocess.run, heartbeat_interval=5,
             baseline_catalog_v4_sha=None):
@@ -261,21 +287,26 @@ def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha
         atomic_json(receipt_path, attempt)
         progress.update('deploying')
         deploying = True
-        with progress.heartbeat(heartbeat_interval), (snapshot / 'hosting-publish.log').open('w') as log:
+        result_path = snapshot / 'hosting-deploy-result.json'
+        with progress.heartbeat(heartbeat_interval), (snapshot / 'hosting-publish.log').open('w') as log, result_path.open('w') as output:
             run(['firebase', 'deploy', '--only', 'hosting', '--project', intent['project'], '--config', str(bound_config.resolve()), '--non-interactive', '--json'],
-                cwd=snapshot, check=True, stdout=log, stderr=subprocess.STDOUT, timeout=3600)
+                cwd=snapshot, check=True, stdout=output, stderr=log, timeout=3600)
+        attempt['newVersion'] = deployed_version(result_path, site=intent['site'], baseline_version=baseline_version)
+        atomic_json(receipt_path, attempt)
         progress.update('verifying_readback')
         lease.check()
 
+        owned_version_observed = False
+
         def readback():
+            nonlocal owned_version_observed
             version = live_version(request, intent['site'])
-            if attempt.get('newVersion'):
-                if version != attempt['newVersion']:
-                    raise PublicationVersionChanged('Live Hosting version changed during propagation')
-            else:
-                contract.require(version != baseline_version, 'No new Hosting version observed')
-                attempt['newVersion'] = version
-                atomic_json(receipt_path, attempt)
+            if version == baseline_version and not owned_version_observed:
+                # The control-plane live channel may still be on its old head.
+                contract.require(False, 'Deployed Hosting version has not propagated')
+            if version != attempt['newVersion']:
+                raise PublicationVersionChanged('Live Hosting version differs from deployment receipt')
+            owned_version_observed = True
             contract.require(public_catalog(reader, intent['origin']) == attempt['catalogSha256'], 'Published catalog readback differs')
             contract.require(public_catalog_v4(reader, intent['origin']) == report.get('catalogV4Sha256'), 'Published v4 catalog readback differs')
             if live_version(request, intent['site']) != attempt['newVersion']:
@@ -325,7 +356,7 @@ def _reconcile(snapshot, *, request, reader, confirmed_version):
         return attempt
     lease.check()
     contract.require((attempt.get('newVersion') or confirmed_version) == confirmed_version,
-                     'Confirmed version differs from first observed deployment version')
+                     'Confirmed version differs from recorded deployment version (first observed for legacy attempts)')
     observed = live_version(request, attempt['intent']['site'])
     contract.require(observed == confirmed_version and observed != attempt['baselineVersion'], 'Explicit confirmed new version differs')
     report = json.loads((Path(snapshot) / 'seal-report.json').read_text())
