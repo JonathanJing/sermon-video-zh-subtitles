@@ -63,3 +63,15 @@
 ## 范围结束助词的空格与复合形式
 
 在 `bce69bd8` 的独立复核中发现，范围末尾空格 `4장 까지` 和复合 `4장까지는` 的删除未受引用结构保护。追加 commits `5e36f34f`、`4efc566f` 纳入带空格的完整范围 marker+suffix（는/만/도）；只标准化空白，保留 suffix 语义，单删 suffix 也被拒绝。最终工作分支 head `4efc566f9c53f2326e62347ee37e6ce008662dc1`，三文件 193 tests、34 subtests passed，0.97 秒，diff check 通过。此前 189 项阶段为历史快照，不与此相加。未执行模型、Spark、部署或真实音频 QC；保持 draft，等待最终 head CI。
+
+## 当前 v5 依赖闭包与计划冻结
+
+commit `cc353091b501f3cd32df5a2c169d4e8fdde779aa` 添加合法完整助词 이／이라고，并把 screen、Korean helper、auto_qc_text_common、common 纳入当前 v5 实现身份。缓存、ASR settings、primary runtime 和 rescore 消费者拒绝过期闭包；QC/calibration/waiver 的实现身份也纳入 helper。Korean normalization-v2 或显式 unit-instructions-v2 的 unified audio plan 绑定新增依赖，修改依赖后 execute 在 dispatch 前拒绝。旧 exact-text v1 声音身份及 v4/v3 评分路径保持，旧 single-file experimental v5 收据需显式重评分。fixture 只更正 current v5 hash，没有放宽阈值、预期结果或旧 v4 测试。
+
+初次六文件测试因旧 dummy/self-only fixtures 得到 22 failed、270 passed、69 subtests（159.03 秒），识别身份预期过期后中止，保留失败证据。更新 fixture 后，四文件快速合同 210 passed／46 subtests（9.98 秒），独立 waiver 依赖变异回归 1 passed（0.09 秒）；最终完整四文件 consumer/fake-calibration 矩阵在冻结 `cc353091` 上 131 passed／64 subtests（920.76 秒），退出码 0。各阶段不相加；快速阶段早于显式 v2 指令 plan 补充测试，完整 consumer 包含该路径。全部使用离线 fake 数据，没有模型、Spark、部署或真实音频 QC。旧 #361/#363 真实 QC 不能验证新 folding／依赖闭包或当前 calibration。
+
+## 引用替代连接词与共享语法
+
+最终代码 head `471fd2c5` 针对新 review 的 이나，并统一已有完整 citation connector：이나／이든／에서부터／부터는／부터만／부터도 与原连接词，在 generator、ASR 边界和引用链共用语法。不扩大一般助词或跨正文上下文。数字折叠先消费完整连接词再处理 reference numeric atoms，避免把连接词的 이／만 当数词。
+
+开发阶段依次发现 connector syllable 误折、无空格 부터만 吞 syllable、一次移动 import 后的作用域 NameError（134 failed），均保留日志与统计。修正后最终三文件合同 219 passed／34 subtests（1.01 秒），diff check 通过；覆盖生成→fold→score、无空格／空格替代和 compound 范围、错误端点拒绝、普通 counter 与跨正文负例。该结果绑定 `471fd2c5`；此前完整 consumer 131／64 只绑定 `cc353091`，本次 connector-only followup 没有重跑其十五分钟矩阵。GitHub CI 按最终 head 独立核对；报告继续 draft，不表示代码已合并或真实 QC／设备／现场通过。

@@ -1,6 +1,6 @@
 # Run digest 20261012-pr360-pr362-offline-review-fixes
 
-Generated 2026-10-13T00:49:10+00:00. Redacted copies only; source hashes are in manifest.json.
+Generated 2026-10-13T01:24:13+00:00. Redacted copies only; source hashes are in manifest.json.
 
 ## 20261012-pr360-margin-validation
 
@@ -95,3 +95,68 @@ Timings `timings.tsv`:
 | stage | status | elapsedSeconds |
 |---|---|---|
 | pytest | pass | 0.97 |
+
+## pr362-implementation-closure-20261012
+
+Source: `/private/tmp/sermon-fix-362/artifacts/pr362-implementation-closure-20261012`
+
+- outcome `outcome.json`: **pass** exit 0 (? → ?)
+
+Timings `timings.tsv`:
+
+| stage | status | elapsedSeconds |
+|---|---|---|
+| initial-development | interrupted | 159.03 |
+| fast-contracts | pass | 9.98 |
+| waiver-dependency-mutation | pass | 0.09 |
+| final-consumer | pass | 920.76 |
+
+Failed stages: `initial-development`
+
+Error-like log lines (first 5 per log):
+
+- `pytest.log`: E               AssertionError: 2 != 1
+- `pytest.log`: tests/test_run_machine_qc_audio_test.py:257: AssertionError
+- `pytest.log`: ... 481 lines omitted; 61 error-like lines, 50 kept below ...
+- `pytest.log`: [line 56] E           AssertionError: 2 != 0
+- `pytest.log`: [line 58] tests/test_run_machine_qc_audio_test.py:237: AssertionError
+
+## pr362-alternative-chain-20261012
+
+Source: `/private/tmp/sermon-fix-362/artifacts/pr362-alternative-chain-20261012`
+
+- outcome `outcome.json`: **pass** exit 0 (? → ?)
+
+Timings `timings.tsv`:
+
+| stage | status | elapsedSeconds |
+|---|---|---|
+| initial_alternative | fail | 1.01 |
+| shared_connector | fail | 1.06 |
+| numeric_atom | fail | 1.02 |
+| connector_token_import | fail | 3.42 |
+| final | pass | 1.01 |
+
+Failed stages: `initial_alternative`, `shared_connector`, `numeric_atom`, `connector_token_import`
+
+Error-like log lines (first 5 per log):
+
+- `atom-final-tests.log`: E       AssertionError: assert '요한복음 3장부터만사장까지' == '요한복음 3장부터만4장까지'
+- `atom-final-tests.log`: tests/test_ko_spoken_numerals.py:260: AssertionError
+- `atom-final-tests.log`: FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\ubd80\ud130\ub9cc]
+- `atom-final-tests.log`: 1 failed, 218 passed, 34 subtests passed in 1.02s
+- `pytest.log`: E       AssertionError: assert '요한복음 3장2나 4장' == '요한복음 3장이나 4장'
+- `pytest.log`: tests/test_ko_spoken_numerals.py:239: AssertionError
+- `pytest.log`: E       AssertionError: assert '요한복음 3장2나4장' == '요한복음 3장이나4장'
+- `pytest.log`: tests/test_ko_spoken_numerals.py:239: AssertionError
+- `pytest.log`: E       AssertionError: assert '시편 3편2나 4편' == '시편 3편이나 4편'
+- `shared-final-tests.log`: E       AssertionError: assert '요한복음 3장2나 4장' == '요한복음 3장이나 4장'
+- `shared-final-tests.log`: tests/test_ko_spoken_numerals.py:239: AssertionError
+- `shared-final-tests.log`: E       AssertionError: assert '요한복음 3장2나4장' == '요한복음 3장이나4장'
+- `shared-final-tests.log`: tests/test_ko_spoken_numerals.py:239: AssertionError
+- `shared-final-tests.log`: E       AssertionError: assert '시편 3편2나 4편' == '시편 3편이나 4편'
+- `token-final-tests.log`: ... 8402 lines omitted; 272 error-like lines, 50 kept below ...
+- `token-final-tests.log`: [line 64] E           NameError: name '_CONNECTOR' is not defined
+- `token-final-tests.log`: [line 66] scripts/screen_target_language_audio_units.py:426: NameError
+- `token-final-tests.log`: [line 126] E           NameError: name '_CONNECTOR' is not defined
+- `token-final-tests.log`: [line 128] scripts/screen_target_language_audio_units.py:426: NameError
