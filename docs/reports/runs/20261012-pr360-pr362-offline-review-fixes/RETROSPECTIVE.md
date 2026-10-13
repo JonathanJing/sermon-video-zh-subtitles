@@ -8,7 +8,7 @@
 
 两个 run 的 outcome 均为通过、exit 0。#360 在修复 commit `14c318ed2ca6ab01fb2376d2af60666f0a7953df` 的单文件测试为 47 passed；随后仅正常合入 dev 报告基线，推送 head 为 `48a3af658cf8d79060c3ba7f5ee5a08dbc871ed5`，未额外重跑。
 
-#362 在数字分隔符保护前的八文件回归为 178 tests、28 subtests passed；补数字间小数点/分隔符保护后的三文件复验为 86 tests、2 subtests passed，最终本地修复 commit `4bf72e641d5e32472a7c878208b55b76d9447591`。两个阶段范围和源码不同，不相加或宣称全部 178 项已在最终源码重跑。当前 #362 尚待 #360 合入 dev 后同步基线并推送；本报告不称其已经 merge。
+#362 在数字分隔符保护前的八文件回归为 178 tests、28 subtests passed；补数字间小数点/分隔符保护后的三文件复验为 86 tests、2 subtests passed，最终本地修复 commit `4bf72e641d5e32472a7c878208b55b76d9447591`。两个阶段范围和源码不同，不相加或宣称全部 178 项已在最终源码重跑。首次导出时 #362 尚待 #360 合入 dev 后同步基线并推送；本报告不称其已经 merge。
 
 ## 耗时
 
@@ -34,8 +34,12 @@
 
 ## 外部可见的变化
 
-#360 已推工作分支；#362 本地修复尚未推送，等待按 strict 分支保护顺序同步 dev。此报告是独立 docs-only draft PR，保持待复核，不代表代码已 merge。Firebase/TestFlight/设备/现场均 not_run。
+首次导出时：#360 已推工作分支；#362 本地修复尚未推送，等待按 strict 分支保护顺序同步 dev。此报告是独立 docs-only draft PR，保持待复核，不代表代码已 merge。Firebase/TestFlight/设备/现场均 not_run。
 
 ## 后续
 
 主 Agent 在 #360 required checks 通过后合并，再由 #362 修复 Agent 正常合入最新 dev、快验和 push，独立核对最终 head checks。#362 最终基线快验可另追加报告，不改写上述阶段收据。历史 #361/#363 真实音频证据属于旧规则身份，不外推新 v2 规则，也不由此报告授权重跑付费阶段。
+
+## 最终 dev 基线追加快验
+
+#360 已通过 required checks 并合入 dev。#362 正常合入 dev `6fc1368224341b4154071001e3818514758f30ac`，最终工作分支 head `d58c140b7ef2554689295ce4d8a7e1a8cf347d5f`，无冲突。针对 Korean spoken numerals 和 gateway 的两个文件快验为 55 passed，pytest 自报 0.86 秒；diff check 通过。未重复八文件 178 项回归，未调用模型、Spark 或部署。最终 head 已正常推送，CI 结果另由 GitHub checks 核对；本报告保持 draft，不表示 #362 已合并。
