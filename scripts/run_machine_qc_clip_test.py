@@ -440,10 +440,16 @@ class ApiJudge:
         value = read(authorization)
         receipt = authorization.parent / value["approvalReceipt"]
         approval = read(receipt)
+        # Optional earlier roots of this run whose paid responses may be reused; the approval
+        # must name the same list, so reuse is never inferred from the file system.
+        reuse_roots = value.get("reuseBudgetRoots", [])
+        binding = {"budgetRoot": value["budgetRoot"], **value["authority"]["bounds"],
+                   **({"reuseBudgetRoots": reuse_roots} if reuse_roots else {})}
         if not (value.get("schemaVersion") == "sermon-machine-qc-api-budget-authorization-v1"
+                and isinstance(reuse_roots, list) and all(isinstance(root, str) and root for root in reuse_roots)
                 and value["authority"]["approvalSha256"] == file_sha256(receipt)
                 and approval.get("humanApproval") is True and approval.get("decision") == "approved"
-                and approval.get("binding") == {"budgetRoot": value["budgetRoot"], **value["authority"]["bounds"]}):
+                and approval.get("binding") == binding):
             raise ValueError("Machine QC API budget authorization is not bound to its approval")
         route = selected_route()
         if route is None:
@@ -480,7 +486,7 @@ class ApiJudge:
         self.ledger = budget.SourceBudget(value["budgetRoot"], {
             "approvalSha256": value["authority"]["approvalSha256"],
             "globalBounds": value["authority"]["bounds"]["globalBounds"], "requestLimits": self.request_limits},
-            verify=verify, transport=transport, max_concurrent=16)
+            verify=verify, transport=transport, max_concurrent=16, reuse_roots=reuse_roots)
         self.api_key = os.environ["OPENAI_API_KEY"]
         self.reasoning = reasoning
         self.identity = {"backend": "openai_api", "model": "gpt-6.1-sol", "modelRevision": "openai-api",

@@ -32,7 +32,8 @@ LEDGER_V2 = 'sermon-source-budget-ledger-v2'
 # and only migrate_to_v3() upgrades one. New ledgers start at v3.
 LEDGER_V3 = 'sermon-source-budget-ledger-v3'
 CONCURRENT_LEDGERS = (LEDGER_V2, LEDGER_V3)
-SETTLEMENT_STATUSES = {'estimated_upper_bound', 'unknown'}
+# 'reused': a response another approved budget root already paid for; it costs nothing here.
+SETTLEMENT_STATUSES = {'estimated_upper_bound', 'unknown', 'reused'}
 
 
 def require(ok, code):
@@ -118,8 +119,14 @@ def bounded_source_judge_payload(payload, limits):
 
 
 class SourceBudget:
-    def __init__(self, root, authority, *, verify, transport=None, max_concurrent=1, resource_policy=None):
+    def __init__(self, root, authority, *, verify, transport=None, max_concurrent=1, resource_policy=None,
+                 reuse_roots=()):
         self.root, self.authority, self.verify = Path(root), authority, verify
+        # Earlier budget roots of the same run whose returned responses this root may reuse,
+        # as named by its approval. Read-only: nothing is written to them.
+        self.reuse_roots = tuple(Path(root_) for root_ in reuse_roots)
+        require(all(root_.resolve() != self.root.resolve() for root_ in self.reuse_roots)
+                and len({root_.resolve() for root_ in self.reuse_roots}) == len(self.reuse_roots), 'invalid_source_reuse_roots')
         self.transport = transport
         require(type(max_concurrent) is int and 1 <= max_concurrent <= 16, 'invalid_source_concurrency')
         self.max_concurrent = max_concurrent
@@ -237,6 +244,25 @@ class SourceBudget:
         legacy = self.root / 'responses' / (fingerprint + '.json')
         return legacy if not path.exists() and legacy.exists() else path
 
+    def _reusable(self, operation, fingerprint):
+        """A verified returned response for exactly this operation and request identity in a reuse root."""
+        for root in self.reuse_roots:
+            try:
+                ledger = jobs._read(root / 'source-budget.json')
+                row = ledger['requests'].get(operation)
+                if not (isinstance(row, dict) and row.get('status') == 'returned' and row.get('identitySha256') == fingerprint):
+                    continue
+                path = root / 'responses' / (jobs._digest(operation) + '-' + fingerprint + '.json')
+                if not path.exists():
+                    path = root / 'responses' / (fingerprint + '.json')
+                saved = jobs._read(path)
+            except (OSError, ValueError, KeyError, TypeError, AttributeError):
+                continue
+            if (saved.get('identitySha256') == fingerprint and jobs._digest(saved.get('requestIdentity')) == fingerprint
+                    and jobs._digest(saved) == row['responseSha256']):
+                return root, saved, row
+        return None
+
     def returned(self, operation, identity):
         """Whether the ledger already holds this operation's returned response for exactly this identity.
 
@@ -295,6 +321,29 @@ class SourceBudget:
                         and jobs._digest(saved) == previous['responseSha256'], 'source_response_identity_changed')
                 self._release_resource(previous)
                 return saved['response']
+            reusable = self._reusable(operation, fingerprint) if ledger['schemaVersion'] == LEDGER_V3 else None
+            if reusable is not None:
+                # Already paid under another approved root of this run: copy it here at no cost.
+                source_root, source_saved, source_row = reusable
+                previous_settlement = saved_settlement(source_saved)
+                saved = {'identitySha256': fingerprint, 'requestIdentity': identity, 'response': source_saved['response'],
+                         'modelCallId': source_saved.get('modelCallId'), 'elapsedSeconds': 0.0,
+                         'reservationBounds': bounds, 'invoiceVerified': False,
+                         'reusedFrom': {'budgetRoot': str(source_root), 'operation': operation,
+                                        'responseSha256': source_row['responseSha256'],
+                                        'originalSettlement': previous_settlement},
+                         'settlement': {'costStatus': 'reused', 'costMicrousd': 0,
+                                        'usage': previous_settlement.get('usage'), 'reasonCode': 'reused_paid_response',
+                                        'requestedModel': previous_settlement.get('requestedModel'),
+                                        'providerModel': previous_settlement.get('providerModel'),
+                                        'elapsedSeconds': 0.0, 'priceBasis': 'reused_from_approved_budget_root',
+                                        'invoiceVerified': False}}
+                response_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+                immutable._atomic(response_path, saved)
+                ledger['requests'][operation] = {'identitySha256': fingerprint, 'bounds': bounds, 'status': 'returned',
+                                                 'responseSha256': jobs._digest(saved), 'settlement': saved['settlement']}
+                jobs._persist(path, ledger)
+                return saved['response']
             require(self.transport is not None or (isinstance(api_key, str) and bool(api_key)
                     and '\n' not in api_key and '\r' not in api_key), 'OPENAI_API_KEY_is_not_configured')
             # Unknown outcomes stop the source lane; they do not buy a fresh
@@ -303,7 +352,9 @@ class SourceBudget:
                     'source_provider_outcome_unknown')
             require(sum(row['status'] == 'live_started' for row in ledger['requests'].values()) < self.max_concurrent,
                     'source_concurrency_busy')
-            used = {key: sum(row['bounds'][key] for row in ledger['requests'].values()) for key in METRICS}
+            # A reused response reserved nothing and cost nothing, so it does not count against the cap.
+            used = {key: sum(row['bounds'][key] for row in ledger['requests'].values()
+                             if (row.get('settlement') or {}).get('costStatus') != 'reused') for key in METRICS}
             require(all(used[key] + bounds[key] <= self.authority['globalBounds'][key] for key in METRICS),
                     'source_budget_exhausted')
             if self.transport is None:
