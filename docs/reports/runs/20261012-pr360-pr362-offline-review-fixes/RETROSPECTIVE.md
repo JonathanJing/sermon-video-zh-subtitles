@@ -43,3 +43,7 @@
 ## 最终 dev 基线追加快验
 
 #360 已通过 required checks 并合入 dev。#362 正常合入 dev `6fc1368224341b4154071001e3818514758f30ac`，最终工作分支 head `d58c140b7ef2554689295ce4d8a7e1a8cf347d5f`，无冲突。针对 Korean spoken numerals 和 gateway 的两个文件快验为 55 passed，pytest 自报 0.86 秒；diff check 通过。未重复八文件 178 项回归，未调用模型、Spark 或部署。最终 head 已正常推送，CI 结果另由 GitHub checks 核对；本报告保持 draft，不表示 #362 已合并。
+
+## 引用范围终点追加修复
+
+最终基线 CI 13 项成功后，新增 review 指出 `부터`／`에서` 范围终点数字未转换。修复 commit `1df273e3` 仅扩展既有书名锚定的相邻引用链，不跨普通正文；普通照片/电影 counter 仍不转换。两个正例和普通 counter／跨正文负例定向测试所在 numeral 文件 50 passed in 0.23 秒，diff check 通过。正常 push 后由新 head CI 再判断可合并性；此前 13 项成功不代表新 head 已通过。没有调用模型或部署，报告保持 draft。

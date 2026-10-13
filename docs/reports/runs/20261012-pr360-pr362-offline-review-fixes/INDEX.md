@@ -1,6 +1,6 @@
 # Run digest 20261012-pr360-pr362-offline-review-fixes
 
-Generated 2026-10-13T00:00:40+00:00. Redacted copies only; source hashes are in manifest.json.
+Generated 2026-10-13T00:15:05+00:00. Redacted copies only; source hashes are in manifest.json.
 
 ## 20261012-pr360-margin-validation
 
@@ -39,3 +39,15 @@ Timings `timings.tsv`:
 | stage | status | elapsedSeconds |
 |---|---|---|
 | pytest | pass | 0.86 |
+
+## pr362-range-chain-review-20261012
+
+Source: `/private/tmp/sermon-fix-362/artifacts/pr362-range-chain-review-20261012`
+
+- outcome `outcome.json`: **pass** exit 0 (? → ?)
+
+Timings `timings.tsv`:
+
+| stage | status | elapsedSeconds |
+|---|---|---|
+| pytest | pass | 0.23 |
