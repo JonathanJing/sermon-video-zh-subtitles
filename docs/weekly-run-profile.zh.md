@@ -60,8 +60,10 @@
 
 ## 开工条件（片段测试中实际卡住过）
 
-- **Layer 2 需要 Spark 独占会话。** controller 在派发前调用 `production_spark_admission.require_session()`，没有会话时 job 直接失败（`spark_exclusive_session_required`），这一步发生在任何 API 调用之前。开工前 `spark_exclusive_session.py begin`，并在启动 controller 的环境里导出 `SPARK_EXCLUSIVE_SESSION_ID`／`OWNER`。
-- **会话里某个 job 异常退出后，会话会进入 `reconcile_required`。** 先确认派发进程已经退出，并核对账本里没有处于 intent 阶段的请求；再用 `reconcile --job-id … --confirm-dispatcher-terminal` 清理，最后 `resume-begin`。
+- **开工前跑一次检查。** 用 `scripts/check_run_start.py`（PR #382）一次查完代码与质检实现哈希、凭据启动器、预算计划、Spark 主机和已部署代码、输出目录、测试页 ID；预算文件用 `scripts/plan_run_budgets.py` 按 `config/weekly-run-profile.json` 生成，不再手写。
+- **只有 GPU 环节占用 Spark 会话**（PR #380 合并后）：Layer 2、文本质检等只调 API 的环节不检查会话、不建 job hold，Spark 服务照常运行；渲染、初筛、音频质检前才 `spark_exclusive_session.py begin`，用完 `finish`。合并前的代码里 Layer 2 仍要求会话（`spark_exclusive_session_required`）。
+- **GPU 环节的会话出状况时**（job 异常退出后变成 `reconcile_required`）：先确认派发进程已退出、账本里没有 intent 状态的请求，再 `reconcile --job-id … --confirm-dispatcher-terminal`，最后 `resume-begin`。
+- **换预算根时复用已付回复**（PR #381 合并后）：新授权写上 `reuseBudgetRoots`，同一请求不再重复付费。
 - **开跑前冻结代码。** 质检、校准、读法规则、截短校准都在机器质检实现哈希里。运行中途改代码，已签发的文本和音频放行证明就作废，所有语言都要重签。片段测试第二轮因此多花约 2.5 美元。
 - **质检规则改变后，用新的 state 目录。** 修复账本会拒绝原样重筛已失败的候选（`blocked_prior_failure`），旧 state 留作证据。
 - **同一候选不要反复重跑质检直到通过。** 质检失败的组，开新修订（Layer 2 重新翻译）后再质检。
