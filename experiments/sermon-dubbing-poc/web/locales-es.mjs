@@ -30,7 +30,7 @@ export const messages = Object.freeze({
   'sermon.info': 'Información del sermón',
   'nav.content': 'Contenido',
   'nav.listen': 'Escuchar',
-  'nav.transcript': 'Transcripción',
+  'nav.transcript': 'Subtítulos',
   'nav.outline': 'Bosquejo',
   'nav.more': 'Más',
   'nav.moreOptions': 'Más opciones',

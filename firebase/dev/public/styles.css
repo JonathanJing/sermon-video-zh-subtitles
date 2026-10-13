@@ -329,11 +329,27 @@ dialog.week-browser { margin:auto;padding:20px;max-height:85dvh;width:min(640px,
 .sermon-language-check { display:inline-flex;color:var(--teal); }
 .sermon-language-check .app-icon { width:16px;height:16px; }
 @media(max-width:480px) {
-  #language-toggle { gap:4px;padding:8px; }
+  #language-toggle { gap:4px;padding:8px;min-width:44px; }
   #language-toggle .menu-chevron { display:none; }
   .page-language-popover { right:-52px;width:min(256px,calc(100vw - 24px)); }
   .sermon-language-option { padding:8px 14px;font-size:14px; }
 }
+/* Long labels shrink the tabs before the actions; narrow phones keep those actions as icons. */
+.field-nav .tabs { min-width:0; }
+.field-nav .tabs button { flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis; }
+.field-nav > .nav-action { flex-shrink:0; }
+@media(max-width:480px) { :root[lang=en] .field-nav .tabs button,:root[lang=es] .field-nav .tabs button { font-size:13px; } }
+@media(max-width:380px) {
+  :root[lang=en] .field-nav .tabs button { font-size:12px; }
+  :root[lang=en] .field-nav > .nav-action,:root[lang=es] .field-nav > .nav-action { min-width:44px; }
+  :root[lang=en] .field-nav > .nav-action [data-icon-label],:root[lang=es] .field-nav > .nav-action [data-icon-label] { position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden; }
+}
+/* A long subtitle wraps inside the brand before the header controls move, together, to a second row. */
+.topbar { flex-wrap:wrap;row-gap:8px; }
+.topbar .brand { flex:1 1 0;min-width:min-content;max-width:max-content; }
+.topbar .topbar-actions { flex-wrap:nowrap;margin-left:auto; }
+.brand-detail { white-space:normal;word-break:keep-all;line-height:1.25; }
+@media(max-width:350px) { :root[lang=en] #language-label { position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden; } }
 
 /* Dev-only controls share the production page's palette, rhythm and component grid. */
 .field-main { padding-bottom: 250px; }
