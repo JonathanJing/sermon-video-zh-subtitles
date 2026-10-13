@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Korean spoken form for chapter, verse and psalm numbers.
 
-In explicit Bible-book citations Korean reads 장, 절 and Psalm 편 with Sino-Korean numerals
-(8장 = 팔 장, 하박국 2장 = 이 장). The TTS voice often reads Arabic digits with
+Korean reads chapter and verse numbers with Sino-Korean numerals (8장 = 팔 장,
+하박국 2장 = 이 장): in explicit Bible-book citations (장, 절 and Psalm 편), and for a bare
+N장 or N절 in sermon prose ("look at chapter 8"), unless it counts objects (사진 2장). The TTS voice often reads Arabic digits with
 native numerals instead (여덟 장, 두 장), which changes the meaning a listener
 hears. ``spoken_form`` spells those numbers out in Sino-Korean for the dub only;
 the approved text, captions and reading text keep the digits.
@@ -25,7 +26,7 @@ except ModuleNotFoundError:  # run as scripts/ko_spoken_numerals.py
     import sermon_sentence_interpretation as identity
     from language_review_plugins.auto_qc_text_common import korean_sino, _KO_BOOK_CODES
 
-RULE = "ko-sino-chapter-verse-numerals-v2"
+RULE = "ko-sino-chapter-verse-numerals-v3"
 INSTRUCTIONS_SCHEMA = "sermon-unit-delivery-instructions-v2"
 # Only an explicit Bible book anchors a citation. Keep subsequent adjacent
 # chapter/verse/psalm numbers in that chain; never infer context across prose.
@@ -51,6 +52,16 @@ _CITATIONS = tuple(
     for opening, closing in _DELIMITERS
 )
 _REFERENCE = re.compile(r"(\d{1,3})(?:(\s*[-~–]\s*)(\d{1,3}))?(\s*)(장|절|편)")
+# v3 (2026-10-13, user decision): a sermon names chapters without the book ("8장의 맨 첫 절")
+# and the voice then reads native numerals, so bare N장 and N절 are chapter and verse too.
+# Bare N편 stays (films, poems), and so does a count right after a counted-object noun.
+_COUNTED_NOUNS = ("사진", "종이", "편지", "카드", "표", "티켓", "지폐", "쪽지", "그림", "접시", "수건", "담요", "이불", "페이지")
+_BARE = re.compile(r"(?<![\d.,:．٫٬，A-Za-z가-힣])(?<!(?:" + "|".join(n for n in _COUNTED_NOUNS if len(n) == 2) + r") )"
+                   r"(?<!(?:" + "|".join(n for n in _COUNTED_NOUNS if len(n) == 1) + r") )"
+                   + _NUMBER + r"(?:장|절)" + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절)"))
+_COUNTED = re.compile(r"(?<![가-힣A-Za-z0-9])(?:" + "|".join(_COUNTED_NOUNS) + r")\s*[(\[（［]?\s*" + _NUMBER
+                      + r"(?:장|절|편)" + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절|편)")
+                      + r"(?:\s*" + _RANGE_PARTICLE + r")?\s*[)\]）］]?")
 
 
 def spoken_form(text: str) -> str:
@@ -60,7 +71,13 @@ def spoken_form(text: str) -> str:
         return numbers + space + counter
     for citation in _CITATIONS:
         text = citation.sub(lambda match: _REFERENCE.sub(spell, match.group()), text)
-    return text
+    # A count after a counted-object noun keeps its whole chain: 사진 2장부터 4장까지, 사진(3-4장).
+    counted = [match.span() for match in _COUNTED.finditer(text)]
+    def bare(match: re.Match) -> str:
+        if any(start <= match.start() < end for start, end in counted):
+            return match.group()
+        return _REFERENCE.sub(spell, match.group())
+    return _BARE.sub(bare, text)
 
 
 def equivalent(approved: str, spoken: str) -> bool:
