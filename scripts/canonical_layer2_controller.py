@@ -482,7 +482,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
                     'backend': 'openai_api', 'route': route,
                     'budgetAuthorizationSha256': budget_binding['sha256']}
-                caller = spark_admission.SessionBoundCaller(caller, requires_spark=False)
+                caller = spark_admission.SessionBoundCaller(caller, requires_spark=False, outcome_guarded=True)
             elif budget_binding is not None:
                 from scripts.strict_budget_capability import reject_codex_cli_transport
                 reject_codex_cli_transport(caller)

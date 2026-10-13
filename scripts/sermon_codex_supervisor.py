@@ -21,7 +21,7 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
     real_caller = call_json is None
     if real_caller:
         from scripts.sermon_codex_transport import call_json
-        call_json = spark_admission.SessionBoundCaller(call_json, purpose="production-supervisor", requires_spark=False)
+        call_json = spark_admission.SessionBoundCaller(call_json, purpose="production-supervisor", requires_spark=False, outcome_guarded=True)
     timeout = getattr(args, 'agent_timeout_seconds', 21600)
     if not math.isfinite(timeout) or timeout <= 0 or not 1 <= args.max_turns <= 100:
         raise AgentsAPIError('invalid_supervisor_limits')

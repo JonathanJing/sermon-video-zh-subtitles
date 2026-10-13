@@ -345,7 +345,7 @@ class SourceBudget:
         req.accounting_settings = {'requestPayloadSha256': fingerprint}
         return pipeline.request_json(req, retries=1, response_observer=returned,
             request_executor=spark_admission.SessionBoundCaller(
-                lambda r: http.execute(r, bounds['wallTimeMs'] / 1000), purpose='source-audio-api', requires_spark=False))
+                lambda r: http.execute(r, bounds['wallTimeMs'] / 1000), purpose='source-audio-api', requires_spark=False, outcome_guarded=True))
 
     def reconcile_returned(self, operation, expected_identity_sha256):
         """Explicit local reconciliation after raw return persisted but ledger did not.

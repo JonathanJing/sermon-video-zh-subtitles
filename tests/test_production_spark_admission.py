@@ -115,16 +115,19 @@ class ProductionSessionCallTests(unittest.TestCase):
         from scripts import build_sermon_reading_edition_with_openai as reading
         from scripts import sermon_pipeline as pipeline
         spark = Mock(side_effect=AssertionError("API-only caller consulted Spark"))
-        with patch.object(sessions.Client, "from_environment", spark), \
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.dict("os.environ", {"SERMON_ACCOUNTING_DIR": directory}), \
+             patch.object(sessions.Client, "from_environment", spark), \
              patch.object(notes, "_request_openai_notes", return_value={"ok": 1}) as notes_api, \
              patch.object(reading, "_codex_json", return_value={"ok": 2}) as reading_cli, \
              patch.object(pipeline, "_chat_json", return_value={"ok": 3}) as text, \
              patch.object(pipeline, "multipart_request", return_value={"ok": 4}) as audio:
+            Path(directory, "input").write_text("{}")
             self.assertEqual(notes.request_openai_notes({"model": "test"}, "test-only"), {"ok": 1})
             self.assertEqual(reading.codex_json({"messages": []}, codex_cli=Path("unused"), model="test",
-                reasoning_effort="medium", schema_path=Path("unused"), output_path=Path("unused")), {"ok": 2})
+                reasoning_effort="medium", schema_path=Path(directory, "input"), output_path=Path("unused")), {"ok": 2})
             self.assertEqual(pipeline.chat_json("test-only", {"model": "gpt-6-astra"}), {"ok": 3})
-            self.assertEqual(pipeline.transcribe_openai_audio("test-only", "gpt-transcribe", "source", Path("nonexistent")), {"ok": 4})
+            self.assertEqual(pipeline.transcribe_openai_audio("test-only", "gpt-transcribe", "source", Path(directory, "input")), {"ok": 4})
         spark.assert_not_called()
         for called in (notes_api, reading_cli, text, audio):
             called.assert_called_once()
