@@ -182,6 +182,11 @@ def _run(args):
     base, prepared, root = (p.resolve() for p in (args.baseline, args.prepared, args.out))
     manifest, assets = builder.verified_assets(prepared)
     baseline_catalog = contract.validate_catalog_snapshot(base)
+    machine = bool(getattr(args, 'machine_checked', False))
+    if machine:
+        # v3 is only the human projection: a machine-only page may exist solely
+        # in v4. Refuse its ID before asset publication or any later sealing.
+        baseline_catalog = contract.snapshot_catalog_v4(base)
     page_id = manifest['pageId']
     contract.require(page_id.startswith(('mockup-', 'dryrun-', 'dev-')), 'Diagnostic page ID required')
     contract.require(set(manifest['releases']) == {'zh-Hans', 'ko', 'es'}, 'Three locales required')
@@ -189,7 +194,6 @@ def _run(args):
                      'Test page already exists; build a new run-specific page ID')
     contents = [preparation.read(prepared / 'public' / preparation.safe_relative(row['path']))
                 for row in assets if row['role'] == 'content']
-    machine = bool(getattr(args, 'machine_checked', False))
     if machine:
         # Real machine-checked content on an isolated test page: formal v3 content with its
         # disclosure, published without the source video (content v3 does not bind one).
