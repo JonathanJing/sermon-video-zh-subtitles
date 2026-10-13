@@ -7,6 +7,12 @@ from scripts import api_cli_outcomes as outcomes
 from scripts.production_spark_admission import SessionBoundCaller
 
 
+def reconciliation_evidence(request_sha256, response, *, terminal_failure=False):
+    return {'schemaVersion': outcomes.RECONCILIATION_EVIDENCE_SCHEMA,
+            'requestSha256': request_sha256, 'responseSha256': outcomes._digest(response),
+            'terminalFailure': terminal_failure, 'terminalResponseEvidence': 'observed-provider-receipt'}
+
+
 class ApiCliOutcomeTests(unittest.TestCase):
     def test_replay_gate_is_read_only_and_checks_unknown_frozen_and_legacy(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -36,6 +42,273 @@ class ApiCliOutcomeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'legacy_execution_binding_requires_explicit_reconciliation'):
                 outcomes.assert_replay_admitted(root, purpose='test', binding=binding)
 
+    def test_recorded_received_or_unknown_json_cannot_be_replaced(self):
+        for status in ('received', 'unknown'):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as directory:
+                def provider():
+                    outcomes.observed_response(b'{"real": 1}', http_status=200)
+                    return {'real': 1}
+                wrapped = SessionBoundCaller(provider, requires_spark=False, outcome_directory=directory)
+                wrapped()
+                path = next(Path(directory).glob('*/outcome.json'))
+                row = json.loads(path.read_text()); row['status'] = status
+                row.pop('response'); row.pop('responseSha256'); outcomes._write(path, row)
+                before = path.read_bytes()
+                wrong = {'fake': 2}
+                with self.assertRaisesRegex(ValueError, 'recorded_response_mismatch'):
+                    outcomes.reconcile(directory, row['requestSha256'], wrong,
+                                       reconciliation_evidence(row['requestSha256'], wrong))
+                self.assertEqual(path.read_bytes(), before)
+                exact = {'real': 1}
+                outcomes.reconcile(directory, row['requestSha256'], exact,
+                                   reconciliation_evidence(row['requestSha256'], exact))
+                self.assertEqual(outcomes.recover(directory, row['requestSha256'], row['purpose']), exact)
+                saved = json.loads(path.read_text())
+                self.assertEqual(saved['reconciliationBinding']['responseSha256'], outcomes._digest(exact))
+                saved['reconciliationBinding']['responseSha256'] = 'f' * 64
+                outcomes._write(path, saved)
+                with self.assertRaisesRegex(ValueError, 'reconciliation_binding_mismatch'):
+                    outcomes.recover(directory, row['requestSha256'], row['purpose'])
+
+    def test_unknown_without_raw_requires_versioned_request_response_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            def provider(): raise TimeoutError('actual unknown')
+            wrapped = SessionBoundCaller(provider, requires_spark=False, outcome_directory=directory)
+            with self.assertRaises(TimeoutError): wrapped()
+            path = next(Path(directory).glob('*/outcome.json')); row = json.loads(path.read_text())
+            response = {'observed': 'provider-or-cli-result'}
+            valid = reconciliation_evidence(row['requestSha256'], response)
+            invalid = [ {'terminalResponseEvidence': 'truthy pointer'},
+                       dict(valid, requestSha256='a' * 64), dict(valid, responseSha256='b' * 64),
+                       dict(valid, terminalFailure=True), dict(valid, terminalFailure='false') ]
+            for evidence in invalid:
+                with self.subTest(evidence=evidence):
+                    before = path.read_bytes()
+                    with self.assertRaisesRegex(ValueError, 'evidence_binding_mismatch'):
+                        outcomes.reconcile(directory, row['requestSha256'], response, evidence)
+                    self.assertEqual(path.read_bytes(), before)
+            outcomes.reconcile(directory, row['requestSha256'], response, valid)
+            self.assertEqual(outcomes.recover(directory, row['requestSha256'], row['purpose']), response)
+
+    def test_non_json_or_http_failure_cannot_be_reconciled_to_success(self):
+        for body, http_status, message in [(b'not JSON', 200, 'not_json'),
+                                           (b'{"error":"rejected"}', 503, 'failure_cannot_be_success')]:
+            with self.subTest(body=body), tempfile.TemporaryDirectory() as directory:
+                def provider():
+                    outcomes.observed_response(body, http_status=http_status)
+                    return {'fixture': True}
+                SessionBoundCaller(provider, requires_spark=False, outcome_directory=directory)()
+                path = next(Path(directory).glob('*/outcome.json')); row = json.loads(path.read_text())
+                row.update(status='received'); row.pop('response'); row.pop('responseSha256')
+                outcomes._write(path, row); before = path.read_bytes()
+                response = {'error':'rejected'} if http_status == 503 else {'fake': True}
+                with self.assertRaisesRegex(ValueError, message):
+                    outcomes.reconcile(directory, row['requestSha256'], response,
+                                       reconciliation_evidence(row['requestSha256'], response))
+                self.assertEqual(path.read_bytes(), before)
+                if http_status == 503:
+                    outcomes.reconcile(directory, row['requestSha256'], response,
+                        reconciliation_evidence(row['requestSha256'], response, terminal_failure=True), terminal_failure=True)
+                    with self.assertRaises(outcomes.TerminalOutcomeError):
+                        outcomes.recover(directory, row['requestSha256'], row['purpose'])
+
+    def test_received_without_raw_is_not_operator_success(self):
+        with tempfile.TemporaryDirectory() as directory:
+            def provider(): raise TimeoutError('unknown')
+            with self.assertRaises(TimeoutError):
+                SessionBoundCaller(provider, requires_spark=False, outcome_directory=directory)()
+            path = next(Path(directory).glob('*/outcome.json')); row = json.loads(path.read_text())
+            row['status'] = 'received'; outcomes._write(path, row); before = path.read_bytes()
+            with self.assertRaisesRegex(ValueError, 'response_bytes_required'):
+                outcomes.reconcile(directory, row['requestSha256'], {}, reconciliation_evidence(row['requestSha256'], {}))
+            self.assertEqual(path.read_bytes(), before)
+
+    def test_completed_cli_failure_is_terminal_other_requests_continue_and_timeout_unknown(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as directory:
+            calls = []
+            def cli(payload):
+                calls.append(payload)
+                if payload == 'timeout':
+                    raise subprocess.TimeoutExpired('fixture-cli', 1)
+                outcomes.observed_cli_terminal(returncode=2 if payload == 'nonzero' else 0,
+                    stdout=b'actual stdout', stderr=b'actual stderr', output=b'not valid JSON')
+                if payload == 'nonzero': raise subprocess.CalledProcessError(2, 'fixture-cli')
+                if payload == 'parse': raise json.JSONDecodeError('parse failure', '', 0)
+                return {'valid': True}
+            wrapped = SessionBoundCaller(cli, requires_spark=False, outcome_directory=directory)
+            for payload, failure in [('nonzero', subprocess.CalledProcessError), ('parse', json.JSONDecodeError)]:
+                with self.subTest(payload=payload):
+                    with self.assertRaises(failure): wrapped(payload)
+                    with self.assertRaises(outcomes.TerminalOutcomeError): wrapped(payload)
+            self.assertEqual(calls, ['nonzero', 'parse'])
+            self.assertEqual(wrapped('success'), {'valid': True})
+            rows = [json.loads(p.read_text()) for p in Path(directory).glob('*/outcome.json')]
+            self.assertTrue(all('cliTerminal' in row and 'httpStatus' not in row for row in rows))
+            self.assertEqual(sorted(row['status'] for row in rows), ['returned', 'terminal_failure', 'terminal_failure'])
+            with self.assertRaises(subprocess.TimeoutExpired): wrapped('timeout')
+            with self.assertRaisesRegex(ValueError, 'reconciliation_required'): wrapped('later')
+            self.assertEqual(calls, ['nonzero', 'parse', 'success', 'timeout'])
+            unknown = next(json.loads(p.read_text()) for p in Path(directory).glob('*/outcome.json')
+                           if json.loads(p.read_text())['status'] == 'unknown')
+            self.assertNotIn('cliTerminal', unknown)
+
+    def test_received_cli_can_only_close_exact_recorded_terminal_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            def cli():
+                outcomes.observed_cli_terminal(returncode=0, stdout=b'{"event":"completed"}',
+                                               stderr=b'', output=b'{"actual":1}')
+                return {'actual': 1}
+            SessionBoundCaller(cli, requires_spark=False, outcome_directory=directory)()
+            path = next(Path(directory).glob('*/outcome.json')); row = json.loads(path.read_text())
+            row.update(status='received'); row.pop('response'); row.pop('responseSha256')
+            outcomes._write(path, row); before = path.read_bytes()
+            with self.assertRaisesRegex(ValueError, 'requires_failure_reconciliation'):
+                outcomes.reconcile(directory, row['requestSha256'], {'fake': 2},
+                    reconciliation_evidence(row['requestSha256'], {'fake': 2}))
+            self.assertEqual(path.read_bytes(), before)
+            with self.assertRaisesRegex(ValueError, 'recorded_response_mismatch'):
+                outcomes.reconcile(directory, row['requestSha256'], {'error': 'invented'},
+                    reconciliation_evidence(row['requestSha256'], {'error': 'invented'}, terminal_failure=True),
+                    terminal_failure=True)
+            self.assertEqual(path.read_bytes(), before)
+            envelope = row['cliTerminal']
+            outcomes.reconcile(directory, row['requestSha256'], envelope,
+                               reconciliation_evidence(row['requestSha256'], envelope, terminal_failure=True),
+                               terminal_failure=True)
+            with self.assertRaises(outcomes.TerminalOutcomeError):
+                outcomes.recover(directory, row['requestSha256'], row['purpose'])
+
+    def test_cli_private_terminal_bytes_are_omitted_from_export(self):
+        from scripts import export_run_digest as exporter
+        import base64
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); source = root/'source'; dest = root/'export'
+            raw = b'PRIVATE-MODEL-OUTPUT-NOT-FOR-REPORT'
+            def cli():
+                outcomes.observed_cli_terminal(returncode=2, stdout=raw, stderr=raw, output=raw)
+                raise RuntimeError('completed rejected CLI')
+            with self.assertRaises(RuntimeError):
+                SessionBoundCaller(cli, requires_spark=False, outcome_directory=source)()
+            self.assertEqual(exporter.main([str(source), '--out', str(dest), '--name', '20261014-cli-private']), 0)
+            report = dest/'20261014-cli-private'
+            text = '\n'.join(p.read_text() for p in report.rglob('*') if p.is_file())
+            self.assertNotIn(raw.decode(), text)
+            self.assertNotIn(base64.b64encode(raw).decode(), text)
+            self.assertEqual(exporter.verify(report, []), [])
+            metadata = next(p for p in report.rglob('outcome.json'))
+            value = json.loads(metadata.read_text())
+            self.assertNotIn('cliTerminal', value)
+            self.assertEqual(value['status'], 'terminal_failure')
+
+    def test_code_identity_is_stable_across_first_execution_and_detects_changed_nested_code(self):
+        namespace = {}
+        exec(compile("def provider(values):\n    def inner(value):\n        return value + 7\n    return {'result': [inner(value) for value in values]}\n",
+                     '<first-execution-identity>', 'exec'), namespace)
+        provider = namespace['provider']
+        arguments = {'values': [1, 2]}
+        before = outcomes.execution_binding(provider, arguments)
+        with tempfile.TemporaryDirectory() as directory:
+            wrapped = SessionBoundCaller(provider, requires_spark=False, outcome_directory=directory)
+            self.assertEqual(wrapped([1, 2]), {'result': [8, 9]})
+            self.assertEqual(outcomes.execution_binding(provider, arguments), before)
+            self.assertEqual(wrapped([1, 2]), {'result': [8, 9]})
+            # Keep the callable/module/qualname and source path, change nested
+            # code only: bytecode fallback must still reject a different implementation.
+            changed = {}
+            exec(compile("def provider(values):\n    def inner(value):\n        return value + 8\n    return {'result': [inner(value) for value in values]}\n",
+                         '<first-execution-identity>', 'exec'), changed)
+            provider.__code__ = changed['provider'].__code__
+            after = outcomes.execution_binding(provider, arguments)
+            self.assertNotEqual(after['caller']['bytecodeSha256'], before['caller']['bytecodeSha256'])
+            with self.assertRaisesRegex(ValueError, 'frozen_execution_binding_changed'):
+                wrapped([1, 2])
+
+    def test_code_identity_distinguishes_typed_constants(self):
+        def provider(): return 1
+        code = provider.__code__
+        integer = outcomes._digest(outcomes._code_identity(code))
+        boolean = outcomes._digest(outcomes._code_identity(code.replace(co_consts=(None, True))))
+        self.assertNotEqual(integer, boolean)
+
+    def test_received_invalid_body_closes_only_bound_failure_then_next_request_can_continue(self):
+        for body in (b'{invalid json', b'\xff\xfe invalid utf8'):
+            with self.subTest(body=body), tempfile.TemporaryDirectory() as directory:
+                calls = []
+                def provider(payload):
+                    calls.append(payload)
+                    outcomes.observed_response(body if payload == 'original' else b'{"ok":true}', http_status=200)
+                    return {'ok': True}
+                wrapped = SessionBoundCaller(provider, requires_spark=False, outcome_directory=directory)
+                wrapped('original')
+                path = next(Path(directory).glob('*/outcome.json')); row = json.loads(path.read_text())
+                # Crash after raw receipt persisted and before parsed result.
+                row.update(status='received'); row.pop('response'); row.pop('responseSha256')
+                outcomes._write(path, row); before = path.read_bytes()
+                failure = {'schemaVersion': outcomes.RAW_FAILURE_SCHEMA,
+                    'requestSha256': row['requestSha256'], 'rawBodySha256': row['rawBodySha256'],
+                    'httpStatus': 200, 'notDispatchedReason': None}
+                for field, value in [('requestSha256', 'a' * 64), ('rawBodySha256', 'b' * 64),
+                                     ('httpStatus', 503), ('notDispatchedReason', 'invented')]:
+                    wrong = dict(failure, **{field: value})
+                    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'raw_failure_binding_mismatch'):
+                        outcomes.reconcile(directory, row['requestSha256'], wrong,
+                            reconciliation_evidence(row['requestSha256'], wrong, terminal_failure=True), terminal_failure=True)
+                    self.assertEqual(path.read_bytes(), before)
+                with self.assertRaisesRegex(ValueError, 'not_json'):
+                    outcomes.reconcile(directory, row['requestSha256'], failure,
+                                       reconciliation_evidence(row['requestSha256'], failure))
+                self.assertEqual(path.read_bytes(), before)
+                with self.assertRaisesRegex(ValueError, 'reconciliation_required'):
+                    wrapped('next')
+                self.assertEqual(calls, ['original'])
+                outcomes.reconcile(directory, row['requestSha256'], failure,
+                    reconciliation_evidence(row['requestSha256'], failure, terminal_failure=True), terminal_failure=True)
+                saved = json.loads(path.read_text())
+                self.assertEqual(saved['status'], 'terminal_failure')
+                self.assertEqual(saved['rawBodyBase64'], row['rawBodyBase64'])
+                self.assertEqual(saved['failure'], failure)
+                with self.assertRaises(outcomes.TerminalOutcomeError): wrapped('original')
+                self.assertEqual(wrapped('next'), {'ok': True})
+                self.assertEqual(calls, ['original', 'next'])
+
+    def test_legacy_truthy_evidence_retained_current_or_explicit_new_evidence_requires_string(self):
+        for schema in (outcomes.LEGACY_SCHEMA, outcomes.V2_SCHEMA, outcomes.SCHEMA):
+            with self.subTest(schema=schema), tempfile.TemporaryDirectory() as directory:
+                def provider(): raise TimeoutError('unknown')
+                with self.assertRaises(TimeoutError):
+                    SessionBoundCaller(provider, requires_spark=False, outcome_directory=directory)()
+                path = next(Path(directory).glob('*/outcome.json')); row = json.loads(path.read_text())
+                row['schemaVersion'] = schema; outcomes._write(path, row); before = path.read_bytes()
+                response = {'legacy': True}
+                new = reconciliation_evidence(row['requestSha256'], response)
+                new['terminalResponseEvidence'] = True
+                with self.assertRaisesRegex(ValueError, 'terminal_evidence_required'):
+                    outcomes.reconcile(directory, row['requestSha256'], response, new)
+                self.assertEqual(path.read_bytes(), before)
+                if schema == outcomes.SCHEMA:
+                    with self.assertRaisesRegex(ValueError, 'terminal_evidence_required'):
+                        outcomes.reconcile(directory, row['requestSha256'], response, {'terminalResponseEvidence': True})
+                    self.assertEqual(path.read_bytes(), before)
+                else:
+                    outcomes.reconcile(directory, row['requestSha256'], response, {'terminalResponseEvidence': True})
+                    self.assertEqual(outcomes.recover(directory, row['requestSha256'], row['purpose']), response)
+
+    def test_legacy_truthy_evidence_does_not_waive_recorded_raw_response_binding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            def provider():
+                outcomes.observed_response(b'{"real":1}', http_status=200)
+                return {'real': 1}
+            SessionBoundCaller(provider, requires_spark=False, outcome_directory=directory)()
+            path = next(Path(directory).glob('*/outcome.json')); row = json.loads(path.read_text())
+            row.update(schemaVersion=outcomes.V2_SCHEMA, status='received')
+            row.pop('response'); row.pop('responseSha256'); outcomes._write(path, row); before = path.read_bytes()
+            with self.assertRaisesRegex(ValueError, 'recorded_response_mismatch'):
+                outcomes.reconcile(directory, row['requestSha256'], {'fake':2}, {'terminalResponseEvidence': True})
+            self.assertEqual(path.read_bytes(), before)
+            outcomes.reconcile(directory, row['requestSha256'], {'real':1}, {'terminalResponseEvidence': True})
+            self.assertEqual(outcomes.recover(directory, row['requestSha256'], row['purpose']), {'real':1})
+
     def test_missing_context_rejects_before_dispatch(self):
         caller = Mock()
         with patch.dict('os.environ', {}, clear=True):
@@ -59,7 +332,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
             self.assertEqual(row['status'], 'unknown')
             self.assertNotIn('key1', path.read_text())
             outcomes.reconcile(root, row['requestSha256'], {'recovered':True},
-                               {'terminalResponseEvidence':'provider-receipt-local.json'})
+                               reconciliation_evidence(row['requestSha256'], {'recovered':True}))
             # Only the original frozen caller and credential can replay this response.
             self.assertEqual(SessionBoundCaller(fail, requires_spark=False,
                 outcome_directory=root)('key1', {'model':'test'}), {'recovered':True})
@@ -182,7 +455,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
             with self.assertRaises(TimeoutError): wrapped({'request':1})
             row = json.loads(next(Path(tmp).glob('*/outcome.json')).read_text())
             outcomes.reconcile(tmp,row['requestSha256'],{'httpStatus':429},
-                {'terminalResponseEvidence':'observed-provider-rejection'},terminal_failure=True)
+                reconciliation_evidence(row['requestSha256'], {'httpStatus':429}, terminal_failure=True),terminal_failure=True)
             with self.assertRaises(outcomes.TerminalOutcomeError): wrapped({'request':1})
 
     def test_legacy_returned_receipt_remains_readable(self):

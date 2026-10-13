@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from scripts import english_source_judge_cache as cache
+from tests.test_api_cli_outcomes import reconciliation_evidence
 
 
 def crash_during_request(root):
@@ -78,7 +79,7 @@ class JudgeSingleFlightTests(unittest.TestCase):
             self.call(0, wrapped)
         recovered = {'id': 'request-0', 'model': 'test', 'choices': [
             {'finish_reason': 'stop', 'message': {'content': '{"ok": true}'}}]}
-        outcomes.reconcile(root, row['requestSha256'], recovered, {'terminalResponseEvidence': 'explicit-response-proof'})
+        outcomes.reconcile(root, row['requestSha256'], recovered, reconciliation_evidence(row['requestSha256'], recovered))
         self.assertEqual(self.call(0, wrapped)[1]['responseId'], 'request-0')
         self.assertEqual(self.call(1, wrapped)[1]['responseId'], 'request-1')
         self.assertEqual(self.call(1, wrapped)[1]['responseId'], 'request-1')
@@ -110,7 +111,7 @@ class JudgeSingleFlightTests(unittest.TestCase):
         row = next(json.loads(path.read_text()) for path in root.glob('*/outcome.json')
                    if json.loads(path.read_text())['status'] == 'unknown')
         outcomes.reconcile(root, row['requestSha256'], {'error': 'explicit terminal failure'},
-                           {'terminalResponseEvidence': 'confirmed-provider-failure'}, terminal_failure=True)
+                           reconciliation_evidence(row['requestSha256'], {'error': 'explicit terminal failure'}, terminal_failure=True), terminal_failure=True)
         self.assertEqual(self.call(0, wrapped), original)
         self.assertEqual(self.calls, [0, 1])
 
