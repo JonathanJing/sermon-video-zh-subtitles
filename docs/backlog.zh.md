@@ -26,7 +26,7 @@ English index: [backlog.md](./backlog.md)
 
 ## 2026-10-13：发布回读、API 会话与预算复用
 
-#379、#380、#381 由[联合修复 #383](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/383) 整合，#382 的预算规划与启动预检依赖 #381 先进入 Dev。此处登记代码合同与剩余运行验收，最终合并状态以远端 PR 收据为准；离线夹具不构成真实 API、Spark、部署或正式放行证明。
+#379、#380、#381 已由[联合修复 #383](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/383) 合入 Dev（`64f1b58d8ee908cb53ce457625e590a10a3c5ec6`，最终 CI 通过）。#382 的预算规划与启动预检已满足 #381 先进入 Dev 的依赖顺序。此处登记代码合同与剩余运行验收，最终合并状态以远端 PR 收据为准；离线夹具不构成真实 API、Spark、部署或正式放行证明。
 
 | 归属 | 本次约束／实现 | 剩余验收 |
 |---|---|---|
