@@ -22,6 +22,19 @@ English index: [backlog.md](./backlog.md)
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
 
+<a id="backlog-session-budget-20261013"></a>
+
+## 2026-10-13：发布回读、API 会话与预算复用
+
+#379、#380、#381 已由[联合修复 #383](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/383) 合入 Dev（`64f1b58d8ee908cb53ce457625e590a10a3c5ec6`，最终 CI 通过）。#382 的预算规划与启动预检已满足 #381 先进入 Dev 的依赖顺序。此处登记代码合同与剩余运行验收，最终合并状态以远端 PR 收据为准；离线夹具不构成真实 API、Spark、部署或正式放行证明。
+
+| 归属 | 本次约束／实现 | 剩余验收 |
+|---|---|---|
+| `DEV-R242-029`、`DEV-L4-004` | #379：Hosting 将本次部署命令返回的版本先持久化绑定，再在有界期限内核对回读传播；竞争版本、版本漂移或超时仍为未确认，不重复部署来处理传播等待 | 按最终代码分别保存真实发布、HTTP 回读、设备与现场收据；不以部署命令成功替代发布判定 |
+| `DEV-R242-026`、`DEV-COST-002` | #380：纯 API／CLI 阶段不占 Spark 排他会话，GPU 阶段保持原门禁；付费请求未知结果须先对账。#381：只在明确批准的预算根及完全一致请求／身份下复用已返回响应，保留原成本归属，不将旧响应计为新付费调用 | 真实批准预算下验证停止／恢复及费用归属；本次不调用模型、不新增预算授权 |
+| `DEV-R242-026` | #382：计划 v3 将总额、已结算费用、阶段与授权哈希冻结到独立批准收据，将实际 source／anchor／policy、环境、完整 OpenAI 路由与凭据指纹、语言与质检实现绑定进 QC 授权 v4；第二路 ASR 与 judge 共用硬预算。整周 Layer 2 使用 locale 分片账本与路由／凭据绑定的授权 v3，按实际组数预检完整初始轮的请求、输入、输出、费用与时间上界；启动、缓存读取与派发前核对身份，预检拒绝跨 Spark 主机拼接证据及未恢复的调用标记，QC／Layer 2 计划必须核对显式 launcher，页面检查必须指定目标 Hosting origin。二级 ASR 仅接受绑定当前上下文的 v4 授权；跨预算复用保持只读 replay-only，部分运行在原批准身份与额度内继续，不因缓存缺失自动另行付费。复用规划／预检核对来源计划、授权、账本与响应结算；二级 ASR 的同根同操作在进程内合并，完成后读回耐久收据；路由模块纳入质检实现哈希。恢复支付计划在启动预检实时重算请求／时间／费用余额，耗尽即拒绝。新片段 profile 每语 2 美元覆盖 16 组初始最坏预留 1.96608 美元；不提高既有授权或全篇旧上限。序列建议不授权累计超限阶段。旧计划保留原版本，须明确重新规划 | 461 组的 922 次初始译审请求及输出 token 最坏预留不能由旧每语 $5 配置覆盖；预算不足应在写授权前拒绝，另行批准配置／总额，不能自动提额。真实运行需绑定最终代码及输入 |
+| `DEV-QC-001` | #380 改变质检／会话身份，#382 继续改变质检实现闭包 | **合并后的第一次运行使用全新 QC 状态与响应缓存，不传旧 `--reuse-from`／`reuseBudgetRoots`。正式运行须按最终 Dev commit、质检实现哈希、模型／运行设置、来源、候选和音频重新校准并生成新的放行证明。**旧缓存、校准与收据保留原冻结身份，不能改标签或替换哈希充作新证据；后续复用仍需满足 #381 的显式批准及完整身份匹配 |
+
 <a id="backlog-qc-merge-20261013"></a>
 
 ## 2026-10-13：五项质检与 Dev 交付合并
@@ -154,7 +167,7 @@ English index: [backlog.md](./backlog.md)
 | **L2 canonical 独立复核及编辑** | [run_target_language_models.py](../scripts/run_target_language_models.py)：`_run_prepared_groups` 构造 reviewer、`normalize_semantic_review`、`model_payload` | 实际允许修正最终 `targetUtterances/coverage`，同时产生 `semanticReview`；保留未解决 issues／uncertainty，不能把此角色写成只读审核；评估修改后文本的验收及是否仍需独立验证 |
 | **L2 strict 初译／修订与只读 verifier** | [sermon_strict_layer2.py](../scripts/sermon_strict_layer2.py)：`prompt`、`generation_prompt`、`response_contract`、`_payload` | verifier 禁止改写；修复走新 revision。与 canonical 分条登记，不把实验／strict 支持状态冒充正式能力 |
 | L2 中文逐句口播译审 | [sermon_sentence_interpretation.py](../scripts/sermon_sentence_interpretation.py)：`TRANSLATION_SYSTEM_PROMPT`／`REVIEW_SYSTEM_PROMPT`；[run_sentence_interpretation_models.py](../scripts/run_sentence_interpretation_models.py)：`_translation_payload`／`_review_payload` | sourceUnit coverage、中文子串证据、否定／数字／引语归属；复核含修订职责，不能以机器 pass 代替人审或实测 timing fit |
-| Legacy 中文字幕翻译及最终双语审核 | [review_prompts.py](../scripts/review_prompts.py)：`CHINESE_TRANSLATION_SYSTEM_PROMPT`；[sermon_pipeline.py](../scripts/sermon_pipeline.py)：`translate_chinese`；[review_sermon_subtitles_with_openai.py](../scripts/review_sermon_subtitles_with_openai.py)：`SYSTEM_PROMPT`、`batch_payload` | 单段与完整句 producer 的边界不同；当前最终字幕审核脚本默认仍为旧模型，需配置审计。完整模板／系列规则／wrapper 变化必须进入缓存身份，不能只看 promptVersion |
+| Legacy 中文字幕翻译及最终双语审核 | [review_prompts.py](../scripts/review_prompts.py)：`CHINESE_TRANSLATION_SYSTEM_PROMPT`；[sermon_pipeline.py](../scripts/sermon_pipeline.py)：`translate_chinese`；[review_sermon_subtitles_with_openai.py](../scripts/review_sermon_subtitles_with_openai.py)：`SYSTEM_PROMPT`、`batch_payload` | 单段与完整句 producer 的边界不同；当前最终字幕审核脚本默认 `gpt-6.1-sol` medium，见[实际工具命令](subtitle-review-tool.zh.md)。完整模板／系列规则／wrapper 变化必须进入缓存身份，不能只看 promptVersion |
 | 经文发现／选句／翻译／独立引用审计／修复 | [sermon_cuv_translation.py](../scripts/sermon_cuv_translation.py)：`SYSTEM`、`DISCOVER`、`SELECT`、`AUDIT_QUOTES` 与各阶段 instruction／payload | 分别登记每个阶段；原音／经文版次／引用权威、完整句与引用 offsets、不可凭模型补经文或扩大引用；timing repair 不删原义 |
 | 阅读稿编辑与 QA | [build_sermon_reading_edition_with_openai.py](../scripts/build_sermon_reading_edition_with_openai.py)：`READING_SYSTEM_PROMPT`、`QA_SYSTEM_PROMPT`、`request_payload` | 书面稿与口播规则分离，整块覆盖／禁省略／神学与引语忠实；QA 实际返回修订后的段落，应单列 reviewer-editor |
 | 大纲／讲道解读／引用／学习产物 | [review_prompts.py](../scripts/review_prompts.py)：`NOTES_SYSTEM_PROMPT`；[generate_notes_with_openai.py](../scripts/generate_notes_with_openai.py)：`build_openai_request` | 每项有 sourceSliceIndexes，引用必须逐字；当前 notes prompt 明确不生成讨论／默想问题，不能据此宣称已覆盖独立默想 producer。库条目须补已合并的[Study v2 builder](../scripts/sermon_study_generation.py)（`PROMPT`、kind=outline/meditation、payload）与[独立审核ingest](../scripts/sermon_unified_reviews.py)；R242-013待新篇生成/两份人审，不能写成producer尚不存在 |
