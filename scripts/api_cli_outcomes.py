@@ -14,6 +14,7 @@ import fcntl
 import hashlib
 import inspect
 import marshal
+import shutil
 import json
 import os
 from pathlib import Path
@@ -48,6 +49,22 @@ def request_identity(caller, args, kwargs, purpose):
                     'executionBinding': execution_binding(caller, bound.arguments)})
 
 
+EXECUTABLE_KEYS = {'codex_cli','cli_path','executable','executable_path','binary_path'}
+
+def executable_identity(value):
+    path=Path(value).expanduser()
+    if not path.is_file() and len(path.parts)==1:
+        found=shutil.which(str(path))
+        if found: path=Path(found)
+    resolved=path.resolve(strict=True)
+    if not resolved.is_file() or not os.access(resolved,os.X_OK):
+        raise ValueError('api_cli_executable_identity_invalid')
+    identity={'resolvedPath':str(resolved),'sha256':hashlib.sha256(resolved.read_bytes()).hexdigest()}
+    bundled=resolved.parent.parent/'CodexCLI.app/Contents/MacOS/codex'
+    if bundled.is_file():identity['bundleBinarySha256']=hashlib.sha256(bundled.read_bytes()).hexdigest()
+    return identity
+
+
 def execution_binding(caller, arguments):
     from scripts.sermon_openai_runtime import selected_route
     function = inspect.unwrap(caller)
@@ -59,7 +76,12 @@ def execution_binding(caller, arguments):
     credentials = {key: hashlib.sha256(value.encode()).hexdigest()
                    for key, value in arguments.items()
                    if key.lower() in {'api_key', 'authorization', 'access_token'} and isinstance(value,str) and value}
+    executables={key:executable_identity(value) for key,value in arguments.items()
+                 if key in EXECUTABLE_KEYS and isinstance(value,(str,Path))}
+    cli_path=getattr(caller,'cli_path',None)
+    if isinstance(cli_path,(str,Path)):executables['transportCli']=executable_identity(cli_path)
     return {'runtimeRoute':selected_route(), 'credentialFingerprints':credentials,
+            'executables':executables,
             'caller':{'module':function.__module__, 'qualname':function.__qualname__,
                       'sourceSha256':hashlib.sha256(Path(source).read_bytes()).hexdigest() if source and Path(source).is_file() else None,
                       'bytecodeSha256':hashlib.sha256(marshal.dumps(code)).hexdigest() if code else None},
@@ -133,6 +155,8 @@ def _write(path, value):
 def _safe(value, key=''):
     if key.lower() in {'api_key', 'authorization', 'secret', 'access_token'}:
         return '<credential-excluded>'
+    if key in EXECUTABLE_KEYS and isinstance(value,(str,Path)):
+        return executable_identity(value)
     if isinstance(value, Path):
         result = {'path': str(value.absolute())}
         if key in {'audio_path', 'file_path', 'schema_path'}:

@@ -178,8 +178,26 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         before=next(prior_root.glob('*/outcome.json')).read_bytes()
         subject.require_reconciled_requests(prior,caller=current,allowed_prior_roots=[prior])
         reusable=subject.reusable_cache(prior,'group-0001','astra')
-        saved=subject._model_call('translator',prompt,self.fixture.policy,self.out/'group-0001-astra.json',
+        destination=self.out/'group-0001-astra.json'
+        def crash_after_raw(path,value,**kwargs):
+            if path==destination:raise OSError('injected crash after destination raw')
+            return save(path,value,**kwargs)
+        with patch.object(subject,'save_new',side_effect=crash_after_raw):
+            with self.assertRaisesRegex(OSError,'destination raw'):
+                subject._model_call('translator',prompt,self.fixture.policy,destination,
+                                   'fixture-key',current,reuse_from=reusable)
+        destination_raw=destination.with_suffix('.raw.json')
+        raw_before=destination_raw.read_bytes();mtime_before=destination_raw.stat().st_mtime_ns
+        saved=subject._model_call('translator',prompt,self.fixture.policy,destination,
                                   'fixture-key',current,reuse_from=reusable)
+        self.assertEqual(destination_raw.read_bytes(),raw_before)
+        self.assertEqual(destination_raw.stat().st_mtime_ns,mtime_before)
+        destination.unlink()
+        changed_raw=json.loads(raw_before);changed_raw['response']['id']='tampered'
+        destination_raw.write_text(json.dumps(changed_raw))
+        with self.assertRaisesRegex(ValueError,'destination raw response changed'):
+            subject._model_call('translator',prompt,self.fixture.policy,destination,
+                               'fixture-key',current,reuse_from=reusable)
         self.assertEqual(saved['result']['translationGroupId'],prompt['input']['translationGroupId'])
         self.assertEqual(len(self.calls),1)
         self.assertEqual(next(prior_root.glob('*/outcome.json')).read_bytes(),before)

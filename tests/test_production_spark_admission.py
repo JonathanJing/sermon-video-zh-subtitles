@@ -123,8 +123,9 @@ class ProductionSessionCallTests(unittest.TestCase):
              patch.object(pipeline, "_chat_json", return_value={"ok": 3}) as text, \
              patch.object(pipeline, "multipart_request", return_value={"ok": 4}) as audio:
             Path(directory, "input").write_text("{}")
+            Path(directory,"codex").write_text("#!/bin/sh\nexit 0\n");Path(directory,"codex").chmod(0o700)
             self.assertEqual(notes.request_openai_notes({"model": "test"}, "test-only"), {"ok": 1})
-            self.assertEqual(reading.codex_json({"messages": []}, codex_cli=Path("unused"), model="test",
+            self.assertEqual(reading.codex_json({"messages": []}, codex_cli=Path(directory,"codex"), model="test",
                 reasoning_effort="medium", schema_path=Path(directory, "input"), output_path=Path("unused")), {"ok": 2})
             self.assertEqual(pipeline.chat_json("test-only", budgets.text_limits.bounded_payload({"model": "gpt-6-astra", "messages":[{"role":"user","content":"synthetic"}], "reasoning_effort":"medium", "response_format":{"type":"json_object"}}, budgets.text_limits.DEFAULT_REQUEST_LIMITS)), {"ok": 3})
             self.assertEqual(pipeline.transcribe_openai_audio("test-only", "gpt-transcribe", "source", Path(directory, "input")), {"ok": 4})

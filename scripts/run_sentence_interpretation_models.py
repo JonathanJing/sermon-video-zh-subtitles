@@ -69,7 +69,10 @@ def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
             "response": response,
             "responseSha256": contract.json_sha256(response),
         }
-        contract.write_json(path, receipt)
+        # Durable JSON replay may reorder response object keys. Freeze derived
+        # cache bytes so its receipt hash (and downstream reviewer request) stays
+        # identical when restoring a returned outcome before this cache existed.
+        contract.write_json(path, json.loads(json.dumps(receipt, sort_keys=True)))
     return _model_result(receipt["response"], requested_model), {
         "path": str(path.resolve()),
         "sha256": contract.sha256(path),
@@ -230,6 +233,10 @@ def run(*, manifest_path: Path, out: Path, model: str, effort: str,
         raise ValueError("workers must be positive")
     terminology = series_terminology.context()
     out.mkdir(parents=True, exist_ok=True)
+    if caller is chat_json:
+        from scripts.production_spark_admission import SessionBoundCaller
+        caller = SessionBoundCaller(caller, purpose="sentence-interpretation",
+                                    requires_spark=False, outcome_directory=out / "api-cli-outcomes")
 
     translation_batches = batches(requests, batch_size)
     def translate_one(item: tuple[int, list[dict[str, Any]]]):

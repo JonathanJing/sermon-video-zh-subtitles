@@ -97,6 +97,7 @@ def batch_payload(
     start_index: int,
     model: str,
     reasoning_effort: str,
+    *, caller=None,
 ) -> dict:
     before = all_segments[start_index - 1] if start_index > 0 else None
     after_index = start_index + len(batch)
@@ -128,6 +129,7 @@ def review_batch(
     cache_dir: Path,
     model: str,
     reasoning_effort: str,
+    *, caller=None,
 ) -> dict:
     payload = batch_payload(all_segments, batch, start_index, model, reasoning_effort)
     identity = hashlib.sha256(
@@ -138,7 +140,7 @@ def review_batch(
     if cache.exists():
         parsed = read_json(cache)
     else:
-        result = chat_json(
+        result = (caller or chat_json)(
             api_key,
             payload,
         )
@@ -184,6 +186,10 @@ def main() -> int:
     cache_dir = args.outdir / "review_windows"
     cache_dir.mkdir(parents=True, exist_ok=True)
 
+    from scripts.production_spark_admission import SessionBoundCaller
+    caller = SessionBoundCaller(chat_json, purpose="subtitle-review",
+                                requires_spark=False, outcome_directory=args.outdir / "api-cli-outcomes")
+
     def run_one(item: tuple[int, list[dict]]) -> tuple[int, dict]:
         start, batch = item
         parsed = review_batch(
@@ -194,6 +200,7 @@ def main() -> int:
             cache_dir,
             args.model,
             args.reasoning_effort,
+            caller=caller,
         )
         print(f"reviewed {batch[0]['id']}-{batch[-1]['id']}", flush=True)
         return start, parsed

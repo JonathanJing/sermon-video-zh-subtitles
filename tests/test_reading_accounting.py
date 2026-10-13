@@ -79,8 +79,9 @@ class ReadingAccountingTests(unittest.TestCase):
     def test_codex_failure_is_scoped_without_api_billing(self):
         with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ, {"SERMON_ACCOUNTING_DIR": temp}), mock.patch.object(reading.subprocess, "run", return_value=argparse.Namespace(returncode=1, stderr="failed", stdout="")), mock.patch.object(reading, "stage", return_value=contextlib.nullcontext()) as stages:
             Path(temp, "schema.json").write_text("{}")
+            Path(temp,"codex").write_text("#!/bin/sh\nexit 0\n");Path(temp,"codex").chmod(0o700)
             with self.assertRaises(RuntimeError):
-                reading.codex_json({"messages": [{"content": "system"}, {"content": "user"}]}, codex_cli=Path("unused"), model="test", reasoning_effort="medium", schema_path=Path(temp)/"schema.json", output_path=Path(temp)/"result.json", session_verifier=lambda: {"status":"offline_test"})
+                reading.codex_json({"messages": [{"content": "system"}, {"content": "user"}]}, codex_cli=Path(temp,"codex"), model="test", reasoning_effort="medium", schema_path=Path(temp)/"schema.json", output_path=Path(temp)/"result.json", session_verifier=lambda: {"status":"offline_test"})
         stages.assert_called_once_with("reading.codex_call", billing="codex")
 
 

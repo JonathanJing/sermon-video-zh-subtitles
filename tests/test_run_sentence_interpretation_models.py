@@ -75,6 +75,26 @@ class SentenceInterpretationModelRunnerTests(unittest.TestCase):
             "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(result, ensure_ascii=False)}}],
         }
 
+    def test_real_run_binds_worker_outcomes_and_recovers_before_cache_write(self):
+        from unittest.mock import patch
+        from scripts import sermon_pipeline
+        out = self.root / "durable"
+        def http(_url, key, payload, **kwargs):
+            return self.fake_call(key, payload)
+        with patch.dict("os.environ", {}, clear=True), patch.object(sermon_pipeline, "json_request", side_effect=http):
+            options = dict(manifest_path=self.manifest_path, out=out, model="gpt-6-astra",
+                           effort="medium", batch_size=1, workers=2, api_key="fixture")
+            runner.run(**options)
+            self.assertEqual(len(self.calls), 2)
+            outcomes = list((out / "api-cli-outcomes").glob("*/outcome.json"))
+            self.assertEqual(len(outcomes), 2)
+            self.assertTrue(all(json.loads(path.read_text())["status"] == "returned" for path in outcomes))
+            # Simulate a crash before derived cache writes: durable outcomes replay.
+            for path in (out / "cache").glob("*.json"):
+                path.unlink()
+            runner.run(**options)
+            self.assertEqual(len(self.calls), 2)
+
     def test_run_caches_separate_translation_and_review_and_never_writes_key(self):
         out = self.root / "out"
         result = runner.run(
