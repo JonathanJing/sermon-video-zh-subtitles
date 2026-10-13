@@ -56,6 +56,11 @@
       "label": "pr362-split-book-anchor-20261012",
       "source": "/private/tmp/sermon-fix-362/artifacts/pr362-split-book-anchor-20261012",
       "skipped": {}
+    },
+    {
+      "label": "pr362-copula-connector-padding-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-copula-connector-padding-20261012",
+      "skipped": {}
     }
   ],
   "files": [
@@ -667,6 +672,95 @@
       "bytes": 44,
       "truncated": false,
       "sha256": "ca440ff0cb0c6297e90888c31d1c819b136d232c8b69e22040e7c6238efe5161",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-connector-padding-20261012",
+      "path": "ci-root1.log",
+      "kind": "log",
+      "bytes": 171560,
+      "truncated": true,
+      "sha256": "5340946ccf1eabbdde452573edc1ac3684afab22a7f1a1b2c59b48e5fb1ccb0d",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 11
+      },
+      "exportedCopy": {
+        "sha256": "b9b51c257bfd51d8ed9ff9d5af37c6b6feb4563a21ecfda3c13750460e502f80",
+        "bytes": 24618,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "pr362-copula-connector-padding-20261012",
+      "path": "contract-final.log",
+      "kind": "log",
+      "bytes": 2312,
+      "truncated": false,
+      "sha256": "f8c023ef69d3565c755b2ff6f750cae6fe19587a1e464739134d6dbb06f881c6",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-connector-padding-20261012",
+      "path": "delivery-fixture.log",
+      "kind": "log",
+      "bytes": 98,
+      "truncated": false,
+      "sha256": "c32513bd167bbf6a888b1fb71e0bf9d4137b3d151f287eb5e18b368193c7b347",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-connector-padding-20261012",
+      "path": "final-pass.log",
+      "kind": "log",
+      "bytes": 398,
+      "truncated": false,
+      "sha256": "f17f883242859c353c9fba86eee3eede189c3b284cf9d2becaa25155d7470ba5",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-connector-padding-20261012",
+      "path": "final-tests.log",
+      "kind": "log",
+      "bytes": 3852,
+      "truncated": false,
+      "sha256": "d8a4e504f6f6f2f1b3fb9e8916057ed00418119e0fdd0991b721412cddcff466",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-connector-padding-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-connector-padding-20261012",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 398,
+      "truncated": false,
+      "sha256": "25911096ba609331a6a532100b06483b7eeaf762ebebf798c864f155e35f4ccd",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-connector-padding-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 794,
+      "truncated": false,
+      "sha256": "a72f79140dd229d5eaee19eba467e087edfa1cd7f9328d377121363794c2d4a5",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-connector-padding-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 154,
+      "truncated": false,
+      "sha256": "debf2f04cda97754fc5a8d79b315fa7746b2db5f8402bec687ffe2dfa6672ec3",
       "redactions": {}
     }
   ],

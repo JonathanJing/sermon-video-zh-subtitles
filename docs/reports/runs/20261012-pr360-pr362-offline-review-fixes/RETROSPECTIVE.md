@@ -89,3 +89,11 @@ commit `cc353091b501f3cd32df5a2c169d4e8fdde779aa` 添加合法完整助词 이�
 ## 已知书名内部 ASR 空格
 
 新增 review 指出 `요한 복음 삼-사장` 因书名空格而失去锚点，范围首端无法折回数字。commit `306d57ba` 仅在 ASR folding 的已知圣经书名模式内允许内部空白，并只 canonicalize 匹配的书名，不全局删除空格。书名后仍需有明确相邻引用；普通照片词、书名后缀、词内前缀与跨正文引用不获得该解释。新增复合书名、Psalm、错误端点及普通字符串负例。最终三文件 273 passed／34 subtests（1.17 秒），默认 diff check 通过；这次没有重跑完整 consumer 或模型／Spark／部署。此前阶段不是此 head 的全量验证，最终 GitHub CI 单独核对。报告保持 draft。
+
+## 完整系词结尾、复合连接词空格及前导零
+
+commit `4d8cc087` 扩展明确列举的完整 copular endings（인데／이고／이지만／이라서及이에요／이죠／이네요／이어서／이니까等），仍要求完整后缀边界，장면／편지普通词不转换。ASR 的已注册复合引用连接词内部空白局部 canonicalize；terminal marker 的 suffix 空格也绑定结构，保留连接词替换、删除、插入保护。03장／03-04장／016절仅在书名引用内按数值规范化，不全局修改普通数字。
+
+首轮 293／34 通过（1.33 秒）；扩展 terminal 矩阵暴露 4 个失败（detached 만／suffix），修正后剩 2 个 suffix 删除误过，进一步纳入完整 marker+suffix。最终三文件 312 passed／34 subtests（1.29 秒），所有失败阶段日志保留，不把中间统计相加。
+
+实际 GitHub root-1 CI 在 head 306d57ba 记录 3 failed、78 passed、3 errors、5 subtests（批次24.25秒）：machine-checked delivery fixture 使用 dummy d*64 screening hash，被 current v5 closure gate 正确拒绝。本次仅改 fixture 使用实际 implementation_sha256，不放宽生产校验、阈值或结果断言。完整该测试文件离线 8 passed（3.30 秒）。CI 脱敏摘录已附，最终 head CI 独立核对。完整 consumer 131／64 仍属于 cc353091，没有重跑；没有模型／Spark／部署。报告继续 draft，默认 diff check 与脱敏验证通过，副本规范化保留 source hash 并绑定 exportedCopy。

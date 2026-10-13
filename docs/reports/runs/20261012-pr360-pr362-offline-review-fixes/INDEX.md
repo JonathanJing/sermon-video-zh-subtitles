@@ -177,3 +177,15 @@ Error-like log lines (first 5 per log):
 - [pytest.log](pr362-split-book-anchor-20261012/pytest.log)
 - [summary.json](pr362-split-book-anchor-20261012/summary.json)
 - [timings.tsv](pr362-split-book-anchor-20261012/timings.tsv)
+
+## Bounded copula, connector spacing and digit padding
+
+- [ci-root1.log](pr362-copula-connector-padding-20261012/ci-root1.log)
+- [contract-final.log](pr362-copula-connector-padding-20261012/contract-final.log)
+- [delivery-fixture.log](pr362-copula-connector-padding-20261012/delivery-fixture.log)
+- [final-pass.log](pr362-copula-connector-padding-20261012/final-pass.log)
+- [final-tests.log](pr362-copula-connector-padding-20261012/final-tests.log)
+- [outcome.json](pr362-copula-connector-padding-20261012/outcome.json)
+- [pytest.log](pr362-copula-connector-padding-20261012/pytest.log)
+- [summary.json](pr362-copula-connector-padding-20261012/summary.json)
+- [timings.tsv](pr362-copula-connector-padding-20261012/timings.tsv)
