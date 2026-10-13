@@ -53,9 +53,9 @@ Rules:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--outdir", type=Path, required=True)
-    parser.add_argument("--model", default="gpt-5.6")
+    parser.add_argument("--model", default="gpt-6.1-sol")
     parser.add_argument("--sermon-start-seconds", type=float, help="Verified archive offset; omit to export only relative subtitles.")
-    parser.add_argument("--reasoning-effort", choices=["low", "medium", "high"], default="high")
+    parser.add_argument("--reasoning-effort", choices=["low", "medium", "high"], default="medium")
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--workers", type=int, default=3)
     return parser.parse_args()
@@ -131,10 +131,11 @@ def review_batch(
     reasoning_effort: str,
     *, caller=None,
 ) -> dict:
-    from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract
+    from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract, legacy_text_execution_identity
     payload = bounded_legacy_chat_payload(batch_payload(all_segments, batch, start_index, model, reasoning_effort))
+    execution = legacy_text_execution_identity(api_key, payload, caller=caller)
     identity = hashlib.sha256(
-        json.dumps({"promptVersion": PROMPT_VERSION, "cacheContract": legacy_text_cache_contract(), "payload": payload},
+        json.dumps({"promptVersion": PROMPT_VERSION, "cacheContract": legacy_text_cache_contract(), "executionIdentity": execution, "payload": payload},
                    sort_keys=True, ensure_ascii=False).encode("utf-8")
     ).hexdigest()
     cache = cache_dir / f"review_{batch[0]['id']:04d}_{batch[-1]['id']:04d}.{identity}.json"

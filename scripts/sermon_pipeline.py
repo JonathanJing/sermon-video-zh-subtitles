@@ -5,6 +5,7 @@ import argparse
 import concurrent.futures
 from contextvars import copy_context
 import hashlib
+import inspect
 import json
 import os
 import re
@@ -1005,22 +1006,48 @@ def chunk_text_for_window(chunks, start, end):
     return "\n".join(parts)
 
 
-LEGACY_TEXT_CACHE_SCHEMA = "sermon-legacy-bounded-text-cache-v2"
+LEGACY_TEXT_CACHE_SCHEMA = "sermon-legacy-bounded-text-cache-v3"
 
 
 def legacy_text_cache_contract():
-    from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS, validate_request_limits
+    from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS, validate_request_limits, LEGACY_VISION_SCHEMA, LEGACY_MAX_IMAGE_BYTES, LEGACY_MAX_IMAGES
     return {"schemaVersion": LEGACY_TEXT_CACHE_SCHEMA,
-            "requestLimits": validate_request_limits(DEFAULT_REQUEST_LIMITS)}
+            "requestLimits": validate_request_limits(DEFAULT_REQUEST_LIMITS),
+            "visionBounds":{"schemaVersion":LEGACY_VISION_SCHEMA,"maxImageBytes":LEGACY_MAX_IMAGE_BYTES,
+                            "maxImages":LEGACY_MAX_IMAGES,"textInputTokenAllowance":DEFAULT_REQUEST_LIMITS['maxInputTokens'],
+                            "visionTokenCostBound":"not_claimed"}}
 
 
 def bounded_legacy_chat_payload(payload):
-    from scripts.sermon_provider_limits import bounded_payload
-    from scripts.strict_budget_capability import require_bounded_api_payload
+    from scripts.sermon_provider_limits import bounded_legacy_payload
     limits = legacy_text_cache_contract()["requestLimits"]
-    payload = bounded_payload(payload, limits)
-    require_bounded_api_payload(payload, limits, surface="legacy_text_api")
-    return payload
+    return bounded_legacy_payload(payload,limits)
+
+
+def legacy_text_execution_identity(api_key,payload,*,caller=None,purpose=None):
+    """Bind derived caches to the exact bounded caller and its outcome scope."""
+    from scripts import api_cli_outcomes as outcomes
+    payload=bounded_legacy_chat_payload(payload)
+    directory=None
+    if isinstance(caller,spark_admission.SessionBoundCaller):
+        directory=caller.outcome_directory
+        purpose=purpose or caller.purpose
+        target=caller.caller
+        kwargs={}
+    elif caller is None or caller is chat_json:
+        target=_chat_json;purpose=purpose or 'production-text-call';kwargs={'retries':1}
+    else:
+        target=caller;purpose=purpose or 'production-text-call';kwargs={}
+    arguments=inspect.signature(target).bind(api_key,payload,**kwargs)
+    arguments.apply_defaults()
+    binding=outcomes.execution_binding(target,arguments.arguments)
+    try:root=outcomes.receipt_root(directory)
+    except ValueError as error:
+        if str(error)!='api_cli_outcome_directory_required_before_dispatch':raise
+    else:outcomes.assert_replay_admitted(directory,purpose=purpose,binding=binding)
+    return {'schemaVersion':'sermon-legacy-text-execution-v1',
+            'outcomeRequestSha256':outcomes.request_identity(target,(api_key,payload),kwargs,purpose),
+            'executionBinding':binding}
 
 
 def chat_json(api_key, payload, retries=1, *, session_verifier=None):
@@ -1035,7 +1062,13 @@ def _chat_json(api_key, payload, retries=1):
         retries = 1
     from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
     from scripts.strict_budget_capability import require_bounded_api_payload
-    require_bounded_api_payload(payload, DEFAULT_REQUEST_LIMITS, surface="legacy_text_api")
+    from scripts.sermon_provider_limits import bounded_legacy_payload
+    try:validated=bounded_legacy_payload(payload,DEFAULT_REQUEST_LIMITS)
+    except (ValueError,TypeError) as error:raise ValueError('unsupported_budget_capability') from error
+    if validated!=payload:raise ValueError('unsupported_budget_capability')
+    # The canonical budget-capability contract stays text/json_object only.
+    if payload['response_format']=={'type':'json_object'} and all(isinstance(row['content'],str) for row in payload['messages']):
+        require_bounded_api_payload(payload, DEFAULT_REQUEST_LIMITS, surface="legacy_text_api")
     last_error = None
     for attempt in range(retries):
         try:
@@ -1066,11 +1099,15 @@ def correct_english(
     reasoning_effort=None,
 ):
     reasoning_effort = reasoning_effort or "high"
+    aggregate_execution=legacy_text_execution_identity(api_key,{
+        'model':model,'reasoning_effort':reasoning_effort,'response_format':{'type':'json_object'},
+        'messages':[{'role':'user','content':'aggregate execution binding'}]})['executionBinding']
     output = outdir / "segments_timed_en_corrected.json"
     version_file = outdir / "english_correction_prompt.json"
     version = {
         "promptVersion": review_prompts.ENGLISH_CORRECTION_PROMPT_VERSION,
         "cacheContract": legacy_text_cache_contract(),
+        "executionIdentity":aggregate_execution,
         "model": model,
         "reasoningEffort": reasoning_effort,
         "inputSha256": json_sha256(
@@ -1089,7 +1126,7 @@ def correct_english(
     windows_dir = outdir / "correction_windows"
     cache_identity = hashlib.sha256(
         json.dumps({"promptVersion": review_prompts.ENGLISH_CORRECTION_PROMPT_VERSION, "model": model,
-                    "reasoningEffort": reasoning_effort, "cacheContract": legacy_text_cache_contract()}, sort_keys=True).encode("utf-8")
+                    "reasoningEffort": reasoning_effort, "cacheContract": legacy_text_cache_contract(),"executionIdentity":aggregate_execution}, sort_keys=True).encode("utf-8")
     ).hexdigest()[:12]
     glossary_text = glossary_lines(glossary)
     start_index = 0
@@ -1128,10 +1165,12 @@ def correct_english(
         }
         payload["reasoning_effort"] = reasoning_effort or "high"
         payload = bounded_legacy_chat_payload(payload)
+        execution=legacy_text_execution_identity(api_key,payload)
         window_input_hash = json_sha256(
             {
                 "batch": batch,
                 "boundedPayload": payload,
+                "executionIdentity":execution,
                 "reference": chunk_text_for_window(
                     gpt4o_chunks,
                     batch[0]["start"],
@@ -1288,12 +1327,16 @@ def translate_chinese(
     workers=1,
 ):
     reasoning_effort = reasoning_effort or "high"
+    aggregate_execution=legacy_text_execution_identity(api_key,{
+        'model':model,'reasoning_effort':reasoning_effort,'response_format':{'type':'json_object'},
+        'messages':[{'role':'user','content':'aggregate execution binding'}]})['executionBinding']
     record_workload("pipeline.translate", {"inputSegments": len(segments), "inputCharacters": sum(len(x.get("text", "")) for x in segments), "workers": workers})
     output = outdir / "segments_timed_zh.json"
     version_file = outdir / "chinese_translation_prompt.json"
     version = {
         "promptVersion": review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION,
         "cacheContract": legacy_text_cache_contract(),
+        "executionIdentity":aggregate_execution,
         "model": model,
         "reasoningEffort": reasoning_effort,
         "inputSha256": json_sha256({"segments": segments, "glossary": glossary}),
@@ -1306,7 +1349,7 @@ def translate_chinese(
     system = review_prompts.CHINESE_TRANSLATION_SYSTEM_PROMPT + "\n" + PROMPT_INSTRUCTION
     cache_identity = hashlib.sha256(
         json.dumps({"promptVersion": review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION, "model": model,
-                    "reasoningEffort": reasoning_effort, "cacheContract": legacy_text_cache_contract()}, sort_keys=True).encode("utf-8")
+                    "reasoningEffort": reasoning_effort, "cacheContract": legacy_text_cache_contract(),"executionIdentity":aggregate_execution}, sort_keys=True).encode("utf-8")
     ).hexdigest()[:12]
     def translate_one(item):
         idx, seg = item
@@ -1337,10 +1380,12 @@ def translate_chinese(
         }
         payload["reasoning_effort"] = reasoning_effort or "high"
         payload = bounded_legacy_chat_payload(payload)
+        execution=legacy_text_execution_identity(api_key,payload)
         segment_input_hash = json_sha256(
             {
                 "segment": seg,
                 "boundedPayload": payload,
+                "executionIdentity":execution,
                 "previous": segments[idx - 1]["text"] if idx > 0 else "",
                 "next": segments[idx + 1]["text"] if idx + 1 < len(segments) else "",
                 "glossary": glossary,

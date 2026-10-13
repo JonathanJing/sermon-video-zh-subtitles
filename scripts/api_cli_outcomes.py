@@ -10,6 +10,7 @@ import base64
 import urllib.error
 import re
 from contextvars import ContextVar
+from contextlib import contextmanager
 import fcntl
 import hashlib
 import inspect
@@ -25,6 +26,7 @@ SCHEMA = 'sermon-api-cli-outcome-v3'
 V2_SCHEMA = 'sermon-api-cli-outcome-v2'
 LEGACY_SCHEMA = 'sermon-api-cli-outcome-v1'
 _observer = ContextVar('api_cli_outcome_observer', default=None)
+_before_dispatch = ContextVar('api_cli_before_dispatch', default=None)
 
 
 class TerminalOutcomeError(RuntimeError):
@@ -184,6 +186,49 @@ def receipt_root(explicit=None):
     return Path(directory) / 'api-cli-outcomes'
 
 
+@contextmanager
+def before_dispatch(callback):
+    """Write an upstream marker only after durable shared admission succeeds."""
+    token = _before_dispatch.set(callback)
+    try:
+        yield
+    finally:
+        _before_dispatch.reset(token)
+
+
+def _assert_scope_admitted(root, *, purpose, binding):
+    paths = list(root.glob('*/outcome.json'))
+    legacy = False
+    for path in paths:
+        saved = json.loads(path.read_text())
+        _validate(saved, path.parent.name)
+        if saved['status'] not in {'returned', 'terminal_failure'}:
+            raise ValueError('api_cli_outcome_reconciliation_required')
+        if saved['schemaVersion'] == SCHEMA and (
+                saved['executionBinding']['runtimeRoute'] != binding['runtimeRoute'] or
+                (saved['purpose'] == purpose and saved['executionBinding'] != binding)):
+            raise ValueError('api_cli_frozen_execution_binding_changed')
+        legacy = legacy or saved['schemaVersion'] != SCHEMA
+    if legacy:
+        raise ValueError('api_cli_legacy_execution_binding_requires_explicit_reconciliation')
+
+
+def assert_replay_admitted(directory, *, purpose, binding):
+    """Read-only shared outcome gate for cache lookup; creates no files/receipts."""
+    root = receipt_root(directory)
+    if not root.exists():
+        return
+    # Dispatchers always create this lock before any outcome. Reuse it without
+    # creating metadata so a cache reader does not mutate its evidence root.
+    lock_path = root / 'lock'
+    if not lock_path.exists():
+        _assert_scope_admitted(root, purpose=purpose, binding=binding)
+        return
+    with lock_path.open('rb') as lock:
+        fcntl.flock(lock, fcntl.LOCK_SH)
+        _assert_scope_admitted(root, purpose=purpose, binding=binding)
+
+
 def call(caller, args, kwargs, *, purpose, directory=None, guarded=False):
     if _active.get(): return caller(*args, **kwargs)
     if guarded:
@@ -197,18 +242,8 @@ def call(caller, args, kwargs, *, purpose, directory=None, guarded=False):
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     with (root / 'lock').open('a+b') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        for path in root.glob('*/outcome.json'):
-            saved = json.loads(path.read_text())
-            _validate(saved, path.parent.name)
-            if saved['status'] not in {'returned', 'terminal_failure'}:
-                raise ValueError('api_cli_outcome_reconciliation_required')
-            if saved['schemaVersion']==SCHEMA and (
-                    saved['executionBinding']['runtimeRoute'] != binding['runtimeRoute'] or
-                    (saved['purpose']==purpose and saved['executionBinding'] != binding)):
-                raise ValueError('api_cli_frozen_execution_binding_changed')
+        _assert_scope_admitted(root, purpose=purpose, binding=binding)
         path = root / identity / 'outcome.json'
-        if any(json.loads(p.read_text()).get('schemaVersion') != SCHEMA for p in root.glob('*/outcome.json')):
-            raise ValueError('api_cli_legacy_execution_binding_requires_explicit_reconciliation')
         if path.exists():
             row = json.loads(path.read_text())
             _validate(row, identity, purpose, binding=binding)
@@ -229,6 +264,9 @@ def call(caller, args, kwargs, *, purpose, directory=None, guarded=False):
         observer_token = _observer.set(observe)
         token = _active.set(True)
         try:
+            callback = _before_dispatch.get()
+            if callback is not None:
+                callback()
             response = caller(*args, **kwargs)
             _write(path, {**row, **received, 'status': 'returned', 'response': response,
                           'responseSha256': _digest(response)})
