@@ -376,7 +376,7 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, asr: tup
                 for unit, opinion in zip(flagged, opinions):
                     unit["asr"]["secondary"] = opinion
             qc = timings.run(f"{locale}.audio-qc", lambda: audio_qc.screen(
-                units, locale, repair_position=ledger.position(lineage, entries)))
+                units, locale, repair_position=ledger.position(lineage, entries), speech_job=job))
             save_once(next_path, qc, qc_binding)
         ledger.append(ledger_root, lineage, qc)
         head_path = next_path

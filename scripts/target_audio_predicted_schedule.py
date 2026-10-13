@@ -55,6 +55,14 @@ def _check_identity(identity: dict, locale: str) -> None:
         raise ValueError("Synthesis identity belongs to another locale")
 
 
+def policy_texts(texts: list[str], locale: str, normalization_policy_sha256: str | None) -> list[str]:
+    """Count the same policy-derived spoken forms as formal synthesis, keeping v1 raw."""
+    job = {"targetLocale": locale, "adapter": {"normalizationPolicySha256": normalization_policy_sha256},
+           "units": [{"translationGroupId": str(index), "text": text} for index, text in enumerate(texts)]}
+    forms = formal.policy_spoken_forms(job)
+    return [forms.get(str(index), text) for index, text in enumerate(texts)]
+
+
 def speech_units(text: str, locale: str) -> float:
     """Locale proxy for spoken length: syllables (ko/es) or Han characters (zh)."""
     if not isinstance(text, str):
@@ -86,8 +94,10 @@ def fit_rate(rows: list[dict], locale: str, *, synthesis_identity: dict) -> dict
     """
     _check_identity(synthesis_identity, locale)
     points, measurements = [], []
-    for row in rows:
-        units, seconds = speech_units(row.get("text"), locale), row.get("audioSeconds")
+    spoken = policy_texts([row.get("text") for row in rows], locale,
+                          synthesis_identity["normalizationPolicySha256"])
+    for row, spoken_text in zip(rows, spoken):
+        units, seconds = speech_units(spoken_text, locale), row.get("audioSeconds")
         if type(seconds) not in (int, float) or not math.isfinite(seconds) or seconds <= 0:
             raise ValueError("Measured audioSeconds must be positive")
         if not re.fullmatch(r"[0-9a-f]{64}", str(row.get("audioSha256"))):
@@ -119,7 +129,8 @@ def fit_rate(rows: list[dict], locale: str, *, synthesis_identity: dict) -> dict
 
 
 def predict_seconds(text: str, rate: dict, *, conservative: bool = True) -> float:
-    seconds = rate["interceptSeconds"] + rate["secondsPerUnit"] * speech_units(text, rate["locale"])
+    spoken = policy_texts([text], rate["locale"], rate["synthesisIdentity"]["normalizationPolicySha256"])[0]
+    seconds = rate["interceptSeconds"] + rate["secondsPerUnit"] * speech_units(spoken, rate["locale"])
     return seconds * (rate["p90Factor"] if conservative else 1.0)
 
 
@@ -160,9 +171,11 @@ def budget(source_seconds: float, groups: list[dict], rate: dict, policy: dict |
         raise ValueError("Target end lag must be positive and within the hard maximum")
     locale = rate["locale"]
     cursor, planned, rows = 0.0, [], []
-    for index, group in enumerate(groups):
+    spoken = policy_texts([group["text"] for group in groups], locale,
+                          synthesis_identity["normalizationPolicySha256"])
+    for index, (group, spoken_text) in enumerate(zip(groups, spoken)):
         start_source, end_source = float(group["sourceStart"]), float(group["sourceEnd"])
-        units = speech_units(group["text"], locale)
+        units = speech_units(spoken_text, locale)
         predicted = predict_seconds(group["text"], rate)
         start = max(start_source + policy["reactionLagSeconds"],
                     cursor + (policy["interUtteranceGapSeconds"] if index else 0.0))

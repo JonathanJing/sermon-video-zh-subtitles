@@ -386,3 +386,28 @@ def test_terminal_compound_marker_asr_space(terminal):
     spoken = "요한복음 삼장부터사장" + terminal[:-1] + " " + terminal[-1]
     assert screen.score(approved, spoken, "ko", 0.88)[2]
     assert not screen.score(approved, spoken.removesuffix(" " + terminal[-1]), "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("ending", ["까지입니다", "까지였어요", "까지라고", "까지의", "까지를", "부터입니다", "에서였어요", "까지이다", "까지이었다", "까지이고", "까지인데", "까지이라서", "까지이니까"])
+def test_stacked_range_particle_endpoints(ending):
+    from scripts import screen_target_language_audio_units as screen
+    approved = "요한복음 3장부터4장" + ending
+    spoken = subject.spoken_form(approved)
+    assert spoken == "요한복음 삼장부터사장" + ending
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.replace("사장", "오장"), "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.removesuffix(ending), "ko", 0.88)[2]
+    assert subject.spoken_form(approved + "상점") == "요한복음 삼장부터4장" + ending + "상점"
+
+
+@pytest.mark.parametrize("opening,closing", [("(", ")"), ("[", "]"), ("（", "）"), ("［", "］")])
+@pytest.mark.parametrize("reference", ["3장16절", "3-4장", "3장부터4장까지입니다"])
+def test_balanced_book_citation_delimiters(opening, closing, reference):
+    from scripts import screen_target_language_audio_units as screen
+    approved = "요한복음" + opening + reference + closing
+    spoken = subject.spoken_form(approved)
+    assert not any(c.isdigit() for c in spoken)
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.replace("삼", "오"), "ko", 0.88)[2]
+    for text in ["사진" + opening + reference + closing, "요한복음" + opening + reference, "요한복음" + opening + reference + ("]" if closing != "]" else ")"), "요한복음" + opening + "사진 " + reference + closing]:
+        assert subject.spoken_form(text) == text

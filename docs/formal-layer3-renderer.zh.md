@@ -128,3 +128,7 @@ docker run --rm --gpus all --ipc=host --read-only --network none \
 实现身份：当前 screening v5 的 implementation hash 覆盖 screen、ko_spoken_numerals、auto_qc_text_common 与 common；单文件 hash 的旧实验 v5 收据需重新筛查，不能重标。QC/calibration/waiver 的实现闭包也含该韩语 helper。统一 audio adapter 对韩语 registered-normalization-v2，以及旧 normalization job 使用显式 unit-instructions-v2 两条新路径，把 helper／共享规则加入 inspect plan code hash；依赖变化后 execute 在 dispatch 前拒绝旧 plan。exact-text v1 未使用新指令时不加这些依赖；renderer 的实际 spokenTextSha256 声音身份仍保留。合法完整助词 `이`／`이라고` 在生成和 ASR 引用边界采用相同规则。
 
 引用链连接词由 generator 与 ASR 共用 `_CONNECTOR`：原有连接、三种横线及列明的 `이나`／`이든` 替代连接、`에서부터`／`부터는`／`부터만`／`부터도` 范围连接，允许空格或连写，但仍不跨正文、不应用于普通计数。
+
+范围终点支持列明的完整叠加助词／系词（例如 `까지입니다`、`까지였어요`、`까지라고`、`까지의`、`까지를`），仍拒普通词后缀。明确书名紧接引用时也支持配对 `()`／`[]` 及全角括号；引用链须完整位于同一对括号内，不由不配对括号或跨正文推断口播规则。ASR 在同一书名引用范围内折叠这些形式。
+
+校准 TTS、语速拟合／预算及传入冻结 speech job 的音频时长 QC 使用同一 job-bound registered spoken form；v1 或未提供 job 的旧 QC 调用保留原文计数。音频 QC 的 ASR/text hash 仍绑定批准文本，口播长度仅用于实际合成时长判定。校准实现闭包包含 formal renderer、transport、driver 与 policy activation helper；旧校准不能作为新实现的当前证据。

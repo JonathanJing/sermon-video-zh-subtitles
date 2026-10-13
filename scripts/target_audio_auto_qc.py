@@ -36,7 +36,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import machine_quality_waiver as waiver
 from scripts import machine_repair_ledger as ledger
-from scripts.target_audio_predicted_schedule import speech_units
+from scripts.target_audio_predicted_schedule import policy_texts, speech_units
 
 SCHEMA = "sermon-target-audio-auto-qc-v1"
 REPAIR_LADDER = ("resynthesize_new_seed", "resynthesize_new_seed",
@@ -125,19 +125,24 @@ def signal_metrics(samples: list[float], rate: int, thresholds: dict = THRESHOLD
     }
 
 
-def unit_issues(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> list[list[str]]:
-    """Issues per unit: ``{text, sourceSeconds, metrics}``; rates are job-relative."""
+def unit_issues(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
+                speech_job: dict | None = None) -> list[list[str]]:
+    """Issues per unit; an optional frozen job selects the synthesized spoken forms."""
+    if speech_job is not None and speech_job.get("targetLocale") != locale:
+        raise ValueError("Speech job belongs to another locale")
+    policy_sha = ((speech_job.get("adapter") or {}).get("normalizationPolicySha256")
+                  if speech_job is not None else None)
+    counts = [speech_units(text, locale) for text in policy_texts(
+        [unit["text"] for unit in units], locale, policy_sha)]
     rates = []
-    for unit in units:
-        units_count = speech_units(unit["text"], locale)
+    for unit, units_count in zip(units, counts):
         if units_count >= 3 and unit["metrics"]["durationSeconds"] > 0:
             rates.append(unit["metrics"]["durationSeconds"] / units_count)
     median_rate = statistics.median(rates) if len(rates) >= 5 else None
     issues = []
-    for unit in units:
+    for unit, count in zip(units, counts):
         metrics, found = unit["metrics"], []
         seconds, source = metrics["durationSeconds"], float(unit["sourceSeconds"])
-        count = speech_units(unit["text"], locale)
         if median_rate is not None and count >= 3:
             expected = median_rate * count
             if (seconds > thresholds["maxRatePerMedian"] * expected
@@ -345,10 +350,12 @@ def next_action(failed_attempts: int) -> str:
 
 
 def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
-           repair_position: dict | None = None) -> dict:
+           repair_position: dict | None = None, speech_job: dict | None = None) -> dict:
     """Screen one render attempt. Each unit: ``{groupId, text, sourceSeconds,
     wav (bytes), asr: {primary, secondary?}, sourceUnitIds?}``,
     where each ASR opinion comes from :func:`asr_opinion`.
+    ``speech_job`` selects the frozen normalization for duration rates; without
+    it, legacy callers retain raw-text counting. ASR bindings keep approved text.
 
     ``repair_position`` is the audio repair ledger head
     (``machine_repair_ledger.position``); failed attempts count from it per
@@ -373,7 +380,7 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
         if isinstance(source, bool) or not isinstance(source, (int, float)) or not math.isfinite(source) or source <= 0:
             raise ValueError(f"Unit source span must be a positive number of seconds: {unit.get('groupId')}")
         rows.append({**unit, "metrics": signal_metrics(*decode_pcm16(unit["wav"]), thresholds)})
-    all_issues = unit_issues(rows, locale, thresholds)
+    all_issues = unit_issues(rows, locale, thresholds, speech_job=speech_job)
     results = []
     for row, issues in zip(rows, all_issues):
         issues = list(issues)
@@ -581,6 +588,7 @@ def main() -> None:
                         help="{locale, units:[{groupId, text, sourceSeconds, wavPath, asr:{primary, "
                              "secondary?}, sourceUnitIds}]}; each ASR opinion is {similarity, recognized, "
                              "audioSha256, textSha256, model, modelRevision?, settings, settingsSha256}")
+    parser.add_argument("--speech-job", type=Path, help="Frozen synthesis job; applies its spoken normalization to duration QC")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--repair-ledger-root", type=Path,
                         help="Durable repair ledger root; with --source and --anchor, counts failed attempts "
@@ -612,7 +620,8 @@ def main() -> None:
                                         waiver.json_sha256(json.loads(args.source.read_text(encoding="utf-8"))),
                                         waiver.json_sha256(json.loads(args.anchor.read_text(encoding="utf-8"))))
         position = ledger.position(repair_lineage, ledger.load(args.repair_ledger_root, repair_lineage))
-    result = screen(units, value["locale"], repair_position=position)
+    speech_job = json.loads(args.speech_job.read_text(encoding="utf-8")) if args.speech_job else None
+    result = screen(units, value["locale"], repair_position=position, speech_job=speech_job)
     if repair_lineage is not None:
         # Claim the ledger position first: a concurrent run from the same head fails here.
         ledger.append(args.repair_ledger_root, repair_lineage, result)
