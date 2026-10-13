@@ -131,3 +131,7 @@
 ### 2026-09-30 FIELD-03 Web 累计预算批次
 
 `FIELD-03` 进入 **in_progress**：现有 10 秒 Web 采集和瞬态恢复共享 15 秒占麦预算，额度不足安全拒绝，迟到缓冲不接纳。实现、Chrome 合成设备测量和调度限制见 [Web 占麦累计预算](field-microphone-budget.zh.md)。保留上方全部未验收勾选：连续 10→15 秒、新能力合同、原生实现和物理设备/现场验证仍未完成。FIELD-02 的当前单索引持久缓存已有独立实现，亦不等于整页离线 readiness。
+
+## 5. 2026-10-13 会场中后排离线基准
+
+`FIELD-09` 增加第一份会场录音基准：固定清单 [`20261011-mid-back.json`](../data/benchmarks/field-venue-fingerprint/20261011-mid-back.json) 与可复现脚本 `scripts/field_venue_fingerprint_benchmark.mjs`。结果和建议见[基准报告](reports/20261013-field-venue-mid-back-benchmark.zh.md)。要点：远场失败集中在 matchFraction 门槛，`FIELD-03` 的延长不能解决这一类；`FIELD-04` 应加入输入声道选择；`FIELD-10` 的查询端 `cmn` 在开发集上有提升但不一致，须用保留集验证。本批只作开发集，上方各项勾选和状态不变。
