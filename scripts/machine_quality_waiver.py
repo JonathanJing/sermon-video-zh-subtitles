@@ -60,6 +60,7 @@ IMPLEMENTATION_FILES = (
     "scripts/render_formal_target_language_speech.py",
     "scripts/machine_qc_audio_transports.py",
     "scripts/run_machine_qc_audio_test.py",
+    "scripts/run_machine_qc_clip_test.py",
     "scripts/machine_qc_budget_authorization.py",
     "scripts/sermon_source_budget.py",
     "scripts/sermon_transcription_request.py",
