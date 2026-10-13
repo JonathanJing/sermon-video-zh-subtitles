@@ -161,7 +161,7 @@ def test_chain_resumes_http_failure_without_repeating_asset_publication(tmp_path
     monkeypatch.setattr(runner.preparation, 'release_plan', lambda base, prepared, out: out.write_text('{}'))
     monkeypatch.setattr(runner.builder, 'seal', lambda args: snapshot(args.out))
     monkeypatch.setattr(runner.preparation, 'overlay', lambda base, public, catalog, out: snapshot(out))
-    monkeypatch.setattr(runner, 'live_readback', lambda final, page, out: (events.append('readback'), out.write_text('{}')))
+    monkeypatch.setattr(runner, 'live_readback', lambda final, page, out, machine_checked=False: (events.append('readback'), out.write_text('{}')))
     args = argparse.Namespace(baseline=base, prepared=prepared, out=root, source_video=source,
                               monitor_metrics=None, execute=True)
     with pytest.raises(TimeoutError):
@@ -211,3 +211,67 @@ def test_live_readback_checks_source_video_and_refuses_changed_bytes(tmp_path, m
     with pytest.raises(ValueError, match='hash/size differs'):
         runner.live_readback(tmp_path, page, tmp_path / 'bad.json')
     assert not (tmp_path / 'bad.json').exists()
+
+
+def test_machine_checked_readback_uses_the_v4_catalog_and_no_source_video(tmp_path, monkeypatch):
+    public = tmp_path / 'public'
+    public.mkdir()
+    page = 'mockup-real'
+    body = b'machine-checked audio'
+    audio_path = '/media/' + page + '/ko.mp3'
+    release = {'status': 'published_http_verified', 'assets': [
+        {'path': audio_path, 'sha256': runner.hashlib.sha256(body).hexdigest()}]}
+    release_bytes = json.dumps(release).encode()
+    catalog = {'pages': [{'id': page, 'diagnosticOnly': True, 'targets': {
+        'ko': {'diagnosticOnly': True, 'releasePackageUrl': '/release.json',
+               'releasePackageJsonSha256': runner.hashlib.sha256(release_bytes).hexdigest()}}}]}
+    raw = json.dumps(catalog).encode()
+    # Only v4 lists the page; a v3 read would not find it.
+    (public / 'multilingual-v4.json').write_bytes(raw)
+    (tmp_path / 'seal-report.json').write_text(json.dumps({'files': [
+        {'path': audio_path, 'sha256': runner.hashlib.sha256(body).hexdigest(), 'bytes': len(body)}]}))
+    urls = []
+    def read(url):
+        urls.append(url)
+        return 200, raw if url.endswith('multilingual-v4.json') else release_bytes
+    monkeypatch.setattr(runner, 'reader', read)
+    monkeypatch.setattr(runner.contract, 'validate_release_schema', lambda data: None)
+    def open_response(request, **kwargs):
+        response = io.BytesIO({runner.preparation.ORIGIN + audio_path: body}[request.full_url])
+        response.status = 200
+        return response
+    monkeypatch.setattr(runner, 'urlopen', open_response)
+    runner.live_readback(tmp_path, page, tmp_path / 'receipt.json', machine_checked=True)
+    receipt = json.loads((tmp_path / 'receipt.json').read_text())
+    assert urls[0].endswith('/multilingual-v4.json')
+    assert receipt['sourceVideo'] is None and receipt['locales']['ko'][0]['status'] == 'pass'
+    # Real content is diagnostic, never a simulation: a simulationOnly flag is refused.
+    catalog['pages'][0]['simulationOnly'] = True
+    raw2 = json.dumps(catalog).encode()
+    (public / 'multilingual-v4.json').write_bytes(raw2)
+    monkeypatch.setattr(runner, 'reader', lambda url: (200, raw2 if url.endswith('multilingual-v4.json') else release_bytes))
+    with pytest.raises(ValueError, match='Missing test isolation'):
+        runner.live_readback(tmp_path, page, tmp_path / 'bad.json', machine_checked=True)
+
+
+def test_each_mode_refuses_the_other_modes_content(tmp_path, monkeypatch):
+    simulated = {'reviewMode': 'simulation', 'sourceVideoUrl': '/media/mockup-x/source.mp4', 'sourceMediaSha256': 'a' * 64}
+    machine = {'schemaVersion': 'sermon-full-video-text-content-v3', 'status': 'machine_checked',
+               'reviewMode': 'formal', 'disclosure': {'locale': 'ko', 'text': 't', 'english': 'e'}}
+    base, prepared = tmp_path / 'base', tmp_path / 'prepared'
+    monkeypatch.setattr(runner.builder, 'verified_assets', lambda path: (
+        {'pageId': 'mockup-x', 'releases': {'zh-Hans': {}, 'ko': {}, 'es': {}}},
+        [{'role': 'content', 'path': f'c{i}.json'} for i in range(3)]))
+    monkeypatch.setattr(runner.contract, 'validate_catalog_snapshot', lambda path: {'pages': []})
+    for content, flag, message in ((machine, False, 'Explicit simulated content required'),
+                                   (simulated, True, 'Explicit machine-checked content required')):
+        monkeypatch.setattr(runner.preparation, 'read', lambda path, content=content: content)
+        args = runner.argparse.Namespace(baseline=base, prepared=prepared, out=tmp_path / 'out', source_video=None,
+                                         monitor_metrics=None, execute=False, machine_checked=flag)
+        with pytest.raises(ValueError, match=message):
+            runner._run(args)
+    monkeypatch.setattr(runner.preparation, 'read', lambda path: machine)
+    args = runner.argparse.Namespace(baseline=base, prepared=prepared, out=tmp_path / 'out', source_video=tmp_path / 'v.mp4',
+                                     monitor_metrics=None, execute=False, machine_checked=True)
+    with pytest.raises(ValueError, match='publish no source video'):
+        runner._run(args)
