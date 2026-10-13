@@ -17,7 +17,7 @@ const metadata = { schemaVersion: 'sermon-audio-fingerprint-binding-v1', algorit
 const settle = async () => { for (let n = 0; n < 30; n += 1) await Promise.resolve(); };
 
 test('attempt records keep only whitelisted enums and buckets', () => {
-  const heard = { stage: 'matched_audio', reason: 'low_confidence', errorCode: 'Some native text', match: { level: 'low', fractionBand: '0_045_to_0_055', landmarks: 1062 }, timings: { totalMs: 14349 }, shadow: { profile: 'cmn-v1', matched: true, extra: 'x' } };
+  const heard = { stage: 'matched_audio', captureSeconds: 10, reason: 'low_confidence', errorCode: 'Some native text', match: { level: 'low', fractionBand: '0_045_to_0_055', landmarks: 1062 }, timings: { totalMs: 14349 }, shadow: { profile: 'cmn-v1', matched: true, extra: 'x' } };
   assert.deepEqual(alignmentAttempt({ ...heard, lastPhase: 'matching' }, 'no_match', at), { at: Date.parse('2026-10-11T17:44:39Z'), outcome: 'no_match', stage: 'matched_audio', reason: 'low_confidence', errorCode: null, level: 'low', fractionBand: '0_045_to_0_055', captureSeconds: 10, totalMs: 14300, shadow: { profile: 'cmn-v1', matched: true, agrees: null } });
   const matched = { ...heard, reason: 'matched', match: { level: 'moderate', fractionBand: 'at_least_0_055' } };
   assert.equal(alignmentAttempt(matched, 'applied', at).shadow, null);

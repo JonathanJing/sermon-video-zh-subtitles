@@ -1,5 +1,8 @@
 export function abortError() { return new DOMException('Cancelled', 'AbortError'); }
-export const MAX_MICROPHONE_MS = 15000;
+// FIELD-03 (2026-10-13 decision): up to 15 s of retained PCM plus the existing
+// 5 s startup deadline share one microphone budget per press.
+export const MAX_CAPTURE_SECONDS = 15;
+export const MAX_MICROPHONE_MS = 20000;
 const budgetError = () => Object.assign(new Error('capture_budget_exhausted'), { captureStage: 'input' });
 function abortable(promise, signal, onLate = () => {}) {
   return new Promise((resolve, reject) => {
@@ -42,10 +45,10 @@ async function waitForInputReady(stream, context, signal) {
     return await abortable(ready, signal);
   } finally { cleanup(); }
 }
-export async function captureFingerprintAttempt({ seconds = 10, signal, microphoneBudgetMs = MAX_MICROPHONE_MS, onPreparing = () => {}, onRecording = () => {}, onTiming = () => {}, env = globalThis }) {
+export async function captureFingerprintAttempt({ seconds = 10, checkpoints = [], onCheckpoint = () => {}, signal, microphoneBudgetMs = MAX_MICROPHONE_MS, onPreparing = () => {}, onRecording = () => {}, onTiming = () => {}, env = globalThis }) {
   if (!microphoneSupported(env)) throw new Error('unsupported');
   if (signal.aborted) throw abortError();
-  if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isFinite(microphoneBudgetMs) || microphoneBudgetMs > MAX_MICROPHONE_MS || seconds * 1000 > microphoneBudgetMs) throw budgetError();
+  if (!Number.isFinite(seconds) || seconds <= 0 || seconds > MAX_CAPTURE_SECONDS || !Number.isFinite(microphoneBudgetMs) || microphoneBudgetMs > MAX_MICROPHONE_MS || seconds * 1000 > microphoneBudgetMs) throw budgetError();
   const operation = new AbortController(), localSignal = operation.signal;
   const cancel = () => operation.abort(); signal.addEventListener('abort', cancel, { once: true });
   const timers = env.setTimeout ? env : globalThis;
@@ -75,7 +78,7 @@ export async function captureFingerprintAttempt({ seconds = 10, signal, micropho
     await waitForInputReady(stream, context, localSignal);
     if (localSignal.aborted) throw abortError();
     source = context.createMediaStreamSource(stream);
-    node = new env.AudioWorkletNode(context, 'fingerprint-capture', { processorOptions: { seconds, startupSeconds: 3 } });
+    node = new env.AudioWorkletNode(context, 'fingerprint-capture', { processorOptions: { seconds, checkpoints: checkpoints.filter(value => value < seconds), startupSeconds: 3 } });
     mute = context.createGain(); mute.gain.value = 0;
     const complete = new Promise((resolve, reject) => {
       let resuming = false;
@@ -115,7 +118,13 @@ export async function captureFingerprintAttempt({ seconds = 10, signal, micropho
         if (!(data.samples instanceof Float32Array) || !Number.isFinite(data.endContextTime) || !(data.sampleRate >= 4000 && data.sampleRate <= 192000)) { reject(new Error('capture_failed')); return; }
         const receivedAt = env.performance.now();
         const lag = Math.max(0, context.currentTime - data.endContextTime);
-        resolve({ samples: data.samples, sampleRate: data.sampleRate, endedAt: receivedAt - lag * 1000, durationSeconds: data.samples.length / data.sampleRate });
+        const recording = { samples: data.samples, sampleRate: data.sampleRate, endedAt: receivedAt - lag * 1000, durationSeconds: data.samples.length / data.sampleRate };
+        if (data.checkpoint === true) {
+          // A prefix of the still-running capture; the caller may stop early.
+          if (started) try { onCheckpoint(recording); } catch { /* Matching never changes capture cleanup. */ }
+          return;
+        }
+        resolve(recording);
       };
     });
     source.connect(node); node.connect(mute); mute.connect(context.destination);
@@ -151,9 +160,9 @@ export async function captureFingerprintAudio(options) {
   const {signal, env = globalThis, onRecovering = () => {}} = options;
   const timers = env.setTimeout ? env : globalThis;
   const limit = options.microphoneBudgetMs ?? MAX_MICROPHONE_MS;
-  let occupiedMs = 0;
+  let occupiedMs = 0, seconds = options.seconds ?? 10;
   for (let attempt = 0; attempt < 3; attempt++) {
-    try { return await captureFingerprintAttempt({...options, microphoneBudgetMs: limit - occupiedMs, onTiming: value => {
+    try { return await captureFingerprintAttempt({...options, seconds, microphoneBudgetMs: limit - occupiedMs, onTiming: value => {
       const occupied = value.microphoneObservedMs;
       if (Number.isFinite(occupied) && occupied >= 0) occupiedMs += occupied;
       options.onTiming?.(value);
@@ -162,7 +171,10 @@ export async function captureFingerprintAudio(options) {
       if (signal.aborted) throw abortError();
       const transient = error.message === 'capture_interrupted' && error.captureDetail !== 'channel_shape' || error.message === 'audio_context_interrupted';
       if (!transient || attempt === 2) throw error;
-      if (limit - occupiedMs < (options.seconds ?? 10) * 1000) throw budgetError();
+      // A retry records a completely new window within what remains of the budget.
+      const remaining = Math.floor((limit - occupiedMs) / 1000);
+      if (remaining < (options.minimumSeconds ?? options.seconds ?? 10)) throw budgetError();
+      seconds = Math.min(options.seconds ?? 10, remaining);
       onRecovering({attempt: attempt + 1});
       let timer;
       try { await abortable(new Promise(resolve => { timer = timers.setTimeout(resolve, 600); }), signal); }
