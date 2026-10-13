@@ -229,6 +229,9 @@ def _http_error_diagnostic(error):
 
 
 def request_json(req, retries=3, *, response_observer=None, request_executor=None):
+    from scripts import api_cli_outcomes
+    if api_cli_outcomes.admitted():
+        retries = 1  # An uncertain legacy request must never retry inside its hold.
     from scripts.sermon_openai_runtime import bind_request
     bind_request(req)
     # Strict recovery is explicitly authorized by D5, never an HTTP retry loop.
@@ -675,7 +678,7 @@ def transcribe_openai_audio(
     session_verifier=None,
 ):
     return spark_admission.SessionBoundCaller(multipart_request, verifier=session_verifier,
-        purpose="source-audio-api")(
+        purpose="source-audio-api", requires_spark=False)(
         TRANSCRIBE_URL,
         api_key,
         transcription_request_fields(
@@ -995,10 +998,13 @@ def chunk_text_for_window(chunks, start, end):
 
 def chat_json(api_key, payload, retries=1, *, session_verifier=None):
     return spark_admission.SessionBoundCaller(_chat_json, verifier=session_verifier,
-        purpose="production-text-call")(api_key, payload, retries=retries)
+        purpose="production-text-call", requires_spark=False)(api_key, payload, retries=retries)
 
 
 def _chat_json(api_key, payload, retries=1):
+    from scripts import api_cli_outcomes
+    if api_cli_outcomes.admitted():
+        retries = 1
     from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
     from scripts.strict_budget_capability import require_bounded_api_payload
     require_bounded_api_payload(payload, DEFAULT_REQUEST_LIMITS, surface="legacy_text_api")

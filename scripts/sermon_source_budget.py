@@ -418,8 +418,6 @@ class SourceBudget:
                              if (row.get('settlement') or {}).get('costStatus') != 'reused') for key in METRICS}
             require(all(used[key] + bounds[key] <= self.authority['globalBounds'][key] for key in METRICS),
                     'source_budget_exhausted')
-            if self.transport is None:
-                spark_admission.require_session()
             row = {'identitySha256': fingerprint, 'bounds': bounds,
                    'status': 'live_started', 'dispatchOwner': owner}
             if self.resource_policy is not None:
@@ -459,7 +457,7 @@ class SourceBudget:
         req.accounting_settings = {'requestPayloadSha256': fingerprint}
         return pipeline.request_json(req, retries=1, response_observer=returned,
             request_executor=spark_admission.SessionBoundCaller(
-                lambda r: http.execute(r, bounds['wallTimeMs'] / 1000), purpose='source-audio-api'))
+                lambda r: http.execute(r, bounds['wallTimeMs'] / 1000), purpose='source-audio-api', requires_spark=False, outcome_guarded=True))
 
     def reconcile_returned(self, operation, expected_identity_sha256):
         """Explicit local reconciliation after raw return persisted but ledger did not.
