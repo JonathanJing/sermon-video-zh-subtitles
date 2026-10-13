@@ -76,6 +76,18 @@
       "label": "pr362-delimiter-stacked-particles-20261012",
       "source": "/private/tmp/sermon-fix-362/artifacts/pr362-delimiter-stacked-particles-20261012",
       "skipped": {}
+    },
+    {
+      "label": "pr362-qc-job-condensation-binding-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-qc-job-condensation-binding-20261012",
+      "skipped": {}
+    },
+    {
+      "label": "20261012-pr362-condensation-normalization",
+      "source": "/private/tmp/sermon-fix-362/artifacts/run/20261012-pr362-condensation-normalization",
+      "skipped": {
+        ".md": 1
+      }
     }
   ],
   "files": [
@@ -966,6 +978,124 @@
       "bytes": 197,
       "truncated": false,
       "sha256": "72e2b23fca2a05b49491ccbbebbdd0e4b00101d9f8b4729fb4b59cf4f15b8506",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-qc-job-condensation-binding-20261012",
+      "path": "calibration-integrated.log",
+      "kind": "log",
+      "bytes": 153,
+      "truncated": false,
+      "sha256": "1aa2e7de7c6783d2ebbc57bac77ad192f65e227e5e2fdaae048149864028551c",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-qc-job-condensation-binding-20261012",
+      "path": "integrated-final.log",
+      "kind": "log",
+      "bytes": 153,
+      "truncated": false,
+      "sha256": "5012dc14523433b8e0ff7193193bec841e807bce4a10a22e65ac1953a03f487e",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-qc-job-condensation-binding-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-qc-job-condensation-binding-20261012",
+      "path": "qc-contract.log",
+      "kind": "log",
+      "bytes": 99,
+      "truncated": false,
+      "sha256": "7c8ac8026c4a7894bbbefd4651e9758747d494ed542c984e00289b7a0d5e127e",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-qc-job-condensation-binding-20261012",
+      "path": "qc-final.log",
+      "kind": "log",
+      "bytes": 99,
+      "truncated": false,
+      "sha256": "62e33362c84fb3c47ff6821e152f9594f115c536b15510ef8f64c2c433248f00",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-qc-job-condensation-binding-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 606,
+      "truncated": false,
+      "sha256": "e28cc7f3144f62d265547f7ca9cd925e372091d77ec439d71a422df945f5588c",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-qc-job-condensation-binding-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 144,
+      "truncated": false,
+      "sha256": "0067d41f31513dcc7540add7809ca3c98717e07e7ccfa4ebb0fb7c0a6396edad",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr362-condensation-normalization",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 440,
+      "truncated": false,
+      "sha256": "39b9b64cc4efb3170f72fa9bbe3f63fba1a344ae8fc689ec61de92bd77616943",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr362-condensation-normalization",
+      "path": "pytest-initial-fixture-fail.log",
+      "kind": "log",
+      "bytes": 1544,
+      "truncated": false,
+      "sha256": "f1b3128e6e160d642ec5e337e0414bc33a618d817477ff40500ed72d35ea9e1d",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "43c41f2287106a081d9d69a7cb9103739aff6f7e1590101939bdc7e6e53fba83",
+        "bytes": 1535,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261012-pr362-condensation-normalization",
+      "path": "pytest-reference-fixture-fail.log",
+      "kind": "log",
+      "bytes": 1108,
+      "truncated": false,
+      "sha256": "4318dc16bf4fa0b4f0095bc751362ae3bce90f79a227ce486732b3f23093fb9d",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "5aaf3d2ff38caa248316c48355cc8ff7ab785a7fc888157c90dd2b97fa92a32d",
+        "bytes": 1099,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261012-pr362-condensation-normalization",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 93,
+      "truncated": false,
+      "sha256": "434613a70585347fdfac08bc492967f23e5e25fb135e0159e8ec11e533732544",
+      "redactions": {}
+    },
+    {
+      "run": "20261012-pr362-condensation-normalization",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 45,
+      "truncated": false,
+      "sha256": "e1670aabca2289c28c67e91eb019a4ca9d0b3b3099a5262e29298cb184aedf87",
       "redactions": {}
     }
   ],

@@ -218,3 +218,18 @@ Error-like log lines (first 5 per log):
 - [outcome.json](pr362-delimiter-stacked-particles-20261012/outcome.json)
 - [summary.json](pr362-delimiter-stacked-particles-20261012/summary.json)
 - [timings.tsv](pr362-delimiter-stacked-particles-20261012/timings.tsv)
+
+## QC job binding and condensation normalization
+
+- [pr362-qc-job-condensation-binding-20261012/calibration-integrated.log](pr362-qc-job-condensation-binding-20261012/calibration-integrated.log)
+- [pr362-qc-job-condensation-binding-20261012/integrated-final.log](pr362-qc-job-condensation-binding-20261012/integrated-final.log)
+- [pr362-qc-job-condensation-binding-20261012/outcome.json](pr362-qc-job-condensation-binding-20261012/outcome.json)
+- [pr362-qc-job-condensation-binding-20261012/qc-contract.log](pr362-qc-job-condensation-binding-20261012/qc-contract.log)
+- [pr362-qc-job-condensation-binding-20261012/qc-final.log](pr362-qc-job-condensation-binding-20261012/qc-final.log)
+- [pr362-qc-job-condensation-binding-20261012/summary.json](pr362-qc-job-condensation-binding-20261012/summary.json)
+- [pr362-qc-job-condensation-binding-20261012/timings.tsv](pr362-qc-job-condensation-binding-20261012/timings.tsv)
+- [20261012-pr362-condensation-normalization/outcome.json](20261012-pr362-condensation-normalization/outcome.json)
+- [20261012-pr362-condensation-normalization/pytest-initial-fixture-fail.log](20261012-pr362-condensation-normalization/pytest-initial-fixture-fail.log)
+- [20261012-pr362-condensation-normalization/pytest-reference-fixture-fail.log](20261012-pr362-condensation-normalization/pytest-reference-fixture-fail.log)
+- [20261012-pr362-condensation-normalization/pytest.log](20261012-pr362-condensation-normalization/pytest.log)
+- [20261012-pr362-condensation-normalization/timings.tsv](20261012-pr362-condensation-normalization/timings.tsv)

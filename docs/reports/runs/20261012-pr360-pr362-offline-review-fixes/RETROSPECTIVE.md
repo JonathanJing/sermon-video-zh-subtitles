@@ -116,4 +116,14 @@ commit `daadac90` 让范围 marker 共用已注册完整系词 grammar，覆盖�
 
 并行独立修复语速拟合／预测／预算与音频时长QC：使用 job-bound formal.policy_spoken_forms，QC driver实际传 speech_job，CLI提供--speech-job；无job或v1保留原文计数。ASR／text hashes继续绑定批准文本。新增实际消费依赖 schedule／audio_qc／formal／driver／ko／terminology／activation helper 均已在当前waiver闭包，无需whole-repo扩张。
 
-开发阶段refactor错误删除book与citation之间空格，85 failed／254 passed／34 subtests（1.93秒），修复后terminal内部空格8 failed／350 passed／34 subtests（1.79秒），均保留日志。grammar阶段358／34（1.71秒）、完整共享copula stacks364／34（1.79秒）通过。最终统一集成390 passed／49 subtests（14.55秒），范围为grammar三文件、新spoken-length实际WAV screen例、原PredictedScheduleTests／AudioQcTests、machine_checked_delivery。独立shadow报告两阶段17 passed／15 subtests（11.32秒）以及5 passed／13 deselected（47.61秒，含真实fake driver入口），与集成阶段重叠，不能相加，原日志待独立证据路径返回时补入。未重跑完整consumer或模型／Spark／部署；最终head CI独立核验，三线程resolve，无评论，报告仍draft。
+开发阶段refactor错误删除book与citation之间空格，85 failed／254 passed／34 subtests（1.93秒），修复后terminal内部空格8 failed／350 passed／34 subtests（1.79秒），均保留日志。grammar阶段358／34（1.71秒）、完整共享copula stacks364／34（1.79秒）通过。最终统一集成390 passed／49 subtests（14.55秒），范围为grammar三文件、新spoken-length实际WAV screen例、原PredictedScheduleTests／AudioQcTests、machine_checked_delivery。独立shadow报告两阶段17 passed／53 deselected／15 subtests（11.32秒）以及5 passed／13 deselected（47.61秒，含真实fake driver入口），与集成阶段重叠，不能相加，shadow确认两阶段stdout仅保存在工具输出、未保存原始文件；作为agent-observed报告记录，不冒充已附原始日志，也不为补日志重跑。未重跑完整consumer或模型／Spark／部署；最终head CI独立核验，三线程resolve，无评论，报告仍draft。
+
+## 独立QC真实job绑定与压缩预算同口径
+
+commit `0ef25fe0` 修复独立unit QC默认无job而raw计数的问题：CLI必须显式--speech-job或--legacy-raw-text，成品QCreceipt记录durationNormalization的job JSON hash与policy hash。canonical v2试听豁免拒缺失、legacy或foreign-job绑定；旧v1无字段收据保持历史raw语义。实际CLI运行验证缺输入拒绝、job绑定输出及显式legacy路径，waiver入口验证v2拒绝无绑定或其他job。
+
+压缩请求从既有budget.rate.synthesisIdentity传递完整冻结身份，预算相等校验、输出长度、omission计量、recordspokenSpeechUnits与bindfinalSpeechUnits均复用相同policy_texts，原frozen rebuild proof未放宽。独立shadow回归22 passed／26 subtests（0.41秒），已保存日志与两份fixture开发失败证据，本报告实际导出入Git。
+
+沿实际校准入口额外发现clean／seeded audio QC仍raw计数，已从renderIdentity.synthesis.normalizationPolicySha256传入显式calibration_policy_context；不伪造完整jobhash，该内部收据不能支持真实v2job豁免。新增测试调用实际seeded.calibrate与fake WAV／render，验证clean边界不误报、多个实际seeded QC都消费同上下文、且不被当成成品job绑定。
+
+定向QC13项（3.35秒）、追加waiver拒绝后14项（3.43秒），校准修复前集成62 passed／38 subtests（4.29秒），最终含校准的集成63 passed／38 subtests（5.74秒），各阶段重叠不能相加。最终范围：实际QC CLI、AudioWaiverTests、machine_checked_delivery与condensation三个文件。全部离线，无模型／Spark／部署或真实重新校准；完整consumer未重跑。默认整PRdiffcheck、脱敏verify通过，日志forceadd／副本规范化保留sourcehash，报告仍draft，最终CI独立核验。
