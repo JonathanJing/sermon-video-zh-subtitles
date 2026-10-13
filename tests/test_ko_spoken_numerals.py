@@ -229,3 +229,38 @@ def test_added_subject_and_quotation_particles_have_symmetric_asr_boundaries(par
     spoken = subject.spoken_form(approved)
     assert screen.fold_transcript(spoken, "ko") == approved
     assert screen.score(approved, spoken, "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("approved", ["요한복음 3장이나 4장", "요한복음 3장이나4장", "시편 3편이나 4편", "시편 3편이나4편"])
+def test_book_anchored_alternatives_generate_fold_and_score(approved):
+    from scripts import screen_target_language_audio_units as screen
+    spoken = subject.spoken_form(approved)
+    assert not any(char.isdigit() for char in spoken)
+    assert screen.fold_transcript(spoken, "ko") == approved
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.replace("사", "오"), "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("사진 3장이나 4장", "사진 3장이나 4장"),
+    ("요한복음 3장이나 사진 4장을 읽습니다.", "요한복음 삼장이나 사진 4장을 읽습니다."),
+    ("요한복음 3장이나마 읽습니다.", "요한복음 3장이나마 읽습니다."),
+])
+def test_alternative_connector_does_not_expand_ordinary_or_prose_scope(text, expected):
+    assert subject.spoken_form(text) == expected
+
+
+@pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+@pytest.mark.parametrize("spacing", ["", " "])
+def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+    from scripts import screen_target_language_audio_units as screen
+    approved = f"요한복음 3장{connector}{spacing}4장까지"
+    spoken = subject.spoken_form(approved)
+    assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+    assert screen.fold_transcript(spoken, "ko") == approved
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.replace("사", "오"), "ko", 0.88)[2]
+    ordinary = f"사진 3장{connector}{spacing}4장까지"
+    assert subject.spoken_form(ordinary) == ordinary
+    prose = f"요한복음 3장{connector} 읽고 사진 4장까지 봅니다."
+    assert subject.spoken_form(prose) == prose.replace("요한복음 3장", "요한복음 삼장")

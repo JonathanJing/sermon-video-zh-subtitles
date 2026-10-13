@@ -126,3 +126,5 @@ docker run --rm --gpus all --ipc=host --read-only --network none \
 引用 counter 后须为词边界、相邻完整引用或列明且完整的韩文助词后缀（含 `에는`、`입니다` 等）；`3장면`、`2편지`、`2편의점` 不转换，不从任意 Hangul 前缀推断引用。scoring v5 仅在书名锚定引用片段内（含紧接的范围终结标记）额外比较有序完整数字串、范围标记与引用 counter/范围助词结构，拒绝 `12-3` 与 `1-23` 的字符摊平等价及范围连接符插删；旧 v4/v3 路径保持原样。
 
 实现身份：当前 screening v5 的 implementation hash 覆盖 screen、ko_spoken_numerals、auto_qc_text_common 与 common；单文件 hash 的旧实验 v5 收据需重新筛查，不能重标。QC/calibration/waiver 的实现闭包也含该韩语 helper。统一 audio adapter 对韩语 registered-normalization-v2，以及旧 normalization job 使用显式 unit-instructions-v2 两条新路径，把 helper／共享规则加入 inspect plan code hash；依赖变化后 execute 在 dispatch 前拒绝旧 plan。exact-text v1 未使用新指令时不加这些依赖；renderer 的实际 spokenTextSha256 声音身份仍保留。合法完整助词 `이`／`이라고` 在生成和 ASR 引用边界采用相同规则。
+
+引用链连接词由 generator 与 ASR 共用 `_CONNECTOR`：原有连接、三种横线及列明的 `이나`／`이든` 替代连接、`에서부터`／`부터는`／`부터만`／`부터도` 范围连接，允许空格或连写，但仍不跨正文、不应用于普通计数。

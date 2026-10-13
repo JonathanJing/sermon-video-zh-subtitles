@@ -406,18 +406,29 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
         # range 삼-사장 the first one-syllable endpoint has no counter of its own.
         # Do not grant that interpretation to bare words or ordinary counters.
         from scripts.language_review_plugins import auto_qc_text_common as rules
+        from scripts.ko_spoken_numerals import _PARTICLES, _CONNECTOR
         books = "|".join(re.escape(name) for name in sorted(rules._KO_BOOK_CODES, key=len, reverse=True))
         number = r"(?:\d{1,3}|[" + _KO_SINO_CHARS + r"]+)"
         def citation_pattern(book, counter):
-            from scripts.ko_spoken_numerals import _PARTICLES
-            boundary = (r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|(?:과|와|및|부터|에서)?\s*"
+            boundary = (r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|" + _CONNECTOR + r"?\s*"
                         + number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter + r")")
             reference = number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter + boundary
             return re.compile(r"(?<![가-힣A-Za-z0-9])(" + book + r")(\s*" + reference
-                              + r"(?:\s*(?:과|와|및|,|부터|에서|[-~–])?\s*" + reference + r")*)")
+                              + r"(?:\s*" + _CONNECTOR + r"?\s*" + reference + r")*)")
+        citation_number = re.compile(r"(" + number + r")(?:(\s*[-~–]\s*)(" + number + r"))?(\s*)(장|절|편)")
+        def fold_number(match):
+            first, dash, second, space, counter = match.groups()
+            left = sino_value(first)
+            right = sino_value(second) if second else None
+            if left is None or second and right is None:
+                return match.group()
+            return left + ((dash + right) if second else "") + space + counter
+        citation_atom = re.compile(_CONNECTOR + "|" + citation_number.pattern)
         def fold_citation(match):
-            return match.group(1) + _KO_SINO_RUN.sub(
-                lambda numeral: sino_value(numeral.group()) or numeral.group(), match.group(2))
+            # Consume complete connectors before numeric atoms: 이나/이든 and
+            # 부터만 must not turn their 이/만 syllables into numbers.
+            return match.group(1) + citation_atom.sub(
+                lambda atom: atom.group() if atom.group(1) is None else fold_number(atom), match.group(2))
         text = citation_pattern(books, r"(?:장|절)").sub(fold_citation, text)
         text = citation_pattern("시편", r"(?:장|절|편)").sub(fold_citation, text)
 

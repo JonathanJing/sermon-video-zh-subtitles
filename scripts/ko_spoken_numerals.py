@@ -34,7 +34,8 @@ _NUMBER = r"\d{1,3}(?:\s*[-~–]\s*\d{1,3})?\s*"
 _BOOK = "|".join(re.escape(name) for name in sorted(_KO_BOOK_CODES, key=len, reverse=True) if name != "시편")
 _PARTICLES = r"(?:이라고|입니다|이라면|이든|이|처럼|마저|조차|마다|에서는|에서도|에서부터|부터는|부터만|부터도|까지는|까지만|까지도|에는|에도|으로는|으로도|에서|부터|까지|으로|이나|과|와|및|을|를|의|은|는|에|도|만|로)(?![가-힣A-Za-z])"
 _COUNTER_END = r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|" + _NUMBER + r"(?:장|절|편))"
-_CHAIN = r"(?:\s*(?:과|와|및|,|부터|에서|[-~–])?\s*" + _NUMBER + r"{counter}" + _COUNTER_END + r")*(?![\d])"
+_CONNECTOR = r"(?:에서부터|부터는|부터만|부터도|이나|이든|과|와|및|부터|에서|,|[-~–])"
+_CHAIN = r"(?:\s*" + _CONNECTOR + r"?\s*" + _NUMBER + r"{counter}" + _COUNTER_END + r")*(?![\d])"
 _CITATIONS = (
     re.compile(r"(?<![가-힣A-Za-z0-9])(?:" + _BOOK + r")\s*" + _NUMBER
                + r"(?:장|절)" + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절)")),
