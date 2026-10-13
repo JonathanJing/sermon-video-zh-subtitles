@@ -66,6 +66,11 @@
       "label": "pr362-calibration-spoken-policy-20261012",
       "source": "/private/tmp/sermon-fix-362/artifacts/pr362-calibration-spoken-policy-20261012",
       "skipped": {}
+    },
+    {
+      "label": "pr362-copula-calibration-closure-20261012",
+      "source": "/private/tmp/sermon-fix-362/artifacts/pr362-copula-calibration-closure-20261012",
+      "skipped": {}
     }
   ],
   "files": [
@@ -811,6 +816,74 @@
       "bytes": 75,
       "truncated": false,
       "sha256": "a0d47f0083939c0def85b36677dc0fa3496a44ba4702608cbad753cdfa4731ab",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-calibration-closure-20261012",
+      "path": "closure-final.log",
+      "kind": "log",
+      "bytes": 478,
+      "truncated": false,
+      "sha256": "bf0ed08c8aff7a926775c053d416566634a12a67ac086b404ed7093d8ef6edd7",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-calibration-closure-20261012",
+      "path": "final-contract.log",
+      "kind": "log",
+      "bytes": 478,
+      "truncated": false,
+      "sha256": "bb9f1f636f351cb5372a207d3bb036164a2fb0c83d80f215cbca26b3d0fd90b1",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-calibration-closure-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-calibration-closure-20261012",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 2195,
+      "truncated": false,
+      "sha256": "71d81e97a8503fd2bf7690aeafea11e6019222d8c475ae1e519278711ec123ce",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "c5cfe5722f03bdbb2f2dbb697c5f80f60bd0856a5074540691004948170d0951",
+        "bytes": 2186,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "pr362-copula-calibration-closure-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 616,
+      "truncated": false,
+      "sha256": "fb46c2f7c1401cd54568ae449f0a87ae4743a4c1c4202f897353f3d9936b5779",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-calibration-closure-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 113,
+      "truncated": false,
+      "sha256": "cce12373644005c4ef3f8dbd892e60612a7c5bf89938524e87bdb9f9e23209ce",
+      "redactions": {}
+    },
+    {
+      "run": "pr362-copula-calibration-closure-20261012",
+      "path": "transport-final.log",
+      "kind": "log",
+      "bytes": 113,
+      "truncated": false,
+      "sha256": "bd95d2584457f3e04e7b6674b2154ea3ca4a61d608af06842d80699af3b3bad1",
       "redactions": {}
     }
   ],

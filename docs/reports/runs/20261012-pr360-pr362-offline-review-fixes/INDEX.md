@@ -197,3 +197,13 @@ Error-like log lines (first 5 per log):
 - [pytest.log](pr362-calibration-spoken-policy-20261012/pytest.log)
 - [summary.json](pr362-calibration-spoken-policy-20261012/summary.json)
 - [timings.tsv](pr362-calibration-spoken-policy-20261012/timings.tsv)
+
+## Complete copulas and calibration implementation closure
+
+- [closure-final.log](pr362-copula-calibration-closure-20261012/closure-final.log)
+- [final-contract.log](pr362-copula-calibration-closure-20261012/final-contract.log)
+- [outcome.json](pr362-copula-calibration-closure-20261012/outcome.json)
+- [pytest.log](pr362-copula-calibration-closure-20261012/pytest.log)
+- [summary.json](pr362-copula-calibration-closure-20261012/summary.json)
+- [timings.tsv](pr362-copula-calibration-closure-20261012/timings.tsv)
+- [transport-final.log](pr362-copula-calibration-closure-20261012/transport-final.log)

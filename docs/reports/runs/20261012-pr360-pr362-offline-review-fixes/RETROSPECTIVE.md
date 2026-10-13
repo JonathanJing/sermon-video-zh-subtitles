@@ -103,3 +103,9 @@ commit `4d8cc087` 扩展明确列举的完整 copular endings（인데／이고�
 commit `f08720bf` 修复 Qwen 校准 transport 对变异文本直接合成 Arabic 数字、与正式 v2 Sino 路径不一致的问题。调用在合成及缓存 lookup 前使用 formal.policy_spoken_forms 与 job 冻结 normalization hash；v1 保留 raw，v2 request／record 绑定实际 spokenTextSha256，缓存读回核对 approved text／spoken binding。不存在的校准 unit 用独立合成单元查询同一策略，不把变异文本误当原 job 固定句。
 
 离线注入 Synth 的定向 transport 测试最终 2 passed、12 deselected（0.32 秒）：验证 v1 raw、v2 Sino、cache reuse、规则派生文本变化 cache miss 和 spoken hash 篡改拒绝，以及 primary ASR 合同。首轮单测 1 passed／13 deselected（0.18 秒），不相加。没有模型／Spark／部署或真实重新校准，完整 consumer 未重跑，旧真实校准不能外推新口播实现。新 head CI 单独核对，报告仍 draft。
+
+## 完整系词与校准调用闭包
+
+commit `57cb5840` 补齐明确枚举的现在／过去／将来／条件 copular endings（含이다／이었다及常用conjugations），保持完整后缀边界，普通词前缀不放开。校准／waiver implementation identity 纳入实际 driver→transport→formal spoken policy 调用路径，以及 policy activation 使用的 sermon_sentence_interpretation.json_sha256；ko helper／terminology／common 已在闭包。未把无关 batch／recovery imports 扩入整个仓库。每个新增文件 mutation 后 hash 改变、旧 calibration receipt 被拒，恢复字节后旧收据重新有效。
+
+开发首轮 1 failed、338 passed／34 subtests（1.49秒），原因是负例拼接后变成已支持的合法이라면；改为普通词尾상점。最终含activation helper闭包的三文件 339 passed／34 subtests（1.47秒），transport合同 2 passed／12 deselected（0.33秒），分别记录，不相加。此前339／34（1.67秒）为未加activation helper的中间阶段。全部离线，无模型／Spark／部署或真实重新校准；完整 consumer 未重跑，最终 CI 独立核验。报告保持 draft，默认diff check／脱敏验证通过。
