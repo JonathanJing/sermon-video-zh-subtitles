@@ -66,7 +66,8 @@ _COUNTED = re.compile(r"(?<![가-힣A-Za-z0-9])(?:" + "|".join(_COUNTED_NOUNS)
                       + r"(?:\s*" + _RANGE_PARTICLE + r")?\s*[)\]）］]?")
 
 
-_NUMERIC_TOKEN = re.compile(r"\d+(?:\s*[.,:．٫٬，]\s*\d+)+\s*(?:장|절)"
+_NUMERIC_TOKEN = re.compile(r"(?:\d+(?:\s*[.,:．٫٬，/／⁄∕+＋*＊×÷=＝^％%−]\s*\d+)+"
+                            r"|(?<![\d])[-+＋−]\s*\d+)\s*(?:장|절)"
                             + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절)"))
 
 
