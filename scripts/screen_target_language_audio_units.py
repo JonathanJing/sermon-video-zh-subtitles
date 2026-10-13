@@ -408,7 +408,7 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
         from scripts.language_review_plugins import auto_qc_text_common as rules
         from scripts.ko_spoken_numerals import _PARTICLES, _CONNECTOR
         books = "|".join(re.escape(name) for name in sorted(rules._KO_BOOK_CODES, key=len, reverse=True))
-        number = r"(?:\d{1,3}|[" + _KO_SINO_CHARS + r"]+)"
+        number = r"(?:\d{1,3}|[" + _KO_SINO_CHARS + r"]+(?:\s+[" + _KO_SINO_CHARS + r"]+)*)"
         def citation_pattern(book, counter):
             boundary = (r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|" + _CONNECTOR + r"?\s*"
                         + number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter + r")")
@@ -418,8 +418,17 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
         citation_number = re.compile(r"(" + number + r")(?:(\s*[-~–]\s*)(" + number + r"))?(\s*)(장|절|편)")
         def fold_number(match):
             first, dash, second, space, counter = match.groups()
-            left = sino_value(first)
-            right = sino_value(second) if second else None
+            def spaced_value(part):
+                compact = re.sub(r"\s+", "", part)
+                value = sino_value(compact)
+                # New spaced spellings must be one canonical positional number,
+                # never additive malformed units or a sequence of endpoints.
+                if value is not None and compact != part and not compact.isdigit():
+                    if rules.korean_sino(int(value)) != compact:
+                        return None
+                return value
+            left = spaced_value(first)
+            right = spaced_value(second) if second else None
             if left is None or second and right is None:
                 return match.group()
             return left + ((dash + right) if second else "") + space + counter
@@ -562,14 +571,14 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
     # Character tokens cannot distinguish 12-3 from 1-23. New Korean scoring
     # preserves complete digit runs and range structure only inside anchored citations.
     def number_structure(text):
-        from scripts.ko_spoken_numerals import _CITATIONS
+        from scripts.ko_spoken_numerals import _CITATIONS, _CONNECTOR
         def with_terminal_marker(match):
             marker = re.match(r"\s*((?:부터|에서|까지)(?:는|만|도)?)(?![가-힣A-Za-z])", text[match.end():])
             return match.group() + (marker.group(1) if marker else "")
         spans = sorted((match.start(), with_terminal_marker(match)) for pattern in _CITATIONS
                        for match in pattern.finditer(text))
         return [["-" if item in "-~–" else item
-                 for item in re.findall(r"\d+|[-~–]|장|절|편|(?:부터|에서|까지)(?:는|만|도)?", citation)]
+                 for item in re.findall(r"\d+|(?:까지)(?:는|만|도)?|" + _CONNECTOR + r"|장|절|편", citation)]
                 for _, citation in spans]
     structure_agrees = (scoring != SCORING or locale != "ko"
                         or number_structure(expected) == number_structure(recognized))
