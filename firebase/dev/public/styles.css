@@ -304,6 +304,36 @@ dialog.week-browser { margin:auto;padding:20px;max-height:85dvh;width:min(640px,
 @media(prefers-reduced-motion:reduce) { .cue-row { scroll-behavior:auto; } }
 #study-outline-inline-content p { font-size:17px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere; }
 #study-meditation-inline-content { font-size:17px;line-height:1.9;overflow-wrap:anywhere; }
+/* Page language is a header menu; sermon language stays visible beside the title in native names. */
+.page-language-control { position:relative; }
+#language-toggle .app-icon { width:18px;height:18px; }
+#language-toggle .menu-chevron { width:14px;height:14px;color:var(--muted); }
+#language-label { font-weight:650; }
+.page-language-popover { position:absolute;top:calc(100% + 8px);right:0;z-index:40;width:256px;padding:6px;border:1px solid var(--control-line);border-radius:12px;background:var(--surface);box-shadow:0 18px 42px var(--shadow); }
+.page-language-popover .menu-heading { display:grid;gap:3px;margin:0 0 4px;padding:8px 10px 10px;border-bottom:1px solid var(--line); }
+.page-language-popover .menu-heading strong { font-size:13px; }
+.page-language-popover .menu-heading span { font-size:11px;line-height:1.5;color:var(--muted); }
+.page-language-menu button { display:flex;width:100%;min-height:44px;align-items:center;gap:12px;padding:7px 10px;border:0;border-radius:8px;background:transparent;text-align:left;font-size:14px; }
+.page-language-menu button:hover,.page-language-menu button[aria-checked=true] { background:var(--selected);color:var(--selected-ink); }
+.page-language-menu .locale-code { width:26px;color:var(--teal);font-size:11px;font-weight:700; }
+.page-language-menu .locale-check { display:inline-flex;margin-left:auto;color:var(--teal); }
+.page-language-menu .locale-check .app-icon { width:18px;height:18px; }
+.sermon-language { display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:12px 0 0; }
+.sermon-language-label { display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted); }
+.sermon-language-label .app-icon { width:18px;height:18px;color:var(--teal); }
+.sermon-language-options { display:flex;flex-wrap:wrap;gap:8px; }
+.sermon-language-option { display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 16px;border:1px solid var(--control-line);border-radius:999px;background:var(--surface);color:var(--ink);font-size:15px;font-weight:600; }
+.sermon-language-option:hover { background:var(--surface-soft); }
+.sermon-language-option[aria-pressed=true] { padding-left:12px;border-color:var(--teal);background:var(--selected);color:var(--selected-ink); }
+.sermon-language-option small { font-size:11px;font-weight:400;color:var(--muted); }
+.sermon-language-check { display:inline-flex;color:var(--teal); }
+.sermon-language-check .app-icon { width:16px;height:16px; }
+@media(max-width:480px) {
+  #language-toggle { gap:4px;padding:8px; }
+  #language-toggle .menu-chevron { display:none; }
+  .page-language-popover { right:-52px;width:min(256px,calc(100vw - 24px)); }
+  .sermon-language-option { padding:8px 14px;font-size:14px; }
+}
 
 /* Dev-only controls share the production page's palette, rhythm and component grid. */
 .field-main { padding-bottom: 250px; }
