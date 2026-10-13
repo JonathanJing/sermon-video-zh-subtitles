@@ -254,7 +254,10 @@ class QwenPrimaryAsr(_Asr):
         weights = self.model_path / "model.safetensors"
         if not weights.is_file() or self.model_revision != f"model.safetensors:sha256:{file_sha256(weights)}":
             problems.append("live Qwen3-ASR weights differ from the screening's modelRevision")
-        if self.settings.get("implementationSha256") != file_sha256(SCREENER):
+        from scripts.screen_target_language_audio_units import SCORING, implementation_sha256
+        expected_implementation = (implementation_sha256() if self.settings.get("scoring") == SCORING
+                                   else file_sha256(SCREENER))
+        if self.settings.get("implementationSha256") != expected_implementation:
             problems.append("the screener changed since this screening; rescreen with the current code")
         if (self.settings.get("executionDevice"), self.settings.get("dtype")) != ("cuda:0", "bfloat16"):
             problems.append("screening ran on another device or precision")
@@ -455,18 +458,30 @@ class QwenTtsRender:
     def __call__(self, text: str, locale: str) -> bytes:
         if locale != self.job["targetLocale"]:
             raise ValueError("TTS render requested for another locale")
+        from scripts import render_formal_target_language_speech as formal
+        # Calibration mutations are not job units, but must use the same frozen
+        # normalization policy before dispatch and before deriving the cache key.
+        forms = formal.policy_spoken_forms({**self.job, "units": [
+            {"translationGroupId": "calibration", "text": text}]})
+        spoken = forms.get("calibration", text)
+        spoken_binding = ({"spokenTextSha256": _sha(spoken.encode("utf-8"))}
+                          if self.adapter.get("normalizationPolicySha256") == json_sha256(
+                              formal.SPOKEN_FORMS_NORMALIZATION_POLICY) else {})
         key = json_sha256({"text": text, "identity": self.identity, "settings": self.settings,
-                           "cacheNamespace": CACHE_NAMESPACE})
+                           "cacheNamespace": CACHE_NAMESPACE, **spoken_binding})
         folder = self.cache / key
         record_path, wav_path = folder / "record.json", folder / "unit.wav"
         if record_path.exists():
             record = json.loads(record_path.read_text(encoding="utf-8"))
+            if spoken_binding and (record.get("spokenTextSha256") != spoken_binding["spokenTextSha256"]
+                                   or record.get("textSha256") != _sha(text.encode("utf-8"))):
+                raise ValueError(f"Cached TTS render {key} has another spoken normalization binding")
             data = wav_path.read_bytes()
             if record.get("audioSha256") != _sha(data):
                 raise ValueError(f"Cached TTS render {key} changed after it was written")
             return data
         from scripts import render_formal_target_language_speech as formal
-        samples, rate = self._synthesizer()(text, self.adapter["languageParameter"], self.adapter["speakerKey"],
+        samples, rate = self._synthesizer()(spoken, self.adapter["languageParameter"], self.adapter["speakerKey"],
                                             seed=self.settings["seed"])
         folder.mkdir(parents=True, exist_ok=True)
         partial = folder / f".unit.{os.getpid()}.wav"
@@ -474,7 +489,7 @@ class QwenTtsRender:
         os.replace(partial, wav_path)
         data = wav_path.read_bytes()
         _write_once(record_path, {"textSha256": _sha(text.encode("utf-8")), "audioSha256": _sha(data),
-                                  "identity": self.identity, "settings": self.settings})
+                                  "identity": self.identity, "settings": self.settings, **spoken_binding})
         return data
 
 

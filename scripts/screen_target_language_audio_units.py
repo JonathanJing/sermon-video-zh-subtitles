@@ -39,13 +39,15 @@ SCHEMA = "sermon-target-language-audio-screening-v2"
 # unfolded scoring and stays reproducible so old receipts rescore exactly as recorded.
 SCORING_V3 = ("token-sequence-ratio-v3; short units (<4 tokens) must match exactly; "
               "no negation, number or protected name may differ; numbers and names keep their order")
-SCORING = ("token-sequence-ratio-v4; readings a listener cannot tell apart are folded first "
+SCORING_V4 = ("token-sequence-ratio-v4; readings a listener cannot tell apart are folded first "
            "(spelled numbers and digits, same-pinyin-same-tone Chinese characters in fixed contexts, "
            "Spanish diacritic function words, Korean spacing; digit strings are not positional numbers; "
            "a Korean native numeral before a Sino counter is not folded); "
            "short units (<4 tokens) must match exactly; "
            "no negation, number or protected name may differ; numbers and names keep their order")
-KNOWN_SCORINGS = (SCORING_V3, SCORING)
+SCORING = SCORING_V4.replace("token-sequence-ratio-v4", "token-sequence-ratio-v5") + (
+    "; book-anchored Korean scripture range endpoints are folded together")
+KNOWN_SCORINGS = (SCORING_V3, SCORING_V4, SCORING)
 MODEL = "Qwen/Qwen3-ASR-0.6B"
 BATCH_SIZES = (1, 2, 4, 8)
 
@@ -81,6 +83,29 @@ def file_sha(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+SCORING_IMPLEMENTATION_FILES = (
+    "scripts/screen_target_language_audio_units.py",
+    "scripts/ko_spoken_numerals.py",
+    "scripts/language_review_plugins/auto_qc_text_common.py",
+    "scripts/language_review_plugins/common.py",
+)
+
+
+def implementation_sha256(root: Path | None = None) -> str:
+    """Current scoring closure; v5 single-file receipts require explicit rescreening."""
+    root = root or Path(__file__).resolve().parents[1]
+    digest = hashlib.sha256()
+    for name in SCORING_IMPLEMENTATION_FILES:
+        digest.update(name.encode() + b"\0" + (root / name).read_bytes() + b"\0")
+    return digest.hexdigest()
+
+
+def current_scoring_identity_problems(settings: dict) -> list[str]:
+    if settings.get("scoring") == SCORING and settings.get("implementationSha256") != implementation_sha256():
+        return ["screening scoring implementation differs; rescreen with the current dependency closure"]
+    return []
 
 
 def tokens(value: str, locale: str) -> list[str]:
@@ -366,7 +391,7 @@ def _ko_native_pattern() -> re.Pattern:
                       r"(?=\s*(?:" + "|".join(_KO_NATIVE_COUNTERS) + "))")
 
 
-def _fold_korean(text: str) -> str:
+def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
     def sino_value(part: str) -> str | None:
         if part.isdigit():
             return part
@@ -376,6 +401,54 @@ def _fold_korean(text: str) -> str:
     def fraction(match: re.Match) -> str:
         parts = [sino_value(match.group(1)), sino_value(match.group(2))]
         return match.group() if None in parts else f"{parts[0]}분의 {parts[1]}"
+    if citation_ranges:
+        # Fold only a complete, book-anchored citation chain. In a single-counter
+        # range 삼-사장 the first one-syllable endpoint has no counter of its own.
+        # Do not grant that interpretation to bare words or ordinary counters.
+        from scripts.language_review_plugins import auto_qc_text_common as rules
+        from scripts.ko_spoken_numerals import _PARTICLES, _CONNECTOR, _RANGE_PARTICLE, _DELIMITERS
+        # ASR may space an already registered compound connector internally.
+        asr_connector = re.sub(r"(?<=[가-힣])(?=[가-힣])", lambda _: r"\s*", _CONNECTOR)
+        asr_terminal = re.sub(r"(?<=[가-힣])(?=[가-힣])", lambda _: r"\s*", _RANGE_PARTICLE)
+        def asr_book(name):
+            return r"\s*".join(re.escape(char) for char in name)
+        books = "|".join(asr_book(name) for name in sorted(rules._KO_BOOK_CODES, key=len, reverse=True))
+        number = r"(?:\d{1,3}|[" + _KO_SINO_CHARS + r"]+(?:\s+[" + _KO_SINO_CHARS + r"]+)*)"
+        def citation_pattern(book, counter, opening="", closing=""):
+            boundary = (r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|" + asr_connector + r"?\s*"
+                        + number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter + r")")
+            reference = number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter + boundary
+            return re.compile(r"(?<![가-힣A-Za-z0-9])(" + book + r")" + ((r"\s*" + re.escape(opening)) if opening else "") + r"(\s*" + reference
+                              + r"(?:\s*" + asr_connector + r"?\s*" + reference + r")*)"
+                              + r"(\s*" + asr_terminal + r")?" + ((r"\s*" + re.escape(closing)) if closing else ""))
+        citation_number = re.compile(r"(" + number + r")(?:(\s*[-~–]\s*)(" + number + r"))?(\s*)(장|절|편)")
+        def fold_number(match):
+            first, dash, second, space, counter = match.groups()
+            def spaced_value(part):
+                compact = re.sub(r"\s+", "", part)
+                value = str(int(compact)) if compact.isdigit() else sino_value(compact)
+                # New spaced spellings must be one canonical positional number,
+                # never additive malformed units or a sequence of endpoints.
+                if value is not None and compact != part and not compact.isdigit():
+                    if rules.korean_sino(int(value)) != compact:
+                        return None
+                return value
+            left = spaced_value(first)
+            right = spaced_value(second) if second else None
+            if left is None or second and right is None:
+                return match.group()
+            return left + ((dash + right) if second else "") + space + counter
+        citation_atom = re.compile(asr_connector + "|" + citation_number.pattern)
+        def fold_citation(match, opening="", closing=""):
+            # Consume complete connectors before numeric atoms: 이나/이든 and
+            # 부터만 must not turn their 이/만 syllables into numbers.
+            return re.sub(r"\s+", "", match.group(1)) + opening + citation_atom.sub(
+                lambda atom: re.sub(r"\s+", "", atom.group()) if atom.group(1) is None else fold_number(atom), match.group(2)) + re.sub(r"\s+", "", match.group(3) or "") + closing
+        for opening, closing in _DELIMITERS:
+            for book, counter in ((books, r"(?:장|절)"), (asr_book("시편"), r"(?:장|절|편)")):
+                text = citation_pattern(book, counter, opening, closing).sub(
+                    lambda match: fold_citation(match, opening, closing), text)
+
     text = _KO_FRACTION.sub(fraction, text)
     text = _KO_DIGITS_WITH_UNIT.sub(lambda m: str(int(m.group(1)) * _KO_SINO_BIG[m.group(2)]), text)
 
@@ -466,13 +539,13 @@ def _fold_spanish(text: str) -> str:
     return "".join(out)
 
 
-def fold_transcript(text: str, locale: str) -> str:
+def fold_transcript(text: str, locale: str, *, citation_ranges: bool = True) -> str:
     """One spelling for readings a listener cannot tell apart; see the notes above."""
     text = unicodedata.normalize("NFKC", text)
     if locale == "zh-Hans":
         return _fold_chinese(text)
     if locale == "ko":
-        return _fold_korean(text)
+        return _fold_korean(text, citation_ranges=citation_ranges)
     if locale == "es":
         return _fold_spanish(text)
     return text
@@ -489,9 +562,10 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
     scoring = SCORING if scoring is None else scoring
     if scoring not in KNOWN_SCORINGS:
         raise ValueError("Unknown ASR scoring identity: " + str(scoring))
-    folded = scoring == SCORING
+    folded = scoring != SCORING_V3
     if folded:
-        expected, recognized = fold_transcript(expected, locale), fold_transcript(recognized, locale)
+        expected, recognized = (fold_transcript(text, locale, citation_ranges=scoring == SCORING)
+                                for text in (expected, recognized))
     expected_tokens, actual_tokens = tokens(expected, locale), tokens(recognized, locale)
     matcher = difflib.SequenceMatcher(None, expected_tokens, actual_tokens, autojunk=False)
     similarity = round(matcher.ratio(), 6)
@@ -502,7 +576,21 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
                    in matcher.get_opcodes() if kind != "equal"]
     # Short units are more vulnerable to a high score hiding one material
     # missing word, so require exact normalized ASR for them.
-    passed = (similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
+    # Character tokens cannot distinguish 12-3 from 1-23. New Korean scoring
+    # preserves complete digit runs and range structure only inside anchored citations.
+    def number_structure(text):
+        from scripts.ko_spoken_numerals import _CITATIONS, _CONNECTOR, _RANGE_PARTICLE
+        def with_terminal_marker(match):
+            marker = re.match(r"\s*(" + _RANGE_PARTICLE + r")", text[match.end():])
+            return match.group() + (re.sub(r"\s+", "", marker.group(1)) if marker else "")
+        spans = sorted((match.start(), with_terminal_marker(match)) for pattern in _CITATIONS
+                       for match in pattern.finditer(text))
+        return [["-" if item in "-~–" else item
+                 for item in re.findall(r"\d+|" + _RANGE_PARTICLE + "|" + _CONNECTOR + r"|장|절|편", citation) if item != ","]
+                for _, citation in spans]
+    structure_agrees = (scoring != SCORING or locale != "ko"
+                        or number_structure(expected) == number_structure(recognized))
+    passed = (structure_agrees and similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
               and not any(key_word(row["expected"], locale) or key_word(row["recognized"], locale)
                           for row in differences)
               and protected_text_agrees(expected, recognized, locale, strip_punctuation=folded))
@@ -565,7 +653,7 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
             "speechJobJsonSha256": job_hash, "model": model, "modelRevision": model_revision,
             "batchSize": batch_size, "maxNewTokens": 2048,
             "dtype": "bfloat16", "executionDevice": "cuda:0",
-            "implementationSha256": file_sha(Path(__file__)),
+            "implementationSha256": implementation_sha256(),
             "runtime": copy.deepcopy(inference_identity or {}),
             "protocol": "formal-back-asr-batch-v1"}})
     require(len({row["identity"]["textGroupId"] for row in requests}) == len(requests),
@@ -642,7 +730,7 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
     asr_settings = {"protocol": "formal-back-asr-batch-v1", "model": model, "modelRevision": model_revision,
                     "language": locale, "batchSize": batch_size, "maxNewTokens": 2048, "dtype": "bfloat16",
                     "executionDevice": "cuda:0", "runtime": copy.deepcopy(inference_identity or {}),
-                    "implementationSha256": file_sha(Path(__file__)), "minSimilarity": min_similarity,
+                    "implementationSha256": implementation_sha256(), "minSimilarity": min_similarity,
                     "scoring": SCORING}
     receipt = {
         "schemaVersion": SCHEMA,

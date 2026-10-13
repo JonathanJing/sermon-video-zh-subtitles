@@ -92,7 +92,7 @@ class FoldTranscriptTests(unittest.TestCase):
                                 "Solo tienes vida y debes permanecer fiel cada día.", "es"))
         self.assertFalse(passes("今天我们看见教会门口有十二个人一直在等待牧师走出来。",
                                 "今天我们看见教会门口有十个人一直在等待牧师走出来。", "zh-Hans"))
-        self.assertIn("token-sequence-ratio-v4", subject.SCORING)
+        self.assertIn("token-sequence-ratio-v5", subject.SCORING)
 
 
 class ReviewCounterexampleTests(unittest.TestCase):
@@ -187,7 +187,7 @@ class ReviewCounterexampleTests(unittest.TestCase):
 
         def receipt(scoring):
             similarity, differences, passed = subject.score(text, heard, "zh-Hans", 0.88, scoring)
-            return {"targetLocale": "zh-Hans", "minSimilarity": 0.88, "asrSettings": {"scoring": scoring},
+            return {"targetLocale": "zh-Hans", "minSimilarity": 0.88, "asrSettings": {"scoring": scoring, "implementationSha256": subject.implementation_sha256()},
                     "results": [{"textGroupId": "g1", "targetTextSha256": hashlib.sha256(text.encode()).hexdigest(),
                                  "recognized": heard, "similarity": similarity, "differences": differences,
                                  "status": "pass" if passed else "requires_review"}]}
@@ -246,3 +246,65 @@ class Weekly20261011FixtureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
+    from pathlib import Path
+    import shutil
+    from scripts import machine_quality_waiver as waiver
+    root = Path(subject.__file__).resolve().parents[1]
+    for name in subject.SCORING_IMPLEMENTATION_FILES:
+        target = tmp_path / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / name, target)
+    initial = subject.implementation_sha256(tmp_path)
+    for name in subject.SCORING_IMPLEMENTATION_FILES:
+        path = tmp_path / name
+        original = path.read_bytes()
+        path.write_bytes(original + b"\n# changed dependency\n")
+        assert subject.implementation_sha256(tmp_path) != initial
+        path.write_bytes(original)
+    assert "scripts/ko_spoken_numerals.py" in waiver.IMPLEMENTATION_FILES
+    for name in waiver.IMPLEMENTATION_FILES:
+        target = tmp_path / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / name, target)
+    original_waiver = waiver.implementation_sha256(tmp_path)
+    helper = tmp_path / "scripts/ko_spoken_numerals.py"
+    helper.write_bytes(helper.read_bytes() + b"\n# changed rule\n")
+    assert waiver.implementation_sha256(tmp_path) != original_waiver
+    helper.write_bytes((root / "scripts/ko_spoken_numerals.py").read_bytes())
+    from tests.test_machine_quality_release_basis import calibration
+    receipt = calibration(implementationSha256=original_waiver)
+    assert waiver.calibration_problems(receipt, "ko", original_waiver, require_audio=True) == []
+    for name in ("scripts/render_formal_target_language_speech.py",
+                 "scripts/machine_qc_audio_transports.py", "scripts/run_machine_qc_audio_test.py",
+                 "scripts/sermon_sentence_interpretation.py"):
+        assert name in waiver.IMPLEMENTATION_FILES
+        path = tmp_path / name
+        original = path.read_bytes()
+        path.write_bytes(original + b"\n# changed calibration call path\n")
+        changed = waiver.implementation_sha256(tmp_path)
+        assert changed != original_waiver
+        assert "QC implementation changed since calibration" in waiver.calibration_problems(
+            receipt, "ko", changed, require_audio=True)
+        path.write_bytes(original)
+        assert waiver.calibration_problems(receipt, "ko", waiver.implementation_sha256(tmp_path), require_audio=True) == []
+
+
+def test_v5_rescore_rejects_stale_closure_before_scoring(monkeypatch):
+    import hashlib
+    from scripts import machine_quality_release_basis as basis
+    text = "요한복음 3장이 맞습니다."
+    candidate = {"groups": [{"translationGroupId": "g1", "targetText": text}]}
+    similarity, differences, passed = subject.score(text, "요한복음 삼장이 맞습니다.", "ko", 0.88)
+    receipt = {"targetLocale": "ko", "minSimilarity": 0.88,
+               "asrSettings": {"scoring": subject.SCORING, "implementationSha256": subject.implementation_sha256()},
+               "results": [{"textGroupId": "g1", "targetTextSha256": hashlib.sha256(text.encode()).hexdigest(),
+                            "recognized": "요한복음 삼장이 맞습니다.", "similarity": similarity,
+                            "differences": differences, "status": "pass" if passed else "requires_review"}]}
+    assert basis.screening_score_problems(receipt, candidate) == []
+    monkeypatch.setattr(subject, "implementation_sha256", lambda: "0" * 64)
+    assert "dependency closure" in basis.screening_score_problems(receipt, candidate)[0]
+    monkeypatch.setattr(subject, "score", lambda *a: (_ for _ in ()).throw(AssertionError("must not rescore stale closure")))
+    assert "dependency closure" in basis.screening_score_problems(receipt, candidate)[0]

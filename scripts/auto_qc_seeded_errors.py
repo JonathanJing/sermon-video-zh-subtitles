@@ -442,7 +442,8 @@ def drop_key_word(text: str, locale: str) -> str | None:
     return re.sub(r"\s{2,}", " ", text[:start] + text[end:]).strip()
 
 
-def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, max_trials: int = 30) -> dict:
+def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, max_trials: int = 30,
+                    normalization_policy_sha256: str | None = None) -> dict:
     """``asr(role, wav, text, locale) -> opinion`` (see ``target_audio_auto_qc.asr_opinion``)
     is the production ASR transport; without it wrong_sentence has no trials.
     ``render(text, locale) -> wav`` is the production TTS; dropped_key_word renders the
@@ -453,7 +454,7 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, ma
     units = [{key: value for key, value in unit.items() if key != "metrics"} for unit in units]
     decoded = [audio_qc.decode_pcm16(unit["wav"]) for unit in units]
     base = list(units)
-    clean = audio_qc.screen(base, locale)["results"]
+    clean = audio_qc.screen(base, locale, calibration_policy_sha256=normalization_policy_sha256)["results"]
     false_positives = sum(row["status"] == "fail" for row in clean)
     kinds, models = {}, {"primary": set(), "secondary": set()}
 
@@ -490,7 +491,7 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, ma
             else:
                 # The screen decodes the mutated bytes, as it would a real faulty render.
                 rows[index] = {**base[index], "wav": audio_qc.encode_pcm16(*mutate_audio(samples, rate, kind))}
-            result = audio_qc.screen(rows, locale)["results"][index]
+            result = audio_qc.screen(rows, locale, calibration_policy_sha256=normalization_policy_sha256)["results"][index]
             note_runtime(result)
             trials += 1
             new = set(result["issues"]) - set(clean[index]["issues"])
@@ -560,7 +561,9 @@ def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, 
     bound = text_qc.semantic_identity(identity) if call is not None else None
     inputs = calibration_inputs(groups, units, spoken_groups, policy, candidate, spoken_candidate)
     text = calibrate_text(groups, locale, policy=policy, call=call, max_trials=max_trials)
-    audio = calibrate_audio(units, locale, asr=asr, render=render, max_trials=max_trials) if units else None
+    audio = calibrate_audio(units, locale, asr=asr, render=render, max_trials=max_trials,
+                            normalization_policy_sha256=(render_identity or {}).get("synthesis", {}).get(
+                                "normalizationPolicySha256")) if units else None
     spoken = (calibrate_spoken(spoken_groups, locale, policy=policy, call=call, max_trials=max_trials)
               if spoken_groups else None)
     kinds = {f"text.{k}": v for k, v in text["kinds"].items()}

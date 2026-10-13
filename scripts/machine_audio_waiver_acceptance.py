@@ -60,6 +60,9 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
              and audio_qc.get("locale") == locale and audio_qc.get("humanApproval") is False
              and [row.get("groupId") for row in results] == [row["textGroupId"] for row in package["units"]],
              "Audio QC must cover every package unit in order")
+    from scripts.target_audio_auto_qc import duration_binding_problems
+    duration_problems = duration_binding_problems(audio_qc, speech_job)
+    _require(not duration_problems, "; ".join(duration_problems))
     accepted = acceptance_rules.check(human_acceptance, package=package, audio_qc=audio_qc)
     _require(not audio_qc.get("subtitleOnlyGroupIds")
              and all((row.get("status") == "pass" and row.get("nextAction") == "keep")

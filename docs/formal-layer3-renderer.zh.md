@@ -6,7 +6,7 @@
 
 ### 单元口播指令输入
 
-`--unit-instructions <JSON 文件>` 接受现有 `sermon-unit-delivery-instructions-v1` 输入，由 [renderer 的 unit_instructions](../scripts/render_formal_target_language_speech.py) 校验。它绑定完整 speech job 的 JSON 身份、locale 和已批准文字；不能借口播指令更改批准文本或授予音色／发布资格。可只列需要覆盖的单元，但 `units` 必须是非空数组。
+`--unit-instructions <JSON 文件>` 接受 `sermon-unit-delivery-instructions-v1` 或 `-v2` 输入，由 [renderer 的 unit_instructions](../scripts/render_formal_target_language_speech.py) 校验。它绑定完整 speech job 的 JSON 身份、locale 和已批准文字；不能借口播指令更改批准文本或授予音色／发布资格。可只列需要覆盖的单元，但 `units` 必须是非空数组。
 
 ```json
 {
@@ -29,13 +29,27 @@
 
 | 字段／规则 | 现有校验与拒绝条件 |
 | --- | --- |
-| `schemaVersion`、`targetLocale`、`speechJobJsonSha256` | 必须分别匹配上述版本、job locale 与完整 job 的 JSON hash；错版本、错语言或旧 job 绑定均拒绝 |
+| `schemaVersion`、`targetLocale`、`speechJobJsonSha256` | 必须分别为 v1 或 v2、job locale 与完整 job 的 JSON hash；错版本、错语言或旧 job 绑定均拒绝 |
 | `translationGroupId` | 必须存在于 job，且同一输入内不重复；未知或重复组拒绝 |
 | `approvedTextSha256` | 必须匹配该组原始批准 text 的 UTF-8 SHA-256；旧稿或任意改字拒绝 |
-| `instruction`、`operatorEvidence` | 均须为非空字符串，纯空白拒绝；instruction 去除首尾空白后使用。操作员依据不代替既有独立人审收据 |
-| `spokenText`（可选） | 仅 `zh-Hans` 支持，且须为非空字符串，通过现有 `_spoken_equivalent`；其他 locale 或不等价文字拒绝 |
+| `instruction`、`operatorEvidence` | 均须为非空字符串，纯空白拒绝；instruction 去除首尾空白后使用。v2 中带 `spokenText` 的行可省略 `instruction`，该单元沿用全局 `--instruct`。操作员依据不代替既有独立人审收据 |
+| `spokenText`（可选） | v1 仅 `zh-Hans`；v2 支持 `zh-Hans` 与 `ko`。须为非空字符串并通过 `_spoken_equivalent`；其他 locale 或不等价文字拒绝 |
 
 当前等价检查移除非字母数字字符，并将 `第3章第16节`、`3:16`、`第三章第十六节` 归一为相同形式，用于已确认的启示录 3:16 读法。这是既有检查的描述，不扩大任意换词、改数字、增删内容或一般经文读法的权限；批准文字仍原样保留，口播形式另绑定 `spokenTextSha256`。
+
+韩语等价检查只允许 [ko_spoken_numerals](../scripts/ko_spoken_numerals.py) 的 `ko-sino-chapter-verse-numerals-v2`：仅明确韩文圣经书名紧接的引用链，将 `장`、`절`（`시편` 另含 `편`）前的阿拉伯数字读作汉字词数字；例如 `하박국 2장` 读作 `하박국 이장`，`요한복음 3장16-17절` 连写也完整转换。书名锚定链还支持 `부터`／`에서` 连接的范围终点，例如 `요한복음 3장부터 4장까지` 和 `창세기 1장 1절에서 3절`；重复 counter 的 `-`／`~`／`–` 范围也支持；连接词后若出现普通正文则停止匹配。裸 `8장`、`16-17절` 不推断上下文，`사진 2장`、`영화 2편` 不转换；书名后的引用上下文不跨越普通文字。等价检查只忽略列明的停顿标点和空格，保留数字间小数点及分隔标点、`%`、金额、数学、比例及范围符号，不能删除可发声的符号。Qwen TTS 常把这些数字读成固有词（`여덟 장`、`두 장`），2026-10-11 周更和 10-12 片段测试的音频质检都因此判为需要修复。`3:16`、`3,000장`、`1.5장` 等不改。字幕、阅读文本和批准文字仍保留阿拉伯数字；ASR 初筛和音频质检把汉字词数字折回阿拉伯数字比较，固有词读法仍会被标出。
+
+### 规范化策略 v2：周更自动口播形式
+
+新的周更 Layer 3 使用仓库内的 [config/layer3-audio-operation-policies.json](../config/layer3-audio-operation-policies.json) 和 [config/layer3-adapters/](../config/layer3-adapters/) 的三个 adapter。其 normalization 策略为 v2 `exact_approved_text_with_registered_spoken_forms`，为 `ko` 登记上述规则 v2；规则 v1 的实验策略哈希不复用，新 adapter 的 normalization hash 随规则版本变化，旧实验 job 不静默迁移。adapter 的 `normalizationPolicySha256` 绑定它，`prepare_target_language_speech_job.py` 再把该哈希冻结进 speech job。renderer 发现 job 绑定 v2 时，按规则为韩语单元自动生成口播形式，不需要 `--unit-instructions` 文件，因此调度器无需额外步骤；恢复导出与统一音频 adapter 使用同一推导。显式指令文件仍可为同一单元加 `instruction`，但给出不同 `spokenText` 会被拒绝。`zh-Hans`、`es` 在 v2 下没有登记规则，合成文字不变。
+
+已绑定 v1 `exact_human_approved_target_text_no_rewrite` 的旧 job 保持原文与声音身份，不原地迁移。旧 job 的显式韩语 Sino spokenText override 不在 synthesisIdentity 内，无法绑定对应预算／压缩／时长 QC，因此 renderer 与统一 adapter 在合成或冻结 plan 前拒绝该组合；旧 v1 instruction-only 配音指令及其他语言原有角色保留。需要韩语改读时，先按 v2 normalization 重新冻结新 job；下面的命令只为该新 job 生成与 policy 完全相同的可选 v2 指令文件，再传给 `--unit-instructions`（没有需要改读的单元时输出 `no_change` 且不写文件）：
+
+```sh
+.venv/bin/python scripts/ko_spoken_numerals.py --job <韩语 speech job.json> --out <新的 unit-instructions.json>
+```
+
+改读会改变受影响单元的声音身份，需在新的 render 目录重新合成。提前配音（speculative）renderer 仍只接受 v1 策略。
 
 列出的单元以其 `instruction` 覆盖全局 `--instruct`；未列出的单元继续使用全局指令。指令或口播形式变化时用新 job／render 目录，重新生成输入绑定，保留原 intent、commit、WAV 和收据。batch>1 的窗口身份包含邻组输入：一个单元的指令变化可能使整个窗口的声音身份变化，不承诺只重合成该单元。
 
@@ -106,3 +120,15 @@ docker run --rm --gpus all --ipc=host --read-only --network none \
 ```
 
 中文已有全局人审能力时可省略 `--clip-voice-capability`。以上命令是路径模板；2026-09-23 的真实结果见 [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md)。`build_target_language_audio_package.py` 以 renderer 的 manifest 构建最高为 `candidate` 的 Layer 3 包。三语均有完整 Qwen3-ASR 筛查收据，机器结果仍为 `requires_review`。`review_target_language_audio.py prepare` 从候选包和同一整轨／单元 hash 的筛查收据生成待审工作表；只在真人完成全文 1 倍速播放、视频同步及每个 ASR 疑点的显式裁决后，`approve` 才能产出 `human_reviewed` 包与 v2 人审收据。Dev staging 继续核对该收据及原机器筛查，不把机器状态改写为通过。
+
+韩文引用的 ASR 初筛以 scoring v5 按书名锚定的完整引用链折叠汉字词数字，含单 counter 范围首端、连写章/节及 Psalm `편`；普通词内不放宽。旧 v4/v3 收据按原评分语义重评分，不自动升级。新实现改变初筛身份，旧 #361/#363 的真实音频 QC 不验证此 v5；新规则的真实模型/音频/校准尚未重跑。口播规则仍为本 PR 未合并的规则 v2，normalization policy hash 不另改；ASR runtime scoring 和实现 hash 与口播 policy hash 分别绑定。
+
+引用 counter 后须为词边界、相邻完整引用或列明且完整的韩文助词后缀（含 `에는`、`입니다` 等）；`3장면`、`2편지`、`2편의점` 不转换，不从任意 Hangul 前缀推断引用。scoring v5 仅在书名锚定引用片段内（含紧接的范围终结标记）额外比较有序完整数字串、范围标记与引用 counter/范围助词结构，拒绝 `12-3` 与 `1-23` 的字符摊平等价及范围连接符插删；旧 v4/v3 路径保持原样。
+
+实现身份：当前 screening v5 的 implementation hash 覆盖 screen、ko_spoken_numerals、auto_qc_text_common 与 common；单文件 hash 的旧实验 v5 收据需重新筛查，不能重标。QC/calibration/waiver 的实现闭包也含该韩语 helper。统一 audio adapter 对韩语 registered-normalization-v2（含与 policy 一致的显式 unit-instructions-v2），把 helper／共享规则加入 inspect plan code hash；依赖变化后 execute 在 dispatch 前拒绝旧 plan。exact-text v1 未使用新指令时不加这些依赖；renderer 的实际 spokenTextSha256 声音身份仍保留。合法完整助词 `이`／`이라고` 在生成和 ASR 引用边界采用相同规则。
+
+引用链连接词由 generator 与 ASR 共用 `_CONNECTOR`：原有连接、三种横线及列明的 `이나`／`이든` 替代连接、`에서부터`／`부터는`／`부터만`／`부터도` 范围连接，允许空格或连写，但仍不跨正文、不应用于普通计数。
+
+范围终点支持列明的完整叠加助词／系词（例如 `까지입니다`、`까지였어요`、`까지라고`、`까지의`、`까지를`），仍拒普通词后缀。明确书名紧接引用时也支持配对 `()`／`[]` 及全角括号；引用链须完整位于同一对括号内，不由不配对括号或跨正文推断口播规则。ASR 在同一书名引用范围内折叠这些形式。
+
+校准 TTS、语速拟合／预算及传入冻结 speech job 的音频时长 QC 使用同一 job-bound registered spoken form；v1 或未提供 job 的旧 QC 调用保留原文计数。音频 QC 的 ASR/text hash 仍绑定批准文本，口播长度仅用于实际合成时长判定。校准实现闭包包含 formal renderer、transport、driver 与 policy activation helper；旧校准不能作为新实现的当前证据。
