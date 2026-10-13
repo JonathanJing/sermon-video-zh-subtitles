@@ -42,3 +42,11 @@
 报告使用 export_run_digest.py 导出并脱敏；仅清理导出日志副本的行末空白，不改变原运行文件或失败语义。manifest 的 sha256／bytes 保留来源含义，规范化副本另记 exportedCopy.sha256／bytes／normalization。
 
 主 Agent 负责最终 #374 head、CI 终态及基线晋升；收到最终证据后在本报告追加对应收据，不覆盖旧阶段。正式生产负责人须在最终实施身份下完成实际产物重新校准和新 waiver，再独立核对发布授权及目标。此报告不授权新增模型调用或部署。
+
+## 最终边界修复与组合树追加验证
+
+#369 分数／直接数学运算保护绑定 `e1c26b39`：两个数字规则文件 619 passed，1.92 秒。直接分数、数学运算和一元带符号数量保护完整表达式及其尾链；支持的 chapter／dash／tilde 范围仍按原合同处理，冻结 v2 不重标。该轮无模型或部署；619 与此前 635 阶段的测试范围不同，不相加。
+
+五 PR 整合最终源码 head `5cbe68443d89e547769b5bd0a1cfa741aafbae36` 的离线定向组合测试为 **693 passed／3 subtests，41.77 秒，exit 0**。本轮最终测试范围与完整实现身份见 `20261013-five-pr-final-validation/summary.json`；旧 `97835708` 的 647／3 只作旧阶段证据，不外推到新代码。当前 QC implementation SHA256 为 `8daff00357a597d704d262c8e734d2aa086e3104bc8bd557a6b83bc08399e6d3`，scoring hash 由同一 summary 记录；代码最终 hash、模型实际运行身份与 waiver 产物 hash 是不同证据。
+
+本次追加时 #374 CI 为 14 queued／1 success／1 skipped，尚未终态，不能称全部 CI 通过或整合已合并。backlog `DEV-QC-001` 保持 waiting_evidence：最终实施下的真实校准、新 artifact-bound waiver 与正式发布仍未执行；用户此前未推送本地组合的真实运行不补作最终身份验收。报告继续 draft，不合并。

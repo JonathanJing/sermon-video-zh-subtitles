@@ -1,6 +1,6 @@
 # Run digest 20261013-qc-five-pr-review-and-merge-validation
 
-Generated 2026-10-13T14:53:23+00:00. Redacted copies only; source hashes are in manifest.json.
+Generated 2026-10-13T14:57:03+00:00. Redacted copies only; source hashes are in manifest.json.
 
 ## 20261013-pr367-screening-review
 
@@ -81,3 +81,30 @@ Timings `timings.tsv`:
 | stage | status | seconds |
 |---|---|---|
 | combined_targeted_pytest | pass | 39.32 |
+
+## 20261013-pr369-fraction-guard
+
+Source: `/private/tmp/sermon-fix-369/artifacts/run/20261013-pr369-fraction-guard`
+
+- outcome `outcome.json`: **pass** exit ? (? → ?)
+
+Timings `timings.tsv`:
+
+| stage | status | elapsedSeconds |
+|---|---|---|
+| pytest | pass | 1.92 |
+
+Not copied: 1 .md
+
+## 20261013-five-pr-final-validation
+
+Source: `~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-five-pr-final-validation`
+
+- outcome `outcome.json`: **pass** exit 0 (? → ?)
+- summary `summary.json`: **pass**
+
+Timings `timings.tsv`:
+
+| stage | status | seconds |
+|---|---|---|
+| final_combined_pytest | pass | 41.77 |

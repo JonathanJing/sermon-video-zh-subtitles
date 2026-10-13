@@ -28,6 +28,18 @@
       "label": "20261013-five-pr-merge-validation",
       "source": "~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-five-pr-merge-validation",
       "skipped": {}
+    },
+    {
+      "label": "20261013-pr369-fraction-guard",
+      "source": "/private/tmp/sermon-fix-369/artifacts/run/20261013-pr369-fraction-guard",
+      "skipped": {
+        ".md": 1
+      }
+    },
+    {
+      "label": "20261013-five-pr-final-validation",
+      "source": "~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-five-pr-final-validation",
+      "skipped": {}
     }
   ],
   "files": [
@@ -258,6 +270,69 @@
       "bytes": 57,
       "truncated": false,
       "sha256": "4031efc82275957ca39681c0bcbdf5991b34376fdab6c3ffcf1f927067401729",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr369-fraction-guard",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 199,
+      "truncated": false,
+      "sha256": "513209e96fa0a16c79ccea3ef19284c519ac07c94c9e77c56d78341c5ff4dbb2",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr369-fraction-guard",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 740,
+      "truncated": false,
+      "sha256": "c1f8f9760490394d706526c737c2891bf396abc3bf0d7cd0681b68dd81df3395",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr369-fraction-guard",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 45,
+      "truncated": false,
+      "sha256": "b60034887600c8a0b7b895b9a895672260ce58051396dcfbca0a9da781904c5e",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-final-validation",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 507,
+      "truncated": false,
+      "sha256": "fe623ab07577430872270896789f073a50ee987a9f5392f3eace78b6860f37e0",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-final-validation",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 837,
+      "truncated": false,
+      "sha256": "958445983b8926fd36215c50bf36a7821791115f9d21bfbfd2d9dc81408903e4",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-final-validation",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 765,
+      "truncated": false,
+      "sha256": "853dcea8766268fc18d08e3f7fda49d8bce0656cea2dfe986195fc384ec81cf6",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-five-pr-final-validation",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 54,
+      "truncated": false,
+      "sha256": "8a0e0742bd204a8b77ebbd2d7df0dd5f4ac4b9bed7e323ce89fa5bbb09b23744",
       "redactions": {}
     }
   ],
