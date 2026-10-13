@@ -32,12 +32,14 @@ INSTRUCTIONS_SCHEMA = "sermon-unit-delivery-instructions-v2"
 # Ordinary counters (photos 장, films 편) and bare numbers remain unchanged.
 _NUMBER = r"\d{1,3}(?:\s*[-~–]\s*\d{1,3})?\s*"
 _BOOK = "|".join(re.escape(name) for name in sorted(_KO_BOOK_CODES, key=len, reverse=True) if name != "시편")
-_CHAIN = r"(?:\s*(?:과|와|및|,|부터|에서|[-~–])?\s*" + _NUMBER + r"{counter})*(?![\d])"
+_PARTICLES = r"(?:입니다|이라면|이든|처럼|마저|조차|마다|에서는|에서도|에서부터|부터는|까지는|에는|에도|으로는|으로도|에서|부터|까지|으로|이나|과|와|및|을|를|의|은|는|에|도|만|로)(?![가-힣A-Za-z])"
+_COUNTER_END = r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|" + _NUMBER + r"(?:장|절|편))"
+_CHAIN = r"(?:\s*(?:과|와|및|,|부터|에서|[-~–])?\s*" + _NUMBER + r"{counter}" + _COUNTER_END + r")*(?![\d])"
 _CITATIONS = (
     re.compile(r"(?<![가-힣A-Za-z0-9])(?:" + _BOOK + r")\s*" + _NUMBER
-               + r"(?:장|절)" + _CHAIN.replace("{counter}", r"(?:장|절)")),
+               + r"(?:장|절)" + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절)")),
     re.compile(r"(?<![가-힣A-Za-z0-9])시편\s*" + _NUMBER
-               + r"(?:장|절|편)" + _CHAIN.replace("{counter}", r"(?:장|절|편)")),
+               + r"(?:장|절|편)" + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절|편)")),
 )
 _REFERENCE = re.compile(r"(\d{1,3})(?:(\s*[-~–]\s*)(\d{1,3}))?(\s*)(장|절|편)")
 

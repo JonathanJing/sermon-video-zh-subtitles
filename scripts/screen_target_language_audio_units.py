@@ -386,7 +386,10 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
         books = "|".join(re.escape(name) for name in sorted(rules._KO_BOOK_CODES, key=len, reverse=True))
         number = r"(?:\d{1,3}|[" + _KO_SINO_CHARS + r"]+)"
         def citation_pattern(book, counter):
-            reference = number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter
+            from scripts.ko_spoken_numerals import _PARTICLES
+            boundary = (r"(?=$|[^가-힣A-Za-z0-9]|" + _PARTICLES + r"|(?:과|와|및|부터|에서)?\s*"
+                        + number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter + r")")
+            reference = number + r"(?:\s*[-~–]\s*" + number + r")?\s*" + counter + boundary
             return re.compile(r"(?<![가-힣A-Za-z0-9])(" + book + r")(\s*" + reference
                               + r"(?:\s*(?:과|와|및|,|부터|에서|[-~–])?\s*" + reference + r")*)")
         def fold_citation(match):
@@ -522,7 +525,21 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
                    in matcher.get_opcodes() if kind != "equal"]
     # Short units are more vulnerable to a high score hiding one material
     # missing word, so require exact normalized ASR for them.
-    passed = (similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
+    # Character tokens cannot distinguish 12-3 from 1-23. New Korean scoring
+    # preserves complete digit runs and range structure only inside anchored citations.
+    def number_structure(text):
+        from scripts.ko_spoken_numerals import _CITATIONS
+        def with_terminal_marker(match):
+            marker = re.match(r"(?:부터|에서|까지)(?![가-힣A-Za-z])", text[match.end():])
+            return match.group() + (marker.group() if marker else "")
+        spans = sorted((match.start(), with_terminal_marker(match)) for pattern in _CITATIONS
+                       for match in pattern.finditer(text))
+        return [["-" if item in "-~–" else item
+                 for item in re.findall(r"\d+|[-~–]|장|절|편|부터|에서|까지", citation)]
+                for _, citation in spans]
+    structure_agrees = (scoring != SCORING or locale != "ko"
+                        or number_structure(expected) == number_structure(recognized))
+    passed = (structure_agrees and similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
               and not any(key_word(row["expected"], locale) or key_word(row["recognized"], locale)
                           for row in differences)
               and protected_text_agrees(expected, recognized, locale, strip_punctuation=folded))

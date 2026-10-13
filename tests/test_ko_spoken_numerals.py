@@ -152,3 +152,59 @@ def test_adjacent_and_psalm_citations_generate_fold_and_score(approved):
     for numeral in ["삼", "십육", "십칠", "일", "이", "이십칠"]:
         if numeral in spoken:
             assert not screen.score(approved, spoken.replace(numeral, "구십구"), "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("text", ["요한복음3장면", "요한복음 3장면", "시편2편지", "시편 2편지", "요한복음 3장16절벽", "시편 2편의점", "요한복음 3장도리", "요한복음 3장만두"])
+def test_counter_prefix_words_are_not_scripture_references(text):
+    expected = text
+    assert subject.spoken_form(text) == expected
+
+
+@pytest.mark.parametrize("approved, wrong", [
+    ("요한복음 12-3장", "요한복음 일-이십삼장"),
+    ("요한복음 1-23장", "요한복음 십이-삼장"),
+    ("요한복음 12-3장", "요한복음 백이십삼장"),
+    ("요한복음 12-3장", "요한복음 12,3장"),
+    ("요한복음 3장부터 4장까지", "요한복음 삼장부터 사장"),
+    ("요한복음 3장부터 4장", "요한복음 삼장부터 사장까지"),
+    ("요한복음 3장 4장", "요한복음 삼장-사장"),
+    ("요한복음 12-3장", "요한복음 십이 삼장"),
+    ("요한복음 12장-3장", "요한복음 십이장-삼절"),
+    ("요한복음 3장12-3절", "요한복음 삼장일-이십삼절"),
+    ("시편 12-3편", "시편 일-이십삼편"),
+])
+def test_v5_rejects_changed_numeric_segments_and_range_structure(approved, wrong):
+    from scripts import screen_target_language_audio_units as screen
+    assert not screen.score(approved, wrong, "ko", 0.88)[2]
+    assert screen.score(approved, subject.spoken_form(approved), "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("particle", ["을", "의", "은", "에", "에서", "부터", "까지", "으로", "과", "도", "에는", "입니다", "마저", "조차", "이든", "처럼", "이라면", "마다"])
+def test_explicit_counter_particles_remain_supported(particle):
+    text = f"요한복음 3장{particle} 읽습니다."
+    assert subject.spoken_form(text) == f"요한복음 삼장{particle} 읽습니다."
+
+
+def test_digit_segmentation_guard_does_not_rewrite_v4_receipts():
+    from scripts import screen_target_language_audio_units as screen
+    assert not screen.score("요한복음 12-3장", "요한복음 1-23장", "ko", 0.88)[2]
+    assert screen.score("요한복음 12-3장", "요한복음 1-23장", "ko", 0.88, screen.SCORING_V4)[2]
+    assert screen.score("요한복음 12-3장", "요한복음 1-23장", "ko", 0.88, screen.SCORING_V3)[2]
+
+
+@pytest.mark.parametrize("connector", ["부터", "에서", "과", "와", "및"])
+@pytest.mark.parametrize("book,counter", [("요한복음", "장"), ("시편", "편")])
+def test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned(connector, book, counter):
+    from scripts import screen_target_language_audio_units as screen
+    approved = f"{book} 3{counter}{connector}4{counter}까지"
+    spoken = subject.spoken_form(approved)
+    assert not any(char.isdigit() for char in spoken)
+    assert screen.fold_transcript(spoken, "ko") == approved
+    assert screen.score(approved, spoken, "ko", 0.88)[2]
+    assert not screen.score(approved, spoken.replace("사", "오"), "ko", 0.88)[2]
+
+
+@pytest.mark.parametrize("approved, recognized", [("COVID-19", "COVID19"), ("사진 12장", "사진 1 2장"), ("영화 12편", "영화 1 2편")])
+def test_v5_structure_guard_does_not_change_non_citation_v4_behavior(approved, recognized):
+    from scripts import screen_target_language_audio_units as screen
+    assert screen.score(approved, recognized, "ko", 0.88) == screen.score(approved, recognized, "ko", 0.88, screen.SCORING_V4)
