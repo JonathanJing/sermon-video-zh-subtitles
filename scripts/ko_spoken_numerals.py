@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Korean spoken form for chapter, verse and psalm numbers.
 
-In explicit Bible-book citations Korean reads 장, 절 and Psalm 편 with Sino-Korean numerals
-(8장 = 팔 장, 하박국 2장 = 이 장). The TTS voice often reads Arabic digits with
+Korean reads chapter and verse numbers with Sino-Korean numerals (8장 = 팔 장,
+하박국 2장 = 이 장): in explicit Bible-book citations (장, 절 and Psalm 편), and for a bare
+N장 or N절 in sermon prose ("look at chapter 8"), unless it counts objects (사진 2장). The TTS voice often reads Arabic digits with
 native numerals instead (여덟 장, 두 장), which changes the meaning a listener
 hears. ``spoken_form`` spells those numbers out in Sino-Korean for the dub only;
 the approved text, captions and reading text keep the digits.
@@ -25,7 +26,8 @@ except ModuleNotFoundError:  # run as scripts/ko_spoken_numerals.py
     import sermon_sentence_interpretation as identity
     from language_review_plugins.auto_qc_text_common import korean_sino, _KO_BOOK_CODES
 
-RULE = "ko-sino-chapter-verse-numerals-v2"
+RULE_V2 = "ko-sino-chapter-verse-numerals-v2"
+RULE = "ko-sino-chapter-verse-numerals-v3"
 INSTRUCTIONS_SCHEMA = "sermon-unit-delivery-instructions-v2"
 # Only an explicit Bible book anchors a citation. Keep subsequent adjacent
 # chapter/verse/psalm numbers in that chain; never infer context across prose.
@@ -51,19 +53,76 @@ _CITATIONS = tuple(
     for opening, closing in _DELIMITERS
 )
 _REFERENCE = re.compile(r"(\d{1,3})(?:(\s*[-~–]\s*)(\d{1,3}))?(\s*)(장|절|편)")
+# v3 (2026-10-13, user decision): a sermon names chapters without the book ("8장의 맨 첫 절")
+# and the voice then reads native numerals, so bare N장 and N절 are chapter and verse too.
+# Bare N편 stays (films, poems), and so does a count right after a counted-object noun.
+_COUNTED_NOUNS = ("사진", "종이", "편지", "카드", "표", "티켓", "지폐", "쪽지", "그림", "접시", "수건", "담요", "이불", "페이지")
+_BARE = re.compile(r"(?<![\d.,:．٫٬，A-Za-z가-힣])(?<!(?:" + "|".join(n for n in _COUNTED_NOUNS if len(n) == 2) + r") )"
+                   r"(?<!(?:" + "|".join(n for n in _COUNTED_NOUNS if len(n) == 1) + r") )"
+                   + _NUMBER + r"(?:장|절)" + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절)"))
+_COUNTED = re.compile(r"(?<![가-힣A-Za-z0-9])(?:" + "|".join(_COUNTED_NOUNS)
+                      + r")(?:은|는|이|가|을|를|도|만|의|에서|에는|에도|으로|로)?\s*[(\[（［]?\s*" + _NUMBER
+                      + r"(?:장|절|편)" + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절|편)")
+                      + r"(?:\s*" + _RANGE_PARTICLE + r")?\s*[)\]）］]?")
+
+
+_NUMERIC_TOKEN = re.compile(r"(?:\d+(?:\s*[.,:．٫٬，/／⁄∕+＋*＊×÷=＝^％%−]\s*\d+)+"
+                            r"|(?<![\d])[-+＋−]\s*\d+)\s*(?:장|절)"
+                            + _COUNTER_END + _CHAIN.replace("{counter}", r"(?:장|절)"))
+
+
+# A bare counter after an arbitrary noun is ambiguous (서류 2장, not chapter 2).
+# Keep the supported sermon entry points explicit rather than growing a noun blacklist.
+_BARE_INTRODUCERS = {"그래서", "그러므로", "그리고", "이제", "먼저", "본문"}
+
+
+def bare_context_allowed(text: str, start: int, end: int) -> bool:
+    prefix = text[:start].rstrip()
+    if not prefix or prefix[-1] in ".!?。！？;；":
+        return True
+    # Opening quotation/bracket may delimit a chapter, but does not erase a noun.
+    prefix = prefix.rstrip("(（[［\"'“‘ ")
+    if not prefix or prefix[-1] in ".!?。！？;；":
+        return True
+    previous = re.search(r"([가-힣A-Za-z]+)$", prefix)
+    word = previous.group(1) if previous else ""
+    if word in _BARE_INTRODUCERS or word in _KO_BOOK_CODES:
+        return True
+    # These existing sermon forms explicitly identify a verse/chapter context.
+    return bool(re.match(r"의\s+맨\s+첫\s+절", text[end:])) or (word == "뒤" and text[start:end].endswith("절"))
+
+
+def bare_citation_matches(text: str):
+    protected = [match.span() for pattern in (_COUNTED, _NUMERIC_TOKEN) for match in pattern.finditer(text)]
+    return [match for match in _BARE.finditer(text)
+            if not any(start <= match.start() < end for start, end in protected)
+            and bare_context_allowed(text, match.start(), match.end())]
+
+
+def spoken_form_v2(text: str) -> str:
+    """Frozen book-anchored v2 behavior for existing normalization-policy jobs."""
+    return _spoken_form(text, bare_chapters=False)
 
 
 def spoken_form(text: str) -> str:
+    return _spoken_form(text, bare_chapters=True)
+
+
+def _spoken_form(text: str, *, bare_chapters: bool) -> str:
     def spell(match: re.Match) -> str:
         first, dash, second, space, counter = match.groups()
         numbers = korean_sino(int(first)) + (dash + korean_sino(int(second)) if second else "")
         return numbers + space + counter
     for citation in _CITATIONS:
         text = citation.sub(lambda match: _REFERENCE.sub(spell, match.group()), text)
-    return text
+    if not bare_chapters:
+        return text
+    matches = {match.span() for match in bare_citation_matches(text)}
+    return _BARE.sub(lambda match: _REFERENCE.sub(spell, match.group())
+                     if match.span() in matches else match.group(), text)
 
 
-def equivalent(approved: str, spoken: str) -> bool:
+def equivalent(approved: str, spoken: str, *, rule: str = RULE) -> bool:
     """True when ``spoken`` is ``approved`` with only this rule applied, ignoring punctuation and spacing."""
     def normalized(value: str) -> str:
         # A punctuation allowlist keeps audible symbols such as %, +, $, /,
@@ -76,21 +135,26 @@ def equivalent(approved: str, spoken: str) -> bool:
         return "".join(char for index, char in enumerate(value)
                        if numeric_separator(index, char)
                        or (not char.isspace() and char not in punctuation))
-    return normalized(spoken_form(approved)) == normalized(spoken) and spoken_form(approved) != approved
+    spell = {RULE_V2: spoken_form_v2, RULE: spoken_form}[rule]
+    return normalized(spell(approved)) == normalized(spoken) and spell(approved) != approved
 
 
 def build(job: dict) -> dict | None:
     """The unit instructions for a Korean speech job, or ``None`` when no unit changes."""
     if job.get("targetLocale") != "ko":
         raise ValueError("Sino chapter numerals apply to Korean speech jobs only")
+    old_policy = {"version": "v2", "policy": "exact_approved_text_with_registered_spoken_forms",
+                  "spokenForms": {"ko": RULE_V2}}
+    frozen_v2 = (job.get("adapter") or {}).get("normalizationPolicySha256") == identity.json_sha256(old_policy)
+    spell, rule = (spoken_form_v2, RULE_V2) if frozen_v2 else (spoken_form, RULE)
     units = []
     for unit in job["units"]:
-        spoken = spoken_form(unit["text"])
+        spoken = spell(unit["text"])
         if spoken != unit["text"]:
             units.append({"translationGroupId": unit["translationGroupId"],
                           "approvedTextSha256": hashlib.sha256(unit["text"].encode()).hexdigest(),
                           "spokenText": spoken,
-                          "operatorEvidence": f"{RULE}: deterministic Sino-Korean reading of chapter/verse numbers"})
+                          "operatorEvidence": f"{rule}: deterministic Sino-Korean reading of chapter/verse numbers"})
     if not units:
         return None
     return {"schemaVersion": INSTRUCTIONS_SCHEMA, "targetLocale": "ko",
