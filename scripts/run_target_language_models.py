@@ -1374,8 +1374,8 @@ def main() -> None:
                       if args.group_plan else None)
     require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
     rule_preflight.preflight(request, policy, args.plugin, plan)
+    # Translation and review call a remote API or the local Codex CLI: no Spark session.
     from scripts import production_spark_admission as spark_admission
-    spark_admission.require_session()
     if args.budget_config is not None:
         require(args.model_backend == "openai-api" and args.group_plan is None
                 and args.revision_brief is None and args.reuse_from is None
@@ -1404,7 +1404,7 @@ def main() -> None:
         from scripts.codex_layer2_transport import CodexLayer2Transport
         transport = CodexLayer2Transport(receipts_dir=args.out_dir / "_cli_calls")
         api_key = ""
-    caller = spark_admission.SessionBoundCaller(transport)
+    caller = spark_admission.SessionBoundCaller(transport, requires_spark=False)
     evidence = run_accounted(
         source, anchor, policy, args.out_dir, api_key,
         caller,

@@ -4,6 +4,8 @@
 
 2026-10-05 用户修正：页面制作拥有高优先级，不等待其他任务自然空闲。先保存其他任务状态，再暂停入口并中断竞争工作负载；不支持检查点的任务允许保存参数和产物后中断，结束后从已有产物重跑。未知 API 调用先对账，不自动重发。此处“恢复”包括服务重启和从已有产物重新执行，不能宣称任意 GPU 进程都能恢复到同一条指令。
 
+2026-10-13 用户决定：**只调 API 的环节不占 Spark 会话**。Layer 2 翻译与复核、文本质检（回译评判）、Codex Supervisor、学习笔记、英文机器审核、阅读版本、旧页面文本与源音频转写都只调远程 API 或 Mac 本地 Codex CLI，不再检查独占会话，也不再为每次调用建立 Spark job hold（`SessionBoundCaller(..., requires_spark=False)`）。这些环节进行时 Spark 上的服务照常运行；进程异常退出也不会让会话进入 `reconcile_required`。GPU 环节不变：TTS 渲染、配音初筛 ASR、音频质检、MFA 和本地模型调用仍要求会话及 job hold。周更只在 Spark 环节期间 begin 会话，结束后 finish。
+
 ## 当前发现
 
 核验主机 `achillesjing@192.168.1.152`：Docker 所有容器均已停止，但 GPU 上仍有 `llama-server.service` 的 llama-server 进程，报告 35,695 MiB（约 34.9 GiB）。主机 MemAvailable 为 76,301,090,816 bytes（约 71.1 GiB）。这些是调查时刻的读数，不是未来开跑保证。
@@ -57,7 +59,7 @@ begin 部分失败按逐项 intent 对账；能确认未启动本轮作业且变
 
 ## 接入与验收
 
-当前[下一轮准备报告](reports/20261005-next-concurrency-test-preparation.zh.md)的 ready 是夹具及依赖预检；采用本设计后还需 exclusive_ready。在任何付费 API／CLI 调用前建立会话，避免译审完成才发现 Spark 被占用。代码接入改变冻结实现身份时，新建准备目录及远端快照，保留旧 mock 和收据。
+当前[下一轮准备报告](reports/20261005-next-concurrency-test-preparation.zh.md)的 ready 是夹具及依赖预检；采用本设计后还需 exclusive_ready。仅在 Spark/GPU 阶段前建立会话；API／CLI 阶段不检查或占用 Spark。代码接入改变冻结实现身份时，新建准备目录及远端快照，保留旧 mock 和收据。
 
 开发顺序：只读 inventory／恢复计划 → 持久会话及 unit/container adapters → 高优先级抢占／admission adapter → 各真实入口 session 核验 → 单次真实 stop/restore 验收。只加本仓库 token 而不封闭 Spark Agent 派发，不满足独占条件。
 
@@ -66,3 +68,9 @@ begin 部分失败按逐项 intent 对账；能确认未启动本轮作业且变
 统一 log 记录 sessionId、runIds、host/bootId、状态与耗时、MemAvailable 前后及稳定采样、GPU PID 归属、stop/restore intent/readback、unknown 和最终恢复状态；不记录凭据。独占准备和常驻模型恢复耗时与制作墙钟、模型推理吞吐分别统计。
 
 关联：[计算策略](local-production-compute-policy.zh.md)、[并发设计](production-concurrency-expansion-design.zh.md)。
+
+### API／CLI 未知结果
+
+旧阅读稿、笔记及通用 API helper 使用当前 accounting 输出目录下的 `api-cli-outcomes`，调用前持久化 started，返回值持久化后才交还调用方。此目录内调用串行；started/unknown 会阻止后续 dispatch，重启、换 key 或新 accounting run ID 不会解除。缺少 accounting context 在 dispatch 前拒绝。新运行使用新输出目录，不复用历史 cache；未知运行不能通过换目录重试。canonical Layer 2、source budget 与 Supervisor 保留各自原有预算和核对 gate。
+
+核对已收到的真实 terminal response 后，用 `python -m scripts.api_cli_outcomes --directory <accounting>/api-cli-outcomes --request-sha256 <receipt中的hash> --response <observed-response.json> --evidence <evidence.json>` 录入；evidence 必须含非空 `terminalResponseEvidence` 来源指针。该命令不调用模型、不批准预算，也不提供“清空未知后重发”功能；没有可确认的响应就保持阻断。收据只记录请求 hash，不记录凭据或 prompt；响应仅留在 ignored 运行目录。

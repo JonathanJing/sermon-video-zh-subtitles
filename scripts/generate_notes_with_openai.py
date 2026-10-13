@@ -601,7 +601,7 @@ def request_openai_notes(
 ) -> dict[str, Any]:
     from scripts.production_spark_admission import SessionBoundCaller
     return SessionBoundCaller(_request_openai_notes, verifier=session_verifier,
-        purpose="production-study-notes")(payload, api_key, timeout_seconds)
+        purpose="production-study-notes", requires_spark=False)(payload, api_key, timeout_seconds)
 
 
 def _request_openai_notes(payload, api_key, timeout_seconds):
