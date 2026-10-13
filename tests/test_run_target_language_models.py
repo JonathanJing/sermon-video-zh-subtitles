@@ -113,6 +113,100 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         return {"id": f"response-{len(self.calls)}", "model": payload["model"],
                 "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(result)}}]}
 
+    def test_standalone_recovers_durable_outcome_before_raw_marker_without_redispatch(self):
+        from unittest.mock import patch
+        from scripts.production_spark_admission import SessionBoundCaller
+        f=self.fixture
+        wrapped=SessionBoundCaller(self.fake_call,requires_spark=False,
+                                   outcome_directory=self.out/'accounting'/'api-cli-outcomes')
+        save=subject.save_new
+        def fail_raw(path, value, **kwargs):
+            if str(path).endswith('group-0001-astra.raw.json'):
+                raise OSError('injected crash after durable API return')
+            return save(path,value,**kwargs)
+        with patch.object(subject,'save_new',side_effect=fail_raw):
+            with self.assertRaisesRegex(OSError,'injected crash'):
+                subject.run(f.source,f.anchor,f.policy,self.out,'fixture-key',wrapped,plugin_path=f.plugin_path)
+        self.assertEqual(len(self.calls),1)
+        self.assertTrue((self.out/'group-0001-astra.started.json').exists())
+        self.assertFalse((self.out/'group-0001-astra.raw.json').exists())
+        subject.run(f.source,f.anchor,f.policy,self.out,'fixture-key',wrapped,plugin_path=f.plugin_path)
+        self.assertEqual(len(self.calls),4)
+        self.assertTrue((self.out/'group-0001-astra.raw.json').exists())
+
+    def test_standalone_returned_receipt_from_another_request_is_refused(self):
+        from unittest.mock import patch
+        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import api_cli_outcomes as outcomes
+        f=self.fixture; root=self.out/'accounting'/'api-cli-outcomes'
+        wrapped=SessionBoundCaller(self.fake_call,requires_spark=False,outcome_directory=root)
+        save=subject.save_new
+        def fail_raw(path,value,**kwargs):
+            if str(path).endswith('group-0001-astra.raw.json'): raise OSError('injected crash')
+            return save(path,value,**kwargs)
+        with patch.object(subject,'save_new',side_effect=fail_raw):
+            with self.assertRaises(OSError):
+                subject.run(f.source,f.anchor,f.policy,self.out,'fixture-key',wrapped,plugin_path=f.plugin_path)
+        response_row=json.loads(next(root.glob('*/outcome.json')).read_text())
+        other_payload=copy.deepcopy(self.calls[0]);other_payload['messages'][1]['content'] += ' changed request'
+        wrong=outcomes.request_identity(self.fake_call,('fixture-key',other_payload),{},wrapped.purpose)
+        outcomes._write(root/wrong/'outcome.json',{**response_row,'requestSha256':wrong})
+        marker=self.out/'group-0001-astra.started.json';row=json.loads(marker.read_text())
+        row['apiCliRequestSha256']=wrong;marker.write_text(json.dumps(row))
+        with self.assertRaisesRegex(ValueError,'marker request binding changed'):
+            subject.run(f.source,f.anchor,f.policy,self.out,'fixture-key',wrapped,plugin_path=f.plugin_path)
+        self.assertEqual(len(self.calls),1)
+
+    def test_explicit_prior_root_recovers_paid_raw_into_new_run_without_redispatch(self):
+        from unittest.mock import patch
+        from scripts.production_spark_admission import SessionBoundCaller
+        prior=self.out.parent/'prior';prior_root=prior/'accounting'/'api-cli-outcomes'
+        old=SessionBoundCaller(self.fake_call,requires_spark=False,outcome_directory=prior_root)
+        prompt={'instruction':'Return synthetic JSON.', 'input':{'translationGroupId':self.fixture.evidence['groups'][0]['translationGroupId']}}
+        old_cache=prior/'group-0001-astra.json';save=subject.save_new
+        def crash(path,value,**kwargs):
+            if path==old_cache.with_suffix('.raw.json'):raise OSError('injected crash')
+            return save(path,value,**kwargs)
+        with patch.object(subject,'save_new',side_effect=crash):
+            with self.assertRaises(OSError):
+                subject._model_call('translator',prompt,self.fixture.policy,old_cache,'fixture-key',old)
+        marker=old_cache.with_suffix('.started.json')
+        current=SessionBoundCaller(self.fake_call,requires_spark=False,
+            outcome_directory=self.out/'accounting'/'api-cli-outcomes')
+        with self.assertRaisesRegex(ValueError,'marker binding changed'):
+            subject.recover_api_outcome(marker,old_cache.with_suffix('.raw.json'),caller=current)
+        before=next(prior_root.glob('*/outcome.json')).read_bytes()
+        subject.require_reconciled_requests(prior,caller=current,allowed_prior_roots=[prior])
+        reusable=subject.reusable_cache(prior,'group-0001','astra')
+        destination=self.out/'group-0001-astra.json'
+        def crash_after_raw(path,value,**kwargs):
+            if path==destination:raise OSError('injected crash after destination raw')
+            return save(path,value,**kwargs)
+        with patch.object(subject,'save_new',side_effect=crash_after_raw):
+            with self.assertRaisesRegex(OSError,'destination raw'):
+                subject._model_call('translator',prompt,self.fixture.policy,destination,
+                                   'fixture-key',current,reuse_from=reusable)
+        destination_raw=destination.with_suffix('.raw.json')
+        raw_before=destination_raw.read_bytes();mtime_before=destination_raw.stat().st_mtime_ns
+        saved=subject._model_call('translator',prompt,self.fixture.policy,destination,
+                                  'fixture-key',current,reuse_from=reusable)
+        self.assertEqual(destination_raw.read_bytes(),raw_before)
+        self.assertEqual(destination_raw.stat().st_mtime_ns,mtime_before)
+        destination.unlink()
+        changed_raw=json.loads(raw_before);changed_raw['response']['id']='tampered'
+        destination_raw.write_text(json.dumps(changed_raw))
+        with self.assertRaisesRegex(ValueError,'destination raw response changed'):
+            subject._model_call('translator',prompt,self.fixture.policy,destination,
+                               'fixture-key',current,reuse_from=reusable)
+        self.assertEqual(saved['result']['translationGroupId'],prompt['input']['translationGroupId'])
+        self.assertEqual(len(self.calls),1)
+        self.assertEqual(next(prior_root.glob('*/outcome.json')).read_bytes(),before)
+        changed=json.loads(marker.read_text());changed['apiCliOutcomeRoot']=str(self.out.parent/'unapproved')
+        marker.write_text(json.dumps(changed))
+        with self.assertRaisesRegex(ValueError,'marker binding changed'):
+            subject.recover_api_outcome(marker,self.out/'unapproved.raw.json',caller=current,allowed_prior_roots=[prior])
+        self.assertEqual(len(self.calls),1)
+
     def simulation_configuration_fixture(self):
         from scripts.codex_layer2_transport import TEST_CONFIGURATION
         policy = copy.deepcopy(self.fixture.policy)

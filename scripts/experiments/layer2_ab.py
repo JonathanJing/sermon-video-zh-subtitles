@@ -195,8 +195,19 @@ def _call_with_receipt(role: str, prompt: dict[str, Any], policy: dict[str, Any]
                              "responseUnconfirmed": True})
             raise
 
+    effective_caller = measured
+    from scripts.production_spark_admission import SessionBoundCaller
+    if isinstance(caller, SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
+        # Expose the durable gate to _model_call so it binds its started marker
+        # and can recover a returned outcome before rejecting that marker.
+        from scripts import api_cli_outcomes
+        measured.execution_identity = api_cli_outcomes.execution_binding(caller.caller, {'api_key': key})
+        # Equal reviewer prompts in separate arms are independent trials.
+        # Bind the operation as well as payload so durable replay cannot collapse them.
+        effective_caller = SessionBoundCaller(measured, purpose=f"{caller.purpose}:{path.parent.name}:{path.stem}",
+            requires_spark=False, outcome_directory=caller.outcome_directory)
     try:
-        saved = production._model_call(role, prompt, policy, path, key, measured)
+        saved = production._model_call(role, prompt, policy, path, key, effective_caller)
     finally:
         if observed and not receipt_path.exists():
             production.save_new(receipt_path, observed)
@@ -396,6 +407,10 @@ def run(source: dict[str, Any], anchor: dict[str, Any], base_policy: dict[str, A
                 "translatorInstruction": TRANSLATOR_INSTRUCTION,
                 "reviewerInstruction": REVIEWER_INSTRUCTION}
     migration = _check_run_identity(out, identity)
+    if caller is sermon_pipeline.chat_json:
+        from scripts.production_spark_admission import SessionBoundCaller
+        caller = SessionBoundCaller(caller, purpose="layer2-ab",
+                                    requires_spark=False, outcome_directory=out / "api-cli-outcomes")
     comparison_path = out / "comparison.json"
     if comparison_path.exists() and producer._load(comparison_path).get("status") == "shadow_only":
         return producer._load(comparison_path)
@@ -602,7 +617,7 @@ def main() -> None:
     key = os.environ.get("OPENAI_API_KEY")
     production.require(bool(key), "OPENAI_API_KEY is not configured")
     result = run(source, anchor, policy, args.out_dir, key,
-                 lambda api_key, payload: sermon_pipeline.chat_json(api_key, payload, retries=1),
+                 sermon_pipeline.chat_json,
                  custom_plan=plan, plugin_path=args.plugin,
                  max_api_calls=args.max_api_calls, max_groups=args.max_groups)
     print(json.dumps(result, ensure_ascii=False))

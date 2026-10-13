@@ -406,7 +406,7 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
         # range 삼-사장 the first one-syllable endpoint has no counter of its own.
         # Do not grant that interpretation to bare words or ordinary counters.
         from scripts.language_review_plugins import auto_qc_text_common as rules
-        from scripts.ko_spoken_numerals import _PARTICLES, _CONNECTOR, _RANGE_PARTICLE, _DELIMITERS
+        from scripts.ko_spoken_numerals import _PARTICLES, _CONNECTOR, _RANGE_PARTICLE, _DELIMITERS, bare_context_allowed, _NUMERIC_TOKEN
         # ASR may space an already registered compound connector internally.
         asr_connector = re.sub(r"(?<=[가-힣])(?=[가-힣])", lambda _: r"\s*", _CONNECTOR)
         asr_terminal = re.sub(r"(?<=[가-힣])(?=[가-힣])", lambda _: r"\s*", _RANGE_PARTICLE)
@@ -448,6 +448,14 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
             for book, counter in ((books, r"(?:장|절)"), (asr_book("시편"), r"(?:장|절|편)")):
                 text = citation_pattern(book, counter, opening, closing).sub(
                     lambda match: fold_citation(match, opening, closing), text)
+        # v3 spoken rules also emit bare chapter/verse ranges. Fold their first
+        # endpoint under the same conservative context, never arbitrary counters.
+        protected = [match.span() for match in _NUMERIC_TOKEN.finditer(text)]
+        text = citation_pattern("", r"(?:장|절)").sub(
+            lambda match: fold_citation(match)
+            if bare_context_allowed(text, match.start(), match.end())
+            and not any(start <= match.start() < end for start, end in protected)
+            else match.group(), text)
 
     text = _KO_FRACTION.sub(fraction, text)
     text = _KO_DIGITS_WITH_UNIT.sub(lambda m: str(int(m.group(1)) * _KO_SINO_BIG[m.group(2)]), text)
@@ -579,12 +587,14 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
     # Character tokens cannot distinguish 12-3 from 1-23. New Korean scoring
     # preserves complete digit runs and range structure only inside anchored citations.
     def number_structure(text):
-        from scripts.ko_spoken_numerals import _CITATIONS, _CONNECTOR, _RANGE_PARTICLE
+        from scripts.ko_spoken_numerals import _CITATIONS, _CONNECTOR, _RANGE_PARTICLE, bare_citation_matches
         def with_terminal_marker(match):
             marker = re.match(r"\s*(" + _RANGE_PARTICLE + r")", text[match.end():])
             return match.group() + (re.sub(r"\s+", "", marker.group(1)) if marker else "")
-        spans = sorted((match.start(), with_terminal_marker(match)) for pattern in _CITATIONS
-                       for match in pattern.finditer(text))
+        anchored = [match for pattern in _CITATIONS for match in pattern.finditer(text)]
+        bare = [match for match in bare_citation_matches(text)
+                if not any(book.start() <= match.start() < book.end() for book in anchored)]
+        spans = sorted((match.start(), with_terminal_marker(match)) for match in anchored + bare)
         return [["-" if item in "-~–" else item
                  for item in re.findall(r"\d+|" + _RANGE_PARTICLE + "|" + _CONNECTOR + r"|장|절|편", citation) if item != ","]
                 for _, citation in spans]
