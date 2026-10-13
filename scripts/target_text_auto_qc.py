@@ -69,6 +69,12 @@ COMPARE_SYSTEM = ("Compare an ORIGINAL English sermon passage with an independen
                   "every sentence, claim, number, ordinal or sequence marker (\"first\", \"second\") and "
                   "name in BACK-TRANSLATION must be in ORIGINAL itself; anything present only in CONTEXT "
                   "or in neither is a major addition. "
+                  "A spoken discourse marker in ORIGINAL that addresses the listeners without making a "
+                  "claim (\"you know\", \"you see\", \"I mean\") may be rendered by the target "
+                  "language's usual audience address; reading it back as \"as everyone knows\" or "
+                  "\"everyone knows that\" is at most minor. Judge the rest of the sentence as usual; "
+                  "a claim that something is commonly known, where ORIGINAL has no such marker, is still "
+                  "a major addition. "
                   "status is fail when any major issue exists. Return JSON matching the schema.")
 SPOKEN_COMPARE_SYSTEM = (
     "Compare an ORIGINAL English sermon passage with an independent BACK-TRANSLATION of its "
