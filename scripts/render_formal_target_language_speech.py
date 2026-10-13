@@ -81,7 +81,20 @@ EXACT_TEXT_POLICY = "exact_human_approved_target_text_no_rewrite"
 SPOKEN_FORMS_NORMALIZATION_POLICY = {
     "version": "v2", "policy": "exact_approved_text_with_registered_spoken_forms",
     "spokenForms": {"ko": ko_spoken_numerals.RULE}}
-SPOKEN_FORM_RULES = {ko_spoken_numerals.RULE: ("ko", ko_spoken_numerals.spoken_form)}
+FROZEN_V2_NORMALIZATION_POLICY = {
+    "version": "v2", "policy": "exact_approved_text_with_registered_spoken_forms",
+    "spokenForms": {"ko": ko_spoken_numerals.RULE_V2}}
+REGISTERED_NORMALIZATION_POLICIES = (FROZEN_V2_NORMALIZATION_POLICY, SPOKEN_FORMS_NORMALIZATION_POLICY)
+SPOKEN_FORM_RULES = {
+    ko_spoken_numerals.RULE_V2: ("ko", ko_spoken_numerals.spoken_form_v2),
+    ko_spoken_numerals.RULE: ("ko", ko_spoken_numerals.spoken_form)}
+
+
+def registered_normalization_policy(job):
+    policy_sha = (job.get("adapter") or {}).get("normalizationPolicySha256")
+    return next((policy for policy in REGISTERED_NORMALIZATION_POLICIES
+                 if identity.json_sha256(policy) == policy_sha), None)
+
 BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_full_window_v2"
 BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
 LEGACY_BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_missing_units_v1"
@@ -142,7 +155,7 @@ def validate_operation_policies(policies: dict[str, Any], adapter: dict[str, Any
                 for name, field in expected),
             "Audio operation policy content differs from speech adapter/job hashes")
     require(policies["normalization"].get("policy") == EXACT_TEXT_POLICY
-            or policies["normalization"] == SPOKEN_FORMS_NORMALIZATION_POLICY,
+            or policies["normalization"] in REGISTERED_NORMALIZATION_POLICIES,
             "Renderer requires exact approved text policy")
 
 
@@ -557,11 +570,12 @@ def _generation_batch_matches(commit: dict[str, Any], intent: dict[str, Any]) ->
     return policy in {intent.get("batchSeedPolicy"), LEGACY_BATCH_SEED_POLICY, BATCH_SEED_POLICY}
 
 
-def _spoken_equivalent(approved: str, spoken: str, locale: str = "zh-Hans") -> bool:
+def _spoken_equivalent(approved: str, spoken: str, locale: str = "zh-Hans", *,
+                       spoken_rule: str = ko_spoken_numerals.RULE) -> bool:
     """Allow only punctuation and the confirmed Revelation 3:16 reading (zh-Hans), or the
     Sino-Korean reading of chapter and verse numbers (ko: 8장 spoken 팔장)."""
     if locale == "ko":
-        return ko_spoken_numerals.equivalent(approved, spoken)
+        return ko_spoken_numerals.equivalent(approved, spoken, rule=spoken_rule)
     def normalized(value: str) -> str:
         value = re.sub(r"第3章第16节|3:16|第三章第十六节", "第三章第十六节", value)
         return "".join(char for char in value if char.isalnum())
@@ -570,10 +584,10 @@ def _spoken_equivalent(approved: str, spoken: str, locale: str = "zh-Hans") -> b
 
 def policy_spoken_forms(job: dict[str, Any]) -> dict[str, str]:
     """Spoken forms the job's normalization policy gives its units, by group."""
-    if (job.get("adapter") or {}).get("normalizationPolicySha256") != identity.json_sha256(
-            SPOKEN_FORMS_NORMALIZATION_POLICY):
+    policy = registered_normalization_policy(job)
+    if policy is None:
         return {}
-    rule = SPOKEN_FORMS_NORMALIZATION_POLICY["spokenForms"].get(job["targetLocale"])
+    rule = policy["spokenForms"].get(job["targetLocale"])
     if rule is None:
         return {}
     locale, spell = SPOKEN_FORM_RULES[rule]
@@ -598,6 +612,8 @@ def unit_instructions(job: dict[str, Any], path: Path | None) -> dict[str, dict[
 
 def _file_unit_instructions(job: dict[str, Any], path: Path) -> dict[str, dict[str, str]]:
     document = package.read_object(path)
+    registered = registered_normalization_policy(job)
+    spoken_rule = (registered or {}).get("spokenForms", {}).get("ko", ko_spoken_numerals.RULE)
     # v1: every row carries a delivery instruction; only zh-Hans may add a spoken form.
     # v2: a row may carry only a spoken form, which keeps the run's default instruction,
     # and ko may give the Sino reading of chapter and verse numbers.
@@ -622,15 +638,16 @@ def _file_unit_instructions(job: dict[str, Any], path: Path) -> dict[str, dict[s
         if spoken is not None:
             locales = ("zh-Hans", "ko") if version == "sermon-unit-delivery-instructions-v2" else ("zh-Hans",)
             require(job["targetLocale"] in locales and isinstance(spoken, str) and spoken.strip()
-                    and _spoken_equivalent(allowed[group]["text"], spoken, job["targetLocale"]),
+                    and _spoken_equivalent(allowed[group]["text"], spoken, job["targetLocale"], spoken_rule=spoken_rule),
                     "Spoken form changes approved words or unsupported locale")
             if job["targetLocale"] == "ko":
                 # An external override is not part of the legacy synthesis identity.
                 # Duration budgets/QC consume the frozen policy, so only its identical
                 # registered form can be used on this path.
-                require((job.get("adapter") or {}).get("normalizationPolicySha256")
-                        == identity.json_sha256(SPOKEN_FORMS_NORMALIZATION_POLICY),
+                require(registered_normalization_policy(job) is not None,
                         "Korean spoken overrides require a new job frozen with normalization-v2; legacy jobs stay raw")
+                require(policy_spoken_forms(job).get(group) == spoken.strip(),
+                        "Unit instruction spoken form differs from the normalization policy's form")
         result[group] = {} if instruction is None else {"instruction": instruction.strip()}
         if spoken is not None:
             result[group]["spokenText"] = spoken.strip()
