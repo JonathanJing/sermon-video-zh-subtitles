@@ -179,15 +179,24 @@ def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False
         response=root/'responses'/(jobs._digest(operation)+'-'+fingerprint+'.json')
         if not response.exists():response=root/'responses'/(fingerprint+'.json')
         saved=json.loads(response.read_text())
-        if (jobs._digest(saved)!=row.get('responseSha256') or saved.get('identitySha256')!=fingerprint
+        if (not isinstance(saved, dict) or not isinstance(saved.get('response'), dict)
+                or jobs._digest(saved)!=row.get('responseSha256') or saved.get('identitySha256')!=fingerprint
                 or jobs._digest(saved.get('requestIdentity'))!=fingerprint
                 or saved.get('reservationBounds')!=row.get('bounds')):
             raise ValueError('damaged paid receipt; reconcile before dispatch')
-        if version in source.SETTLED_LEDGERS and not source._valid_settlement(row.get('settlement'),version=version):
+        if version in source.SETTLED_LEDGERS and (not source._valid_settlement(row.get('settlement'),version=version)
+                or row['settlement'] != source.saved_settlement(saved)):
             raise ValueError('invalid paid settlement')
         reused=row.get('settlement',{}).get('costStatus')=='reused'
-        if as_reuse_source and (reused or 'reusedFrom' in saved):
-            raise ValueError('reuse requires a direct paid source root')
+        if as_reuse_source:
+            paid_settlement = source.saved_settlement(saved)
+            if reused or 'reusedFrom' in saved or paid_settlement.get('costStatus') == 'reused':
+                raise ValueError('reuse requires a direct paid source root')
+            # Legacy v1/v2 rows have no row settlement. Mirror runtime reuse:
+            # do not recompute away a malformed explicitly recorded settlement.
+            if (not source._valid_settlement(paid_settlement, version=source.LEDGER_V3) or
+                    'settlement' in saved and not source._valid_settlement(saved['settlement'], version=source.LEDGER_V3)):
+                raise ValueError('invalid paid source settlement; reconcile before dispatch')
         if reused:
             provenance=saved.get('reusedFrom',{})
             if (version!=source.LEDGER_V4 or saved.get('settlement')!=row['settlement']
@@ -304,6 +313,13 @@ def check_budget(plan_dir: Path):
                                     reuse_roots=admitted.get('reuseBudgetRoots',[]))
                 for root in admitted.get('reuseBudgetRoots',[]):
                     inspect_source_root(Path(root),required=True,as_reuse_source=True)
+                if 'reuseSources' in stage:
+                    references = stage['reuseSources']
+                    if (not isinstance(references, list)
+                            or [reference['budgetRoot'] for reference in references] != admitted.get('reuseBudgetRoots', [])):
+                        raise ValueError('Selected reuse source roots changed')
+                    for reference in references:
+                        planner.inspect_reuse_source_reference(reference, context)
             elif stage["stage"] == "layer2":
                 execution = Path(stage["execution"])
                 if sha256(execution) != stage["executionSha256"]:

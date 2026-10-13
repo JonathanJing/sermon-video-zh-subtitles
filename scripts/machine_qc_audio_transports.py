@@ -33,6 +33,7 @@ The fake transports exist for plumbing tests only; their identities name a
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -331,6 +332,29 @@ def _multipart(fields: list[tuple[str, str]], wav: bytes) -> tuple[bytes, str]:
     return b"".join(parts) + delimiter + b"--\r\n", "multipart/form-data; boundary=" + boundary
 
 
+# Coordinate only identical requests in this process. SourceBudget remains the
+# durable authority: waiters reread its result, including an unknown outcome;
+# they never dispatch a retry or copy an in-memory success around the ledger.
+_SECONDARY_FLIGHTS_LOCK = threading.Lock()
+_SECONDARY_FLIGHTS = {}
+
+
+@contextmanager
+def _secondary_flight(root: Path, operation: str):
+    key = (str(Path(root).resolve()), operation)
+    with _SECONDARY_FLIGHTS_LOCK:
+        flight = _SECONDARY_FLIGHTS.setdefault(key, [threading.Lock(), 0])
+        flight[1] += 1
+    try:
+        with flight[0]:
+            yield
+    finally:
+        with _SECONDARY_FLIGHTS_LOCK:
+            flight[1] -= 1
+            if not flight[1]:
+                del _SECONDARY_FLIGHTS[key]
+
+
 class OpenAiTranscribeSecondary(_Asr):
     """``gpt-transcribe`` as the stronger second opinion, through the selected OpenAI Project.
 
@@ -403,25 +427,26 @@ class OpenAiTranscribeSecondary(_Asr):
                     "runtime": {key: self.route[key] for key in ("environment", "projectId", "credentialAlias")},
                     "qcContextSha256": json_sha256(getattr(self.budget, "qc_context", None))}
         operation = "judge." + json_sha256(identity)
-        cached = self.budget.returned(operation, identity)
-        from scripts import sermon_workflow_jobs as jobs
-        reusable = self.budget._reusable(operation, jobs._digest(identity)) if not cached and self.budget.reuse_roots else None
-        charged = not cached and reusable is None
-        with self._calls_lock:
-            if charged and self.calls >= self.max_calls:
-                raise ValueError(f"secondary ASR call cap reached ({self.max_calls}); raise --max-api-calls deliberately")
-            self.calls += charged
-        response = self.budget.call(operation=operation, identity=identity, bounds=prepared["budgetBounds"],
-                                    request=body, api_key=os.environ["OPENAI_API_KEY"],
-                                    content_type=content_type, endpoint=TRANSCRIBE_URL)
-        if charged:
-            recorded = json.loads((self.budget.root / "source-budget.json").read_text())["requests"][operation]
-            if recorded.get("settlement", {}).get("costStatus") == "reused":
-                with self._calls_lock:
-                    self.calls -= 1
-        if not isinstance(response, dict) or not isinstance(response.get("text"), str):
-            raise ValueError("gpt-transcribe returned no transcript text")
-        return response["text"].strip()
+        with _secondary_flight(self.budget.root, operation):
+            cached = self.budget.returned(operation, identity)
+            from scripts import sermon_workflow_jobs as jobs
+            reusable = self.budget._reusable(operation, jobs._digest(identity)) if not cached and self.budget.reuse_roots else None
+            charged = not cached and reusable is None
+            with self._calls_lock:
+                if charged and self.calls >= self.max_calls:
+                    raise ValueError(f"secondary ASR call cap reached ({self.max_calls}); raise --max-api-calls deliberately")
+                self.calls += charged
+            response = self.budget.call(operation=operation, identity=identity, bounds=prepared["budgetBounds"],
+                                        request=body, api_key=os.environ["OPENAI_API_KEY"],
+                                        content_type=content_type, endpoint=TRANSCRIBE_URL)
+            if charged:
+                recorded = json.loads((self.budget.root / "source-budget.json").read_text())["requests"][operation]
+                if recorded.get("settlement", {}).get("costStatus") == "reused":
+                    with self._calls_lock:
+                        self.calls -= 1
+            if not isinstance(response, dict) or not isinstance(response.get("text"), str):
+                raise ValueError("gpt-transcribe returned no transcript text")
+            return response["text"].strip()
 
     def uncertain(self) -> list[str]:
         # Preserve the old transport's unresolved markers for explicit recovery;

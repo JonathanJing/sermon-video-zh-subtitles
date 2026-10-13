@@ -62,6 +62,8 @@ IMPLEMENTATION_FILES = (
     "scripts/run_machine_qc_audio_test.py",
     "scripts/run_machine_qc_clip_test.py",
     "scripts/machine_qc_budget_authorization.py",
+    # Request routing and project-header enforcement are part of the QC runtime.
+    "scripts/sermon_openai_runtime.py",
     "scripts/sermon_source_budget.py",
     "scripts/sermon_transcription_request.py",
     "scripts/sermon_workflow_jobs.py",

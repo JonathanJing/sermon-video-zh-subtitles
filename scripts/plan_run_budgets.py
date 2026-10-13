@@ -42,7 +42,7 @@ def file_sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def qc_files(out, locale, profile, scale, *, approved_by, evidence, reviewed_at, reuse, context):
+def qc_files(out, locale, profile, scale, *, approved_by, evidence, reviewed_at, reuse, context, reuse_sources=()):
     from scripts import machine_qc_budget_authorization as auth
     qc = profile["qc"]
     directory = out / f"qc-{locale}"
@@ -69,8 +69,28 @@ def qc_files(out, locale, profile, scale, *, approved_by, evidence, reviewed_at,
             "authorizationSha256": file_sha256(authorization), "approvalSha256": file_sha256(approval),
             "budgetRoot": root, "capUsd": cap, "reuseBudgetRoots": reuse, "qcContext": context,
             "executionMode": "replay_only" if reuse else "new_authority",
+            **({"reuseSources": list(reuse_sources)} if reuse else {}),
             "secondaryAsr": {"requests": secondary["requests"][scale],
                              "capUsd": secondary["capUsdPerLocale"][scale]}}
+
+
+def inspect_reuse_source_reference(reference, context):
+    """Read-only plan evidence: recheck the exact selected prior authority."""
+    from scripts import machine_qc_budget_authorization as auth
+    from scripts.check_run_start import inspect_source_root
+    if set(reference) != {'plan', 'planSha256', 'authorization', 'authorizationSha256', 'budgetRoot', 'authority'}:
+        raise ValueError('Invalid selected reuse source reference')
+    if (file_sha256(reference['plan']) != reference['planSha256']
+            or file_sha256(reference['authorization']) != reference['authorizationSha256']):
+        raise ValueError('Selected reuse source plan or authorization changed')
+    value = auth.validate(reference['authorization'], context=context, require_scope=True)
+    expected = {'approvalSha256': value['authority']['approvalSha256'],
+                'globalBounds': value['authority']['bounds']['globalBounds'],
+                'requestLimits': value['authority']['requestLimits']}
+    if reference['authority'] != expected or reference['budgetRoot'] != value['budgetRoot']:
+        raise ValueError('Selected reuse source authority changed')
+    inspect_source_root(Path(reference['budgetRoot']), required=True, as_reuse_source=True,
+                        expected=expected, reuse_roots=value.get('reuseBudgetRoots', []))
 
 
 def resume_qc_stage(path, context):
@@ -272,21 +292,49 @@ def main(argv=None):
     if not planned['fits']:
         print(json.dumps(planned)); return 1
     reuse = {locale: [] for locale in qc_locales}
+    reuse_sources = {locale: [] for locale in qc_locales}
     for prior in args.reuse_from:
         prior_plan = json.loads((prior / "plan.json").read_text())
+        prior_receipt = prior / prior_plan['approvalReceipt']
+        approved = json.loads(prior_receipt.read_text())
+        frozen = {key: value for key, value in prior_plan.items() if key not in {'approvalReceipt', 'approvalSha256'}}
+        if (prior_plan.get('schemaVersion') != PLAN_SCHEMA
+                or file_sha256(prior_receipt) != prior_plan['approvalSha256']
+                or approved.get('schemaVersion') != 'sermon-run-budget-plan-approval-v1'
+                or approved.get('binding') != frozen or approved.get('humanApproval') is not True
+                or approved.get('decision') != 'approved' or not approved.get('reviewedBy')
+                or not approved.get('operatorEvidence')):
+            raise ValueError('Reuse prior plan or approval changed')
         for locale in qc_locales:
             matches = [s for s in prior_plan["stages"] if s["stage"] == f"qc.{locale}"]
             if len(matches) != 1:
                 parser.error("Reuse plan lacks the exact locale stage")
             previous = auth.validate(matches[0]["authorization"], context=contexts[locale], require_scope=True)
+            stage = matches[0]
+            if (file_sha256(stage['authorization']) != stage['authorizationSha256']
+                    or previous['authority']['approvalSha256'] != stage['approvalSha256']
+                    or stage['budgetRoot'] != previous['budgetRoot']
+                    or stage['qcContext'] != previous['qcContext']
+                    or stage.get('reuseBudgetRoots', []) != previous.get('reuseBudgetRoots', [])
+                    or micro(stage['capUsd']) != previous['authority']['bounds']['globalBounds']['costMicrousd']):
+                raise ValueError('Reuse prior stage differs from its authorization')
             root = str(Path(previous["budgetRoot"]).resolve())
             if not (Path(root) / "source-budget.json").is_file():
                 parser.error("Reuse root has no paid ledger to reconcile")
             from scripts.check_run_start import inspect_source_root
-            inspect_source_root(Path(root), required=True, as_reuse_source=True)
+            expected = {'approvalSha256': previous['authority']['approvalSha256'],
+                        'globalBounds': previous['authority']['bounds']['globalBounds'],
+                        'requestLimits': previous['authority']['requestLimits']}
+            inspect_source_root(Path(root), required=True, as_reuse_source=True,
+                                expected=expected, reuse_roots=previous.get('reuseBudgetRoots', []))
             if root in reuse[locale]:
                 parser.error("Duplicate reuse root; list each approved source only once")
             reuse[locale].append(root)
+            reuse_sources[locale].append({'plan': str((prior / 'plan.json').resolve()),
+                'planSha256': file_sha256(prior / 'plan.json'),
+                'authorization': str(Path(stage['authorization']).resolve()),
+                'authorizationSha256': stage['authorizationSha256'],
+                'budgetRoot': previous['budgetRoot'], 'authority': expected})
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     common = {"approved_by": args.approved_by, "evidence": args.evidence, "reviewed_at": now}
     stages = []
@@ -297,7 +345,8 @@ def main(argv=None):
         else:
             locale = stage["stage"].split(".")[1]
             stages.append(resumes[locale] if locale in resumes else qc_files(
-                args.out, locale, profile, args.scale, reuse=reuse[locale], context=contexts[locale], **common))
+                args.out, locale, profile, args.scale, reuse=reuse[locale], context=contexts[locale],
+                reuse_sources=reuse_sources[locale], **common))
     from scripts import machine_quality_waiver as waiver
     plan = {"schemaVersion": PLAN_SCHEMA, "createdAt": now, "scale": args.scale, "locales": locales,
             "profileSha256": file_sha256(args.profile), "profile": str(args.profile.resolve()),
