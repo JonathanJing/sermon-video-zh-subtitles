@@ -79,3 +79,7 @@ scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
 8. **后续**：每条写清楚由谁做、在哪个 PR 或 backlog 条目里跟踪。
 
 复盘只引用报告里的数值，不粘贴原始日志。
+
+## 预算结算摘要版本
+
+新导出使用 `sermon-run-digest-budget-settlement-v2`：增加 `reused`，`reservedMicrousd` 只计算本根的新增预留，排除复用行；复用响应不再次计费用量。既有 `sermon-run-digest-budget-settlement-v1` 报告保持原字段与原预留总额语义，不就地重写。摘要呈现器显式识别 v1/v2，未知版本不按已知合同解释；导出不修改原 source-budget 账本。API judge 的无 context 复用授权版本见[独立合同](machine-qc-api-reuse-authorization.zh.md)。

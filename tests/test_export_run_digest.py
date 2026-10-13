@@ -274,6 +274,24 @@ class ExportRunDigestTests(unittest.TestCase):
         self.assertTrue(any('private_model_response' in item for item in digest.verify(dest,[])))
 
 
+    def test_reused_settlement_summary_is_v2_and_reader_keeps_explicit_v1(self):
+        import copy
+        ledger={'schemaVersion':'sermon-source-budget-ledger-v4','requests':{
+            'paid':{'status':'returned','bounds':{'costMicrousd':500000},'settlement':{
+                'costStatus':'estimated_upper_bound','costMicrousd':200000,'requestedModel':'gpt-6.1-sol','usage':{}}},
+            'reuse':{'status':'returned','bounds':{'costMicrousd':500000},'settlement':{
+                'costStatus':'reused','costMicrousd':0,'requestedModel':'gpt-6.1-sol','usage':{}}}}}
+        summary=digest.budget_summary(ledger)
+        self.assertEqual(summary['schemaVersion'],'sermon-run-digest-budget-settlement-v2')
+        self.assertEqual((summary['reservedMicrousd'],summary['reused'],summary['estimatedMicrousd']),(500000,1,200000))
+        self.assertIn('1 reused without new reservation',digest.budget_line('source-budget.json',summary))
+        legacy={**summary,'schemaVersion':digest.BUDGET_SUMMARY_SCHEMA_V1,'reservedMicrousd':1000000}
+        legacy.pop('reused');before=copy.deepcopy(legacy)
+        self.assertIn('reserved US$1.00',digest.budget_line('source-budget.json',legacy))
+        self.assertEqual(legacy,before)
+        self.assertIn('unsupported',digest.budget_line('source-budget.json',{'schemaVersion':'unknown'}))
+
+
 
 if __name__ == "__main__":
     unittest.main()

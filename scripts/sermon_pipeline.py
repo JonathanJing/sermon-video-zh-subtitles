@@ -1005,11 +1005,26 @@ def chunk_text_for_window(chunks, start, end):
     return "\n".join(parts)
 
 
-def chat_json(api_key, payload, retries=1, *, session_verifier=None):
-    from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS, bounded_payload
+LEGACY_TEXT_CACHE_SCHEMA = "sermon-legacy-bounded-text-cache-v2"
+
+
+def legacy_text_cache_contract():
+    from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS, validate_request_limits
+    return {"schemaVersion": LEGACY_TEXT_CACHE_SCHEMA,
+            "requestLimits": validate_request_limits(DEFAULT_REQUEST_LIMITS)}
+
+
+def bounded_legacy_chat_payload(payload):
+    from scripts.sermon_provider_limits import bounded_payload
     from scripts.strict_budget_capability import require_bounded_api_payload
-    payload = bounded_payload(payload, DEFAULT_REQUEST_LIMITS)
-    require_bounded_api_payload(payload, DEFAULT_REQUEST_LIMITS, surface="legacy_text_api")
+    limits = legacy_text_cache_contract()["requestLimits"]
+    payload = bounded_payload(payload, limits)
+    require_bounded_api_payload(payload, limits, surface="legacy_text_api")
+    return payload
+
+
+def chat_json(api_key, payload, retries=1, *, session_verifier=None):
+    payload = bounded_legacy_chat_payload(payload)
     return spark_admission.SessionBoundCaller(_chat_json, verifier=session_verifier,
         purpose="production-text-call", requires_spark=False)(api_key, payload, retries=retries)
 
@@ -1055,6 +1070,7 @@ def correct_english(
     version_file = outdir / "english_correction_prompt.json"
     version = {
         "promptVersion": review_prompts.ENGLISH_CORRECTION_PROMPT_VERSION,
+        "cacheContract": legacy_text_cache_contract(),
         "model": model,
         "reasoningEffort": reasoning_effort,
         "inputSha256": json_sha256(
@@ -1072,7 +1088,8 @@ def correct_english(
     corrected = []
     windows_dir = outdir / "correction_windows"
     cache_identity = hashlib.sha256(
-        f"{review_prompts.ENGLISH_CORRECTION_PROMPT_VERSION}|{model}|{reasoning_effort}".encode("utf-8")
+        json.dumps({"promptVersion": review_prompts.ENGLISH_CORRECTION_PROMPT_VERSION, "model": model,
+                    "reasoningEffort": reasoning_effort, "cacheContract": legacy_text_cache_contract()}, sort_keys=True).encode("utf-8")
     ).hexdigest()[:12]
     glossary_text = glossary_lines(glossary)
     start_index = 0
@@ -1083,9 +1100,38 @@ def correct_english(
         while end_index < len(segments) and segments[end_index]["start"] < window_end:
             end_index += 1
         batch = segments[start_index:end_index]
+        reference = chunk_text_for_window(gpt4o_chunks, batch[0]["start"], batch[-1]["end"])
+        payload = {
+            "model": model,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {
+                    "role": "system",
+                    "content": review_prompts.ENGLISH_CORRECTION_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "<glossary>\n"
+                        + glossary_text
+                        + "\n</glossary>\n<reference_transcript>\n"
+                        + reference
+                        + "\n</reference_transcript>\n<timed_segments>\n"
+                        + json.dumps(
+                            [{"id": s["id"], "text": s["text"]} for s in batch],
+                            ensure_ascii=False,
+                        )
+                        + "\n</timed_segments>"
+                    ),
+                },
+            ],
+        }
+        payload["reasoning_effort"] = reasoning_effort or "high"
+        payload = bounded_legacy_chat_payload(payload)
         window_input_hash = json_sha256(
             {
                 "batch": batch,
+                "boundedPayload": payload,
                 "reference": chunk_text_for_window(
                     gpt4o_chunks,
                     batch[0]["start"],
@@ -1105,33 +1151,6 @@ def correct_english(
             parsed = None
             returned = []
         if parsed is None:
-            reference = chunk_text_for_window(gpt4o_chunks, batch[0]["start"], batch[-1]["end"])
-            payload = {
-                "model": model,
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": review_prompts.ENGLISH_CORRECTION_SYSTEM_PROMPT,
-                    },
-                    {
-                        "role": "user",
-                        "content": (
-                            "<glossary>\n"
-                            + glossary_text
-                            + "\n</glossary>\n<reference_transcript>\n"
-                            + reference
-                            + "\n</reference_transcript>\n<timed_segments>\n"
-                            + json.dumps(
-                                [{"id": s["id"], "text": s["text"]} for s in batch],
-                                ensure_ascii=False,
-                            )
-                            + "\n</timed_segments>"
-                        ),
-                    },
-                ],
-            }
-            payload["reasoning_effort"] = reasoning_effort or "high"
             result = chat_json(api_key, payload)
             parsed = json.loads(result["choices"][0]["message"]["content"])
             parsed["_model"] = result.get("model", model)
@@ -1274,6 +1293,7 @@ def translate_chinese(
     version_file = outdir / "chinese_translation_prompt.json"
     version = {
         "promptVersion": review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION,
+        "cacheContract": legacy_text_cache_contract(),
         "model": model,
         "reasoningEffort": reasoning_effort,
         "inputSha256": json_sha256({"segments": segments, "glossary": glossary}),
@@ -1285,13 +1305,42 @@ def translate_chinese(
     from scripts.series_terminology import PROMPT_INSTRUCTION
     system = review_prompts.CHINESE_TRANSLATION_SYSTEM_PROMPT + "\n" + PROMPT_INSTRUCTION
     cache_identity = hashlib.sha256(
-        f"{review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION}|{model}|{reasoning_effort}".encode("utf-8")
+        json.dumps({"promptVersion": review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION, "model": model,
+                    "reasoningEffort": reasoning_effort, "cacheContract": legacy_text_cache_contract()}, sort_keys=True).encode("utf-8")
     ).hexdigest()[:12]
     def translate_one(item):
         idx, seg = item
+        context = {
+            "glossary": glossary_terms(glossary),
+            "zh_term_map": zh_term_map(glossary),
+            "previous_english": segments[idx - 1]["text"] if idx > 0 else "",
+            "current_id": seg["id"],
+            "current_english": seg["text"],
+            "next_english": segments[idx + 1]["text"] if idx + 1 < len(segments) else "",
+        }
+        payload = {
+            "model": model,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {"role": "system", "content": system},
+                {
+                    "role": "user",
+                    "content": (
+                        "<glossary>\n"
+                        + glossary_text
+                        + "\n</glossary>\n<context>\n"
+                        + json.dumps(context, ensure_ascii=False)
+                        + "\n</context>"
+                    ),
+                },
+            ],
+        }
+        payload["reasoning_effort"] = reasoning_effort or "high"
+        payload = bounded_legacy_chat_payload(payload)
         segment_input_hash = json_sha256(
             {
                 "segment": seg,
+                "boundedPayload": payload,
                 "previous": segments[idx - 1]["text"] if idx > 0 else "",
                 "next": segments[idx + 1]["text"] if idx + 1 < len(segments) else "",
                 "glossary": glossary,
@@ -1304,32 +1353,6 @@ def translate_chinese(
             with stage("translation.segment_cache", cache_hit=True):
                 parsed = read_json(cache)
         else:
-            context = {
-                "glossary": glossary_terms(glossary),
-                "zh_term_map": zh_term_map(glossary),
-                "previous_english": segments[idx - 1]["text"] if idx > 0 else "",
-                "current_id": seg["id"],
-                "current_english": seg["text"],
-                "next_english": segments[idx + 1]["text"] if idx + 1 < len(segments) else "",
-            }
-            payload = {
-                "model": model,
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {"role": "system", "content": system},
-                    {
-                        "role": "user",
-                        "content": (
-                            "<glossary>\n"
-                            + glossary_text
-                            + "\n</glossary>\n<context>\n"
-                            + json.dumps(context, ensure_ascii=False)
-                            + "\n</context>"
-                        ),
-                    },
-                ],
-            }
-            payload["reasoning_effort"] = reasoning_effort or "high"
             result = chat_json(api_key, payload)
             parsed = json.loads(result["choices"][0]["message"]["content"])
             parsed["_model"] = result.get("model", model)

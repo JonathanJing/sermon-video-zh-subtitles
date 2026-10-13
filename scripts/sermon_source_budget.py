@@ -342,6 +342,13 @@ class SourceBudget:
                     and saved_settlement(saved).get('costStatus') != 'reused'
                     and (row.get('settlement') or {}).get('costStatus') != 'reused',
                     'source_reuse_requires_direct_paid_root')
+            # Legacy v1/v2 rows have no row-level settlement validation. Check
+            # the saved/computed paid settlement before freezing it as v4 reuse
+            # provenance; a malformed recorded value must not be recomputed away.
+            require(_valid_settlement(saved_settlement(saved), version=LEDGER_V3)
+                    and ('settlement' not in saved
+                         or _valid_settlement(saved['settlement'], version=LEDGER_V3)),
+                    'source_reuse_response_reconciliation_required')
             # Check every root before returning: a later unknown/damaged matching
             # row must not be hidden by an earlier successful cache candidate.
             if candidate is None:

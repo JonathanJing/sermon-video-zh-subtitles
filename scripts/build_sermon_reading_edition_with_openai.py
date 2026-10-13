@@ -430,11 +430,18 @@ def edit_batch(
         reasoning_effort=reasoning_effort,
         qa_pass=qa_pass,
     )
+    if provider == "openai":
+        from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract
+        payload = bounded_legacy_chat_payload(payload)
+        cache_contract = legacy_text_cache_contract()
+    else:
+        cache_contract = None  # Preserve the frozen Codex request/cache policy.
     input_hash = hashlib.sha256(
         json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
     ).hexdigest()[:12]
     identity = hashlib.sha256(
-        f"{prompt_version}|{provider}|{model}|{reasoning_effort}".encode("utf-8")
+        (f"{prompt_version}|{provider}|{model}|{reasoning_effort}" +
+         ("|" + json.dumps(cache_contract, sort_keys=True) if cache_contract else "")).encode("utf-8")
     ).hexdigest()[:12]
     cache = cache_dir / (
         f"{'qa' if qa_pass else 'edit'}_{batch[0]['id']:03d}_{batch[-1]['id']:03d}."

@@ -53,7 +53,10 @@ def _model_result(response: dict[str, Any], requested_model: str) -> dict[str, A
 
 def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
                 requested_model: str, caller: Callable[..., dict[str, Any]] = chat_json) -> tuple[dict[str, Any], dict[str, Any]]:
-    request = {"schemaVersion": RUN_SCHEMA, "stage": stage, "payload": payload}
+    from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract
+    payload = bounded_legacy_chat_payload(payload)
+    request = {"schemaVersion": "sermon-sentence-model-cache-v2", "cacheContract": legacy_text_cache_contract(),
+               "stage": stage, "payload": payload}
     request_hash = contract.json_sha256(request)
     path = out / "cache" / f"{stage}-{request_hash}.json"
     if path.exists():
@@ -63,7 +66,7 @@ def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
     else:
         response = caller(api_key, payload)
         receipt = {
-            "schemaVersion": RUN_SCHEMA,
+            "schemaVersion": "sermon-sentence-model-cache-v2",
             "request": request,
             "requestSha256": request_hash,
             "response": response,

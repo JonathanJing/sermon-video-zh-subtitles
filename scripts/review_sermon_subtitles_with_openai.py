@@ -131,9 +131,10 @@ def review_batch(
     reasoning_effort: str,
     *, caller=None,
 ) -> dict:
-    payload = batch_payload(all_segments, batch, start_index, model, reasoning_effort)
+    from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract
+    payload = bounded_legacy_chat_payload(batch_payload(all_segments, batch, start_index, model, reasoning_effort))
     identity = hashlib.sha256(
-        json.dumps({"promptVersion": PROMPT_VERSION, "payload": payload},
+        json.dumps({"promptVersion": PROMPT_VERSION, "cacheContract": legacy_text_cache_contract(), "payload": payload},
                    sort_keys=True, ensure_ascii=False).encode("utf-8")
     ).hexdigest()
     cache = cache_dir / f"review_{batch[0]['id']:04d}_{batch[-1]['id']:04d}.{identity}.json"

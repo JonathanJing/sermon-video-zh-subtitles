@@ -18,9 +18,9 @@ from scripts import sermon_accounting as accounting
 class ReadingAccountingTests(unittest.TestCase):
     def test_cache_hit_does_not_repeat_api_attempt(self):
         block = {"id": 0, "start": 0, "end": 2, "en": "Hello.", "zh": "你好。"}
-        reply = {"model": "test-model", "choices": [{"message": {"content": json.dumps({"blocks": [{"id": 0, "zh": "您好。"}]})}}]}
+        reply = {"model": "gpt-6.1-sol", "choices": [{"message": {"content": json.dumps({"blocks": [{"id": 0, "zh": "您好。"}]})}}]}
         with tempfile.TemporaryDirectory() as temp, mock.patch.object(reading, "chat_json", return_value=reply) as api, mock.patch.object(reading, "stage", side_effect=lambda *a, **k: contextlib.nullcontext()) as stages:
-            options = dict(model="test-model", reasoning_effort="medium", qa_pass=False,
+            options = dict(model="gpt-6.1-sol", reasoning_effort="medium", qa_pass=False,
                            provider="openai", codex_cli=Path("unused"), schema_path=Path("unused"))
             first = reading.edit_batch("secret", [block], [block], 0, Path(temp), **options)
             second = reading.edit_batch("secret", [block], [block], 0, Path(temp), **options)
@@ -32,7 +32,7 @@ class ReadingAccountingTests(unittest.TestCase):
         block = {"id": 0, "zh": "你好。"}
         with mock.patch.object(reading, "edit_batch", return_value={"blocks": [block]}), mock.patch.object(reading, "stage", side_effect=lambda *a, **k: contextlib.nullcontext()) as stages:
             for qa_pass in (False, True):
-                result = reading.run_edit_pass("secret", [block], Path("unused"), model="test-model",
+                result = reading.run_edit_pass("secret", [block], Path("unused"), model="gpt-6.1-sol",
                     reasoning_effort="medium", batch_size=1, workers=2, qa_pass=qa_pass,
                     provider="openai", codex_cli=Path("unused"), schema_path=Path("unused"))
                 self.assertEqual(result[0]["zh"], block["zh"])
@@ -44,11 +44,11 @@ class ReadingAccountingTests(unittest.TestCase):
 
         def fake_api(api_key, payload):
             calls.append(payload)
-            reply = {"id": f"response-{len(calls)}", "model": "test-model",
+            reply = {"id": f"response-{len(calls)}", "model": "gpt-6.1-sol",
                      "usage": {"prompt_tokens": 10, "completion_tokens": 3},
                      "choices": [{"message": {"content": json.dumps({"blocks": [{"id": 0, "zh": "您好。"}]})}}]}
             # The real chat_json owns this receipt; the reading caller must not add one.
-            accounting.record_api_attempt("test-model", reply, .01)
+            accounting.record_api_attempt("gpt-6.1-sol", reply, .01)
             return reply
 
         with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ), mock.patch.object(reading, "chat_json", side_effect=fake_api):
@@ -57,7 +57,7 @@ class ReadingAccountingTests(unittest.TestCase):
             root = Path(temp)
             with accounting.accounting_session(root/"accounting", "test_reading"):
                 for qa_pass in (False, True, False):
-                    reading.run_edit_pass("private", [block], root, model="test-model",
+                    reading.run_edit_pass("private", [block], root, model="gpt-6.1-sol",
                         reasoning_effort="medium", batch_size=1, workers=2, qa_pass=qa_pass,
                         provider="openai", codex_cli=Path("unused"), schema_path=Path("unused"))
             events = [json.loads(line) for line in (root/"accounting/events.jsonl").read_text().splitlines()]
