@@ -118,11 +118,14 @@ class ReviewCounterexampleTests(unittest.TestCase):
     def test_spanish_thousands_separators_join_one_number(self):
         # 2026-10-14 clip: the dub said "dos mil setecientos millones"; both ASRs wrote digits.
         spoken = "Si hacen las cuentas, dos mil setecientos millones de personas en la Tierra perecen."
-        for heard in ("Si hacen las cuentas, 2,700 millones de personas en la tierra perecen.",
-                      "Si hacen las cuentas, 2.700 millones de personas en la Tierra perecen."):
-            self.assertTrue(subject.score(spoken, heard, "es", 0.88)[2])
-            # v5 receipts keep their recorded semantics: the groups stay split.
-            self.assertFalse(subject.score(spoken, heard, "es", 0.88, subject.SCORING_V5)[2])
+        heard = "Si hacen las cuentas, 2.700 millones de personas en la Tierra perecen."  # gpt-transcribe
+        self.assertTrue(subject.score(spoken, heard, "es", 0.88)[2])
+        # v5 receipts keep their recorded semantics: the groups stay split.
+        self.assertFalse(subject.score(spoken, heard, "es", 0.88, subject.SCORING_V5)[2])
+        # A single comma group is a Spanish decimal (1,500 millones = 1.5 million), even before a
+        # scale word (review of #401), so Qwen's "2,700 millones" is left to the secondary ASR.
+        self.assertFalse(subject.score(spoken, heard.replace("2.700", "2,700"), "es", 0.88)[2])
+        self.distinct("es", "1,500 millones", "mil quinientos millones")
         self.assertEqual(subject.fold_transcript("1.000.000 y 12,345,678", "es"), "1000000 y 12345678")
         self.same("es", "dos mil setecientos millones", "2.700 millones")
         # Only whole three-digit groups join: decimals and other numbers stay distinct.
@@ -141,7 +144,7 @@ class ReviewCounterexampleTests(unittest.TestCase):
         self.distinct("es", "0,001", "0,1")
         self.distinct("es", "1.05", "1.5")
         self.assertEqual(subject.fold_transcript("0,001", "es", grouped_digits=False), "0,1")  # v5 as recorded
-        self.assertEqual(subject.fold_transcript("2,700 Millones", "es"), "2700000000")
+        self.assertEqual(subject.fold_transcript("2,700 Millones", "es"), "2,700 Millones")
         self.assertEqual(subject.fold_transcript("2,700", "es", grouped_digits=False), "2,700")
 
     def test_spanish_stress_accents_stay_but_diacritic_pairs_fold(self):

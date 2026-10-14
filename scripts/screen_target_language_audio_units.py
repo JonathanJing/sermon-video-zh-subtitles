@@ -48,7 +48,8 @@ SCORING_V4 = ("token-sequence-ratio-v4; readings a listener cannot tell apart ar
 SCORING_V5 = SCORING_V4.replace("token-sequence-ratio-v4", "token-sequence-ratio-v5") + (
     "; book-anchored Korean scripture range endpoints are folded together")
 SCORING = SCORING_V5.replace("token-sequence-ratio-v5", "token-sequence-ratio-v6") + (
-    "; a Spanish digit string grouped by thousands (2.700, 1,000,000, or 2,700 before a scale word) is one number; "
+    "; a Spanish digit string grouped by thousands points (2.700) or by two or more comma groups (1,000,000) "
+    "is one number; "
     "comma decimals and numbers starting with 0 stay as written, their fractional digits unfolded")
 KNOWN_SCORINGS = (SCORING_V3, SCORING_V4, SCORING_V5, SCORING)
 MODEL = "Qwen/Qwen3-ASR-0.6B"
@@ -536,21 +537,18 @@ def _take_spanish_cardinal(pieces: list[str], index: int) -> tuple[int | None, i
 
 # ASR writes 2 700 000 000 as "2.700 millones" (Spanish thousands point) or "2,700 millones";
 # a spelled "dos mil setecientos millones" folds to the same value only if the groups join.
-# Spanish also writes decimals with a comma (0,001 %, 1,500 km = 1.5 km), so only these join:
-# a point-grouped number (2.700, 1.000.000) or a comma-grouped one with two or more groups
-# (1,000,000), and a single comma group only right before a scale word (2,700 millones).
-# A number starting with 0 never joins (0,001 and 0.001 are decimals), and neither does an
-# incomplete group (2,7, 3,14, 1,234,56).
-_ES_SCALE_WORDS = r"(?:mil|mill[oó]n|millones|bill[oó]n|billones)\b"
+# Spanish writes decimals with a comma (0,001 %, 1,500 millones = 1.5 million), so a single
+# comma group is never joined, even before a scale word: only a point-grouped number (2.700,
+# 1.000.000) or a comma-grouped one with two or more groups (1,000,000) is. A number starting
+# with 0 never joins (0.001), and neither does an incomplete group (2,7, 3,14, 1,234,56).
+# A unit whose primary ASR wrote "2,700 millones" is then settled by the secondary ASR.
 _ES_POINT_GROUPS = re.compile(r"(?<![\d.,])[1-9]\d{0,2}(?:\.\d{3})+(?![\d]|[.,]\d)")
 _ES_COMMA_GROUPS = re.compile(r"(?<![\d.,])[1-9]\d{0,2}(?:,\d{3}){2,}(?![\d]|[.,]\d)")
-_ES_COMMA_BEFORE_SCALE = re.compile(r"(?<![\d.,])[1-9]\d{0,2},\d{3}(?![\d]|[.,]\d)(?=\s+" + _ES_SCALE_WORDS + ")",
-                                    re.IGNORECASE)
 
 
 def _join_spanish_groups(text: str) -> str:
     join = lambda match: re.sub(r"[.,]", "", match.group())
-    for pattern in (_ES_POINT_GROUPS, _ES_COMMA_GROUPS, _ES_COMMA_BEFORE_SCALE):
+    for pattern in (_ES_POINT_GROUPS, _ES_COMMA_GROUPS):
         text = pattern.sub(join, text)
     return text
 
