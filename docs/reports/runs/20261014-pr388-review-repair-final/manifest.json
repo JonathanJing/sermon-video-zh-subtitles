@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-pr388-review-repair-final",
+  "runs": [
+    {
+      "label": "20261014-pr388-review-repair-final",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/test-runs/20261014-pr388-review-repair-final",
+      "skipped": {
+        "(none)": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261014-pr388-review-repair-final",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 384,
+      "truncated": false,
+      "sha256": "4ae870290ac156f7f2da49911cedac1bf09e175a271419c1d688a6e71942b456",
+      "redactions": {}
+    },
+    {
+      "run": "20261014-pr388-review-repair-final",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 248,
+      "truncated": false,
+      "sha256": "ad037b4ee05e7ddc3c4ef4444b83cfbb4c94d24d3940a976ce500e6c4b9f27fb",
+      "redactions": {}
+    },
+    {
+      "run": "20261014-pr388-review-repair-final",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 546,
+      "truncated": false,
+      "sha256": "d57c0a6340ee1f0f425d54a5f30f33762ffa5b822c2a646c761c845b141512d5",
+      "redactions": {}
+    },
+    {
+      "run": "20261014-pr388-review-repair-final",
+      "path": "verification.log",
+      "kind": "log",
+      "bytes": 1251,
+      "truncated": false,
+      "sha256": "5fb0a3ffd688dc4c0e80ceedfce78537e05bf4a0dcc5fa08a8ee755b2552e93b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

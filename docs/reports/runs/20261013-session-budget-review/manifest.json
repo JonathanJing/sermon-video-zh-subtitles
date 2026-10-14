@@ -1,0 +1,270 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261013-session-budget-review",
+  "runs": [
+    {
+      "label": "20261013-pr379-readback-review",
+      "source": "/private/tmp/sermon-fix-379/artifacts/run/20261013-pr379-readback-review",
+      "skipped": {}
+    },
+    {
+      "label": "20261013-pr380-api-outcomes",
+      "source": "/private/tmp/sermon-fix-380/artifacts/run/20261013-pr380-api-outcomes",
+      "skipped": {
+        ".txt": 1,
+        ".md": 1
+      }
+    },
+    {
+      "label": "20261013-pr381-reuse-safety",
+      "source": "/private/tmp/sermon-fix-381/artifacts/run/20261013-pr381-reuse-safety",
+      "skipped": {
+        ".md": 1
+      }
+    },
+    {
+      "label": "20261013-session-budget-integration",
+      "source": "~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-session-budget-integration",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261013-pr379-readback-review",
+      "path": "development-fixture.log",
+      "kind": "log",
+      "bytes": 3114,
+      "truncated": false,
+      "sha256": "b5a37f41b6b7575ec786998c11e7aee9797ae8d2c46612c655416302a3ead5fe",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "edf27989e1c5c80114bad53d5acc39286ea9b007df7dae5ec279c5dbc3c7e708",
+        "bytes": 3111,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261013-pr379-readback-review",
+      "path": "development-negative.log",
+      "kind": "log",
+      "bytes": 9411,
+      "truncated": false,
+      "sha256": "41aa1a16695f5f97252e0e351e7adc825bf66a09e939c5211298676bbbaa7e3a",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "6511eddd424459bad86edbf1ea2a713d0ad1a2e6d8fcf377d18069dc6826c246",
+        "bytes": 9402,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261013-pr379-readback-review",
+      "path": "initial-corrected.log",
+      "kind": "log",
+      "bytes": 99,
+      "truncated": false,
+      "sha256": "3206bfb39d1f783b96b69bdc9c65411017d2d3bbf3b8bb20795099a32eed606c",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "3206bfb39d1f783b96b69bdc9c65411017d2d3bbf3b8bb20795099a32eed606c",
+        "bytes": 99,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261013-pr379-readback-review",
+      "path": "initial.log",
+      "kind": "log",
+      "bytes": 29806,
+      "truncated": true,
+      "sha256": "03b4b5f04495a5683a33d886daa93536e4d140635c9c84595c02898ce3f62df4",
+      "redactions": {
+        "email": 10
+      },
+      "exportedCopy": {
+        "sha256": "76cb329db40948300b5f5d9dbce35dbef8258752af3d6bda523b354f8d032dd9",
+        "bytes": 17483,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261013-pr379-readback-review",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 31,
+      "truncated": false,
+      "sha256": "414ad3f97be16b860dc82e9404154dc57fe36f4f9202bf16aa81215fa8147184",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr379-readback-review",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 99,
+      "truncated": false,
+      "sha256": "43ec5ccd1bc47d8c8685a2a21a02c07dd0841a5bb7f90d2322685f0f4ddc3577",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "43ec5ccd1bc47d8c8685a2a21a02c07dd0841a5bb7f90d2322685f0f4ddc3577",
+        "bytes": 99,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261013-pr379-readback-review",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1268,
+      "truncated": false,
+      "sha256": "9acac3c5e80e09fd137f09c75624f0d1d6de41df88415156b4d8b9ed46cd100f",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr379-readback-review",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 67,
+      "truncated": false,
+      "sha256": "37c1c6170650a3be9fd32b7ae6e507ee349bbc4339c8d4840c83ad84322f3ac6",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr380-api-outcomes",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 135,
+      "truncated": false,
+      "sha256": "3b13aa6d01d75ad8335eeac4fdc0bcd2b07d6e68e40aab3af6f9c950da8a0849",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr380-api-outcomes",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 221,
+      "truncated": false,
+      "sha256": "7c05a74b9fd29d9476b37a8f07bad912582ccef8c20def2e1de3cce9b7943395",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "7c05a74b9fd29d9476b37a8f07bad912582ccef8c20def2e1de3cce9b7943395",
+        "bytes": 221,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261013-pr380-api-outcomes",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 45,
+      "truncated": false,
+      "sha256": "dac01eccd833a8a106a1953c3ddfe3698dc6c86bb844765a9a8f0ef6c3436171",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr381-reuse-safety",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 275,
+      "truncated": false,
+      "sha256": "7d198d2853cca2ffd7b22934e887e2b6290d8ca739bdcb656124e8e318480787",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-pr381-reuse-safety",
+      "path": "pytest-initial-fixture-fail.log",
+      "kind": "log",
+      "bytes": 3960,
+      "truncated": false,
+      "sha256": "faa9e7b2237c3e2579bb03c4561da68a1f22e38dcb981c7d80ffd7608e500ba4",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "21545e43f7ffd052287d397698406041363601860052f4f4ff9edf0e9620a730",
+        "bytes": 3954,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261013-pr381-reuse-safety",
+      "path": "pytest-phase1-pass.log",
+      "kind": "log",
+      "bytes": 110,
+      "truncated": false,
+      "sha256": "5575c78d07ee89126da9c76c948e0cb08b2c6b8159bb5ca0401e7e6ab1cd543f",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "5575c78d07ee89126da9c76c948e0cb08b2c6b8159bb5ca0401e7e6ab1cd543f",
+        "bytes": 110,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261013-pr381-reuse-safety",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 110,
+      "truncated": false,
+      "sha256": "75336f35958bcea74fd1eaf8a8a3245906b1f0e4aab70f3c717d27256b7b7b41",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "75336f35958bcea74fd1eaf8a8a3245906b1f0e4aab70f3c717d27256b7b7b41",
+        "bytes": 110,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261013-pr381-reuse-safety",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 45,
+      "truncated": false,
+      "sha256": "45a6c5076af9ce82b65020413d18a56a1e883470c4ff37a74fcfca66bc133d6a",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-session-budget-integration",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 482,
+      "truncated": false,
+      "sha256": "8ffc2226b0f31c7839d28e4971f9f9a96570bbfa40473ca89d851bc2e3b57f6d",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-session-budget-integration",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 195,
+      "truncated": false,
+      "sha256": "c6ff5f0e13a35d53a917df93628d9acf17255627a232aff42c2d02f8ff74f1f3",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "c6ff5f0e13a35d53a917df93628d9acf17255627a232aff42c2d02f8ff74f1f3",
+        "bytes": 195,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "20261013-session-budget-integration",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 482,
+      "truncated": false,
+      "sha256": "8ffc2226b0f31c7839d28e4971f9f9a96570bbfa40473ca89d851bc2e3b57f6d",
+      "redactions": {}
+    },
+    {
+      "run": "20261013-session-budget-integration",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 50,
+      "truncated": false,
+      "sha256": "0ccaad899fa7b794cbf510b08831c1f45ee71b532b7127eed8d2957a9393e0b2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

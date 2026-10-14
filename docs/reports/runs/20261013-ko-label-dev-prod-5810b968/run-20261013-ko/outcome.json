@@ -1,0 +1,22 @@
+{
+  "status": "deployed",
+  "exitCode": 0,
+  "sourceCommit": "4938a7f23b4b5ac1b54629887224b0333a831c4c",
+  "startedAt": "2026-10-13T20:23:33.807852+00:00",
+  "completedAt": "2026-10-13T20:24:59.457270+00:00",
+  "deployments": {
+    "dev": {
+      "status": "deployed",
+      "baseline": "sites/ai-for-god-sermon-audio-dev/versions/bc4e94edeec02a88",
+      "newVersion": "sites/ai-for-god-sermon-audio-dev/versions/ae7dd119129a4680"
+    },
+    "prod": {
+      "status": "deployed",
+      "baseline": "sites/ai-for-god-sermon-audio/versions/a0b4d399c4d38e81",
+      "newVersion": "sites/ai-for-god-sermon-audio/versions/37421012eb737055"
+    }
+  },
+  "browserInteraction": "not_run",
+  "devicePlayback": "not_run",
+  "venueAcceptance": "not_run"
+}
