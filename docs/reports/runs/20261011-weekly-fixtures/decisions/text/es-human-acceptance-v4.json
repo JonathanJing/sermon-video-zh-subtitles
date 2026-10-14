@@ -1,0 +1,170 @@
+{
+ "schemaVersion": "sermon-text-qc-human-acceptance-v1",
+ "targetLocale": "es",
+ "candidateJsonSha256": "1df43ebdafb507f988b907b4f4afe02e453f51967262af568f19c2d6f45b8ad9",
+ "textQcJsonSha256": "aee485f02e6227ba65c27283e863ed0525d3e08c9fc88d4afea5a7e4c7420609",
+ "decidedBy": "Jony",
+ "decidedByRole": "human_operator",
+ "humanApproval": true,
+ "decidedAt": "2026-10-11T08:58:49Z",
+ "userStatement": "es全部接受 (12 groups); 你直接做机器检查，修改好后，开始做l3 (delegation)",
+ "groups": [
+  {
+   "groupId": "translation-chunk-0000-u008",
+   "englishSha256": "6e8a2d94b9083514dabb89bc9786d67c08bc8968561bbe440db1c9fec784930d",
+   "targetTextSha256": "2fd8c7e99a6c086388f6dffb0c6391ab4ceff37e15541247085b1894d7775187",
+   "problems": [
+    "back_translation meaning_shift: as the oldest sibling -> being the older brother"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0000-u040",
+   "englishSha256": "a99c00b161d3062c80349260896a03ac3ff2cb75ac24ca0b66094cc1ffd7991d",
+   "targetTextSha256": "29eb741ca9b36b7bfe1be71ce250b86d09b6eb57619d721a928f7555d5e45cc8",
+   "problems": [
+    "back_translation number: he brings it to my dad -> he takes them to my dad"
+   ],
+   "decision": "accepted",
+   "decidedBy": "claude-code (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "'it' is the PlayStation just smashed to pieces; 'los' refers to those pieces. Same sentence Jony marked for a post-release correction in Korean; accepted as-is per 'Ship as-is, fix later' and noted for the same correction."
+  },
+  {
+   "groupId": "translation-chunk-0003-u045",
+   "englishSha256": "aacaab29830411f54b66b550bd654b01671b9d2ed653e307e5a1c3047a7bb680",
+   "targetTextSha256": "12106d2fd98520a00453b7f878d85197646df800cdcbfbf72e04a5e6678299aa",
+   "problems": [
+    "back_translation meaning_shift: tell her -> tell him"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0003-u046",
+   "englishSha256": "ff6b8983ca2ca6da7713d815f1c3fbe56a826c11206f97e5080eb5ab1c341642",
+   "targetTextSha256": "1793b6449a19e8eb255c5d87e53c32a799f00106099a6e4bbe383735d6913503",
+   "problems": [
+    "back_translation meaning_shift: I wanted to say to her -> I wanted to say to him"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0004-u006",
+   "englishSha256": "fb0675e5d169fc1a15f26291f314d83f7a984f21d0f5af81edf40479ea3889bf",
+   "targetTextSha256": "ca8e03b78213ae24023c1df435904b50f8d8361dcae5952036f7e3db2ffaed78",
+   "problems": [
+    "back_translation meaning_shift: It's to not care. -> It is not worrying."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0007-u001",
+   "englishSha256": "eaad47d1e36cafef220e4159fd66d3cc2a15c7380c76a74182a67df2224fdfbd",
+   "targetTextSha256": "61b6a36f83992ad2c6aa2b808c2431bba66e55314ed4a76183ce107255b2ac55",
+   "problems": [
+    "back_translation meaning_shift: You don't know -> They don't know"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0007-u002",
+   "englishSha256": "9bac58c7f51b727ab4d6126bf5bbd0c8a8fc7f7446bb5dd564c251a6ec561838",
+   "targetTextSha256": "67eba966405b9ac556671d6cac23b654bc5b3391d8d0c00336ac468a2da4e8f6",
+   "problems": [
+    "back_translation meaning_shift: Are they getting any of these messages? -> Are you receiving any of these messages?"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0008-u020",
+   "englishSha256": "104711c1acbf79f347803d371050b11df1425e05973cd9f3d3fd5fef1d5ac4b8",
+   "targetTextSha256": "20e6962f43c35d2576f592d390834a7cf1941507586b8220b2e543516f96f52e",
+   "problems": [
+    "back_translation meaning_shift: I was just filled with self-righteousness. -> He was simply filled with a sense of moral superiority."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0009-u007",
+   "englishSha256": "07bcfb0a9ad18c61588a6ddae133c7aa741d312d371bf199d729a3fa29130289",
+   "targetTextSha256": "a2d09685dd031463c38896bdb618936c9a1b00da377750fc7cabed465bcfae22",
+   "problems": [
+    "back_translation meaning_shift: not tweeting about the world, but praying for the world -> you are not tweeting about the world, but praying for the world"
+   ],
+   "decision": "accepted",
+   "decidedBy": "claude-code (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "English has no explicit subject; Spanish 'ustedes' addresses the same listeners as the surrounding sentences (previously accepted; re-flagged by a nondeterministic rescreen)."
+  },
+  {
+   "groupId": "translation-chunk-0009-u024",
+   "englishSha256": "7642008772cb2d7b83e19232bdb1336cd749fee98b07559deab99963a02b06da",
+   "targetTextSha256": "76908dd90d6771c79faf6c76a75df993114179bd3bd96e7fbb72519cf7826278",
+   "problems": [
+    "back_translation number: we asked him -> we asked them"
+   ],
+   "decision": "accepted",
+   "decidedBy": "claude-code (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "Spanish 'le' is him/her/them; the referent (the man they asked) is unchanged."
+  },
+  {
+   "groupId": "translation-chunk-0009-u033",
+   "englishSha256": "545464a2d5464aebfc7b750472fd14d81dfa978503ef10af82d2b0b02ccc161f",
+   "targetTextSha256": "29e49a2eff56da01f0fa58a8a696a62090c0fbcea8ad7cf48d9fa619ca40a2c0",
+   "problems": [
+    "back_translation meaning_shift: put it in the fridge -> put it on the refrigerator"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0010-u006",
+   "englishSha256": "8d215b7371c888f161cdc5a54c17a3bad0ad1aeefc7e9fecfc946e8eb19bd062",
+   "targetTextSha256": "eaacaf730ab854b36edc326144107c8bf8842e0fd7d780320f4666131f6202fe",
+   "problems": [
+    "back_translation meaning_shift: Jesus is our oldest spiritual brother. -> Jesus is our older brother spiritually."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0010-u013",
+   "englishSha256": "e587a8ae27a0d7c34057fb3ff2708de9f3029310a468b16a1af073ab28f4ad58",
+   "targetTextSha256": "6db7f1a842c979491dca09afdc66167802bbdfe6d1e14e6f2dc549117d3d44ab",
+   "problems": [
+    "back_translation meaning_shift: Not on you, not on me. -> Not about you, not about me."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0011-u001",
+   "englishSha256": "59b91d08a8d8c27c786607681c7791fc0debd725cf671f1e4e0cda31708ea37a",
+   "targetTextSha256": "14c5f6744bd464213d2559a315f4091ffb29bee8c7af831d28ef5281ba2bdca3",
+   "problems": [
+    "back_translation meaning_shift: Card, you ever do that before you go to church? -> Do you ever check that ticket before going to church?"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  }
+ ]
+}

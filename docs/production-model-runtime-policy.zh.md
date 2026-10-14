@@ -30,6 +30,10 @@ Canonical worker 使用绑定 Project 与预算授权的 OpenAI API transport，
 
 Supervisor 默认与后端生成命令均选择 `codex-cli`。旧 Agents API 会话使用显式 `--agent-backend agents-api` 按原身份恢复；未决工具先对账，SDK 新会话继续禁用。模型或 reasoning 变化需新的冻结 policy、payload 和运行身份，不重标旧批准候选或缓存。
 
+## Layer 2 角色与返修
+
+新 dev 和正式 run 的翻译（Sol 6.1 high）与独立复核（Sol 6.1 medium）在同一份冻结英文单元上按组运行，常规路径不增加 Astra 或 Gemini 第三轮门禁。Sol 标出失败、问题或不确定时，保留该证据并开新修订做返修，重跑该修订规定的译者、复核者、语言插件和候选准入链；模型复核仍只是机器证据，schema 里的人工译文批准独立存在。Gemini A/B 评审属实验，除非该次运行的政策明确要求。互相独立的组或 locale 在 producer 支持时可有界并行；Supervisor 的有状态转移和写入由 lease 保护。已有 run 保留其冻结政策，不按本节改写。
+
 ## API key 与 fallback
 
 剩余 OpenAI API 调用使用[双 Project 环境启动器](openai-minimal-project-setup.zh.md)：dev／Beta／实验选 `tongxing-dev-runtime`，正式内容选 `tongxing-prod-runtime`。key 值只保存在忽略的 `.env.openai`，不入日志。已有任务保留原凭据；云端 Secret Manager 配置沿用服务现状直至专门迁移。
@@ -55,3 +59,5 @@ Supervisor 默认与后端生成命令均选择 `codex-cli`。旧 Agents API 会
 证据：[最新固定样本](reports/20261005-sol61-high-fast-fixed-180s-retest.zh.md)、[四臂翻译](reports/20261005-sol61-high-fast-translation-ab.zh.md)、[生产账本](reports/20261004-production-time-tokens.zh.md)、[Supervisor历史影子实验](reports/20260928-model-production-ab-results.zh.md)、[TTS 8×8](reports/20261003-spark-production-8x8.zh.md)。历史报告保留当时参数，不追改历史数据。
 
 历史实现记录：[API 优先切换](reports/20261005-api-first-runtime-switch.zh.md)、[CLI 模型迁移记录](reports/20261005-cli-model-defaults-migration.zh.md)及[结构化收据](reports/20261005-cli-model-defaults-migration-receipt.json)。历史记录不覆盖当前 `AGENTS.md` 和本文件的默认运行策略。
+
+共享 legacy chat helper 保留 strict `json_schema` 和 CUV inline PNG/JPEG 图片形状。文字及 schema 按既有输入上限校验，completion 仍按冻结输出 cap/default tier；图片单独使用 `sermon-legacy-cuv-vision-bounds-v1`（原 CUV 12 MiB 图片总量、最多 12 张），不将图片字节/count 或输出 cap 冒充文字 token 上限、vision 费用上限或美元预算授权。现有 consumer 的预算、人工/source 批准和未知结果阻断仍负责准入，canonical strict text budget adapter 没有因此扩展到图片。未迁移 CUV 历史缓存 schema，也未改写冻结历史 runs。

@@ -270,7 +270,33 @@ class SourceTextReviewTest(unittest.TestCase):
             with self.subTest(schema=schema), self.assertRaisesRegex(ValueError, "exactly one source-meaning receipt"):
                 self.apply(review=dict(self.review, schemaVersion=schema, authority=review_module.MACHINE_AUTHORITY))
         with self.assertRaisesRegex(ValueError, "conversational source correction review"):
-            self.apply(review=dict(self.review, schemaVersion="sermon-source-text-review-v3"))
+            self.apply(review=dict(self.review, schemaVersion="sermon-source-text-review-v4"))
+
+    def human_review(self, **changes):
+        review = {k: v for k, v in self.review.items() if k != "model"}
+        review.update(schemaVersion=review_module.SCHEMA_V3, reviewType="human", humanApproval=True,
+                      authority=review_module.HUMAN_AUTHORITY, reviewedBy="operator")
+        review.update(changes)
+        return review
+
+    def test_operator_confirmed_review_applies_with_human_provenance(self):
+        corrected, provenance = self.apply(review=self.human_review())
+        self.assertEqual(corrected[0]["text"], "But I have committed to not shield you.")
+        self.assertEqual((provenance["reviewType"], provenance["humanApproval"]), ("human", True))
+        self.assertNotIn("model", provenance)
+        self.assertEqual(provenance["authority"], review_module.HUMAN_AUTHORITY)
+
+    def test_operator_confirmed_review_rejects_a_model_identity_or_missing_approval(self):
+        for bad in (dict(model=review_module.MODEL), dict(humanApproval=False), dict(reviewType="model"),
+                    dict(authority=review_module.AUTHORITY)):
+            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, "operator-confirmed"):
+                self.apply(review=self.human_review(**bad))
+
+    def test_operator_confirmed_review_keeps_the_original_text_binding(self):
+        review = self.human_review()
+        review["patches"][0]["originalTextSha256"] = "b" * 64
+        with self.assertRaisesRegex(ValueError, "text changed"):
+            self.apply(review=review)
 
     def test_v2_keeps_the_conversational_review_and_records_its_schema(self):
         corrected, provenance = self.apply(review=dict(self.review, schemaVersion=review_module.SCHEMA_V2))

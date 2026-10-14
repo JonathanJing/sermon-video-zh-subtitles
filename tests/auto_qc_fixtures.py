@@ -133,10 +133,10 @@ PACKAGE_VOICE = {"provider": "local", "model": "tts", "checkpointSha256": "e" * 
 
 
 def _asr_settings(model: str, backend: str) -> dict:
-    from scripts.screen_target_language_audio_units import SCORING
+    from scripts.screen_target_language_audio_units import SCORING, implementation_sha256
     return {"protocol": "fake-asr-v1", "model": model, "modelRevision": None, "language": "auto",
             "minSimilarity": audio_qc.THRESHOLDS["asrMinSimilarity"], "scoring": SCORING,
-            "implementationSha256": "e" * 64, "runtime": {"backend": backend, "temperature": 0.0}}
+            "implementationSha256": implementation_sha256(), "runtime": {"backend": backend, "temperature": 0.0}}
 
 
 ASR_SETTINGS = {PRIMARY_ASR: _asr_settings(PRIMARY_ASR, "fake-asr"),

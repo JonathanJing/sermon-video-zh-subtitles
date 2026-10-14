@@ -539,7 +539,10 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
   return {
     id: page.id, date: page.date, number: '', targetLocale: locale, defaultTargetLocale: locale, title: content.title,
     series: content.series, speaker: content.speaker, scripture: content.scripture,
-    sourceUrl: podcast ? page.sourceUrl : assetPath(content.sourceVideoUrl),
+    // Content v3 may publish text/audio without a hosted source video. A
+    // declared video still goes through the same strict same-origin check.
+    sourceUrl: podcast ? page.sourceUrl : content.schemaVersion === CONTENT_V3 && !Object.hasOwn(content, 'sourceVideoUrl')
+      ? null : assetPath(content.sourceVideoUrl),
     sourceLabel: podcast ? PODCAST_LABELS[locale].source : labels.source,
     sourceRoute: podcast ? 'podcast' : 'full_video', ...(page.mediaType ? {mediaType: page.mediaType} : {}),
     sourceSha256: content.sourceMediaSha256,

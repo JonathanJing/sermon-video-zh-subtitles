@@ -70,13 +70,14 @@ class EnglishSourcePackageTests(unittest.TestCase):
             schema, format_checker=FormatChecker(),
         ).iter_errors(value))
 
-    def build(self, *, review_path=None):
+    def build(self, *, review_path=None, machine_judge_path=None):
         return subject.build_package(
             self.segments_path,
             self.manifest_path,
             summary_path=self.summary_path,
             approval_evidence_path=self.approval_path,
             review_path=review_path,
+            machine_judge_path=machine_judge_path,
             source_id="sermon-fixture",
             source_url_hash="2" * 64,
             service_date="2026-09-20",
@@ -189,6 +190,33 @@ class EnglishSourcePackageTests(unittest.TestCase):
             self.assertEqual(blocked["status"], "candidate_ready_for_translation")
             self.assertFalse(blocked["translationEligible"])
             self.assertIn("alignment_word_duration_outlier", {item["type"] for item in blocked["issues"]})
+
+    def test_operator_accepted_word_outlier_clears_only_with_both_reviews(self):
+        sentence_id = self.manifest["sourceUnits"][0]["sourceSentenceId"]
+        self.manifest["issues"] = [{"type": "alignment_word_duration_outlier", "sourceSentenceId": sentence_id,
+                                    "wordId": "w-accepted"},
+                                   {"type": "alignment_word_duration_outlier", "sourceSentenceId": sentence_id,
+                                    "wordId": "w-other"}]
+        write_json(self.manifest_path, self.manifest)
+        review_path = self.root / "review-outlier.json"
+        write_json(review_path, {
+            "schemaVersion": subject.REVIEW_SCHEMA_VERSION,
+            "alignedSegmentsSha256": subject.file_sha256(self.segments_path),
+            "anchorManifestJsonSha256": subject.json_sha256(self.manifest),
+            "humanApproval": True, "reviewedBy": "Fixture reviewer", "reviewedAt": "2026-09-20T12:00:00Z",
+            "reviewedSourceUnitIds": [unit["sourceUnitId"] for unit in self.manifest["sourceUnits"]],
+            "checks": {name: "approved" for name in subject.APPROVED_CHECKS},
+        })
+        judge_path = self.root / "judge.json"
+        write_json(judge_path, {"operatorAcceptance": {"items": [
+            {"sourceSentenceId": sentence_id, "issueType": "alignment_word_duration_outlier", "wordId": "w-accepted"}]}})
+        with patch.object(subject, "_machine_judge_payload", return_value=(None, True)):
+            package = self.build(review_path=review_path, machine_judge_path=judge_path)
+        self.assertEqual([item["detail"]["wordId"] for item in package["issues"]], ["w-other"])
+        self.assertFalse(package["translationEligible"])
+        with patch.object(subject, "_machine_judge_payload", return_value=(None, False)):
+            unjudged = self.build(review_path=review_path, machine_judge_path=judge_path)
+        self.assertEqual(len(unjudged["issues"]), 2)
 
     def test_review_bound_to_other_anchor_is_rejected(self):
         review_path = self.root / "review.json"
