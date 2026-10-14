@@ -68,3 +68,7 @@ TTS batch-001 的收据 `inferenceSeconds` 连续三轮为 0.0。已查明：8 �
 ## 更正
 
 本文的 TTS 数字原先把窗口 0 的收据当作 batch-000 的总耗时，并把窗口 8 记为 0.0 秒。真实的两窗口生成时间见上表（来自 `replica-runtime.json` 的 worker 计时）。
+
+## 报告维护
+
+本报告初始 CI 因导出的 `asr.log`、`tts.log` 含行尾空白而未通过 `git diff --check`。本次只规范化报告中的日志副本，不改错误内容或原运行文件；manifest 原有 `sha256`/`bytes` 继续绑定原来源，新增 `exportedCopy` 记录规范化副本的哈希、字节数和处理方式。
