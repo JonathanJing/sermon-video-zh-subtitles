@@ -59,7 +59,7 @@ These files are retained for provenance and research, not as operator entrypoint
 - Historical cloud architecture: [system design](system-design.md), [gap analysis](system-design-gap-analysis.md), [Cloud Run deployment prep](cloud-run-deployment-prep.md), [old Sunday cloud runbook](sunday-live-test-runbook.md), [cloud observability](observability.md), and [admin workflow](admin-workflow.md).
 - Historical publication and offline implementation: [July 5 publication retrospective](post-live-reviewed-sunday-publication.zh.md) and [old offline subtitle notes](weekly-offline-subtitle-generation.zh.md).
 - Early research: [findings](findings-report.md), [source feasibility](youtube-sermon-subtitle-pipeline-analysis.zh-en.md), [archive timing evidence](offline-live-archive-timing-feasibility.zh.md), and [provider comparison](model-provider-comparison.md).
-- Benchmark and training Discovery: [live translation](live-sermon-translation-benchmark.zh.md), [local ASR](local-asr-benchmark.zh.md), [MacBook translation](macbook-sermon-translation-benchmark.zh.md), and [MiLMMT post-training](milmmt-sermon-post-training-plan.zh.md).
+- Benchmark and training Discovery: [model output speed index](model-output-speed-index.zh.md), [live translation](live-sermon-translation-benchmark.zh.md), [local ASR](local-asr-benchmark.zh.md), [MacBook translation](macbook-sermon-translation-benchmark.zh.md), and [MiLMMT post-training](milmmt-sermon-post-training-plan.zh.md).
 - Old project records: [backlog](backlog.md), [development notes](development-notes.md), and [review/test notes](review-testing.md).
 
 Chinese and English historical counterparts remain beside one another for provenance. They are not independent current sources of truth.

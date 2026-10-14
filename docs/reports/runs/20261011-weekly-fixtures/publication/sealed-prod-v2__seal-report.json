@@ -1,0 +1,20 @@
+{
+ "appCandidateSha256s": {
+  "es": "9b60270ac67ff26ff61409186e6aa9ff8dc5f6c55a024e6702581cb8d68e6d65",
+  "ko": "19909b7884cf7d291b5935f9e2cfed3ef433a3367862f3deee4c24542f804f83",
+  "zh-Hans": "bf6e0e8acb5c604bf5660032a2a5bf74015af63e1c78efef430c688f18c0d6d1"
+ },
+ "catalogSha256": "7a0dda6c3311067bc409b775a3fdb20f54c39e3cd5824d54c1715ce28c5825fc",
+ "catalogV4Sha256": "3eeef37f4fc4178a19082456f6677690a2d3738caca7ff3d9755e4645ba9d319",
+ "files": "<186 rows omitted>",
+ "httpAssetReceiptSha256": "4a1254af79adc9eaf1b220cf7e3cfa4e1e693158e7bc11d46a7d8b258f85b42e",
+ "origin": "https://ai-for-god-sermon-audio.web.app",
+ "pageId": "resi-20261011-54475d42",
+ "releaseSha256s": {
+  "es": "835d9fd20d6d30117a69f8b49b4840c946fd4cc24199380f11596a022435f946",
+  "ko": "76d5aaeaae0cb08155a6bef78e3dc1504061ad64cf8a9e69e58baa5200e02d5d",
+  "zh-Hans": "d0398bf480855ba31ecd0f720d07b9ba8a40deb5be5818f0c6b1d0752ffbf3e8"
+ },
+ "schemaVersion": "sermon-dual-script-app-seal-v1",
+ "status": "ready_for_catalog_deployment"
+}

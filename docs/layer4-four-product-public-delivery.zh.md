@@ -55,9 +55,15 @@ PDF 不进入该身份。静态 HTML 包含 `study-outline` 和 `study-meditatio
 
 ## 封存、发布与端点
 
-准备验证会同时检查私有批准、公开 bytes、候选 hash 与静态 HTML 完整显示。除逐语言七种资源外，准备 manifest 的 `runtimeAssets` 冻结并公开发布 app.mjs、published-weeks.mjs、content-locales.mjs，避免与旧 Web baseline 合并时留下不支持 v3 的 reader。这三份模块进入 input snapshot、HTTP 清单和 sealed snapshot。HTTP 准备 receipt 必须恰好覆盖全部逐语言资源与共享 runtime。封存清单与 live HTTP 验证包含学习资源及产品 manifest。原有多语言 overlay、baseline 和未知发布 lease 规则不变。
+准备验证会同时检查私有批准、公开 bytes、候选 hash 与静态 HTML 完整显示。除逐语言七种资源外，准备 manifest 的 `runtimeAssets` 冻结并公开发布 reader 的**完整外壳闭包**（`runtime_web_files()`：`index.html`、它引用的样式、主题脚本、图标与品牌图、离线 service worker、声纹 worker／worklet，以及从 app.mjs、published-weeks.mjs、content-locales.mjs 出发的全部 ES 模块；`/weekly.json` 这类数据文件不算外壳），避免与旧 Web baseline 合并时留下旧的 `index.html` 或不支持 v3 的 reader（2026-10-11 线上故障的原因）。这些文件进入 input snapshot、HTTP 清单和 sealed snapshot；`verify`／`seal` 还会逐个核对它们与当前代码库 `experiments/sermon-dubbing-poc/web` 同哈希，web 改动之后必须重新 prepare。HTTP 准备 receipt 必须恰好覆盖全部逐语言资源与共享 runtime。封存清单与 live HTTP 验证包含学习资源及产品 manifest。原有多语言 overlay、baseline 和未知发布 lease 规则不变。
 
-封存站点带 v4 时（四层封存总会写出 v4），即使本次全是人工审核的语言，端点回读也必须包含 `/multilingual-v4.json`，因为当前网页和 iOS 先读 v4；只回读 v3 不能证明当前客户端的路径；托管发布部署前比较线上 v4 与基线，部署后回读 v4 与封存 SHA。四产物端点使用 [client readback v2](../schemas/sermon-client-readback-v2.schema.json)，必须包含当前 catalog、release 及所有七种资源的 URL/bytes hash。Web 的 dev / production_web 端点还必须回读上述三份 reader runtime（role=reader_runtime）。每个 locale 的播放 telemetry 另需：
+发布入口的另外三道门（2026-10-11 复盘 `DEV-R242-029`）：
+
+1. **线上基线必须当场取。** prepare 之前用 `scripts/prepare_dev_simulated_publication.py baseline --environment production --out <新目录>`（可带 `--cache-public`／`--cache-receipt` 复用上周已核验的字节）从 Hosting API 取当前 live 版本的文件清单并逐文件按 gzip 哈希核对，写出 `baseline-receipt.json` 与 `seal-report.json`。本地留存的旧基线不能当 live 基线：2026-10-11 本地快照比线上少 13 个文件，发布后外壳不完整。
+2. **发布后浏览器冒烟。** 发 Dev 和发生产之后各跑一次 `scripts/smoke_published_page.py --origin <站点> --page-id <pageId> --out <报告>`（需要本机 Chrome 和 Node）：`scripts/smoke_browser_cdp.mjs` 通过 Chrome 调试协议打开三语 `/?week=<pageId>&contentLang=<locale>`，只观察、不自己发请求。每个语言都要与该语言的发布包对上：URL 保留请求的周和语言，内容语言选择器显示该语言，`<audio>` 地址是该发布包的音频，标题以该语言正文标题开头，当前字幕和全文来自该语言的 cue；不能有 `console.error`、未捕获异常，也不能有外壳文件或本发布包资产加载失败；页面自己发出的 `/api/session` 请求全部返回 200，且每个请求带的周、音轨 ID 和音频哈希只能是该发布包的音轨或阅读器的使用统计锚点（默认页默认语言的音轨），并至少有一个是该发布包的音轨，免得反馈和收听统计记到别的音轨上；超过截止时间即失败。其他可选资源（例如别的页面的定位索引）加载失败只记为警告并列出。页面打开时本来就会建匿名会话，冒烟不额外建；报告只是浏览器渲染证据，不是设备或现场验收。
+3. **反馈目录随周发布同步。** 新页面的音轨必须进入反馈 API 的来源目录，否则该页的赞踩、逐句反馈和收听统计全部返回 400 `unknown_source`（2026-10-02 至 10-11 三周 9 条音轨曾如此）。来源目录用现有的 `scripts/build_language_listening_catalog.py --public <与线上一致的站点快照> --previous-catalog <线上函数当前的 catalog.json> --legacy-locale zh-Hans --out <新 catalog.json>` 生成：它保留全部旧来源（已有来源的任何变化都会报错），逐个核验已发布的音频、字幕、正文和 release 哈希，为每个带音轨的语言加上 `pageId`／`audioLocale`，时长取客户端上报的配音时钟。运行时代码和 `server-config.json` 取自线上函数当前的源码包（位置见 `gcloud functions describe sermon-feedback-api`），只替换 `catalog.json`，再按线上相同的参数 `gcloud functions deploy`；这是对外动作，需授权。回退就是用原源码包按同样参数重新部署。部署后用浏览器冒烟确认三语 `/api/session` 返回 200。
+
+封存站点带 v4 时（四层封存总会写出 v4），即使本次全是人工审核的语言，端点回读也必须包含 `/multilingual-v4.json`，因为当前网页和 iOS 先读 v4；只回读 v3 不能证明当前客户端的路径；托管发布部署前比较线上 v4 与基线，部署后回读 v4 与封存 SHA。新版本经 CDN 传播需要片刻：部署后的版本、v3／v4 回读、对账时的目录回读，以及刷新基线时逐文件的 GET，都在 `guarded_hosting_publish.PROPAGATION_TIMEOUT_SECONDS`（默认 120 秒，每 5 秒一次）内重复只读检查，到期仍不一致才判为不一致或结果未知；不重复部署。每个 read 传入当前剩余 timeout，完成时再核对统一 deadline，过期成功不接纳；HTTP 断流（含 IncompleteRead）只重读。发布从本次 `firebase deploy --json` 的 `status=success/result.hosting` 单站点版本回执固定 `newVersion`，保存为 `hosting-deploy-result.json`，在任何线上回读前写入 attempt；缺失、无效或多站点回执保持 unknown，不能用首次观测到的非基线版本代替本次部署身份。注入的 subprocess runner 也须向提供的 stdout 写同形 JSON。目录读取前后及后续重试必须仍为回执版本；其他发布者换版本时保留 unknown 收据与 lease，不把无关版本记为本 attempt 成功。新 attempt 同时保存版本化 `versionPropagation`，绑定 attempt、基线、CLI 回执哈希和 ownedVersion；仅明确 `ownedVersionObserved=false` 时，发布或对账可在同一传播 deadline 内等待 live 从基线切换。首次观测本次版本后先持久化 true，再读目录；崩溃后对账仍拒绝退回基线或第三方版本。缺该状态的旧 attempt 继续严格确认，不推测尚未观测，也不改写旧收据升级等待权限。到期不一致保留 unknown 和 lease，不重部署。对账也须匹配该已记录版本；旧 unknown attempt 没有版本回执时仍需显式确认版本，不能自动认领。四产物端点使用 [client readback v2](../schemas/sermon-client-readback-v2.schema.json)，必须包含当前 catalog、release 及所有七种资源的 URL/bytes hash。Web 的 dev / production_web 端点还必须回读上述三份 reader runtime（role=reader_runtime）。每个 locale 的播放 telemetry 另需：
 
 ```json
 {"studyArtifacts":{"outline":"<canonical artifact SHA-256>","meditation":"<canonical artifact SHA-256>"},"studyDisplayed":true}
@@ -67,6 +73,7 @@ PDF 不进入该身份。静态 HTML 包含 `study-outline` 和 `study-meditatio
 
 ## 旧版本迁移
 
+- 旧版（legacy）工具保留其文档化范围，不能替代本路径；纯文字语言经 `audio_unavailable` 发布，仅当发布计划、producer 与客户端都支持。
 - 没有 require_study 的旧 builder 路径继续产生 release v2；旧 snapshot、catalog-v3、Web v2 页面继续可读。
 - v2 没有独立学习资源，不授予四产物资格，不能将旧 content.outline 当成 v3 的独立 outline。
 - 将旧页面升级到 v3，必须提供同一 source/text 身份下的新独立学习产物和两份人审 receipt，重新 prepare、HTTP 验证、seal，并取得绑定新候选的发布授权。不能原地改旧 release schemaVersion。

@@ -73,16 +73,23 @@ ACTIONS = {
     "quotation_attribution_error": "repair_translation",
     "scripture_reference_error": "repair_translation",
     "meaning_shift": "repair_translation",
-    # AGENTS.md: a Sol issue or uncertainty also starts a new repair revision.
+    # docs/production-model-runtime-policy.zh.md (Layer 2 角色与返修): a Sol issue or uncertainty also starts a new repair revision.
     "review_uncertainty": "repair_translation",
     "review_issue_open": "repair_translation",
-    "language_plugin_failed": "escalate_engineering",
+    # A deterministic language check names its own finding (an over-long utterance,
+    # a forbidden register form); one repair carries it, a repeat goes to engineering.
+    "language_plugin_failed": "repair_translation",
+    # A reply that breaks the output contract (utterances as objects, missing
+    # coverage) says nothing about the translation; ask once more for the format.
+    "malformed_model_output": "repair_translation",
 }
 # What a repeated failure becomes once a repair made no progress on it.
 REPEATED_FAILURE_ACTIONS = {
     "quotation_attribution_error": "request_source_review",  # points at the source, not the wording
     "review_uncertainty": "request_human_review",
     "review_issue_open": "request_human_review",
+    "language_plugin_failed": "escalate_engineering",
+    "malformed_model_output": "escalate_engineering",
 }
 INSTRUCTIONS = {
     "meaning_omission": "Restore every meaning the English source states; the prior translation omitted some.",
@@ -94,6 +101,11 @@ INSTRUCTIONS = {
     "meaning_shift": "Restore the meaning of the English source; the prior translation shifted it.",
     "review_uncertainty": "Resolve the reviewer's stated uncertainty from the English source and its context.",
     "review_issue_open": "Resolve the reviewer's open issue from the English source.",
+    "language_plugin_failed": ("Fix the deterministic language check finding below without changing meaning: "
+                               "keep each utterance at most 180 characters (split at natural clause boundaries), "
+                               "use the policy register, and keep every number, name and reference the English says."),
+    "malformed_model_output": ("The prior reply broke the JSON contract. Return targetUtterances as a JSON array "
+                               "of plain strings and one coverage row per source unit with an exact targetText substring."),
 }
 SYSTEMIC_MINIMUM_GROUPS = 3
 SYSTEMIC_FRACTION = 0.01
@@ -118,7 +130,7 @@ def classify_review(semantic: dict) -> tuple[list[str], str]:
     """Failure codes and action for a Sol review that did not pass.
 
     Every Sol failure, uncertainty or open issue starts a new repair revision
-    (AGENTS.md). Uncertainty or an open issue that repeats after a repair goes
+    (docs/production-model-runtime-policy.zh.md). Uncertainty or an open issue that repeats after a repair goes
     to a person instead (REPEATED_FAILURE_ACTIONS).
     """
     checks = semantic.get("checks") or {}
@@ -134,7 +146,8 @@ def classify_review(semantic: dict) -> tuple[list[str], str]:
 # Umbrella codes lump unrelated defects (one group a negation, another a number,
 # a third a name). They stop dispatch only when consecutive, never by scattered
 # count at the end of a round.
-UMBRELLA_CODES = frozenset({"negation_number_name_error", "review_issue_open", "review_uncertainty"})
+UMBRELLA_CODES = frozenset({"negation_number_name_error", "review_issue_open", "review_uncertainty",
+                            "language_plugin_failed", "malformed_model_output"})
 # Repository waiver policy: at most four repairs per English source unit.
 MAX_REPAIRS_PER_SOURCE_UNIT = 4
 
@@ -243,6 +256,14 @@ class FailureCollector:
                       "failureCodes": ["language_plugin_failed"], "action": ACTIONS["language_plugin_failed"],
                       "evidence": _clip("; ".join(f"{check.get('checkId')}: {check.get('evidence', '')}"
                                                   for check in failed)),
+                      "issues": [], "uncertainty": []})
+
+    def record_malformed_output(self, index: int, group: dict, role: str, cache_path: Path, reason: str) -> None:
+        """A translator or reviewer reply that broke the output contract fails only its group."""
+        _require(role in ("translator", "reviewer"), "Malformed output role must be translator or reviewer")
+        self._record({**self._base(index, group, cache_path), "gate": "output_contract",
+                      "failedRole": role, "failureCodes": ["malformed_model_output"],
+                      "action": ACTIONS["malformed_model_output"], "evidence": _clip(reason),
                       "issues": [], "uncertainty": []})
 
     def record_not_dispatched(self, index: int, group: dict) -> None:
@@ -445,7 +466,7 @@ def decide(failure: dict, history: list[dict], value: dict, *, noted: bool = Fal
     if current in seen:
         repeated = {REPEATED_FAILURE_ACTIONS[code] for code in failure["failureCodes"]
                     if code in REPEATED_FAILURE_ACTIONS}
-        for action in ("request_source_review", "request_human_review"):
+        for action in ("request_source_review", "request_human_review", "escalate_engineering"):
             if action in repeated:
                 if action == "request_source_review" and noted \
                         and not any("source_meaning_noted" in row["decisions"] for row in history):
@@ -472,11 +493,145 @@ def repair_row(failure: dict, meaning_notes: dict | None = None) -> dict:
     if noted:
         # The frozen English of these units is what was said: translate it literally, add no meaning.
         instruction += " " + noted
-    instruction += (" Machine-written repair instruction from a failed independent review; "
-                    "check every point against the English source. Reviewer finding: " + reason)
-    return {"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
-            "failedRole": "reviewer", "failedCacheSha256": failure["reviewerCacheSha256"],
-            "failureReason": reason, "instruction": instruction[:2000]}
+    finding = ("Back-translation QC finding (the independent reviewer passed the prior translation, "
+               "an independent back-translation did not): " if "backTranslationQc" in failure
+               else "Language check finding: " if "language_plugin_failed" in failure["failureCodes"]
+               else "Reviewer finding: ")
+    instruction += (" Machine-written repair instruction from a failed machine check; "
+                    "check every point against the English source. " + finding + reason)
+    row = {"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
+           "failedRole": failure.get("failedRole", "reviewer"), "failedCacheSha256": failure["reviewerCacheSha256"],
+           "failureReason": reason, "instruction": instruction[:2000]}
+    if "backTranslationQc" in failure:
+        row["backTranslationQc"] = failure["backTranslationQc"]
+    return row
+
+
+# ---------------------------------------------------------------- gate 4: back-translation QC
+
+
+QC_RECEIPT_SCHEMA = "sermon-target-text-auto-qc-v1"
+
+
+def back_translation_qc_failures(receipt: dict, request: dict, head_run: Path) -> tuple[list[dict], list[dict]]:
+    """``(repairs, fallbacks)``: the groups a text QC receipt failed, bound to the chain head's caches.
+
+    The receipt must be the QC of this lineage and must have judged exactly the text the head
+    round's reviewer caches hold: QC of an older or other candidate can never send a group back.
+    Every QC backend records the locale and the frozen policy hash, and the policy's
+    ``sourceScope`` binds the source package and anchor, so those bind the lineage; a scoped
+    API receipt's ``qcContext`` is checked too when present (Codex and legacy API receipts have
+    none). The QC's own repair ladder decides what may happen to a failed group: only
+    ``revise_translation`` reopens it, with codes from the back-translation issue kinds
+    (``QC_KIND_CODES``); a group whose QC attempts are spent (``source_text_fallback``) is a
+    terminal stop, never another translation. A failed group with no mappable issue (only a
+    deterministic QC check), another action, or a QC still pending is refused."""
+    _require(isinstance(receipt, dict) and receipt.get("schemaVersion") == QC_RECEIPT_SCHEMA
+             and receipt.get("status") == "requires_repair" and receipt.get("humanApproval") is False,
+             "back_translation_qc_receipt_not_a_failed_machine_qc")
+    context = ((receipt.get("semanticIdentity") or {}).get("settings") or {}).get("qcContext")
+    _require(receipt.get("locale") == request["targetLocale"]
+             and receipt.get("policyJsonSha256") == request["translationPolicySha256"]
+             and (context is None or isinstance(context, dict)
+                  and context.get("targetLocale") == request["targetLocale"]
+                  and context.get("englishSourcePackageJsonSha256") == request["englishSourcePackageJsonSha256"]
+                  and context.get("anchorManifestJsonSha256") == request["anchorManifestSha256"]
+                  and context.get("targetLanguagePolicyJsonSha256") == request["translationPolicySha256"]),
+             "back_translation_qc_receipt_belongs_to_another_lineage")
+    caches = {}
+    for path in sorted(Path(head_run).glob("group-*-sol.json")):
+        saved = json.loads(path.read_text(encoding="utf-8"))
+        result = saved.get("result") if isinstance(saved, dict) else None
+        if isinstance(result, dict) and isinstance(result.get("translationGroupId"), str):
+            caches[result["translationGroupId"]] = (path, result)
+    failures, fallbacks = [], []
+    for row in receipt.get("results") or []:
+        if row.get("status") == "pass":
+            continue
+        _require(row.get("status") == "fail", "back_translation_qc_incomplete")
+        group_id = row.get("groupId")
+        _require(group_id in caches, "back_translation_qc_group_not_in_chain_head")
+        path, result = caches[group_id]
+        utterances = result.get("targetUtterances")
+        _require(isinstance(utterances, list) and all(isinstance(item, str) for item in utterances)
+                 and result.get("sourceUnitIds") == row.get("sourceUnitIds"),
+                 "back_translation_qc_group_identity_differs")
+        text = "".join(utterances)
+        _require(hashlib.sha256(text.encode("utf-8")).hexdigest() == row.get("targetTextSha256"),
+                 "back_translation_qc_judged_another_text")
+        if row.get("nextAction") == "source_text_fallback":
+            fallbacks.append({"translationGroupId": group_id, "sourceUnitIds": row["sourceUnitIds"],
+                              "failureCodes": [], "reasonCode": "qc_source_text_fallback"})
+            continue
+        _require(row.get("nextAction") == "revise_translation", "back_translation_qc_action_not_a_revision")
+        issues = ((row.get("backTranslation") or {}).get("majorIssues")) or []
+        codes = sorted({QC_KIND_CODES[issue.get("kind")] for issue in issues if issue.get("kind") in QC_KIND_CODES})
+        _require(bool(codes), "back_translation_qc_failure_has_no_repairable_issue")
+        evidence = "; ".join(
+            f"English: {issue.get('english', '')!s} | prior translation: {text} | "
+            f"back-translation: {issue.get('backTranslation', '')!s} | {issue.get('kind')}"
+            for issue in issues if issue.get("kind") in QC_KIND_CODES)
+        failures.append({"translationGroupId": group_id, "sourceUnitIds": row["sourceUnitIds"],
+                         "failureCodes": codes, "action": "repair_translation", "evidence": evidence,
+                         "issues": [], "failedRole": "reviewer",
+                         "reviewerCacheSha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                         "backTranslationQc": {"receiptSha256": json_sha256(receipt),
+                                               "targetTextSha256": row["targetTextSha256"],
+                                               "failureCodes": codes}})
+    _require(bool(failures or fallbacks), "back_translation_qc_receipt_has_no_failed_group")
+    return failures, fallbacks
+
+
+def _reopen_for_qc(request: dict, entries: list[dict], value: dict, ledger_root: Path,
+                   receipt: dict) -> dict | None:
+    """Continue a passed chain with the groups a back-translation QC of its head failed.
+
+    Gate 1 and 2 passing is not release (``releaseAuthority: none``); the independent
+    back-translation of the resulting candidate is gate 4. Its failures re-enter this
+    same chain as one repair round over the head's caches, under the usual per-unit
+    limit, fingerprint, patience and 10% spend rules, so a QC that keeps failing the same
+    unit for the same reason stops instead of looping. A receipt reopens at most once;
+    the QC of the repaired candidate is a new receipt."""
+    receipt_sha256 = json_sha256(receipt)
+    if any((entry.get("reopenedBy") or {}).get("qcReceiptSha256") == receipt_sha256 for entry in entries):
+        return None
+    last = entries[-1]
+    _require(last["outcome"] == "passed", "back_translation_qc_reopen_requires_passed_chain")
+    failures, fallbacks = back_translation_qc_failures(receipt, request, Path(last["runDirectory"]))
+    rows = [{"translationGroupId": row["translationGroupId"], "sourceUnitIds": row["sourceUnitIds"],
+             "failureCodes": [], "fingerprint": None, "repaired": False, "decision": row["reasonCode"]}
+            for row in fallbacks]
+    repairs, stopped = [], []
+    for failure in failures:
+        verdict, reason = decide(failure, unit_history(entries, failure["sourceUnitIds"]), value)
+        rows.append({"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
+                     "failureCodes": failure["failureCodes"],
+                     "fingerprint": fingerprint(value, failure["sourceUnitIds"], failure["failureCodes"]),
+                     "repaired": verdict == "repair", "decision": reason})
+        (repairs if verdict == "repair" else stopped).append((failure, reason))
+    affordable, cap_reason = _affordable_repairs(entries)
+    for failure, _ in repairs[affordable:]:
+        next(row for row in rows if row["translationGroupId"] == failure["translationGroupId"]).update(
+            repaired=False, decision=cap_reason)
+        stopped.append((failure, cap_reason))
+    repairs = repairs[:affordable]
+    head = Path(last["runDirectory"])
+    next_brief = {"schemaVersion": runner.PARTIAL_REPAIR_SCHEMA_V2, **{key: request[key] for key in (
+        "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256")},
+        "groups": [repair_row(failure) for failure, _ in repairs]} if repairs else None
+    return append_ledger(ledger_root, value, entries, {
+        "runDirectory": last["runDirectory"], "routingVersion": ROUTING_VERSION, "repairBriefSha256": None,
+        "evidenceSha256": None, "failureReportSha256": None,
+        "spend": {"calls": 0, "tokens": 0, "callsWithoutUsage": 0}, "groups": rows,
+        "outcome": "repairing" if repairs else "stopped",
+        "stopped": [{"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
+                     "failureCodes": failure["failureCodes"], "reasonCode": reason,
+                     "evidencePath": str(head)} for failure, reason in stopped]
+                   + [{**row, "evidencePath": str(head)} for row in fallbacks],
+        "nextBrief": next_brief,
+        "reopenedBy": {"evidence": "back_translation_qc", "qcReceiptSha256": receipt_sha256,
+                       "groups": sorted([failure["translationGroupId"] for failure in failures]
+                                        + [row["translationGroupId"] for row in fallbacks])}})
 
 
 # ---------------------------------------------------------------- loop
@@ -542,18 +697,33 @@ def reopenable_groups(entries: list[dict], meaning_notes: dict | None) -> dict[s
         history = unit_history(entries, row["sourceUnitIds"])
         fresh = {unit for unit in row["sourceUnitIds"] if unit in meaning_notes} \
             - noted_units(entries, row["sourceUnitIds"])
-        if row["reasonCode"] == "request_source_review" and fresh \
+        # A human ruling also answers a request_human_review stop for the units it covers.
+        answered = row["reasonCode"] == "request_source_review" or (
+            row["reasonCode"] == "request_human_review" and fresh
+            and all(meaning_notes[unit].get("humanRuling") for unit in fresh))
+        if answered and fresh \
                 and sum(item["repaired"] for item in history) < MAX_REPAIRS_PER_SOURCE_UNIT:
             eligible[row["translationGroupId"]] = row
     return eligible
+
+
+def token_cap(initial_tokens: int, token_bound: int | None) -> int:
+    """The repair token allowance: 10% of the initial round, but never less than the
+    worst-case reservation of ``MINIMUM_REPAIR_CALLS`` calls, like the call cap.
+
+    Repairs are reserved at the enforced request bound (input plus completion limit),
+    about ten times a real call, so 10% alone could not pay for one repair on a
+    16-group clip and for about four on a full week (user decision 2026-10-14)."""
+    fraction = math.ceil(initial_tokens * SPEND_FRACTION)
+    return fraction if token_bound is None else max(fraction, MINIMUM_REPAIR_CALLS * token_bound)
 
 
 def _affordable_repairs(entries: list[dict]) -> tuple[int, str]:
     """How many groups the repair allowance can still reserve before any round runs, and the reason when short.
 
     The same caps the loop applies when it picks a round's repairs: 10% of the
-    initial calls (at least ``MINIMUM_REPAIR_CALLS``) and of the initial tokens,
-    reserved at the enforced worst case per call."""
+    initial calls and of the initial tokens, each at least ``MINIMUM_REPAIR_CALLS``
+    calls (``token_cap``), reserved at the enforced worst case per call."""
     initial = entries[0]["spend"]
     if initial["callsWithoutUsage"] or any(e["spend"]["callsWithoutUsage"] for e in entries[1:]):
         return 0, "repair_token_usage_unavailable"
@@ -563,13 +733,13 @@ def _affordable_repairs(entries: list[dict]) -> tuple[int, str]:
     calls = sum(e["spend"]["calls"] for e in entries[1:])
     tokens = sum(e["spend"]["tokens"] for e in entries[1:])
     cap_calls = max(MINIMUM_REPAIR_CALLS, math.ceil(initial["calls"] * SPEND_FRACTION))
-    cap_tokens = math.ceil(initial["tokens"] * SPEND_FRACTION)
+    cap_tokens = token_cap(initial["tokens"], token_bound)
     return min(max(0, (cap_calls - calls) // CALLS_PER_REPAIR),
                max(0, (cap_tokens - tokens) // (CALLS_PER_REPAIR * token_bound))), "repair_spend_cap"
 
 
 def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], value: dict, ledger_root: Path,
-                      meaning_notes: dict | None) -> dict | None:
+                      meaning_notes: dict | None, meaning_notes_sha256: str | None = None) -> dict | None:
     """Reopen a chain stopped for source review once meaning notes settle those groups' units.
 
     Audio adjudication normally becomes available after a locale has stopped with
@@ -633,14 +803,15 @@ def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], val
         "evidenceSha256": None, "failureReportSha256": None,
         "spend": {"calls": 0, "tokens": 0, "callsWithoutUsage": 0}, "groups": rows,
         "outcome": "repairing" if failures else "stopped", "stopped": stopped, "nextBrief": next_brief,
-        "reopenedBy": {"evidence": "source_meaning_notes", "meaningNotesSha256": json_sha256(meaning_notes),
+        "reopenedBy": {"evidence": "source_meaning_notes", "meaningNotesSha256": meaning_notes_sha256 or json_sha256(meaning_notes),
                        "units": units,
                        "failureReports": [{"sequence": sequence, "failureReportSha256": digest}
                                           for sequence, digest in sorted(origins.items())]}})
 
 
 def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Path,
-          ledger_root: Path, *, group_workers: int = 1, meaning_notes: dict | None = None) -> dict:
+          ledger_root: Path, *, group_workers: int = 1, meaning_notes: dict | None = None,
+          meaning_notes_sha256: str | None = None, back_translation_qc: dict | None = None) -> dict:
     """Run rounds until every group passes or repair stops; write and return a receipt.
 
     ``run_round(out, reuse_from, brief, collector)`` returns evidence when every
@@ -652,12 +823,23 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
     bound to this run's source and anchor: a group holding a noted unit carries
     the note in its repair brief, and a quotation failure that recurs on such a
     group is repaired once more with it before it is sent to source review.
+
+    ``back_translation_qc`` is a failed text QC receipt of this chain's passed head
+    (gate 4): its failed groups reopen the chain for one repair round (``_reopen_for_qc``).
     """
     value = lineage(request)
     out_root = Path(out_root)
     entries = load_ledger(ledger_root, value)
+    if back_translation_qc is not None:
+        # A QC receipt repairs the passed chain it judged; it never starts or silently skips a chain.
+        consumed = any((entry.get("reopenedBy") or {}).get("qcReceiptSha256") == json_sha256(back_translation_qc)
+                       for entry in entries)
+        _require(consumed or (entries and entries[-1]["outcome"] == "passed"),
+                 "back_translation_qc_requires_passed_repair_chain")
     if entries and entries[-1]["outcome"] != "repairing":
-        reopened = _reopen_for_notes(request, total_groups, entries, value, ledger_root, meaning_notes)
+        reopened = _reopen_for_notes(request, total_groups, entries, value, ledger_root, meaning_notes, meaning_notes_sha256)
+        if reopened is None and back_translation_qc is not None and entries[-1]["outcome"] == "passed":
+            reopened = _reopen_for_qc(request, entries, value, ledger_root, back_translation_qc)
         if reopened is not None:
             entries.append(reopened)
         if entries[-1]["outcome"] != "repairing":
@@ -684,7 +866,7 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
                      and not initial["callsWithoutUsage"]
                      and not any(e["spend"]["callsWithoutUsage"] for e in entries[1:])
                      and spent["tokens"] + len(brief["groups"]) * CALLS_PER_REPAIR * token_bound
-                     <= math.ceil(initial["tokens"] * SPEND_FRACTION),
+                     <= token_cap(initial["tokens"], token_bound),
                      "repair_token_reservation_unavailable")
         collector = FailureCollector(
             total_groups, [row["translationGroupId"] for row in brief["groups"]] if brief else None,
@@ -732,8 +914,8 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
                 stopped.append({**skipped, "failureCodes": [], "reasonCode": "not_dispatched_after_systemic_stop",
                                 "evidencePath": None})
             cap_calls = max(MINIMUM_REPAIR_CALLS, math.ceil(initial["calls"] * SPEND_FRACTION))
-            cap_tokens = math.ceil(initial["tokens"] * SPEND_FRACTION)
             token_bound = _repair_token_bound()
+            cap_tokens = token_cap(initial["tokens"], token_bound)
             known_usage = not initial["callsWithoutUsage"] and not spend["callsWithoutUsage"] \
                 and not any(e["spend"]["callsWithoutUsage"] for e in entries[1:])
             # Repair as many groups as the cap still allows, in source order.
@@ -757,7 +939,7 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
             if not repairs:
                 outcome = "stopped"
         elif brief is not None and (spend["callsWithoutUsage"]
-                                    or spent["tokens"] > math.ceil(initial["tokens"] * SPEND_FRACTION)):
+                                    or spent["tokens"] > token_cap(initial["tokens"], _repair_token_bound())):
             # Even a passing injected/misbehaving transport cannot hide unknown
             # or excessive usage behind successful semantic/plugin checks.
             outcome = "stopped"
