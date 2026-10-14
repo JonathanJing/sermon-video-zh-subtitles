@@ -22,6 +22,7 @@ test('attempt records keep only whitelisted enums and buckets', () => {
   const matched = { ...heard, reason: 'matched', match: { level: 'moderate', fractionBand: 'at_least_0_055' } };
   assert.equal(alignmentAttempt(matched, 'applied', at).shadow, null);
   assert.equal(alignmentAttempt({ ...matched, lastPhase: 'play_blocked' }, 'cancelled', at).outcome, 'play_blocked');
+  assert.equal(alignmentAttempt({ ...matched, lastPhase: 'play_starting' }, 'cancelled', at).outcome, 'matched');
   assert.equal(alignmentAttempt({ ...matched, lastPhase: 'matched' }, 'play_starting', at).outcome, 'matched');
   const denied = alignmentAttempt({ stage: 'index_ready', errorCode: 'MIC_PERMISSION', timings: {} }, 'permission_denied', at);
   assert.deepEqual([denied.stage, denied.reason, denied.fractionBand, denied.captureSeconds, denied.errorCode, denied.totalMs], ['index_ready', null, null, null, 'MIC_PERMISSION', null]);

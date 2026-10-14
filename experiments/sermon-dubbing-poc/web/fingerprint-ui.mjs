@@ -130,6 +130,8 @@ const LEVELS = new Set(['silent', 'very_low', 'low', 'moderate', 'high', 'unknow
 export function alignmentAttempt(observation, finalPhase, at) {
   let outcome = finalPhase;
   if (finalPhase === 'cancelled' && MATCH_HELD.includes(observation.lastPhase)) outcome = observation.lastPhase;
+  if (finalPhase === 'cancelled' && observation.lastPhase === 'play_starting'
+    && observation.stage === 'matched_audio' && observation.reason === 'matched') outcome = 'matched';
   if (!ATTEMPT_OUTCOMES.has(outcome)) outcome = MATCH_HELD.includes(observation.lastPhase) ? observation.lastPhase : 'cancelled';
   const heard = observation.stage === 'matched_audio', matched = heard && observation.reason === 'matched';
   if (['applied', ...MATCH_HELD].includes(outcome) && !matched) outcome = 'cancelled';

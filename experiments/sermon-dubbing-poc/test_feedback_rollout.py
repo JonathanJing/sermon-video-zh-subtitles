@@ -13,6 +13,7 @@ import unittest
 from unittest.mock import patch
 
 import deploy_feedback_compat as deploy
+import deploy_feedback as standard_deploy
 from deploy_feedback import verified_feedback_catalog as verify_standard_catalog, public_week_date
 from poc import sha256, write_json
 
@@ -145,6 +146,31 @@ class FeedbackRolloutTests(unittest.TestCase):
             self.assertEqual(compatible["weekIds"], ["2026-09-06"])
             self.assertEqual(len({deploy.source_identity(source) for source in compatible["sources"]}), 2)
             self.assertEqual(snapshot(current), before)
+
+    def test_runtime_catalog_adds_verified_page_and_audio_locale_to_legacy_sources(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            current = source_pages_fixture(Path(tmp))
+            weekly = read(current / "public/weekly.json")
+            weekly["weeks"][0]["targetLocale"] = "ko"
+            write_json(current / "public/weekly.json", weekly)
+            refresh_report(current)
+            before = snapshot(current)
+            runtime, _, _ = standard_deploy.merge_release_catalogs(current)
+            self.assertEqual({(source["pageId"], source["audioLocale"]) for source in runtime["sources"]},
+                             {(weekly["weeks"][0]["id"], "ko"), (weekly["weeks"][1]["id"], "zh-Hans")})
+            self.assertEqual(snapshot(current), before)
+            self.assertTrue(all("pageId" not in source for source in read(current / "feedback-catalog.json")["sources"]))
+            staged = Path(tmp) / "staged-api"
+            standard_deploy.prepare(current, staged)
+            self.assertEqual({(source["pageId"], source["audioLocale"]) for source in read(staged / "catalog.json")["sources"]},
+                             {(weekly["weeks"][0]["id"], "ko"), (weekly["weeks"][1]["id"], "zh-Hans")})
+
+            catalog = read(current / "feedback-catalog.json")
+            catalog["sources"][0]["pageId"] = weekly["weeks"][0]["id"]
+            write_json(current / "feedback-catalog.json", catalog)
+            refresh_report(current)
+            with self.assertRaisesRegex(ValueError, "Invalid feedback source fields"):
+                standard_deploy.merge_release_catalogs(current)
 
     def test_dual_source_compat_plan_preserves_previous_pages_and_exact_api(self):
         with tempfile.TemporaryDirectory() as tmp:
