@@ -51,11 +51,16 @@ MAX_AUTO_REPAIR_LOCALES = 3
 
 def _auto_repair_binding(value):
     required = {'routingVersion', 'groupWorkers', 'maxActiveLocales'}
-    require(isinstance(value, dict) and required <= set(value) <= required | {'sourceMeaningNotes'}
+    qc = value.get('backTranslationQc', {}) if isinstance(value, dict) else None
+    require(isinstance(value, dict) and required <= set(value) <= required | {'sourceMeaningNotes', 'backTranslationQc'}
             and value['routingVersion'] == auto_repair.ROUTING_VERSION
             # Optional: the Layer 1 machine audio adjudication notes (meaning-notes.json beside its receipt)
             # that ride the repair briefs of the groups holding their units.
             and (type(value.get('sourceMeaningNotes', 'x')) is str and value.get('sourceMeaningNotes', 'x'))
+            # Optional (gate 4): per locale, the failed text QC receipt of that lane's passed repair chain;
+            # its failed groups reopen the chain for one repair round (layer2_auto_repair._reopen_for_qc).
+            and isinstance(qc, dict) and ('backTranslationQc' not in value or bool(qc))
+            and all(locale in pipeline.LOCALES and type(path) is str and path for locale, path in qc.items())
             and type(value['groupWorkers']) is int
             and 1 <= value['groupWorkers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE
             and type(value['maxActiveLocales']) is int
@@ -138,6 +143,11 @@ def load_configuration(path):
         notes_path = _path(path.parent, repair_binding['sourceMeaningNotes'])
         repair_binding['sourceMeaningNotes'] = str(notes_path)
         input_paths.append(notes_path)
+    if repair_binding and repair_binding.get('backTranslationQc'):
+        require(set(repair_binding['backTranslationQc']) <= set(value['locales']), 'invalid_execution_configuration')
+        qc_paths = {locale: _path(path.parent, item) for locale, item in repair_binding['backTranslationQc'].items()}
+        repair_binding['backTranslationQc'] = {locale: str(item) for locale, item in qc_paths.items()}
+        input_paths.extend(qc_paths.values())
     concurrency_profile = resource_policy = None
     if 'concurrencyProfile' in value:
         from scripts.production_concurrency_profile import load_profile
@@ -211,6 +221,13 @@ def package_view(config):
         digest = jobs._digest(_json(Path(notes)))
         view['packageIdentities']['sourceMeaningNotes'] = digest
         view['stateRevision'] = jobs._digest({'packages': view['stateRevision'], 'sourceMeaningNotes': digest})
+    for locale, qc in sorted(((getattr(config, 'auto_repair', None) or {}).get('backTranslationQc') or {}).items()):
+        # A failed back-translation QC receipt is an input of that locale's text job (gate 4):
+        # a new receipt is a new job identity whose worker reopens the passed repair chain.
+        digest = jobs._digest(_json(Path(qc)))
+        view['packageIdentities']['backTranslationQc.' + locale] = digest
+        view['stateRevision'] = jobs._digest({'packages': view['stateRevision'],
+                                              'backTranslationQc.' + locale: digest})
     return view
 
 
@@ -582,9 +599,14 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
         notes_artifact_sha256 = jobs._digest(_json(notes_path))
         notes = source_meaning.load_meaning_notes(notes_path, source=source, anchor=anchor)
         require(jobs._digest(_json(notes_path)) == notes_artifact_sha256, 'meaning_notes_changed_during_load')
+    qc_receipt = None
+    qc_path = (config.auto_repair.get('backTranslationQc') or {}).get(policy['targetLocale'])
+    if qc_path:
+        # Checked against this lineage and the chain head's reviewer caches by the loop before any dispatch.
+        qc_receipt = _json(Path(qc_path))
     receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
                                 group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
-                                meaning_notes_sha256=notes_artifact_sha256)
+                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt)
     require(receipt['status'] == 'all_groups_passed', 'layer2_auto_repair_stopped')
     final = Path(receipt['finalRunDirectory'])
     require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),

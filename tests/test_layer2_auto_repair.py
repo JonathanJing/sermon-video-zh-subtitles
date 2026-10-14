@@ -168,22 +168,34 @@ class LoopTests(unittest.TestCase):
         self.assertEqual(receipt["ledgerRoot"], str((self.root / "state-runs").resolve()))
 
     def test_token_reservation_stops_before_a_passing_repair_can_dispatch(self):
-        fleet = Fleet(self, 46, [{"g21": failing("quotationAttribution")}])
-        # The next pair could use 1,000 tokens, while the initial 9,200
-        # tokens permit only 920 for repairs, although the call cap has room.
+        # Three different failure codes: the same code in three groups would be systemic.
+        three = {"g2": failing("completeMeaning"), "g5": failing("noAddedMeaning"),
+                 "g21": failing("negationsNumbersNames")}
+        fleet = Fleet(self, 46, [three])
+        # A pair could use 1,000 tokens. 10% of the initial 9,200 tokens (920) would not pay for one,
+        # so the floor of four worst-case calls (2,000) applies: two pairs fit, the third does not,
+        # although the call cap (10 calls) has room.
         with patch.object(subject, "_repair_token_bound", return_value=500):
             receipt = self.drive(fleet)
-        self.assertEqual(fleet.calls, ["all"])
+        self.assertEqual(fleet.calls, ["all", ["g2", "g5"]])
         self.assertEqual(receipt["status"], "repair_stopped")
-        self.assertEqual(receipt["repairSpend"], {"calls": 0, "tokens": 0})
-        self.assertEqual(receipt["stoppedGroups"][0]["reasonCode"], "repair_spend_cap")
+        self.assertEqual(receipt["repairSpend"], {"calls": 4, "tokens": 400})
+        self.assertEqual([(row["translationGroupId"], row["reasonCode"]) for row in receipt["stoppedGroups"]],
+                         [("g21", "repair_spend_cap")])
+
+    def test_token_floor_is_four_worst_case_calls_and_never_lowers_the_fraction(self):
+        self.assertEqual(subject.token_cap(59_363, 18_432), 4 * 18_432)  # 2026-10-14 clip: 10% is 5,937
+        self.assertEqual(subject.token_cap(2_000_000, 18_432), 200_000)
+        self.assertEqual(subject.token_cap(59_363, None), 5_937)
 
     def test_token_reservations_limit_concurrent_round_to_whole_pairs(self):
-        fleet = Fleet(self, 46, [{"g2": failing("completeMeaning"), "g30": failing("completeMeaning")},
-                                 {"g30": failing("completeMeaning")}])
+        three = {"g2": failing("completeMeaning"), "g5": failing("noAddedMeaning"),
+                 "g30": failing("negationsNumbersNames")}
+        fleet = Fleet(self, 46, [three])
+        # Cap max(920, 4 x 300) = 1,200: two whole 600-token pairs, never a third half pair.
         with patch.object(subject, "_repair_token_bound", return_value=300):
             receipt = self.drive(fleet)
-        self.assertEqual(fleet.calls, ["all", ["g2"]])
+        self.assertEqual(fleet.calls, ["all", ["g2", "g5"]])
         self.assertEqual(receipt["status"], "repair_stopped")
         self.assertEqual(receipt["stoppedGroups"][0]["translationGroupId"], "g30")
 
@@ -415,17 +427,18 @@ class LoopTests(unittest.TestCase):
                 "meaningNote": "Keep the frozen wording; it is what was said."}
         notes = {"u21": note, "u30": note}
         both = {"g21": failing("quotationAttribution"), "g30": failing("quotationAttribution")}
-        # 46 groups at 100 tokens a call give 9,200 initial tokens, so repairs may use 920; the first repair
-        # round spent 400. At 1,000 tokens a call nothing more fits: the reopen ends stopped at once.
-        fleet = Fleet(self, 46, [both, both])
+        # 16 groups make 32 initial calls, so repairs may use the minimum of 4 calls; the first repair
+        # round used all 4. Nothing more fits: the reopen ends stopped at once.
+        small = {"g5": failing("quotationAttribution"), "g12": failing("quotationAttribution")}
+        fleet = Fleet(self, 16, [small, small])
         self.drive(fleet)
         with patch.object(subject, "_repair_token_bound", return_value=1000):
             capped = subject.drive(REQUEST, fleet.groups, fleet, self.root / "runs", self.root / "state-runs",
-                                   meaning_notes=notes)
-        self.assertEqual(fleet.calls, ["all", ["g21", "g30"]])
+                                   meaning_notes={"u5": note, "u12": note})
+        self.assertEqual(fleet.calls, ["all", ["g12", "g5"]])
         self.assertEqual((capped["status"], sorted((row["translationGroupId"], row["reasonCode"])
                                                    for row in capped["stoppedGroups"])),
-                         ("repair_stopped", [("g21", "repair_spend_cap"), ("g30", "repair_spend_cap")]))
+                         ("repair_stopped", [("g12", "repair_spend_cap"), ("g5", "repair_spend_cap")]))
         entries = subject.load_ledger(self.root / "state-runs", subject.lineage(REQUEST))
         self.assertEqual([entry["outcome"] for entry in entries], ["repairing", "stopped", "stopped"])
         self.assertEqual((entries[2]["nextBrief"], [row["decision"] for row in entries[2]["groups"]]),
@@ -433,7 +446,8 @@ class LoopTests(unittest.TestCase):
         self.assertEqual(subject.reopenable_groups(entries, notes), {})
         self.assertEqual(subject.drive(REQUEST, fleet.groups, fleet, self.root / "runs", self.root / "state-runs",
                                        meaning_notes=notes)["ledgerHeadSha256"], capped["ledgerHeadSha256"])
-        # At 200 tokens a call one pair fits: the first stopped group is reopened, the other keeps the cap's reason.
+        # 46 groups (10 calls); at 200 tokens a call the cap is max(920, 800) less the 400 spent: one pair fits.
+        # The first stopped group is reopened, the other keeps the cap's reason.
         fleet = Fleet(self, 46, [both, both])
         self.drive(fleet, out="partial")
         with patch.object(subject, "_repair_token_bound", return_value=200):
@@ -595,6 +609,122 @@ class LoopTests(unittest.TestCase):
                     "failureCodes": ["meaning_omission"],
                     "fingerprints": [subject.fingerprint(value, ["u1", "u2"], ["meaning_omission"])]}]
         self.assertEqual(subject.decide(failure, history, value)[0], "stop")
+
+
+class QcFleet(Fleet):
+    """A Fleet whose reviewer caches hold real group results, as the runner writes them."""
+
+    def __call__(self, out, reuse_from, brief, collector):
+        result = super().__call__(out, reuse_from, brief, collector)
+        repaired = {row["translationGroupId"] for row in brief["groups"]} if brief else None
+        for index, group in enumerate(self.plan(), 1):
+            path = out / f"group-{index:04d}-sol.json"
+            if reuse_from is None or group["translationGroupId"] in repaired:
+                path.write_text(json.dumps({"model": "gpt-6.1-sol", "result": {
+                    **group, "targetUtterances": [f"{out.name} {group['translationGroupId']}."]}}))
+        return result
+
+
+def qc_receipt(head: Path, failed: dict, *, request=REQUEST, kind="meaning_shift"):
+    """A failed text QC receipt (target_text_auto_qc shape) that judged ``head``'s reviewer text."""
+    import hashlib
+    results = []
+    for path in sorted(head.glob("group-*-sol.json")):
+        group = json.loads(path.read_text())["result"]
+        text = "".join(group["targetUtterances"])
+        row = {"groupId": group["translationGroupId"], "sourceUnitIds": group["sourceUnitIds"],
+               "targetTextSha256": hashlib.sha256(text.encode()).hexdigest(), "status": "pass", "problems": []}
+        if group["translationGroupId"] in failed:
+            row.update(status="fail", nextAction="revise_translation",
+                       problems=[f"back_translation {kind}: {failed[group['translationGroupId']]}"],
+                       backTranslation={"status": "fail", "backTranslation": "It is truly amazing.",
+                                        "majorIssues": ([{"kind": kind, "severity": "major", "english": "It is intense.",
+                                                          "backTranslation": "It is truly amazing."}] if kind else [])})
+        results.append(row)
+    return {"schemaVersion": subject.QC_RECEIPT_SCHEMA, "status": "requires_repair", "humanApproval": False,
+            "locale": request["targetLocale"], "policyJsonSha256": request["translationPolicySha256"],
+            "semanticIdentity": {"settings": {"qcContext": {
+                "targetLocale": request["targetLocale"],
+                "englishSourcePackageJsonSha256": request["englishSourcePackageJsonSha256"],
+                "anchorManifestJsonSha256": request["anchorManifestSha256"],
+                "targetLanguagePolicyJsonSha256": request["translationPolicySha256"]}}},
+            "results": results}
+
+
+class BackTranslationQcTests(unittest.TestCase):
+    """Gate 4: a failed QC of a passed chain's candidate sends exactly its failed groups back."""
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        bound = patch.object(subject, "_repair_token_bound", return_value=100)
+        bound.start()
+        self.addCleanup(bound.stop)
+        self.fleet = QcFleet(self, 16, [])
+
+    def drive(self, qc=None):
+        return subject.drive(REQUEST, self.fleet.groups, self.fleet, self.root / "runs", self.root / "state",
+                             back_translation_qc=qc)
+
+    def head(self):
+        return Path(subject.load_ledger(self.root / "state", subject.lineage(REQUEST))[-1]["runDirectory"])
+
+    def test_a_failed_qc_reopens_the_passed_chain_for_its_groups_only(self):
+        first = self.drive()
+        self.assertEqual((first["status"], self.fleet.calls), ("all_groups_passed", ["all"]))
+        receipt = qc_receipt(self.head(), {"g8": "It is intense. -> It is truly amazing."})
+        repaired = self.drive(receipt)
+        self.assertEqual((repaired["status"], self.fleet.calls), ("all_groups_passed", ["all", ["g8"]]))
+        entries = subject.load_ledger(self.root / "state", subject.lineage(REQUEST))
+        self.assertEqual([entry["outcome"] for entry in entries], ["passed", "repairing", "passed"])
+        reopen = entries[1]
+        self.assertEqual((reopen["reopenedBy"], reopen["spend"]["calls"], reopen["runDirectory"]),
+                         ({"evidence": "back_translation_qc", "qcReceiptSha256": subject.json_sha256(receipt),
+                           "groups": ["g8"]}, 0, entries[0]["runDirectory"]))
+        row = reopen["nextBrief"]["groups"][0]
+        self.assertEqual(reopen["nextBrief"]["schemaVersion"], runner.PARTIAL_REPAIR_SCHEMA_V2)
+        self.assertEqual((row["failedRole"], row["backTranslationQc"]["failureCodes"]), ("reviewer", ["meaning_shift"]))
+        self.assertIn("Back-translation QC finding", row["instruction"])
+        self.assertIn("prior translation: round-001 g8.", row["instruction"])
+        # A receipt reopens once: driving again with it dispatches nothing.
+        self.assertEqual(self.drive(receipt)["ledgerHeadSha256"], repaired["ledgerHeadSha256"])
+        self.assertEqual(self.fleet.calls, ["all", ["g8"]])
+
+    def test_the_same_failure_after_its_repair_stops_instead_of_looping(self):
+        self.drive()
+        self.drive(qc_receipt(self.head(), {"g8": "intense -> amazing"}))
+        again = self.drive(qc_receipt(self.head(), {"g8": "intense -> amazing"}))
+        self.assertEqual((again["status"], again["stoppedGroups"][0]["reasonCode"]),
+                         ("repair_stopped", "repeated_failure_without_progress"))
+        self.assertEqual(self.fleet.calls, ["all", ["g8"]])
+        self.assertEqual(again["gatesPassed"], [])
+
+    def test_qc_of_another_text_lineage_or_kind_is_refused_before_dispatch(self):
+        self.drive()
+        head = self.head()
+        stale = qc_receipt(head, {"g8": "x"})
+        stale["results"][7]["targetTextSha256"] = "0" * 64
+        other = qc_receipt(head, {"g8": "x"}, request=dict(REQUEST, translationPolicySha256="e" * 64))
+        deterministic = qc_receipt(head, {"g8": "length outlier"}, kind=None)
+        passed = dict(qc_receipt(head, {}), status="pass")
+        for receipt, message in ((stale, "judged_another_text"), (other, "another_lineage"),
+                                 (deterministic, "no_repairable_issue"), (passed, "not_a_failed_machine_qc")):
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                self.drive(receipt)
+        self.assertEqual(self.fleet.calls, ["all"])
+        self.assertEqual(len(subject.load_ledger(self.root / "state", subject.lineage(REQUEST))), 1)
+
+    def test_qc_repairs_share_the_chain_spend_cap(self):
+        # 16 groups: 32 initial calls and 3,200 tokens. The call minimum (4) and the token floor
+        # (4 x 100 = 400, above 10% = 320) both allow two repairs; the third group stops.
+        self.drive()
+        receipt = qc_receipt(self.head(), {"g2": "a", "g5": "b", "g8": "c"})
+        capped = self.drive(receipt)
+        self.assertEqual(self.fleet.calls, ["all", ["g2", "g5"]])
+        self.assertEqual([(row["translationGroupId"], row["reasonCode"]) for row in capped["stoppedGroups"]],
+                         [("g8", "repair_spend_cap")])
+        self.assertEqual(capped["status"], "repair_stopped")
 
 
 class RunnerCollectionTests(unittest.TestCase):
