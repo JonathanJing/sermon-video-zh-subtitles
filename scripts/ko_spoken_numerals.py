@@ -27,7 +27,8 @@ except ModuleNotFoundError:  # run as scripts/ko_spoken_numerals.py
     from language_review_plugins.auto_qc_text_common import korean_sino, _KO_BOOK_CODES
 
 RULE_V2 = "ko-sino-chapter-verse-numerals-v2"
-RULE = "ko-sino-chapter-verse-numerals-v3"
+RULE_V3 = "ko-sino-chapter-verse-numerals-v3"
+RULE = "ko-sino-chapter-verse-numerals-v4"
 INSTRUCTIONS_SCHEMA = "sermon-unit-delivery-instructions-v2"
 # Only an explicit Bible book anchors a citation. Keep subsequent adjacent
 # chapter/verse/psalm numbers in that chain; never infer context across prose.
@@ -73,10 +74,17 @@ _NUMERIC_TOKEN = re.compile(r"(?:\d+(?:\s*[.,:．٫٬，/／⁄∕+＋*＊×÷=�
 
 # A bare counter after an arbitrary noun is ambiguous (서류 2장, not chapter 2).
 # Keep the supported sermon entry points explicit rather than growing a noun blacklist.
-_BARE_INTRODUCERS = {"그래서", "그러므로", "그리고", "이제", "먼저", "본문"}
+# v3 froze the first list. v4 (2026-10-13 clip run, "그렇기 때문에 8장을 보면") adds
+# connectives and adverbs, which never count objects, and lets a pause comma follow any
+# introducer ("따라서, 3장").
+_BARE_INTRODUCERS_V3 = frozenset({"그래서", "그러므로", "그리고", "이제", "먼저", "본문"})
+_BARE_INTRODUCERS = _BARE_INTRODUCERS_V3 | {"본문은", "본문도", "때문에", "따라서", "그러니까", "그런데", "하지만",
+                                            "그러나", "또", "또한", "다시", "이어서", "계속해서"}
+_PAUSE_PUNCTUATION = ",，、"
 
 
-def bare_context_allowed(text: str, start: int, end: int) -> bool:
+def bare_context_allowed(text: str, start: int, end: int, *, rule: str = RULE) -> bool:
+    introducers = _BARE_INTRODUCERS_V3 if rule == RULE_V3 else _BARE_INTRODUCERS
     prefix = text[:start].rstrip()
     if not prefix or prefix[-1] in ".!?。！？;；":
         return True
@@ -84,19 +92,21 @@ def bare_context_allowed(text: str, start: int, end: int) -> bool:
     prefix = prefix.rstrip("(（[［\"'“‘ ")
     if not prefix or prefix[-1] in ".!?。！？;；":
         return True
+    if rule != RULE_V3:
+        prefix = prefix.rstrip(_PAUSE_PUNCTUATION + " ")
     previous = re.search(r"([가-힣A-Za-z]+)$", prefix)
     word = previous.group(1) if previous else ""
-    if word in _BARE_INTRODUCERS or word in _KO_BOOK_CODES:
+    if word in introducers or word in _KO_BOOK_CODES:
         return True
     # These existing sermon forms explicitly identify a verse/chapter context.
     return bool(re.match(r"의\s+맨\s+첫\s+절", text[end:])) or (word == "뒤" and text[start:end].endswith("절"))
 
 
-def bare_citation_matches(text: str):
+def bare_citation_matches(text: str, *, rule: str = RULE):
     protected = [match.span() for pattern in (_COUNTED, _NUMERIC_TOKEN) for match in pattern.finditer(text)]
     return [match for match in _BARE.finditer(text)
             if not any(start <= match.start() < end for start, end in protected)
-            and bare_context_allowed(text, match.start(), match.end())]
+            and bare_context_allowed(text, match.start(), match.end(), rule=rule)]
 
 
 def spoken_form_v2(text: str) -> str:
@@ -104,11 +114,16 @@ def spoken_form_v2(text: str) -> str:
     return _spoken_form(text, bare_chapters=False)
 
 
+def spoken_form_v3(text: str) -> str:
+    """Frozen v3 behavior (first introducer list) for existing normalization-policy jobs."""
+    return _spoken_form(text, bare_chapters=True, rule=RULE_V3)
+
+
 def spoken_form(text: str) -> str:
     return _spoken_form(text, bare_chapters=True)
 
 
-def _spoken_form(text: str, *, bare_chapters: bool) -> str:
+def _spoken_form(text: str, *, bare_chapters: bool, rule: str = RULE) -> str:
     def spell(match: re.Match) -> str:
         first, dash, second, space, counter = match.groups()
         numbers = korean_sino(int(first)) + (dash + korean_sino(int(second)) if second else "")
@@ -117,7 +132,7 @@ def _spoken_form(text: str, *, bare_chapters: bool) -> str:
         text = citation.sub(lambda match: _REFERENCE.sub(spell, match.group()), text)
     if not bare_chapters:
         return text
-    matches = {match.span() for match in bare_citation_matches(text)}
+    matches = {match.span() for match in bare_citation_matches(text, rule=rule)}
     return _BARE.sub(lambda match: _REFERENCE.sub(spell, match.group())
                      if match.span() in matches else match.group(), text)
 
@@ -135,7 +150,7 @@ def equivalent(approved: str, spoken: str, *, rule: str = RULE) -> bool:
         return "".join(char for index, char in enumerate(value)
                        if numeric_separator(index, char)
                        or (not char.isspace() and char not in punctuation))
-    spell = {RULE_V2: spoken_form_v2, RULE: spoken_form}[rule]
+    spell = {RULE_V2: spoken_form_v2, RULE_V3: spoken_form_v3, RULE: spoken_form}[rule]
     return normalized(spell(approved)) == normalized(spoken) and spell(approved) != approved
 
 
@@ -143,10 +158,11 @@ def build(job: dict) -> dict | None:
     """The unit instructions for a Korean speech job, or ``None`` when no unit changes."""
     if job.get("targetLocale") != "ko":
         raise ValueError("Sino chapter numerals apply to Korean speech jobs only")
-    old_policy = {"version": "v2", "policy": "exact_approved_text_with_registered_spoken_forms",
-                  "spokenForms": {"ko": RULE_V2}}
-    frozen_v2 = (job.get("adapter") or {}).get("normalizationPolicySha256") == identity.json_sha256(old_policy)
-    spell, rule = (spoken_form_v2, RULE_V2) if frozen_v2 else (spoken_form, RULE)
+    # A job bound to a frozen rule keeps that rule's forms.
+    bound = (job.get("adapter") or {}).get("normalizationPolicySha256")
+    spell, rule = next(((spell, rule) for spell, rule in ((spoken_form_v2, RULE_V2), (spoken_form_v3, RULE_V3))
+                        if bound == identity.json_sha256({"version": "v2", "policy": "exact_approved_text_with_registered_spoken_forms",
+                                                          "spokenForms": {"ko": rule}})), (spoken_form, RULE))
     units = []
     for unit in job["units"]:
         spoken = spell(unit["text"])
