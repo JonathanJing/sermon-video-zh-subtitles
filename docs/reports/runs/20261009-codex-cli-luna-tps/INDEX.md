@@ -5,4 +5,3 @@ Generated 2026-10-10T02:32:05+00:00. Redacted copies only; source hashes are in 
 ## codex-cli-tps
 
 Source: `~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/codex-cli-tps`
-
