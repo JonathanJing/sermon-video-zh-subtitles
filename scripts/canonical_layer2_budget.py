@@ -123,7 +123,7 @@ def load_authorization(config, path, code_identity, expected_sha=None):
     authority = budget._authority(value['authority'])
     receipt_path = _safe_path(path.parent / value['approvalReceipt'])
     receipt = jobs._read(receipt_path)
-    root = config.job_root.parent / f'.{config.job_root.name}.layer2-budget'
+    root = budget_root(config)
     expected = {'productionRunId': config.run_id, 'configurationSha256': config.sha256,
                 'codeIdentitySha256': code_identity, 'budgetRoot': str(root),
                 'requestLimits': selected, 'globalBounds': authority['globalBounds'],
@@ -139,6 +139,14 @@ def load_authorization(config, path, code_identity, expected_sha=None):
             and receipt.get('reviewedBy') and receipt.get('reviewedAt'), 'budget_approval_not_bound')
     return {'path': path, 'sha256': actual_sha, 'value': value, 'root': root, 'limits': selected,
             'scope': scope, **({'runtimeIdentity': runtime} if runtime is not None else {})}
+
+
+def budget_root(config):
+    """Keep a Gate 4 revision's new authority separate from the passed chain's ledger."""
+    base = config.job_root.parent / f'.{config.job_root.name}.layer2-budget'
+    if (getattr(config, 'auto_repair', None) or {}).get('backTranslationQc'):
+        return base.with_name(base.name + '-qc-' + config.sha256)
+    return base
 
 
 def ledger_root(authorization, locale):
@@ -165,9 +173,12 @@ class BudgetedCaller:
         self.auth, self.config, self.policy = authorization, config, policy
         verify_runtime(authorization)
         if authorization.get('runtimeIdentity') is not None:
-            self.execution_identity = {'schemaVersion': 'openai-layer2-budget-transport-identity-v2',
-                'backend': 'openai_api', 'runtimeIdentity': authorization['runtimeIdentity'],
-                'budgetAuthorizationSha256': authorization['sha256']}
+            # A QC repair has a new, configuration-bound budget authorization but
+            # carries unchanged groups from its previous round. Cache identity
+            # follows the actual route/key; verify_execution still validates the
+            # current authorization on every cache hit and provider dispatch.
+            self.execution_identity = {'schemaVersion': 'openai-layer2-budget-transport-identity-v3',
+                'backend': 'openai_api', 'runtimeIdentity': authorization['runtimeIdentity']}
         self.source, self.anchor = source, anchor
         require(authorization.get('scope', 'run') == 'run' or policy['targetLocale'] in config.lanes,
                 'budget_locale_not_registered')
