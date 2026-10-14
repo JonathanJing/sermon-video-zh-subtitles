@@ -1,0 +1,31 @@
+== 18:29:58 zh-Hans
+zh-Hans settled before 13.558
+{"plan": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/plans/qc-zh-Hans/plan.json", "schedule": {"mode": "all_stages_may_run_together", "worstCaseUsd": 19.083, "fits": true}}
+check zh-Hans-api pass []
+zh-Hans text text_waiver_issued [] {'cleanFalsePositiveRate': 0.0, 'detected': 91, 'overallDetectionRate': 1.0, 'trials': 91} None
+check zh-Hans-gpu pass []
+zh-Hans package machine_screened pass
+zh-Hans audio audio_waiver_issued [] {'cleanFalsePositiveRate': 0.0, 'detected': 177, 'overallDetectionRate': 1.0, 'trials': 177} None
+settled after 13.929
+== 18:36:36 done
+ko.text-qc	pass	1	114
+ko.job	pass	121	1
+ko.render	fail(1)	122	85
+ko.compact	pass	207	17
+ko.screen	pass	224	40
+ko.package	pass	264	4
+ko.audio-qc	pass	269	163
+es.text-qc	pass	433	102
+es.job	pass	537	1
+es.render	fail(1)	538	87
+es.compact	pass	625	16
+es.screen	pass	641	39
+es.package	pass	680	3
+es.audio-qc	pass	684	133
+zh-Hans.text-qc	pass	0	105
+zh-Hans.job	pass	107	1
+zh-Hans.render	fail(1)	108	85
+zh-Hans.compact	pass	193	16
+zh-Hans.screen	pass	209	37
+zh-Hans.package	pass	246	4
+zh-Hans.audio-qc	pass	250	148
