@@ -1,0 +1,98 @@
+[
+  {
+    "headRefOid": "4f2601d2122dd0c0b17ec058dd6bcdbf29971e97",
+    "isDraft": true,
+    "number": 328,
+    "title": "运行报告：20261010-ios-pr-merge-validation"
+  },
+  {
+    "headRefOid": "ea4b84078fa07c4eb5230a9dea45a206c0512fb9",
+    "isDraft": true,
+    "number": 320,
+    "title": "运行报告：20261009-codex-cli-luna-tps"
+  },
+  {
+    "headRefOid": "13ecae9f5f29bdcf7e31ad2a5451d9ec60f5c491",
+    "isDraft": true,
+    "number": 319,
+    "title": "运行报告：20261009-luna-api-tps"
+  },
+  {
+    "headRefOid": "f12954c8baaaf949ebf7978a2836d7f30dab536b",
+    "isDraft": true,
+    "number": 313,
+    "title": "运行报告：20261009-dev-180s-e2e-20261009T062736Z"
+  },
+  {
+    "headRefOid": "a5c13bcaadcf80fb592be81a1175d114f333ac1c",
+    "isDraft": true,
+    "number": 312,
+    "title": "运行报告：20261008-env-l1-l4-mock"
+  },
+  {
+    "headRefOid": "e80ea2d66165952d3620fe110c85b8988ec9ac18",
+    "isDraft": true,
+    "number": 307,
+    "title": "运行报告：20261009-l3-l4-bound-delivery-revision"
+  },
+  {
+    "headRefOid": "cf0ca2e34b6976ee1b49b3d5fd2639d9d009be0c",
+    "isDraft": true,
+    "number": 306,
+    "title": "运行报告：20261009-l3-l4-bound-delivery"
+  },
+  {
+    "headRefOid": "2037dcf3b5d375cccfa78c0ac00c8996b6a8ccab",
+    "isDraft": true,
+    "number": 305,
+    "title": "运行报告：20261009-l3-l4-auto-handoff"
+  },
+  {
+    "headRefOid": "5f30247f72906868a83bb62f334330daed45879b",
+    "isDraft": true,
+    "number": 304,
+    "title": "运行报告：20261009-api-luna-g013-rerun-l3"
+  },
+  {
+    "headRefOid": "83f8174c0060ec49b3bfa71788d5dc1b378f7984",
+    "isDraft": true,
+    "number": 303,
+    "title": "运行报告：20261009-api-luna-concurrency"
+  },
+  {
+    "headRefOid": "8c343c3ed23fb92f6fc5353cf8749ed1071c7604",
+    "isDraft": true,
+    "number": 302,
+    "title": "运行报告：20261008-claude-opus-haiku-180s-review"
+  },
+  {
+    "headRefOid": "68cf33e801793f445d1913330bf5efb013c867f2",
+    "isDraft": true,
+    "number": 300,
+    "title": "运行报告：20261008-pr295-regressions"
+  },
+  {
+    "headRefOid": "0493b59ef2aa18863b0a8d28581244d6e52160f6",
+    "isDraft": true,
+    "number": 290,
+    "title": "运行报告：20261007-pr287-review-round2"
+  },
+  {
+    "headRefOid": "8c50b6e627c407ddf9b773de697c637703544227",
+    "isDraft": true,
+    "number": 289,
+    "title": "运行报告：20261007-pr287-review-repair"
+  },
+  {
+    "headRefOid": "fabcb7989cdc2d541e73e4b59e890bdb17390cce",
+    "isDraft": true,
+    "number": 288,
+    "title": "运行报告：20261007-agent-api-trials"
+  },
+  {
+    "headRefOid": "8ca4895731fe52fd096e8c4ec5dcb73637998087",
+    "isDraft": true,
+    "number": 286,
+    "title": "运行报告：20261008-haiku-180s-8x8-dev-r3"
+  }
+]
