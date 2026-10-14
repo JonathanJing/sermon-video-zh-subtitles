@@ -1,0 +1,96 @@
+{
+  "backend": "real",
+  "implementationSha256": "8daff00357a597d704d262c8e734d2aa086e3104bc8bd557a6b83bc08399e6d3",
+  "locales": {
+    "ko": {
+      "audioQc": "pass",
+      "audioQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/textqc-ko/state/qc-receipts/audio/ko/741429e3be59b1ebd986ef3d825c05fb54294b5ebe835041f4816732803953e0/entry-000001.json",
+      "audioWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/aqc/ko/ko/audio-waiver-75018b6519e78f18.json",
+      "calibration": {
+        "cleanFalsePositiveRate": 0.0,
+        "detected": 177,
+        "overallDetectionRate": 1.0,
+        "trials": 177
+      },
+      "calibrationCoverage": {
+        "audio": {
+          "droppedKeyWordTrials": 5,
+          "truncationEligibleTrials": 16,
+          "untestableKinds": [],
+          "wrongSentenceUnits": 16
+        },
+        "text": {
+          "applicableGroups": {
+            "added_content": 16,
+            "added_number": 9,
+            "added_reference": 13,
+            "dropped_half": 10,
+            "dropped_name": 1,
+            "english_leak": 11,
+            "placeholder": 16,
+            "semantic_negation": 0,
+            "swapped_name": 0,
+            "swapped_quantity": 0,
+            "wrong_book": 1,
+            "wrong_number": 3,
+            "wrong_ordinal": 13
+          },
+          "notApplicableKinds": [
+            "semantic_negation",
+            "swapped_quantity",
+            "swapped_name"
+          ],
+          "untestableKinds": []
+        }
+      },
+      "calibrationMisses": {
+        "text.semantic_negation": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_name": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_quantity": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        }
+      },
+      "failedGroups": [],
+      "flaggedGroups": [
+        "translation-chunk-0005-u015"
+      ],
+      "locale": "ko",
+      "packageJsonSha256": "7783e186da22e1c898dac02c86b3be5ade8485ee37c0c7bffe7423f656292b50",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/src/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/text/ko/candidate.json",
+        "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/aqc/run-ko/l3/speech-job.json",
+        "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l3/ko/audio-package.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/policy/ko-policy-clip.json",
+        "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/aqc/run-ko/l3/asr-screening-receipt-v1.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/src/source.json",
+        "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/textqc-ko/out/ko/text-waiver-a13bf0b10ad7190c.json"
+      },
+      "problems": [],
+      "secondaryAsrGroups": [
+        "translation-chunk-0005-u015"
+      ],
+      "status": "audio_waiver_issued",
+      "trackCheck": "pass",
+      "trackCheckReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/aqc/ko/ko/track-check-29db24068062961a.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/aqc/run-ko",
+  "transportSha256": "4e8e117b5e2943277a0c1675999dcb48ed4028df719b608e4f9bb97cc2c3ee6f"
+}

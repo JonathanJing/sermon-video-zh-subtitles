@@ -1,0 +1,5 @@
+stage	status	elapsedSeconds
+initial-development	interrupted	159.03
+fast-contracts	pass	9.98
+waiver-dependency-mutation	pass	0.09
+final-consumer	pass	920.76

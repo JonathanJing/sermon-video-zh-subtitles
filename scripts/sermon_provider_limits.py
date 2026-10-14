@@ -16,6 +16,9 @@ from __future__ import annotations
 from copy import deepcopy
 from fractions import Fraction
 import json
+import base64
+import io
+import re
 import math
 
 SCHEMA = 'sermon-openai-chat-request-limits-v1'
@@ -136,6 +139,76 @@ def bounded_payload(payload, limits):
                  'provider_service_tier_mismatch')
     _require(_input_upper_bound(payload) <= limits['maxInputTokens'], 'provider_input_bound_exceeded')
     return dict(deepcopy(payload), max_completion_tokens=limits['maxCompletionTokens'], service_tier=limits['serviceTier'])
+
+
+LEGACY_MAX_IMAGE_BYTES = 12 * 1024 * 1024
+LEGACY_MAX_IMAGES = 12
+LEGACY_VISION_SCHEMA = "sermon-legacy-cuv-vision-bounds-v1"
+
+def bounded_legacy_payload(payload, limits):
+    """Closed legacy chat formats, separate from the strict text budget adapter.
+
+    Text/schema bytes retain their token allowance. The separate legacy vision
+    contract bounds inline image bytes/count and completion output; it does not
+    claim the text token cap bounds vision charges or grant spending authority.
+    """
+    limits=validate_request_limits(limits)
+    required={'model','reasoning_effort','messages','response_format'}
+    _require(type(payload) is dict and required<=set(payload) and
+             set(payload)<=required|{'max_completion_tokens','service_tier'},'unsupported_bounded_provider_payload')
+    _require(payload['model'] in SUPPORTED_MODELS,'unsupported_bounded_provider_model')
+    _require(payload['reasoning_effort'] in reasoning_efforts(payload['model']),'unsupported_bounded_reasoning_effort')
+    messages=payload['messages'];fmt=payload['response_format']
+    _require(type(messages) is list and 1<=len(messages)<=MAX_MESSAGES,'invalid_bounded_messages')
+    if fmt!={'type':'json_object'}:
+        _require(type(fmt) is dict and set(fmt)=={'type','json_schema'} and fmt['type']=='json_schema',
+                 'unsupported_bounded_response_format')
+        schema=fmt['json_schema']
+        _require(type(schema) is dict and set(schema)=={'name','strict','schema'}
+                 and isinstance(schema['name'],str) and re.fullmatch(r'[A-Za-z0-9_-]{1,64}',schema['name'])
+                 and schema['strict'] is True and type(schema['schema']) is dict,'unsupported_bounded_response_format')
+        from jsonschema import Draft202012Validator
+        try:Draft202012Validator.check_schema(schema['schema'])
+        except Exception as error:raise ValueError('invalid_bounded_response_schema') from error
+    text_messages=[];image_count=0;image_bytes=0
+    for message in messages:
+        _require(type(message) is dict and set(message)=={'role','content'}
+                 and message['role'] in ('system','developer','user','assistant'),'invalid_bounded_message')
+        content=message['content']
+        if isinstance(content,str):
+            _require(bool(content),'invalid_bounded_message');text_messages.append(message);continue
+        _require(type(content) is list and 1<=len(content)<=2*LEGACY_MAX_IMAGES+1,'invalid_bounded_message')
+        text_parts=[]
+        for part in content:
+            _require(type(part) is dict,'invalid_bounded_content_part')
+            if part.get('type')=='text':
+                _require(set(part)=={'type','text'} and isinstance(part['text'],str) and part['text'], 'invalid_bounded_content_part')
+                text_parts.append(part);continue
+            _require(set(part)=={'type','image_url'} and part['type']=='image_url','invalid_bounded_content_part')
+            image=part['image_url']
+            _require(type(image) is dict and set(image)<= {'url','detail'} and 'url' in image
+                     and image.get('detail','auto') in {'auto','low','high'},'invalid_bounded_image')
+            url=image['url']
+            _require(isinstance(url,str) and len(url)<=4*((LEGACY_MAX_IMAGE_BYTES+2)//3)+64,'provider_image_bound_exceeded')
+            match=re.fullmatch(r'data:image/(png|jpeg);base64,([A-Za-z0-9+/]*={0,2})',url)
+            _require(match is not None,'invalid_bounded_image')
+            try:raw=base64.b64decode(match[2],validate=True)
+            except ValueError as error:raise ValueError('invalid_bounded_image') from error
+            _require(bool(raw) and (raw.startswith(b'\x89PNG\r\n\x1a\n') if match[1]=='png' else raw.startswith(b'\xff\xd8\xff')),'invalid_bounded_image')
+            from PIL import Image
+            try:
+                with Image.open(io.BytesIO(raw)) as decoded:
+                    width,height=decoded.size
+                    _require(width>0 and height>0,'invalid_bounded_image')
+            except (OSError,ValueError) as error:raise ValueError('invalid_bounded_image') from error
+            image_count+=1;image_bytes+=len(raw)
+            _require(image_count<=LEGACY_MAX_IMAGES and image_bytes<=LEGACY_MAX_IMAGE_BYTES,'provider_image_bound_exceeded')
+            text_parts.append({'type':'text','text':'[bounded inline image]'})
+        text_messages.append({'role':message['role'],'content':text_parts})
+    _require(_input_upper_bound({**payload,'messages':text_messages})<=limits['maxInputTokens'],'provider_input_bound_exceeded')
+    for key,expected in [('max_completion_tokens',limits['maxCompletionTokens']),('service_tier',limits['serviceTier'])]:
+        if key in payload:_require(type(payload[key]) is type(expected) and payload[key]==expected,'provider_output_cap_mismatch' if key=='max_completion_tokens' else 'provider_service_tier_mismatch')
+    return dict(deepcopy(payload),max_completion_tokens=limits['maxCompletionTokens'],service_tier=limits['serviceTier'])
 
 
 def _cost(model, inputs, outputs):

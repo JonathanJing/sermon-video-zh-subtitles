@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "modules": [
+    "tests.test_layer2_auto_repair",
+    "tests.test_sermon_unified_continuation",
+    "tests.test_canonical_layer2_budget_shards",
+    "tests.test_canonical_layer2_auto_repair"
+  ],
+  "paidCalls": 0,
+  "scope": "terminal receipt recovery and verified v2 controller-lane ingestion"
+}

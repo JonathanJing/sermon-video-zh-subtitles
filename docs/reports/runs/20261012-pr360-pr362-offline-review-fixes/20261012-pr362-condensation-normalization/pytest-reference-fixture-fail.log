@@ -1,0 +1,19 @@
+.F....................                         [100%]
+=================================== FAILURES ===================================
+____ test_v2_output_and_binding_recheck_normalized_length_and_legacy_is_raw ____
+
+    def test_v2_output_and_binding_recheck_normalized_length_and_legacy_is_raw():
+        anchor, candidate, plan = inputs()
+        request = condensation.requests(anchor, candidate, plan)["requests"][0]
+        spoken = BASE + REPEAT
+        omissions = [{"fullTextSpan": REPEAT, "kind": "repetition"}] * 4
+>       assert condensation.spoken_problems(request, spoken, omissions, "ko", None) == []
+E       AssertionError: assert ['missing chapter 101'] == []
+E
+E         Left contains one more item: 'missing chapter 101'
+E         Use -v to get more diff
+
+tests/test_spoken_condensation_normalization.py:54: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_spoken_condensation_normalization.py::test_v2_output_and_binding_recheck_normalized_length_and_legacy_is_raw
+1 failed, 21 passed, 26 subtests passed in 0.40s

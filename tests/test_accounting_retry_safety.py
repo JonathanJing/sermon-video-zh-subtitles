@@ -49,6 +49,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
     @staticmethod
     def urllib_response():
         response = MagicMock()
+        response.__enter__.return_value.status = 200
         response.__enter__.return_value.read.return_value = json.dumps({
             "id": "fixture-response", "choices": [], "usage": {"input_tokens": 1, "output_tokens": 1}
         }).encode()
@@ -74,7 +75,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
             for caller in ("chat", "request"):
                 if hasattr(original_error, "sermon_logging_failed"):
                     delattr(original_error, "sermon_logging_failed")
-                with self.subTest(error=type(original_error).__name__, caller=caller), patch.object(pipeline.urllib.request, "urlopen", side_effect=original_error) as network, self.fail_receipt_writes():
+                with self.subTest(error=type(original_error).__name__, caller=caller), tempfile.TemporaryDirectory() as case_dir, patch.dict(os.environ, {"SERMON_ACCOUNTING_DIR":case_dir}), patch.object(pipeline.urllib.request, "urlopen", side_effect=original_error) as network, self.fail_receipt_writes():
                     with self.assertRaises(type(original_error)) as caught:
                         if caller == "chat":
                             pipeline.chat_json("fixture-key", self.bounded_chat(), retries=3, session_verifier=lambda: {"status":"offline_test"})
@@ -85,18 +86,26 @@ class AccountingRetrySafetyTests(unittest.TestCase):
                     self.assertTrue(getattr(original_error, "sermon_logging_failed", False))
                     self.assertEqual(network.call_count, 1)
 
-    def test_healthy_ledger_preserves_normal_http_retry(self):
+    def test_known_http_rejection_does_not_poison_corrected_work_or_repeat_same_call(self):
+        from scripts import api_cli_outcomes as outcomes
         error = urllib.error.HTTPError("https://example.invalid", 503, "unavailable", {}, io.BytesIO(b"retryable"))
         with patch.object(pipeline.urllib.request, "urlopen", side_effect=[error, self.urllib_response()]) as network:
-            result = pipeline.chat_json("fixture-key", self.bounded_chat(), retries=2, session_verifier=lambda: {"status":"offline_test"})
+            with self.assertRaises(RuntimeError):
+                pipeline.chat_json("fixture-key", self.bounded_chat(), retries=2)
+            with self.assertRaises(outcomes.TerminalOutcomeError):
+                pipeline.chat_json("fixture-key", self.bounded_chat(), retries=2)
+            corrected = self.bounded_chat(); corrected['messages'][0]['content'] += ' corrected'
+            result = pipeline.chat_json("fixture-key", corrected, retries=2)
         self.assertEqual(result["id"], "fixture-response")
         self.assertEqual(network.call_count, 2)
         attempts = [event for event in self.events() if event["event"] == "api_attempt"]
         self.assertEqual([event["status"] for event in attempts], ["failed", "completed"])
         self.assertEqual(attempts[0]["httpStatus"], 503)
+        from scripts.sermon_provider_error import diagnostic
+        self.assertEqual(error.safe_diagnostic, diagnostic(503,b"retryable"))
 
     def test_notes_successful_response_keeps_write_failure_distinct(self):
-        response = MagicMock(status_code=200)
+        response = MagicMock(status_code=200, content=b"{}")
         response.json.return_value = {"id": "notes-response", "usage": {"input_tokens": 1, "output_tokens": 1}}
         with patch.object(notes.requests, "post", return_value=response) as network, self.fail_receipt_writes():
             with self.assertRaises(accounting.AccountingWriteError):
@@ -106,10 +115,10 @@ class AccountingRetrySafetyTests(unittest.TestCase):
     def test_notes_network_and_decode_failures_preserve_original(self):
         for kind in ("network", "decode"):
             error = requests.ConnectionError("private network detail") if kind == "network" else ValueError("private decode detail")
-            response = MagicMock(status_code=200)
+            response = MagicMock(status_code=200, content=b"{}")
             response.json.side_effect = error
             kwargs = {"side_effect": error} if kind == "network" else {"return_value": response}
-            with self.subTest(kind=kind), patch.object(notes.requests, "post", **kwargs) as network, self.fail_receipt_writes():
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as case_dir, patch.dict(os.environ, {"SERMON_ACCOUNTING_DIR":case_dir}), patch.object(notes.requests, "post", **kwargs) as network, self.fail_receipt_writes():
                 with self.assertRaises(type(error)) as caught:
                     notes.request_openai_notes({"model": "gpt-6-astra"}, api_key="fixture-key", session_verifier=lambda: {"status":"offline_test"})
                 self.assertIs(caught.exception, error)
@@ -117,7 +126,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
                 self.assertEqual(network.call_count, 1)
 
     def test_notes_http_failure_remains_system_exit_when_receipt_write_fails(self):
-        response = MagicMock(status_code=503)
+        response = MagicMock(status_code=503, content=b'{"error":"unavailable"}')
         response.json.return_value = {"error": {"message": "fixture unavailable"}}
         with patch.object(notes.requests, "post", return_value=response) as network, self.fail_receipt_writes():
             with self.assertRaises(SystemExit) as caught:

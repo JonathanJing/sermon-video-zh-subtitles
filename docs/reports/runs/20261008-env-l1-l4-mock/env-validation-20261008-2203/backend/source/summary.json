@@ -1,0 +1,15 @@
+{
+  "models": {
+    "referenceAsr": "fixture_no_model"
+  },
+  "pipelineInputIdentity": {
+    "sourceAudio": {
+      "sha256": "8f00a22b17e99dbfb9af2131dc5307058e33a7a3012ddc306a8190c113a3aeac",
+      "sizeBytes": 144044
+    }
+  },
+  "readingAligner": "fixture_word_times",
+  "sermonEndSeconds": 6.0,
+  "sermonStartSeconds": 0,
+  "sourceDurationSeconds": 6.0
+}

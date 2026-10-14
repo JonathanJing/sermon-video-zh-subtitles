@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261008-pr295-ledger-guard",
+  "runs": [
+    {
+      "label": "pr295-ledger-guard",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/pr295-ledger-guard",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr295-ledger-guard",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 348,
+      "truncated": false,
+      "sha256": "c7805fc6269330ee00572387efe2e051a568758c1180d92b8f58316d02f742b8",
+      "redactions": {}
+    },
+    {
+      "run": "pr295-ledger-guard",
+      "path": "pr295-path-correction.log",
+      "kind": "log",
+      "bytes": 98,
+      "truncated": false,
+      "sha256": "869b59646dd3beb09cd1c2da0a1f4aba3f2a0f79eac0a95d5e387dff0c545c48",
+      "redactions": {}
+    },
+    {
+      "run": "pr295-ledger-guard",
+      "path": "pr295-path-final.log",
+      "kind": "log",
+      "bytes": 128,
+      "truncated": false,
+      "sha256": "77f72caff0c40573866f6e559bf54008f39ef15c6e77ea225fe0a6412b4198b4",
+      "redactions": {}
+    },
+    {
+      "run": "pr295-ledger-guard",
+      "path": "pr295-path-regression.log",
+      "kind": "log",
+      "bytes": 1023,
+      "truncated": false,
+      "sha256": "d82848b96f01fb5c2875de494b80b0e4aa8d01d999835c0840ce3b10d619fab3",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "pr295-ledger-guard",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 50,
+      "truncated": false,
+      "sha256": "55147caf21b4c1fbf83521a5b3a9b34386abb66baacb48fd84978853caf09e1f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
