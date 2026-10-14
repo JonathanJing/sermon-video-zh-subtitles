@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-field09-independent-truth-v6",
+  "runs": [
+    {
+      "label": "run-v6-pr388-independent",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/field-benchmark/20261011-venue-mid-back/run-v6-pr388-independent",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "run-v6-pr388-independent",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 991,
+      "truncated": false,
+      "sha256": "457bf7286f2ab833b8bdb15bfedd1413a68905bfbbb93f62557eec6388155e83",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

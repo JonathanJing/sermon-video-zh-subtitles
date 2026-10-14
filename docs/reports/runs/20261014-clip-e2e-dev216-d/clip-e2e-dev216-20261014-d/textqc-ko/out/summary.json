@@ -1,0 +1,75 @@
+{
+  "implementationSha256": "70078f905f6ddbd06550e0520fa21c6cadc63cef30aea823f26fa6d59b198eb6",
+  "locales": {
+    "ko": {
+      "calibration": {
+        "cleanFalsePositiveRate": 0.0,
+        "detected": 92,
+        "overallDetectionRate": 1.0,
+        "trials": 92
+      },
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 16,
+          "added_number": 9,
+          "added_reference": 13,
+          "dropped_half": 10,
+          "dropped_name": 1,
+          "english_leak": 11,
+          "placeholder": 16,
+          "semantic_negation": 0,
+          "swapped_name": 0,
+          "swapped_quantity": 0,
+          "wrong_book": 1,
+          "wrong_number": 3,
+          "wrong_ordinal": 13
+        },
+        "notApplicableKinds": [
+          "semantic_negation",
+          "swapped_quantity",
+          "swapped_name"
+        ],
+        "untestableKinds": []
+      },
+      "calibrationMisses": {
+        "text.semantic_negation": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_name": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_quantity": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        }
+      },
+      "candidateJsonSha256": "f0f9650b36c336de4756f9891d58666735b8793095ad4321fa436562d6117a90",
+      "failedGroups": [],
+      "locale": "ko",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/run-out/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/run-out/ko/candidate.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/run-out/policies/ko-policy-clip.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/run-out/source.json"
+      },
+      "problems": [],
+      "status": "text_waiver_issued",
+      "textQc": "pass",
+      "textQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/state/qc-receipts/text/ko/b6380f06a7ae6cc9743013f3759f5f4b5b38979d85fdcbb1662b13f74a1fead8/entry-000001.json",
+      "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/out/ko/text-waiver-b1b5e7c533acef07.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/run-out",
+  "textBackend": "api"
+}

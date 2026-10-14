@@ -1,0 +1,132 @@
+[
+  {
+    "headRefOid": "4376b8c355d55bd15a889ffc7b476fc6200a0331",
+    "mergeCommit": {
+      "oid": "138a34796d45a00b647c8e0bf8173fd90a8da03c"
+    },
+    "mergedAt": "2026-10-11T02:07:50Z",
+    "number": 215,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/215"
+  },
+  {
+    "headRefOid": "730f404fc413783a12770d3b336eb61049a0cb0c",
+    "mergeCommit": {
+      "oid": "9040b157eeee1fcc98009475ee960d5e269f39fd"
+    },
+    "mergedAt": "2026-10-11T03:49:23Z",
+    "number": 259,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/259"
+  },
+  {
+    "headRefOid": "d18daa83cdcab57449044be9ffad0f70baac8349",
+    "mergeCommit": {
+      "oid": "0d0507a4e8c08c11fe3cf1397cd4dab718e46386"
+    },
+    "mergedAt": "2026-10-11T03:49:23Z",
+    "number": 266,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/266"
+  },
+  {
+    "headRefOid": "c2a351132600c884580151e4948e43e63e00c0ff",
+    "mergeCommit": {
+      "oid": "c04f0602815ec587a03d5b8616ae17705b57c5e4"
+    },
+    "mergedAt": "2026-10-11T02:11:35Z",
+    "number": 280,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/280"
+  },
+  {
+    "headRefOid": "0e16a42eaa94dbe1f6017aef4c1c08f153ff5147",
+    "mergeCommit": {
+      "oid": "78548e036b29b4eff2d40c8a52e1c9279bedf851"
+    },
+    "mergedAt": "2026-10-11T03:49:23Z",
+    "number": 285,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/285"
+  },
+  {
+    "headRefOid": "b4b7e5b6c20738f8b5b41cc58f99666325012c1b",
+    "mergeCommit": {
+      "oid": "46e2a256a2ca810dc387626f20b554b1f5719592"
+    },
+    "mergedAt": "2026-10-11T03:49:23Z",
+    "number": 299,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/299"
+  },
+  {
+    "headRefOid": "eda6e23e0eebf0bcfd699214f7630f5036df3004",
+    "mergeCommit": {
+      "oid": "51f7e7a3a480606efbb0feaf53e71486fcd5ef07"
+    },
+    "mergedAt": "2026-10-11T03:49:23Z",
+    "number": 311,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/311"
+  },
+  {
+    "headRefOid": "c4869fff8b5196e856dab0c1251340f12db9d604",
+    "mergeCommit": {
+      "oid": "1e4f9b1d6e7595dea15fbacfd0f8e518b1e46e03"
+    },
+    "mergedAt": "2026-10-11T03:49:23Z",
+    "number": 314,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/314"
+  },
+  {
+    "headRefOid": "e5c6910b9aa8cbb31ac666cef93245a98e8167d6",
+    "mergeCommit": {
+      "oid": "a84ffa341062ceeb47b9b913d55fb159a4981070"
+    },
+    "mergedAt": "2026-10-11T03:49:23Z",
+    "number": 321,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/321"
+  },
+  {
+    "headRefOid": "0d282161d364cdad6f053a32f2e88eb3afd95d30",
+    "mergeCommit": {
+      "oid": "28f1693273b8c1a0c364b375797a228b967ae480"
+    },
+    "mergedAt": "2026-10-11T03:49:23Z",
+    "number": 323,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/323"
+  },
+  {
+    "headRefOid": "18871b67c1604be124855b6cc2545cbb1f474d74",
+    "mergeCommit": {
+      "oid": "f62aabf9db3b4656c863e1d57cc0c8a03463a16b"
+    },
+    "mergedAt": "2026-10-11T03:49:23Z",
+    "number": 329,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/329"
+  },
+  {
+    "headRefOid": "2b8296afac36e4726a4e03951480523743fa7206",
+    "mergeCommit": {
+      "oid": "df0125bef2666e62608b766d5951f58f96166b9c"
+    },
+    "mergedAt": "2026-10-11T03:49:23Z",
+    "number": 330,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/330"
+  },
+  {
+    "headRefOid": "11e5c9ae2d0820f2e8fd6dd68894f953b1f5466f",
+    "mergeCommit": {
+      "oid": "beb1761a54e05fe23d915cd648905e144313d1d4"
+    },
+    "mergedAt": "2026-10-11T03:49:22Z",
+    "number": 331,
+    "state": "MERGED",
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/331"
+  }
+]

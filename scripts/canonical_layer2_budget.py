@@ -168,7 +168,8 @@ def request_limits(selected):
 
 
 class BudgetedCaller:
-    def __init__(self, authorization, config, source, anchor, policy, *, transport=None, claude_transport=None):
+    def __init__(self, authorization, config, source, anchor, policy, *, transport=None, claude_transport=None,
+                 claude_transports=None):
         self.auth, self.config, self.policy = authorization, config, policy
         verify_runtime(authorization)
         if authorization.get('runtimeIdentity') is not None:
@@ -186,8 +187,16 @@ class BudgetedCaller:
             self.root, authorization['value']['authority'],
             max_ledger_bytes=LOCALE_LEDGER_MAX_BYTES if authorization.get('scope') == 'locale' else None)
         self.transport = transport
-        # Subscription-login Claude CLI for the translator only; never the reviewer.
-        self.claude_transport = claude_transport
+        # Subscription-login Claude CLI transports by role. A translator-only transport serves the
+        # historical Opus-translator experiment; both roles exist only for a claude_cli_opus policy.
+        from scripts import target_language_policy as policies
+        self.claude_transports = dict(claude_transports or {})
+        if claude_transport is not None:
+            require('translator' not in self.claude_transports, 'claude_transport_required')
+            self.claude_transports['translator'] = claude_transport
+        require('reviewer' not in self.claude_transports or policies.layer2_backend(policy) == 'claude_cli_opus',
+                'claude_reviewer_requires_claude_cli_opus_policy')
+        self.claude_transport = self.claude_transports.get('translator')
 
     def verify_execution(self, key):
         load_authorization(self.config, self.auth['path'], self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
@@ -213,9 +222,10 @@ class BudgetedCaller:
         # Configuration errors are not paid unknown outcomes. Validate the
         # selected transport before reserving or marking any budget request.
         if payload['model'] in limits.CLAUDE_MODELS:
-            require(self.transport is None and self.claude_transport is not None and role == 'translator'
-                    and payload['model'] == self.claude_transport.model
-                    and payload['reasoning_effort'] == self.claude_transport.effort, 'claude_transport_required')
+            selected_transport = self.claude_transports.get(role)
+            require(self.transport is None and selected_transport is not None
+                    and payload['model'] == selected_transport.model
+                    and payload['reasoning_effort'] == selected_transport.effort, 'claude_transport_required')
         # Separate immutable request chains prevent content revisions from
         # resetting one shared global ledger. Each exact payload is one operation.
         identity = budget.chain_identity({
@@ -244,9 +254,9 @@ class BudgetedCaller:
         # The trusted injected transport is only a local test seam. Production
         # uses the existing isolated, single-attempt, wall-deadline HTTP executor.
         if payload['model'] in limits.CLAUDE_MODELS:
-            # Claude is reachable only as the frozen translator, through its subscription CLI.
+            # Claude is reachable only through its subscription CLI, as the role the policy froze.
             from scripts.claude_layer2_transport import chat_envelope
-            response = chat_envelope(self.claude_transport('', payload, role=role), payload['model'])
+            response = chat_envelope(self.claude_transports[role]('', payload, role=role), payload['model'])
         elif self.transport is None:
             request = urllib.request.Request('https://api.openai.com/v1/chat/completions',
                 data=json.dumps(payload).encode(), method='POST',

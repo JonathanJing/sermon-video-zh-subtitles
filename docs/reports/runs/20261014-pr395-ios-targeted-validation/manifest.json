@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-pr395-ios-targeted-validation",
+  "runs": [
+    {
+      "label": "ios-test-summary-pr395",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/ios-test-summary-pr395",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ios-test-summary-pr395",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 620,
+      "truncated": false,
+      "sha256": "750b971516792618ec06a2e01af49753b5945013bfba9e5d824d96825311ca94",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

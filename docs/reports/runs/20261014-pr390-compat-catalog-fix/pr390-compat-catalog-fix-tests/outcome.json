@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "sermon-targeted-test-outcome-v1",
+  "status": "pass_after_expected-contract-update",
+  "exitCode": 0,
+  "startedAt": "2026-10-14T17:07:00Z",
+  "endedAt": "2026-10-14T17:09:01Z",
+  "baseCommit": "ace03ce8ba8c2ebf015795162393f4f631e39b46",
+  "scope": "PR 390 compatibility publisher catalog enrichment",
+  "productionDeployment": "not_run"
+}

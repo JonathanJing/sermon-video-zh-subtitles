@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "commit": "dd9e3ceb72ccc606991d0881420e69b5a6566e03",
+  "coreTestsPassed": 635,
+  "coreSubtestsPassed": 14,
+  "transportTestsPassed": 1,
+  "modelCalls": 0,
+  "paidCalls": 0,
+  "deployments": 0,
+  "ci": "queued_at_push",
+  "initialRun": "Four early failures (two fixture expectations, two numeric trailing-chain conversions) corrected; broad initial matrix interrupted before slow driver tests. Original log retained."
+}

@@ -1,0 +1,11 @@
+## targeted_unittest
+$ /opt/homebrew/opt/<email>/bin/python3.13 -m unittest tests.test_backend_four_layer_dry_run
+.........
+----------------------------------------------------------------------
+Ran 9 tests in 0.582s
+
+OK
+
+## four_layer_evaluator
+$ /opt/homebrew/opt/<email>/bin/python3.13 scripts/evaluate_backend_four_layer_dry_run.py
+{"schemaVersion": "sermon-backend-dry-run-evaluation-v1", "status": "pass", "simulationOnly": true, "successfulRun": {"events": 29, "sourceUnits": 2, "modelCalls": 12, "sharedControlLoops": {"layer2": "astra_sol_group_runner", "layer3": "pcm16_schedule_and_assembly"}, "externalCalls": {"download": 0, "asr": 0, "translation": 0, "tts": 0, "firebase": 0}}, "failureCases": [{"failurePoint": "layer1", "status": "blocked_as_expected", "failedStep": "layer1"}, {"failurePoint": "layer2:ko:unit-0:sol", "status": "blocked_as_expected", "failedStep": "layer2:ko:unit-0:sol"}, {"failurePoint": "layer3:es", "status": "blocked_as_expected", "failedStep": "layer3:es"}, {"failurePoint": "layer4", "status": "blocked_as_expected", "failedStep": "layer4"}, {"failurePoint": "layer2:ko:unit-7:sol", "status": "rejected_unreachable", "failedStep": null}]}

@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "sermon-multilingual-poster-v1",
+  "source": {
+    "pageId": "resi-20261011-54475d42",
+    "targetLocale": "es",
+    "sourceIdentitySha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+    "catalogSha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+    "releasePackageSha256": "bbaf5a8576efb00708d27f0016936f4f9493f3d42c4d55a053de8cab5158576c",
+    "contentSha256": "392cae6952eeabaf2833ce1890c422d00f91c2c1f42b22b358f9db1dc72f6187",
+    "brief": {
+      "locale": "es",
+      "date": "2026-10-11",
+      "origin": "https://ai-for-god-sermon-audio.web.app",
+      "title": "Jesús advierte",
+      "series": "Apocalipsis: El consuelo y la esperanza que Jesús trae",
+      "scripture": "Apocalipsis 8–9",
+      "speaker": "Steve Bang Lee",
+      "tagline": "Escuchamos y caminamos juntos.",
+      "reviewLabel": "Traducción y audio con control de calidad automático · Sin revisión humana",
+      "labels": {
+        "brand": "Tongxing",
+        "eyebrow": "SERMÓN SEMANAL · ESPAÑOL",
+        "cta": "Lee y escucha el sermón de esta semana",
+        "serviceLine": "Audio en español · Texto en inglés · Transcripción completa",
+        "qrCaption": "Esta semana, en español",
+        "disclaimer": "Proyecto personal independiente, sin afiliación ni respaldo de Mariners Church. El audio en español sintetizado por IA y el texto preparado por IA son para consulta personal.",
+        "header": "Tongxing   ───   SERMÓN SEMANAL",
+        "web": "Versión web",
+        "caption": "Escanea para leer y escuchar",
+        "storeHeading": "Descargar Tongxing",
+        "webHeading": "Abrir sermón semanal",
+        "showReview": "true"
+      },
+      "qrURL": "https://ai-for-god-sermon-audio.web.app/?week=resi-20261011-54475d42&contentLang=es&lang=es",
+      "displayTitle": "Jesús\nadvierte",
+      "storeURL": "https://apps.apple.com/app/id6809255441"
+    }
+  },
+  "status": "complete",
+  "provenance": {
+    "templateVersion": "tongxing-dual-qr-v2",
+    "templateSha256": "d88e2f2ea84f8bf541878e2f20208d268d400a983c9beacb60a1b3c1964e4f86",
+    "badgeHashes": {
+      "zh-Hans": "65191b2d1182a194e510b27c9985b1367b60ed6ef565f86fc492f585a27bc932",
+      "ko": "fc82d5344d0f2919a7ae697e677fc9c62872f1ee47bd70e24a581245423de9c1",
+      "es": "e4d7c2c1606454536482735c96b933b04ea86a2e72701b3319ae1f3a369b0479"
+    },
+    "artSha256": "705c368c907b0f89915a36d35c2ee89fd99e352137fec36aaebe450eee6dcbee",
+    "promptSha256": "8a1a36a8d24c237536d4c7e75de1e00d23ee15b83fb593403795fa3a8322c0b2",
+    "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+    "builderSha256": "3a3d3dc237f0839d8889df87cdbd7300d2e366a03c53f886c6fffde975cfbbe4"
+  },
+  "outputs": {
+    "poster.png": "cb82640edee27900f72d0219947520ee40d72880edd64cf76a0d9ddcc93b0df7",
+    "poster-preview.png": "b889469e30458668112676f972e4257a8bf986c02804dec60a952b1edf691788",
+    "qr-validation.json": "3098a1358dd6281ef5d026cf2a75e272070cabf6515705dcd33c3eb436079c53"
+  },
+  "publicVerification": {
+    "checkedAt": "2026-10-14T16:37:09.229063+00:00",
+    "origin": "https://ai-for-god-sermon-audio.web.app",
+    "status": "pass",
+    "checks": [
+      {
+        "path": "/multilingual-v4.json",
+        "sha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+        "status": 200
+      },
+      {
+        "path": "/releases-v4/resi-20261011-54475d42/zh-Hans.json",
+        "sha256": "2503ca70abb2372d513bd9a14603d42b5aac6401d5cc0e635dbc988ec8c84e51",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261011-54475d42/zh-Hans.json",
+        "sha256": "fa95a519ae45ed699d72011db56f1f4c5e88d964c01d79745d2ff40b58b2e2d3",
+        "status": 200
+      },
+      {
+        "path": "/releases-v4/resi-20261011-54475d42/ko.json",
+        "sha256": "0c9e90e0d9554252ad62fe124c7637f7485a45d0583b2cd044686e456711e1c6",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261011-54475d42/ko.json",
+        "sha256": "55dc057013c01cbf127aa0e58196aa78ef6cddede0734d10111facf95d0cca4e",
+        "status": 200
+      },
+      {
+        "path": "/releases-v4/resi-20261011-54475d42/es.json",
+        "sha256": "bbaf5a8576efb00708d27f0016936f4f9493f3d42c4d55a053de8cab5158576c",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261011-54475d42/es.json",
+        "sha256": "392cae6952eeabaf2833ce1890c422d00f91c2c1f42b22b358f9db1dc72f6187",
+        "status": 200
+      }
+    ]
+  },
+  "visualReview": {
+    "reviewer": "codex",
+    "humanApproval": false
+  },
+  "visualReviewedAt": "2026-10-14T16:37:09.248733+00:00"
+}

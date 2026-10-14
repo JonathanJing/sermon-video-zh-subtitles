@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "sermon-layer2-auto-repair-receipt-v1",
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "lineage": {
+    "targetLocale": "zh-Hans",
+    "englishSourcePackageJsonSha256": "1ef6f467dc149835652598674bbb57e254736d3d6e6a86c5463f5b9c86a1ba44",
+    "anchorManifestSha256": "c71f2a1eb970a84f3ef834666c2194e0203e78004ccd4da3bc936463086fb852",
+    "translationPolicySha256": "058ec0bcba5e4e927e118e7ba1a861080ed1589ccd94f3fb89e145d392bbf164"
+  },
+  "status": "all_groups_passed",
+  "rounds": 1,
+  "finalRunDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-e/l2/text/zh-Hans/repair-rounds/round-001",
+  "evidenceSha256": "73481baeb0e340270e660eb8a5fb608a5ef26b8309de863d86aba774d419bc7c",
+  "initialSpend": {
+    "calls": 32,
+    "tokens": 135219,
+    "callsWithoutUsage": 0
+  },
+  "repairSpend": {
+    "calls": 0,
+    "tokens": 0
+  },
+  "stoppedGroups": [],
+  "gatesPassed": [
+    "independent_review",
+    "language_plugin"
+  ],
+  "releaseAuthority": "none",
+  "ledgerRoot": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-e/l2/.layer2-jobs.layer2-repair",
+  "ledgerHeadSha256": "839c1eabca39e07abc96c81b8bdf5f18823699a3894cb17c7abd33f7cc8582b4",
+  "humanApproval": false,
+  "reviewKind": "machine_review"
+}

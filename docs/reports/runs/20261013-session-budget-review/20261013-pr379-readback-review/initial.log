@@ -1,0 +1,274 @@
+F.FF..FFF.F...............FFF.                                           [100%]
+=================================== FAILURES ===================================
+_________________ test_remote_lease_success_and_repeat_refusal _________________
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-99/test_remote_lease_success_and_0')
+
+    def test_remote_lease_success_and_repeat_refusal(tmp_path):
+        intent, data, sha = setup(tmp_path); remote = Remote()
+        def run(*args, **kwargs): remote.version = 'new'
+        args = dict(intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old', baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
+>       receipt = p.publish(tmp_path, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_guarded_hosting_publish.py:45:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts/guarded_hosting_publish.py:223: in publish
+    return _publish(snapshot, intent=intent, routes=routes, baseline_version=baseline_version,
+scripts/guarded_hosting_publish.py:283: in _publish
+    version = await_propagation(readback)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/guarded_hosting_publish.py:170: in await_propagation
+    contract.require(timeout > 0 and interval > 0, 'Propagation timeout and interval must be positive')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+ok = False, message = 'Propagation timeout and interval must be positive'
+
+    def require(ok, message):
+        if not ok:
+>           raise ValueError(message)
+E           ValueError: Propagation timeout and interval must be positive
+
+scripts/delivery_contract.py:18: ValueError
+_________ test_unknown_deploy_retains_lease_and_reconciles_explicitly __________
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-99/test_unknown_deploy_retains_le0')
+
+    def test_unknown_deploy_retains_lease_and_reconciles_explicitly(tmp_path):
+        intent, data, sha = setup(tmp_path); remote = Remote()
+        def run(*args, **kwargs):
+            remote.version = 'new'
+... 261 lines omitted; 32 error-like lines, 32 kept below ...
+[line 41]             raise TimeoutError('unknown remote outcome')
+[line 42]         with pytest.raises(TimeoutError):
+[line 62] >           raise ValueError(message)
+[line 63] E           ValueError: Confirmed version differs from first observed deployment version
+[line 65] scripts/delivery_contract.py:18: ValueError
+[line 94]                 pytest.fail('No heartbeat while deploy was blocked')
+[line 96]             with pytest.raises(ValueError, match='still running'):
+[line 99]             with pytest.raises(ValueError, match='still running'):
+[line 119]     contract.require(timeout > 0 and interval > 0, 'Propagation timeout and interval must be positive')
+[line 122] ok = False, message = 'Propagation timeout and interval must be positive'
+[line 126] >           raise ValueError(message)
+[line 127] E           ValueError: Propagation timeout and interval must be positive
+[line 129] scripts/delivery_contract.py:18: ValueError
+[line 142]             raise TimeoutError('unknown')
+[line 143]         with pytest.raises(TimeoutError):
+[line 157]             with pytest.raises(ValueError, match='still running'):
+[line 163]             child.wait(timeout=5)
+[line 184] >           raise ValueError(message)
+[line 185] E           ValueError: Confirmed version differs from first observed deployment version
+[line 187] scripts/delivery_contract.py:18: ValueError
+[line 206]         def stale(*args, **kwargs): pytest.fail('Deployment must not run against a changed v4 catalog')
+[line 208]         with pytest.raises(ValueError, match='Live v4 catalog changed'):
+[line 226]     contract.require(timeout > 0 and interval > 0, 'Propagation timeout and interval must be positive')
+[line 229] ok = False, message = 'Propagation timeout and interval must be positive'
+[line 233] >           raise ValueError(message)
+[line 234] E           ValueError: Propagation timeout and interval must be positive
+[line 236] scripts/delivery_contract.py:18: ValueError
+[line 249] >       with pytest.raises(ValueError, match='Published v4 catalog readback differs'):
+[line 251] E       AssertionError: Regex pattern did not match.
+[line 253] E         Actual message: 'Propagation timeout and interval must be positive'
+[line 255] tests/test_guarded_hosting_publish.py:233: AssertionError
+[line 265]         monkeypatch.setattr(p, 'PROPAGATION_TIMEOUT_SECONDS', 60.0)
+... end of omitted section ...
+            atomic_json(receipt_path, attempt)
+        if version != attempt['newVersion']:
+>           raise PublicationVersionChanged('Live Hosting version changed during propagation')
+E           scripts.guarded_hosting_publish.PublicationVersionChanged: Live Hosting version changed during propagation
+
+scripts/guarded_hosting_publish.py:277: PublicationVersionChanged
+______ test_production_baseline_acquires_frozen_version_and_config[gzip] _______
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-99/test_production_baseline_acqui0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10807b540>
+encoding = 'gzip'
+
+    @pytest.mark.parametrize('encoding', ['gzip', 'identity'])
+    def test_production_baseline_acquires_frozen_version_and_config(tmp_path, monkeypatch, encoding):
+        target = publication.hosting_target('production')
+        version = 'sites/' + target['site'] + '/versions/frozen'
+        raw = b'{"pages": []}'
+        compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+        compressed = compressed[:9] + bytes([19]) + compressed[10:]
+        sha = hashlib.sha256(compressed).hexdigest()
+        config = {'rewrites': [{'glob': '/api/**', 'run': {'serviceId': 'sermon-feedback-api', 'region': 'us-west1'}}]}
+        calls, origins = [], []
+        def request(method, url):
+            calls.append(url)
+            if url.endswith('/files?pageSize=1000'):
+                return {'files': [{'path': '/multilingual-v3.json', 'status': 'ACTIVE', 'hash': sha}]}
+            assert url.endswith('/' + version)
+            return {'status': 'FINALIZED', 'config': config}
+        class Response(io.BytesIO):
+            status = 200
+            headers = {'Content-Encoding': encoding, 'Etag': '"' + sha + '"'}
+        def download(req, timeout):
+            origins.append(req.full_url)
+            return Response(compressed if encoding == 'gzip' else raw)
+        monkeypatch.setattr(publication.publisher, 'authenticated_transport', lambda: request)
+        monkeypatch.setattr(publication.publisher, 'live_version', lambda req, site: version if site == target['site'] else 'wrong')
+        monkeypatch.setattr(publication, 'urlopen', download)
+        out = tmp_path / 'production-baseline'
+>       result = publication.baseline(out, environment='production')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_prepare_dev_simulated_publication.py:225:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts/prepare_dev_simulated_publication.py:240: in baseline
+    verified = list(pool.map(materialize, rows))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:625: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:318: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:460: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:402: in __get_result
+    raise self._exception
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/prepare_dev_simulated_publication.py:205: in materialize
+    return publisher.await_propagation(lambda: fetch(row, relative, target, compressed, managed))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/guarded_hosting_publish.py:170: in await_propagation
+    contract.require(timeout > 0 and interval > 0, 'Propagation timeout and interval must be positive')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+ok = False, message = 'Propagation timeout and interval must be positive'
+
+    def require(ok, message):
+        if not ok:
+>           raise ValueError(message)
+E           ValueError: Propagation timeout and interval must be positive
+
+scripts/delivery_contract.py:18: ValueError
+____ test_production_baseline_acquires_frozen_version_and_config[identity] _____
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-99/test_production_baseline_acqui1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1081f77e0>
+encoding = 'identity'
+
+    @pytest.mark.parametrize('encoding', ['gzip', 'identity'])
+    def test_production_baseline_acquires_frozen_version_and_config(tmp_path, monkeypatch, encoding):
+        target = publication.hosting_target('production')
+        version = 'sites/' + target['site'] + '/versions/frozen'
+        raw = b'{"pages": []}'
+        compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+        compressed = compressed[:9] + bytes([19]) + compressed[10:]
+        sha = hashlib.sha256(compressed).hexdigest()
+        config = {'rewrites': [{'glob': '/api/**', 'run': {'serviceId': 'sermon-feedback-api', 'region': 'us-west1'}}]}
+        calls, origins = [], []
+        def request(method, url):
+            calls.append(url)
+            if url.endswith('/files?pageSize=1000'):
+                return {'files': [{'path': '/multilingual-v3.json', 'status': 'ACTIVE', 'hash': sha}]}
+            assert url.endswith('/' + version)
+            return {'status': 'FINALIZED', 'config': config}
+        class Response(io.BytesIO):
+            status = 200
+            headers = {'Content-Encoding': encoding, 'Etag': '"' + sha + '"'}
+        def download(req, timeout):
+            origins.append(req.full_url)
+            return Response(compressed if encoding == 'gzip' else raw)
+        monkeypatch.setattr(publication.publisher, 'authenticated_transport', lambda: request)
+        monkeypatch.setattr(publication.publisher, 'live_version', lambda req, site: version if site == target['site'] else 'wrong')
+        monkeypatch.setattr(publication, 'urlopen', download)
+        out = tmp_path / 'production-baseline'
+>       result = publication.baseline(out, environment='production')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_prepare_dev_simulated_publication.py:225:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts/prepare_dev_simulated_publication.py:240: in baseline
+    verified = list(pool.map(materialize, rows))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:625: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:318: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:453: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:402: in __get_result
+    raise self._exception
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/prepare_dev_simulated_publication.py:205: in materialize
+    return publisher.await_propagation(lambda: fetch(row, relative, target, compressed, managed))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/guarded_hosting_publish.py:170: in await_propagation
+    contract.require(timeout > 0 and interval > 0, 'Propagation timeout and interval must be positive')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+ok = False, message = 'Propagation timeout and interval must be positive'
+
+    def require(ok, message):
+        if not ok:
+>           raise ValueError(message)
+E           ValueError: Propagation timeout and interval must be positive
+
+scripts/delivery_contract.py:18: ValueError
+_________ test_baseline_waits_for_a_freshly_deployed_file_to_propagate _________
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-99/test_baseline_waits_for_a_fres0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10807bc40>
+
+    def test_baseline_waits_for_a_freshly_deployed_file_to_propagate(tmp_path, monkeypatch):
+        # 2026-10-13 Dev: a file of a version deployed 3.5 s earlier answered 404 and the refresh failed.
+        from urllib.error import HTTPError
+        target = publication.hosting_target('production')
+        version = 'sites/' + target['site'] + '/versions/fresh'
+        raw = b'{"pages": []}'
+        compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+        sha = hashlib.sha256(compressed).hexdigest()
+        def request(method, url):
+            if url.endswith('/files?pageSize=1000'):
+                return {'files': [{'path': '/multilingual-v3.json', 'status': 'ACTIVE', 'hash': sha}]}
+            return {'status': 'FINALIZED', 'config': {}}
+        class Response(io.BytesIO):
+            status = 200
+            headers = {'Content-Encoding': 'gzip', 'Etag': '"' + sha + '"'}
+        answers = ['404', 'stale', 'fresh']
+        def download(req, timeout):
+            answer = answers.pop(0)
+            if answer == '404':
+                raise HTTPError(req.full_url, 404, 'Not Found', {}, None)
+            return Response(gzip.compress(b'{"old": 1}', mtime=0) if answer == 'stale' else compressed)
+        monkeypatch.setattr(publication.publisher, 'authenticated_transport', lambda: request)
+        monkeypatch.setattr(publication.publisher, 'live_version', lambda req, site: version)
+        monkeypatch.setattr(publication, 'urlopen', download)
+        monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 60.0)
+        monkeypatch.setattr(publication.publisher.time, 'sleep', lambda seconds: None)
+        out = tmp_path / 'baseline'
+        assert publication.baseline(out, environment='production')['status'] == 'complete_verified_not_deployed'
+        assert (out / 'public/multilingual-v3.json').read_bytes() == raw and answers == []
+        # Without time to propagate, the read still fails rather than accepting other bytes.
+        monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 0.0)
+        answers[:] = ['stale']
+>       with pytest.raises(ValueError, match='no longer matches frozen version'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'no longer matches frozen version'
+E         Actual message: 'Propagation timeout and interval must be positive'
+
+tests/test_prepare_dev_simulated_publication.py:271: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_guarded_hosting_publish.py::test_remote_lease_success_and_repeat_refusal
+FAILED tests/test_guarded_hosting_publish.py::test_unknown_deploy_retains_lease_and_reconciles_explicitly
+FAILED tests/test_guarded_hosting_publish.py::test_live_deployment_heartbeats_and_refuses_reconciliation
+FAILED tests/test_guarded_hosting_publish.py::test_process_crash_releases_local_lock_but_needs_explicit_remote_reconciliation
+FAILED tests/test_guarded_hosting_publish.py::test_v4_catalog_is_compare_and_swapped_alongside_v3
+FAILED tests/test_guarded_hosting_publish.py::test_published_v4_readback_must_match_the_sealed_catalog
+FAILED tests/test_guarded_hosting_publish.py::test_a_v4_catalog_that_reads_back_stale_at_first_is_deployed_once_it_propagates
+FAILED tests/test_prepare_dev_simulated_publication.py::test_production_baseline_acquires_frozen_version_and_config[gzip]
+FAILED tests/test_prepare_dev_simulated_publication.py::test_production_baseline_acquires_frozen_version_and_config[identity]
+FAILED tests/test_prepare_dev_simulated_publication.py::test_baseline_waits_for_a_freshly_deployed_file_to_propagate
+10 failed, 20 passed in 0.78s

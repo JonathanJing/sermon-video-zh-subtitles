@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "sermon-multilingual-poster-v1",
+  "source": {
+    "pageId": "resi-20261004-69ba7a66",
+    "targetLocale": "ko",
+    "sourceIdentitySha256": "dc9104063404d44866f762c76af7449e4f8d25ca6dd03f2312b256fb32f88502",
+    "catalogSha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+    "releasePackageSha256": "4a3712ae8ac69d37f84f9798a1c94a8e2c1efc51b39272677410ede7a50341c9",
+    "contentSha256": "075ad4a58237ce1cd6d4f565110b9dc99699a7ddc4b141fc3451a9be619a242c",
+    "brief": {
+      "locale": "ko",
+      "date": "2026-10-04",
+      "origin": "https://ai-for-god-sermon-audio.web.app",
+      "title": "예수님은 심판하시고 지키십니다",
+      "series": "요한계시록: 예수님이 주시는 위로와 소망",
+      "scripture": "요한계시록 6장–8장 1절",
+      "speaker": "Eric Geiger",
+      "tagline": "함께 듣고, 함께 걸어갑니다.",
+      "reviewLabel": "번역과 음성 검토 완료",
+      "labels": {
+        "brand": "Tongxing",
+        "eyebrow": "이번 주 설교 · 한국어",
+        "cta": "이번 주 설교 읽기 · 듣기",
+        "serviceLine": "한국어 음성 · 영어 대조 · 전체 원고",
+        "qrCaption": "이번 주 한국어로 바로 열기",
+        "disclaimer": "Mariners Church와 제휴하거나 공식 후원을 받지 않는 개인 독립 프로젝트입니다.\nAI로 합성한 한국어 오디오와 정리한 텍스트는 개인 참고용입니다.",
+        "header": "Tongxing   ───   이번 주 설교",
+        "web": "웹 버전",
+        "caption": "QR 코드로 읽기 · 듣기",
+        "storeHeading": "Tongxing 앱 다운로드",
+        "webHeading": "이번 주 설교 웹 버전",
+        "showReview": "false"
+      },
+      "qrURL": "https://ai-for-god-sermon-audio.web.app/?week=resi-20261004-69ba7a66&contentLang=ko&lang=ko",
+      "displayTitle": "예수님은 심판하시고\n지키십니다",
+      "storeURL": "https://apps.apple.com/app/id6809255441"
+    }
+  },
+  "status": "complete",
+  "provenance": {
+    "templateVersion": "tongxing-dual-qr-v2",
+    "templateSha256": "d88e2f2ea84f8bf541878e2f20208d268d400a983c9beacb60a1b3c1964e4f86",
+    "badgeHashes": {
+      "zh-Hans": "65191b2d1182a194e510b27c9985b1367b60ed6ef565f86fc492f585a27bc932",
+      "ko": "fc82d5344d0f2919a7ae697e677fc9c62872f1ee47bd70e24a581245423de9c1",
+      "es": "e4d7c2c1606454536482735c96b933b04ea86a2e72701b3319ae1f3a369b0479"
+    },
+    "artSha256": "da58209cce9faa94c735d89efcf948a7a0cfe968b9ba2922508339f6f3960ecc",
+    "promptSha256": "04c0612a5f3351616256f4aea8a5a71f89d308dc466612386b7bb80958896e8a",
+    "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+    "builderSha256": "3a3d3dc237f0839d8889df87cdbd7300d2e366a03c53f886c6fffde975cfbbe4"
+  },
+  "outputs": {
+    "poster.png": "24e3831277f4b6b926a77a95ee38be6a000406fbad547aa39824d537b61311b2",
+    "poster-preview.png": "a19beadd129f187f687141a1ce0e181bf0f694a4bfb6b58d71ab805a48bd8404",
+    "qr-validation.json": "ac1b2f01181859069b27d992d6a8a921e9125cc83b018c442e46e31d191eb4a9"
+  },
+  "publicVerification": {
+    "checkedAt": "2026-10-14T16:37:08.040339+00:00",
+    "origin": "https://ai-for-god-sermon-audio.web.app",
+    "status": "pass",
+    "checks": [
+      {
+        "path": "/multilingual-v4.json",
+        "sha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/resi-20261004-69ba7a66/zh-Hans.json",
+        "sha256": "6d85d1c27c7cfcf676c9a77bdae55153389265e0056efe2e25ba2eec30e51063",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261004-69ba7a66/zh-Hans.json",
+        "sha256": "1c3cb8cd34129083983de4221b799565bac0adbec6571c86082da6972bccaa9d",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/resi-20261004-69ba7a66/ko.json",
+        "sha256": "4a3712ae8ac69d37f84f9798a1c94a8e2c1efc51b39272677410ede7a50341c9",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261004-69ba7a66/ko.json",
+        "sha256": "075ad4a58237ce1cd6d4f565110b9dc99699a7ddc4b141fc3451a9be619a242c",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/resi-20261004-69ba7a66/es.json",
+        "sha256": "55988ec5bd280f6980485d261c4bb5930aeccb6305373818bf4d5794ba2aaff6",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261004-69ba7a66/es.json",
+        "sha256": "642eee2cd730c9b56f5d0a7b7a91d9b7fa60b8773c3e2da3e2ac74784a511a7f",
+        "status": 200
+      }
+    ]
+  },
+  "visualReview": {
+    "reviewer": "codex",
+    "humanApproval": false
+  },
+  "visualReviewedAt": "2026-10-14T16:37:08.060862+00:00"
+}

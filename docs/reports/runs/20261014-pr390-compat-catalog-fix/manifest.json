@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-pr390-compat-catalog-fix",
+  "runs": [
+    {
+      "label": "pr390-compat-catalog-fix-tests",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/pr390-compat-catalog-fix-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr390-compat-catalog-fix-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 362,
+      "truncated": false,
+      "sha256": "7ca9206fa9013af1fa1f0b95b7757992073091849d4c20ae2d8f778d3a5e8bfa",
+      "redactions": {}
+    },
+    {
+      "run": "pr390-compat-catalog-fix-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 821,
+      "truncated": false,
+      "sha256": "aafe18a630c78bfa8b73955dd5c5fa2d3d75a6329d2b94574543c026a2fc9e23",
+      "redactions": {}
+    },
+    {
+      "run": "pr390-compat-catalog-fix-tests",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 166,
+      "truncated": false,
+      "sha256": "15e922725193c9a16737567020ccf00dc9161fa13e476799ab912ccc6467434d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
