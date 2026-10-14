@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { createUsageHandler } from './usage-core.mjs';
 import { createListeningHandler } from './listening-core.mjs';
+import { createAlignmentUsageHandler } from './alignment-core.mjs';
 
 export const DAY = 86_400_000;
 export const CATEGORIES = ['translation', 'pronunciation', 'fluency', 'voice', 'sync', 'volume', 'playback'];
@@ -98,6 +99,7 @@ export function createService({ store, catalog, origins, now = Date.now, randomT
   const usage = createUsageHandler({ catalog, ApiError });
   const listening = createListeningHandler({ ApiError, catalog });
   const interfaceUsage = createListeningHandler({ ApiError, catalog, interfaceUsage: true });
+  const alignmentUsage = createAlignmentUsageHandler({ ApiError, catalog });
   const budget = { mintsPerMinute: 100, mintsPerDay: 3000, sessionRequestsPerMinute: 30, ...limits };
   for (const value of Object.values(budget)) assert(integer(value, 100000) && value > 0, 'invalid_limits', 503);
   return async ({ method, path, origin, contentType, body, rawBytes, authorization, address }) => {
@@ -106,7 +108,7 @@ export function createService({ store, catalog, origins, now = Date.now, randomT
     assert(/^application\/json(?:\s*;|$)/i.test(contentType || ''), 'json_required', 415);
     assert(Number.isInteger(rawBytes) && rawBytes <= 16384, 'payload_too_large', 413);
     assert(object(body));
-    assert(['/api/session', '/api/feedback', '/api/events', '/api/usage', '/api/listening', '/api/interface-usage'].includes(path), 'not_found', 404);
+    assert(['/api/session', '/api/feedback', '/api/events', '/api/usage', '/api/listening', '/api/interface-usage', '/api/alignment-usage'].includes(path), 'not_found', 404);
     ipLimiter(address, path);
     const { source, stored } = identity(body, sources);
     const timestamp = now();
@@ -136,6 +138,7 @@ export function createService({ store, catalog, origins, now = Date.now, randomT
       const nextSession = { ...session, windowMinute: minute, windowCount: session.windowMinute === minute ? session.windowCount + 1 : 1 };
       assert(nextSession.windowCount <= budget.sessionRequestsPerMinute, 'rate_limited', 429);
       if (path === '/api/interface-usage') return interfaceUsage({ tx, body, source, stored, session, nextSession, sessionPath, sessionId, timestamp });
+      if (path === '/api/alignment-usage') return alignmentUsage({ tx, body, source, stored, session, nextSession, sessionPath, sessionId, timestamp });
       if (path === '/api/listening') return listening({ tx, body, source, stored, session, nextSession, sessionPath, sessionId, timestamp });
       if (path === '/api/usage') return usage({ tx, body, session, nextSession, sessionPath, sessionId, stored, timestamp });
       const metric = await tx.get(metricPath) || { ...stored, durationSeconds: source.durationSeconds };

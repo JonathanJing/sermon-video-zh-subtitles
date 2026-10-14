@@ -66,6 +66,7 @@ final class BetaNotificationController: NSObject, ObservableObject, UNUserNotifi
         defaults.set(value, forKey: "betaNotificationEnabled")
         if !value {
             pending = nil
+            BetaRemotePush.shared.revoke()
             clearLocalRequests()
             status = "已退出本机通知测试；不会安排新通知。"
         }
@@ -73,6 +74,7 @@ final class BetaNotificationController: NSObject, ObservableObject, UNUserNotifi
 
     func setLocale(_ value: String) {
         guard ["zh-Hans", "en", "ko", "es", "vi"].contains(value) else { return }
+        BetaRemotePush.shared.revoke()
         locale = value
         preferenceRevision = UUID()
         defaults.set(value, forKey: "betaNotificationLocale")
@@ -85,7 +87,9 @@ final class BetaNotificationController: NSObject, ObservableObject, UNUserNotifi
         let settings = await center.notificationSettings()
         switch settings.authorizationStatus {
         case .authorized: permissionStatus = "系统通知已允许。"
-        case .denied: permissionStatus = "系统通知已拒绝；请到系统设置更改。"
+        case .denied:
+            BetaRemotePush.shared.revoke()
+            permissionStatus = "系统通知已拒绝；请到系统设置更改。"
         case .notDetermined: permissionStatus = "尚未申请系统通知权限。"
         case .provisional, .ephemeral: permissionStatus = "系统仅允许临时或静默通知。"
         @unknown default: permissionStatus = "系统通知权限状态未知。"
@@ -211,12 +215,19 @@ final class BetaNotificationAppDelegate: NSObject, UIApplicationDelegate {
         BetaNotificationController.shared.installDelegate()
         return true
     }
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        BetaRemotePush.shared.didRegister(deviceToken)
+    }
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        BetaRemotePush.shared.didFail()
+    }
 }
 
 struct BetaNotificationSettingsView: View {
     @ObservedObject var model: AppModel
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject private var controller = BetaNotificationController.shared
+    @ObservedObject private var remotePush = BetaRemotePush.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var pageID = ""
     private var pages: [MultilingualPage] {
@@ -255,6 +266,18 @@ struct BetaNotificationSettingsView: View {
                     .accessibilityIdentifier("beta-notification-permission")
                 Link(localization.text("打开系统通知设置"), destination: URL(string: UIApplication.openSettingsURLString)!)
             }
+            Section("远程推送 · 本人设备测试") {
+                Text(remotePush.status).accessibilityIdentifier("beta-remote-push-status")
+                Button("登记本机远程推送") { Task { await remotePush.register() } }
+                    .disabled(!controller.enabled)
+                    .accessibilityIdentifier("beta-remote-push-register")
+                if let url = remotePush.exportURL {
+                    ShareLink("导出设备登记文件", item: url)
+                        .accessibilityIdentifier("beta-remote-push-export")
+                }
+                Text("登记文件仅存本机，不自动上传。导出后只交给你的本机推送测试工具。")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
             Section(localization.text("本机预览")) {
                 if !controller.status.isEmpty {
                     Text(localization.text(controller.status)).accessibilityIdentifier("beta-notification-status")
@@ -279,7 +302,7 @@ struct BetaNotificationSettingsView: View {
                 }
                 Button(localization.text("清除本机测试记录")) { controller.clearTestHistory() }
                     .accessibilityIdentifier("beta-notification-clear")
-                Text(localization.text("当前仅支持本机测试，远端推送和海报附件将在后续 Beta 中验证。"))
+                Text(localization.text("本机通知与远程推送分别测试；远程推送需要先登记本人设备。"))
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }

@@ -80,7 +80,9 @@ python scripts/render_vietnamese_voice_demos.py \
 
 2026-09-21，用户明确要求复用当前已授权讲员样本／checkpoint，制作各讲员中文、韩语、西班牙语和越南语声音克隆 demo。该指示记录为 `multilingual_voice_demo` 用途，不自动授予新语言整篇生产或发布权限，也不把任何机器生成音频变成训练 Gold。
 
-目前登记 Eric Geiger、Jared Kirkwood、Christine Caine、Doug Fields、Kenton Beshore 和 Steve Bang Lee 六位讲员。中文能力状态沿用已绑定样片的现有人工认可；其他三种语言在完成本轮生成后仍保持 `unverified_poc`，直至各语言听审完成。越南语 POC 当前是 reference clone，不等于已经完成与中文相同的 per-speaker SFT；是否为 Gwen-TTS 建立长期训练 checkpoint 要在试听和母语发音审核后另行决定。
+目前登记 Eric Geiger、Jared Kirkwood、Christine Caine、Doug Fields、Kenton Beshore 和 Steve Bang Lee 六位讲员。中文能力状态沿用已绑定样片的现有人工认可；其他三种语言在完成本轮生成后仍保持 `unverified_poc`，直至各语言听审完成。
+
+2026-10-11，Jony 将 Steve Bang Lee 的韩语、西语声音标为 verified：Registry 中这两个 locale 改为 `human_reviewed`，授权用途增加 `multilingual_dubbing`（原授权声明“声音可以用于训练和配音”）。决定记录 [speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json](../experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json) 绑定该 checkpoint 及 2026-09-21 的 ko/es 样音哈希。它只确认声音能力，不审核任何一篇证道的整轨配音；每次运行的音频 QC、豁免或听审照常。其他讲员的韩语、西语仍为 `unverified_poc`。越南语 POC 当前是 reference clone，不等于已经完成与中文相同的 per-speaker SFT；是否为 Gwen-TTS 建立长期训练 checkpoint 要在试听和母语发音审核后另行决定。
 
 本轮实跑已生成 6 位讲员 × 4 个 locale 共 24 条 WAV，并编码为 24 条 MP3；源 WAV 与交付 MP3 均完成全文件解码。Qwen3-ASR 完整覆盖筛查中，韩语和西班牙语为 1.00，中文约为 0.97；6 条越南语全部低于 0.85，已标为人工复核优先项。这个结果只证明文件可解码并给出文本一致性风险信号：所有新语言仍等待母语人耳审核，越南语不得进入正式生产。
 

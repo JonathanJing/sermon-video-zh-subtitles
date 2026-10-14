@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-weekly-layer4",
+  "runs": [
+    {
+      "label": "layer4-54475d42",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-54475d42",
+      "skipped": {
+        ".txt": 2,
+        ".json": 585,
+        ".py": 5,
+        ".mjs": 275,
+        ".png": 81,
+        ".js": 30,
+        ".srt": 14,
+        ".mp3": 346,
+        ".pdf": 28,
+        ".html": 101,
+        ".jpg": 7,
+        ".css": 16,
+        ".sh": 1,
+        ".cache": 4,
+        ".lock": 2,
+        ".svg": 6,
+        ".mp4": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "layer4-54475d42",
+      "path": "audio-review/es/audio-human-review-receipt.json",
+      "kind": "whole",
+      "bytes": 28548,
+      "truncated": false,
+      "sha256": "ea28af0cf60a4ad1d8d9fd1a800d6f82052ff816c192341d8e0143a688b6d19e",
+      "redactions": {}
+    },
+    {
+      "run": "layer4-54475d42",
+      "path": "audio-review/ko/audio-human-review-receipt.json",
+      "kind": "whole",
+      "bytes": 28831,
+      "truncated": false,
+      "sha256": "ce8ac7119779ffe5b65bf5292f956eb7b5ce5dbd5973195170a05d60ba86d6ee",
+      "redactions": {}
+    },
+    {
+      "run": "layer4-54475d42",
+      "path": "audio-review/zh-Hans/audio-human-review-receipt.json",
+      "kind": "whole",
+      "bytes": 22893,
+      "truncated": false,
+      "sha256": "b55f51857dfc47a62df76f7a01b03b8d94fcfeb7ef8b22edcc1fc33581fc965c",
+      "redactions": {}
+    },
+    {
+      "run": "layer4-54475d42",
+      "path": "live-baseline-7089e037/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 1796,
+      "truncated": false,
+      "sha256": "833d59d2d2b8a1cd948acc2a73deebfe7677f3c467190052bed76c1ab9babdda",
+      "redactions": {}
+    },
+    {
+      "run": "layer4-54475d42",
+      "path": "prod-shell-v1/hosting-publish.log",
+      "kind": "log",
+      "bytes": 139,
+      "truncated": false,
+      "sha256": "2943b34adfd8cb8c54c516f3eb58e3d58961517204b02dcdbbf6612648352839",
+      "redactions": {}
+    },
+    {
+      "run": "layer4-54475d42",
+      "path": "prod-shell-v2/hosting-publish.log",
+      "kind": "log",
+      "bytes": 139,
+      "truncated": false,
+      "sha256": "84ad6bb608f00c597acfe8a15edf3566384ccfbeb2ca7051042f7b47436d36b5",
+      "redactions": {}
+    },
+    {
+      "run": "layer4-54475d42",
+      "path": "publish-shell-v1/deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 925,
+      "truncated": false,
+      "sha256": "eac91c6368f261f61d98dbba6a99814799df9d6b6837ae980bfe33aebd878449",
+      "redactions": {}
+    },
+    {
+      "run": "layer4-54475d42",
+      "path": "publish-shell-v1/http-receipt.json",
+      "kind": "whole",
+      "bytes": 44612,
+      "truncated": false,
+      "sha256": "85a96ab1ea55729362ca0bc21d5d8b2d6f4f5ed4164499431e5ed3a52cf61fbb",
+      "redactions": {}
+    },
+    {
+      "run": "layer4-54475d42",
+      "path": "publish-shell-v1/production-http-receipt-v2.json",
+      "kind": "whole",
+      "bytes": 44773,
+      "truncated": false,
+      "sha256": "54a9e3e320ff9b44467c08328e35bdd540e042f62c3fc1992d096b778c75d3e1",
+      "redactions": {}
+    },
+    {
+      "run": "layer4-54475d42",
+      "path": "publish-shell-v1/summary.json",
+      "kind": "whole",
+      "bytes": 674,
+      "truncated": false,
+      "sha256": "ca91f36fef231123fb1d037a3792c71970a3c7b9ba3608c5f617dd0f5af99937",
+      "redactions": {
+        "secret_field": 1
+      }
+    },
+    {
+      "run": "layer4-54475d42",
+      "path": "video-v1/encode.log",
+      "kind": "log",
+      "bytes": 28635,
+      "truncated": false,
+      "sha256": "a9aa09631ec1ae15f38e2937acb268472b79d10ad11a0b47e4964571aafe2e30",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

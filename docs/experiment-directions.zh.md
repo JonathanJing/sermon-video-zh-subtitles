@@ -45,6 +45,7 @@
 | 本地 TTS/ASR 共存能否减少等待？64 GiB MacBook、一句 TTS 与历史 A.wav | 已运行／仅能力探针；推理区间重叠 1.69 秒，缓存/加载顺序混杂，不能推算整篇提速 | [并发报告与紧凑 JSON](../experiments/local-model-concurrency-poc/README.zh.md) | 交换顺序、多轮、内存压力/失败恢复及质量对照；遵守现有模型许可，不宣称 GPU kernel 并行 |
 | Sol/Luna 能否安全选择 Supervisor 下一步？12 个冻结状态，模型只作 shadow 决策 | 已运行／保留确定性校验；动作正确不等于完整状态通过，未改变生产权限 | [Supervisor 与生产模型结果](reports/20260928-model-production-ab-results.zh.md) · [冻结输入](reports/20260928-model-production-ab-inputs.json) | 完整 schema、所有阻塞/恢复条件、总调度成本；不得用模型自然语言覆盖固定门禁 |
 | DeepSeek Harness 或 Terra 是否减少调度开销？同 CUV 任务/缓存的 A/B/C 方案 | **计划／未运行**；Spark 云 API 阶段与后续本地模型阶段分开，尚未证明 ARM64 部署或模型兼容 | [既有调度实验提案](scheduler-harness-ab-experiment.zh.md) | 冻结 runtime、模型、预算与输入；全部关键阻塞用例通过，费用/延迟/人工介入可比，另行决定晋升 |
+| Agents API 与 Decisions API 能否帮失败排查、预检和风险分档？10 个失败样例（2 个真实日志）、10 份预检计划、8 份故意写错的诊断、60 个风险动作 × 3 次，全部只读、dev key | 首轮实跑（26 会话、26 次请求，报告 #288）／扩充后的样例未实跑；首轮诊断基本都对，时间线工具未见增益，风险分档有危险降档 | [试验合同与命令](agent-api-trials.zh.md) | 用扩充样例在新 `--out` 实跑；危险降档为零或由固定规则兜住、预检不漏阻断项后，再讨论接入生产流程 |
 | 手机媒体回路的网络/播放队列是否可靠？单机及 admin/user、MacBook/DGX 顺序探针 | **工具已实现／手机实测待独立证据**；WS/WSS + WebAudio，没有 ASR、翻译、TTS，也不是 WebRTC/SFU | [media probe 合同](../experiments/mobile-live-translation/media-probe/README.zh.md) | 实际手机/网络/声学输出、丢帧和恢复证据分别记录；client-reported 下拉选项不能证明真机 |
 
 ## 采用结果的共同边界

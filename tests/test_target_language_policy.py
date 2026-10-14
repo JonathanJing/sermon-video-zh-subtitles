@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts import target_language_policy as subject
 
@@ -16,6 +17,39 @@ def read_policy(locale):
 
 
 class TargetLanguagePolicyTests(unittest.TestCase):
+    def test_claude_selection_and_manual_draft_cannot_freeze(self):
+        draft = read_policy("ko")
+        draft.pop("componentSha256")
+        selected = subject.apply_translator_backend(draft, 'claude_cli')
+        for policy in (selected, {**draft, 'reviewer': {**draft['reviewer'], 'model': 'claude-opus-5-5'}}):
+            with self.assertRaisesRegex(ValueError, 'separate experimental policy contract'):
+                subject.freeze_policy(policy)
+        strict = {**selected, 'schemaVersion': subject.POLICY_V3}
+        with self.assertRaisesRegex(ValueError, 'separate experimental policy contract'):
+            subject.freeze_strict_policy(strict, {})
+
+    def test_claude_cli_freeze_leaves_no_policy_artifact(self):
+        draft = read_policy("ko")
+        draft.pop("componentSha256")
+        with tempfile.TemporaryDirectory() as folder:
+            source, out = Path(folder) / 'draft.json', Path(folder) / 'new/policy.json'
+            source.write_text(json.dumps(draft))
+            with patch('sys.argv', ['policy', 'freeze', '--policy', str(source), '--out', str(out),
+                                    '--translator-backend', 'claude_cli']):
+                with self.assertRaisesRegex(ValueError, 'separate experimental policy contract'):
+                    subject.main()
+            self.assertFalse(out.exists())
+            self.assertFalse(out.parent.exists())
+
+    def test_already_frozen_claude_identity_still_validates_without_migration(self):
+        policy = read_policy("ko")
+        policy['translator'].update(model='claude-opus-5-5', reasoningEffort='high')
+        policy['componentSha256']['translator'] = subject.canonical_sha256(policy['translator'])
+        before = json.dumps(policy, sort_keys=True)
+        identity = subject.validate_policy(policy)
+        self.assertEqual(identity['translationPolicySha256'], subject.canonical_sha256(policy))
+        self.assertEqual(json.dumps(policy, sort_keys=True), before)
+
     def test_frozen_three_language_policies_keep_distinct_unresolved_gates(self):
         zh = read_policy("zh-Hans")
         ko = read_policy("ko")
