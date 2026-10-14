@@ -1,0 +1,33 @@
+{
+  "codeRevision": "daadac908af39f9ff3d7ef9fd8a693f3f5ef2227",
+  "integrated": {
+    "tests": 390,
+    "subtests": 49,
+    "elapsedSeconds": 14.55
+  },
+  "grammarStage": {
+    "tests": 364,
+    "subtests": 34,
+    "elapsedSeconds": 1.79
+  },
+  "development": [
+    "85 failed/254passed/34subtests1.93s: refactor removed citation spacing",
+    "8 failed/350passed/34subtests1.79s:terminal suffix spacing",
+    "358passed/34subtests1.71s before full shared copula stacks"
+  ],
+  "shadowStages": [
+    {
+      "tests": 17,
+      "subtests": 15,
+      "elapsedSeconds": 11.32
+    },
+    {
+      "tests": 5,
+      "deselected": 13,
+      "elapsedSeconds": 47.61
+    }
+  ],
+  "scope": "balanced citation delimiters, stacked range particles, job-bound spoken lengths in fit/predict/budget and actual QC/driver entry",
+  "modelsCalled": false,
+  "fullConsumerRepeated": false
+}

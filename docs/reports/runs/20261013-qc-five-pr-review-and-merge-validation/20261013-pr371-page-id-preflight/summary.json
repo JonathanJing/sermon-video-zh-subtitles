@@ -1,0 +1,12 @@
+{
+  "codeRevision": "db76ad17f6b8ce59cdadeafc2de30b3b4a7507a0",
+  "pr": 371,
+  "baseHead": "2418f077783f13800df9c0ae8ef163c89a41f129",
+  "tests": 17,
+  "elapsedSeconds": 0.27,
+  "command": "python -m pytest tests/test_run_dev_simulated_delivery.py -q",
+  "scope": "actual run entry rejects existing machine-only v4 ID before assets/publisher/seal; simulation executes unchanged v3 path",
+  "modelsCalled": false,
+  "deployment": "not_run",
+  "networkPublication": "not_run"
+}

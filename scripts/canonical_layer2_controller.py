@@ -327,7 +327,9 @@ def _inputs(config, locale, view):
     require(producer.plugin_implementation_sha256(lane['plugin']) == policy['languageReview']['pluginImplementationSha256'],
             'plugin_does_not_match_frozen_policy')
     # Fixed production models and the canonical runner's worker budget bound paid work.
-    require(all(policy[role]['model'] == model and policy[role]['reasoningEffort'] == models.MODEL_EFFORTS[role] for role, model in models.production_models(policy).items()), 'production_model_policy_changed')
+    efforts = models.production_efforts(policy)
+    require(all(policy[role]['model'] == model and policy[role]['reasoningEffort'] == efforts[role]
+                for role, model in models.production_models(policy).items()), 'production_model_policy_changed')
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
@@ -499,11 +501,19 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 route = selected_route()
                 require(route is not None, 'openai_layer2_requires_explicit_dev_or_prod_launcher')
                 api_key = os.environ['OPENAI_API_KEY']
-                # Canonical new dev/formal runs use the production Sol policy.
-                # Claude remains available only to explicit experimental callers.
-                models.production_models(policy)
-                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy)
-                if budget_binding.get('runtimeIdentity') is None:
+                # The policy's frozen Layer 2 backend picks the transport: the OpenAI API (Sol), or
+                # the subscription Claude CLI for both roles (claude_cli_opus).
+                backend = models.production_backend(policy)
+                transports = claude_transports(policy, lane) if backend == 'claude_cli_opus' else None
+                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
+                                                     claude_transports=transports)
+                if transports is not None:
+                    caller.execution_identity = {
+                        'schemaVersion': 'claude-layer2-budget-transport-identity-v1', 'backend': 'claude_cli',
+                        'layer2Backend': backend,
+                        'transports': {role: t.execution_identity for role, t in sorted(transports.items())},
+                        'budgetAuthorizationSha256': budget_binding['sha256']}
+                elif budget_binding.get('runtimeIdentity') is None:
                     caller.execution_identity = {
                         'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
                         'backend': 'openai_api', 'route': route,
@@ -721,6 +731,18 @@ def reopen_repair(config_path, locale, expected_revision):
                         'originalJobStatus': 'failed', 'nextJobId': jobs._digest(plan['nextIdentity']),
                         'reopenedGroups': plan['reopenedGroups'], 'modelCalls': 0, 'runtimeCodexTurns': 0,
                         'humanApprovalCreated': False}
+
+
+def claude_transports(policy, lane):
+    """One subscription-login Claude CLI transport per role, at the policy's frozen model and effort.
+
+    Receipts of every CLI call stay under the lane (``claude-calls/``). The transport refuses an
+    API key, strips OpenAI and Anthropic credentials from the child environment and requires a
+    subscription login, so these calls use subscription quota, not an API project."""
+    from scripts.claude_layer2_transport import ClaudeLayer2Transport
+    return {role: ClaudeLayer2Transport(model=policy[role]['model'], effort=policy[role]['reasoningEffort'],
+                                        receipts_dir=lane['output'] / 'claude-calls')
+            for role in ('translator', 'reviewer')}
 
 
 def drive(config_path, locale, *, budget_authorization=None):

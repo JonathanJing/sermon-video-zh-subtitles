@@ -1,0 +1,13 @@
+{
+  "codeRevision": "d58c140b7ef2554689295ce4d8a7e1a8cf347d5f",
+  "devBaseline": "6fc1368224341b4154071001e3818514758f30ac",
+  "scope": [
+    "tests/test_ko_spoken_numerals.py",
+    "tests/test_run_spark_diagnostic_audio.py"
+  ],
+  "passed": 55,
+  "elapsedSeconds": 0.86,
+  "models": "not_run",
+  "deployment": "not_run",
+  "full178Suite": "not_repeated"
+}

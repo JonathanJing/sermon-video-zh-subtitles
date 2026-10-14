@@ -1,0 +1,5 @@
+stage	status	elapsedSeconds
+initial	fail	1.49
+intermediate	pass	1.67
+closure_final	pass	1.47
+transport	pass	0.33

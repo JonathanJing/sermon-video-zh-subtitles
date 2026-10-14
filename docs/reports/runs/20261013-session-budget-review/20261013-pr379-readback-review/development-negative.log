@@ -1,0 +1,156 @@
+.....................................F............FF.......              [100%]
+=================================== FAILURES ===================================
+______ test_baseline_retries_incomplete_http_reads_with_remaining_budget _______
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-101/test_baseline_retries_incomple0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ab8bf50>
+
+    def test_baseline_retries_incomplete_http_reads_with_remaining_budget(tmp_path, monkeypatch):
+        import http.client
+        import io
+        from types import SimpleNamespace
+        target = publication.hosting_target('production')
+        version = 'sites/' + target['site'] + '/versions/fresh'
+        raw = b'{"pages": []}'
+        compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+        digest = hashlib.sha256(compressed).hexdigest()
+        def request(method, url):
+            if url.endswith('/files?pageSize=1000'): return {'files': [{'path': '/multilingual-v3.json', 'hash': digest}]}
+            return {'config': {}}
+        now, timeouts = [0.0], []
+        class Response(io.BytesIO):
+            status = 200
+            headers = {'Content-Encoding': 'gzip'}
+        def download(req, *, timeout):
+            timeouts.append(timeout)
+            if len(timeouts) == 1: raise http.client.IncompleteRead(b'partial', 10)
+            return Response(compressed)
+        monkeypatch.setattr(publication.publisher, 'authenticated_transport', lambda: request)
+        monkeypatch.setattr(publication.publisher, 'live_version', lambda req, site: version)
+        monkeypatch.setattr(publication, 'urlopen', download)
+        monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 12)
+        monkeypatch.setattr(publication.publisher, 'time', SimpleNamespace(
+            monotonic=lambda: now[0], sleep=lambda seconds: now.__setitem__(0, now[0] + seconds)))
+        out = tmp_path/'baseline'
+>       assert publication.baseline(out, environment='production')['status'] == 'complete_verified_not_deployed'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_prepare_dev_simulated_publication.py:311:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts/prepare_dev_simulated_publication.py:162: in baseline
+    contract.require(detail.get('status') == 'FINALIZED', 'Live version is not finalized')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+ok = False, message = 'Live version is not finalized'
+
+    def require(ok, message):
+        if not ok:
+>           raise ValueError(message)
+E           ValueError: Live version is not finalized
+
+scripts/delivery_contract.py:18: ValueError
+_______ test_live_readback_checks_source_video_and_refuses_changed_bytes _______
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-101/test_live_readback_checks_sour0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b1b2a50>
+
+    def test_live_readback_checks_source_video_and_refuses_changed_bytes(tmp_path, monkeypatch):
+        public = tmp_path / 'public'
+        public.mkdir()
+        page = 'mockup-test'
+        body = b'cached audio'
+        source = b'cached video'
+        audio_path, video_path = '/media/' + page + '/zh-Hans.mp3', '/media/' + page + '/source.mp4'
+        release = {'status': 'published_http_verified', 'assets': [
+            {'path': audio_path, 'sha256': runner.hashlib.sha256(body).hexdigest()}]}
+        release_bytes = json.dumps(release).encode()
+        catalog = {'pages': [{'id': page, 'simulationOnly': True, 'diagnosticOnly': True, 'targets': {
+            'zh-Hans': {'simulationOnly': True, 'diagnosticOnly': True, 'releasePackageUrl': '/release.json',
+                        'releasePackageJsonSha256': runner.hashlib.sha256(release_bytes).hexdigest()}}}]}
+        raw = json.dumps(catalog).encode()
+        (public / 'multilingual-v3.json').write_bytes(raw)
+        (tmp_path / 'seal-report.json').write_text(json.dumps({'files': [
+            {'path': audio_path, 'sha256': runner.hashlib.sha256(body).hexdigest(), 'bytes': len(body)},
+            {'path': video_path, 'sha256': runner.hashlib.sha256(source).hexdigest(), 'bytes': len(source)}]}))
+        monkeypatch.setattr(runner, 'reader', lambda url: (200, raw if url.endswith('multilingual-v3.json') else release_bytes))
+        monkeypatch.setattr(runner.contract, 'validate_release_schema', lambda data: None)
+        payloads = {runner.preparation.ORIGIN + audio_path: body, runner.preparation.ORIGIN + video_path: source}
+        def open_response(request, **kwargs):
+            response = io.BytesIO(payloads[request.full_url])
+            response.status = 200
+            return response
+        monkeypatch.setattr(runner, 'urlopen', open_response)
+>       runner.live_readback(tmp_path, page, tmp_path / 'receipt.json')
+
+tests/test_run_dev_simulated_delivery.py:207:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts/run_dev_simulated_delivery.py:171: in live_readback
+    checked.append(check_asset(asset))
+                   ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+asset = {'path': '/media/mockup-test/zh-Hans.mp3', 'sha256': '30efc90aeee475e0c78d136c1e3898be054e0ebc1f71cfa394d410484cb58d34'}
+
+    def check_asset(asset):
+        # Stream audio/media; do not retain large remote binaries in memory.
+>       with urlopen(Request(preparation.ORIGIN + asset['path'], headers={'Cache-Control': 'no-cache'}), timeout=timeout) as response:
+                                                                                                                 ^^^^^^^
+E       NameError: name 'timeout' is not defined
+
+scripts/run_dev_simulated_delivery.py:150: NameError
+____ test_machine_checked_readback_uses_the_v4_catalog_and_no_source_video _____
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-101/test_machine_checked_readback_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b1c24a0>
+
+    def test_machine_checked_readback_uses_the_v4_catalog_and_no_source_video(tmp_path, monkeypatch):
+        public = tmp_path / 'public'
+        public.mkdir()
+        page = 'mockup-real'
+        body = b'machine-checked audio'
+        audio_path = '/media/' + page + '/ko.mp3'
+        release = {'status': 'published_http_verified', 'assets': [
+            {'path': audio_path, 'sha256': runner.hashlib.sha256(body).hexdigest()}]}
+        release_bytes = json.dumps(release).encode()
+        catalog = {'pages': [{'id': page, 'diagnosticOnly': True, 'targets': {
+            'ko': {'diagnosticOnly': True, 'releasePackageUrl': '/release.json',
+                   'releasePackageJsonSha256': runner.hashlib.sha256(release_bytes).hexdigest()}}}]}
+        raw = json.dumps(catalog).encode()
+        # Only v4 lists the page; a v3 read would not find it.
+        (public / 'multilingual-v4.json').write_bytes(raw)
+        (tmp_path / 'seal-report.json').write_text(json.dumps({'files': [
+            {'path': audio_path, 'sha256': runner.hashlib.sha256(body).hexdigest(), 'bytes': len(body)}]}))
+        urls = []
+        def read(url):
+            urls.append(url)
+            return 200, raw if url.endswith('multilingual-v4.json') else release_bytes
+        monkeypatch.setattr(runner, 'reader', read)
+        monkeypatch.setattr(runner.contract, 'validate_release_schema', lambda data: None)
+        def open_response(request, **kwargs):
+            response = io.BytesIO({runner.preparation.ORIGIN + audio_path: body}[request.full_url])
+            response.status = 200
+            return response
+        monkeypatch.setattr(runner, 'urlopen', open_response)
+>       runner.live_readback(tmp_path, page, tmp_path / 'receipt.json', machine_checked=True)
+
+tests/test_run_dev_simulated_delivery.py:245:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts/run_dev_simulated_delivery.py:171: in live_readback
+    checked.append(check_asset(asset))
+                   ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+asset = {'path': '/media/mockup-real/ko.mp3', 'sha256': '153955367ce85d8cfa1a8bad67c09d0ee3f9242d15db68e3dadbfd487742f676'}
+
+    def check_asset(asset):
+        # Stream audio/media; do not retain large remote binaries in memory.
+>       with urlopen(Request(preparation.ORIGIN + asset['path'], headers={'Cache-Control': 'no-cache'}), timeout=timeout) as response:
+                                                                                                                 ^^^^^^^
+E       NameError: name 'timeout' is not defined
+
+scripts/run_dev_simulated_delivery.py:150: NameError
+=========================== short test summary info ============================
+FAILED tests/test_prepare_dev_simulated_publication.py::test_baseline_retries_incomplete_http_reads_with_remaining_budget
+FAILED tests/test_run_dev_simulated_delivery.py::test_live_readback_checks_source_video_and_refuses_changed_bytes
+FAILED tests/test_run_dev_simulated_delivery.py::test_machine_checked_readback_uses_the_v4_catalog_and_no_source_video
+3 failed, 56 passed in 0.64s
