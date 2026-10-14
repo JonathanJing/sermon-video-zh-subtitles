@@ -135,3 +135,14 @@
 ## 5. 2026-10-13 会场中后排离线基准
 
 `FIELD-09` 增加第一份会场录音基准：真实素材清单与完整报告留在本机 `artifacts/field-benchmark/`，仓库只保留可复现脚本 `scripts/field_venue_fingerprint_benchmark.mjs` 和脱敏[运行报告 PR #412](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/412)。远场失败集中在 matchFraction 门槛，`FIELD-03` 的延长不能解决这一类；`FIELD-04` 应加入输入声道选择；`FIELD-10` 的查询端 `cmn` 在开发集上有提升但不一致，须用保留集验证。本批只作开发集，上方各项勾选和状态不变。
+
+## 6. 2026-10-13 听声定位后台统计与影子对照
+
+维护者要求在后台统计触发次数和定位成功率。Web 新增 `POST /api/alignment-usage`（集合 `alignmentUsageSessions30d`，30 天 TTL）和私有报表 `admin.mjs alignment`，字段与口径见 [API 说明](../experiments/sermon-dubbing-poc/feedback-api/README.zh.md#听声定位统计alignment-v1)。
+
+- 这是维护者对 `FIELD-01`“不借匿名收听统计开关自动上传新增诊断”的明确调整，范围仅限每次触发一条计数记录：结束状态、最远步骤、匹配原因、错误码、音量区间、matchFraction 区间、采集秒数和 100 ms 取整的总耗时。会话诊断详情、PCM、landmark、设备与路由仍只留在本机。
+- 沿用现有匿名统计开关：Web 默认开启、可关闭，关闭即撤回；iOS 尚未接入（且 iOS 统计默认关闭）。
+- `FIELD-10` 影子对照：生产匹配失败（非静音）后，Worker 用同一段 PCM 计算 `cmn-v1` 候选查询，只上报能否命中，不跳转、不改门槛；成功路径不增加延迟。`fingerprint-core.mjs` 的生产 `fingerprint()` 输出在黄金夹具和真实会场录音上逐字节不变。
+- 统计结果是使用证据，不是 `FIELD-09` 的会场验收；影子命中没有真值，不等于正确定位。
+
+状态：代码与本地测试完成，API、TTL 与 Hosting 部署待执行；上方勾选不变。

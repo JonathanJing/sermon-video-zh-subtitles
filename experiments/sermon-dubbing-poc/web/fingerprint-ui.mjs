@@ -119,17 +119,55 @@ export function playAlignmentAudio(audio, { signal, timeoutMs = 8000, timers = g
     } catch (error) { finish(error || new Error('audio_play_failed')); }
   });
 }
-export function createFingerprintController({ context, pause, seek, play, position = () => NaN, onState = () => {}, capture = captureFingerprintAudio, prepare = prepareInWorker, match = null, supported = microphoneSupported, now = () => performance.now(), timers = globalThis, expirySeconds = 15, autoApply = true }) {
+const ATTEMPT_OUTCOMES = new Set(['applied', 'matched', 'play_failed', 'play_blocked', 'no_match', 'expired', 'timeout', 'cancelled', 'error', 'permission_denied', 'unavailable', 'unsupported']);
+const MATCH_HELD = ['matched', 'play_failed', 'play_blocked'];
+const ERROR_CODES = new Set('MIC_BUDGET MIC_START_TIMEOUT INPUT_INTERRUPTED AUDIO_INTERRUPTED MIC_ENDED PROCESSOR_ERROR INVALID_CAPTURE INDEX_MISMATCH INDEX_UNAVAILABLE MATCH_ERROR MIC_PERMISSION MIC_MISSING MIC_BUSY MIC_SETTINGS AUDIO_UNSUPPORTED WORKLET_LOAD AUDIO_START UNKNOWN'.split(' '));
+const LEVELS = new Set(['silent', 'very_low', 'low', 'moderate', 'high', 'unknown']);
+/**
+ * One anonymous count record per press, built only from whitelisted enums and
+ * 100 ms buckets: no PCM, landmarks, device route, error text or position.
+ */
+export function alignmentAttempt(observation, finalPhase, at) {
+  let outcome = finalPhase;
+  if (finalPhase === 'cancelled' && MATCH_HELD.includes(observation.lastPhase)) outcome = observation.lastPhase;
+  if (finalPhase === 'cancelled' && observation.lastPhase === 'play_starting'
+    && observation.stage === 'matched_audio' && observation.reason === 'matched') outcome = 'matched';
+  if (!ATTEMPT_OUTCOMES.has(outcome)) outcome = MATCH_HELD.includes(observation.lastPhase) ? observation.lastPhase : 'cancelled';
+  const heard = observation.stage === 'matched_audio', matched = heard && observation.reason === 'matched';
+  if (['applied', ...MATCH_HELD].includes(outcome) && !matched) outcome = 'cancelled';
+  if (outcome === 'no_match' && (!heard || matched)) outcome = 'cancelled';
+  const total = observation.timings?.totalMs;
+  return {
+    at: Math.floor(at / 1000) * 1000, outcome, stage: observation.stage || 'opened',
+    reason: heard ? matchReason(observation.reason) : null,
+    errorCode: ERROR_CODES.has(observation.errorCode) ? observation.errorCode : null,
+    level: LEVELS.has(observation.match?.level) ? observation.match.level : null,
+    fractionBand: heard ? observation.match?.fractionBand ?? null : null,
+    captureSeconds: ['recording', 'matched_audio'].includes(observation.stage) ? 10 : null,
+    totalMs: Number.isFinite(total) && total >= 0 ? Math.min(600000, Math.round(total / 100) * 100) : null,
+    shadow: heard && !matched && observation.shadow?.profile === 'cmn-v1' && typeof observation.shadow.matched === 'boolean' ? { profile: 'cmn-v1', matched: observation.shadow.matched, agrees: null } : null,
+  };
+}
+export function createFingerprintController({ context, pause, seek, play, position = () => NaN, onState = () => {}, onAttempt = () => {}, capture = captureFingerprintAudio, prepare = prepareInWorker, match = null, supported = microphoneSupported, now = () => performance.now(), wallNow = () => Date.now(), timers = globalThis, expirySeconds = 15, autoApply = true }) {
   let serial = 0, active = null, result = null, expiryTimer = null, pendingPlay = null;
   let state = { phase: 'idle' }, session = null, readyCapture = null;
   const elapsedMs = started => Math.max(0, now() - started);
+  const report = (observation, phase) => {
+    if (!observation || observation.reported) return;
+    observation.reported = true;
+    // Statistics must never affect alignment or playback.
+    try { onAttempt(alignmentAttempt(observation, phase, wallNow())); } catch { }
+  };
   const emit = value => {
     state = value;
     if (session) {
+      if (session.phase !== value.phase) session.lastPhase = session.phase;
+      if (value.phase === 'ready_to_record') session.stage = 'index_ready';
+      if (value.phase === 'recording' && session.stage !== 'matched_audio') session.stage = 'recording';
       session.phase = value.phase;
       if (value.diagnostic) session.errorCode = value.diagnostic.code;
       if (!session.finished) session.timings.totalMs = elapsedMs(session.started);
-      if (['no_match', 'error', 'permission_denied', 'unavailable', 'unsupported', 'expired', 'timeout', 'cancelled', 'applied'].includes(value.phase)) session.finished = true;
+      if (['no_match', 'error', 'permission_denied', 'unavailable', 'unsupported', 'expired', 'timeout', 'cancelled', 'applied'].includes(value.phase)) { session.finished = true; report(session, value.phase); }
     }
     onState(value);
   };
@@ -139,7 +177,7 @@ export function createFingerprintController({ context, pause, seek, play, positi
     const pending = pendingPlay; pendingPlay = null;
     serial++; active?.abort(); active = null; readyCapture?.prepared.close(); readyCapture = null; result = null; clearExpiry();
     if (pending) { pending.controller.abort(); pause(); }
-    if (reason === 'idle') session = null;
+    if (reason === 'idle') { report(session, session?.phase); session = null; }
     emit({ phase: reason });
   }
   const valid = (token, binding) => serial === token && key(binding) === key(fingerprintBinding(context()));
@@ -152,7 +190,7 @@ export function createFingerprintController({ context, pause, seek, play, positi
     if (readyCapture) return record();
     cancel('idle');
     const binding = fingerprintBinding(context());
-    session = { started: now(), phase: 'idle', content: binding?.metadata, attempts: 0, timings: {} };
+    session = { started: now(), phase: 'idle', stage: 'opened', content: binding?.metadata, attempts: 0, timings: {} };
     const observation = session;
     if (!binding) { emit({ phase: 'unavailable' }); return; }
     if (!supported()) { emit({ phase: 'unsupported' }); return; }
@@ -208,6 +246,8 @@ export function createFingerprintController({ context, pause, seek, play, positi
         if (typeof value === 'number' && Number.isFinite(value) && value >= 0) observation.timings[name] = value;
       }
       observation.match = answer.summary;
+      observation.stage = 'matched_audio'; observation.reason = answer.result?.matched ? 'matched' : matchReason(answer.result?.diagnostics?.reason);
+      observation.shadow = answer.shadow ?? null;
       const found = answer.result;
       if (!found?.matched) { emit({ phase: 'no_match', reason: matchReason(found?.diagnostics?.reason) }); return; }
       const end = found.queryStartSeconds + recording.durationSeconds;
