@@ -1,0 +1,13 @@
+{
+  "codeRevision": "9e29a875dee36a709d5040fd37eee45c851b4413",
+  "pr": 367,
+  "baseHead": "70311aa1a23e0ab94a37bf168a293f86c47ec64e",
+  "tests": 47,
+  "elapsedSeconds": 27.68,
+  "command": "python -m pytest tests/test_build_target_language_audio_package.py -q",
+  "scope": "v2 settings digest/current implementation closure before score; v1 actual historical ratio and short exactness; package integration",
+  "historicalSource": "git show 436d0b99:scripts/screen_target_language_audio_units.py lines102-111",
+  "modelsCalled": false,
+  "deployment": "not_run",
+  "publication": "not_run"
+}

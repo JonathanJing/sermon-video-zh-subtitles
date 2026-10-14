@@ -1,0 +1,14 @@
+{
+  "codeRevision": "4efc566f9c53f2326e62347ee37e6ce008662dc1",
+  "scope": [
+    "tests/test_ko_spoken_numerals.py",
+    "tests/test_screen_transcript_folding.py",
+    "tests/test_screen_target_language_audio_units.py"
+  ],
+  "passed": 193,
+  "subtestsPassed": 34,
+  "elapsedSeconds": 0.97,
+  "scoring": "token-sequence-ratio-v5",
+  "models": "not_run",
+  "deployment": "not_run"
+}

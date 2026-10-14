@@ -1,0 +1,31 @@
+{
+  "status": "not_sent_production_push_unavailable",
+  "reason": "Current implementation registers and sends only manually authorized single Beta devices; no production audience registration/sender",
+  "requestedDestination": "in_app_weekly_poster",
+  "drafts": [
+    {
+      "locale": "zh-Hans",
+      "title": "耶稣警告",
+      "body": "本周证道《耶稣警告》已更新。点按查看本周海报。",
+      "pageID": "resi-20261011-54475d42",
+      "releaseSHA256": "2503ca70abb2372d513bd9a14603d42b5aac6401d5cc0e635dbc988ec8c84e51",
+      "posterUrl": "https://ai-for-god-sermon-audio.web.app/posters/resi-20261011-54475d42/zh-Hans-f0edf7eab5b3cde7ec3b683e90853b31a761016ece482b2342f702ba720f9611.png"
+    },
+    {
+      "locale": "ko",
+      "title": "예수님은 경고하십니다",
+      "body": "이번 주 설교가 업데이트되었습니다. 탭하여 이번 주 포스터를 확인하세요.",
+      "pageID": "resi-20261011-54475d42",
+      "releaseSHA256": "0c9e90e0d9554252ad62fe124c7637f7485a45d0583b2cd044686e456711e1c6",
+      "posterUrl": "https://ai-for-god-sermon-audio.web.app/posters/resi-20261011-54475d42/ko-0d298c3bca3d4ad60a633b11e07ca89a701a3047e658201ccbe5b6dc7df7e23b.png"
+    },
+    {
+      "locale": "es",
+      "title": "Jesús advierte",
+      "body": "El sermón de esta semana ya está disponible. Toca para ver el cartel semanal.",
+      "pageID": "resi-20261011-54475d42",
+      "releaseSHA256": "bbaf5a8576efb00708d27f0016936f4f9493f3d42c4d55a053de8cab5158576c",
+      "posterUrl": "https://ai-for-god-sermon-audio.web.app/posters/resi-20261011-54475d42/es-395dd1afece977903bdf3fac970f0772d0c8e9cc2a42f9dd906376b94bb7648e.png"
+    }
+  ]
+}

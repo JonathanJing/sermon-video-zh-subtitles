@@ -195,7 +195,7 @@ class ProductionCodexTransportTests(unittest.TestCase):
         with patch.object(mod, '_call', side_effect=private_call):
             result = mod.chat_json('ignored-key', payload)
         self.assertEqual(self.executions[0][2], [('.png', raw)])
-        self.assertIn('BOUND IMAGE 1', self.executions[0][1]['input'])
+        self.assertIn(b'BOUND IMAGE 1', self.executions[0][1]['input'])
         self.assertEqual(result['modelIdentityKind'], 'requested')
 
     def test_remote_or_mislabeled_image_rejected_before_dispatch(self):
