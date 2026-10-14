@@ -104,6 +104,23 @@ def test_modified_hosting_config_rejected_before_output(tmp_path):
     assert not out.exists()
 
 
+def test_dev_overlay_replaces_changed_strings_with_their_ui(tmp_path, monkeypatch):
+    base = baseline(tmp_path, 'dev')
+    (base / 'public' / 'locales-interface.mjs').write_text('old strings')
+    _, source = committed_ui(tmp_path, monkeypatch)
+    (base / 'public' / 'locales-ko.mjs').write_bytes((source / 'locales-ko.mjs').read_bytes())
+    (base / 'seal-report.json').unlink()
+    staging.write(base / 'seal-report.json', {'catalogSha256': staging.digest(base / 'public/multilingual-v3.json'),
+                                            'files': staging.files_report(base / 'public')})
+    out = tmp_path / 'candidate'
+    ui.prepare(base, out, environment='dev')
+    plan = staging.read(out / 'ui-update-plan.json')
+    assert '/locales-interface.mjs' in plan['changedPaths']
+    assert '/locales-ko.mjs' not in plan['changedPaths'], 'unchanged dependencies stay byte-identical'
+    assert (out / 'public/locales-interface.mjs').read_bytes() == (source / 'locales-interface.mjs').read_bytes()
+    assert (out / 'public/old.mp3').read_bytes() == (base / 'public/old.mp3').read_bytes()
+
+
 @pytest.mark.parametrize('environment,requested', [('dev', 'production'), ('production', 'dev')])
 def test_cross_environment_baseline_rejected_before_output(tmp_path, environment, requested):
     base = baseline(tmp_path, environment)
@@ -138,3 +155,18 @@ def test_prior_unknown_production_outcome_cannot_start_another_publish(tmp_path)
     staging.write(base / 'deployment-attempt-v2.json', {'status': 'outcome_unknown'})
     with pytest.raises(ValueError, match='uncertain or differs'):
         staging.publication_config(base, tmp_path / 'candidate', environment='production')
+
+
+def test_production_overlay_is_accepted_by_dev_shell_without_copying_baseline_modules(tmp_path, monkeypatch):
+    from scripts import firebase_dev_app_shell_update as shell
+    base = baseline(tmp_path)
+    repo, _ = committed_ui(tmp_path, monkeypatch)
+    out = tmp_path / 'candidate'
+    ui.prepare(base, out, environment='production')
+    monkeypatch.setattr(shell, 'ROOT', repo)
+    plan = shell.read_plan(out / 'public', out / 'ui-update-plan.json')
+    replaced, _ = shell.shell_names(shell.dev.files(out / 'public'), plan)
+    assert 'app.mjs' in replaced
+    assert 'fingerprint-worker.mjs' not in replaced
+    assert 'fingerprint-worker.mjs' not in plan['sourceFiles']
+    assert (out / 'public/fingerprint-worker.mjs').read_bytes() == (base / 'public/fingerprint-worker.mjs').read_bytes()

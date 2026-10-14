@@ -1,0 +1,17 @@
+{
+  "status": "deployed_browser_entry_verified",
+  "version": "sites/ai-for-god-sermon-audio/versions/c9c412b43053d46c",
+  "pageId": "resi-20261011-54475d42",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "testsPassed": 99,
+  "commit": "03982120a403d44e8ba1424f84325c6891bdccec",
+  "browserChineseTitle": "耶稣警告",
+  "browserChineseDate": "2026.10.11",
+  "browserAudioDuration": "35:31",
+  "alignment": "known window mismatch; rebuilding from approved source",
+  "video": "requested by user; encoding in progress"
+}

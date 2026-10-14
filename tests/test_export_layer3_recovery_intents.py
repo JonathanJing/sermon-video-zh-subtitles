@@ -1,5 +1,6 @@
 """Current-producer recovery snapshots with real admission, synthetic inputs, no models."""
 import fcntl
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -124,6 +125,11 @@ class ExportTests(unittest.TestCase):
         incomplete = settings(); incomplete.pop("instruct")
         with self.assertRaisesRegex(ValueError, "Complete explicit"):
             producer.recovery_render_settings(incomplete)
+        # The tail allowance is the one optional field: absent means 0.0, present it is bounded.
+        self.assertEqual(producer.recovery_render_settings(settings(tailOverrunSeconds=0.5))["tailOverrunSeconds"], 0.5)
+        for bad in (1.5, -0.1, float("nan"), "0.5"):
+            with self.subTest(tail=bad), self.assertRaisesRegex(ValueError, "scheduling policy"):
+                producer.recovery_render_settings(settings(tailOverrunSeconds=bad))
 
     def test_precise_direct_parent_batch_cache_survives_pure_builder_extraction(self):
         from tests.test_formal_audio_batching import BatchEngine
@@ -203,6 +209,19 @@ class ExportTests(unittest.TestCase):
         context["candidate"]["groups"].pop()
         with self.assertRaisesRegex(ValueError, "coverage differs"):
             producer.build_expected_intents(context, self.paths, settings())
+
+    def test_policy_spoken_forms_bind_recovery_intents_without_a_file(self):
+        context = producer.checked_context(self.paths, self.map_path, self.policies_path, assembly_only=True)
+        context["job"]["units"][0]["text"] = "하박국 2장을 보십시오."
+        self.assertNotIn("spokenTextSha256", producer.build_expected_intents(context, self.paths, settings())[0])
+        context["job"]["adapter"]["normalizationPolicySha256"] = producer.identity.json_sha256(
+            producer.SPOKEN_FORMS_NORMALIZATION_POLICY)
+        intents = producer.build_expected_intents(context, self.paths, settings())
+        self.assertEqual(intents[0]["spokenTextSha256"],
+                         hashlib.sha256("하박국 이장을 보십시오.".encode()).hexdigest())
+        with self.assertRaisesRegex(ValueError, "explicitly bound"):
+            producer.build_expected_intents(context, self.paths, settings(),
+                                            instructions_by_group={"other": {"instruction": "x"}})
 
     def test_cli_stdout_snapshot_without_output_option(self):
         args = ["--settings", str(self.settings_path), "--checkpoint-map", str(self.map_path),

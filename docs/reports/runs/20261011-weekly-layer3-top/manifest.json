@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-weekly-layer3-top",
+  "runs": [
+    {
+      "label": "l3-top",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/l3-top",
+      "skipped": {
+        ".json": 7
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "l3-top",
+      "path": "l3-chain-a4.log",
+      "kind": "log",
+      "bytes": 3095,
+      "truncated": false,
+      "sha256": "56dc0f420c015d54773debc91dc624f289d9bfc04218b350b628eb1e482a7804",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "l3-top",
+      "path": "l3-chain-v2.log",
+      "kind": "log",
+      "bytes": 1184,
+      "truncated": false,
+      "sha256": "f879606766c3b38af27e65a70ea0544a67fc7e20619a1f5fa36a76a6079a95ce",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "l3-top",
+      "path": "l3-chain-v2b.log",
+      "kind": "log",
+      "bytes": 2624,
+      "truncated": false,
+      "sha256": "21a5a2e3cb6394effe99c030cecfdeff405dc9704c1c59ee06ced58304e933f6",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "l3-top",
+      "path": "l3-chain-v2c.log",
+      "kind": "log",
+      "bytes": 3193,
+      "truncated": false,
+      "sha256": "d0cf2a4590af4a9f246434c5adf9e4ff31cb9f0aa86e7f5852af15fb5506e392",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "l3-top",
+      "path": "l3-dispatch-a4.log",
+      "kind": "log",
+      "bytes": 1458,
+      "truncated": false,
+      "sha256": "9b467b6847f29dfe87d3995157e77c26c55627306a0a233eb73356e140fe047b",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "l3-top",
+      "path": "l3-dispatch-v2.log",
+      "kind": "log",
+      "bytes": 1823,
+      "truncated": false,
+      "sha256": "d8e614fed53e92802b6bd5adf28565b795d5e14b971e20287766b93202a0a8b3",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "l3-top",
+      "path": "l3-final-chain.log",
+      "kind": "log",
+      "bytes": 1810,
+      "truncated": false,
+      "sha256": "da252d3f764a16fbe62adb12bedc8fb45cc43e1e45a6b2db78c779b4bd8b0c2f",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "l3-top",
+      "path": "l3-post-chain-v2.log",
+      "kind": "log",
+      "bytes": 60,
+      "truncated": false,
+      "sha256": "b58043e5494eb8356119dcdaebcab88e004043bb119ec31e5547011e1b75009d",
+      "redactions": {}
+    },
+    {
+      "run": "l3-top",
+      "path": "l3-post-chain-v3.log",
+      "kind": "log",
+      "bytes": 441,
+      "truncated": false,
+      "sha256": "3b0ffe1b94487f214aeed45a58dccaffa3e4217f2fbf47293a57ad9a21285962",
+      "redactions": {}
+    },
+    {
+      "run": "l3-top",
+      "path": "l3-post-chain.log",
+      "kind": "log",
+      "bytes": 390,
+      "truncated": false,
+      "sha256": "d82f96b03b34501bbafd4180b55faf041db340fc304c0afff0c80bb6fed0a9dc",
+      "redactions": {}
+    },
+    {
+      "run": "l3-top",
+      "path": "l3-resume-v3.log",
+      "kind": "log",
+      "bytes": 783,
+      "truncated": false,
+      "sha256": "0d6296ed588a173dff291eb5b1a983d71807e15550983b0a117a8bc66322cc95",
+      "redactions": {}
+    },
+    {
+      "run": "l3-top",
+      "path": "l3-screen-chain.log",
+      "kind": "log",
+      "bytes": 161,
+      "truncated": false,
+      "sha256": "e338940c309b4064d0671dee0f645302833a532d1521d754ca0a3d4732414bad",
+      "redactions": {}
+    },
+    {
+      "run": "l3-top",
+      "path": "render-chain.log",
+      "kind": "log",
+      "bytes": 9651,
+      "truncated": false,
+      "sha256": "f26f628111895f7ef1d3b136fc1d3b62f9216d2005240387a1b9311dca1d8797",
+      "redactions": {
+        "email": 4,
+        "home_dir": 42
+      }
+    },
+    {
+      "run": "l3-top",
+      "path": "render-chain2.log",
+      "kind": "log",
+      "bytes": 841,
+      "truncated": false,
+      "sha256": "5edf17a4405a20071984f963473dd411fe69c1fe18d82bb79bb4cbb79c7f939e",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "l3-top",
+      "path": "render-chain3.log",
+      "kind": "log",
+      "bytes": 841,
+      "truncated": false,
+      "sha256": "da7fe9a6554f37d1b15830d923a005519d0890738f36329a68c0664415532667",
+      "redactions": {
+        "home_dir": 2
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

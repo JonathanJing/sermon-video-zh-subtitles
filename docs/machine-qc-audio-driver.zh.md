@@ -33,8 +33,11 @@ python scripts/run_machine_qc_audio_test.py --out artifacts/machine-qc-audio/202
 python scripts/run_with_openai_environment.py --environment dev -- \
   python scripts/run_machine_qc_audio_test.py --run-dir artifacts/dev-full-rerun-20261001 \
   --out artifacts/machine-qc-audio/20261001 --state-dir artifacts/dev-full-rerun-20261001/machine-qc-state \
-  --asr-model-path /models/Qwen3-ASR-0.6B --tts-checkpoint-map path/to/checkpoint-map.json --locales ko
+  --asr-model-path /models/Qwen3-ASR-0.6B --tts-checkpoint-map path/to/checkpoint-map.json --locales ko \
+  --api-budget-authorization artifacts/budget-plan/qc-ko/api-budget-authorization.json
 ```
+
+真实音频运行即使使用默认 `--text-backend codex`，二级 ASR 仍需要 API 预算。先按[运行规划](weekly-run-profile.zh.md)生成并批准该语言的 QC 授权 v4，再将其传给 `--api-budget-authorization`；实际路径取自计划的 `stages[].authorization`。授权绑定该语言的 source／anchor／policy、完整 launcher 路由、凭据指纹和当前实现，`--locales` 必须与授权一致；多语言分别运行。纯预检和 fake 演练不需要授权。
 
 ## 限制
 

@@ -262,6 +262,50 @@ class SourceTextReviewTest(unittest.TestCase):
         _, second = self.apply()
         self.assertNotEqual(first["reviewSha256"], second["reviewSha256"])
 
+    def test_machine_authority_requires_its_receipt_under_either_label(self):
+        # The machine authority always rests on one bound source-meaning receipt; v1 or v2, a review
+        # without one is refused (a v1 label is further limited to receipts from pre-v2 writers).
+        self.assertEqual(review_module.SCHEMAS, (review_module.SCHEMA, review_module.SCHEMA_V2))
+        for schema in review_module.SCHEMAS:
+            with self.subTest(schema=schema), self.assertRaisesRegex(ValueError, "exactly one source-meaning receipt"):
+                self.apply(review=dict(self.review, schemaVersion=schema, authority=review_module.MACHINE_AUTHORITY))
+        with self.assertRaisesRegex(ValueError, "conversational source correction review"):
+            self.apply(review=dict(self.review, schemaVersion="sermon-source-text-review-v4"))
+
+    def human_review(self, **changes):
+        review = {k: v for k, v in self.review.items() if k != "model"}
+        review.update(schemaVersion=review_module.SCHEMA_V3, reviewType="human", humanApproval=True,
+                      authority=review_module.HUMAN_AUTHORITY, reviewedBy="operator")
+        review.update(changes)
+        return review
+
+    def test_operator_confirmed_review_applies_with_human_provenance(self):
+        corrected, provenance = self.apply(review=self.human_review())
+        self.assertEqual(corrected[0]["text"], "But I have committed to not shield you.")
+        self.assertEqual((provenance["reviewType"], provenance["humanApproval"]), ("human", True))
+        self.assertNotIn("model", provenance)
+        self.assertEqual(provenance["authority"], review_module.HUMAN_AUTHORITY)
+
+    def test_operator_confirmed_review_rejects_a_model_identity_or_missing_approval(self):
+        for bad in (dict(model=review_module.MODEL), dict(humanApproval=False), dict(reviewType="model"),
+                    dict(authority=review_module.AUTHORITY)):
+            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, "operator-confirmed"):
+                self.apply(review=self.human_review(**bad))
+
+    def test_operator_confirmed_review_keeps_the_original_text_binding(self):
+        review = self.human_review()
+        review["patches"][0]["originalTextSha256"] = "b" * 64
+        with self.assertRaisesRegex(ValueError, "text changed"):
+            self.apply(review=review)
+
+    def test_v2_keeps_the_conversational_review_and_records_its_schema(self):
+        corrected, provenance = self.apply(review=dict(self.review, schemaVersion=review_module.SCHEMA_V2))
+        self.assertEqual(corrected[0]["text"], "But I have committed to not shield you.")
+        self.assertEqual(provenance["schemaVersion"], review_module.SCHEMA_V2)
+        self.assertEqual(provenance["authority"], review_module.AUTHORITY)
+        _, v1 = self.apply()
+        self.assertEqual(v1["schemaVersion"], review_module.SCHEMA)
+
     def test_missing_malformed_or_duplicate_key_review_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "unavailable"):
             review_module.apply_review(self.segments, self.review_path, self.audio, self.asr)

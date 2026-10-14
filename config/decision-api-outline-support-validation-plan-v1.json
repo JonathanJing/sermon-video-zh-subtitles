@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "decision-outline-support-validation-plan-v1",
+  "status": "design_ready",
+  "execution": {
+    "started": false,
+    "requestsSent": 0,
+    "producerConsumesPlan": false,
+    "existingRunnerCompatible": false,
+    "productionChangesAuthorizedByPlan": false
+  },
+  "task": {
+    "locale": "zh-Hans",
+    "unit": "complete_outline_section_with_claim_spans",
+    "labels": [
+      "supported",
+      "contradiction",
+      "unsupported",
+      "needs_more_evidence"
+    ],
+    "framingLabels": [
+      "faithful",
+      "misleading",
+      "needs_more_evidence"
+    ],
+    "unsupportedScope": "current_cited_evidence_not_entire_sermon_truth",
+    "humanReviewRetained": true
+  },
+  "sample": {
+    "newSourceClusters": 6,
+    "itemsPerSource": 8,
+    "totalItems": 48,
+    "untouchedReal": 12,
+    "faithfulParaphrase": 6,
+    "semanticErrorVariants": 24,
+    "contextDeficitVariants": 6,
+    "previousDevelopmentSourcesExcluded": true,
+    "stockVerified": false,
+    "severeFamilies": [
+      "qualifier_inflation",
+      "quotation_attribution",
+      "context_removal",
+      "application_overreach",
+      "relationship_reversal",
+      "misleading_section_framing"
+    ],
+    "perSevereFamilyTarget": 4,
+    "oneFormPerParentDraft": true
+  },
+  "truth": {
+    "independentHumanGoldRequired": true,
+    "modelAgreementIsGold": false,
+    "variantAuthorLabelIsGold": false,
+    "goldReviewersPerItem": 2,
+    "adjudicationRequiredForDisagreement": true,
+    "windowAndWholeSourceConclusionsSeparate": true,
+    "sameSourceGoldAndTimedReviewRolesMayNotOverlap": true
+  },
+  "arms": {
+    "A": "existing_program_prechecks_plus_human_review",
+    "B": "same_prechecks_and_human_review_plus_decisions_hints",
+    "paidSolBaseline": false,
+    "timedReviewers": 2,
+    "allocationUnit": "source",
+    "sameReviewerMayNotSeeSameSourceInBothArms": true,
+    "commonSourceSearchAndEvidence": true,
+    "supportedDoesNotSkipHumanReview": true
+  },
+  "metrics": {
+    "primaryTime": "humanActiveSecondsToEquivalentValidEndpoint",
+    "timeReductionTarget": 0.2,
+    "caseObservationLimitSeconds": 480,
+    "censoredItemsRemainInDenominator": true,
+    "sourceClusterReporting": true,
+    "realAndVariantsSeparate": true,
+    "humanGoldStatus": "not_prepared"
+  },
+  "gates": {
+    "promotionStopsOnAnyFinalHumanSevereMiss": true,
+    "criticalWrongEditsStopPromotion": true,
+    "smallPilotCanOnlyAdvanceToLargerValidation": true,
+    "productionReplacementAllowed": false,
+    "unresolvedGoldPreventsCompleteQualityConclusion": true,
+    "faithfulParaphraseFalseFlagsMax": 1,
+    "effectiveCompletionBMustNotBeLowerThanA": true,
+    "reworkBMustNotExceedA": true
+  },
+  "budget": {
+    "currency": "USD",
+    "existingTotalAuthorization": 20,
+    "estimatedCarrySnapshot": 2.995649,
+    "remainingSnapshot": 17.004351,
+    "phaseIncrementalCap": 2,
+    "maxDecisionsRequests": 120,
+    "allExpansionAndRepeatCallsIncluded": true,
+    "environment": "dev",
+    "credentialAlias": "tongxing-dev-runtime",
+    "refreshAndSealPreviousLedgerBeforeDispatch": true,
+    "implicitRetries": false,
+    "unknownRedispatchAllowed": false,
+    "invoiceVerified": false
+  },
+  "requiredBeforeExecution": [
+    "verify_six_new_source_clusters",
+    "prepare_and_freeze_samples",
+    "independent_human_gold_and_adjudication",
+    "assign_blinded_nonoverlapping_review_roles",
+    "freeze_rubric_payload_randomization",
+    "implement_human_timing_and_receipts",
+    "refresh_shared_budget_and_full_preflight"
+  ]
+}

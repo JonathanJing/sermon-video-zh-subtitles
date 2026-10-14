@@ -1,0 +1,86 @@
+{
+  "implementationSha256": "3ffacae2331358b38e8a53200774ff424329c6f5c79663f8a62d380d67921689",
+  "locales": {
+    "es": {
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 461,
+          "added_number": 385,
+          "added_reference": 454,
+          "dropped_half": 337,
+          "dropped_name": 12,
+          "english_leak": 367,
+          "placeholder": 461,
+          "semantic_negation": 26,
+          "swapped_name": 0,
+          "swapped_quantity": 4,
+          "wrong_book": 5,
+          "wrong_number": 38,
+          "wrong_ordinal": 453
+        },
+        "untestableKinds": []
+      },
+      "candidateJsonSha256": "1df43ebdafb507f988b907b4f4afe02e453f51967262af568f19c2d6f45b8ad9",
+      "locale": "es",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-54475d42/output4-rebuild2/anchor-manifest.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/recovered/es/candidate.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/policies/es-policy-frozen-r5.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-54475d42/formal/english-source-package.json"
+      },
+      "problems": [],
+      "reason": "HTTPError: HTTP Error 503: Service Unavailable",
+      "status": "error"
+    },
+    "ko": {
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 461,
+          "added_number": 385,
+          "added_reference": 454,
+          "dropped_half": 337,
+          "dropped_name": 12,
+          "english_leak": 367,
+          "placeholder": 461,
+          "semantic_negation": 9,
+          "swapped_name": 0,
+          "swapped_quantity": 4,
+          "wrong_book": 5,
+          "wrong_number": 27,
+          "wrong_ordinal": 438
+        },
+        "untestableKinds": []
+      },
+      "candidateJsonSha256": "efc5043b3a57ec3973245163a88d40139a4cc9a1c15aef482b4a587b69da1a1b",
+      "failedGroups": [
+        "translation-chunk-0000-u040",
+        "translation-chunk-0001-u010",
+        "translation-chunk-0001-u036",
+        "translation-chunk-0002-u024",
+        "translation-chunk-0003-u044",
+        "translation-chunk-0004-u013",
+        "translation-chunk-0005-u032",
+        "translation-chunk-0007-u008",
+        "translation-chunk-0008-u008",
+        "translation-chunk-0008-u022",
+        "translation-chunk-0008-u023",
+        "translation-chunk-0009-u002",
+        "translation-chunk-0010-u007"
+      ],
+      "locale": "ko",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-54475d42/output4-rebuild2/anchor-manifest.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/recovered/ko/candidate.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/policies/ko-policy-frozen-r5.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-54475d42/formal/english-source-package.json"
+      },
+      "problems": [],
+      "reason": "text QC failed; repair the failed groups in a new candidate revision",
+      "status": "requires_repair",
+      "textQc": "requires_repair",
+      "textQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-54475d42/state-v2/qc-receipts/text/ko/c41c57f4ea3676df82f616ffcf6c2c4d7ca92f560f594d069b9ecee4bbb37aec/entry-000001.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live",
+  "textBackend": "api"
+}
