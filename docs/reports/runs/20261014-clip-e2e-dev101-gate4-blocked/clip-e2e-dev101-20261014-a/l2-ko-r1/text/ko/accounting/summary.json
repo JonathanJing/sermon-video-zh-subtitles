@@ -1,0 +1,871 @@
+{
+  "schemaVersion": "sermon-workflow-accounting-v3",
+  "generatedAt": "2026-10-14T16:02:14.436298+00:00",
+  "runs": [
+    {
+      "runId": "f1f093635831483bb9fe790efc781e4b",
+      "status": "failed",
+      "workflow": "canonical_layer2_worker",
+      "startedAt": "2026-10-14T16:02:14.277629+00:00",
+      "metadata": {
+        "targetLocale": "ko",
+        "jobSha256": "c8eb29a063b96345720c9b6d45ed9dd49488ec3461715c115ff9a5fc07da2d78",
+        "productionRunId": "22144a37a1bf5e46002b7f77cff2349b5d70f0a302d0e26590b3619beb405ed7"
+      },
+      "workloads": [
+        {
+          "stage": "layer2.source_identity",
+          "metrics": {
+            "englishSourcePackageJsonSha256": "8034a0d2922eb79e0ba929e4b4b4126d3d613c903c0a6dbc5eea4744859ec188",
+            "anchorManifestSha256": "2c0377251a595624f28bff060c1d972d18702c5b1c192f275cac3bff6d6b5b6e",
+            "translationPolicySha256": "467a55ec80ea5027b102013d0cfa8c47f941bd5216cb6997cba9b9cb592237f3",
+            "sourceDurationSeconds": 75.04,
+            "sourceMediaSha256": "f6fc24fdff5111972f252bc016b68b43314a518f8d7b03be14fa4436c7ff9bd1",
+            "translationGroups": 16,
+            "sourceUnits": 16
+          }
+        },
+        {
+          "stage": "layer2.rule_preflight",
+          "metrics": {
+            "ruleBundleSha256": "768cc9f60ae401203381cbd5609153ef5cecf9a3f9e64b75a98c63085bf25d04",
+            "humanApproval": false
+          }
+        }
+      ],
+      "diagnostics": [
+        {
+          "runId": "f1f093635831483bb9fe790efc781e4b",
+          "workflowId": "0de3c4e1f7de4e2ba1d2baba6ae79613",
+          "stage": "layer2.run_admission.ko",
+          "spanId": "6d21675b89b743978d43b405ea089bbe",
+          "attemptId": "d80fb2f761f748c48b69c3105bb609cf",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T16:02:14.430510+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.002759,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 975,
+              "function": "_run_prepared_groups"
+            },
+            {
+              "file": "scripts/target_language_rule_preflight.py",
+              "line": 382,
+              "function": "verify_prior_model_inputs"
+            },
+            {
+              "file": "scripts/target_language_rule_preflight.py",
+              "line": 39,
+              "function": "require"
+            }
+          ]
+        },
+        {
+          "runId": "f1f093635831483bb9fe790efc781e4b",
+          "workflowId": "0de3c4e1f7de4e2ba1d2baba6ae79613",
+          "stage": "layer2_models",
+          "spanId": "9e3b5cc0e4894efda93d7d153d903f0b",
+          "attemptId": "55f253dfcb3b4ba8ad2376779f484d90",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T16:02:14.431127+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.008222,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 591,
+              "function": "accounting_session"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1402,
+              "function": "run_accounted"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 975,
+              "function": "_run_prepared_groups"
+            },
+            {
+              "file": "scripts/target_language_rule_preflight.py",
+              "line": 382,
+              "function": "verify_prior_model_inputs"
+            },
+            {
+              "file": "scripts/target_language_rule_preflight.py",
+              "line": 39,
+              "function": "require"
+            }
+          ]
+        },
+        {
+          "runId": "f1f093635831483bb9fe790efc781e4b",
+          "workflowId": "0de3c4e1f7de4e2ba1d2baba6ae79613",
+          "stage": "canonical_layer2_worker",
+          "spanId": "f8180ae0563f423d9322a887e2bcc68e",
+          "attemptId": null,
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T16:02:14.431664+00:00",
+          "event": "workflow_finished",
+          "code": "workflow_finished",
+          "level": "ERROR"
+        },
+        {
+          "runId": "f1f093635831483bb9fe790efc781e4b",
+          "workflowId": "cec58b3e8bfe4643b3d2232e9b6b84f4",
+          "stage": "canonical_layer2_worker",
+          "spanId": "f8180ae0563f423d9322a887e2bcc68e",
+          "attemptId": "6eba35bf78c04947af1ba11cff24129c",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T16:02:14.432456+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.098908,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 591,
+              "function": "accounting_session"
+            },
+            {
+              "file": "scripts/canonical_layer2_controller.py",
+              "line": 539,
+              "function": "execute"
+            },
+            {
+              "file": "scripts/canonical_layer2_controller.py",
+              "line": 615,
+              "function": "_run_auto_repair"
+            },
+            {
+              "file": "scripts/layer2_auto_repair.py",
+              "line": 881,
+              "function": "drive"
+            },
+            {
+              "file": "scripts/canonical_layer2_controller.py",
+              "line": 594,
+              "function": "run_round"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1402,
+              "function": "run_accounted"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 975,
+              "function": "_run_prepared_groups"
+            },
+            {
+              "file": "scripts/target_language_rule_preflight.py",
+              "line": 382,
+              "function": "verify_prior_model_inputs"
+            },
+            {
+              "file": "scripts/target_language_rule_preflight.py",
+              "line": 39,
+              "function": "require"
+            }
+          ]
+        },
+        {
+          "runId": "f1f093635831483bb9fe790efc781e4b",
+          "workflowId": "cec58b3e8bfe4643b3d2232e9b6b84f4",
+          "stage": null,
+          "spanId": null,
+          "attemptId": null,
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T16:02:14.433866+00:00",
+          "event": "workflow_finished",
+          "code": "workflow_finished",
+          "level": "ERROR"
+        },
+        {
+          "runId": "f1f093635831483bb9fe790efc781e4b",
+          "workflowId": "cec58b3e8bfe4643b3d2232e9b6b84f4",
+          "stage": null,
+          "spanId": null,
+          "attemptId": null,
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T16:02:14.434050+00:00",
+          "event": "run_finished",
+          "code": "run_finished",
+          "level": "ERROR"
+        }
+      ],
+      "completedAt": "2026-10-14T16:02:14.434050+00:00",
+      "wallSeconds": 0.156421,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "apiAttempts": 0,
+      "usageReceipts": 0,
+      "usageReceiptCoverage": null,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "workflows": [
+        {
+          "workflowId": "cec58b3e8bfe4643b3d2232e9b6b84f4",
+          "runId": "f1f093635831483bb9fe790efc781e4b",
+          "workflow": "canonical_layer2_worker",
+          "parentWorkflowId": null,
+          "status": "failed",
+          "startedAt": "2026-10-14T16:02:14.330050+00:00",
+          "completedAt": "2026-10-14T16:02:14.433866+00:00",
+          "metadata": {
+            "targetLocale": "ko",
+            "jobSha256": "c8eb29a063b96345720c9b6d45ed9dd49488ec3461715c115ff9a5fc07da2d78",
+            "productionRunId": "22144a37a1bf5e46002b7f77cff2349b5d70f0a302d0e26590b3619beb405ed7"
+          },
+          "executionIdentity": {
+            "gitCommit": "42fa4150d1bad74b0a7fde98aed8bcee12a74f69",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/canonical_layer2_controller.py": "0d43cd49e9aad2a034b6ff110f84f040f6c152387f00d000cc432f51dfdf63e5",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_workflow_jobs.py": "60c12804264b445b67a5f9ffdd20d5fcef4e7f677d1ca0e8c7662d73628b24aa",
+              "scripts/canonical_pipeline_definition.py": "f1519c67205ddf0149b4f43bdaa3d61239e49fd9d2825d22a701f95374176c14",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/sermon_clock_evidence.py": "72228a1b1babd9196aee394d696a17cdbffbc9a05dc339b28ffe51c0a5d6e465",
+              "scripts/sermon_dispatch_observation.py": "95c57dd365394bb7e7fa668f67fc0445ec3d31d8a8197dc07586497aa7e204b2",
+              "scripts/sermon_log_contract.py": "fd3829cc86c38d3a576a2b1ec415a4546943f8f8dc540e6b46c666f239bd7a05",
+              "scripts/sermon_release_workflow.py": "bdcdf7d9d2237304b114757f060681eb5ee48fc879618238bc305d60e0f705b6",
+              "scripts/sermon_log_outbox.py": "45e037f7e2541197d9423f9d37a05a7e89bdeb8d6c5fecbd99da6fccfe23be95",
+              "scripts/sermon_log_profile.py": "f3fda90bd257a628bca8554601800d01b3b62a81ba2196a2b93384e1725af9ed",
+              "scripts/sermon_accounting.py": "b6b626eb2c6c810d1377168d86b6d7186226b720251c1e426c9146810c00fadb",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/build_english_source_package.py": "3af9b46734f973718284f811e0bce9b33c407123199b103fb10d73439ce52cd0",
+              "scripts/machine_quality_waiver.py": "f86441dab16f64043ca14c9439977fb0b273d6c0f6613e2b8d05fc0040a2446e",
+              "scripts/machine_repair_ledger.py": "bb4bd1691196b93c007e391cf6f0b205a20ad2376a464bc3ca71060abdf0a8c0",
+              "scripts/machine_quality_release_basis.py": "410988d188c495c69f8648f9467135d8038c25643137d61d01ad0c4ef7af8fc9",
+              "scripts/sermon_sentence_interpretation.py": "5aa19b0580febb3652f9b694cf2ac9f1cbba1c241320c02396a99f0a63a439c1",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/target_language_policy.py": "d4124cb925a0ac06de96400b36d053633c95a3b923556cdb588d4f94e5c233b8",
+              "scripts/clip_timeline_map.py": "8153583efe866e651e0403f20b24fda9bedd740e9be2219f3d5f46a3b3015a26",
+              "scripts/prepare_target_language_speech_job.py": "6a80e433baf6a5bad78ff93038aca973dec7c460d31fb4fa8c4e41eb5f9ff759",
+              "scripts/produce_target_language_candidate.py": "0b1586ea81906739ea9fe96ca9b6306836d7ecd73a39ba855bde1235a622e12d",
+              "scripts/validate_target_language_audio_unit.py": "5a4dcedff69c0435f423647bbcc9b277ab62f79fe99af0095e9489fe6f68b02c",
+              "scripts/dev_audio_test_profile.py": "d102bcde95b5432e798c48b77b37beffa4da53f49e7ae44c59fb85d3bf015d3c",
+              "scripts/dev_audio_test_receipts.py": "efbe15e86f9d007e17675c987ac2bc5b2bcd9a24d852850b95d7d86822ed5dbe",
+              "scripts/screen_target_language_audio_units.py": "8005f9e3ee5b20c81ca0636fd24c38c29300cb128e25a84576703d887423f154",
+              "scripts/build_target_language_audio_package.py": "1c27786312b59cbdbc3d9abcd972c784733f0c750c68925000e6cbd355ae400e",
+              "scripts/stage_formal_multilingual_dev.py": "6bf1626482d8f7c412f99ae80412220c0359a8436fc64d4193b41b8d8c1c0743",
+              "scripts/inspect_canonical_audio.py": "1cadaea2721c419c7966fb0b3903ecc3cc3d010ff7200752840340cf5e370907",
+              "scripts/inspect_canonical_release.py": "845278a8446c678620f84111e4028e3e83bca471ece84c1a0bb5c8cdbb7c6f39",
+              "scripts/inspect_canonical_packages.py": "49b65e7aa7f3862c997744b14d050b7ce9cac2f6a8a93b48b53da3421eaa90f0",
+              "scripts/canonical_durable_jobs.py": "e16ee7be3a7bd80bb1b6df9541f007ddf029e2635b65759496066d6a5003ec31",
+              "scripts/production_spark_admission.py": "df0c2b0eb4cde55eff2c7c088524d4fecdafb80ce9bfd34fdffff8e29cddb703",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/sermon_pipeline.py": "178674fcd8ef449c113c3810a1154cf7496212625a48179b63164f88688451b9",
+              "scripts/target_language_policy_preview.py": "2878e45d80b0896507184d7632fe56ab10a298ad39a6d2f54e6e11436ea2773b",
+              "scripts/target_language_rule_preflight.py": "60310945267ca5deccb64e0d9943b70c91fd5c1ade8c5f05424f356c5969721c",
+              "scripts/migrate_target_language_model_cache.py": "2fd38dd78433a564cdc72b9d3b9cf7379cc04558dd3670aaec92775849fb16b2",
+              "scripts/run_target_language_models.py": "44c7fece922e646283e5e79952b1ef541f4d4d5210018efff97f958b48958e82",
+              "scripts/layer2_api_concurrency.py": "9ee3994b9a258631431cf86fe605abd5a00fb7b7e693eb044522e7c4dd2c6ba9",
+              "scripts/sermon_provider_limits.py": "6ac1b4bc65e960ffae0a0433a2c58f66ea4da4fb37892b5388d371e60939ba6f",
+              "scripts/sermon_provider_http.py": "45c17bab77632e9e0957ef81e792a1da9aaddbdb8f09bb908f1204261821346e",
+              "scripts/sermon_review_contracts.py": "71e7fa802fad3cac9788b1163907da3b908d4410777552333d46034754db89f2",
+              "scripts/sermon_review_budget.py": "5e73db16994ae401b7fea44c5440d2c4a539f83a616e437875027b30f9c312b2",
+              "scripts/canonical_layer2_budget.py": "2d2d8772e9a5a3f8c8b714b794ddccefbc237fa18a85ebaa48b2cf9eca0404db",
+              "scripts/sermon_source_text_review.py": "67c4757238ff0d61c1a579213825dee0ce3d5d50043f10ba183f6b1c50a0ce5e",
+              "scripts/source_meaning_machine_adjudication.py": "2d7369021e502370a774b2faef9fecbb11f546410d23fab3f79271718a991536",
+              "scripts/layer2_auto_repair.py": "17c1870e9e898aa943dec35cfa59b48ee15c90e423ff6823aa505853c909e1bc",
+              "scripts/sermon_openai_runtime.py": "9b77113543b721e24e9f532bf9cfb23f9fe75f0582411155aab0c7a1b4620a0a"
+            },
+            "pythonVersion": "3.13.15",
+            "platform": "darwin",
+            "architecture": "arm64",
+            "scope": "Loaded project Python modules at workflow start; unimported modules and remote code require their own receipts."
+          },
+          "resourcesBefore": {
+            "processPeakRssBytes": 42057728,
+            "processUserCpuSeconds": 0.188668,
+            "processSystemCpuSeconds": 0.07288,
+            "finishedChildUserCpuSeconds": 0.011838,
+            "finishedChildSystemCpuSeconds": 0.050886,
+            "diskFreeBytes": 178699649024,
+            "gpuPeakBytes": null,
+            "scope": "Process-lifetime RSS high-water mark and CPU counters; child CPU includes finished children only. GPU allocation not exposed by this local collector."
+          },
+          "resourcesAfter": {
+            "processPeakRssBytes": 42844160,
+            "processUserCpuSeconds": 0.241665,
+            "processSystemCpuSeconds": 0.09688899999999999,
+            "finishedChildUserCpuSeconds": 0.024019,
+            "finishedChildSystemCpuSeconds": 0.096756,
+            "diskFreeBytes": 178699603968,
+            "gpuPeakBytes": null,
+            "scope": "Process-lifetime RSS high-water mark and CPU counters; child CPU includes finished children only. GPU allocation not exposed by this local collector."
+          },
+          "evidenceBefore": {
+            "schemaVersion": "sermon-workflow-evidence-v1",
+            "workflow": "canonical_layer2_worker",
+            "observedAt": "2026-10-14T16:02:14.331545+00:00",
+            "evidenceScope": "existing_files_snapshot",
+            "currentRunExecutionProven": false,
+            "artifacts": [],
+            "errors": [],
+            "missingCategories": [
+              "layer2_evidence",
+              "layer2_request",
+              "layer2_run_identity"
+            ],
+            "limits": {
+              "maxJsonBytes": 1048576,
+              "maxWeekEntries": 128,
+              "lookup": "fixed_relative_paths_and_sermon_prefix_direct_children_only"
+            },
+            "optionalDownstreamCategories": [
+              "layer2_candidate",
+              "layer2_language_review"
+            ],
+            "cacheProvenanceScope": "per_cache_observation_events_not_unbounded_file_scan",
+            "sourceIdentityClaims": [],
+            "sourceFingerprint": null,
+            "sourceFingerprintMeaning": "digest_of_reported_identity_claims_not_media_verification",
+            "evidenceFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "reportedBlockers": [],
+            "missingCategoryMeaning": "not_found_in_bounded_lookup_not_proof_of_failed_or_required_stage",
+            "status": "evidence_gaps"
+          },
+          "evidenceAfter": {
+            "schemaVersion": "sermon-workflow-evidence-v1",
+            "workflow": "canonical_layer2_worker",
+            "observedAt": "2026-10-14T16:02:14.432726+00:00",
+            "evidenceScope": "existing_files_snapshot",
+            "currentRunExecutionProven": false,
+            "artifacts": [],
+            "errors": [],
+            "missingCategories": [
+              "layer2_evidence",
+              "layer2_request",
+              "layer2_run_identity"
+            ],
+            "limits": {
+              "maxJsonBytes": 1048576,
+              "maxWeekEntries": 128,
+              "lookup": "fixed_relative_paths_and_sermon_prefix_direct_children_only"
+            },
+            "optionalDownstreamCategories": [
+              "layer2_candidate",
+              "layer2_language_review"
+            ],
+            "cacheProvenanceScope": "per_cache_observation_events_not_unbounded_file_scan",
+            "sourceIdentityClaims": [],
+            "sourceFingerprint": null,
+            "sourceFingerprintMeaning": "digest_of_reported_identity_claims_not_media_verification",
+            "evidenceFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "reportedBlockers": [],
+            "missingCategoryMeaning": "not_found_in_bounded_lookup_not_proof_of_failed_or_required_stage",
+            "status": "evidence_gaps"
+          }
+        },
+        {
+          "workflowId": "0de3c4e1f7de4e2ba1d2baba6ae79613",
+          "runId": "f1f093635831483bb9fe790efc781e4b",
+          "workflow": "layer2_models",
+          "parentWorkflowId": "cec58b3e8bfe4643b3d2232e9b6b84f4",
+          "status": "failed",
+          "startedAt": "2026-10-14T16:02:14.421635+00:00",
+          "completedAt": "2026-10-14T16:02:14.431664+00:00",
+          "metadata": {
+            "targetLocale": "ko"
+          },
+          "executionIdentity": {
+            "gitCommit": "42fa4150d1bad74b0a7fde98aed8bcee12a74f69",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/canonical_layer2_controller.py": "0d43cd49e9aad2a034b6ff110f84f040f6c152387f00d000cc432f51dfdf63e5",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_workflow_jobs.py": "60c12804264b445b67a5f9ffdd20d5fcef4e7f677d1ca0e8c7662d73628b24aa",
+              "scripts/canonical_pipeline_definition.py": "f1519c67205ddf0149b4f43bdaa3d61239e49fd9d2825d22a701f95374176c14",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/sermon_clock_evidence.py": "72228a1b1babd9196aee394d696a17cdbffbc9a05dc339b28ffe51c0a5d6e465",
+              "scripts/sermon_dispatch_observation.py": "95c57dd365394bb7e7fa668f67fc0445ec3d31d8a8197dc07586497aa7e204b2",
+              "scripts/sermon_log_contract.py": "fd3829cc86c38d3a576a2b1ec415a4546943f8f8dc540e6b46c666f239bd7a05",
+              "scripts/sermon_release_workflow.py": "bdcdf7d9d2237304b114757f060681eb5ee48fc879618238bc305d60e0f705b6",
+              "scripts/sermon_log_outbox.py": "45e037f7e2541197d9423f9d37a05a7e89bdeb8d6c5fecbd99da6fccfe23be95",
+              "scripts/sermon_log_profile.py": "f3fda90bd257a628bca8554601800d01b3b62a81ba2196a2b93384e1725af9ed",
+              "scripts/sermon_accounting.py": "b6b626eb2c6c810d1377168d86b6d7186226b720251c1e426c9146810c00fadb",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/build_english_source_package.py": "3af9b46734f973718284f811e0bce9b33c407123199b103fb10d73439ce52cd0",
+              "scripts/machine_quality_waiver.py": "f86441dab16f64043ca14c9439977fb0b273d6c0f6613e2b8d05fc0040a2446e",
+              "scripts/machine_repair_ledger.py": "bb4bd1691196b93c007e391cf6f0b205a20ad2376a464bc3ca71060abdf0a8c0",
+              "scripts/machine_quality_release_basis.py": "410988d188c495c69f8648f9467135d8038c25643137d61d01ad0c4ef7af8fc9",
+              "scripts/sermon_sentence_interpretation.py": "5aa19b0580febb3652f9b694cf2ac9f1cbba1c241320c02396a99f0a63a439c1",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/target_language_policy.py": "d4124cb925a0ac06de96400b36d053633c95a3b923556cdb588d4f94e5c233b8",
+              "scripts/clip_timeline_map.py": "8153583efe866e651e0403f20b24fda9bedd740e9be2219f3d5f46a3b3015a26",
+              "scripts/prepare_target_language_speech_job.py": "6a80e433baf6a5bad78ff93038aca973dec7c460d31fb4fa8c4e41eb5f9ff759",
+              "scripts/produce_target_language_candidate.py": "0b1586ea81906739ea9fe96ca9b6306836d7ecd73a39ba855bde1235a622e12d",
+              "scripts/validate_target_language_audio_unit.py": "5a4dcedff69c0435f423647bbcc9b277ab62f79fe99af0095e9489fe6f68b02c",
+              "scripts/dev_audio_test_profile.py": "d102bcde95b5432e798c48b77b37beffa4da53f49e7ae44c59fb85d3bf015d3c",
+              "scripts/dev_audio_test_receipts.py": "efbe15e86f9d007e17675c987ac2bc5b2bcd9a24d852850b95d7d86822ed5dbe",
+              "scripts/screen_target_language_audio_units.py": "8005f9e3ee5b20c81ca0636fd24c38c29300cb128e25a84576703d887423f154",
+              "scripts/build_target_language_audio_package.py": "1c27786312b59cbdbc3d9abcd972c784733f0c750c68925000e6cbd355ae400e",
+              "scripts/stage_formal_multilingual_dev.py": "6bf1626482d8f7c412f99ae80412220c0359a8436fc64d4193b41b8d8c1c0743",
+              "scripts/inspect_canonical_audio.py": "1cadaea2721c419c7966fb0b3903ecc3cc3d010ff7200752840340cf5e370907",
+              "scripts/inspect_canonical_release.py": "845278a8446c678620f84111e4028e3e83bca471ece84c1a0bb5c8cdbb7c6f39",
+              "scripts/inspect_canonical_packages.py": "49b65e7aa7f3862c997744b14d050b7ce9cac2f6a8a93b48b53da3421eaa90f0",
+              "scripts/canonical_durable_jobs.py": "e16ee7be3a7bd80bb1b6df9541f007ddf029e2635b65759496066d6a5003ec31",
+              "scripts/production_spark_admission.py": "df0c2b0eb4cde55eff2c7c088524d4fecdafb80ce9bfd34fdffff8e29cddb703",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/sermon_pipeline.py": "178674fcd8ef449c113c3810a1154cf7496212625a48179b63164f88688451b9",
+              "scripts/target_language_policy_preview.py": "2878e45d80b0896507184d7632fe56ab10a298ad39a6d2f54e6e11436ea2773b",
+              "scripts/target_language_rule_preflight.py": "60310945267ca5deccb64e0d9943b70c91fd5c1ade8c5f05424f356c5969721c",
+              "scripts/migrate_target_language_model_cache.py": "2fd38dd78433a564cdc72b9d3b9cf7379cc04558dd3670aaec92775849fb16b2",
+              "scripts/run_target_language_models.py": "44c7fece922e646283e5e79952b1ef541f4d4d5210018efff97f958b48958e82",
+              "scripts/layer2_api_concurrency.py": "9ee3994b9a258631431cf86fe605abd5a00fb7b7e693eb044522e7c4dd2c6ba9",
+              "scripts/sermon_provider_limits.py": "6ac1b4bc65e960ffae0a0433a2c58f66ea4da4fb37892b5388d371e60939ba6f",
+              "scripts/sermon_provider_http.py": "45c17bab77632e9e0957ef81e792a1da9aaddbdb8f09bb908f1204261821346e",
+              "scripts/sermon_review_contracts.py": "71e7fa802fad3cac9788b1163907da3b908d4410777552333d46034754db89f2",
+              "scripts/sermon_review_budget.py": "5e73db16994ae401b7fea44c5440d2c4a539f83a616e437875027b30f9c312b2",
+              "scripts/canonical_layer2_budget.py": "2d2d8772e9a5a3f8c8b714b794ddccefbc237fa18a85ebaa48b2cf9eca0404db",
+              "scripts/sermon_source_text_review.py": "67c4757238ff0d61c1a579213825dee0ce3d5d50043f10ba183f6b1c50a0ce5e",
+              "scripts/source_meaning_machine_adjudication.py": "2d7369021e502370a774b2faef9fecbb11f546410d23fab3f79271718a991536",
+              "scripts/layer2_auto_repair.py": "17c1870e9e898aa943dec35cfa59b48ee15c90e423ff6823aa505853c909e1bc",
+              "scripts/sermon_openai_runtime.py": "9b77113543b721e24e9f532bf9cfb23f9fe75f0582411155aab0c7a1b4620a0a",
+              "scripts/sermon_workflow_evidence.py": "b148b6b425b3a56be111730b2bd9822b2014f0f903e8c7aaa3c59f70bccff0ec"
+            },
+            "pythonVersion": "3.13.15",
+            "platform": "darwin",
+            "architecture": "arm64",
+            "scope": "Loaded project Python modules at workflow start; unimported modules and remote code require their own receipts."
+          },
+          "resourcesBefore": {
+            "processPeakRssBytes": 42811392,
+            "processUserCpuSeconds": 0.23360599999999998,
+            "processSystemCpuSeconds": 0.093043,
+            "finishedChildUserCpuSeconds": 0.024019,
+            "finishedChildSystemCpuSeconds": 0.096756,
+            "diskFreeBytes": 178699624448,
+            "gpuPeakBytes": null,
+            "scope": "Process-lifetime RSS high-water mark and CPU counters; child CPU includes finished children only. GPU allocation not exposed by this local collector."
+          },
+          "resourcesAfter": {
+            "processPeakRssBytes": 42844160,
+            "processUserCpuSeconds": 0.24026199999999998,
+            "processSystemCpuSeconds": 0.09614299999999999,
+            "finishedChildUserCpuSeconds": 0.024019,
+            "finishedChildSystemCpuSeconds": 0.096756,
+            "diskFreeBytes": 178699608064,
+            "gpuPeakBytes": null,
+            "scope": "Process-lifetime RSS high-water mark and CPU counters; child CPU includes finished children only. GPU allocation not exposed by this local collector."
+          },
+          "evidenceBefore": {
+            "schemaVersion": "sermon-workflow-evidence-v1",
+            "workflow": "layer2_models",
+            "observedAt": "2026-10-14T16:02:14.422062+00:00",
+            "evidenceScope": "existing_files_snapshot",
+            "currentRunExecutionProven": false,
+            "artifacts": [],
+            "errors": [
+              {
+                "path": ".",
+                "code": "directory_missing"
+              }
+            ],
+            "missingCategories": [
+              "layer2_evidence",
+              "layer2_request",
+              "layer2_run_identity"
+            ],
+            "limits": {
+              "maxJsonBytes": 1048576,
+              "maxWeekEntries": 128,
+              "lookup": "fixed_relative_paths_and_sermon_prefix_direct_children_only"
+            },
+            "status": "evidence_gaps"
+          },
+          "evidenceAfter": {
+            "schemaVersion": "sermon-workflow-evidence-v1",
+            "workflow": "layer2_models",
+            "observedAt": "2026-10-14T16:02:14.431332+00:00",
+            "evidenceScope": "existing_files_snapshot",
+            "currentRunExecutionProven": false,
+            "artifacts": [],
+            "errors": [
+              {
+                "path": ".",
+                "code": "directory_missing"
+              }
+            ],
+            "missingCategories": [
+              "layer2_evidence",
+              "layer2_request",
+              "layer2_run_identity"
+            ],
+            "limits": {
+              "maxJsonBytes": 1048576,
+              "maxWeekEntries": 128,
+              "lookup": "fixed_relative_paths_and_sermon_prefix_direct_children_only"
+            },
+            "status": "evidence_gaps"
+          }
+        }
+      ],
+      "sdkCalls": [],
+      "duplicateSdkInvocations": 0,
+      "unpricedSdkInvocations": 0,
+      "overallCostStatus": "recorded_api_only",
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0
+    }
+  ],
+  "stages": [
+    {
+      "runId": "f1f093635831483bb9fe790efc781e4b",
+      "stage": "layer2.worker_admission.ko",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.028866,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "f1f093635831483bb9fe790efc781e4b",
+      "stage": "layer2.source_admission.ko",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.003966,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "f1f093635831483bb9fe790efc781e4b",
+      "stage": "layer2.run_admission.ko",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.002759,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "f1f093635831483bb9fe790efc781e4b",
+      "stage": "layer2_models",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.008222,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "f1f093635831483bb9fe790efc781e4b",
+      "stage": "canonical_layer2_worker",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.098908,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    }
+  ],
+  "ledgerIntegrity": {
+    "status": "readable",
+    "damagedEvents": [],
+    "unattributedCostUnknown": false,
+    "originalBytesPreserved": true
+  },
+  "receiptIntegrity": {
+    "status": "consistent",
+    "conflicts": [],
+    "equivalentDuplicatesIgnored": 0
+  },
+  "unfinishedApiAttempts": [],
+  "unfinishedStages": [],
+  "notes": [
+    "Parent and child elapsed times overlap: do not sum all stages as wall time.",
+    "Known USD is an API list-price estimate, not an invoice or complete project cost.",
+    "Local compute, storage, network and in-conversation Codex costs are not allocated.",
+    "Missing usage/cost remains unknown; caches do not re-bill old responses."
+  ],
+  "modelCallReport": {
+    "schemaVersion": "sermon-model-call-report-v2",
+    "calls": [],
+    "totals": [],
+    "groups": [],
+    "creditUsage": null,
+    "equivalentDuplicatesIgnored": 0,
+    "coverage": {
+      "callCount": 0,
+      "conflictCallCount": 0,
+      "missingOutputTokenCalls": 0
+    }
+  },
+  "stageAttempts": [
+    {
+      "runId": "f1f093635831483bb9fe790efc781e4b",
+      "workflowId": "cec58b3e8bfe4643b3d2232e9b6b84f4",
+      "stage": "canonical_layer2_worker",
+      "spanId": "f8180ae0563f423d9322a887e2bcc68e",
+      "parentSpanId": null,
+      "startedAt": "2026-10-14T16:02:14.333021+00:00",
+      "finishedAt": "2026-10-14T16:02:14.432456+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.098908,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "f1f093635831483bb9fe790efc781e4b",
+      "workflowId": "cec58b3e8bfe4643b3d2232e9b6b84f4",
+      "stage": "layer2.worker_admission.ko",
+      "spanId": "4c025ed7864040aaa8b0acf8f66c19f5",
+      "parentSpanId": "f8180ae0563f423d9322a887e2bcc68e",
+      "startedAt": "2026-10-14T16:02:14.333689+00:00",
+      "finishedAt": "2026-10-14T16:02:14.362654+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.028866,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "f1f093635831483bb9fe790efc781e4b",
+      "workflowId": "0de3c4e1f7de4e2ba1d2baba6ae79613",
+      "stage": "layer2_models",
+      "spanId": "9e3b5cc0e4894efda93d7d153d903f0b",
+      "parentSpanId": "f8180ae0563f423d9322a887e2bcc68e",
+      "startedAt": "2026-10-14T16:02:14.422551+00:00",
+      "finishedAt": "2026-10-14T16:02:14.431127+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.008222,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "f1f093635831483bb9fe790efc781e4b",
+      "workflowId": "0de3c4e1f7de4e2ba1d2baba6ae79613",
+      "stage": "layer2.source_admission.ko",
+      "spanId": "59281989616541e18e0051d8e7206e6a",
+      "parentSpanId": "9e3b5cc0e4894efda93d7d153d903f0b",
+      "startedAt": "2026-10-14T16:02:14.423068+00:00",
+      "finishedAt": "2026-10-14T16:02:14.427133+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.003966,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "f1f093635831483bb9fe790efc781e4b",
+      "workflowId": "0de3c4e1f7de4e2ba1d2baba6ae79613",
+      "stage": "layer2.run_admission.ko",
+      "spanId": "6d21675b89b743978d43b405ea089bbe",
+      "parentSpanId": "9e3b5cc0e4894efda93d7d153d903f0b",
+      "startedAt": "2026-10-14T16:02:14.427433+00:00",
+      "finishedAt": "2026-10-14T16:02:14.430510+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.002759,
+      "cacheHit": false,
+      "billing": "local"
+    }
+  ]
+}

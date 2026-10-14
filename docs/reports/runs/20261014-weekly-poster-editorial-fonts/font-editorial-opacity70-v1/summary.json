@@ -1,0 +1,32 @@
+{
+  "status": "passed_local_preview",
+  "pageId": "resi-20261011-54475d42",
+  "pullRequest": 405,
+  "codeCommit": "9e0274d824fd9adfaf78fd08142dad0f738976c2",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "fonts": {
+    "zh-Hans": "STSongti-SC-Bold",
+    "ko": "AppleMyungjo",
+    "es": "Georgia-Bold"
+  },
+  "metadataPanelOpacity": 0.7,
+  "renderedPngCount": 6,
+  "dualQrValidatedPngCount": 6,
+  "unittestPassed": 16,
+  "visualPreviewCheckedLocales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "published": false,
+  "appChanged": false,
+  "posterSha256": {
+    "zh-Hans": "6698c15a16290edc31a0f32dcef9c6f1433c2c11c5ac5d49f28a928c09bcf1db",
+    "ko": "6301f2873c89f605508fe8bfef1b62f87d85ad43582a8b93e56b3115bdfbe690",
+    "es": "69a2ddc75fdfbcd24ee1bbe110ff1d3958d985b316000a3858d56d944fcd96f9"
+  }
+}

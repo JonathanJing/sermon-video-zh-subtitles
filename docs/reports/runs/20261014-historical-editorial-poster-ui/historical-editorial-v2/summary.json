@@ -1,0 +1,125 @@
+{
+  "status": "complete_local_visual_review",
+  "scope": "historical poster regeneration and UI proportion check",
+  "sourceWeeks": [
+    "2026-09-27",
+    "2026-10-04",
+    "2026-10-11"
+  ],
+  "localeCount": 3,
+  "posters": 9,
+  "pngs": 18,
+  "dualQrValidatedPngs": 18,
+  "localVisualReviewed": 9,
+  "humanApproval": false,
+  "iPhone15ProSimulatorUI": {
+    "os": "iOS 17.5",
+    "suite": "TongxingUITests/WeeklyUpdateUITests",
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "fixture": "synthetic poster; historical images inspected in a separate proportional browser preview"
+  },
+  "published": false,
+  "rows": [
+    {
+      "date": "2026-09-27",
+      "pageId": "2026-09-27-weekend-sermon-drive-530",
+      "locale": "zh-Hans",
+      "status": "complete",
+      "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+      "posterSha256": "f0d2cb1acb99c0c1ad52e12dd8808ee27ef28c5d80c7b541fa17c1c55bd19dff",
+      "previewSha256": "8c7081835c720164daae8165f83c6416825dc383018d4b795cd53a8e02a2c5ba",
+      "qrValidatedFiles": 2,
+      "humanApproval": false
+    },
+    {
+      "date": "2026-09-27",
+      "pageId": "2026-09-27-weekend-sermon-drive-530",
+      "locale": "ko",
+      "status": "complete",
+      "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+      "posterSha256": "c441cd79d678bada3dd32c35df5c01002615b4401142fc99fbeaaf93504bbdda",
+      "previewSha256": "5a12a8682873de9f8c089f0374a14dbcdd279e5cddfc94e8f865e1b9c29e408f",
+      "qrValidatedFiles": 2,
+      "humanApproval": false
+    },
+    {
+      "date": "2026-09-27",
+      "pageId": "2026-09-27-weekend-sermon-drive-530",
+      "locale": "es",
+      "status": "complete",
+      "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+      "posterSha256": "70237bb4fea1dc9c2dfc495ce4b93dbcfb9a86bf02bc61d06bd2df89ace96f88",
+      "previewSha256": "2f797032716ad9fe1af3b68c6b26c56e0c0c6f171a09d1b23ca59be09265c266",
+      "qrValidatedFiles": 2,
+      "humanApproval": false
+    },
+    {
+      "date": "2026-10-04",
+      "pageId": "resi-20261004-69ba7a66",
+      "locale": "zh-Hans",
+      "status": "complete",
+      "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+      "posterSha256": "0fd7872b140b9f61002ca2fec51b780cd077b4e1b773e3b51c23f7c67e938dcf",
+      "previewSha256": "72f629020a411644da37f05a8f6d6322564a628a95352c8324e5ea66682d8e88",
+      "qrValidatedFiles": 2,
+      "humanApproval": false
+    },
+    {
+      "date": "2026-10-04",
+      "pageId": "resi-20261004-69ba7a66",
+      "locale": "ko",
+      "status": "complete",
+      "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+      "posterSha256": "24e3831277f4b6b926a77a95ee38be6a000406fbad547aa39824d537b61311b2",
+      "previewSha256": "a19beadd129f187f687141a1ce0e181bf0f694a4bfb6b58d71ab805a48bd8404",
+      "qrValidatedFiles": 2,
+      "humanApproval": false
+    },
+    {
+      "date": "2026-10-04",
+      "pageId": "resi-20261004-69ba7a66",
+      "locale": "es",
+      "status": "complete",
+      "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+      "posterSha256": "d36e36772d7b4357f35ba220746053086d1d562d5e52c30fd5faa7179314bb6c",
+      "previewSha256": "b0ad75dd7b3e1467083c9c3936eda71fa590eedea340ce30813d13e1e145ea91",
+      "qrValidatedFiles": 2,
+      "humanApproval": false
+    },
+    {
+      "date": "2026-10-11",
+      "pageId": "resi-20261011-54475d42",
+      "locale": "zh-Hans",
+      "status": "complete",
+      "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+      "posterSha256": "4690a7ccd981983ddf7b4e3d7acc6188b69598ace23511ad071cf78cc9fb63ca",
+      "previewSha256": "4ea74daf85c775ac7b70dd6810fe1787a6980c9eb99110145424e8397e90dc44",
+      "qrValidatedFiles": 2,
+      "humanApproval": false
+    },
+    {
+      "date": "2026-10-11",
+      "pageId": "resi-20261011-54475d42",
+      "locale": "ko",
+      "status": "complete",
+      "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+      "posterSha256": "00960be7310853ecaf2012a1ce57e5813685178a217feb907daa2c8095f0e8b6",
+      "previewSha256": "52d582ef52954472bb0fd66821abe149c371e7dbf73cac293a197d3de0abc1ef",
+      "qrValidatedFiles": 2,
+      "humanApproval": false
+    },
+    {
+      "date": "2026-10-11",
+      "pageId": "resi-20261011-54475d42",
+      "locale": "es",
+      "status": "complete",
+      "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+      "posterSha256": "cb82640edee27900f72d0219947520ee40d72880edd64cf76a0d9ddcc93b0df7",
+      "previewSha256": "b889469e30458668112676f972e4257a8bf986c02804dec60a952b1edf691788",
+      "qrValidatedFiles": 2,
+      "humanApproval": false
+    }
+  ]
+}

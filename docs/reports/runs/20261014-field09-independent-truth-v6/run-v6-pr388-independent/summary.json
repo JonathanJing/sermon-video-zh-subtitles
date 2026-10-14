@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "field-venue-fingerprint-summary-v2",
+  "benchmarkId": "20261011-venue-mid-back",
+  "manifestSha256": "2dfa0d5669aef40fadc834cbcdda638e9a6ec146162c7ec7b3a058c7b07bd24c",
+  "execution": {
+    "runnerSha256": "8ec341b8e56d0d3df315d64796aebe3fe2f009d5d562a51691a123249573974a",
+    "matcherSha256": "d1a76ed47c066e9f19d8bf0a8cb2d3961cf876af6de14ae2cc4a8b3699d391c5",
+    "variants": [
+      "base"
+    ],
+    "negativeWindowStepSeconds": 5,
+    "roomWindowStepSeconds": 1,
+    "windowSeconds": [
+      7,
+      10,
+      12,
+      15
+    ],
+    "checkpointSeconds": [
+      7,
+      10,
+      12,
+      15
+    ],
+    "localizationToleranceSeconds": 0.5
+  },
+  "status": "completed_no_false_match",
+  "evidenceScope": "offline_replay_of_room_recordings",
+  "deviceAppAcceptance": "not_run",
+  "venueAcceptance": "not_run",
+  "promotionAllowed": false,
+  "baseCheckpointLocks": {
+    "iphone-builtin:mix": "18/35",
+    "iphone-builtin:left": "23/35",
+    "iphone-builtin:right": "18/35",
+    "airpods:mix": "27/27"
+  },
+  "elapsedSeconds": 96
+}

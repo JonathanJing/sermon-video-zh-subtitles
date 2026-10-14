@@ -1,0 +1,13 @@
+discover	pass	0.0
+zh-Hans.text-qc.prefetch	pass	18.1
+zh-Hans.text-qc	pass	0.5
+Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/20261013-221026-machine-qc-text
+{
+  "zh-Hans": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+Digest: /private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run/artifacts/run-reports/20261013-221026-machine-qc-text (3 files, 10 redactions)

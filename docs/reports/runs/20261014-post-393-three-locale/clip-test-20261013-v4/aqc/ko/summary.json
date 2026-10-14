@@ -1,0 +1,92 @@
+{
+  "backend": "real",
+  "implementationSha256": "ba7e28cd00ad0c754344d13b1549985114f5ddf146b954b9137ea9ff0c1bd94d",
+  "locales": {
+    "ko": {
+      "audioQc": "pass",
+      "audioQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/textqc-ko/state/qc-receipts/audio/ko/741429e3be59b1ebd986ef3d825c05fb54294b5ebe835041f4816732803953e0/entry-000001.json",
+      "audioWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/aqc/ko/ko/audio-waiver-547595b3c0eddf38.json",
+      "calibration": {
+        "cleanFalsePositiveRate": 0.0,
+        "detected": 177,
+        "overallDetectionRate": 1.0,
+        "trials": 177
+      },
+      "calibrationCoverage": {
+        "audio": {
+          "droppedKeyWordTrials": 5,
+          "truncationEligibleTrials": 16,
+          "untestableKinds": [],
+          "wrongSentenceUnits": 16
+        },
+        "text": {
+          "applicableGroups": {
+            "added_content": 16,
+            "added_number": 9,
+            "added_reference": 13,
+            "dropped_half": 10,
+            "dropped_name": 1,
+            "english_leak": 11,
+            "placeholder": 16,
+            "semantic_negation": 0,
+            "swapped_name": 0,
+            "swapped_quantity": 0,
+            "wrong_book": 1,
+            "wrong_number": 3,
+            "wrong_ordinal": 13
+          },
+          "notApplicableKinds": [
+            "semantic_negation",
+            "swapped_quantity",
+            "swapped_name"
+          ],
+          "untestableKinds": []
+        }
+      },
+      "calibrationMisses": {
+        "text.semantic_negation": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_name": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_quantity": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        }
+      },
+      "failedGroups": [],
+      "flaggedGroups": [],
+      "locale": "ko",
+      "packageJsonSha256": "ffaccdd05634ac9c38f6484edc15403c3156053cc26ee09cf16900b73fd000f5",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-merged/l2/src/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-merged/l2/text/ko/candidate.json",
+        "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/aqc/run-ko/l3/speech-job.json",
+        "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/l3/ko/audio-package.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-merged/l2/policy/ko-policy-clip.json",
+        "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/aqc/run-ko/l3/asr-screening-receipt-v1.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-merged/l2/src/source.json",
+        "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/textqc-ko/out/ko/text-waiver-390068cd8daa30eb.json"
+      },
+      "problems": [],
+      "secondaryAsrGroups": [],
+      "status": "audio_waiver_issued",
+      "trackCheck": "pass",
+      "trackCheckReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/aqc/ko/ko/track-check-37edfdd768994434.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/aqc/run-ko",
+  "transportSha256": "fd914707cda7fbe25e99f64f1cd31661acbf0816c58401499bbf2c667cc31f04"
+}

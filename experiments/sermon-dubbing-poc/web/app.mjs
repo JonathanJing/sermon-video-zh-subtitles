@@ -56,7 +56,7 @@ $("subtitle-toggle").addEventListener("click", () => {
   updateCurrentEnglish(lastCue);
 });
 let feedback = { select() {}, count() {}, error() {}, statisticsEnabled: () => false };
-let usage = { setEnabled() {}, record() {} };
+let usage = { setEnabled() {}, record() {}, recordAlignment() {} };
 const controls = [$("play"), $("back"), $("forward"), $("progress"), $("jump-time"), $("jump"), $("precision-open"), ...document.querySelectorAll("[data-nudge],[data-play-toggle]")];
 const tabs = [...document.querySelectorAll('[role="tab"],[data-view]')];
 const primaryTabs = tabs.filter(tab => tab.getAttribute("role") === "tab");
@@ -66,6 +66,7 @@ const fieldAlignment = mountFingerprintUI({
   position: () => audio.currentTime,
   seek: (time, { correction = false } = {}) => setPosition(time, { offset: 0, alignment: true, undo: !correction }),
   play: options => startAlignmentPlayback(options),
+  onAttempt: attempt => usage.recordAlignment?.(attempt),
 });
 const alignmentDiagnostics = $("fingerprint-diagnostics")?.closest?.("details");
 if (alignmentDiagnostics && typeof fieldAlignment.getDiagnostics !== "function") alignmentDiagnostics.hidden = true;

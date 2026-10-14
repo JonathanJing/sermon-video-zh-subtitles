@@ -48,6 +48,80 @@ public struct ListeningAccumulator: Sendable {
     }
 }
 
+/// One anonymous count record per "听声定位" press, matching the Web
+/// `/api/alignment-usage` whitelist: no audio, landmarks, route, error text or
+/// playback position. Inconsistent combinations are normalized, never invented.
+public struct AlignmentAttemptRecord: Sendable, Equatable {
+    public enum Outcome: String, Sendable {
+        case applied, matched, expired, timeout, cancelled, error, unavailable, unsupported
+        case playFailed = "play_failed", playBlocked = "play_blocked", noMatch = "no_match"
+        case permissionDenied = "permission_denied"
+    }
+    public enum Stage: String, Sendable {
+        case opened, recording
+        case indexReady = "index_ready", matchedAudio = "matched_audio"
+    }
+    static let reasons: Set<String> = ["matched", "silence", "insufficient_audio", "no_consensus", "ambiguous",
+                                       "low_confidence", "incompatible_index", "incompatible_query", "unknown"]
+    static let errorCodes: Set<String> = ["MIC_PERMISSION", "INPUT_INTERRUPTED", "INVALID_CAPTURE",
+                                          "INDEX_UNAVAILABLE", "AUDIO_UNSUPPORTED", "MATCH_ERROR", "UNKNOWN"]
+
+    public let atMilliseconds: Int
+    public let outcome: Outcome
+    public let stage: Stage
+    public let reason: String?
+    public let errorCode: String?
+    public let level: String?
+    public let fractionBand: String?
+    public let captureSeconds: Int?
+    public let totalMilliseconds: Int?
+
+    public init(at: Date, outcome: Outcome, stage: Stage, reason: String? = nil, errorCode: String? = nil,
+                rms: Double? = nil, matchFraction: Double? = nil, captureSeconds: Double? = nil, totalSeconds: Double? = nil) {
+        let heard = stage == .matchedAudio
+        let safeReason = heard ? (reason.map { Self.reasons.contains($0) ? $0 : "unknown" } ?? "unknown") : nil
+        var outcome = outcome
+        if [.applied, .matched, .playFailed, .playBlocked].contains(outcome), safeReason != "matched" { outcome = .cancelled }
+        if outcome == .noMatch, !heard || safeReason == "matched" { outcome = .error }
+        atMilliseconds = Int((at.timeIntervalSince1970).rounded(.down)) * 1000
+        self.outcome = outcome
+        self.stage = stage
+        self.reason = safeReason
+        self.errorCode = errorCode.flatMap { Self.errorCodes.contains($0) ? $0 : nil }
+        if heard, let rms, rms.isFinite, rms >= 0 {
+            level = rms < 0.0001 ? "silent" : rms < 0.001 ? "very_low" : rms < 0.01 ? "low" : rms < 0.1 ? "moderate" : "high"
+        } else { level = nil }
+        // Bands around the frozen 0.055 accept gate; 0.045-0.055 is a near miss.
+        if heard, let value = matchFraction, value.isFinite, value >= 0, value <= 1 {
+            fractionBand = value < 0.03 ? "below_0_03" : value < 0.045 ? "0_03_to_0_045" : value < 0.055 ? "0_045_to_0_055" : "at_least_0_055"
+        } else { fractionBand = nil }
+        let rounded = captureSeconds.map { Int($0.rounded()) }
+        self.captureSeconds = [Stage.recording, .matchedAudio].contains(stage) && [7, 10, 12, 15].contains(rounded ?? 0) ? rounded : nil
+        if let totalSeconds, totalSeconds.isFinite, totalSeconds >= 0 {
+            totalMilliseconds = min(600_000, Int((totalSeconds * 10).rounded()) * 100)
+        } else { totalMilliseconds = nil }
+    }
+
+    var json: [String: Any] {
+        let null = NSNull()
+        return ["at": atMilliseconds, "outcome": outcome.rawValue, "stage": stage.rawValue,
+                "reason": reason ?? null, "errorCode": errorCode ?? null, "level": level ?? null,
+                "fractionBand": fractionBand ?? null, "captureSeconds": captureSeconds ?? null,
+                "totalMs": totalMilliseconds ?? null, "shadow": null]
+    }
+}
+
+/// Where an alignment press is counted: the page, track and languages selected
+/// when the press started, even if the listener switches before it ends.
+public struct AlignmentStatisticsContext: Sendable, Equatable {
+    public let source: ListeningSource
+    public let interfaceLocale: String
+    public let contentLocale: String
+    public init(source: ListeningSource, interfaceLocale: String, contentLocale: String) {
+        self.source = source; self.interfaceLocale = interfaceLocale; self.contentLocale = contentLocale
+    }
+}
+
 /// Best-effort online reporting. Pending requests/credentials exist only in this
 /// process; this is deliberately not an offline upload queue.
 public actor ListeningStatistics {
@@ -80,6 +154,21 @@ public actor ListeningStatistics {
     private var minting = Set<Key>()
     private var sending = Set<Key>()
     private var retryAfter: [Key: Date] = [:]
+    /// Alignment presses use their own credentials and cumulative, append-only
+    /// lists of at most 40 attempts; a full list continues in a new credential.
+    private struct AlignmentKey: Hashable { let source: ListeningSource; let day: String; let interfaceLocale: String; let contentLocale: String; let chunk: Int }
+    private struct AlignmentRecord {
+        var token: String?
+        var expiresAt = Date.distantFuture
+        var clientID: String
+        var seq = 0
+        var attempts: [AlignmentAttemptRecord] = []
+        var sentCount = 0
+        var mayExist = false
+    }
+    static let alignmentAttemptsPerCredential = 40
+    private var alignmentRecords: [AlignmentKey: AlignmentRecord] = [:]
+    private var alignmentBusy = Set<AlignmentKey>()
 
     public init(origin: URL, appVersion: String, defaults: UserDefaults = .standard, session: URLSession? = nil) {
         self.origin = origin; self.appVersion = appVersion; self.defaults = defaults
@@ -102,6 +191,7 @@ public actor ListeningStatistics {
         // Higher sequences protect against a late in-flight upsert. Include all
         // languages visited this run, including uncertain timed-out submissions.
         for key in Array(records.keys) where records[key]?.mayExist == true { await retract(key) }
+        for key in Array(alignmentRecords.keys) { await retractAlignment(key) }
         interfaceRevision += 1; interfaceDay = nil
         for (id, var record) in interfaceRecords {
             record.seq += 1; interfaceRecords[id] = record
@@ -180,7 +270,60 @@ public actor ListeningStatistics {
         return nil
     }
 
-    public func flush() async { if let active { await flush(active, date: Date()) } }
+    public func flush() async {
+        if let active { await flush(active, date: Date()) }
+        for key in Array(alignmentRecords.keys) { await sendAlignment(key) }
+    }
+
+    public func recordAlignment(_ attempt: AlignmentAttemptRecord, source: ListeningSource,
+                                interfaceLocale: String, contentLocale: String, date: Date = Date()) async {
+        guard enabled else { return }
+        let day = ListeningAccumulator.reportingDay(date)
+        var chunk = 0
+        func key(_ chunk: Int) -> AlignmentKey { .init(source: source, day: day, interfaceLocale: interfaceLocale, contentLocale: contentLocale, chunk: chunk) }
+        while (alignmentRecords[key(chunk)]?.attempts.count ?? 0) >= Self.alignmentAttemptsPerCredential { chunk += 1 }
+        let target = key(chunk)
+        if alignmentRecords[target] == nil { alignmentRecords[target] = AlignmentRecord(clientID: dailyID(day)) }
+        alignmentRecords[target]?.attempts.append(attempt)
+        await sendAlignment(target)
+    }
+
+    /// Mints lazily, then upserts the whole list with a higher sequence. A failed
+    /// send keeps the attempts for the next press or flush; nothing is persisted.
+    private func sendAlignment(_ key: AlignmentKey) async {
+        guard enabled, !alignmentBusy.contains(key), let initial = alignmentRecords[key],
+              initial.attempts.count > initial.sentCount, initial.expiresAt > Date() else { return }
+        alignmentBusy.insert(key)
+        defer { alignmentBusy.remove(key) }
+        let consent = revision
+        if initial.token == nil {
+            guard let response = try? await post("/api/session", body: common(key.source)),
+                  let token = response["token"] as? String, let expiry = Self.expiry(response), expiry > Date(),
+                  enabled, revision == consent else { return }
+            alignmentRecords[key]?.token = token; alignmentRecords[key]?.expiresAt = expiry
+        }
+        while enabled, revision == consent, var record = alignmentRecords[key], let token = record.token,
+              record.attempts.count > record.sentCount {
+            record.seq += 1; record.mayExist = true
+            alignmentRecords[key] = record
+            let attempts = record.attempts
+            var body = common(key.source)
+            body.merge(["action": "upsert", "seq": record.seq, "day": key.day, "clientId": record.clientID,
+                        "platform": "ios", "interfaceLocale": key.interfaceLocale, "contentLocale": key.contentLocale,
+                        "attempts": attempts.map(\.json)]) { _, new in new }
+            guard (try? await post("/api/alignment-usage", body: body, token: token)) != nil else { return }
+            alignmentRecords[key]?.sentCount = attempts.count
+        }
+    }
+
+    private func retractAlignment(_ key: AlignmentKey) async {
+        guard var record = alignmentRecords[key] else { return }
+        guard record.mayExist, let token = record.token, record.expiresAt > Date() else { alignmentRecords[key] = nil; return }
+        record.seq += 1; alignmentRecords[key] = record
+        var body = common(key.source)
+        body.merge(["action": "delete", "seq": record.seq]) { _, new in new }
+        if (try? await post("/api/alignment-usage", body: body, token: token)) != nil { alignmentRecords[key] = nil }
+    }
 
     private func flush(_ key: Key, date: Date) async {
         guard enabled, !sending.contains(key), var record = records[key], record.expiresAt > date,

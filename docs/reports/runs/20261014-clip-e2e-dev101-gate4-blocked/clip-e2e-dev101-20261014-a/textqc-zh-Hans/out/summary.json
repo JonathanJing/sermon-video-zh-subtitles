@@ -1,0 +1,51 @@
+{
+  "implementationSha256": "70078f905f6ddbd06550e0520fa21c6cadc63cef30aea823f26fa6d59b198eb6",
+  "locales": {
+    "zh-Hans": {
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 16,
+          "added_number": 11,
+          "added_reference": 16,
+          "dropped_half": 10,
+          "dropped_name": 1,
+          "english_leak": 10,
+          "placeholder": 16,
+          "semantic_negation": 0,
+          "swapped_name": 0,
+          "swapped_quantity": 0,
+          "wrong_book": 0,
+          "wrong_number": 0,
+          "wrong_ordinal": 14
+        },
+        "notApplicableKinds": [
+          "wrong_number",
+          "wrong_book",
+          "semantic_negation",
+          "swapped_quantity",
+          "swapped_name"
+        ],
+        "untestableKinds": []
+      },
+      "candidateJsonSha256": "0974ff1cfba42278f7f51ecb5c1542aedad6d68c49f4ed6a2d1befac1019b8b2",
+      "failedGroups": [
+        "translation-chunk-0002-u024",
+        "translation-chunk-0002-u028"
+      ],
+      "locale": "zh-Hans",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-a/textqc-zh-Hans/run-out/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-a/textqc-zh-Hans/run-out/zh-Hans/candidate.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-a/textqc-zh-Hans/run-out/policies/zh-Hans-policy-clip.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-a/textqc-zh-Hans/run-out/source.json"
+      },
+      "problems": [],
+      "reason": "text QC failed; repair the failed groups in a new candidate revision",
+      "status": "requires_repair",
+      "textQc": "requires_repair",
+      "textQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-a/textqc-zh-Hans/state/qc-receipts/text/zh-Hans/3a9301d04e78285703c6ea9e8a7010b960dc1394d8dacebcd5835312a8dd0d89/entry-000001.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-a/textqc-zh-Hans/run-out",
+  "textBackend": "api"
+}
