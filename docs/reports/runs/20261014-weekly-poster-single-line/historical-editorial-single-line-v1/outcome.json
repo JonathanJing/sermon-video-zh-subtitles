@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "scope": "local single-line poster regeneration",
+  "posters": 9,
+  "pngs": 18,
+  "dualQrValidatedPngs": 18,
+  "localVisualReviewed": 9,
+  "unitTestsPassed": 17,
+  "published": false,
+  "humanApproval": false
+}
