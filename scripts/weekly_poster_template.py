@@ -26,17 +26,9 @@ COPY = {
 
 
 def title_lines(title, locale):
-    if '\n' in title:
-        return title
-    words = title.split()
-    if locale == 'zh-Hans' and len(words) == 1 and len(title) > 5:
-        middle = (len(title)+1)//2
-        return title[:middle] + '\n' + title[middle:]
-    if len(words) >= 2:
-        # Break only between words, including Hangul; never split a Korean word.
-        split = min(range(1,len(words)), key=lambda i:abs(len(' '.join(words[:i]))-len(' '.join(words[i:]))))
-        return ' '.join(words[:split]) + '\n' + ' '.join(words[split:])
-    return title
+    # The editorial title occupies one line; preserve every word and let the
+    # renderer fit its font size to the available width.
+    return ' '.join(title.split())
 
 
 def apply_template(bundle):

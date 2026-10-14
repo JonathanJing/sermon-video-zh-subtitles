@@ -43,6 +43,23 @@ func text(_ value: String, _ rect: NSRect, maxSize: CGFloat, minSize: CGFloat = 
     }
     throw Failure(description:"Text cannot fit assigned region without clipping: \(value.prefix(60))")
 }
+func oneLineHeadline(_ value: String, _ rect: NSRect, maxSize: CGFloat, minSize: CGFloat) throws {
+    let line = value.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    try need(!line.isEmpty, "Empty poster title")
+    var size = maxSize
+    while size >= minSize {
+        let face = try font(size, headline: true)
+        let attributes: [NSAttributedString.Key: Any] = [.font: face, .foregroundColor: ink]
+        let measured = (line as NSString).size(withAttributes: attributes)
+        if ceil(measured.width) <= rect.width && ceil(measured.height) <= rect.height {
+            let origin = NSPoint(x: rect.midX - measured.width / 2, y: rect.midY - measured.height / 2)
+            (line as NSString).draw(at: origin, withAttributes: attributes)
+            return
+        }
+        size -= 1
+    }
+    throw Failure(description: "Title cannot fit on one line without clipping: \(line.prefix(60))")
+}
 func bitmap(_ width: Int, _ height: Int) throws -> NSBitmapImageRep {
     guard let rep = NSBitmapImageRep(bitmapDataPlanes:nil,pixelsWide:width,pixelsHigh:height,bitsPerSample:8,samplesPerPixel:4,hasAlpha:true,isPlanar:false,colorSpaceName:.deviceRGB,bytesPerRow:width*4,bitsPerPixel:32) else { throw Failure(description:"Cannot allocate canvas") }; return rep
 }
@@ -107,7 +124,7 @@ do {
  art.draw(in:area,from:.zero,operation:.copy,fraction:1,respectFlipped:true,hints:[.interpolation:NSImageInterpolation.high])
  softenHeadlineBackground()
  try text(brief.labels["header"] ?? "",NSRect(x:120,y:75,width:960,height:68),maxSize:33,alignment:.center)
- try text(brief.displayTitle ?? brief.title,NSRect(x:100,y:180,width:1000,height:300),maxSize:brief.locale == "zh-Hans" ? 138 : 100,minSize:66,headline:true,alignment:.center)
+ try oneLineHeadline(brief.displayTitle ?? brief.title,NSRect(x:80,y:225,width:1040,height:210),maxSize:brief.locale == "zh-Hans" ? 138 : 100,minSize:46)
  // Group source metadata over a stable light surface across weekly artwork.
  paper.withAlphaComponent(0.70).setFill()
  NSBezierPath(roundedRect:NSRect(x:80,y:505,width:1040,height:255),xRadius:20,yRadius:20).fill()
