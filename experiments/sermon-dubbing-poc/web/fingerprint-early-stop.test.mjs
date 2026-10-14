@@ -9,8 +9,8 @@ const settle = async () => { for (let n = 0; n < 40; n += 1) await Promise.resol
 const sha = 'a'.repeat(64), trackSha = 'b'.repeat(64);
 const metadata = { schemaVersion: 'sermon-audio-fingerprint-binding-v1', algorithmVersion: 'spectral-landmarks-v1', pageId: 'week', sourceSha256: sha, trackSha256: trackSha, indexSha256: 'c'.repeat(64), indexUrl: '/fingerprints/abc.json', captureSeconds: 10, sourceStartSeconds: 1749, sourceEndSeconds: 3880 };
 
-test('early-stop contract matches iOS: 15 s PCM, 7/10/12 s prefixes, 15 s PCM plus 5 s startup budget', () => {
-  assert.equal(CAPTURE_SECONDS, 15); assert.deepEqual([...CAPTURE_CHECKPOINTS], [7, 10, 12]); assert.equal(MAX_MICROPHONE_MS, 20000);
+test('early-stop contract matches iOS: 15 s PCM, 7/10/12 s prefixes, 15 s PCM plus 5 s startup and 1 s margin budget', () => {
+  assert.equal(CAPTURE_SECONDS, 15); assert.deepEqual([...CAPTURE_CHECKPOINTS], [7, 10, 12]); assert.equal(MAX_MICROPHONE_MS, 21000);
 });
 
 test('worklet posts copied prefixes at each checkpoint and keeps one continuous 15 s buffer', () => {
@@ -115,4 +115,24 @@ test('user cancel during listening stops capture without a late seek', async () 
   const h = harness({ answers: [hit] }); const pending = begin(h);
   await settle(); h.controller.cancel(); h.checkpoint(7); await pending; await settle();
   assert.equal(h.signal.aborted, true); assert.deepEqual(h.seeks, []); assert.deepEqual(h.matched, []);
+});
+
+test('a prefix still waiting when capture fails is discarded, never matched or seeked', async () => {
+  let release; const slow = () => new Promise(resolve => { release = () => resolve(miss); });
+  const h = harness({ answers: [slow, hit] }); const pending = begin(h);
+  await settle(); h.checkpoint(7); await settle();
+  h.checkpoint(10);
+  h.fail(Object.assign(new Error('capture_interrupted'), { captureDetail: 'track_muted' })); await settle();
+  release(); await pending; await settle();
+  assert.deepEqual(h.matched, [7], 'the 10 s prefix captured before the failure is not matched');
+  assert.deepEqual(h.seeks, []); assert.equal(h.states.at(-1).phase, 'error');
+});
+
+test('a hit computed while capture fails is rejected', async () => {
+  let release; const slow = () => new Promise(resolve => { release = () => resolve(hit); });
+  const h = harness({ answers: [slow] }); const pending = begin(h);
+  await settle(); h.checkpoint(7); await settle();
+  h.fail(Object.assign(new Error('capture_interrupted'), { captureDetail: 'frame_gap' })); await settle();
+  release(); await pending; await settle();
+  assert.deepEqual(h.seeks, []); assert.equal(h.states.at(-1).phase, 'error');
 });

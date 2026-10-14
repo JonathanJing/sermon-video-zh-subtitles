@@ -100,3 +100,23 @@ test('a full 40-attempt list with every field at its longest stays well under th
   assert.ok(bytes <= 16384 * .8, `worst-case alignment upload is ${bytes} bytes; keep 20% headroom under the 16384-byte limit`);
   assert.equal((await request('/api/alignment-usage', body, token)).accepted, true);
 });
+
+test('offline presses upload on a late credential, including across midnight, but never older than a day', async () => {
+  const s = setup();
+  s.advance(15 * 60000); // first network access 15 minutes after the press
+  const { token } = await s.mint();
+  assert.equal((await s.request('/api/alignment-usage', payload([applied(start)]), token)).accepted, true);
+
+  const late = setup(), beforeMidnight = Date.UTC(2026, 9, 12, 6, 50); // 23:50 PDT on 10/11
+  late.advance(beforeMidnight - start + 30 * 60000); // mint at 00:20 PDT on 10/12
+  const { token: next } = await late.mint();
+  assert.equal((await late.request('/api/alignment-usage', payload([applied(beforeMidnight)]), next)).accepted, true);
+  // An attempt's own day must match the list's day; one credential keeps one day.
+  await rejects(late.request('/api/alignment-usage', payload([applied(beforeMidnight)], { day: '2026-10-12', seq: 2 }), next), 'invalid_alignment_time');
+  await rejects(late.request('/api/alignment-usage', payload([applied(beforeMidnight + 20 * 60000)], { day: '2026-10-12', seq: 2 }), next), 'alignment_identity_changed');
+
+  const stale = setup(); stale.advance(DAY + 60000);
+  const { token: old } = await stale.mint();
+  await rejects(stale.request('/api/alignment-usage', payload([applied(start)], { day: '2026-10-12' }), old), 'invalid_alignment_time');
+  await rejects(stale.request('/api/alignment-usage', payload([applied(start)]), old), 'invalid_alignment_time');
+});

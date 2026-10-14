@@ -256,8 +256,11 @@ export function createFingerprintController({ context, pause, seek, play, positi
         if (!valid(token, binding)) return;
         // A timeout reaches the catch below as 'timeout'; a user cancel is already stale.
         if (controller.signal.aborted) throw abortError();
+        // A failed capture invalidates every prefix still waiting (matches iOS):
+        // an interruption is an error, never a partial jump.
+        if (captureError) break;
         // Only the newest prefix is matched; the final buffer follows every prefix.
-        const next = pending ?? (captureDone && !captureError ? final : null);
+        const next = pending ?? (captureDone ? final : null);
         if (!next) {
           if (captureDone) break;
           await new Promise(resolve => { wake = resolve; });
@@ -272,6 +275,8 @@ export function createFingerprintController({ context, pause, seek, play, positi
         answer = await (match ? match(next, binding.metadata, controller.signal, { shadow: finalBuffer }) : prepared.match(next, { shadow: finalBuffer }));
         if (!valid(token, binding)) return;
         if (controller.signal.aborted) throw abortError();
+        // Recording may fail while this prefix was matching; never accept its hit.
+        if (captureError) break;
         observation.timings.workerMs += elapsedMs(workerStarted);
         for (const name of ['indexMs', 'featureMs', 'matchMs']) {
           const value = answer.timings?.[name];

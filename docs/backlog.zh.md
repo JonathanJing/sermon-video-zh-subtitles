@@ -682,7 +682,7 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 
 **2026-10-13 后台统计：** 应维护者要求，Web 每次听声定位都在匿名统计开关下上报一条计数记录，私有报表给出触发次数和成功率；生产失败时附带 `cmn-v1` 影子对照结果。iOS 尚未接入。范围与隐私边界见[专项第 6 节](field-fingerprint-alignment-backlog.zh.md#6-2026-10-13-听声定位后台统计与影子对照)。
 
-**2026-10-13 Web 早停：** Web 改为与 iOS 相同的 7→10→12→15 秒连续采集早停，占麦预算 20 秒（15 秒录音 + 5 秒启动），门槛不变；见[专项第 7 节](field-fingerprint-alignment-backlog.zh.md#7-2026-10-13-web-早停7101215-秒)。iOS 侧随后完成这四项（15 秒从首个样本起算、整次截止 45 秒、定位统计、提示本地化），待 TestFlight 与真机验证，见[专项第 8 节](field-fingerprint-alignment-backlog.zh.md#8-2026-10-13-ios-早停预算统计与本地化)。
+**2026-10-13 Web 早停：** Web 改为与 iOS 相同的 7→10→12→15 秒连续采集早停，占麦预算 21 秒（15 秒录音 + 5 秒启动 + 1 秒余量），门槛不变；见[专项第 7 节](field-fingerprint-alignment-backlog.zh.md#7-2026-10-13-web-早停7101215-秒)。iOS 侧随后完成这四项（15 秒从首个样本起算、整次截止 45 秒、定位统计、提示本地化），待 TestFlight 与真机验证，见[专项第 8 节](field-fingerprint-alignment-backlog.zh.md#8-2026-10-13-ios-早停预算统计与本地化)。
 
 ## P1：稳定性、恢复与运营效率
 

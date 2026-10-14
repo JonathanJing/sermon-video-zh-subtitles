@@ -39,10 +39,12 @@ export function createAlignmentUsageHandler({ ApiError, catalog }) {
   const assert = (condition, code = 'invalid_alignment_payload', status = 400) => { if (!condition) throw new ApiError(status, code); };
   const keys = (value, allowed) => assert(value !== null && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === allowed.length && allowed.every((key) => Object.hasOwn(value, key)));
   const nullableEnum = (value, key) => assert(value === null || sets[key].has(value));
-  function attempt(item, session, timestamp) {
+  function attempt(item, day, timestamp) {
     keys(item, ATTEMPT_KEYS);
-    // The credential may be minted lazily just after the attempt it reports.
-    assert(Number.isSafeInteger(item.at) && item.at % 1000 === 0 && item.at >= session.createdAtMs - 600000 && item.at <= timestamp + 300000, 'invalid_alignment_time');
+    // Clients mint lazily, possibly long after an offline press; bound attempts
+    // by the upload time and their own reporting day, not the credential's age.
+    assert(Number.isSafeInteger(item.at) && item.at % 1000 === 0 && item.at >= timestamp - DAY && item.at <= timestamp + 300000
+      && usageClock(item.at).day === day, 'invalid_alignment_time');
     assert(sets.outcome.has(item.outcome) && sets.stage.has(item.stage));
     for (const key of ['reason', 'errorCode', 'level', 'fractionBand']) nullableEnum(item[key], key);
     assert(item.captureSeconds === null || [7, 10, 12, 15].includes(item.captureSeconds));
@@ -69,12 +71,14 @@ export function createAlignmentUsageHandler({ ApiError, catalog }) {
     keys(body, [...common, 'day', 'clientId', 'platform', 'interfaceLocale', 'contentLocale', 'attempts']);
     assert(body.action === 'upsert');
     assert(!session.alignmentDeleted, 'alignment_withdrawn', 410);
-    assert(validListeningDay(body.day) && body.day === usageClock(session.createdAtMs).day, 'alignment_day_mismatch');
+    // Presses before midnight may upload on a credential minted the next day.
+    const mintDay = usageClock(session.createdAtMs).day, previousDay = usageClock(session.createdAtMs - DAY).day;
+    assert(validListeningDay(body.day) && (body.day === mintDay || body.day === previousDay), 'alignment_day_mismatch');
     assert(['web', 'ios'].includes(body.platform) && INTERFACE_LOCALES.includes(body.interfaceLocale));
     assert(INTERFACE_LOCALES.includes(body.contentLocale) && contentLocales.get(source.pageId)?.has(body.contentLocale), 'unknown_content_locale');
     assert(body.clientId === null || (typeof body.clientId === 'string' && UUID.test(body.clientId)));
     assert(Array.isArray(body.attempts) && body.attempts.length > 0 && body.attempts.length <= ALIGNMENT_ATTEMPT_LIMIT);
-    const attempts = body.attempts.map((item) => attempt(item, session, timestamp));
+    const attempts = body.attempts.map((item) => attempt(item, body.day, timestamp));
     for (let i = 1; i < attempts.length; i++) assert(attempts[i].at >= attempts[i - 1].at, 'invalid_alignment_time');
     const dailyClientKey = body.clientId === null ? null : hash(`${body.day}\0${body.platform}\0${body.clientId.toLowerCase()}`);
     if (session.alignmentDay) {
