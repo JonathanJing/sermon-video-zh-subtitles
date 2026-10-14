@@ -1,0 +1,26 @@
+{
+  "codeRevision": "0ef25fe0013f8c4fcce33acedbf39b325c26e843",
+  "integrated": {
+    "tests": 63,
+    "subtests": 38,
+    "elapsedSeconds": 5.74
+  },
+  "earlierIntegrated": {
+    "tests": 62,
+    "subtests": 38,
+    "elapsedSeconds": 4.29
+  },
+  "qcDirected": [
+    {
+      "tests": 13,
+      "elapsedSeconds": 3.35
+    },
+    {
+      "tests": 14,
+      "elapsedSeconds": 3.43
+    }
+  ],
+  "scope": "actual standalone QC CLI binding, v2 waiver rejects absent/foreign job, job-bound condensation normalization, actual seeded calibration context",
+  "modelsCalled": false,
+  "fullConsumerRepeated": false
+}

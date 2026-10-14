@@ -135,8 +135,7 @@ def duration_normalization_binding(speech_job: dict | None) -> dict:
 def duration_binding_problems(receipt: dict, speech_job: dict) -> list[str]:
     from scripts import render_formal_target_language_speech as formal
     binding = receipt.get("durationNormalization")
-    current = (speech_job.get("adapter") or {}).get("normalizationPolicySha256") == waiver.json_sha256(
-        formal.SPOKEN_FORMS_NORMALIZATION_POLICY)
+    current = formal.registered_normalization_policy(speech_job) is not None
     # Historical v1 receipts without a duration-policy field retain raw semantics.
     if not current and binding in (None, {"mode": "legacy_raw_text"}):
         return []

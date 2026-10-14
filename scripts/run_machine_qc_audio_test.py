@@ -149,7 +149,11 @@ def audio_coverage(job: dict, locale: str) -> dict:
     dropped = sum(seeded.drop_key_word(text, locale) is not None for text in texts)
     untestable = [kind for kind, count in (("dropped_key_word", dropped), ("wrong_sentence", len(set(texts)) - 1))
                   if count < 1]
-    return {"droppedKeyWordTrials": dropped, "wrongSentenceUnits": len(texts), "untestableKinds": untestable}
+    truncated = min(MAX_TRIALS, sum(seeded.truncation_eligible(unit["text"], locale) for unit in job["units"]))
+    if not truncated:
+        untestable.append("truncated")
+    return {"droppedKeyWordTrials": dropped, "wrongSentenceUnits": len(texts),
+            "truncationEligibleTrials": truncated, "untestableKinds": untestable}
 
 
 def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | None) -> dict:
@@ -246,16 +250,25 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
 
 # ---------------------------------------------------------------- transports
 
+def audio_api_judge_for_resolved(authorization: Path, resolved: dict, *, requested_locales=None):
+    """New audio/secondary-ASR work requires scoped v4 before ledger creation."""
+    from scripts import machine_qc_budget_authorization as qc_authorization
+    qc_authorization.validate(authorization, require_scope=True)
+    return text_driver.api_judge_for_resolved(authorization, resolved, requested_locales=requested_locales)
+
+
 def make_transports(backend: str, args, state: Path, *, locale: str, screening: dict, job: dict,
-                    package: dict) -> tuple:
+                    package: dict, budget=None) -> tuple:
     """``(primary, secondary, tts)`` for one locale."""
     if backend == "fake":
         tts = transports.FakeTts(job)
         texts = {unit["audio"]["sha256"]: job_unit["text"] for unit, job_unit in zip(package["units"], job["units"])}
         return (transports.FakePrimaryAsr(screening, tts), transports.FakeSecondaryAsr(locale, texts, tts), tts)
-    primary = transports.QwenPrimaryAsr(screening, cache=state / "asr-calls" / "primary", model_path=args.asr_model_path)
+    if budget is None:
+        raise ValueError("Real secondary ASR requires an approved SourceBudget ledger")
     secondary = transports.OpenAiTranscribeSecondary(locale, cache=state / "asr-calls" / "secondary",
-                                                     max_calls=args.max_api_calls)
+                                                     max_calls=args.max_api_calls, budget=budget)
+    primary = transports.QwenPrimaryAsr(screening, cache=state / "asr-calls" / "primary", model_path=args.asr_model_path)
     checkpoint = transports.checkpoint_path(job, read(args.tts_checkpoint_map))
     tts = transports.QwenTtsRender(job, checkpoint=checkpoint, cache=state / "tts-renders", seed=args.tts_seed,
                                    device=args.tts_device, dtype=args.tts_dtype,
@@ -507,8 +520,8 @@ def main(argv=None) -> int:
     parser.add_argument("--text-backend", choices=("codex", "api"), default="codex",
                         help="Back-translation judge for text-kind calibration: local Codex CLI or the OpenAI API")
     parser.add_argument("--api-budget-authorization", type=Path,
-                        help="Bound budget for --text-backend api (sermon-machine-qc-api-budget-authorization-v1); "
-                             "reuse the text driver's to replay its cached judgements")
+                        help="Required for every real run, including --text-backend codex: planned per-locale "
+                             "QC authorization v4 for judge/secondary ASR; use the same locale and budget as the text driver")
     freeze.add_argument(parser)
     args = parser.parse_args(argv)
     if args.expected_implementation:
@@ -524,8 +537,9 @@ def main(argv=None) -> int:
         parser.error(f"--workers must be between 1 and {MAX_WORKERS}")
     if args.max_api_calls < 0:
         parser.error("--max-api-calls must not be negative")
-    if args.text_backend == "api" and args.backend == "real" and not args.preflight_only and not args.api_budget_authorization:
-        parser.error("--text-backend api needs --api-budget-authorization (sermon-machine-qc-api-budget-authorization-v1)")
+    if args.backend == "real" and not args.preflight_only and not args.api_budget_authorization:
+        parser.error("real audio runs require --api-budget-authorization (planned per-locale QC authorization v4), "
+                     "including --text-backend codex for the secondary ASR budget")
     real = args.backend == "real"
     if real and not args.preflight_only:
         if not args.state_dir:
@@ -542,6 +556,14 @@ def main(argv=None) -> int:
                          "scripts/run_with_openai_environment.py --environment dev (prod for formal content)")
     if not real and args.state_dir:
         parser.error("--backend fake never writes to a persistent state dir")
+    if real and not args.preflight_only:
+        # Validate the new audio authorization before creating any output/state
+        # or constructing a text judge. Legacy authority remains text-only.
+        from scripts import machine_qc_budget_authorization as qc_authorization
+        try:
+            qc_authorization.validate(args.api_budget_authorization.resolve(), require_scope=True)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            parser.error(f"secondary ASR requires scoped v4 audio authorization: {error}")
     acceptances = {}
     for item in args.human_acceptance:
         locale, _, path = item.partition("=")
@@ -599,18 +621,30 @@ def main(argv=None) -> int:
         judge = text_driver.FakeJudge(groups)
     elif args.text_backend == "api":
         # Text-kind calibration replays the text driver's API judge cache when the same budget is reused.
-        judge = text_driver.ApiJudge(args.api_budget_authorization.resolve())
+        judge = audio_api_judge_for_resolved(args.api_budget_authorization.resolve(), resolved, requested_locales=locales)
     else:
         judge = text_driver.CodexJudge(state / "codex-calls")
+    secondary_budget = getattr(judge, "ledger", None)
+    if real and secondary_budget is None:
+        if not args.api_budget_authorization:
+            parser.error("Real secondary ASR requires --api-budget-authorization")
+        secondary_budget = audio_api_judge_for_resolved(args.api_budget_authorization.resolve(), resolved, requested_locales=locales).ledger
     for locale, paths in resolved.items():
         uncertain = judge.uncertain() + uncertain_calls(state)
+        if secondary_budget is not None:
+            ledger_path = secondary_budget.root / "source-budget.json"
+            if ledger_path.exists():
+                uncertain += [operation for operation, row in read(ledger_path).get("requests", {}).items()
+                              if row.get("status") == "started_response_unconfirmed"]
+            uncertain = sorted(set(uncertain))
         if uncertain:
             outcome = {"status": "blocked_unknown_outcome", "uncertainCalls": uncertain,
                        "reason": f"model calls with an unknown outcome under {state}; reconcile them first"}
         else:
             try:
                 asr = make_transports(args.backend, args, state, locale=locale, screening=read(Path(paths["screening"])),
-                                      job=read(Path(paths["job"])), package=read(Path(paths["package"])))
+                                      job=read(Path(paths["job"])), package=read(Path(paths["package"])),
+                                      budget=secondary_budget)
                 outcome = run_locale(locale, paths, out, state, judge, asr, timings, args.workers, fake=not real,
                                      human_acceptance=acceptances.get(locale))
             except Exception as error:  # The summary says what failed.

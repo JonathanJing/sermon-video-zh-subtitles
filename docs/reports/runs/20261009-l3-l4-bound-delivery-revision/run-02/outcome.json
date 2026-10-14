@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "PYTHONPATH=/tmp/sermon-api-l2-rerun-deps python -m unittest tests.test_backend_four_layer_dry_run tests.test_sermon_unified_cli tests.test_sermon_unified_audio tests.test_sermon_unified_delivery tests.test_sermon_unified_continuation tests.test_sermon_unified_continuation_owner",
+  "status": "succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-10-09T02:59:07+00:00",
+  "endedAt": "2026-10-09T02:59:28+00:00"
+}

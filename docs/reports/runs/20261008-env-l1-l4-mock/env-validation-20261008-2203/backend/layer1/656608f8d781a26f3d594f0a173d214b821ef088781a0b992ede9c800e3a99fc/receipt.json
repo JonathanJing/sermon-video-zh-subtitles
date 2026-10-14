@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "sermon-sentence-interpretation-shadow-v1",
+  "layer": "shared_english_source_and_anchors",
+  "interface": "sermon-english-source-package-v1",
+  "status": "waiting_machine_judge",
+  "releaseEligible": false,
+  "productionTranslationEligible": false,
+  "productionOutputChanged": false,
+  "identity": {
+    "schemaVersion": "sermon-sentence-interpretation-shadow-v1",
+    "source": {
+      "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/local-environment-setup-9a27e4/artifacts/backend-four-layer-dry-run/env-validation-20261008-2203/.backend-rh0l6t9w/source/aligned-segments.json",
+      "sha256": "27a5f0609c52068b11ddd43ae0e504dace8d4b10f50fd287a2726f4fa00448cb"
+    },
+    "implementation": {
+      "anchorGeneratorSha256": "62e891ade1cf77eeb528c38a77073dde09ce900dfabc79a81b172e1c96c02ed0",
+      "englishSourceBuilderSha256": "57292807e8527af7a6321082ccb0c0d2f521063d4cc70d3f6e0a55557383cee6",
+      "shadowRunnerSha256": "66de6c0f0a2b962282bc52019db36bfb33f06b109262616b2587b5269083b7da"
+    },
+    "policy": {
+      "unitPolicy": "clause_stable_v2",
+      "maxUnitSeconds": 8.0,
+      "minUnitSeconds": 1.5,
+      "internalPauseSeconds": 0.35,
+      "wordDurationOutlierSeconds": 2.5
+    },
+    "sourceContext": {
+      "sourceId": "weekly-dry-run-fixture-001",
+      "sourceUrlHash": "2a0d6d9204baf8ca3cadb5aa8f82112a3343bf680481865d1dbb62c01d5182c2",
+      "serviceDate": "2026-10-04",
+      "summarySha256": "543c8fc2c79268ce744ceeb82f0c456291b126a486fb9381ed434d25f68609ba",
+      "approvalEvidenceSha256": null,
+      "reviewSha256": null,
+      "machineJudgeSha256": null
+    }
+  },
+  "artifacts": {
+    "anchorManifest": {
+      "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/local-environment-setup-9a27e4/artifacts/backend-four-layer-dry-run/env-validation-20261008-2203/.backend-rh0l6t9w/layer1/656608f8d781a26f3d594f0a173d214b821ef088781a0b992ede9c800e3a99fc/anchor-manifest.json",
+      "sha256": "6fcf3b4249f0cd0bc49ebaecd838b3bd9d0a9b2ee71aba87c288d4aba503bfde",
+      "jsonSha256": "da55dcf131665c88e31ecafbc8c49e4cdec4e6aae59493e63351c6fadffb6840"
+    },
+    "englishSourcePackage": {
+      "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/local-environment-setup-9a27e4/artifacts/backend-four-layer-dry-run/env-validation-20261008-2203/.backend-rh0l6t9w/layer1/656608f8d781a26f3d594f0a173d214b821ef088781a0b992ede9c800e3a99fc/english-source-package.json",
+      "sha256": "f26ff278d23c1f08209b1d0999fb741b3f155fdc5504663c4d98e3e616c8abce",
+      "jsonSha256": "6ac3ea341669c0c7499dfcbe0474ea011e53084f1fe42134a4eb8eb9e770e051"
+    },
+    "receipt": {
+      "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/local-environment-setup-9a27e4/artifacts/backend-four-layer-dry-run/env-validation-20261008-2203/.backend-rh0l6t9w/layer1/656608f8d781a26f3d594f0a173d214b821ef088781a0b992ede9c800e3a99fc/receipt.json"
+    }
+  },
+  "counts": {
+    "sourceSentences": 2,
+    "sourceUnits": 2,
+    "sourceWords": 10,
+    "longSentencesSplit": 0,
+    "pauseDerivedUnits": 0
+  },
+  "anchorIssueCount": 0,
+  "anchorIssueTypes": [],
+  "nextStage": "run_english_source_machine_judge",
+  "humanReview": "pending"
+}
