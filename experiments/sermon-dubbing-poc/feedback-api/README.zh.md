@@ -137,7 +137,7 @@ node admin.mjs listening --from 2026-09-27 --to 2026-09-27 --out /private/path/l
 
 | 字段 | 取值 |
 |---|---|
-| `at` | 尝试结束时的毫秒时间，取整到秒；不早于凭据签发前 10 分钟 |
+| `at` | 尝试结束时的毫秒时间，取整到秒；不早于上传前 24 小时，且与 `day` 同属一个洛杉矶日。客户端可能离线后才签发凭据，所以 `day` 可以是凭据签发当日或前一日 |
 | `outcome` | `applied`（已跳转并开始播放）、`matched`、`play_failed`、`play_blocked`、`no_match`、`expired`、`timeout`、`cancelled`、`error`、`permission_denied`、`unavailable`、`unsupported` |
 | `stage` | 最远到达的步骤：`opened`、`index_ready`、`recording`、`matched_audio` |
 | `reason` | 匹配器原因枚举；只有 `matched_audio` 可以非空 |
