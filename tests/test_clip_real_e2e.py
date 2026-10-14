@@ -1,5 +1,6 @@
 """Real-model clip E2E entry: specification, budget accounting, stage order and Spark command shape (no network)."""
 import json
+import hashlib
 from pathlib import Path
 import shutil
 import tempfile
@@ -229,6 +230,40 @@ class RunTests(unittest.TestCase):
         self.assertEqual(len(self.run.stages["audio.ko"]["repairAttempts"][0]["unitInstructionsSha256"]), 64)
         self.assertEqual([label.split(".")[0] for label, _ in calls],
                          ["render", "compact", "screen", "package", "audio-qc"])
+
+    def test_layer4_resume_uses_bound_publish_and_later_browser_pass_without_redeploy(self):
+        self.run.publish = True
+        l4 = self.run_dir / "l4"
+        page_id = self.run.spec["page"]["pageId"]
+        subject.write(l4 / "prepare-result.json", {"status": "succeeded"})
+        files = {"preparedManifestSha256": l4 / "work/prepared/preparation-manifest.json",
+                 "baselineReceiptSha256": l4 / "baseline/baseline-receipt.json",
+                 "baselineSealSha256": l4 / "baseline/seal-report.json"}
+        inputs = {"pageId": page_id, "target": {"origin": subject.DEV_ORIGIN}, "contentMode": "machine_checked"}
+        for field, path in files.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(field)
+            inputs[field] = hashlib.sha256(path.read_bytes()).hexdigest()
+        state = {"status": "diagnostic_dev_http_verified", "inputs": inputs,
+                 "completedAt": "2026-10-14T12:00:00+00:00",
+                 "stages": {name: {"status": "succeeded"} for name in
+                            ("publish_assets", "verify_assets", "publish_catalog", "live_readback")}}
+        subject.write(l4 / "workflow/workflow-state.json", state)
+        subject.write(l4 / "workflow/run-report.json", {"status": state["status"], "inputs": inputs})
+        subject.write(l4 / "browser-smoke.json", {"status": "fail", "pageId": page_id})
+        passed = l4 / "browser-smoke-later.json"
+        subject.write(passed, {"status": "pass", "pageId": page_id, "origin": subject.DEV_ORIGIN,
+                               "checkedAt": "2026-10-14T12:01:00+00:00",
+                               "locales": [{"locale": locale, "status": "pass"} for locale in ("ko", "es")]})
+        with mock.patch.object(self.run, "sh", side_effect=AssertionError("must not deploy or resmoke")):
+            subject.stage_layer4(self.run)
+        self.assertEqual(self.run.stages["layer4"]["status"], "done")
+        self.assertEqual(self.run.stages["layer4"]["smokeReceipt"], str(passed.resolve()))
+        state["status"] = "running"
+        subject.write(l4 / "workflow/workflow-state.json", state)
+        with mock.patch.object(self.run, "sh", side_effect=AssertionError("must not deploy")), \
+                self.assertRaisesRegex(subject.Stop, "needs reconciliation"):
+            subject.stage_layer4(self.run)
 
 
 class SparkTests(unittest.TestCase):

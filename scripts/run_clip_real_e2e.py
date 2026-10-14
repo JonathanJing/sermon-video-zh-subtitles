@@ -723,11 +723,51 @@ def stage_layer4(run: Run):
     if not run.publish:
         run.mark("layer4", "prepared_not_published")
         raise Stop("layer4 prepared; publishing to Dev Hosting needs --publish")
-    run.sh("layer4-publish", [PY, ROOT / "scripts/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
-                              "--prepared", l4 / "work/prepared", "--out", l4 / "workflow", "--machine-checked", "--execute"])
-    run.sh("layer4-smoke", [PY, ROOT / "scripts/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
-                            page["pageId"], "--no-session", "--out", l4 / "browser-smoke.json"])
-    run.mark("layer4", "done", pageId=page["pageId"], smoke=read(l4 / "browser-smoke.json").get("status"))
+    workflow = l4 / "workflow"
+    state_path = workflow / "workflow-state.json"
+    if not state_path.exists():
+        if workflow.exists() and any(workflow.iterdir()):
+            raise Stop("Layer 4 publish files exist without a terminal receipt; reconcile before retry")
+        run.sh("layer4-publish", [PY, ROOT / "scripts/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
+                                  "--prepared", l4 / "work/prepared", "--out", workflow, "--machine-checked", "--execute"])
+    state = read(state_path)
+    report_path = workflow / "run-report.json"
+    report = read(report_path) if report_path.exists() else {}
+    inputs = state.get("inputs") or {}
+    sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+    expected = (("preparedManifestSha256", l4 / "work/prepared/preparation-manifest.json"),
+                ("baselineReceiptSha256", l4 / "baseline/baseline-receipt.json"),
+                ("baselineSealSha256", l4 / "baseline/seal-report.json"))
+    if (state.get("status") != "diagnostic_dev_http_verified"
+            or report.get("status") != state["status"] or report.get("inputs") != inputs
+            or inputs.get("pageId") != page["pageId"]
+            or (inputs.get("target") or {}).get("origin") != DEV_ORIGIN
+            or inputs.get("contentMode") != "machine_checked"
+            or any(not path.is_file() or inputs.get(key) != sha(path) for key, path in expected)
+            or any((state.get("stages") or {}).get(stage, {}).get("status") != "succeeded"
+                   for stage in ("publish_assets", "verify_assets", "publish_catalog", "live_readback"))):
+        raise Stop("Layer 4 publish receipt needs reconciliation; refusing to deploy again")
+
+    def passed_smoke(path):
+        try:
+            receipt = read(path)
+            return (receipt.get("status") == "pass" and receipt.get("pageId") == page["pageId"]
+                    and receipt.get("origin") == DEV_ORIGIN
+                    and {row["locale"] for row in receipt.get("locales", []) if row.get("status") == "pass"}
+                    == set(spec["locales"])
+                    and datetime.fromisoformat(receipt["checkedAt"]) >= datetime.fromisoformat(state["completedAt"]))
+        except (OSError, ValueError, KeyError, TypeError):
+            return False
+
+    receipts = sorted(l4.glob("browser-smoke*.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    smoke = next((path for path in receipts if passed_smoke(path)), None)
+    if smoke is None:
+        smoke = l4 / f"browser-smoke-retry-{len(receipts) + 1}.json"
+        run.sh("layer4-smoke", [PY, ROOT / "scripts/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
+                                page["pageId"], "--settle-ms", "15000", "--no-session", "--out", smoke])
+        require(passed_smoke(smoke), "Layer 4 browser smoke did not pass")
+    run.mark("layer4", "done", pageId=page["pageId"], smoke="pass", smokeReceipt=str(smoke),
+             workflowReceipt=str(workflow / "run-report.json"))
 
 
 def stage_report(run: Run):
