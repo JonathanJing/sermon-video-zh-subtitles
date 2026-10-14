@@ -191,6 +191,8 @@ class RunTests(unittest.TestCase):
         self.run.mark("audio.ko", "failed", qcStatus="requires_repair",
                       failedGroups=["g7"], nextActions={"g7": "resynthesize_new_seed"})
         original_state = dict(self.run.stages["audio.ko"])
+        instructions = self.run_dir / "l3/ko-repair-instructions.json"
+        instructions.write_text("{}")
         repair = self.run_dir / f"l3/ko-repair-seed-{seed}"
         rendered = repair / f"spark-ko-seed-{seed}-c/spark-output/speech-job"
         qc_out = self.run_dir / f"aqc/ko-seed-{seed}"
@@ -215,7 +217,7 @@ class RunTests(unittest.TestCase):
 
         with mock.patch.object(self.run, "check"), mock.patch.object(self.run, "sh", side_effect=fake_sh), \
                 mock.patch.object(subject, "mirror_run_to_spark"):
-            subject.repair_audio(self.run, locale, seed, "repo-test")
+            subject.repair_audio(self.run, locale, seed, "repo-test", unit_instructions=instructions)
         self.assertEqual(self.run.stages["audio.ko"]["status"], "done")
         self.assertEqual(self.run.stages["audio.ko"]["repairedFrom"], ["g7"])
         self.assertEqual(self.run.stages["audio.ko"]["repairAttempts"][0]["status"], "done")
@@ -223,6 +225,8 @@ class RunTests(unittest.TestCase):
         self.assertFalse((original / "audio-package.json").exists())
         self.assertIn("--seed", calls[0][1])
         self.assertEqual(calls[0][1][calls[0][1].index("--seed") + 1], str(seed))
+        self.assertEqual(calls[0][1][calls[0][1].index("--unit-instructions") + 1], str(instructions))
+        self.assertEqual(len(self.run.stages["audio.ko"]["repairAttempts"][0]["unitInstructionsSha256"]), 64)
         self.assertEqual([label.split(".")[0] for label, _ in calls],
                          ["render", "compact", "screen", "package", "audio-qc"])
 

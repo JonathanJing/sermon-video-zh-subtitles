@@ -588,7 +588,7 @@ def stage_audio(run: Run, locale: str, code: str):
     run.mark("audio." + locale, "done", package=str(package), audioQcOut=str(out / locale))
 
 
-def repair_audio(run: Run, locale: str, seed: int, code: str):
+def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructions: Path | None = None):
     """Re-render a failed locale in a fresh root and recheck against its existing repair ledger."""
     key = "audio." + locale
     prior = run.stages.get(key) or {}
@@ -596,13 +596,18 @@ def repair_audio(run: Run, locale: str, seed: int, code: str):
     require(prior.get("nextActions") and set(prior["nextActions"].values()) == {"resynthesize_new_seed"},
             f"{key} does not call for a new TTS seed")
     attempts = list(prior.get("repairAttempts") or [])
+    instruction_sha = hashlib.sha256(unit_instructions.read_bytes()).hexdigest() if unit_instructions else None
     require(type(seed) is int and seed >= 0 and seed != 42, "repair seed must differ from the original seed 42")
     require(not attempts or seed not in [a["seed"] for a in attempts[:-1]], "repair seed was used earlier")
     require(not attempts or attempts[-1]["seed"] == seed or attempts[-1]["status"] == "failed",
             "reconcile the current repair attempt before using another seed")
+    require(not attempts or attempts[-1]["seed"] != seed
+            or attempts[-1].get("unitInstructionsSha256") == instruction_sha,
+            "repair instructions differ from the frozen attempt")
     if not attempts or attempts[-1]["seed"] != seed:
         attempts.append({"seed": seed, "status": "running", "startedAt": now(),
-                         "failedGroupsBefore": prior.get("failedGroups")})
+                         "failedGroupsBefore": prior.get("failedGroups"),
+                         "unitInstructionsSha256": instruction_sha})
     run.mark(key, "failed", **{k: v for k, v in prior.items() if k not in ("status", "at", "repairAttempts")},
              repairAttempts=attempts)
 
@@ -637,7 +642,8 @@ def repair_audio(run: Run, locale: str, seed: int, code: str):
     lag = str(run.spec["layer3"]["maxEndLagSeconds"])
     if not (repair / "dispatch.result.json").exists():
         run.sh(f"render.{locale}.seed-{seed}", [*spark, "render", *common, "--job", job, *inputs,
-               "--remote-name", raw, "--max-end-lag-seconds", lag, "--seed", str(seed)], check=False)
+               "--remote-name", raw, "--max-end-lag-seconds", lag, "--seed", str(seed),
+               *(["--unit-instructions", unit_instructions] if unit_instructions else [])], check=False)
     require(read(repair / "dispatch.result.json")["outcome"] == "known_terminal",
             f"render.{locale}.seed-{seed}: unknown outcome")
     if not (repair / f"compact-{compacted}.result.json").exists():
@@ -821,6 +827,8 @@ def main(argv=None) -> int:
     repair.add_argument("--run-dir", type=Path, required=True)
     repair.add_argument("--locale", required=True, choices=LOCALES)
     repair.add_argument("--seed", required=True, type=int)
+    repair.add_argument("--unit-instructions", type=Path,
+                        help="Frozen per-unit delivery instructions under this run directory")
     route = commands.add_parser("_route")
     route.add_argument("--out", type=Path, required=True)
     drive = commands.add_parser("_drive")
@@ -847,12 +855,16 @@ def main(argv=None) -> int:
         require(prior.get("nextActions") and set(prior["nextActions"].values()) == {"resynthesize_new_seed"},
                 "audio QC did not request resynthesize_new_seed")
         require(args.seed >= 0 and args.seed != 42, "repair seed must differ from the original seed 42")
+        if args.unit_instructions is not None:
+            args.unit_instructions = args.unit_instructions.resolve()
+            require(args.unit_instructions.is_file() and args.unit_instructions.is_relative_to(run.dir),
+                    "repair instructions must be a file under this run directory")
         run.plan(run.dir / "plans" / f"qc-{args.locale}-audio-seed-{args.seed}",
                  [f"qc.{args.locale}"], [args.locale], extra=["--qc-inputs", run.l2 / "qc-inputs.json"])
         stopped = []
         try:
             ensure_session(run)
-            repair_audio(run, args.locale, args.seed, stage_code(run))
+            repair_audio(run, args.locale, args.seed, stage_code(run), unit_instructions=args.unit_instructions)
         except Stop as stop:
             stopped.append(str(stop))
         finally:
