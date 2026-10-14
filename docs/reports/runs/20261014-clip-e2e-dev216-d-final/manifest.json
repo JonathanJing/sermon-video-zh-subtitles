@@ -1,0 +1,216 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-clip-e2e-dev216-d-final",
+  "runs": [
+    {
+      "label": "report-final",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/report-final",
+      "skipped": {}
+    },
+    {
+      "label": "l4",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l4",
+      "skipped": {
+        ".lock": 4,
+        ".json": 2288,
+        ".js": 44,
+        ".html": 386,
+        ".mjs": 247,
+        ".png": 97,
+        ".svg": 18,
+        ".srt": 10,
+        ".mp3": 840,
+        ".pdf": 20,
+        ".wav": 65,
+        ".mp4": 100,
+        ".jpg": 5,
+        ".css": 22,
+        ".txt": 1,
+        ".cache": 2
+      }
+    },
+    {
+      "label": "ko-seed-44",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/ko-seed-44",
+      "skipped": {
+        ".lock": 1,
+        ".json": 9
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "report-final",
+      "path": "publication-receipt.json",
+      "kind": "whole",
+      "bytes": 973,
+      "truncated": false,
+      "sha256": "1324c5aae036426b73eefb3bc0bb7dc87ecff6a67faefc9cf5cf7779666ffa50",
+      "redactions": {}
+    },
+    {
+      "run": "report-final",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 7524,
+      "truncated": false,
+      "sha256": "7bd9f54e3ceb46efe4b413ddf8ba99d6fcf8fb4ef77738b289b1eeb06a0d703e",
+      "redactions": {
+        "home_dir": 31
+      }
+    },
+    {
+      "run": "report-final",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 1684,
+      "truncated": false,
+      "sha256": "d4f2e8009712ad86dbbcbf697eee2ae71daef790817f54d97935234f08d5885e",
+      "redactions": {}
+    },
+    {
+      "run": "l4",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 297794,
+      "truncated": false,
+      "sha256": "c09d90fe91ee70d2ff2840790941426755488a0632b7feb38aa7d32d4d163c50",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "l4",
+      "path": "baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "l4",
+      "path": "workflow/asset-first/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 297794,
+      "truncated": false,
+      "sha256": "c09d90fe91ee70d2ff2840790941426755488a0632b7feb38aa7d32d4d163c50",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "l4",
+      "path": "workflow/asset-first/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "l4",
+      "path": "workflow/asset-first/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "l4",
+      "path": "workflow/final-overlay/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 306247,
+      "truncated": false,
+      "sha256": "9c9c62e81a11f4656c490419e9917c80bf36c55d83b55a95a6100f99ba7b6337",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "l4",
+      "path": "workflow/final-overlay/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "l4",
+      "path": "workflow/final-overlay/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "l4",
+      "path": "workflow/live-baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 306247,
+      "truncated": false,
+      "sha256": "9c9c62e81a11f4656c490419e9917c80bf36c55d83b55a95a6100f99ba7b6337",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "l4",
+      "path": "workflow/live-baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "l4",
+      "path": "workflow/sealed/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "ko-seed-44",
+      "path": "ko/preflight.json",
+      "kind": "whole",
+      "bytes": 2313,
+      "truncated": false,
+      "sha256": "e2ef702fdcb3cb3f5ebfd8e450432d6ac2cc7f82fbaf5097c4d921b53afd75af",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "ko-seed-44",
+      "path": "spark-driver.log",
+      "kind": "log",
+      "bytes": 2545,
+      "truncated": false,
+      "sha256": "4e43e5adbc52e1cfe96d3a6e98376bfbcf976cee9529ca5fc4273b0493f18340",
+      "redactions": {}
+    },
+    {
+      "run": "ko-seed-44",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 4509,
+      "truncated": false,
+      "sha256": "328ade24655c71ecf6ad41360001d8bc308cf9e627b9a6b3c0df85698c094b45",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "ko-seed-44",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "95687e60b2d28731549e879c9e291e117bd331275099388f29bdf94b1a575d53",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
