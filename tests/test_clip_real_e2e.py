@@ -126,6 +126,21 @@ class SpecificationTests(unittest.TestCase):
         self.assertFalse(language_models.cli_same_job_repair(prior, self.base / 'other/repair-rounds/round-002', {'groups': []}))
         self.assertFalse(language_models.cli_same_job_repair(prior, prior.parent / 'round-002', None))
 
+    def test_claude_qc_revision_stays_in_same_run_locale_and_next_revision(self):
+        prior = self.base / 'run/l2/text/ko/repair-rounds/round-002'
+        next_round = self.base / 'run/l2-ko-r1/text/ko/repair-rounds/round-004'
+        brief = {'schemaVersion': language_models.PARTIAL_REPAIR_SCHEMA_V2,
+                 'groups': [{'backTranslationQc': {'targetTextSha256': 'a' * 64}}]}
+        self.assertTrue(language_models.cli_same_job_repair(prior, next_round, brief))
+        self.assertFalse(language_models.cli_same_job_repair(prior,
+                         self.base / 'other/l2-ko-r1/text/ko/repair-rounds/round-004', brief))
+        self.assertFalse(language_models.cli_same_job_repair(prior,
+                         self.base / 'run/l2-es-r1/text/es/repair-rounds/round-004', brief))
+        self.assertFalse(language_models.cli_same_job_repair(prior,
+                         self.base / 'run/l2-ko-r2/text/ko/repair-rounds/round-004', brief))
+        self.assertFalse(language_models.cli_same_job_repair(prior, next_round,
+                         {'schemaVersion': language_models.PARTIAL_REPAIR_SCHEMA_V2, 'groups': [{}]}))
+
     def test_the_run_directory_must_be_mirrorable_under_artifacts(self):
         with self.assertRaisesRegex(ValueError, "under artifacts/"):
             subject.Run(spec_files(self.base), self.base / "run", publish=False)

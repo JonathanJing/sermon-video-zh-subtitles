@@ -682,14 +682,43 @@ def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:
 
 
 def cli_same_job_repair(reuse_from: Path | None, out: Path, brief: dict | None) -> bool:
-    """Permit only the next repair round beside a completed prior round for CLI calls."""
+    """Permit a bound CLI repair in one clip run, including its next QC revision."""
     if reuse_from is None or brief is None:
         return False
     prior, current = reuse_from.resolve(), out.resolve()
-    if prior.parent != current.parent or prior.parent.name != 'repair-rounds':
+    if prior.parent.name != 'repair-rounds' or current.parent.name != 'repair-rounds':
         return False
     before, after = re.fullmatch(r'round-(\d{3})', prior.name), re.fullmatch(r'round-(\d{3})', current.name)
-    return bool(before and after and int(after.group(1)) == int(before.group(1)) + 1)
+    if not before or not after:
+        return False
+    if prior.parent == current.parent:
+        return int(after.group(1)) == int(before.group(1)) + 1
+    # Gate-4 QC opens the next revision under l2-<locale>-rN. The controller's
+    # repair ledger adds a reopening entry, so the round numbers need not be
+    # adjacent. Both paths must remain in the same run and locale, and the
+    # validated partial brief must carry the rejected QC text binding.
+    if (brief.get('schemaVersion') != PARTIAL_REPAIR_SCHEMA_V2
+            or not isinstance(brief.get('groups'), list)
+            or not brief['groups']
+            or not all(isinstance(row, dict) and 'backTranslationQc' in row
+                       for row in brief['groups'])):
+        return False
+    if len(prior.parents) < 5 or len(current.parents) < 5:
+        return False
+    locale = prior.parents[1].name
+    if (current.parents[1].name != locale
+            or prior.parents[2].name != 'text' or current.parents[2].name != 'text'
+            or prior.parents[4] != current.parents[4]):
+        return False
+    prior_lane, current_lane = prior.parents[3].name, current.parents[3].name
+    match = re.fullmatch(r'l2-' + re.escape(locale) + r'-r(\d+)', current_lane)
+    if not match:
+        return False
+    prior_revision = (0 if prior_lane == 'l2' else
+                      (int(m.group(1)) if (m := re.fullmatch(
+                          r'l2-' + re.escape(locale) + r'-r(\d+)', prior_lane)) else -1))
+    return (prior_revision >= 0 and int(match.group(1)) == prior_revision + 1
+            and int(after.group(1)) > int(before.group(1)))
 
 
 def carry_forward_group(prior_run: Path, out: Path, index: int,
