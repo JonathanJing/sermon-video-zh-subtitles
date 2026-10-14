@@ -1,6 +1,7 @@
 """V3 route/actual-credential approval and cache admission; offline only."""
 import copy
 import contextlib
+from dataclasses import replace
 import io
 import json
 import os
@@ -114,6 +115,14 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
                                            SessionBoundCaller(next_caller, requires_spark=False, outcome_guarded=True),
                                            request_limits=self.base.limits),first)
         self.assertEqual(calls,[1])
+
+    def test_qc_revisions_have_distinct_budget_roots_with_the_same_job_root(self):
+        original=self.base.config
+        first=replace(original, sha256='a'*64, auto_repair={'backTranslationQc':{'ko':'qc-a.json'}})
+        second=replace(original, sha256='b'*64, auto_repair={'backTranslationQc':{'ko':'qc-b.json'}})
+        self.assertEqual(first.job_root,second.job_root)
+        self.assertNotEqual(b.budget_root(original),b.budget_root(first))
+        self.assertNotEqual(b.budget_root(first),b.budget_root(second))
 
 
     def test_new_approval_is_exact_and_legacy_cannot_be_silently_extended(self):

@@ -123,7 +123,7 @@ def load_authorization(config, path, code_identity, expected_sha=None):
     authority = budget._authority(value['authority'])
     receipt_path = _safe_path(path.parent / value['approvalReceipt'])
     receipt = jobs._read(receipt_path)
-    root = config.job_root.parent / f'.{config.job_root.name}.layer2-budget'
+    root = budget_root(config)
     expected = {'productionRunId': config.run_id, 'configurationSha256': config.sha256,
                 'codeIdentitySha256': code_identity, 'budgetRoot': str(root),
                 'requestLimits': selected, 'globalBounds': authority['globalBounds'],
@@ -139,6 +139,14 @@ def load_authorization(config, path, code_identity, expected_sha=None):
             and receipt.get('reviewedBy') and receipt.get('reviewedAt'), 'budget_approval_not_bound')
     return {'path': path, 'sha256': actual_sha, 'value': value, 'root': root, 'limits': selected,
             'scope': scope, **({'runtimeIdentity': runtime} if runtime is not None else {})}
+
+
+def budget_root(config):
+    """Keep a Gate 4 revision's new authority separate from the passed chain's ledger."""
+    base = config.job_root.parent / f'.{config.job_root.name}.layer2-budget'
+    if (getattr(config, 'auto_repair', None) or {}).get('backTranslationQc'):
+        return base.with_name(base.name + '-qc-' + config.sha256)
+    return base
 
 
 def ledger_root(authorization, locale):
