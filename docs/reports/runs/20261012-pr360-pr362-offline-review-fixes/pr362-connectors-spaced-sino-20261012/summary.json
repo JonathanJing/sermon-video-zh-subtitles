@@ -1,0 +1,17 @@
+{
+  "codeRevision": "2165db4948a60740664fe093e948252632001e27",
+  "status": "pass",
+  "tests": 263,
+  "subtests": 34,
+  "elapsedSeconds": 1.12,
+  "scope": "connector substitution/drop/insertion; spaced canonical Sino references; malformed numerals and endpoint segmentation negatives",
+  "modelsCalled": false,
+  "fullConsumerRepeated": false,
+  "earlierStage": {
+    "codeRevision": "ca535487",
+    "tests": 264,
+    "subtests": 34,
+    "elapsedSeconds": 1.11
+  },
+  "commaPolicy": "pause punctuation ignored; lexical connectors and range markers exact"
+}

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261013-ko-label-dev-prod-5810b968",
+  "runs": [
+    {
+      "label": "run-20261013-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/web-language-pickers/ko-redeploy/run-20261013-ko",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "run-20261013-ko",
+      "path": "dev-deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 927,
+      "truncated": false,
+      "sha256": "9ebeeaeeb293fa1729f7d333671d7af0af098fad29fd4cc789983af2e259f70c",
+      "redactions": {}
+    },
+    {
+      "run": "run-20261013-ko",
+      "path": "dev-http-receipt.json",
+      "kind": "whole",
+      "bytes": 1447,
+      "truncated": false,
+      "sha256": "64aefffcde22d4c8ff3657438c9ff837302d493de09b209c26a8c494e33a8429",
+      "redactions": {}
+    },
+    {
+      "run": "run-20261013-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 746,
+      "truncated": false,
+      "sha256": "379c3e50a293ed36bc6eb9dc38694c9a715b45afe97410a9af2462c06e2d49be",
+      "redactions": {}
+    },
+    {
+      "run": "run-20261013-ko",
+      "path": "prod-deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 925,
+      "truncated": false,
+      "sha256": "19f2c5e4079ae40b8fd1556a6ce0e86397115e4eb447f0a76172e3652721feca",
+      "redactions": {}
+    },
+    {
+      "run": "run-20261013-ko",
+      "path": "prod-http-receipt.json",
+      "kind": "whole",
+      "bytes": 1436,
+      "truncated": false,
+      "sha256": "fe7703477da2f028ce8e353047ea9f32e5c60688d7a0d1d5c369adcde4e2660c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

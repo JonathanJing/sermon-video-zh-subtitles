@@ -1,0 +1,6 @@
+test_engine_then_readonly_report_replay_and_failure (tests.test_sermon_pilot_evidence.PilotEngineEvidenceTests.test_engine_then_readonly_report_replay_and_failure) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 42.158s
+
+OK

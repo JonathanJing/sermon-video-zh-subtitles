@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-weekly-posters-production",
+  "runs": [
+    {
+      "label": "publish-posters-v1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-54475d42/publish-posters-v1",
+      "skipped": {
+        ".json": 1,
+        ".py": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "publish-posters-v1",
+      "path": "deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 925,
+      "truncated": false,
+      "sha256": "adf64829c7644889776bdf16c4dc3c5a79991627650ffd1b58d8a4330fffba6a",
+      "redactions": {}
+    },
+    {
+      "run": "publish-posters-v1",
+      "path": "http-receipt.json",
+      "kind": "whole",
+      "bytes": 3415,
+      "truncated": false,
+      "sha256": "b68b27968a10e05bd248d6650edc3663b647ab3668ed2892567caa27c462b88d",
+      "redactions": {}
+    },
+    {
+      "run": "publish-posters-v1",
+      "path": "preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 3706,
+      "truncated": false,
+      "sha256": "b59d1666e1854800a161a64611556216a51bdd16fed615f6c6dbe72888e76af4",
+      "redactions": {}
+    },
+    {
+      "run": "publish-posters-v1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 425,
+      "truncated": false,
+      "sha256": "759c028d31551ac5849ad25922b19eccf848e9fa41cdb38a27dedf2818d444d7",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

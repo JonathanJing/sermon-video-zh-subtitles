@@ -8,11 +8,18 @@
 | Layer 2 独立审核 | `gpt-6.1-sol` | `medium` | 批准的 tier（目前 `default`）；无授权 standalone `fast` 发送前拒绝 | OpenAI API |
 | dev 与正式生产 Supervisor | `gpt-6-luna` | `medium` | `fast` | ChatGPT-authenticated Codex CLI |
 
-## 显式实验翻译后端
+## Layer 2 后端：OpenAI API 或 Claude CLI（Opus 5.5）
 
-新 dev 与正式 canonical Layer 2 只接受 `openai_api`（`gpt-6.1-sol` high），独立审核使用 Sol medium。`target_language_policy.py freeze --translator-backend claude_cli` 以及手工写入 Claude model 的新 draft 均在冻结前拒绝，等待独立实验政策契约；不能生成普通 production-ready Claude 政策。独立 A/B transport 仍可使用原 Sol 基线 prompts，canonical worker 和生产模型验证持续拒绝 Claude 政策。已有冻结政策字节、哈希及 cache-only replay 验证规则不变。
+新 dev 与正式 canonical Layer 2 默认是 `openai_api`：初译 `gpt-6.1-sol` high，独立复核 Sol medium。
 
-Claude CLI transport 仅保留独立实验入口，经订阅登录运行，隔离 OpenAI／Anthropic 凭据与路由覆盖；每次调用必须传入 `max_completion_tokens`，显式关闭 API 与结构化输出重试，拒绝出现其他模型的返回。它不证明 CLI 整个 agent session 的调用次数可受 canonical API 预算约束，因此不接入新 canonical 运行。
+2026-10-14 起（用户决定）可在冻结政策时显式选择 `claude_cli_opus`：`target_language_policy.py freeze --layer2-backend claude_cli_opus`。
+- **模型分工：** 初译 `claude-opus-5-5` high，独立复核 `claude-opus-5-5` medium，与 Sol 的分工一致；每次调用的角色仍由模型和推理强度区分。
+- **调用方式：** 两个角色都经本机订阅登录的 Claude Code CLI（`ClaudeLayer2Transport`），走订阅额度，不用 API key。transport 拒绝 API key，子进程去掉 OpenAI／Anthropic 凭据，要求订阅登录，模型身份以 CLI 返回的 `modelUsage` 为准。
+- **政策绑定：** 选择写入政策的 translator/reviewer 角色，进入政策哈希。controller 按冻结的后端选择 transport，并在执行身份里记下两个角色的 CLI 身份；caller 与政策后端不一致时，在派发前拒绝。
+- **仍然拒绝的组合：** 只有完整的这一对模型才能冻结。旧的"Opus 初译 + Sol 复核"实验政策，以及其他 Claude 组合，冻结时仍会拒绝。
+- **预算：** 账本仍按列价最坏情况（`strict-claude-list-worst-case-2026-10-08-v1`）逐次预留和结算，上限取[周更运行配置](weekly-run-profile.zh.md)的 `claudeCliListPriceCapUsdPerLocale`。列价等价不是实际扣费，不计入用户批准的美元总额；计划里该阶段记 `countsTowardTotal: false`。
+- **不变的部分：** 文本质检、校准和音频质检的评判仍走 OpenAI API，按原预算规则。
+- **待验证：** 下一次片段 E2E 用此后端做第一次真实运行，在那之前没有 Claude Layer 2 的真实运行证据。Claude 订阅的速率和额度不受 API 并发槽约束，`groupWorkers` 并发时要观察 CLI 是否限流。
 
 原 Claude 冻结运行已经返回的付费结果允许 `cache_only` 恢复，恢复仍禁止派发。预算响应记录按模型选择价格版本；Claude 对应 `strict-claude-list-worst-case-2026-10-08-v1`，列价等价不是订阅实际收费。没有真实 Claude Layer 2 运行或部署证据。
 

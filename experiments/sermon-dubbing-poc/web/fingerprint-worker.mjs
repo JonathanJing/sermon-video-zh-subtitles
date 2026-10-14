@@ -1,4 +1,4 @@
-import { CONFIG, fingerprint, matchFingerprint } from './fingerprint-core.mjs';
+import { CONFIG, fingerprint, fingerprintProfile, matchFingerprint } from './fingerprint-core.mjs';
 import { captureQuality, summarizeMatch } from './fingerprint-diagnostics.mjs';
 
 let prepared = null;
@@ -110,7 +110,7 @@ async function prepareIndex(m) {
 self.onmessage = async ({ data }) => {
   const timings = {};
   try {
-    const { samples, sampleRate, metadata: m, requestId, operation } = data;
+    const { samples, sampleRate, metadata: m, requestId, operation, shadow: shadowRequested } = data;
     const cached = operation === 'match' ? prepared : await prepareIndex(m);
     if (!cached || cached.binding !== identity(m)) bindingError();
     timings.indexMs = cached.indexMs;
@@ -122,12 +122,19 @@ self.onmessage = async ({ data }) => {
     const featureStart = performance.now();
     const query = fingerprint(samples, sampleRate);
     const quality = captureQuality(samples, query.rms);
-    samples.fill(0);
     timings.featureMs = performance.now() - featureStart;
     const matchStart = performance.now();
     const result = matchFingerprint(query, cached.index);
     timings.matchMs = performance.now() - matchStart;
-    self.postMessage({ requestId, result: { matched: result.matched === true, queryStartSeconds: result.queryStartSeconds, confidence: result.confidence, diagnostics: result.diagnostics }, durationSeconds: query.durationSeconds, summary: summarizeMatch(query, result, quality), timings });
+    // Shadow-only FIELD-10 comparison after a production miss: reported as a
+    // count, never used to seek. The controller requests it only for the final
+    // buffer, so it never delays an earlier checkpoint or a successful match.
+    let shadow = null;
+    if (shadowRequested === true && result.matched !== true && result.diagnostics?.reason !== 'silence') {
+      try { shadow = { profile: 'cmn-v1', matched: matchFingerprint(fingerprintProfile(samples, sampleRate, 'cmn-v1'), cached.index).matched === true, agrees: null }; } catch { shadow = null; }
+    }
+    samples.fill(0);
+    self.postMessage({ requestId, result: { matched: result.matched === true, queryStartSeconds: result.queryStartSeconds, confidence: result.confidence, diagnostics: result.diagnostics }, durationSeconds: query.durationSeconds, summary: summarizeMatch(query, result, quality), shadow, timings });
   } catch (error) {
     prepared = null;
     self.postMessage({ requestId: data.requestId, error: ['index_binding', 'index_unavailable'].includes(error.message) ? error.message : 'match_failed' });
