@@ -18,6 +18,7 @@ import threading
 import time
 from contextlib import contextmanager
 import json
+import re
 import subprocess
 from pathlib import Path
 from urllib.parse import quote
@@ -219,6 +220,10 @@ def deployed_version(result_path, *, site, baseline_version):
 
     firebase-tools 15.30.2 lib/deploy/index.js returns {hosting: versionName}
     (an array for multiple sites); lib/command.js wraps it in status/result.
+    The real CLI names the version with its project, as
+    projects/<project number>/sites/<site>/versions/<id> (Dev deploy, 2026-10-14);
+    the project segment is dropped so the result compares with the Hosting API's
+    sites/<site>/versions/<id> live head.
     Injected subprocess runners must write this same JSON to their stdout file.
     An observed live head is never evidence of which version this command made.
     """
@@ -232,6 +237,9 @@ def deployed_version(result_path, *, site, baseline_version):
     if isinstance(version, list):
         contract.require(len(version) == 1, 'Exactly one deployed Hosting version required')
         version = version[0]
+    project = re.match(r'projects/([^/\s]+)/(?=sites/)', version) if isinstance(version, str) else None
+    if project:
+        version = version[project.end():]
     prefix = 'sites/' + site + '/versions/'
     contract.require(isinstance(version, str) and version.startswith(prefix)
                      and bool(version[len(prefix):]) and '/' not in version[len(prefix):]
