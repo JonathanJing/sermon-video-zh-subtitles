@@ -1,0 +1,72 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-14T16:34:20+00:00",
+      "units": 16,
+      "inputs": "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/clip-e2e-dev216-20261014-c/inputs"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-14T16:34:20+00:00"
+    },
+    "layer2": {
+      "status": "done",
+      "at": "2026-10-14T16:35:28+00:00"
+    },
+    "qc.ko": {
+      "status": "done",
+      "at": "2026-10-14T16:37:29+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/l2/text/ko/candidate.json",
+          "out": "out",
+          "status": "text_waiver_issued",
+          "failedGroups": [],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/textqc-ko/state/qc-receipts/text/ko/4cef012c2a432153aaa467e0889ac62d15ccaa9de41ae180dfe8ddd6d61b9e12/entry-000001.json",
+          "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/textqc-ko/out/ko"
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/l2/text/ko/candidate.json",
+      "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/textqc-ko/out/ko"
+    },
+    "qc.es": {
+      "status": "done",
+      "at": "2026-10-14T16:39:04+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/l2/text/es/candidate.json",
+          "out": "out",
+          "status": "text_waiver_issued",
+          "failedGroups": [],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/textqc-es/state/qc-receipts/text/es/17dbe682d9a00dcf3926f814b6b6be4ba971ec6cb2f3e8c90558c9bef1217238/entry-000001.json",
+          "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/textqc-es/out/es"
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/l2/text/es/candidate.json",
+      "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/textqc-es/out/es"
+    },
+    "qc.zh-Hans": {
+      "status": "running",
+      "at": "2026-10-14T16:39:22+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/l2/text/zh-Hans/candidate.json",
+          "out": "out",
+          "status": "requires_repair",
+          "failedGroups": [
+            "translation-chunk-0005-u003"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/textqc-zh-Hans/state/qc-receipts/text/zh-Hans/23e9ee4c9878436973d78f032ae154c4367aaf7b232ca16caf453759c05465f5/entry-000001.json",
+          "waiverDir": null
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-c/l2/text/zh-Hans/candidate.json"
+    }
+  },
+  "stopped": [
+    "layer2-zh-Hans-r1: Layer 2 blocked {\"zh-Hans\": {\"status\": \"blocked\", \"reason\": \"failed_durable_job\", \"dispatched\": false}}"
+  ],
+  "settledUsd": 4.37635
+}
