@@ -601,7 +601,7 @@ def request_openai_notes(
 ) -> dict[str, Any]:
     from scripts.production_spark_admission import SessionBoundCaller
     return SessionBoundCaller(_request_openai_notes, verifier=session_verifier,
-        purpose="production-study-notes")(payload, api_key, timeout_seconds)
+        purpose="production-study-notes", requires_spark=False)(payload, api_key, timeout_seconds)
 
 
 def _request_openai_notes(payload, api_key, timeout_seconds):
@@ -625,6 +625,9 @@ def _request_openai_notes(payload, api_key, timeout_seconds):
                            elapsed_seconds=time.perf_counter() - started,
                            status="failed", error_type=type(exc).__name__, attempt_id=attempt_id), exc)
         raise
+    from scripts import api_cli_outcomes
+    if api_cli_outcomes.observing():
+        api_cli_outcomes.observed_response(response.content, http_status=response.status_code)
     if response.status_code >= 400:
         error = SystemExit(f"OpenAI notes request failed with HTTP {response.status_code}: {safe_error_message(response)}")
         _finalize(lambda: record_api_attempt(model=model, response=None,

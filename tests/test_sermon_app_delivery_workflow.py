@@ -140,6 +140,24 @@ class AppDeliveryWorkflowTests(unittest.TestCase):
         self.assertEqual(code, 0); self.assertEqual(final['status'], 'complete')
         self.assertEqual(final['publication'], 'not_run')
 
+    def test_job_admitted_between_snapshot_reads_stays_waiting(self):
+        initial = workflow.snapshot(self.path)
+        key = jobs._digest(initial['jobIdentity'])
+        (self.config.jobs / key).mkdir(parents=True)
+        for status in jobs.ACTIVE:
+            state = {'jobId': key, 'status': status}
+            # The scan sees a directory before admission has written its state;
+            # the direct read then observes the newly queued/running job.
+            with self.subTest(status=status), \
+                 patch.object(workflow, '_job_state', side_effect=[None, state]), \
+                 patch.object(workflow, '_verify_bundle') as verify:
+                observed = workflow.snapshot(self.path)
+            verify.assert_not_called()
+            self.assertEqual(observed['workflowJob'], state)
+            self.assertEqual(observed['recommendedAction'],
+                             {'action': 'wait_for_workflow_job', 'humanActionRequired': False})
+            self.assertFalse(observed['workflowComplete'])
+
     def test_two_actual_supervisor_cli_processes_admit_one_fixed_bundle_job(self):
         command = [sys.executable, '-m', 'scripts.run_codex_local_sermon_production',
             '--app-delivery-config', str(self.path), '--sunday', '2026-10-04',

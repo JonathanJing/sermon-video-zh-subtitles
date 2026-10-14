@@ -1,0 +1,38 @@
+{
+  "status": "browser_verified",
+  "locales": {
+    "zh-Hans": {
+      "title": "耶稣警告",
+      "date": "2026.10.11",
+      "audioDuration": "35:31"
+    },
+    "ko": {
+      "title": "예수님은 경고하십니다",
+      "date": "2026.10.11",
+      "audioDuration": "35:31"
+    },
+    "es": {
+      "title": "Jesús advierte",
+      "date": "2026.10.11",
+      "audioDuration": "35:31"
+    }
+  },
+  "sourceVideo": {
+    "observedPlaying": true,
+    "currentTime": 7.370475,
+    "duration": 2131.0289,
+    "readyState": 4,
+    "width": 1920,
+    "height": 1080,
+    "error": null,
+    "seekUi": "not_verified: native video keyboard action unavailable; HTTP first/last Range passed"
+  },
+  "soundAlignment": {
+    "dialogVisible": true,
+    "startButtonEnabled": true,
+    "microphoneTest": "not_run",
+    "offlineSourceSamples": "pass at clip 30,900,1900 seconds"
+  },
+  "nativeDeviceAcceptance": "not_run",
+  "venueAcceptance": "not_run"
+}

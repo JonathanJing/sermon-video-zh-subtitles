@@ -1,0 +1,218 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261012-weekly-clip-rehearsal-u216",
+  "runs": [
+    {
+      "label": "20261012T050250Z-u216",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/artifacts/dev-180s-page-test-20261004/20261012T050250Z-u216",
+      "skipped": {
+        ".json": 1802,
+        ".js": 48,
+        ".html": 286,
+        ".mjs": 254,
+        ".png": 99,
+        ".svg": 20,
+        ".srt": 12,
+        ".mp3": 740,
+        ".pdf": 24,
+        ".wav": 68,
+        ".mp4": 90,
+        ".jpg": 5,
+        ".css": 22,
+        ".lock": 4,
+        ".txt": 3,
+        ".md": 1,
+        ".cache": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 233517,
+      "truncated": false,
+      "sha256": "a0469442bbdbd4c84e8b0e36ec9fbca790e3cbf93a0306fc0867d06493d4b135",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "baseline.log",
+      "kind": "log",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "31bb98de7e69326ca7f4d281fe756e95803ae52b0f96cbc89aa0793d5a9f01dc",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "build-inputs.log",
+      "kind": "log",
+      "bytes": 941,
+      "truncated": false,
+      "sha256": "507dc063535bd1859cd233e02497a15086a1f3745e8810a468938592d939c027",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "delivery-execute-resume.log",
+      "kind": "log",
+      "bytes": 3059,
+      "truncated": false,
+      "sha256": "38fcead5c518a4cb883a467ab370f3ef9a946209de2a2b475746de602d15a695",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "delivery-execute-resume2.log",
+      "kind": "log",
+      "bytes": 2480,
+      "truncated": false,
+      "sha256": "6b7f98fb7dcde6e3c96104b8b30a565058e9d1533a965b35543a667bde15c243",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "delivery-execute.log",
+      "kind": "log",
+      "bytes": 5594,
+      "truncated": false,
+      "sha256": "ab3f2bf95d1df3738608bed318276294c609c455eefe5cd05e8d7aa19b5ddd0c",
+      "redactions": {
+        "email": 11
+      }
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "delivery-preflight.log",
+      "kind": "log",
+      "bytes": 1402,
+      "truncated": false,
+      "sha256": "413950d2be8847f70f65697fd5440336de4be90b933edf273e4559de7fc4f753",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "inputs/summary.json",
+      "kind": "whole",
+      "bytes": 463,
+      "truncated": false,
+      "sha256": "6cfe14faf32b5f4f0a0fbc8f03056484aab614d660b8dcc8d8150cad3bf98617",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "live-baseline-partial-404/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 206,
+      "truncated": false,
+      "sha256": "40e7e3bae1cef7f5201b0e0acd4355e6d2036cb353eb76c65b81b24db730e263",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "workflow/asset-first/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 233517,
+      "truncated": false,
+      "sha256": "a0469442bbdbd4c84e8b0e36ec9fbca790e3cbf93a0306fc0867d06493d4b135",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "workflow/asset-first/hosting-publish.log",
+      "kind": "log",
+      "bytes": 143,
+      "truncated": false,
+      "sha256": "afc3b9a69a12e8a853b891a6c94deef79ff1918b75717e8c8557a0a999330ee1",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "workflow/asset-first/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "workflow/final-overlay/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 241670,
+      "truncated": false,
+      "sha256": "6da1f4a8ecd939ce470970e4cbdcc2e0871bd46f125018b24c724fc5c384fe70",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "workflow/final-overlay/hosting-publish.log",
+      "kind": "log",
+      "bytes": 143,
+      "truncated": false,
+      "sha256": "69e331c18ed4843ec9efca41a8da615b679bb89a9b0d956d5758a539ba1b9973",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "workflow/final-overlay/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "workflow/live-baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 241670,
+      "truncated": false,
+      "sha256": "6da1f4a8ecd939ce470970e4cbdcc2e0871bd46f125018b24c724fc5c384fe70",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "workflow/live-baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261012T050250Z-u216",
+      "path": "workflow/sealed/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

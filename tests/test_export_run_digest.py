@@ -51,6 +51,73 @@ class ExportRunDigestTests(unittest.TestCase):
         self.assertTrue(zipfile.is_zipfile(str(dest) + ".zip"))
         self.assertIn("## 遗留状态", (dest / "RETROSPECTIVE.md").read_text())
 
+    def test_keys_that_redact_alike_keep_every_entry(self):
+        # Review finding: a host map keyed by user@private-IP collapsed to one "<email>" entry.
+        (self.run / "summary.json").write_text(json.dumps({"hosts": {
+            "alice@192.168.1.1": {"ok": True}, "bob@192.168.1.2": {"ok": False}, "carol@192.168.1.3": {"ok": True}}}))
+        dest = self.export()
+        hosts = json.loads((dest / self.run.name / "summary.json").read_text())["hosts"]
+        self.assertEqual(sorted(hosts), ["<email>", "<email>#2", "<email>#3"])
+        self.assertEqual([row["ok"] for row in hosts.values()], [True, False, True])
+        entry = next(f for f in json.loads((dest / "manifest.json").read_text())["files"] if f["path"] == "summary.json")
+        self.assertEqual(entry["redactions"]["key_collision"], 2)
+
+    def test_model_evidence_acceptances_and_approvals_are_not_copied(self):
+        # Review finding: Layer 2 evidence.json carries source text and translations under the size cap.
+        layer2 = self.run / "layer2" / "ko"
+        layer2.mkdir(parents=True)
+        (layer2 / "evidence.json").write_text(json.dumps({"groups": [{"source": "Jesus warns", "translation": "예수님은 경고하십니다"}]}))
+        (layer2 / "ko-human-acceptance-c5.json").write_text(json.dumps({"units": [{"text": "예수님은"}]}))
+        (layer2 / "content-approval.json").write_text(json.dumps({"text": "예수님은"}))
+        (layer2 / "outline-review.evidence.txt").write_text("예수님은")
+        (self.run / "journal.ndjson").write_text('{"at": "t", "stage": "layer1", "event": "started"}\n')
+        (self.run / "decisions.ndjson").write_text('{"at": "t", "question": "q", "choice": "c"}\n')
+        dest = self.export()
+        copied = sorted(str(path.relative_to(dest / self.run.name)) for path in (dest / self.run.name).rglob("*") if path.is_file())
+        self.assertEqual(copied, ["audio/outcome.json", "audio/tts-receipt.json", "decisions.ndjson", "journal.ndjson",
+                                  "timings.tsv", "upload.log"])
+        self.assertNotIn("예수님은", "".join(path.read_text() for path in dest.rglob("*") if path.is_file()))
+
+    def test_source_budget_ledger_is_summarized_not_copied(self):
+        # Review finding: the ledger's settlements were only counted as a skipped .json file.
+        budget = self.run / ".jobs3.source-budget"
+        budget.mkdir()
+        settled = lambda model, micro, status="estimated_upper_bound", reason=None: {
+            "costStatus": status, "costMicrousd": micro, "reasonCode": reason, "requestedModel": model,
+            "usage": {"inputTokens": 1000, "outputTokens": 200, "cachedInputTokens": None, "reasoningTokens": 50}}
+        row = lambda status, cost, settlement=None: {"identitySha256": "a" * 64, "status": status,
+            "bounds": {"requests": 1, "wallTimeMs": 1000, "costMicrousd": cost},
+            "resourceBinding": {"owner": {"sourceBudgetRoot": "/Users/achillesjing/run"}},
+            **({"settlement": settlement} if settlement else {})}
+        (budget / "source-budget.json").write_text(json.dumps({"schemaVersion": "sermon-source-budget-ledger-v3", "requests": {
+            "judge.1": row("returned", 400_000, settled("gpt-6.1-sol", 120_000)),
+            "judge.2": row("returned", 400_000, settled("gpt-6.1-sol", 80_000)),
+            "asr.0000": row("returned", 13_500, settled("gpt-transcribe", None, "unknown", "no_frozen_price_for_model")),
+            "asr.0001": row("started_response_unconfirmed", 13_500)}}))
+        dest = self.export()
+        self.assertFalse((dest / self.run.name / ".jobs3.source-budget" / "source-budget.json").exists())
+        summary = json.loads((dest / self.run.name / ".jobs3.source-budget" / digest.BUDGET_SUMMARY_NAME).read_text())
+        self.assertEqual((summary["requests"], summary["returned"], summary["priced"], summary["estimatedMicrousd"],
+                          summary["reservedMicrousd"], summary["unknownCost"], summary["withoutSettlement"]),
+                         (4, 3, 2, 200_000, 827_000, {"no_frozen_price_for_model": 1}, 0))
+        self.assertEqual(summary["statuses"], {"returned": 3, "started_response_unconfirmed": 1})
+        self.assertEqual(summary["tokens"]["inputTokens"], 3000)
+        self.assertEqual(summary["byModel"]["gpt-6.1-sol"], {"returned": 2, "priced": 2, "estimatedMicrousd": 200_000})
+        self.assertNotIn("achillesjing", json.dumps(summary))
+        entry = next(f for f in json.loads((dest / "manifest.json").read_text())["files"] if f["kind"] == "budget")
+        self.assertEqual((entry["source"], entry["path"]), (".jobs3.source-budget/source-budget.json",
+                                                            ".jobs3.source-budget/" + digest.BUDGET_SUMMARY_NAME))
+        self.assertEqual(len(entry["sha256"]), 64)
+        index = (dest / "INDEX.md").read_text()
+        self.assertIn("3 of 4 requests returned; reserved US$0.83; estimated US$0.20 over 2 priced; "
+                      "cost unknown: no_frozen_price_for_model ×1; invoice not verified", index)
+
+    def test_a_v2_budget_ledger_says_its_settlement_was_not_recorded(self):
+        (self.run / "source-budget.json").write_text(json.dumps({"schemaVersion": "sermon-source-budget-ledger-v2", "requests": {
+            "asr.0000": {"status": "returned", "bounds": {"costMicrousd": 13_500}}}}))
+        index = (self.export() / "INDEX.md").read_text()
+        self.assertIn("1 without settlement (ledger sermon-source-budget-ledger-v2; SourceBudget.migrate_to_v3 books it)", index)
+
     def test_index_lists_outcome_timings_and_failures(self):
         index = (self.export() / "INDEX.md").read_text()
         self.assertIn("**failed** exit 1", index)
@@ -113,6 +180,21 @@ class ExportRunDigestTests(unittest.TestCase):
             for leak in ('{"password": "correct horse battery staple"}\n', "token=abc123xyz\n"):
                 (dest / "INDEX.md").write_text(leak)
                 self.assertEqual(digest.main([str(dest), "--verify"]), 1, leak)
+
+    def test_tidy_whitespace_satisfies_git_diff_check_and_skips_binary(self):
+        (self.run / "render.log").write_text("UserWarning: x  \r\n  indented\t\n\n\n")
+        dest = self.export()
+        (dest / "INDEX.md").write_text((dest / "INDEX.md").read_text() + "edited by hand  \n\n")
+        (dest / "blob.bin").write_bytes(b"a  \0b  \n\n")
+        self.assertEqual(digest.main([str(dest), "--tidy-whitespace"]), 0)
+        self.assertEqual(digest.tidy_whitespace(dest), [])
+        self.assertEqual((dest / "blob.bin").read_bytes(), b"a  \0b  \n\n")
+        for path in (p for p in dest.rglob("*") if p.is_file() and p.suffix != ".bin"):
+            text = path.read_text(encoding="utf-8")
+            self.assertFalse(text.endswith("\n\n"), path)
+            self.assertFalse(any(line != line.rstrip() for line in text.split("\n")), path)
+        self.assertTrue((dest / "INDEX.md").read_text().endswith("edited by hand\n"))
+        self.assertEqual(digest.main([str(dest), "--verify"]), 0)
 
     def test_json_stays_valid_and_summary_status_is_indexed(self):
         (self.run / "summary.json").write_text(json.dumps({"locales": {
@@ -187,6 +269,43 @@ class ExportRunDigestTests(unittest.TestCase):
         with patch.object(digest, "MAX_DIGEST_BYTES", 10):
             self.assertEqual(digest.main([str(self.run), "--out", str(self.out), "--name", "20261007-big"]), 1)
         self.assertFalse((self.out / "20261007-big").exists())
+
+    def test_private_api_outcomes_export_metadata_only_and_verify_old_exports(self):
+        import base64
+        private={'schemaVersion':'sermon-api-cli-outcome-v3','status':'returned','requestSha256':'a'*64,
+                 'purpose':'synthetic','response':{'output_text':'DO-NOT-PUBLISH-MODEL-TEXT'},
+                 'rawBodyBase64':base64.b64encode(b'DO-NOT-PUBLISH-MODEL-TEXT').decode(),
+                 'rawBodySha256':'b'*64,'executionBinding':{'private':'not-public'}}
+        directory=self.run/'accounting'/'api-cli-outcomes'/('a'*64);directory.mkdir(parents=True)
+        (directory/'outcome.json').write_text(json.dumps(private))
+        (self.run/'summary.json').write_text(json.dumps({'nested':private}))
+        dest=self.export()
+        public=json.loads((dest/self.run.name/'accounting'/'api-cli-outcomes'/('a'*64)/'outcome.json').read_text())
+        self.assertTrue(public['privateResponseOmitted'])
+        self.assertNotIn('response',public);self.assertNotIn('rawBodyBase64',public)
+        self.assertEqual(digest.verify(dest,[]),[])
+        self.assertNotIn('DO-NOT-PUBLISH',(dest/self.run.name/'summary.json').read_text())
+        old=dest/'old-outcome.json';old.write_text(json.dumps(private))
+        self.assertTrue(any('private_model_response' in item for item in digest.verify(dest,[])))
+
+
+    def test_reused_settlement_summary_is_v2_and_reader_keeps_explicit_v1(self):
+        import copy
+        ledger={'schemaVersion':'sermon-source-budget-ledger-v4','requests':{
+            'paid':{'status':'returned','bounds':{'costMicrousd':500000},'settlement':{
+                'costStatus':'estimated_upper_bound','costMicrousd':200000,'requestedModel':'gpt-6.1-sol','usage':{}}},
+            'reuse':{'status':'returned','bounds':{'costMicrousd':500000},'settlement':{
+                'costStatus':'reused','costMicrousd':0,'requestedModel':'gpt-6.1-sol','usage':{}}}}}
+        summary=digest.budget_summary(ledger)
+        self.assertEqual(summary['schemaVersion'],'sermon-run-digest-budget-settlement-v2')
+        self.assertEqual((summary['reservedMicrousd'],summary['reused'],summary['estimatedMicrousd']),(500000,1,200000))
+        self.assertIn('1 reused without new reservation',digest.budget_line('source-budget.json',summary))
+        legacy={**summary,'schemaVersion':digest.BUDGET_SUMMARY_SCHEMA_V1,'reservedMicrousd':1000000}
+        legacy.pop('reused');before=copy.deepcopy(legacy)
+        self.assertIn('reserved US$1.00',digest.budget_line('source-budget.json',legacy))
+        self.assertEqual(legacy,before)
+        self.assertIn('unsupported',digest.budget_line('source-budget.json',{'schemaVersion':'unknown'}))
+
 
 
 if __name__ == "__main__":

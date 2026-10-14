@@ -1,0 +1,280 @@
+{
+ "schemaVersion": "sermon-audio-qc-human-acceptance-v1",
+ "targetLocale": "ko",
+ "targetLanguageAudioPackageJsonSha256": "cdeed4da6a87ece1469d79b795e78128622749225d8d0ec22c39b6e3cb80a3f8",
+ "targetLanguageCandidateJsonSha256": "efc5043b3a57ec3973245163a88d40139a4cc9a1c15aef482b4a587b69da1a1b",
+ "audioQcJsonSha256": "7eaa1c942f7927d38150fb865ee65518722f1b5a9263a451ac0511a54b9163ca",
+ "decidedBy": "Jony",
+ "decidedByRole": "human_operator",
+ "humanApproval": true,
+ "decidedAt": "2026-10-11T14:43:42Z",
+ "userStatement": "Ko用现有读音发布。都不做新的合成 (chat 2026-10-11; delegation: 你直接做机器检查，修改好后，开始做l3)",
+ "units": [
+  {
+   "groupId": "translation-chunk-0000-u008",
+   "audioSha256": "5f5c0ee77b01c6d9a6eb0201927fc202d791b5f5d59584c2719d09abd83564dd",
+   "textSha256": "7577ecf06b179b54645662179de7df9f62edf153954cd48055dafe183156fc7e",
+   "asrPrimaryRecognized": "여러분 중에는 마시로 잘한 사람이 많군요.",
+   "asrSecondaryRecognized": "여러분 중에는 마지로 잘한 사람이 많군요.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0000-u015",
+   "audioSha256": "1fe78617ad95350c0ed2201cd8ccd50d4f1cccb30e001705e91cd5321019b84d",
+   "textSha256": "745bf113b31df141459e2355e3e34a6c5e30bdba79da556224d4fd0a77a93f10",
+   "asrPrimaryRecognized": "그리고 아버지는 이렇게 말했습니다. 다음 성적표에서 내 잠재력에 걸맞은 성적을 내지 못하면 내가 할 거야.",
+   "asrSecondaryRecognized": "그리고 아버지는 이렇게 말했습니다. 다음 성적표에서 내 잠재력에 걸맞은 성적을 내지 못하면 내가 할 거야.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0001-u006",
+   "audioSha256": "b1854dd406b19215dc642412efbc4645cf177bfb99034189a6a9378d2b21b396",
+   "textSha256": "423ee83b39403c737a8c9c850f62d9441b7a7f0c96a5fb89b3e01ccddc77a574",
+   "asrPrimaryRecognized": "야 그건 전적으로 내 책임이었어.",
+   "asrSecondaryRecognized": "야, 그건 전적으로 내 책임이었어.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0001-u039",
+   "audioSha256": "e4a39daabd346031db7d3c446f12ffc8e528c0428ad78bdc42aef0118a300711",
+   "textSha256": "8cbf693aa24aeea61cf4a138287a2b34e3b050542a0f1d849b923da0ce602fa6",
+   "asrPrimaryRecognized": "우리는 요한계시록 여덟 장과 구 장에서 그 중 여섯 개의 나팔을 살펴보게 됩니다.",
+   "asrSecondaryRecognized": "우리는 요한계시록 여덟 장과 구장에서 그 중 여섯 개의 나팔을 살펴보게 됩니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "chapter numeral read with the native Korean numeral (8장→여덟 장 / 15장→열다섯 장); operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0002-u002",
+   "audioSha256": "e2f30c008334402054ebb15b895306d4554a18d70cdab6a5c373781fcf1aae49",
+   "textSha256": "bc47cc3e21b267d1cf2a8cced9f6afdc3255e48f303da4cd0e376e4014fae88b",
+   "asrPrimaryRecognized": "그리고 이것이 땅의 약 3분의 1과 그 위에 모든 초목을 태워버립니다.",
+   "asrSecondaryRecognized": "그리고 이것이 땅의 약 3분의 1과 그 위의 모든 초목을 태워 버립니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0002-u006",
+   "audioSha256": "5b0118e490105405ff964e734f8f57b4c51ea3c851482262eeec4305afc57d81",
+   "textSha256": "e3bfb6ea244e10807ccdf3dd4200d7673c333741748a76c9fd1f926210a6091b",
+   "asrPrimaryRecognized": "바다 생물의 3분의 1이 죽고 선박의 3분의 1이 영향을 받습니다. 이는 식량 공급망도 영향을 받았다는 것을 보여줍니다.",
+   "asrSecondaryRecognized": "바다 생물의 3분의 1이 죽고 선박의 3분의 1이 영향을 받습니다. 이는 식량 공급망도 영향을 받았다는 것을 보여줍니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0002-u008",
+   "audioSha256": "ceed511cba5f1cf06e2ca1a1535f9253dcd18e2b0bbf21529d10c516bde59c62",
+   "textSha256": "d2195a8f0a0407a1db07b007f0744a1577ebd03c4a7bb9541030d1b239f677c7",
+   "asrPrimaryRecognized": "그리고 네 번째 나팔이 울리면 달과 별과 해에 3분의 1이 어두워집니다.",
+   "asrSecondaryRecognized": "그리고 네 번째 나팔이 울리면 달과 별과 해의 3분의 1이 어두워집니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0002-u010",
+   "audioSha256": "72c2cef6965a89c585801a844e01613339b82548ded8d48c728d033d191e7e1b",
+   "textSha256": "545a118761268d6eb69ba4fdd78f2915f5903070b052e20f16db553ed0e32b48",
+   "asrPrimaryRecognized": "자 여러분도 아마 이 첫 네 나팔이 세상을 이루는 요소들에 약 3분의 1에 영향을 미쳤다는 점을 알아차리셨을 것입니다.",
+   "asrSecondaryRecognized": "자, 여러분도 아마 이 첫 네 나팔이 세상을 이루는 요소들의 약 3분의 1에 영향을 미쳤다는 점을 알아차리셨을 것입니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0002-u020",
+   "audioSha256": "9d3cf5f10bb92d19f6da80bf53d8ff861f2d9037010f89c9033aa4ce1e4ffed1",
+   "textSha256": "28e224e27795011f18fc2c6f6c6c0756f3ae36c7b61c5b4167ef9be1d138b89b",
+   "asrPrimaryRecognized": "이용명으로 이루어진 군대가 일어나 땅 위의 사람들 가운데 삼 분의 일을 정복합니다.",
+   "asrSecondaryRecognized": "이영명으로 이루어진 군대가 일어나 땅 위의 사람들 가운데 삼분의 일을 정복합니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0002-u023",
+   "audioSha256": "4d3261a06b1947ba0c2750f1fdd97f9adfab068357cfe46270c8515a302db8c5",
+   "textSha256": "4becc3f75e4ea7dd1aee1228578143e6cfdaef4ccf70ef373ba2d882842fb0b8",
+   "asrPrimaryRecognized": "삼옥합니다.",
+   "asrSecondaryRecognized": "사목합니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "both ASRs heard a different word for 참혹합니다; operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0003-u002",
+   "audioSha256": "c057d17fb192169efb92ffd2b3abb097360cb83db22511a9c1fc5957a01c48a9",
+   "textSha256": "afbc2fee184179a44f6f381f1aa4ed5bbb3695f62f16415d0358f9df5bd864cf",
+   "asrPrimaryRecognized": "바트 어마는 불가지론자인 학자입니다.",
+   "asrSecondaryRecognized": "바트 어마는 불가지론자인 학자입니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0005-u007",
+   "audioSha256": "d98bdce97fac55c0fc3de526fa6597754405c5cbeda48e7da5da4dc3d026c367",
+   "textSha256": "5a76e6251110f4f7b4d870f4156b81daa105b831d7c1c8084a5065b39b504cb6",
+   "asrPrimaryRecognized": "그렇기 때문에 여덟 장을 보면 참으로 놀랍습니다. 하나님의 경고, 곧 나팔의 경고가 주어지기도 전에.",
+   "asrSecondaryRecognized": "그렇기 때문에 여덟 장을 보면 참으로 놀랍습니다. 하나님의 경고, 곧 나팔의 경고가 주어지기도 전에.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "chapter numeral read with the native Korean numeral (8장→여덟 장 / 15장→열다섯 장); operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0005-u016",
+   "audioSha256": "4ab09d571c084478635f53a1064834dc1c6fb93a37a0290ea3295a222f942683",
+   "textSha256": "83d098e80808a92ccd475cf2426e81070f05a4e11c5266b438cb8c4a7f36bbc7",
+   "asrPrimaryRecognized": "여덟 장의 맨 첫 절에 주목해 보십시오.",
+   "asrSecondaryRecognized": "여덟 장의 맨 첫 절에 주목해 보십시오.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "chapter numeral read with the native Korean numeral (8장→여덟 장 / 15장→열다섯 장); operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0005-u027",
+   "audioSha256": "3d1a28bbfb8b9b55017d99f71569df9005ef14266569244902df1db9e69d66e9",
+   "textSha256": "b69c009492ca7605813633567f80dfb586b7dea9b611f86aa781bbd0602f340b",
+   "asrPrimaryRecognized": "신해산 기술계에서 볼 수 있습니다.",
+   "asrSecondaryRecognized": "신해산 기슭에서 볼 수 있습니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0006-u014",
+   "audioSha256": "bdb6b0d45f6a3edbe4e3ad2e857ab4ad047ebd44610ae3c7c0397eaff452f496",
+   "textSha256": "ca15c538afa40e009fc2c94c3941bba5d690825514f701de1f86acf577a2016c",
+   "asrPrimaryRecognized": "삼 분의 일 분입니다.",
+   "asrSecondaryRecognized": "3분의 1뿐입니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0006-u039",
+   "audioSha256": "c7194812c7163a4b1ed39653d6dd6e65222e6607a3f63ce57516ab2f46df4bbd",
+   "textSha256": "4cb567718b06131fbab70acfae96ff46dbdae8506dce1641c2ec02395e32c845",
+   "asrPrimaryRecognized": "짐 개피거는 목사가 아닙니다.",
+   "asrSecondaryRecognized": "짐 개피거는 목사가 아닙니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  },
+  {
+   "groupId": "translation-chunk-0008-u026",
+   "audioSha256": "6750bc26b2f8e2e4c96a8c7d2b4cb36e7dbb1b6604bfeb27e815af7c51bf0d51",
+   "textSha256": "46670e9bea3f1565efa2c9f7181af4df9cf784b3415c45fd725f3bed169a002a",
+   "asrPrimaryRecognized": "그리고 성경에서 가장 유명한 이야기 중 하나인 누가복음 열 다섯 장의 이야기에서.",
+   "asrSecondaryRecognized": "그리고 성경에서 가장 유명한 이야기 중 하나인 누가복음 열다섯 장의 이야기에서.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "chapter numeral read with the native Korean numeral (8장→여덟 장 / 15장→열다섯 장); operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0009-u021",
+   "audioSha256": "9f69ab5ca7e88051c583a87ecaaeb0f7d1951106f2c2b488a63ce85540200276",
+   "textSha256": "778ce476ba2699c4bca92f9bd718e0e3d7b6c80ea3dca70667e4746d4e49ff4c",
+   "asrPrimaryRecognized": "그리고 요한계시록 여덟 장은 제가 이 사람을 위해 다시 기도하도록 저를 초대합니다.",
+   "asrSecondaryRecognized": "그리고 요한계시록 여덟 장은 제가 이 사람을 위해 다시 기도하도록 저를 초대합니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "chapter numeral read with the native Korean numeral (8장→여덟 장 / 15장→열다섯 장); operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0011-u006",
+   "audioSha256": "5d5983ba3b15dfeb5bdce13ce3773112dc842f991f762499c74c48ab45259d05",
+   "textSha256": "44c7e17be1f996c5c110282c6b8752fa0d491f9c187fa8025ca10a9cd883fcfe",
+   "asrPrimaryRecognized": "여러분은 1년 전이나 수십 년 전에 저질러서 후회하는 그 한 가지 일 그 한 가지 죄 그 실수를 계속 생각해 왔습니다.",
+   "asrSecondaryRecognized": "여러분은 1년 전이나 수십 년 전에 저질러서 후회하는 그 한 가지 일, 그 한 가지 죄, 그 실수를 계속 생각해 왔습니다.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "speech matches the text; the ASR difference is a numeral/orthography or homophone rendering (삼분의 일↔3분의 1, 네↔내, 맏이로↔마지로, 어만은↔어마는, 개피건↔개피거), not a wrong reading"
+  }
+ ]
+}

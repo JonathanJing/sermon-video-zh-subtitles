@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261009-codex-cli-luna-tps",
+  "runs": [
+    {
+      "label": "codex-cli-tps",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/codex-cli-tps",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "codex-cli-tps",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 3553,
+      "truncated": false,
+      "sha256": "b07cc5ceae5342000ebff50d7fbb27905f6ec7c681fd65a66fa490c555dc9351",
+      "redactions": {
+        "home_dir": 1
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
