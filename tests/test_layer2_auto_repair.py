@@ -625,7 +625,7 @@ class QcFleet(Fleet):
         return result
 
 
-def qc_receipt(head: Path, failed: dict, *, request=REQUEST, kind="meaning_shift"):
+def qc_receipt(head: Path, failed: dict, *, request=REQUEST, kind="meaning_shift", actions=None, context=True):
     """A failed text QC receipt (target_text_auto_qc shape) that judged ``head``'s reviewer text."""
     import hashlib
     results = []
@@ -635,20 +635,20 @@ def qc_receipt(head: Path, failed: dict, *, request=REQUEST, kind="meaning_shift
         row = {"groupId": group["translationGroupId"], "sourceUnitIds": group["sourceUnitIds"],
                "targetTextSha256": hashlib.sha256(text.encode()).hexdigest(), "status": "pass", "problems": []}
         if group["translationGroupId"] in failed:
-            row.update(status="fail", nextAction="revise_translation",
+            row.update(status="fail", nextAction=(actions or {}).get(group["translationGroupId"], "revise_translation"),
                        problems=[f"back_translation {kind}: {failed[group['translationGroupId']]}"],
                        backTranslation={"status": "fail", "backTranslation": "It is truly amazing.",
                                         "majorIssues": ([{"kind": kind, "severity": "major", "english": "It is intense.",
                                                           "backTranslation": "It is truly amazing."}] if kind else [])})
         results.append(row)
+    settings = {"qcContext": {
+        "targetLocale": request["targetLocale"],
+        "englishSourcePackageJsonSha256": request["englishSourcePackageJsonSha256"],
+        "anchorManifestJsonSha256": request["anchorManifestSha256"],
+        "targetLanguagePolicyJsonSha256": request["translationPolicySha256"]}} if context else {"backend": "codex"}
     return {"schemaVersion": subject.QC_RECEIPT_SCHEMA, "status": "requires_repair", "humanApproval": False,
             "locale": request["targetLocale"], "policyJsonSha256": request["translationPolicySha256"],
-            "semanticIdentity": {"settings": {"qcContext": {
-                "targetLocale": request["targetLocale"],
-                "englishSourcePackageJsonSha256": request["englishSourcePackageJsonSha256"],
-                "anchorManifestJsonSha256": request["anchorManifestSha256"],
-                "targetLanguagePolicyJsonSha256": request["translationPolicySha256"]}}},
-            "results": results}
+            "semanticIdentity": {"settings": settings}, "results": results}
 
 
 class BackTranslationQcTests(unittest.TestCase):
@@ -714,6 +714,47 @@ class BackTranslationQcTests(unittest.TestCase):
                 self.drive(receipt)
         self.assertEqual(self.fleet.calls, ["all"])
         self.assertEqual(len(subject.load_ledger(self.root / "state", subject.lineage(REQUEST))), 1)
+
+    def test_a_codex_receipt_without_qc_context_binds_through_policy_and_text(self):
+        # Codex and legacy API QC record no qcContext; the frozen policy hash binds source and anchor.
+        self.drive()
+        repaired = self.drive(qc_receipt(self.head(), {"g8": "intense -> amazing"}, context=False))
+        self.assertEqual((repaired["status"], self.fleet.calls), ("all_groups_passed", ["all", ["g8"]]))
+        other = qc_receipt(self.head(), {"g3": "x"}, context=False,
+                           request=dict(REQUEST, translationPolicySha256="e" * 64))
+        with self.assertRaisesRegex(ValueError, "another_lineage"):
+            self.drive(other)
+
+    def test_the_qc_repair_ladder_decides_and_a_spent_group_never_reopens(self):
+        self.drive()
+        head = self.head()
+        mixed = qc_receipt(head, {"g2": "a", "g8": "b"}, actions={"g8": "source_text_fallback"})
+        stopped = self.drive(mixed)
+        self.assertEqual(self.fleet.calls, ["all", ["g2"]])
+        self.assertEqual((stopped["status"], [(row["translationGroupId"], row["reasonCode"])
+                                               for row in stopped["stoppedGroups"]]),
+                         ("repair_stopped", [("g8", "qc_source_text_fallback")]))
+        self.assertEqual(stopped["gatesPassed"], [])
+        # Only a fallback: the reopen entry itself is terminal, nothing dispatches.
+        fleet = QcFleet(self, 16, [])
+        only = subject.drive(REQUEST, 16, fleet, self.root / "only", self.root / "state-only")
+        receipt = qc_receipt(Path(only["finalRunDirectory"]), {"g8": "b"}, actions={"g8": "source_text_fallback"})
+        terminal = subject.drive(REQUEST, 16, fleet, self.root / "only", self.root / "state-only",
+                                 back_translation_qc=receipt)
+        self.assertEqual((terminal["status"], fleet.calls), ("repair_stopped", ["all"]))
+        entries = subject.load_ledger(self.root / "state-only", subject.lineage(REQUEST))
+        self.assertEqual((entries[-1]["outcome"], entries[-1]["nextBrief"]), ("stopped", None))
+        # On a passed chain, another action or a QC that never finished is refused before dispatch.
+        fleet = QcFleet(self, 16, [])
+        fresh = subject.drive(REQUEST, 16, fleet, self.root / "fresh", self.root / "state-fresh")
+        keep = qc_receipt(Path(fresh["finalRunDirectory"]), {"g3": "c"}, actions={"g3": "keep"})
+        pending = qc_receipt(Path(fresh["finalRunDirectory"]), {"g3": "c"})
+        pending["results"][2]["status"] = "pending_back_translation"
+        for bad, message in ((keep, "action_not_a_revision"), (pending, "back_translation_qc_incomplete")):
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                subject.drive(REQUEST, 16, fleet, self.root / "fresh", self.root / "state-fresh",
+                              back_translation_qc=bad)
+        self.assertEqual(fleet.calls, ["all"])
 
     def test_qc_repairs_share_the_chain_spend_cap(self):
         # 16 groups: 32 initial calls and 3,200 tokens. The call minimum (4) and the token floor

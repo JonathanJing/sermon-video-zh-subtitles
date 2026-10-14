@@ -513,25 +513,30 @@ def repair_row(failure: dict, meaning_notes: dict | None = None) -> dict:
 QC_RECEIPT_SCHEMA = "sermon-target-text-auto-qc-v1"
 
 
-def back_translation_qc_failures(receipt: dict, request: dict, head_run: Path) -> list[dict]:
-    """The groups a text QC receipt failed, as repair failures bound to the chain head's caches.
+def back_translation_qc_failures(receipt: dict, request: dict, head_run: Path) -> tuple[list[dict], list[dict]]:
+    """``(repairs, fallbacks)``: the groups a text QC receipt failed, bound to the chain head's caches.
 
-    The receipt must be the QC of this lineage (locale, source, anchor and policy) and must
-    have judged exactly the text the head round's reviewer caches hold: QC of an older or
-    other candidate can never send a group back. Each failed group becomes one failure whose
-    codes come from the back-translation issue kinds (routing table ``QC_KIND_CODES``); a
-    failed group with no mappable issue (only a deterministic QC check) is refused, since this
-    loop has no repair instruction for it yet."""
+    The receipt must be the QC of this lineage and must have judged exactly the text the head
+    round's reviewer caches hold: QC of an older or other candidate can never send a group back.
+    Every QC backend records the locale and the frozen policy hash, and the policy's
+    ``sourceScope`` binds the source package and anchor, so those bind the lineage; a scoped
+    API receipt's ``qcContext`` is checked too when present (Codex and legacy API receipts have
+    none). The QC's own repair ladder decides what may happen to a failed group: only
+    ``revise_translation`` reopens it, with codes from the back-translation issue kinds
+    (``QC_KIND_CODES``); a group whose QC attempts are spent (``source_text_fallback``) is a
+    terminal stop, never another translation. A failed group with no mappable issue (only a
+    deterministic QC check), another action, or a QC still pending is refused."""
     _require(isinstance(receipt, dict) and receipt.get("schemaVersion") == QC_RECEIPT_SCHEMA
              and receipt.get("status") == "requires_repair" and receipt.get("humanApproval") is False,
              "back_translation_qc_receipt_not_a_failed_machine_qc")
-    context = ((receipt.get("semanticIdentity") or {}).get("settings") or {}).get("qcContext") or {}
+    context = ((receipt.get("semanticIdentity") or {}).get("settings") or {}).get("qcContext")
     _require(receipt.get("locale") == request["targetLocale"]
              and receipt.get("policyJsonSha256") == request["translationPolicySha256"]
-             and context.get("targetLocale") == request["targetLocale"]
-             and context.get("englishSourcePackageJsonSha256") == request["englishSourcePackageJsonSha256"]
-             and context.get("anchorManifestJsonSha256") == request["anchorManifestSha256"]
-             and context.get("targetLanguagePolicyJsonSha256") == request["translationPolicySha256"],
+             and (context is None or isinstance(context, dict)
+                  and context.get("targetLocale") == request["targetLocale"]
+                  and context.get("englishSourcePackageJsonSha256") == request["englishSourcePackageJsonSha256"]
+                  and context.get("anchorManifestJsonSha256") == request["anchorManifestSha256"]
+                  and context.get("targetLanguagePolicyJsonSha256") == request["translationPolicySha256"]),
              "back_translation_qc_receipt_belongs_to_another_lineage")
     caches = {}
     for path in sorted(Path(head_run).glob("group-*-sol.json")):
@@ -539,10 +544,11 @@ def back_translation_qc_failures(receipt: dict, request: dict, head_run: Path) -
         result = saved.get("result") if isinstance(saved, dict) else None
         if isinstance(result, dict) and isinstance(result.get("translationGroupId"), str):
             caches[result["translationGroupId"]] = (path, result)
-    failures = []
+    failures, fallbacks = [], []
     for row in receipt.get("results") or []:
         if row.get("status") == "pass":
             continue
+        _require(row.get("status") == "fail", "back_translation_qc_incomplete")
         group_id = row.get("groupId")
         _require(group_id in caches, "back_translation_qc_group_not_in_chain_head")
         path, result = caches[group_id]
@@ -553,6 +559,11 @@ def back_translation_qc_failures(receipt: dict, request: dict, head_run: Path) -
         text = "".join(utterances)
         _require(hashlib.sha256(text.encode("utf-8")).hexdigest() == row.get("targetTextSha256"),
                  "back_translation_qc_judged_another_text")
+        if row.get("nextAction") == "source_text_fallback":
+            fallbacks.append({"translationGroupId": group_id, "sourceUnitIds": row["sourceUnitIds"],
+                              "failureCodes": [], "reasonCode": "qc_source_text_fallback"})
+            continue
+        _require(row.get("nextAction") == "revise_translation", "back_translation_qc_action_not_a_revision")
         issues = ((row.get("backTranslation") or {}).get("majorIssues")) or []
         codes = sorted({QC_KIND_CODES[issue.get("kind")] for issue in issues if issue.get("kind") in QC_KIND_CODES})
         _require(bool(codes), "back_translation_qc_failure_has_no_repairable_issue")
@@ -567,8 +578,8 @@ def back_translation_qc_failures(receipt: dict, request: dict, head_run: Path) -
                          "backTranslationQc": {"receiptSha256": json_sha256(receipt),
                                                "targetTextSha256": row["targetTextSha256"],
                                                "failureCodes": codes}})
-    _require(bool(failures), "back_translation_qc_receipt_has_no_failed_group")
-    return failures
+    _require(bool(failures or fallbacks), "back_translation_qc_receipt_has_no_failed_group")
+    return failures, fallbacks
 
 
 def _reopen_for_qc(request: dict, entries: list[dict], value: dict, ledger_root: Path,
@@ -586,8 +597,11 @@ def _reopen_for_qc(request: dict, entries: list[dict], value: dict, ledger_root:
         return None
     last = entries[-1]
     _require(last["outcome"] == "passed", "back_translation_qc_reopen_requires_passed_chain")
-    failures = back_translation_qc_failures(receipt, request, Path(last["runDirectory"]))
-    rows, repairs, stopped = [], [], []
+    failures, fallbacks = back_translation_qc_failures(receipt, request, Path(last["runDirectory"]))
+    rows = [{"translationGroupId": row["translationGroupId"], "sourceUnitIds": row["sourceUnitIds"],
+             "failureCodes": [], "fingerprint": None, "repaired": False, "decision": row["reasonCode"]}
+            for row in fallbacks]
+    repairs, stopped = [], []
     for failure in failures:
         verdict, reason = decide(failure, unit_history(entries, failure["sourceUnitIds"]), value)
         rows.append({"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
@@ -612,10 +626,12 @@ def _reopen_for_qc(request: dict, entries: list[dict], value: dict, ledger_root:
         "outcome": "repairing" if repairs else "stopped",
         "stopped": [{"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
                      "failureCodes": failure["failureCodes"], "reasonCode": reason,
-                     "evidencePath": str(head)} for failure, reason in stopped],
+                     "evidencePath": str(head)} for failure, reason in stopped]
+                   + [{**row, "evidencePath": str(head)} for row in fallbacks],
         "nextBrief": next_brief,
         "reopenedBy": {"evidence": "back_translation_qc", "qcReceiptSha256": receipt_sha256,
-                       "groups": sorted(failure["translationGroupId"] for failure in failures)}})
+                       "groups": sorted([failure["translationGroupId"] for failure in failures]
+                                        + [row["translationGroupId"] for row in fallbacks])}})
 
 
 # ---------------------------------------------------------------- loop
