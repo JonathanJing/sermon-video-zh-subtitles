@@ -1,0 +1,27 @@
+FF....................                         [100%]
+=================================== FAILURES ===================================
+______ test_v2_citation_in_keep_group_does_not_reject_condensation_budget ______
+
+    def test_v2_citation_in_keep_group_does_not_reject_condensation_budget():
+        anchor, candidate, plan = inputs()
+        requested = condensation.requests(anchor, candidate, plan)["requests"]
+>       assert [r["translationGroupId"] for r in requested] == ["g1"]
+E       AssertionError: assert [] == ['g1']
+E
+E         Right contains one more item: 'g1'
+E         Use -v to get more diff
+
+tests/test_spoken_condensation_normalization.py:35: AssertionError
+____ test_v2_output_and_binding_recheck_normalized_length_and_legacy_is_raw ____
+
+    def test_v2_output_and_binding_recheck_normalized_length_and_legacy_is_raw():
+        anchor, candidate, plan = inputs()
+>       request = condensation.requests(anchor, candidate, plan)["requests"][0]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: list index out of range
+
+tests/test_spoken_condensation_normalization.py:51: IndexError
+=========================== short test summary info ============================
+FAILED tests/test_spoken_condensation_normalization.py::test_v2_citation_in_keep_group_does_not_reject_condensation_budget
+FAILED tests/test_spoken_condensation_normalization.py::test_v2_output_and_binding_recheck_normalized_length_and_legacy_is_raw
+2 failed, 20 passed, 26 subtests passed in 0.43s

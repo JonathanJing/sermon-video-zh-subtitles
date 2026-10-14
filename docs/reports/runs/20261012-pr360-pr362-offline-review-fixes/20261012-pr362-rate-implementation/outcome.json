@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "testsPassed": 53,
+  "subtestsPassed": 41,
+  "deselected": 53,
+  "modelCalls": 0,
+  "paidCalls": 0,
+  "scope": "rate-v2 six implementation dependencies mutation, missing/stale identity rejection, legacy raw rate compatibility, affected prediction/QC/condensation",
+  "initialRun": "Overbroad offline matrix interrupted after 78 passed and 41 subtests in96.67s to avoid unnecessary slow calibration; log retained."
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-weekly-poster-template-v2",
+  "runs": [
+    {
+      "label": "approved-template-code-validation",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sermon-poster/2026-10-11/approved-template-code-validation",
+      "skipped": {
+        ".json": 6,
+        ".png": 6
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "approved-template-code-validation",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1428,
+      "truncated": false,
+      "sha256": "533109f5906450fecf0015b5875bf3dff246b692a9a646d104ccd088c1cf19c1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "status": "pass",
+  "exitCode": 0,
+  "testedCommit": "5cbe68443d89e547769b5bd0a1cfa741aafbae36",
+  "tests": 693,
+  "subtests": 3,
+  "durationSeconds": 41.77,
+  "qcImplementationSha256": "8daff00357a597d704d262c8e734d2aa086e3104bc8bd557a6b83bc08399e6d3",
+  "scoringImplementationSha256": "4a122f5eb4d536563a713c28aafd91f8f79fe1a6925f5b77554d453a3e68d678",
+  "modelCalls": 0,
+  "deployment": "not_run",
+  "ci": "pending",
+  "formalRun": "requires recalibration and new waiver receipts under final code",
+  "scope": "Six targeted modules on final combined tree including backlog; not real-model calibration, HTTP or device acceptance",
+  "oldEvidence": "The prior real-model run used an unpushed local combination; cannot authorize final-code formal production"
+}

@@ -1,0 +1,550 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-clip-e2e-dev101-gate4-blocked",
+  "runs": [
+    {
+      "label": "clip-e2e-dev101-20261014-a",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-a",
+      "skipped": {
+        ".lock": 335,
+        ".json": 874,
+        ".jsonl": 5,
+        ".csv": 15
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/layer2-jobs/1461a377f63e451fc6df29258c721e407be873f442dc8612de381961a7d6f3a1/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "89cf81b4893a641b3df8685f4207bd901469f9dad39888fccbc7e7a43b051a50",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/layer2-jobs/2d1bdd14af03922d515b268ac47ae4324f36e99fcd0b4ac24205d974a31092e5/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "19f3aba8fb1180e98595c56c83fabe581e60e8ac0c760a135248e91c692bfcdb",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/layer2-jobs/8e2e62351c651403f4d8b5cf754f207aff4117a431c906021554a13240b1c936/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "1d6e405254643037e491ef3a9a057ee05f0fd3f908319db8a99d7c7e429aa4d4",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/layer2-jobs/c8eb29a063b96345720c9b6d45ed9dd49488ec3461715c115ff9a5fc07da2d78/worker.log",
+      "kind": "log",
+      "bytes": 4842,
+      "truncated": false,
+      "sha256": "a185c0cb25e5842971026fe01d8e690fd29e8d74bec33df9253f3842f02b2243",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/layer2-jobs/db8afe5eb3709463396918f8118cebc4dc170e810ec2125390cfc81ed4eaab1b/worker.log",
+      "kind": "log",
+      "bytes": 4842,
+      "truncated": false,
+      "sha256": "a185c0cb25e5842971026fe01d8e690fd29e8d74bec33df9253f3842f02b2243",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/text/es/accounting/operations.log",
+      "kind": "log",
+      "bytes": 99651,
+      "truncated": true,
+      "sha256": "cd216a4d64d482001b8556cb681a3f56071cee7964e2023323db6d2a81d2b6d3",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/text/es/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 271582,
+      "truncated": false,
+      "sha256": "0b99148118a527de9a249ac33db6778d99255750baabd8c2104946e11c94d1a1",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/text/es/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1352,
+      "truncated": false,
+      "sha256": "0a3f2959295514046357dd68079e4bf352e4bfdb0a50988a46c5a0fe0565afa7",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/text/ko/accounting/operations.log",
+      "kind": "log",
+      "bytes": 99669,
+      "truncated": true,
+      "sha256": "0f2225b437212023f06d380405f9950612ab9889899ba434aeec2fd8408be091",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/text/ko/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 271652,
+      "truncated": false,
+      "sha256": "02c9c1b4700d95d250864ddd476d54098619c762d4dade093ff0796a679d2272",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/text/ko/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1352,
+      "truncated": false,
+      "sha256": "a2264c09e6e58bf054463fb99b4b644c8831f1208a2a9a51ca99b8cc2057e5e3",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/text/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 100994,
+      "truncated": true,
+      "sha256": "ac41aa0d79a10e66b7637d4f507f8ed50bb4dde1e7fd20eb04e956c5c5475cc9",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/text/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 272859,
+      "truncated": false,
+      "sha256": "9c09b0e75716fc2fb07e853e0932eadb51ac9d6b4ab52962ff4c6c0337fd8d68",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2/text/zh-Hans/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1362,
+      "truncated": false,
+      "sha256": "286250853082a62cf1531cdd1a79e59541e8189b70c76abfd2c10021608b4466",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2-ko-r1/text/ko/accounting/operations.log",
+      "kind": "log",
+      "bytes": 5938,
+      "truncated": false,
+      "sha256": "975d459838c6458a8a44c15497fb4596d2a5a37f1c575bef7753a83b86d46dcd",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2-ko-r1/text/ko/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 40295,
+      "truncated": false,
+      "sha256": "d8ca9442c5eb2a922491f0d92401b2c5f0ba693733d0d10486e6125a485a1db7",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2-zh-Hans-r1/text/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 5968,
+      "truncated": false,
+      "sha256": "71b7a6ca005f4fd75adfada956d10be1353b66451720c585730b3d5e2d333769",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "l2-zh-Hans-r1/text/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 40343,
+      "truncated": false,
+      "sha256": "f0c37d9ab53d8c2e67c6fb04afe51fb01549e17f84cf4e40e7ac6d717d5d7e46",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/check-layer2.log",
+      "kind": "log",
+      "bytes": 2495,
+      "truncated": false,
+      "sha256": "561a58e976d3146a09863dde8c42a996874a7b5a4154be2c1c04c07df4e8555a",
+      "redactions": {
+        "email": 1,
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/check-qc-es-out.log",
+      "kind": "log",
+      "bytes": 2178,
+      "truncated": false,
+      "sha256": "4e3e87574cada339f0acc0eb158a0dba7d9fad0db9baac9a5152c6994eb87aa5",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/check-qc-ko-out.log",
+      "kind": "log",
+      "bytes": 2177,
+      "truncated": false,
+      "sha256": "f1f96c6309fa437dda6a291c4dff53c7f34b6fc697ae4152f6851a3a35d4e664",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/check-qc-zh-Hans-out.log",
+      "kind": "log",
+      "bytes": 2208,
+      "truncated": false,
+      "sha256": "cc8d026b7a18f37b16a258ab5739948091825cc4d721f7cc030e897e31df1dad",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/inputs.log",
+      "kind": "log",
+      "bytes": 1322,
+      "truncated": false,
+      "sha256": "cac72089b459154f865d11d548a9fb618143f558eaaacef7e62428b2d8f4fefd",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/layer2-ko-r1.log",
+      "kind": "log",
+      "bytes": 2134,
+      "truncated": false,
+      "sha256": "6b9f603863c61a2866df8b445420b14ebabb3b8b598c0aca896b2c3827c1ac34",
+      "redactions": {
+        "home_dir": 16
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/layer2-zh-Hans-r1.log",
+      "kind": "log",
+      "bytes": 2174,
+      "truncated": false,
+      "sha256": "5ee96c2251e601fd925a092636ba927fe660fd3e2d38624c46561bdce132cd89",
+      "redactions": {
+        "home_dir": 16
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/layer2.log",
+      "kind": "log",
+      "bytes": 2120,
+      "truncated": false,
+      "sha256": "331ef8a6f5cf30297ca923f108376c43db70d23ee25712ebbd84857f26d75524",
+      "redactions": {
+        "home_dir": 16
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/plan-layer2-ko-r1.log",
+      "kind": "log",
+      "bytes": 1404,
+      "truncated": false,
+      "sha256": "b4ae99dfa92d35398acdca8888e7b71c7a4f9c837af5df7b315872d72b3cdcb6",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/plan-layer2-zh-Hans-r1.log",
+      "kind": "log",
+      "bytes": 1427,
+      "truncated": false,
+      "sha256": "e9fa5e6d2a7a551b97f95a6deb4bba61fe5a1c5d669ba71b8d5d20e1fcaa137a",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/plan-layer2.log",
+      "kind": "log",
+      "bytes": 1385,
+      "truncated": false,
+      "sha256": "13244046f76d66fd20dfd1c62bc2ccfe81bf3b369d0697b1a6736598f9b1e4e4",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/plan-qc-es.log",
+      "kind": "log",
+      "bytes": 1377,
+      "truncated": false,
+      "sha256": "0f595aa9a738db6ef5c22527b35271d5c7efca6f53e497edafc3f56501747d9f",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/plan-qc-ko.log",
+      "kind": "log",
+      "bytes": 1376,
+      "truncated": false,
+      "sha256": "9b189fab46c011855d416ed320eaa4d074e439d0401e31bfeadfdc47db41c357",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/plan-qc-zh-Hans.log",
+      "kind": "log",
+      "bytes": 1399,
+      "truncated": false,
+      "sha256": "0fbcab29e9b727402d1f7785ecd8cf9fc3ef43de1e10aa560f9f77f52635df68",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/route-probe.log",
+      "kind": "log",
+      "bytes": 714,
+      "truncated": false,
+      "sha256": "550f0db9e97fad4c25f0663aef3d7a2f680dcff4722946a5fbcb2fc44b44ce93",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/text-qc.es.out.log",
+      "kind": "log",
+      "bytes": 1981,
+      "truncated": false,
+      "sha256": "106d5ce451a3148244be9f09aed4ce0bd385449853c2cbf4460de7a691d4f42e",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/text-qc.ko.out.log",
+      "kind": "log",
+      "bytes": 1846,
+      "truncated": false,
+      "sha256": "c37ff676f0039b2f1183e01bf2e39fffdd269c4050cc05b526c5599a4f817ced",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/text-qc.zh-Hans.out.log",
+      "kind": "log",
+      "bytes": 1891,
+      "truncated": false,
+      "sha256": "96fc14debe16520a9d1c3a9cb2a2f92302ecba4a4897a48f6f954ffd753b8c0b",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "logs/timeline-map.log",
+      "kind": "log",
+      "bytes": 1058,
+      "truncated": false,
+      "sha256": "b24daebd36415a187da123b2ec635f11e2b7e4a75b6fcc36f53a6f6669f640a4",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "plans/qc-es/qc-es/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 211070,
+      "truncated": false,
+      "source": "plans/qc-es/qc-es/.api-budget/source-budget.json",
+      "sha256": "7c64298bd588663a0c0e98bbb3229e96bc037b040c0cf00e52901e18c99160e4",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "plans/qc-ko/qc-ko/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 31075,
+      "truncated": false,
+      "source": "plans/qc-ko/qc-ko/.api-budget/source-budget.json",
+      "sha256": "cb0fbc350c59db2793b17f3f1e758a25cb0025aacfb30c7a4d87388005c595df",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "plans/qc-zh-Hans/qc-zh-Hans/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 31073,
+      "truncated": false,
+      "source": "plans/qc-zh-Hans/qc-zh-Hans/.api-budget/source-budget.json",
+      "sha256": "98ef42e607229b2e868000bfced3553f2a8eba25a521d671b8adb5ae7cc8837f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 3641,
+      "truncated": false,
+      "sha256": "aa11972a7f23f85c1c9a4cdd49dfd6eca69baa9bd7291e53e330b7ea833461b0",
+      "redactions": {
+        "home_dir": 13
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "textqc-es/out/es/preflight.json",
+      "kind": "whole",
+      "bytes": 1373,
+      "truncated": false,
+      "sha256": "e82a2ddcc5bd707bddf1999544fef131c08bd6b514a341e961b1e1949e6a9b9e",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "textqc-es/out/summary.json",
+      "kind": "whole",
+      "bytes": 3253,
+      "truncated": false,
+      "sha256": "daa060aa1041186b62d96da3bb16bd056c270fc8e87d0845688d2b5aca765d3d",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "textqc-es/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 171,
+      "truncated": false,
+      "sha256": "6cb32485777765d08231d236524928b42f5b8f01967587cad9509733e4dfc92b",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "textqc-ko/out/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 1373,
+      "truncated": false,
+      "sha256": "33322bf2e52538f6f48e5f0e3547626a0d45c26de976ed967d267b9b284a0b8a",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "textqc-ko/out/summary.json",
+      "kind": "whole",
+      "bytes": 2291,
+      "truncated": false,
+      "sha256": "22634f71c7411e53b8864347c91a5891fc070c68eb5e9dff6a109ff91f8311f9",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "textqc-ko/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 89,
+      "truncated": false,
+      "sha256": "a2a08f3f932f8741b1bb6bc00cf90741683c981f5ae9b96452bd77a414a22ceb",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "textqc-zh-Hans/out/summary.json",
+      "kind": "whole",
+      "bytes": 2411,
+      "truncated": false,
+      "sha256": "b378faad09627b979a22f2be3b3e5fc9868ca95a9378d264a49cb90048e52573",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "textqc-zh-Hans/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 99,
+      "truncated": false,
+      "sha256": "c8240c0fa2097f8c1563b2efb8107a904b15c6ee995013c3cd5f6aa5ff250f96",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "textqc-zh-Hans/out/zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 1430,
+      "truncated": false,
+      "sha256": "c9667c8f204013c427fd08f2c119b727670f558150f44e1572e40b52d8394153",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-e2e-dev101-20261014-a",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 478,
+      "truncated": false,
+      "sha256": "8d465855ec06d813d0b35b27656f39796f9a2f64ce11cb4b4c70be13d617412a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

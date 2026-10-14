@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-field03-independent-checkpoints-v7",
+  "runs": [
+    {
+      "label": "run-v7-pr391-independent-checkpoints",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/field-benchmark/20261011-venue-mid-back/run-v7-pr391-independent-checkpoints",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "run-v7-pr391-independent-checkpoints",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 992,
+      "truncated": false,
+      "sha256": "4e5b88868421034c5da7529fbefa25cb147adbdd04661275a0f550be4cc56afc",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
