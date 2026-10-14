@@ -1,0 +1,230 @@
+{
+  "rows": [
+    {
+      "case": "f01-plugin-identity",
+      "sessionId": "sess_0ae7e54d7114d960006ac725d5bc608196a67f8836fe88e9a9",
+      "status": "completed",
+      "toolCalls": 8,
+      "usage": null,
+      "elapsedSeconds": 50.51,
+      "report": {
+        "alternative_category": "identity_mismatch",
+        "alternative_cause": "未发现证据支持更早或更合适的替代原因；现有记录指向诊断预检中的插件身份不匹配。",
+        "counter_evidence": [],
+        "reason": "交叉核对后，没有发现能推翻该诊断的证据。fixture-manifest.json 与 current-plugin.json 对同一插件路径记录了不同的实现 SHA-256；layer2.log 明确显示加载 fixture 后开始检查 frozen identities，并在 load_fixture 中抛出 “Diagnostic plugin identity changed”。outcome.json 记录同一 ValueError 和非零退出码。git-log.txt 显示该插件文件在冻结提交之后被修改，时间顺序与陈旧 fixture 的解释一致。日志证明失败发生在身份预检，因此没有证据表明 TTS、ASR 或翻译执行阶段开始或失败。提交记录本身不能独立证明哈希计算过程，但与两个身份记录及明确的异常信息相互印证。",
+        "summary_zh": "诊断成立：运行在预检阶段发现 fixture 中冻结的 zh_hans.py 实现哈希与当前插件记录的哈希不一致，随后因 “Diagnostic plugin identity changed” 退出。日志没有显示 TTS、ASR 或翻译执行失败。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": true,
+        "refuterRight": true,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": false
+      }
+    },
+    {
+      "case": "f02-preempt-authorization",
+      "sessionId": "sess_00e6ded75fccbd9a006ac726083ab4819792459ddf9b297c25",
+      "status": "completed",
+      "toolCalls": 7,
+      "usage": null,
+      "elapsedSeconds": 43.68,
+      "report": {
+        "alternative_category": "other",
+        "alternative_cause": "No better-supported alternative cause is present in the evidence.",
+        "counter_evidence": [
+          {
+            "file": "spark-session.log",
+            "quote": "2026-10-08T01:25:02Z [begin] llama-server processingSlots=0 queue=0"
+          }
+        ],
+        "reason": "The recorded command selects --mode preempt and does not include --allow-interrupted-restart. The help explicitly says that flag is required with preempt. The log then reports the exact authorization error, and outcome.json records exit code 2. The idle slots and queue are the only apparent counterpoint, but they do not satisfy the CLI's explicit authorization requirement; the same log proceeds to say preempt would stop four services. No earlier or competing failure appears in the timeline.",
+        "summary_zh": "结论维持：证据支持根因是使用 preempt 模式时遗漏了必需的 --allow-interrupted-restart。命令记录没有该标志，帮助文本明确要求提供该标志，日志随后报出 interrupted_restart_authorization_required，结果文件记录退出码 2。虽然日志显示 processingSlots=0、queue=0，但这不能替代明确授权；也没有发现更早或更有力的其他故障原因。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": true,
+        "refuterRight": true,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": false
+      }
+    },
+    {
+      "case": "f03-relative-out",
+      "sessionId": "sess_02b2c8afa4c9363a006ac72633e7bc8197b691434c5423ca12",
+      "status": "completed",
+      "toolCalls": 10,
+      "usage": null,
+      "elapsedSeconds": 60.31,
+      "report": {
+        "alternative_category": "path_handling",
+        "alternative_cause": "No better-supported alternative cause. The recorded exception directly identifies a relative staged path being compared with the absolute ROOT path.",
+        "counter_evidence": [],
+        "reason": "The evidence supports the diagnosis. command.txt supplies relative --out and --media paths; execute.log records preflight readiness at 01:30:08, hold creation at 01:30:10, then staging at 01:30:11 failing at (material / 'source.mp4').relative_to(ROOT) because the relative staged path is not under the absolute ROOT path. outcome.json records the same ValueError and exit code 1. The hold predates the exception, while gpuProcesses=0 is consistent with the run stopping before GPU work; neither indicates an earlier failure. Resolving paths before relative_to addresses the observed exception. Validating before creating the hold would additionally avoid leaving a held job on this failure path.",
+        "summary_zh": "判定维持。证据显示命令使用相对路径，执行在素材暂存阶段将相对的 source.mp4 路径传给 relative_to(ROOT)，而 ROOT 是绝对路径，因此抛出 ValueError 并以状态码 1 结束。时间线显示任务 hold 在异常前创建；gpuProcesses 为 0 与失败发生在 GPU 工作开始前相符，并未揭示更早的故障。将相关路径解析为绝对路径后再调用 relative_to 可修复所见异常；在创建 hold 前验证路径还能避免留下未运行的 hold。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": true,
+        "refuterRight": true,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": false
+      }
+    },
+    {
+      "case": "f04-missing-terminology",
+      "sessionId": "sess_066407ed84a3bafe006ac726705fc48193a1cb2090ae51a372",
+      "status": "completed",
+      "toolCalls": 9,
+      "usage": null,
+      "elapsedSeconds": 52.9,
+      "report": {
+        "alternative_category": "insufficient_evidence",
+        "alternative_cause": "No earlier or better-supported alternative cause appears in the available evidence.",
+        "counter_evidence": [],
+        "reason": "The remote log directly records input validation failing because /stage/repo/docs/series-terminology.zh.md was not found, followed immediately by exit 3. The staging manifest identifies the manual include list and contains scripts/, schemas/, and config/, with no docs/ entry. outcome.json independently records the same remote input-validation failure. The manifest does not prove the exact final staged filesystem by itself, but the logged missing path establishes the proximate cause, and no evidence supports an earlier competing failure.",
+        "summary_zh": "结论维持：远程 TTS 在输入校验时因找不到 /stage/repo/docs/series-terminology.zh.md 而退出 3。手动暂存清单没有包含 docs/，与日志中的缺失文件相吻合。清单本身不能单独证明最终暂存目录的完整状态，但日志直接确认该文件缺失；现有证据没有显示更早或更有力的其他故障原因。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": true,
+        "refuterRight": true,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": false
+      }
+    },
+    {
+      "case": "f05-asr-symlink-mount",
+      "sessionId": "sess_0bf6e06206317ef9006ac726a533d4819383f28f7bc5590a2b",
+      "status": "completed",
+      "toolCalls": 7,
+      "usage": null,
+      "elapsedSeconds": 117.63,
+      "report": {
+        "alternative_category": "insufficient_evidence",
+        "alternative_cause": "No better-supported alternative. The evidence does not independently verify that the referenced blob exists in the host repository, so the precise missing-target mechanism is highly plausible rather than directly confirmed.",
+        "counter_evidence": [],
+        "reason": "The mounted source is only the snapshots/3c1e9a7 directory, while the listing shows model.safetensors as a relative symlink to ../../blobs/9f2e41.... Within the container that relative target is outside the mounted snapshot and is not supplied by this mount. The ASR log then reports the same model path as a symlink with exists=False, and the outcome records local_model_missing and exit code 1. Timeline evidence shows no earlier logged failure: the process starts, checks the model, and fails at that check. This supports path handling as the direct cause. The logs do not verify whether the blob exists on the host, so the report's 0.98 confidence is stronger than the available evidence warrants; this limitation does not establish a competing cause.",
+        "summary_zh": "判定：维持路径处理诊断。Docker 只挂载 snapshot 目录，而 model.safetensors 指向该目录之外的相对路径；容器内检查随即报告该路径是断链（exists=False），运行结果也记录 local_model_missing 和退出码 1。时间线上没有更早的失败记录。证据未直接确认宿主机上的 blob 是否存在，因此具体断链机制很有说服力，但 0.98 的置信度略高于材料所能独立证明的程度。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": false,
+        "refuterRight": false,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": true
+      }
+    },
+    {
+      "case": "f06-zero-inference-seconds",
+      "sessionId": "sess_03291d88ec7593c4006ac7271ab9588193befcfa8ed6caf5c1",
+      "status": "completed",
+      "toolCalls": 12,
+      "usage": null,
+      "elapsedSeconds": 70.79,
+      "report": {
+        "alternative_category": "insufficient_evidence",
+        "alternative_cause": "The records do not establish a specific cause. The pool generation total (31.6 s for 13 segments) is already less than batch-000's reported inference time (33.24 s for 8 segments), so these fields cannot safely be treated as directly additive or equivalent. No per-round timing records or metric definitions explain batch-001's zero.",
+        "counter_evidence": [
+          {
+            "file": "replica-pool-summary.json",
+            "quote": "\"generationSeconds\": 31.6,\n  \"segments\": 13"
+          },
+          {
+            "file": "tts-batch-000-receipt.json",
+            "quote": "\"segments\": 8,\n  \"inferenceSeconds\": 33.24"
+          }
+        ],
+        "reason": "I checked all five supplied evidence files and searched for round, batch-001, generationSeconds, and inferenceSeconds. There are no per-round or per-replica timing records and no metric definitions. The pool's 31.6 seconds is less than batch-000's 33.24 seconds despite the pool covering 13 segments, which further cautions against interpreting the totals as a shared additive metric. This does not disprove the diagnosis; it supports its conclusion that the reason for batch-001's zero is undetermined. The question mentions both rounds, but the evidence contains no separate round records to verify that claim.",
+        "summary_zh": "未能推翻原诊断。现有文件没有逐轮计时记录或指标定义，无法确定 batch-001 的 inferenceSeconds 为何是 0.0。另一个疑点是池汇总的 31.6 秒低于 batch-000 的 33.24 秒，因此不能把这些字段直接视为同一口径的可加总时间。结论仍是证据不足。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": true,
+        "refuterRight": true,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": false
+      }
+    },
+    {
+      "case": "f07-services-not-yet-restored",
+      "sessionId": "sess_0058b4b90e781ca0006ac7276182248196affa2b5540dddbec",
+      "status": "completed",
+      "toolCalls": 8,
+      "usage": null,
+      "elapsedSeconds": 52.92,
+      "report": {
+        "alternative_category": "not_a_failure",
+        "alternative_cause": "No better-supported alternative cause appears in the evidence. The inactive snapshot was taken immediately after restoration began; the later wrapper health check and independent service check show successful recovery.",
+        "counter_evidence": [
+          {
+            "file": "services-check-1.txt",
+            "quote": "2026-10-08T02:47:59Z $ systemctl is-active spark-api spark-agent collector llama-server\ninactive\ninactive\ninactive\ninactive"
+          }
+        ],
+        "reason": "The only evidence of inactive services is at 02:47:59, one second after round-wrapper.log records restoration starting at 02:47:58. At 02:48:39 the wrapper reports all four services active and /v1/models healthy, then reports finish_exit=0. The independent 02:49:10 check also reports all four active. outcome.json records status succeeded and exitCode 0 for the command. These later checks support the diagnosis that the earlier snapshot was taken during restoration; the evidence does not show a failed recovery.",
+        "summary_zh": "结论维持：证据支持“恢复过程中进行的中间状态检查”，没有显示恢复最终失败。02:47:59 的检查发现四项服务均未激活，但它发生在包装器于 02:47:58 启动恢复之后仅一秒。02:48:39 包装器报告四项服务均已激活且 /v1/models 健康，02:49:10 的独立检查也确认四项服务均已激活。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": true,
+        "refuterRight": true,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": false
+      }
+    },
+    {
+      "case": "f08-monitor-bad-substitution",
+      "sessionId": "sess_0a21b23e80c5fedb006ac727967aec81959ab5de6815b8255e",
+      "status": "completed",
+      "toolCalls": 6,
+      "usage": null,
+      "elapsedSeconds": 39.45,
+      "report": {
+        "alternative_category": "shell_incompatibility",
+        "alternative_cause": "No better-supported alternative appears in the evidence. The monitor command uses Bash-style ${!name} under /bin/zsh, which matches the logged bad substitution and exit status 1.",
+        "counter_evidence": [
+          {
+            "file": "outcome.json",
+            "quote": "\"command\": \"monitor\""
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"endedAt\": \"2026-10-08T02:38:50Z\""
+          }
+        ],
+        "reason": "The command file explicitly identifies /bin/zsh -c and contains ${!name} on the line evaluated as line 2. monitor.log records “zsh:2: bad substitution” followed by “monitor exited 1,” and outcome.json independently records that the monitor failed with exitCode 1. These mutually consistent records support shell syntax incompatibility as the monitor’s failure cause. They do not establish whether sermon processing succeeded or failed: the outcome is specifically for command “monitor,” and no pipeline status is present.",
+        "summary_zh": "结论：维持原诊断。监控命令由 /bin/zsh 执行，却使用 Bash 风格的 ${!name} 间接展开；日志报告第 2 行出现 “bad substitution”，随后监控以状态码 1 退出。现有证据仅说明监控失败，无法判断讲道处理流水线本身是否成功。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": true,
+        "refuterRight": true,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": false
+      }
+    }
+  ],
+  "summary": {
+    "sessions": 8,
+    "refuterRight": 7,
+    "falseRefutations": 0,
+    "missedWrongDiagnoses": 1
+  }
+}

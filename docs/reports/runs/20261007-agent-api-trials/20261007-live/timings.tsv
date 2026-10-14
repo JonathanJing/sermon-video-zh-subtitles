@@ -1,0 +1,6 @@
+stage	result	seconds
+timeline	pass	0.01
+diagnose	pass	725.38
+refute	pass	488.22
+preflight	pass	265.68
+risk	pass	0.0

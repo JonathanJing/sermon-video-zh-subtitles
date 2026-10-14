@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "codex-layer2-test",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-09T01:38:05.319015+00:00",
+  "endedAt": "2026-10-09T01:38:06.364579+00:00",
+  "error": {
+    "type": "ValueError",
+    "message": "Partial repair failed cache has different group identity: fresh-g013"
+  }
+}

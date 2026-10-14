@@ -433,33 +433,71 @@ class ApiJudge:
     returned response replays for free. An unknown outcome stops new dispatch.
     """
 
-    def __init__(self, authorization: Path, *, reasoning: str = "medium", cache_namespace: str = CACHE_NAMESPACE):
+    def __init__(self, authorization: Path, *, reasoning: str = "medium", cache_namespace: str = CACHE_NAMESPACE,
+                 qc_paths: dict | None = None, locale: str | None = None):
         from scripts import sermon_source_budget as budget
         from scripts import sermon_provider_limits as limits
         from scripts.sermon_openai_runtime import selected_route
+        authorization_sha = file_sha256(authorization)
         value = read(authorization)
         receipt = authorization.parent / value["approvalReceipt"]
         approval = read(receipt)
-        if not (value.get("schemaVersion") == "sermon-machine-qc-api-budget-authorization-v1"
-                and value["authority"]["approvalSha256"] == file_sha256(receipt)
-                and approval.get("humanApproval") is True and approval.get("decision") == "approved"
-                and approval.get("binding") == {"budgetRoot": value["budgetRoot"], **value["authority"]["bounds"]}):
-            raise ValueError("Machine QC API budget authorization is not bound to its approval")
         route = selected_route()
+        from scripts import machine_qc_budget_authorization as qc_authorization
+        scoped = value.get("schemaVersion") == qc_authorization.AUTH_V4
+        context = None
+        if scoped:
+            if route is None:
+                raise ValueError("Machine QC API calls need the dev or prod OpenAI launcher")
+            if qc_paths is None or locale is None:
+                raise ValueError("Scoped QC authorization requires resolved source/anchor/policy paths and locale")
+            context = qc_authorization.context_from_paths(qc_paths, locale, route["environment"], route=route, credential_sha256=qc_authorization.credential_fingerprint(os.environ.get("OPENAI_API_KEY")))
+            qc_authorization.validate(authorization, context=context, require_scope=True)
+        version=value.get('schemaVersion')
+        legacy=version=='sermon-machine-qc-api-budget-authorization-v1'
+        reuse=version=='sermon-machine-qc-api-budget-authorization-v2'
+        reuse_roots=value.get('reuseBudgetRoots',[])
+        binding={'budgetRoot':value['budgetRoot'],**value['authority']['bounds']}
+        if reuse:binding['reuseBudgetRoots']=reuse_roots
+        if not scoped and not ((legacy or reuse)
+                and set(value)=={'schemaVersion','budgetRoot','authority','approvalReceipt'} | ({'reuseBudgetRoots'} if reuse else set())
+                and set(value['authority'])=={'approvalSha256','bounds','requestLimits'}
+                and set(value['authority']['bounds'])=={'globalBounds','requestLimits'}
+                and Path(value['budgetRoot']).is_absolute()
+                and value['authority']['requestLimits']==value['authority']['bounds']['requestLimits']
+                and isinstance(reuse_roots,list) and (not reuse or bool(reuse_roots))
+                and all(isinstance(root,str) and Path(root).is_absolute() for root in reuse_roots)
+                and len(set(reuse_roots))==len(reuse_roots)
+                and value['authority']['approvalSha256']==file_sha256(receipt)
+                and ((legacy and ('schemaVersion' not in approval or approval['schemaVersion']=='sermon-machine-qc-api-budget-approval-v1'))
+                     or (reuse and approval.get('schemaVersion')=='sermon-machine-qc-api-budget-approval-v2'
+                         and set(approval)=={'schemaVersion','humanApproval','decision','binding'}))
+                and approval.get('humanApproval') is True and approval.get('decision')=='approved'
+                and approval.get('binding')==binding):
+            raise ValueError('Machine QC API budget authorization is not bound to its approval')
         if route is None:
             raise ValueError("Machine QC API calls need the dev or prod OpenAI launcher")
+        route=dict(route)
         self.limits = limits
         self.request_limits = value["authority"]["requestLimits"]
-        # API-only calls use no Spark compute: the process verifies the exclusive session
-        # before its first call and again each minute, instead of a hold per request.
-        from scripts.production_spark_admission import require_session
-        self._session_checked, self._session_lock = 0.0, threading.Lock()
-
+        admitted_key=os.environ["OPENAI_API_KEY"]
+        credential_sha=hashlib.sha256(admitted_key.encode()).hexdigest()
+        # API-only calls use no Spark compute and take no Spark session (2026-10-13).
         def verify():
-            with self._session_lock:
-                if time.monotonic() - self._session_checked > 60:
-                    require_session()
-                    self._session_checked = time.monotonic()
+            try:
+                same = (file_sha256(authorization) == authorization_sha
+                        and file_sha256(receipt) == value["authority"]["approvalSha256"]
+                        and selected_route() == route
+                        and hashlib.sha256(os.environ.get("OPENAI_API_KEY","").encode()).hexdigest()==credential_sha
+                        and getattr(self,"api_key",admitted_key)==admitted_key)
+            except OSError as error:
+                raise ValueError("Machine QC API budget authorization changed after admission") from error
+            if not same:
+                raise ValueError("Machine QC API budget authorization changed after admission")
+            if scoped:
+                actual = qc_authorization.context_from_paths(qc_paths, locale, route["environment"], route=route, credential_sha256=qc_authorization.credential_fingerprint(os.environ.get("OPENAI_API_KEY")))
+                qc_authorization.validate(authorization, context=actual, require_scope=True)
+        self._verify=verify
         verify()
         wall = self.request_limits["wallTimeMs"] / 1000
 
@@ -468,29 +506,39 @@ class ApiJudge:
             import urllib.request
             call = urllib.request.Request(endpoint, data=request, method="POST",
                                           headers={"Authorization": "Bearer " + api_key, "Content-Type": content_type})
-            # 429 and 5xx come back before any completion is produced; retry them with backoff.
-            for attempt in range(5):
-                try:
-                    with urllib.request.urlopen(call, timeout=wall) as response:
-                        return json.loads(response.read())
-                except urllib.error.HTTPError as error:
-                    if error.code != 429 and error.code < 500 or attempt == 4:
-                        raise
-                    time.sleep(2 ** attempt)
+            from scripts.sermon_openai_runtime import project_headers
+            for name, header in project_headers(api_key).items():
+                call.add_header(name, header)
+            # One durable reservation authorizes one provider attempt, including
+            # secondary audio. Unknown errors are reconciled, never auto-retried.
+            from scripts import sermon_transcription_request as transcription
+            is_audio = endpoint.endswith('/audio/transcriptions')
+            timeout = transcription.WALL_TIME_MS / 1000 if is_audio else wall
+            with urllib.request.urlopen(call, timeout=timeout) as response:
+                raw = response.read(transcription.MAX_RESPONSE_BYTES + 1) if is_audio else response.read()
+                if is_audio and len(raw) > transcription.MAX_RESPONSE_BYTES:
+                    raise ValueError("secondary_asr_response_size_exceeded")
+                return json.loads(raw)
         self.ledger = budget.SourceBudget(value["budgetRoot"], {
             "approvalSha256": value["authority"]["approvalSha256"],
             "globalBounds": value["authority"]["bounds"]["globalBounds"], "requestLimits": self.request_limits},
-            verify=verify, transport=transport, max_concurrent=16)
-        self.api_key = os.environ["OPENAI_API_KEY"]
+            verify=verify, transport=transport, max_concurrent=16, reuse_roots=reuse_roots)
+        self.ledger.qc_context = context
+        self.api_key = admitted_key
         self.reasoning = reasoning
         self.identity = {"backend": "openai_api", "model": "gpt-6.1-sol", "modelRevision": "openai-api",
                          "cacheNamespace": cache_namespace,
                          "settings": {"reasoningEffort": reasoning, "serviceTier": self.request_limits["serviceTier"],
                                       "promptFormat": "system-user-json-v1",
                                       "maxCompletionTokens": self.request_limits["maxCompletionTokens"],
-                                      "route": {k: route.get(k) for k in ("environment", "credentialAlias")},
+                                      "route": {k: route.get(k) for k in ("environment", "credentialAlias", "projectId")},
+                                      "credentialSha256":credential_sha,
                                       "transport": {"adapterSha256": file_sha256(Path(__file__)),
-                                                    "sessionCheck": "per_process_60s"}}}
+                                                    "sessionCheck": "none_api_only"}}}
+
+        if scoped:
+            self.identity["settings"]["qcContext"] = context
+            self.identity["settings"]["authorizationHelperSha256"] = file_sha256(Path(qc_authorization.__file__))
 
     def key(self, role, system, user, schema) -> str:
         return json_sha256({"role": role, "system": system, "user": user, "schema": schema,
@@ -508,8 +556,12 @@ class ApiJudge:
         return "judge." + self.key(role, system, user, schema)
 
     def cached(self, role, system, user, schema):
+        self._verify()
         payload = self._payload(role, system, user, schema)
-        return self(role, system, user, schema) if self.ledger.returned(self._operation(role, system, user, schema), payload) else None
+        return self(role, system, user, schema) if self.ledger.returned(self._operation(role, system, user, schema), self._request_identity(payload)) else None
+
+    def _request_identity(self,payload):
+        return {**payload,'sourceExecutionIdentity':self.identity}
 
     def uncertain(self) -> list[str]:
         path = Path(self.ledger.root) / "source-budget.json"
@@ -519,6 +571,7 @@ class ApiJudge:
         return sorted(key for key, row in rows.items() if row.get("status") == "started_response_unconfirmed")
 
     def __call__(self, role, system, user, schema):
+        self._verify()
         import jsonschema
         payload = self._payload(role, system, user, schema)
         inputs = self.limits._input_upper_bound(payload)
@@ -526,7 +579,7 @@ class ApiJudge:
             raise ValueError("machine_qc_api_input_bound_exceeded")
         bounds = {"requests": 1, "wallTimeMs": self.request_limits["wallTimeMs"],
                   "costMicrousd": self.limits._cost(payload["model"], inputs, self.request_limits["maxCompletionTokens"])}
-        response = self.ledger.call(operation=self._operation(role, system, user, schema), identity=payload, bounds=bounds,
+        response = self.ledger.call(operation=self._operation(role, system, user, schema), identity=self._request_identity(payload), bounds=bounds,
                                     request=json.dumps(payload, ensure_ascii=False).encode(), api_key=self.api_key,
                                     content_type="application/json", endpoint="https://api.openai.com/v1/chat/completions")
         choice = (response.get("choices") or [{}])[0]
@@ -775,6 +828,18 @@ def still_valid(row: dict) -> bool:
     return True
 
 
+def api_judge_for_resolved(authorization: Path, resolved: dict, *, requested_locales=None):
+    """A scoped approval names one locale; never silently apply it to a three-locale default."""
+    from scripts import machine_qc_budget_authorization as qc_authorization
+    value = read(authorization)
+    if value.get("schemaVersion") == qc_authorization.AUTH_V4:
+        if len(resolved) != 1 or set(requested_locales or resolved) != {value["qcContext"]["targetLocale"]}:
+            raise ValueError("Scoped QC authorization requires exactly one requested locale")
+        locale, paths = next(iter(resolved.items()))
+        return ApiJudge(authorization, qc_paths=paths, locale=locale)
+    return ApiJudge(authorization)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run-dir", type=Path, default=ROOT / "artifacts/dev-full-rerun-20261001")
@@ -791,7 +856,7 @@ def main(argv=None) -> int:
     parser.add_argument("--human-acceptance", action="append", default=[], metavar="LOCALE=PATH",
                         help="A person's acceptance of failed groups in the head text QC (text_qc_human_acceptance)")
     parser.add_argument("--api-budget-authorization", type=Path,
-                        help="Bound budget for --text-backend api (sermon-machine-qc-api-budget-authorization-v1)")
+                        help="Bound budget for --text-backend api (sermon-machine-qc-api-budget-authorization-v1 or reuse-only v2)")
     freeze.add_argument(parser)
     args = parser.parse_args(argv)
     if args.expected_implementation:
@@ -878,7 +943,7 @@ def main(argv=None) -> int:
     if args.text_backend == "codex":
         judge = CodexJudge(state / "codex-calls")
     elif args.text_backend == "api":
-        judge = ApiJudge(args.api_budget_authorization.resolve())
+        judge = api_judge_for_resolved(args.api_budget_authorization.resolve(), resolved, requested_locales=locales)
     else:
         judge = FakeJudge({locale: [group for part in screened_groups(paths) for group in part or []]
                            for locale, paths in resolved.items()})

@@ -37,7 +37,7 @@ test('unsupported and denied permissions leave playback paused or untouched with
  const denied=harness({capture:async()=>{throw new DOMException('No','NotAllowedError');}});await listen(denied.controller);assert.equal(denied.controller.getState().phase,'permission_denied');assert.equal(denied.pauseCalls,1);assert.equal(denied.playCalls,0);
 });
 test('capture timeout aborts and releases operation',async()=>{
- let signal;const h=harness({capture:({signal:s})=>{signal=s;return new Promise((_,reject)=>s.addEventListener('abort',()=>reject(new DOMException('stop','AbortError'))));}});const pending=listen(h.controller);await new Promise(r=>setImmediate(r));h.jobs.find(x=>x.ms===35000&&!x.cancelled).fn();await pending;assert.ok(signal.aborted);assert.equal(h.controller.getState().phase,'timeout');
+ let signal;const h=harness({capture:({signal:s})=>{signal=s;return new Promise((_,reject)=>s.addEventListener('abort',()=>reject(new DOMException('stop','AbortError'))));}});const pending=listen(h.controller);await new Promise(r=>setImmediate(r));h.jobs.find(x=>x.ms===45000&&!x.cancelled).fn();await pending;assert.ok(signal.aborted);assert.equal(h.controller.getState().phase,'timeout');
 });
 test('out-of-window match and wait past sermon end reject instead of clamp',async()=>{
  const h=harness({match:async()=>({result:{matched:true,queryStartSeconds:2228,confidence:.9}})});await listen(h.controller);h.setClock(13000);assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);
