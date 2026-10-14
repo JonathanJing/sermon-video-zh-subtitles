@@ -1,6 +1,6 @@
 # 同行每周海报格式规范 v2
 
-2026-10-14 用户确认新版中／韩／西预览：系列、日期、讲员、经文收进浅色信息区；两个二维码上方分别标明 App 下载和本周网页；海报不再显示单独的审核状态横幅。底部原有 AI 内容及独立项目免责声明保持完整，正式 release/catalog/页面的机器质检状态和披露不变。2026-10-07 的 v1 打样与历史回执保留在下文。
+2026-10-14 用户确认新版中／韩／西预览：标题单行居中、按宽度缩放；系列、日期、讲员、经文收进浅色信息区；两个二维码上方分别标明 App 下载和本周网页；海报不再显示单独的审核状态横幅。底部原有 AI 内容及独立项目免责声明保持完整，正式 release/catalog/页面的机器质检状态和披露不变。**今后每周交付、临时制作、历史周次重做与补图，都以本页和 `build_multilingual_sermon_posters.py` 的当前模板为准**；2026-10-07 的 v1 打样与历史回执仅作历史证据。
 
 2026-10-07 用户确认第三版打样的 v1 格式；通用双二维码结构沿用至 v2。多语言渲染 CLI 使用当前模板；旧单语言 CLI 保留兼容格式。版式修改不改变内容审核、发布或设备验收状态。
 
@@ -55,7 +55,7 @@ App Store 官方徽章内的文字和标志保持官方素材原样，不应用�
 
 本次晨光山景的完整实际生成提示词保存在 [tongxing-weekly-poster-sunrise-v1.txt](prompts/tongxing-weekly-poster-sunrise-v1.txt)。使用内置 ImageGen，仅生成无文字背景。每周主题变化时按已核对的证道内容调整场景，并记录实际使用的完整 prompt；不把希望、守护或山景当作所有周次固定的内容解释。
 
-标题、日期、讲员、系列、经文从精确 pageId 的正式 catalog/content/release package 读取。字体、官方徽章和两个二维码由本地排版合成，不靠模型生成；多语言 CLI 已接入 `render_weekly_poster.swift`，从来源 brief 自动合成新模板；历史单语言 CLI 保留旧格式。
+标题、日期、讲员、系列、经文从精确 pageId 的正式 catalog/content/release package 读取。字体、官方徽章和两个二维码由本地排版合成，不靠模型生成；统一入口 `build_multilingual_sermon_posters.py` 调用 `weekly_poster_template.py` 与 `render_weekly_poster.swift`。单语临时制作也用该入口及 `--locales`，不因只做一张就回到旧版 `build_sermon_poster.py`／`render_sermon_poster.swift`。旧脚本仅供复现既有 `weekly.json` 历史产物；它不是未来海报的交付模板。准备与渲染命令见[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
 
 ## 验收与证据
 
