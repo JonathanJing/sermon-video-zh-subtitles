@@ -166,7 +166,12 @@
       "bytes": 42946,
       "truncated": false,
       "sha256": "c33202ebbe02522891e82760e5ac82c3d1d9e5a2951dd51506f447d3ae0e310f",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "7c8c63f333238f28b01fe988bf096799c7b21c5941dbf1d0966e1edc6c280037",
+        "bytes": 3923,
+        "normalization": "strip_line_end_whitespace"
+      }
     },
     {
       "run": "video-v1",
