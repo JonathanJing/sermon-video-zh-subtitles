@@ -102,7 +102,12 @@ def test_arbitrary_noun_counter_is_conservative_and_not_admitted_as_sino(tmp_pat
 
 @pytest.mark.parametrize("text,spoken", [("그래서 8장을 보면 정말 놀랍습니다.", "그래서 팔장을 보면 정말 놀랍습니다."),
                                           ("8장의 맨 첫 절", "팔장의 맨 첫 절"), ("(3-4장)", "(삼-사장)"),
-                                          ("이제 3장부터4장까지", "이제 삼장부터사장까지")])
+                                          ("이제 3장부터4장까지", "이제 삼장부터사장까지"),
+                                          ("그렇기 때문에 8장을 보면 참으로 놀랍습니다.", "그렇기 때문에 팔장을 보면 참으로 놀랍습니다."),
+                                          ("따라서 3장 16절을 보십시오.", "따라서 삼장 십육절을 보십시오."),
+                                          ("본문은 8장입니다.", "본문은 팔장입니다."),
+                                          ("하지만 다시 2장으로 돌아가 봅시다.", "하지만 다시 이장으로 돌아가 봅시다."),
+                                          ("따라서, 3장을 보십시오.", "따라서, 삼장을 보십시오.")])
 def test_explicit_bare_chapter_contexts_still_generate_and_screen(text, spoken):
     from scripts import screen_target_language_audio_units as screen
     assert ko.spoken_form(text) == spoken
@@ -125,3 +130,41 @@ def test_previous_asr_scoring_keeps_its_recorded_bare_range_semantics():
     for version in [screen.SCORING_V3, screen.SCORING_V4]:
         assert screen.score("12-3장", "1-23장", "ko", .88, scoring=version)[2]
     assert not screen.score("12-3장", "1-23장", "ko", .88)[2]
+
+
+
+@pytest.mark.parametrize("text", ["그래서 서류 2장을 냈습니다", "또 사진 2장을 보냈습니다", "하지만 봉투 3장이 남았습니다"])
+def test_a_connective_before_a_counted_noun_keeps_the_count(text):
+    assert ko.spoken_form(text) == text
+
+
+def test_frozen_v3_keeps_its_introducers_and_v4_adds_connectives_and_pause_commas(tmp_path):
+    assert formal.identity.json_sha256(formal.FROZEN_V3_NORMALIZATION_POLICY) == "0ca53bbbf7f90a0b5a93b5df1f55f7dfa1162747371f4a0b8b306a227034ccd0"
+    texts = {"그렇기 때문에 8장을 보면": "그렇기 때문에 팔장을 보면", "따라서, 3장을 봅시다": "따라서, 삼장을 봅시다",
+             "그래서, 8장을 보면": "그래서, 팔장을 보면", "본문은 8장입니다": "본문은 팔장입니다"}
+    for text, spoken in texts.items():
+        assert ko.spoken_form_v3(text) == text
+        assert ko.spoken_form(text) == spoken
+        assert ko.equivalent(text, spoken) and not ko.equivalent(text, spoken, rule=ko.RULE_V3)
+    assert ko.spoken_form_v3("그래서 8장을 보면") == "그래서 팔장을 보면"
+    for policy, expected in ((formal.FROZEN_V3_NORMALIZATION_POLICY, None), (formal.SPOKEN_FORMS_NORMALIZATION_POLICY, "그렇기 때문에 팔장을 보면")):
+        job = {"targetLocale": "ko", "adapter": {"normalizationPolicySha256": formal.identity.json_sha256(policy)},
+               "units": [{"translationGroupId": "g1", "text": "그렇기 때문에 8장을 보면"}]}
+        assert formal.policy_spoken_forms(job) == ({"g1": expected} if expected else {})
+        document = ko.build(job)
+        assert (document["units"][0]["spokenText"] if document else None) == expected
+
+
+def test_tracked_layer3_configs_bind_the_current_rule():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    policies = json.loads((root / "config/layer3-audio-operation-policies.json").read_text())
+    assert policies["normalization"] == formal.SPOKEN_FORMS_NORMALIZATION_POLICY
+    for locale in ("ko", "es", "zh-Hans"):
+        adapter = json.loads((root / f"config/layer3-adapters/adapter-{locale}.json").read_text())
+        assert adapter["normalizationPolicySha256"] == formal.identity.json_sha256(formal.SPOKEN_FORMS_NORMALIZATION_POLICY)
+
+
+@pytest.mark.parametrize("text", ["서류, 2장을 냈습니다", "사진, 2장", "또 사진, 2장을 보냈습니다"])
+def test_a_pause_comma_after_a_noun_keeps_the_count(text):
+    assert ko.spoken_form(text) == text

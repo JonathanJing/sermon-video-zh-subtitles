@@ -59,3 +59,5 @@ Supervisor 默认与后端生成命令均选择 `codex-cli`。旧 Agents API 会
 证据：[最新固定样本](reports/20261005-sol61-high-fast-fixed-180s-retest.zh.md)、[四臂翻译](reports/20261005-sol61-high-fast-translation-ab.zh.md)、[生产账本](reports/20261004-production-time-tokens.zh.md)、[Supervisor历史影子实验](reports/20260928-model-production-ab-results.zh.md)、[TTS 8×8](reports/20261003-spark-production-8x8.zh.md)。历史报告保留当时参数，不追改历史数据。
 
 历史实现记录：[API 优先切换](reports/20261005-api-first-runtime-switch.zh.md)、[CLI 模型迁移记录](reports/20261005-cli-model-defaults-migration.zh.md)及[结构化收据](reports/20261005-cli-model-defaults-migration-receipt.json)。历史记录不覆盖当前 `AGENTS.md` 和本文件的默认运行策略。
+
+共享 legacy chat helper 保留 strict `json_schema` 和 CUV inline PNG/JPEG 图片形状。文字及 schema 按既有输入上限校验，completion 仍按冻结输出 cap/default tier；图片单独使用 `sermon-legacy-cuv-vision-bounds-v1`（原 CUV 12 MiB 图片总量、最多 12 张），不将图片字节/count 或输出 cap 冒充文字 token 上限、vision 费用上限或美元预算授权。现有 consumer 的预算、人工/source 批准和未知结果阻断仍负责准入，canonical strict text budget adapter 没有因此扩展到图片。未迁移 CUV 历史缓存 schema，也未改写冻结历史 runs。

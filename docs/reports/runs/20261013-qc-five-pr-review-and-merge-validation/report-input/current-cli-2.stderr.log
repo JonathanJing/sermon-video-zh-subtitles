@@ -1,0 +1,15 @@
+08:10:11.355 | INFO    | prefect - Starting temporary server on http://127.0.0.1:8736
+See https://docs.prefect.io/v3/concepts/server#how-to-guides for more information on running a dedicated Prefect server.
+08:10:16.895 | INFO    | Flow run 'ubiquitous-nautilus' - Beginning flow run 'ubiquitous-nautilus' for flow 'sermon-local-mock-dag'
+08:10:17.982 | INFO    | Task run 'dispatch-92c' - Finished in state Completed()
+08:10:19.075 | INFO    | Task run 'dispatch-06e' - Finished in state Completed()
+08:10:19.083 | INFO    | Task run 'dispatch-f27' - Finished in state Completed()
+08:10:19.090 | INFO    | Task run 'dispatch-f10' - Finished in state Completed()
+08:10:19.100 | INFO    | Task run 'dispatch-0b9' - Finished in state Completed()
+08:10:20.161 | INFO    | Task run 'dispatch-7b1' - Finished in state Completed()
+08:10:20.176 | INFO    | Task run 'dispatch-aa8' - Finished in state Completed()
+08:10:21.276 | INFO    | Task run 'dispatch-024' - Finished in state Completed()
+08:10:21.284 | INFO    | Task run 'dispatch-fb6' - Finished in state Completed()
+08:10:22.372 | INFO    | Task run 'dispatch-e41' - Finished in state Completed()
+08:10:22.919 | INFO    | Flow run 'ubiquitous-nautilus' - Finished in state Completed()
+08:10:22.942 | INFO    | prefect - Stopping temporary server on http://127.0.0.1:8736

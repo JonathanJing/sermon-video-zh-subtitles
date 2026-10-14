@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+from contextvars import copy_context
 import hashlib
 import json
 import subprocess
@@ -18,6 +19,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts import sermon_pipeline  # noqa: E402
+from scripts.sermon_accounting import accounting_session
 from scripts.build_local_asr_model_reviewed_reference import (  # noqa: E402
     CRITICAL_TERMS,
     contains_term,
@@ -138,6 +140,11 @@ def main() -> int:
     if not args.confirm_billable_asr:
         raise SystemExit("--confirm-billable-asr is required")
 
+    with accounting_session((REPO_ROOT / args.output_dir).resolve()/"accounting", "local_asr_gpt_reaudit"):
+        return _run(args)
+
+
+def _run(args):
     queue_path = (REPO_ROOT / args.queue).resolve()
     base_manifest_path = (REPO_ROOT / args.base_manifest).resolve()
     output_dir = (REPO_ROOT / args.output_dir).resolve()
@@ -155,7 +162,7 @@ def main() -> int:
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = {
             executor.submit(
-                process_item,
+                copy_context().run, process_item,
                 item,
                 api_key=api_key,
                 model=args.model,

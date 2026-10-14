@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "sermon-layer2-auto-repair-receipt-v1",
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "lineage": {
+    "targetLocale": "es",
+    "englishSourcePackageJsonSha256": "e5f85039457cf874ebd463fd1b384a43688c2e7f33da4a8e631a5732859065a0",
+    "anchorManifestSha256": "35d39e40a6a0808a34fbe9d9b4d43121c21a856d0bddb9caadad547dccfc8af5",
+    "translationPolicySha256": "1cbf9b056cf1b10d470e533f2b6e75a0a06cc281eae33b526965c37160ad817c"
+  },
+  "status": "all_groups_passed",
+  "rounds": 1,
+  "finalRunDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/es-l2/text/es/repair-rounds/round-001",
+  "evidenceSha256": "ace7907d702163e9247ddf92df7dc0fc76bd1ab67899aeaf00ed06290b1b0f57",
+  "initialSpend": {
+    "calls": 32,
+    "tokens": 55759,
+    "callsWithoutUsage": 0
+  },
+  "repairSpend": {
+    "calls": 0,
+    "tokens": 0
+  },
+  "stoppedGroups": [],
+  "gatesPassed": [
+    "independent_review",
+    "language_plugin"
+  ],
+  "releaseAuthority": "none",
+  "ledgerRoot": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/es-l2/.layer2-jobs.layer2-repair",
+  "ledgerHeadSha256": "d3affbb9c91865386ed9d5ff94602d4ae0264d3e58ab2cc14b52321d51fda0bb",
+  "humanApproval": false,
+  "reviewKind": "machine_review"
+}
