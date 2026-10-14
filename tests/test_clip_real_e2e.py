@@ -264,6 +264,33 @@ class RunTests(unittest.TestCase):
         self.assertIn("mkdir -p -- ", calls[0][-1])
         self.assertIn("/mac-artifacts/", calls[1][-1])
 
+    def test_audio_qc_creates_new_remote_output_before_checkpoint_upload(self):
+        mirror_root = (ROOT / "artifacts").resolve()
+        run_root = self.run_dir.resolve()
+        args = SimpleNamespace(locale="es", stage="/stage", mirror_root=str(mirror_root),
+                               run_dir=str(run_root), out=str(run_root / "aqc/es"),
+                               audio_package=str(run_root / "l3/es/audio-package.json"),
+                               state_dir=str(run_root / "state"),
+                               api_budget_authorization=str(run_root / "authorization.json"),
+                               prior_budget_plan=None, human_acceptance=None, allow_busy=False)
+        digest = "a" * 64
+        runtime = {"openaiEnvFile": "/secret", "modelRoot": "/model",
+                   "asrSnapshot": "asr", "asrRevision": digest,
+                   "speaker": {"id": "speaker", "checkpointRef": "checkpoint"}}
+        calls = []
+        def stop_after_upload(local, destination):
+            calls.append(("put", destination))
+            raise RuntimeError("stop before dispatch")
+        remote = SimpleNamespace(
+            out=lambda _: "\n".join(("env-ok", "mirror-ok", digest, "12345")),
+            run=lambda argv: calls.append(("run", argv)),
+            put=stop_after_upload)
+        with self.assertRaisesRegex(RuntimeError, "stop before dispatch"):
+            spark.audio_qc(args, runtime, remote, None)
+        self.assertEqual([kind for kind, _ in calls], ["run", "put"])
+        self.assertEqual(calls[0][1], ["mkdir", "-p", "/stage/mac-artifacts/" +
+                                           str((run_root / "aqc/es").relative_to(mirror_root))])
+
     def test_settled_spend_counts_layer2_results_priced_qc_and_unpriced_reservations(self):
         subject.write(self.run_dir / "l2/.layer2-jobs.layer2-budget/x/a.result.json",
                       {"result": {"usage": {"costMicrousd": 200_000}}})

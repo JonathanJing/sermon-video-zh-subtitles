@@ -432,6 +432,7 @@ def audio_qc(args, runtime, spark, session) -> int:
     require(args.allow_busy or not busy, f"spark_busy:{busy}")
     cmap = out_local / "tts-checkpoint-map.container.json"
     cmap.write_text(json.dumps(checkpoint_map(runtime), indent=1))
+    spark.run(["mkdir", "-p", f"{mirror}/{relative(out)}"])
     spark.put(str(cmap), f"{mirror}/{relative(out)}/")
     code = f"/work/{args.code}"
     command = ["--rm", "--gpus", "all", "--ipc", "host", "--read-only",
