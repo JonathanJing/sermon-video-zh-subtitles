@@ -11,28 +11,24 @@ STORE_URL = 'https://apps.apple.com/app/id6809255441'
 BADGE_CODES = {'zh-Hans': 'zh-cn', 'ko': 'ko-kr', 'es': 'es-es', 'en': 'en-us'}
 COPY = {
     'zh-Hans': dict(header='同行   ───   本周证道', cta='扫码开启本周证道', web='网页版', caption='扫码阅读 · 收听',
+        storeHeading='下载同行 App', webHeading='打开本周网页版',
         disclaimer='独立个人项目，与 Mariners Church 无隶属或背书关系。\nAI 合成中文音频与整理文字仅供个人跟读参考。'),
     'ko': dict(header='Tongxing   ───   이번 주 설교', cta='이번 주 설교 읽기 · 듣기', web='웹 버전', caption='QR 코드로 읽기 · 듣기',
+        storeHeading='Tongxing 앱 다운로드', webHeading='이번 주 설교 웹 버전',
         disclaimer='Mariners Church와 제휴하거나 공식 후원을 받지 않는 개인 독립 프로젝트입니다.\nAI로 합성한 한국어 오디오와 정리한 텍스트는 개인 참고용입니다.'),
     'es': dict(header='Tongxing   ───   SERMÓN SEMANAL', cta='Lee y escucha el sermón de esta semana', web='Versión web', caption='Escanea para leer y escuchar',
+        storeHeading='Descargar Tongxing', webHeading='Abrir sermón semanal',
         disclaimer='Proyecto personal independiente, sin afiliación ni respaldo de Mariners Church. El audio en español sintetizado por IA y el texto preparado por IA son para consulta personal.'),
     'en': dict(header='Tongxing   ───   THIS WEEK’S SERMON', cta='Read and listen to this week’s sermon', web='Web version', caption='Chinese audio · English reference',
+        storeHeading='Download Tongxing', webHeading='Weekly sermon online',
         disclaimer='An independent personal project, not affiliated with or endorsed by Mariners Church. AI-synthesized Chinese audio and AI-prepared text are for personal reference.'),
 }
 
 
 def title_lines(title, locale):
-    if '\n' in title:
-        return title
-    words = title.split()
-    if locale == 'zh-Hans' and len(words) == 1 and len(title) > 5:
-        middle = (len(title)+1)//2
-        return title[:middle] + '\n' + title[middle:]
-    if len(words) >= 2:
-        # Break only between words, including Hangul; never split a Korean word.
-        split = min(range(1,len(words)), key=lambda i:abs(len(' '.join(words[:i]))-len(' '.join(words[i:]))))
-        return ' '.join(words[:split]) + '\n' + ' '.join(words[split:])
-    return title
+    # The editorial title occupies one line; preserve every word and let the
+    # renderer fit its font size to the available width.
+    return ' '.join(title.split())
 
 
 def apply_template(bundle):

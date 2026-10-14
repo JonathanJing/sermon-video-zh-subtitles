@@ -30,7 +30,7 @@ Purpose: help attendees follow English sermons in their own language, on time an
 | OpenAI keys and projects | [Environment launcher](docs/openai-minimal-project-setup.zh.md) |
 | Machine-checked text or audio, or publication without manual review | [Machine-quality waiver](docs/machine-quality-waiver.zh.md): calibration, repair limits, degradation, current wiring limits |
 | Canonical App delivery | [Layer 4 public delivery](docs/layer4-four-product-public-delivery.zh.md) and [weekly release](docs/tongxing-weekly-release.zh.md) |
-| Weekly poster | [Poster procedure](docs/tongxing-weekly-release.zh.md#每周海报交付): separate from page publication; do not send or upload it without the user's instruction |
+| Weekly or ad hoc poster | Use the same [single-line poster template](docs/tongxing-weekly-poster-format.zh.md) and [poster procedure](docs/tongxing-weekly-release.zh.md#每周海报交付), including one-locale work; separate from page publication and do not send or upload it without the user's instruction |
 | Resume a weekly production run | [Local production runbook](docs/codex-local-production-runbook.zh.md), [run profile](docs/weekly-run-profile.zh.md) for concurrency and budget caps, and the existing run artifacts |
 | Manual dual-PDF production | [Stable post-live workflow](docs/stable-post-live-reading-pdf-workflow.md) |
 | Supervisor state or tools | [Supervisor contract](docs/sermon-production-supervisor-agent.md) |
