@@ -1,0 +1,17 @@
+
+== 2026-10-14T23:41:39+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_dev_simulated_delivery.py --baseline ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/l4/baseline --prepared ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/l4/work/prepared --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/l4/workflow --machine-checked --execute
+Traceback (most recent call last):
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_dev_simulated_delivery.py", line 294, in <module>
+    main()
+    ~~~~^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_dev_simulated_delivery.py", line 290, in main
+    print(json.dumps(run(args), ensure_ascii=False))
+                     ~~~^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_dev_simulated_delivery.py", line 277, in run
+    return _run(args)
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_dev_simulated_delivery.py", line 192, in _run
+    contract.require(set(manifest['releases']) == {'zh-Hans', 'ko', 'es'}, 'Three locales required')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/delivery_contract.py", line 18, in require
+    raise ValueError(message)
+ValueError: Three locales required
