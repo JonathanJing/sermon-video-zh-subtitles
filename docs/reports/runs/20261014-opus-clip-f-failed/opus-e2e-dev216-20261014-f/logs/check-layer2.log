@@ -1,0 +1,68 @@
+
+== 2026-10-14T18:55:40+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/check_run_start.py --expected-commit e28204ef24b42ae2898f4f4222f72ca844ad5370 --expected-implementation 5815242564f4a4ab7c972d04cf94780b7d1084d78687bde7fb3e9c8f4ad2304b --openai-environment dev --env-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.env.openai --budget-plan ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/plans/layer2 --spark --fresh-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/l2/text --page-id mockup-dev-clip-20261011-u216-231-opus-f --origin https://ai-for-god-sermon-audio-dev.web.app --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/start-check-layer2.json
+{
+ "schemaVersion": "sermon-run-start-check-v1",
+ "status": "pass",
+ "failed": [],
+ "checks": [
+  {
+   "check": "code",
+   "status": "pass",
+   "head": "e28204ef24b42ae2898f4f4222f72ca844ad5370",
+   "qcImplementationSha256": "5815242564f4a4ab7c972d04cf94780b7d1084d78687bde7fb3e9c8f4ad2304b",
+   "problems": []
+  },
+  {
+   "check": "openai",
+   "status": "pass",
+   "environment": "dev",
+   "exitCode": 0
+  },
+  {
+   "check": "budget",
+   "status": "pass",
+   "plan": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/plans/layer2/plan.json",
+   "schedule": {
+    "mode": "all_stages_may_run_together",
+    "worstCaseUsd": 8.010202,
+    "fits": true
+   },
+   "stages": [
+    [
+     "layer2",
+     24.0
+    ]
+   ],
+   "problems": []
+  },
+  {
+   "check": "spark",
+   "status": "pass",
+   "problems": [],
+   "host": "<email>",
+   "session": "not_required_api_only"
+  },
+  {
+   "check": "outputs",
+   "status": "pass",
+   "fresh": [
+    "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/l2/text"
+   ],
+   "problems": []
+  },
+  {
+   "check": "page",
+   "status": "pass",
+   "pageId": "mockup-dev-clip-20261011-u216-231-opus-f",
+   "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+   "problems": []
+  },
+  {
+   "check": "environment_binding",
+   "status": "pass",
+   "qcStages": 0,
+   "layer2Stages": 1,
+   "problems": []
+  }
+ ]
+}
