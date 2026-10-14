@@ -101,6 +101,18 @@ def verify_runtime(authorization, key=None):
     return frozen
 
 
+def budget_root(config):
+    """The run's Layer 2 budget root beside its job root.
+
+    A QC repair revision (execution v5 with ``backTranslationQc``) shares the job root and repair
+    ledger with the run it revises but is a new approval, and a ledger never changes authority:
+    it gets its own root under the run's, named by its configuration hash."""
+    root = config.job_root.parent / f'.{config.job_root.name}.layer2-budget'
+    if (getattr(config, 'auto_repair', None) or {}).get('backTranslationQc'):
+        root = root / ('revision-' + config.sha256[:16])
+    return root
+
+
 def load_authorization(config, path, code_identity, expected_sha=None):
     path = _safe_path(Path(path).absolute())
     actual_sha = sha(path)
@@ -123,7 +135,7 @@ def load_authorization(config, path, code_identity, expected_sha=None):
     authority = budget._authority(value['authority'])
     receipt_path = _safe_path(path.parent / value['approvalReceipt'])
     receipt = jobs._read(receipt_path)
-    root = config.job_root.parent / f'.{config.job_root.name}.layer2-budget'
+    root = budget_root(config)
     expected = {'productionRunId': config.run_id, 'configurationSha256': config.sha256,
                 'codeIdentitySha256': code_identity, 'budgetRoot': str(root),
                 'requestLimits': selected, 'globalBounds': authority['globalBounds'],

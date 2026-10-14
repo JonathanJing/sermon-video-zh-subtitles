@@ -97,9 +97,10 @@ class Spark:
     def put(self, local: str, remote: str) -> None:
         subprocess.run(["rsync", "-a", "-e", "ssh", local, f"{self.host}:{remote}"], check=True)
 
-    def get(self, remote: str, local: str, *, exclude: tuple = ()) -> None:
+    def get(self, remote: str, local: str, *, exclude: tuple = ()) -> bool:
+        """Read artifacts back; False when rsync failed (the caller records the outcome as unknown)."""
         excludes = [arg for pattern in exclude for arg in ("--exclude", pattern)]
-        subprocess.run(["rsync", "-a", "-e", "ssh", *excludes, f"{self.host}:{remote}", local], check=False)
+        return subprocess.run(["rsync", "-a", "-e", "ssh", *excludes, f"{self.host}:{remote}", local]).returncode == 0
 
     def run_held(self, config: dict) -> int:
         return self._ssh("/usr/bin/python3 -c " + shlex.quote(RUNNER) + " " + shlex.quote(json.dumps(config))).returncode
@@ -136,11 +137,16 @@ def dispatch(spark: Spark, session, name: str, locale: str, *, stage: str, code:
     return returncode, ("known_terminal" if returncode in TERMINAL_EXIT_CODES else "unknown"), hold
 
 
-def finish(session, hold, returncode, outcome, result_path: Path, summary: dict) -> int:
+def finish(session, hold, returncode, outcome, result_path: Path, summary: dict, *, read_back: bool) -> int:
+    """End the hold and record the result. A failed readback means the local run lacks the stage's
+    outputs (manifests, audio, QC state, ledgers): the outcome is unknown and must be reconciled."""
+    if not read_back:
+        outcome = "unknown"
     session.end_job(hold, process_exited=True, outcome=outcome)
-    result_path.write_text(json.dumps({"exitCode": returncode, "outcome": outcome}, indent=1))
-    print(json.dumps({**summary, "exitCode": returncode}))
-    return returncode
+    result_path.write_text(json.dumps({"exitCode": returncode, "outcome": outcome,
+                                       **({} if read_back else {"readback": "failed"})}, indent=1))
+    print(json.dumps({**summary, "exitCode": returncode, "outcome": outcome}))
+    return returncode if read_back else 3
 
 
 # ---------------------------------------------------------------- render
@@ -254,8 +260,9 @@ def render(args, runtime, spark, session) -> int:
     returncode, outcome, hold = dispatch(spark, session, "render", loc, stage=stage, code=args.code, command_for=command_for,
                                          log=f"{remote_out}/render.log", marker=local_out / "dispatch.started.json",
                                          started={"stagedFiles": len(upload)})
-    spark.get(f"{remote_out}/", str(local_out / "spark-output") + "/")
-    return finish(session, hold, returncode, outcome, local_out / "dispatch.result.json", {"locale": loc, "phase": "render"})
+    read_back = spark.get(f"{remote_out}/", str(local_out / "spark-output") + "/")
+    return finish(session, hold, returncode, outcome, local_out / "dispatch.result.json", {"locale": loc, "phase": "render"},
+                  read_back=read_back)
 
 
 # ---------------------------------------------------------------- compact
@@ -321,9 +328,10 @@ def compact(args, runtime, spark, session) -> int:
         log=f"{stage}/output/{args.remote_name}/compact.log", marker=marker,
         started={"rawName": args.raw_name, "remoteName": args.remote_name, "jobSha256": job_sha,
                  "maxEndLagSeconds": args.max_end_lag_seconds, "trimTrailing": args.trim_trailing, "tuning": tuning})
-    spark.get(f"{stage}/output/{args.remote_name}/", str(local_out / f"spark-{args.remote_name}") + "/", exclude=("*.wav",))
+    read_back = spark.get(f"{stage}/output/{args.remote_name}/", str(local_out / f"spark-{args.remote_name}") + "/",
+                          exclude=("*.wav",))
     return finish(session, hold, returncode, outcome, local_out / f"compact-{args.remote_name}.result.json",
-                  {"locale": loc, "phase": "compact"})
+                  {"locale": loc, "phase": "compact"}, read_back=read_back)
 
 
 # ---------------------------------------------------------------- screen
@@ -379,9 +387,9 @@ def screen(args, runtime, spark, session) -> int:
         log=f"{remote_out}/screen-{args.tag}.log", marker=marker,
         started={"jobSha256": job_sha, "model": "Qwen/Qwen3-ASR-0.6B", "modelRevision": runtime["asrRevision"],
                  "batchSize": int(args.batch_size)})
-    spark.get(f"{remote_out}/", str(local_out / "spark-output") + "/")
+    read_back = spark.get(f"{remote_out}/", str(local_out / "spark-output") + "/")
     return finish(session, hold, returncode, outcome, local_out / f"screen-{args.tag}.result.json",
-                  {"locale": loc, "phase": "asr-screen"})
+                  {"locale": loc, "phase": "asr-screen"}, read_back=read_back)
 
 
 # ---------------------------------------------------------------- audio QC
@@ -456,10 +464,9 @@ def audio_qc(args, runtime, spark, session) -> int:
     budget_root = json.loads(Path(auth).read_text())["budgetRoot"]
     if budget_root.startswith(str(root) + "/"):
         readback.append(relative(budget_root))
-    for rel in readback:
-        spark.get(f"{mirror}/{rel}/", f"{root}/{rel}/")
+    read_back = all([spark.get(f"{mirror}/{rel}/", f"{root}/{rel}/") for rel in readback])
     return finish(session, hold, returncode, outcome, out_local / "spark-dispatch.result.json",
-                  {"locale": loc, "phase": "audio-qc"})
+                  {"locale": loc, "phase": "audio-qc"}, read_back=read_back)
 
 
 # ---------------------------------------------------------------- command line
@@ -522,6 +529,8 @@ def main(argv=None) -> int:
     require(args.stage.startswith(runtime["stageRoot"].rstrip("/") + "/"), "stage_outside_runtime_stage_root")
     from scripts.spark_exclusive_session import Client
     session = Client.from_environment()
+    # The hold must be on the host the stage dispatches to (SPARK_EXCLUSIVE_HOST), never another default.
+    require(session.host == runtime["host"], "spark_session_host_differs_from_runtime")
     handler = {"render": render, "compact": compact, "screen": screen, "audio-qc": audio_qc}[args.command]
     return handler(args, runtime, Spark(runtime["host"]), session)
 

@@ -11,21 +11,22 @@ from scripts import clip_e2e_spark as spark
 from scripts import run_clip_real_e2e as subject
 
 ROOT = Path(__file__).resolve().parents[1]
+LOCALES = ("ko", "es", "zh-Hans")
 DISPLAY = {"series": "[test] s", "title": "[test] t", "speaker": "Speaker", "scripture": "Rev 9", "summary": "[test] x"}
 
 
 def spec_files(base: Path, **changes) -> Path:
-    for name in ("clip.json", "registry.json", "ko-policy.json", "es-policy.json", "ko-att.json", "es-att.json",
-                 "ko.py", "es.py"):
+    for name in ("clip.json", "registry.json", *[f"{k}-{kind}" for k in ("ko", "es", "zh-Hans")
+                                                  for kind in ("policy.json", "att.json", "plugin.py")]):
         (base / name).write_text("{}")
-    spec = {"schemaVersion": subject.SPEC_SCHEMA, "name": "u101-test", "clipSpec": "clip.json", "locales": ["ko", "es"],
+    spec = {"schemaVersion": subject.SPEC_SCHEMA, "name": "u101-test", "clipSpec": "clip.json", "locales": ["ko", "es", "zh-Hans"],
             "authorization": {"approvedBy": "Jony", "evidence": "chat 2026-10-14",
                               "defaultPass": "isolated-test default pass authorized by Jony; not a human review"},
             "budget": {"totalUsd": 30, "settledUsdBefore": 15.3},
-            "layer2": {"policyTemplates": {"ko": "ko-policy.json", "es": "es-policy.json"},
-                       "plugins": {"ko": "ko.py", "es": "es.py"}},
-            "layer3": {"attestationTemplates": {"ko": "ko-att.json", "es": "es-att.json"}, "speakerRegistry": "registry.json"},
-            "page": {"pageId": "mockup-dev-clip-test", "display": {"ko": DISPLAY, "es": DISPLAY}}}
+            "layer2": {"policyTemplates": {k: f"{k}-policy.json" for k in LOCALES},
+                       "plugins": {k: f"{k}-plugin.py" for k in LOCALES}},
+            "layer3": {"attestationTemplates": {k: f"{k}-att.json" for k in LOCALES}, "speakerRegistry": "registry.json"},
+            "page": {"pageId": "mockup-dev-clip-test", "display": {k: DISPLAY for k in LOCALES}}}
     for key, value in changes.items():
         spec[key] = value
     path = base / "spec.json"
@@ -48,15 +49,18 @@ class SpecificationTests(unittest.TestCase):
         self.assertEqual(spec["spark"]["sessionId"], "clip-e2e-u101-test")
 
     def test_unsafe_or_incomplete_specifications_are_refused(self):
-        page = {"pageId": "dev-weekly", "display": {"ko": DISPLAY, "es": DISPLAY}}
+        page = {"pageId": "dev-weekly", "display": {k: DISPLAY for k in LOCALES}}
         bad = [({"page": page}, "mockup- page"),
                ({"authorization": {"approvedBy": "Jony", "evidence": "chat", "defaultPass": "approved"}}, "not a human review"),
                ({"budget": {"totalUsd": 10, "settledUsdBefore": 12}}, "totalUsd > settledUsdBefore"),
-               ({"locales": ["ko", "fr"]}, "locales must be"),
+               ({"locales": ["ko", "es"]}, "the Dev publisher joins all three"),
+               ({"page": {"pageId": "mockup-x", "display": {k: DISPLAY for k in LOCALES},
+                          "baselineCachePublic": "public"}}, "go together"),
                ({"extra": 1}, "unknown run specification field"),
-               ({"layer3": {"attestationTemplates": {"ko": "ko-att.json"}, "speakerRegistry": "registry.json"}},
+               ({"layer3": {"attestationTemplates": {"ko": "ko-att.json", "es": "es-att.json"},
+                            "speakerRegistry": "registry.json"}},
                 "attestationTemplates missing a locale"),
-               ({"page": {"pageId": "mockup-x", "display": {"ko": DISPLAY}}}, "display texts missing")]
+               ({"page": {"pageId": "mockup-x", "display": {"ko": DISPLAY, "es": DISPLAY}}}, "display texts missing")]
         for changes, message in bad:
             with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
                 subject.load_spec(spec_files(self.base, **changes))
@@ -75,6 +79,16 @@ class RunTests(unittest.TestCase):
         self.run_dir = Path(tempfile.mkdtemp(prefix="test-clip-e2e-", dir=ROOT / "artifacts"))
         self.addCleanup(shutil.rmtree, self.run_dir, True)
         self.run = subject.Run(spec_files(self.base), self.run_dir, publish=False)
+
+    def test_clip_inputs_are_bound_to_the_clip_specification(self):
+        from scripts.build_dev_180s_simulated_inputs import TEST_ROOT
+        clip_sha = __import__("hashlib").sha256(Path(self.run.spec["clipSpec"]).read_bytes()).hexdigest()
+        folder = TEST_ROOT / f"clip-e2e-{self.run.spec['name']}-{clip_sha[:12]}"
+        folder.mkdir(parents=True)
+        self.addCleanup(shutil.rmtree, folder, True)
+        (folder / "clip-spec.sha256").write_text("0" * 64)
+        with self.assertRaisesRegex(ValueError, "another clip specification"):
+            subject.stage_inputs(self.run)
 
     def test_a_run_directory_stays_bound_to_its_specification(self):
         other = spec_files(self.base, budget={"totalUsd": 40, "settledUsdBefore": 15.3})
@@ -95,12 +109,12 @@ class RunTests(unittest.TestCase):
         self.assertAlmostEqual(self.run.settled(), 15.3 + 0.2 + 0.003 + 0.0135)
 
     def test_open_qc_caps_count_until_the_locale_finishes_audio(self):
-        for locale in ("ko", "es"):
+        for locale in LOCALES:
             subject.write(self.run_dir / f"plans/qc-{locale}/plan.json", {"stages": [{"capUsd": 5.525}]})
-        self.assertAlmostEqual(self.run.open_qc_caps(), 11.05)
+        self.assertAlmostEqual(self.run.open_qc_caps(), 16.575)
         self.run.mark("audio.ko", "done")
         self.run.mark("audio.es", "failed")
-        self.assertEqual(self.run.open_qc_caps(), 0)
+        self.assertAlmostEqual(self.run.open_qc_caps(), 5.525)
 
     def test_one_locale_stopping_does_not_stop_the_others_and_layer4_needs_all(self):
         calls = []
@@ -126,18 +140,19 @@ class RunTests(unittest.TestCase):
                 mock.patch.object(subject, "stage_report", record("report")):
             summary = subject.execute(self.run)
             self.assertEqual(calls, [("inputs",), ("layer2-setup",), ("layer2",), ("qc", "ko"), ("qc", "es"),
-                                     ("audio", "es", "repo-test")])
+                                     ("qc", "zh-Hans"), ("audio", "es", "repo-test"), ("audio", "zh-Hans", "repo-test"),
+                                     ("report",)])
             self.assertEqual(len(summary["stopped"]), 2)
             self.assertIn("layer4 needs every locale", summary["stopped"][1])
             # A resumed run skips finished stages and retries only what is left.
             calls.clear()
             subject.execute(self.run)
-            self.assertEqual(calls, [("qc", "ko")])
+            self.assertEqual(calls, [("qc", "ko"), ("report",)])  # every invocation leaves a report
             # A recorded terminal failure is reported, not retried.
             calls.clear()
             self.run.mark("qc.ko", "failed", outcome="requires_repair")
             summary = subject.execute(self.run)
-            self.assertEqual(calls, [])
+            self.assertEqual(calls, [("report",)])
             self.assertIn("qc.ko: failed earlier", summary["stopped"][0])
 
     def test_qc_never_rechecks_an_unchanged_candidate_and_resumes_into_its_revision(self):
@@ -162,6 +177,55 @@ class RunTests(unittest.TestCase):
         # The recorded requires_repair of the first candidate is not checked again.
         self.assertEqual(checks, [(str(self.run_dir / "l2-ko-r1/candidate.json"), "out-r1")])
         self.assertEqual(self.run.stages["qc.ko"]["status"], "done")
+
+
+class ReviewFixTests(unittest.TestCase):
+    """Behaviour asked for in the review of #403."""
+
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.base = Path(directory.name)
+
+    def test_approvers_and_approval_quotes_never_enter_command_logs(self):
+        shown = subject.redacted(["plan", "--approved-by", "Jony", "--evidence", "chat quote", "--total-usd", "30"])
+        self.assertEqual(shown, ["plan", "--approved-by", "<redacted>", "--evidence", "<redacted>", "--total-usd", "30"])
+
+    def test_a_spark_stage_is_skipped_only_after_an_accepted_known_result(self):
+        result = self.base / "compact.result.json"
+        self.assertFalse(subject.spark_result(result))
+        result.write_text(json.dumps({"exitCode": 0, "outcome": "known_terminal"}))
+        self.assertTrue(subject.spark_result(result))
+        for bad in ({"exitCode": 1, "outcome": "known_terminal"}, {"exitCode": 0, "outcome": "unknown", "readback": "failed"}):
+            result.write_text(json.dumps(bad))
+            with self.subTest(result=bad), self.assertRaisesRegex(subject.Stop, "reconcile"):
+                subject.spark_result(result)
+        result.write_text(json.dumps({"exitCode": 1, "outcome": "known_terminal"}))
+        self.assertTrue(subject.spark_result(result, accept=(0, 1)))  # render: its own screen flagged units
+
+    def test_a_failed_readback_records_an_unknown_outcome(self):
+        session = mock.Mock()
+        path = self.base / "screen.result.json"
+        code = spark.finish(session, {"jobId": "j"}, 0, "known_terminal", path, {"phase": "screen"}, read_back=False)
+        self.assertEqual((code, json.loads(path.read_text())), (3, {"exitCode": 0, "outcome": "unknown", "readback": "failed"}))
+        session.end_job.assert_called_once_with({"jobId": "j"}, process_exited=True, outcome="unknown")
+
+    def test_the_session_is_held_on_the_runtime_host(self):
+        runtime = spark.load_runtime()
+        env = {"SPARK_EXCLUSIVE_SESSION_ID": "clip-e2e-x", "SPARK_EXCLUSIVE_SESSION_OWNER": "clip-e2e-x",
+               "SPARK_EXCLUSIVE_HOST": "someone@elsewhere"}
+        with mock.patch.dict("os.environ", env), self.assertRaisesRegex(ValueError, "spark_session_host_differs"):
+            spark.main(["screen", "--locale", "ko", "--stage", runtime["stageRoot"] + "/clip-e2e-x", "--code", "repo-x",
+                        "--job", "job.json"])
+
+    def test_a_qc_repair_revision_gets_its_own_layer2_budget_root(self):
+        from types import SimpleNamespace
+        from scripts import canonical_layer2_budget as budget
+        jobs = self.base / "l2" / "layer2-jobs"
+        first = SimpleNamespace(job_root=jobs, auto_repair={"routingVersion": "v"}, sha256="a" * 64)
+        revision = SimpleNamespace(job_root=jobs, auto_repair={"backTranslationQc": {"ko": "qc.json"}}, sha256="b" * 64)
+        self.assertEqual(budget.budget_root(first), self.base / "l2" / ".layer2-jobs.layer2-budget")
+        self.assertEqual(budget.budget_root(revision), budget.budget_root(first) / ("revision-" + "b" * 16))
 
 
 class SparkTests(unittest.TestCase):

@@ -91,6 +91,8 @@
 ## 已知限制
 
 - **质检修复回 Layer 2** 需要执行配置 v5（PR #402）。只有确定性检查失败、没有回译问题的组，还不能自动修复。
+- **片段里要有已批准的多词专有名词。** 政策 v4 要求术语回执非空，且回执里每个词都出现在本片段。没有这样的名词时，`layer2-setup` 在任何付费调用前停下，需换一个句子范围。片段里出现的系列名会自动写入 `usedSeriesNames`。
+- **页面信息批准和学习产品复核仍写成批准记录。** 这两项按运行规格的默认放行声明填写，记录本身还是批准的格式（页面信息 `reviewer=user`，提纲和默想 `humanApproval=true`）。对应的"测试默认放行"记录类型另行实现：页面信息只影响交付合同；提纲和默想还牵涉发布包 v5，以及 Python、网页和 iOS 三个读取端。
 - **声音授权模板** 取自源周次的片段证明，`userStatement` 会改写为本次运行的授权说明。
 - **Layer 4 的模板目录** `artifacts/unified-cli-acceptance/native-four-product-fixture-v2` 是本机产物，与 `build_dev_180s_simulated_inputs.py` 共用。
 - **Spark 的运行时路径和镜像摘要** 写在 `config/clip-e2e/spark-runtime.json`。换了镜像或权重要改这里，并重新校准相关质检。

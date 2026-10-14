@@ -18,7 +18,7 @@ result in ``stages.json`` and a resumed run skips finished stages. Stages, in or
    compaction, ASR screen, audio package and audio QC (``clip_e2e_spark``);
 6. ``layer4``: the machine-checked release (``clip_e2e_release``), Dev baseline, guarded publish
    with ``--publish`` only, and the browser smoke;
-7. ``report``: the redacted run report (``export_run_digest``), not yet published.
+7. the redacted run report of every invocation, pass or fail (``export_run_digest``), not yet published.
 
 Spend is planned with ``plan_run_budgets.py`` against the specification's approved total:
 settled spend is the specification's earlier spend plus this run's ledgers (unpriced rows at
@@ -89,8 +89,10 @@ def load_spec(path: Path) -> dict:
     require(isinstance(spec.get("name"), str) and spec["name"].replace("-", "").isalnum() and len(spec["name"]) <= 60,
             "name must be a short [A-Za-z0-9-] label")
     locales = spec.get("locales")
-    require(isinstance(locales, list) and locales and len(set(locales)) == len(locales)
-            and set(locales) <= set(LOCALES), "locales must be distinct values of " + ", ".join(LOCALES))
+    # The Dev publisher joins exactly zh-Hans, ko and es (run_dev_simulated_delivery); a subset would
+    # spend every paid stage and only fail at Layer 4.
+    require(isinstance(locales, list) and len(locales) == len(set(locales)) and set(locales) == set(LOCALES),
+            "locales must be all of " + ", ".join(LOCALES) + " (the Dev publisher joins all three)")
     auth = spec.get("authorization") or {}
     require(all(isinstance(auth.get(k), str) and auth[k].strip() for k in ("approvedBy", "evidence", "defaultPass"))
             and "not a human review" in auth["defaultPass"],
@@ -121,6 +123,8 @@ def load_spec(path: Path) -> dict:
     spark = spec.setdefault("spark", {})
     spark.setdefault("sessionId", "clip-e2e-" + spec["name"])
     spark.setdefault("owner", "clip-e2e-" + spec["name"])
+    require(bool(page.get("baselineCachePublic")) == bool(page.get("baselineCacheReceipt")),
+            "page.baselineCachePublic and page.baselineCacheReceipt go together")
     for key in ("baselineCachePublic", "baselineCacheReceipt"):
         if page.get(key):
             page[key] = resolve(page[key])
@@ -128,6 +132,18 @@ def load_spec(path: Path) -> dict:
 
 
 # ---------------------------------------------------------------- run state
+
+
+REDACTED_OPTIONS = ("--approved-by", "--evidence")
+
+
+def redacted(argv) -> list[str]:
+    """The command as logged: approver names and approval quotations never enter run logs or reports."""
+    shown, hide = [], False
+    for arg in map(str, argv):
+        shown.append("<redacted>" if hide else arg)
+        hide = arg in REDACTED_OPTIONS
+    return shown
 
 
 class Run:
@@ -169,7 +185,7 @@ class Run:
         log = self.dir / "logs" / f"{label}.log"
         started = time.time()
         with log.open("ab") as stream:
-            stream.write(f"\n== {now()} {' '.join(map(str, argv))}\n".encode())
+            stream.write(f"\n== {now()} {' '.join(redacted(argv))}\n".encode())
             stream.flush()
             done = subprocess.run([str(a) for a in argv], cwd=cwd, stdout=stream, stderr=subprocess.STDOUT,
                                   env={**os.environ, **(env or {})})
@@ -253,10 +269,18 @@ class Run:
 def stage_inputs(run: Run):
     # The clip builder writes only under its own ignored test root; the run keeps copies of what it binds.
     from scripts.build_dev_180s_simulated_inputs import TEST_ROOT
-    inputs = TEST_ROOT / ("clip-e2e-" + run.spec["name"]) / "inputs"
+    # The shared input root is named by the clip specification's hash, and the run records which
+    # specification built it, so a reused name never picks up another clip's source.
+    clip_sha = hashlib.sha256(Path(run.spec["clipSpec"]).read_bytes()).hexdigest()
+    inputs = TEST_ROOT / f"clip-e2e-{run.spec['name']}-{clip_sha[:12]}" / "inputs"
+    stamp = inputs.parent / "clip-spec.sha256"
+    if stamp.exists():
+        require(stamp.read_text().strip() == clip_sha, "clip input directory belongs to another clip specification")
     if not (inputs / "source.json").exists():
         run.sh("inputs", [PY, ROOT / "scripts/build_dev_180s_simulated_inputs.py", "--clip-spec", run.spec["clipSpec"],
-                          "--run-id", "clip-e2e-" + run.spec["name"], "--out", inputs])
+                          "--run-id", f"clip-e2e-{run.spec['name']}-{clip_sha[:12]}", "--out", inputs])
+        stamp.write_text(clip_sha + "\n")
+    require(stamp.exists() and stamp.read_text().strip() == clip_sha, "clip inputs are not bound to this clip specification")
     src = run.l2 / "src"
     src.mkdir(parents=True, exist_ok=True)
     for name in ("source.json", "anchor.json"):
@@ -269,23 +293,31 @@ def stage_inputs(run: Run):
                                 "--anchor", src / "anchor.json", "--clip-media", inputs / "clip/source.mp4",
                                 "--out", timeline])
     anchor = read(src / "anchor.json")
-    run.mark("inputs", "done", units=len(anchor["sourceUnits"]), inputs=str(inputs))
+    run.mark("inputs", "done", units=len(anchor["sourceUnits"]), inputs=str(inputs), clipSpecSha256=clip_sha)
 
 
 def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str) -> dict:
     """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
     from scripts import target_language_policy as tp
     rows = anchor["sourceUnits"]
-    observed = tp.source_scoped_proper_names(rows, set())
     frozen = read(template)
+    # Series titles the clip says, found the way validate_source_scope finds them, are not proper names.
+    english = " ".join(row.get("english", "") for row in rows).casefold()
+    series = {term["source"] for term in frozen["terminology"]["seriesNames"] if term["source"].casefold() in english}
+    observed = tp.source_scoped_proper_names(rows, series)
     exclusions = sorted(e for e in frozen["sourceScope"]["ordinaryPhraseExclusions"] if e in observed)
     used = sorted(observed - set(exclusions))
     draft = copy.deepcopy(frozen)
     draft.pop("componentSha256")
+    # Policy v4 requires a non-empty direct term receipt whose every term this clip says; a clip with
+    # no approved multiword name cannot be frozen under it, so stop before any paid stage.
+    require(bool(used), "the clip says no approved multiword proper name; policy v4 needs a non-empty term "
+                        "receipt bound to the clip (choose a range that names one, see docs/clip-real-e2e.zh.md)")
     draft["terminology"]["properNames"] = [t for t in draft["terminology"]["properNames"] if t["source"] in used]
     scope = draft["sourceScope"]
     scope.update(englishSourcePackageJsonSha256=tp.canonical_sha256(source), anchorManifestSha256=tp.canonical_sha256(anchor),
-                 usedSeriesNames=[], usedProperNames=used, ordinaryPhraseExclusions=exclusions, termApprovalEvidence=[])
+                 usedSeriesNames=sorted(series), usedProperNames=used, ordinaryPhraseExclusions=exclusions,
+                 termApprovalEvidence=[])
     receipt = scope["termApprovalReceipt"]
     targets = {t["source"]: t["target"] for t in receipt["approvedTerms"]}
     missing = [name for name in used if name not in targets]
@@ -359,7 +391,7 @@ def stage_layer2(run: Run):
     run.plan(plans, ["layer2"], run.spec["locales"], extra=["--layer2-execution", run.l2 / "execution.json"],
              include_open_qc=False)
     if not any((run.l2 / "text").glob("*/candidate.json")):
-        run.check("layer2", "--budget-plan", plans, "--spark", "--fresh-dir", run.l2 / "text",
+        run.check("layer2", "--budget-plan", plans, "--fresh-dir", run.l2 / "text",
                   "--page-id", run.spec["page"]["pageId"], "--origin", DEV_ORIGIN)
     drive_layer2(run, run.l2 / "execution.json", plans / "layer2/budget-authorization.json", run.spec["locales"], "layer2")
     run.mark("layer2", "done")
@@ -448,11 +480,13 @@ def ensure_session(run: Run):
     if run.session_up:
         return
     env = {"SPARK_EXCLUSIVE_SESSION_ID": run.spec["spark"]["sessionId"],
-           "SPARK_EXCLUSIVE_SESSION_OWNER": run.spec["spark"]["owner"]}
+           "SPARK_EXCLUSIVE_SESSION_OWNER": run.spec["spark"]["owner"],
+           # The session is held on the host the stages dispatch to, never the module's default.
+           "SPARK_EXCLUSIVE_HOST": run.runtime["host"]}
     os.environ.update(env)
     for attempt in range(1, 4):
         # begin may need a second call while Spark services stop; every attempt keeps its own output.
-        done = run.sh(f"spark-begin-{attempt}", [PY, ROOT / "scripts/spark_exclusive_session.py", "begin",
+        done = run.sh(f"spark-begin-{attempt}", [PY, ROOT / "scripts/spark_exclusive_session.py", "--host", run.runtime["host"], "begin",
                                                   "--session-id", env["SPARK_EXCLUSIVE_SESSION_ID"],
                                                   "--owner", env["SPARK_EXCLUSIVE_SESSION_OWNER"]], check=False)
         if done.returncode == 0:
@@ -464,7 +498,7 @@ def ensure_session(run: Run):
 
 def finish_session(run: Run):
     if run.session_up:
-        run.sh("spark-finish", [PY, ROOT / "scripts/spark_exclusive_session.py", "finish",
+        run.sh("spark-finish", [PY, ROOT / "scripts/spark_exclusive_session.py", "--host", run.runtime["host"], "finish",
                                 "--session-id", run.spec["spark"]["sessionId"], "--owner", run.spec["spark"]["owner"]])
         run.session_up = False
 
@@ -496,6 +530,18 @@ def attestation(run: Run, locale: str) -> Path:
     return path
 
 
+def spark_result(path: Path, *, accept=(0,)) -> bool:
+    """Whether a Spark stage already finished with an accepted exit code; anything else stops for reconciliation.
+
+    No result yet means the stage has not run (its own started marker refuses an unknown outcome)."""
+    if not path.exists():
+        return False
+    result = read(path)
+    if result.get("outcome") == "known_terminal" and result.get("exitCode") in accept:
+        return True
+    raise Stop(f"{path.name}: {result}; read the stage log and reconcile before resuming")
+
+
 def stage_audio(run: Run, locale: str, code: str):
     l3, q = run.dir / "l3" / locale, run.stages["qc." + locale]
     candidate, waiver_dir = Path(q["candidate"]), Path(q["waiverDir"])
@@ -516,7 +562,7 @@ def stage_audio(run: Run, locale: str, code: str):
                                         "--speaker-registry", registry, "--clip-voice-authorization", voice,
                                         "--clip-timeline-map", timeline, "--out", job_dir])
     run.check(f"gpu-{locale}", "--budget-plan", run.dir / "plans" / f"qc-{locale}", "--spark-stages",
-              "--spark-code-dir", f"{run.stage_dir}/{code}")
+              "--spark-host", run.runtime["host"], "--spark-code-dir", f"{run.stage_dir}/{code}")
     inputs = ["--source", src, "--anchor", anchor, "--candidate", candidate, "--policy", policy,
               "--human-review-receipt", waiver, "--speaker-registry", registry, "--adapter", adapter,
               "--clip-voice-authorization", voice, "--clip-timeline-map", timeline,
@@ -525,13 +571,13 @@ def stage_audio(run: Run, locale: str, code: str):
     common = ["--locale", locale, "--stage", run.stage_dir, "--code", code]
     raw, compacted = f"{locale}-raw", f"{locale}-c"
     lag = str(run.spec["layer3"]["maxEndLagSeconds"])
-    if not (l3 / "dispatch.result.json").exists():
-        # The renderer exits 1 when its own unit screening flags units; the ASR screen below decides.
+    # The renderer exits 1 when its own unit screening flags units; the ASR screen below decides.
+    if not spark_result(l3 / "dispatch.result.json", accept=(0, 1)):
         run.sh(f"render.{locale}", [*spark, "render", *common, "--job", job_dir / "job.json", *inputs,
                                     "--remote-name", raw, "--max-end-lag-seconds", lag], check=False)
-        require(read(l3 / "dispatch.result.json")["outcome"] == "known_terminal", f"render.{locale}: unknown outcome")
+        spark_result(l3 / "dispatch.result.json", accept=(0, 1))
     compact_job = l3 / f"spark-{compacted}" / "speech-job" / "job.json"
-    if not (l3 / f"compact-{compacted}.result.json").exists():
+    if not spark_result(l3 / f"compact-{compacted}.result.json"):
         run.sh(f"compact.{locale}", [*spark, "compact", *common, "--job", job_dir / "job.json", *inputs,
                                      "--raw-name", raw, "--remote-name", compacted, "--max-end-lag-seconds", lag,
                                      "--trim-trailing", "--padding-seconds", "0.03", "--inter-utterance-gap-seconds", "0",
@@ -539,7 +585,7 @@ def stage_audio(run: Run, locale: str, code: str):
     # compact reads its root back into l3/<locale>/spark-<name>/; screen reads the screened root back
     # beside the job it ran on, under that directory's spark-output/.
     compacted_local = l3 / f"spark-{compacted}"
-    if not (compacted_local / "screen-v1.result.json").exists():
+    if not spark_result(compacted_local / "screen-v1.result.json"):
         run.sh(f"screen.{locale}", [*spark, "screen", *common, "--job", compact_job, "--remote-name", compacted,
                                     "--batch-size", "1", "--tag", "v1"])
     rendered = compacted_local / "spark-output" / "speech-job"
@@ -567,14 +613,17 @@ def stage_audio(run: Run, locale: str, code: str):
                     f"{run.runtime['host']}:{run.stage_dir}/mac-artifacts/{relative}/"], check=True)
     out = run.dir / "aqc" / locale
     authorization = run.dir / "plans" / f"qc-{locale}" / f"qc-{locale}" / "api-budget-authorization.json"
-    run.sh(f"audio-qc.{locale}", [*spark, "audio-qc", *common, "--audio-package", package,
-                                  "--state-dir", run.dir / f"textqc-{locale}" / "state",
-                                  "--api-budget-authorization", authorization, "--out", out, "--run-dir", qc_run,
-                                  "--openai-environment", run.spec["openai"]["environment"], "--max-api-calls", "150"],
-           check=False)
+    # Exit 1 is a QC verdict (requires repair), not an execution failure; a failed readback is unknown.
+    if not spark_result(out / "spark-dispatch.result.json", accept=(0, 1, 2)):
+        run.sh(f"audio-qc.{locale}", [*spark, "audio-qc", *common, "--audio-package", package,
+                                      "--state-dir", run.dir / f"textqc-{locale}" / "state",
+                                      "--api-budget-authorization", authorization, "--out", out, "--run-dir", qc_run,
+                                      "--openai-environment", run.spec["openai"]["environment"], "--max-api-calls", "150"],
+               check=False)
+        spark_result(out / "spark-dispatch.result.json", accept=(0, 1, 2))
     summary = read(out / "summary.json")["locales"][locale]
     if summary.get("status") != "audio_waiver_issued":
-        run.mark("audio." + locale, "failed", status=summary.get("status"), failedGroups=summary.get("failedGroups"),
+        run.mark("audio." + locale, "failed", outcome=summary.get("status"), failedGroups=summary.get("failedGroups"),
                  nextActions=summary.get("nextActions"))
         raise Stop(f"audio.{locale}: {summary.get('status')} {summary.get('failedGroups')} {summary.get('reason')}")
     run.mark("audio." + locale, "done", package=str(package), audioQcOut=str(out / locale))
@@ -587,6 +636,9 @@ def stage_layer4(run: Run):
     from scripts import clip_e2e_release
     spec, l4 = run.spec, run.dir / "l4"
     page = spec["page"]
+    if l4.exists() and not (l4 / "prepare-result.json").exists():
+        # An incomplete preparation is local and pre-publication: keep it as evidence and rebuild.
+        l4.rename(run.dir / f"l4.incomplete-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}")
     if not (l4 / "prepare-result.json").exists():
         clip = read(spec["clipSpec"])
         lanes = {k: {"candidate": run.stages["qc." + k]["candidate"], "textQcOut": run.stages["qc." + k]["waiverDir"],
@@ -607,29 +659,35 @@ def stage_layer4(run: Run):
         raise Stop("layer4 prepared; publishing to Dev Hosting needs --publish")
     run.sh("layer4-publish", [PY, ROOT / "scripts/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
                               "--prepared", l4 / "work/prepared", "--out", l4 / "workflow", "--machine-checked", "--execute"])
+    smoke = l4 / "browser-smoke.json"
+    if smoke.exists():
+        # A failed or earlier check stays as evidence; a resumed run collects fresh browser evidence.
+        smoke.rename(l4 / f"browser-smoke.{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.json")
     run.sh("layer4-smoke", [PY, ROOT / "scripts/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
                             page["pageId"], "--no-session", "--out", l4 / "browser-smoke.json"])
     run.mark("layer4", "done", pageId=page["pageId"], smoke=read(l4 / "browser-smoke.json").get("status"))
 
 
 def stage_report(run: Run):
-    name = datetime.now(timezone.utc).strftime("%Y%m%d") + "-clip-e2e-" + run.spec["name"]
+    """Export the redacted run report of this invocation, pass or fail (AGENTS.md: every test run)."""
+    name = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-clip-e2e-" + run.spec["name"]
     run.sh("report", [PY, ROOT / "scripts/export_run_digest.py", run.dir, "--name", name])
-    run.mark("report", "done", name=name)
+    reports = (run.stages.get("report") or {}).get("reports", [])
+    run.mark("report", "done", name=name, reports=[*reports, name])
 
 
 # ---------------------------------------------------------------- driver
 
 
-def execute(run: Run, *, through: str | None = None) -> dict:
+def execute(run: Run, *, through: str | None = None, report: bool = True) -> dict:
     spec = run.spec
     order = ["inputs", "layer2-setup", "layer2", *[f"qc.{k}" for k in spec["locales"]],
-             *[f"audio.{k}" for k in spec["locales"]], "layer4", "report"]
+             *[f"audio.{k}" for k in spec["locales"]], "layer4"]
     if through:
         require(through in order, "unknown stage")
         order = order[:order.index(through) + 1]
     simple = {"inputs": stage_inputs, "layer2-setup": stage_layer2_setup, "layer2": stage_layer2,
-              "layer4": stage_layer4, "report": stage_report}
+              "layer4": stage_layer4}
     stopped = []
     code = None
     try:
@@ -670,6 +728,12 @@ def execute(run: Run, *, through: str | None = None) -> dict:
         stopped.append(str(stop))
     finally:
         finish_session(run)
+    # Every invocation that did anything leaves a run report, including a stop or a --through run.
+    if run.stages and report:
+        try:
+            stage_report(run)
+        except Stop as stop:
+            stopped.append(str(stop))
     summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled()}
     write(run.dir / "summary.json", summary)
     return summary
@@ -701,6 +765,7 @@ def main(argv=None) -> int:
     go.add_argument("--run-dir", type=Path, required=True, help="New or resumed directory under artifacts/")
     go.add_argument("--through", help="Stop after this stage (e.g. layer2, qc.ko, audio.es, layer4)")
     go.add_argument("--publish", action="store_true", help="Allow the guarded Dev Hosting publish in stage layer4")
+    go.add_argument("--no-report", action="store_true", help="Skip the run report export of this invocation")
     show = commands.add_parser("status", help="print the recorded stages and settled spend")
     show.add_argument("--spec", type=Path, required=True)
     show.add_argument("--run-dir", type=Path, required=True)
@@ -723,7 +788,7 @@ def main(argv=None) -> int:
         print(json.dumps({"stages": run.stages, "settledUsd": run.settled(), "openQcCapsUsd": run.open_qc_caps()},
                          ensure_ascii=False, indent=1))
         return 0
-    summary = execute(run, through=args.through)
+    summary = execute(run, through=args.through, report=not args.no_report)
     print(json.dumps({"stopped": summary["stopped"], "settledUsd": summary["settledUsd"],
                       "stages": {k: v["status"] for k, v in summary["stages"].items()}}, ensure_ascii=False, indent=1))
     return 1 if summary["stopped"] else 0
