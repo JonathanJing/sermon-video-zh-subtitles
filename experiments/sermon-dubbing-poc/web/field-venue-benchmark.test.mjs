@@ -1,0 +1,104 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import {fingerprint} from './fingerprint-core.mjs';
+import {assertBenchmarkPlan, assertCompatibleIndex, assertIndependentTruth, assertVariantParity, failingGates, fingerprintVariant, nearestRank, scoreNegatives, scorePositive} from '../../../scripts/field_venue_fingerprint_benchmark.mjs';
+
+function speechLike(seconds, seed = 7) {
+  let s = seed; const rand = () => ((s = (s * 1103515245 + 12345) >>> 0) / 2 ** 32) - .5;
+  const x = new Float32Array(seconds * 8000);
+  for (let i = 0; i < x.length; i++) {
+    const t = i / 8000, f = 300 + 900 * Math.abs(Math.sin(t * 1.7)) + 400 * Math.sin(t * 5.3);
+    x[i] = .3 * Math.sin(2 * Math.PI * f * t) * (.5 + .5 * Math.sin(t * 9)) + .2 * Math.sin(2 * Math.PI * 2 * f * t + 1) + .02 * rand();
+  }
+  return x;
+}
+
+test('benchmark query copy equals fingerprint-core when no variant is selected', () => {
+  const x = speechLike(10);
+  assert.doesNotThrow(() => assertVariantParity(x));
+  assert.deepEqual(fingerprintVariant(x).landmarks, fingerprint(x, 8000).landmarks);
+});
+
+test('room-noise variants change only query landmarks and stay deterministic', () => {
+  const x = speechLike(10), hum = Float32Array.from(x, (v, i) => v + .2 * Math.sin(2 * Math.PI * 500 * i / 8000));
+  const a = fingerprintVariant(hum, {cmn: true}), b = fingerprintVariant(hum, {cmn: true});
+  assert.deepEqual(a.landmarks, b.landmarks);
+  assert.notDeepEqual(a.landmarks, fingerprintVariant(hum).landmarks);
+  assert.ok(fingerprintVariant(hum, {gatePct: .5}).landmarks.length <= fingerprintVariant(hum).landmarks.length);
+});
+
+test('gate labels mirror the published matcher thresholds', () => {
+  const pass = {votes: 35, distinctAnchors: 12, coveredSeconds: 4.5, peakRatio: 1.8, matchFraction: .055, subwindowAnchors: [3, 3, 3]};
+  assert.deepEqual(failingGates(pass), []);
+  assert.deepEqual(failingGates({...pass, matchFraction: .054}), ['fraction']);
+  assert.deepEqual(failingGates({...pass, votes: 34, subwindowAnchors: [3, 2, 3]}), ['votes', 'subwindow']);
+  assert.deepEqual(failingGates({}), ['votes', 'anchors', 'span', 'ratio', 'fraction', 'subwindow']);
+});
+
+test('negative scoring counts every index comparison and reports no match for unrelated postings', () => {
+  const index = {schemaVersion: 'sermon-landmark-index-v1', algorithmVersion: 'spectral-landmarks-v1', sampleRate: 8000, hopSize: 256, durationSeconds: 60, postings: {0: [0]}};
+  const r = scoreNegatives([speechLike(20)], [['target', index], ['other', index]], null, 5);
+  assert.equal(r.windows, 6); assert.equal(r.matches, 0); assert.equal(r.maxTargetFraction, 0);
+});
+
+test('benchmark rejects incompatible indexes before counting comparisons', () => {
+  const index = {schemaVersion: 'sermon-landmark-index-v1', algorithmVersion: 'spectral-landmarks-v1', sampleRate: 8000, hopSize: 256, durationSeconds: 60, postings: {123: [1, 20]}};
+  assert.doesNotThrow(() => assertCompatibleIndex(index));
+  for (const broken of [{...index, sampleRate: 16000}, {...index, postings: {}}, {...index, postings: {bad: [1]}}, {...index, postings: {123: ['bad']}}]) {
+    assert.throws(() => scoreNegatives([speechLike(10)], [['target', broken]], null, 1), /incompatible_index/);
+  }
+});
+
+test('negative-window step must advance and be finite', () => {
+  const index = {schemaVersion: 'sermon-landmark-index-v1', algorithmVersion: 'spectral-landmarks-v1', sampleRate: 8000, hopSize: 256, durationSeconds: 60, postings: {0: [0]}};
+  for (const step of [0, -1, Infinity, NaN]) assert.throws(() => scoreNegatives([], [['target', index]], null, step), /invalid_neg_step/);
+  const cli = new URL('../../../scripts/field_venue_fingerprint_benchmark.mjs', import.meta.url);
+  const r = spawnSync(process.execPath, [cli.pathname, 'missing.json', '--out', 'unused', '--neg-step', '0'], {encoding: 'utf8'});
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /invalid_neg_step/);
+});
+
+test('reference correctness uses the expected offset, not merely an accepted match', () => {
+  const x = speechLike(20), features = fingerprint(x, 8000), postings = {};
+  for (const [hash, frame] of features.landmarks) (postings[hash] ??= []).push(frame + 156);
+  const index = {schemaVersion: 'sermon-landmark-index-v1', algorithmVersion: 'spectral-landmarks-v1', sampleRate: 8000, hopSize: 256, durationSeconds: 60, postings};
+  const result = scorePositive(x, index, 0, null, {ref: {indexStartSeconds: 0, samples: x}});
+  assert.ok(result.windows[10].rows.some(row => row.reference.matched && !row.reference.correct));
+  assert.equal(result.windows[10].referenceCorrect, 0);
+  assert.ok(result.windows[10].referenceWrong > 0);
+});
+
+test('benchmark plan rejects empty comparisons and mismatched published source identity', () => {
+  const sourceUrl = 'https://example.org/sermon', sourceUrlHash = createHash('sha256').update(sourceUrl).digest('hex');
+  const source = {sourceId: 'sermon-1', sourceUrl, sourceUrlHash, mediaSha256: 'a'.repeat(64), durationSeconds: 80,
+    window: {startSeconds: 10, endSeconds: 70, approvalReceiptSha256: 'b'.repeat(64)}};
+  const manifest = {sourceIdentity: source, reference: {sha256: source.mediaSha256}, index: {pageId: 'page-1', targetLocale: 'zh-Hans'}, recordings: [{channels: ['mix']}],
+    negatives: {referenceRanges: [[0, 20]], otherIndexes: [{id: 'other'}]}};
+  const index = {pageId: 'page-1', sourceSha256: source.mediaSha256, sourceStartSeconds: 10, sourceEndSeconds: 70, durationSeconds: 60};
+  const release = {pageId: 'page-1', targetLocale: 'zh-Hans', sourceIdentity: {sourceId: source.sourceId, sourceUrlHash, mediaSha256: source.mediaSha256, durationSeconds: source.durationSeconds, window: source.window}};
+  assert.doesNotThrow(() => assertBenchmarkPlan(manifest, index, release));
+  assert.throws(() => assertBenchmarkPlan({...manifest, recordings: []}, index, release), /empty_benchmark_plan/);
+  assert.throws(() => assertBenchmarkPlan({...manifest, negatives: {...manifest.negatives, referenceRanges: [[0, 9]]}}, index, release), /empty_benchmark_plan/);
+  assert.throws(() => assertBenchmarkPlan(manifest, {...index, sourceStartSeconds: 11}, release), /source_identity_mismatch/);
+  assert.throws(() => assertBenchmarkPlan({...manifest, sourceIdentity: {...source, sourceUrl: 'https://example.org/other'}}, index, release), /source_identity_mismatch/);
+  assert.throws(() => assertBenchmarkPlan(manifest, index, {...release, sourceIdentity: {...release.sourceIdentity, sourceId: 'other'}}), /source_identity_mismatch/);
+});
+
+test('report quantiles use nearest rank on even counts', () => {
+  assert.equal(nearestRank([4, 1, 3, 2], .5), 2);
+  assert.equal(nearestRank([4, 1, 3, 2], .95), 4);
+  assert.equal(nearestRank([], .5), null);
+});
+
+test('independent truth binds the source and recording before scoring', () => {
+  const manifest = {reference: {sha256: 'a'.repeat(64)}, recordings: [{id: 'phone', sha256: 'b'.repeat(64), truthIndexStartSeconds: 12.3}]};
+  const index = {sourceStartSeconds: 100};
+  const truth = {schemaVersion: 'field-venue-independent-truth-v1', methodVersion: 'band-energy-global-v1+waveform-local-v1', sourceSha256: manifest.reference.sha256,
+    recordings: [{id: 'phone', recordingSha256: 'b'.repeat(64), sourceStartSecondsAbsolute: 112.3, indexStartSeconds: 12.3,
+      segmentStartMinSeconds: 112.29, segmentStartMaxSeconds: 112.31, bestScore: .9, runnerUpScore: .2}]};
+  assert.doesNotThrow(() => assertIndependentTruth(manifest, index, truth));
+  assert.throws(() => assertIndependentTruth({...manifest, recordings: [{...manifest.recordings[0], truthIndexStartSeconds: 13}]}, index, truth), /independent_truth_mismatch/);
+  assert.throws(() => assertIndependentTruth(manifest, index, {...truth, sourceSha256: 'c'.repeat(64)}), /independent_truth_mismatch/);
+});
