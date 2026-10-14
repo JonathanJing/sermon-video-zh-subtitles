@@ -195,7 +195,9 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
     from scripts import canonical_layer2_controller as controller
     config, per_locale, sizing = prepared or layer2_spec(execution, locales, profile, scale)
     layer2 = profile["layer2"]
-    runtime_identity = budget_tools.selected_runtime_identity()
+    # The authorization freezes the runtime its backend dispatches through: the OpenAI launcher
+    # route and key fingerprint, or the subscription Claude CLI login (claude_cli_opus).
+    runtime_identity = budget_tools.runtime_identity_for(layer2_backend_of(execution))
     sharded = scale == "week"
     bounds = per_locale if sharded else {k: v * len(locales) for k, v in per_locale.items()}
     limits, rules = layer2["requestLimits"], layer2["limits"]

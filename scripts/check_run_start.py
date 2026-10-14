@@ -101,22 +101,31 @@ def check_launcher_binding(plan_dir, environment, env_file):
         stages = [stage for stage in planned['stages'] if stage['stage'].startswith('qc.') or stage['stage'] == 'layer2']
         if not stages:
             return result('environment_binding', 'pass', qcStages=0, layer2Stages=0, problems=[])
-        selected = selected_launcher_identity(environment, env_file)
+        launcher = []
+
+        def selected():
+            # Resolved once, and only when an OpenAI-bound stage needs it.
+            if not launcher:
+                launcher.append(selected_launcher_identity(environment, env_file))
+            return launcher[0]
         qc_count = l2_count = 0
         for stage in stages:
             if stage['stage'] == 'layer2':
                 from scripts import canonical_layer2_budget as l2, canonical_layer2_controller as controller
                 config = controller.load_configuration(Path(stage['execution']))
                 admitted = l2.load_authorization(config, Path(stage['authorization']), controller.code_identity(), stage['authorizationSha256'])
-                if admitted.get('runtimeIdentity') != selected or stage.get('runtimeIdentity') != selected:
+                # A Claude CLI Layer 2 is bound to the subscription login, not to the OpenAI launcher.
+                expected = (l2.claude_runtime_identity() if 'claudeCli' in (admitted.get('runtimeIdentity') or {})
+                            else selected())
+                if admitted.get('runtimeIdentity') != expected or stage.get('runtimeIdentity') != expected:
                     raise ValueError('launcher_identity_changed')
                 l2_count += 1
             else:
                 admitted = auth.validate(Path(stage['authorization']), require_scope=True)
                 context = admitted['qcContext']
                 if (context['environment'] != environment or
-                        context['openaiRoute'] != selected['openaiRoute'] or
-                        context['credentialSha256'] != selected['credentialSha256']):
+                        context['openaiRoute'] != selected()['openaiRoute'] or
+                        context['credentialSha256'] != selected()['credentialSha256']):
                     raise ValueError('launcher_identity_changed')
                 qc_count += 1
         return result('environment_binding', 'pass', qcStages=qc_count, layer2Stages=l2_count, problems=[])
@@ -487,8 +496,13 @@ def main(argv=None) -> int:
     elif args.budget_plan and not args.env_file:
         def require_planned_launcher():
             stages = json.loads((args.budget_plan / 'plan.json').read_text())['stages']
-            if any(stage['stage'] == 'layer2' or stage['stage'].startswith('qc.') for stage in stages):
+            openai_bound = [stage for stage in stages if stage['stage'].startswith('qc.')
+                            or (stage['stage'] == 'layer2' and stage.get('layer2Backend', 'openai_api') == 'openai_api')]
+            if openai_bound:
                 return result('environment_binding', 'fail', problems=['Layer 2 or QC plan requires --openai-environment'])
+            if any(stage['stage'] == 'layer2' for stage in stages):
+                # A Claude CLI Layer 2 is checked against the subscription login; no launcher needed.
+                return check_launcher_binding(args.budget_plan, None, None)
             return result('environment_binding', 'skip')
         checks.append(checked('environment_binding', require_planned_launcher))
     failed = [check["check"] for check in checks if check["status"] == "fail"]

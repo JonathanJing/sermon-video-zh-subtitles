@@ -69,6 +69,21 @@ def normalize_usage(raw):
             'totalTokens': prompt + output if prompt is not None and isinstance(output, int) else None}
 
 
+def subscription_login(cli_path=None, *, env=None):
+    """The non-secret login of the local Claude CLI; refuses anything but a first-party subscription."""
+    located = cli_path or shutil.which('claude')
+    if not located:
+        raise FileNotFoundError('claude_cli_not_found')
+    status = json.loads(subprocess.check_output([str(Path(located).absolute()), 'auth', 'status'],
+                                                env=env if env is not None else {**child_environment(), 'DISABLE_AUTOUPDATER': '1'},
+                                                text=True, timeout=30))
+    method = str(status.get('authMethod', ''))
+    if status.get('loggedIn') is not True or 'api' in method.lower() \
+            or status.get('apiProvider') not in (None, 'firstParty'):
+        raise ValueError('claude_language_requires_subscription_login')
+    return {'authMethod': method, 'apiProvider': status.get('apiProvider') or 'firstParty'}
+
+
 class ClaudeLayer2Transport:
     billing = 'local'  # Claude subscription usage; total_cost_usd is a list-price equivalent, not a charge
 
@@ -84,12 +99,7 @@ class ClaudeLayer2Transport:
         self.timeout_seconds = timeout_seconds
         self.receipts_dir = Path(receipts_dir) if receipts_dir is not None else None
         self.env = {**child_environment(), 'DISABLE_AUTOUPDATER': '1'}
-        status = json.loads(subprocess.check_output([str(self.cli_path), 'auth', 'status'],
-                                                    env=self.env, text=True, timeout=30))
-        method = str(status.get('authMethod', ''))
-        if status.get('loggedIn') is not True or 'api' in method.lower() \
-                or status.get('apiProvider') not in (None, 'firstParty'):
-            raise ValueError('claude_language_requires_subscription_login')
+        method = subscription_login(self.cli_path, env=self.env)['authMethod']
         version = subprocess.check_output([str(self.cli_path), '--version'], env=self.env,
                                           text=True, timeout=15).strip()
         resolved = self.cli_path.resolve()

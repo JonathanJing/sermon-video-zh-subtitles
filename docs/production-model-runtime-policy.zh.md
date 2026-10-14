@@ -16,6 +16,8 @@
 - **模型分工：** 初译 `claude-opus-5-5` high，独立复核 `claude-opus-5-5` medium，与 Sol 的分工一致；每次调用的角色仍由模型和推理强度区分。
 - **调用方式：** 两个角色都经本机订阅登录的 Claude Code CLI（`ClaudeLayer2Transport`），走订阅额度，不用 API key。transport 拒绝 API key，子进程去掉 OpenAI／Anthropic 凭据，要求订阅登录，模型身份以 CLI 返回的 `modelUsage` 为准。
 - **政策绑定：** 选择写入政策的 translator/reviewer 角色，进入政策哈希。controller 按冻结的后端选择 transport，并在执行身份里记下两个角色的 CLI 身份；caller 与政策后端不一致时，在派发前拒绝。
+- **不需要 OpenAI 凭据：** worker 先按政策确定后端，Claude 后端不要求 OpenAI launcher 或 key。Layer 2 预算授权冻结的运行身份是 Claude CLI 的订阅登录（`claude-layer2-runtime-identity-v1`：登录方式、firstParty），不含 CLI 版本，因为 CLI 会自动更新，每次调用的 transport 身份仍会记下确切版本。开工检查对这类计划核对订阅登录，不要求 `--openai-environment`。
+- **计费与恢复：** 调用按订阅额度记为本地计费（`billing: local`），不记作 API 计费。修复轮可以复用同一 job 内上一轮的缓存。已付回复可以仅缓存恢复（两个角色都可以）。
 - **仍然拒绝的组合：** 只有完整的这一对模型才能冻结。旧的"Opus 初译 + Sol 复核"实验政策，以及其他 Claude 组合，冻结时仍会拒绝。
 - **预算：** 账本仍按列价最坏情况（`strict-claude-list-worst-case-2026-10-08-v1`）逐次预留和结算，上限取[周更运行配置](weekly-run-profile.zh.md)的 `claudeCliListPriceCapUsdPerLocale`。列价等价不是实际扣费，不计入用户批准的美元总额；计划里该阶段记 `countsTowardTotal: false`。
 - **不变的部分：** 文本质检、校准和音频质检的评判仍走 OpenAI API，按原预算规则。

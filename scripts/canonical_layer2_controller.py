@@ -496,15 +496,21 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
         with liveness.report(request_path.parent, request) as progress:
             if caller is None:
                 require(budget_binding is not None, 'bound_budget_authorization_required')
-                # OpenAI API only: no Spark session (2026-10-13; only GPU stages occupy Spark).
-                from scripts.sermon_openai_runtime import selected_route
-                route = selected_route()
-                require(route is not None, 'openai_layer2_requires_explicit_dev_or_prod_launcher')
-                api_key = os.environ['OPENAI_API_KEY']
-                # The policy's frozen Layer 2 backend picks the transport: the OpenAI API (Sol), or
-                # the subscription Claude CLI for both roles (claude_cli_opus).
+                # The policy's frozen Layer 2 backend picks the transport before any credential: the
+                # OpenAI API (Sol) through the explicit launcher, or the subscription Claude CLI for
+                # both roles (claude_cli_opus), which needs no OpenAI route or key.
+                # No Spark session either way (2026-10-13; only GPU stages occupy Spark).
                 backend = models.production_backend(policy)
                 transports = claude_transports(policy, lane) if backend == 'claude_cli_opus' else None
+                if transports is None:
+                    from scripts.sermon_openai_runtime import selected_route
+                    route = selected_route()
+                    require(route is not None, 'openai_layer2_requires_explicit_dev_or_prod_launcher')
+                    api_key = os.environ['OPENAI_API_KEY']
+                else:
+                    require('claudeCli' in (budget_binding.get('runtimeIdentity') or {}),
+                            'claude_layer2_requires_claude_runtime_authorization')
+                    api_key = ''  # never reaches a Claude process
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
                                                      claude_transports=transports)
                 if transports is not None:

@@ -170,8 +170,22 @@ def production_efforts(policy: dict[str, Any]) -> dict[str, str]:
     return {role: effort for role, (_, effort) in policy_tools.LAYER2_BACKENDS[production_backend(policy)].items()}
 
 
+def repair_round_reuse_allowed(transport_identity: dict[str, Any]) -> bool:
+    """Whether a repair round may reuse an earlier round's caches under this transport.
+
+    Only budget-bound transports qualify: the OpenAI API, and the budgeted Claude CLI transport of
+    a claude_cli_opus job (its identity holds both roles' CLI identities and the authorization hash).
+    Every cache fingerprint includes this identity, so a changed transport never reuses a cache."""
+    return (transport_identity.get("backend") == "openai_api"
+            or (transport_identity.get("schemaVersion") == "claude-layer2-budget-transport-identity-v1"
+                and transport_identity.get("layer2Backend") == "claude_cli_opus"))
+
+
 def historical_models(policy: dict[str, Any], *, cache_only: bool) -> dict[str, str]:
     """Validate frozen identities without enabling a new provider dispatch."""
+    if cache_only and policy_tools.layer2_backend(policy) == "claude_cli_opus":
+        # Paid Claude responses of a production claude_cli_opus job recover cache-only (both roles).
+        return {role: policy[role]["model"] for role in MODEL_ROLES}
     for role in MODEL_ROLES:
         allowed = {MODEL_ROLES[role], HISTORICAL_MODEL_ROLES[role]}
         if cache_only and role == "translator":
@@ -1040,7 +1054,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             # prior-input check above rejects any cache made under another one.
             require(resume_cache_from is None
                     and (reuse_from is None or (partial_repair_brief is not None
-                                                and transport_identity.get("backend") == "openai_api")),
+                                                and repair_round_reuse_allowed(transport_identity))),
                     "CLI transport supports same-run resume only; cross-run cache reuse is not enabled")
         if revision_brief is not None:
             identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)

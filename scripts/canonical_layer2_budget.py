@@ -83,8 +83,34 @@ def selected_runtime_identity(key=None):
     return {'openaiRoute': route, 'credentialSha256': hashlib.sha256(actual.encode()).hexdigest()}
 
 
+CLAUDE_RUNTIME_SCHEMA = 'claude-layer2-runtime-identity-v1'
+_CLAUDE_LOGIN = {}
+
+
+def claude_runtime_identity():
+    """The non-secret runtime of a claude_cli_opus Layer 2: the subscription login of the local
+    Claude CLI. No OpenAI route or key is involved; the CLI version is left out because the CLI
+    updates itself, and every call's transport identity records the exact version anyway."""
+    if 'value' not in _CLAUDE_LOGIN:
+        from scripts.claude_layer2_transport import subscription_login
+        _CLAUDE_LOGIN['value'] = subscription_login()
+    return {'claudeCli': {'schemaVersion': CLAUDE_RUNTIME_SCHEMA, **_CLAUDE_LOGIN['value']}}
+
+
+def runtime_identity_for(backend, key=None):
+    """The runtime identity a Layer 2 authorization freezes for this policy backend."""
+    return claude_runtime_identity() if backend == 'claude_cli_opus' else selected_runtime_identity(key)
+
+
 def validate_runtime_identity(value):
     from scripts.sermon_openai_runtime import safe_route
+    if type(value) is dict and set(value) == {'claudeCli'}:
+        login = value['claudeCli']
+        require(type(login) is dict and set(login) == {'schemaVersion', 'authMethod', 'apiProvider'}
+                and login['schemaVersion'] == CLAUDE_RUNTIME_SCHEMA and login['apiProvider'] == 'firstParty'
+                and isinstance(login['authMethod'], str) and login['authMethod']
+                and 'api' not in login['authMethod'].lower(), 'invalid_layer2_runtime_identity')
+        return value
     require(type(value) is dict and set(value) == {'openaiRoute', 'credentialSha256'}
             and safe_route(value['openaiRoute']) is not None
             and safe_route(value['openaiRoute']) == value['openaiRoute']
@@ -97,7 +123,8 @@ def validate_runtime_identity(value):
 def verify_runtime(authorization, key=None):
     frozen = authorization.get('runtimeIdentity')
     if frozen is not None:
-        require(selected_runtime_identity(key) == frozen, 'layer2_runtime_identity_changed')
+        current = claude_runtime_identity() if 'claudeCli' in frozen else selected_runtime_identity(key)
+        require(current == frozen, 'layer2_runtime_identity_changed')
     return frozen
 
 
@@ -164,7 +191,7 @@ class BudgetedCaller:
                  claude_transports=None):
         self.auth, self.config, self.policy = authorization, config, policy
         verify_runtime(authorization)
-        if authorization.get('runtimeIdentity') is not None:
+        if authorization.get('runtimeIdentity') is not None and 'openaiRoute' in authorization['runtimeIdentity']:
             self.execution_identity = {'schemaVersion': 'openai-layer2-budget-transport-identity-v2',
                 'backend': 'openai_api', 'runtimeIdentity': authorization['runtimeIdentity'],
                 'budgetAuthorizationSha256': authorization['sha256']}
@@ -186,6 +213,9 @@ class BudgetedCaller:
         require('reviewer' not in self.claude_transports or policies.layer2_backend(policy) == 'claude_cli_opus',
                 'claude_reviewer_requires_claude_cli_opus_policy')
         self.claude_transport = self.claude_transports.get('translator')
+        if self.claude_transports and policies.layer2_backend(policy) == 'claude_cli_opus':
+            # Subscription quota, not an API project: accounting records these calls as local.
+            self.billing = 'local'
 
     def verify_execution(self, key):
         load_authorization(self.config, self.auth['path'], self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
@@ -194,7 +224,8 @@ class BudgetedCaller:
     def __call__(self, key, payload):
         self.verify_execution(key)
         from scripts.sermon_openai_runtime import project_headers
-        selected_headers = project_headers(key)
+        # A Claude CLI call carries no OpenAI key or project header.
+        selected_headers = None if payload.get('model') in limits.CLAUDE_MODELS else project_headers(key)
         load_authorization(self.config, self.auth['path'],
                            self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
         from scripts.strict_budget_capability import require_bounded_api_payload

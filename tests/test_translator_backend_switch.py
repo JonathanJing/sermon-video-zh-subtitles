@@ -61,7 +61,11 @@ class TranslatorBackendPolicyTests(unittest.TestCase):
         self.assertEqual(models.historical_models(policy, cache_only=True)['translator'], CLAUDE)
         with self.assertRaisesRegex(ValueError, 'unsupported_historical_model_policy'):
             models.historical_models(policy, cache_only=False)
+        # A production claude_cli_opus job recovers both roles' paid responses cache-only.
         policy['reviewer']['model'] = CLAUDE
+        self.assertEqual(models.historical_models(policy, cache_only=True), {'translator': CLAUDE, 'reviewer': CLAUDE})
+        # Any other Claude reviewer is still not a recoverable identity.
+        policy['reviewer']['reasoningEffort'] = 'high'
         with self.assertRaisesRegex(ValueError, 'unsupported_historical_model_policy'):
             models.historical_models(policy, cache_only=True)
 
@@ -266,6 +270,17 @@ class ClaudeCliOpusBackendTests(unittest.TestCase):
         data = jobs._read(self.h.auth['root'] / ledger.STORE_ID / 'state.json')
         self.assertEqual([row['request']['kind'] for row in data['reservations'].values()], ['review'])
 
+    def test_claude_calls_are_billed_locally_and_carry_no_openai_header(self):
+        from unittest import mock
+        transports = self.transports()
+        caller = budget.BudgetedCaller(self.h.auth, self.h.config, self.h.source, self.h.anchor, self.policy,
+                                       claude_transports=transports)
+        self.assertEqual(caller.billing, 'local')
+        with mock.patch('scripts.sermon_openai_runtime.project_headers', side_effect=AssertionError('no OpenAI header')):
+            caller('', self.payload('medium'))
+        sol = budget.BudgetedCaller(self.h.auth, self.h.config, self.h.source, self.h.anchor, self.h.policy)
+        self.assertFalse(hasattr(sol, 'billing'))
+
     def test_a_claude_reviewer_needs_the_claude_cli_opus_policy(self):
         sol_reviewer = copy.deepcopy(self.policy)
         sol_reviewer['reviewer'].update(model='gpt-6.1-sol', reasoningEffort='medium')
@@ -292,6 +307,37 @@ class ClaudeCliOpusBackendTests(unittest.TestCase):
         self.assertEqual(sorted(transports), ['reviewer', 'translator'])
         self.assertEqual(sorted(built), [(CLAUDE, 'high', Path('/lane/claude-calls')),
                                          (CLAUDE, 'medium', Path('/lane/claude-calls'))])
+
+
+class ClaudeCliOpusReviewTests(unittest.TestCase):
+    """Behaviour asked for in the review of #430."""
+
+    def test_claude_runtime_identity_is_the_subscription_login_not_an_openai_route(self):
+        from unittest import mock
+        login = {'claudeCli': {'schemaVersion': budget.CLAUDE_RUNTIME_SCHEMA, 'authMethod': 'claude.ai',
+                               'apiProvider': 'firstParty'}}
+        self.assertEqual(budget.validate_runtime_identity(login), login)
+        for bad in ({'claudeCli': {**login['claudeCli'], 'authMethod': 'api_key'}},
+                    {'claudeCli': {**login['claudeCli'], 'apiProvider': 'bedrock'}}):
+            with self.assertRaisesRegex(ValueError, 'invalid_layer2_runtime_identity'):
+                budget.validate_runtime_identity(bad)
+        budget._CLAUDE_LOGIN.clear()
+        self.addCleanup(budget._CLAUDE_LOGIN.clear)
+        with mock.patch.object(claude, 'subscription_login', return_value={'authMethod': 'claude.ai', 'apiProvider': 'firstParty'}), \
+                mock.patch.dict('os.environ', {}, clear=True):
+            # No OpenAI launcher or key is needed for a Claude Layer 2 runtime.
+            self.assertEqual(budget.runtime_identity_for('claude_cli_opus'), login)
+            self.assertEqual(budget.verify_runtime({'runtimeIdentity': login}), login)
+            with self.assertRaisesRegex(ValueError, 'layer2_runtime_identity_changed'):
+                budget.verify_runtime({'runtimeIdentity': {'claudeCli': {**login['claudeCli'], 'authMethod': 'other'}}})
+
+    def test_budgeted_claude_repair_rounds_may_reuse_caches(self):
+        self.assertTrue(models.repair_round_reuse_allowed({'backend': 'openai_api'}))
+        self.assertTrue(models.repair_round_reuse_allowed({'schemaVersion': 'claude-layer2-budget-transport-identity-v1',
+                                                           'backend': 'claude_cli', 'layer2Backend': 'claude_cli_opus'}))
+        for identity in ({'backend': 'claude_cli'}, {'backend': 'codex_cli'},
+                         {'schemaVersion': 'claude-layer2-budget-transport-identity-v1', 'layer2Backend': 'openai_api'}):
+            self.assertFalse(models.repair_round_reuse_allowed(identity))
 
 
 class ClaudeCliOpusPlanTests(unittest.TestCase):
