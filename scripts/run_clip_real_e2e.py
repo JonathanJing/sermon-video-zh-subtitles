@@ -168,6 +168,11 @@ def load_spec(path: Path) -> dict:
     qc = spec.setdefault("qc", {})
     qc.setdefault("maxRevisions", 2)
     require(type(qc["maxRevisions"]) is int and 0 <= qc["maxRevisions"] <= 3, "qc.maxRevisions must be 0-3")
+    human_acceptance = qc.get("humanAcceptanceByLocale", {})
+    require(isinstance(human_acceptance, dict) and set(human_acceptance) <= set(locales)
+            and all(isinstance(value, str) and value for value in human_acceptance.values()),
+            "qc.humanAcceptanceByLocale must name run locales and receipt paths")
+    qc["humanAcceptanceByLocale"] = {locale: resolve(value) for locale, value in human_acceptance.items()}
     page = spec.get("page") or {}
     require(isinstance(page.get("pageId"), str) and page["pageId"].startswith("mockup-"),
             "page.pageId must be an isolated mockup- page")
@@ -640,10 +645,12 @@ def text_qc(run: Run, locale: str, candidate: Path, out_name: str) -> dict:
     shutil.copyfile(run.l2 / "src/anchor.json", work / "anchor.json")
     shutil.copyfile(run.l2 / "policy" / f"{locale}-policy-clip.json", work / "policies" / f"{locale}-policy-clip.json")
     shutil.copyfile(candidate, work / locale / "candidate.json")
+    acceptance = run.spec["qc"]["humanAcceptanceByLocale"].get(locale)
     run.sh(f"text-qc.{locale}.{out_name}",
            [PY, ROOT / "scripts/run_machine_qc_clip_test.py", "--run-dir", work, "--out", out, "--state-dir", root / "state",
             "--locales", locale, "--text-backend", "api", "--api-budget-authorization", authorization,
-            "--workers", 8, "--expected-implementation", run.impl()], launcher=True, check=False)
+            "--workers", 8, "--expected-implementation", run.impl(),
+            *(["--human-acceptance", f"{locale}={acceptance}"] if acceptance else [])], launcher=True, check=False)
     summary = read(out / "summary.json")["locales"][locale]
     waivers = [p for p in (out / locale).glob("text-waiver-*.json") if not p.name.endswith(".inputs.json")]
     return {"status": summary["status"], "failedGroups": summary.get("failedGroups"),

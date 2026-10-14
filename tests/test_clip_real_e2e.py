@@ -89,6 +89,15 @@ class SpecificationTests(unittest.TestCase):
                          (2, "dev", 120.0))
         self.assertEqual(spec["spark"]["sessionId"], "clip-e2e-u101-test")
 
+    def test_group_acceptance_is_scoped_to_a_run_locale(self):
+        spec = subject.load_spec(spec_files(self.base, qc={
+            "maxRevisions": 0, "humanAcceptanceByLocale": {"ko": "ko-acceptance.json"}}))
+        self.assertEqual(spec["qc"]["humanAcceptanceByLocale"]["ko"],
+                         str((self.base / "ko-acceptance.json").resolve()))
+        with self.assertRaisesRegex(ValueError, "humanAcceptanceByLocale"):
+            subject.load_spec(spec_files(self.base, qc={
+                "maxRevisions": 0, "humanAcceptanceByLocale": {"fr": "fr-acceptance.json"}}))
+
     def test_raised_repair_fraction_is_scoped_to_named_dev_locales(self):
         base = json.loads(spec_files(self.base).read_text())
         layer2 = {**base["layer2"], "repairSpendFractionByLocale": {"ko": 0.30}}
@@ -255,6 +264,24 @@ class RunTests(unittest.TestCase):
         other = spec_files(self.base, budget={"totalUsd": 40, "settledUsdBefore": 15.3})
         with self.assertRaisesRegex(ValueError, "another specification"):
             subject.Run(other, self.run_dir, publish=False)
+
+    def test_text_qc_passes_the_bound_group_acceptance(self):
+        receipt = self.run_dir / "ko-acceptance.json"
+        self.run.spec["qc"]["humanAcceptanceByLocale"] = {"ko": str(receipt)}
+        for rel in ("l2/src/source.json", "l2/src/anchor.json", "l2/policy/ko-policy-clip.json",
+                    "l2/text/ko/candidate.json"):
+            subject.write(self.run_dir / rel, {})
+        calls = []
+        def fake_sh(label, argv, **kwargs):
+            calls.append(argv)
+            out = self.run_dir / "textqc-ko/out"
+            subject.write(out / "summary.json", {"locales": {"ko": {
+                "status": "text_waiver_issued", "failedGroups": [], "textQcReceipt": "head.json"}}})
+            subject.write(out / "ko/text-waiver-test.json", {})
+        with mock.patch.object(self.run, "check"), mock.patch.object(self.run, "sh", side_effect=fake_sh):
+            result = subject.text_qc(self.run, "ko", self.run_dir / "l2/text/ko/candidate.json", "out")
+        self.assertEqual(result["status"], "text_waiver_issued")
+        self.assertEqual(calls[0][-2:], ["--human-acceptance", f"ko={receipt}"])
 
     def test_audio_qc_mirror_creates_remote_parent_before_rsync(self):
         calls=[]
