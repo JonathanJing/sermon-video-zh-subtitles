@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import unittest
 from unittest import mock
+from types import SimpleNamespace
 
 from scripts import clip_e2e_release as release
 from scripts import clip_e2e_spark as spark
@@ -43,6 +44,41 @@ class SpecificationTests(unittest.TestCase):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.base = Path(directory.name)
+
+    def test_clip_voice_attestation_is_derived_from_bound_source_permission(self):
+        full = {"source": {"sourceId": "sermon-1", "media": {"sha256": "full-media"},
+                           "approvedWindow": {"startSeconds": 10.0, "endSeconds": 30.0}}}
+        clip_source = {"source": {"sourceId": "sermon-1"}}
+        template = {"schemaVersion": "sermon-source-user-voice-attestation-v2",
+                    "permissionClaimed": True, "userStatement": "Produce the authorized TTS",
+                    "sourceId": "sermon-1", "sourceMediaSha256": "full-media",
+                    "approvedWindow": {"startSeconds": 10.0, "endSeconds": 30.0},
+                    "targetLocales": ["es"], "speakerId": "speaker-1",
+                    "voiceCheckpointSha256": "voice-1"}
+        source_path = self.base / "full.json"
+        source_path.write_text(json.dumps(full))
+        template_path = self.base / "permission.json"
+        template_path.write_text(json.dumps(template))
+        clip_path = self.base / "clip.json"
+        clip_path.write_text(json.dumps({"sourceId": "sermon-1", "approvedWindowStartSeconds": 10.0,
+                                         "englishSourcePackage": {"path": str(source_path)}}))
+        l2 = self.base / "l2"
+        (l2 / "src").mkdir(parents=True)
+        (l2 / "src/source.json").write_text(json.dumps(clip_source))
+        run = SimpleNamespace(dir=self.base / "run", l2=l2,
+                              spec={"clipSpec": str(clip_path),
+                                    "layer3": {"attestationTemplates": {"es": str(template_path)}},
+                                    "authorization": {"evidence": "Continue isolated Dev E2E"}})
+        result = json.loads(subject.attestation(run, "es").read_text())
+        self.assertEqual(result["schemaVersion"], "sermon-clip-user-rights-attestation-v1")
+        self.assertEqual(result["scope"], "isolated-clip-test-dev-app-and-audio_only")
+        self.assertEqual(result["userStatement"], template["userStatement"])
+        self.assertEqual(result["derivedFrom"]["sha256"], hashlib.sha256(template_path.read_bytes()).hexdigest())
+        template["approvedWindow"]["endSeconds"] = 31.0
+        template_path.write_text(json.dumps(template))
+        shutil.rmtree(run.dir)
+        with self.assertRaisesRegex(ValueError, "not bound"):
+            subject.attestation(run, "es")
 
     def test_paths_resolve_beside_the_specification_and_defaults_apply(self):
         spec = subject.load_spec(spec_files(self.base))

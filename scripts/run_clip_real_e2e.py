@@ -735,12 +735,37 @@ def attestation(run: Run, locale: str) -> Path:
     path = run.dir / "l3" / locale / "clip-user-rights-attestation.json"
     if not path.exists():
         template = read(run.spec["layer3"]["attestationTemplates"][locale])
+        clip = read(run.spec["clipSpec"])
+        full_source = read(clip["englishSourcePackage"]["path"])
+        source = read(run.l2 / "src/source.json")
+        require(template.get("schemaVersion") == "sermon-source-user-voice-attestation-v2"
+                and template.get("permissionClaimed") is True
+                and bool(template.get("userStatement", "").strip())
+                and template.get("sourceId") == clip["sourceId"] == source["source"]["sourceId"]
+                == full_source["source"]["sourceId"]
+                and template.get("sourceMediaSha256") == full_source["source"]["media"]["sha256"]
+                and template.get("approvedWindow") == {
+                    key: full_source["source"]["approvedWindow"][key] for key in ("startSeconds", "endSeconds")}
+                and clip["approvedWindowStartSeconds"] == template["approvedWindow"]["startSeconds"]
+                and locale in template.get("targetLocales", []),
+                "source voice permission is not bound to this approved clip")
+        template_path = Path(run.spec["layer3"]["attestationTemplates"][locale])
         stamp = now()
-        template.update(englishSourcePackageJsonSha256=interp.json_sha256(read(run.l2 / "src/source.json")),
-                        targetLocales=[locale], recordedAt=stamp, attestedAt=stamp,
-                        userStatement=run.spec["authorization"]["evidence"]
-                        + f" Dev clip from {Path(run.spec['clipSpec']).name}, inside the window the source attestation covers.")
-        write(path, template)
+        write(path, {
+            "schemaVersion": "sermon-clip-user-rights-attestation-v1",
+            "scope": "isolated-clip-test-dev-app-and-audio_only",
+            "englishSourcePackageJsonSha256": interp.json_sha256(source),
+            "targetLocales": [locale],
+            "speakerId": template["speakerId"],
+            "voiceCheckpointSha256": template["voiceCheckpointSha256"],
+            "permissionClaimed": True,
+            "userStatement": template["userStatement"],
+            "taskAuthorizationEvidence": run.spec["authorization"]["evidence"],
+            "derivedFrom": {"path": str(template_path.resolve()),
+                            "sha256": hashlib.sha256(template_path.read_bytes()).hexdigest()},
+            "recordedAt": stamp,
+            "attestedAt": stamp,
+        })
     return path
 
 
