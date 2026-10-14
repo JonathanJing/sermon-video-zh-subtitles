@@ -302,6 +302,9 @@ class AudioQcTests(unittest.TestCase):
                 self.assertFalse(passed)
                 self.assertFalse(audio_qc.transcript_agrees(text, heard, locale))
                 self.assertTrue(audio_qc.transcript_agrees(text, text, locale))
+        self.assertIsNone(seeded.drop_key_word("静默和神的圣洁常常是连在一起的。", "zh-Hans"))
+        self.assertEqual(seeded.drop_key_word("请看第八章。", "zh-Hans"), "请看第章。")
+        self.assertEqual(seeded.drop_key_word("请翻到启示录3章4节。", "zh-Hans"), "请翻到启示录章4节。")
         # Korean dubs mostly say quantities in words, so those are dropped too; 이 사람 is not one.
         for text, heard in (("그에게는 두 아들과 세 딸이 있었고 모두 함께 예배를 드렸습니다.",
                              "그에게는 아들과 세 딸이 있었고 모두 함께 예배를 드렸습니다."),

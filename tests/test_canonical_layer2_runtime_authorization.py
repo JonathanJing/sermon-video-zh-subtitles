@@ -1,6 +1,7 @@
 """V3 route/actual-credential approval and cache admission; offline only."""
 import copy
 import contextlib
+from dataclasses import replace
 import io
 import json
 import os
@@ -91,6 +92,37 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
                 models._model_call('translator',prompt,self.base.policy,output,self.env['OPENAI_API_KEY'],next_caller,
                                    request_limits=self.base.limits)
         self.assertEqual(calls,[1])
+
+    def test_new_budget_authorization_reuses_same_runtime_cache(self):
+        calls=[]
+        def transport(key, payload):
+            calls.append(1)
+            return {'id':'offline-response', 'model':payload['model'], 'choices':[{'finish_reason':'stop',
+                'message':{'content':'{"fixture":true}'}}], 'usage':{'prompt_tokens':20,'completion_tokens':10}}
+        caller=self.caller(transport)
+        from scripts.production_spark_admission import SessionBoundCaller
+        output=self.root/'repair-cache'/'translation.json'
+        prompt={'instruction':'Translate.', 'input':{'english':'A full sentence.'}}
+        first=models._model_call('translator',prompt,self.base.policy,output,self.env['OPENAI_API_KEY'],
+                                 SessionBoundCaller(caller, requires_spark=False, outcome_guarded=True),
+                                 request_limits=self.base.limits)
+        first_auth=b.sha(self.path)
+        self.write_v3('locale')
+        self.assertNotEqual(first_auth,b.sha(self.path))
+        next_caller=self.caller(transport)
+        self.assertEqual(caller.execution_identity,next_caller.execution_identity)
+        self.assertEqual(models._model_call('translator',prompt,self.base.policy,output,self.env['OPENAI_API_KEY'],
+                                           SessionBoundCaller(next_caller, requires_spark=False, outcome_guarded=True),
+                                           request_limits=self.base.limits),first)
+        self.assertEqual(calls,[1])
+
+    def test_qc_revisions_have_distinct_budget_roots_with_the_same_job_root(self):
+        original=self.base.config
+        first=replace(original, sha256='a'*64, auto_repair={'backTranslationQc':{'ko':'qc-a.json'}})
+        second=replace(original, sha256='b'*64, auto_repair={'backTranslationQc':{'ko':'qc-b.json'}})
+        self.assertEqual(first.job_root,second.job_root)
+        self.assertNotEqual(b.budget_root(original),b.budget_root(first))
+        self.assertNotEqual(b.budget_root(first),b.budget_root(second))
 
 
     def test_new_approval_is_exact_and_legacy_cannot_be_silently_extended(self):

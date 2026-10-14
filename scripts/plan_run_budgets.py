@@ -199,7 +199,7 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
     sharded = scale == "week"
     bounds = per_locale if sharded else {k: v * len(locales) for k, v in per_locale.items()}
     limits, rules = layer2["requestLimits"], layer2["limits"]
-    root = config.job_root.parent / f".{config.job_root.name}.layer2-budget"
+    root = budget_tools.budget_root(config)
     directory = out / "layer2"
     binding = {"productionRunId": config.run_id, "configurationSha256": config.sha256,
                "codeIdentitySha256": controller.code_identity(), "budgetRoot": str(root),

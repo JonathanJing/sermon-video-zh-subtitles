@@ -37,6 +37,7 @@
 | `authorization` | `approvedBy`、`evidence`（批准出处）、`defaultPass`（必须写明 "not a human review"） |
 | `budget` | `totalUsd` 是批准总额；`settledUsdBefore` 是此前已结算的花费，包括未标价转写的预留 |
 | `layer2.policyTemplates` / `plugins` | 每种语言：源周次冻结的政策，以及语言插件 |
+| `layer2.backend` | 可选，默认 `openai_api`；显式 `claude_cli_opus` 会把片段政策重新冻结为 Opus 5.5 high 初译及 medium 复核。Claude 订阅调用的列价等价金额单列，不计入 `budget.totalUsd`；文本和音频质检仍计入批准的美元总额。 |
 | `layer3.attestationTemplates` / `speakerRegistry` | 源周次的用户声音授权（会改绑到本片段的来源包）和说话人登记 |
 | `qc.maxRevisions` | 每种语言的文本质检最多打回 Layer 2 几次（0–3，默认 2） |
 | `page` | `pageId`（`mockup-…`）、三语展示文案（必须标明是测试）、可选的 Dev 基线缓存 |
@@ -50,6 +51,8 @@
 - **续跑：** 同一条命令。已完成的阶段跳过；运行目录绑定首次使用的规格，改过的规格会被拒绝。
 - **只跑到某一步：** 加 `--through layer2`，或 `qc.ko`、`audio.es` 等。
 - **发布到 Dev：** 加 `--publish`。
+- **修复音频质检失败：** 当 `audio.<语言>` 的 `nextActions` 全部为 `resynthesize_new_seed` 时，运行 `repair-audio --spec artifacts/<run>/run-spec.json --run-dir artifacts/<run> --locale ko --seed 43`。它按同一总预算为新提交规划独立质检授权，在独立渲染根保留旧失败与修复账本，对新音频重新压缩、筛查、打包和质检。通过后再用原 `run --publish` 续跑 Layer 4；结果未知先对账，不换种子盲试。
+- **已定位发音问题时：** 可加 `--unit-instructions artifacts/<run>/l3/<语言>-repair-instructions.json`，只为失败单元提供与批准文本绑定的朗读提示；提示文件必须在本次运行目录内，哈希随修复尝试冻结。不得借提示改译文或绕过失败账本。
 - **查看状态：** `run_clip_real_e2e.py status --spec … --run-dir …`，显示各阶段状态、已结算花费和仍未结束的质检上限。
 
 运行目录必须在 `artifacts/` 下，因为音频质检会把它镜像到 Spark，并挂载在同一个绝对路径。每一步的输出在 `logs/<步骤>.log`，耗时记在 `timings.tsv`，结束时写 `summary.json`。
@@ -85,8 +88,9 @@
 - **结果未知时先对账。** 每个 Spark 阶段派发前会写 `*.started.json`，有标记但没有结果文件，说明结果未知，同一阶段会拒绝再跑。Layer 2 的未知结果由 controller 的持久 job 处理。
 - **Spark 会话开不起来。** `begin` 最多尝试 3 次，每次的输出都保留在 `logs/spark-begin-<n>.log`。编排器退出前一定会 `finish` 会话。
 - **渲染退出码为 1。** 渲染器自身的初筛标出了句子，后续的压缩和正式 ASR 筛查照常进行；只有退出码不在 0–2 才算未知。
-- **音频质检失败。** 该语言记为 `failed`，并记录 `nextActions`，例如 `resynthesize_new_seed`。修复阶梯目前不自动执行。
+- **音频质检失败。** 该语言记为 `failed`，并记录 `nextActions`，例如 `resynthesize_new_seed`。修复不会自动执行；按上面的显式命令使用新的种子和独立根。修复沿原语言的音频修复账本计数，只有新音频通过质检才把该语言改为 `done`。
 - **部署结果未知。** 按 [Layer 4 公开交付](layer4-four-product-public-delivery.zh.md)的规则，用 `guarded_hosting_publish.reconcile()` 对账，不要重新部署。
+- **Dev 发布成功但浏览器冒烟失败。** 先保留原浏览器收据并独立复查；续跑检查已发布工作流的页面、输入哈希及 HTTP 读回终态，跳过部署，只使用发布后且三语通过的浏览器收据。若发布收据不完整则停下对账。冷启动复查给页面 15 秒稳定时间，不把设备或场地状态从浏览器结果推断出来。
 
 ## 已知限制
 

@@ -34,6 +34,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -99,6 +100,9 @@ def load_spec(path: Path) -> dict:
     require(all(type(budget.get(k)) in (int, float) and budget[k] >= 0 for k in ("totalUsd", "settledUsdBefore"))
             and budget["settledUsdBefore"] < budget["totalUsd"], "budget needs totalUsd > settledUsdBefore >= 0")
     layer2, layer3 = spec.get("layer2") or {}, spec.get("layer3") or {}
+    layer2.setdefault("backend", "openai_api")
+    require(layer2["backend"] in ("openai_api", "claude_cli_opus"),
+            "layer2.backend must be openai_api or claude_cli_opus")
     for field, table in (("policyTemplates", layer2), ("plugins", layer2), ("attestationTemplates", layer3)):
         require(isinstance(table.get(field), dict) and set(locales) <= set(table[field]), f"{field} missing a locale")
         table[field] = {k: resolve(v) for k, v in table[field].items() if k in locales}
@@ -199,12 +203,13 @@ class Run:
 
     # -- budget
     def settled(self) -> float:
-        """Earlier spend plus this run's Layer 2 results and QC ledgers; unpriced rows count at their reservation."""
+        """Approved-dollar spend; Claude subscription list-price equivalents are kept separate."""
         from scripts.export_run_digest import budget_summary
         total = 0
-        for path in self.dir.rglob("*.result.json"):
-            if "layer2-budget" in str(path) and "responses" not in path.parts:
-                total += read(path)["result"]["usage"]["costMicrousd"]
+        if self.spec["layer2"]["backend"] == "openai_api":
+            for path in self.dir.rglob("*.result.json"):
+                if "layer2-budget" in str(path) and "responses" not in path.parts:
+                    total += read(path)["result"]["usage"]["costMicrousd"]
         for path in self.dir.rglob("source-budget.json"):
             ledger = read(path)
             total += budget_summary(ledger).get("estimatedMicrousd", 0)
@@ -212,6 +217,15 @@ class Run:
                          if row.get("status") == "returned"
                          and (row.get("settlement") or {}).get("costStatus") not in ("estimated_upper_bound", "reused"))
         return round(self.spec["budget"]["settledUsdBefore"] + total / 1e6, 6)
+
+    def claude_list_price_equivalent(self) -> float:
+        """Subscription Layer 2 usage at its reserved list-price basis, not cash spend."""
+        if self.spec["layer2"]["backend"] != "claude_cli_opus":
+            return 0.0
+        total = sum(read(path)["result"]["usage"]["costMicrousd"]
+                    for path in self.dir.rglob("*.result.json")
+                    if "layer2-budget" in str(path) and "responses" not in path.parts)
+        return round(total / 1e6, 6)
 
     def open_qc_caps(self) -> float:
         """Full caps of QC budgets planned in this run whose locale has not finished audio QC."""
@@ -272,7 +286,8 @@ def stage_inputs(run: Run):
     run.mark("inputs", "done", units=len(anchor["sourceUnits"]), inputs=str(inputs))
 
 
-def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str) -> dict:
+def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str,
+                       backend: str = "openai_api") -> dict:
     """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
     from scripts import target_language_policy as tp
     rows = anchor["sourceUnits"]
@@ -282,6 +297,7 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
     used = sorted(observed - set(exclusions))
     draft = copy.deepcopy(frozen)
     draft.pop("componentSha256")
+    draft = tp.apply_layer2_backend(draft, backend)
     draft["terminology"]["properNames"] = [t for t in draft["terminology"]["properNames"] if t["source"] in used]
     scope = draft["sourceScope"]
     scope.update(englishSourcePackageJsonSha256=tp.canonical_sha256(source), anchorManifestSha256=tp.canonical_sha256(anchor),
@@ -312,7 +328,7 @@ def stage_layer2_setup(run: Run):
         if not path.exists():
             write(path, freeze_clip_policy(Path(spec["layer2"]["policyTemplates"][locale]), source, anchor,
                                            reviewed_by=auth["defaultPass"] + "; targets carried from the source week's receipt",
-                                           statement=auth["evidence"]))
+                                           statement=auth["evidence"], backend=spec["layer2"]["backend"]))
     if not (l2 / "execution.json").exists():
         write(l2 / "inspection.json", {"schemaVersion": "sermon-canonical-package-inspection-config-v1",
                                        "source": "src/source.json", "anchor": "src/anchor.json",
@@ -496,6 +512,15 @@ def attestation(run: Run, locale: str) -> Path:
     return path
 
 
+def mirror_run_to_spark(run: Run):
+    relative = run.dir.relative_to((ROOT / "artifacts").resolve())
+    mirror = f"{run.stage_dir}/mac-artifacts/{relative}"
+    subprocess.run(["ssh", "-o", "BatchMode=yes", run.runtime["host"],
+                    "mkdir -p -- " + shlex.quote(mirror)], check=True)
+    subprocess.run(["rsync", "-a", "-e", "ssh", "--exclude", "logs/", f"{run.dir}/",
+                    f"{run.runtime['host']}:{mirror}/"], check=True)
+
+
 def stage_audio(run: Run, locale: str, code: str):
     l3, q = run.dir / "l3" / locale, run.stages["qc." + locale]
     candidate, waiver_dir = Path(q["candidate"]), Path(q["waiverDir"])
@@ -562,9 +587,7 @@ def stage_audio(run: Run, locale: str, code: str):
                                 (rendered / "render-manifest-screened-v1.json", qc_run / "l3/render-manifest-screened-v1.json"),
                                 (rendered / "job.json", qc_run / "l3/speech-job.json")):
         shutil.copyfile(source_path, target)
-    relative = run.dir.relative_to((ROOT / "artifacts").resolve())
-    subprocess.run(["rsync", "-a", "-e", "ssh", "--exclude", "logs/", f"{run.dir}/",
-                    f"{run.runtime['host']}:{run.stage_dir}/mac-artifacts/{relative}/"], check=True)
+    mirror_run_to_spark(run)
     out = run.dir / "aqc" / locale
     authorization = run.dir / "plans" / f"qc-{locale}" / f"qc-{locale}" / "api-budget-authorization.json"
     run.sh(f"audio-qc.{locale}", [*spark, "audio-qc", *common, "--audio-package", package,
@@ -574,10 +597,120 @@ def stage_audio(run: Run, locale: str, code: str):
            check=False)
     summary = read(out / "summary.json")["locales"][locale]
     if summary.get("status") != "audio_waiver_issued":
-        run.mark("audio." + locale, "failed", status=summary.get("status"), failedGroups=summary.get("failedGroups"),
+        run.mark("audio." + locale, "failed", qcStatus=summary.get("status"), failedGroups=summary.get("failedGroups"),
                  nextActions=summary.get("nextActions"))
         raise Stop(f"audio.{locale}: {summary.get('status')} {summary.get('failedGroups')} {summary.get('reason')}")
     run.mark("audio." + locale, "done", package=str(package), audioQcOut=str(out / locale))
+
+
+def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructions: Path | None = None):
+    """Re-render a failed locale in a fresh root and recheck against its existing repair ledger."""
+    key = "audio." + locale
+    prior = run.stages.get(key) or {}
+    require(prior.get("status") == "failed", f"{key} has no terminal failure to repair")
+    require(prior.get("nextActions") and set(prior["nextActions"].values()) == {"resynthesize_new_seed"},
+            f"{key} does not call for a new TTS seed")
+    attempts = list(prior.get("repairAttempts") or [])
+    instruction_sha = hashlib.sha256(unit_instructions.read_bytes()).hexdigest() if unit_instructions else None
+    require(type(seed) is int and seed >= 0 and seed != 42, "repair seed must differ from the original seed 42")
+    require(not attempts or seed not in [a["seed"] for a in attempts[:-1]], "repair seed was used earlier")
+    require(not attempts or attempts[-1]["seed"] == seed or attempts[-1]["status"] == "failed",
+            "reconcile the current repair attempt before using another seed")
+    require(not attempts or attempts[-1]["seed"] != seed
+            or attempts[-1].get("unitInstructionsSha256") == instruction_sha,
+            "repair instructions differ from the frozen attempt")
+    if not attempts or attempts[-1]["seed"] != seed:
+        attempts.append({"seed": seed, "status": "running", "startedAt": now(),
+                         "failedGroupsBefore": prior.get("failedGroups"),
+                         "unitInstructionsSha256": instruction_sha})
+    run.mark(key, "failed", **{k: v for k, v in prior.items() if k not in ("status", "at", "repairAttempts")},
+             repairAttempts=attempts)
+
+    l3 = run.dir / "l3" / locale
+    repair = run.dir / "l3" / f"{locale}-repair-seed-{seed}"
+    q = run.stages["qc." + locale]
+    candidate, waiver_dir = Path(q["candidate"]), Path(q["waiverDir"])
+    waiver = next(p for p in waiver_dir.glob("text-waiver-*.json") if not p.name.endswith(".inputs.json"))
+    adapter = ROOT / "config/layer3-adapters" / f"adapter-{locale}.json"
+    policy = run.l2 / "policy" / f"{locale}-policy-clip.json"
+    src, anchor = run.l2 / "src/source.json", run.l2 / "src/anchor.json"
+    timeline = run.dir / "l3/clip-timeline-map.json"
+    registry = Path(run.spec["layer3"]["speakerRegistry"])
+    voice = l3 / "clip-voice-authorization.json"
+    job = repair / "speech-job" / "job.json"
+    job.parent.mkdir(parents=True, exist_ok=True)
+    original_job = l3 / "speech-job" / "job.json"
+    if job.exists():
+        require(job.read_bytes() == original_job.read_bytes(), "repair speech job differs from frozen original")
+    else:
+        shutil.copyfile(original_job, job)
+    repair_plan = run.dir / "plans" / f"qc-{locale}-audio-seed-{seed}"
+    run.check(f"gpu-{locale}-seed-{seed}", "--budget-plan", repair_plan,
+              "--spark-stages", "--spark-code-dir", f"{run.stage_dir}/{code}")
+    inputs = ["--source", src, "--anchor", anchor, "--candidate", candidate, "--policy", policy,
+              "--human-review-receipt", waiver, "--speaker-registry", registry, "--adapter", adapter,
+              "--clip-voice-authorization", voice, "--clip-timeline-map", timeline,
+              "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json"]
+    spark = [PY, ROOT / "scripts/clip_e2e_spark.py"]
+    common = ["--locale", locale, "--stage", run.stage_dir, "--code", code]
+    raw, compacted = f"{locale}-seed-{seed}-raw", f"{locale}-seed-{seed}-c"
+    lag = str(run.spec["layer3"]["maxEndLagSeconds"])
+    if not (repair / "dispatch.result.json").exists():
+        run.sh(f"render.{locale}.seed-{seed}", [*spark, "render", *common, "--job", job, *inputs,
+               "--remote-name", raw, "--max-end-lag-seconds", lag, "--seed", str(seed),
+               *(["--unit-instructions", unit_instructions] if unit_instructions else [])], check=False)
+    require(read(repair / "dispatch.result.json")["outcome"] == "known_terminal",
+            f"render.{locale}.seed-{seed}: unknown outcome")
+    if not (repair / f"compact-{compacted}.result.json").exists():
+        run.sh(f"compact.{locale}.seed-{seed}", [*spark, "compact", *common, "--job", job, *inputs,
+               "--raw-name", raw, "--remote-name", compacted, "--max-end-lag-seconds", lag,
+               "--trim-trailing", "--padding-seconds", "0.03", "--inter-utterance-gap-seconds", "0",
+               "--reaction-lag-seconds", "0", "--tail-overrun-seconds", "1.0"])
+    compacted_local = repair / f"spark-{compacted}"
+    compact_job = compacted_local / "speech-job" / "job.json"
+    if not (compacted_local / "screen-v1.result.json").exists():
+        run.sh(f"screen.{locale}.seed-{seed}", [*spark, "screen", *common, "--job", compact_job,
+               "--remote-name", compacted, "--batch-size", "1", "--tag", "v1"])
+    rendered = compacted_local / "spark-output" / "speech-job"
+    package = repair / "audio-package.json"
+    if not package.exists():
+        run.sh(f"package.{locale}.seed-{seed}", [PY, ROOT / "scripts/build_target_language_audio_package.py",
+               "--source", src, "--anchor", anchor, "--candidate", candidate, "--job", rendered / "job.json",
+               "--adapter", adapter, "--policy", policy, "--human-review-receipt", waiver,
+               "--speaker-registry", registry, "--clip-voice-authorization", voice,
+               "--clip-timeline-map", timeline, "--render-manifest", rendered / "render-manifest-screened-v1.json",
+               "--artifact-root", rendered, "--out", package])
+    qc_run = run.dir / "aqc" / f"run-{locale}-seed-{seed}"
+    for directory in (qc_run / locale, qc_run / "policies", qc_run / "l3"):
+        directory.mkdir(parents=True, exist_ok=True)
+    for source_path, target in ((src, qc_run / "source.json"), (anchor, qc_run / "anchor.json"),
+                                (policy, qc_run / "policies" / policy.name), (candidate, qc_run / locale / "candidate.json"),
+                                (waiver, qc_run / locale / waiver.name), (package, qc_run / "l3/audio-package.json"),
+                                (rendered / "asr-screening-receipt-v1.json", qc_run / "l3/asr-screening-receipt-v1.json"),
+                                (rendered / "render-manifest-screened-v1.json", qc_run / "l3/render-manifest-screened-v1.json"),
+                                (rendered / "job.json", qc_run / "l3/speech-job.json")):
+        if target.exists():
+            require(target.read_bytes() == source_path.read_bytes(), f"repair QC input changed: {target}")
+        else:
+            shutil.copyfile(source_path, target)
+    mirror_run_to_spark(run)
+    out = run.dir / "aqc" / f"{locale}-seed-{seed}"
+    authorization = repair_plan / f"qc-{locale}" / "api-budget-authorization.json"
+    if not (out / "summary.json").exists():
+        run.sh(f"audio-qc.{locale}.seed-{seed}", [*spark, "audio-qc", *common, "--audio-package", package,
+               "--state-dir", run.dir / f"textqc-{locale}" / "state", "--api-budget-authorization", authorization,
+               "--out", out, "--run-dir", qc_run, "--openai-environment", run.spec["openai"]["environment"],
+               "--max-api-calls", "150"], check=False)
+    summary = read(out / "summary.json")["locales"][locale]
+    attempts[-1].update(status="done" if summary.get("status") == "audio_waiver_issued" else "failed",
+                        finishedAt=now(), qcStatus=summary.get("status"), failedGroups=summary.get("failedGroups"),
+                        package=str(package), audioQcOut=str(out / locale))
+    if summary.get("status") != "audio_waiver_issued":
+        run.mark(key, "failed", qcStatus=summary.get("status"), failedGroups=summary.get("failedGroups"),
+                 nextActions=summary.get("nextActions"), repairAttempts=attempts)
+        raise Stop(f"{key} seed {seed}: {summary.get('status')} {summary.get('failedGroups')} {summary.get('reason')}")
+    run.mark(key, "done", package=str(package), audioQcOut=str(out / locale),
+             repairedFrom=prior.get("failedGroups"), repairAttempts=attempts)
 
 
 # ---------------------------------------------------------------- stages: Layer 4 and report
@@ -605,17 +738,65 @@ def stage_layer4(run: Run):
     if not run.publish:
         run.mark("layer4", "prepared_not_published")
         raise Stop("layer4 prepared; publishing to Dev Hosting needs --publish")
-    run.sh("layer4-publish", [PY, ROOT / "scripts/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
-                              "--prepared", l4 / "work/prepared", "--out", l4 / "workflow", "--machine-checked", "--execute"])
-    run.sh("layer4-smoke", [PY, ROOT / "scripts/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
-                            page["pageId"], "--no-session", "--out", l4 / "browser-smoke.json"])
-    run.mark("layer4", "done", pageId=page["pageId"], smoke=read(l4 / "browser-smoke.json").get("status"))
+    workflow = l4 / "workflow"
+    state_path = workflow / "workflow-state.json"
+    if not state_path.exists():
+        if workflow.exists() and any(workflow.iterdir()):
+            raise Stop("Layer 4 publish files exist without a terminal receipt; reconcile before retry")
+        run.sh("layer4-publish", [PY, ROOT / "scripts/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
+                                  "--prepared", l4 / "work/prepared", "--out", workflow, "--machine-checked", "--execute"])
+    state = read(state_path)
+    report_path = workflow / "run-report.json"
+    report = read(report_path) if report_path.exists() else {}
+    inputs = state.get("inputs") or {}
+    sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+    expected = (("preparedManifestSha256", l4 / "work/prepared/preparation-manifest.json"),
+                ("baselineReceiptSha256", l4 / "baseline/baseline-receipt.json"),
+                ("baselineSealSha256", l4 / "baseline/seal-report.json"))
+    if (state.get("status") != "diagnostic_dev_http_verified"
+            or report.get("status") != state["status"] or report.get("inputs") != inputs
+            or inputs.get("pageId") != page["pageId"]
+            or (inputs.get("target") or {}).get("origin") != DEV_ORIGIN
+            or inputs.get("contentMode") != "machine_checked"
+            or any(not path.is_file() or inputs.get(key) != sha(path) for key, path in expected)
+            or any((state.get("stages") or {}).get(stage, {}).get("status") != "succeeded"
+                   for stage in ("publish_assets", "verify_assets", "publish_catalog", "live_readback"))):
+        raise Stop("Layer 4 publish receipt needs reconciliation; refusing to deploy again")
+
+    def passed_smoke(path):
+        try:
+            receipt = read(path)
+            return (receipt.get("status") == "pass" and receipt.get("pageId") == page["pageId"]
+                    and receipt.get("origin") == DEV_ORIGIN
+                    and {row["locale"] for row in receipt.get("locales", []) if row.get("status") == "pass"}
+                    == set(spec["locales"])
+                    and datetime.fromisoformat(receipt["checkedAt"]) >= datetime.fromisoformat(state["completedAt"]))
+        except (OSError, ValueError, KeyError, TypeError):
+            return False
+
+    receipts = sorted(l4.glob("browser-smoke*.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    smoke = next((path for path in receipts if passed_smoke(path)), None)
+    if smoke is None:
+        smoke = l4 / f"browser-smoke-retry-{len(receipts) + 1}.json"
+        run.sh("layer4-smoke", [PY, ROOT / "scripts/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
+                                page["pageId"], "--settle-ms", "15000", "--no-session", "--out", smoke])
+        require(passed_smoke(smoke), "Layer 4 browser smoke did not pass")
+    run.mark("layer4", "done", pageId=page["pageId"], smoke="pass", smokeReceipt=str(smoke),
+             workflowReceipt=str(workflow / "run-report.json"))
 
 
 def stage_report(run: Run):
     name = datetime.now(timezone.utc).strftime("%Y%m%d") + "-clip-e2e-" + run.spec["name"]
-    run.sh("report", [PY, ROOT / "scripts/export_run_digest.py", run.dir, "--name", name])
-    run.mark("report", "done", name=name)
+    digest = ROOT / "artifacts/run-reports" / name
+    if digest.exists():
+        manifest = read(digest / "manifest.json")
+        require(manifest.get("name") == name and
+                [row.get("label") for row in manifest.get("runs", [])] == [run.dir.name],
+                "existing run digest does not match this run")
+        run.sh("report-verify", [PY, ROOT / "scripts/export_run_digest.py", digest, "--verify"])
+    else:
+        run.sh("report", [PY, ROOT / "scripts/export_run_digest.py", run.dir, "--name", name])
+    run.mark("report", "done", reportName=name)
 
 
 # ---------------------------------------------------------------- driver
@@ -670,7 +851,8 @@ def execute(run: Run, *, through: str | None = None) -> dict:
         stopped.append(str(stop))
     finally:
         finish_session(run)
-    summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled()}
+    summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled(),
+               "claudeListPriceEquivalentUsd": run.claude_list_price_equivalent()}
     write(run.dir / "summary.json", summary)
     return summary
 
@@ -704,6 +886,13 @@ def main(argv=None) -> int:
     show = commands.add_parser("status", help="print the recorded stages and settled spend")
     show.add_argument("--spec", type=Path, required=True)
     show.add_argument("--run-dir", type=Path, required=True)
+    repair = commands.add_parser("repair-audio", help="resume a failed audio locale with a new TTS seed")
+    repair.add_argument("--spec", type=Path, required=True)
+    repair.add_argument("--run-dir", type=Path, required=True)
+    repair.add_argument("--locale", required=True, choices=LOCALES)
+    repair.add_argument("--seed", required=True, type=int)
+    repair.add_argument("--unit-instructions", type=Path,
+                        help="Frozen per-unit delivery instructions under this run directory")
     route = commands.add_parser("_route")
     route.add_argument("--out", type=Path, required=True)
     drive = commands.add_parser("_drive")
@@ -720,9 +909,38 @@ def main(argv=None) -> int:
         return 0
     run = Run(args.spec, args.run_dir, publish=getattr(args, "publish", False))
     if args.command == "status":
-        print(json.dumps({"stages": run.stages, "settledUsd": run.settled(), "openQcCapsUsd": run.open_qc_caps()},
+        print(json.dumps({"stages": run.stages, "settledUsd": run.settled(),
+                          "claudeListPriceEquivalentUsd": run.claude_list_price_equivalent(),
+                          "openQcCapsUsd": run.open_qc_caps()},
                          ensure_ascii=False, indent=1))
         return 0
+    if args.command == "repair-audio":
+        prior = run.stages.get("audio." + args.locale) or {}
+        require(prior.get("status") == "failed",
+                "repair requires a recorded terminal audio failure")
+        require(prior.get("nextActions") and set(prior["nextActions"].values()) == {"resynthesize_new_seed"},
+                "audio QC did not request resynthesize_new_seed")
+        require(args.seed >= 0 and args.seed != 42, "repair seed must differ from the original seed 42")
+        if args.unit_instructions is not None:
+            args.unit_instructions = args.unit_instructions.resolve()
+            require(args.unit_instructions.is_file() and args.unit_instructions.is_relative_to(run.dir),
+                    "repair instructions must be a file under this run directory")
+        run.plan(run.dir / "plans" / f"qc-{args.locale}-audio-seed-{args.seed}",
+                 [f"qc.{args.locale}"], [args.locale], extra=["--qc-inputs", run.l2 / "qc-inputs.json"])
+        stopped = []
+        try:
+            ensure_session(run)
+            repair_audio(run, args.locale, args.seed, stage_code(run), unit_instructions=args.unit_instructions)
+        except Stop as stop:
+            stopped.append(str(stop))
+        finally:
+            finish_session(run)
+        summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled(),
+                   "claudeListPriceEquivalentUsd": run.claude_list_price_equivalent()}
+        write(run.dir / "summary.json", summary)
+        print(json.dumps({"stopped": stopped, "settledUsd": summary["settledUsd"],
+                          "audioStatus": run.stages["audio." + args.locale]["status"]}, ensure_ascii=False))
+        return 1 if stopped else 0
     summary = execute(run, through=args.through)
     print(json.dumps({"stopped": summary["stopped"], "settledUsd": summary["settledUsd"],
                       "stages": {k: v["status"] for k, v in summary["stages"].items()}}, ensure_ascii=False, indent=1))
