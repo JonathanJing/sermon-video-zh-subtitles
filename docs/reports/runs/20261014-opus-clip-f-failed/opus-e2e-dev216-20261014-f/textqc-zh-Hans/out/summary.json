@@ -1,0 +1,48 @@
+{
+  "implementationSha256": "5815242564f4a4ab7c972d04cf94780b7d1084d78687bde7fb3e9c8f4ad2304b",
+  "locales": {
+    "zh-Hans": {
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 16,
+          "added_number": 9,
+          "added_reference": 13,
+          "dropped_half": 10,
+          "dropped_name": 1,
+          "english_leak": 11,
+          "placeholder": 16,
+          "semantic_negation": 0,
+          "swapped_name": 0,
+          "swapped_quantity": 0,
+          "wrong_book": 1,
+          "wrong_number": 1,
+          "wrong_ordinal": 14
+        },
+        "notApplicableKinds": [
+          "semantic_negation",
+          "swapped_quantity",
+          "swapped_name"
+        ],
+        "untestableKinds": []
+      },
+      "candidateJsonSha256": "3bcccee731f1eead3db06cba3ee993277a3463c37cf29309c54859221e5bec59",
+      "failedGroups": [
+        "translation-chunk-0005-u005"
+      ],
+      "locale": "zh-Hans",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/textqc-zh-Hans/run-out/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/textqc-zh-Hans/run-out/zh-Hans/candidate.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/textqc-zh-Hans/run-out/policies/zh-Hans-policy-clip.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/textqc-zh-Hans/run-out/source.json"
+      },
+      "problems": [],
+      "reason": "text QC failed; repair the failed groups in a new candidate revision",
+      "status": "requires_repair",
+      "textQc": "requires_repair",
+      "textQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/textqc-zh-Hans/state/qc-receipts/text/zh-Hans/1068e9f7759558987c9ee6e9cfc44e28313253d3a4b3a4ede324feee9f3b6272/entry-000001.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/textqc-zh-Hans/run-out",
+  "textBackend": "api"
+}

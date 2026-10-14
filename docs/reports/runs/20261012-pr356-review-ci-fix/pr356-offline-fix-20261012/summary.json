@@ -1,0 +1,29 @@
+{
+  "status": "pass",
+  "codeRevision": "793b68b2862054a99fb871b886be853d08105d57",
+  "command": [
+    "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_text_qc_unmarked_plural.py",
+    "tests/test_sermon_app_delivery_workflow.py",
+    "tests/test_spoken_condensation.py",
+    "tests/test_run_spoken_condensation.py"
+  ],
+  "elapsedSeconds": 36.939604249999775,
+  "exitCode": 0,
+  "newModelRequests": 0,
+  "deployment": "not_run",
+  "publication": "not_run",
+  "ciFailure": {
+    "run": 38293337080,
+    "test": "test_two_actual_supervisor_cli_processes_admit_one_fixed_bundle_job",
+    "reason": "A job appeared queued between snapshot reads but was checked as a completed bundle and falsely required human failure inspection."
+  },
+  "initialFocusedTests": {
+    "passed": 26,
+    "subtestsPassed": 20,
+    "elapsedSeconds": 36.78
+  }
+}

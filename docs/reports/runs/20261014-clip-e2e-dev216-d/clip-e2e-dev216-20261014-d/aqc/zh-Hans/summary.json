@@ -1,0 +1,100 @@
+{
+  "backend": "real",
+  "implementationSha256": "70078f905f6ddbd06550e0520fa21c6cadc63cef30aea823f26fa6d59b198eb6",
+  "locales": {
+    "zh-Hans": {
+      "audioQc": "pass",
+      "audioQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-zh-Hans/state/qc-receipts/audio/zh-Hans/bbbc8ac8f702e538512a4748c75f7600cf1f04d1c2ff8e171b14d51941dab827/entry-000001.json",
+      "audioWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/zh-Hans/zh-Hans/audio-waiver-dd426859aceb7330.json",
+      "calibration": {
+        "cleanFalsePositiveRate": 0.0,
+        "detected": 177,
+        "overallDetectionRate": 0.994382,
+        "trials": 178
+      },
+      "calibrationCoverage": {
+        "audio": {
+          "droppedKeyWordTrials": 11,
+          "truncationEligibleTrials": 13,
+          "untestableKinds": [],
+          "wrongSentenceUnits": 16
+        },
+        "text": {
+          "applicableGroups": {
+            "added_content": 16,
+            "added_number": 9,
+            "added_reference": 13,
+            "dropped_half": 10,
+            "dropped_name": 1,
+            "english_leak": 11,
+            "placeholder": 16,
+            "semantic_negation": 0,
+            "swapped_name": 0,
+            "swapped_quantity": 0,
+            "wrong_book": 1,
+            "wrong_number": 0,
+            "wrong_ordinal": 14
+          },
+          "notApplicableKinds": [
+            "wrong_number",
+            "semantic_negation",
+            "swapped_quantity",
+            "swapped_name"
+          ],
+          "untestableKinds": []
+        }
+      },
+      "calibrationMisses": {
+        "text.semantic_negation": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_name": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_quantity": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.wrong_number": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        }
+      },
+      "failedGroups": [],
+      "flaggedGroups": [],
+      "locale": "zh-Hans",
+      "packageJsonSha256": "d3b823f788856cdb477dc8c7f0cba83bbda584fa786c4aecc5ded67aeba0b68c",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/src/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2-zh-Hans-r1/text/zh-Hans/candidate.json",
+        "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/run-zh-Hans/l3/speech-job.json",
+        "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l3/zh-Hans/audio-package.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/policy/zh-Hans-policy-clip.json",
+        "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/run-zh-Hans/l3/asr-screening-receipt-v1.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/src/source.json",
+        "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-zh-Hans/out-r1/zh-Hans/text-waiver-dd571b70e7181b47.json"
+      },
+      "problems": [],
+      "secondaryAsrGroups": [],
+      "status": "audio_waiver_issued",
+      "trackCheck": "pass",
+      "trackCheckReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/zh-Hans/zh-Hans/track-check-bc48c8d061469e4a.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/run-zh-Hans",
+  "transportSha256": "fd914707cda7fbe25e99f64f1cd31661acbf0816c58401499bbf2c667cc31f04"
+}

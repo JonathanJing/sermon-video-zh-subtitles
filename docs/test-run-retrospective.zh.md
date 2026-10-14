@@ -19,7 +19,7 @@
    - `INDEX.md`：自动生成，包括结束状态、各阶段耗时、失败阶段和错误行。
    - `manifest.json`：原文件路径、哈希、截断和脱敏次数。云端可以据此核对本机证据，不需要原文件。
    - 运行目录的副本：只含 `outcome.json`、`timings.tsv`、`summary.json`、`preflight.json`、`journal.ndjson`、`decisions.ndjson` 和 `*receipt*.json`；`source-budget.json` 只导出结算摘要（`source-budget.settlement.json`：请求数、预留与估算费用、token、成本未知的原因），不导出账本本身；`*.log` 只保留开头 40 行、结尾 200 行和中间的错误行。名字含 `evidence`、`acceptance`、`approval` 的文件不复制：Layer 2 的 `evidence.json` 和人工验收文件可能含讲道原文或译文。人工验收和批准以文件哈希的形式进入决定记录。JSON 的键和值都脱敏（2026-10-11 以 `user@内网IP` 为键的主机表曾漏出），脱敏后撞名的键加 `#2`、`#3` 保留。
-   - `RETROSPECTIVE.md`：按下面的复盘清单生成的骨架，由本地或云端的 agent 填写。
+   - `RETROSPECTIVE.md`：按下面的复盘检查清单生成的骨架，已预填总时间和收据里的模型与速度，其余由本地或云端的 agent 填写。
 2. **两步，分开生成和公开。** `export_run_digest.py` 只在被忽略的 `artifacts/run-reports/` 下生成报告，不碰 Git；`publish_run_report.sh` 先复查脱敏，再公开。生成可以无条件自动执行，公开是一个单独、可检查的动作。
 3. **报告单独走 PR。** 公开脚本从 `origin/dev` 切出 `run-report/<name>` 分支，在临时 worktree 里把报告加成 `docs/reports/runs/<name>/`，推送并开草稿 PR。当前检出和分支都不动。报告 PR 只含文档，走 CI 的文档快速路径；修复另开 PR，引用报告路径。这样报告不会被代码评审卡住，修复也不会混进证据。
 4. **公开仓库的保护。**
@@ -67,18 +67,25 @@ scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
 
 ## 复盘检查清单
 
-`RETROSPECTIVE.md` 骨架按这 8 项生成。[PR #283](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/283) 里两轮 Spark 8×8 的复盘是参照样本。
+`RETROSPECTIVE.md` 骨架按下面 8 项生成。前 5 项是复盘的主体：用了多久、每层用了什么模型、跑得多快、出了什么错、下次怎么改。[PR #283](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/283) 里两轮 Spark 8×8 的复盘是参照样本。
 
-1. **实际覆盖范围**：按 L1–L4 列出本轮真正执行了什么、复用了什么、没有执行什么。模拟审核、诊断级候选、`productionEligible=false` 要原样写出，不要写成“端到端通过”。
-2. **结果和结束信号**：每个运行目录的 `outcome.json` 状态。需要独占 Spark 的运行，以 `spark_session_round.sh` 输出的 `round:` 行为准，`execute succeeded` 不代表服务已经恢复。
-3. **耗时**：按 `timings.tsv` 列出各阶段，与上一轮同一阶段比较；把等待（sleep、Apple 处理、人工回答）和真正的计算分开。
-4. **错误**：每个错误写现象、原因、处理和是否已有回归测试。有改动的，写明提交或 PR。
-5. **发生在占用资源之后的错误**：哪些错误本可以在预检阶段发现（例如独占 Spark 之后才暴露的路径或挂载问题），以及要补的预检。
-6. **遗留状态**：Dev 上没有被引用的文件、未结束的 job hold、用过但没上传的构建号、需要删除的本地构建产物。
-7. **外部可见的变化**：Dev 发布版本、TestFlight 构建、绕过分支保护的推送，每项分开写证据。设备播放和场地验收没做就写 `not_run`。
-8. **后续**：每条写清楚由谁做、在哪个 PR 或 backlog 条目里跟踪。
+1. **结论先行**：交付类型（`dual_pdf`、`live_session`、`four_layer_release` 或测试）、最终状态、结束信号和证据边界。结束信号看各运行目录的 `outcome.json`；独占 Spark 的运行以 `spark_session_round.sh` 输出的 `round:` 行为准，`execute succeeded` 不代表服务已经恢复。模拟审核、诊断级候选、`productionEligible=false` 要原样写出，不要写成"端到端通过"。
+2. **总时间**：从开始到结束的墙钟时间，拆成计算、等待（人、服务、凭据）和返工，并与上一轮同类运行比较。导出时自动预填：有 `journal.ndjson` 就用 `run_journal.py summary` 的拆分；没有就用 `outcome.json` 的起止时间；再没有就把 `timings.tsv` 各阶段相加，此时不含阶段之间的等待。
+3. **各层模型、耗时与速度**：固定表格，每行一个层或阶段：L1 来源 ASR、L1 词级对齐、L1 英文机器评审、L2 初译、L2 独立审核、文本质检、L3 配音、L3 回转写筛查、音频质检、L4 构建与发布。每行填：
+   - 模型或后端、推理强度和 tier；
+   - 调用次数、计算耗时；
+   - token 或音频秒数；
+   - 速度：文字模型写输出 token/s，语音写 ×实时；
+   - 费用和证据文件。
 
-复盘只引用报告里的数值，不粘贴原始日志。
+   没执行的层写 `not_run`，复用的写 `reused` 并注明来源。导出时会扫描已复制的收据，列出出现过的模型身份、调用记录、输出 token、计时和速度。速度只用同一条记录里同时有输出 token 和耗时的部分。这张自动表按模型汇总，不知道层，归到哪一层由填写者判断。收据里没写推理强度或 tier 的记为 `?`，要按冻结政策或预算账本补上。
+4. **错误**：每个错误一行，写层或阶段、现象、原因、发现时机、处理、回归测试，以及对应的提交或 PR。发现时机分三种：预检、占用资源后、发布后。占用资源之后才暴露的错误，例如独占 Spark 之后才发现的路径或挂载问题，要写明该补哪项预检。
+5. **可以改进的地方**：按速度、成本、预检、质量、流程分类。每条写依据（引用本报告的数值或错误行）、预期收益、负责人，以及跟踪它的 PR 或 backlog 条目。
+6. **实际覆盖范围**：按 L1–L4 列出本轮真正执行了什么、复用了什么、没有执行什么。
+7. **遗留状态**：Dev 上没有被引用的文件、未结束的 job hold、用过但没上传的构建号、需要删除的本地构建产物。
+8. **外部可见的变化**：Dev 发布版本、TestFlight 构建、绕过分支保护的推送，每项分开写证据。设备播放和场地验收没做就写 `not_run`。
+
+复盘只引用报告里的数值，不粘贴原始日志。自动预填的数值要核对后保留；与证据不符时改正，并写明原因。2026-10-14 以前生成的报告仍按旧版 8 项填写，不需要回改。
 
 ## 预算结算摘要版本
 

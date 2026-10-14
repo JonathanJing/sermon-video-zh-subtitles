@@ -1,0 +1,9 @@
+{
+  "codeRevision": "306d57ba8a9b6ad2edfaf66b2e2bd47df3032b9c",
+  "tests": 273,
+  "subtests": 34,
+  "elapsedSeconds": 1.17,
+  "scope": "known book internal ASR whitespace only; citation ranges/endpoints and ordinary-string negatives",
+  "modelsCalled": false,
+  "fullConsumerRepeated": false
+}

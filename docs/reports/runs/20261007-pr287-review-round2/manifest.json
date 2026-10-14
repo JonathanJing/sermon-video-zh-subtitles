@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261007-pr287-review-round2",
+  "runs": [
+    {
+      "label": "fake-plumbing",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/agent-api-trials/20261007-pr287-review-round2/fake-plumbing",
+      "skipped": {
+        ".json": 209,
+        ".lock": 26,
+        ".jsonl": 28
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "fake-plumbing",
+      "path": "diagnose.json",
+      "kind": "whole",
+      "bytes": 14796,
+      "truncated": false,
+      "sha256": "a8493a68f7e0e89bd8b61ae8fca8f5b9cf0969faf467e4baf0d83df3144825d8",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "diagnose.rubric-receipt.json",
+      "kind": "whole",
+      "bytes": 245,
+      "truncated": false,
+      "sha256": "755d0d15aee97518f166c03835852c5dc199e1647ecec45cd601b1bb8cd8e000",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 226,
+      "truncated": false,
+      "sha256": "6f030c520b4190cb3491c44408ccd192bbe4b75448a4b3da33249e7e48922ee2",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 2351,
+      "truncated": false,
+      "sha256": "ef9943b61cc6de13801586515d9b89dbdd15fea90e108377df754ce61035a08d",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "preflight.rubric-receipt.json",
+      "kind": "whole",
+      "bytes": 246,
+      "truncated": false,
+      "sha256": "da1f1e96198a1794d8a0fe7667f8cad73acb0d467c5865795d1770077b602e8d",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "refute.json",
+      "kind": "whole",
+      "bytes": 5869,
+      "truncated": false,
+      "sha256": "72ed5d769a82125c83e0a0688ca072718fb5ad4c88e2fad5ad25f58d2f97e104",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "refute.rubric-receipt.json",
+      "kind": "whole",
+      "bytes": 243,
+      "truncated": false,
+      "sha256": "0b1975b6f060f10179a06a7d565d7b0ba92c0821a8122e56510b2b3fd947edfa",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "risk.json",
+      "kind": "whole",
+      "bytes": 18380,
+      "truncated": false,
+      "sha256": "62d543531ed812a287794ba4e828022cb773204b25e6a6bde315986e10ffb7a3",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "risk.rubric-receipt.json",
+      "kind": "whole",
+      "bytes": 241,
+      "truncated": false,
+      "sha256": "214484ef90dd6753d5e702aabaafa321f8ae9f83c87fe7968cf1ec08dd7e59c8",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 6297,
+      "truncated": true,
+      "sha256": "1ae2d8d4013408231fd93296268ba072eea6f6d0072d0fe624b205b400c0df11",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 3148,
+      "truncated": false,
+      "sha256": "6e3923523fe9f051fdb9445e5618ad60f1e8f028ed1c1a0dca2279bd5c2ce539",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 199,
+      "truncated": false,
+      "sha256": "dbebc02e1bf29a583fb451e513ef040f32a17de92021541f55b826a2208c6477",
+      "redactions": {}
+    },
+    {
+      "run": "fake-plumbing",
+      "path": "validation-receipt.json",
+      "kind": "whole",
+      "bytes": 658,
+      "truncated": false,
+      "sha256": "23eefcf6afac778c4b8c49727a96b97a8ee6a4efa20fab47fce27a2d47fc52b4",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

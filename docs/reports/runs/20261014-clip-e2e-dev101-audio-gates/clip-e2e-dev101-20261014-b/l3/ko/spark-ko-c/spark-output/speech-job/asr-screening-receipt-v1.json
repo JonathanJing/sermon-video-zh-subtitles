@@ -1,0 +1,221 @@
+{
+  "schemaVersion": "sermon-target-language-audio-screening-v2",
+  "targetLocale": "ko",
+  "targetLanguageSpeechJobJsonSha256": "d46fb0e688a51c7bdebff6851ac01cdb58299e6c99b3a2cb7e5ea1883aee6241",
+  "trackSha256": "226c59707238b47f3814e4d632608ef8004d339873e999c15eeef9f4a9f1c5e3",
+  "status": "pass",
+  "model": "Qwen/Qwen3-ASR-0.6B",
+  "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+  "minSimilarity": 0.88,
+  "coverage": 1.0,
+  "reviewedGroupIds": [
+    "translation-chunk-0002-u017",
+    "translation-chunk-0002-u018",
+    "translation-chunk-0002-u019",
+    "translation-chunk-0002-u020",
+    "translation-chunk-0002-u021",
+    "translation-chunk-0002-u022",
+    "translation-chunk-0002-u023",
+    "translation-chunk-0002-u024",
+    "translation-chunk-0002-u025",
+    "translation-chunk-0002-u026",
+    "translation-chunk-0002-u027",
+    "translation-chunk-0002-u028",
+    "translation-chunk-0002-u029",
+    "translation-chunk-0002-u030",
+    "translation-chunk-0002-u031",
+    "translation-chunk-0002-u032"
+  ],
+  "unitAudioSha256s": [
+    "d396d0c76b2caf31335e563b98eca6b090569079cbefd05e33a80c4a0436bc66",
+    "2506066db7b6e58efa7bc1d3b176b4328389d6044d70d9d18a6a21d8a98b4fa0",
+    "ed58ccbe110afcdadf27a4ce5d635dc2fc63a08c181d649d4ddf917f18bacb1b",
+    "2027ab19815d80713203e68366a0a5df3298ef90fdc06b9561bda5f22391f46f",
+    "0b138cf6230830e6c80248a57aa69a9672b5b98ced7cc8a9f05595dc6a1b6a31",
+    "5af620c43e728079f30dda851641a2a5c3f10a9c8ae4b7d9f27de5bbbffe0d23",
+    "128ac1cc3a2b2f58e2720f9a8fb7e56d8d91ab9cb78ec32390597be434b382e0",
+    "2870ecaa74be1b99e288e15c0d3926c5bc2b01fc7381f0e9440d55f731ac870e",
+    "d25bd29fea1a13c2c28060dc5d150e97937115fb6b10f1d1a4bbc6e5811445ec",
+    "c47ac4cc164268d68cfa80ebad5dc09613ed7cd3ab07fd6cbd9188cf79fe6472",
+    "d46436d007e75fabe347558de7ea32f915a650346a4a0e66ce44052e53fb2436",
+    "b19f2bc0cbd8b151292eed8dc33d5d87fcfdefe90e968631bf5a91c68ebc5103",
+    "e3ff5d71acee87ac4029ead00c48003d78b403a5a65b990630e30e28566a89b5",
+    "386d164c673d354ed5c41d088b7d08b2b0638da60c65f2a53fc37ec3ba851bae",
+    "c6ad95cd564d62d5dbc1b2583750877e846b4e81fedf826bad3ef435bfb6710e",
+    "cb08cc51dcb3a7535e4ae1f79a8f29d5a6c063b4a4d4702c7434ff5773095c79"
+  ],
+  "results": [
+    {
+      "textGroupId": "translation-chunk-0002-u017",
+      "targetTextSha256": "8a3fd4235da5494f960618488413d69980e2268d76aadfc0861ef0cf944c1b5f",
+      "audioSha256": "d396d0c76b2caf31335e563b98eca6b090569079cbefd05e33a80c4a0436bc66",
+      "recognized": "그것들은 땅에 사는 사람들을 괴롭히고 땅에 큰 고통을 가져오는 일종의 악마적인 존재들로 보입니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u018",
+      "targetTextSha256": "423a1daa4ed8858e32b70fbce2f8111e7b65697e86a3e47c89fba7d1962d983e",
+      "audioSha256": "2506066db7b6e58efa7bc1d3b176b4328389d6044d70d9d18a6a21d8a98b4fa0",
+      "recognized": "그 다음 여섯 번째 나팔은 참혹합니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u019",
+      "targetTextSha256": "436bb695fdf580f22fc7dcc5472557c9a2cdb18a84620095bde7c28e26f05167",
+      "audioSha256": "ed58ccbe110afcdadf27a4ce5d635dc2fc63a08c181d649d4ddf917f18bacb1b",
+      "recognized": "정말 잔혹합니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u020",
+      "targetTextSha256": "d64469dc45c7083402c86987336ef00807c492e1ebad106d0c41fa5f71dffd8d",
+      "audioSha256": "2027ab19815d80713203e68366a0a5df3298ef90fdc06b9561bda5f22391f46f",
+      "recognized": "2억 명으로 이루어진 군대가 일어나 지구상의 사람들 가운데 3분의 1을 정복합니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u021",
+      "targetTextSha256": "76ad62cd2a8aeff1284a617f812c8c0b64a824079db0f041ae9ecb06f007a66b",
+      "audioSha256": "0b138cf6230830e6c80248a57aa69a9672b5b98ced7cc8a9f05595dc6a1b6a31",
+      "recognized": "엄청난 수의 사망자가 발생합니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u022",
+      "targetTextSha256": "6d68b907c85395230952c592ea7274d0714bbe6ba863fba40e206abd9fa8682b",
+      "audioSha256": "5af620c43e728079f30dda851641a2a5c3f10a9c8ae4b7d9f27de5bbbffe0d23",
+      "recognized": "계산해 보면 지구상에서 이십칠억 명이 목숨을 잃습니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u023",
+      "targetTextSha256": "4becc3f75e4ea7dd1aee1228578143e6cfdaef4ccf70ef373ba2d882842fb0b8",
+      "audioSha256": "128ac1cc3a2b2f58e2720f9a8fb7e56d8d91ab9cb78ec32390597be434b382e0",
+      "recognized": "참혹합니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u024",
+      "targetTextSha256": "80812db4a65d6bc752874d27b5e7cb44fb3e5102f6678c755ba21558754fbb4b",
+      "audioSha256": "2870ecaa74be1b99e288e15c0d3926c5bc2b01fc7381f0e9440d55f731ac870e",
+      "recognized": "정말 엄청납니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u025",
+      "targetTextSha256": "b96a5c13f80a2a6f091dbe6f49e1e0fcfb50bdf5fe10a8d7e0afd91d517b7697",
+      "audioSha256": "d25bd29fea1a13c2c28060dc5d150e97937115fb6b10f1d1a4bbc6e5811445ec",
+      "recognized": "자, 그렇다면 우리는 이 나팔들을 어떻게 받아들여야 할까요?",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u026",
+      "targetTextSha256": "cb6c0e0abb6ceb210baa1a5a1e21dda565599c5b472b0d57eccbe10524472a29",
+      "audioSha256": "c47ac4cc164268d68cfa80ebad5dc09613ed7cd3ab07fd6cbd9188cf79fe6472",
+      "recognized": "우리는 이 나팔들을 어떻게 이해해야 할까요?",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u027",
+      "targetTextSha256": "5197a0540dc2ed786f932e278cfb01ec53d5d89b0b45ddc274b5183714f48430",
+      "audioSha256": "d46436d007e75fabe347558de7ea32f915a650346a4a0e66ce44052e53fb2436",
+      "recognized": "자 여기서 중요하게 짚고 넘어갈 점이 있습니다. 지난 2000년의 교회 역사 동안.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u028",
+      "targetTextSha256": "74c46388fe89e2e807d47004ca87025047689e7eab18f46e7364f01ad9e6abfc",
+      "audioSha256": "b19f2bc0cbd8b151292eed8dc33d5d87fcfdefe90e968631bf5a91c68ebc5103",
+      "recognized": "이 나팔들의 시기와 방식을 서로 다르게 해석해 온 뛰어난 기독교 사상가들이 많이 있었습니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u029",
+      "targetTextSha256": "da3ec0f7390ff775da5ff5ab4fa342d0d8b70b6aa3120e70ca31a1980cd1a89c",
+      "audioSha256": "e3ff5d71acee87ac4029ead00c48003d78b403a5a65b990630e30e28566a89b5",
+      "recognized": "그러니 더 깊이 알아보고 싶다면 종말에 관한 여러 견해를 조금 더 세세하게 파고 들고 싶다면 If I Had More Time 팟캐스트를 들어보시면 됩니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u030",
+      "targetTextSha256": "bcb28ecf5b1e7abe60948d2039b1da0a44a323e44f8909c1c57fb3aa83b4d718",
+      "audioSha256": "386d164c673d354ed5c41d088b7d08b2b0638da60c65f2a53fc37ec3ba851bae",
+      "recognized": "그리고 저희는 정말 깊이 파고듭니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u031",
+      "targetTextSha256": "ebbe6a09a31e4ccca5f993661a27a578db8699e90fd996c45469fba8bb518fac",
+      "audioSha256": "c6ad95cd564d62d5dbc1b2583750877e846b4e81fedf826bad3ef435bfb6710e",
+      "recognized": "하지만 제가 여러분에게 알려드리고 싶은 것은 모든 학자들이.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u032",
+      "targetTextSha256": "32cc98ff141c7557b820d0aa851b8a4aa67bcc23d58ab7da10b4c384e3c6e530",
+      "audioSha256": "cb08cc51dcb3a7535e4ae1f79a8f29d5a6c063b4a4d4702c7434ff5773095c79",
+      "recognized": "네 가지 견해 모두 이 나팔 경고가 반역하는 세상을 향한 하나님의 신적 경고라는데 동의합니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    }
+  ],
+  "humanListeningStatus": "pending",
+  "asrSettings": {
+    "protocol": "formal-back-asr-batch-v1",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+    "language": "ko",
+    "batchSize": 1,
+    "maxNewTokens": 2048,
+    "dtype": "bfloat16",
+    "executionDevice": "cuda:0",
+    "runtime": {
+      "backend": "qwen-asr-local",
+      "torchVersion": "2.13.0a0+8145d630e8.nv26.06",
+      "qwenAsrVersion": "0.0.6",
+      "modelMetadataSha256s": {
+        "chat_template.json": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff",
+        "config.json": "76d3ae4601ce939830b2517f4a6cadb86cc51316c3900af6b020b051c21a478c",
+        "generation_config.json": "1da527824d81e07118facff437e03f2e24a23311e3bdeb2368973fe77e5f275c",
+        "preprocessor_config.json": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d",
+        "tokenizer_config.json": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c",
+        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      }
+    },
+    "implementationSha256": "cb123c807a0306e34fd6143935bd1c1f0df5b9759ef00b0fa51a3953354f6458",
+    "minSimilarity": 0.88,
+    "scoring": "token-sequence-ratio-v6; readings a listener cannot tell apart are folded first (spelled numbers and digits, same-pinyin-same-tone Chinese characters in fixed contexts, Spanish diacritic function words, Korean spacing; digit strings are not positional numbers; a Korean native numeral before a Sino counter is not folded); short units (<4 tokens) must match exactly; no negation, number or protected name may differ; numbers and names keep their order; book-anchored Korean scripture range endpoints are folded together; a Spanish digit string grouped by thousands points (2.700) or by two or more comma groups (1,000,000) is one number; comma decimals and numbers starting with 0 stay as written, their fractional digits unfolded"
+  },
+  "asrSettingsSha256": "d68f22174b39a2bc89dc794ee850d22f5b42be3aac314c26b4d6cdd047e42424"
+}

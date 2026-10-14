@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 PROFILE = ROOT / "config/weekly-run-profile.json"
-PROFILE_SCHEMA = "sermon-weekly-run-profile-v2"
+PROFILE_SCHEMA = "sermon-weekly-run-profile-v3"
 PLAN_SCHEMA = "sermon-run-budget-plan-v3"
 LOCALES = ("zh-Hans", "ko", "es")
 
@@ -121,6 +121,28 @@ def resume_qc_stage(path, context):
             'executionMode': 'resume_prior_authority', 'remainingReservationBounds': remaining}
 
 
+def layer2_backend_of(execution):
+    """The one Layer 2 backend every lane policy of this execution freezes."""
+    from scripts import canonical_layer2_controller as controller
+    from scripts import run_target_language_models as models
+    config = controller.load_configuration(execution)
+    backends = {models.production_backend(controller._json(lane["policy"])) for lane in config.lanes.values()}
+    if len(backends) != 1:
+        raise ValueError("Layer 2 lanes of one execution must share a backend")
+    return backends.pop()
+
+
+def layer2_cap_per_locale(profile, scale, backend):
+    """``(cap USD per locale, counts toward the approved total)`` for this backend.
+
+    claude_cli_opus runs on the Claude subscription: its ledger cap is a list-price equivalent
+    that bounds use, not money, so it never counts toward the approved USD total."""
+    layer2 = profile["layer2"]
+    if backend == "claude_cli_opus":
+        return layer2["claudeCliListPriceCapUsdPerLocale"][scale], False
+    return layer2["capUsdPerLocale"][scale], True
+
+
 def layer2_spec(execution, locales, profile, scale):
     from scripts import canonical_layer2_controller as controller
     from scripts import sermon_provider_limits as limits
@@ -129,7 +151,7 @@ def layer2_spec(execution, locales, profile, scale):
         raise ValueError("Layer 2 execution locales differ from the plan")
     layer2 = profile["layer2"]
     bounds = dict(layer2["boundsPerLocale"][scale])
-    bounds["costMicrousd"] = micro(layer2["capUsdPerLocale"][scale])
+    bounds["costMicrousd"] = micro(layer2_cap_per_locale(profile, scale, layer2_backend_of(execution))[0])
     anchor = controller._json(controller._path(config.inspection_root, config.inspection["anchor"]))
     source = controller._json(controller._path(config.inspection_root, config.inspection["source"]))
     # The canonical group plan, not a historical calls-per-week estimate.
@@ -177,7 +199,7 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
     sharded = scale == "week"
     bounds = per_locale if sharded else {k: v * len(locales) for k, v in per_locale.items()}
     limits, rules = layer2["requestLimits"], layer2["limits"]
-    root = config.job_root.parent / f".{config.job_root.name}.layer2-budget"
+    root = budget_tools.budget_root(config)
     directory = out / "layer2"
     binding = {"productionRunId": config.run_id, "configurationSha256": config.sha256,
                "codeIdentitySha256": controller.code_identity(), "budgetRoot": str(root),
@@ -195,9 +217,12 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
                       "unitBounds": bounds, "limits": rules}, "approvalReceipt": approval.name,
         "ledgerScope": "locale" if sharded else "run", "runtimeIdentity": runtime_identity})
     budget_tools.load_authorization(config, authorization, binding["codeIdentitySha256"])
+    backend = layer2_backend_of(execution)
+    cap, counts = layer2_cap_per_locale(profile, scale, backend)
     return {"stage": "layer2", "authorization": str(authorization),
             "authorizationSha256": file_sha256(authorization), "approvalSha256": file_sha256(approval),
-            "budgetRoot": str(root), "runtimeIdentity": runtime_identity, "capUsd": layer2["capUsdPerLocale"][scale] * len(locales),
+            "budgetRoot": str(root), "runtimeIdentity": runtime_identity, "capUsd": cap * len(locales),
+            "layer2Backend": backend, "countsTowardTotal": counts,
             "execution": str(execution), "executionSha256": file_sha256(execution), "locales": locales,
             "sizing": sizing, "inputFiles": [
                 {"path":str(path),"sha256":file_sha256(path)} for path in [
@@ -208,7 +233,8 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
 
 def schedule(stages, *, total, settled):
     total_micro, settled_micro = micro(total), micro(settled)
-    caps = [micro(stage["capUsd"]) for stage in stages]
+    # A Claude subscription stage's cap is a list-price equivalent, not money (countsTowardTotal false).
+    caps = [micro(stage["capUsd"]) for stage in stages if stage.get("countsTowardTotal", True)]
     worst = settled_micro + sum(caps)
     if worst <= total_micro:
         return {"mode": "all_stages_may_run_together", "worstCaseUsd": worst / 1_000_000, "fits": True}
@@ -255,7 +281,9 @@ def main(argv=None):
     for kind in ('layer2', 'qc'):
         micro(profile[kind]['capUsdPerLocale'][args.scale])
     micro(profile['qc']['secondaryAsr']['capUsdPerLocale'][args.scale])
-    available = ([{"stage": "layer2", "capUsd": profile["layer2"]["capUsdPerLocale"][args.scale] * len(locales)}]
+    layer2_cap = (layer2_cap_per_locale(profile, args.scale, layer2_backend_of(args.layer2_execution.resolve()))
+                  if args.layer2_execution else None)
+    available = ([{"stage": "layer2", "capUsd": layer2_cap[0] * len(locales), "countsTowardTotal": layer2_cap[1]}]
                  if args.layer2_execution else []) + [{"stage": f"qc.{locale}", "capUsd":
                     profile["qc"]["capUsdPerLocale"][args.scale] + profile["qc"]["secondaryAsr"]["capUsdPerLocale"][args.scale]}
                     for locale in locales]

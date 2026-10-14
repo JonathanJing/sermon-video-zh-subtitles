@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "spark-diagnostic-audio-summary-receipt-v1",
+  "status": "completed_diagnostic",
+  "targetLocale": "zh-Hans",
+  "sourceUnits": 39,
+  "groups": 13,
+  "sourceMediaSha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+  "sourceWindow": {
+    "startSeconds": 60.0,
+    "endSeconds": 240.0
+  },
+  "tts": {
+    "status": "completed_diagnostic",
+    "replicas": 8,
+    "batchSize": 8,
+    "cpuWorkers": 4,
+    "modelLoadSeconds": 52.543643492273986,
+    "inferenceSeconds": 62.74914310220629,
+    "processWallSeconds": 96.92283921316266,
+    "manifestSha256": "09c525f0dc6779f8d37c694b9d3aec0d5920d9a297dc1fdffa47cf5629ef4a1f",
+    "audioFiles": 13
+  },
+  "asr": {
+    "status": "completed_diagnostic",
+    "modelReplicas": 1,
+    "batchSize": 8,
+    "modelLoadSeconds": 16.281397063285112,
+    "inferenceSeconds": 8.969863399863243,
+    "processWallSeconds": 28.64071422442794,
+    "manifestSha256": "e903e7ea02ccc2a6b96fe857896e5ed31aa09060adfbc1eba0740b8c9bf83a7c"
+  },
+  "productionEligible": false,
+  "humanApproval": false,
+  "releaseEligible": false,
+  "apiCalls": 0
+}

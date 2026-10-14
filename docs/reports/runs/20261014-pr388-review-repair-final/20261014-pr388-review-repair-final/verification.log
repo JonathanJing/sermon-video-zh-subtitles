@@ -1,0 +1,22 @@
+✔ benchmark query copy equals fingerprint-core when no variant is selected (66.864916ms)
+✔ room-noise variants change only query landmarks and stay deterministic (141.462917ms)
+✔ gate labels mirror the published matcher thresholds (0.170334ms)
+✔ negative scoring counts every index comparison and reports no match for unrelated postings (74.623416ms)
+✔ benchmark rejects incompatible indexes before counting comparisons (30.231666ms)
+✔ negative-window step must advance and be finite (117.785709ms)
+✔ reference correctness uses the expected offset, not merely an accepted match (930.995916ms)
+✔ benchmark plan rejects empty comparisons and mismatched published source identity (1.981875ms)
+✔ positive recordings must stay inside the indexed source span (0.127542ms)
+✔ report quantiles use nearest rank on even counts (0.105708ms)
+✔ independent truth binds the source and recording before scoring (0.209083ms)
+✔ variant selection rejects inherited property names (119.756875ms)
+✔ filesystem errors do not reveal private paths (118.395458ms)
+✔ independent truth requires a private output file (43.119167ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1785.274875

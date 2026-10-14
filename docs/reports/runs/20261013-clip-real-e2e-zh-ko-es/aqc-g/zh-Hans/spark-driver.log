@@ -1,0 +1,13 @@
+discover	pass	0.0
+zh-Hans.track-check	pass	0.3
+zh-Hans.audio-qc	pass	0.2
+zh-Hans.calibration.prefetch	fail	144.1
+{
+  "zh-Hans": {
+    "status": "error",
+    "reason": "ValueError: source_budget_exhausted",
+    "problems": [],
+    "calibration": null
+  }
+}
+Run report not written ([Errno 30] Read-only file system: '/work/repo-f06ab9fd/artifacts'); export it by hand with scripts/export_run_digest.py

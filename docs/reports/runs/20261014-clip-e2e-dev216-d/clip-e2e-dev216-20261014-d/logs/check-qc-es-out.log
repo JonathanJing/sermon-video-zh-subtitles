@@ -1,0 +1,62 @@
+
+== 2026-10-14T16:44:35+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/check_run_start.py --expected-commit e3e3682e60e8b1c7d850d7a76463f80e36ee686d --expected-implementation 70078f905f6ddbd06550e0520fa21c6cadc63cef30aea823f26fa6d59b198eb6 --openai-environment dev --env-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.env.openai --budget-plan ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/plans/qc-es --fresh-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-es/out --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/start-check-qc-es-out.json
+{
+ "schemaVersion": "sermon-run-start-check-v1",
+ "status": "pass",
+ "failed": [],
+ "checks": [
+  {
+   "check": "code",
+   "status": "pass",
+   "head": "e3e3682e60e8b1c7d850d7a76463f80e36ee686d",
+   "qcImplementationSha256": "70078f905f6ddbd06550e0520fa21c6cadc63cef30aea823f26fa6d59b198eb6",
+   "problems": []
+  },
+  {
+   "check": "openai",
+   "status": "pass",
+   "environment": "dev",
+   "exitCode": 0
+  },
+  {
+   "check": "budget",
+   "status": "pass",
+   "plan": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/plans/qc-es/plan.json",
+   "schedule": {
+    "mode": "all_stages_may_run_together",
+    "worstCaseUsd": 16.435495,
+    "fits": true
+   },
+   "stages": [
+    [
+     "qc.es",
+     5.525
+    ]
+   ],
+   "problems": []
+  },
+  {
+   "check": "spark",
+   "status": "skip"
+  },
+  {
+   "check": "outputs",
+   "status": "pass",
+   "fresh": [
+    "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-es/out"
+   ],
+   "problems": []
+  },
+  {
+   "check": "page",
+   "status": "skip"
+  },
+  {
+   "check": "environment_binding",
+   "status": "pass",
+   "qcStages": 1,
+   "layer2Stages": 0,
+   "problems": []
+  }
+ ]
+}

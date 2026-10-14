@@ -19,7 +19,9 @@ copied file is redacted (API keys, tokens, cookies, private keys, emails,
 private IPs, home directories, and the values of secret-like environment
 variables) before it is written. The digest gets ``manifest.json`` (source
 hashes, truncation and redaction counts), ``INDEX.md`` (outcomes, stage
-timings, failed stages and error lines) and a ``RETROSPECTIVE.md`` skeleton.
+timings, failed stages and error lines) and a ``RETROSPECTIVE.md`` skeleton
+pre-filled with the run's total time and the model identities, tokens and
+speeds found in the copied receipts.
 
 It is written to ignored ``artifacts/run-reports/<name>/``. To make it readable
 by cloud sessions, ``scripts/publish_run_report.sh`` verifies it and opens a
@@ -46,6 +48,8 @@ import sys
 from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 SCHEMA = "sermon-run-digest-v1"
 # diagnose/refute/risk.json carry agent-trial rows the run report reviews case by case.
 WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json", "diagnose.json", "refute.json", "risk.json",
@@ -62,15 +66,21 @@ MAX_WHOLE_BYTES = 256 * 1024
 ROW_NAMES = {"preflight.json", "diagnose.json", "refute.json", "risk.json"}
 MAX_DIGEST_BYTES = 2 * 1024 * 1024
 NAME = re.compile(r"\d{8}-[A-Za-z0-9._-]+")  # Same set publish_run_report.sh accepts
+# Fixed retrospective content (docs/test-run-retrospective.zh.md): total time, each layer's model,
+# time and speed, errors, and improvements. The exporter pre-fills what the copied evidence shows.
+LAYER_ROWS = ["L1 来源 ASR", "L1 词级对齐（MFA）", "L1 英文机器评审", "L2 初译", "L2 独立审核", "文本质检（回译）",
+              "L3 配音（TTS）", "L3 回转写筛查（ASR）", "音频质检", "L4 构建与发布"]
 RETROSPECTIVE_SECTIONS = [
-    ("实际覆盖范围", "按 L1–L4 写本轮执行、复用和未执行的部分；模拟审核和诊断级结果原样写出。"),
-    ("结果和结束信号", "各运行目录的 outcome.json；独占 Spark 的运行以 round: 行为准。"),
-    ("耗时", "按 timings.tsv 列阶段并与上一轮比较，把等待和计算分开。"),
-    ("错误", "现象、原因、处理、回归测试、对应提交或 PR。"),
-    ("占用资源之后才暴露的错误", "哪些本可以在预检发现，要补哪项预检。"),
+    ("结论先行", "交付类型（dual_pdf／live_session／four_layer_release／测试）、最终状态和结束信号（outcome.json；"
+                 "独占 Spark 以 round: 行为准）、证据边界。模拟审核和诊断级结果原样写出。"),
+    ("总时间", "从开始到结束的墙钟时间，拆成计算、等待（人、服务、凭据）和返工；与上一轮同类运行比较。"),
+    ("各层模型、耗时与速度", "每层写模型或后端、推理强度和 tier、调用次数、计算耗时、token 或音频秒数、"
+                            "速度（输出 token/s 或 ×实时）、费用。没执行的层写 not_run，复用的写 reused 和来源。"),
+    ("错误", "每个错误一行：发现时机分预检／占用资源后／发布后；占用资源后才发现的，写要补的预检。"),
+    ("可以改进的地方", "按速度、成本、预检、质量、流程分类；每条写预期收益、负责人和跟踪的 PR 或 backlog 条目。"),
+    ("实际覆盖范围", "按 L1–L4 写本轮执行、复用和未执行的部分。"),
     ("遗留状态", "Dev 上无引用的文件、未结束的 job hold、已用构建号、待删除的本地产物。"),
     ("外部可见的变化", "Dev 发布、TestFlight、受保护分支推送各自的证据；没做的验收写 not_run。"),
-    ("后续", "每条写负责人和跟踪的 PR 或 backlog 条目。"),
 ]
 LOG_HEAD, LOG_TAIL, LOG_MAX_ERRORS, LOG_LINE_CHARS = 40, 200, 50, 2000
 SECRET_KEY = re.compile(r"(?i)(?:api[_-]?key|token|secret|password|passwd|cookie|authorization)$")
@@ -515,10 +525,143 @@ def budget_line(source: str, record: dict) -> str:
     return line + "; invoice not verified"
 
 
-def retrospective_markdown(name: str) -> str:
+def _duration(seconds: float) -> str:
+    seconds = int(round(seconds))
+    return f"{seconds // 3600}h{seconds // 60 % 60:02d}m{seconds % 60:02d}s" if seconds >= 3600 else f"{seconds // 60}m{seconds % 60:02d}s"
+
+
+def time_lines(dest: Path, entries: list[dict], runs: list[dict]) -> list[str]:
+    """Wall, compute, waiting and rework time per run, from the journal, else outcome, else timings.tsv."""
+    from scripts import run_journal
+    lines = []
+    for run in runs:
+        label, files = run["label"], [e for e in entries if e["run"] == run["label"] and "omitted" not in e]
+        journals = [e for e in files if Path(e["path"]).name == run_journal.FILE_NAME]
+        outcomes = [read_json(dest / label / e["path"]) or {} for e in files if Path(e["path"]).name == "outcome.json"]
+        timings = [e for e in files if Path(e["path"]).name == "timings.tsv"]
+        if journals:
+            try:
+                summary = run_journal.summary((dest / label / journals[0]["path"]).parent)
+            except ValueError:
+                summary = None
+            if summary and summary["events"]:
+                totals = summary["totals"]
+                lines.append(f"- `{label}`（journal）：墙钟 {_duration(summary['wallSeconds'])}；计算 "
+                             f"{_duration(totals['computeSeconds'])}，等待 {_duration(totals['waitingSeconds'])}，返工 "
+                             f"{_duration(totals['reworkSeconds'])}（{totals['rework']} 次重跑）"
+                             + (f"；未结束阶段 {', '.join(summary['openStages'])}" if summary["openStages"] else ""))
+                continue
+        spans = []
+        for record in outcomes:
+            try:
+                spans.append((datetime.fromisoformat(str(record["startedAt"]).replace("Z", "+00:00")),
+                              datetime.fromisoformat(str(record["endedAt"]).replace("Z", "+00:00"))))
+            except (KeyError, ValueError):
+                pass
+        if spans:
+            wall = (max(end for _, end in spans) - min(start for start, _ in spans)).total_seconds()
+            lines.append(f"- `{label}`（outcome.json）：墙钟 {_duration(wall)}；没有 journal，计算和等待未拆分")
+            continue
+        total = 0.0
+        for entry in timings:
+            with (dest / label / entry["path"]).open(encoding="utf-8") as handle:
+                rows = [r for r in csv.reader(handle, delimiter="\t") if r]
+            column = next((i for i, name in enumerate(rows[0] if rows else []) if "second" in name.lower()), None)
+            for row in rows[1:] if column is not None else []:
+                try:
+                    total += float(row[column])
+                except (IndexError, ValueError):
+                    pass
+        lines.append(f"- `{label}`（timings.tsv 各阶段相加）：{_duration(total)}；不含阶段之间的等待"
+                     if timings and total else f"- `{label}`：没有 journal、outcome 起止时间或 timings.tsv，无法自动计算")
+    return lines
+
+
+MODEL_KEYS = ("model", "requestedModel", "modelId")
+EFFORT_KEYS = ("reasoningEffort", "reasoning_effort", "effort")
+TIER_KEYS = ("serviceTier", "service_tier", "requestedServiceTier")
+ELAPSED_KEYS = ("elapsedSeconds", "inferenceSeconds", "durationSeconds")
+
+
+def _first(record: dict, keys) -> object:
+    return next((record[k] for k in keys if record.get(k) not in (None, "")), None)
+
+
+def model_rows(dest: Path, entries: list[dict]) -> list[dict]:
+    """Model identities in the copied receipts, with call records, tokens and elapsed seconds where present."""
+    found: dict[tuple, dict] = {}
+
+    def visit(node, path: str) -> None:
+        if isinstance(node, list):
+            for item in node:
+                visit(item, path)
+            return
+        if not isinstance(node, dict):
+            return
+        model = _first(node, MODEL_KEYS)
+        if isinstance(model, str) and model.strip() and "<" not in model:
+            settings = node.get("settings") if isinstance(node.get("settings"), dict) else {}
+            effort = _first(node, EFFORT_KEYS) or _first(settings, EFFORT_KEYS)
+            tier = _first(node, TIER_KEYS) or _first(settings, TIER_KEYS)
+            row = found.setdefault((model, str(effort or "?"), str(tier or "?")),
+                                   {"model": model, "effort": str(effort or "?"), "tier": str(tier or "?"), "records": 0,
+                                    "files": set(), "outputTokens": 0, "timedOutputTokens": 0, "seconds": 0.0})
+            row["records"] += 1
+            row["files"].add(path)
+            usage = node.get("usage") if isinstance(node.get("usage"), dict) else node
+            output = usage.get("outputTokens", usage.get("output_tokens"))
+            elapsed = _first(node, ELAPSED_KEYS)
+            if isinstance(output, int) and not isinstance(output, bool):
+                row["outputTokens"] += output
+                if isinstance(elapsed, (int, float)) and not isinstance(elapsed, bool) and elapsed > 0:
+                    row["timedOutputTokens"] += output
+                    row["seconds"] += float(elapsed)
+        for key, value in node.items():
+            if key not in MODEL_KEYS:
+                visit(value, path)
+
+    for entry in entries:
+        if entry["kind"] == "whole" and "omitted" not in entry and entry["path"].endswith(".json"):
+            record = read_json(dest / entry["run"] / entry["path"])
+            if record is not None:
+                visit(record, f"{entry['run']}/{entry['path']}")
+    return sorted(found.values(), key=lambda r: (r["model"], r["effort"], r["tier"]))
+
+
+def _files(paths: set[str]) -> str:
+    shown = ", ".join(f"`{path}`" for path in sorted(paths)[:3])
+    return shown + (f" 等 {len(paths)} 个" if len(paths) > 3 else "")
+
+
+def model_table(rows: list[dict]) -> list[str]:
+    if not rows:
+        return ["已复制的收据里没有模型身份；按各层的预算账本或收据手工填写。"]
+    out = ["| 模型 | 推理强度 | tier | 调用记录 | 输出 token | 计时 | 输出 token/s | 来源文件 |", "|---|---|---|---|---|---|---|---|"]
+    for row in rows:
+        speed = f"{row['timedOutputTokens'] / row['seconds']:.1f}" if row["seconds"] else "—"
+        out.append(f"| `{row['model']}` | {row['effort']} | {row['tier']} | {row['records']} | {row['outputTokens'] or '—'} | "
+                   f"{_duration(row['seconds']) if row['seconds'] else '—'} | {speed} | {_files(row['files'])} |")
+    return out + ["", "同一次调用可能在请求和响应两处各记一次；速度只用同一记录里同时有输出 token 和耗时的部分。"]
+
+
+def retrospective_markdown(name: str, dest: Path | None = None, entries: list[dict] | None = None,
+                           runs: list[dict] | None = None) -> str:
+    entries, runs = entries or [], runs or []
+    auto = {
+        "总时间": (["自动汇总（核对后保留）：", ""] + time_lines(dest, entries, runs)) if dest else [],
+        "各层模型、耗时与速度": [
+            "| 层／阶段 | 模型或后端 | 推理强度／tier | 调用次数 | 计算耗时 | token 或音频秒数 | 速度 | 费用 | 证据 |",
+            "|---|---|---|---|---|---|---|---|---|"] + [f"| {layer} | 待填写 | | | | | | | |" for layer in LAYER_ROWS]
+            + (["", "已复制收据里出现的模型（自动汇总，按层归入上表）：", ""] + model_table(model_rows(dest, entries))
+               if dest else []),
+        "错误": ["| 层／阶段 | 现象 | 原因 | 发现时机 | 处理 | 回归测试 | 提交或 PR |", "|---|---|---|---|---|---|---|",
+                 "| 待填写 | | | 预检／占用资源后／发布后 | | | |"],
+        "可以改进的地方": ["| 类别 | 改进 | 依据（本报告的数值或错误） | 预期收益 | 负责人 | 跟踪 |", "|---|---|---|---|---|---|",
+                           "| 速度／成本／预检／质量／流程 | 待填写 | | | | |"],
+    }
     out = [f"# 复盘：{name}", "", "数据见同目录 INDEX.md 和 manifest.json。未填写的小节删掉前请写明原因。", ""]
     for heading, hint in RETROSPECTIVE_SECTIONS:
-        out += [f"## {heading}", "", f"<!-- {hint} -->", "待填写。", ""]
+        out += [f"## {heading}", "", f"<!-- {hint} -->"] + (auto.get(heading) or ["待填写。"]) + [""]
     return "\n".join(out)
 
 
@@ -591,7 +734,7 @@ def main(argv: list[str] | None = None) -> int:
                 "limits": {"maxWholeBytes": MAX_WHOLE_BYTES, "logHead": LOG_HEAD, "logTail": LOG_TAIL}}
     (dest / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (dest / "INDEX.md").write_text(index_markdown(name, dest, entries, runs), encoding="utf-8")
-    (dest / "RETROSPECTIVE.md").write_text(retrospective_markdown(name), encoding="utf-8")
+    (dest / "RETROSPECTIVE.md").write_text(retrospective_markdown(name, dest, entries, runs), encoding="utf-8")
     tidy_whitespace(dest)
     size = sum(p.stat().st_size for p in dest.rglob("*") if p.is_file())
     if size > MAX_DIGEST_BYTES:

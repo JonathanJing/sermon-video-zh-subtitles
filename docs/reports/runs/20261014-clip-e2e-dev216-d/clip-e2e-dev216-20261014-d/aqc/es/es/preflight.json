@@ -1,0 +1,49 @@
+{
+  "calibrationCoverage": {
+    "audio": {
+      "droppedKeyWordTrials": 4,
+      "truncationEligibleTrials": 16,
+      "untestableKinds": [],
+      "wrongSentenceUnits": 16
+    },
+    "text": {
+      "applicableGroups": {
+        "added_content": 16,
+        "added_number": 9,
+        "added_reference": 13,
+        "dropped_half": 10,
+        "dropped_name": 1,
+        "english_leak": 11,
+        "placeholder": 16,
+        "semantic_negation": 0,
+        "swapped_name": 0,
+        "swapped_quantity": 0,
+        "wrong_book": 1,
+        "wrong_number": 4,
+        "wrong_ordinal": 15
+      },
+      "notApplicableKinds": [
+        "semantic_negation",
+        "swapped_quantity",
+        "swapped_name"
+      ],
+      "untestableKinds": []
+    }
+  },
+  "flaggedGroups": [
+    "translation-chunk-0005-u013"
+  ],
+  "locale": "es",
+  "packageJsonSha256": "ef07c227ce64bbfba443161c4f58622e9d38905a9dc807c803bcb839dc4f3231",
+  "paths": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/src/anchor.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/text/es/candidate.json",
+    "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/run-es/l3/speech-job.json",
+    "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l3/es/audio-package.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/policy/es-policy-clip.json",
+    "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/run-es/l3/asr-screening-receipt-v1.json",
+    "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/src/source.json",
+    "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-es/out/es/text-waiver-4e6e264e32236bce.json"
+  },
+  "problems": []
+}

@@ -123,7 +123,7 @@ def load_authorization(config, path, code_identity, expected_sha=None):
     authority = budget._authority(value['authority'])
     receipt_path = _safe_path(path.parent / value['approvalReceipt'])
     receipt = jobs._read(receipt_path)
-    root = config.job_root.parent / f'.{config.job_root.name}.layer2-budget'
+    root = budget_root(config)
     expected = {'productionRunId': config.run_id, 'configurationSha256': config.sha256,
                 'codeIdentitySha256': code_identity, 'budgetRoot': str(root),
                 'requestLimits': selected, 'globalBounds': authority['globalBounds'],
@@ -139,6 +139,14 @@ def load_authorization(config, path, code_identity, expected_sha=None):
             and receipt.get('reviewedBy') and receipt.get('reviewedAt'), 'budget_approval_not_bound')
     return {'path': path, 'sha256': actual_sha, 'value': value, 'root': root, 'limits': selected,
             'scope': scope, **({'runtimeIdentity': runtime} if runtime is not None else {})}
+
+
+def budget_root(config):
+    """Keep a Gate 4 revision's new authority separate from the passed chain's ledger."""
+    base = config.job_root.parent / f'.{config.job_root.name}.layer2-budget'
+    if (getattr(config, 'auto_repair', None) or {}).get('backTranslationQc'):
+        return base.with_name(base.name + '-qc-' + config.sha256)
+    return base
 
 
 def ledger_root(authorization, locale):
@@ -160,13 +168,17 @@ def request_limits(selected):
 
 
 class BudgetedCaller:
-    def __init__(self, authorization, config, source, anchor, policy, *, transport=None, claude_transport=None):
+    def __init__(self, authorization, config, source, anchor, policy, *, transport=None, claude_transport=None,
+                 claude_transports=None):
         self.auth, self.config, self.policy = authorization, config, policy
         verify_runtime(authorization)
         if authorization.get('runtimeIdentity') is not None:
-            self.execution_identity = {'schemaVersion': 'openai-layer2-budget-transport-identity-v2',
-                'backend': 'openai_api', 'runtimeIdentity': authorization['runtimeIdentity'],
-                'budgetAuthorizationSha256': authorization['sha256']}
+            # A QC repair has a new, configuration-bound budget authorization but
+            # carries unchanged groups from its previous round. Cache identity
+            # follows the actual route/key; verify_execution still validates the
+            # current authorization on every cache hit and provider dispatch.
+            self.execution_identity = {'schemaVersion': 'openai-layer2-budget-transport-identity-v3',
+                'backend': 'openai_api', 'runtimeIdentity': authorization['runtimeIdentity']}
         self.source, self.anchor = source, anchor
         require(authorization.get('scope', 'run') == 'run' or policy['targetLocale'] in config.lanes,
                 'budget_locale_not_registered')
@@ -175,8 +187,16 @@ class BudgetedCaller:
             self.root, authorization['value']['authority'],
             max_ledger_bytes=LOCALE_LEDGER_MAX_BYTES if authorization.get('scope') == 'locale' else None)
         self.transport = transport
-        # Subscription-login Claude CLI for the translator only; never the reviewer.
-        self.claude_transport = claude_transport
+        # Subscription-login Claude CLI transports by role. A translator-only transport serves the
+        # historical Opus-translator experiment; both roles exist only for a claude_cli_opus policy.
+        from scripts import target_language_policy as policies
+        self.claude_transports = dict(claude_transports or {})
+        if claude_transport is not None:
+            require('translator' not in self.claude_transports, 'claude_transport_required')
+            self.claude_transports['translator'] = claude_transport
+        require('reviewer' not in self.claude_transports or policies.layer2_backend(policy) == 'claude_cli_opus',
+                'claude_reviewer_requires_claude_cli_opus_policy')
+        self.claude_transport = self.claude_transports.get('translator')
 
     def verify_execution(self, key):
         load_authorization(self.config, self.auth['path'], self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
@@ -202,9 +222,10 @@ class BudgetedCaller:
         # Configuration errors are not paid unknown outcomes. Validate the
         # selected transport before reserving or marking any budget request.
         if payload['model'] in limits.CLAUDE_MODELS:
-            require(self.transport is None and self.claude_transport is not None and role == 'translator'
-                    and payload['model'] == self.claude_transport.model
-                    and payload['reasoning_effort'] == self.claude_transport.effort, 'claude_transport_required')
+            selected_transport = self.claude_transports.get(role)
+            require(self.transport is None and selected_transport is not None
+                    and payload['model'] == selected_transport.model
+                    and payload['reasoning_effort'] == selected_transport.effort, 'claude_transport_required')
         # Separate immutable request chains prevent content revisions from
         # resetting one shared global ledger. Each exact payload is one operation.
         identity = budget.chain_identity({
@@ -233,9 +254,9 @@ class BudgetedCaller:
         # The trusted injected transport is only a local test seam. Production
         # uses the existing isolated, single-attempt, wall-deadline HTTP executor.
         if payload['model'] in limits.CLAUDE_MODELS:
-            # Claude is reachable only as the frozen translator, through its subscription CLI.
+            # Claude is reachable only through its subscription CLI, as the role the policy froze.
             from scripts.claude_layer2_transport import chat_envelope
-            response = chat_envelope(self.claude_transport('', payload, role=role), payload['model'])
+            response = chat_envelope(self.claude_transports[role]('', payload, role=role), payload['model'])
         elif self.transport is None:
             request = urllib.request.Request('https://api.openai.com/v1/chat/completions',
                 data=json.dumps(payload).encode(), method='POST',

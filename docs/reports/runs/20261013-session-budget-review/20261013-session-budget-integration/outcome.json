@@ -1,0 +1,14 @@
+{
+  "status": "pass",
+  "exitCode": 0,
+  "testedCommit": "d3688e3344cbd6a8cf82bc5b84dd6605d2a0636b",
+  "tests": 124,
+  "subtests": 4,
+  "durationSeconds": 3.55,
+  "modelCalls": 0,
+  "sshCalls": 0,
+  "deployments": 0,
+  "ci": "pending",
+  "scope": "Combined Hosting/API outcomes/reuse tests; not real provider or deployment acceptance",
+  "firstRunRequirement": "New frozen code, fresh QC state and response cache, no old-identity reuse roots, new calibration and waiver evidence"
+}

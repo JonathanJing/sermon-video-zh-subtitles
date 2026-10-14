@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261009-l3-l4-auto-handoff",
+  "runs": [
+    {
+      "label": "run-01",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/l3-l4-auto-handoff-20261009/run-01",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "run-01",
+      "path": "evaluation-receipt.json",
+      "kind": "whole",
+      "bytes": 1079,
+      "truncated": false,
+      "sha256": "34e4ef075544d41b848af5c8913ea322d588903520daf597eca3f372994b25e4",
+      "redactions": {}
+    },
+    {
+      "run": "run-01",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 237,
+      "truncated": false,
+      "sha256": "5528a1f7cbc0ea7d19ae867c2f445f63c69ca4991dc3938cef31072247cf516b",
+      "redactions": {}
+    },
+    {
+      "run": "run-01",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 593,
+      "truncated": false,
+      "sha256": "133d033ccee09625b470335c98c958a1ece24e782efe6c75868cbc8f4af4273b",
+      "redactions": {}
+    },
+    {
+      "run": "run-01",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 1189,
+      "truncated": false,
+      "sha256": "e3a547032c2c2e6ec35ae725e124321778c75a17d07e568c6628e740da1a7a9a",
+      "redactions": {
+        "email": 2
+      }
+    },
+    {
+      "run": "run-01",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 101,
+      "truncated": false,
+      "sha256": "337db454c8ea6b05379b86bdd9d61d0d89db4b281a8c97497f5ad872b59af2bd",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

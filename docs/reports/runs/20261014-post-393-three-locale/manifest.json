@@ -1,0 +1,1025 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-post-393-three-locale",
+  "runs": [
+    {
+      "label": "clip-test-20261013-v4",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4",
+      "skipped": {
+        ".lock": 739,
+        ".json": 3891,
+        ".sh": 1,
+        ".txt": 2,
+        ".sha256": 112,
+        ".wav": 272,
+        ".mp3": 816,
+        ".jsonl": 3,
+        ".csv": 9,
+        ".js": 44,
+        ".html": 356,
+        ".mjs": 247,
+        ".png": 97,
+        ".svg": 18,
+        ".srt": 10,
+        ".pdf": 20,
+        ".mp4": 95,
+        ".jpg": 5,
+        ".css": 22,
+        ".cache": 2,
+        ".py": 2,
+        ".err": 2,
+        "(none)": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/es/es/preflight.json",
+      "kind": "whole",
+      "bytes": 2223,
+      "truncated": false,
+      "sha256": "17a398d649586d130b3eaaef371864795d0dda21c12e43605355c791abeabb2b",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/es/spark-driver.log",
+      "kind": "log",
+      "bytes": 2314,
+      "truncated": false,
+      "sha256": "54b77efd3d40eb2ec42bff3af5fcbb9ae5a6d23dcc4ef8eb0b0e3aa586eb77f9",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/es/summary.json",
+      "kind": "whole",
+      "bytes": 4332,
+      "truncated": false,
+      "sha256": "6642b0d9cae36495194915973e88a9b32afb2899777060987e15fddaea34112b",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/es/timings.tsv",
+      "kind": "whole",
+      "bytes": 194,
+      "truncated": false,
+      "sha256": "9323d9ec8053054034bd3c432189251321b98bfed858b1c665929dd40743a9bc",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/es.log",
+      "kind": "log",
+      "bytes": 53,
+      "truncated": false,
+      "sha256": "96701ee8e81e792ea53ead23b40061061eef0a9dc058aa059b04a28187d0f31f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/ko/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 2186,
+      "truncated": false,
+      "sha256": "a53a2d9b3527d81fcc0c998a12c8d30f3c970c6272aa95e1c220300634d5a72d",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/ko/spark-driver.log",
+      "kind": "log",
+      "bytes": 2517,
+      "truncated": false,
+      "sha256": "1e0f0a94a653659b634733f98a413a449ecccaeeec5fa70998ab45ca7f607bb1",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/ko/summary.json",
+      "kind": "whole",
+      "bytes": 4242,
+      "truncated": false,
+      "sha256": "29459456b3e11eafcc8d7a0e57faf5ccd3e986878716c051d319d5c5e0da6a35",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/ko/timings.tsv",
+      "kind": "whole",
+      "bytes": 168,
+      "truncated": false,
+      "sha256": "b93f18c255f692352549fa2bea6da8d99dfe8e4511334fe2c41586cce922326d",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/ko.log",
+      "kind": "log",
+      "bytes": 53,
+      "truncated": false,
+      "sha256": "16d1d541b9d0c7a2b81162ed263f60d532aca1ff7cceae511c6c50a726295bc2",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/run-es/l3/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 10909,
+      "truncated": false,
+      "sha256": "a540f6e97b7f464da6ed7be99dd704bed8a4751c2746903a737528fbde152c13",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/run-ko/l3/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 10886,
+      "truncated": false,
+      "sha256": "8e797bab52b858e2ead744082b4109c27fec38709f3270efa31d19cab901a72f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/run-zh-Hans/l3/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 10811,
+      "truncated": false,
+      "sha256": "dcbbcf842a626d604cd28a23a9882b513e53c8cbfbc0d42dbf9542d7b724743a",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/zh-Hans/spark-driver.log",
+      "kind": "log",
+      "bytes": 3463,
+      "truncated": false,
+      "sha256": "4358888883601486c52f4d68318ad2a986c2615d30497e5b2654ec790c01687d",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/zh-Hans/summary.json",
+      "kind": "whole",
+      "bytes": 4328,
+      "truncated": false,
+      "sha256": "3172fa06cd1dd18b284ce578651ea2e33247412b128bb26d35abcc091f818d94",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/zh-Hans/timings.tsv",
+      "kind": "whole",
+      "bytes": 193,
+      "truncated": false,
+      "sha256": "dc444d74094ae79142f9e9c3ab01b49d6db9ddcbf2d8abdf7cf05a5f51cd40a8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/zh-Hans/zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 2232,
+      "truncated": false,
+      "sha256": "8c712a5a7ae1e1209478b9c175b601aeee8dfc3ee863ea8436ed2a0065ba4b64",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "aqc/zh-Hans.log",
+      "kind": "log",
+      "bytes": 58,
+      "truncated": false,
+      "sha256": "5debf72cc7b1e4978355328be71eddd7209ec93ac018b68f9e24778c597bf5cc",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "chain-koes.log",
+      "kind": "log",
+      "bytes": 1562,
+      "truncated": false,
+      "sha256": "fcf7f7d564ab5629e148f472b95dd3bc5e171cfec0af26c77543a85121a8ca9b",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "chain-zh.log",
+      "kind": "log",
+      "bytes": 1189,
+      "truncated": false,
+      "sha256": "ee9b4322c295c665b5e14b13c323846ba28ec9590b61b05053f9a05011381f48",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/es/compact.log",
+      "kind": "log",
+      "bytes": 52,
+      "truncated": false,
+      "sha256": "2a26a05dac6ea49e846a84af98dbd978065987cb0b664f007149cfe948cbea7a",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/es/package.log",
+      "kind": "log",
+      "bytes": 192,
+      "truncated": false,
+      "sha256": "91759aa586a085f409b70e0b1cca61864e90465cb36fb0ebbfffc824eec02d3e",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/es/render.log",
+      "kind": "log",
+      "bytes": 128,
+      "truncated": false,
+      "sha256": "6db819f4100d30014ca9eac39ea860fa95f386fbd183dc03138d07ae6919a8bb",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/es/screen.log",
+      "kind": "log",
+      "bytes": 55,
+      "truncated": false,
+      "sha256": "e76f6e92087c8b4c5624444fd75d23d67a122c085e95b8dc3c91ae4504863613",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/es/spark-es-c-v4/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "28852d87da704ed06c2e1e03b710b75208772b556f6c6f42eac69a8b1d5af1be",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/es/spark-es-c-v4/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "28852d87da704ed06c2e1e03b710b75208772b556f6c6f42eac69a8b1d5af1be",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/es/spark-es-c-v4/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 1944,
+      "truncated": false,
+      "sha256": "c1c99be019e6b4711ff38ed2c6b6e9fb4ab419d52b9e97aaa51ee9d41b3f8c19",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/es/spark-es-c-v4/spark-output/speech-job/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 10909,
+      "truncated": false,
+      "sha256": "a540f6e97b7f464da6ed7be99dd704bed8a4751c2746903a737528fbde152c13",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/es/spark-output/render.log",
+      "kind": "log",
+      "bytes": 5939,
+      "truncated": false,
+      "sha256": "5084b8ae968a7c01e8f1c314464a6d046e2e44b6ec76c5d749598076ad19ee77",
+      "redactions": {},
+      "exportedCopy": {"sha256": "efd0dcb34dd28b5bf8e5474c25b905ca6da3a09dde8ae9570733076f678d1b64", "bytes": 5899, "normalization": "strip_line_end_whitespace"}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/es/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 81295,
+      "truncated": true,
+      "sha256": "47f68debda056ea4769ceb49e702e570ff4590bf671084193cdca8c8631a4b35",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/es/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 207051,
+      "truncated": false,
+      "sha256": "0528cae00323b52762d60b26f063c3e880cfcea8b963d296cefb4972ec272a36",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/ko/compact.log",
+      "kind": "log",
+      "bytes": 52,
+      "truncated": false,
+      "sha256": "26e0221cf2a91f61c2d0dcc73b3d01dfe74d62688e8fc2a53d0a5ce846218e9f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/ko/package.log",
+      "kind": "log",
+      "bytes": 199,
+      "truncated": false,
+      "sha256": "e6db81e67ba59af2139646b389f0334aafad57128496b85d45be334d1f7c38fc",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/ko/render.log",
+      "kind": "log",
+      "bytes": 128,
+      "truncated": false,
+      "sha256": "40074dd28e0ed47cab5ee70516cf4eef9160a8c28769a5b74f090d9496353307",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/ko/screen.log",
+      "kind": "log",
+      "bytes": 55,
+      "truncated": false,
+      "sha256": "c966b8a7c195ae3ae512c7da7f9d90f9811c85be64ea8beb1cd2dba46d108868",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/ko/spark-ko-c-v4/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "04b69e5da29242c4a36dda19e5ede4f48a50b326e3d0c2e90b50dde2a8df951c",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/ko/spark-ko-c-v4/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "04b69e5da29242c4a36dda19e5ede4f48a50b326e3d0c2e90b50dde2a8df951c",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/ko/spark-ko-c-v4/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 1904,
+      "truncated": false,
+      "sha256": "7cedb1f1290223be0cc26ce9827355fcaba8f79b538b97a18de35aed664087d8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/ko/spark-ko-c-v4/spark-output/speech-job/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 10886,
+      "truncated": false,
+      "sha256": "8e797bab52b858e2ead744082b4109c27fec38709f3270efa31d19cab901a72f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/ko/spark-output/render.log",
+      "kind": "log",
+      "bytes": 5939,
+      "truncated": false,
+      "sha256": "6557bf3bbb7afe57b728cf558c73b2cff1e6e757668f4ae911f198218e78985a",
+      "redactions": {},
+      "exportedCopy": {"sha256": "87e6f60b129b28cfc858625de42718d20bfb640a5e8db4815540f274bdc49ade", "bytes": 5899, "normalization": "strip_line_end_whitespace"}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/ko/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 81293,
+      "truncated": true,
+      "sha256": "15470b28b18a1987a2d8530d26181b7711fd91ddfc134d14eba4fe8160a333fd",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/ko/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 207053,
+      "truncated": false,
+      "sha256": "5df6ecdcd5fad7bb6006d5175176cc6a366f3ec40ad1baf747ccb8d5f4f2161f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/zh-Hans/compact.log",
+      "kind": "log",
+      "bytes": 57,
+      "truncated": false,
+      "sha256": "1ed2a7a64bb04ba9d9789ff6f76c6a851520379b66fda692f89bf20acb34a58d",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/zh-Hans/package.log",
+      "kind": "log",
+      "bytes": 209,
+      "truncated": false,
+      "sha256": "9d3d96a098bc1eac9f80fe99a680bc5ede3c698cd960fd4ed1180f7f244dd915",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/zh-Hans/render.log",
+      "kind": "log",
+      "bytes": 133,
+      "truncated": false,
+      "sha256": "9756c49817fb15e3b32a009d1ffdd6d5398dfabba134e2e34aeb60cc321b9294",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/zh-Hans/screen.log",
+      "kind": "log",
+      "bytes": 60,
+      "truncated": false,
+      "sha256": "31c1bdc2652bfcbedfc830eb6525ff005d5f255ea2b7a1436336051717d81376",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/zh-Hans/spark-output/render.log",
+      "kind": "log",
+      "bytes": 5939,
+      "truncated": false,
+      "sha256": "67582b14e9b04abbbf77d1d9f0bf0e883203eda52657900635d4e3c329d88ff3",
+      "redactions": {},
+      "exportedCopy": {"sha256": "fd90903458699e0da181a7bc9609c22e770a0c1c6303d947dfaf25c4ed3305c4", "bytes": 5899, "normalization": "strip_line_end_whitespace"}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/zh-Hans/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 82350,
+      "truncated": true,
+      "sha256": "baa6b67057e195f48d5d407c400cb8a00ef66bde0fe91ba586155a651488229c",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/zh-Hans/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 208126,
+      "truncated": false,
+      "sha256": "5292e213861f5da328597b81e41073b924d94e40f8e865e2ef59a1334f1bf7f6",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/zh-Hans/spark-zh-Hans-c-v4/compact.log",
+      "kind": "log",
+      "bytes": 199,
+      "truncated": false,
+      "sha256": "0710130abb1544c2738e011e60b5997ca4e36db4ecbd2f53162df7bc70f3d631",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/zh-Hans/spark-zh-Hans-c-v4/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 199,
+      "truncated": false,
+      "sha256": "0710130abb1544c2738e011e60b5997ca4e36db4ecbd2f53162df7bc70f3d631",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/zh-Hans/spark-zh-Hans-c-v4/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 1904,
+      "truncated": false,
+      "sha256": "a905728c57e90632083e52fb5ff01526e79e558d4a277107961b74e270663660",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l3/zh-Hans/spark-zh-Hans-c-v4/spark-output/speech-job/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 10811,
+      "truncated": false,
+      "sha256": "dcbbcf842a626d604cd28a23a9882b513e53c8cbfbc0d42dbf9542d7b724743a",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4/baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 279131,
+      "truncated": false,
+      "sha256": "ca4cecf63f0226b29b88d0a77bc1a67323fb147c97d0045d82931473af0094b8",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4/baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4/workflow/asset-first/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 279131,
+      "truncated": false,
+      "sha256": "ca4cecf63f0226b29b88d0a77bc1a67323fb147c97d0045d82931473af0094b8",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4/workflow/asset-first/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4/workflow/asset-first/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4/workflow/final-overlay/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 287500,
+      "truncated": false,
+      "sha256": "748d5631ca141b0025dd48af12bce6ffd1f40b80d1c69e638eb8ed907fe4575f",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4/workflow/final-overlay/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4/workflow/final-overlay/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4/workflow/live-baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 287500,
+      "truncated": false,
+      "sha256": "748d5631ca141b0025dd48af12bce6ffd1f40b80d1c69e638eb8ed907fe4575f",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4/workflow/live-baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4/workflow/sealed/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4-baseline.log",
+      "kind": "log",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "5c5a41b5d310bf10c0980a6c3e56d6b540afe8976146f7fca3feadd314cac657",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4-prepare.log",
+      "kind": "log",
+      "bytes": 233,
+      "truncated": false,
+      "sha256": "8cc9ea29a027046df66f46429c7ca5cabb53b89cba41d9e9b39861d944880ac2",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4-publish-2.log",
+      "kind": "log",
+      "bytes": 4793,
+      "truncated": false,
+      "sha256": "e85b19a99a61298925e9d74055a044e0e9919cfe9a4a6ba0e5f4866282d4cc01",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4-publish-3.log",
+      "kind": "log",
+      "bytes": 2236,
+      "truncated": false,
+      "sha256": "2bb2f2c468fdf1046700ef2643e56930c74c5cadf00e696bd01800b425352957",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4-publish.log",
+      "kind": "log",
+      "bytes": 4789,
+      "truncated": false,
+      "sha256": "b3dfe9781989cc941d7ba853944fd03f15272e7ede9fb1ef78ebffc4c4a7d838",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "l4-smoke.log",
+      "kind": "log",
+      "bytes": 12068,
+      "truncated": false,
+      "sha256": "5555c4f8c522c6b31ee2c736e8caf8bb43218cc45455361ac7b721a8c0406102",
+      "redactions": {
+        "home_dir": 1
+      },
+      "exportedCopy": {"sha256": "62ee32df5fb2612edd2fb5770c68d9d233fcdf5cb71b8a51677f5d1c8a9f8cbc", "bytes": 12046, "normalization": "strip_line_end_whitespace"}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "plans/qc-es/qc-es/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 227056,
+      "truncated": false,
+      "source": "plans/qc-es/qc-es/.api-budget/source-budget.json",
+      "sha256": "c47bb5f28a037dea0648bd3ae7364b66b1c63a73ede2a6bb62f00a9fcf4d4521",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "plans/qc-ko/qc-ko/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 222155,
+      "truncated": false,
+      "source": "plans/qc-ko/qc-ko/.api-budget/source-budget.json",
+      "sha256": "d74293f9f781146a57a132152b212b9749e6584acd4b23c9fba70961e3d09275",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "plans/qc-zh-Hans/qc-zh-Hans/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 222566,
+      "truncated": false,
+      "source": "plans/qc-zh-Hans/qc-zh-Hans/.api-budget/source-budget.json",
+      "sha256": "62744dbeba22cbcbfa07a0eeb11320bcc7992b33008617e5ea500c2575ed95d8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-es/out/es/preflight.json",
+      "kind": "whole",
+      "bytes": 1316,
+      "truncated": false,
+      "sha256": "32c150777a9869d6512036b598bc2f57042952f71fbd75029cd4b24eb9a1657f",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-es/out/summary.json",
+      "kind": "whole",
+      "bytes": 2995,
+      "truncated": false,
+      "sha256": "fbb9b47049a2d06eda4db08e6d81431976f00c80a160c348017470db0efc653e",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-es/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 171,
+      "truncated": false,
+      "sha256": "d6a88997cdae42a7999e11f269928af8b87a4d222201059c3c8c65ac25e02fac",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-es/state/asr-calls/primary/131b77efe989c96ca81c53fe2ee642b673d1e16e3a5e1e7a9c218e2ad2d8742d/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "5f17a82a70dffc25983f0430a7c194ddee2395bd85feee8508022a16e16d3e1b",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-es/state/asr-calls/primary/311f4d1b69739f97997eac9aad09eb5d3b62424c5d1f122035be1b97fd531fa3/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "1682b62a32a891918f5aa8bc87d9503aa13bb56fd8c0e31c8c2e61cbb42b07e1",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-es/state/asr-calls/primary/a5e7b44dee0e8a9c8ec0afaadd3637c985e356adbc2dd3c699d7a4da032973e6/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "412e0769c63b466516ec3d5f4e2a3462bf1f4c4fd292cbe35bee4daaa4904429",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-es/state/asr-calls/primary/e49f060348c55f499a325ea3dd84501cb9682c64c47857257092ec6c4b809d63/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "1048588fc9e531958ef9ee5aa0cf0c12c086f44b57004283d89b09db24f2c1b1",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-es/textqc.log",
+      "kind": "log",
+      "bytes": 736,
+      "truncated": false,
+      "sha256": "c33fd2da26664604df967d8966071389fe46bd0ba2cad5c2cffd7625d271414b",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-ko/out/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 1316,
+      "truncated": false,
+      "sha256": "0f8c34911084b55acc5728b3bba77464c6795865baae08d577e3476dc491f13b",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-ko/out/summary.json",
+      "kind": "whole",
+      "bytes": 2995,
+      "truncated": false,
+      "sha256": "4f4da6bf20b6db44aa21a841d36168d8b2de092c758578520be7c0558d0811f8",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-ko/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 171,
+      "truncated": false,
+      "sha256": "aa82e183091e88e18f2c69229f87f1d3afadcd7484ca773269fd365153bee614",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-ko/state/asr-calls/primary/31d0e78621a4a8f96b83bb52d7078db8129f39d7eec2e9b72339202ac728358e/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "fd3098525b78f055c6f40a221d9dafa7dc95fd47c3b4adbce645fd4327c949a6",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-ko/state/asr-calls/primary/547c0ce9c31ad9e04209349422496dc63c2358c2ba72d93df2db2ed9df559178/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "45838b01720f0fc9b56a484c4ea70f691aa40f83ad76626f82627a15bfffe8fa",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-ko/state/asr-calls/primary/7653271b79b32987ad3d980bfdc2ea2726076f85d1b746977280c8f08b2a70ee/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "52c98a53c20c9b4a9a16638c406c04ed1e65b237e0a00aafc9a3d1b1a977295f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-ko/state/asr-calls/primary/aba0db8506b200ab8f65e7b8f5964f38b9f1726ec4d5838d49eb55388ca5fcb2/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "e9499b457e0c35b4c66790c053a9fdab09a03f1dc5db00e4803807ce4187dad8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-ko/state/asr-calls/primary/f90f213477d1f00718add6e1dccea59cd2583f441bb7db5b6962ffbfa184bde3/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "ba14e3be4cfa4551048a176a5da6237b8c0f54e357c1dd38b70c4633ebd12154",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-ko/textqc.log",
+      "kind": "log",
+      "bytes": 736,
+      "truncated": false,
+      "sha256": "81adaf473233bd87c999d18abb08f198d65fbb769191c931f0168f2258984fb2",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/out/summary.json",
+      "kind": "whole",
+      "bytes": 3060,
+      "truncated": false,
+      "sha256": "f823b4e3ab2c661ac817e4bf579d6e90a338de308dcc474323a5fc74a413e8b7",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "921901855717d8b1b8082af71fafdce86210d1ff120d0afae3a74973f75934e7",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/out/zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 1351,
+      "truncated": false,
+      "sha256": "9d65f1a192b0df5f800cf7ae550d0c4635ebebacc3846eee58d237bf77a70323",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/0e97fc4ec8d6093394c6ff7e61f60df094dd5c90bbe8d62da3dce75a65bf9dab/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "974a3a8eef6de5d448b47bc8ce1c959bbc4e635bcba97877b3a7e1a62d97c8cd",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/126a397ea1e2ced6509876c5850d08459ea92c6e1d37d030a8f979de6b380ad7/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "e7486a425d776c20941b30ec19f7012adb36276f08dba572a9f829c497589663",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/3cf7fa296174dfccf83595b9822b9682f680daf548b9621c7faa397e7118ef49/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "5c701f3fd7fe71bb1a7b59921888a6fd327e37bf4020a804fce2fe4fe9bf4036",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/6c1d0d603aed30f0e41a53b463995c5778d9a9fc265e5effe29172b73df2535f/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "77489dea67e401f570c5aff98b2cea043436be99868f23f1f0534de44f290889",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/8319238ad0b1327b718af45b7f0a766ad326dd4e997f26a3826d6fc326fcde20/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "bffbb0c88a72d4984bbef28aaacec8d46a77355c4dd403e9eb665288a2fe3e3b",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/8e90aa6fca7889305da2cfd961a0f31ca8236412e14a222e1411ac6208090928/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "47b32e9b52422ada992b3c95b630df159834655c39acc582974b208255e876ec",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/9d5471ab0e582afb75244e8fd68e43c01d834ac97590c662bc0c76fafdf0d83e/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "a673f9c7ef65b366381525356c2c18d036a50694634a96f01c5426d421e07cba",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/e1e15d9a7721a31609a35f1f7deb590fc3c68333a8570f925b28b6175629a73d/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "757595302a3aeea9d4728815fc9040c193bbb2f0e70209f4aa4510984720aa9c",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/state/asr-calls/primary/ef66067db485f9fb5f4c0388f72eccc2bd2fcfedfd8be2979bccf75d91aeb55c/outcome.json",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "d6fb6d26165cc3a887cd584e2c1c092381e35744a46385d3d596ec07a84c9259",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "textqc-zh-Hans/textqc.log",
+      "kind": "log",
+      "bytes": 766,
+      "truncated": false,
+      "sha256": "5060e79dc745707d133302f3de4ff0048ac042552f2da355eddadcfd60f3d242",
+      "redactions": {}
+    },
+    {
+      "run": "clip-test-20261013-v4",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 508,
+      "truncated": false,
+      "sha256": "e8236ceedddcd693b08dd4b67b7b9f193be812310f10096aad9d953935797af1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

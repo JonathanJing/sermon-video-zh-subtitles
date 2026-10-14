@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261013-language-pickers-firebase-dev-01f1acdb",
+  "runs": [
+    {
+      "label": "run-20261013-01f1acdb",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/web-language-pickers/dev-deploy/run-20261013-01f1acdb",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "run-20261013-01f1acdb",
+      "path": "hosting-deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 927,
+      "truncated": false,
+      "sha256": "bfe3242454ef1e8487c6e23ef84e4cc8c7f1caf343e62eb359ed24f48c9254cf",
+      "redactions": {}
+    },
+    {
+      "run": "run-20261013-01f1acdb",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 427,
+      "truncated": false,
+      "sha256": "c67c9b64195ef34aa223534f38101b68736b24ce24dbd849b2936c377a0ce92a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

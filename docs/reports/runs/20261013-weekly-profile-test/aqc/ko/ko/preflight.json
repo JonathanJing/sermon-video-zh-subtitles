@@ -1,0 +1,49 @@
+{
+  "calibrationCoverage": {
+    "audio": {
+      "droppedKeyWordTrials": 5,
+      "truncationEligibleTrials": 16,
+      "untestableKinds": [],
+      "wrongSentenceUnits": 16
+    },
+    "text": {
+      "applicableGroups": {
+        "added_content": 16,
+        "added_number": 9,
+        "added_reference": 13,
+        "dropped_half": 10,
+        "dropped_name": 1,
+        "english_leak": 11,
+        "placeholder": 16,
+        "semantic_negation": 0,
+        "swapped_name": 0,
+        "swapped_quantity": 0,
+        "wrong_book": 1,
+        "wrong_number": 3,
+        "wrong_ordinal": 13
+      },
+      "notApplicableKinds": [
+        "semantic_negation",
+        "swapped_quantity",
+        "swapped_name"
+      ],
+      "untestableKinds": []
+    }
+  },
+  "flaggedGroups": [
+    "translation-chunk-0005-u015"
+  ],
+  "locale": "ko",
+  "packageJsonSha256": "7783e186da22e1c898dac02c86b3be5ade8485ee37c0c7bffe7423f656292b50",
+  "paths": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/src/anchor.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/text/ko/candidate.json",
+    "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/aqc/run-ko/l3/speech-job.json",
+    "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l3/ko/audio-package.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/policy/ko-policy-clip.json",
+    "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/aqc/run-ko/l3/asr-screening-receipt-v1.json",
+    "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/src/source.json",
+    "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/textqc-ko/out/ko/text-waiver-a13bf0b10ad7190c.json"
+  },
+  "problems": []
+}

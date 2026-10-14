@@ -1,0 +1,23 @@
+
+== 2026-10-14T18:58:45+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/run_with_openai_environment.py --environment dev --env-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.env.openai -- ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/run_machine_qc_clip_test.py --run-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/textqc-es/run-out --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/textqc-es/out --state-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/textqc-es/state --locales es --text-backend api --api-budget-authorization ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/plans/qc-es/qc-es/api-budget-authorization.json --workers 8 --expected-implementation 5815242564f4a4ab7c972d04cf94780b7d1084d78687bde7fb3e9c8f4ad2304b
+discover	pass	0.0
+es.text-qc.prefetch	pass	13.6
+es.text-qc	pass	0.5
+es.calibration.prefetch	pass	90.7
+es.calibration	pass	3.7
+es.text-waiver	pass	0.0
+Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/20261014-190034-machine-qc-text
+{
+  "es": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 95,
+      "detected": 95
+    }
+  }
+}
+Digest: ~/.codex/worktrees/opus-e2e-dev-20261014/sermon-video-zh-subtitles/artifacts/run-reports/20261014-190034-machine-qc-text (3 files, 11 redactions)

@@ -1,0 +1,233 @@
+{
+  "schemaVersion": "sermon-target-language-audio-screening-v2",
+  "targetLocale": "zh-Hans",
+  "targetLanguageSpeechJobJsonSha256": "d3b962eb00969cee51018d1d8547ac3983e645e6e6a35c8913b297c9d67f3bf7",
+  "trackSha256": "3f8d9a7d5665d1adb7b6405dcb26fe2c2d17ccd364d403af1aa0a6dc32d0b16a",
+  "status": "pass",
+  "model": "Qwen/Qwen3-ASR-0.6B",
+  "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+  "minSimilarity": 0.88,
+  "coverage": 1.0,
+  "reviewedGroupIds": [
+    "translation-chunk-0002-u017",
+    "translation-chunk-0002-u018",
+    "translation-chunk-0002-u019",
+    "translation-chunk-0002-u020",
+    "translation-chunk-0002-u021",
+    "translation-chunk-0002-u022",
+    "translation-chunk-0002-u023",
+    "translation-chunk-0002-u024",
+    "translation-chunk-0002-u025",
+    "translation-chunk-0002-u026",
+    "translation-chunk-0002-u027",
+    "translation-chunk-0002-u028",
+    "translation-chunk-0002-u029",
+    "translation-chunk-0002-u030",
+    "translation-chunk-0002-u031",
+    "translation-chunk-0002-u032"
+  ],
+  "unitAudioSha256s": [
+    "eb600b04c1398978cdea206c96a07217e3b102eb0fb544137fb3de7f8ea4daee",
+    "133a2605ac9ab3309fd87e8ddba59f61333f8225f3958b091e2b14cb221bf98c",
+    "3742f027c49c488d1ed92ec52f14bf3826728a903a6b4fe371c405a419bc9698",
+    "99438b92dd79ef2e4e7663a9ed22530039579ed2585c58d96173d9eb0265cd4e",
+    "1425f96a7a8f83233e62cb6067bb103c21e6006a29c980e3b203dd6dac3ee116",
+    "e11ce519463707711b7bcccc22b743bad46d4a1b69f5a3ec72d4086dc0ebc9ca",
+    "bc49c034ba3f3d36cdd3cfb6b9d724ac312fea593fd87577a39295b79641ee7c",
+    "3b3af6466bc11bc5a3466812b8418922ae819c7c82f529300de90ce3b55baa8c",
+    "bfdeb3659e99a15a263718bace494a6e99c40ffff7d0428ec0b1b94e5e357ad1",
+    "06055f54b3412711367d182f621a5b303062c31644467627b175348c9e929fe3",
+    "b0331ba25627bedad42bd502b0266e11c7249218727b27dab45f88d24e5a80c0",
+    "e2de5c48daca812e3594cf74dffd966f4a28e2e82d3aa5a6475e7e27425521e5",
+    "9e20b7885dbfa27999e3b6507fd646b37da448a62fcea1b5be73b76ff55f47d1",
+    "50db2d0b548300ffdd9b418937f940c1c2a5b4216646db64ffd00acbe1d50a82",
+    "715af08e822388b9b609a63266526da59acf12a2eb0b77082811ddd9b8c85a85",
+    "53a693be50efa8d9b4b7ffd58f829002eb9b7ac467da98382587eb723dc92cd5"
+  ],
+  "results": [
+    {
+      "textGroupId": "translation-chunk-0002-u017",
+      "targetTextSha256": "bff411ac1c7fe9b152f06380b442653c39ce5d5ec6aee22afd54adfa5a83b8cf",
+      "audioSha256": "eb600b04c1398978cdea206c96a07217e3b102eb0fb544137fb3de7f8ea4daee",
+      "recognized": "他们似乎是某种魔鬼般的生物，折磨地上的人，给地上带来极大的苦难。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u018",
+      "targetTextSha256": "317333e780ed53f37a408c48331a55dcacaa020b4422f76c888e2529e49214ba",
+      "audioSha256": "133a2605ac9ab3309fd87e8ddba59f61333f8225f3958b091e2b14cb221bf98c",
+      "recognized": "接着，第六号带来的灾难非常惨烈。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u019",
+      "targetTextSha256": "00738473d20aaa291c57d78d45f99a3a406f87cab6fdbe74c91f6cc3e4c5add2",
+      "audioSha256": "3742f027c49c488d1ed92ec52f14bf3826728a903a6b4fe371c405a419bc9698",
+      "recognized": "真是太惨烈了。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u020",
+      "targetTextSha256": "ba5b0be512aeffe49c59830779f889e6d732f1ab51d902bd547ec6f249ef2568",
+      "audioSha256": "99438b92dd79ef2e4e7663a9ed22530039579ed2585c58d96173d9eb0265cd4e",
+      "recognized": "一支两亿人的大军兴起，征服了地上三分之一的人。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u021",
+      "targetTextSha256": "be5c9cc7551598696f002fa528f1650d1c333b602c0e8952249d883b39ea9685",
+      "audioSha256": "1425f96a7a8f83233e62cb6067bb103c21e6006a29c980e3b203dd6dac3ee116",
+      "recognized": "死亡人数多得惊人。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u022",
+      "targetTextSha256": "eb32898cdbe9977fcbc43f4f19dad08992fa4bd35dbc6c57b9dd3cbfb9b50b76",
+      "audioSha256": "e11ce519463707711b7bcccc22b743bad46d4a1b69f5a3ec72d4086dc0ebc9ca",
+      "recognized": "你算一下，就会发现地上有二十七亿人丧生。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u023",
+      "targetTextSha256": "c5bf017a4c1af6bd0870abc287df523a65354e091bee232b894e41b5efefebb1",
+      "audioSha256": "bc49c034ba3f3d36cdd3cfb6b9d724ac312fea593fd87577a39295b79641ee7c",
+      "recognized": "这太惨烈了。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u024",
+      "targetTextSha256": "d90533330f62aee4b96facd3382f4ac4259324253d8ed0446b502dcce444e6f7",
+      "audioSha256": "3b3af6466bc11bc5a3466812b8418922ae819c7c82f529300de90ce3b55baa8c",
+      "recognized": "这实在太猛烈了。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u025",
+      "targetTextSha256": "f6ed1719ade39e630bc93c0a3073ab92027ccd7c1ac97bc3d3bac9646111bcb4",
+      "audioSha256": "bfdeb3659e99a15a263718bace494a6e99c40ffff7d0428ec0b1b94e5e357ad1",
+      "recognized": "好，那么我们该怎么看待这些号呢？",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u026",
+      "targetTextSha256": "cc7b4c805d114220c5fa7c33d07615258ac47802a09244e4ec32262eafc03a69",
+      "audioSha256": "06055f54b3412711367d182f621a5b303062c31644467627b175348c9e929fe3",
+      "recognized": "我们该怎样理解这些号呢？",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u027",
+      "targetTextSha256": "80701455f56d6fb006e93cf98bb6ade55eba7084cb7f09bf36894f7b1f280be9",
+      "audioSha256": "b0331ba25627bedad42bd502b0266e11c7249218727b27dab45f88d24e5a80c0",
+      "recognized": "现在有一点我们需要特别留意：在过去两千年的教会历史中。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u028",
+      "targetTextSha256": "fd79d9208dc1e2118d6dd4b2ef85cdbd99a80bdc8857bc9cdb76fac242974ae2",
+      "audioSha256": "e2de5c48daca812e3594cf74dffd966f4a28e2e82d3aa5a6475e7e27425521e5",
+      "recognized": "有许多才智出众的基督徒思想家，对这些浩统所指的事情何时发生、如何发生，有着不同的解读。",
+      "similarity": 0.948718,
+      "differences": [
+        {
+          "kind": "replace",
+          "expected": [
+            "号",
+            "筒"
+          ],
+          "recognized": [
+            "浩",
+            "统"
+          ]
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u029",
+      "targetTextSha256": "309b9a55a0d5c14b0978f82d947133422ab3f0565c3892e47bce6c4643cb9e3b",
+      "audioSha256": "9e20b7885dbfa27999e3b6507fd646b37da448a62fcea1b5be73b76ff55f47d1",
+      "recognized": "所以如果你想更深入地了解，想稍微钻研一下不同的末世观，可以收听《If I Had More Time》播客。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u030",
+      "targetTextSha256": "b68a8b39a9c59b094875b607b985dc1f914bab4ac032b869259a4dfd182d9645",
+      "audioSha256": "50db2d0b548300ffdd9b418937f940c1c2a5b4216646db64ffd00acbe1d50a82",
+      "recognized": "而且我们还真会深入钻研一番。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u031",
+      "targetTextSha256": "5f1137217ce766982f88d84a19486f304fa8a7eeccb80447245e9d8b2ce033b4",
+      "audioSha256": "715af08e822388b9b609a63266526da59acf12a2eb0b77082811ddd9b8c85a85",
+      "recognized": "但我想让大家知道的是，所有的学者。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0002-u032",
+      "targetTextSha256": "2c6f4abd006c4c1a255f1b492e4afccb9d6928cd75df6e53345caf654fa5dc52",
+      "audioSha256": "53a693be50efa8d9b4b7ffd58f829002eb9b7ac467da98382587eb723dc92cd5",
+      "recognized": "这四种观点都一致认为，这些号角的警告是神向这个悖逆的世界发出的神圣警告。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    }
+  ],
+  "humanListeningStatus": "pending",
+  "asrSettings": {
+    "protocol": "formal-back-asr-batch-v1",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+    "language": "zh-Hans",
+    "batchSize": 1,
+    "maxNewTokens": 2048,
+    "dtype": "bfloat16",
+    "executionDevice": "cuda:0",
+    "runtime": {
+      "backend": "qwen-asr-local",
+      "torchVersion": "2.13.0a0+8145d630e8.nv26.06",
+      "qwenAsrVersion": "0.0.6",
+      "modelMetadataSha256s": {
+        "chat_template.json": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff",
+        "config.json": "76d3ae4601ce939830b2517f4a6cadb86cc51316c3900af6b020b051c21a478c",
+        "generation_config.json": "1da527824d81e07118facff437e03f2e24a23311e3bdeb2368973fe77e5f275c",
+        "preprocessor_config.json": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d",
+        "tokenizer_config.json": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c",
+        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      }
+    },
+    "implementationSha256": "cb123c807a0306e34fd6143935bd1c1f0df5b9759ef00b0fa51a3953354f6458",
+    "minSimilarity": 0.88,
+    "scoring": "token-sequence-ratio-v6; readings a listener cannot tell apart are folded first (spelled numbers and digits, same-pinyin-same-tone Chinese characters in fixed contexts, Spanish diacritic function words, Korean spacing; digit strings are not positional numbers; a Korean native numeral before a Sino counter is not folded); short units (<4 tokens) must match exactly; no negation, number or protected name may differ; numbers and names keep their order; book-anchored Korean scripture range endpoints are folded together; a Spanish digit string grouped by thousands points (2.700) or by two or more comma groups (1,000,000) is one number; comma decimals and numbers starting with 0 stay as written, their fractional digits unfolded"
+  },
+  "asrSettingsSha256": "15f055ffa9470109793c8c48d9569b75443da7281e2416cc5a74b9b283ba9a65"
+}
