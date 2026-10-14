@@ -340,7 +340,11 @@ def check_budget(plan_dir: Path):
                 for row in stage['inputFiles']:
                     if sha256(Path(row['path']))!=row['sha256']:
                         raise ValueError('Layer 2 frozen input changed')
-                _,_,sizing=planner.layer2_spec(execution,stage['locales'],json.loads(Path(plan['profile']).read_text()),plan['scale'])
+                effective_profile = planner.with_clip_claude_cap(
+                    json.loads(Path(plan['profile']).read_text()), scale=plan['scale'],
+                    backend=planner.layer2_backend_of(execution),
+                    cap=plan.get('clipClaudeListPriceCapUsdPerLocale'))
+                _,_,sizing=planner.layer2_spec(execution,stage['locales'],effective_profile,plan['scale'])
                 if sizing!=stage['sizing']:
                     raise ValueError('Layer 2 group sizing changed')
                 checked = l2_budget.load_authorization(config, authorization, controller.code_identity(), stage["authorizationSha256"])
