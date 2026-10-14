@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-beta-weekly-push",
+  "runs": [
+    {
+      "label": "beta-sync-v1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-54475d42/beta-sync-v1",
+      "skipped": {
+        ".json": 2,
+        ".py": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "beta-sync-v1",
+      "path": "apns-receipt.json",
+      "kind": "whole",
+      "bytes": 688,
+      "truncated": false,
+      "sha256": "9e0f30cbe9aa9e3317626cfee5e3dd48553a3ff11ef9e93f9c4768892b894eef",
+      "redactions": {}
+    },
+    {
+      "run": "beta-sync-v1",
+      "path": "deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 873,
+      "truncated": false,
+      "sha256": "df2956356dcdda435d3621b37453c7f8240671afadcaf762f931378648e78460",
+      "redactions": {}
+    },
+    {
+      "run": "beta-sync-v1",
+      "path": "http-receipt.json",
+      "kind": "whole",
+      "bytes": 7762,
+      "truncated": false,
+      "sha256": "3079073110c92d453957ebfe7a28f93e946af3e4cf0b23a4fbb6570966e01799",
+      "redactions": {}
+    },
+    {
+      "run": "beta-sync-v1",
+      "path": "preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 2428,
+      "truncated": false,
+      "sha256": "af835eb4da741596735ae9fd211c91bb1ce5f5da27a125f5da467b02699b3280",
+      "redactions": {}
+    },
+    {
+      "run": "beta-sync-v1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 518,
+      "truncated": false,
+      "sha256": "d1fed67e066bf7294720ea92e0a28d5dd357c6ba0a8cb61e1e9592112fd347e4",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

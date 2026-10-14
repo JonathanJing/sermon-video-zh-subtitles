@@ -1,0 +1,15 @@
+08:09:48.408 | INFO    | prefect - Starting temporary server on http://127.0.0.1:8732
+See https://docs.prefect.io/v3/concepts/server#how-to-guides for more information on running a dedicated Prefect server.
+08:09:55.035 | INFO    | Flow run 'exuberant-wombat' - Beginning flow run 'exuberant-wombat' for flow 'sermon-local-mock-dag'
+08:09:56.167 | INFO    | Task run 'dispatch-f0e' - Finished in state Completed()
+08:09:57.275 | INFO    | Task run 'dispatch-9b3' - Finished in state Completed()
+08:09:57.282 | INFO    | Task run 'dispatch-023' - Finished in state Completed()
+08:09:58.386 | INFO    | Task run 'dispatch-8b0' - Finished in state Completed()
+08:09:58.395 | INFO    | Task run 'dispatch-dd5' - Finished in state Completed()
+08:09:59.496 | INFO    | Task run 'dispatch-c3d' - Finished in state Completed()
+08:09:59.507 | INFO    | Task run 'dispatch-f46' - Finished in state Completed()
+08:10:00.595 | INFO    | Task run 'dispatch-9c7' - Finished in state Completed()
+08:10:00.620 | INFO    | Task run 'dispatch-a7c' - Finished in state Completed()
+08:10:01.703 | INFO    | Task run 'dispatch-b82' - Finished in state Completed()
+08:10:02.065 | INFO    | Flow run 'exuberant-wombat' - Finished in state Completed()
+08:10:02.093 | INFO    | prefect - Stopping temporary server on http://127.0.0.1:8732

@@ -1,0 +1,9 @@
+{
+  "codeRevision": "f08720bf912cd8d8935d058cec526bafcee09a27",
+  "tests": 2,
+  "deselected": 12,
+  "elapsedSeconds": 0.32,
+  "scope": "TTS calibration policy binding, v1 raw/v2 Sino, cache reuse/output identity and tamper rejection; primary ASR contract",
+  "modelsCalled": false,
+  "fullConsumerRepeated": false
+}

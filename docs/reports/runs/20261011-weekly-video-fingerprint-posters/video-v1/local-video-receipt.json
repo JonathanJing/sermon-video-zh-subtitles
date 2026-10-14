@@ -1,0 +1,36 @@
+{
+  "sha256": "9865990575af53071fb6486a86e6092caa16766664026bd7bfe89fce83392be9",
+  "bytes": 1148263358,
+  "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/resi-20261011-54475d42/9865990575af53071fb6486a86e6092caa16766664026bd7bfe89fce83392be9.mp4",
+  "canonicalUrl": "/pages/resi-20261011-54475d42/full-video-browser.mp4",
+  "status": "local_video_verified",
+  "approvedStartSeconds": 1749,
+  "approvedEndSeconds": 3880,
+  "sourceTimeline": "resi-54475d42-6e3c-4ba7-9018-4df3f558b9a9/timeline-report.json",
+  "fullDecodeExitCode": 0,
+  "fullDecodeErrors": 0,
+  "ffprobe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "width": 1920,
+        "height": 1080,
+        "start_time": "0.000000",
+        "duration": "2131.028900"
+      },
+      {
+        "codec_name": "aac",
+        "start_time": "0.000000",
+        "duration": "2131.000000"
+      }
+    ],
+    "format": {
+      "start_time": "0.000000",
+      "duration": "2131.028900",
+      "size": "1148263358"
+    }
+  },
+  "sourceMediaIdentityPreserved": true
+}

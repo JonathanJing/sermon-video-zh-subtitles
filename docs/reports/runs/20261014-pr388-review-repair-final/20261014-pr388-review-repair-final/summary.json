@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-journal-summary-v1",
+  "events": 2,
+  "firstAt": "2026-10-14T16:49:44+00:00",
+  "lastAt": "2026-10-14T16:49:46+00:00",
+  "wallSeconds": 2.0,
+  "stages": {
+    "pr388.targeted_verification": {
+      "starts": 1,
+      "computeSeconds": 2.0,
+      "waitingSeconds": 0.0,
+      "reworkSeconds": 0.0,
+      "costMicrousd": 0,
+      "waitingOn": [],
+      "status": "finished",
+      "rework": 0
+    }
+  },
+  "totals": {
+    "computeSeconds": 2.0,
+    "waitingSeconds": 0.0,
+    "reworkSeconds": 0.0,
+    "costMicrousd": 0,
+    "rework": 0
+  },
+  "openStages": []
+}

@@ -115,6 +115,53 @@ struct ListeningStatisticsTests {
         #expect(next.body["clientId"] as? String != uploads.last?.body["clientId"] as? String)
         #expect(next.body["day"] as? String != uploads.last?.body["day"] as? String)
     }
+
+    @Test func alignmentAttemptRecordKeepsOnlyWhitelistedConsistentFields() {
+        let at = Date(timeIntervalSince1970: 1_760_204_679.4)
+        let miss = AlignmentAttemptRecord(at: at, outcome: .noMatch, stage: .matchedAudio, reason: "low_confidence",
+                                          errorCode: "Native text", rms: 0.004, matchFraction: 0.05, captureSeconds: 15.002, totalSeconds: 19.349)
+        #expect(miss.atMilliseconds == 1_760_204_679_000)
+        #expect(miss.reason == "low_confidence" && miss.errorCode == nil && miss.level == "low")
+        #expect(miss.fractionBand == "0_045_to_0_055" && miss.captureSeconds == 15 && miss.totalMilliseconds == 19_300)
+        let json = miss.json
+        #expect(Set(json.keys) == ["at", "outcome", "stage", "reason", "errorCode", "level", "fractionBand", "captureSeconds", "totalMs", "shadow"])
+        #expect(json["shadow"] is NSNull && json["errorCode"] is NSNull)
+        let denied = AlignmentAttemptRecord(at: at, outcome: .permissionDenied, stage: .indexReady, reason: "matched",
+                                            errorCode: "MIC_PERMISSION", rms: 0.5, matchFraction: 0.2, captureSeconds: 10)
+        #expect(denied.reason == nil && denied.level == nil && denied.fractionBand == nil && denied.captureSeconds == nil)
+        #expect(denied.errorCode == "MIC_PERMISSION")
+        #expect(AlignmentAttemptRecord(at: at, outcome: .applied, stage: .recording).outcome == .cancelled)
+        #expect(AlignmentAttemptRecord(at: at, outcome: .noMatch, stage: .recording).outcome == .error)
+        #expect(AlignmentAttemptRecord(at: at, outcome: .applied, stage: .matchedAudio, reason: "matched", captureSeconds: 11).captureSeconds == nil)
+    }
+    @Test func alignmentAttemptsAppendRetryRollOverAndRetract() async {
+        let harness = ListeningHarness(); defer { harness.cleanup() }
+        let statistics = harness.make()
+        let attempt = AlignmentAttemptRecord(at: harness.date, outcome: .applied, stage: .matchedAudio, reason: "matched", captureSeconds: 10, totalSeconds: 12)
+        await statistics.recordAlignment(attempt, source: harness.source, interfaceLocale: "en", contentLocale: "zh-Hans", date: harness.date)
+        #expect(ListeningProtocol.requests.isEmpty, "disabled statistics never mint or upload")
+        await statistics.setEnabled(true)
+        let before = ListeningProtocol.requests.count
+        await statistics.recordAlignment(attempt, source: harness.source, interfaceLocale: "en", contentLocale: "zh-Hans", date: harness.date)
+        ListeningProtocol.failNextAlignment = true
+        await statistics.recordAlignment(attempt, source: harness.source, interfaceLocale: "en", contentLocale: "zh-Hans", date: harness.date)
+        await statistics.recordAlignment(attempt, source: harness.source, interfaceLocale: "en", contentLocale: "zh-Hans", date: harness.date)
+        var uploads = ListeningProtocol.requests.dropFirst(before).filter { $0.path == "/api/alignment-usage" }
+        #expect(uploads.map { ($0.body["attempts"] as? [[String: Any]])?.count ?? -1 } == [1, 2, 3])
+        #expect(uploads.map { $0.body["seq"] as? Int ?? -1 } == [1, 2, 3])
+        #expect(uploads.last?.body["platform"] as? String == "ios" && uploads.last?.body["contentLocale"] as? String == "zh-Hans")
+        #expect(ListeningProtocol.requests.dropFirst(before).filter { $0.path == "/api/session" }.count == 1)
+        for _ in 0..<38 {
+            await statistics.recordAlignment(attempt, source: harness.source, interfaceLocale: "en", contentLocale: "zh-Hans", date: harness.date)
+        }
+        uploads = ListeningProtocol.requests.dropFirst(before).filter { $0.path == "/api/alignment-usage" }
+        #expect(uploads.compactMap { ($0.body["attempts"] as? [[String: Any]])?.count }.max() == 40)
+        #expect(uploads.last.flatMap { ($0.body["attempts"] as? [[String: Any]])?.count } == 1, "the 41st press opens a new credential")
+        #expect(ListeningProtocol.requests.dropFirst(before).filter { $0.path == "/api/session" }.count == 2)
+        await statistics.setEnabled(false)
+        let deletes = ListeningProtocol.requests.filter { $0.path == "/api/alignment-usage" && $0.body["action"] as? String == "delete" }
+        #expect(deletes.count == 2)
+    }
 }
 
 private final class ListeningHarness {
@@ -122,7 +169,7 @@ private final class ListeningHarness {
     let defaults: UserDefaults
     let source = ListeningSource(week: "2026-09-27", trackId: "example", audioSha256: String(repeating: "a", count: 64))
     let date = Date()
-    init() { defaults = UserDefaults(suiteName: name)!; ListeningProtocol.requests = []; ListeningProtocol.failNextListening = false }
+    init() { defaults = UserDefaults(suiteName: name)!; ListeningProtocol.requests = []; ListeningProtocol.failNextListening = false; ListeningProtocol.failNextAlignment = false }
     func cleanup() { defaults.removePersistentDomain(forName: name) }
     func make() -> ListeningStatistics {
         let config = URLSessionConfiguration.ephemeral; config.protocolClasses = [ListeningProtocol.self]
@@ -139,6 +186,7 @@ private final class ListeningProtocol: URLProtocol {
     struct Request { let path: String; let body: [String: Any] }
     nonisolated(unsafe) static var requests: [Request] = []
     nonisolated(unsafe) static var failNextListening = false
+    nonisolated(unsafe) static var failNextAlignment = false
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
@@ -151,6 +199,9 @@ private final class ListeningProtocol: URLProtocol {
         let body = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
         let path = request.url!.path
         Self.requests.append(Request(path: path, body: body))
+        if path == "/api/alignment-usage", Self.failNextAlignment {
+            Self.failNextAlignment = false; client?.urlProtocol(self, didFailWithError: URLError(.timedOut)); return
+        }
         if path == "/api/listening", Self.failNextListening {
             Self.failNextListening = false; client?.urlProtocol(self, didFailWithError: URLError(.timedOut)); return
         }

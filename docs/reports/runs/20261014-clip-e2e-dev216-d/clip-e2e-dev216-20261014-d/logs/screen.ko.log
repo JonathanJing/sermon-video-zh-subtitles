@@ -1,0 +1,3 @@
+
+== 2026-10-14T16:50:47+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/clip_e2e_spark.py screen --locale ko --stage ~/dgx-spark-benchmark/results/clip-e2e-dev216-20261014-d --code repo-e3e3682e --job ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l3/ko/spark-ko-c/speech-job/job.json --remote-name ko-c --batch-size 1 --tag v1
+{"locale": "ko", "phase": "asr-screen", "exitCode": 0}
