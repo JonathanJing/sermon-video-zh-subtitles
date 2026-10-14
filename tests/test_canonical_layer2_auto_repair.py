@@ -67,10 +67,10 @@ class ControllerAutoRepairTests(unittest.TestCase):
         self.assertEqual(config.auto_repair, BINDING)
         self.assertEqual(subject._locale_capacity(config), 3)
         self.base.config_data["schemaVersion"] = subject.DEV_REPAIR_SCHEMA
-        self.base.config_data["layer2AutoRepair"] = {**BINDING, "repairSpendFractionByLocale": {"ko": 0.30}}
+        self.base.config_data["layer2AutoRepair"] = {**BINDING, "repairSpendFractionByLocale": {"zh-Hans": 0.30}}
         self.base.save_config()
         self.assertEqual(subject.load_configuration(self.base.path).auto_repair["repairSpendFractionByLocale"],
-                         {"ko": 0.30})
+                         {"zh-Hans": 0.30})
         self.base.config_data["schemaVersion"] = subject.AUTO_REPAIR_SCHEMA
         self.base.save_config()
         with self.assertRaisesRegex(ValueError, "invalid_execution_configuration"):

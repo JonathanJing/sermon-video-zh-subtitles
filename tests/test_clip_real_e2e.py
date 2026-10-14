@@ -70,6 +70,16 @@ class SpecificationTests(unittest.TestCase):
             subject.load_spec(spec_files(self.base, schemaVersion=subject.SCOPED_REPAIR_SPEC_SCHEMA,
                                          layer2=layer2, openai={"environment": "prod"}))
 
+    def test_single_locale_qc_revision_drops_other_locale_repair_allowances(self):
+        base = {"routingVersion": "layer2-auto-repair-routing-v1", "groupWorkers": 8,
+                "maxActiveLocales": 3, "repairSpendFractionByLocale": {"ko": 0.30, "zh-Hans": 0.30}}
+        ko = subject.revision_repair_binding(base, "ko", "/qc-ko.json")
+        es = subject.revision_repair_binding(base, "es", "/qc-es.json")
+        self.assertEqual(ko["repairSpendFractionByLocale"], {"ko": 0.30})
+        self.assertNotIn("repairSpendFractionByLocale", es)
+        self.assertEqual(ko["backTranslationQc"], {"ko": "/qc-ko.json"})
+        self.assertEqual(es["maxActiveLocales"], 1)
+
     def test_unsafe_or_incomplete_specifications_are_refused(self):
         page = {"pageId": "dev-weekly", "display": {"ko": DISPLAY, "es": DISPLAY}}
         bad = [({"page": page}, "mockup- page"),

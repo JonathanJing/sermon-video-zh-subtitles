@@ -609,6 +609,18 @@ def text_qc(run: Run, locale: str, candidate: Path, out_name: str) -> dict:
             "receipt": summary.get("textQcReceipt"), "waiverDir": str(out / locale) if waivers else None}
 
 
+def revision_repair_binding(base: dict, locale: str, receipt: str) -> dict:
+    """Keep only the selected locale's scoped allowance in a single-lane QC revision."""
+    binding = {**base, "maxActiveLocales": 1, "backTranslationQc": {locale: receipt}}
+    fractions = base.get("repairSpendFractionByLocale", {})
+    if fractions:
+        if locale in fractions:
+            binding["repairSpendFractionByLocale"] = {locale: fractions[locale]}
+        else:
+            binding.pop("repairSpendFractionByLocale", None)
+    return binding
+
+
 def revise(run: Run, locale: str, receipt: str, number: int) -> Path:
     """A Layer 2 revision of one locale carrying its failed QC receipt (execution v5, gate 4)."""
     from scripts import canonical_layer2_controller as controller
@@ -622,8 +634,8 @@ def revise(run: Run, locale: str, receipt: str, number: int) -> Path:
             "schemaVersion": schema, "productionRunId": base["productionRunId"], "inspectionConfig": "../l2/inspection.json",
             "jobRoot": "../l2/layer2-jobs", "locales": {locale: {"outputDirectory": f"text/{locale}",
                                                                  "plugin": base["locales"][locale]["plugin"]}},
-            "layer2AutoRepair": {**base["layer2AutoRepair"], "maxActiveLocales": 1,
-                                 "backTranslationQc": {locale: str(Path(receipt).resolve())}}})
+            "layer2AutoRepair": revision_repair_binding(base["layer2AutoRepair"], locale,
+                                                          str(Path(receipt).resolve()))})
     plans = run.dir / "plans" / f"layer2-{locale}-r{number}"
     run.plan(plans, ["layer2"], [locale], extra=["--layer2-execution", revision / "execution.json"])
     drive_layer2(run, revision / "execution.json", plans / "layer2/budget-authorization.json", [locale],
@@ -637,6 +649,14 @@ def stage_qc(run: Run, locale: str):
     Resume-safe: a candidate whose QC is already recorded is not checked again (a recorded
     ``requires_repair`` goes straight to its revision), and the candidate a revision produced is
     recorded before it is checked."""
+    # Validate the single-lane revision shape before buying the first QC pass.
+    # Its actual QC receipt path is bound only after that pass exists.
+    from scripts import canonical_layer2_controller as controller
+    if (run.l2 / "execution.json").is_file():
+        base_execution = read(run.l2 / "execution.json")
+        controller._auto_repair_binding(
+            revision_repair_binding(base_execution["layer2AutoRepair"], locale, "pending-qc-receipt.json"),
+            allow_qc=True, allow_scoped_fraction=base_execution["schemaVersion"] == controller.DEV_REPAIR_SCHEMA)
     run.plan(run.dir / "plans" / f"qc-{locale}", [f"qc.{locale}"], [locale],
              extra=["--qc-inputs", run.l2 / "qc-inputs.json"])
     state = run.stages.get("qc." + locale) or {}
