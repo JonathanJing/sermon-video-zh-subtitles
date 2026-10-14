@@ -1,0 +1,39 @@
+discover	pass	0.0
+ko.track-check	pass	0.4
+ko.secondary-asr	pass	0.8
+ko.audio-qc	pass	0.3
+ko.calibration.prefetch	pass	207.4
+W1014 17:17:30.877000 50 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1014 17:17:30.894000 50 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[0;93m2026-10-14 17:17:31.308809252 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+The following generation flags are not valid and may be ignored: ['temperature']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+ko.calibration	pass	141.3
+ko.audio-waiver	pass	0.2
+{
+  "ko": {
+    "status": "audio_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 177,
+      "detected": 177
+    }
+  }
+}
+Run report not written ([Errno 30] Read-only file system: '/work/repo-8de08048/artifacts'); export it by hand with scripts/export_run_digest.py

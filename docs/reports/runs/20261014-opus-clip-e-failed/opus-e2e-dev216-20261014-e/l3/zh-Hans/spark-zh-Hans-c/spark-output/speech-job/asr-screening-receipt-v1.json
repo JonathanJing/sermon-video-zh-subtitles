@@ -1,0 +1,231 @@
+{
+  "schemaVersion": "sermon-target-language-audio-screening-v2",
+  "targetLocale": "zh-Hans",
+  "targetLanguageSpeechJobJsonSha256": "75af39060e4696e7e8eb174123e6b18b049cd1071a28c6d65054e5fa9570d20e",
+  "trackSha256": "9683261b4fa15965a0f7a721f79bd75a1145ea1e2d3d0cdd441ae0ae4a7e006c",
+  "status": "requires_review",
+  "model": "Qwen/Qwen3-ASR-0.6B",
+  "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+  "minSimilarity": 0.88,
+  "coverage": 1.0,
+  "reviewedGroupIds": [
+    "translation-chunk-0005-u003",
+    "translation-chunk-0005-u004",
+    "translation-chunk-0005-u005",
+    "translation-chunk-0005-u006",
+    "translation-chunk-0005-u007",
+    "translation-chunk-0005-u008",
+    "translation-chunk-0005-u009",
+    "translation-chunk-0005-u010",
+    "translation-chunk-0005-u011",
+    "translation-chunk-0005-u012",
+    "translation-chunk-0005-u013",
+    "translation-chunk-0005-u014",
+    "translation-chunk-0005-u015",
+    "translation-chunk-0005-u016",
+    "translation-chunk-0005-u017",
+    "translation-chunk-0005-u018"
+  ],
+  "unitAudioSha256s": [
+    "1c7f32426939943c6be727a46dbc11de2e6c3d182b39e26515a87c889af533d5",
+    "784b2b2bd911d49a653515e223d8d1c4da820e55cd0b8117ee442327db174025",
+    "1501ec7fb23635a60da229991e55d43ff28733ebe0d57d7367e2ff831157c06f",
+    "dc25abdc178fd9f1743dcf722796a5d2c2345cd2c7c7471403be7b69b173604e",
+    "12ecdac11381dd90a7decb57f322c58cd3b1e3b13e65609913c589af0bd9c59e",
+    "f9dfb5585a4de34ef2cb11a9ad10179f924c64a7885d96557e4e8533f025e4f8",
+    "7509abe2b9bf1aa0be09b3b38f6d940c30deed9d0cd91d990cdd94aa5943c32f",
+    "f6162331166e3fd41eb727b7face8702fa22996c4cd46e44bdd0cefd190fb28e",
+    "3571ab74b2aa93ea154352c074678c45987106baa254809294826f7e03c70e2e",
+    "4233609492d24c2fe944c5fdb9c691973cfc1263d489ab0273d82489bf03032a",
+    "fb5a05084e5c9f4f4d5e8550378287fda5667d4ebf26055ba7b84d2642a47c96",
+    "4dfb75a4214c69781c9cc3b660e499d255d23d8a2a794c5e4c0db7dab910090b",
+    "cf200b8def34fbd54d9334e80f773914164c99cf2af432d3f841381fdcc5fa70",
+    "0b481ac0c1fc814e36a07ad70509d848a969735110446a56d7e1775377df3b88",
+    "12fa85be6de541ebc0b91b34f700d41bc29acb84a135781896fe85e4caa040e5",
+    "dcfe28ff9fe5e79f78a11c0c62d70992746e68f672415ef2d33eea1c61b67890"
+  ],
+  "results": [
+    {
+      "textGroupId": "translation-chunk-0005-u003",
+      "targetTextSha256": "db74fa3c6811685eb86d22ed61446bdb31f8e4399c59890d81b65315db0892dc",
+      "audioSha256": "1c7f32426939943c6be727a46dbc11de2e6c3d182b39e26515a87c889af533d5",
+      "recognized": "出于他强烈这个核心特质，他做什么事都很强烈。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u004",
+      "targetTextSha256": "3957c0fd860e3b8c40fc17286ad4e37638a488f9c1ddfc0426fc8571d2e52e58",
+      "audioSha256": "784b2b2bd911d49a653515e223d8d1c4da820e55cd0b8117ee442327db174025",
+      "recognized": "同样地，神出于他圣洁这一核心属性，他所做的一切都是以道德上完美的方式来做的。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u005",
+      "targetTextSha256": "ec96ed2bd57ee03bf91e7a5103ca62ef8312a61b18ed449df0864cfb4735ed3b",
+      "audioSha256": "1501ec7fb23635a60da229991e55d43ff28733ebe0d57d7367e2ff831157c06f",
+      "recognized": "这就意味着，如果神要降下这些数天的警告，他会以怎样的方式来做呢？",
+      "similarity": 0.965517,
+      "differences": [
+        {
+          "kind": "replace",
+          "expected": [
+            "属"
+          ],
+          "recognized": [
+            "数"
+          ]
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u006",
+      "targetTextSha256": "c981beae6dee1302d70cc0982b907ed5c768d829f7714eb68af1f5250e5d1b15",
+      "audioSha256": "dc25abdc178fd9f1743dcf722796a5d2c2345cd2c7c7471403be7b69b173604e",
+      "recognized": "就是以道德上完全的方式。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u007",
+      "targetTextSha256": "0527b4e1be58506d21efca51fedfcd63b2de91ef310fc1cea9df2fde56f806c8",
+      "audioSha256": "12ecdac11381dd90a7decb57f322c58cd3b1e3b13e65609913c589af0bd9c59e",
+      "recognized": "正因如此，当我们看第八章的时候，真是令人惊叹。在神的警告，也就是号角的警告，还没有发出之前。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u008",
+      "targetTextSha256": "031562d454508857fb09be1db7c6616f8d5e47cc0b51cb0b0ee6e69102b0ad66",
+      "audioSha256": "f9dfb5585a4de34ef2cb11a9ad10179f924c64a7885d96557e4e8533f025e4f8",
+      "recognized": "使徒约翰，也就是作者，首先清楚地确立了神的圣洁。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u009",
+      "targetTextSha256": "952621eb69d99afb08c090943ff5980db9be3b0e0283aac8cd1048de3bdff507",
+      "audioSha256": "7509abe2b9bf1aa0be09b3b38f6d940c30deed9d0cd91d990cdd94aa5943c32f",
+      "recognized": "这在两方面令人惊叹。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u010",
+      "targetTextSha256": "2b6d6d579cf2073ff358f7022364793b30d69e3b3ddbd6ce1223710853a89ed5",
+      "audioSha256": "f6162331166e3fd41eb727b7face8702fa22996c4cd46e44bdd0cefd190fb28e",
+      "recognized": "第一是借着静默。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u011",
+      "targetTextSha256": "a80ee073782390ff342e4fbc4d27a25ae95cdb836f38ed3eefd70682bdf43d84",
+      "audioSha256": "3571ab74b2aa93ea154352c074678c45987106baa254809294826f7e03c70e2e",
+      "recognized": "静默。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u012",
+      "targetTextSha256": "0d33f82f666947507fd7f667c11281b05ba8f8c912bea74bf7bf71f68bcf85cf",
+      "audioSha256": "4233609492d24c2fe944c5fdb9c691973cfc1263d489ab0273d82489bf03032a",
+      "recognized": "你知道，在旧约里，静默和神的圣洁常常是连在一起的。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u013",
+      "targetTextSha256": "cf73a5e68f015bf6fdd2dc9805db9646837f3924712d5f1aff7b41369c3d391e",
+      "audioSha256": "fb5a05084e5c9f4f4d5e8550378287fda5667d4ebf26055ba7b84d2642a47c96",
+      "recognized": "比如，我们来看《哈巴谷书》第二章。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "requires_review"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u014",
+      "targetTextSha256": "e8164aa3e30b6017e9378f946a8129a116769d7898242b3bb0ad789ad0f0ed84",
+      "audioSha256": "4dfb75a4214c69781c9cc3b660e499d255d23d8a2a794c5e4c0db7dab910090b",
+      "recognized": "但主就在他的圣殿里。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u015",
+      "targetTextSha256": "33ee6e1b16061f55649f055c7b796c4bd74db268626c70320b4bd661bda4e62d",
+      "audioSha256": "cf200b8def34fbd54d9334e80f773914164c99cf2af432d3f841381fdcc5fa70",
+      "recognized": "全地都当在他面前静默。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u016",
+      "targetTextSha256": "524ce2743774f40ad726aac15fe1ce72b6e6861c8dc2f2db496131ea7f7320db",
+      "audioSha256": "0b481ac0c1fc814e36a07ad70509d848a969735110446a56d7e1775377df3b88",
+      "recognized": "请留意第八章的第一节。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u017",
+      "targetTextSha256": "e3ef929f956497bbedc3dd93007619151b7325694b0edfe47ee34ee0aa987fe9",
+      "audioSha256": "12fa85be6de541ebc0b91b34f700d41bc29acb84a135781896fe85e4caa040e5",
+      "recognized": "他揭开第七印的时候，天上寂静了大约半小时。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u018",
+      "targetTextSha256": "6b3c08e4c1f6f0ff6bb75c93139d8b03e02a22e7dfcc3628d3bc1db26e0ea2cf",
+      "audioSha256": "dcfe28ff9fe5e79f78a11c0c62d70992746e68f672415ef2d33eea1c61b67890",
+      "recognized": "那时，一片寂静。",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    }
+  ],
+  "humanListeningStatus": "pending",
+  "asrSettings": {
+    "protocol": "formal-back-asr-batch-v1",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+    "language": "zh-Hans",
+    "batchSize": 1,
+    "maxNewTokens": 2048,
+    "dtype": "bfloat16",
+    "executionDevice": "cuda:0",
+    "runtime": {
+      "backend": "qwen-asr-local",
+      "torchVersion": "2.13.0a0+8145d630e8.nv26.06",
+      "qwenAsrVersion": "0.0.6",
+      "modelMetadataSha256s": {
+        "chat_template.json": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff",
+        "config.json": "76d3ae4601ce939830b2517f4a6cadb86cc51316c3900af6b020b051c21a478c",
+        "generation_config.json": "1da527824d81e07118facff437e03f2e24a23311e3bdeb2368973fe77e5f275c",
+        "preprocessor_config.json": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d",
+        "tokenizer_config.json": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c",
+        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      }
+    },
+    "implementationSha256": "cb123c807a0306e34fd6143935bd1c1f0df5b9759ef00b0fa51a3953354f6458",
+    "minSimilarity": 0.88,
+    "scoring": "token-sequence-ratio-v6; readings a listener cannot tell apart are folded first (spelled numbers and digits, same-pinyin-same-tone Chinese characters in fixed contexts, Spanish diacritic function words, Korean spacing; digit strings are not positional numbers; a Korean native numeral before a Sino counter is not folded); short units (<4 tokens) must match exactly; no negation, number or protected name may differ; numbers and names keep their order; book-anchored Korean scripture range endpoints are folded together; a Spanish digit string grouped by thousands points (2.700) or by two or more comma groups (1,000,000) is one number; comma decimals and numbers starting with 0 stay as written, their fractional digits unfolded"
+  },
+  "asrSettingsSha256": "15f055ffa9470109793c8c48d9569b75443da7281e2416cc5a74b9b283ba9a65"
+}

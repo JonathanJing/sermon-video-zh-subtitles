@@ -1,0 +1,62 @@
+
+== 2026-10-14T19:00:34+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/check_run_start.py --expected-commit e28204ef24b42ae2898f4f4222f72ca844ad5370 --expected-implementation 5815242564f4a4ab7c972d04cf94780b7d1084d78687bde7fb3e9c8f4ad2304b --openai-environment dev --env-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.env.openai --budget-plan ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/plans/qc-zh-Hans --fresh-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/textqc-zh-Hans/out --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/start-check-qc-zh-Hans-out.json
+{
+ "schemaVersion": "sermon-run-start-check-v1",
+ "status": "pass",
+ "failed": [],
+ "checks": [
+  {
+   "check": "code",
+   "status": "pass",
+   "head": "e28204ef24b42ae2898f4f4222f72ca844ad5370",
+   "qcImplementationSha256": "5815242564f4a4ab7c972d04cf94780b7d1084d78687bde7fb3e9c8f4ad2304b",
+   "problems": []
+  },
+  {
+   "check": "openai",
+   "status": "pass",
+   "environment": "dev",
+   "exitCode": 0
+  },
+  {
+   "check": "budget",
+   "status": "pass",
+   "plan": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/plans/qc-zh-Hans/plan.json",
+   "schedule": {
+    "mode": "all_stages_may_run_together",
+    "worstCaseUsd": 25.262692,
+    "fits": true
+   },
+   "stages": [
+    [
+     "qc.zh-Hans",
+     5.525
+    ]
+   ],
+   "problems": []
+  },
+  {
+   "check": "spark",
+   "status": "skip"
+  },
+  {
+   "check": "outputs",
+   "status": "pass",
+   "fresh": [
+    "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f/textqc-zh-Hans/out"
+   ],
+   "problems": []
+  },
+  {
+   "check": "page",
+   "status": "skip"
+  },
+  {
+   "check": "environment_binding",
+   "status": "pass",
+   "qcStages": 1,
+   "layer2Stages": 0,
+   "problems": []
+  }
+ ]
+}

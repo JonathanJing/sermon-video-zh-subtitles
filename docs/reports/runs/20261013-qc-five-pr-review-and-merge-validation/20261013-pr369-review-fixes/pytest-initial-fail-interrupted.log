@@ -1,0 +1,100 @@
+F.....F................................................................. [ 11%]
+........................................................................ [ 22%]
+..............................................................FF........ [ 33%]
+........................................................................ [ 44%]
+........................................................................ [ 55%]
+........................................................................ [ 66%]
+........................................................................ [ 77%]
+........................................................................ [ 89%]
+.......................................................... [ 97%]
+....
+=================================== FAILURES ===================================
+_ test_frozen_registered_policies_validate_and_dispatch_without_migration[policy0-ko] _
+
+locale = 'ko'
+policy = {'version': 'v2', 'policy': 'exact_approved_text_with_registered_spoken_forms', 'spokenForms': {'ko': 'ko-sino-chapter-verse-numerals-v2'}}
+
+    @pytest.mark.parametrize("locale", ["ko", "es", "zh-Hans"])
+    @pytest.mark.parametrize("policy", formal.REGISTERED_NORMALIZATION_POLICIES)
+    def test_frozen_registered_policies_validate_and_dispatch_without_migration(locale, policy):
+        policies = {"normalization": policy, "asrScreening": {"policy": "screen_all"}, "subtitle": {"policy": "full"}}
+        fields = {"normalization": "normalizationPolicySha256", "asrScreening": "asrScreeningPolicySha256",
+                  "subtitle": "subtitlePolicySha256"}
+        adapter = {field: formal.identity.json_sha256(policies[name]) for name, field in fields.items()}
+        job = {"targetLocale": locale, "adapter": adapter,
+               "units": [{"translationGroupId": "g1", "text": "하박국 2장과 8장의 맨 첫 절"}]}
+        before = json.dumps(job, sort_keys=True)
+        formal.validate_operation_policies(policies, adapter, job)
+        forms = formal.policy_spoken_forms(job)
+        if locale == "ko":
+            expected = "하박국 이장과 8장의 맨 첫 절" if policy == formal.FROZEN_V2_NORMALIZATION_POLICY else "하박국 이장과 팔장의 맨 첫 절"
+>           assert forms == {"g1": expected}
+E           AssertionError: assert {'g1': '하박국 이장과 팔장의 맨 첫 절'} == {'g1': '하박국 이장과 8장의 맨 첫 절'}
+E
+E             Differing items:
+E             {'g1': '하박국 이장과 팔장의 맨 첫 절'} != {'g1': '하박국 이장과 8장의 맨 첫 절'}
+E             Use -v to get more diff
+
+tests/test_ko_spoken_rule_versions.py:26: AssertionError
+___ test_frozen_v2_hash_and_explicit_instruction_export_retain_original_rule ___
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-71/test_frozen_v2_hash_and_explic0')
+
+    def test_frozen_v2_hash_and_explicit_instruction_export_retain_original_rule(tmp_path):
+        assert formal.identity.json_sha256(formal.FROZEN_V2_NORMALIZATION_POLICY) == "5c8e7ac6d14f8c5968b2a8d146d8d35eb9a9fa430317c413df71e3f4a402d744"
+        text = "하박국 2장과 8장의 맨 첫 절"
+        job = {"targetLocale": "ko", "adapter": {"normalizationPolicySha256": formal.identity.json_sha256(formal.FROZEN_V2_NORMALIZATION_POLICY)},
+               "units": [{"translationGroupId": "g1", "text": text}]}
+        document = ko.build(job)
+        assert ko.RULE_V2 in document["units"][0]["operatorEvidence"]
+        path = tmp_path / "instructions.json"
+        path.write_text(json.dumps(document))
+>       assert formal.unit_instructions(job, path) == {"g1": {"spokenText": "하박국 이장과 8장의 맨 첫 절"}}
+E       AssertionError: assert {'g1': {'spok...과 팔장의 맨 첫 절'}} == {'g1': {'spok...과 8장의 맨 첫 절'}}
+E
+E         Differing items:
+E         {'g1': {'spokenText': '하박국 이장과 팔장의 맨 첫 절'}} != {'g1': {'spokenText': '하박국 이장과 8장의 맨 첫 절'}}
+E         Use -v to get more diff
+
+tests/test_ko_spoken_rule_versions.py:44: AssertionError
+__ test_complete_numeric_token_with_spaces_is_not_a_bare_chapter[1 .5\uc7a5] ___
+
+token = '<redacted>'
+
+    @pytest.mark.parametrize("token", ["1 . 5장", "3, 000장", "3: 16절", "1 .5장", "3 ,000장", "3 : 16절", "3 ， 000장", "1 ． 5장"])
+    def test_complete_numeric_token_with_spaces_is_not_a_bare_chapter(token):
+        assert ko.spoken_form(token) == token
+>       assert ko.spoken_form("본문 " + token + "부터 7장까지") == "본문 " + token + "부터 7장까지"
+E       AssertionError: assert '본문 1 .5장부터 칠장까지' == '본문 1 .5장부터 7장까지'
+E
+E         - 본문 1 .5장부터 7장까지
+E         ?            ^
+E         + 본문 1 .5장부터 칠장까지
+E         ?            ^
+
+tests/test_ko_spoken_rule_versions.py:63: AssertionError
+_ test_complete_numeric_token_with_spaces_is_not_a_bare_chapter[3 ,000\uc7a5] __
+
+token = '<redacted>'
+
+    @pytest.mark.parametrize("token", ["1 . 5장", "3, 000장", "3: 16절", "1 .5장", "3 ,000장", "3 : 16절", "3 ， 000장", "1 ． 5장"])
+    def test_complete_numeric_token_with_spaces_is_not_a_bare_chapter(token):
+        assert ko.spoken_form(token) == token
+>       assert ko.spoken_form("본문 " + token + "부터 7장까지") == "본문 " + token + "부터 7장까지"
+E       AssertionError: assert '본문 3 ,000장부터 칠장까지' == '본문 3 ,000장부터 7장까지'
+E
+E         - 본문 3 ,000장부터 7장까지
+E         ?              ^
+E         + 본문 3 ,000장부터 칠장까지
+E         ?              ^
+
+tests/test_ko_spoken_rule_versions.py:63: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ko_spoken_rule_versions.py::test_frozen_registered_policies_validate_and_dispatch_without_migration[policy0-ko]
+FAILED tests/test_ko_spoken_rule_versions.py::test_frozen_v2_hash_and_explicit_instruction_export_retain_original_rule
+FAILED tests/test_ko_spoken_rule_versions.py::test_complete_numeric_token_with_spaces_is_not_a_bare_chapter[1 .5\uc7a5]
+FAILED tests/test_ko_spoken_rule_versions.py::test_complete_numeric_token_with_spaces_is_not_a_bare_chapter[3 ,000\uc7a5]
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/re/_compiler.py:375: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+4 failed, 634 passed, 2 deselected, 14 subtests passed in 105.30s (0:01:45)

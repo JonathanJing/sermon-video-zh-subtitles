@@ -1,0 +1,116 @@
+{
+  "backend": "real",
+  "implementationSha256": "70078f905f6ddbd06550e0520fa21c6cadc63cef30aea823f26fa6d59b198eb6",
+  "locales": {
+    "zh-Hans": {
+      "audioQc": "pass",
+      "audioQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-b/textqc-zh-Hans/state/qc-receipts/audio/zh-Hans/0939524caf3b6b0efffcd0f48ffa6db019764d5d1a1afe5a4ac17054f9457679/entry-000001.json",
+      "calibration": {
+        "cleanFalsePositiveRate": 0.0,
+        "detected": 176,
+        "overallDetectionRate": 0.99435,
+        "trials": 177
+      },
+      "calibrationCoverage": {
+        "audio": {
+          "droppedKeyWordTrials": 8,
+          "truncationEligibleTrials": 13,
+          "untestableKinds": [],
+          "wrongSentenceUnits": 16
+        },
+        "text": {
+          "applicableGroups": {
+            "added_content": 16,
+            "added_number": 11,
+            "added_reference": 16,
+            "dropped_half": 10,
+            "dropped_name": 1,
+            "english_leak": 10,
+            "placeholder": 16,
+            "semantic_negation": 0,
+            "swapped_name": 0,
+            "swapped_quantity": 0,
+            "wrong_book": 0,
+            "wrong_number": 0,
+            "wrong_ordinal": 14
+          },
+          "notApplicableKinds": [
+            "wrong_number",
+            "wrong_book",
+            "semantic_negation",
+            "swapped_quantity",
+            "swapped_name"
+          ],
+          "untestableKinds": []
+        }
+      },
+      "calibrationMisses": {
+        "audio.dropped_key_word": {
+          "detected": 7,
+          "missedGroupIds": [
+            "translation-chunk-0002-u022"
+          ],
+          "rate": 0.875,
+          "trials": 8
+        },
+        "text.semantic_negation": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_name": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_quantity": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.wrong_book": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.wrong_number": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        }
+      },
+      "failedGroups": [],
+      "flaggedGroups": [],
+      "locale": "zh-Hans",
+      "packageJsonSha256": "bdc14ec402b95682d9b6a8c507cf0efcb0052a52d7403b1928432ffe1d4f39c1",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-b/l2/src/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-b/l2/text/zh-Hans/candidate.json",
+        "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-b/aqc/run-zh-Hans/l3/speech-job.json",
+        "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-b/l3/zh-Hans/audio-package.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-b/l2/policy/zh-Hans-policy-clip.json",
+        "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-b/aqc/run-zh-Hans/l3/asr-screening-receipt-v1.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-b/l2/src/source.json",
+        "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-b/textqc-zh-Hans/out/zh-Hans/text-waiver-2d0bdedd1a9fbe75.json"
+      },
+      "problems": [],
+      "reason": "Calibration does not allow a waiver: seeded-error detection below minimum for ['audio.dropped_key_word']",
+      "secondaryAsrGroups": [],
+      "status": "waiver_refused",
+      "trackCheck": "pass",
+      "trackCheckReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-b/aqc/zh-Hans/zh-Hans/track-check-a3331ce8919babe5.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev101-20261014-b/aqc/run-zh-Hans",
+  "transportSha256": "fd914707cda7fbe25e99f64f1cd31661acbf0816c58401499bbf2c667cc31f04"
+}

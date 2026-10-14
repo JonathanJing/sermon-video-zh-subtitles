@@ -1,0 +1,499 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-opus-clip-f-failed",
+  "runs": [
+    {
+      "label": "opus-e2e-dev216-20261014-f",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f",
+      "skipped": {
+        ".lock": 514,
+        ".json": 1434,
+        ".jsonl": 4,
+        ".csv": 12,
+        ".txt": 96
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/layer2-jobs/0b71c060481f74f1f4ff86315d3997c53be0e99fa587a46f576a1724686d6f91/worker.log",
+      "kind": "log",
+      "bytes": 4842,
+      "truncated": false,
+      "sha256": "a77039b2aa4e61daa400dacc07280a09547c655b81d541adcffa9da293ed93f4",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/layer2-jobs/9aace6388748b32d743015d8d79635fae3665e9676b63840858f6199a3f420ce/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "0fb90adef63d417a9d88685223fd8aa6e3946bc38638447331d9de7ce75062e7",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/layer2-jobs/b2947d221b325dab713a671a7bb52e4b81801a22b9c52c08134f905fb38e8d06/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "0c65c14a62981886de7f1ad460dee9884c24c2548c3f74768513bb1347e6e74f",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/layer2-jobs/c16409a7bea4bcdc819d3da3508226aaab4f4de8e5ef1fd42ace1bdd1d806422/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "716300d53e65ef98afb21b1a2a699e9e572536363788401029e6a3add4b58a56",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/text/es/accounting/operations.log",
+      "kind": "log",
+      "bytes": 96285,
+      "truncated": true,
+      "sha256": "64fbd88d84556882de8df14f4e0b53a5da2ca6088b6af289b7d37d0b29e577cb",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/text/es/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 264146,
+      "truncated": false,
+      "sha256": "6c791416d20f66ff52415a281269728d9c6cd707b08df5a8aef10716e38ade8e",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/text/es/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1353,
+      "truncated": false,
+      "sha256": "de46b8f5581aba9e5b3249b03cec2c107f2d6699cc0872956bb9415f96fd90fd",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/text/ko/accounting/operations.log",
+      "kind": "log",
+      "bytes": 96286,
+      "truncated": true,
+      "sha256": "d5f059b2dbd1f9b43a8b46dd2da83ffde9a2f99ef9344d7b3a444901c172c0f8",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/text/ko/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 264116,
+      "truncated": false,
+      "sha256": "25f961fbeca7a55b46ffd564ee3d0d989522b20b3882c8d5b96f4454109fabec",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/text/ko/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1353,
+      "truncated": false,
+      "sha256": "0b2c1eae6ed3054032c928b6faeb4625fece9f3b3da194c17751e3d3fb8ceb90",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/text/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 97637,
+      "truncated": true,
+      "sha256": "eae9221fcc7f00235210a2d32a4de713d7d253856dbd236e543d26c6be9e547c",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/text/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 265347,
+      "truncated": false,
+      "sha256": "bc336257840aba9953aff72d87e9b505113170992062b723cf0d9d4979da5307",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2/text/zh-Hans/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1363,
+      "truncated": false,
+      "sha256": "02da7e779ed70e7cd78dc2d39956d75c6b2862e2d7401c91ce585e27125e121e",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2-zh-Hans-r1/text/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 5968,
+      "truncated": false,
+      "sha256": "9f95920b1312f5be2be509a6276644e43121f07c244b4b3df5b48e9b9d9f3a26",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "l2-zh-Hans-r1/text/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 41311,
+      "truncated": false,
+      "sha256": "a74bd03a7840cfee6c14cabd574b51633c5c98a8dfce8aba411bbbb47b75d9ce",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/check-layer2.log",
+      "kind": "log",
+      "bytes": 2511,
+      "truncated": false,
+      "sha256": "7dfdfd2c6394299f90c0c4fdbebe0c997373b8de8071c923a82ffeda125a2214",
+      "redactions": {
+        "email": 1,
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/check-qc-es-out.log",
+      "kind": "log",
+      "bytes": 2177,
+      "truncated": false,
+      "sha256": "7331a9e0f0d2ec7814e5cc5585a3b1ebbfca42080a89afb7207dc8512e69144d",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/check-qc-ko-out.log",
+      "kind": "log",
+      "bytes": 2178,
+      "truncated": false,
+      "sha256": "2912125a1f65d02b92ddd49bd4dba810eb1ea71c1aa2c60ad082bec683da8a03",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/check-qc-zh-Hans-out.log",
+      "kind": "log",
+      "bytes": 2208,
+      "truncated": false,
+      "sha256": "85efc2583b9aa4b03908d4936f619706acd2eb09199c14d2213503bc85381678",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/inputs.log",
+      "kind": "log",
+      "bytes": 1335,
+      "truncated": false,
+      "sha256": "4b9bb9642e097c13170fd348317a461561d5c00df02bcba200782e68343cd43e",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/layer2-zh-Hans-r1.log",
+      "kind": "log",
+      "bytes": 2174,
+      "truncated": false,
+      "sha256": "7896959dc7a315799c0daea751c03c303047a18e2d10f0e745df99d8e58090ce",
+      "redactions": {
+        "home_dir": 16
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/layer2.log",
+      "kind": "log",
+      "bytes": 2120,
+      "truncated": false,
+      "sha256": "bc443c0225d83743997c90dbb99702661160ddf9148eceed94c277cb3cb120f6",
+      "redactions": {
+        "home_dir": 16
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/plan-layer2-zh-Hans-r1.log",
+      "kind": "log",
+      "bytes": 1560,
+      "truncated": false,
+      "sha256": "b76584eb5313fee8a2e1285e74691260a5d47de2b9325b0ad0947734c4d1b6b5",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/plan-layer2.log",
+      "kind": "log",
+      "bytes": 1530,
+      "truncated": false,
+      "sha256": "9367941089ef05b249effb529a997eac368a8c7856755f769c9742ccbba5e955",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/plan-qc-es.log",
+      "kind": "log",
+      "bytes": 1511,
+      "truncated": false,
+      "sha256": "c3b99c1d58b3d92e22dd39db139000a0227376e70ac0566e5397e735d2481adf",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/plan-qc-ko.log",
+      "kind": "log",
+      "bytes": 1510,
+      "truncated": false,
+      "sha256": "059d48942b03a5c3325b231b99b790d343ef1e5ed6457cfb58ffb93710e15cba",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/plan-qc-zh-Hans.log",
+      "kind": "log",
+      "bytes": 1533,
+      "truncated": false,
+      "sha256": "bcdd7e3a7e6015560f5240d934c4545eea0cdbbf2912195447f6e7113df0bbd6",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/route-probe.log",
+      "kind": "log",
+      "bytes": 714,
+      "truncated": false,
+      "sha256": "808cd5d3677e46b58bd842bf0bc83a42e98f423f8a682b571f19e8ccaa3f8f1c",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/text-qc.es.out.log",
+      "kind": "log",
+      "bytes": 1981,
+      "truncated": false,
+      "sha256": "df83884fd63716996a858527c95c4224cbb2791f768abea5a24eb514038df130",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/text-qc.ko.out.log",
+      "kind": "log",
+      "bytes": 1982,
+      "truncated": false,
+      "sha256": "8ac1d0e22f8dac081828d07da058dad8adfe88aa6d42e1655c049e9f3605ed89",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/text-qc.zh-Hans.out.log",
+      "kind": "log",
+      "bytes": 1891,
+      "truncated": false,
+      "sha256": "3134a057b68cae086e2451e2b25e6fbf96e15b651e703faace317d48b50cb920",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "logs/timeline-map.log",
+      "kind": "log",
+      "bytes": 1059,
+      "truncated": false,
+      "sha256": "09b34287f33fea26e51dd38121a996c9d0f7279333cc422b70f538b7f274b6d8",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "plans/qc-es/qc-es/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 210115,
+      "truncated": false,
+      "source": "plans/qc-es/qc-es/.api-budget/source-budget.json",
+      "sha256": "8c3f6e3285332290619d114c4e0ff90e60ccb34eb45a9f2b19328e70f5d20b38",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "plans/qc-ko/qc-ko/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 205395,
+      "truncated": false,
+      "source": "plans/qc-ko/qc-ko/.api-budget/source-budget.json",
+      "sha256": "bdd2ef80643a59cd1fca0b2d03148ee5c4ecfff0c5d77f71f9460acfb918963c",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "plans/qc-zh-Hans/qc-zh-Hans/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 31079,
+      "truncated": false,
+      "source": "plans/qc-zh-Hans/qc-zh-Hans/.api-budget/source-budget.json",
+      "sha256": "55621721db43cb40003214f6fb7f25a1c601632c60f1cce3013d9d079964ec81",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 3750,
+      "truncated": false,
+      "sha256": "2f01dd6a8c42d560a92610b098109631438bc1435d7eafd4b59c7ef337b90240",
+      "redactions": {
+        "home_dir": 15
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "textqc-es/out/es/preflight.json",
+      "kind": "whole",
+      "bytes": 1352,
+      "truncated": false,
+      "sha256": "a1d0ddc6252623859a5131cd22438ce35b348859c3a9ef5869bde050b42b7670",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "textqc-es/out/summary.json",
+      "kind": "whole",
+      "bytes": 3050,
+      "truncated": false,
+      "sha256": "236c985dc99dfa43ac3e3baccb64e638945921fd7c819ef698f94e1dc0c33ded",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "textqc-es/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 171,
+      "truncated": false,
+      "sha256": "882db7ba644ebad3b2e02554c7792c694f45c45aef1eb2565b91d8b8ab86a76f",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "textqc-ko/out/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 1352,
+      "truncated": false,
+      "sha256": "980938a222fc8e889c4d25090b25d1efd0751f37cd5ecdc7341da3ebf28a707e",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "textqc-ko/out/summary.json",
+      "kind": "whole",
+      "bytes": 3050,
+      "truncated": false,
+      "sha256": "7fa70d4e0fcc0139f2425a1ee1692cbe41a598a53ae73395ef8446b47bc4effd",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "textqc-ko/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "859ad16703039ad791345e66e21b19034edfa8d5512b24170423a6b22b108204",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "textqc-zh-Hans/out/summary.json",
+      "kind": "whole",
+      "bytes": 2321,
+      "truncated": false,
+      "sha256": "a962eb7caa98ea927dd80639d4b02c37e8d89f3feb18c846fc2998636e2ac909",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "textqc-zh-Hans/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 99,
+      "truncated": false,
+      "sha256": "9bd055aa8eecfafa6ee0d180996d3c8bde333883f09108d35175b91d357ced91",
+      "redactions": {}
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "textqc-zh-Hans/out/zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 1387,
+      "truncated": false,
+      "sha256": "d0f6962b06e10b99171966aeb186762754ca11c88e84f5e814f572a3f1c309c1",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "opus-e2e-dev216-20261014-f",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 412,
+      "truncated": false,
+      "sha256": "be99e7c07abfe07dbd9e12ed52e2bf3b703b1bec00f80374a2a41a8b5a131102",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

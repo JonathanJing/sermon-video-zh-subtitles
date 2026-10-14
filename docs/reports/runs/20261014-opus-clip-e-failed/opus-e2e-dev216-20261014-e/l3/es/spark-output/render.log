@@ -1,0 +1,84 @@
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+
+  queued_call()
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+
+  queued_call()
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+
+  queued_call()
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+
+  queued_call()
+[0;93m2026-10-14 18:38:04.183740066 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+[0;93m2026-10-14 18:38:04.219344290 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+[0;93m2026-10-14 18:38:04.308663588 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+
+  queued_call()
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+
+  queued_call()
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+
+  queued_call()
+[0;93m2026-10-14 18:38:04.711704697 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning:
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+
+  queued_call()
+[0;93m2026-10-14 18:38:04.959910357 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+[0;93m2026-10-14 18:38:05.008079022 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+[0;93m2026-10-14 18:38:05.431044460 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+[0;93m2026-10-14 18:38:05.488213245 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Traceback (most recent call last):
+  File "/work/repo-7dda928f/scripts/render_formal_target_language_speech.py", line 1684, in <module>
+    main()
+  File "/work/repo-7dda928f/scripts/render_formal_target_language_speech.py", line 1661, in main
+    result = render_accounted(
+             ^^^^^^^^^^^^^^^^^
+  File "/work/repo-7dda928f/scripts/render_formal_target_language_speech.py", line 1567, in render_accounted
+    result = render(paths, checkpoint_map_path, operation_policies_path, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-7dda928f/scripts/render_formal_target_language_speech.py", line 1554, in render
+    return _render(paths, checkpoint_map_path, operation_policies_path,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-7dda928f/scripts/render_formal_target_language_speech.py", line 1543, in _render
+    return assemble(context, paths, root, rows, policy=policy, track_format=track_format,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-7dda928f/scripts/render_formal_target_language_speech.py", line 1415, in assemble
+    encoded = subprocess.run([
+              ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/usr/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'ffmpeg'

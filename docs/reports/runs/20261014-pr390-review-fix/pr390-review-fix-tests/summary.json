@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-targeted-test-summary-v1",
+  "status": "pass",
+  "node": {
+    "tests": 27,
+    "passed": 27,
+    "failed": 0,
+    "files": [
+      "experiments/sermon-dubbing-poc/web/alignment-usage.test.mjs",
+      "experiments/sermon-dubbing-poc/feedback-api/test/alignment.test.mjs",
+      "experiments/sermon-dubbing-poc/web/field-venue-benchmark.test.mjs"
+    ]
+  },
+  "python": {
+    "tests": 22,
+    "passed": 22,
+    "failed": 0,
+    "file": "experiments/sermon-dubbing-poc/test_feedback_rollout.py",
+    "retryReason": "The first repository-root unittest invocation could not resolve a test-local module; rerun from the test directory used the expected import path."
+  },
+  "limits": {
+    "productionDeployment": "not_run",
+    "browserRendering": "not_run",
+    "realDevicePlayback": "not_run",
+    "venueAcceptance": "not_run"
+  }
+}
