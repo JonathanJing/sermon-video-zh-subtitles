@@ -146,11 +146,28 @@ def translator_backend(policy: dict[str, Any]) -> str:
     raise ValueError("unsupported_translator_backend")
 
 
+def production_backend(policy: dict[str, Any]) -> str:
+    """The frozen Layer 2 backend a new dispatch may use: openai_api or claude_cli_opus.
+
+    A translator-only Claude policy (Opus beside the Sol reviewer) stays an experiment that
+    replays cache-only; it is never a production backend."""
+    backend = policy_tools.layer2_backend(policy)
+    if backend is None:
+        # A Sol translator with any other reviewer is the OpenAI backend with a changed role;
+        # the per-role checks name the role that differs.
+        require(translator_backend(policy) == "openai_api", "claude_translator_is_experimental_only")
+        return "openai_api"
+    return backend
+
+
 def production_models(policy: dict[str, Any]) -> dict[str, str]:
-    """Expected formal model per role for this policy's frozen translator backend."""
-    require(translator_backend(policy) == "openai_api", "claude_translator_is_experimental_only")
-    return {"translator": MODEL_ROLES["translator"],
-            "reviewer": MODEL_ROLES["reviewer"]}
+    """Expected formal model per role for this policy's frozen Layer 2 backend."""
+    return {role: model for role, (model, _) in policy_tools.LAYER2_BACKENDS[production_backend(policy)].items()}
+
+
+def production_efforts(policy: dict[str, Any]) -> dict[str, str]:
+    """Expected reasoning effort per role for this policy's frozen Layer 2 backend."""
+    return {role: effort for role, (_, effort) in policy_tools.LAYER2_BACKENDS[production_backend(policy)].items()}
 
 
 def historical_models(policy: dict[str, Any], *, cache_only: bool) -> dict[str, str]:
@@ -938,15 +955,19 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         else:
             require("simulationModelConfiguration" not in request,
                     "Simulation request configuration lacks a bound effective policy")
+        expected_efforts = (production_efforts(policy) if not historical_replay and simulation_configuration is None
+                            else MODEL_EFFORTS)
         for role, expected in expected_models.items():
             if expected in {"gpt-6.1-sol", "claude-opus-5-5"}:
-                require(policy[role]["reasoningEffort"] == MODEL_EFFORTS[role], "production_role_effort_changed")
+                require(policy[role]["reasoningEffort"] == expected_efforts[role], "production_role_effort_changed")
             require(policy[role]["model"] == expected,
                     f"Production {role} model must be {expected}; freeze a new policy")
         if not historical_replay and simulation_configuration is None:
-            # An OpenAI or Codex caller must never serve a Claude-translator policy, and vice versa.
-            require(getattr(caller, "execution_identity", {}).get("translatorBackend", "openai_api")
-                    == translator_backend(policy), "translator_backend_caller_mismatch")
+            # An OpenAI or Codex caller must never serve a Claude policy, and vice versa: the caller
+            # names the Layer 2 backend it dispatches through.
+            identity = getattr(caller, "execution_identity", {})
+            require(identity.get("layer2Backend", identity.get("translatorBackend", "openai_api"))
+                    == production_backend(policy), "translator_backend_caller_mismatch")
         workers = policy["batching"].get("workers")
         capacity_profile = getattr(caller, 'execution_identity', {}).get('concurrencyProfile')
         maximum_workers = 16

@@ -1,0 +1,22 @@
+{
+  "status": "pass",
+  "origin": "https://ai-for-god-sermon-audio.web.app",
+  "hostingVersion": "sites/ai-for-god-sermon-audio/versions/a0b4d399c4d38e81",
+  "scope": "manual browser controls and rendered text",
+  "pageLanguages": [
+    "zh",
+    "en",
+    "ko",
+    "es"
+  ],
+  "sermonLanguages": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "pageLanguageKeepsSermonLanguage": true,
+  "restored": "Chinese UI and Chinese sermon",
+  "audioPlayback": "not_run",
+  "physicalDevice": "not_run",
+  "venue": "not_run"
+}

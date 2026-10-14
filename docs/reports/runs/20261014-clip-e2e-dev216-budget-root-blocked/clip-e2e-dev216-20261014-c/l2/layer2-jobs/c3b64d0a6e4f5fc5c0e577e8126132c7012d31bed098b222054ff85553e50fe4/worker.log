@@ -1,0 +1,99 @@
+Traceback (most recent call last):
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 782, in <module>
+    main()
+    ~~~~^^
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 776, in main
+    result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
+                     budget_authorization=<redacted>, expected_budget=args.expected_budget)
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 539, in execute
+    evidence, model_output = _run_auto_repair(
+                             ~~~~~~~~~~~~~~~~^
+        config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        admission_span, model_completion,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        qc_digest=current['packageIdentities'].get('backTranslationQc.' + locale))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 615, in _run_auto_repair
+    receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
+                                group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
+                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt)
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/layer2_auto_repair.py", line 881, in drive
+    evidence = run_round(out, reuse_from, brief, collector)
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 594, in run_round
+    return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                None, reuse_from, partial_repair_brief=brief,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                progress_callback=progress, predecessor_spans=[admission_span],
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                completion_spans=completion_spans, failure_collector=collector,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                candidate_mode=config.candidate_mode)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/run_target_language_models.py", line 1402, in run_accounted
+    evidence = _run_prepared_groups(
+        request, anchor, policy, out_dir, api_key, call, plan, plugin,
+    ...<2 lines>...
+        progress_callback=progress_callback, completion_spans=completion_spans,
+        failure_collector=failure_collector)
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/run_target_language_models.py", line 1337, in _run_prepared_groups
+    ordered_group_results(list(enumerate(plan, 1)), process_group, workers))
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/run_target_language_models.py", line 742, in ordered_group_results
+    results[index] = future.result()
+                     ~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/run_target_language_models.py", line 1334, in process_group
+    return _process_group(item)
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/run_target_language_models.py", line 1196, in _process_group
+    translated = _model_call("translator", translate_prompt, policy,
+                             astra_path, api_key, caller,
+    ...<3 lines>...
+                             if brief is None and repair is None else None, cache_only=cache_only,
+                             rule_receipt=rule_receipt)
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/run_target_language_models.py", line 350, in _model_call
+    response = caller(api_key, payload)
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 530, in bound_call
+    return caller(key, payload)
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/production_spark_admission.py", line 107, in __call__
+    return api_cli_outcomes.call(self.caller, args, kwargs, purpose=self.purpose,
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        directory=self.outcome_directory, guarded=self.outcome_guarded)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/api_cli_outcomes.py", line 324, in call
+    try: return caller(*args, **kwargs)
+                ~~~~~~^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/canonical_layer2_budget.py", line 220, in __call__
+    reservation = self._ledger(lambda: self.store.reserve(identity, operation_id='model.' + fingerprint,
+        kind='initial_generation' if role == 'translator' else 'review', revision_id='initial',
+        revision_number=1, input_sha256=fingerprint, bounds=bounds))
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/canonical_layer2_budget.py", line 277, in _ledger
+    return operation()
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/canonical_layer2_budget.py", line 220, in <lambda>
+    reservation = self._ledger(lambda: self.store.reserve(identity, operation_id='model.' + fingerprint,
+                                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        kind='initial_generation' if role == 'translator' else 'review', revision_id='initial',
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        revision_number=1, input_sha256=fingerprint, bounds=bounds))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/sermon_review_budget.py", line 216, in reserve
+    with self._locked() as (folder, ledger):
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/sermon_review_budget.py", line 154, in _locked
+    require(ledger['schemaVersion'] == SCHEMA and ledger['authority'] == self.authority
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            and ledger['storeSha256'] == self.store_sha256, 'budget_authority_changed')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/scripts/sermon_review_contracts.py", line 35, in require
+    if not condition: raise ContractError(code)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts.sermon_review_contracts.ContractError: budget_authority_changed
