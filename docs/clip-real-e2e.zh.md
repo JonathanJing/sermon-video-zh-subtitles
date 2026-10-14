@@ -32,6 +32,7 @@
 |---|---|
 | `name` | 运行名，`[A-Za-z0-9-]`。Spark 目录、会话 ID 和 Layer 2 运行 ID 都由它派生 |
 | `clipSpec` | `sermon-dev-clip-spec` v1/v2：源周次、句子范围（必须是完整的句子）、媒体 |
+| `layer1` | 可选 `backend=claude_cli_opus` 和 `listPriceCapUsd`：从已批准周次的完整来源包按完整句子裁切，检查来源/时间轴绑定，再用订阅登录的 Opus 5.5 high 审核每句；收据仍为机器审核，测试用的重绑人工回执明确标为模拟 |
 | `locales` | 本次的语言 |
 | `openai` | `environment`（dev/prod）和 launcher 读取的 env 文件 |
 | `authorization` | `approvedBy`、`evidence`（批准出处）、`defaultPass`（必须写明 "not a human review"） |
@@ -61,7 +62,7 @@
 
 | 阶段 | 做什么 | 结果 |
 |---|---|---|
-| `inputs` | `build_dev_180s_simulated_inputs.py --clip-spec` 截出片段的英文来源、锚点和媒体；`clip_timeline_map.py` 生成片段时间轴映射 | 片段输入在 `artifacts/dev-180s-page-test-20261004/clip-e2e-<name>/inputs/`（输入构建器只写自己的测试根目录）；运行目录里有 `l2/src/` 的副本和 `l3/clip-timeline-map.json` |
+| `inputs` | 默认由 `build_dev_180s_simulated_inputs.py --clip-spec` 截出片段；`layer1.backend=claude_cli_opus` 时由 `prepare_clip_layer1_opus.py` 只截真实来源、按原周次已批准范围检查裁切和时间轴，再调用 Opus 做 Layer 1 机器审核；`clip_timeline_map.py` 生成片段时间轴映射 | 片段输入在 `artifacts/dev-180s-page-test-20261004/clip-e2e-<name>/inputs/`；运行目录里有 `l2/src/` 的副本和 `l3/clip-timeline-map.json`。Opus 路径另有 `layer1-opus-summary.json`、逐批返回收据和来源包绑定 |
 | `layer2-setup` | 每种语言：把源周次的冻结政策收窄到本片段的来源范围和术语后重新冻结（片段里出现、但源周次回执没有译法的术语会被拒绝）；写 canonical 执行配置（v3）；在 launcher 里取得非秘密的 API 路由和凭据指纹，写入质检输入 | `l2/policy/`、`l2/execution.json`、`l2/qc-inputs.json` |
 | `layer2` | 规划 Layer 2 预算 → 开工检查 → 逐语言 tick controller，直到全部 `succeeded`；有语言 `blocked` 就停 | `l2/text/<语言>/candidate.json` |
 | `qc.<语言>` | 为该语言规划质检预算（文本质检、校准、音频质检共用一个根）→ 开工检查 → 文本质检。失败的组带着质检收据回到 Layer 2，开新修订（执行配置 v5，[gate 4](layer2-bounded-auto-repair.zh.md)），再质检新候选，最多 `maxRevisions` 次 | `textqc-<语言>/`；修订在 `l2-<语言>-r<N>/` |

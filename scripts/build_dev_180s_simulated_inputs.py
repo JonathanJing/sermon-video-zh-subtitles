@@ -206,12 +206,13 @@ def migrate_clip_spec(spec):
     return migrated
 
 
-def weekly_clip(spec, clip_dir):
+def weekly_clip(spec, clip_dir, *, source_only=False):
     """Cut a contiguous run of English units, with each locale's text and unit audio, from a weekly run."""
     original_sha = contract.sha(spec)
     spec = migrate_clip_spec(spec)
-    contract.require(set(spec.get('locales', {})) == set(LOCALES),
-                     'Clip rehearsal requires exactly zh-Hans, ko and es')
+    if not source_only:
+        contract.require(set(spec.get('locales', {})) == set(LOCALES),
+                         'Clip rehearsal requires exactly zh-Hans, ko and es')
     lo, hi = spec['unitRange']
     anchor_full = read(spec['anchor']['path'])
     contract.require(contract.sha(anchor_full) == spec['anchor']['jsonSha256'], 'Anchor manifest differs from the clip spec')
@@ -253,11 +254,15 @@ def weekly_clip(spec, clip_dir):
     start = max(0.0, units[lo]['start'] - before)
     end = units[hi - 1]['end'] + after
     window_start = float(spec['approvedWindowStartSeconds'])
-    clip_dir.mkdir(parents=True)
+    clip_dir.mkdir(parents=True, exist_ok=source_only)
     media = clip_dir / 'source.mp4'
-    subprocess.run(['ffmpeg', '-v', 'error', '-ss', '%.3f' % (window_start + start), '-i', spec['media']['path'],
-                    '-t', '%.3f' % (end - start), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28',
-                    '-c:a', 'aac', '-b:a', '96k', '-movflags', '+faststart', str(media)], check=True)
+    if media.exists() and source_only:
+        contract.require(abs(duration(media) - (end - start)) <= 0.2,
+                         'Existing source-only clip has the wrong duration; inspect it before retry')
+    else:
+        subprocess.run(['ffmpeg', '-v', 'error', '-ss', '%.3f' % (window_start + start), '-i', spec['media']['path'],
+                        '-t', '%.3f' % (end - start), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28',
+                        '-c:a', 'aac', '-b:a', '96k', '-movflags', '+faststart', str(media)], check=True)
     selected = [copy.deepcopy(unit) for unit in units[lo:hi]]
     ids = {unit['sourceUnitId'] for unit in selected}
     sentences = {unit['sourceSentenceId'] for unit in selected}
@@ -292,7 +297,7 @@ def weekly_clip(spec, clip_dir):
                      'Clip margin omits an aligned segment for a retained source unit')
     groups_wanted = [row['translationGroupId'] for row in requests]
     locales = {}
-    for locale, paths in spec['locales'].items():
+    for locale, paths in ({} if source_only else spec['locales']).items():
         candidate = read(paths['candidate'])
         package = read(paths['audioPackage'])
         contract.require(candidate.get('anchorManifestSha256') == contract.sha(anchor_full),
@@ -323,8 +328,10 @@ def weekly_clip(spec, clip_dir):
         locales[locale] = {'candidate': candidate, 'wavs': wavs, 'track': track}
     title = spec.get('title', '本周片段')
     return {'media': media, 'segments': segments, 'anchor': anchor, 'locales': locales,
-            'source_url': 'https://simulation-test-only.invalid/weekly-clip/' + spec.get('pageId', 'unknown'),
-            'source_id': 'simulation-test-only-weekly-clip', 'service_date': spec['serviceDate'],
+            'source_url': (spec['sourceUrl'] if source_only else
+                           'https://simulation-test-only.invalid/weekly-clip/' + spec.get('pageId', 'unknown')),
+            'source_id': (spec['sourceId'] if source_only else 'simulation-test-only-weekly-clip'),
+            'service_date': spec['serviceDate'],
             'label': '本周片段', 'proposal_title': '本周片段 %d 句' % len(selected), 'title': title,
             'scripture': spec.get('scripture', '片段经文未单独标注'), 'outline': spec.get('outline', title),
             'summary': '沿用本周已发布的译文和单句音频', 'meditation': CLIP_MEDITATION_PROMPT,

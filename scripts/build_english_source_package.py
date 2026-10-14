@@ -26,7 +26,8 @@ SCHEMA_VERSION = "sermon-english-source-package-v1"
 REVIEW_SCHEMA_VERSION = "sermon-english-source-review-v1"
 MACHINE_JUDGE_SCHEMA_VERSION = "sermon-english-source-machine-judge-v1"
 MACHINE_JUDGE_MODEL = "gpt-6.1-sol"
-MACHINE_JUDGE_IDENTITIES = {("gpt-6-astra", "medium"), (MACHINE_JUDGE_MODEL, "high")}
+MACHINE_JUDGE_IDENTITIES = {("gpt-6-astra", "medium"), (MACHINE_JUDGE_MODEL, "high"),
+                            ("claude-opus-5-5", "high")}
 MACHINE_JUDGE_REASONING_EFFORT = "high"
 MACHINE_JUDGE_CHECKS = frozenset({
     "meaningPreserved",

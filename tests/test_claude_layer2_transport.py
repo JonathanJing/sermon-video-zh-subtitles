@@ -84,6 +84,19 @@ class ClaudeTransportTests(unittest.TestCase):
         self.assertTrue(call['args'][call['args'].index('--system-prompt') + 1].endswith('Translate.'))
         self.assertEqual(len(list((self.root / 'calls').glob('*/response.json'))), 1)
 
+    def test_source_judge_role_uses_layer1_schema(self):
+        from scripts.judge_english_source_for_translation import BATCH_SCHEMA, CHECKS
+        source_result = {'schemaVersion': BATCH_SCHEMA, 'sentences': [{
+            'sourceSentenceId': 's1', 'sourceUnitIds': ['u1'], 'verdict': 'pass',
+            'risk': 'low', 'checks': {name: 'pass' for name in CHECKS},
+            'evidence': 'The complete sentence remains in order.', 'unresolvedIssues': []}]}
+        self.set_state(result(structured_output=source_result))
+        response = self.transport()('', PAYLOAD, role='source')
+        self.assertEqual(json.loads(response['content']), source_result)
+        call = json.loads(self.log.read_text().splitlines()[0])
+        schema = json.loads(call['args'][call['args'].index('--json-schema') + 1])
+        self.assertEqual(schema['properties']['schemaVersion']['const'], BATCH_SCHEMA)
+
     def test_api_key_login_is_rejected_before_any_call(self):
         self.set_state(result(), auth={'loggedIn': True, 'authMethod': 'api_key', 'apiProvider': 'firstParty'})
         with self.assertRaisesRegex(ValueError, 'subscription'):

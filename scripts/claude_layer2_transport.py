@@ -28,6 +28,13 @@ GUARD = ('Perform only the language task below. Do not use tools, read files, br
 API_CREDENTIALS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN')
 
 
+def schema_for_role(role):
+    if role == 'source':
+        from scripts.judge_english_source_for_translation import _response_schema
+        return _response_schema()
+    return output_schema(role)
+
+
 def child_environment(environ=None):
     environ = os.environ if environ is None else environ
     # Nested Claude Code variables would bind the call to a parent session; OpenAI
@@ -109,14 +116,14 @@ class ClaudeLayer2Transport:
 
     def command(self, role, system_prompt):
         return [str(self.cli_path), '-p', '--model', self.model, '--effort', self.effort,
-                '--output-format', 'json', '--json-schema', json.dumps(output_schema(role), separators=(',', ':')),
+                '--output-format', 'json', '--json-schema', json.dumps(schema_for_role(role), separators=(',', ':')),
                 '--system-prompt', system_prompt, '--tools', '', '--no-session-persistence',
                 '--setting-sources', '', '--strict-mcp-config', '--disable-slash-commands']
 
     def __call__(self, api_key, payload, *, role='translator'):
         if api_key:
             raise ValueError('claude_language_must_not_receive_api_key')
-        if role not in ('translator', 'reviewer'):
+        if role not in ('translator', 'reviewer', 'source'):
             raise ValueError('unsupported_claude_language_role')
         output_cap = payload.get('max_completion_tokens')
         if type(output_cap) is not int or output_cap <= 0:
@@ -172,7 +179,7 @@ class ClaudeLayer2Transport:
                 raise RuntimeError('claude_language_unexpected_turn_count')
             if set(model_usage) != {self.model}:
                 raise RuntimeError('claude_language_model_identity_missing')
-            jsonschema.validate(content, output_schema(role))
+            jsonschema.validate(content, schema_for_role(role))
             response = {'schemaVersion': SCHEMA, 'id': 'claude:' + str(result.get('session_id')),
                         'sessionId': result.get('session_id'), 'requestedModel': self.model,
                         'reportedModels': sorted(model_usage), 'requestedEffort': self.effort,

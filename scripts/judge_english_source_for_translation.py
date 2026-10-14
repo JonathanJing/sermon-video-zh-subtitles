@@ -378,7 +378,8 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
         effort: str = "high", batch_size: int = 15, api_key: str,
         cache_root: Path | None = None, workers: int = 1, prewarm: bool = False,
         caller: Callable[..., dict[str, Any]] | None = None,
-        operator_acceptance: Path | None = None) -> dict[str, Any]:
+        operator_acceptance: Path | None = None,
+        deterministic_clip_review: dict[str, Any] | None = None) -> dict[str, Any]:
     if type(workers) is not int or not 1 <= workers <= 8:
         raise ValueError("L1 judge workers must be an integer between 1 and 8")
     aligned_path = aligned_path.resolve()
@@ -403,7 +404,8 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
         from scripts.production_spark_admission import SessionBoundCaller
         caller = SessionBoundCaller(chat_json, purpose="english-machine-review", requires_spark=False,
                                     outcome_directory=cache_root / "api-cli-outcomes")
-    deterministic = deterministic_review(aligned_path, manifest)
+    deterministic = (deterministic_clip_review if deterministic_clip_review is not None
+                     else deterministic_review(aligned_path, manifest))
     sentences = _sentence_inputs(manifest)
     reviewed: list[dict[str, Any]] = []
     request_receipts: list[dict[str, Any]] = []

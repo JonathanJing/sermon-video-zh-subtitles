@@ -85,7 +85,7 @@ def load_spec(path: Path) -> dict:
     base = path.parent
     resolve = lambda value: str((base / value).resolve())
     require(spec.get("schemaVersion") == SPEC_SCHEMA, "unsupported run specification")
-    require(set(spec) <= {"schemaVersion", "name", "clipSpec", "locales", "openai", "authorization", "budget",
+    require(set(spec) <= {"schemaVersion", "name", "clipSpec", "locales", "openai", "authorization", "budget", "layer1",
                           "layer2", "layer3", "qc", "spark", "page", "notes"}, "unknown run specification field")
     require(isinstance(spec.get("name"), str) and spec["name"].replace("-", "").isalnum() and len(spec["name"]) <= 60,
             "name must be a short [A-Za-z0-9-] label")
@@ -99,6 +99,12 @@ def load_spec(path: Path) -> dict:
     budget = spec.get("budget") or {}
     require(all(type(budget.get(k)) in (int, float) and budget[k] >= 0 for k in ("totalUsd", "settledUsdBefore"))
             and budget["settledUsdBefore"] < budget["totalUsd"], "budget needs totalUsd > settledUsdBefore >= 0")
+    layer1 = spec.setdefault("layer1", {})
+    layer1.setdefault("backend", "simulated")
+    require(layer1["backend"] in ("simulated", "claude_cli_opus"), "unsupported layer1.backend")
+    if layer1["backend"] == "claude_cli_opus":
+        require(type(layer1.get("listPriceCapUsd")) in (int, float) and layer1["listPriceCapUsd"] > 0,
+                "Opus Layer 1 needs a positive subscription list-price cap")
     layer2, layer3 = spec.get("layer2") or {}, spec.get("layer3") or {}
     layer2.setdefault("backend", "openai_api")
     require(layer2["backend"] in ("openai_api", "claude_cli_opus"),
@@ -269,8 +275,18 @@ def stage_inputs(run: Run):
     from scripts.build_dev_180s_simulated_inputs import TEST_ROOT
     inputs = TEST_ROOT / ("clip-e2e-" + run.spec["name"]) / "inputs"
     if not (inputs / "source.json").exists():
-        run.sh("inputs", [PY, ROOT / "scripts/build_dev_180s_simulated_inputs.py", "--clip-spec", run.spec["clipSpec"],
-                          "--run-id", "clip-e2e-" + run.spec["name"], "--out", inputs])
+        if run.spec["layer1"]["backend"] == "claude_cli_opus":
+            run.sh("inputs", [PY, ROOT / "scripts/prepare_clip_layer1_opus.py", "--clip-spec", run.spec["clipSpec"],
+                              "--out", inputs, "--list-price-cap-usd", run.spec["layer1"]["listPriceCapUsd"]])
+        else:
+            run.sh("inputs", [PY, ROOT / "scripts/build_dev_180s_simulated_inputs.py", "--clip-spec", run.spec["clipSpec"],
+                              "--run-id", "clip-e2e-" + run.spec["name"], "--out", inputs])
+    if run.spec["layer1"]["backend"] == "claude_cli_opus":
+        from scripts import delivery_contract
+        layer1 = read(inputs / "layer1-opus-summary.json")
+        require(layer1["machineStatus"] == "approved_for_layer2_shadow"
+                and layer1["sourcePackageJsonSha256"] == delivery_contract.sha(read(inputs / "source.json")),
+                "Opus Layer 1 receipt is missing or changed")
     src = run.l2 / "src"
     src.mkdir(parents=True, exist_ok=True)
     for name in ("source.json", "anchor.json"):
@@ -283,7 +299,8 @@ def stage_inputs(run: Run):
                                 "--anchor", src / "anchor.json", "--clip-media", inputs / "clip/source.mp4",
                                 "--out", timeline])
     anchor = read(src / "anchor.json")
-    run.mark("inputs", "done", units=len(anchor["sourceUnits"]), inputs=str(inputs))
+    run.mark("inputs", "done", units=len(anchor["sourceUnits"]), inputs=str(inputs),
+             layer1Backend=run.spec["layer1"]["backend"])
 
 
 def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str,
