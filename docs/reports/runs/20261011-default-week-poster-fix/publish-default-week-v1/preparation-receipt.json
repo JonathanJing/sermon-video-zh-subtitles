@@ -1,0 +1,26 @@
+{
+  "status": "prepared",
+  "beforeDefault": "resi-20261004-69ba7a66",
+  "afterDefault": "resi-20261011-54475d42",
+  "changedFiles": [
+    "/multilingual-v4.json"
+  ],
+  "humanProjectionUnchanged": true,
+  "appPosterSelection": [
+    {
+      "locale": "zh-Hans",
+      "title": "耶稣警告",
+      "poster": "/posters/resi-20261011-54475d42/zh-Hans-f0edf7eab5b3cde7ec3b683e90853b31a761016ece482b2342f702ba720f9611.png"
+    },
+    {
+      "locale": "ko",
+      "title": "예수님은 경고하십니다",
+      "poster": "/posters/resi-20261011-54475d42/ko-0d298c3bca3d4ad60a633b11e07ca89a701a3047e658201ccbe5b6dc7df7e23b.png"
+    },
+    {
+      "locale": "es",
+      "title": "Jesús advierte",
+      "poster": "/posters/resi-20261011-54475d42/es-395dd1afece977903bdf3fac970f0772d0c8e9cc2a42f9dd906376b94bb7648e.png"
+    }
+  ]
+}

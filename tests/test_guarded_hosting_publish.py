@@ -430,7 +430,11 @@ def test_external_deploy_before_first_readback_cannot_be_claimed(tmp_path, monke
     {'status': 'success', 'result': {'hosting': ['sites/site/versions/new', 'sites/other/versions/other']}},
     {'status': 'success', 'result': {'hosting': 'sites/other/versions/new'}},
     {'status': 'success', 'result': {'hosting': 'sites/site/versions/old'}},
-    {'status': 'success', 'result': {'hosting': 'sites/site/versions/'}}])
+    {'status': 'success', 'result': {'hosting': 'sites/site/versions/'}},
+    {'status': 'success', 'result': {'hosting': 'projects/1/sites/other/versions/new'}},
+    {'status': 'success', 'result': {'hosting': 'projects//sites/site/versions/new'}},
+    {'status': 'success', 'result': {'hosting': 'projects/1/2/sites/site/versions/new'}},
+    {'status': 'success', 'result': {'hosting': 'projects/1/sites/site/versions/old'}}])
 def test_missing_or_invalid_cli_identity_keeps_unknown_without_claiming_live_version(tmp_path, output):
     intent, data, sha = setup(tmp_path); remote = Remote(); deployments = []
     def deploy(*args, **kwargs):
@@ -454,6 +458,15 @@ def test_cli_owned_version_can_wait_for_baseline_control_plane_propagation(tmp_p
                         baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
     assert receipt['status'] == 'deployed' and receipt['newVersion'] == 'sites/site/versions/new'
     assert deployments == [1] and sleeps == [5]
+
+
+@pytest.mark.parametrize('hosting', ['projects/548454657719/sites/site/versions/new',
+                                     ['projects/ai-for-god-sermon-audio-dev/sites/site/versions/new']])
+def test_project_qualified_cli_receipt_names_the_site_version(tmp_path, hosting):
+    # firebase-tools 15.30.2 on the 2026-10-14 Dev deploy returned the project-qualified name.
+    path = tmp_path / 'result.json'
+    path.write_text(json.dumps({'status': 'success', 'result': {'hosting': hosting}}))
+    assert p.deployed_version(path, site='site', baseline_version='sites/site/versions/old') == 'sites/site/versions/new'
 
 
 def test_single_version_array_cli_receipt_is_accepted(tmp_path):

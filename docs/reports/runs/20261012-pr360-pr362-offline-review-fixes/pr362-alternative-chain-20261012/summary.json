@@ -1,0 +1,38 @@
+{
+  "codeRevision": "471fd2c52c56a00d3d06b054661b4bdb88b2bb42",
+  "scope": "offline Korean citation shared connector generation-fold-score contracts",
+  "modelsCalled": false,
+  "deployment": "not_run",
+  "stages": [
+    {
+      "stage": "initial_alternative",
+      "status": "fail",
+      "elapsedSeconds": 1.01,
+      "result": "4 failed, 203 passed, 34 subtests"
+    },
+    {
+      "stage": "shared_connector",
+      "status": "fail",
+      "elapsedSeconds": 1.06,
+      "result": "9 failed, 210 passed, 34 subtests"
+    },
+    {
+      "stage": "numeric_atom",
+      "status": "fail",
+      "elapsedSeconds": 1.02,
+      "result": "1 failed, 218 passed, 34 subtests"
+    },
+    {
+      "stage": "connector_token_import",
+      "status": "fail",
+      "elapsedSeconds": 3.42,
+      "result": "134 failed, 99 passed, 20 subtests; NameError import scope"
+    },
+    {
+      "stage": "final",
+      "status": "pass",
+      "elapsedSeconds": 1.01,
+      "result": "219 passed, 34 subtests"
+    }
+  ]
+}
