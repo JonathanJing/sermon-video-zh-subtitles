@@ -1,0 +1,6 @@
+.............................................. [ 43%]
+................................
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/private/tmp/sermon-fix-362/scripts/target_audio_auto_qc.py:80: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+78 passed, 41 subtests passed in 96.67s (0:01:36)

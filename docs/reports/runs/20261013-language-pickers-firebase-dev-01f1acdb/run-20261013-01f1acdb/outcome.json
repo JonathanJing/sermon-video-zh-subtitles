@@ -1,0 +1,13 @@
+{
+  "status": "deployed",
+  "exitCode": 0,
+  "startedAt": "2026-10-13T17:12:45.024693+00:00",
+  "completedAt": "2026-10-13T17:13:36.037426+00:00",
+  "implementationCommit": "114a10aa",
+  "newVersion": "sites/ai-for-god-sermon-audio-dev/versions/bc4e94edeec02a88",
+  "catalogV3Readback": "passed",
+  "catalogV4Readback": "passed",
+  "browserRendering": "not_run",
+  "devicePlayback": "not_run",
+  "venueAcceptance": "not_run"
+}

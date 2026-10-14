@@ -1,0 +1,15 @@
+08:12:52.094 | INFO    | prefect - Starting temporary server on http://127.0.0.1:8201
+See https://docs.prefect.io/v3/concepts/server#how-to-guides for more information on running a dedicated Prefect server.
+08:12:57.725 | INFO    | Flow run 'esoteric-hoatzin' - Beginning flow run 'esoteric-hoatzin' for flow 'sermon-local-mock-dag'
+08:12:58.825 | INFO    | Task run 'dispatch-d87' - Finished in state Completed()
+08:12:59.926 | INFO    | Task run 'dispatch-e94' - Finished in state Completed()
+08:12:59.934 | INFO    | Task run 'dispatch-b20' - Finished in state Completed()
+08:13:01.023 | INFO    | Task run 'dispatch-b74' - Finished in state Completed()
+08:13:01.106 | INFO    | Task run 'dispatch-532' - Finished in state Completed()
+08:13:01.111 | INFO    | Task run 'dispatch-4e6' - Finished in state Completed()
+08:13:01.114 | INFO    | Task run 'dispatch-28d' - Finished in state Completed()
+08:13:02.113 | INFO    | Task run 'dispatch-e19' - Finished in state Completed()
+08:13:02.149 | INFO    | Task run 'dispatch-8c0' - Finished in state Completed()
+08:13:03.199 | INFO    | Task run 'dispatch-aac' - Finished in state Completed()
+08:13:03.760 | INFO    | Flow run 'esoteric-hoatzin' - Finished in state Completed()
+08:13:03.783 | INFO    | prefect - Stopping temporary server on http://127.0.0.1:8201

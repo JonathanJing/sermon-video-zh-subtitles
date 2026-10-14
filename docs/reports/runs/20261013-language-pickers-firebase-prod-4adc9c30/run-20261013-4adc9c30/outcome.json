@@ -1,0 +1,14 @@
+{
+  "status": "deployed",
+  "exitCode": 0,
+  "startedAt": "2026-10-13T17:53:25.075847+00:00",
+  "completedAt": "2026-10-13T17:53:45.582493+00:00",
+  "newVersion": "sites/ai-for-god-sermon-audio/versions/a0b4d399c4d38e81",
+  "baselineVersion": "sites/ai-for-god-sermon-audio/versions/c10d222bd231b959",
+  "sourceCommit": "114a10aa39dc2fbc51d348836c344923c1020217",
+  "branch": "codex/language-pickers",
+  "promotion": "PR 377 open; user explicitly requested Production deployment of prepared candidate",
+  "browserLanguageControls": "pass",
+  "devicePlayback": "not_run",
+  "venueAcceptance": "not_run"
+}
