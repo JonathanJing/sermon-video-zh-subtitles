@@ -417,6 +417,7 @@ def audio_qc(args, runtime, spark, session) -> int:
     require(not marker.exists(), "unknown_spark_audio_qc_requires_reconciliation")
     package, state, auth, out = (mirrored(path, root) for path in (args.audio_package, args.state_dir,
                                                                     args.api_budget_authorization, out_local))
+    prior_plan = mirrored(args.prior_budget_plan, root) if args.prior_budget_plan else None
     acceptance = mirrored(args.human_acceptance, root) if args.human_acceptance else None
     relative = lambda path: path[len(str(root)) + 1:]
     probe = spark.out("set -e; test -f %s && echo env-ok; test -s %s/%s && echo mirror-ok; "
@@ -448,13 +449,16 @@ def audio_qc(args, runtime, spark, session) -> int:
             "-w", code, "--entrypoint", "python", runtime["images"]["pytorchFfmpeg"],
             f"{code}/scripts/run_with_openai_environment.py", "--environment", args.openai_environment,
             "--env-file", "/secrets/openai.env",
-            "python", f"{code}/scripts/run_machine_qc_audio_test.py",
+            "python", f"{code}/scripts/"
+                      + ("run_audio_qc_budget_continuation.py" if prior_plan else "run_machine_qc_audio_test.py"),
             "--run-dir", run_dir, "--out", out, "--state-dir", state, "--locales", loc,
             "--audio-package", f"{loc}={package}", "--backend", "real",
             "--asr-model-path", f"/model-cache/{runtime['asrSnapshot']}",
             "--tts-checkpoint-map", f"{out}/tts-checkpoint-map.container.json",
             "--text-backend", "api", "--api-budget-authorization", auth,
             "--max-api-calls", str(args.max_api_calls), "--workers", str(args.workers)]
+    if prior_plan:
+        tail += ["--prior-budget-plan", prior_plan]
     if acceptance:
         tail += ["--human-acceptance", f"{loc}={acceptance}"]
     command_for = lambda hold: ["docker", "run", *command, *session_labels(session, hold), *tail]
@@ -518,6 +522,7 @@ def parser() -> argparse.ArgumentParser:
     sub.add_argument("--audio-package", required=True)
     sub.add_argument("--state-dir", required=True, help="The locale's text QC state dir (shared repair ledgers)")
     sub.add_argument("--api-budget-authorization", required=True)
+    sub.add_argument("--prior-budget-plan", help="Approved prior QC plan whose returned judge calls can be replayed")
     sub.add_argument("--out", required=True)
     sub.add_argument("--run-dir", required=True, help="Directory the driver searches for the package inputs (mirrored)")
     sub.add_argument("--mirror-root", default=str(ROOT / "artifacts"),

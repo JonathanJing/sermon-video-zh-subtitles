@@ -141,6 +141,16 @@ def load_spec(path: Path) -> dict:
         require(isinstance(overrides, dict) and set(overrides) <= set(locales),
                 f"layer3.{field} must name run locales")
         layer3[field] = {k: resolve(v) for k, v in overrides.items()}
+    reused_audio = layer3.get("reuseAudioFrom", {})
+    require(isinstance(reused_audio, dict) and set(reused_audio) <= set(locales),
+            "layer3.reuseAudioFrom must name run locales")
+    for locale, binding in reused_audio.items():
+        require(isinstance(binding, dict) and set(binding) == {"runDir", "packageSha256", "screeningSha256"}
+                and all(isinstance(binding[key], str) for key in binding),
+                f"layer3.reuseAudioFrom.{locale} needs runDir, packageSha256 and screeningSha256")
+        require(all(re.fullmatch(r"[a-f0-9]{64}", binding[key]) for key in ("packageSha256", "screeningSha256")),
+                f"layer3.reuseAudioFrom.{locale} needs SHA-256 bindings")
+        binding["runDir"] = resolve(binding["runDir"])
     require(isinstance(layer3.get("speakerRegistry"), str), "layer3.speakerRegistry required")
     layer3["speakerRegistry"] = resolve(layer3["speakerRegistry"])
     if layer3.get("audioOperationPolicies"):
@@ -800,17 +810,92 @@ def attestation(run: Run, locale: str) -> Path:
     return path
 
 
-def mirror_run_to_spark(run: Run):
-    relative = run.dir.relative_to((ROOT / "artifacts").resolve())
+def mirror_run_to_spark(run: Run, artifact_dir: Path | None = None):
+    artifact_dir = (artifact_dir or run.dir).resolve()
+    require(artifact_dir.is_relative_to((ROOT / "artifacts").resolve()),
+            "Spark mirror source must be under ignored artifacts")
+    relative = artifact_dir.relative_to((ROOT / "artifacts").resolve())
     mirror = f"{run.stage_dir}/mac-artifacts/{relative}"
     subprocess.run(["ssh", "-o", "BatchMode=yes", run.runtime["host"],
                     "mkdir -p -- " + shlex.quote(mirror)], check=True)
-    subprocess.run(["rsync", "-a", "-e", "ssh", "--exclude", "logs/", f"{run.dir}/",
+    subprocess.run(["rsync", "-a", "-e", "ssh", "--exclude", "logs/", f"{artifact_dir}/",
                     f"{run.runtime['host']}:{mirror}/"], check=True)
+
+
+def stage_reused_audio(run: Run, locale: str, code: str, binding: dict, q: dict):
+    """Continue audio QC on an unchanged screened package, with a new bounded QC plan."""
+    from scripts import run_machine_qc_audio_test as audio_driver
+    prior = Path(binding["runDir"]).resolve()
+    require(prior.is_dir() and prior != run.dir
+            and prior.is_relative_to((ROOT / "artifacts").resolve()),
+            "reused audio run must be a distinct ignored artifact run")
+    package = prior / "l3" / locale / "audio-package.json"
+    qc_run = prior / "aqc" / f"run-{locale}"
+    require(package.is_file() and qc_run.is_dir()
+            and hashlib.sha256(package.read_bytes()).hexdigest() == binding["packageSha256"],
+            "reused audio package changed")
+    for key in ("track", "captions", "schedule"):
+        reference = read(package).get(key) or {}
+        referenced = Path(reference.get("path", ""))
+        require(referenced.is_file() and referenced.is_relative_to(prior)
+                and hashlib.sha256(referenced.read_bytes()).hexdigest() == reference.get("sha256"),
+                f"reused audio {key} changed")
+    resolved = audio_driver.resolve_locale(qc_run, audio_driver.text_driver.index_run(qc_run), locale, package)
+    require(not resolved["problems"], "reused audio is not QC-admissible: " + str(resolved["problems"]))
+    require(hashlib.sha256(Path(resolved["paths"]["screening"]).read_bytes()).hexdigest()
+            == binding["screeningSha256"], "reused audio screening changed")
+    waiver_dir = Path(q["waiverDir"])
+    waivers = [path for path in waiver_dir.glob("text-waiver-*.json") if not path.name.endswith(".inputs.json")]
+    require(len(waivers) == 1, "reused audio requires exactly one current text waiver")
+    expected = {"source": run.l2 / "src/source.json", "anchor": run.l2 / "src/anchor.json",
+                "candidate": Path(q["candidate"]), "policy": run.l2 / "policy" / f"{locale}-policy-clip.json",
+                "textWaiver": waivers[0]}
+    require(all(hashlib.sha256(Path(resolved["paths"][key]).read_bytes()).digest()
+                == hashlib.sha256(path.read_bytes()).digest() for key, path in expected.items()),
+            "reused audio input differs from this run's source, policy, candidate or text waiver")
+    from scripts import check_run_start
+    prior_plan = prior / "plans" / f"qc-{locale}"
+    require(check_run_start.check_budget(prior_plan)["status"] == "pass",
+            "prior audio QC budget plan needs reconciliation before continuation")
+    source_state, state = prior / f"textqc-{locale}" / "state", run.dir / f"textqc-{locale}" / "state"
+    require(source_state.is_dir(), "prior audio QC state is missing")
+    for saved in source_state.rglob("*"):
+        if saved.is_file():
+            target = state / saved.relative_to(source_state)
+            if target.exists():
+                require(hashlib.sha256(saved.read_bytes()).digest() == hashlib.sha256(target.read_bytes()).digest(),
+                        "prior audio QC state conflicts with this run")
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(saved, target)
+    run.check(f"gpu-{locale}", "--budget-plan", run.dir / "plans" / f"qc-{locale}", "--spark-stages",
+              "--spark-code-dir", f"{run.stage_dir}/{code}")
+    mirror_run_to_spark(run)
+    mirror_run_to_spark(run, prior)
+    spark = run.spark_command()
+    out = run.dir / "aqc" / locale
+    authorization = run.dir / "plans" / f"qc-{locale}" / f"qc-{locale}" / "api-budget-authorization.json"
+    run.sh(f"audio-qc.{locale}", [*spark, "audio-qc", "--locale", locale, "--stage", run.stage_dir,
+                                  "--code", code, "--audio-package", package,
+                                  "--state-dir", state,
+                                  "--api-budget-authorization", authorization, "--out", out, "--run-dir", qc_run,
+                                  "--prior-budget-plan", prior_plan,
+                                  "--openai-environment", run.spec["openai"]["environment"], "--max-api-calls", "150"],
+           check=False)
+    summary = read(out / "summary.json")["locales"][locale]
+    if summary.get("status") != "audio_waiver_issued":
+        run.mark("audio." + locale, "failed", qcStatus=summary.get("status"), failedGroups=summary.get("failedGroups"),
+                 nextActions=summary.get("nextActions"))
+        raise Stop(f"audio.{locale}: {summary.get('status')} {summary.get('failedGroups')} {summary.get('reason')}")
+    run.mark("audio." + locale, "done", package=str(package), audioQcOut=str(out / locale),
+             reusedFrom=str(prior), packageSha256=binding["packageSha256"])
 
 
 def stage_audio(run: Run, locale: str, code: str):
     l3, q = run.dir / "l3" / locale, run.stages["qc." + locale]
+    reused = run.spec["layer3"].get("reuseAudioFrom", {}).get(locale)
+    if reused:
+        return stage_reused_audio(run, locale, code, reused, q)
     candidate, waiver_dir = Path(q["candidate"]), Path(q["waiverDir"])
     waiver = next(p for p in waiver_dir.glob("text-waiver-*.json") if not p.name.endswith(".inputs.json"))
     adapter = run.adapter(locale)

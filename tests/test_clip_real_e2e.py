@@ -125,6 +125,8 @@ class SpecificationTests(unittest.TestCase):
         raw["layer3"]["adapters"] = {"es": "eric-adapter.json"}
         raw["layer3"]["capabilities"] = {"es": "capability.json"}
         raw["layer3"]["audioOperationPolicies"] = "operation-policies.json"
+        raw["layer3"]["reuseAudioFrom"] = {"es": {"runDir": "prior-audio",
+            "packageSha256": "a" * 64, "screeningSha256": "b" * 64}}
         raw["spark"] = {"runtimeConfig": "runtime.json"}
         path = self.base / "source-specific.json"
         path.write_text(json.dumps(raw))
@@ -134,6 +136,13 @@ class SpecificationTests(unittest.TestCase):
         self.assertEqual(loaded["spark"]["runtimeConfig"], str((self.base / "runtime.json").resolve()))
         self.assertEqual(loaded["layer3"]["audioOperationPolicies"],
                          str((self.base / "operation-policies.json").resolve()))
+        self.assertEqual(loaded["layer3"]["reuseAudioFrom"]["es"]["runDir"],
+                         str((self.base / "prior-audio").resolve()))
+        raw["layer3"]["reuseAudioFrom"]["es"]["packageSha256"] = "invalid"
+        path.write_text(json.dumps(raw))
+        with self.assertRaisesRegex(ValueError, "reuseAudioFrom"):
+            subject.load_spec(path)
+        raw["layer3"]["reuseAudioFrom"]["es"]["packageSha256"] = "a" * 64
         raw["layer3"]["capabilities"] = {"fr": "capability.json"}
         path.write_text(json.dumps(raw))
         with self.assertRaisesRegex(ValueError, "layer3.capabilities"):
