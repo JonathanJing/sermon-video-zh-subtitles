@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "dev-180s-page-test-preflight-v1",
+  "baseCommit": "96347762686750fe643458c68210d00ed42cb6a3",
+  "status": "blocked_before_page_generation",
+  "scope": "real_clip_media_and_normal_admission",
+  "originalWindow": {
+    "startSeconds": 60,
+    "endSeconds": 240
+  },
+  "media": [
+    {
+      "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/dev-full-rerun-20261001/dev-candidate/hosting/public/media/dryrun-20261001-dev-full-180s/source.mp4",
+      "sha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+      "durationSeconds": 180.013167,
+      "fullAudioDecode": "passed"
+    },
+    {
+      "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/dev-full-rerun-20261001/dev-candidate/hosting/public/media/dryrun-20261001-dev-full-180s/zh-Hans-4946cd9c72825cd2.mp3",
+      "sha256": "4946cd9c72825cd269337bbed68294cfb1e89f0029a1a0bfae5eac22296b98bf",
+      "durationSeconds": 191.6,
+      "fullAudioDecode": "passed"
+    },
+    {
+      "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/dev-full-rerun-20261001/dev-candidate/hosting/public/media/dryrun-20261001-dev-full-180s/ko-b715f62a1156f180.mp3",
+      "sha256": "b715f62a1156f180736611f0ce2a5c37df80778dcaad121b932765c3186e295c",
+      "durationSeconds": 215.2,
+      "fullAudioDecode": "passed"
+    },
+    {
+      "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/dev-full-rerun-20261001/dev-candidate/hosting/public/media/dryrun-20261001-dev-full-180s/es-86d3172c2b2ac889.mp3",
+      "sha256": "86d3172c2b2ac889b3edc82f89f8e2d5706cf36e9a7ac3ecd198ecf772da5406",
+      "durationSeconds": 194.08,
+      "fullAudioDecode": "passed"
+    }
+  ],
+  "mediaCliOutcome": "succeeded",
+  "productionEligible": false,
+  "newPaidRequests": 0,
+  "providerDispatches": 0,
+  "modelReplayExecuted": false,
+  "sourceStatus": "blocked",
+  "sourceUrlHash": null,
+  "sourceWindow": {
+    "startSeconds": 60.0,
+    "endSeconds": 240.0,
+    "status": "pending",
+    "humanApproval": false,
+    "evidence": null
+  },
+  "translationCandidates": {
+    "zh-Hans": {
+      "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/dev-full-rerun-20261001/locales/zh-Hans/machine-candidates/a0531addf1119a97f61d442f38c575d2614482158a2c60dc6d6be2361daf0592/candidate.json",
+      "sha256": "d9eae0ef1d93c49ef919c394600c22db44c5f282c1d91258b82aecc23bff707f",
+      "groups": 13
+    },
+    "ko": {
+      "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/dev-full-rerun-20261001/locales/ko/machine-candidates/3b5a5130ee2b83feba390358d2cf1d81c25d7b9b2b9b513e9229fcac87e70e4d/candidate.json",
+      "sha256": "9e7f2314edd6dc9e8df45fd82886badaf02c2da93bf496b9dffc4da14e669b74",
+      "groups": 13
+    },
+    "es": {
+      "path": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/dev-full-rerun-20261001/locales/es/machine-candidates/3aa213a5cde45f6582464547256066fb1a97dd6f1721e2ae8c479ba067a63eec/candidate.json",
+      "sha256": "7f46938039b6c8bed1b1ee909ee58af40722fcd13298594cfabbb04e7627d454",
+      "groups": 13
+    }
+  },
+  "admissionProbe": {
+    "fixtureDeliveryBlockers": [
+      "consumer_capabilities_required_or_invalid",
+      "execution_runtime_changed_or_unbound",
+      "fixture_provider_forbidden",
+      "required_stage_dependency_missing"
+    ],
+    "unapprovedSourceResult": "blocked"
+  },
+  "study": {
+    "outline": "missing",
+    "meditation": "missing"
+  },
+  "publication": {
+    "beta": "not_started",
+    "dev": "not_started"
+  },
+  "deviceAcceptance": "not_run"
+}

@@ -17,7 +17,8 @@ function render() {
 }
 
 document.getElementById("interface-language")?.addEventListener("change", render);
-document.getElementById("language-toggle")?.addEventListener("click", () => queueMicrotask(render));
+// The header menu changes the page language without a select change event.
+document.addEventListener("sermon-locale-change", render);
 render();
 
 if (location.pathname.startsWith("/dry-run/")) {

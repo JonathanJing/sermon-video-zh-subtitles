@@ -1,0 +1,31 @@
+{
+ "schemaVersion": "field-venue-fingerprint-benchmark-v1",
+ "benchmarkId": "20261011-venue-mid-back",
+ "purpose": "FIELD-09 baseline for the venue's middle-back seating area at the 2026-10-11 Sunday service level. The Sunday room replayed the Saturday 5:30pm Resi recording, so the published Saturday index is the correct target.",
+ "position": {"zone": "middle_back", "notes": "Listener seat in the middle-rear of the main room; distance and SPL not measured. The two clips were taken from the same seat about one minute apart, not simultaneously."},
+ "index": {"path": "artifacts/web-language-pickers/prod-deploy/live-baseline/public/fingerprints/ebe4a4f40bf36271-landmarks.json", "sha256": "ebe4a4f40bf3627142906625dfea0b0c587353cc5523a92578b088797adab73c", "pageId": "resi-20261011-54475d42", "targetLocale": "zh-Hans", "servedByProduction": true},
+ "reference": {"path": "artifacts/weekend-live/resi-54475d42-6e3c-4ba7-9018-4df3f558b9a9/audio-clean.flac", "sha256": "43bd50ade81393ccf8dab81b09e0a25d48bf21cc48cda6578a6ddab575b0b997", "role": "same-source clean upper bound and outside-window negatives"},
+ "recordings": [
+  {"id": "iphone-builtin", "path": "artifacts/field-benchmark/20261011-venue-mid-back/recordings/iphone-voice-memos.qta", "sha256": "d9cf5e6571764d25288ddcca4fbb516adc151a0f9054028d70c2f17ae5c4af16",
+   "device": "iPhone built-in microphones", "captureApp": "Voice Memos (iOS 27.0.1, spatial .qta)", "stream": "a:0", "channels": ["mix", "left", "right"],
+   "startUtc": "2026-10-11T17:44:39Z", "durationSeconds": 49.8,
+   "measuredLevelDbfs": {"left": {"rms": -32.4, "peak": -7.9}, "right": {"rms": -32.5, "peak": -10.4}},
+   "truthIndexStartSeconds": 1129.736},
+  {"id": "airpods", "path": "artifacts/field-benchmark/20261011-venue-mid-back/recordings/airpods-voice-memos.m4a", "sha256": "b954ec4e1f80ca4457c1596504f6d3bf40f4498e6e73d7760a912a5e3af33742",
+   "device": "AirPods microphone", "captureApp": "Voice Memos (iOS 27.0.1)", "stream": "a:0", "channels": ["mix"],
+   "startUtc": "2026-10-11T17:45:42Z", "durationSeconds": 41.6,
+   "measuredLevelDbfs": {"mono": {"rms": -32.3, "peak": -11.1}},
+   "truthIndexStartSeconds": 1193.016}
+ ],
+ "truthDerivation": "Every accepted production window agrees on one offset per clip within 40 ms; the clean reference at that offset matches 100% of 10 s windows; the two offsets differ by 63.28 s against a 63 s gap between the files' whole-second creation times.",
+ "negatives": {
+  "referenceRanges": [[0, 1740], [3890, 4801]],
+  "otherIndexes": [
+   {"id": "2026-09-13", "path": "artifacts/web-language-pickers/prod-deploy/live-baseline/public/fingerprints/ae274a6b4ba914fa-landmarks.json", "sha256": "ae274a6b4ba914faf3b8f0adb9deebc3294f2b0513312eb912218d908edf5cfa"},
+   {"id": "2026-09-20", "path": "artifacts/web-language-pickers/prod-deploy/live-baseline/public/fingerprints/003e1983708381ad-landmarks.json", "sha256": "003e1983708381adc25233f67898fa32eebb9f0f151ba7aa7c4f74109947dba6"},
+   {"id": "2026-09-27", "path": "artifacts/web-language-pickers/prod-deploy/live-baseline/public/fingerprints/4cda22a17d051100-landmarks.json", "sha256": "4cda22a17d0511002c228cc161f94ce3c2cd05fb2403ba8ef0a159375452b057"},
+   {"id": "2026-10-04", "path": "artifacts/web-language-pickers/prod-deploy/live-baseline/public/fingerprints/1e52515b350ddee4-landmarks.json", "sha256": "1e52515b350ddee4fa92a00d73ac02dfb2211e7632e88bd9d66ae8e2c28528d4"}
+  ]
+ },
+ "limits": "Voice Memos processing is not the app capture path (Web raw-v1 / iOS .measurement). One seat, one service, about 90 s of audio, non-simultaneous device clips with different sermon content; 1 s window steps overlap heavily and are not independent trials. The same clips were used to choose the experimental variants, so they are a development set, not a holdout."
+}

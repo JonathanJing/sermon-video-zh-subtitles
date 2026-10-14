@@ -119,6 +119,28 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'catalog status'):
             self.build()
 
+    def test_v2_release_with_its_own_dub_clock_uses_the_client_duration(self):
+        # The 2026-10-02 podcast page: a v2 release whose content carries the dub's own clock.
+        # Clients report audioDurationSeconds, so the catalog must accept captions up to it.
+        page = self.page['targets']['zh-Hans']
+        release = json.loads((self.public / page['releasePackageUrl'].lstrip('/')).read_text())
+        assets = {a['role']: a for a in release['assets']}
+        content_path = assets['content']['path'].lstrip('/')
+        content = json.loads((self.public / content_path).read_text())
+        content['audioDurationSeconds'] = 12.5
+        self.write(content_path, content)
+        captions_path = assets['captions']['path'].lstrip('/')
+        self.write(captions_path, dict(cues=[dict(start=0, end=12.4, text='approved', textGroupId='g1')]))
+        for role, path in (('content', content_path), ('captions', captions_path)):
+            assets[role]['sha256'] = module.digest(self.public / path)
+        release['assets'] = list(assets.values())
+        self.write(page['releasePackageUrl'].lstrip('/'), release)
+        page['releasePackageJsonSha256'] = module.digest(self.public / page['releasePackageUrl'].lstrip('/'))
+        self.write('multilingual-v3.json', dict(schemaVersion='sermon-multilingual-catalog-v3', pages=[self.page]))
+        sources = {s['audioLocale']: s for s in self.build()['sources']}
+        self.assertEqual(sources['zh-Hans']['durationSeconds'], 12.5)
+        self.assertEqual(sources['ko']['durationSeconds'], 10)  # no own clock: the source duration
+
     def test_preserves_previous_unannotated_source(self):
         previous=copy.deepcopy(self.previous)
         old=dict(week='2026-09-20', trackId='old', audioSha256='d'*64)

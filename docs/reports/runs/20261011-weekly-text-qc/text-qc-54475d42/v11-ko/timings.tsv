@@ -1,0 +1,11 @@
+stage	status	seconds
+discover	pass	20.4
+ko.text-qc.prefetch	pass	143.5
+ko.text-qc	pass	5.4
+discover	pass	19.2
+ko.text-qc.prefetch	pass	164.1
+ko.text-qc	pass	5.4
+discover	pass	21.0
+ko.calibration.prefetch	pass	258.5
+ko.calibration	pass	13.3
+ko.text-waiver	pass	0.1

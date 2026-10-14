@@ -928,3 +928,33 @@ test('present catalog source media identity binds reviewed content for video and
   assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
   assert.equal(result.errors.length, 1);
 });
+
+test('v3 content without a hosted source video keeps all three machine-checked audio and reading variants', async () => {
+  const both = ['machine_checked', 'machine_checked'];
+  const f = machineFixture({ 'zh-Hans': both, ko: both, es: both }, ({ content }) => {
+    delete content.sourceVideoUrl;
+    content.sourceWindow = { schemaVersion: 'sermon-original-recording-window-v1', startSeconds: 100, endSeconds: 110, mediaSha256: content.sourceMediaSha256 };
+  });
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.defaultWeekId, pageId);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'ko', 'es']);
+  for (const variant of Object.values(result.weeks[0].contentVariants)) {
+    assert.equal(variant.sourceUrl, null);
+    assert.equal(variant.sourceFingerprintWindow.startSeconds, 100);
+    assert.equal(variant.tracks.length, 1);
+    assert.equal(variant.fullTranscript.length, 1);
+    assert.equal(variant.machineChecked, true);
+  }
+});
+
+test('optional v3 source video does not relax validation for declared unsafe or empty URLs', async () => {
+  for (const sourceVideoUrl of [null, '', '//other.test/video.mp4', 'https://other.test/video.mp4']) {
+    const f = machineFixture(undefined, ({ content, locale }) => {
+      if (locale === 'ko') content.sourceVideoUrl = sourceVideoUrl;
+    });
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.equal(result.weeks[0].contentVariants.ko, undefined);
+    assert.match(result.errors.join('\n'), /Unsafe published asset path/);
+  }
+});

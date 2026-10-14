@@ -39,9 +39,14 @@ def plan(source_seconds, rows, policy=None, *, identities=None, locale='und'):
     """
     source_seconds = _number(source_seconds, 'source duration', positive=True)
     policy = dict(formal.DEFAULT_POLICY if policy is None else policy)
-    if set(policy) != set(formal.DEFAULT_POLICY):
+    # tailOverrunSeconds is optional so that plans recorded before it existed keep
+    # their identity; when present it is bounded like the renderer bounds it.
+    required = set(formal.DEFAULT_POLICY) - {'tailOverrunSeconds'}
+    if not required <= set(policy) <= set(formal.DEFAULT_POLICY):
         raise ValueError('Invalid schedule policy fields')
     policy = {k: _number(v, k) for k, v in policy.items()}
+    if policy.get('tailOverrunSeconds', 0.0) > formal.MAX_TAIL_OVERRUN_SECONDS:
+        raise ValueError('Invalid schedule policy fields')
     if not isinstance(rows, list) or not rows or not isinstance(locale, str) or not locale.strip():
         raise ValueError('Rows and locale are required')
     identities = dict(identities or {})

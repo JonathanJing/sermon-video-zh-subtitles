@@ -1,0 +1,940 @@
+{
+ "note": "units the audio QC (c5 packages) failed, with both ASR transcripts and metrics; ground truth for scoring-normalization work",
+ "counts": {
+  "zh-Hans": 11,
+  "ko": 19,
+  "es": 12
+ },
+ "rows": {
+  "zh-Hans": [
+   {
+    "groupId": "translation-chunk-0001-u038",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.857143,
+    "asrPrimaryRecognized": "一共有七只号角。",
+    "asrSecondary": 0.857143,
+    "asrSecondaryRecognized": "一共有七只号角。",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 1.46,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.02,
+     "peakDbfs": -3.404,
+     "rmsDbfs": -18.6,
+     "silenceRatio": 0.041096,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "一共有七支号角。"
+   },
+   {
+    "groupId": "translation-chunk-0002-u022",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.871795,
+    "asrPrimaryRecognized": "你算一算，就会发现地球上会有二十七亿人丧生。",
+    "asrSecondary": 0.871795,
+    "asrSecondaryRecognized": "你算一算就会发现，地球上会有二十七亿人丧生。",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 4.08,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.38,
+     "peakDbfs": -3.816,
+     "rmsDbfs": -18.793,
+     "silenceRatio": 0.117647,
+     "trailingSilenceSeconds": 0.0
+    },
+    "targetText": "你算一算就会发现，地球上会有27亿人丧生。"
+   },
+   {
+    "groupId": "translation-chunk-0003-u013",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.833333,
+    "asrPrimaryRecognized": "神是有愤怒的。",
+    "asrSecondary": 0.833333,
+    "asrSecondaryRecognized": "神是有愤怒的。",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 1.61,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.0,
+     "peakDbfs": -4.192,
+     "rmsDbfs": -17.128,
+     "silenceRatio": 0.037037,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "神是有忿怒的。"
+   },
+   {
+    "groupId": "translation-chunk-0003-u016",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.857143,
+    "asrPrimaryRecognized": "而正是因为神有慈爱，他也有愤怒。",
+    "asrSecondary": 0.857143,
+    "asrSecondaryRecognized": "而正是因为神有慈爱，他也有愤怒。",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 3.08,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.2,
+     "peakDbfs": -4.643,
+     "rmsDbfs": -19.364,
+     "silenceRatio": 0.084416,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "而正是因为神有慈爱，祂也有忿怒。"
+   },
+   {
+    "groupId": "translation-chunk-0003-u032",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.8,
+    "asrPrimaryRecognized": "他是最棒的。",
+    "asrSecondary": 0.8,
+    "asrSecondaryRecognized": "他是最棒的。",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 0.97,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.06,
+     "peakDbfs": -4.471,
+     "rmsDbfs": -19.952,
+     "silenceRatio": 0.142857,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "她是最棒的。"
+   },
+   {
+    "groupId": "translation-chunk-0006-u036",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.857143,
+    "asrPrimaryRecognized": "你们做出了回应。",
+    "asrSecondary": 0.857143,
+    "asrSecondaryRecognized": "你们做出了回应。",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 1.3,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.04,
+     "peakDbfs": -6.913,
+     "rmsDbfs": -19.593,
+     "silenceRatio": 0.061538,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "你们作出了回应。"
+   },
+   {
+    "groupId": "translation-chunk-0007-u008",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.857143,
+    "asrPrimaryRecognized": "它就会降下瘟疫。",
+    "asrSecondary": 0.857143,
+    "asrSecondaryRecognized": "它就会降下瘟疫。",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 1.63,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.24,
+     "peakDbfs": -5.688,
+     "rmsDbfs": -19.823,
+     "silenceRatio": 0.170732,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "他就会降下瘟疫。"
+   },
+   {
+    "groupId": "translation-chunk-0007-u021",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.94382,
+    "asrPrimaryRecognized": "如果你手边有《series》杂志，可以看看第八十一页上方的表格。不过两者之间的相似之处确实多得惊人。",
+    "asrSecondary": 0.898876,
+    "asrSecondaryRecognized": "如果你手边有《Sirius》杂志，可以看看第八十一页上方的表格。不过，两者之间的相似之处确实多得惊人。",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 9.2,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.64,
+     "peakDbfs": -4.137,
+     "rmsDbfs": -19.677,
+     "silenceRatio": 0.178261,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "如果你手边有《Series》杂志，可以看看第81页上方的表格，不过，两者之间的相似之处确实多得惊人。"
+   },
+   {
+    "groupId": "translation-chunk-0007-u029",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.920635,
+    "asrPrimaryRecognized": "在第八十一页的底部，你们会看到另一张表，里面讲的是创造和对创造的逆转。",
+    "asrSecondary": 0.920635,
+    "asrSecondaryRecognized": "在第八十一页的底部，你们会看到另一张表，里面讲的是创造和对创造的逆转。",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 6.54,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.42,
+     "peakDbfs": -3.455,
+     "rmsDbfs": -17.874,
+     "silenceRatio": 0.16208,
+     "trailingSilenceSeconds": 0.0
+    },
+    "targetText": "在第81页的底部，你们会看到另一张表，里面讲的是创造和对创造的逆转。"
+   },
+   {
+    "groupId": "translation-chunk-0010-u009",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.954545,
+    "asrPrimaryRecognized": "他牺牲了自己的生命，为要使你我在他里面成为一人。",
+    "asrSecondary": 0.954545,
+    "asrSecondaryRecognized": "他牺牲了自己的生命，为要使你我在他里面成为一人。",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 4.85,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.4,
+     "peakDbfs": -4.192,
+     "rmsDbfs": -18.571,
+     "silenceRatio": 0.106996,
+     "trailingSilenceSeconds": 0.0
+    },
+    "targetText": "他牺牲了自己的生命，为要使你我在他里面成为义人。"
+   },
+   {
+    "groupId": "translation-chunk-0011-u009",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.933333,
+    "asrPrimaryRecognized": "所以今晚我们领受圣餐的合一方式。",
+    "asrSecondary": 0.933333,
+    "asrSecondaryRecognized": "所以，今晚我们领受圣餐的合一方式。",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 3.53,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.36,
+     "peakDbfs": -2.728,
+     "rmsDbfs": -19.35,
+     "silenceRatio": 0.175141,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "所以，今晚我们领受圣餐的合宜方式"
+   }
+  ],
+  "ko": [
+   {
+    "groupId": "translation-chunk-0000-u008",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.764706,
+    "asrPrimaryRecognized": "여러분 중에는 마시로 잘한 사람이 많군요.",
+    "asrSecondary": 0.764706,
+    "asrSecondaryRecognized": "여러분 중에는 마지로 잘한 사람이 많군요.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 3.29,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.52,
+     "peakDbfs": -4.471,
+     "rmsDbfs": -18.529,
+     "silenceRatio": 0.181818,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "여러분 중에는 맏이로 자란 사람이 많군요."
+   },
+   {
+    "groupId": "translation-chunk-0000-u015",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.976744,
+    "asrPrimaryRecognized": "그리고 아버지는 이렇게 말했습니다. 다음 성적표에서 내 잠재력에 걸맞은 성적을 내지 못하면 내가 할 거야.",
+    "asrSecondary": 0.976744,
+    "asrSecondaryRecognized": "그리고 아버지는 이렇게 말했습니다. 다음 성적표에서 내 잠재력에 걸맞은 성적을 내지 못하면 내가 할 거야.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 7.74,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.62,
+     "peakDbfs": -3.975,
+     "rmsDbfs": -19.251,
+     "silenceRatio": 0.191214,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "그리고 아버지는 이렇게 말했습니다. “다음 성적표에서 네 잠재력에 걸맞은 성적을 내지 못하면, 내가 …할 거야.”"
+   },
+   {
+    "groupId": "translation-chunk-0001-u006",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.923077,
+    "asrPrimaryRecognized": "야 그건 전적으로 내 책임이었어.",
+    "asrSecondary": 0.923077,
+    "asrSecondaryRecognized": "야, 그건 전적으로 내 책임이었어.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 3.09,
+     "leadingSilenceSeconds": 0.0,
+     "longestInternalSilenceSeconds": 0.2,
+     "peakDbfs": -5.954,
+     "rmsDbfs": -19.366,
+     "silenceRatio": 0.103226,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "야, 그건 전적으로 네 책임이었어."
+   },
+   {
+    "groupId": "translation-chunk-0001-u039",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.920635,
+    "asrPrimaryRecognized": "우리는 요한계시록 여덟 장과 구 장에서 그 중 여섯 개의 나팔을 살펴보게 됩니다.",
+    "asrSecondary": 0.920635,
+    "asrSecondaryRecognized": "우리는 요한계시록 여덟 장과 구장에서 그 중 여섯 개의 나팔을 살펴보게 됩니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 5.46,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.24,
+     "peakDbfs": -4.029,
+     "rmsDbfs": -18.584,
+     "silenceRatio": 0.14652,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "우리는 요한계시록 8장과 9장에서 그중 여섯 개의 나팔을 살펴보게 됩니다."
+   },
+   {
+    "groupId": "translation-chunk-0002-u002",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.892857,
+    "asrPrimaryRecognized": "그리고 이것이 땅의 약 3분의 1과 그 위에 모든 초목을 태워버립니다.",
+    "asrSecondary": 0.928571,
+    "asrSecondaryRecognized": "그리고 이것이 땅의 약 3분의 1과 그 위의 모든 초목을 태워 버립니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 5.28,
+     "leadingSilenceSeconds": 0.0,
+     "longestInternalSilenceSeconds": 0.4,
+     "peakDbfs": -3.607,
+     "rmsDbfs": -18.632,
+     "silenceRatio": 0.162879,
+     "trailingSilenceSeconds": 0.0
+    },
+    "targetText": "그리고 이것이 땅의 약 삼분의 일과 그 위의 모든 초목을 태워 버립니다."
+   },
+   {
+    "groupId": "translation-chunk-0002-u006",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.918367,
+    "asrPrimaryRecognized": "바다 생물의 3분의 1이 죽고 선박의 3분의 1이 영향을 받습니다. 이는 식량 공급망도 영향을 받았다는 것을 보여줍니다.",
+    "asrSecondary": 0.918367,
+    "asrSecondaryRecognized": "바다 생물의 3분의 1이 죽고 선박의 3분의 1이 영향을 받습니다. 이는 식량 공급망도 영향을 받았다는 것을 보여줍니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 8.94,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.72,
+     "peakDbfs": -3.255,
+     "rmsDbfs": -18.322,
+     "silenceRatio": 0.145414,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "바다 생물의 삼분의 일이 죽고, 선박의 삼분의 일이 영향을 받습니다. 이는 식량 공급망도 영향을 받았다는 것을 보여 줍니다."
+   },
+   {
+    "groupId": "translation-chunk-0002-u008",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.896552,
+    "asrPrimaryRecognized": "그리고 네 번째 나팔이 울리면 달과 별과 해에 3분의 1이 어두워집니다.",
+    "asrSecondary": 0.931034,
+    "asrSecondaryRecognized": "그리고 네 번째 나팔이 울리면 달과 별과 해의 3분의 1이 어두워집니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 5.14,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.2,
+     "peakDbfs": -3.304,
+     "rmsDbfs": -18.911,
+     "silenceRatio": 0.093385,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "그리고 네 번째 나팔이 울리면 달과 별과 해의 삼분의 일이 어두워집니다."
+   },
+   {
+    "groupId": "translation-chunk-0002-u010",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.9375,
+    "asrPrimaryRecognized": "자 여러분도 아마 이 첫 네 나팔이 세상을 이루는 요소들에 약 3분의 1에 영향을 미쳤다는 점을 알아차리셨을 것입니다.",
+    "asrSecondary": 0.958333,
+    "asrSecondaryRecognized": "자, 여러분도 아마 이 첫 네 나팔이 세상을 이루는 요소들의 약 3분의 1에 영향을 미쳤다는 점을 알아차리셨을 것입니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 8.53,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.24,
+     "peakDbfs": -5.559,
+     "rmsDbfs": -19.634,
+     "silenceRatio": 0.128806,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "자, 여러분도 아마 이 첫 네 나팔이 세상을 이루는 요소들의 약 삼분의 일에 영향을 미쳤다는 점을 알아차리셨을 것입니다."
+   },
+   {
+    "groupId": "translation-chunk-0002-u020",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.882353,
+    "asrPrimaryRecognized": "이용명으로 이루어진 군대가 일어나 땅 위의 사람들 가운데 삼 분의 일을 정복합니다.",
+    "asrSecondary": 0.882353,
+    "asrSecondaryRecognized": "이영명으로 이루어진 군대가 일어나 땅 위의 사람들 가운데 삼분의 일을 정복합니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 5.49,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.3,
+     "peakDbfs": -3.455,
+     "rmsDbfs": -19.026,
+     "silenceRatio": 0.112727,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "2억 명으로 이루어진 군대가 일어나 땅 위의 사람들 가운데 3분의 1을 정복합니다."
+   },
+   {
+    "groupId": "translation-chunk-0002-u023",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.6,
+    "asrPrimaryRecognized": "삼옥합니다.",
+    "asrSecondary": 0.6,
+    "asrSecondaryRecognized": "사목합니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 0.83,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.02,
+     "peakDbfs": -7.065,
+     "rmsDbfs": -22.936,
+     "silenceRatio": 0.095238,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "참혹합니다."
+   },
+   {
+    "groupId": "translation-chunk-0003-u002",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.875,
+    "asrPrimaryRecognized": "바트 어마는 불가지론자인 학자입니다.",
+    "asrSecondary": 0.875,
+    "asrSecondaryRecognized": "바트 어마는 불가지론자인 학자입니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 3.03,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.2,
+     "peakDbfs": -5.623,
+     "rmsDbfs": -19.665,
+     "silenceRatio": 0.151316,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "바트 어만은 불가지론자인 학자입니다."
+   },
+   {
+    "groupId": "translation-chunk-0005-u007",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.962025,
+    "asrPrimaryRecognized": "그렇기 때문에 여덟 장을 보면 참으로 놀랍습니다. 하나님의 경고, 곧 나팔의 경고가 주어지기도 전에.",
+    "asrSecondary": 0.962025,
+    "asrSecondaryRecognized": "그렇기 때문에 여덟 장을 보면 참으로 놀랍습니다. 하나님의 경고, 곧 나팔의 경고가 주어지기도 전에.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 7.3,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.6,
+     "peakDbfs": -4.471,
+     "rmsDbfs": -18.691,
+     "silenceRatio": 0.164384,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "그렇기 때문에 8장을 보면 참으로 놀랍습니다. 하나님의 경고, 곧 나팔의 경고가 주어지기도 전에,"
+   },
+   {
+    "groupId": "translation-chunk-0005-u016",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.896552,
+    "asrPrimaryRecognized": "여덟 장의 맨 첫 절에 주목해 보십시오.",
+    "asrSecondary": 0.896552,
+    "asrSecondaryRecognized": "여덟 장의 맨 첫 절에 주목해 보십시오.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 2.45,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.08,
+     "peakDbfs": -3.505,
+     "rmsDbfs": -17.822,
+     "silenceRatio": 0.065041,
+     "trailingSilenceSeconds": 0.0
+    },
+    "targetText": "8장의 맨 첫 절에 주목해 보십시오."
+   },
+   {
+    "groupId": "translation-chunk-0005-u027",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.740741,
+    "asrPrimaryRecognized": "신해산 기술계에서 볼 수 있습니다.",
+    "asrSecondary": 0.846154,
+    "asrSecondaryRecognized": "신해산 기슭에서 볼 수 있습니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 2.17,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.04,
+     "peakDbfs": -4.137,
+     "rmsDbfs": -18.167,
+     "silenceRatio": 0.06422,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "시내산 기슭에서 볼 수 있습니다."
+   },
+   {
+    "groupId": "translation-chunk-0006-u014",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.875,
+    "asrPrimaryRecognized": "삼 분의 일 분입니다.",
+    "asrSecondary": 0.75,
+    "asrSecondaryRecognized": "3분의 1뿐입니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 1.49,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.06,
+     "peakDbfs": -7.456,
+     "rmsDbfs": -18.092,
+     "silenceRatio": 0.106667,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "삼분의 일뿐입니다."
+   },
+   {
+    "groupId": "translation-chunk-0006-u039",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.833333,
+    "asrPrimaryRecognized": "짐 개피거는 목사가 아닙니다.",
+    "asrSecondary": 0.833333,
+    "asrSecondaryRecognized": "짐 개피거는 목사가 아닙니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 1.9,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.02,
+     "peakDbfs": -4.76,
+     "rmsDbfs": -18.082,
+     "silenceRatio": 0.031579,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "짐 개피건은 목사가 아닙니다."
+   },
+   {
+    "groupId": "translation-chunk-0008-u026",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.923077,
+    "asrPrimaryRecognized": "그리고 성경에서 가장 유명한 이야기 중 하나인 누가복음 열 다섯 장의 이야기에서.",
+    "asrSecondary": 0.923077,
+    "asrSecondaryRecognized": "그리고 성경에서 가장 유명한 이야기 중 하나인 누가복음 열다섯 장의 이야기에서.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 5.52,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.26,
+     "peakDbfs": -3.659,
+     "rmsDbfs": -19.16,
+     "silenceRatio": 0.101449,
+     "trailingSilenceSeconds": 0.0
+    },
+    "targetText": "그리고 성경에서 가장 유명한 이야기 중 하나인 누가복음 15장의 이야기에서,"
+   },
+   {
+    "groupId": "translation-chunk-0009-u021",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.955224,
+    "asrPrimaryRecognized": "그리고 요한계시록 여덟 장은 제가 이 사람을 위해 다시 기도하도록 저를 초대합니다.",
+    "asrSecondary": 0.955224,
+    "asrSecondaryRecognized": "그리고 요한계시록 여덟 장은 제가 이 사람을 위해 다시 기도하도록 저를 초대합니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 5.59,
+     "leadingSilenceSeconds": 0.0,
+     "longestInternalSilenceSeconds": 0.24,
+     "peakDbfs": -3.659,
+     "rmsDbfs": -19.11,
+     "silenceRatio": 0.114286,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "그리고 요한계시록 8장은 제가 이 사람을 위해 다시 기도하도록 저를 초대합니다."
+   },
+   {
+    "groupId": "translation-chunk-0011-u006",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.977778,
+    "asrPrimaryRecognized": "여러분은 1년 전이나 수십 년 전에 저질러서 후회하는 그 한 가지 일 그 한 가지 죄 그 실수를 계속 생각해 왔습니다.",
+    "asrSecondary": 0.977778,
+    "asrSecondaryRecognized": "여러분은 1년 전이나 수십 년 전에 저질러서 후회하는 그 한 가지 일, 그 한 가지 죄, 그 실수를 계속 생각해 왔습니다.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 8.53,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.4,
+     "peakDbfs": -5.431,
+     "rmsDbfs": -19.014,
+     "silenceRatio": 0.203747,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "여러분은 일 년 전이나 수십 년 전에 저질러서 후회하는 그 한 가지 일, 그 한 가지 죄, 그 실수를 계속 생각해 왔습니다."
+   }
+  ],
+  "es": [
+   {
+    "groupId": "translation-chunk-0000-u002",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.857143,
+    "asrPrimaryRecognized": "Si aún no nos conocemos, mi nombre es Steve Bangley.",
+    "asrSecondary": 0.857143,
+    "asrSecondaryRecognized": "Si aún no nos conocemos, mi nombre es Steve Bangley.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 3.49,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.1,
+     "peakDbfs": -4.938,
+     "rmsDbfs": -18.165,
+     "silenceRatio": 0.08,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "Si aún no nos conocemos, mi nombre es Steve Bang Lee."
+   },
+   {
+    "groupId": "translation-chunk-0000-u021",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.944444,
+    "asrPrimaryRecognized": "Lleva décadas como pastor en una iglesia y todos los que lo conocen dan fe de su integridad.",
+    "asrSecondary": 0.944444,
+    "asrSecondaryRecognized": "Lleva décadas como pastor en una iglesia y todos los que lo conocen dan fe de su integridad.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 6.88,
+     "leadingSilenceSeconds": 0.0,
+     "longestInternalSilenceSeconds": 0.28,
+     "peakDbfs": -3.921,
+     "rmsDbfs": -18.771,
+     "silenceRatio": 0.130814,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "Lleva décadas como pastor en 1 iglesia, y todos los que lo conocen dan fe de su integridad."
+   },
+   {
+    "groupId": "translation-chunk-0000-u022",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.571429,
+    "asrPrimaryRecognized": "Y aún así es la sola advertencia.",
+    "asrSecondary": 0.857143,
+    "asrSecondaryRecognized": "Y aún así, él lanzó la advertencia.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 2.41,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.12,
+     "peakDbfs": -5.754,
+     "rmsDbfs": -19.226,
+     "silenceRatio": 0.07438,
+     "trailingSilenceSeconds": 0.0
+    },
+    "targetText": "Y aun así, él lanzó la advertencia."
+   },
+   {
+    "groupId": "translation-chunk-0002-u020",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.944444,
+    "asrPrimaryRecognized": "Se levanta un ejército de doscientos millones y somete a un tercio de las personas en la tierra.",
+    "asrSecondary": 0.944444,
+    "asrSecondaryRecognized": "Se levanta un ejército de doscientos millones y somete a un tercio de las personas en la tierra.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 6.0,
+     "leadingSilenceSeconds": 0.0,
+     "longestInternalSilenceSeconds": 0.14,
+     "peakDbfs": -2.59,
+     "rmsDbfs": -18.436,
+     "silenceRatio": 0.093333,
+     "trailingSilenceSeconds": 0.0
+    },
+    "targetText": "Se levanta un ejército de 200 millones y somete a un tercio de las personas en la tierra."
+   },
+   {
+    "groupId": "translation-chunk-0003-u003",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.9375,
+    "asrPrimaryRecognized": "Y escribió en su libro Armagedón que el libro de Apocalipsis celebra el juicio, la condenación.",
+    "asrSecondary": 0.9375,
+    "asrSecondaryRecognized": "Y escribió en su libro Armagedón que el libro de Apocalipsis celebra el juicio, la condenación.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 7.53,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.44,
+     "peakDbfs": -4.359,
+     "rmsDbfs": -18.913,
+     "silenceRatio": 0.164456,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "y escribió en su libro Armageddon que el libro de Apocalipsis celebra el juicio, la condenación,"
+   },
+   {
+    "groupId": "translation-chunk-0003-u005",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.952381,
+    "asrPrimaryRecognized": "Miren, desde la perspectiva de Herman, cuando él examina el libro de Apocalipsis, este no muestra a un Dios de gracia.",
+    "asrSecondary": 0.952381,
+    "asrSecondaryRecognized": "Miren, desde la perspectiva de Herman, cuando él examina el libro de Apocalipsis, este no muestra a un Dios de gracia.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 8.4,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.44,
+     "peakDbfs": -4.819,
+     "rmsDbfs": -19.714,
+     "silenceRatio": 0.221429,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "Miren, desde la perspectiva de Ehrman, cuando él examina el libro de Apocalipsis, este no muestra a un Dios de gracia."
+   },
+   {
+    "groupId": "translation-chunk-0003-u008",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.909091,
+    "asrPrimaryRecognized": "Erman es muy inteligente y nosotros podemos ser muy inteligentes y aún así al examinar apocalipsis formarnos una imagen incorrecta de Dios.",
+    "asrSecondary": 0.954545,
+    "asrSecondaryRecognized": "Herman es muy inteligente y nosotros podemos ser muy inteligentes y aun así, al examinar Apocalipsis, formarnos una imagen incorrecta de Dios.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 9.33,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.3,
+     "peakDbfs": -3.816,
+     "rmsDbfs": -18.575,
+     "silenceRatio": 0.132762,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "Ehrman es muy inteligente, y nosotros podemos ser muy inteligentes y aun así, al examinar Apocalipsis, formarnos una imagen incorrecta de Dios."
+   },
+   {
+    "groupId": "translation-chunk-0003-u009",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.9,
+    "asrPrimaryRecognized": "Entonces, ya que Herman sacó el tema, hablemos de ello.",
+    "asrSecondary": 0.9,
+    "asrSecondaryRecognized": "Entonces, ya que Herman sacó el tema, hablemos de ello.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 4.27,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.5,
+     "peakDbfs": -3.157,
+     "rmsDbfs": -19.362,
+     "silenceRatio": 0.238318,
+     "trailingSilenceSeconds": 0.04
+    },
+    "targetText": "Entonces, ya que Ehrman sacó el tema, hablemos de ello."
+   },
+   {
+    "groupId": "translation-chunk-0004-u038",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.875,
+    "asrPrimaryRecognized": "Por ejemplo, el no toma agua se hidrata.",
+    "asrSecondary": 0.875,
+    "asrSecondaryRecognized": "Por ejemplo, el no toma agua, se hidrata.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 3.35,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.3,
+     "peakDbfs": -3.975,
+     "rmsDbfs": -18.903,
+     "silenceRatio": 0.22619,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "Por ejemplo, él no toma agua; se hidrata."
+   },
+   {
+    "groupId": "translation-chunk-0009-u028",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.928571,
+    "asrPrimaryRecognized": "Mi hermana hizo el trabajo más difícil: simplemente orar por mí durante diez años.",
+    "asrSecondary": 0.928571,
+    "asrSecondaryRecognized": "Mi hermana hizo el trabajo más difícil, simplemente orar por mí durante diez años.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 5.61,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.28,
+     "peakDbfs": -5.181,
+     "rmsDbfs": -19.395,
+     "silenceRatio": 0.113879,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "Mi hermana hizo el trabajo más difícil: simplemente orar por mí durante 10 años."
+   },
+   {
+    "groupId": "translation-chunk-0009-u031",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.916667,
+    "asrPrimaryRecognized": "ella elevó sus oraciones ante la presencia de Dios durante diez años",
+    "asrSecondary": 0.916667,
+    "asrSecondaryRecognized": "Ella elevó sus oraciones ante la presencia de Dios durante diez años.",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 4.63,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.06,
+     "peakDbfs": -5.886,
+     "rmsDbfs": -18.857,
+     "silenceRatio": 0.047414,
+     "trailingSilenceSeconds": 0.0
+    },
+    "targetText": "Ella elevó sus oraciones ante la presencia de Dios durante 10 años."
+   },
+   {
+    "groupId": "translation-chunk-0010-u005",
+    "status": "fail",
+    "issues": [
+     "asr_mismatch_confirmed"
+    ],
+    "asrPrimary": 0.5,
+    "asrPrimaryRecognized": "Quién pagó Quién pagó",
+    "asrSecondary": 0.5,
+    "asrSecondaryRecognized": "¿Quién pagó? ¿Quién pagó?",
+    "metrics": {
+     "clippingRatio": 0.0,
+     "durationSeconds": 2.14,
+     "leadingSilenceSeconds": 0.02,
+     "longestInternalSilenceSeconds": 0.48,
+     "peakDbfs": -4.76,
+     "rmsDbfs": -18.916,
+     "silenceRatio": 0.280374,
+     "trailingSilenceSeconds": 0.02
+    },
+    "targetText": "quien pagó, quien pagó."
+   }
+  ]
+ }
+}

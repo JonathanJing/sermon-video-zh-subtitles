@@ -822,7 +822,7 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         for kind in ("text.dropped_name", "audio.silent"):
             broken = copy.deepcopy(calibration)
             broken["kinds"][kind]["rate"] = float("nan")
-            self.assertIn(f"seeded-error detection below minimum for ['{kind}']",
+            self.assertIn(f"inconsistent detection rate for {kind}",
                           self.waive("ko", receipts, broken)["reasons"])
             broken["kinds"][kind].update(rate=1.0, trials=float("nan"))
             self.assertIn(f"calibration has no trials for ['{kind}']", self.waive("ko", receipts, broken)["reasons"])
@@ -908,7 +908,12 @@ class CalibrationAndWaiverTests(unittest.TestCase):
                   {"groupId": "g2", "english": "He prayed for his son.", "targetText": "他为儿子祷告。"},
                   {"groupId": "g3", "english": "Grace is a gift from heaven above.", "targetText": "恩典是从天上来的礼物。"}]
         group = {"groupId": "g0", "english": "Grace is a gift.", "targetText": "恩典是礼物。"}
-        self.assertEqual(seeded.mutate_text(group, "added_content", "zh-Hans", None, others), "恩典是礼物。他为儿子祷告。")
+        # The shortest sentence that still states a claim (six or more English words)
+        # wins over a shorter interjection-like sentence.
+        self.assertEqual(seeded.mutate_text(group, "added_content", "zh-Hans", None, others),
+                         "恩典是礼物。恩典是从天上来的礼物。")
+        self.assertEqual(seeded.mutate_text(group, "added_content", "zh-Hans", None, others[:2]),
+                         "恩典是礼物。他为儿子祷告。")
         self.assertIsNone(seeded.mutate_text(group, "added_content", "zh-Hans", None))
 
     def test_swapped_name_exchanges_two_named_roles(self):
@@ -959,7 +964,7 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         self.assertIn("calibration has no trials for ['text.swapped_name']",
                       waiver.calibration_problems(calibration, "zh-Hans", waiver.implementation_sha256()))
         row["applicableGroupIds"] = False
-        self.assertIn("invalid swapped-name applicability",
+        self.assertIn("invalid applicability record for text.swapped_name",
                       waiver.calibration_problems(calibration, "zh-Hans", waiver.implementation_sha256()))
 
     def test_malformed_swapped_name_row_is_rejected_without_crashing(self):

@@ -1,0 +1,242 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-weekly-layer2-top",
+  "runs": [
+    {
+      "label": "l2-top",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/l2-top",
+      "skipped": {
+        ".json": 40
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "l2-top",
+      "path": "run-es.log",
+      "kind": "log",
+      "bytes": 908,
+      "truncated": false,
+      "sha256": "bc478621bc1d3bdcde0c9d163a2c33e982b954754bb1a5ebd5a955e5878ee225",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-ko.log",
+      "kind": "log",
+      "bytes": 908,
+      "truncated": false,
+      "sha256": "4695cb05e473108e67cce79515e278c17515d6f83edbf23f12372131a4c370d2",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r10-zh-Hans.log",
+      "kind": "log",
+      "bytes": 913,
+      "truncated": false,
+      "sha256": "b7365072c4446e63468deef397cf57430561c800981a7b41c28c87dccdc88052",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r11-zh-Hans.log",
+      "kind": "log",
+      "bytes": 913,
+      "truncated": false,
+      "sha256": "d0b88c593e84b712b356fec5b6b8edd4aef05f5df58da273cb2647ee9d8848f5",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r12-zh-Hans.credfail.log",
+      "kind": "log",
+      "bytes": 35,
+      "truncated": false,
+      "sha256": "679300e1d8effcde3b5ca9ada9f718c060cc63b44866809eff97e15dfb508871",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r12-zh-Hans.log",
+      "kind": "log",
+      "bytes": 913,
+      "truncated": false,
+      "sha256": "6b7a6b6651c83b334fc04424cb722ec4c48f67994cc519e6d1625c146117207a",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r2-es.log",
+      "kind": "log",
+      "bytes": 908,
+      "truncated": false,
+      "sha256": "45741abe5c5093cf0f814cbef166501013241cd9f7898163ebe5d469b184a85c",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r2-ko.log",
+      "kind": "log",
+      "bytes": 908,
+      "truncated": false,
+      "sha256": "72ded5c6d629b4b2accbd7663596d28c9fae614ab98bfcbc003b70201c6e2885",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r3-es.log",
+      "kind": "log",
+      "bytes": 908,
+      "truncated": false,
+      "sha256": "9f71a64e68cf0a745543816176b916ca0ca057ba971763561af6d81db6f40c02",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r3-ko.log",
+      "kind": "log",
+      "bytes": 908,
+      "truncated": false,
+      "sha256": "fa9cbfbec5bb469108263242293b3d63cc8ef3e2b87772b3cbfc16177f4cfe1f",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r4-es.log",
+      "kind": "log",
+      "bytes": 908,
+      "truncated": false,
+      "sha256": "adaf37f98e500786876c7a6f1b913144ccfef1102a9a4722ad0f811ec779cae2",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r4-ko.log",
+      "kind": "log",
+      "bytes": 908,
+      "truncated": false,
+      "sha256": "b46c87adfae4f00944cb78ebc17f00900c425aa334578114498df2675fcc9f30",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r4-zh-Hans.log",
+      "kind": "log",
+      "bytes": 913,
+      "truncated": false,
+      "sha256": "92570aabaeb8df3531fe6abd9ea79f79c2119ec0cdc7aefbe36966b59df366aa",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r5-es.log",
+      "kind": "log",
+      "bytes": 908,
+      "truncated": false,
+      "sha256": "e0c8109ef6a7671e7c20aa9beebaf8f4e5a0da46f4fcd2f4331477bfbb9bede8",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r5-ko.log",
+      "kind": "log",
+      "bytes": 908,
+      "truncated": false,
+      "sha256": "d39baf56ce59cca30239063bcc710148f2c6665f436d3759c6897a7882055e84",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r5-zh-Hans.log",
+      "kind": "log",
+      "bytes": 913,
+      "truncated": false,
+      "sha256": "a7fc99646568cba5b4c64eec2ed5a0f0a2374fb87e41ea2ee1880ce274b0b0d8",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r6-zh-Hans.log",
+      "kind": "log",
+      "bytes": 913,
+      "truncated": false,
+      "sha256": "ea43d065ccd729ca377edf22bc1d98df1dba204776c223a2c4cd891114ce4600",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r6-zh-reopen.log",
+      "kind": "log",
+      "bytes": 913,
+      "truncated": false,
+      "sha256": "14d1368d4e6ed2361c56e89b60f44bd4fc7896074cd047ad73a4ec13009cf19c",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r7-zh-Hans.log",
+      "kind": "log",
+      "bytes": 913,
+      "truncated": false,
+      "sha256": "6630ebd9e071e1a90c1cbeabab038d440e9f3ae2c134cc9125b94314f2747ceb",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r8-zh-Hans.log",
+      "kind": "log",
+      "bytes": 913,
+      "truncated": false,
+      "sha256": "26f5ce370352e5bd7b9cc3a7860f8b9db60255be7314ead87c086d7ae37afe1d",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r8-zh-Hans.session-not-ready.log",
+      "kind": "log",
+      "bytes": 1421,
+      "truncated": false,
+      "sha256": "d406a42a558af1a45851b1f157715cc7e90a74d29e06bcf802c47872599660d2",
+      "redactions": {
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r9-zh-Hans.envfail.log",
+      "kind": "log",
+      "bytes": 1108,
+      "truncated": false,
+      "sha256": "4a90c5b588ad1385c4342b5c293c41aae7f00dabe64303ccaf605b2d2d33cad6",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "l2-top",
+      "path": "run-r9-zh-Hans.log",
+      "kind": "log",
+      "bytes": 913,
+      "truncated": false,
+      "sha256": "41a646532e8a24d0b9bfebb5fd70216068850f1905090ac377e88a313f83d2aa",
+      "redactions": {}
+    },
+    {
+      "run": "l2-top",
+      "path": "run-zh-Hans.log",
+      "kind": "log",
+      "bytes": 1374,
+      "truncated": false,
+      "sha256": "df00b806c6aadf545a71ffbcbe2b61ff8fbfbc53eb949be47eaeb66738ad6caa",
+      "redactions": {
+        "home_dir": 5
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

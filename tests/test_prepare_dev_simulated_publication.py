@@ -155,6 +155,27 @@ def test_simulated_page_joins_v4_so_v3_stays_its_human_projection(tmp_path):
         publication.with_simulated_page(v4, catalog, 'dev-run')
 
 
+def test_a_test_page_newer_than_every_reviewed_page_never_becomes_the_default():
+    # Found on Dev 2026-10-12: the v4 default was machine-checked, so the v3 projection moved the default to the
+    # newest human page, which was a weekly clip test page dated 2026-10-11. Production pages carry no flags.
+    human = {'releasePackageUrl': '/releases-v2/x/zh-Hans.json', 'releasePackageJsonSha256': 'a' * 64,
+             'contentStatus': 'human_reviewed', 'audioStatus': 'human_reviewed', 'capabilities': ['text', 'captions', 'audio']}
+    machine = {**human, 'releasePackageUrl': '/releases-v4/x/ko.json', 'contentStatus': 'machine_checked', 'audioStatus': 'machine_checked'}
+    page = lambda page_id, date, targets, **flags: {'id': page_id, 'date': date, 'title': page_id, 'sourceLocale': 'en',
+        'sourceIdentitySha256': 'c' * 64, 'defaultTargetLocale': next(iter(targets)), 'targets': targets, **flags}
+    v4 = {'schemaVersion': 'sermon-multilingual-catalog-v4', 'generatedAt': 'g', 'defaultPageId': 'machine-week',
+          'pages': [page('machine-week', '2026-10-11', {'ko': machine}), page('human-week', '2026-10-04', {'zh-Hans': human}),
+                    page('dev-clip', '2026-10-11', {'zh-Hans': {**human, 'simulationOnly': True, 'diagnosticOnly': True}},
+                         simulationOnly=True, diagnosticOnly=True)]}
+    assert contract.project_human_catalog(v4)['defaultPageId'] == 'human-week'
+    # Unflagged, the newest human page still wins, as before.
+    plain = copy.deepcopy(v4); plain['pages'][2] = page('real-week', '2026-10-11', {'zh-Hans': human})
+    assert contract.project_human_catalog(plain)['defaultPageId'] == 'real-week'
+    # Only test pages left: one of them is still chosen rather than none.
+    only = copy.deepcopy(v4); only['pages'] = [v4['pages'][0], v4['pages'][2]]
+    assert contract.project_human_catalog(only)['defaultPageId'] == 'dev-clip'
+
+
 def test_catalog_report_adds_the_v4_hash_only_once_published(tmp_path):
     (tmp_path / 'multilingual-v3.json').write_text('{}')
     assert set(publication.catalog_report(tmp_path)) == {'catalogSha256'}
@@ -214,6 +235,42 @@ def test_production_baseline_acquires_frozen_version_and_config(tmp_path, monkey
     assert publication.read(out / 'firebase.json')['hosting']['rewrites'][0]['run'] == config['rewrites'][0]['run']
 
 
+
+def test_baseline_waits_for_a_freshly_deployed_file_to_propagate(tmp_path, monkeypatch):
+    # 2026-10-13 Dev: a file of a version deployed 3.5 s earlier answered 404 and the refresh failed.
+    from urllib.error import HTTPError
+    target = publication.hosting_target('production')
+    version = 'sites/' + target['site'] + '/versions/fresh'
+    raw = b'{"pages": []}'
+    compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+    sha = hashlib.sha256(compressed).hexdigest()
+    def request(method, url):
+        if url.endswith('/files?pageSize=1000'):
+            return {'files': [{'path': '/multilingual-v3.json', 'status': 'ACTIVE', 'hash': sha}]}
+        return {'status': 'FINALIZED', 'config': {}}
+    class Response(io.BytesIO):
+        status = 200
+        headers = {'Content-Encoding': 'gzip', 'Etag': '"' + sha + '"'}
+    answers = ['404', 'stale', 'fresh']
+    def download(req, timeout):
+        answer = answers.pop(0)
+        if answer == '404':
+            raise HTTPError(req.full_url, 404, 'Not Found', {}, None)
+        return Response(gzip.compress(b'{"old": 1}', mtime=0) if answer == 'stale' else compressed)
+    monkeypatch.setattr(publication.publisher, 'authenticated_transport', lambda: request)
+    monkeypatch.setattr(publication.publisher, 'live_version', lambda req, site: version)
+    monkeypatch.setattr(publication, 'urlopen', download)
+    monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 60.0)
+    monkeypatch.setattr(publication.publisher.time, 'sleep', lambda seconds: None)
+    out = tmp_path / 'baseline'
+    assert publication.baseline(out, environment='production')['status'] == 'complete_verified_not_deployed'
+    assert (out / 'public/multilingual-v3.json').read_bytes() == raw and answers == []
+    # Without time to propagate, the read still fails rather than accepting other bytes.
+    monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 1.0)
+    answers[:] = ['stale']
+    with pytest.raises(ValueError, match='no longer matches frozen version'):
+        publication.baseline(tmp_path / 'baseline-2', environment='production')
+
 def test_gzip_identity_hash_rejects_changed_bytes(tmp_path):
     path = tmp_path / 'raw'
     path.write_bytes(b'known media bytes')
@@ -222,3 +279,35 @@ def test_gzip_identity_hash_rejects_changed_bytes(tmp_path):
     assert expected in publication.firebase_cli_gzip_hashes(path)
     path.write_bytes(b'different media bytes')
     assert expected not in publication.firebase_cli_gzip_hashes(path)
+
+
+def test_baseline_retries_incomplete_http_reads_with_remaining_budget(tmp_path, monkeypatch):
+    import http.client
+    import io
+    from types import SimpleNamespace
+    target = publication.hosting_target('production')
+    version = 'sites/' + target['site'] + '/versions/fresh'
+    raw = b'{"pages": []}'
+    compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+    digest = hashlib.sha256(compressed).hexdigest()
+    def request(method, url):
+        if url.endswith('/files?pageSize=1000'): return {'files': [{'path': '/multilingual-v3.json', 'hash': digest, 'status': 'ACTIVE'}]}
+        return {'config': {}, 'status': 'FINALIZED'}
+    now, timeouts = [0.0], []
+    class Response(io.BytesIO):
+        status = 200
+        headers = {'Content-Encoding': 'gzip'}
+    def download(req, *, timeout):
+        timeouts.append(timeout)
+        if len(timeouts) == 1: raise http.client.IncompleteRead(b'partial', 10)
+        return Response(compressed)
+    monkeypatch.setattr(publication.publisher, 'authenticated_transport', lambda: request)
+    monkeypatch.setattr(publication.publisher, 'live_version', lambda req, site: version)
+    monkeypatch.setattr(publication, 'urlopen', download)
+    monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 12)
+    monkeypatch.setattr(publication.publisher, 'time', SimpleNamespace(
+        monotonic=lambda: now[0], sleep=lambda seconds: now.__setitem__(0, now[0] + seconds)))
+    out = tmp_path/'baseline'
+    assert publication.baseline(out, environment='production')['status'] == 'complete_verified_not_deployed'
+    assert (out/'public/multilingual-v3.json').read_bytes() == raw
+    assert timeouts == [12, 7]
