@@ -2,6 +2,8 @@
 
 这组工具复用既有缓存，测试正常页面 prepare、校验、封存、guarded Hosting 发布和 reader；不调用模型 API。模拟审核仅用于用户明确授权的 Dev 测试，不代表正式内容批准。初次线上测试发现的时间轴问题已在 PR #245 的后续代码中修复；Luna 监控复跑已完成 Dev 三语发布、Web 与原生 HTTPS 读回，最终版本 `ac307d67871fec59`。没有更新 TestFlight 或执行实际播放。历史过程见 [本轮复盘](reports/20261004-dev-180s-page-generation-retrospective.zh.md)，后续监控和恢复工具见 [诊断发布执行器](dev-diagnostic-delivery-runner.zh.md)。
 
+需要真实模型译文、真实配音和机器质检的同类片段测试，见[真实模型片段 E2E](clip-real-e2e.zh.md)。
+
 ## 生成与发布
 
 ```sh
