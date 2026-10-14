@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-field03-full-checkpoint-v8",
+  "runs": [
+    {
+      "label": "run-v8-pr391-full-checkpoint-plan",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/field-benchmark/20261011-venue-mid-back/run-v8-pr391-full-checkpoint-plan",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "run-v8-pr391-full-checkpoint-plan",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 992,
+      "truncated": false,
+      "sha256": "ba97e2e324b628e93aa2075c01c9edd2554869bd81d7643b479fb0e9b09eef5e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

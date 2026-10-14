@@ -1,0 +1,74 @@
+{
+  "backend": "real",
+  "implementationSha256": "70078f905f6ddbd06550e0520fa21c6cadc63cef30aea823f26fa6d59b198eb6",
+  "locales": {
+    "ko": {
+      "audioQc": "requires_repair",
+      "audioQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/state/qc-receipts/audio/ko/d7bd83a44963b7f900621fbf222b2929b15b4e242127342b88feae0dfa1fc40f/entry-000002.json",
+      "calibrationCoverage": {
+        "audio": {
+          "droppedKeyWordTrials": 5,
+          "truncationEligibleTrials": 16,
+          "untestableKinds": [],
+          "wrongSentenceUnits": 16
+        },
+        "text": {
+          "applicableGroups": {
+            "added_content": 16,
+            "added_number": 9,
+            "added_reference": 13,
+            "dropped_half": 10,
+            "dropped_name": 1,
+            "english_leak": 11,
+            "placeholder": 16,
+            "semantic_negation": 0,
+            "swapped_name": 0,
+            "swapped_quantity": 0,
+            "wrong_book": 1,
+            "wrong_number": 3,
+            "wrong_ordinal": 13
+          },
+          "notApplicableKinds": [
+            "semantic_negation",
+            "swapped_quantity",
+            "swapped_name"
+          ],
+          "untestableKinds": []
+        }
+      },
+      "failedGroups": [
+        "translation-chunk-0005-u007"
+      ],
+      "flaggedGroups": [
+        "translation-chunk-0005-u007",
+        "translation-chunk-0005-u015"
+      ],
+      "locale": "ko",
+      "nextActions": {
+        "translation-chunk-0005-u007": "resynthesize_new_seed"
+      },
+      "packageJsonSha256": "28cc898200ad72c7971f2fd7ff7edb614ea196986d0debfa0a07024a0d8b2f2e",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/src/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/text/ko/candidate.json",
+        "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/run-ko-seed-43/l3/speech-job.json",
+        "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l3/ko-repair-seed-43/audio-package.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/policy/ko-policy-clip.json",
+        "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/run-ko-seed-43/l3/asr-screening-receipt-v1.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/src/source.json",
+        "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/out/ko/text-waiver-b1b5e7c533acef07.json"
+      },
+      "problems": [],
+      "reason": "audio QC failed; re-render the failed units as the repair ladder says",
+      "secondaryAsrGroups": [
+        "translation-chunk-0005-u007",
+        "translation-chunk-0005-u015"
+      ],
+      "status": "requires_repair",
+      "trackCheck": "pass",
+      "trackCheckReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/ko-seed-43/ko/track-check-ba11a902fc6c53c6.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/run-ko-seed-43",
+  "transportSha256": "fd914707cda7fbe25e99f64f1cd31661acbf0816c58401499bbf2c667cc31f04"
+}

@@ -1,0 +1,270 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-15-2" : [
+
+    ],
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5469306880,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+... 2581 lines omitted; 28 error-like lines, 28 kept below ...
+[line 1504] RegisterExecutionPolicyException ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework (in target 'TongxingCoredynamic-product' from project 'TongxingCore')
+[line 1506]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework
+[line 1917] RegisterExecutionPolicyException ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex (in target 'ListeningActivityExtension' from project 'Tongxing')
+[line 1919]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex
+[line 2193] ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:717:100: warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2204]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2208] ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:834:21: warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 2212]      |                     `- warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 2383] ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:717:100: warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2394]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2398] ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:834:21: warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 2402]      |                     `- warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 2406] ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:534:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2410]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2414] ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:552:20: warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 2420]      |                    `- warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 2424] ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:565:81: warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2428]      |                                                                                 `- warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2432] ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:581:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2436]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2440] ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:597:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2444]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2448] ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:624:81: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2452]      |                                                                                 `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2595] RegisterExecutionPolicyException ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest (in target 'TongxingTests' from project 'Tongxing')
+[line 2597]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest
+[line 2603] RegisterExecutionPolicyException ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+[line 2605]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app
+... end of omitted section ...
+
+CopySwiftLibs ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests --scan-folder ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --scan-folder ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/PlugIns --scan-folder ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/SystemExtensions --scan-folder ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitco ...[line truncated]
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name TongxingUITests --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk --xcode-version 27A9275 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.jonathanjing.tongxing.dev.uitests --output ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest --target-triple arm64-apple-ios17.0-simulator --binary-file ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests --dependency-file ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests_dependency_info.dat --stringsdata-file ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.SwiftFileList --metadata-file-list ~ ...[line truncated]
+2026-10-14 09:35:45.138 appintentsmetadataprocessor[87017:8862554] Starting appintentsmetadataprocessor export
+2026-10-14 09:35:45.140 appintentsmetadataprocessor[87017:8862554] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+AppIntentsSSUTraining (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Info.plist --temp-dir-path ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/ssu --bundle-id com.jonathanjing.tongxing.dev.uitests --product-path ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest --extracted-metadata-path ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Metadata.appintents --metadata-file-list ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/TongxingUITests.DependencyMetadataFileList --source-file ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Info.plist --archive-ssu-assets
+2026-10-14 09:35:45.172 appintentsnltrainingprocessor[87018:8862555] Parsing options for appintentsnltrainingprocessor
+2026-10-14 09:35:45.173 appintentsnltrainingprocessor[87018:8862555] Starting AppIntents SSU YAML Generation
+2026-10-14 09:35:45.173 appintentsnltrainingprocessor[87018:8862555] No AppShortcuts found - Skipping.
+
+MkDir ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios
+    /bin/mkdir -p ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app
+
+CopyPlistFile ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/Info.plist /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/XCTRunner.app/Info.plist (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copyPlist --validate --convert xml1 --macro-expansion WRAPPEDPRODUCTNAME TongxingUITests-Runner --macro-expansion WRAPPEDPRODUCTBUNDLEIDENTIFIER com.jonathanjing.tongxing.dev.uitests.xctrunner --macro-expansion TESTPRODUCTNAME TongxingUITests --macro-expansion TESTPRODUCTBUNDLEIDENTIFIER com.jonathanjing.tongxing.dev.uitests --copy-value UIDeviceFamily ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Info.plist --outdir ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app -- /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/XCTRunner.app/Info.plist
+
+Copy ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PkgInfo /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/XCTRunner.app/PkgInfo (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/XCTRunner.app/PkgInfo ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app
+
+CopyAndPreserveArchs ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/TongxingUITests-Runner (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/XCTRunner.app/XCTRunner -output ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/TongxingUITests-Runner -extract arm64
+
+RegisterExecutionPolicyException ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-RegisterExecutionPolicyException ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest
+
+Touch ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/apps/tongxing-ios
+    /usr/bin/touch -c ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+2026-10-14 09:35:46.464 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-14 09:35:56.367776-0700 TongxingUITests-Runner[87226:8864617] [Default] Running tests...
+Test Suite 'Selected tests' started at 2026-10-14 09:35:57.755.
+Test Suite 'TongxingUITests.xctest' started at 2026-10-14 09:35:57.756.
+Test Suite 'WeeklyUpdateUITests' started at 2026-10-14 09:35:57.756.
+Test Case '-[TongxingUITests.WeeklyUpdateUITests testMissingPosterStillOffersContent]' started.
+    t =     0.00s Start Test at 2026-10-14 09:35:57.756
+    t =     0.20s Set Up
+    t =     0.20s Open com.jonathanjing.tongxing.dev
+    t =     0.20s     Launch com.jonathanjing.tongxing.dev
+2026-10-14 09:35:58.238 xcodebuild[86549:8860146] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-14 09:35:58.238 xcodebuild[86549:8860146] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-14 09:35:58.295 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     1.36s         Setting up automation session
+    t =     1.93s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =     3.36s Waiting 15.0s for "weekly-update-open" Button to exist
+    t =     4.39s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =     4.39s         Checking existence of `"weekly-update-open" Button`
+    t =     4.49s Tap "weekly-update-open" Button
+    t =     4.49s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     4.49s     Find the "weekly-update-open" Button
+    t =     4.52s     Check for interrupting elements affecting "weekly-update-open" Button
+    t =     4.55s     Synthesize event
+    t =     4.95s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     5.37s Waiting 10.0s for "海报暂不可用，仍可打开本周内容。" StaticText to exist
+    t =     6.40s     Checking `Expect predicate `existsNoRetry == 1` for object "海报暂不可用，仍可打开本周内容。" StaticText`
+    t =     6.40s         Checking existence of `"海报暂不可用，仍可打开本周内容。" StaticText`
+    t =     6.45s Find the "weekly-update-read" Button
+    t =     6.48s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     6.59s Added attachment named 'weekly-update-poster-unavailable-synthetic'
+    t =     6.59s Tap "weekly-update-read" Button
+    t =     6.59s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     6.60s     Find the "weekly-update-read" Button
+    t =     6.63s     Check for interrupting elements affecting "weekly-update-read" Button
+    t =     6.67s     Synthesize event
+    t =     6.97s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     7.31s Waiting 5.0s for "weekly-update-reopen" Button to exist
+    t =     8.35s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-reopen" Button`
+    t =     8.35s         Checking existence of `"weekly-update-reopen" Button`
+    t =     8.38s Tear Down
+Test Case '-[TongxingUITests.WeeklyUpdateUITests testMissingPosterStillOffersContent]' passed (8.630 seconds).
+Test Case '-[TongxingUITests.WeeklyUpdateUITests testPosterPromptPersistsDismissalAndCanReopen]' started.
+    t =     0.00s Start Test at 2026-10-14 09:36:06.387
+    t =     0.02s Set Up
+    t =     0.02s Open com.jonathanjing.tongxing.dev
+    t =     0.02s     Launch com.jonathanjing.tongxing.dev
+    t =     0.02s         Terminate com.jonathanjing.tongxing.dev:87279
+2026-10-14 09:36:06.422 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-14 09:36:06.423 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-14 09:36:07.463 xcodebuild[86549:8860146] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-14 09:36:07.463 xcodebuild[86549:8860146] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-14 09:36:07.468 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     1.29s         Setting up automation session
+    t =     1.71s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =     2.97s Waiting 15.0s for "weekly-update-open" Button to exist
+    t =     4.00s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =     4.00s         Checking existence of `"weekly-update-open" Button`
+    t =     4.07s Waiting 10.0s for "playback-toggle" Button to exist
+    t =     5.11s     Checking `Expect predicate `existsNoRetry == 1` for object "playback-toggle" Button`
+    t =     5.11s         Checking existence of `"playback-toggle" Button`
+    t =     6.17s Checking `Expect predicate `enabled == 1` for object "playback-toggle" Button`
+    t =     6.17s     Find the "playback-toggle" Button
+    t =     6.20s Tap "playback-toggle" Button
+    t =     6.20s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     6.20s     Find the "playback-toggle" Button
+    t =     6.23s     Check for interrupting elements affecting "playback-toggle" Button
+    t =     6.25s     Synthesize event
+    t =     6.55s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     6.56s Find the "playback-toggle" Button
+    t =     6.58s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     6.69s Added attachment named 'weekly-update-new-synthetic'
+    t =     6.69s Tap "weekly-update-open" Button
+    t =     6.69s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     6.69s     Find the "weekly-update-open" Button
+    t =     6.72s     Check for interrupting elements affecting "weekly-update-open" Button
+    t =     6.75s     Synthesize event
+    t =     7.05s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     7.45s Waiting 5.0s for "weekly-update-title" StaticText to exist
+    t =     8.48s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-title" StaticText`
+    t =     8.48s         Checking existence of `"weekly-update-title" StaticText`
+    t =     8.53s Checking existence of `"海报暂不可用，仍可打开本周内容。" StaticText`
+    t =     8.56s Checking existence of `"weekly-update-poster" Image`
+    t =     8.59s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     8.70s Added attachment named 'weekly-update-poster-synthetic'
+    t =     8.70s Tap "weekly-update-done" Button
+    t =     8.70s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     8.71s     Find the "weekly-update-done" Button
+    t =     8.75s     Check for interrupting elements affecting "weekly-update-done" Button
+    t =     8.78s     Synthesize event
+    t =     9.07s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     9.41s Waiting 5.0s for "weekly-update-reopen" Button to exist
+    t =    10.44s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-reopen" Button`
+    t =    10.45s         Checking existence of `"weekly-update-reopen" Button`
+    t =    10.47s Checking existence of `"weekly-update-open" Button`
+    t =    10.49s Find the "playback-toggle" Button
+    t =    10.52s Terminate com.jonathanjing.tongxing.dev:87341
+2026-10-14 09:36:16.921 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-14 09:36:16.921 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    11.57s Open com.jonathanjing.tongxing.dev
+    t =    11.58s     Launch com.jonathanjing.tongxing.dev
+2026-10-14 09:36:17.963 xcodebuild[86549:8860146] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-14 09:36:17.963 xcodebuild[86549:8860146] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-14 09:36:17.967 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    11.79s         Setting up automation session
+    t =    12.22s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =    13.48s Waiting 15.0s for "weekly-update-reopen" Button to exist
+    t =    14.52s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-reopen" Button`
+    t =    14.52s         Checking existence of `"weekly-update-reopen" Button`
+    t =    14.59s Checking existence of `"weekly-update-open" Button`
+    t =    14.62s Tap "weekly-update-reopen" Button
+    t =    14.62s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    14.63s     Find the "weekly-update-reopen" Button
+    t =    14.65s     Check for interrupting elements affecting "weekly-update-reopen" Button
+    t =    14.68s     Synthesize event
+    t =    14.98s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    15.38s Waiting 5.0s for "weekly-update-read" Button to exist
+    t =    16.41s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-read" Button`
+    t =    16.41s         Checking existence of `"weekly-update-read" Button`
+    t =    16.46s Tap "weekly-update-read" Button
+    t =    16.46s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    16.46s     Find the "weekly-update-read" Button
+    t =    16.50s     Check for interrupting elements affecting "weekly-update-read" Button
+    t =    16.56s     Synthesize event
+    t =    16.86s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    17.21s Waiting 5.0s for "weekly-update-reopen" Button to exist
+    t =    18.24s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-reopen" Button`
+    t =    18.24s         Checking existence of `"weekly-update-reopen" Button`
+    t =    18.28s Tear Down
+Test Case '-[TongxingUITests.WeeklyUpdateUITests testPosterPromptPersistsDismissalAndCanReopen]' passed (18.547 seconds).
+Test Suite 'WeeklyUpdateUITests' passed at 2026-10-14 09:36:24.934.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 27.177 (27.178) seconds
+Test Suite 'TongxingUITests.xctest' passed at 2026-10-14 09:36:24.934.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 27.177 (27.179) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 09:36:24.935.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 27.177 (27.180) seconds
+2026-10-14 09:36:24.971 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-14 09:36:24.972 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-14 09:36:25.026 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-14 09:36:25.026 xcodebuild[86549:8860146] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-14 09:36:25.287 xcodebuild[86549:8860146] [MT] IDETestOperationsObserverDebug: 40.082 elapsed -- Testing started completed.
+2026-10-14 09:36:25.287 xcodebuild[86549:8860146] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-14 09:36:25.287 xcodebuild[86549:8860146] [MT] IDETestOperationsObserverDebug: 40.082 sec, +40.082 sec -- end
+
+Test session results, code coverage, and logs:
+	~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-14/cli/20261014T093514-test-4b6fb431/test.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+
+Exit status: 0

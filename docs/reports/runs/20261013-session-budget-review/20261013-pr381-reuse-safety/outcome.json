@@ -1,0 +1,9 @@
+{
+  "status": "pass",
+  "testsPassed": 44,
+  "subtestsPassed": 8,
+  "modelCalls": 0,
+  "paidCalls": 0,
+  "deployments": 0,
+  "scope": "versioned paid response reuse, damaged and uncertain receipts block redispatch, explicit migration, provenance/cap and runtime approvals"
+}

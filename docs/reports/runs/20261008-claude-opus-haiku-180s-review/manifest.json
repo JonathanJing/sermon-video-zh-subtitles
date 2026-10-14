@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261008-claude-opus-haiku-180s-review",
+  "runs": [
+    {
+      "label": "claude-opus55-haiku55-review-180s-20261008",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/claude-opus55-haiku55-review-180s-20261008",
+      "skipped": {
+        ".json": 99,
+        ".txt": 20
+      }
+    },
+    {
+      "label": "claude-opus55-haiku55-review-180s-20261008-r2",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/claude-opus55-haiku55-review-180s-20261008-r2",
+      "skipped": {
+        ".json": 132,
+        ".txt": 26
+      }
+    },
+    {
+      "label": "claude-opus55-haiku55-review-180s-20261008-r3-group6",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/claude-opus55-haiku55-review-180s-20261008-r3-group6",
+      "skipped": {
+        ".json": 12,
+        ".txt": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "claude-opus55-haiku55-review-180s-20261008-r2",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1440,
+      "truncated": false,
+      "sha256": "e29667b35c90460fdc4a51399a0a91b75b69ae495a801473aee16c2dc1611022",
+      "redactions": {}
+    },
+    {
+      "run": "claude-opus55-haiku55-review-180s-20261008-r3-group6",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1408,
+      "truncated": false,
+      "sha256": "bd2d9e82da8103b569ff20faee4e8b0681b73206667fdc837c607643ab274088",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

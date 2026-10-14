@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "sermon-multilingual-poster-v1",
+  "source": {
+    "pageId": "resi-20261011-54475d42",
+    "targetLocale": "ko",
+    "sourceIdentitySha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+    "catalogSha256": "bc9ea1b3a0ef57998927b9fdb36fd7ad34c9bb60415717c586bdbae4a308cc86",
+    "releasePackageSha256": "0c9e90e0d9554252ad62fe124c7637f7485a45d0583b2cd044686e456711e1c6",
+    "contentSha256": "55dc057013c01cbf127aa0e58196aa78ef6cddede0734d10111facf95d0cca4e",
+    "brief": {
+      "locale": "ko",
+      "date": "2026-10-11",
+      "origin": "https://ai-for-god-sermon-audio.web.app",
+      "title": "예수님은 경고하십니다",
+      "series": "요한계시록: 예수님이 주시는 위로와 소망",
+      "scripture": "요한계시록 8–9장",
+      "speaker": "Steve Bang Lee",
+      "tagline": "함께 듣고, 함께 걸어갑니다.",
+      "reviewLabel": "번역과 음성 기계 품질 검사 · 사람 검토 없음",
+      "labels": {
+        "brand": "Tongxing",
+        "eyebrow": "이번 주 설교 · 한국어",
+        "cta": "이번 주 설교 읽기 · 듣기",
+        "serviceLine": "한국어 음성 · 영어 대조 · 전체 원고",
+        "qrCaption": "이번 주 한국어로 바로 열기",
+        "disclaimer": "Mariners Church와 제휴하거나 공식 후원을 받지 않는 개인 독립 프로젝트입니다.\nAI로 합성한 한국어 오디오와 정리한 텍스트는 개인 참고용입니다.",
+        "header": "Tongxing   ───   이번 주 설교",
+        "web": "웹 버전",
+        "caption": "QR 코드로 읽기 · 듣기",
+        "showReview": "true"
+      },
+      "qrURL": "https://ai-for-god-sermon-audio.web.app/?week=resi-20261011-54475d42&contentLang=ko&lang=ko",
+      "displayTitle": "예수님은\n경고하십니다",
+      "storeURL": "https://apps.apple.com/app/id6809255441"
+    }
+  },
+  "status": "complete",
+  "provenance": {
+    "templateVersion": "tongxing-dual-qr-v1",
+    "templateSha256": "043454aeeba6033493d152d2affed853990a37aa6dca3bb25cfa83ae83cc513b",
+    "badgeHashes": {
+      "zh-Hans": "65191b2d1182a194e510b27c9985b1367b60ed6ef565f86fc492f585a27bc932",
+      "ko": "fc82d5344d0f2919a7ae697e677fc9c62872f1ee47bd70e24a581245423de9c1",
+      "es": "e4d7c2c1606454536482735c96b933b04ea86a2e72701b3319ae1f3a369b0479"
+    },
+    "artSha256": "705c368c907b0f89915a36d35c2ee89fd99e352137fec36aaebe450eee6dcbee",
+    "promptSha256": "8a1a36a8d24c237536d4c7e75de1e00d23ee15b83fb593403795fa3a8322c0b2",
+    "rendererSha256": "d600e3e8f4968d6eea2c675b796020336beff11e4b2d288292159dbe886abfca",
+    "builderSha256": "5f5bcd032ebdfc24dd959244f739deded3c23ab5433004e75fc77d9fe2389875"
+  },
+  "outputs": {
+    "poster.png": "0d298c3bca3d4ad60a633b11e07ca89a701a3047e658201ccbe5b6dc7df7e23b",
+    "poster-preview.png": "fe82e5a76183c5575bc8ea59655d249ad31820d8f728871b29cba606989a2285",
+    "qr-validation.json": "6bffc9695bc2bd09becbc2f635f1346d9536485765e4c5b039762c089bbc818b"
+  },
+  "publicVerification": {
+    "checkedAt": "2026-10-11T15:47:10.172386+00:00",
+    "origin": "https://ai-for-god-sermon-audio.web.app",
+    "status": "pass",
+    "checks": [
+      {
+        "path": "/multilingual-v4.json",
+        "sha256": "bc9ea1b3a0ef57998927b9fdb36fd7ad34c9bb60415717c586bdbae4a308cc86",
+        "status": 200
+      },
+      {
+        "path": "/releases-v4/resi-20261011-54475d42/zh-Hans.json",
+        "sha256": "2503ca70abb2372d513bd9a14603d42b5aac6401d5cc0e635dbc988ec8c84e51",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261011-54475d42/zh-Hans.json",
+        "sha256": "fa95a519ae45ed699d72011db56f1f4c5e88d964c01d79745d2ff40b58b2e2d3",
+        "status": 200
+      },
+      {
+        "path": "/releases-v4/resi-20261011-54475d42/ko.json",
+        "sha256": "0c9e90e0d9554252ad62fe124c7637f7485a45d0583b2cd044686e456711e1c6",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261011-54475d42/ko.json",
+        "sha256": "55dc057013c01cbf127aa0e58196aa78ef6cddede0734d10111facf95d0cca4e",
+        "status": 200
+      },
+      {
+        "path": "/releases-v4/resi-20261011-54475d42/es.json",
+        "sha256": "bbaf5a8576efb00708d27f0016936f4f9493f3d42c4d55a053de8cab5158576c",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261011-54475d42/es.json",
+        "sha256": "392cae6952eeabaf2833ce1890c422d00f91c2c1f42b22b358f9db1dc72f6187",
+        "status": 200
+      }
+    ]
+  },
+  "visualReview": {
+    "reviewer": "codex",
+    "humanApproval": false
+  },
+  "visualReviewedAt": "2026-10-11T15:47:10.180532+00:00"
+}

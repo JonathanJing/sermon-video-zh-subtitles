@@ -1,0 +1,232 @@
+{
+  "schemaVersion": "sermon-target-language-audio-screening-v2",
+  "targetLocale": "es",
+  "targetLanguageSpeechJobJsonSha256": "19a930a4e0858f6c4da1f3dc55546cf25ddd2068d92ac588f2341f079b58d5f2",
+  "trackSha256": "76113fc8a4e396b85a37037dba9b761e5911658874a7900bbfa2ff3153b89fbb",
+  "status": "requires_review",
+  "model": "Qwen/Qwen3-ASR-0.6B",
+  "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+  "minSimilarity": 0.88,
+  "coverage": 1.0,
+  "reviewedGroupIds": [
+    "translation-chunk-0005-u003",
+    "translation-chunk-0005-u004",
+    "translation-chunk-0005-u005",
+    "translation-chunk-0005-u006",
+    "translation-chunk-0005-u007",
+    "translation-chunk-0005-u008",
+    "translation-chunk-0005-u009",
+    "translation-chunk-0005-u010",
+    "translation-chunk-0005-u011",
+    "translation-chunk-0005-u012",
+    "translation-chunk-0005-u013",
+    "translation-chunk-0005-u014",
+    "translation-chunk-0005-u015",
+    "translation-chunk-0005-u016",
+    "translation-chunk-0005-u017",
+    "translation-chunk-0005-u018"
+  ],
+  "unitAudioSha256s": [
+    "942fadc98125bce9c21263d32294c30f4f92eea221b631e55b518b8ad463887d",
+    "ba6052f646623f3e96ad86c2e4c1aa5cad058a4ffa3b476b734df26723d3ab2d",
+    "7778a48c0ad626572cce7014fc5136c85500529e8d100acac280bb12f128a3d3",
+    "fe59ec39e63b77881682a4b9174aa4f4731ebf080b401960d60fca82478ea0e6",
+    "0a017592c15c9a16b7570828c3ec3531f155426dcedc9a6aa0d6612f52335b2f",
+    "22a511aae236eb18d97fd878fdac802739042eac9d1cf44d6cda2a95670ec60f",
+    "a4163aab0d9f639c18e5afa8bd262ef8483411410b400106137fc6872060c845",
+    "9ec3e235c1b71418db5d982e0b117d6e235c310a5218a7cebef6a5920e2efe05",
+    "f82a3604c782eb0b23bdb4301399db189f3a20a9ffcd4ffcd05942985e375c69",
+    "b39cb722943dc84b70d224dce966855dd2f19cfbcbb9236669791671ce72aff4",
+    "a5d55edf5fad2a80d48c68bdf72384047c44032a224efe753c88b18dfa607408",
+    "85e7340dcac54a94a2b1cad5e2c43d5b9b94e467ba9f018462b02b09b0c7f330",
+    "df977b5cd678b0be2ada9b6efa500a175b8da04f943f9200bbe8bf9906c37f1a",
+    "a0126763204b6188b88312a261f58dc74209e7d81fd6cb09e64397be4860a20d",
+    "fdc749ffd2c6a5e9f6d3dd973669c7f35dbe358870ca0157e4e3e9c3ad2a9dda",
+    "a00763a16a8c23bdb0ea6903cf5cb9d2ca48ec6e1f75ad1c4ec273222613388a"
+  ],
+  "results": [
+    {
+      "textGroupId": "translation-chunk-0005-u003",
+      "targetTextSha256": "9fe7c3c3e0efc7d03ccd8c59f5282f0bc91ec862c0cf90f89525efda4768cc71",
+      "audioSha256": "942fadc98125bce9c21263d32294c30f4f92eea221b631e55b518b8ad463887d",
+      "recognized": "Por su atributo fundamental de intensidad, él hace todo intensamente.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u004",
+      "targetTextSha256": "b51756644b11a2a739298f5a24a4bff925d61f1566f19e793a805476f99e3856",
+      "audioSha256": "ba6052f646623f3e96ad86c2e4c1aa5cad058a4ffa3b476b734df26723d3ab2d",
+      "recognized": "Y así, de la misma manera, Dios, en virtud de su atributo esencial de santidad, hace todo de una manera moralmente perfecta.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u005",
+      "targetTextSha256": "5a5d3c708c0649d917f3a6e2a953ffe81212a6e961cfb880a58bd3d7fb82b683",
+      "audioSha256": "7778a48c0ad626572cce7014fc5136c85500529e8d100acac280bb12f128a3d3",
+      "recognized": "Lo cual significa que si Dios lleva a cabo estas advertencias divinas, cómo lo haría",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u006",
+      "targetTextSha256": "8a6effae78037a93e76d376e4cb397fdb214dee7a9770ad87866338e5309c5a4",
+      "audioSha256": "fe59ec39e63b77881682a4b9174aa4f4731ebf080b401960d60fca82478ea0e6",
+      "recognized": "de una manera moralmente perfecta.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u007",
+      "targetTextSha256": "6abe62d72d65e8829ff4ac10a6a7e74148340ada3a3cc42ed7701a40c968ede8",
+      "audioSha256": "0a017592c15c9a16b7570828c3ec3531f155426dcedc9a6aa0d6612f52335b2f",
+      "recognized": "Por eso es tan increíble que cuando vemos el capítulo 8 antes de que se den siquiera las advertencias divinas, las advertencias de las trompetas.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u008",
+      "targetTextSha256": "fb017936d505fb9451007bf0480b14b1a5866ebcf70e3ec9889c8d2d6c89fcf6",
+      "audioSha256": "22a511aae236eb18d97fd878fdac802739042eac9d1cf44d6cda2a95670ec60f",
+      "recognized": "Juan, el apóstol y autor, establece primero con claridad la santidad de Dios.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u009",
+      "targetTextSha256": "27a695ccf6d09ab63f00ecae2188d574e94404bb0e76a3cd8443b19a212fc98e",
+      "audioSha256": "a4163aab0d9f639c18e5afa8bd262ef8483411410b400106137fc6872060c845",
+      "recognized": "Es increíble en dos sentidos.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u010",
+      "targetTextSha256": "75365cbf2381a42afe32699747109591101b7f2dce9834364cd892c0d08758af",
+      "audioSha256": "9ec3e235c1b71418db5d982e0b117d6e235c310a5218a7cebef6a5920e2efe05",
+      "recognized": "Primero por medio del silencio.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u011",
+      "targetTextSha256": "bf38e201c2494b68db28363300a6b763fe8389967f24a106bd8d8082b4b124fc",
+      "audioSha256": "f82a3604c782eb0b23bdb4301399db189f3a20a9ffcd4ffcd05942985e375c69",
+      "recognized": "Silencio.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u012",
+      "targetTextSha256": "b2eb8e298e2adfaea46f63bd99245561ca6b6b36b9df25335c0e711008d249d6",
+      "audioSha256": "b39cb722943dc84b70d224dce966855dd2f19cfbcbb9236669791671ce72aff4",
+      "recognized": "Como saben, en el Antiguo Testamento a menudo hay una conexión entre el silencio y la santidad de Dios.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u013",
+      "targetTextSha256": "f6d15bdbf1f7150646a0c9e3b5c46415a6b2cc4108e079b8a5621bf126f94ab4",
+      "audioSha256": "a5d55edf5fad2a80d48c68bdf72384047c44032a224efe753c88b18dfa607408",
+      "recognized": "Por ejemplo, miren Java Cook dos.",
+      "similarity": 0.727273,
+      "differences": [
+        {
+          "kind": "replace",
+          "expected": [
+            "habacuc"
+          ],
+          "recognized": [
+            "java",
+            "cook"
+          ]
+        }
+      ],
+      "status": "requires_review"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u014",
+      "targetTextSha256": "d2454af380ce648b060c82120c91aa5f6dc8a8db7b048e8851340d00a009f288",
+      "audioSha256": "85e7340dcac54a94a2b1cad5e2c43d5b9b94e467ba9f018462b02b09b0c7f330",
+      "recognized": "Pero el señor está en su santo templo.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u015",
+      "targetTextSha256": "ce2a0ef13f6de93c0feed865f5c05e3a472f563eed1365e57483f508a5c39713",
+      "audioSha256": "df977b5cd678b0be2ada9b6efa500a175b8da04f943f9200bbe8bf9906c37f1a",
+      "recognized": "Que toda la tierra guarde silencio en su presencia.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u016",
+      "targetTextSha256": "d7952b966ef2beab2a65a9e0d6cc6eeaac0393bc288e658d7e86786fdecd3f95",
+      "audioSha256": "a0126763204b6188b88312a261f58dc74209e7d81fd6cb09e64397be4860a20d",
+      "recognized": "Fíjense en el primer versículo del capítulo ocho.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u017",
+      "targetTextSha256": "2c9d1ee3cf63f7ec91f9d7942ea9faac38bb141c7423c71750e0d6083b4c4ebf",
+      "audioSha256": "fdc749ffd2c6a5e9f6d3dd973669c7f35dbe358870ca0157e4e3e9c3ad2a9dda",
+      "recognized": "Cuando él abrió el séptimo sello, hubo silencio en el cielo durante aproximadamente media hora.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u018",
+      "targetTextSha256": "f601aeb1e1d174ed441602b2bf99ff38420304431c172e3febebaeb62c66cee0",
+      "audioSha256": "a00763a16a8c23bdb0ea6903cf5cb9d2ca48ec6e1f75ad1c4ec273222613388a",
+      "recognized": "Hubo silencio.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    }
+  ],
+  "humanListeningStatus": "pending",
+  "asrSettings": {
+    "protocol": "formal-back-asr-batch-v1",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+    "language": "es",
+    "batchSize": 1,
+    "maxNewTokens": 2048,
+    "dtype": "bfloat16",
+    "executionDevice": "cuda:0",
+    "runtime": {
+      "backend": "qwen-asr-local",
+      "torchVersion": "2.13.0a0+8145d630e8.nv26.06",
+      "qwenAsrVersion": "0.0.6",
+      "modelMetadataSha256s": {
+        "chat_template.json": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff",
+        "config.json": "76d3ae4601ce939830b2517f4a6cadb86cc51316c3900af6b020b051c21a478c",
+        "generation_config.json": "1da527824d81e07118facff437e03f2e24a23311e3bdeb2368973fe77e5f275c",
+        "preprocessor_config.json": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d",
+        "tokenizer_config.json": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c",
+        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      }
+    },
+    "implementationSha256": "eb748c3193f72ece5a9a54110ff7e703fc50e7539d2bbdcabdae2a02ca7a281b",
+    "minSimilarity": 0.88,
+    "scoring": "token-sequence-ratio-v5; readings a listener cannot tell apart are folded first (spelled numbers and digits, same-pinyin-same-tone Chinese characters in fixed contexts, Spanish diacritic function words, Korean spacing; digit strings are not positional numbers; a Korean native numeral before a Sino counter is not folded); short units (<4 tokens) must match exactly; no negation, number or protected name may differ; numbers and names keep their order; book-anchored Korean scripture range endpoints are folded together"
+  },
+  "asrSettingsSha256": "0d71c3d987b3cf192d4de6a4e4fea54964cc885c218b2e5f49ef85a5368f41ea"
+}

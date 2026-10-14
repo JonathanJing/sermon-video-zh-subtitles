@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "sermon-targeted-test-summary-v1",
+  "status": "pass",
+  "testFile": "experiments/sermon-dubbing-poc/test_feedback_rollout.py",
+  "tests": 22,
+  "passed": 22,
+  "failed": 0,
+  "initialFailure": {
+    "count": 2,
+    "reason": "Existing assertions required the compatibility runtime catalog to equal the legacy release catalog byte-for-byte; the reviewed contract now requires verified pageId and audioLocale additions."
+  },
+  "verified": [
+    "current compatibility sources are enriched",
+    "previous-release compatibility sources are enriched",
+    "compatibility prepare writes the enriched runtime catalog",
+    "legacy v1 release catalogs remain unchanged"
+  ],
+  "limits": {
+    "productionDeployment": "not_run",
+    "productionApiReadback": "not_run",
+    "browserUpload": "not_run"
+  }
+}

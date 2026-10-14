@@ -1,0 +1,23 @@
+......F                                                                  [100%]
+=================================== FAILURES ===================================
+_______ test_release_consumer_accepts_unchanged_v2_and_current_v3_counts _______
+
+    def test_release_consumer_accepts_unchanged_v2_and_current_v3_counts():
+        from scripts import machine_quality_release_basis as basis
+        from scripts import machine_quality_waiver as waiver
+        from tests.test_machine_quality_release_basis import calibration, IMPLEMENTATION
+        receipt = calibration()
+        current = basis.calibration_summary(receipt, "ko", IMPLEMENTATION)
+        receipt["schemaVersion"] = waiver.LEGACY_CALIBRATION_SCHEMA
+>       assert basis.calibration_summary(receipt, "ko", IMPLEMENTATION) == current
+E       AssertionError: assert {'jsonSha256'...te': 1.0, ...} == {'jsonSha256'...te': 1.0, ...}
+E
+E         Omitting 6 identical items, use -vv to show
+E         Differing items:
+E         {'jsonSha256': '10a8de40bdd81fd4b61d097fbba9e1804fb3e93eb5a0f34d12312533b374f838'} != {'jsonSha256': '89628293512391099f87c7bca3b082de812a255cdd001a9fdfad28f3f16c8e0d'}
+E         Use -v to get more diff
+
+tests/test_audio_calibration_short_truncation.py:84: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_audio_calibration_short_truncation.py::test_release_consumer_accepts_unchanged_v2_and_current_v3_counts
+1 failed, 6 passed in 10.47s

@@ -1,0 +1,10 @@
+== 15:13:06 zh-Hans
+zh-Hans settled before 11.221
+check zh-Hans-api pass []
+zh-Hans text text_waiver_issued [] {'cleanFalsePositiveRate': 0.0, 'detected': 91, 'overallDetectionRate': 1.0, 'trials': 91} None
+session begin failed
+zh-Hans stopped
+settled after 11.578
+== 15:15:03 done
+zh-Hans.text-qc	fail(1)	1	19
+zh-Hans.text-qc	pass	1	115
