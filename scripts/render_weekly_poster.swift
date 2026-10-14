@@ -126,11 +126,17 @@ do {
  try text(brief.labels["header"] ?? "",NSRect(x:120,y:75,width:960,height:68),maxSize:33,alignment:.center)
  try oneLineHeadline(brief.displayTitle ?? brief.title,NSRect(x:80,y:225,width:1040,height:210),maxSize:brief.locale == "zh-Hans" ? 138 : 100,minSize:46)
  // Group source metadata over a stable light surface across weekly artwork.
+ try need(["true", "false"].contains(brief.labels["showReview"] ?? ""),"Missing review visibility identity")
+ let showReview = brief.labels["showReview"] == "true"
+ if showReview { try need(!brief.reviewLabel.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty,"Missing machine-review disclosure") }
  paper.withAlphaComponent(0.70).setFill()
- NSBezierPath(roundedRect:NSRect(x:80,y:505,width:1040,height:255),xRadius:20,yRadius:20).fill()
- try text(brief.series,NSRect(x:120,y:525,width:960,height:54),maxSize:34,minSize:27,alignment:.center)
- try text(brief.date.replacingOccurrences(of:"-",with:".")+" · "+brief.speaker,NSRect(x:120,y:605,width:960,height:55),maxSize:33,minSize:28,alignment:.center)
- try text(brief.scripture,NSRect(x:120,y:678,width:960,height:55),maxSize:31,minSize:27,alignment:.center)
+ NSBezierPath(roundedRect:NSRect(x:80,y:505,width:1040,height:showReview ? 340 : 255),xRadius:20,yRadius:20).fill()
+ try text(brief.series,NSRect(x:120,y:525,width:960,height:60),maxSize:34,minSize:16,alignment:.center)
+ try text(brief.date.replacingOccurrences(of:"-",with:".")+" · "+brief.speaker,NSRect(x:120,y:605,width:960,height:60),maxSize:33,minSize:16,alignment:.center)
+ try text(brief.scripture,NSRect(x:120,y:685,width:960,height:60),maxSize:31,minSize:16,alignment:.center)
+ if showReview {
+     try text(brief.reviewLabel,NSRect(x:180,y:755,width:840,height:75),maxSize:28,minSize:18,alignment:.center)
+ }
  paper.setFill();NSRect(x:0,y:1200,width:1200,height:600).fill()
  try text(brief.labels["cta"] ?? "",NSRect(x:80,y:1224,width:1040,height:58),maxSize:34,minSize:29,alignment:.center)
  try text(brief.labels["storeHeading"] ?? "",NSRect(x:125,y:1290,width:350,height:43),maxSize:29,minSize:27,alignment:.center)
