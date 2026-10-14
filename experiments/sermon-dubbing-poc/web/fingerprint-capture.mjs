@@ -1,8 +1,11 @@
 export function abortError() { return new DOMException('Cancelled', 'AbortError'); }
 // FIELD-03 (2026-10-13 decision): up to 15 s of retained PCM plus the existing
-// 5 s startup deadline share one microphone budget per press.
+// 5 s startup deadline share one microphone budget per press, with 1 s for the
+// worklet's 150 ms clock priming and timer/scheduling delay.
 export const MAX_CAPTURE_SECONDS = 15;
-export const MAX_MICROPHONE_MS = 20000;
+export const MAX_MICROPHONE_MS = 21000;
+// A retry reopens the microphone, so it must leave time for startup again.
+const RETRY_STARTUP_RESERVE_MS = 2000;
 const budgetError = () => Object.assign(new Error('capture_budget_exhausted'), { captureStage: 'input' });
 function abortable(promise, signal, onLate = () => {}) {
   return new Promise((resolve, reject) => {
@@ -172,7 +175,7 @@ export async function captureFingerprintAudio(options) {
       const transient = error.message === 'capture_interrupted' && error.captureDetail !== 'channel_shape' || error.message === 'audio_context_interrupted';
       if (!transient || attempt === 2) throw error;
       // A retry records a completely new window within what remains of the budget.
-      const remaining = Math.floor((limit - occupiedMs) / 1000);
+      const remaining = Math.floor((limit - occupiedMs - RETRY_STARTUP_RESERVE_MS) / 1000);
       if (remaining < (options.minimumSeconds ?? options.seconds ?? 10)) throw budgetError();
       seconds = Math.min(options.seconds ?? 10, remaining);
       onRecovering({attempt: attempt + 1});
