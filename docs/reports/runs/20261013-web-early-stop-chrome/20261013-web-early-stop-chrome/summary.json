@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "web-early-stop-chrome-smoke-v1",
+  "status": "pass_2_of_3",
+  "commit": "4d47619478bee6b752076a5ba3494c090926e69f",
+  "scope": "chrome_synthetic_device_audio_worklet_not_hardware_or_safari",
+  "runs": [
+    {
+      "run": "capture",
+      "status": "fail",
+      "reason": "browser_deadline",
+      "checkpointSeconds": null,
+      "checkpointFinalSeconds": null,
+      "earlyStopMicrophoneMs": null,
+      "streamsEnded": null,
+      "contextsClosed": null,
+      "browserVersion": "Google Chrome 155.0.8059.40",
+      "moduleSha256": {
+        "fingerprint-capture.mjs": "4abfacac827cca9a28efbe99e44131956021e79e6011ce5ae19a9c82d652e218",
+        "fingerprint-worklet.mjs": "f31ccd00f57441778a1a4f549e49fb6a0c0b1a97660b95eec0bfdda9f13984ec"
+      }
+    },
+    {
+      "run": "run1",
+      "status": "pass",
+      "reason": null,
+      "checkpointSeconds": [
+        7,
+        10,
+        12
+      ],
+      "checkpointFinalSeconds": 15,
+      "earlyStopMicrophoneMs": 10175.20000000298,
+      "streamsEnded": 4,
+      "contextsClosed": 4,
+      "browserVersion": "Google Chrome 155.0.8059.40",
+      "moduleSha256": {
+        "fingerprint-capture.mjs": "4abfacac827cca9a28efbe99e44131956021e79e6011ce5ae19a9c82d652e218",
+        "fingerprint-worklet.mjs": "f31ccd00f57441778a1a4f549e49fb6a0c0b1a97660b95eec0bfdda9f13984ec"
+      }
+    },
+    {
+      "run": "run2",
+      "status": "pass",
+      "reason": null,
+      "checkpointSeconds": [
+        7,
+        10,
+        12
+      ],
+      "checkpointFinalSeconds": 15,
+      "earlyStopMicrophoneMs": 10182.59999999404,
+      "streamsEnded": 4,
+      "contextsClosed": 4,
+      "browserVersion": "Google Chrome 155.0.8059.40",
+      "moduleSha256": {
+        "fingerprint-capture.mjs": "4abfacac827cca9a28efbe99e44131956021e79e6011ce5ae19a9c82d652e218",
+        "fingerprint-worklet.mjs": "f31ccd00f57441778a1a4f549e49fb6a0c0b1a97660b95eec0bfdda9f13984ec"
+      }
+    }
+  ]
+}

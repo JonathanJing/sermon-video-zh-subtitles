@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "sermon-weekly-run-profile-v2",
+  "schemaVersion": "sermon-weekly-run-profile-v3",
   "documentation": "docs/weekly-run-profile.zh.md",
   "measuredFrom": [
     "2026-10-11 full week (461 sentences, three locales)",
@@ -40,7 +40,12 @@
     "capUsdPerLocale": {
       "clip": 2.0,
       "week": 5.0
-    }
+    },
+    "claudeCliListPriceCapUsdPerLocale": {
+      "clip": 8.0,
+      "week": 200.0
+    },
+    "claudeCliComment": "claude_cli_opus Layer 2 runs on the Claude subscription: the ledger reserves and settles each call at list-price worst case (strict-claude-list-worst-case-2026-10-08-v1) up to this cap per locale, but list-price equivalents are not money and do not count toward an approved USD total (user decision 2026-10-14)."
   },
   "qc": {
     "comment": "One root per locale shared by text QC, calibration and audio QC; its ledger is the judge response cache.",

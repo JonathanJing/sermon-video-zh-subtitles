@@ -12,7 +12,7 @@ from deploy_firebase import verify_release
 from poc import sha256, write_json
 
 HERE = Path(__file__).resolve().parent
-RUNTIME_FILES = ("index.mjs", "core.mjs", "usage-core.mjs", "listening-core.mjs", "firestore-store.mjs",
+RUNTIME_FILES = ("index.mjs", "core.mjs", "usage-core.mjs", "listening-core.mjs", "alignment-core.mjs", "firestore-store.mjs",
                  "package.json", "package-lock.json")
 PROJECT = "ai-for-god-caption-dev"
 REGION = "us-west1"
@@ -122,10 +122,41 @@ def verified_feedback_catalog(release):
         "feedbackCatalogSha256": sha256(release / "feedback-catalog.json"), "sourceCount": len(actual)}
 
 
+def runtime_listening_sources(release, catalog):
+    """Add identities from the hash-verified public catalog to legacy v1 feedback sources."""
+    release = Path(release).resolve()
+    public_catalog = release / "public/weekly.json"
+    build = json.loads((release / "build-report.json").read_text())
+    bound_weekly = next((item for item in build["files"] if item["path"] == "weekly.json"), None)
+    if bound_weekly is None or sha256(public_catalog) != bound_weekly["sha256"]:
+        raise ValueError("Public weekly catalog changed after feedback verification")
+    weekly = json.loads(public_catalog.read_text())
+    identities = {}
+    for week in weekly["weeks"]:
+        week_date = public_week_date(week)
+        page_id = week["id"]
+        if not re.fullmatch(r"[A-Za-z0-9_-]{1,160}", page_id):
+            raise ValueError("Invalid runtime page identity")
+        for track in week["tracks"]:
+            page_locale, track_locale = week.get("targetLocale"), track.get("targetLocale")
+            if page_locale and track_locale and page_locale != track_locale:
+                raise ValueError("Conflicting public audio locale")
+            locale = page_locale or track_locale or "zh-Hans"  # legacy weekly.json default used by the Web client
+            if locale not in {"zh-Hans", "ko", "es", "en", "vi"}:
+                raise ValueError("Invalid runtime audio locale")
+            key = week_date, track["id"], track["sha256"]
+            if key in identities:
+                raise ValueError("Repeated public listening identity")
+            identities[key] = {"pageId": page_id, "audioLocale": locale}
+    if set(identities) != {source_identity(source) for source in catalog["sources"]}:
+        raise ValueError("Runtime listening identity differs from verified feedback sources")
+    return [{**source, **identities[source_identity(source)]} for source in catalog["sources"]]
+
+
 def merge_release_catalogs(release, previous_releases=()):
     """Keep old open pages working only for explicitly verified prior releases."""
     catalog, current = verified_feedback_catalog(release)
-    sources = {source_identity(source): source for source in catalog["sources"]}
+    sources = {source_identity(source): source for source in runtime_listening_sources(release, catalog)}
     include_usage = "weekIds" in catalog
     week_ids = set(catalog.get("weekIds", [source["week"] for source in catalog["sources"]]))
     voice_ids = set(catalog.get("voiceIds", []))
@@ -140,7 +171,7 @@ def merge_release_catalogs(release, previous_releases=()):
         week_ids.update(old_catalog.get("weekIds", [source["week"] for source in old_catalog["sources"]]))
         voice_ids.update(old_catalog.get("voiceIds", []))
         added = 0
-        for source in old_catalog["sources"]:
+        for source in runtime_listening_sources(previous, old_catalog):
             key = source_identity(source)
             if key in sources and sources[key] != source:
                 raise ValueError("Conflicting feedback timing for the same audio identity")

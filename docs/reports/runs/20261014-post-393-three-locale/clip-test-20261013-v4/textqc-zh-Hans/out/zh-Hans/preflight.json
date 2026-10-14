@@ -1,0 +1,34 @@
+{
+  "calibrationCoverage": {
+    "applicableGroups": {
+      "added_content": 16,
+      "added_number": 9,
+      "added_reference": 13,
+      "dropped_half": 10,
+      "dropped_name": 1,
+      "english_leak": 11,
+      "placeholder": 16,
+      "semantic_negation": 0,
+      "swapped_name": 0,
+      "swapped_quantity": 0,
+      "wrong_book": 1,
+      "wrong_number": 1,
+      "wrong_ordinal": 14
+    },
+    "notApplicableKinds": [
+      "semantic_negation",
+      "swapped_quantity",
+      "swapped_name"
+    ],
+    "untestableKinds": []
+  },
+  "candidateJsonSha256": "545da68eebe06a12a1223c5e1d848753637c849d562aa216e0ebe666d6c9e8ed",
+  "locale": "zh-Hans",
+  "paths": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/textqc-zh-Hans/run/anchor.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/textqc-zh-Hans/run/zh-Hans/candidate.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/textqc-zh-Hans/run/policies/zh-Hans-policy-clip.json",
+    "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/textqc-zh-Hans/run/source.json"
+  },
+  "problems": []
+}

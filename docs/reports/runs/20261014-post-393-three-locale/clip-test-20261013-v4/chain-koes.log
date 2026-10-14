@@ -1,0 +1,32 @@
+== 18:16:20 ko
+ko settled before 12.9
+{"plan": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/plans/qc-ko/plan.json", "schedule": {"mode": "all_stages_may_run_together", "worstCaseUsd": 18.425, "fits": true}}
+check ko-api pass []
+ko text text_waiver_issued [] {'cleanFalsePositiveRate': 0.0, 'detected': 92, 'overallDetectionRate': 1.0, 'trials': 92} None
+check ko-gpu pass []
+ko package machine_screened pass
+ko audio audio_waiver_issued [] {'cleanFalsePositiveRate': 0.0, 'detected': 177, 'overallDetectionRate': 1.0, 'trials': 177} None
+== 18:23:32 es
+es settled before 13.253
+{"plan": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-v4/plans/qc-es/plan.json", "schedule": {"mode": "all_stages_may_run_together", "worstCaseUsd": 18.778, "fits": true}}
+check es-api pass []
+es text text_waiver_issued [] {'cleanFalsePositiveRate': 0.0, 'detected': 95, 'overallDetectionRate': 1.0, 'trials': 95} None
+check es-gpu pass []
+es package candidate requires_review
+es audio audio_waiver_issued [] {'cleanFalsePositiveRate': 0.0, 'detected': 179, 'overallDetectionRate': 1.0, 'trials': 179} None
+settled after 13.558
+== 18:29:58 done
+ko.text-qc	pass	1	114
+ko.job	pass	121	1
+ko.render	fail(1)	122	85
+ko.compact	pass	207	17
+ko.screen	pass	224	40
+ko.package	pass	264	4
+ko.audio-qc	pass	269	163
+es.text-qc	pass	433	102
+es.job	pass	537	1
+es.render	fail(1)	538	87
+es.compact	pass	625	16
+es.screen	pass	641	39
+es.package	pass	680	3
+es.audio-qc	pass	684	133
