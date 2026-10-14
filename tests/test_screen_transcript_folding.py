@@ -92,7 +92,7 @@ class FoldTranscriptTests(unittest.TestCase):
                                 "Solo tienes vida y debes permanecer fiel cada día.", "es"))
         self.assertFalse(passes("今天我们看见教会门口有十二个人一直在等待牧师走出来。",
                                 "今天我们看见教会门口有十个人一直在等待牧师走出来。", "zh-Hans"))
-        self.assertIn("token-sequence-ratio-v5", subject.SCORING)
+        self.assertIn("token-sequence-ratio-v6", subject.SCORING)
 
 
 class ReviewCounterexampleTests(unittest.TestCase):
@@ -114,6 +114,38 @@ class ReviewCounterexampleTests(unittest.TestCase):
         self.same("es", "doscientos millones", "200 millones")
         self.same("es", "treinta y uno años", "31 años")
         self.assertEqual(subject.fold_transcript("veintiún días y", "es"), "21 días y")  # a dangling y stays text
+
+    def test_spanish_thousands_separators_join_one_number(self):
+        # 2026-10-14 clip: the dub said "dos mil setecientos millones"; both ASRs wrote digits.
+        spoken = "Si hacen las cuentas, dos mil setecientos millones de personas en la Tierra perecen."
+        heard = "Si hacen las cuentas, 2.700 millones de personas en la Tierra perecen."  # gpt-transcribe
+        self.assertTrue(subject.score(spoken, heard, "es", 0.88)[2])
+        # v5 receipts keep their recorded semantics: the groups stay split.
+        self.assertFalse(subject.score(spoken, heard, "es", 0.88, subject.SCORING_V5)[2])
+        # A single comma group is a Spanish decimal (1,500 millones = 1.5 million), even before a
+        # scale word (review of #401), so Qwen's "2,700 millones" is left to the secondary ASR.
+        self.assertFalse(subject.score(spoken, heard.replace("2.700", "2,700"), "es", 0.88)[2])
+        self.distinct("es", "1,500 millones", "mil quinientos millones")
+        self.assertEqual(subject.fold_transcript("1.000.000 y 12,345,678", "es"), "1000000 y 12345678")
+        self.same("es", "dos mil setecientos millones", "2.700 millones")
+        # Only whole three-digit groups join: decimals and other numbers stay distinct.
+        self.assertEqual(subject.fold_transcript("3,14 y 1.5 y 2,7", "es"), "3,14 y 1.5 y 2,7")
+        self.distinct("es", "dos mil setecientos millones", "2,7 millones")
+        self.distinct("es", "dos mil setecientos millones", "700 millones")
+        self.assertEqual(subject.fold_transcript("1,234,56", "es"), "1,234,56")
+        # Spanish writes decimals with a comma: a single comma group joins only before a scale word,
+        # and a number starting with 0 never joins (review of #401: 0,001 % is not 1 %).
+        for decimal in ("0,001", "0.001", "1,500 km", "2,700"):
+            self.assertEqual(subject.fold_transcript(decimal, "es"), decimal)
+        for spoken in ("Solo 0,001% de la gente.", "Solo 0.001% de la gente."):
+            self.assertFalse(subject.score(spoken, "Solo uno por ciento de la gente.", "es", 0.88)[2])
+        self.assertEqual(subject.fold_transcript("2.700 personas", "es"), "2700 personas")
+        # Fractional digits are not cardinals: v6 keeps 0,001 apart from 0,1 and 1.05 apart from 1.5.
+        self.distinct("es", "0,001", "0,1")
+        self.distinct("es", "1.05", "1.5")
+        self.assertEqual(subject.fold_transcript("0,001", "es", grouped_digits=False), "0,1")  # v5 as recorded
+        self.assertEqual(subject.fold_transcript("2,700 Millones", "es"), "2,700 Millones")
+        self.assertEqual(subject.fold_transcript("2,700", "es", grouped_digits=False), "2,700")
 
     def test_spanish_stress_accents_stay_but_diacritic_pairs_fold(self):
         self.distinct("es", "practicó", "práctico")
