@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261013-ios-alignment-tests",
+  "runs": [
+    {
+      "label": "20261013-ios-alignment-tests",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/field-benchmark/20261013-ios-alignment-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261013-ios-alignment-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1062,
+      "truncated": false,
+      "sha256": "fa16d7cd52f6217a55e44c09c050adfffd775c43d748f7a7cf3fa2e16cdd2c45",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

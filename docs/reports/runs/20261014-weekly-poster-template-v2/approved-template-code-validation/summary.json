@@ -1,0 +1,38 @@
+{
+  "status": "validated_not_published",
+  "pageId": "resi-20261011-54475d42",
+  "templateVersion": "tongxing-dual-qr-v2",
+  "commit": "70cbefa6601e271dfcb2ab7edf3e980097b894f9",
+  "locales": [
+    {
+      "locale": "zh-Hans",
+      "poster.pngSha256": "5efe2f1fba3edb2ad1a37f483abdc59a2844ea3648f4d2647da84e4bdf00a1f2",
+      "poster-preview.pngSha256": "a14e5599d161c0f4e038a8861eea6adee2390d26e91a21512067cd077ad4e525",
+      "qrValidation": "pass",
+      "matchesApprovedPreview": true
+    },
+    {
+      "locale": "ko",
+      "poster.pngSha256": "44cc180b1ff7a2fc224a7c4ec174c657412da6ade6b6e8e491e6352c52ba3360",
+      "poster-preview.pngSha256": "cfe3a67b3bac355da6de01b00b2925e07aa099df14f84f223a6c7fad12d1bd85",
+      "qrValidation": "pass",
+      "matchesApprovedPreview": true
+    },
+    {
+      "locale": "es",
+      "poster.pngSha256": "28fbd5a4acb1ac813e13af646f191f95afa7cbf8e6356a53fe0069dce4cafc3c",
+      "poster-preview.pngSha256": "c58ce513cf5d5ddb7fe610ed9c74f3323ff7babbbbae4e37d46f5f3460b08785",
+      "qrValidation": "pass",
+      "matchesApprovedPreview": true
+    }
+  ],
+  "targetedPosterTestsPassed": 22,
+  "fontBase": "NSFont.systemFont bold title regular body",
+  "runtimeFontFallback": {
+    "zh-HansTitle": ".PingFangUIDisplaySC-Bold",
+    "zh-HansBody": ".PingFangUIDisplaySC-Regular",
+    "koTitle": ".AppleSDGothicNeoI-Bold",
+    "esTitle": ".SFNS-Bold"
+  },
+  "productionSiteChanged": false
+}

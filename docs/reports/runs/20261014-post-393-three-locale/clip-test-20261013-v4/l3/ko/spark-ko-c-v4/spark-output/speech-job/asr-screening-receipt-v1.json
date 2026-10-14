@@ -1,0 +1,221 @@
+{
+  "schemaVersion": "sermon-target-language-audio-screening-v2",
+  "targetLocale": "ko",
+  "targetLanguageSpeechJobJsonSha256": "d57bbbc67737805b7811c1195ef6facf7025700778da8c70fb4c1268c4252d89",
+  "trackSha256": "584fe845f2fb5f47c9e75b45f8dd948019a2a03747e40e20781b6223c61c6af6",
+  "status": "pass",
+  "model": "Qwen/Qwen3-ASR-0.6B",
+  "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+  "minSimilarity": 0.88,
+  "coverage": 1.0,
+  "reviewedGroupIds": [
+    "translation-chunk-0005-u003",
+    "translation-chunk-0005-u004",
+    "translation-chunk-0005-u005",
+    "translation-chunk-0005-u006",
+    "translation-chunk-0005-u007",
+    "translation-chunk-0005-u008",
+    "translation-chunk-0005-u009",
+    "translation-chunk-0005-u010",
+    "translation-chunk-0005-u011",
+    "translation-chunk-0005-u012",
+    "translation-chunk-0005-u013",
+    "translation-chunk-0005-u014",
+    "translation-chunk-0005-u015",
+    "translation-chunk-0005-u016",
+    "translation-chunk-0005-u017",
+    "translation-chunk-0005-u018"
+  ],
+  "unitAudioSha256s": [
+    "79a15acf33bec3cb8ab81dc837b26c22fb4077a9e682d3e15adeecc76c701e35",
+    "0300dc6a7a7b40c9b903f9a2e5fdc3320d949cf4b7e75a6ceaaa40ebd3fa3cd0",
+    "7aaa90c968e97575d71ae81489f838099858c1f1c4a0dc634437fe8a84020c96",
+    "cabdbf9f980b4d09c0916f6abd2fc40bfd402ff4e9ed2c4f7788e7927c5b58b7",
+    "7d747e0bbe29c984bddf80d8c930138783b804c7c6f17d00210154d0b8c3b22a",
+    "f17f661712cbcb7f40563f2740f0e8ff87cd38b3c426bf77dc02d84c5898466e",
+    "192c709d3b508998a0f69e9df5c20e74e7632230b71456e9a474664c0dd7c5be",
+    "c910588dc6b367d8824b678817892bf23b4a289da3c12e689523d18748b9229f",
+    "0b76a691b86f85b1dec1e73ffba47d19f7f123f249ca1241a728aca31aac238c",
+    "3f414dde7d9c29d3e15e2c682bc1dd4389432464224997c96b379724140e95d6",
+    "02b14795c86627534e6ed8eaac786443a83521765251d72ba46ae2939ecad353",
+    "706fa776944b4c176ce7006944768a58b8c5e9e80964a1c8db3b7dc7250cbf45",
+    "5347a8012dde4a47bbf51dc6ac907edf97ae27d6d6659bfaaf231c89cbbf12cd",
+    "98572f1ef7bf925ebd415f2b73d6cc8d7628d2011154283d4dc8b25525e7554e",
+    "ed6a4451555c7a579de263667856429761753b3b7999392618dc84691f37aba3",
+    "04623a5ca56792c8f4c30e1bcd1a986bf6c9ed7dfcda4a24da0f24998ec900cd"
+  ],
+  "results": [
+    {
+      "textGroupId": "translation-chunk-0005-u003",
+      "targetTextSha256": "cbe44352693f5a668f973e29800605483a3000fd8092d04206b7f0b225b7980f",
+      "audioSha256": "79a15acf33bec3cb8ab81dc837b26c22fb4077a9e682d3e15adeecc76c701e35",
+      "recognized": "그의 핵심적인 특성이 강렬함이기 때문에 그는 모든 일을 강렬하게 합니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u004",
+      "targetTextSha256": "10649634694f20e532fe154d427a077c56fad189f35b1614235d02662a05d862",
+      "audioSha256": "0300dc6a7a7b40c9b903f9a2e5fdc3320d949cf4b7e75a6ceaaa40ebd3fa3cd0",
+      "recognized": "그러므로 이와 마찬가지로 하나님은 거룩함이라는 핵심 속성에 근거하여 모든 일을 도덕적으로 완전하게 행합니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u005",
+      "targetTextSha256": "ce6a00654779d0e931327e2f5cdf5a37d32235401b0e6a65742afdbbca3187c8",
+      "audioSha256": "7aaa90c968e97575d71ae81489f838099858c1f1c4a0dc634437fe8a84020c96",
+      "recognized": "다시 말해, 하나님이 이러한 신적 경고들을 일으킨다면 어떤 방식으로 그렇게 할까요?",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u006",
+      "targetTextSha256": "a388b0012353328862798953a180af0daf4ef6aa7f4d289ebdbae2f5e243b22b",
+      "audioSha256": "cabdbf9f980b4d09c0916f6abd2fc40bfd402ff4e9ed2c4f7788e7927c5b58b7",
+      "recognized": "도덕적으로 완전한 방식으로 행합니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u007",
+      "targetTextSha256": "5a76e6251110f4f7b4d870f4156b81daa105b831d7c1c8084a5065b39b504cb6",
+      "audioSha256": "7d747e0bbe29c984bddf80d8c930138783b804c7c6f17d00210154d0b8c3b22a",
+      "recognized": "그렇기 때문에 팔 장을 보면 참으로 놀랍습니다. 하나님의 경고, 곧 나팔의 경고가 주어지기도 전에.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u008",
+      "targetTextSha256": "cbe39b64495f42cda4ae43fddabafb28b91e1929cbe2e0beff52a2ebaf7b62d7",
+      "audioSha256": "f17f661712cbcb7f40563f2740f0e8ff87cd38b3c426bf77dc02d84c5898466e",
+      "recognized": "저자인 사도 요한은 먼저 하나님의 거룩함을 분명히 밝힙니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u009",
+      "targetTextSha256": "25b9d12d4f08c2d2224dcd45fd5a8d13a76352a0380b1bc763339108637150a0",
+      "audioSha256": "192c709d3b508998a0f69e9df5c20e74e7632230b71456e9a474664c0dd7c5be",
+      "recognized": "이것은 두 가지 면에서 놀랍습니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u010",
+      "targetTextSha256": "3ed62ae206364d87fca88106adaf3c3687cb7d62f1412f751f983b4fd5614564",
+      "audioSha256": "c910588dc6b367d8824b678817892bf23b4a289da3c12e689523d18748b9229f",
+      "recognized": "첫째, 침묵을 통해서입니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u011",
+      "targetTextSha256": "897e268e4bffb778309301837c2822ea8faa39590efd4067101f9ca10d13533d",
+      "audioSha256": "0b76a691b86f85b1dec1e73ffba47d19f7f123f249ca1241a728aca31aac238c",
+      "recognized": "침묵입니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u012",
+      "targetTextSha256": "206a43bf3a433f651f6500836954ddfcbf271c3f33da73bf3ae0d2b247d043cf",
+      "audioSha256": "3f414dde7d9c29d3e15e2c682bc1dd4389432464224997c96b379724140e95d6",
+      "recognized": "아시다시피 구약에서는 침묵과 하나님의 거룩함이 서로 연결되는 경우가 많습니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u013",
+      "targetTextSha256": "b64ed5293c795a1c662a3a866f3f05862f56a8794898209d2d507dcbe278e460",
+      "audioSha256": "02b14795c86627534e6ed8eaac786443a83521765251d72ba46ae2939ecad353",
+      "recognized": "예를 들어 하박국 이장을 보십시오.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u014",
+      "targetTextSha256": "d94299bad4f7c586dd0c8974d5a852faafae75f640cb7e3aa55e070ba0731299",
+      "audioSha256": "706fa776944b4c176ce7006944768a58b8c5e9e80964a1c8db3b7dc7250cbf45",
+      "recognized": "그러나 주는 자신의 거룩한 성전에 있습니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u015",
+      "targetTextSha256": "f79a267387b75c9b213b3280920e97cf58c04c6c632c22691079d2089c74db72",
+      "audioSha256": "5347a8012dde4a47bbf51dc6ac907edf97ae27d6d6659bfaaf231c89cbbf12cd",
+      "recognized": "온 땅은 그 앞에서 잠잠해야 합니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u016",
+      "targetTextSha256": "83d098e80808a92ccd475cf2426e81070f05a4e11c5266b438cb8c4a7f36bbc7",
+      "audioSha256": "98572f1ef7bf925ebd415f2b73d6cc8d7628d2011154283d4dc8b25525e7554e",
+      "recognized": "팔장의 맨 첫절에 주목해 보십시오.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u017",
+      "targetTextSha256": "ecc19bb8a561bfa73a3c052c1a725509537314da5c5264ce560cc1a2b4aa4529",
+      "audioSha256": "ed6a4451555c7a579de263667856429761753b3b7999392618dc84691f37aba3",
+      "recognized": "그가 일곱 번째 봉인을 열었을 때 하늘에는 약 반 시간 동안 침묵이 이어졌습니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    },
+    {
+      "textGroupId": "translation-chunk-0005-u018",
+      "targetTextSha256": "e57b385ed4d26bf0b1a37918e8b69ca641eb164c7a63777ed0249c91164a38ae",
+      "audioSha256": "04623a5ca56792c8f4c30e1bcd1a986bf6c9ed7dfcda4a24da0f24998ec900cd",
+      "recognized": "침묵이 있었습니다.",
+      "similarity": 1.0,
+      "differences": [],
+      "status": "pass"
+    }
+  ],
+  "humanListeningStatus": "pending",
+  "asrSettings": {
+    "protocol": "formal-back-asr-batch-v1",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+    "language": "ko",
+    "batchSize": 1,
+    "maxNewTokens": 2048,
+    "dtype": "bfloat16",
+    "executionDevice": "cuda:0",
+    "runtime": {
+      "backend": "qwen-asr-local",
+      "torchVersion": "2.13.0a0+8145d630e8.nv26.06",
+      "qwenAsrVersion": "0.0.6",
+      "modelMetadataSha256s": {
+        "chat_template.json": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff",
+        "config.json": "76d3ae4601ce939830b2517f4a6cadb86cc51316c3900af6b020b051c21a478c",
+        "generation_config.json": "1da527824d81e07118facff437e03f2e24a23311e3bdeb2368973fe77e5f275c",
+        "preprocessor_config.json": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d",
+        "tokenizer_config.json": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c",
+        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      }
+    },
+    "implementationSha256": "a2426a324b737cd6526d599bfa3bb6667edb8e50e321e1ed87960709da898585",
+    "minSimilarity": 0.88,
+    "scoring": "token-sequence-ratio-v5; readings a listener cannot tell apart are folded first (spelled numbers and digits, same-pinyin-same-tone Chinese characters in fixed contexts, Spanish diacritic function words, Korean spacing; digit strings are not positional numbers; a Korean native numeral before a Sino counter is not folded); short units (<4 tokens) must match exactly; no negation, number or protected name may differ; numbers and names keep their order; book-anchored Korean scripture range endpoints are folded together"
+  },
+  "asrSettingsSha256": "57ce56c942327fa58c18f9e0eb887e05aee75b8fafc4cdb52b5132010cfe6f8f"
+}

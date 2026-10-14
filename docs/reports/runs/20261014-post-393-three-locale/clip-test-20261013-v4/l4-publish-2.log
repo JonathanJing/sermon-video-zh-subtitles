@@ -1,0 +1,43 @@
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run2/scripts/run_dev_simulated_delivery.py", line 294, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run2/scripts/run_dev_simulated_delivery.py", line 290, in main
+    print(json.dumps(run(args), ensure_ascii=False))
+                     ~~~^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run2/scripts/run_dev_simulated_delivery.py", line 277, in run
+    return _run(args)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run2/scripts/run_dev_simulated_delivery.py", line 251, in _run
+    journal.stage('publish_catalog', lambda: publish_once(final), [final / 'deployment-attempt-v2.json'])
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run2/scripts/run_dev_simulated_delivery.py", line 97, in stage
+    action()
+    ~~~~~~^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run2/scripts/run_dev_simulated_delivery.py", line 251, in <lambda>
+    journal.stage('publish_catalog', lambda: publish_once(final), [final / 'deployment-attempt-v2.json'])
+                                             ~~~~~~~~~~~~^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run2/scripts/run_dev_simulated_delivery.py", line 131, in publish_once
+    return publisher.publish(**preparation.read(snapshot / 'publish-config.json'),
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                             request=publisher.authenticated_transport(), reader=reader)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run2/scripts/guarded_hosting_publish.py", line 295, in publish
+    return _publish(snapshot, intent=intent, routes=routes, baseline_version=baseline_version,
+                    baseline_catalog_sha=baseline_catalog_sha, lease_bucket=lease_bucket,
+                    request=request, reader=reader, run=run, heartbeat_interval=heartbeat_interval,
+                    baseline_catalog_v4_sha=baseline_catalog_v4_sha)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run2/scripts/guarded_hosting_publish.py", line 340, in _publish
+    attempt['newVersion'] = deployed_version(result_path, site=intent['site'], baseline_version=baseline_version)
+                            ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run2/scripts/guarded_hosting_publish.py", line 236, in deployed_version
+    contract.require(isinstance(version, str) and version.startswith(prefix)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     and bool(version[len(prefix):]) and '/' not in version[len(prefix):]
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     and not any(character.isspace() for character in version)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     and version != baseline_version, 'Deployment version receipt differs from intended site or baseline')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-run2/scripts/delivery_contract.py", line 18, in require
+    raise ValueError(message)
+ValueError: Deployment version receipt differs from intended site or baseline

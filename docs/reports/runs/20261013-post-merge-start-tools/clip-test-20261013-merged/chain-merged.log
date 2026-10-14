@@ -1,0 +1,11 @@
+== 15:10:06 zh-Hans
+zh-Hans settled before 10.948
+{"plan": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-merged/plans/qc-zh-Hans/plan.json", "schedule": {"mode": "all_stages_may_run_together", "worstCaseUsd": 16.473, "fits": true}}
+check zh-Hans-api pass []
+zh-Hans text requires_repair ['translation-chunk-0005-u003'] None text QC failed; repair the failed groups in a new candidate revision
+locale_run:9: no matches found: ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-merged/textqc-zh-Hans/out/zh-Hans/text-waiver-*.json
+zh-Hans no text waiver
+zh-Hans stopped
+settled after 10.998
+== 15:10:26 done
+zh-Hans.text-qc	fail(1)	1	19
