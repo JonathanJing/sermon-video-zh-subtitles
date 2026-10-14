@@ -7,6 +7,12 @@ const finite = value => typeof value === 'number' && Number.isFinite(value) && v
 const count = value => finite(value) ? Math.min(1000000, Math.floor(value)) : null;
 const ms = value => finite(value) ? Math.min(3600000, Math.round(value / 100) * 100) : null;
 export function matchReason(value) { return REASONS.has(value) ? value : 'unknown'; }
+const BANDS = new Set(['below_0_03', '0_03_to_0_045', '0_045_to_0_055', 'at_least_0_055']);
+// Bands around the frozen 0.055 accept gate; 0.045-0.055 is a near miss.
+export function fractionBand(value) {
+  if (!finite(value) || value > 1) return null;
+  return value < .03 ? 'below_0_03' : value < .045 ? '0_03_to_0_045' : value < .055 ? '0_045_to_0_055' : 'at_least_0_055';
+}
 export function captureQuality(samples, rms) {
   let clipped = 0;
   for (const value of samples) {
@@ -28,6 +34,7 @@ export function summarizeMatch(query = {}, result = {}, quality = {}) {
     landmarks: count(query.landmarks?.length), peaks: count(query.peakCount),
     supportingAnchors: count(d.distinctAnchors), votes: count(d.votes), runnerUpVotes: count(d.runnerUpVotes),
     coverageMs: ms(finite(d.coveredSeconds) ? d.coveredSeconds * 1000 : NaN),
+    fractionBand: fractionBand(d.matchFraction),
   };
 }
 // Reconstruct every field at the final boundary; never spread an event/error object.
@@ -35,7 +42,7 @@ export function diagnosticSummary(value = {}) {
   const raw = value.match || {}, timing = value.timings || {}, content = value.content || {};
   const hashes = {};
   for (const key of ['sourceSha256', 'trackSha256', 'indexSha256']) if (typeof content[key] === 'string' && /^[a-f0-9]{64}$/.test(content[key])) hashes[key] = content[key];
-  const phases = new Set(['idle', 'preparing_index', 'ready_to_record', 'permission', 'starting', 'recording', 'recovering', 'matching', 'matched', 'no_match', 'error', 'permission_denied', 'unavailable', 'unsupported', 'expired', 'timeout', 'cancelled', 'play_starting', 'play_failed', 'play_blocked', 'applied']);
+  const phases = new Set(['idle', 'preparing_index', 'ready_to_record', 'permission', 'starting', 'recording', 'listening_more', 'recovering', 'matching', 'matched', 'no_match', 'error', 'permission_denied', 'unavailable', 'unsupported', 'expired', 'timeout', 'cancelled', 'play_starting', 'play_failed', 'play_blocked', 'applied']);
   const timings = {};
   for (const key of ['totalMs', 'permissionMs', 'startupMs', 'captureMs', 'microphoneObservedMs', 'indexMs', 'featureMs', 'matchMs', 'workerMs', 'seekCallMs', 'playStartMs']) timings[key] = ms(timing[key]);
   return {

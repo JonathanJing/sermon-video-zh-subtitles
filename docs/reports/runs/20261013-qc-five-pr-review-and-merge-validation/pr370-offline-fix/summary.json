@@ -1,0 +1,17 @@
+{
+  "pr": 370,
+  "codeRevision": "909527694d91643f715f5be1d5b4b2c2d4b65197",
+  "scope": "offline calibration quota/schema compatibility and preflight regression",
+  "modelCalls": 0,
+  "deployment": "not_run",
+  "jointTests": 126,
+  "jointSubtests": 52,
+  "jointSeconds": 968.04,
+  "focusedTests": 7,
+  "focusedSeconds": 10.28,
+  "finalAudioCompatibilityTests": 1,
+  "finalAudioCompatibilitySeconds": 0.17,
+  "note": "joint run collected focused tests before later producer+release compatibility assertions were added; final focused file and final require_audio compatibility were separately verified; implementation unchanged throughout",
+  "initialFocusedDevelopmentFailure": "assertion incorrectly compared calibration jsonSha256 across schema versions; corrected to require differing artifact hashes and equal validated summary",
+  "allThreeReviewThreadsResolved": true
+}

@@ -1,0 +1,13 @@
+{
+  "testCount": 60,
+  "suites": [
+    "tests.test_backend_four_layer_dry_run",
+    "tests.test_sermon_unified_cli",
+    "tests.test_sermon_unified_audio",
+    "tests.test_sermon_unified_delivery",
+    "tests.test_sermon_unified_continuation",
+    "tests.test_sermon_unified_continuation_owner"
+  ],
+  "scope": "Deterministic offline regression; no provider, Spark/GPU, Firebase, or publication calls.",
+  "change": "Bound JSON delivery draft resolves frozen audio package port and review binding; scheduler success/failure handoff coverage."
+}

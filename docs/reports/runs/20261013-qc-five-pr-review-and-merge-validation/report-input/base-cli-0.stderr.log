@@ -1,0 +1,15 @@
+08:12:29.497 | INFO    | prefect - Starting temporary server on http://127.0.0.1:8083
+See https://docs.prefect.io/v3/concepts/server#how-to-guides for more information on running a dedicated Prefect server.
+08:12:35.432 | INFO    | Flow run 'feathered-deer' - Beginning flow run 'feathered-deer' for flow 'sermon-local-mock-dag'
+08:12:36.538 | INFO    | Task run 'dispatch-9af' - Finished in state Completed()
+08:12:37.638 | INFO    | Task run 'dispatch-cc0' - Finished in state Completed()
+08:12:37.644 | INFO    | Task run 'dispatch-2c5' - Finished in state Completed()
+08:12:38.844 | INFO    | Task run 'dispatch-872' - Finished in state Completed()
+08:12:38.853 | INFO    | Task run 'dispatch-6e8' - Finished in state Completed()
+08:12:40.049 | INFO    | Task run 'dispatch-95b' - Finished in state Completed()
+08:12:40.083 | INFO    | Task run 'dispatch-7e4' - Finished in state Completed()
+08:12:41.264 | INFO    | Task run 'dispatch-ce8' - Finished in state Completed()
+08:12:41.266 | INFO    | Task run 'dispatch-516' - Finished in state Completed()
+08:12:42.357 | INFO    | Task run 'dispatch-183' - Finished in state Completed()
+08:12:42.463 | INFO    | Flow run 'feathered-deer' - Finished in state Completed()
+08:12:42.506 | INFO    | prefect - Stopping temporary server on http://127.0.0.1:8083

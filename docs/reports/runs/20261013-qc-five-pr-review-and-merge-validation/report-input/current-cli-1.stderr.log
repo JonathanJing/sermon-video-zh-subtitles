@@ -1,0 +1,15 @@
+08:10:05.105 | INFO    | prefect - Starting temporary server on http://127.0.0.1:8453
+See https://docs.prefect.io/v3/concepts/server#how-to-guides for more information on running a dedicated Prefect server.
+08:10:07.123 | INFO    | Flow run 'discreet-manatee' - Beginning flow run 'discreet-manatee' for flow 'sermon-local-mock-dag'
+08:10:07.189 | INFO    | Task run 'dispatch-70c' - Finished in state Completed()
+08:10:07.231 | INFO    | Task run 'dispatch-dd4' - Finished in state Completed()
+08:10:07.241 | INFO    | Task run 'dispatch-a43' - Finished in state Completed()
+08:10:07.262 | INFO    | Task run 'dispatch-a92' - Finished in state Completed()
+08:10:07.291 | INFO    | Task run 'dispatch-f67' - Finished in state Completed()
+08:10:07.311 | INFO    | Task run 'dispatch-56d' - Finished in state Completed()
+08:10:07.342 | INFO    | Task run 'dispatch-e73' - Finished in state Completed()
+08:10:07.382 | INFO    | Task run 'dispatch-adc' - Finished in state Completed()
+08:10:07.396 | INFO    | Task run 'dispatch-9b8' - Finished in state Completed()
+08:10:07.402 | INFO    | Task run 'dispatch-25f' - Finished in state Completed()
+08:10:08.132 | INFO    | Flow run 'discreet-manatee' - Finished in state Completed()
+08:10:08.158 | INFO    | prefect - Stopping temporary server on http://127.0.0.1:8453

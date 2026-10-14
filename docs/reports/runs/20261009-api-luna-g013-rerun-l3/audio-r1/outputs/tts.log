@@ -1,0 +1,31 @@
+Traceback (most recent call last):
+  File "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/scripts/experiments/replay_fixed_clip_local_models.py", line 701, in <module>
+    main()
+  File "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/scripts/experiments/replay_fixed_clip_local_models.py", line 696, in main
+    result = render_tts(args) if args.stage == 'tts' else back_asr(args)
+             ^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/scripts/experiments/replay_fixed_clip_local_models.py", line 285, in render_tts
+    groups, binding = checked_inputs(args)
+                      ^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/scripts/experiments/diagnostic_audio_inputs.py", line 38, in checked_inputs
+    source, anchor, policy, plan, plugin, request, rule, context, fixture = diagnostic.load_fixture(directory)
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/scripts/codex_layer2_diagnostic.py", line 201, in load_fixture
+    request = producer.prepare_request(source, anchor, policy, diagnostic_context=context)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/scripts/produce_target_language_candidate.py", line 134, in prepare_request
+    policy_tools.validate_diagnostic_policy(policy, diagnostic_context))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/scripts/target_language_policy.py", line 177, in validate_diagnostic_policy
+    result = validate_policy(view, series_table=series_table)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/scripts/target_language_policy.py", line 72, in validate_policy
+    if policy["terminology"]["seriesTableSha256"] != file_sha256(series_table):
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/scripts/target_language_policy.py", line 44, in file_sha256
+    with path.open("rb") as stream:
+         ^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/docs/series-terminology.zh.md'
