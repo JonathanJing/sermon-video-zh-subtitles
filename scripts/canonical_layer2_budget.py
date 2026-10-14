@@ -164,9 +164,12 @@ class BudgetedCaller:
         self.auth, self.config, self.policy = authorization, config, policy
         verify_runtime(authorization)
         if authorization.get('runtimeIdentity') is not None:
-            self.execution_identity = {'schemaVersion': 'openai-layer2-budget-transport-identity-v2',
-                'backend': 'openai_api', 'runtimeIdentity': authorization['runtimeIdentity'],
-                'budgetAuthorizationSha256': authorization['sha256']}
+            # A QC repair has a new, configuration-bound budget authorization but
+            # carries unchanged groups from its previous round. Cache identity
+            # follows the actual route/key; verify_execution still validates the
+            # current authorization on every cache hit and provider dispatch.
+            self.execution_identity = {'schemaVersion': 'openai-layer2-budget-transport-identity-v3',
+                'backend': 'openai_api', 'runtimeIdentity': authorization['runtimeIdentity']}
         self.source, self.anchor = source, anchor
         require(authorization.get('scope', 'run') == 'run' or policy['targetLocale'] in config.lanes,
                 'budget_locale_not_registered')

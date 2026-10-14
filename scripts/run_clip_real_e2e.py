@@ -574,7 +574,7 @@ def stage_audio(run: Run, locale: str, code: str):
            check=False)
     summary = read(out / "summary.json")["locales"][locale]
     if summary.get("status") != "audio_waiver_issued":
-        run.mark("audio." + locale, "failed", status=summary.get("status"), failedGroups=summary.get("failedGroups"),
+        run.mark("audio." + locale, "failed", qcStatus=summary.get("status"), failedGroups=summary.get("failedGroups"),
                  nextActions=summary.get("nextActions"))
         raise Stop(f"audio.{locale}: {summary.get('status')} {summary.get('failedGroups')} {summary.get('reason')}")
     run.mark("audio." + locale, "done", package=str(package), audioQcOut=str(out / locale))
