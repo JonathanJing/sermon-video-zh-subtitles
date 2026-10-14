@@ -6,9 +6,14 @@ on:
       - dev
       - main
   push:
+    # Every dev change already ran this suite as a PR; a dev push run caught no
+    # regression from 2026-08 to 2026-10. The nightly run below covers dev.
     branches:
-      - dev
       - main
+  schedule:
+    # Scheduled runs use main's copy of this file; it checks out dev.
+    - cron: "17 10 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,15 +26,20 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      docs_only: ${{ steps.classify.outputs.docs_only }}
-      scope: ${{ steps.scope.outputs.scope }}
+      docs_only: ${{ steps.classify.outputs.docs_only || steps.scheduled.outputs.docs_only }}
+      scope: ${{ steps.scope.outputs.scope || steps.scheduled.outputs.scope }}
     steps:
       - name: Check out repository history
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - name: Run the full suite on schedule or manual dispatch
+        id: scheduled
+        if: github.event_name != 'pull_request' && github.event_name != 'push'
+        run: printf 'docs_only=false\nscope=full\n' >> "$GITHUB_OUTPUT"
       - name: Classify and validate documentation changes
         id: classify
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
         env:
           BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
@@ -43,6 +53,7 @@ jobs:
 
       - name: Select full or native contract suite
         id: scope
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
         env:
           BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
@@ -116,6 +127,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'dev' || '' }}
 
       - name: Set up Python
         uses: actions/setup-python@v7

@@ -88,14 +88,19 @@ class ControllerAutoRepairTests(unittest.TestCase):
 
     def test_groups_run_concurrently_in_the_worker(self):
         import threading
-        import time
         active, peak, lock = [0], [0], threading.Lock()
+        overlapped = threading.Event()
 
         def slow(key, payload):
             with lock:
                 active[0] += 1
                 peak[0] = max(peak[0], active[0])
-            time.sleep(0.05)
+                if active[0] >= 2:
+                    overlapped.set()
+            # Hold the first call until a second one is in flight instead of a
+            # fixed sleep a slow runner can outlast. A serial worker still ends
+            # with peak 1 once the wait expires.
+            overlapped.wait(5)
             try:
                 return self.caller(key, payload)
             finally:
