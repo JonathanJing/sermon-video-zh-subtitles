@@ -130,6 +130,18 @@ class ReviewCounterexampleTests(unittest.TestCase):
         self.distinct("es", "dos mil setecientos millones", "2,7 millones")
         self.distinct("es", "dos mil setecientos millones", "700 millones")
         self.assertEqual(subject.fold_transcript("1,234,56", "es"), "1,234,56")
+        # Spanish writes decimals with a comma: a single comma group joins only before a scale word,
+        # and a number starting with 0 never joins (review of #401: 0,001 % is not 1 %).
+        for decimal in ("0,001", "0.001", "1,500 km", "2,700"):
+            self.assertEqual(subject.fold_transcript(decimal, "es"), decimal)
+        for spoken in ("Solo 0,001% de la gente.", "Solo 0.001% de la gente."):
+            self.assertFalse(subject.score(spoken, "Solo uno por ciento de la gente.", "es", 0.88)[2])
+        self.assertEqual(subject.fold_transcript("2.700 personas", "es"), "2700 personas")
+        # Fractional digits are not cardinals: v6 keeps 0,001 apart from 0,1 and 1.05 apart from 1.5.
+        self.distinct("es", "0,001", "0,1")
+        self.distinct("es", "1.05", "1.5")
+        self.assertEqual(subject.fold_transcript("0,001", "es", grouped_digits=False), "0,1")  # v5 as recorded
+        self.assertEqual(subject.fold_transcript("2,700 Millones", "es"), "2700000000")
         self.assertEqual(subject.fold_transcript("2,700", "es", grouped_digits=False), "2,700")
 
     def test_spanish_stress_accents_stay_but_diacritic_pairs_fold(self):
