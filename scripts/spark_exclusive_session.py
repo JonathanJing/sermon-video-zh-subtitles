@@ -36,10 +36,16 @@ DEFAULT_MINIMUM_AVAILABLE_GIB = 110.0
 # launcher child the admission check accepts, and only when it is a direct child with no children.
 RESOURCE_TRACKER_HELPER = 'multiprocessing_resource_tracker'
 RESOURCE_TRACKER_ARGUMENT = re.compile(r'^from multiprocessing\.resource_tracker import main;main\(\d+\)$')
-UNITS = ('spark-api.service', 'spark-agent.service', 'llama-performance-collector.service', 'llama-server.service')
+# The reasoning-review timer restarts llama-server on its own schedule; on 2026-10-11 it
+# did so in the middle of a held session and the next dispatch failed on memory. It is
+# frozen first and restored last. It may be absent on a host; then it is recorded as such.
+UNITS = ('job-reasoning-review.timer', 'spark-api.service', 'spark-agent.service',
+         'llama-performance-collector.service', 'llama-server.service')
+OPTIONAL_UNITS = ('job-reasoning-review.timer',)
 LAUNCHERS = ('spark-api.service', 'spark-agent.service')
 STOP_ORDER = UNITS
-RESTORE_ORDER = ('llama-server.service', 'llama-performance-collector.service', 'spark-agent.service', 'spark-api.service')
+RESTORE_ORDER = ('llama-server.service', 'llama-performance-collector.service', 'spark-agent.service',
+                 'spark-api.service', 'job-reasoning-review.timer')
 IDENTIFIER = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$')
 
 class SessionError(RuntimeError):
@@ -95,6 +101,9 @@ class LinuxBackend:
         properties = ('Id', 'LoadState', 'ActiveState', 'SubState', 'MainPID', 'ControlGroup', 'FragmentPath', 'DropInPaths', 'KillMode')
         output = self.command(['systemctl', '--user', 'show', name] + [f'--property={p}' for p in properties])
         raw = dict(line.split('=', 1) for line in output.splitlines() if '=' in line)
+        if raw.get('LoadState') == 'not-found' and name in OPTIONAL_UNITS:
+            return {'name': name, 'active': 'inactive', 'sub': 'dead', 'mainPid': 0, 'controlGroup': None,
+                    'identity': 'not-found', 'killMode': None}
         if raw.get('LoadState') != 'loaded': raise SessionError('unit_not_loaded:' + name)
         files = [raw.get('FragmentPath', '')] + shlex.split(raw.get('DropInPaths', ''))
         hashes = []
@@ -387,11 +396,15 @@ class Engine:
                 if unit['active'] not in {'active', 'inactive'}: raise SessionError('unit_state_unknown')
                 main = next((p for p in inventory['processes'] if p['pid'] == unit['mainPid']), None)
                 if unit['active'] == 'active':
+                    if unit['name'].endswith('.timer') and not unit['mainPid']:
+                        continue  # A timer has no main process; stopping it only removes a future start.
                     if not main or main.get('unreadable'): raise SessionError('unit_process_unknown')
                     roots.append((main['pid'], main['startTicks']))
         else:
             for name, unit in inventory['units'].items():
-                if unit['identity'] != state['snapshot']['units'][name]['identity']: raise SessionError('unit_identity_changed')
+                frozen = state['snapshot']['units'].get(name)
+                if frozen is None: raise SessionError('snapshot_lacks_unit:' + name)
+                if unit['identity'] != frozen['identity']: raise SessionError('unit_identity_changed')
                 if unit['active'] != 'inactive' or unit['mainPid']: raise SessionError('competing_service_active:' + name)
             if not require_idle:
                 for job in state['jobs'].values():

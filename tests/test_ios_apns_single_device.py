@@ -1,4 +1,6 @@
 import importlib.util
+import hashlib
+import urllib.error
 import json
 import os
 from pathlib import Path
@@ -52,6 +54,78 @@ class APNsSingleDeviceTests(unittest.TestCase):
             target.pop("simulationOnly", None)
             target.pop("diagnosticOnly", None)
             target["contentStatus"] = "human_reviewed"
+
+    def fixture(self, machine=True):
+        status = "machine_checked" if machine else "human_reviewed"
+        version = "v4" if machine else "v2"
+        release = {"schemaVersion": "sermon-target-language-release-package-" + version,
+                   "pageId": "week", "targetLocale": "zh-Hans", "status": "published_http_verified",
+                   "contentStatus": status, "audioStatus": status, "httpVerification": {"status": "pass"}}
+        raw = json.dumps(release).encode()
+        target = {"contentStatus": status, "audioStatus": status,
+                  "releasePackageUrl": f"/releases-{version}/week/zh-Hans.json",
+                  "releasePackageJsonSha256": hashlib.sha256(raw).hexdigest()}
+        catalog = {"schemaVersion": "sermon-multilingual-catalog-" + ("v4" if machine else "v3"),
+                   "defaultPageId": "week", "pages": [{"id": "week", "targets": {"zh-Hans": target}}]}
+        return catalog, target, release, raw
+
+    def test_v4_machine_and_v3_human_release_binding(self):
+        for machine in (True, False):
+            catalog, target, release, raw = self.fixture(machine)
+            with patch.object(apns, "fetch_json", return_value=(release, raw)) as fetch:
+                self.assertEqual(apns.verified_notice(catalog, None, "zh-Hans")["tongxing"]["pageID"], "week")
+                fetch.assert_called_once_with(apns.ORIGIN + target["releasePackageUrl"])
+
+    def test_catalog_fallback_only_for_missing_v4(self):
+        v4 = self.fixture()[0]
+        v3 = self.fixture(False)[0]
+        with patch.object(apns, "fetch_json", return_value=(v4, b"")) as fetch:
+            self.assertEqual(apns.load_catalog(), v4)
+            fetch.assert_called_once_with(apns.ORIGIN + "/multilingual-v4.json")
+        missing = urllib.error.HTTPError("test", 404, "missing", {}, None)
+        with patch.object(apns, "fetch_json", side_effect=[missing, (v3, b"")]) as fetch:
+            self.assertEqual(apns.load_catalog(), v3)
+            self.assertEqual(fetch.call_count, 2)
+        for failure in (urllib.error.HTTPError("test", 503, "unavailable", {}, None), ValueError("bad JSON")):
+            with patch.object(apns, "fetch_json", side_effect=failure) as fetch:
+                with self.assertRaises(type(failure)):
+                    apns.load_catalog()
+                self.assertEqual(fetch.call_count, 1)
+        with patch.object(apns, "fetch_json", return_value=(v3, b"")):
+            with self.assertRaises(apns.TestValidationError):
+                apns.load_catalog()
+
+    def test_invalid_release_bindings_rejected(self):
+        for field, value in (("status", "candidate"), ("schemaVersion", "sermon-target-language-release-package-v2"),
+                             ("targetLocale", "ko"), ("pageId", "old-week"), ("contentStatus", "human_reviewed"),
+                             ("httpVerification", {"status": "fail"})):
+            catalog, target, release, _ = self.fixture()
+            release[field] = value
+            raw = json.dumps(release).encode()
+            target["releasePackageJsonSha256"] = hashlib.sha256(raw).hexdigest()
+            with patch.object(apns, "fetch_json", return_value=(release, raw)):
+                with self.assertRaises(apns.TestValidationError):
+                    apns.verified_notice(catalog, None, "zh-Hans")
+        for field, value in (("releasePackageUrl", "/releases-v2/week/zh-Hans.json"),
+                             ("releasePackageUrl", "/releases-v4/week/zh-Hans.json?x=1"),
+                             ("releasePackageJsonSha256", "f" * 64)):
+            catalog, target, release, raw = self.fixture()
+            target[field] = value
+            with patch.object(apns, "fetch_json", return_value=(release, raw)):
+                with self.assertRaises(apns.TestValidationError):
+                    apns.verified_notice(catalog, None, "zh-Hans")
+
+    def test_dry_run_does_not_send(self):
+        catalog, _, release, raw = self.fixture()
+        with patch("sys.argv", [str(MODULE), "--key-file", "unused", "--key-id", "A" * 10,
+                               "--team-id", "B" * 10, "--device", "unused"]), \
+             patch.object(apns, "device_receipt", return_value=self.device()), \
+             patch.object(apns, "load_catalog", return_value=catalog), \
+             patch.object(apns, "fetch_json", return_value=(release, raw)), \
+             patch.object(apns, "provider_token", return_value="private.jwt"), \
+             patch.object(apns, "send") as send, patch("builtins.print"):
+            self.assertEqual(apns.main(), 0)
+            send.assert_not_called()
 
     def test_failed_request_is_not_retried_and_receipt_and_argv_do_not_expose_secrets(self):
         device = self.device()

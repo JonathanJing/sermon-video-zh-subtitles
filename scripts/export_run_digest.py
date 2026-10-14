@@ -5,11 +5,16 @@ Runs leave their evidence under ignored ``artifacts/`` on the Mac (and on
 Spark), where a cloud review session cannot read it. This tool copies only the
 files a retrospective needs from one or more run directories:
 
-- ``outcome.json``, ``timings.tsv``, ``summary.json`` and ``*receipt*.json``
-  (whole, when under the size cap);
+- ``outcome.json``, ``timings.tsv``, ``summary.json``, the run journal
+  ``journal.ndjson``, the decision record ``decisions.ndjson`` and
+  ``*receipt*.json`` (whole, when under the size cap);
+- ``source-budget.json`` as a settlement summary only (requests, reserved and
+  estimated cost, tokens, unknown-cost reasons), never the ledger itself;
 - ``*.log`` (first and last lines, with every error line in between).
 
-Media, model outputs and any other file are left out and only counted. Every
+Media, model outputs and any other file are left out and only counted. Human
+acceptances and approvals reach the report as hash-bound entries in the decision
+record, not as copies: their files can hold sermon text. Every
 copied file is redacted (API keys, tokens, cookies, private keys, emails,
 private IPs, home directories, and the values of secret-like environment
 variables) before it is written. The digest gets ``manifest.json`` (source
@@ -30,7 +35,7 @@ from __future__ import annotations
 
 import argparse
 import csv
-from collections import deque
+from collections import Counter, deque
 import hashlib
 import json
 import os
@@ -43,7 +48,14 @@ from datetime import datetime, timezone
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "sermon-run-digest-v1"
 # diagnose/refute/risk.json carry agent-trial rows the run report reviews case by case.
-WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json", "diagnose.json", "refute.json", "risk.json"}
+WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json", "diagnose.json", "refute.json", "risk.json",
+               # The run journal and decision record (run_journal.py, record_decision.py) are the retrospective's spine.
+               "journal.ndjson", "decisions.ndjson"}
+BUDGET_LEDGER = "source-budget.json"
+BUDGET_SUMMARY_NAME = "source-budget.settlement.json"
+BUDGET_SUMMARY_SCHEMA_V1 = "sermon-run-digest-budget-settlement-v1"
+BUDGET_SUMMARY_SCHEMA = "sermon-run-digest-budget-settlement-v2"
+MAX_BUDGET_LEDGER_BYTES = 32 * 1024 * 1024
 MAX_WHOLE_BYTES = 256 * 1024
 # Agent-trial result files hold one row per case; one over the cap is exported as row chunks, each under the cap,
 # so case-level evidence is not dropped. The whole-digest cap still bounds the total.
@@ -98,11 +110,23 @@ def redact_json(value, secrets: list[str], counts: dict[str, int]):
     if isinstance(value, dict):
         out = {}
         for key, item in value.items():
+            # Keys are redacted like values: a host map keyed by "user@192.168.x.y"
+            # leaked private addresses from Layer 1 summaries on 2026-10-11.
+            safe_key, found = redact(str(key), secrets)
+            for name, hits in found.items():
+                counts[name] = counts.get(name, 0) + hits
+            if safe_key in out:
+                # Two keys can redact alike ("a@10.0.0.1" and "b@10.0.0.2" both become "<email>"); keep both entries.
+                number = 2
+                while f"{safe_key}#{number}" in out:
+                    number += 1
+                safe_key = f"{safe_key}#{number}"
+                counts["key_collision"] = counts.get("key_collision", 0) + 1
             if SECRET_KEY.search(str(key)) and item not in ("<redacted>", None):
                 counts["secret_field"] = counts.get("secret_field", 0) + 1
-                out[key] = "<redacted>"
+                out[safe_key] = "<redacted>"
             else:
-                out[key] = redact_json(item, secrets, counts)
+                out[safe_key] = redact_json(item, secrets, counts)
         return out
     if isinstance(value, list):
         return [redact_json(item, secrets, counts) for item in value]
@@ -127,11 +151,46 @@ def redact(text: str, secrets: list[str]) -> tuple[str, dict[str, int]]:
     return text, counts
 
 
+PRIVATE_OUTCOME_PREFIX = 'sermon-api-cli-outcome-v'
+PRIVATE_OUTCOME_FIELDS = {'response', 'rawBodyBase64', 'failure', 'executionBinding'}
+
+def private_outcome(value, path):
+    return (isinstance(value, dict) and (str(value.get('schemaVersion','')).startswith(PRIVATE_OUTCOME_PREFIX)
+                                           or 'rawBodyBase64' in value)
+            or 'api-cli-outcomes' in path.parts)
+
+def outcome_metadata(value):
+    allowed = {'schemaVersion','status','purpose','requestSha256','responseSha256',
+               'rawBodySha256','httpStatus','failureType','notDispatchedReason',
+               'executionBindingSha256','reconciliationEvidenceSha256','reconciledFromSchemaVersion'}
+    return {**{key:value[key] for key in allowed if key in value},
+            'privateResponseOmitted':True, 'exportSchemaVersion':'sermon-api-cli-outcome-metadata-v1'}
+
+
+def private_response_nodes(value):
+    if isinstance(value,dict):
+        if private_outcome(value,Path()) and PRIVATE_OUTCOME_FIELDS & set(value): return True
+        return any(private_response_nodes(child) for child in value.values())
+    if isinstance(value,list):return any(private_response_nodes(child) for child in value)
+    return False
+
+def public_metadata_tree(value):
+    if isinstance(value,dict):
+        if private_outcome(value,Path()):return outcome_metadata(value)
+        return {key:public_metadata_tree(child) for key,child in value.items()}
+    if isinstance(value,list):return [public_metadata_tree(child) for child in value]
+    return value
+
+
 def verify(dest: Path, secrets: list[str]) -> list[str]:
     """Return files that still hold a value the redaction rules would change."""
     leaks = []
     for path in sorted(p for p in dest.rglob("*") if p.is_file() and p.suffix != ".zip"):
         text = path.read_text(encoding="utf-8", errors="replace")
+        try: parsed = json.loads(text)
+        except ValueError: parsed = None
+        if (private_outcome(parsed,path) and (not isinstance(parsed,dict) or PRIVATE_OUTCOME_FIELDS & set(parsed))) or private_response_nodes(parsed):
+            leaks.append(f"{path.relative_to(dest)}: private_model_response")
         hits = [name for name, pattern, _ in REDACTIONS if name != "secret_field" and pattern.search(text)]
         # A secret field counts unless its value is the placeholder or a plain count
         # (the manifest's own redaction counters, e.g. "env_secret": 1).
@@ -141,6 +200,30 @@ def verify(dest: Path, secrets: list[str]) -> list[str]:
         if hits:
             leaks.append(f"{path.relative_to(dest)}: {', '.join(hits)}")
     return leaks
+
+
+def tidy_whitespace(dest: Path) -> list[str]:
+    """Strip trailing whitespace and blank lines at EOF from every text file, as `git diff --check` requires.
+
+    Copied logs (torch warnings, xcodebuild output) and hand-edited Markdown often carry both, and the docs
+    gate rejects the report PR for it. Binary or non-UTF-8 files are left untouched. Returns changed paths."""
+    changed = []
+    for path in sorted(p for p in dest.rglob("*") if p.is_file() and not p.is_symlink()):
+        raw = path.read_bytes()
+        if b"\0" in raw:
+            continue
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        lines = [line.rstrip(" \t\r\f\v") for line in text.split("\n")]
+        while lines and not lines[-1]:
+            lines.pop()
+        tidy = "\n".join(lines) + "\n" if lines else ""
+        if tidy != text:
+            path.write_text(tidy, encoding="utf-8")
+            changed.append(str(path.relative_to(dest)))
+    return changed
 
 
 def read_log(path: Path, digest) -> tuple[str, bool]:
@@ -177,9 +260,43 @@ def read_log(path: Path, digest) -> tuple[str, bool]:
 def classify(path: Path) -> str | None:
     if path.name in WHOLE_NAMES or (path.suffix == ".json" and "receipt" in path.name):
         return "whole"
+    if path.name == BUDGET_LEDGER:
+        return "budget"
     if path.suffix == ".log":
         return "log"
     return None
+
+
+def budget_summary(ledger) -> dict:
+    """Settlement totals from a source budget ledger, without its request identities or resource paths."""
+    rows = ledger.get("requests") if isinstance(ledger, dict) else None
+    if not isinstance(rows, dict):
+        return {"schemaVersion": BUDGET_SUMMARY_SCHEMA, "status": "unreadable_ledger"}
+    rows = [row for row in rows.values() if isinstance(row, dict)]
+    returned = [row for row in rows if row.get("status") == "returned"]
+    settled = [row["settlement"] for row in returned if isinstance(row.get("settlement"), dict)]
+    # Reused responses were paid under another root: they reserve and cost nothing here.
+    reused = [s for s in settled if s.get("costStatus") == "reused"]
+    settled = [s for s in settled if s.get("costStatus") != "reused"]
+    priced = [s for s in settled if s.get("costStatus") == "estimated_upper_bound" and type(s.get("costMicrousd")) is int]
+    by_model: dict[str, dict] = {}
+    for item in settled:
+        model = by_model.setdefault(str(item.get("requestedModel")), {"returned": 0, "priced": 0, "estimatedMicrousd": 0})
+        model["returned"] += 1
+        if item in priced:
+            model["priced"] += 1
+            model["estimatedMicrousd"] += item["costMicrousd"]
+    tokens = {key: sum((item.get("usage") or {}).get(key) or 0 for item in settled)
+              for key in ("inputTokens", "outputTokens", "cachedInputTokens", "reasoningTokens")}
+    return {"schemaVersion": BUDGET_SUMMARY_SCHEMA, "status": "summarized", "ledgerSchemaVersion": ledger.get("schemaVersion"),
+            "requests": len(rows), "statuses": dict(Counter(str(row.get("status")) for row in rows)),
+            "reservedMicrousd": sum((row.get("bounds") or {}).get("costMicrousd") or 0 for row in rows
+                                    if ((row.get("settlement") or {}).get("costStatus")) != "reused"),
+            "reused": len(reused),
+            "returned": len(returned), "withoutSettlement": len(returned) - len(settled) - len(reused),
+            "priced": len(priced), "estimatedMicrousd": sum(item["costMicrousd"] for item in priced),
+            "unknownCost": dict(Counter(str(item.get("reasonCode")) for item in settled if item not in priced)),
+            "tokens": tokens, "byModel": by_model, "invoiceVerified": False}
 
 
 def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[list[dict], dict[str, int]]:
@@ -196,6 +313,9 @@ def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[
             continue
         digest = hashlib.sha256()
         entry = {"run": label, "path": str(rel), "kind": kind, "bytes": path.stat().st_size, "truncated": False}
+        if kind == "budget":
+            entries.append(write_budget_summary(path, rel, dest / label, secrets, entry))
+            continue
         if kind == "log":
             text, entry["truncated"] = read_log(path, digest)
         elif entry["bytes"] > MAX_WHOLE_BYTES and path.name in ROW_NAMES and entry["bytes"] <= MAX_DIGEST_BYTES:
@@ -226,7 +346,14 @@ def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[
                 parsed = json.loads(text)
             except ValueError:
                 parsed = None
+        if private_outcome(parsed,rel):
+            if not isinstance(parsed,dict):
+                entry.update(omitted='private_api_cli_outcome');entries.append(entry);continue
+            parsed = outcome_metadata(parsed)
+            entry['privateResponseOmitted'] = True
         if parsed is not None:
+            if private_response_nodes(parsed): entry['privateResponseOmitted'] = True
+            parsed = public_metadata_tree(parsed)
             entry["redactions"] = {}
             text = json.dumps(redact_json(parsed, secrets, entry["redactions"]), ensure_ascii=False, indent=2) + "\n"
         else:
@@ -242,6 +369,26 @@ def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[
         target.write_text(text, encoding="utf-8")
         entries.append(entry)
     return entries, skipped
+
+
+def write_budget_summary(path: Path, rel: Path, dest: Path, secrets: list[str], entry: dict) -> dict:
+    """Write the ledger's settlement summary next to where the ledger sat; the entry names the ledger as its source."""
+    entry.update(source=str(rel), path=str(rel.with_name(BUDGET_SUMMARY_NAME)))
+    if entry["bytes"] > MAX_BUDGET_LEDGER_BYTES:
+        entry.update(omitted="over_size_cap")
+        return entry
+    raw = path.read_bytes()
+    entry["sha256"] = hashlib.sha256(raw).hexdigest()
+    try:
+        ledger = json.loads(raw.decode("utf-8"))
+    except ValueError:
+        ledger = None
+    entry["redactions"] = {}
+    summary = redact_json(budget_summary(ledger), secrets, entry["redactions"])
+    target = dest / entry["path"]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return entry
 
 
 EMPTY_ROWS = len(json.dumps({"rows": []}, indent=2))
@@ -331,6 +478,9 @@ def index_markdown(name: str, dest: Path, entries: list[dict], runs: list[dict])
                 failed = [r[0] for r in rows[1:] if len(r) > 1 and r[1] != "pass"]
                 if failed:
                     out += ["", "Failed stages: " + ", ".join(f"`{s}`" for s in failed)]
+        for entry in (e for e in entries if e["run"] == label and e["kind"] == "budget" and "omitted" not in e):
+            record = read_json(dest / label / entry["path"]) or {}
+            out.append(budget_line(entry["source"], record))
         error_lines = []
         for entry in (e for e in entries if e["run"] == label and e["kind"] == "log" and "omitted" not in e):
             hits = [l.strip() for l in (dest / label / entry["path"]).read_text(encoding="utf-8").splitlines()
@@ -342,6 +492,27 @@ def index_markdown(name: str, dest: Path, entries: list[dict], runs: list[dict])
             out += ["", "Not copied: " + ", ".join(f"{n} {ext}" for ext, n in sorted(run["skipped"].items()))]
         out.append("")
     return "\n".join(out)
+
+
+def budget_line(source: str, record: dict) -> str:
+    usd = lambda micro: f"US${micro / 1_000_000:.2f}"
+    version=record.get("schemaVersion")
+    if version not in {BUDGET_SUMMARY_SCHEMA_V1,BUDGET_SUMMARY_SCHEMA}:
+        return f"- source budget `{source}`: unsupported settlement summary schema"
+    if record.get("status") != "summarized":
+        return f"- source budget `{source}`: unreadable ledger"
+    line = (f"- source budget `{source}`: {record['returned']} of {record['requests']} requests returned; "
+            f"reserved {usd(record['reservedMicrousd'])}")
+    if version==BUDGET_SUMMARY_SCHEMA and record.get("reused",0):
+        line += f"; {record['reused']} reused without new reservation"
+    if record["priced"]:
+        line += f"; estimated {usd(record['estimatedMicrousd'])} over {record['priced']} priced"
+    if record["unknownCost"]:
+        line += "; cost unknown: " + ", ".join(f"{reason} ×{count}" for reason, count in sorted(record["unknownCost"].items()))
+    if record["withoutSettlement"]:
+        line += (f"; {record['withoutSettlement']} without settlement (ledger {record['ledgerSchemaVersion']}; "
+                 "SourceBudget.migrate_to_v3 books it)")
+    return line + "; invoice not verified"
 
 
 def retrospective_markdown(name: str) -> str:
@@ -374,6 +545,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("run_dirs", nargs="+", type=Path, help="Run directories (usually under artifacts/)")
     parser.add_argument("--verify", action="store_true",
                         help="Only check that existing digest directories hold nothing the redaction rules would change")
+    parser.add_argument("--tidy-whitespace", action="store_true",
+                        help="Only strip trailing whitespace and blank lines at EOF in existing digest directories")
     parser.add_argument("--name", help="YYYYMMDD-<label> (default: today UTC + first run directory name)")
     parser.add_argument("--out", type=Path, default=ROOT / "artifacts/run-reports")
     parser.add_argument("--zip", action="store_true", help="Also write <name>.zip next to the digest")
@@ -386,6 +559,11 @@ def main(argv: list[str] | None = None) -> int:
         leaks = [f"{d}/{leak}" for d in args.run_dirs for leak in verify(d, env_secret_values())]
         print("\n".join(leaks) or "No unredacted values found.", file=sys.stderr if leaks else sys.stdout)
         return 1 if leaks else 0
+    if args.tidy_whitespace:
+        for run_dir in args.run_dirs:
+            for path in tidy_whitespace(run_dir):
+                print(f"Tidied whitespace: {run_dir}/{path}")
+        return 0
     label = re.sub(r"[^A-Za-z0-9._-]+", "-", args.run_dirs[0].resolve().name).strip("-") or "run"
     name = args.name or f"{datetime.now(timezone.utc):%Y%m%d}-{label}"
     if not NAME.fullmatch(name):
@@ -414,6 +592,7 @@ def main(argv: list[str] | None = None) -> int:
     (dest / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (dest / "INDEX.md").write_text(index_markdown(name, dest, entries, runs), encoding="utf-8")
     (dest / "RETROSPECTIVE.md").write_text(retrospective_markdown(name), encoding="utf-8")
+    tidy_whitespace(dest)
     size = sum(p.stat().st_size for p in dest.rglob("*") if p.is_file())
     if size > MAX_DIGEST_BYTES:
         shutil.rmtree(dest)

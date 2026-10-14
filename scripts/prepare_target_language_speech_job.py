@@ -648,7 +648,7 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
             },
             ("textReleaseBasis" if machine else "humanReviewReceipt"): {
                 **({"kind": machine_basis.REVIEW_KIND,
-                    "schemaVersion": machine_basis.TEXT_WAIVER_SCHEMA} if machine else {}),
+                    "schemaVersion": human_review_receipt["schemaVersion"]} if machine else {}),
                 "path": str(human_review_receipt_path.resolve()),
                 "sha256": interpretation.sha256(human_review_receipt_path),
                 "jsonSha256": interpretation.json_sha256(human_review_receipt),

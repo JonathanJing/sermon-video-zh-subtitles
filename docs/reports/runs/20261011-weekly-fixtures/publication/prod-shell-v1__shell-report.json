@@ -1,0 +1,22 @@
+{
+ "schemaVersion": "sermon-production-shell-overlay-v1",
+ "base": "sealed-prod-v2",
+ "webVersion": "1.26.16",
+ "shellChanged": [
+  "fingerprint-worker.mjs",
+  "index.html",
+  "style.css",
+  "theme.js",
+  "voice-samples.mjs"
+ ],
+ "shellAdded": [
+  "brand-icon-light.png",
+  "brand-icon-light.svg",
+  "brand-icon.svg",
+  "icons.svg",
+  "offline-worker.js",
+  "speaker-clip-demos.mjs",
+  "voice-demo.css"
+ ],
+ "files": "<193 rows omitted>"
+}

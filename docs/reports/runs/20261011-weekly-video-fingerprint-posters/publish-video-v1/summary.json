@@ -1,0 +1,32 @@
+{
+  "status": "published_http_verified",
+  "version": "sites/ai-for-god-sermon-audio/versions/bb01b5d98ae9fb4d",
+  "pageId": "resi-20261011-54475d42",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "publicFileHashesPassed": 201,
+  "videoFullDecode": "pass",
+  "videoPublicFullGetAndRanges": "pass",
+  "browserThreeLocaleLanding": "pass",
+  "browserVideoPlayback": "pass",
+  "soundAlignmentUi": "restored",
+  "offlineSourceMatchSamplesPassed": 3,
+  "posterPngCount": 6,
+  "posterQrDecodedCount": 12,
+  "posterExternalUpload": "not_run",
+  "tests": {
+    "optionalVideo": 99,
+    "fingerprintUi": 84
+  },
+  "commits": [
+    "03982120",
+    "7d9fb729"
+  ],
+  "legacyWarning": "12 historical voice-demo Range requests return whole file; bytes verified; unchanged and outside sermon playback",
+  "physicalMicrophone": "not_run",
+  "nativeDevice": "not_run",
+  "venue": "not_run"
+}
