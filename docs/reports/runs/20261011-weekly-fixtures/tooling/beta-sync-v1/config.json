@@ -1,0 +1,26 @@
+{
+  "baseline_catalog_sha": "dccdbfe7b1688f2f93fa18c2ec829cf098075a726ba61cc9d570d90ca1dacfbf",
+  "baseline_catalog_v4_sha": null,
+  "baseline_version": "sites/ai-for-god-sermon-audio-dev/versions/eb4e551b41e69726",
+  "intent": {
+    "channel": "dev",
+    "environment": "dev",
+    "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+    "project": "ai-for-god-sermon-audio-dev",
+    "schemaVersion": "sermon-release-intent-v1",
+    "site": "ai-for-god-sermon-audio-dev"
+  },
+  "lease_bucket": "ai-for-god-sermon-media-dev",
+  "routes": {
+    "dev": {
+      "channels": [
+        "dev",
+        "beta"
+      ],
+      "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+      "project": "ai-for-god-sermon-audio-dev",
+      "site": "ai-for-god-sermon-audio-dev"
+    }
+  },
+  "snapshot": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-54475d42/beta-content-v1"
+}

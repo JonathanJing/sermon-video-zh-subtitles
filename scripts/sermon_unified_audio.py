@@ -137,6 +137,15 @@ def inspect(job_path, output_path=None):
         raise ValueError('Audio input snapshot changed; create a new bound configuration')
     cache = {'committedUnits': committed, 'missingUnits': missing, 'plannedGeneratedUnits': generated_units,
              'soundIdentityAdmission': 'renderer_required'}
+    code_paths = [Path(__file__), Path(renderer.__file__), Path(integrity.__file__)]
+    explicit_instructions = (json.loads(extra['unitInstructions'].read_text())
+                             if extra.get('unitInstructions') else {})
+    if (context['job']['targetLocale'] == 'ko'
+            and (renderer.registered_normalization_policy(context['job']) is not None
+                 or explicit_instructions.get('schemaVersion') == 'sermon-unit-delivery-instructions-v2')):
+        code_paths.extend(Path(renderer.ko_spoken_numerals.__file__).parent / name for name in
+                          ('ko_spoken_numerals.py', 'language_review_plugins/auto_qc_text_common.py',
+                           'language_review_plugins/common.py'))
     plan = {'schemaVersion': 'sermon-unified-audio-plan-v2', 'adapter': 'canonical.audio',
             'sourceIdentity': source_identity(context['source']),
             'sourcePackage': {'sha256': identity.sha256(paths['source']),
@@ -149,7 +158,7 @@ def inspect(job_path, output_path=None):
             'settings': settings, 'dependencies': dependencies, 'inputsSha256': inputs_sha,
             'snapshotBound': config.get('inputSnapshotSha256') == inputs_sha,
             'adapterCodeSha256': identity.json_sha256({p.name: identity.sha256(p) for p in
-                [Path(__file__), Path(renderer.__file__), Path(integrity.__file__)]}),
+                code_paths}),
             'cache': cache, 'maxEndLagSeconds': 8.0, 'humanListeningReview': 'pending',
             'productionEligible': False}
     # Cache growth during a resumed attempt does not change the admitted plan.

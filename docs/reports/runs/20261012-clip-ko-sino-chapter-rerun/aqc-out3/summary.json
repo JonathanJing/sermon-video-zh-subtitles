@@ -1,0 +1,95 @@
+{
+  "backend": "real",
+  "implementationSha256": "3a6118f3e4af3c0066e818dfed421ebf8f447ea63ed55d510d62ed9eaa5e4a01",
+  "locales": {
+    "ko": {
+      "audioQc": "pass",
+      "audioQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/ko-textqc-b/state/qc-receipts/audio/ko/741429e3be59b1ebd986ef3d825c05fb54294b5ebe835041f4816732803953e0/entry-000002.json",
+      "audioWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/aqc-out3/ko/audio-waiver-d952184993357e01.json",
+      "calibration": {
+        "cleanFalsePositiveRate": 0.0,
+        "detected": 177,
+        "overallDetectionRate": 1.0,
+        "trials": 177
+      },
+      "calibrationCoverage": {
+        "audio": {
+          "droppedKeyWordTrials": 5,
+          "untestableKinds": [],
+          "wrongSentenceUnits": 16
+        },
+        "text": {
+          "applicableGroups": {
+            "added_content": 16,
+            "added_number": 9,
+            "added_reference": 13,
+            "dropped_half": 10,
+            "dropped_name": 1,
+            "english_leak": 11,
+            "placeholder": 16,
+            "semantic_negation": 0,
+            "swapped_name": 0,
+            "swapped_quantity": 0,
+            "wrong_book": 1,
+            "wrong_number": 3,
+            "wrong_ordinal": 13
+          },
+          "notApplicableKinds": [
+            "semantic_negation",
+            "swapped_quantity",
+            "swapped_name"
+          ],
+          "untestableKinds": []
+        }
+      },
+      "calibrationMisses": {
+        "text.semantic_negation": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_name": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_quantity": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        }
+      },
+      "failedGroups": [],
+      "flaggedGroups": [
+        "translation-chunk-0005-u015"
+      ],
+      "locale": "ko",
+      "packageJsonSha256": "abeab1bf824d116843de971ee6b893ad76201275743995d2d6b1b4f0e643ce5d",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/ko-l2b/src/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/ko-l2b/text/ko/candidate.json",
+        "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/aqc-run2/l3/speech-job.json",
+        "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/l3e/ko/audio-package.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/ko-l2b/policy/ko-policy-clip.json",
+        "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/aqc-run2/l3/asr-screening-receipt-v1.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/ko-l2b/src/source.json",
+        "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/ko-textqc-b/out/ko/text-waiver-66bc6c1ee200a66b.json"
+      },
+      "problems": [],
+      "secondaryAsrGroups": [
+        "translation-chunk-0005-u015"
+      ],
+      "status": "audio_waiver_issued",
+      "trackCheck": "pass",
+      "trackCheckReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/aqc-out3/ko/track-check-a6b27b0f67e10e49.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/aqc-run2",
+  "transportSha256": "437517886af2b960abb3a8d9415811fff4345878b4ea89bb9b07ad91462f9330"
+}
