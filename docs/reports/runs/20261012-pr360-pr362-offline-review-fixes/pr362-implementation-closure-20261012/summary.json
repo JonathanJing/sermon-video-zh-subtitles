@@ -1,0 +1,35 @@
+{
+  "codeRevision": "cc353091b501f3cd32df5a2c169d4e8fdde779aa",
+  "validationStages": [
+    {
+      "name": "initial development/old fixture hashes",
+      "status": "interrupted_after_failures",
+      "failed": 22,
+      "passed": 270,
+      "subtestsPassed": 69,
+      "elapsedSeconds": 159.03
+    },
+    {
+      "name": "fast four-file contracts before explicit-v2 plan followup",
+      "status": "pass",
+      "passed": 210,
+      "subtestsPassed": 46,
+      "elapsedSeconds": 9.98
+    },
+    {
+      "name": "expanded waiver dependency mutation",
+      "status": "pass",
+      "passed": 1,
+      "elapsedSeconds": 0.09
+    },
+    {
+      "name": "final consumer files incl explicit-v2 plan, transports, release-basis, waiver",
+      "status": "pass",
+      "passed": 131,
+      "subtestsPassed": 64,
+      "elapsedSeconds": 920.76
+    }
+  ],
+  "models": "not_run",
+  "deployment": "not_run"
+}

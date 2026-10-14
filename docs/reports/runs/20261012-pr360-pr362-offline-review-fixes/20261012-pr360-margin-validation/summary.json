@@ -1,0 +1,18 @@
+{
+  "pr": 360,
+  "commit": "14c318ed",
+  "scope": "Offline clip fixture boundary and schema validation; synthetic media only",
+  "command": "python -m pytest -q tests/test_dev_clip_fixture.py",
+  "passed": 47,
+  "failed": 0,
+  "durationSeconds": 11.37,
+  "covered": [
+    "v2 rejects bool, string, null, containers, NaN, infinities and unrepresentable numeric margins before input access or clip creation",
+    "v1 rejects nonfinite margins while preserving symmetric migration and original spec hash",
+    "zero and finite integer/float margins accepted",
+    "existing asymmetric boundaries and source binding tests"
+  ],
+  "modelCalls": 0,
+  "deployment": "not_run",
+  "deviceAcceptance": "not_run"
+}

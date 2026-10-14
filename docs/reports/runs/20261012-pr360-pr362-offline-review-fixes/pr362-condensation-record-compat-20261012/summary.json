@@ -1,0 +1,28 @@
+{
+  "codeRevision": "e173a663c26cf7a28c5ab32eb9c2c5b90f2a8ce9",
+  "integrated": {
+    "tests": 443,
+    "subtests": 75,
+    "elapsedSeconds": 15.51
+  },
+  "recordDirected": {
+    "tests": 34,
+    "subtests": 26,
+    "elapsedSeconds": 0.97
+  },
+  "grammarDirected": {
+    "tests": 379,
+    "subtests": 34,
+    "elapsedSeconds": 1.96
+  },
+  "actualCI": {
+    "head": "01bb67a4",
+    "root0": "650 tests/384.376s errors1 skipped3",
+    "root6": "685 tests/438.417s errors1 skipped3",
+    "cause": "legacy condensation record absent synthesisIdentity KeyError"
+  },
+  "development": "33passed/26subtests +1 existing macOS /private/var vs/var assertion failure, normalized path comparison",
+  "scope": "recordv2 required frozen identity with v1raw reader; full formalpast family; ratev2 bound implementation and raw-only legacy rate migration",
+  "modelsCalled": false,
+  "fullConsumerRepeated": false
+}

@@ -58,6 +58,17 @@
 
 片段彩排三语一轮历史实际约 2 美元（2026-10-13 分开预算根时为 2.69）。当前 Layer 2 三语初始 cap 合计 6.00 美元；每语 QC 连二级 ASR cap 为 5.525 美元，三语为 16.575 美元，全部阶段同时批准共 22.575 美元，超过 10 美元。显式总额与开工门会拒绝不合适的并行组合；选阶段后仍须在后续余额不足时停止或取得新批准，不能保证 10 美元内所有阶段必完成，也不自动提高已有授权。
 
+### Claude CLI（Opus 5.5）后端的 Layer 2
+
+Layer 2 政策冻结为 `claude_cli_opus` 时（[运行时模型政策](production-model-runtime-policy.zh.md#layer-2-后端openai-api-或-claude-cliopus-55)），走订阅额度。账本仍按 Claude 列价最坏情况逐次预留，每次约 0.172 美元等价（16,384 输入 × 8 美元／百万 + 2,048 输出 × 20 美元／百万）。
+
+| 规模 | 列价等价上限（每语言） | 首轮 |
+|---|---|---|
+| 片段 | 8 美元等价 | 16 组 × 2 次约 5.5 美元等价 |
+| 全篇 | 200 美元等价 | — |
+
+这个上限限制用量，不是花费：规划器把该阶段记为 `countsTowardTotal: false`，不计入批准的美元总额。profile 因此升为 `sermon-weekly-run-profile-v3`，旧计划保留原 profile 哈希。
+
 ## 开工条件（片段测试中实际卡住过）
 
 - **开工前跑一次检查。** 用 `scripts/check_run_start.py`（PR #382）一次查完代码与质检实现哈希、凭据启动器、预算计划、Spark 主机和已部署代码、输出目录、测试页 ID；预算文件用 `scripts/plan_run_budgets.py` 按 `config/weekly-run-profile.json` 生成，不再手写。

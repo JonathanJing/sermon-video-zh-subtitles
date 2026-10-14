@@ -1,0 +1,20 @@
+{
+  "codeRevision": "57cb58400c27ecc89682b37914f7c770fa769e08",
+  "contracts": {
+    "tests": 339,
+    "subtests": 34,
+    "elapsedSeconds": 1.47
+  },
+  "transport": {
+    "tests": 2,
+    "deselected": 12,
+    "elapsedSeconds": 0.33
+  },
+  "development": [
+    "1 failed,338 passed,34subtests1.49s:negative suffix formed valid이라면",
+    "339/34passed1.67s before activation helper closure addition"
+  ],
+  "scope": "complete copulas and calibration formal/transport/driver/activation implementation closure with stale-receipt mutation tests",
+  "modelsCalled": false,
+  "fullConsumerRepeated": false
+}
