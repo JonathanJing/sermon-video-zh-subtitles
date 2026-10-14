@@ -182,7 +182,8 @@ RENDER_PREFIX = ["docker", "run", "--rm", "--gpus", "all", "--ipc", "host", "--n
 
 
 def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, max_end_lag: float,
-                   unit_instructions: str | None, seed: int = 42) -> list[str]:
+                   unit_instructions: str | None, seed: int = 42,
+                   clip_voice_capability: bool = False) -> list[str]:
     """The render container arguments after the docker prefix and the session labels."""
     command = ["--tmpfs", "/tmp:rw,exec,nosuid,size=2g,mode=1777", "--tmpfs", "/Users:rw,nosuid,size=64m,mode=1777",
                "--tmpfs", "/private:rw,nosuid,size=64m,mode=1777", "--tmpfs", "/home:rw,nosuid,size=64m,mode=1777",
@@ -204,6 +205,8 @@ def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, 
                "--track-format", "mp3", "--max-end-lag-seconds", str(max_end_lag), "--seed", str(seed)]
     if unit_instructions:
         command += ["--unit-instructions", unit_instructions]
+    if clip_voice_capability:
+        command += ["--clip-voice-capability", blob("clip-voice-capability")]
     return command
 
 
@@ -216,6 +219,8 @@ def render(args, runtime, spark, session) -> int:
     job = json.loads(args.job.read_text())
     files, remote = evidence_closure(job, spark, runtime["remoteHome"])
     cli = {name: getattr(args, name.replace("-", "_")).resolve() for name in CLI_INPUTS}
+    if args.clip_voice_capability:
+        cli["clip-voice-capability"] = args.clip_voice_capability.resolve()
     extra = [args.unit_instructions.resolve()] if args.unit_instructions else []
     for path in [*cli.values(), args.job.resolve(), *extra]:
         files.setdefault(str(path), sha(path))
@@ -251,7 +256,7 @@ def render(args, runtime, spark, session) -> int:
     tail = render_command(runtime, stage, args.code, blobs.__getitem__, f"/work/output/{remote_name}/speech-job",
                           max_end_lag=args.max_end_lag_seconds,
                           unit_instructions=f"/work/blobs/{sha(extra[0])}" if extra else None,
-                          seed=args.seed)
+                          seed=args.seed, clip_voice_capability=bool(args.clip_voice_capability))
     command_for = lambda hold: [*RENDER_PREFIX, *session_labels(session, hold), *tail]
     returncode, outcome, hold = dispatch(spark, session, "render", loc, stage=stage, code=args.code, command_for=command_for,
                                          log=f"{remote_out}/render.log", marker=local_out / "dispatch.started.json",
@@ -272,6 +277,8 @@ def compact(args, runtime, spark, session) -> int:
     require(path_map.is_file() and cmap.is_file(), "raw render dispatch files missing (path-map, checkpoint-map)")
     mapped = json.loads(path_map.read_text())["paths"]
     cli = {name: getattr(args, name.replace("-", "_")).resolve() for name in CLI_INPUTS}
+    if args.clip_voice_capability:
+        cli["clip-voice-capability"] = args.clip_voice_capability.resolve()
     for path in cli.values():
         require(str(path) in mapped and mapped[str(path)].endswith(sha(path)), f"input not in the raw render's path map: {path}")
     job_sha = sha(args.job)
@@ -311,6 +318,8 @@ def compact(args, runtime, spark, session) -> int:
                    "--audio-operation-policies", blob("audio-operation-policies"),
                    "--path-map", f"/work/blobs/{sha(path_map)}",
                    "--max-end-lag-seconds", str(args.max_end_lag_seconds), "--track-format", "mp3"]
+        if args.clip_voice_capability:
+            command += ["--clip-voice-capability", blob("clip-voice-capability")]
         if args.trim_trailing:
             command.append("--trim-trailing")
         for name, value in tuning.items():
@@ -483,6 +492,7 @@ def parser() -> argparse.ArgumentParser:
     sub.add_argument("--job", type=Path, required=True)
     for name in CLI_INPUTS:
         sub.add_argument("--" + name, type=Path, required=True)
+    sub.add_argument("--clip-voice-capability", type=Path)
     sub.add_argument("--max-end-lag-seconds", type=float, default=8.0)
     sub.add_argument("--seed", type=int, default=42, help="Frozen TTS seed; a repair needs a fresh render root")
     sub.add_argument("--unit-instructions", type=Path, default=None)
@@ -491,6 +501,7 @@ def parser() -> argparse.ArgumentParser:
     sub.add_argument("--job", type=Path, required=True, help="The local job.json the raw render root holds")
     for name in CLI_INPUTS:
         sub.add_argument("--" + name, type=Path, required=True)
+    sub.add_argument("--clip-voice-capability", type=Path)
     sub.add_argument("--raw-name", required=True)
     sub.add_argument("--remote-name", required=True)
     sub.add_argument("--max-end-lag-seconds", type=float, required=True)

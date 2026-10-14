@@ -136,6 +136,11 @@ def load_spec(path: Path) -> dict:
     for field, table in (("policyTemplates", layer2), ("plugins", layer2), ("attestationTemplates", layer3)):
         require(isinstance(table.get(field), dict) and set(locales) <= set(table[field]), f"{field} missing a locale")
         table[field] = {k: resolve(v) for k, v in table[field].items() if k in locales}
+    for field in ("adapters", "capabilities"):
+        overrides = layer3.get(field, {})
+        require(isinstance(overrides, dict) and set(overrides) <= set(locales),
+                f"layer3.{field} must name run locales")
+        layer3[field] = {k: resolve(v) for k, v in overrides.items()}
     require(isinstance(layer3.get("speakerRegistry"), str), "layer3.speakerRegistry required")
     layer3["speakerRegistry"] = resolve(layer3["speakerRegistry"])
     layer3.setdefault("maxEndLagSeconds", 120.0)
@@ -155,6 +160,8 @@ def load_spec(path: Path) -> dict:
     from scripts import clip_e2e_release
     clip_e2e_release.validate_display(page.get("display"), locales)
     spark = spec.setdefault("spark", {})
+    if spark.get("runtimeConfig"):
+        spark["runtimeConfig"] = resolve(spark["runtimeConfig"])
     spark.setdefault("sessionId", "clip-e2e-" + spec["name"])
     spark.setdefault("owner", "clip-e2e-" + spec["name"])
     for key in ("baselineCachePublic", "baselineCacheReceipt"):
@@ -186,7 +193,9 @@ class Run:
         self.stages = read(self.stages_path) if self.stages_path.exists() else {}
         (self.dir / "logs").mkdir(exist_ok=True)
         from scripts import clip_e2e_spark
-        self.runtime = clip_e2e_spark.load_runtime()
+        runtime_config = self.spec["spark"].get("runtimeConfig")
+        self.runtime = (clip_e2e_spark.load_runtime(Path(runtime_config)) if runtime_config
+                        else clip_e2e_spark.load_runtime())
         self.stage_dir = f"{self.runtime['stageRoot'].rstrip('/')}/clip-e2e-{self.spec['name']}"
         self.session_up = False
 
@@ -224,6 +233,20 @@ class Run:
     def candidate(self, locale) -> Path:
         info = self.stages.get("qc." + locale) or {}
         return Path(info.get("candidate") or self.l2 / "text" / locale / "candidate.json")
+
+    def adapter(self, locale: str) -> Path:
+        return Path(self.spec["layer3"].get("adapters", {}).get(
+            locale, ROOT / "config/layer3-adapters" / f"adapter-{locale}.json"))
+
+    def capability(self, locale: str) -> Path | None:
+        value = self.spec["layer3"].get("capabilities", {}).get(locale)
+        return Path(value) if value else None
+
+    def spark_command(self) -> list:
+        command = [PY, ROOT / "scripts/clip_e2e_spark.py"]
+        if self.spec["spark"].get("runtimeConfig"):
+            command += ["--runtime", self.spec["spark"]["runtimeConfig"]]
+        return command
 
     def impl(self) -> str:
         from scripts import machine_quality_waiver as waiver
@@ -782,7 +805,9 @@ def stage_audio(run: Run, locale: str, code: str):
     l3, q = run.dir / "l3" / locale, run.stages["qc." + locale]
     candidate, waiver_dir = Path(q["candidate"]), Path(q["waiverDir"])
     waiver = next(p for p in waiver_dir.glob("text-waiver-*.json") if not p.name.endswith(".inputs.json"))
-    adapter = ROOT / "config/layer3-adapters" / f"adapter-{locale}.json"
+    adapter = run.adapter(locale)
+    capability = run.capability(locale)
+    capability_args = ["--clip-voice-capability", capability] if capability else []
     policy = run.l2 / "policy" / f"{locale}-policy-clip.json"
     src, anchor, timeline = run.l2 / "src/source.json", run.l2 / "src/anchor.json", run.dir / "l3/clip-timeline-map.json"
     registry = Path(run.spec["layer3"]["speakerRegistry"])
@@ -796,14 +821,16 @@ def stage_audio(run: Run, locale: str, code: str):
                                         "--english-source-package", src, "--anchor", anchor, "--candidate", candidate,
                                         "--policy", policy, "--text-release-basis", waiver, "--adapter", adapter,
                                         "--speaker-registry", registry, "--clip-voice-authorization", voice,
+                                        *capability_args,
                                         "--clip-timeline-map", timeline, "--out", job_dir])
     run.check(f"gpu-{locale}", "--budget-plan", run.dir / "plans" / f"qc-{locale}", "--spark-stages",
               "--spark-code-dir", f"{run.stage_dir}/{code}")
     inputs = ["--source", src, "--anchor", anchor, "--candidate", candidate, "--policy", policy,
               "--human-review-receipt", waiver, "--speaker-registry", registry, "--adapter", adapter,
               "--clip-voice-authorization", voice, "--clip-timeline-map", timeline,
-              "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json"]
-    spark = [PY, ROOT / "scripts/clip_e2e_spark.py"]
+              "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json",
+              *capability_args]
+    spark = run.spark_command()
     common = ["--locale", locale, "--stage", run.stage_dir, "--code", code]
     raw, compacted = f"{locale}-raw", f"{locale}-c"
     lag = str(run.spec["layer3"]["maxEndLagSeconds"])
@@ -831,6 +858,7 @@ def stage_audio(run: Run, locale: str, code: str):
                                      "--anchor", anchor, "--candidate", candidate, "--job", rendered / "job.json",
                                      "--adapter", adapter, "--policy", policy, "--human-review-receipt", waiver,
                                      "--speaker-registry", registry, "--clip-voice-authorization", voice,
+                                     *capability_args,
                                      "--clip-timeline-map", timeline,
                                      "--render-manifest", rendered / "render-manifest-screened-v1.json",
                                      "--artifact-root", rendered, "--out", package])
@@ -888,7 +916,9 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
     q = run.stages["qc." + locale]
     candidate, waiver_dir = Path(q["candidate"]), Path(q["waiverDir"])
     waiver = next(p for p in waiver_dir.glob("text-waiver-*.json") if not p.name.endswith(".inputs.json"))
-    adapter = ROOT / "config/layer3-adapters" / f"adapter-{locale}.json"
+    adapter = run.adapter(locale)
+    capability = run.capability(locale)
+    capability_args = ["--clip-voice-capability", capability] if capability else []
     policy = run.l2 / "policy" / f"{locale}-policy-clip.json"
     src, anchor = run.l2 / "src/source.json", run.l2 / "src/anchor.json"
     timeline = run.dir / "l3/clip-timeline-map.json"
@@ -907,8 +937,9 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
     inputs = ["--source", src, "--anchor", anchor, "--candidate", candidate, "--policy", policy,
               "--human-review-receipt", waiver, "--speaker-registry", registry, "--adapter", adapter,
               "--clip-voice-authorization", voice, "--clip-timeline-map", timeline,
-              "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json"]
-    spark = [PY, ROOT / "scripts/clip_e2e_spark.py"]
+              "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json",
+              *capability_args]
+    spark = run.spark_command()
     common = ["--locale", locale, "--stage", run.stage_dir, "--code", code]
     raw, compacted = f"{locale}-seed-{seed}-raw", f"{locale}-seed-{seed}-c"
     lag = str(run.spec["layer3"]["maxEndLagSeconds"])
@@ -935,6 +966,7 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
                "--source", src, "--anchor", anchor, "--candidate", candidate, "--job", rendered / "job.json",
                "--adapter", adapter, "--policy", policy, "--human-review-receipt", waiver,
                "--speaker-registry", registry, "--clip-voice-authorization", voice,
+               *capability_args,
                "--clip-timeline-map", timeline, "--render-manifest", rendered / "render-manifest-screened-v1.json",
                "--artifact-root", rendered, "--out", package])
     qc_run = run.dir / "aqc" / f"run-{locale}-seed-{seed}"

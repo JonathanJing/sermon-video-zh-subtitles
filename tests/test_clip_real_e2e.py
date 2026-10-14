@@ -116,6 +116,25 @@ class SpecificationTests(unittest.TestCase):
         self.assertEqual(ko["backTranslationQc"], {"ko": "/qc-ko.json"})
         self.assertEqual(es["maxActiveLocales"], 1)
 
+    def test_source_specific_audio_bindings_are_resolved_per_locale(self):
+        raw = json.loads(spec_files(self.base).read_text())
+        (self.base / "eric-adapter.json").write_text("{}")
+        (self.base / "capability.json").write_text("{}")
+        (self.base / "runtime.json").write_text("{}")
+        raw["layer3"]["adapters"] = {"es": "eric-adapter.json"}
+        raw["layer3"]["capabilities"] = {"es": "capability.json"}
+        raw["spark"] = {"runtimeConfig": "runtime.json"}
+        path = self.base / "source-specific.json"
+        path.write_text(json.dumps(raw))
+        loaded = subject.load_spec(path)
+        self.assertEqual(loaded["layer3"]["adapters"]["es"], str((self.base / "eric-adapter.json").resolve()))
+        self.assertEqual(loaded["layer3"]["capabilities"]["es"], str((self.base / "capability.json").resolve()))
+        self.assertEqual(loaded["spark"]["runtimeConfig"], str((self.base / "runtime.json").resolve()))
+        raw["layer3"]["capabilities"] = {"fr": "capability.json"}
+        path.write_text(json.dumps(raw))
+        with self.assertRaisesRegex(ValueError, "layer3.capabilities"):
+            subject.load_spec(path)
+
     def test_unsafe_or_incomplete_specifications_are_refused(self):
         page = {"pageId": "dev-weekly", "display": {"ko": DISPLAY, "es": DISPLAY}}
         bad = [({"page": page}, "mockup- page"),
@@ -454,6 +473,12 @@ class SparkTests(unittest.TestCase):
         self.assertEqual(command[command.index("--max-end-lag-seconds") + 1], "120.0")
         self.assertEqual(command[command.index("--seed") + 1], "42")
         self.assertNotIn("--unit-instructions", command)
+        with_capability = spark.render_command(runtime, "/stage", "repo-x", blob,
+                                                "/work/output/ko-raw/speech-job",
+                                                max_end_lag=120.0, unit_instructions=None,
+                                                clip_voice_capability=True)
+        self.assertEqual(with_capability[with_capability.index("--clip-voice-capability") + 1],
+                         "/work/blobs/clip-voice-capability")
 
     def test_mirrored_paths_must_be_under_the_mirror_root(self):
         root = ROOT / "artifacts"
