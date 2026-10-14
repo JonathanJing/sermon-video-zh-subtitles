@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "scope": "PR 351 targeted regression tests only",
+  "testsPassed": 50,
+  "initialCollectionAttempt": "failed: unmatched brace in edited test fixture, corrected before successful tests",
+  "newApiCalls": 0,
+  "publication": "not_run",
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run"
+}

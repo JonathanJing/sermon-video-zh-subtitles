@@ -9,7 +9,7 @@ import re
 import subprocess
 
 from deploy_firebase import verify_release
-from deploy_feedback import public_week_date
+from deploy_feedback import public_week_date, runtime_listening_sources
 from poc import sha256, write_json
 
 HERE = Path(__file__).resolve().parent
@@ -114,7 +114,7 @@ def verified_feedback_catalog(release):
 
 def merge_release_catalogs(release, previous_releases=()):
     catalog, current = verified_feedback_catalog(release)
-    sources = {source_identity(source): source for source in catalog["sources"]}
+    sources = {source_identity(source): source for source in runtime_listening_sources(release, catalog)}
     usage_context = "weekIds" in catalog
     week_ids = set(catalog.get("weekIds", [source["week"] for source in catalog["sources"]]))
     voice_ids = set(catalog.get("voiceIds", []))
@@ -129,7 +129,7 @@ def merge_release_catalogs(release, previous_releases=()):
         week_ids.update(old_catalog.get("weekIds", [source["week"] for source in old_catalog["sources"]]))
         voice_ids.update(old_catalog.get("voiceIds", []))
         added = 0
-        for source in old_catalog["sources"]:
+        for source in runtime_listening_sources(previous, old_catalog):
             key = source_identity(source)
             if key in sources and sources[key] != source:
                 raise ValueError("Conflicting feedback timing for the same audio identity")

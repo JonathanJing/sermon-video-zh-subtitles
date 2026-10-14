@@ -1,0 +1,48 @@
+{
+  "calibrationCoverage": {
+    "audio": {
+      "droppedKeyWordTrials": 10,
+      "truncationEligibleTrials": 13,
+      "untestableKinds": [],
+      "wrongSentenceUnits": 16
+    },
+    "text": {
+      "applicableGroups": {
+        "added_content": 16,
+        "added_number": 9,
+        "added_reference": 13,
+        "dropped_half": 10,
+        "dropped_name": 1,
+        "english_leak": 11,
+        "placeholder": 16,
+        "semantic_negation": 0,
+        "swapped_name": 0,
+        "swapped_quantity": 0,
+        "wrong_book": 1,
+        "wrong_number": 0,
+        "wrong_ordinal": 14
+      },
+      "notApplicableKinds": [
+        "wrong_number",
+        "semantic_negation",
+        "swapped_quantity",
+        "swapped_name"
+      ],
+      "untestableKinds": []
+    }
+  },
+  "flaggedGroups": [],
+  "locale": "zh-Hans",
+  "packageJsonSha256": "1a426ab73e68b40ad5a49a6f1428c5a65e09708027f580c682b0be7667fd8632",
+  "paths": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/src/anchor.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/text/zh-Hans/candidate.json",
+    "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/aqc/run-zh-Hans/l3/speech-job.json",
+    "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l3/zh-Hans/audio-package.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/policy/zh-Hans-policy-clip.json",
+    "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/aqc/run-zh-Hans/l3/asr-screening-receipt-v1.json",
+    "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/l2/src/source.json",
+    "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-profile/textqc-zh-Hans/out/zh-Hans/text-waiver-6530089b24130815.json"
+  },
+  "problems": []
+}

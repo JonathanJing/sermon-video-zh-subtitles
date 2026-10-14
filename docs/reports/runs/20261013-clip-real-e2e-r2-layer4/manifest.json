@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261013-clip-real-e2e-r2-layer4",
+  "runs": [
+    {
+      "label": "l4-r2b",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/l4-r2b",
+      "skipped": {
+        ".lock": 4,
+        ".json": 1923,
+        ".js": 44,
+        ".html": 326,
+        ".mjs": 247,
+        ".png": 97,
+        ".svg": 18,
+        ".srt": 10,
+        ".mp3": 780,
+        ".pdf": 20,
+        ".wav": 65,
+        ".mp4": 95,
+        ".jpg": 5,
+        ".css": 22,
+        ".txt": 1,
+        ".cache": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "l4-r2b",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 261703,
+      "truncated": false,
+      "sha256": "3938a063801d6d82197a3f5c7584d02d3d63709cc1259bf473ce4523ad2c47c1",
+      "redactions": {}
+    },
+    {
+      "run": "l4-r2b",
+      "path": "baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "l4-r2b",
+      "path": "execute.log",
+      "kind": "log",
+      "bytes": 2237,
+      "truncated": false,
+      "sha256": "9cfa95e2ccd1d34e7d61daee69f9f7c095701b172a61f08b85fe8361b51ce999",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "l4-r2b",
+      "path": "workflow/asset-first/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 261703,
+      "truncated": false,
+      "sha256": "3938a063801d6d82197a3f5c7584d02d3d63709cc1259bf473ce4523ad2c47c1",
+      "redactions": {}
+    },
+    {
+      "run": "l4-r2b",
+      "path": "workflow/asset-first/hosting-publish.log",
+      "kind": "log",
+      "bytes": 143,
+      "truncated": false,
+      "sha256": "652da01cf888bc57ff2206a47fba77fb62f887dbe84c6dd482b9b2939dac674a",
+      "redactions": {}
+    },
+    {
+      "run": "l4-r2b",
+      "path": "workflow/asset-first/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "l4-r2b",
+      "path": "workflow/final-overlay/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 269393,
+      "truncated": false,
+      "sha256": "d8cf5a3b77b0f5d4e95e306f3e98ff003099628ceed1c7e1bf9309f0fb19b2f0",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "l4-r2b",
+      "path": "workflow/final-overlay/hosting-publish.log",
+      "kind": "log",
+      "bytes": 143,
+      "truncated": false,
+      "sha256": "c193fbaed61136684c8b8b726e761e78abace63c4d72aa2a29861ce5e2e53c81",
+      "redactions": {}
+    },
+    {
+      "run": "l4-r2b",
+      "path": "workflow/final-overlay/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "l4-r2b",
+      "path": "workflow/live-baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 269393,
+      "truncated": false,
+      "sha256": "d8cf5a3b77b0f5d4e95e306f3e98ff003099628ceed1c7e1bf9309f0fb19b2f0",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "l4-r2b",
+      "path": "workflow/live-baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "l4-r2b",
+      "path": "workflow/sealed/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261010-remote-pr-merge-validation",
+  "runs": [
+    {
+      "label": "pr-merge-validation-20261010",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/pr-merge-validation-20261010",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "pr-merge-validation-20261010",
+      "path": "failure-receipt.json",
+      "kind": "whole",
+      "bytes": 602,
+      "truncated": false,
+      "sha256": "d8fb7ec7f77b73863e78ffd00c4f476286a9a51d68dfc5238cfb0b37536810dc",
+      "redactions": {}
+    },
+    {
+      "run": "pr-merge-validation-20261010",
+      "path": "final-ci-receipt.json",
+      "kind": "whole",
+      "bytes": 6626,
+      "truncated": false,
+      "sha256": "75d9a5c75c7a4219d6351f31968c192b47b626f5d59912be2c088028716b79d9",
+      "redactions": {}
+    },
+    {
+      "run": "pr-merge-validation-20261010",
+      "path": "original-prs-merge-receipt.json",
+      "kind": "whole",
+      "bytes": 4124,
+      "truncated": false,
+      "sha256": "da4da84eeb55c4a3c27db535cabd37e3636a14a526b4ba068a0e62f3e8be3c89",
+      "redactions": {}
+    },
+    {
+      "run": "pr-merge-validation-20261010",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 188,
+      "truncated": false,
+      "sha256": "ed6c15c23421205da71bfd246a05200cdf026e201975fba9de8c7e3f714103b4",
+      "redactions": {}
+    },
+    {
+      "run": "pr-merge-validation-20261010",
+      "path": "passed-intermediate-ci-receipt.json",
+      "kind": "whole",
+      "bytes": 6586,
+      "truncated": false,
+      "sha256": "de3cdeb1296f371a578c6edb7ba9587eb81bdc10a660e12085691862a4367ae0",
+      "redactions": {}
+    },
+    {
+      "run": "pr-merge-validation-20261010",
+      "path": "remaining-prs-receipt.json",
+      "kind": "whole",
+      "bytes": 2264,
+      "truncated": false,
+      "sha256": "078389d24a7b2ef71da6988877a86e2230c4b95b762e0c528656eace258aba39",
+      "redactions": {}
+    },
+    {
+      "run": "pr-merge-validation-20261010",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 17848,
+      "truncated": false,
+      "sha256": "28ace01dba16c99ae13a9450f78c06c2d643b4cc409de7843f8e724aed7c2ae2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "scope": "Six targeted modules on the combined five-PR tree; not real-model calibration or formal release",
+  "testedCommit": "978357084740264d439129382239f3c249577363",
+  "pytest": "647 passed, 3 subtests passed in 39.32s",
+  "formalReadiness": "requires recalibration and new artifact-bound waiver receipts under final implementation",
+  "priorRealModelRun": "unpushed local combination; not final Dev evidence"
+}

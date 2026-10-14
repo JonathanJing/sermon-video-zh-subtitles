@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261013-field-venue-mid-back",
+  "runs": [
+    {
+      "label": "run-v1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/field-benchmark/20261011-venue-mid-back/run-v1",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "run-v1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 471,
+      "truncated": false,
+      "sha256": "01d4ffe69baa65f9f05f2fdd54d85b91c6924337df36e7133c2bf4c449ff654c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

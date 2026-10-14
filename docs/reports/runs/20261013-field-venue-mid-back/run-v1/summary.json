@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "field-venue-fingerprint-summary-v1",
+  "benchmarkId": "20261011-venue-mid-back",
+  "status": "completed_no_false_match",
+  "evidenceScope": "offline_replay_of_room_recordings",
+  "deviceAppAcceptance": "not_run",
+  "venueAcceptance": "not_run",
+  "promotionAllowed": false,
+  "baseCheckpointLocks": {
+    "iphone-builtin:mix": "18/35",
+    "iphone-builtin:left": "23/35",
+    "iphone-builtin:right": "18/35",
+    "airpods:mix": "27/27"
+  },
+  "elapsedSeconds": 351
+}

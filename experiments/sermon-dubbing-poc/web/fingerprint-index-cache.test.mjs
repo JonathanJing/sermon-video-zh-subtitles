@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { createHash, webcrypto } from 'node:crypto';
-import { CONFIG, fingerprint, matchFingerprint } from './fingerprint-core.mjs';
+import { CONFIG, fingerprint, fingerprintProfile, matchFingerprint } from './fingerprint-core.mjs';
 import { captureQuality, summarizeMatch } from './fingerprint-diagnostics.mjs';
 
 const code = fs.readFileSync(new URL('./fingerprint-worker.mjs', import.meta.url), 'utf8').replace(/^import .*;\n/gm, '');
@@ -26,7 +26,7 @@ function worker(cache, {index=base,offline=false,response,metadataChange=()=>{}}
   const bytes=encoded(index), replies=[];let requests=0;
   const metadata={schemaVersion:'sermon-audio-fingerprint-binding-v1',...index,indexSha256:digest(bytes),indexUrl:'/fingerprints/current.json',captureSeconds:10};
   delete metadata.postings; metadataChange(metadata);
-  const scope={CONFIG,fingerprint,matchFingerprint,captureQuality,summarizeMatch,TextDecoder,Uint8Array,Float32Array,URL,
+  const scope={CONFIG,fingerprint,fingerprintProfile,matchFingerprint,captureQuality,summarizeMatch,TextDecoder,Uint8Array,Float32Array,URL,
     Response,crypto:webcrypto,performance,caches:cache,
     self:{location:{href:'https://example.test/fingerprint-worker.mjs',origin:'https://example.test'},postMessage:value=>replies.push(value)},
     fetch:async()=>{requests++;if(offline)throw new Error('offline');return response||new Response(bytes);}};
