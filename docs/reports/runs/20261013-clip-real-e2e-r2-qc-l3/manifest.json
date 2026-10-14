@@ -1581,7 +1581,8 @@
       "bytes": 5939,
       "truncated": false,
       "sha256": "eb9284386f23cc88004a0845fba2c226d4123502a12a7e29d7f0a2f993bed66a",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {"sha256": "06fcd7f21bc4caf4d9cf815a4491949ccf4bd9c532a3dc8cd7ad7cd97665fe52", "bytes": 5899, "normalization": "strip_line_end_whitespace"}
     },
     {
       "run": "l3r2",
@@ -1682,7 +1683,8 @@
       "bytes": 5939,
       "truncated": false,
       "sha256": "7d2589291a88682515adc1f514f047655ffe530aa8a3aa470f4f83d7babd1577",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {"sha256": "5159f03253dfb15083b3524e63df6c1dfff4f63a8639f413b6b2e80ca47369df", "bytes": 5899, "normalization": "strip_line_end_whitespace"}
     },
     {
       "run": "l3r2",
@@ -1747,7 +1749,8 @@
       "bytes": 5939,
       "truncated": false,
       "sha256": "e1a775889a9efa4ba2662a0faecfb2f1811810b48fe05c09b15f730829b10d5f",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {"sha256": "c062e54a73d48642c67f6768608aefbc080e6b5f61a8e01e75a982172ef4ab91", "bytes": 5899, "normalization": "strip_line_end_whitespace"}
     },
     {
       "run": "l3r2",
