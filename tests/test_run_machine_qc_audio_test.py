@@ -217,8 +217,11 @@ class MachineQcAudioDriverTests(unittest.TestCase):
         stack = ExitStack()
         stack.enter_context(patch.dict(os.environ, OPENAI_ENV))
         real_make = driver.make_transports
-        stack.enter_context(patch.object(driver, "make_transports",
-                                         lambda backend, *a, **k: real_make("fake", *a, **k)))
+        def bounded_fake(backend, *args, **kwargs):
+            from scripts.sermon_source_budget import SourceBudget
+            self.assertIsInstance(kwargs.get("budget"), SourceBudget)
+            return real_make("fake", *args, **kwargs)
+        stack.enter_context(patch.object(driver, "make_transports", bounded_fake))
         stack.enter_context(patch.object(transports.QwenPrimaryAsr, "runtime_problems", lambda self: []))
         groups = text_driver.qc_groups(json.loads((self.run_dir / "diagnostic-previews/ko/native-1/candidate.json")
                                                   .read_text(encoding="utf-8")),
@@ -229,9 +232,37 @@ class MachineQcAudioDriverTests(unittest.TestCase):
 
         stack.enter_context(patch.object(text_driver, "CodexJudge", lambda cache: RealLooking({LOCALE: groups})))
         map_path = write(self.root / "ckpt-map.json", {})
+        # Real audio paths now require an approved secondary-ASR ledger even
+        # when this fixture substitutes fake audio transports.
+        from tests.test_source_budget_settlement import AUTHORITY
+        bounds = {"globalBounds": AUTHORITY["globalBounds"], "requestLimits": AUTHORITY["requestLimits"]}
+        from scripts import machine_qc_budget_authorization as auth
+        from scripts.sermon_openai_runtime import selected_route
+        paths = driver.resolve_locale(self.run_dir, text_driver.index_run(self.run_dir), LOCALE, None)['paths']
+        # This historical fake-driver fixture has a minimal terminology policy,
+        # not a canonical production policy. Supply its explicit synthetic bound
+        # context; full real context validation is covered by runtime-budget tests.
+        source_sha = auth.canonical_sha(json.loads(Path(paths['source']).read_text()))
+        context = {'schemaVersion': auth.CONTEXT_SCHEMA, 'runId': source_sha,
+            'environment': 'dev', 'targetLocale': LOCALE, 'openaiRoute': selected_route(),
+            'credentialSha256': auth.credential_fingerprint(OPENAI_ENV['OPENAI_API_KEY']),
+            'englishSourcePackageJsonSha256': source_sha,
+            'anchorManifestJsonSha256': auth.canonical_sha(json.loads(Path(paths['anchor']).read_text())),
+            'targetLanguagePolicyJsonSha256': auth.canonical_sha(json.loads(Path(paths['policy']).read_text())),
+            'qcImplementationSha256': basis.waiver.implementation_sha256()}
+        stack.enter_context(patch.object(auth, 'context_from_paths', return_value=context))
+        approval = {"schemaVersion": auth.APPROVAL_V4, "humanApproval": True,
+                    "decision": "approved", "reviewedBy": "offline fixture", "reviewedAt": "2026-10-13T00:00:00Z",
+                    "operatorEvidence": "Synthetic scoped audio test approval",
+                    "binding": {"budgetRoot": str(self.root / "secondary-budget"), **bounds, "qcContext": context}}
+        approval_path = write(self.root / "secondary-approval.json", approval)
+        authorization = write(self.root / "secondary-authorization.json", {
+            "schemaVersion": auth.AUTH_V4, "qcContext": context, "budgetRoot": str(self.root / "secondary-budget"),
+            "approvalReceipt": approval_path.name, "authority": {"approvalSha256": sha(approval_path.read_bytes()),
+                "bounds": bounds, "requestLimits": AUTHORITY["requestLimits"]}})
         argv = ["--run-dir", str(self.run_dir), "--out", str(self.root / "audio-real"), "--locales", LOCALE,
                 "--state-dir", str(self.state), "--asr-model-path", str(self.root / "asr"),
-                "--tts-checkpoint-map", str(map_path)]
+                "--tts-checkpoint-map", str(map_path), "--api-budget-authorization", str(authorization)]
         return stack, argv
 
     def real_row(self):
@@ -337,6 +368,23 @@ class TransportTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "run_with_openai_environment"):
                 transports.OpenAiTranscribeSecondary(LOCALE, cache=self.root, max_calls=5)
 
+    def secondary_budget(self, executor, name="secondary-budget"):
+        from scripts import sermon_source_budget as source_budget
+        from scripts.sermon_openai_runtime import project_headers
+        from tests.test_source_budget_settlement import AUTHORITY
+        import urllib.request
+        def transport(endpoint, body, content_type, key):
+            request = urllib.request.Request(endpoint, data=body, method="POST", headers={
+                "Authorization": "Bearer " + key, "Content-Type": content_type, **project_headers(key)})
+            return executor(request)
+        store = source_budget.SourceBudget(self.root / name, AUTHORITY, verify=lambda: None, transport=transport)
+        from scripts import machine_qc_budget_authorization as auth
+        from scripts.sermon_openai_runtime import selected_route
+        store.qc_context = {'schemaVersion': auth.CONTEXT_SCHEMA, 'targetLocale': LOCALE, 'environment': 'dev',
+                            'openaiRoute': selected_route(),
+                            'credentialSha256': auth.credential_fingerprint(OPENAI_ENV['OPENAI_API_KEY'])}
+        return store
+
     def test_secondary_asr_sends_audio_only_and_caches_by_audio(self):
         sent = []
 
@@ -348,7 +396,7 @@ class TransportTests(unittest.TestCase):
         wav = qc_fixtures.speech_wav(1.0)
         with patch.dict(os.environ, OPENAI_ENV):
             asr = transports.OpenAiTranscribeSecondary(LOCALE, cache=self.root / "calls", max_calls=1,
-                                                       request_executor=executor)
+                                                       budget=self.secondary_budget(executor))
             opinion = asr.opinion(wav, text, LOCALE)
             again = asr.opinion(wav, "다른 기대 문장", LOCALE)
         self.assertEqual(len(sent), 1)
@@ -380,15 +428,15 @@ class TransportTests(unittest.TestCase):
         wav = qc_fixtures.speech_wav(1.0)
         with patch.dict(os.environ, OPENAI_ENV):
             asr = transports.OpenAiTranscribeSecondary(LOCALE, cache=self.root / "calls", max_calls=5,
-                                                       request_executor=executor)
+                                                       budget=self.secondary_budget(executor))
             with self.assertRaises(TimeoutError):
                 asr.transcribe(wav)
-            with self.assertRaises(transports.UnknownOutcome):
+            with self.assertRaisesRegex(ValueError, "source_provider_outcome_unknown"):
                 asr.transcribe(wav)
             self.assertEqual(len(calls), 1)
             self.assertEqual(len(asr.uncertain()), 1)
             capped = transports.OpenAiTranscribeSecondary(LOCALE, cache=self.root / "other", max_calls=0,
-                                                          request_executor=executor)
+                                                          budget=self.secondary_budget(executor, "other-budget"))
             with self.assertRaisesRegex(ValueError, "call cap"):
                 capped.transcribe(wav)
         self.assertEqual(len(calls), 1)
@@ -510,6 +558,55 @@ class TransportTests(unittest.TestCase):
         mapping["checkpoints"][0]["checkpointRef"] = "other"
         with self.assertRaises(ValueError):
             transports.checkpoint_path(job, mapping)
+
+
+class AudioBudgetCliContractTests(unittest.TestCase):
+    def test_real_main_legacy_authorization_never_creates_state_or_ledger(self):
+        from contextlib import redirect_stderr
+        from io import StringIO
+        from scripts import sermon_source_budget as source_budget
+        from tests.test_source_budget_settlement import AUTHORITY
+        for backend in ('api', 'codex'):
+            with self.subTest(backend=backend), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder); out, state, budget = root/'out', root/'state', root/'budget'
+                bounds = {'globalBounds': AUTHORITY['globalBounds'], 'requestLimits': AUTHORITY['requestLimits']}
+                approval = {'schemaVersion': 'sermon-machine-qc-api-budget-approval-v1',
+                    'humanApproval': True, 'decision': 'approved', 'binding': {'budgetRoot': str(budget), **bounds}}
+                receipt = root/'approval.json'; receipt.write_text(json.dumps(approval))
+                auth = root/'authorization.json'; auth.write_text(json.dumps({
+                    'schemaVersion': 'sermon-machine-qc-api-budget-authorization-v1',
+                    'budgetRoot': str(budget), 'approvalReceipt': receipt.name,
+                    'authority': {'approvalSha256': sha(receipt.read_bytes()), 'bounds': bounds,
+                                  'requestLimits': AUTHORITY['requestLimits']}}))
+                with patch.dict('os.environ', OPENAI_ENV), patch.object(text_driver, 'index_run') as discover, \
+                        patch.object(text_driver, 'CodexJudge') as codex, \
+                        patch.object(source_budget, 'SourceBudget') as ledger, \
+                        patch.object(transports, 'QwenPrimaryAsr') as gpu, redirect_stderr(StringIO()) as errors:
+                    with self.assertRaises(SystemExit) as failure:
+                        driver.main(['--out', str(out), '--state-dir', str(state), '--backend', 'real',
+                            '--text-backend', backend, '--locales', 'ko', '--asr-model-path', str(root/'asr'),
+                            '--tts-checkpoint-map', str(root/'checkpoints.json'), '--api-budget-authorization', str(auth)])
+                    self.assertEqual(failure.exception.code, 2)
+                    self.assertIn('scoped v4 audio authorization', errors.getvalue())
+                    discover.assert_not_called(); codex.assert_not_called(); ledger.assert_not_called(); gpu.assert_not_called()
+                self.assertFalse(out.exists()); self.assertFalse(state.exists()); self.assertFalse(budget.exists())
+
+    def test_real_codex_and_api_require_budget_before_reading_artifacts(self):
+        from contextlib import redirect_stderr
+        from io import StringIO
+        for backend in ("codex", "api"):
+            with self.subTest(backend=backend), tempfile.TemporaryDirectory() as folder:
+                out = Path(folder) / "must-not-be-created"
+                with patch.object(text_driver, "index_run") as discover, \
+                        patch.object(text_driver, "CodexJudge") as judge, redirect_stderr(StringIO()) as error:
+                    with self.assertRaises(SystemExit) as failure:
+                        driver.main(["--out", str(out), "--backend", "real", "--text-backend", backend,
+                                     "--locales", "ko"])
+                self.assertEqual(failure.exception.code, 2)
+                self.assertIn("real audio runs require --api-budget-authorization", error.getvalue())
+                discover.assert_not_called()
+                judge.assert_not_called()
+                self.assertFalse(out.exists())
 
 
 if __name__ == "__main__":

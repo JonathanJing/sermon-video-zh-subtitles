@@ -1,0 +1,28 @@
+{
+  "codeRevision": "01bb67a443817a49dbebc2eeee14928143724cb7",
+  "integrated": {
+    "tests": 39,
+    "subtests": 12,
+    "elapsedSeconds": 5.26
+  },
+  "directed": [
+    {
+      "tests": 24,
+      "subtests": 12,
+      "elapsedSeconds": 0.93
+    },
+    {
+      "tests": 24,
+      "subtests": 12,
+      "elapsedSeconds": 0.9
+    }
+  ],
+  "shadowRendererAdapter": {
+    "tests": 44,
+    "subtests": 14,
+    "elapsedSeconds": 34.28
+  },
+  "scope": "actual v3 waiver calls with valid human acceptance reject missing/foreign duration binding; legacy explicit Korean spoken overrides fail closed before dispatch",
+  "modelsCalled": false,
+  "fullConsumerRepeated": false
+}

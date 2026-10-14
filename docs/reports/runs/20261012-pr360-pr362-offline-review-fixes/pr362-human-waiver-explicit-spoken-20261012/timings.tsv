@@ -1,0 +1,5 @@
+stage	status	elapsedSeconds
+initial_human_gate	pass	0.93
+valid_human_gate	pass	0.90
+integrated	pass	5.26
+shadow_renderer_adapter	pass	34.28

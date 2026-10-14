@@ -1,0 +1,32 @@
+{
+  "observedAt": "2026-10-13T15:37:50.983217+00:00",
+  "pr": 374,
+  "testedHead": "a0eaf047caab7dc36b7839a7a0ffa81c7a3ea7ff",
+  "state": "MERGED",
+  "mergedAt": "2026-10-13T15:36:37Z",
+  "mergeCommit": "f7490d0ea2f23d37bcc4ff669944b32053ba91a1",
+  "remoteDevReadback": "f7490d0ea2f23d37bcc4ff669944b32053ba91a1",
+  "checkConclusions": {
+    "SUCCESS": 18,
+    "SKIPPED": 2
+  },
+  "localMockConclusion": "SUCCESS",
+  "allReviewThreadsResolved": true,
+  "reviewThreadCount": 4,
+  "originalPrStates": {
+    "366": "MERGED",
+    "367": "MERGED",
+    "369": "MERGED",
+    "370": "MERGED",
+    "371": "MERGED"
+  },
+  "backlog": "DEV-QC-001 remains P0 waiting_evidence for final-code recalibration and new artifact-bound waiver",
+  "historicalCiFailure": "5cbe6844 original local-mock failure remains preserved; not reproduced, root cause unknown; later new-head success does not establish its cause was fixed",
+  "newModelCalls": 0,
+  "deployment": "not_run",
+  "formalCalibration": "not_run",
+  "newWaiver": "not_issued",
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run",
+  "reportDisposition": "draft; do not merge"
+}

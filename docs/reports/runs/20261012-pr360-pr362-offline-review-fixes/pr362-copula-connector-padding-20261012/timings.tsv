@@ -1,0 +1,6 @@
+stage	status	elapsedSeconds
+initial	pass	1.33
+terminal_iteration	fail	1.44
+suffix_iteration	fail	1.36
+final_contract	pass	1.29
+delivery_fixture	pass	3.30

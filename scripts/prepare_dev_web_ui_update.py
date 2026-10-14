@@ -20,8 +20,10 @@ from scripts import build_full_video_app_release as builder
 UI_FILES = ('index.html', 'style.css', 'app.mjs', 'i18n.mjs',
             'published-weeks.mjs', 'reading-mode.mjs', 'locales-reader.mjs',
             'offline.mjs', 'offline-worker.js')
-# Production's deployed reader predates these presentation interfaces. Preserve
-# its media, feedback configuration and acoustic capture/worker implementation.
+# Presentation dependencies of the UI files. Production's deployed reader
+# predated them, and a UI change may also change their strings on Dev; only
+# files that differ from the live baseline are replaced. Media, feedback
+# configuration and the acoustic capture/worker implementation are preserved.
 PRODUCTION_UI_DEPENDENCIES = (
     'catalog.mjs', 'content-locales.mjs', 'icons.mjs', 'icons.svg', 'theme.js',
     'brand-icon.svg', 'brand-icon-light.svg', 'brand-icon.png',
@@ -32,7 +34,7 @@ PRODUCTION_UI_DEPENDENCIES = (
 
 def ui_files(environment):
     staging.hosting_target(environment)
-    return UI_FILES + (PRODUCTION_UI_DEPENDENCIES if environment == 'production' else ())
+    return UI_FILES + PRODUCTION_UI_DEPENDENCIES
 
 
 def bound_source(names):
@@ -92,7 +94,8 @@ def prepare(baseline, out, *, environment='dev'):
     contract.require(set(before).issubset({row['path'] for row in after}), 'Existing file removed')
     # Check the actual mixed candidate, including preserved production modules.
     builder.runtime_web_files(out / 'public')
-    staging.write(out / 'seal-report.json', {'catalogSha256': staging.digest(out / 'public/multilingual-v3.json'), 'files': after})
+    # A live site with a machine-checked v4 catalog seals both catalog hashes.
+    staging.write(out / 'seal-report.json', {**staging.catalog_report(out / 'public'), 'files': after})
     contract.validate_catalog_snapshot(out)
     staging.write(out / 'publish-config.json', staging.publication_config(base, out, environment=environment))
     staging.write(out / 'ui-update-plan.json', {

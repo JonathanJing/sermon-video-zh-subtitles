@@ -19,6 +19,7 @@ import shutil
 from typing import Any, Callable
 
 try:
+    from scripts import production_spark_admission as spark_admission
     from scripts import four_layer_measure as measure
     from scripts import produce_target_language_candidate as producer
     from scripts import sermon_accounting as accounting
@@ -30,6 +31,7 @@ try:
     from scripts.migrate_target_language_model_cache import migration_cache
     from scripts import sermon_workflow_jobs as jobs
 except ImportError:
+    import production_spark_admission as spark_admission
     import four_layer_measure as measure
     import produce_target_language_candidate as producer
     import sermon_accounting as accounting
@@ -69,6 +71,32 @@ def revision_boundary_instruction(target_locale: str, *, revising: bool) -> str:
             "Korean unit may state that reason as its own sentence. Do not force a "
             "trailing comma merely to mirror the English clause boundary. ")
 PARTIAL_REPAIR_SCHEMA = "sermon-target-language-partial-repair-brief-v1"
+# v2 adds gate 4: a row may carry the back-translation QC finding that rejected the reviewer's
+# text (layer2_auto_repair). Sol passed that text, so its cache is not failure evidence by itself;
+# the row binds the QC receipt and the exact rejected text, which is checked against the cache.
+PARTIAL_REPAIR_SCHEMA_V2 = "sermon-target-language-partial-repair-brief-v2"
+PARTIAL_REPAIR_ROW_KEYS = frozenset({"translationGroupId", "sourceUnitIds", "failedRole",
+                                     "failedCacheSha256", "failureReason", "instruction"})
+BACK_TRANSLATION_QC_KEYS = frozenset({"receiptSha256", "targetTextSha256", "failureCodes"})
+
+
+def _repair_row_keys_valid(row: Any, *, allow_qc: bool) -> bool:
+    if not isinstance(row, dict):
+        return False
+    keys = set(row)
+    if keys == PARTIAL_REPAIR_ROW_KEYS:
+        return True
+    return allow_qc and keys == PARTIAL_REPAIR_ROW_KEYS | {"backTranslationQc"} and _qc_evidence_valid(row)
+
+
+def _qc_evidence_valid(row: dict[str, Any]) -> bool:
+    qc = row["backTranslationQc"]
+    return (isinstance(qc, dict) and set(qc) == BACK_TRANSLATION_QC_KEYS
+            and all(isinstance(qc[key], str) and re.fullmatch(r"[a-f0-9]{64}", qc[key]) is not None
+                    for key in ("receiptSha256", "targetTextSha256"))
+            and isinstance(qc["failureCodes"], list) and bool(qc["failureCodes"])
+            and all(isinstance(code, str) and code for code in qc["failureCodes"])
+            and row["failedRole"] == "reviewer")
 
 
 def scripture_prompt_instruction(policy: dict[str, Any], *, frozen_rules=False) -> str:
@@ -223,11 +251,24 @@ def model_payload(role, prompt, policy, request_limits=None):
     return payload
 
 
+def validate_api_marker(marker,caller,api_key,payload,fingerprint,role):
+    if marker.exists() and isinstance(caller,spark_admission.SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
+        from scripts import api_cli_outcomes as outcomes
+        saved=producer._load(marker)
+        if 'apiCliRequestSha256' in saved:
+            require(saved.get('payloadSha256')==fingerprint and saved.get('role')==role
+                    and saved['apiCliRequestSha256']==outcomes.request_identity(caller.caller,(api_key,payload),{},caller.purpose),
+                    'Standalone API outcome marker request binding changed')
+
+
 def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
                 reuse_from: Path | None = None, *, cache_only: bool = False,
                 response_observer=None, request_limits=None, rule_receipt=None) -> dict[str, Any]:
+    verifier = getattr(caller, 'verify_execution', None)
+    if verifier is not None:
+        verifier(api_key)  # Includes cache hits: changed route/key cannot consume old results.
     if rule_receipt is not None:
         rule_preflight.verify_model_prompt(role, prompt, rule_receipt, policy)
     model = policy[role]["model"]
@@ -236,30 +277,37 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     policy_preview.freeze_payload_preview(
         role, payload, policy, output.with_suffix(".policy-preview.json"))
     transport_identity = getattr(caller, "execution_identity", None)
-    fingerprint = policy_tools.canonical_sha256(
-        {"payload": payload, "modelTransportIdentity": transport_identity}
-        if transport_identity is not None else payload)
+    fingerprint_input = ({"payload": payload, "modelTransportIdentity": transport_identity}
+                         if transport_identity is not None else payload)
+    if isinstance(caller,spark_admission.SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
+        from scripts import api_cli_outcomes as outcomes
+        fingerprint_input = {'request':fingerprint_input, 'apiCliRequestSha256':outcomes.request_identity(
+            caller.caller,(api_key,payload),{},caller.purpose)}
+    fingerprint = policy_tools.canonical_sha256(fingerprint_input)
     migrated_from = migration_cache(role, payload)
     if migrated_from is not None:
         require(cache_only and reuse_from is None, "Explicit migration must be cache-only and isolated")
         reuse_from = migrated_from
     if reuse_from is not None and not output.exists():
-        require(reuse_from.is_file(), f"Missing reusable {role} cache: {reuse_from}")
-        cached = producer._load(reuse_from)
-        require(cached.get("payloadSha256") == fingerprint
-                and cached.get("model") == model
-                and isinstance(cached.get("requestId"), str) and cached["requestId"]
-                and isinstance(cached.get("result"), dict),
-                f"Reusable {role} cache belongs to different inputs: {reuse_from}")
-        previous_raw = reuse_from.with_suffix(".raw.json")
+        validate_api_marker(reuse_from.with_suffix('.started.json'),caller,api_key,payload,fingerprint,role)
+        previous_raw = reuse_from.with_suffix('.raw.json')
+        require(reuse_from.is_file() or previous_raw.is_file(), f"Missing reusable {role} response: {reuse_from}")
         if previous_raw.is_file():
             raw = producer._load(previous_raw)
-            require(raw.get("payloadSha256") == fingerprint
-                    and isinstance(raw.get("response"), dict),
+            require(raw.get('payloadSha256') == fingerprint and isinstance(raw.get('response'),dict),
                     f"Reusable {role} raw response belongs to different inputs: {previous_raw}")
-        save_new(output, cached)
-        if previous_raw.is_file():
-            shutil.copyfile(previous_raw, output.with_suffix(".raw.json"))
+            destination_raw=output.with_suffix('.raw.json')
+            if destination_raw.exists():
+                require(producer._load(destination_raw)==raw,'Reusable destination raw response changed')
+            else:
+                save_new(destination_raw,raw,private=True)
+        if reuse_from.is_file():
+            cached=producer._load(reuse_from)
+            require(cached.get('payloadSha256')==fingerprint and cached.get('model')==model
+                    and isinstance(cached.get('requestId'),str) and cached['requestId']
+                    and isinstance(cached.get('result'),dict),
+                    f"Reusable {role} cache belongs to different inputs: {reuse_from}")
+            save_new(output,cached)
     if output.exists():
         saved = producer._load(output)
         require(saved.get("payloadSha256") == fingerprint
@@ -271,6 +319,10 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
         return saved
     marker = output.with_suffix(".started.json")
     raw_path = output.with_suffix(".raw.json")
+    validate_api_marker(marker,caller,api_key,payload,fingerprint,role)
+    if marker.exists() and not raw_path.exists():
+        recover_api_outcome(marker, raw_path, caller=caller,
+                            allowed_prior_roots=[reuse_from.parent] if reuse_from is not None else [])
     recovered_raw = raw_path.exists()
     if recovered_raw:
         raw = producer._load(raw_path)
@@ -286,8 +338,14 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
         resource_admission = getattr(caller, "admit_resource", None)
         if resource_admission is not None:
             resource_admission(payload)
+        outcome_binding = {}
+        if isinstance(caller, spark_admission.SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
+            from scripts import api_cli_outcomes as outcomes
+            outcome_binding = {"apiCliOutcomeRoot":str(outcomes.receipt_root(caller.outcome_directory).resolve()),
+                "apiCliRequestSha256":outcomes.request_identity(caller.caller, (api_key, payload), {}, caller.purpose),
+                "apiCliPurpose":caller.purpose}
         save_new(marker, {"role": role, "payloadSha256": fingerprint,
-                          "status": "started_response_unconfirmed"}, **save_options)
+                          "status": "started_response_unconfirmed", **outcome_binding}, **save_options)
         if response_observer is None:
             response = caller(api_key, payload)
         else:
@@ -441,8 +499,9 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
             and set(brief) == {"schemaVersion", "targetLocale",
                                "englishSourcePackageJsonSha256", "anchorManifestSha256",
                                "translationPolicySha256", "groups"}
-            and brief["schemaVersion"] == PARTIAL_REPAIR_SCHEMA,
+            and brief["schemaVersion"] in (PARTIAL_REPAIR_SCHEMA, PARTIAL_REPAIR_SCHEMA_V2),
             "Invalid partial repair brief")
+    allow_qc = brief["schemaVersion"] == PARTIAL_REPAIR_SCHEMA_V2
     for key in ("targetLocale", "englishSourcePackageJsonSha256",
                 "anchorManifestSha256", "translationPolicySha256"):
         require(brief[key] == request[key], f"Partial repair source or policy changed: {key}")
@@ -453,10 +512,7 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
     model_roles = expected_models or MODEL_ROLES
     result: dict[str, dict[str, Any]] = {}
     for row in entries:
-        require(isinstance(row, dict) and set(row) == {
-            "translationGroupId", "sourceUnitIds", "failedRole",
-            "failedCacheSha256", "failureReason", "instruction"},
-            "Invalid partial repair row")
+        require(_repair_row_keys_valid(row, allow_qc=allow_qc), "Invalid partial repair row")
         group_id = row["translationGroupId"]
         require(group_id in plan_by_id and group_id not in result,
                 f"Unknown or duplicate partial repair group: {group_id}")
@@ -480,6 +536,11 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
                 and prior_result.get("translationGroupId") == group_id
                 and prior_result.get("sourceUnitIds") == group["sourceUnitIds"],
                 f"Partial repair failed cache has different group identity: {group_id}")
+        if "backTranslationQc" in row:
+            # The QC rejected exactly the text this reviewer cache holds, not some other revision.
+            _require_rejected_reviewer_text(failed_cache, row["backTranslationQc"]["targetTextSha256"],
+                                            group["sourceUnitIds"],
+                                            "back-translation QC finding does not match the reviewer text")
         result[group_id] = row
     return result
 
@@ -537,13 +598,14 @@ def partial_repair_brief_for_plugin_stop(reuse_from: Path, request: dict[str, An
 
 
 def _require_rejected_reviewer_text(cache: Path, expected_sha256: str,
-                                    source_unit_ids: list[str]) -> None:
+                                    source_unit_ids: list[str],
+                                    message: str = "plugin group stop does not match the rejected reviewer text") -> None:
     saved = producer._load(cache)
     result = saved.get("result") if isinstance(saved, dict) else None
     utterances = result.get("targetUtterances") if isinstance(result, dict) else None
     utterances = _utterances(utterances, source_unit_ids)
     actual = hashlib.sha256("".join(utterances).encode("utf-8")).hexdigest()
-    require(actual == expected_sha256, "plugin group stop does not match the rejected reviewer text")
+    require(actual == expected_sha256, message)
 
 
 def carried_repairs(reuse_from: Path | None, request: dict[str, Any], plan: list[dict[str, Any]],
@@ -559,8 +621,7 @@ def carried_repairs(reuse_from: Path | None, request: dict[str, Any], plan: list
     prior = producer._load(reuse_from / "effective-repairs.json")
     plan_by_id = {row["translationGroupId"]: row for row in plan}
     require(isinstance(prior, dict) and all(
-        isinstance(row, dict) and set(row) == {"translationGroupId", "sourceUnitIds", "failedRole",
-                                              "failedCacheSha256", "failureReason", "instruction"}
+        _repair_row_keys_valid(row, allow_qc=True)
         and row["translationGroupId"] == group_id and group_id in plan_by_id
         and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
         for group_id, row in prior.items()), "Prior effective repairs do not match this group plan")
@@ -595,7 +656,7 @@ def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:
     if prior_run is None:
         return None
     path = prior_run / f"{stem}-{role}.json"
-    if path.is_file():
+    if path.is_file() or path.with_suffix(".raw.json").is_file():
         return path
     require(not path.with_suffix(".started.json").exists()
             and not path.with_suffix(".raw.json").exists(),
@@ -699,7 +760,27 @@ def validate_standalone_worker_budget(policy: dict) -> None:
             "Standalone production runner requires batchSize=1 and workers=1..3")
 
 
-def require_reconciled_requests(*directories: Path | None) -> None:
+def recover_api_outcome(marker, raw_path, *, caller, allowed_prior_roots=()):
+    """Recover only a bound durable return; this path cannot dispatch anything."""
+    if not isinstance(caller, spark_admission.SessionBoundCaller) or caller.requires_spark or caller.outcome_guarded:
+        return
+    from scripts import api_cli_outcomes as outcomes
+    saved = producer._load(marker)
+    identity = saved.get("apiCliRequestSha256")
+    if identity is None: return  # Older markers remain uncertain, never redispatch.
+    allowed = {outcomes.receipt_root(caller.outcome_directory).resolve()}
+    for prior in allowed_prior_roots:
+        if prior is not None:
+            allowed.update({(Path(prior)/'accounting'/'api-cli-outcomes').resolve(),
+                            (Path(prior)/'api-cli-outcomes').resolve()})
+    recorded = Path(saved.get('apiCliOutcomeRoot','')).resolve()
+    require(recorded in allowed and saved.get("apiCliPurpose") == caller.purpose,
+            "Standalone API outcome marker binding changed")
+    response = outcomes.recover(recorded, identity, caller.purpose)
+    save_new(raw_path, {"payloadSha256":saved["payloadSha256"], "response":response}, private=True)
+
+
+def require_reconciled_requests(*directories: Path | None, caller=None, allowed_prior_roots=()) -> None:
     """Block the whole dispatch before any group can replay an unknown call.
 
     Returned raw responses and validated caches remain recoverable. A marker
@@ -713,6 +794,9 @@ def require_reconciled_requests(*directories: Path | None) -> None:
         for marker in sorted(directory.glob("group-*.started.json")):
             stem = marker.name.removesuffix(".started.json")
             role = {"astra": "translator", "sol": "reviewer"}.get(stem.rsplit("-", 1)[-1], "model")
+            raw_path = directory / f"{stem}.raw.json"
+            if not (directory / f"{stem}.json").is_file() and not raw_path.is_file():
+                recover_api_outcome(marker, raw_path, caller=caller,allowed_prior_roots=allowed_prior_roots)
             require((directory / f"{stem}.json").is_file()
                     or (directory / f"{stem}.raw.json").is_file(),
                     f"Uncertain paid {role} call; inspect before retry or dispatch: {marker}")
@@ -977,7 +1061,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 require(producer._load(receipt_path) == rule_receipt, "Frozen rule preflight changed")
             else:
                 save_new(receipt_path, rule_receipt, private=True)
-        require_reconciled_requests(out, reuse_from, resume_cache_from)
+        require_reconciled_requests(out, reuse_from, resume_cache_from, caller=caller,
+                                    allowed_prior_roots=[reuse_from,resume_cache_from])
         if repairs or carried:
             effective_path = out / "effective-repairs.json"
             effective = {**carried, **repairs}
@@ -1374,8 +1459,8 @@ def main() -> None:
                       if args.group_plan else None)
     require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
     rule_preflight.preflight(request, policy, args.plugin, plan)
+    # Translation and review call a remote API or the local Codex CLI: no Spark session.
     from scripts import production_spark_admission as spark_admission
-    spark_admission.require_session()
     if args.budget_config is not None:
         require(args.model_backend == "openai-api" and args.group_plan is None
                 and args.revision_brief is None and args.reuse_from is None
@@ -1404,7 +1489,7 @@ def main() -> None:
         from scripts.codex_layer2_transport import CodexLayer2Transport
         transport = CodexLayer2Transport(receipts_dir=args.out_dir / "_cli_calls")
         api_key = ""
-    caller = spark_admission.SessionBoundCaller(transport)
+    caller = spark_admission.SessionBoundCaller(transport, requires_spark=False)
     evidence = run_accounted(
         source, anchor, policy, args.out_dir, api_key,
         caller,

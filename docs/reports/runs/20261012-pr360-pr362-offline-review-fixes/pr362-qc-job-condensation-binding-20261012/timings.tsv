@@ -1,0 +1,5 @@
+stage	status	elapsedSeconds
+qc_initial	pass	3.35
+qc_contract	pass	3.43
+integrated_before_calibration	pass	4.29
+final_with_calibration	pass	5.74
