@@ -51,6 +51,32 @@ class ExportRunDigestTests(unittest.TestCase):
         self.assertTrue(zipfile.is_zipfile(str(dest) + ".zip"))
         self.assertIn("## 遗留状态", (dest / "RETROSPECTIVE.md").read_text())
 
+    def test_retrospective_prefills_total_time_and_models(self):
+        (self.run / "journal.ndjson").write_text("\n".join(json.dumps(r) for r in [
+            {"at": "2026-10-11T10:00:00+00:00", "stage": "layer1", "event": "started"},
+            {"at": "2026-10-11T10:05:00+00:00", "stage": "layer1", "event": "waiting", "waitingOn": "operator"},
+            {"at": "2026-10-11T10:15:00+00:00", "stage": "layer1", "event": "resumed"},
+            {"at": "2026-10-11T10:20:00+00:00", "stage": "layer1", "event": "finished"}]) + "\n")
+        (self.run / "judge-receipt.json").write_text(json.dumps({"calls": [
+            {"model": "gpt-6-astra", "settings": {"reasoning_effort": "medium", "service_tier": "default"},
+             "elapsedSeconds": 20.0, "usage": {"outputTokens": 1000}},
+            {"model": "gpt-6-astra", "settings": {"reasoning_effort": "medium", "service_tier": "default"},
+             "usage": {"outputTokens": 500}}]}))
+        text = (self.export() / "RETROSPECTIVE.md").read_text()
+        for heading in ("## 结论先行", "## 总时间", "## 各层模型、耗时与速度", "## 错误", "## 可以改进的地方"):
+            self.assertIn(heading, text)
+        self.assertIn("墙钟 20m00s；计算 10m00s，等待 10m00s，返工 0m00s", text)
+        # Speed uses only the record that has both output tokens and elapsed time: 1000 / 20 s.
+        self.assertIn("| `gpt-6-astra` | medium | default | 2 | 1500 | 0m20s | 50.0 | `e2e-20261007T193332Z/judge-receipt.json` |", text)
+        self.assertIn("| L1 英文机器评审 | 待填写 |", text)
+
+    def test_retrospective_falls_back_to_outcome_span(self):
+        (self.run / "audio" / "outcome.json").write_text(json.dumps({
+            "status": "passed", "exitCode": 0, "startedAt": "2026-10-11T10:00:00Z", "endedAt": "2026-10-11T11:30:05Z"}))
+        text = (self.export() / "RETROSPECTIVE.md").read_text()
+        self.assertIn("（outcome.json）：墙钟 1h30m05s；没有 journal", text)
+        self.assertIn("已复制的收据里没有模型身份", text)
+
     def test_keys_that_redact_alike_keep_every_entry(self):
         # Review finding: a host map keyed by user@private-IP collapsed to one "<email>" entry.
         (self.run / "summary.json").write_text(json.dumps({"hosts": {
