@@ -53,7 +53,12 @@ def _model_result(response: dict[str, Any], requested_model: str) -> dict[str, A
 
 def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
                 requested_model: str, caller: Callable[..., dict[str, Any]] = chat_json) -> tuple[dict[str, Any], dict[str, Any]]:
-    request = {"schemaVersion": RUN_SCHEMA, "stage": stage, "payload": payload}
+    from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract, legacy_text_execution_identity
+    payload = bounded_legacy_chat_payload(payload)
+    execution = legacy_text_execution_identity(api_key, payload, caller=None if caller is chat_json else caller)
+    request = {"schemaVersion": "sermon-sentence-model-cache-v3", "cacheContract": legacy_text_cache_contract(),
+               "executionIdentity": execution,
+               "stage": stage, "payload": payload}
     request_hash = contract.json_sha256(request)
     path = out / "cache" / f"{stage}-{request_hash}.json"
     if path.exists():
@@ -63,13 +68,16 @@ def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
     else:
         response = caller(api_key, payload)
         receipt = {
-            "schemaVersion": RUN_SCHEMA,
+            "schemaVersion": "sermon-sentence-model-cache-v3",
             "request": request,
             "requestSha256": request_hash,
             "response": response,
             "responseSha256": contract.json_sha256(response),
         }
-        contract.write_json(path, receipt)
+        # Durable JSON replay may reorder response object keys. Freeze derived
+        # cache bytes so its receipt hash (and downstream reviewer request) stays
+        # identical when restoring a returned outcome before this cache existed.
+        contract.write_json(path, json.loads(json.dumps(receipt, sort_keys=True)))
     return _model_result(receipt["response"], requested_model), {
         "path": str(path.resolve()),
         "sha256": contract.sha256(path),
@@ -230,6 +238,10 @@ def run(*, manifest_path: Path, out: Path, model: str, effort: str,
         raise ValueError("workers must be positive")
     terminology = series_terminology.context()
     out.mkdir(parents=True, exist_ok=True)
+    if caller is chat_json:
+        from scripts.production_spark_admission import SessionBoundCaller
+        caller = SessionBoundCaller(caller, purpose="sentence-interpretation",
+                                    requires_spark=False, outcome_directory=out / "api-cli-outcomes")
 
     translation_batches = batches(requests, batch_size)
     def translate_one(item: tuple[int, list[dict[str, Any]]]):

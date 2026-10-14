@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-local-scheduler-test-summary-v1",
+  "status": "passed",
+  "command": "pytest tests/test_spark_tts_production.py tests/test_spark_tts_replica_pool.py tests/test_production_spark_admission.py tests/test_run_spark_diagnostic_audio.py tests/test_replay_fixed_clip_local_models.py tests/test_spark_exclusive_session.py",
+  "passed": 93,
+  "subtestsPassed": 11,
+  "failed": 0,
+  "scope": "offline scheduler, replica-pool, admission, diagnostic-audio and exclusive-session tests; no local-model dispatch"
+}

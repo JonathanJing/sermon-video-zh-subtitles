@@ -1,0 +1,818 @@
+{
+ "schemaVersion": "sermon-weekly-fixture-bundle-v1",
+ "week": "2026-10-11",
+ "pageId": "resi-20261011-54475d42",
+ "redaction": "home paths -> ~, Spark host/user/IP -> placeholders, emails, keys; applied to every file",
+ "files": [
+  {
+   "path": "decisions/text/es-human-acceptance-v2.json",
+   "bytes": 7355,
+   "sha256": "4c9357bbf0d83e66c640d77ae2ac4bbd1fbcada8275b224f083f83b5ed15f13a",
+   "source": "artifacts/weekend-live/text-qc-54475d42/es-human-acceptance-v2.json"
+  },
+  {
+   "path": "decisions/text/es-human-acceptance-v3.json",
+   "bytes": 7060,
+   "sha256": "b753f31599e6a71d2d3a71c7c084e21b8ba7481bcbec9c3f01bd6d6a29343458",
+   "source": "artifacts/weekend-live/text-qc-54475d42/es-human-acceptance-v3.json"
+  },
+  {
+   "path": "decisions/text/es-human-acceptance-v4.json",
+   "bytes": 7332,
+   "sha256": "61a58731e8d3bfc9fbad3be35e969da4680c893333d2eac98a7cb514b0fb3d85",
+   "source": "artifacts/weekend-live/text-qc-54475d42/es-human-acceptance-v4.json"
+  },
+  {
+   "path": "decisions/text/es-human-acceptance-v5.json",
+   "bytes": 6642,
+   "sha256": "4eebeb44bab2f2e084de427e316944be15920be42c95e085d988cdcc4fd269b3",
+   "source": "artifacts/weekend-live/text-qc-54475d42/es-human-acceptance-v5.json"
+  },
+  {
+   "path": "decisions/text/es-human-acceptance.json",
+   "bytes": 5099,
+   "sha256": "01a56da79b9048b421ce7ff04fcddcb69d32bf3569522f987e0cf2c5066cc5bd",
+   "source": "artifacts/weekend-live/text-qc-54475d42/es-human-acceptance.json"
+  },
+  {
+   "path": "decisions/text/ko-human-acceptance-v2.json",
+   "bytes": 9427,
+   "sha256": "43e5b81a3d00b3eb93a4099ee86d4592f63c99a12b5bde6a59a40048b8c86e83",
+   "source": "artifacts/weekend-live/text-qc-54475d42/ko-human-acceptance-v2.json"
+  },
+  {
+   "path": "decisions/text/ko-human-acceptance-v3.json",
+   "bytes": 11088,
+   "sha256": "9c420af3f8b72cf692e8f050feedb713f3fbec6ebbc50404ac9743d57fa96ce6",
+   "source": "artifacts/weekend-live/text-qc-54475d42/ko-human-acceptance-v3.json"
+  },
+  {
+   "path": "decisions/text/ko-human-acceptance-v4.json",
+   "bytes": 11467,
+   "sha256": "c395b65b169a76e07370895ebbaa69143b181a4a97b29529fca08ec69e38a813",
+   "source": "artifacts/weekend-live/text-qc-54475d42/ko-human-acceptance-v4.json"
+  },
+  {
+   "path": "decisions/text/ko-human-acceptance-v5.json",
+   "bytes": 11140,
+   "sha256": "1068b820bf1db1ede8c74b10e45040dde5c61c89ae979233afa20be1e9d96a6c",
+   "source": "artifacts/weekend-live/text-qc-54475d42/ko-human-acceptance-v5.json"
+  },
+  {
+   "path": "decisions/text/ko-human-acceptance.json",
+   "bytes": 5499,
+   "sha256": "5b51e369d2312d33e4f8441e67144ba616522c967700bd2a7687246ad336734f",
+   "source": "artifacts/weekend-live/text-qc-54475d42/ko-human-acceptance.json"
+  },
+  {
+   "path": "decisions/text/zh-Hans-human-acceptance-v1.json",
+   "bytes": 18819,
+   "sha256": "bc1052e92c6402703cbaa6d0cc4706d9ac6b827c9044c1390df10b688485fcbd",
+   "source": "artifacts/weekend-live/text-qc-54475d42/zh-Hans-human-acceptance-v1.json"
+  },
+  {
+   "path": "decisions/audio/es-human-acceptance-c5.json",
+   "bytes": 8663,
+   "sha256": "c4049b5c3a24c7ce810ae704c130b2a9b8441e00e313fec9f2081608cb157f72",
+   "source": "artifacts/weekend-live/audio-qc-54475d42/es-human-acceptance-c5.json"
+  },
+  {
+   "path": "decisions/audio/ko-human-acceptance-c5.json",
+   "bytes": 16781,
+   "sha256": "29eda5e30898030da1d6e0e7bb36979c085516d4f034d7801f532144fb46b7b2",
+   "source": "artifacts/weekend-live/audio-qc-54475d42/ko-human-acceptance-c5.json"
+  },
+  {
+   "path": "decisions/audio/zh-Hans-human-acceptance-c5.json",
+   "bytes": 7186,
+   "sha256": "45d1ed0742f6acf0183fbec95a939783b69d832e6331997b0855fc965390ed61",
+   "source": "artifacts/weekend-live/audio-qc-54475d42/zh-Hans-human-acceptance-c5.json"
+  },
+  {
+   "path": "decisions/study/zh-Hans/outline-artifact.json",
+   "bytes": 10671,
+   "sha256": "90710f676bd4aab15c14db7b727736bb218bdecb83478a597c4f90c2ca81b7c9",
+   "source": "artifacts/weekend-live/study-54475d42/zh-Hans/outline-artifact.json"
+  },
+  {
+   "path": "decisions/study/zh-Hans/outline-review.json",
+   "bytes": 612,
+   "sha256": "d2d806259d1068b24115bed6f906b657ec9c8ef5e241d35a8e96045499c7fea5",
+   "source": "artifacts/weekend-live/study-54475d42/zh-Hans/outline-review.json"
+  },
+  {
+   "path": "decisions/study/zh-Hans/meditation-artifact.json",
+   "bytes": 6023,
+   "sha256": "0b9230ea245d90ba640b7cfb304656ad4d3a566d4d615fd675a9c9885cfb8373",
+   "source": "artifacts/weekend-live/study-54475d42/zh-Hans/meditation-artifact.json"
+  },
+  {
+   "path": "decisions/study/zh-Hans/meditation-review.json",
+   "bytes": 615,
+   "sha256": "3d268ff7fdd469e05a2e698112518c2b082fa04d674e9025a9b716abe443b8df",
+   "source": "artifacts/weekend-live/study-54475d42/zh-Hans/meditation-review.json"
+  },
+  {
+   "path": "decisions/audio-review/zh-Hans-worksheet.approved.json",
+   "bytes": 22089,
+   "sha256": "f7bdf89031b138d6010caffbd0210210e0e098cc908df637fcd0318df0874130",
+   "source": "artifacts/weekend-live/layer4-54475d42/audio-review/zh-Hans-worksheet.approved.json"
+  },
+  {
+   "path": "decisions/audio-review/zh-Hans/audio-human-review-receipt.json",
+   "bytes": 22893,
+   "sha256": "b55f51857dfc47a62df76f7a01b03b8d94fcfeb7ef8b22edcc1fc33581fc965c",
+   "source": "artifacts/weekend-live/layer4-54475d42/audio-review/zh-Hans/audio-human-review-receipt.json"
+  },
+  {
+   "path": "decisions/study/ko/outline-artifact.json",
+   "bytes": 13023,
+   "sha256": "c8f2d79f8cea3ad0804aa509df48e9930da0cd76fb96bccb42e20c6886c864c7",
+   "source": "artifacts/weekend-live/study-54475d42/ko/outline-artifact.json"
+  },
+  {
+   "path": "decisions/study/ko/outline-review.json",
+   "bytes": 607,
+   "sha256": "d5454cd40bcc37253e81541689c3a62aeba8905dd701462303b0c86a0844f145",
+   "source": "artifacts/weekend-live/study-54475d42/ko/outline-review.json"
+  },
+  {
+   "path": "decisions/study/ko/meditation-artifact.json",
+   "bytes": 7433,
+   "sha256": "68b86eba2a4d7fb78c4ba50e107d34023f36955ef8a2207680f2979429c9994c",
+   "source": "artifacts/weekend-live/study-54475d42/ko/meditation-artifact.json"
+  },
+  {
+   "path": "decisions/study/ko/meditation-review.json",
+   "bytes": 610,
+   "sha256": "45dac4e55c5b4a1158593750279cf12843b1d22e23703752c65ba5cee4b1cb68",
+   "source": "artifacts/weekend-live/study-54475d42/ko/meditation-review.json"
+  },
+  {
+   "path": "decisions/audio-review/ko-worksheet.approved.json",
+   "bytes": 28447,
+   "sha256": "e148a9b5f61a6e8fb5c08c62d5d895416d27e4c38285f3e4daafd051403edd50",
+   "source": "artifacts/weekend-live/layer4-54475d42/audio-review/ko-worksheet.approved.json"
+  },
+  {
+   "path": "decisions/audio-review/ko/audio-human-review-receipt.json",
+   "bytes": 28831,
+   "sha256": "ce8ac7119779ffe5b65bf5292f956eb7b5ce5dbd5973195170a05d60ba86d6ee",
+   "source": "artifacts/weekend-live/layer4-54475d42/audio-review/ko/audio-human-review-receipt.json"
+  },
+  {
+   "path": "decisions/study/es/outline-artifact.json",
+   "bytes": 11730,
+   "sha256": "6106e1aaeef09cfba7adb0f58bd06093f1c8a30cf16cdc1fe3a6bf5e4f08ae95",
+   "source": "artifacts/weekend-live/study-54475d42/es/outline-artifact.json"
+  },
+  {
+   "path": "decisions/study/es/outline-review.json",
+   "bytes": 607,
+   "sha256": "6a52e79b6fcc3450d722e1e0b8a93500425c8a5f224ccd0936ce8cf8a0dce287",
+   "source": "artifacts/weekend-live/study-54475d42/es/outline-review.json"
+  },
+  {
+   "path": "decisions/study/es/meditation-artifact.json",
+   "bytes": 6280,
+   "sha256": "11f8deeeceb1463b2067e35c4832973f664432d394bb5c2ac38024c9b6e8a902",
+   "source": "artifacts/weekend-live/study-54475d42/es/meditation-artifact.json"
+  },
+  {
+   "path": "decisions/study/es/meditation-review.json",
+   "bytes": 610,
+   "sha256": "8b5785eb291efc71c810b41f64ddc44577a910e0fa9eacd8dde8b6c1356d54f2",
+   "source": "artifacts/weekend-live/study-54475d42/es/meditation-review.json"
+  },
+  {
+   "path": "decisions/audio-review/es-worksheet.approved.json",
+   "bytes": 28144,
+   "sha256": "8e39c785754aff6d10e5ab10e79c3e90dd63463378d60d90e67669588d04ca4e",
+   "source": "artifacts/weekend-live/layer4-54475d42/audio-review/es-worksheet.approved.json"
+  },
+  {
+   "path": "decisions/audio-review/es/audio-human-review-receipt.json",
+   "bytes": 28548,
+   "sha256": "ea28af0cf60a4ad1d8d9fd1a800d6f82052ff816c192341d8e0143a688b6d19e",
+   "source": "artifacts/weekend-live/layer4-54475d42/audio-review/es/audio-human-review-receipt.json"
+  },
+  {
+   "path": "decisions/layer4/metadata-proposal-v1.json",
+   "bytes": 2402,
+   "sha256": "1a13bc1b83c1508b4d9d4cde5aafbdda9152c9b63902aeb724c51a2e52637443",
+   "source": "artifacts/weekend-live/layer4-54475d42/metadata-proposal-v1.json"
+  },
+  {
+   "path": "decisions/layer4/metadata-approval-v1.json",
+   "bytes": 2182,
+   "sha256": "0f72f60decd796396f9cc150a0fcc47355a353cd7fd4e85bd9dcd82348fbde2b",
+   "source": "artifacts/weekend-live/layer4-54475d42/metadata-approval-v1.json"
+  },
+  {
+   "path": "decisions/layer4/metadata-approval-v1.evidence.txt",
+   "bytes": 117,
+   "sha256": "b6010a5a7095f3f8fc8ac41dd6fd68dfa278741367d79d14d42a5ea7b790a411",
+   "source": "artifacts/weekend-live/layer4-54475d42/metadata-approval-v1.evidence.txt"
+  },
+  {
+   "path": "decisions/layer4/release-plan-prod-v2.json",
+   "bytes": 383,
+   "sha256": "efae351ea4923b8bba34d09100f2e3ad05faaf89cee97616075007129b1251b0",
+   "source": "artifacts/weekend-live/layer4-54475d42/release-plan-prod-v2.json"
+  },
+  {
+   "path": "decisions/evidence/zh-Hans__outline-review.evidence.txt",
+   "bytes": 77,
+   "sha256": "dc8ef61e2d43e561980aa473e74cb4133cbef691b811caeb29dfea4f55581cdf",
+   "source": "artifacts/weekend-live/study-54475d42/zh-Hans/outline-review.evidence.txt"
+  },
+  {
+   "path": "decisions/evidence/zh-Hans__meditation-review.evidence.txt",
+   "bytes": 77,
+   "sha256": "dc8ef61e2d43e561980aa473e74cb4133cbef691b811caeb29dfea4f55581cdf",
+   "source": "artifacts/weekend-live/study-54475d42/zh-Hans/meditation-review.evidence.txt"
+  },
+  {
+   "path": "decisions/evidence/ko__outline-review.evidence.txt",
+   "bytes": 77,
+   "sha256": "dc8ef61e2d43e561980aa473e74cb4133cbef691b811caeb29dfea4f55581cdf",
+   "source": "artifacts/weekend-live/study-54475d42/ko/outline-review.evidence.txt"
+  },
+  {
+   "path": "decisions/evidence/ko__meditation-review.evidence.txt",
+   "bytes": 77,
+   "sha256": "dc8ef61e2d43e561980aa473e74cb4133cbef691b811caeb29dfea4f55581cdf",
+   "source": "artifacts/weekend-live/study-54475d42/ko/meditation-review.evidence.txt"
+  },
+  {
+   "path": "decisions/evidence/es__outline-review.evidence.txt",
+   "bytes": 77,
+   "sha256": "dc8ef61e2d43e561980aa473e74cb4133cbef691b811caeb29dfea4f55581cdf",
+   "source": "artifacts/weekend-live/study-54475d42/es/outline-review.evidence.txt"
+  },
+  {
+   "path": "decisions/evidence/es__meditation-review.evidence.txt",
+   "bytes": 77,
+   "sha256": "dc8ef61e2d43e561980aa473e74cb4133cbef691b811caeb29dfea4f55581cdf",
+   "source": "artifacts/weekend-live/study-54475d42/es/meditation-review.evidence.txt"
+  },
+  {
+   "path": "decisions/evidence/audio-review__approval.evidence.txt",
+   "bytes": 101,
+   "sha256": "7aada08f52bc9b459cdddc8aa0a31eda9972948724c4e4c2bcb3f1bb46bc9152",
+   "source": "artifacts/weekend-live/layer4-54475d42/audio-review/approval.evidence.txt"
+  },
+  {
+   "path": "text-qc/zh-Hans/text-waiver-b364ef215fcb255e.json",
+   "bytes": 124584,
+   "sha256": "03670475f4b54e52f0e94273140e6c105a979e7fdbb9c8983ddf1f2335f67525",
+   "source": "artifacts/weekend-live/text-qc-54475d42/v3-zh/zh-Hans/text-waiver-b364ef215fcb255e.json"
+  },
+  {
+   "path": "text-qc/zh-Hans/calibration-7af5cbf40a225c86.json",
+   "bytes": 118866,
+   "sha256": "7fa6ef4dcd18d466c79b3273b62b6e139424d283c74eba34ba2763c84556bde9",
+   "source": "artifacts/weekend-live/text-qc-54475d42/v3-zh/zh-Hans/calibration-7af5cbf40a225c86.json"
+  },
+  {
+   "path": "text-qc/zh-Hans/preflight.json",
+   "bytes": 979,
+   "sha256": "23c2597eeecdbe74a78dd835ab90af0b29e2376c22dd0273d2bfa748cb0d9f05",
+   "source": "derived"
+  },
+  {
+   "path": "text-qc/ko/text-waiver-6bf4791566c2b8b3.json",
+   "bytes": 122161,
+   "sha256": "96abb52f27d3e2f8bea2976a9f9ec32958a8ba49a1de5d89f508ace93f91ce76",
+   "source": "artifacts/weekend-live/text-qc-54475d42/v15-ko/ko/text-waiver-6bf4791566c2b8b3.json"
+  },
+  {
+   "path": "text-qc/ko/calibration-3eef7f22018b73e1.json",
+   "bytes": 119411,
+   "sha256": "86123ea08966c508a86d1888e605564c99656eebb34a94770d0d443532df02e1",
+   "source": "artifacts/weekend-live/text-qc-54475d42/v15-ko/ko/calibration-3eef7f22018b73e1.json"
+  },
+  {
+   "path": "text-qc/ko/preflight.json",
+   "bytes": 942,
+   "sha256": "d6790a05fb3181b19d8b6d08d2ecf05a9fe59d23f6cbf0d4c9148a2826098b05",
+   "source": "derived"
+  },
+  {
+   "path": "text-qc/es/text-waiver-7a18087538a44402.json",
+   "bytes": 120577,
+   "sha256": "ab879b4d65e733390779a489183aa3f5f617cb6dd29cc1f94373c127915a15c3",
+   "source": "artifacts/weekend-live/text-qc-54475d42/v15-es/es/text-waiver-7a18087538a44402.json"
+  },
+  {
+   "path": "text-qc/es/calibration-82bf663b05098e70.json",
+   "bytes": 121038,
+   "sha256": "f6e6eb283de7d17808a99d4d53eaf5aad9938a1af99543e0e379b614acbe8471",
+   "source": "artifacts/weekend-live/text-qc-54475d42/v15-es/es/calibration-82bf663b05098e70.json"
+  },
+  {
+   "path": "text-qc/es/preflight.json",
+   "bytes": 943,
+   "sha256": "35cb9802b7f031d4da83301f579a137f21c5edc766b71a8f4fe448cc7ff64ea2",
+   "source": "derived"
+  },
+  {
+   "path": "text-qc/flagged-groups.json",
+   "bytes": 32265,
+   "sha256": "2b6a93c80dba7fdbc983dede7bd662ce08d115f3d2a2c337962f607de92c5a01",
+   "source": "derived"
+  },
+  {
+   "path": "audio-qc/failed-units.json",
+   "bytes": 33095,
+   "sha256": "953385046a6270278ed5ced0d9c0153daafa11d2ec187ad1d837a6b11017ac5b",
+   "source": "derived"
+  },
+  {
+   "path": "audio-qc/screening-flags.json",
+   "bytes": 57866,
+   "sha256": "5eb7bd7b0ce4cd1eec5fd01654c3c1218e3e09d2fba3306c6d861b88292a0705",
+   "source": "derived"
+  },
+  {
+   "path": "audio-qc/ko-c5b/ko/audio-calibration-dd6985161b885e14.json",
+   "bytes": 121627,
+   "sha256": "bb814242fd59aac20cb31e0b1216909d3ea1c793d8744ca12b076e10fd9ce873",
+   "source": "artifacts/weekend-live/audio-qc-54475d42/ko-c5b/ko/audio-calibration-dd6985161b885e14.json"
+  },
+  {
+   "path": "audio-qc/zh-Hans-c5/zh-Hans/track-check-8d74d74569f80386.json",
+   "bytes": 34495,
+   "sha256": "447ac9ef2b7b02c1f970ce03c0002f3011e6b04a261476761452ea1f694b4266",
+   "source": "artifacts/weekend-live/audio-qc-54475d42/zh-Hans-c5/zh-Hans/track-check-8d74d74569f80386.json"
+  },
+  {
+   "path": "audio-qc/ko-c5/ko/track-check-fffea13ecb50555b.json",
+   "bytes": 34490,
+   "sha256": "23e842ac45089b7f808f6110a6817b426fe3a9ac7d568311fbc3e62abf737c35",
+   "source": "artifacts/weekend-live/audio-qc-54475d42/ko-c5/ko/track-check-fffea13ecb50555b.json"
+  },
+  {
+   "path": "timing/anchor-units.json",
+   "bytes": 39532,
+   "sha256": "0deb917b1f8405260fb55f149fa18f8557dc0e8fd3e198915260c28b5dfe4526",
+   "source": "derived"
+  },
+  {
+   "path": "timing/schedules.json",
+   "bytes": 346736,
+   "sha256": "11859cdc1efdba3097712983d4fb91fd356e7d272aa51577227682efc4ba0754",
+   "source": "derived"
+  },
+  {
+   "path": "timing/mp3-bitrate-waveform-check.json",
+   "bytes": 559,
+   "sha256": "fb9fa8fa7632a8e153aa87af4f1da2802349b17e57eec7e565b137d28fef23f5",
+   "source": "derived"
+  },
+  {
+   "path": "cost/token-usage-by-ledger.json",
+   "bytes": 5727,
+   "sha256": "ddc88ddfefc0dc499ac5b7d30eee201ece0807af276da8fd9e8022d9b5479423",
+   "source": "derived"
+  },
+  {
+   "path": "layer2/reviewer-repair-records.json",
+   "bytes": 80496,
+   "sha256": "6aeff8f8c7cfbb24575582144dcfdc34785faff06ad8db6332bcbd394408a8ad",
+   "source": "derived"
+  },
+  {
+   "path": "layer2/execution-r11-zh.json",
+   "bytes": 644,
+   "sha256": "39fa0a0e5570d0fcecbbf47efebd21c0f9096a52815ab25b97c115393914b1dc",
+   "source": "artifacts/weekend-live/layer2-54475d42/execution-r11-zh.json"
+  },
+  {
+   "path": "layer2/execution-r4.json",
+   "bytes": 915,
+   "sha256": "eb5e1b4f092859f70e22383d643c100a57816f223f8388479e6062bfa290be81",
+   "source": "artifacts/weekend-live/layer2-54475d42/execution-r4.json"
+  },
+  {
+   "path": "layer2/execution-r6-zh.json",
+   "bytes": 642,
+   "sha256": "e0a17309f7dfb2649f85ae952133594f489c38e4fc1df4b0ca06124c0cbb1c09",
+   "source": "artifacts/weekend-live/layer2-54475d42/execution-r6-zh.json"
+  },
+  {
+   "path": "layer2/execution-r5.json",
+   "bytes": 918,
+   "sha256": "96ec6576f9bbaa9a6c36cb31b5bc3977817404e49083b0cd94a6a46c9579d8e0",
+   "source": "artifacts/weekend-live/layer2-54475d42/execution-r5.json"
+  },
+  {
+   "path": "layer2/execution-r7-zh.json",
+   "bytes": 642,
+   "sha256": "fa93552966fa1afd2bf3753bb26ba20260280626c761bd05874906106f7efb6f",
+   "source": "artifacts/weekend-live/layer2-54475d42/execution-r7-zh.json"
+  },
+  {
+   "path": "layer2/execution-r10-zh.json",
+   "bytes": 644,
+   "sha256": "d21c63166990182bd66bd950f3e58ed697d23fd152332899ef4475e7f1acf358",
+   "source": "artifacts/weekend-live/layer2-54475d42/execution-r10-zh.json"
+  },
+  {
+   "path": "layer2/execution-r12-zh.json",
+   "bytes": 644,
+   "sha256": "9ec053b2093356175670930a6c4b722e5291edc3ea2973bb942aa8a8bdcc74ac",
+   "source": "artifacts/weekend-live/layer2-54475d42/execution-r12-zh.json"
+  },
+  {
+   "path": "layer2/execution-r8-zh.json",
+   "bytes": 642,
+   "sha256": "50ce92394fbea61b5429461519468ca8ce49b698faa436271a136d05a454f0dc",
+   "source": "artifacts/weekend-live/layer2-54475d42/execution-r8-zh.json"
+  },
+  {
+   "path": "layer2/execution-r9-zh.json",
+   "bytes": 642,
+   "sha256": "04c2d6999a8f681aed3d7bf23486cb859e45c74d860b5d0578ab3fb21bbf3191",
+   "source": "artifacts/weekend-live/layer2-54475d42/execution-r9-zh.json"
+  },
+  {
+   "path": "layer2/execution-ko-es-r3.json",
+   "bytes": 704,
+   "sha256": "ffbbed12c566d9bd4c77b18c16bc43596ab2b171d508f12de1470fdef3d39a52",
+   "source": "artifacts/weekend-live/layer2-54475d42/execution-ko-es-r3.json"
+  },
+  {
+   "path": "layer2/execution-ko-es-r2.json",
+   "bytes": 705,
+   "sha256": "33923bd4bde41c2901eeaa75a07cf9b8064fa89449a862a5fd60a2f2f8c17d31",
+   "source": "artifacts/weekend-live/layer2-54475d42/execution-ko-es-r2.json"
+  },
+  {
+   "path": "publication/publish-shell-v1/summary.json",
+   "bytes": 674,
+   "sha256": "ca91f36fef231123fb1d037a3792c71970a3c7b9ba3608c5f617dd0f5af99937",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-shell-v1/summary.json"
+  },
+  {
+   "path": "publication/publish-shell-v1/deployment-receipt.json",
+   "bytes": 925,
+   "sha256": "eac91c6368f261f61d98dbba6a99814799df9d6b6837ae980bfe33aebd878449",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-shell-v1/deployment-receipt.json"
+  },
+  {
+   "path": "publication/publish-shell-v1/http-receipt.json",
+   "bytes": 44612,
+   "sha256": "85a96ab1ea55729362ca0bc21d5d8b2d6f4f5ed4164499431e5ed3a52cf61fbb",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-shell-v1/http-receipt.json"
+  },
+  {
+   "path": "publication/publish-shell-v2/summary.json",
+   "bytes": 532,
+   "sha256": "3946b939d86079bf952512579375c355dc035fad8c269828037317c4c4fada77",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-shell-v2/summary.json"
+  },
+  {
+   "path": "publication/publish-shell-v2/deployment-receipt.json",
+   "bytes": 925,
+   "sha256": "58fe5707adc047657d7e5fc5b6aa9f4728cc383528500aae360d296f937f638d",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-shell-v2/deployment-receipt.json"
+  },
+  {
+   "path": "publication/publish-video-v1/summary.json",
+   "bytes": 885,
+   "sha256": "445099e71b594f0a895cdad090b47dbb3d01bccabf2bf30967cd3d20a4c4cdb5",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-video-v1/summary.json"
+  },
+  {
+   "path": "publication/publish-video-v1/deployment-receipt.json",
+   "bytes": 925,
+   "sha256": "9ad59cb72aa009f0ab2b0af0d5981a90440407b67a383ef534187bfc9cc4bfb4",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-video-v1/deployment-receipt.json"
+  },
+  {
+   "path": "publication/publish-video-v1/http-receipt.json",
+   "bytes": 42071,
+   "sha256": "f8cc3f065cadba41f1785b7ae81ab2ef637182477c3aa7fd63fca77b5741ad2e",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-video-v1/http-receipt.json"
+  },
+  {
+   "path": "publication/publish-posters-v1/summary.json",
+   "bytes": 425,
+   "sha256": "759c028d31551ac5849ad25922b19eccf848e9fa41cdb38a27dedf2818d444d7",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-posters-v1/summary.json"
+  },
+  {
+   "path": "publication/publish-posters-v1/deployment-receipt.json",
+   "bytes": 925,
+   "sha256": "adf64829c7644889776bdf16c4dc3c5a79991627650ffd1b58d8a4330fffba6a",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-posters-v1/deployment-receipt.json"
+  },
+  {
+   "path": "publication/publish-posters-v1/http-receipt.json",
+   "bytes": 3415,
+   "sha256": "b68b27968a10e05bd248d6650edc3663b647ab3668ed2892567caa27c462b88d",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-posters-v1/http-receipt.json"
+  },
+  {
+   "path": "publication/publish-default-week-v1/summary.json",
+   "bytes": 1207,
+   "sha256": "b20322ad93557f8da218092fad5486f182b6d625af1fe9360452f27810a4ab7f",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-default-week-v1/summary.json"
+  },
+  {
+   "path": "publication/publish-default-week-v1/deployment-receipt.json",
+   "bytes": 925,
+   "sha256": "f58f0067fb4e31f0dab7e466016cedf6a337406a84454e7941e05fc88287a19e",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-default-week-v1/deployment-receipt.json"
+  },
+  {
+   "path": "publication/publish-default-week-v1/http-receipt.json",
+   "bytes": 1207,
+   "sha256": "b20322ad93557f8da218092fad5486f182b6d625af1fe9360452f27810a4ab7f",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-default-week-v1/http-receipt.json"
+  },
+  {
+   "path": "publication/beta-sync-v1/summary.json",
+   "bytes": 518,
+   "sha256": "d1fed67e066bf7294720ea92e0a28d5dd357c6ba0a8cb61e1e9592112fd347e4",
+   "source": "artifacts/weekend-live/layer4-54475d42/beta-sync-v1/summary.json"
+  },
+  {
+   "path": "publication/beta-sync-v1/deployment-receipt.json",
+   "bytes": 873,
+   "sha256": "df2956356dcdda435d3621b37453c7f8240671afadcaf762f931378648e78460",
+   "source": "artifacts/weekend-live/layer4-54475d42/beta-sync-v1/deployment-receipt.json"
+  },
+  {
+   "path": "publication/beta-sync-v1/http-receipt.json",
+   "bytes": 7762,
+   "sha256": "3079073110c92d453957ebfe7a28f93e946af3e4cf0b23a4fbb6570966e01799",
+   "source": "artifacts/weekend-live/layer4-54475d42/beta-sync-v1/http-receipt.json"
+  },
+  {
+   "path": "publication/push-preparation-v1/summary.json",
+   "bytes": 1693,
+   "sha256": "cb2f5102058618b6148b94ec56f394f12755918b2ef8ad6b27cc8a238de8fd1d",
+   "source": "artifacts/weekend-live/layer4-54475d42/push-preparation-v1/summary.json"
+  },
+  {
+   "path": "publication/http-verification-prod-v1.json",
+   "bytes": 8494,
+   "sha256": "03c1823b8bfe919a33cb7423907556327d0debc96c32b59013b3bf05b52aee63",
+   "source": "artifacts/weekend-live/layer4-54475d42/http-verification-prod-v1.json"
+  },
+  {
+   "path": "publication/production-http-verification-v1.json",
+   "bytes": 744,
+   "sha256": "db0d8ee3f280c935134dfa81ce5fd5434bc19757177a7df46f5e2a73e842a34e",
+   "source": "artifacts/weekend-live/layer4-54475d42/production-http-verification-v1.json"
+  },
+  {
+   "path": "publication/prod-asset-first-v2__asset-first-report.json",
+   "bytes": 1730,
+   "sha256": "67d85bc4ab14c6d2fb1e5ab2a52d169d3196cbea4e1588ab2c507b3dfe20996a",
+   "source": "artifacts/weekend-live/layer4-54475d42/prod-asset-first-v2/asset-first-report.json"
+  },
+  {
+   "path": "publication/sealed-prod-v2__seal-report.json",
+   "bytes": 1009,
+   "sha256": "526286556c699ee4fcf65917f8ae37fa64958197a9aa9517b9b697a282e373f7",
+   "source": "artifacts/weekend-live/layer4-54475d42/sealed-prod-v2/seal-report.json"
+  },
+  {
+   "path": "publication/prod-shell-v1__shell-report.json",
+   "bytes": 440,
+   "sha256": "c7ced5dccbb688f9f72c44df04081c91e5f1e7bdd3595ad79620efdd7bb37430",
+   "source": "artifacts/weekend-live/layer4-54475d42/prod-shell-v1/shell-report.json"
+  },
+  {
+   "path": "publication/live-baseline-7089e037__baseline-receipt.json",
+   "bytes": 1797,
+   "sha256": "a965674b6404e62b04f6301f1231efd11d682b79986f5892ccea661451041d53",
+   "source": "artifacts/weekend-live/layer4-54475d42/live-baseline-7089e037/baseline-receipt.json"
+  },
+  {
+   "path": "tooling/run_spark_audio_qc.py",
+   "bytes": 10834,
+   "sha256": "63f57d2309159175ed3d1b0d7927471fd2ffcdc3a6e3693aa606868d8fd58c4d",
+   "source": "artifacts/weekend-live/layer3-54475d42/run_spark_audio_qc.py"
+  },
+  {
+   "path": "tooling/run_spark_asr_screen.py",
+   "bytes": 9480,
+   "sha256": "39f4020df633889db9f394eeb59d3e759b7b05ce5a12ba7b769da1c985efff3a",
+   "source": "artifacts/weekend-live/layer3-54475d42/run_spark_asr_screen.py"
+  },
+  {
+   "path": "tooling/run_spark_formal_render.py",
+   "bytes": 12432,
+   "sha256": "9a265fd39338093761813a9bafbb397f539137aad7ed7255bbae3e58261f84bb",
+   "source": "artifacts/weekend-live/layer3-54475d42/run_spark_formal_render.py"
+  },
+  {
+   "path": "tooling/run_spark_compact.py",
+   "bytes": 10352,
+   "sha256": "03b8b0581cc670f69ce6b4c2a42bef957772adc0659e6ca6033eaacb06d67bf6",
+   "source": "artifacts/weekend-live/layer3-54475d42/run_spark_compact.py"
+  },
+  {
+   "path": "tooling/l3_post_chain_v3.sh",
+   "bytes": 3405,
+   "sha256": "3bea58fc9b59a3fee2ce260fdd150a259a0ac436c7424ccd6d235c568ef3b0b9",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/l3_post_chain_v3.sh"
+  },
+  {
+   "path": "tooling/l3_post_chain_v2.sh",
+   "bytes": 3405,
+   "sha256": "3a18ddf40d51c0563e0d68ba3804752ad48031cddc61806c17e28e8a44c96f2e",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/l3_post_chain_v2.sh"
+  },
+  {
+   "path": "tooling/aqc_zh_es.sh",
+   "bytes": 1934,
+   "sha256": "4ffe5207c6a41c34919387ae4f65e506b3af7b4c295d14abdca990d65323dc5e",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/aqc_zh_es.sh"
+  },
+  {
+   "path": "tooling/l3_dispatch_a4.sh",
+   "bytes": 1798,
+   "sha256": "400aea4fc20594fa60cb26eb46fe312dd2d33ccb6463ae4dc8c3103ffbc92bae",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/l3_dispatch_a4.sh"
+  },
+  {
+   "path": "tooling/l3_chain_a4.sh",
+   "bytes": 1300,
+   "sha256": "4c40ba23ae62a703f51c9693cacf5eabe5fc91490b9d3069b258a99f70c75a35",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/l3_chain_a4.sh"
+  },
+  {
+   "path": "tooling/l3_resume_v3.sh",
+   "bytes": 2480,
+   "sha256": "412f03f6bd15ead57e1227b05cb7e5ce43c5acb589f77ba3f98b42bf42f8bf42",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/l3_resume_v3.sh"
+  },
+  {
+   "path": "tooling/audio_qc_chain.sh",
+   "bytes": 1953,
+   "sha256": "a7bed9c81d9b27002bc66c250fa5b8b5ebd900661ae8a1e3f55fff4b711fcad6",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/audio_qc_chain.sh"
+  },
+  {
+   "path": "tooling/audio_qc_accept_chain.sh",
+   "bytes": 1955,
+   "sha256": "7c1db5423a42259750fb8b8f41267da08fce4a43e5e507a4697803473c910889",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/audio_qc_accept_chain.sh"
+  },
+  {
+   "path": "tooling/l3_dispatch_v2.sh",
+   "bytes": 1996,
+   "sha256": "64e71b09ebc5ee09f281df63f248ae2bcbbdc65dda5d7dcf3c762f3c93f2d7ee",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/l3_dispatch_v2.sh"
+  },
+  {
+   "path": "tooling/l3_chain_v2.sh",
+   "bytes": 1245,
+   "sha256": "5e13dfae718bd8fce213713c3993de13aff976498f0a3c5f35dc5a54286510a0",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/l3_chain_v2.sh"
+  },
+  {
+   "path": "tooling/l3_chain.sh",
+   "bytes": 1300,
+   "sha256": "b2ea3dbeb663bbb0965b66b8c15685bce2eda9296ecc0c2947ab8325aa94fe31",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/l3_chain.sh"
+  },
+  {
+   "path": "tooling/l3_screen_chain.sh",
+   "bytes": 1284,
+   "sha256": "895c32f578d64878c149238a0a8d45c03587ba6f2062723e0af0bdaad718148e",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/l3_screen_chain.sh"
+  },
+  {
+   "path": "tooling/l3_post_chain.sh",
+   "bytes": 3196,
+   "sha256": "a5dd2f926904c51e0470985b22c8efadff83399e49935defb35e5d2f559157f0",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/l3_post_chain.sh"
+  },
+  {
+   "path": "tooling/l3_final_chain.sh",
+   "bytes": 4723,
+   "sha256": "91f53ada6b1adc11d8bfffcb8a17928212c9dfeeea9b0f184500707085d7824f",
+   "source": "artifacts/weekend-live/layer3-54475d42/tooling/chains/l3_final_chain.sh"
+  },
+  {
+   "path": "tooling/build_content_v3.py",
+   "bytes": 3938,
+   "sha256": "2eca75860b5a1b6cc6b744b67cff81a3ec710acddaf1f5c5ec36071e861e13fc",
+   "source": "artifacts/weekend-live/layer4-54475d42/build_content_v3.py"
+  },
+  {
+   "path": "tooling/prepare_release.sh",
+   "bytes": 2136,
+   "sha256": "ecc482ee27b4c191c6bfb9af06f0b457ca61775e769e2f8cb5d99248f56a7d63",
+   "source": "artifacts/weekend-live/layer4-54475d42/prepare_release.sh"
+  },
+  {
+   "path": "tooling/run_study.py",
+   "bytes": 7484,
+   "sha256": "8db96a86451b17812e1d0d71663ff094f4e696f22e5985544ebc7cd9b97c5303",
+   "source": "artifacts/weekend-live/study-54475d42/run_study.py"
+  },
+  {
+   "path": "tooling/freeze_study_draft.py",
+   "bytes": 2845,
+   "sha256": "fe696a2fe58f4caf99761d8220119379c30b891f2bf86b10819b11629274c122",
+   "source": "artifacts/weekend-live/study-54475d42/freeze_study_draft.py"
+  },
+  {
+   "path": "tooling/publish-shell-v1/prepare.py",
+   "bytes": 1602,
+   "sha256": "1455666b89f332ee0bd7ffe2653d29cce8d6692dc8982a82211b0a8971b57ec5",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-shell-v1/prepare.py"
+  },
+  {
+   "path": "tooling/publish-shell-v1/verify.py",
+   "bytes": 1918,
+   "sha256": "4b346c9203d94279d09f4915a7501bb9db2c229a3cad5470cf2ab2a98977ea12",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-shell-v1/verify.py"
+  },
+  {
+   "path": "tooling/publish-shell-v1/config.json",
+   "bytes": 881,
+   "sha256": "3cddf8697990fc1e0920b53290d1f24500ef3d5ecdf75b442c3aa967c772a229",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-shell-v1/config.json"
+  },
+  {
+   "path": "tooling/publish-video-v1/verify.py",
+   "bytes": 1966,
+   "sha256": "25ff41fa9883a9a70cbb104c486bc87fb8bfbbb5faab5740db8ac9297f5d9527",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-video-v1/verify.py"
+  },
+  {
+   "path": "tooling/publish-video-v1/config.json",
+   "bytes": 943,
+   "sha256": "da4a9650faa5ee06cd375cdd9cd890004249a85129d9d98e7c580b53114d0906",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-video-v1/config.json"
+  },
+  {
+   "path": "tooling/publish-posters-v1/prepare.py",
+   "bytes": 3118,
+   "sha256": "c77c1aac731e7547bebcfae5a58a9d28a9263d06bbe630cfbd533191dbfeaff5",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-posters-v1/prepare.py"
+  },
+  {
+   "path": "tooling/publish-posters-v1/verify.py",
+   "bytes": 2011,
+   "sha256": "b3598734476e9602227876cd0cfcb34c1fe2e592c46646a6d804f69f84fa8792",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-posters-v1/verify.py"
+  },
+  {
+   "path": "tooling/publish-posters-v1/config.json",
+   "bytes": 945,
+   "sha256": "2508b809db31f40d034d6ed155298552b9566a6195165211a8a9cf8b549dd749",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-posters-v1/config.json"
+  },
+  {
+   "path": "tooling/publish-default-week-v1/prepare.py",
+   "bytes": 2420,
+   "sha256": "edbb8a3c7bcbf48dccee48ed40dd048859719fba31bc7922b920ee429afa0e09",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-default-week-v1/prepare.py"
+  },
+  {
+   "path": "tooling/publish-default-week-v1/config.json",
+   "bytes": 950,
+   "sha256": "c201edbb2a6ddad722b5c5d24886151e5a34143797e3a60136dc10dacde3f540",
+   "source": "artifacts/weekend-live/layer4-54475d42/publish-default-week-v1/config.json"
+  },
+  {
+   "path": "tooling/beta-sync-v1/prepare.py",
+   "bytes": 2687,
+   "sha256": "d63d93e970744a58cd950a5453064e5f8746413bba6a1a2ae95749b9b44f9907",
+   "source": "artifacts/weekend-live/layer4-54475d42/beta-sync-v1/prepare.py"
+  },
+  {
+   "path": "tooling/beta-sync-v1/verify.py",
+   "bytes": 1991,
+   "sha256": "1b4c64e13618aea0cd4b46258c23dd6f7181715ce8ef0bca629ac3f043577048",
+   "source": "artifacts/weekend-live/layer4-54475d42/beta-sync-v1/verify.py"
+  },
+  {
+   "path": "tooling/beta-sync-v1/config.json",
+   "bytes": 911,
+   "sha256": "45656628bb61388a234f598b548cb10122c78a93557b3ae56b8e8efea8729cf6",
+   "source": "artifacts/weekend-live/layer4-54475d42/beta-sync-v1/config.json"
+  },
+  {
+   "path": "tooling/build_fixture_bundle.py",
+   "bytes": 12232,
+   "sha256": "30985f78f13ea9fc305e4639c25849a34c210fe8d249a62565b775059549cd77",
+   "source": "the script that built this bundle"
+  },
+  {
+   "path": "cost/model-responses-archive.json",
+   "bytes": 5245,
+   "sha256": "ed29289135e369b2bb38bfc0a5e4041d09e1af4f07827baabe7106ff05423ef4",
+   "source": "derived; points at private GCS"
+  }
+ ]
+}

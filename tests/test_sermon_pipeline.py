@@ -273,7 +273,7 @@ class SermonPipelineTest(unittest.TestCase):
                 "choices": [{"message": {"content": '{"segments":[{"id":0,"text":"God loves us."}]}'}}]
             }
             translation_response = {
-                "model": "gpt-5.6",
+                "model": "gpt-6.1-sol",
                 "choices": [{"message": {"content": '{"id":0,"zh":"神爱我们。"}'}}],
             }
             with mock.patch.object(mod, "chat_json", side_effect=[correction_response, translation_response]) as request:
@@ -282,7 +282,7 @@ class SermonPipelineTest(unittest.TestCase):
                     segments,
                     gpt4o_chunks,
                     outdir,
-                    "gpt-5.6",
+                    "gpt-6.1-sol",
                     glossary,
                     240.0,
                     reasoning_effort="high",
@@ -291,7 +291,7 @@ class SermonPipelineTest(unittest.TestCase):
                     "key",
                     corrected,
                     outdir,
-                    "gpt-5.6",
+                    "gpt-6.1-sol",
                     glossary,
                     reasoning_effort="high",
                 )

@@ -2,6 +2,8 @@
 
 这组工具复用既有缓存，测试正常页面 prepare、校验、封存、guarded Hosting 发布和 reader；不调用模型 API。模拟审核仅用于用户明确授权的 Dev 测试，不代表正式内容批准。初次线上测试发现的时间轴问题已在 PR #245 的后续代码中修复；Luna 监控复跑已完成 Dev 三语发布、Web 与原生 HTTPS 读回，最终版本 `ac307d67871fec59`。没有更新 TestFlight 或执行实际播放。历史过程见 [本轮复盘](reports/20261004-dev-180s-page-generation-retrospective.zh.md)，后续监控和恢复工具见 [诊断发布执行器](dev-diagnostic-delivery-runner.zh.md)。
 
+需要真实模型译文、真实配音和机器质检的同类片段测试，见[真实模型片段 E2E](clip-real-e2e.zh.md)。
+
 ## 生成与发布
 
 ```sh
@@ -13,6 +15,25 @@
 `verify_dev_180s_page_test` 对固定媒体 SHA、时长、完整解码及 CLI 正负准入进行只读验证，输出使用新的目录。`build_dev_180s_simulated_inputs` 从 `artifacts/dev-full-rerun-20261001` 提取既有单元、译文与音频，构造醒目标记的独立模拟包并执行正常 delivery prepare。其 `--out` 应使用独立的 artifacts 子目录，不得指向正式 run 或已需保留的产物。
 
 `prepare_dev_simulated_publication` 的 `baseline` 从真实 Hosting 版本获取文件清单和配置，缓存重用必须匹配线上 hash；`asset-first` 保留目录并先加入完整资源；正常 builder HTTP verification / seal 后，`overlay` 只允许增加一个隔离测试页，保持原有页面和默认页；`runtime-repair` 仅更新完整 reader 模块闭包，catalog 字节不变。该工具只准备快照，不自行部署。部署须使用正常 `guarded_hosting_publish` 的 Dev 配置与回执。不要重复发布结果未知的 attempt；先对账。
+
+## 用上周的片段彩排（2026-10-12 起）
+
+每周正式运行前，用同一份代码对上周的片段跑一遍（2026-10-11 复盘第九节第 4 条）。用真实模型彩排时，各环节预算上限和开工条件见[周更运行配置](weekly-run-profile.zh.md)；历史三语片段运行约 3 美元不是当前预算保证，必须按显式总额选择阶段，余额不足时停止或重新批准。`build_dev_180s_simulated_inputs.py --clip-spec <spec.json>` 从周更运行的冻结产物里切一段连续的英文单元：源视频按时间剪下并重新编码，对齐分段和锚点的时间平移到片段起点，每个语言保留这些单元对应的候选组和单句音频，音轨由单句音频按顺序拼成。审核仍是醒目标记的模拟，不调用模型。
+
+`sermon-dev-clip-spec-v2` 写明：`englishSourcePackage`（冻结英文源包的 `path` 和 `jsonSha256`）、`media`（剪片视频及 SHA-256）、`englishSourceMedia`（源包绑定的媒体哈希与时长）、`alignedSegments`、`anchor`（路径与规范 JSON 哈希）、`approvedWindowStartSeconds`、`unitRange`（半开区间）、`marginSeconds`（必填 `{"before": …, "after": …}`，分别设定前后留白；配音通常比英文长，结尾要留更多，例如前 1 秒、后 8 秒，并让结尾落在静默里），以及恰好 `zh-Hans`、`ko`、`es` 三个语言的 `candidate` 与 `audioPackage`。旧的 `sermon-dev-clip-spec-v1` 仍可读取：其 `marginSeconds` 只能是一个数（缺省 1 秒），读取时在内存中迁移为前后相同的 v2；片段记录的 `clipSpecSha256` 仍是原文件的哈希。v1 文件里写对象会被拒绝，需改为 v2。英文源包必须绑定当前锚点、对齐分段、源媒体、日期和窗口起点；每个候选与音频包必须绑定该源包，候选还须绑定原始锚点，音频包须绑定原始候选，不能靠重写哈希接纳其他周的产物。
+
+视频若不是源包绑定的同一文件，`englishSourceMedia.path` 必须指向哈希匹配的源媒体，并且视频与它的完整音频解码到 16 kHz 单声道 PCM 后 SHA-256 相同；时长仍须相差不超过 0.1 秒。仅自报哈希或时长不足以证明同一录音；经过降噪、裁剪或有损重编码导致解码音频不同的文件会被拒绝，需使用可验证一致的源文件。片段必须保留完整的 `sourceSentenceId`，跨越片段边界的句子或翻译组会被拒绝；每个保留单元还须有片段内的对齐分段覆盖，否则应扩大 margin 或调整范围。
+
+一条命令跑完（不加 `--execute` 只做本地预检）：
+
+```sh
+CLIP_SPEC=/absolute/path/clip-spec.json BASELINE_CACHE=/absolute/path/previous-dev-baseline \
+  scripts/run_dev_180s_beta_e2e.sh --execute
+```
+
+`BASELINE_CACHE` 指向上一次已核验的 Dev baseline 目录（含 `public/` 与 `baseline-receipt.json`）：线上哈希仍一致的文件直接复用。Dev 站的 09-27 整场视频在下载约 560 MB 时会被服务端截断，不带缓存时 baseline 会稳定失败。
+
+2026-10-12 首次用 10-11 第 216–241 句（约 130 秒，含启示录第八章两处章节引用）跑通：Dev 隔离页三语冒烟通过，Dev 默认页未变。同一次运行发现并修正：Dev 的 v4 默认页是机器质检页，v3 人工投影原本把默认页挪到日期最新的人工页，而日期为 10-11 的测试页正是最新的；现在投影不会选模拟或诊断页作默认页，overlay 也会在标记测试页后恢复原默认页。发布后紧接着的回读可能因 CDN 传播延迟读到旧文件，记为 `outcome_unknown` 时先用 `guarded_hosting_publish.reconcile()` 对账，不要重发。Dev 站反馈功能关闭（`/engagement.json` 为 `enabled: false`），浏览器冒烟要加 `--no-session`。
 
 ## Schema 与迁移
 

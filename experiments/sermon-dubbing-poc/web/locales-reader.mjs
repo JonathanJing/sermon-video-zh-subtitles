@@ -96,7 +96,7 @@ export const messages = {
     "reader.offlineMissing": "오프라인: 콘텐츠가 완전히 저장되지 않았습니다. 인터넷 연결 후 다시 여세요."
   },
   "es": {
-    "reader.live": "Escucha en directo",
+    "reader.live": "En directo",
     "reader.follow": "Seguir reproducción",
     "reader.free": "Lectura libre",
     "reader.followHint": "Desplázate para leer libremente; vuelve a la frase actual para seguir.",

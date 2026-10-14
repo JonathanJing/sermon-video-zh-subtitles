@@ -1,0 +1,245 @@
+{
+ "schemaVersion": "sermon-text-qc-human-acceptance-v1",
+ "targetLocale": "ko",
+ "candidateJsonSha256": "efc5043b3a57ec3973245163a88d40139a4cc9a1c15aef482b4a587b69da1a1b",
+ "textQcJsonSha256": "60a8eac5e69131106a31d1adeb23281590012fe429f825cffc8b765cf7712639",
+ "decidedBy": "Jony",
+ "decidedByRole": "human_operator",
+ "humanApproval": true,
+ "decidedAt": "2026-10-11T09:55:00Z",
+ "userStatement": "按建议 / Ship as-is, fix later; 你直接做机器检查，修改好后，开始做l3 (delegation, 2026-10-11)",
+ "groups": [
+  {
+   "groupId": "translation-chunk-0000-u029",
+   "englishSha256": "0424bbdaddad7d3bfd0ee7fd47e439f045a394a5176584fb3d9cef849828c584",
+   "targetTextSha256": "737480d37f8f6405ff06e4e0e007e9c154f7f41f5a944e274737805d5885eb59",
+   "problems": [
+    "back_translation addition: my brother -> my younger brother"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "'my brother' is the younger brother throughout this story; Korean requires 남동생 (new flag on the rescreen under implementation 49f4e9bf)"
+  },
+  {
+   "groupId": "translation-chunk-0000-u040",
+   "englishSha256": "a99c00b161d3062c80349260896a03ac3ff2cb75ac24ca0b66094cc1ffd7991d",
+   "targetTextSha256": "a5ff5d4bb019949569da9c2c3c27802ee6a19a8379a9b4a20fa268a8371fdf51",
+   "problems": [
+    "back_translation number: he brings -> they bring"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0000-u041",
+   "englishSha256": "7fe8963e3208bd64d7f73748c9a8fe7f999a6d007b0fb0a18bc14ccc23ff9bdd",
+   "targetTextSha256": "d2dc5c54127133bdba1df48167560eb9933748900978980069c0e23db8ef660e",
+   "problems": [
+    "back_translation meaning_shift: From upstairs, I hear two loud cracks. -> I hear a loud sound of something breaking upstairs twice."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "'two loud cracks' rendered as a loud breaking sound heard twice; same event (new flag on the rescreen under implementation 49f4e9bf)"
+  },
+  {
+   "groupId": "translation-chunk-0001-u037",
+   "englishSha256": "c2fd2c06f5cbe781fbdbc15c03eb64750f34ae2bff87ff91203372f26664c56a",
+   "targetTextSha256": "93764bc4655179d0f82e34dc6c6e8e04011ac814bc3c92df36ac071463fc3d7c",
+   "problems": [
+    "back_translation number: the trumpets are God's divine warnings -> the trumpet is God's warning"
+   ],
+   "decision": "accepted",
+   "decidedBy": "claude-code (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "Korean does not mark the plural; 나팔 covers 'the trumpets'."
+  },
+  {
+   "groupId": "translation-chunk-0002-u024",
+   "englishSha256": "d00d51032077cde1f381f30c05df856b701c49ec5e524088189f6d3be7e2eb48",
+   "targetTextSha256": "80812db4a65d6bc752874d27b5e7cb44fb3e5102f6678c755ba21558754fbb4b",
+   "problems": [
+    "back_translation meaning_shift: It is intense. -> It is truly amazing."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "'It is intense' rendered 엄청납니다 (tremendous); accepted for release, listed for post-release wording fix (new flag on the rescreen under implementation 49f4e9bf)"
+  },
+  {
+   "groupId": "translation-chunk-0003-u004",
+   "englishSha256": "188f1ae50a0fc8f318f3dad489391c0f9f889608dd599f99e28717c1cc2a6af6",
+   "targetTextSha256": "7d0480cb931b519bfa1b0eacccac0adbc9b49f0a7f83aa2ae2d9bdf6d7455b80",
+   "problems": [
+    "back_translation addition: bloody vengeance, and divine wrath -> It is praising bloody revenge and God's wrath"
+   ],
+   "decision": "accepted",
+   "decidedBy": "claude-code (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "Fragment that completes the preceding unit's 'praising ...'; the predicate is carried over, no new claim."
+  },
+  {
+   "groupId": "translation-chunk-0003-u016",
+   "englishSha256": "61b674ea46248d66858a8f077ea80a10cd27a201891c9344839a8cdf39aa5945",
+   "targetTextSha256": "8bbec12db73a4672e7d00b33fd87c39c0219a7723a55056a156374743ec96f49",
+   "problems": [
+    "back_translation meaning_shift: God is also wrathful -> God sometimes becomes angry"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "'God is also wrathful' rendered 진노하기도 하는 (also shows wrath); meaning preserved (new flag on the rescreen under implementation 49f4e9bf)"
+  },
+  {
+   "groupId": "translation-chunk-0003-u044",
+   "englishSha256": "ac3cf641c9d7c9fd0bc83f60242064d197429388a2c3d04f96849b21ff78b0e7",
+   "targetTextSha256": "391bed1c4386fae78e96c916207294e2525d9eee5e1bdac3aca48b3fd830388d",
+   "problems": [
+    "back_translation meaning_shift: He called me names. -> That kid swore at me."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0004-u001",
+   "englishSha256": "325cf649ace316796dc74a016e1d7b6d5eb75b9f42acccf7a7acd878a2fa1ae4",
+   "targetTextSha256": "71f7820609b584e615240ebb44e5183fc614b6cb7930b3a18e3f75796491b81d",
+   "problems": [
+    "back_translation addition: that little boy if we could borrow his PlayStation. -> Could you ask that little boy if we can borrow his PlayStation?"
+   ],
+   "decision": "accepted",
+   "decidedBy": "claude-code (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "Fragment that completes 'I wanted to say to her, can you ask...'; the question form is the preceding unit's."
+  },
+  {
+   "groupId": "translation-chunk-0004-u013",
+   "englishSha256": "479e04a9b8f8865fc2282880a91bbea7a9e51feae67cbf7978ca5f22fa331403",
+   "targetTextSha256": "508144aee9d583ca4709cb0534180a860d8497b6fa9076b1710192824d15c374",
+   "problems": [
+    "Hangul share 0.59 < 0.60"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0005-u021",
+   "englishSha256": "1a988f282b5cc607980e416cda97e90d088d9054729247e2357c0a5a5b8f320d",
+   "targetTextSha256": "c6ed4a098cb7be2cafeab181a164cddb43ab100177e1ee96db7c719366b42681",
+   "problems": [
+    "back_translation number: but also signs -> but also through a sign"
+   ],
+   "decision": "accepted",
+   "decidedBy": "claude-code (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "Korean does not mark the plural; 표징 covers 'signs'."
+  },
+  {
+   "groupId": "translation-chunk-0005-u032",
+   "englishSha256": "f44e0aeca610ad042cc25872848d29162c23da0f1e965c113d8dbdfc166c27d8",
+   "targetTextSha256": "507d1977014b6e095d1772b2f3843c7e044f9e500481d769b8b6e86bf133af8a",
+   "problems": [
+    "back_translation number: Trumpets. -> It is a trumpet."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0007-u008",
+   "englishSha256": "7038b61f37cf01c1b2a7cff7fac34ab50ad02fce7212a739ecadaac61f94394c",
+   "targetTextSha256": "b8e1e0b4457ebe8c66a44b2aae20823ca76e6504ac486a722226ab877461d6bb",
+   "problems": [
+    "back_translation meaning_shift: He'd send a plague. -> God used to send disasters."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0008-u014",
+   "englishSha256": "f46046c5be927032f67a352f95890056cdd13d3ade219f950d6122dcc64ce1c5",
+   "targetTextSha256": "d36d2eb837e3b3a11c8d8112268603602ff57cd4d7cf8b0482898d33f3a0c30a",
+   "problems": [
+    "back_translation addition: how do you and I, -> how should you and I live?"
+   ],
+   "decision": "accepted",
+   "decidedBy": "claude-code (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "Fragment 'how do you and I,' completed by the next unit ('In two ways'); 살아야 supplies the elided verb."
+  },
+  {
+   "groupId": "translation-chunk-0008-u016",
+   "englishSha256": "587c446f9615644881df468e1800c3ff3cc8f0f923aa70c47bf8d63106fe9a5a",
+   "targetTextSha256": "acfe84bb55d5c3f2ab554587c94157163ddbd37b3506d3e18e992b969c450f93",
+   "problems": [
+    "back_translation addition: In two ways. -> We must live in two ways."
+   ],
+   "decision": "accepted",
+   "decidedBy": "claude-code (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "'In two ways.' answers 'how do you and I [live]'; the verb is the same elided predicate."
+  },
+  {
+   "groupId": "translation-chunk-0008-u022",
+   "englishSha256": "5d5378a334ef16a8e9113976099f4a99a7cc18489dafbe777c39dd8ff86144e6",
+   "targetTextSha256": "c3b7115a91c968458550a1ed0495d756f2accb380b60c2c3e853410dffee7b73",
+   "problems": [
+    "back_translation meaning_shift: My dad's heart was aching for my brother. -> My father was heartbroken because of my younger sibling.",
+    "back_translation addition: my brother -> my younger sibling"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0008-u023",
+   "englishSha256": "94eb3a4981fab9c8b8cea4a9cc8f40e063f542613f97a9a8d6ab854ab88942dc",
+   "targetTextSha256": "55b3aa47c61de8ffe81b0cd66c3ac53c8bd452cba917d328ea77d7dae78478c3",
+   "problems": [
+    "back_translation meaning_shift: but I missed it. -> but I did not understand his feelings."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0009-u002",
+   "englishSha256": "01e7aa5b7ca7211dfbf67dada095f6cc291098bf9bde1abeeb4beb1a7ef7c21d",
+   "targetTextSha256": "ba765dc69b3012e68ab25348eacad63d14f66e3ec23bfb84520a59b26802b127",
+   "problems": [
+    "back_translation addition: drop the hammer on you -> punishes you without mercy"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0010-u007",
+   "englishSha256": "d194886c3c08f2c65b767408b8ee51cfe3cb8b9b5a2b1c938e090cfe4b3f1e30",
+   "targetTextSha256": "13b148da13208ece25a2dfee68b9aea44603080f4188ebcd10ca575d39b2bfea",
+   "problems": [
+    "back_translation meaning_shift: he was not self-righteous -> he did not boast about his own righteousness"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator"
+  },
+  {
+   "groupId": "translation-chunk-0010-u029",
+   "englishSha256": "9f05a8fe6315230d535f76ed5ad7679cf4cbb0c1f7d6fcce9fdc2f7e9cd0da46",
+   "targetTextSha256": "7ab0d851d77827bfd3e7c6a63e04f49b0531c7b6d2ed30571a17f1f59e6a8c83",
+   "problems": [
+    "back_translation meaning_shift: You walked in here tonight ... you quickly checked your old spiritual report card. -> Some of you came in here tonight ... you quickly checked your old spiritual report card."
+   ],
+   "decision": "accepted",
+   "decidedBy": "claude-code (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "The sermon is addressing a subset of listeners here (preceding 'Others of us...'); 여러분 중 어떤 분은 keeps that address."
+  }
+ ]
+}

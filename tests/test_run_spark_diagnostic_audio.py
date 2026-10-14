@@ -138,10 +138,11 @@ class SparkAudioWrapperTests(unittest.TestCase):
             'inventory': {'processes': [{'pid': os.getpid(), 'startTicks': 42}]}}
         gateway = subject.AdmissionGateway(Path(gateway_temp.name) / 'gateway', self.session, {'jobId': 'fixture-job'})
         self.addCleanup(gateway.close)
-        def request(payload):
+        def request(payload, *, send=True):
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as channel:
                 channel.settimeout(5); channel.connect(str(gateway.path))
-                channel.sendall(json.dumps(payload).encode() + b'\n')
+                if send:
+                    channel.sendall(json.dumps(payload).encode() + b'\n')
                 return json.loads(channel.makefile('rb').readline(65537))
         valid = {'action': 'require', 'session_id': 'fixture-session', 'owner': 'fixture-owner'}
         first = request(valid)['result']
@@ -157,8 +158,14 @@ class SparkAudioWrapperTests(unittest.TestCase):
         self.assertIn('error', request({**valid, 'action': 'finish'}))
         self.assertIn('error', request({**valid, 'owner': 'other-owner'}))
         self.assertEqual(self.session.require_ready.call_count, 2)
+        prior_status_calls = self.session.request.call_count
         with patch.object(gateway, 'peer_uid', return_value=os.getuid() + 1):
-            self.assertIn('error', request(valid))
+            # Credentials are rejected before reading any payload. Read the
+            # rejection immediately; writing after that close races EPIPE.
+            self.assertEqual(request(valid, send=False),
+                             {'error': 'gateway_admission_rejected:ValueError'})
+        self.assertEqual(self.session.request.call_count, prior_status_calls)
+        self.assertEqual(self.session.require_ready.call_count, 2)
         self.session.request.return_value['inventory']['processes'][0]['startTicks'] = 43
         self.assertIn('error', request(valid))
         self.assertEqual(self.session.require_ready.call_count, 2)

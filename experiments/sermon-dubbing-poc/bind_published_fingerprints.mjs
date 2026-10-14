@@ -41,7 +41,9 @@ for(const [locale,target] of Object.entries(page.targets)) {
   const content=read(local(contentAsset.path));
   require(content.sourceMediaSha256===sourceSha&&content.englishSourcePackageJsonSha256===page.sourceIdentitySha256&&content.pageId===pageId&&content.targetLocale===locale,'Source identity mismatch');
   const probe=spawnSync('ffprobe',['-v','error','-show_entries','format=duration','-of','json',local(audioAsset.path)],{encoding:'utf8'});
-  require(probe.status===0&&Math.abs(Number(JSON.parse(probe.stdout).format.duration)-content.durationSeconds)<.1,'Track is not source-clock length');
+  const drift=Number(JSON.parse(probe.stdout).format.duration)-content.durationSeconds;
+  // A natural dub may end up to one second after the approved clip (final sentence outlasting the English).
+  require(probe.status===0&&drift>-.1&&drift<1.1,'Track is not source-clock length');
   variants.push({locale,target,audioAsset,duration:content.durationSeconds});
 }
 require(variants.length>0&&variants.every(v=>v.duration===variants[0].duration),'Different source windows');

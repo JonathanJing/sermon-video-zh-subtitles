@@ -61,6 +61,20 @@ COMPARE_SYSTEM = ("Compare an ORIGINAL English sermon passage with an independen
                   "notice: omission, addition, negation, number, name, scripture_reference, meaning_shift. "
                   "Ignore wording, word order, register and natural paraphrase. Severity is major when "
                   "a fact, claim, instruction or theological point changes; otherwise minor. "
+                  "CONTEXT, when given, is the surrounding English the translator saw. Use it only to "
+                  "decide what a pronoun or elliptical phrase refers to: a pronoun the rendering resolves "
+                  "to the referent CONTEXT names (\"he\" -> \"my father\"), and the target language's "
+                  "generic grammatical gender for a mixed or unspecified group, are at most minor; a "
+                  "referent CONTEXT does not support is a major issue. CONTEXT never licenses content: "
+                  "every sentence, claim, number, ordinal or sequence marker (\"first\", \"second\") and "
+                  "name in BACK-TRANSLATION must be in ORIGINAL itself; anything present only in CONTEXT "
+                  "or in neither is a major addition. "
+                  "A spoken discourse marker in ORIGINAL that addresses the listeners without making a "
+                  "claim (\"you know\", \"you see\", \"I mean\") may be rendered by the target "
+                  "language's usual audience address; reading it back as \"as everyone knows\" or "
+                  "\"everyone knows that\" is at most minor. Judge the rest of the sentence as usual; "
+                  "a claim that something is commonly known, where ORIGINAL has no such marker, is still "
+                  "a major addition. "
                   "status is fail when any major issue exists. Return JSON matching the schema.")
 SPOKEN_COMPARE_SYSTEM = (
     "Compare an ORIGINAL English sermon passage with an independent BACK-TRANSLATION of its "
@@ -148,11 +162,31 @@ def back_translation_requests(group: dict, locale: str) -> dict:
     return {"backTranslation": back, "backTranslationRequestSha256": _sha(back)}
 
 
+# Korean and Chinese leave plural number unmarked on most nouns: "나팔" or "号角" is read back as
+# "the trumpet" even when the English says "the trumpets" (2026-10-12 Korean clip test). Grammatical
+# plural-to-singular ambiguity alone can be minor; added plural meaning and changed counts are not.
+UNMARKED_PLURAL_LOCALES = frozenset({"ko", "zh-Hans"})
+UNMARKED_PLURAL_NOTE = (
+    " {language} does not require plural marking on nouns: when the back-translation reads a noun as "
+    "singular where ORIGINAL has it plural, and no numeral, count, quantity word, ordinal "
+    "or 'each/every/all/both' changes, that is at most a minor number issue. A changed or dropped numeral, "
+    "count, quantity word or ordinal is still a major number issue. This exception is one-way: "
+    "when ORIGINAL is singular but BACK-TRANSLATION is plural, treat the added plural meaning as a major "
+    "number issue; do not assume an unmarked target noun without evidence.")
+
+
+def comparison_system(locale: str, *, spoken: bool = False) -> str:
+    system = SPOKEN_COMPARE_SYSTEM if spoken else COMPARE_SYSTEM
+    if locale in UNMARKED_PLURAL_LOCALES:
+        system = system.replace(" status is fail", UNMARKED_PLURAL_NOTE + " status is fail", 1)
+    return system.format(language=LANGUAGE_NAMES[locale])
+
+
 def comparison_request(group: dict, locale: str, back_translation: str) -> dict:
-    system = SPOKEN_COMPARE_SYSTEM if group.get("condensation") else COMPARE_SYSTEM
     request = {"role": "back_translation_judge",
-               "system": system.format(language=LANGUAGE_NAMES[locale]),
-               "user": json.dumps({"ORIGINAL": group["english"], "BACK-TRANSLATION": back_translation},
+               "system": comparison_system(locale, spoken=bool(group.get("condensation"))),
+               "user": json.dumps({"ORIGINAL": group["english"], "BACK-TRANSLATION": back_translation,
+                                   **({"CONTEXT": group["contextEnglish"]} if group.get("contextEnglish") else {})},
                                   ensure_ascii=False),
                "schema": COMPARISON_SCHEMA}
     return {**request, "requestSha256": _sha(request)}
