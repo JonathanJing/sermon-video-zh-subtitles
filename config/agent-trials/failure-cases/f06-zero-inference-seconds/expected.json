@@ -1,0 +1,18 @@
+{
+  "id": "f06-zero-inference-seconds",
+  "reconstructedFrom": "docs/reports/20261007-haiku-180s-8x8-spark-diagnostic-retrospective.zh.md #6; docs/reports/20261008-haiku-180s-8x8-round2-retrospective.zh.md 未解决 1",
+  "category": "insufficient_evidence",
+  "abstain": true,
+  "note": "Both retrospectives leave the cause unexplained; the evidence here cannot prove one. A good report says so.",
+  "causeKeywords": [],
+  "fixKeywords": [
+    [
+      "receipt",
+      "timing",
+      "instrument",
+      "inspect",
+      "log",
+      "code"
+    ]
+  ]
+}

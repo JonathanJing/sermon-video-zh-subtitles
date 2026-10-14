@@ -1,0 +1,16 @@
+# excerpt: scripts/experiments/diagnostic_audio_inputs.py (remote side)
+TERMINOLOGY = ROOT / 'docs/series-terminology.zh.md'
+REGISTRY = ROOT / 'config/speaker-voice-registry.json'
+SCHEMAS = ROOT / 'schemas'
+def validate_remote_inputs():
+    for path in (TERMINOLOGY, REGISTRY, SCHEMAS):
+        if not path.exists():
+            raise FileNotFoundError(path)
+
+# excerpt: scripts/experiments/run_spark_diagnostic_audio.py
+def stage_material(args):
+    material = args.out / 'material'
+    # hold is created before staging
+    return {'source': str((material / 'source.mp4').relative_to(ROOT))}
+
+# excerpt: back-ASR loads model.safetensors from --model; HF snapshot files are symlinks into ../../blobs

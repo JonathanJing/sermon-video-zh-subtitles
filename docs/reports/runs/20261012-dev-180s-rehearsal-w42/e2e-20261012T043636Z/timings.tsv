@@ -1,0 +1,4 @@
+stage	status	seconds
+verify-clip	pass	4
+build-inputs	pass	4
+baseline	fail	105

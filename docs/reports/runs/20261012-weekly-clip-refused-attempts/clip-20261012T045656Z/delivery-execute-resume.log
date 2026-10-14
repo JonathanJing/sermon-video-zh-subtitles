@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_dev_simulated_delivery.py", line 270, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_dev_simulated_delivery.py", line 266, in main
+    print(json.dumps(run(args), ensure_ascii=False))
+                     ~~~^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_dev_simulated_delivery.py", line 255, in run
+    return _run(args)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_dev_simulated_delivery.py", line 213, in _run
+    journal = Journal(root, identity)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_dev_simulated_delivery.py", line 70, in __init__
+    contract.require(self.data['inputIdentitySha256'] == self.identity,
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     'Workflow inputs changed; use a new run directory')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/delivery_contract.py", line 18, in require
+    raise ValueError(message)
+ValueError: Workflow inputs changed; use a new run directory

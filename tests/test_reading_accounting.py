@@ -18,9 +18,9 @@ from scripts import sermon_accounting as accounting
 class ReadingAccountingTests(unittest.TestCase):
     def test_cache_hit_does_not_repeat_api_attempt(self):
         block = {"id": 0, "start": 0, "end": 2, "en": "Hello.", "zh": "你好。"}
-        reply = {"model": "test-model", "choices": [{"message": {"content": json.dumps({"blocks": [{"id": 0, "zh": "您好。"}]})}}]}
+        reply = {"model": "gpt-6.1-sol", "choices": [{"message": {"content": json.dumps({"blocks": [{"id": 0, "zh": "您好。"}]})}}]}
         with tempfile.TemporaryDirectory() as temp, mock.patch.object(reading, "chat_json", return_value=reply) as api, mock.patch.object(reading, "stage", side_effect=lambda *a, **k: contextlib.nullcontext()) as stages:
-            options = dict(model="test-model", reasoning_effort="medium", qa_pass=False,
+            options = dict(model="gpt-6.1-sol", reasoning_effort="medium", qa_pass=False,
                            provider="openai", codex_cli=Path("unused"), schema_path=Path("unused"))
             first = reading.edit_batch("secret", [block], [block], 0, Path(temp), **options)
             second = reading.edit_batch("secret", [block], [block], 0, Path(temp), **options)
@@ -32,7 +32,7 @@ class ReadingAccountingTests(unittest.TestCase):
         block = {"id": 0, "zh": "你好。"}
         with mock.patch.object(reading, "edit_batch", return_value={"blocks": [block]}), mock.patch.object(reading, "stage", side_effect=lambda *a, **k: contextlib.nullcontext()) as stages:
             for qa_pass in (False, True):
-                result = reading.run_edit_pass("secret", [block], Path("unused"), model="test-model",
+                result = reading.run_edit_pass("secret", [block], Path("unused"), model="gpt-6.1-sol",
                     reasoning_effort="medium", batch_size=1, workers=2, qa_pass=qa_pass,
                     provider="openai", codex_cli=Path("unused"), schema_path=Path("unused"))
                 self.assertEqual(result[0]["zh"], block["zh"])
@@ -44,11 +44,11 @@ class ReadingAccountingTests(unittest.TestCase):
 
         def fake_api(api_key, payload):
             calls.append(payload)
-            reply = {"id": f"response-{len(calls)}", "model": "test-model",
+            reply = {"id": f"response-{len(calls)}", "model": "gpt-6.1-sol",
                      "usage": {"prompt_tokens": 10, "completion_tokens": 3},
                      "choices": [{"message": {"content": json.dumps({"blocks": [{"id": 0, "zh": "您好。"}]})}}]}
             # The real chat_json owns this receipt; the reading caller must not add one.
-            accounting.record_api_attempt("test-model", reply, .01)
+            accounting.record_api_attempt("gpt-6.1-sol", reply, .01)
             return reply
 
         with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ), mock.patch.object(reading, "chat_json", side_effect=fake_api):
@@ -57,7 +57,7 @@ class ReadingAccountingTests(unittest.TestCase):
             root = Path(temp)
             with accounting.accounting_session(root/"accounting", "test_reading"):
                 for qa_pass in (False, True, False):
-                    reading.run_edit_pass("private", [block], root, model="test-model",
+                    reading.run_edit_pass("private", [block], root, model="gpt-6.1-sol",
                         reasoning_effort="medium", batch_size=1, workers=2, qa_pass=qa_pass,
                         provider="openai", codex_cli=Path("unused"), schema_path=Path("unused"))
             events = [json.loads(line) for line in (root/"accounting/events.jsonl").read_text().splitlines()]
@@ -77,18 +77,20 @@ class ReadingAccountingTests(unittest.TestCase):
                 run.assert_called_once_with(args)
 
     def test_codex_failure_is_scoped_without_api_billing(self):
-        with tempfile.TemporaryDirectory() as temp, mock.patch.object(reading.subprocess, "run", return_value=argparse.Namespace(returncode=1, stderr="failed", stdout="")), mock.patch.object(reading, "stage", return_value=contextlib.nullcontext()) as stages:
+        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ, {"SERMON_ACCOUNTING_DIR": temp}), mock.patch.object(reading.subprocess, "run", return_value=argparse.Namespace(returncode=1, stderr="failed", stdout="")), mock.patch.object(reading, "stage", return_value=contextlib.nullcontext()) as stages:
+            Path(temp, "schema.json").write_text("{}")
+            Path(temp,"codex").write_text("#!/bin/sh\nexit 0\n");Path(temp,"codex").chmod(0o700)
             with self.assertRaises(RuntimeError):
-                reading.codex_json({"messages": [{"content": "system"}, {"content": "user"}]}, codex_cli=Path("unused"), model="test", reasoning_effort="medium", schema_path=Path("unused"), output_path=Path(temp)/"result.json", session_verifier=lambda: {"status":"offline_test"})
+                reading.codex_json({"messages": [{"content": "system"}, {"content": "user"}]}, codex_cli=Path(temp,"codex"), model="test", reasoning_effort="medium", schema_path=Path(temp)/"schema.json", output_path=Path(temp)/"result.json", session_verifier=lambda: {"status":"offline_test"})
         stages.assert_called_once_with("reading.codex_call", billing="codex")
 
 
 class NotesAttemptAccountingTests(unittest.TestCase):
     def test_success_records_one_raw_usage_response(self):
         body = {"id": "response-test", "usage": {"input_tokens": 17, "output_tokens": 5}, "output_text": "{}"}
-        response = mock.Mock(status_code=200)
+        response = mock.Mock(status_code=200, content=b"{}")
         response.json.return_value = body
-        with mock.patch.object(notes.requests, "post", return_value=response), mock.patch.object(notes, "record_api_attempt") as record:
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {"SERMON_ACCOUNTING_DIR": tmp}), mock.patch.object(notes.requests, "post", return_value=response), mock.patch.object(notes, "record_api_attempt") as record:
             self.assertIs(notes.request_openai_notes({"model": "test"}, "private", session_verifier=lambda: {"status":"offline_test"}), body)
         record.assert_called_once()
         self.assertIs(record.call_args.kwargs["response"], body)
@@ -121,17 +123,20 @@ class NotesAttemptAccountingTests(unittest.TestCase):
             self.assertTrue((root/"notes.qa.json").exists())
 
     def test_network_http_and_decode_failures_record_once(self):
-        bad_http = mock.Mock(status_code=429)
+        bad_http = mock.Mock(status_code=429, content=b'{"error":"retry later"}')
         bad_http.json.return_value = {"error": {"message": "retry later"}}
-        bad_json = mock.Mock(status_code=200)
+        bad_json = mock.Mock(status_code=200, content=b"not json")
         bad_json.json.side_effect = ValueError("invalid JSON")
         cases = [(requests.Timeout("sensitive transport detail"), None, requests.Timeout, "Timeout"),
                  (None, bad_http, SystemExit, "HTTP429"),
                  (None, bad_json, ValueError, "ValueError")]
         for failure, response, expected, error_type in cases:
-            with self.subTest(error_type=error_type), mock.patch.object(notes.requests, "post", side_effect=failure, return_value=response), mock.patch.object(notes, "record_api_attempt") as record:
+            with self.subTest(error_type=error_type), tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {"SERMON_ACCOUNTING_DIR": tmp}), mock.patch.object(notes.requests, "post", side_effect=failure, return_value=response), mock.patch.object(notes, "record_api_attempt") as record:
                 with self.assertRaises(expected):
                     notes.request_openai_notes({"model": "test"}, "private", session_verifier=lambda: {"status":"offline_test"})
+                rows = list((Path(tmp)/'api-cli-outcomes').glob('*/outcome.json'))
+                self.assertEqual(json.loads(rows[0].read_text())['status'],
+                                 'unknown' if failure else 'terminal_failure')
                 record.assert_called_once()
                 kwargs = record.call_args.kwargs
                 self.assertEqual(kwargs["status"], "failed")

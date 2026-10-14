@@ -1,0 +1,6 @@
+2026-10-08T01:22:10Z [preflight] loading fixture artifacts/next-iteration-repair-20261007/fixture-180s-r2
+2026-10-08T01:22:12Z [preflight] checking frozen identities
+Traceback (most recent call last):
+  File "scripts/run_codex_layer2_test.py", line 103, in run_diagnostic_test
+  File "scripts/codex_layer2_diagnostic.py", line 150, in load_fixture
+ValueError: Diagnostic plugin identity changed

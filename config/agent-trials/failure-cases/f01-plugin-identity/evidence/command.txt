@@ -1,0 +1,3 @@
+.venv/bin/python scripts/run_codex_layer2_test.py --diagnostic-fixture \
+  --fixture-dir artifacts/next-iteration-repair-20261007/fixture-180s-r2 \
+  --out-dir artifacts/next-iteration-repair-20261007/live-180s-r3 --reviewer-tier fast --timeout-seconds 240

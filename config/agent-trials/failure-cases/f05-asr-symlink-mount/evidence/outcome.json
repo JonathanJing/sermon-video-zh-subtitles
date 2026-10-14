@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "spark-diagnostic-audio execute",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-08T01:40:02Z",
+  "endedAt": "2026-10-08T01:41:15Z",
+  "error": {
+    "type": "RemoteStageError",
+    "message": "back-asr: local_model_missing"
+  }
+}

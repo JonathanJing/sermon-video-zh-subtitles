@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "sermon-speaker-voice-locale-acceptance-v1",
+  "speakerId": "steve_bang_lee",
+  "checkpointSha256": "b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9",
+  "decidedBy": "Jony",
+  "decidedAt": "2026-10-11T05:20:28Z",
+  "userStatement": "Steve Bang Lee's voice ko and es marked as verified",
+  "decision": {
+    "ko": "human_reviewed",
+    "es": "human_reviewed"
+  },
+  "purposeAdded": "multilingual_dubbing",
+  "purposeBasis": "Speaker authorization user-confirmation-20260905-steve_bang_lee states '已获得授权，声音可以用于训练和配音' (training and dubbing); this decision extends the registered purpose to Korean and Spanish dubbing.",
+  "boundDemoTracks": {
+    "ko": {
+      "wav": {
+        "path": "steve_bang_lee/ko.wav",
+        "sha256": "9e20cd461722fc25ac2efbc7babc4f489dd9c5de7cda2f6da6420b97b8488503"
+      },
+      "mp3": {
+        "path": "mp3/steve_bang_lee/ko.mp3",
+        "sha256": "ea566e3e9566b1b2216e36996937c1e4e8f55be036fae8e4cd1615684dbbf94f",
+        "durationSeconds": 15.76,
+        "codec": "mp3",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "128k",
+        "fullDecode": "pass"
+      },
+      "asrSimilarity": 1.0
+    },
+    "es": {
+      "wav": {
+        "path": "steve_bang_lee/es.wav",
+        "sha256": "5ef9a8492557c1a5124c9fda7969d5c27a72fd029ed7ecf8dfc4d0a9593b4c78"
+      },
+      "mp3": {
+        "path": "mp3/steve_bang_lee/es.mp3",
+        "sha256": "88561dfccbcb7938a6d28951b7801fe94f5db22b9c419ce0e1d58c1a1f904437",
+        "durationSeconds": 13.52,
+        "codec": "mp3",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "128k",
+        "fullDecode": "pass"
+      },
+      "asrSimilarity": 1.0
+    }
+  },
+  "demoDeliveryManifest": "artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2/delivery-manifest.json",
+  "limits": "Voice capability for this checkpoint and locale only. It does not review any sermon's full translated audio; per-run audio QC, waiver or listening review still applies."
+}

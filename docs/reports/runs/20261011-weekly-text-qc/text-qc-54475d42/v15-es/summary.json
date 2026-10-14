@@ -1,0 +1,73 @@
+{
+  "implementationSha256": "49f4e9bf63276b1ede7a3229bcfb11febbfa7f07aaaee83c268885d9a46d4508",
+  "locales": {
+    "es": {
+      "calibration": {
+        "cleanFalsePositiveRate": 0.0282,
+        "detected": 285,
+        "overallDetectionRate": 1.0,
+        "trials": 285
+      },
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 461,
+          "added_number": 385,
+          "added_reference": 454,
+          "dropped_half": 337,
+          "dropped_name": 12,
+          "english_leak": 367,
+          "placeholder": 461,
+          "semantic_negation": 26,
+          "swapped_name": 0,
+          "swapped_quantity": 4,
+          "wrong_book": 5,
+          "wrong_number": 38,
+          "wrong_ordinal": 453
+        },
+        "notApplicableKinds": [
+          "swapped_name"
+        ],
+        "untestableKinds": []
+      },
+      "calibrationMisses": {
+        "text.swapped_name": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        }
+      },
+      "candidateJsonSha256": "1df43ebdafb507f988b907b4f4afe02e453f51967262af568f19c2d6f45b8ad9",
+      "failedGroups": [
+        "translation-chunk-0000-u008",
+        "translation-chunk-0003-u045",
+        "translation-chunk-0003-u046",
+        "translation-chunk-0004-u006",
+        "translation-chunk-0007-u001",
+        "translation-chunk-0007-u002",
+        "translation-chunk-0007-u008",
+        "translation-chunk-0008-u020",
+        "translation-chunk-0008-u024",
+        "translation-chunk-0009-u033",
+        "translation-chunk-0010-u006",
+        "translation-chunk-0010-u013",
+        "translation-chunk-0011-u001"
+      ],
+      "locale": "es",
+      "paths": {
+        "anchor": "artifacts/weekend-live/layer1-54475d42/output4-rebuild2/anchor-manifest.json",
+        "candidate": "artifacts/weekend-live/layer2-54475d42/recovered/es/candidate.json",
+        "policy": "artifacts/weekend-live/layer2-54475d42/policies/es-policy-frozen-r5.json",
+        "source": "artifacts/weekend-live/layer1-54475d42/formal/english-source-package.json"
+      },
+      "problems": [],
+      "status": "text_waiver_issued",
+      "textQc": "requires_repair",
+      "textQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-54475d42/state-es-v4/qc-receipts/text/es/cddd839b303f78e1d76f218e59dc0b8eafa8e00e8f11856254a034b1258c9281/entry-000002.json",
+      "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-54475d42/v15-es/es/text-waiver-7a18087538a44402.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live",
+  "textBackend": "api"
+}

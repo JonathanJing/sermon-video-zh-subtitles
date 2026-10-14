@@ -5,6 +5,7 @@ import argparse
 import concurrent.futures
 from contextvars import copy_context
 import hashlib
+import inspect
 import json
 import os
 import re
@@ -229,6 +230,9 @@ def _http_error_diagnostic(error):
 
 
 def request_json(req, retries=3, *, response_observer=None, request_executor=None):
+    from scripts import api_cli_outcomes
+    if api_cli_outcomes.admitted():
+        retries = 1  # An uncertain legacy request must never retry inside its hold.
     from scripts.sermon_openai_runtime import bind_request
     bind_request(req)
     # Strict recovery is explicitly authorized by D5, never an HTTP retry loop.
@@ -256,14 +260,23 @@ def request_json(req, retries=3, *, response_observer=None, request_executor=Non
                 result = request_executor(req)
             else:
                 with urllib.request.urlopen(req, timeout=300) as response:
-                    result = json.loads(response.read().decode())
+                    raw_body = response.read()
+                    if api_cli_outcomes.observing():
+                        api_cli_outcomes.observed_response(raw_body, http_status=response.status)
+                    result = json.loads(raw_body.decode())
         except PreDispatchRejection as exc:
+            api_cli_outcomes.observed_no_dispatch(exc.reason_code)
             exc.bind_attempt(attempt_id)
             _finalize(lambda: record_api_attempt(getattr(req, "accounting_model", "unknown"), None,
                 time.monotonic() - started, "failed", type(exc).__name__,
                 attempt_id=attempt_id, not_dispatched_reason=exc.reason_code), exc)
             raise
         except urllib.error.HTTPError as exc:
+            if api_cli_outcomes.observing():
+                raw_error = exc.read()
+                api_cli_outcomes.observed_response(raw_error, http_status=exc.code)
+                from scripts import sermon_provider_error as provider_errors
+                exc.safe_diagnostic = provider_errors.diagnostic(exc.code, raw_error)
             if response_observer is not None and exc.code in KNOWN_REQUEST_REJECTIONS:
                 rejection = TransportRejection(exc.code, _http_error_diagnostic(exc))
                 if hasattr(response_observer, "request_rejected"):
@@ -675,7 +688,7 @@ def transcribe_openai_audio(
     session_verifier=None,
 ):
     return spark_admission.SessionBoundCaller(multipart_request, verifier=session_verifier,
-        purpose="source-audio-api")(
+        purpose="source-audio-api", requires_spark=False)(
         TRANSCRIBE_URL,
         api_key,
         transcription_request_fields(
@@ -993,15 +1006,69 @@ def chunk_text_for_window(chunks, start, end):
     return "\n".join(parts)
 
 
+LEGACY_TEXT_CACHE_SCHEMA = "sermon-legacy-bounded-text-cache-v3"
+
+
+def legacy_text_cache_contract():
+    from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS, validate_request_limits, LEGACY_VISION_SCHEMA, LEGACY_MAX_IMAGE_BYTES, LEGACY_MAX_IMAGES
+    return {"schemaVersion": LEGACY_TEXT_CACHE_SCHEMA,
+            "requestLimits": validate_request_limits(DEFAULT_REQUEST_LIMITS),
+            "visionBounds":{"schemaVersion":LEGACY_VISION_SCHEMA,"maxImageBytes":LEGACY_MAX_IMAGE_BYTES,
+                            "maxImages":LEGACY_MAX_IMAGES,"textInputTokenAllowance":DEFAULT_REQUEST_LIMITS['maxInputTokens'],
+                            "visionTokenCostBound":"not_claimed"}}
+
+
+def bounded_legacy_chat_payload(payload):
+    from scripts.sermon_provider_limits import bounded_legacy_payload
+    limits = legacy_text_cache_contract()["requestLimits"]
+    return bounded_legacy_payload(payload,limits)
+
+
+def legacy_text_execution_identity(api_key,payload,*,caller=None,purpose=None):
+    """Bind derived caches to the exact bounded caller and its outcome scope."""
+    from scripts import api_cli_outcomes as outcomes
+    payload=bounded_legacy_chat_payload(payload)
+    directory=None
+    if isinstance(caller,spark_admission.SessionBoundCaller):
+        directory=caller.outcome_directory
+        purpose=purpose or caller.purpose
+        target=caller.caller
+        kwargs={}
+    elif caller is None or caller is chat_json:
+        target=_chat_json;purpose=purpose or 'production-text-call';kwargs={'retries':1}
+    else:
+        target=caller;purpose=purpose or 'production-text-call';kwargs={}
+    arguments=inspect.signature(target).bind(api_key,payload,**kwargs)
+    arguments.apply_defaults()
+    binding=outcomes.execution_binding(target,arguments.arguments)
+    try:root=outcomes.receipt_root(directory)
+    except ValueError as error:
+        if str(error)!='api_cli_outcome_directory_required_before_dispatch':raise
+    else:outcomes.assert_replay_admitted(directory,purpose=purpose,binding=binding)
+    return {'schemaVersion':'sermon-legacy-text-execution-v1',
+            'outcomeRequestSha256':outcomes.request_identity(target,(api_key,payload),kwargs,purpose),
+            'executionBinding':binding}
+
+
 def chat_json(api_key, payload, retries=1, *, session_verifier=None):
+    payload = bounded_legacy_chat_payload(payload)
     return spark_admission.SessionBoundCaller(_chat_json, verifier=session_verifier,
-        purpose="production-text-call")(api_key, payload, retries=retries)
+        purpose="production-text-call", requires_spark=False)(api_key, payload, retries=retries)
 
 
 def _chat_json(api_key, payload, retries=1):
+    from scripts import api_cli_outcomes
+    if api_cli_outcomes.admitted():
+        retries = 1
     from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
     from scripts.strict_budget_capability import require_bounded_api_payload
-    require_bounded_api_payload(payload, DEFAULT_REQUEST_LIMITS, surface="legacy_text_api")
+    from scripts.sermon_provider_limits import bounded_legacy_payload
+    try:validated=bounded_legacy_payload(payload,DEFAULT_REQUEST_LIMITS)
+    except (ValueError,TypeError) as error:raise ValueError('unsupported_budget_capability') from error
+    if validated!=payload:raise ValueError('unsupported_budget_capability')
+    # The canonical budget-capability contract stays text/json_object only.
+    if payload['response_format']=={'type':'json_object'} and all(isinstance(row['content'],str) for row in payload['messages']):
+        require_bounded_api_payload(payload, DEFAULT_REQUEST_LIMITS, surface="legacy_text_api")
     last_error = None
     for attempt in range(retries):
         try:
@@ -1031,10 +1098,16 @@ def correct_english(
     window_seconds,
     reasoning_effort=None,
 ):
+    reasoning_effort = reasoning_effort or "high"
+    aggregate_execution=legacy_text_execution_identity(api_key,{
+        'model':model,'reasoning_effort':reasoning_effort,'response_format':{'type':'json_object'},
+        'messages':[{'role':'user','content':'aggregate execution binding'}]})['executionBinding']
     output = outdir / "segments_timed_en_corrected.json"
     version_file = outdir / "english_correction_prompt.json"
     version = {
         "promptVersion": review_prompts.ENGLISH_CORRECTION_PROMPT_VERSION,
+        "cacheContract": legacy_text_cache_contract(),
+        "executionIdentity":aggregate_execution,
         "model": model,
         "reasoningEffort": reasoning_effort,
         "inputSha256": json_sha256(
@@ -1052,7 +1125,8 @@ def correct_english(
     corrected = []
     windows_dir = outdir / "correction_windows"
     cache_identity = hashlib.sha256(
-        f"{review_prompts.ENGLISH_CORRECTION_PROMPT_VERSION}|{model}|{reasoning_effort}".encode("utf-8")
+        json.dumps({"promptVersion": review_prompts.ENGLISH_CORRECTION_PROMPT_VERSION, "model": model,
+                    "reasoningEffort": reasoning_effort, "cacheContract": legacy_text_cache_contract(),"executionIdentity":aggregate_execution}, sort_keys=True).encode("utf-8")
     ).hexdigest()[:12]
     glossary_text = glossary_lines(glossary)
     start_index = 0
@@ -1063,9 +1137,40 @@ def correct_english(
         while end_index < len(segments) and segments[end_index]["start"] < window_end:
             end_index += 1
         batch = segments[start_index:end_index]
+        reference = chunk_text_for_window(gpt4o_chunks, batch[0]["start"], batch[-1]["end"])
+        payload = {
+            "model": model,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {
+                    "role": "system",
+                    "content": review_prompts.ENGLISH_CORRECTION_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "<glossary>\n"
+                        + glossary_text
+                        + "\n</glossary>\n<reference_transcript>\n"
+                        + reference
+                        + "\n</reference_transcript>\n<timed_segments>\n"
+                        + json.dumps(
+                            [{"id": s["id"], "text": s["text"]} for s in batch],
+                            ensure_ascii=False,
+                        )
+                        + "\n</timed_segments>"
+                    ),
+                },
+            ],
+        }
+        payload["reasoning_effort"] = reasoning_effort or "high"
+        payload = bounded_legacy_chat_payload(payload)
+        execution=legacy_text_execution_identity(api_key,payload)
         window_input_hash = json_sha256(
             {
                 "batch": batch,
+                "boundedPayload": payload,
+                "executionIdentity":execution,
                 "reference": chunk_text_for_window(
                     gpt4o_chunks,
                     batch[0]["start"],
@@ -1085,34 +1190,6 @@ def correct_english(
             parsed = None
             returned = []
         if parsed is None:
-            reference = chunk_text_for_window(gpt4o_chunks, batch[0]["start"], batch[-1]["end"])
-            payload = {
-                "model": model,
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": review_prompts.ENGLISH_CORRECTION_SYSTEM_PROMPT,
-                    },
-                    {
-                        "role": "user",
-                        "content": (
-                            "<glossary>\n"
-                            + glossary_text
-                            + "\n</glossary>\n<reference_transcript>\n"
-                            + reference
-                            + "\n</reference_transcript>\n<timed_segments>\n"
-                            + json.dumps(
-                                [{"id": s["id"], "text": s["text"]} for s in batch],
-                                ensure_ascii=False,
-                            )
-                            + "\n</timed_segments>"
-                        ),
-                    },
-                ],
-            }
-            if reasoning_effort:
-                payload["reasoning_effort"] = reasoning_effort
             result = chat_json(api_key, payload)
             parsed = json.loads(result["choices"][0]["message"]["content"])
             parsed["_model"] = result.get("model", model)
@@ -1249,11 +1326,17 @@ def translate_chinese(
     reasoning_effort=None,
     workers=1,
 ):
+    reasoning_effort = reasoning_effort or "high"
+    aggregate_execution=legacy_text_execution_identity(api_key,{
+        'model':model,'reasoning_effort':reasoning_effort,'response_format':{'type':'json_object'},
+        'messages':[{'role':'user','content':'aggregate execution binding'}]})['executionBinding']
     record_workload("pipeline.translate", {"inputSegments": len(segments), "inputCharacters": sum(len(x.get("text", "")) for x in segments), "workers": workers})
     output = outdir / "segments_timed_zh.json"
     version_file = outdir / "chinese_translation_prompt.json"
     version = {
         "promptVersion": review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION,
+        "cacheContract": legacy_text_cache_contract(),
+        "executionIdentity":aggregate_execution,
         "model": model,
         "reasoningEffort": reasoning_effort,
         "inputSha256": json_sha256({"segments": segments, "glossary": glossary}),
@@ -1265,13 +1348,44 @@ def translate_chinese(
     from scripts.series_terminology import PROMPT_INSTRUCTION
     system = review_prompts.CHINESE_TRANSLATION_SYSTEM_PROMPT + "\n" + PROMPT_INSTRUCTION
     cache_identity = hashlib.sha256(
-        f"{review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION}|{model}|{reasoning_effort}".encode("utf-8")
+        json.dumps({"promptVersion": review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION, "model": model,
+                    "reasoningEffort": reasoning_effort, "cacheContract": legacy_text_cache_contract(),"executionIdentity":aggregate_execution}, sort_keys=True).encode("utf-8")
     ).hexdigest()[:12]
     def translate_one(item):
         idx, seg = item
+        context = {
+            "glossary": glossary_terms(glossary),
+            "zh_term_map": zh_term_map(glossary),
+            "previous_english": segments[idx - 1]["text"] if idx > 0 else "",
+            "current_id": seg["id"],
+            "current_english": seg["text"],
+            "next_english": segments[idx + 1]["text"] if idx + 1 < len(segments) else "",
+        }
+        payload = {
+            "model": model,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {"role": "system", "content": system},
+                {
+                    "role": "user",
+                    "content": (
+                        "<glossary>\n"
+                        + glossary_text
+                        + "\n</glossary>\n<context>\n"
+                        + json.dumps(context, ensure_ascii=False)
+                        + "\n</context>"
+                    ),
+                },
+            ],
+        }
+        payload["reasoning_effort"] = reasoning_effort or "high"
+        payload = bounded_legacy_chat_payload(payload)
+        execution=legacy_text_execution_identity(api_key,payload)
         segment_input_hash = json_sha256(
             {
                 "segment": seg,
+                "boundedPayload": payload,
+                "executionIdentity":execution,
                 "previous": segments[idx - 1]["text"] if idx > 0 else "",
                 "next": segments[idx + 1]["text"] if idx + 1 < len(segments) else "",
                 "glossary": glossary,
@@ -1284,33 +1398,6 @@ def translate_chinese(
             with stage("translation.segment_cache", cache_hit=True):
                 parsed = read_json(cache)
         else:
-            context = {
-                "glossary": glossary_terms(glossary),
-                "zh_term_map": zh_term_map(glossary),
-                "previous_english": segments[idx - 1]["text"] if idx > 0 else "",
-                "current_id": seg["id"],
-                "current_english": seg["text"],
-                "next_english": segments[idx + 1]["text"] if idx + 1 < len(segments) else "",
-            }
-            payload = {
-                "model": model,
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {"role": "system", "content": system},
-                    {
-                        "role": "user",
-                        "content": (
-                            "<glossary>\n"
-                            + glossary_text
-                            + "\n</glossary>\n<context>\n"
-                            + json.dumps(context, ensure_ascii=False)
-                            + "\n</context>"
-                        ),
-                    },
-                ],
-            }
-            if reasoning_effort:
-                payload["reasoning_effort"] = reasoning_effort
             result = chat_json(api_key, payload)
             parsed = json.loads(result["choices"][0]["message"]["content"])
             parsed["_model"] = result.get("model", model)
@@ -1498,6 +1585,8 @@ def main():
     parser.add_argument("--mfa-g2p-model", type=Path, default=os.environ.get("MFA_G2P_MODEL"))
     parser.add_argument("--mfa-spoken-forms", type=Path, default=os.environ.get("MFA_SPOKEN_FORMS"))
     parser.add_argument("--source-text-review", type=Path, help="Hash-bound, separately reviewed English source corrections; original ASR stays unchanged.")
+    parser.add_argument("--source-text-review-package", type=Path,
+                        help="Directory with the source.json and anchor.json a machine audio adjudication review's receipt adjudicated; required for that authority.")
     parser.add_argument(
         "--reading-segment-target-chars",
         type=int,
@@ -1695,7 +1784,16 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
             asr_path = outdir / "asr_reference.json"
             if not asr_path.exists():
                 asr_path = outdir / "asr_reference_chunks.json"
-            corrected, source_review = apply_review(corrected, args.source_text_review, clip_path, asr_path)
+            package_dir = getattr(args, "source_text_review_package", None)
+            adjudicated_package = None
+            if package_dir:
+                # The adjudicated package and the parent media bind a machine receipt to what is being corrected.
+                adjudicated_package = {
+                    name: json.loads((Path(package_dir) / f"{name}.json").read_text(encoding="utf-8"))
+                    for name in ("source", "anchor")}
+                adjudicated_package["mediaSha256"] = file_sha256(args.input)
+            corrected, source_review = apply_review(corrected, args.source_text_review, clip_path, asr_path,
+                                                    adjudicated_package=adjudicated_package)
             write_json(outdir / "source-text-review-provenance.json", source_review)
             if getattr(args, "reading_aligner", "mfa") == "mfa":
                 # Text edits invalidate old word/phone times; realign the reviewed words.
