@@ -100,6 +100,9 @@ def load_spec(path: Path) -> dict:
     require(all(type(budget.get(k)) in (int, float) and budget[k] >= 0 for k in ("totalUsd", "settledUsdBefore"))
             and budget["settledUsdBefore"] < budget["totalUsd"], "budget needs totalUsd > settledUsdBefore >= 0")
     layer2, layer3 = spec.get("layer2") or {}, spec.get("layer3") or {}
+    layer2.setdefault("backend", "openai_api")
+    require(layer2["backend"] in ("openai_api", "claude_cli_opus"),
+            "layer2.backend must be openai_api or claude_cli_opus")
     for field, table in (("policyTemplates", layer2), ("plugins", layer2), ("attestationTemplates", layer3)):
         require(isinstance(table.get(field), dict) and set(locales) <= set(table[field]), f"{field} missing a locale")
         table[field] = {k: resolve(v) for k, v in table[field].items() if k in locales}
@@ -200,12 +203,13 @@ class Run:
 
     # -- budget
     def settled(self) -> float:
-        """Earlier spend plus this run's Layer 2 results and QC ledgers; unpriced rows count at their reservation."""
+        """Approved-dollar spend; Claude subscription list-price equivalents are kept separate."""
         from scripts.export_run_digest import budget_summary
         total = 0
-        for path in self.dir.rglob("*.result.json"):
-            if "layer2-budget" in str(path) and "responses" not in path.parts:
-                total += read(path)["result"]["usage"]["costMicrousd"]
+        if self.spec["layer2"]["backend"] == "openai_api":
+            for path in self.dir.rglob("*.result.json"):
+                if "layer2-budget" in str(path) and "responses" not in path.parts:
+                    total += read(path)["result"]["usage"]["costMicrousd"]
         for path in self.dir.rglob("source-budget.json"):
             ledger = read(path)
             total += budget_summary(ledger).get("estimatedMicrousd", 0)
@@ -213,6 +217,15 @@ class Run:
                          if row.get("status") == "returned"
                          and (row.get("settlement") or {}).get("costStatus") not in ("estimated_upper_bound", "reused"))
         return round(self.spec["budget"]["settledUsdBefore"] + total / 1e6, 6)
+
+    def claude_list_price_equivalent(self) -> float:
+        """Subscription Layer 2 usage at its reserved list-price basis, not cash spend."""
+        if self.spec["layer2"]["backend"] != "claude_cli_opus":
+            return 0.0
+        total = sum(read(path)["result"]["usage"]["costMicrousd"]
+                    for path in self.dir.rglob("*.result.json")
+                    if "layer2-budget" in str(path) and "responses" not in path.parts)
+        return round(total / 1e6, 6)
 
     def open_qc_caps(self) -> float:
         """Full caps of QC budgets planned in this run whose locale has not finished audio QC."""
@@ -273,7 +286,8 @@ def stage_inputs(run: Run):
     run.mark("inputs", "done", units=len(anchor["sourceUnits"]), inputs=str(inputs))
 
 
-def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str) -> dict:
+def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str,
+                       backend: str = "openai_api") -> dict:
     """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
     from scripts import target_language_policy as tp
     rows = anchor["sourceUnits"]
@@ -283,6 +297,7 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
     used = sorted(observed - set(exclusions))
     draft = copy.deepcopy(frozen)
     draft.pop("componentSha256")
+    draft = tp.apply_layer2_backend(draft, backend)
     draft["terminology"]["properNames"] = [t for t in draft["terminology"]["properNames"] if t["source"] in used]
     scope = draft["sourceScope"]
     scope.update(englishSourcePackageJsonSha256=tp.canonical_sha256(source), anchorManifestSha256=tp.canonical_sha256(anchor),
@@ -313,7 +328,7 @@ def stage_layer2_setup(run: Run):
         if not path.exists():
             write(path, freeze_clip_policy(Path(spec["layer2"]["policyTemplates"][locale]), source, anchor,
                                            reviewed_by=auth["defaultPass"] + "; targets carried from the source week's receipt",
-                                           statement=auth["evidence"]))
+                                           statement=auth["evidence"], backend=spec["layer2"]["backend"]))
     if not (l2 / "execution.json").exists():
         write(l2 / "inspection.json", {"schemaVersion": "sermon-canonical-package-inspection-config-v1",
                                        "source": "src/source.json", "anchor": "src/anchor.json",
@@ -828,7 +843,8 @@ def execute(run: Run, *, through: str | None = None) -> dict:
         stopped.append(str(stop))
     finally:
         finish_session(run)
-    summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled()}
+    summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled(),
+               "claudeListPriceEquivalentUsd": run.claude_list_price_equivalent()}
     write(run.dir / "summary.json", summary)
     return summary
 
@@ -885,7 +901,9 @@ def main(argv=None) -> int:
         return 0
     run = Run(args.spec, args.run_dir, publish=getattr(args, "publish", False))
     if args.command == "status":
-        print(json.dumps({"stages": run.stages, "settledUsd": run.settled(), "openQcCapsUsd": run.open_qc_caps()},
+        print(json.dumps({"stages": run.stages, "settledUsd": run.settled(),
+                          "claudeListPriceEquivalentUsd": run.claude_list_price_equivalent(),
+                          "openQcCapsUsd": run.open_qc_caps()},
                          ensure_ascii=False, indent=1))
         return 0
     if args.command == "repair-audio":
@@ -909,7 +927,8 @@ def main(argv=None) -> int:
             stopped.append(str(stop))
         finally:
             finish_session(run)
-        summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled()}
+        summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled(),
+                   "claudeListPriceEquivalentUsd": run.claude_list_price_equivalent()}
         write(run.dir / "summary.json", summary)
         print(json.dumps({"stopped": stopped, "settledUsd": summary["settledUsd"],
                           "audioStatus": run.stages["audio." + args.locale]["status"]}, ensure_ascii=False))
