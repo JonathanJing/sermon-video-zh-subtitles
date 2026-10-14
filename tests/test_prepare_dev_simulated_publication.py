@@ -74,6 +74,17 @@ def plan_inputs(tmp_path, monkeypatch):
     return base, tmp_path / 'prepared', catalog, receipt, manifest
 
 
+def test_single_locale_release_plan_is_bound_to_v4_diagnostic_path(plan_inputs):
+    base, prepared, _, _, manifest = plan_inputs
+    page_id = manifest['pageId']
+    manifest['releases'] = {'es': {'releasePath': f'/releases-v4/{page_id}/es.json',
+                                 'releaseSha256': 'c' * 64}}
+    plan = publication.bound_release_plan(base, prepared)
+    assert plan['locales'] == plan['requiredLocales'] == ['es']
+    assert not publication.isolated_machine_locale_subset({**manifest, 'releases': {
+        'es': {'releasePath': f'/releases-v2/{page_id}/es.json'}}})
+
+
 def test_release_plan_uses_canonical_catalog_hash_and_preserves_default(plan_inputs, tmp_path):
     base, prepared, catalog, receipt, manifest = plan_inputs
     plan = publication.bound_release_plan(base, prepared)

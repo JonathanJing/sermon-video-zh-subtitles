@@ -272,10 +272,35 @@ def test_each_mode_refuses_the_other_modes_content(tmp_path, monkeypatch):
                                          monitor_metrics=None, execute=False, machine_checked=flag)
         with pytest.raises(ValueError, match=message):
             runner._run(args)
-    monkeypatch.setattr(runner.preparation, 'read', lambda path: machine)
+    locales = ('zh-Hans', 'ko', 'es')
+    monkeypatch.setattr(runner.preparation, 'read', lambda path: {
+        **machine, 'targetLocale': locales[int(Path(path).stem[1:])]})
     args = runner.argparse.Namespace(baseline=base, prepared=prepared, out=tmp_path / 'out', source_video=tmp_path / 'v.mp4',
                                      monitor_metrics=None, execute=False, machine_checked=True)
     with pytest.raises(ValueError, match='publish no source video'):
+        runner._run(args)
+
+
+def test_single_locale_machine_diagnostic_dry_run_keeps_simulation_join(tmp_path, monkeypatch):
+    page_id = 'mockup-single-es'
+    manifest = {'pageId': page_id, 'releases': {
+        'es': {'releasePath': f'/releases-v4/{page_id}/es.json'}}}
+    assets = [{'role': 'content', 'path': f'/content/{page_id}/es.json'}]
+    content = {'targetLocale': 'es', 'schemaVersion': 'sermon-full-video-text-content-v3',
+               'status': 'machine_checked', 'reviewMode': 'formal', 'disclosure': {'locale': 'es'}}
+    base, prepared, out = (tmp_path / name for name in ('baseline', 'prepared', 'workflow'))
+    monkeypatch.setattr(runner.builder, 'verified_assets', lambda _: (manifest, assets))
+    monkeypatch.setattr(runner.contract, 'validate_catalog_snapshot', lambda _: {'pages': []})
+    monkeypatch.setattr(runner.contract, 'snapshot_catalog_v4', lambda _: {'pages': []})
+    monkeypatch.setattr(runner.preparation, 'read', lambda path: (
+        {'site': runner.preparation.SITE, 'project': runner.preparation.PROJECT,
+         'origin': runner.preparation.ORIGIN} if Path(path).name == 'baseline-receipt.json' else content))
+    monkeypatch.setattr(runner.preparation, 'digest', lambda _: 'a' * 64)
+    args = argparse.Namespace(baseline=base, prepared=prepared, out=out,
+                              source_video=None, monitor_metrics=None, execute=False, machine_checked=True)
+    assert runner._run(args)['status'] == 'validated_not_deployed'
+    args.machine_checked = False
+    with pytest.raises(ValueError, match='Three simulation locales'):
         runner._run(args)
 
 

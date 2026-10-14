@@ -1172,7 +1172,8 @@ def stage_layer4(run: Run):
     if smoke is None:
         smoke = l4 / f"browser-smoke-retry-{len(receipts) + 1}.json"
         run.sh("layer4-smoke", [PY, ROOT / "scripts/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
-                                page["pageId"], "--settle-ms", "15000", "--no-session", "--out", smoke])
+                                page["pageId"], *[arg for locale in spec["locales"] for arg in ("--locale", locale)],
+                                "--settle-ms", "15000", "--no-session", "--out", smoke])
         require(passed_smoke(smoke), "Layer 4 browser smoke did not pass")
     run.mark("layer4", "done", pageId=page["pageId"], smoke="pass", smokeReceipt=str(smoke),
              workflowReceipt=str(workflow / "run-report.json"))

@@ -284,6 +284,15 @@ def publication_config(base, out, *, environment='dev'):
             'lease_bucket': target['lease_bucket']}
 
 
+def isolated_machine_locale_subset(manifest):
+    """Recognize a bounded v4-only diagnostic page with fewer than three locales."""
+    releases = manifest.get('releases') or {}
+    locales = set(releases)
+    return (bool(locales) and locales <= {'zh-Hans', 'ko', 'es'}
+            and all(item.get('releasePath') == f"/releases-v4/{manifest.get('pageId')}/{locale}.json"
+                    for locale, item in releases.items()))
+
+
 def bound_release_plan(baseline_path, prepared_path):
     """Build the seal/merge contract from verified bytes, not raw JSON hashes."""
     from scripts import build_full_video_app_release as builder
@@ -300,7 +309,8 @@ def bound_release_plan(baseline_path, prepared_path):
     contract.require(isinstance(page_id, str) and re.fullmatch(r'(?:mockup|dryrun|dev)-[A-Za-z0-9][A-Za-z0-9_-]{0,139}', page_id), 'Isolated test page required')
     contract.require(page_id not in {page['id'] for page in catalog['pages']}, 'Simulation page ID already exists; use a new run ID')
     locales = sorted(manifest['releases'])
-    contract.require(set(locales) == {'zh-Hans', 'ko', 'es'}, 'Three locale test coverage required')
+    contract.require(set(locales) == {'zh-Hans', 'ko', 'es'} or isolated_machine_locale_subset(manifest),
+                     'Three simulation locales or a bound machine-checked subset required')
     config = publication_config(base, base)
     plan = {'schemaVersion': 'sermon-locale-release-plan-v1',
             'baselineCatalogSha256': contract.sha(catalog),
@@ -311,7 +321,7 @@ def bound_release_plan(baseline_path, prepared_path):
                  'defaultPageId': page_id, 'pages': [{
                      'id': page_id, 'date': manifest['date'], 'title': manifest['title'],
                      'sourceLocale': 'en', 'sourceIdentitySha256': manifest['englishSourcePackageJsonSha256'],
-                     'defaultTargetLocale': 'zh-Hans', 'targets': {
+                     'defaultTargetLocale': 'zh-Hans' if 'zh-Hans' in locales else locales[0], 'targets': {
                          locale: {'releasePackageUrl': item['releasePath'],
                                   'releasePackageJsonSha256': item['releaseSha256']}
                          for locale, item in manifest['releases'].items()}}]}
@@ -340,7 +350,9 @@ def asset_first(baseline_path, prepared, out, source_video=None):
         sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
         from scripts import build_full_video_app_release as builder
     manifest, assets = builder.verified_assets(prepared)
-    contract.require(set(manifest['releases']) == {'zh-Hans', 'ko', 'es'}, 'Three locales required')
+    contract.require(set(manifest['releases']) == {'zh-Hans', 'ko', 'es'}
+                     or isolated_machine_locale_subset(manifest),
+                     'Three simulation locales or a bound machine-checked subset required')
     receipt = read(base / 'baseline-receipt.json')
     contract.require(receipt['project'] == PROJECT and receipt['site'] == SITE and receipt['origin'] == ORIGIN, 'Dev target only')
     out.mkdir(parents=True)
@@ -412,9 +424,9 @@ def machine_checked_overlay(baseline_path, overlay_public, catalog_path, out):
     contract.require(len(new_pages) == len(catalog['pages']) and set(old_pages) <= set(new_pages), 'Missing or duplicate sibling pages')
     added = [p for p in catalog['pages'] if p['id'] not in old_pages]
     contract.require(len(added) == 1 and added[0]['id'].startswith(('mockup-', 'dryrun-', 'dev-')), 'Exactly one isolated test page is required')
-    contract.require(set(added[0]['targets']) == {'zh-Hans', 'ko', 'es'}
+    contract.require(bool(added[0]['targets']) and set(added[0]['targets']) <= {'zh-Hans', 'ko', 'es'}
                      and all(t.get('contentStatus') == t.get('audioStatus') == contract.MACHINE_CHECKED
-                             for t in added[0]['targets'].values()), 'Three machine-checked locale targets required')
+                             for t in added[0]['targets'].values()), 'Machine-checked locale targets required')
     # Real (formal) content is diagnostic, never a simulation: readers refuse formal content on a
     # simulationOnly page, and a diagnostic page is never the default.
     added[0].update(diagnosticOnly=True)
