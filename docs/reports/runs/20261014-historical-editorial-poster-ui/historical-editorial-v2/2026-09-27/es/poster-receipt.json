@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "sermon-multilingual-poster-v1",
+  "source": {
+    "pageId": "2026-09-27-weekend-sermon-drive-530",
+    "targetLocale": "es",
+    "sourceIdentitySha256": "a0cf67203bae17bff080b2d1af41f88bdef786345a435021c2739d14f15394ac",
+    "catalogSha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+    "releasePackageSha256": "89bd0ae679a4c4af3b83d753128a1b729d4a89a80269a2d575855a87eb7508d8",
+    "contentSha256": "9fe8da801ebe139fa1c3fac33622744c9cabd2128e3b4ef8334dc611dc5c5ae7",
+    "brief": {
+      "locale": "es",
+      "date": "2026-09-27",
+      "origin": "https://ai-for-god-sermon-audio.web.app",
+      "title": "Jesús es digno",
+      "series": "Apocalipsis: el consuelo y la esperanza que trae Jesús",
+      "scripture": "Apocalipsis 4–5",
+      "speaker": "Eric Geiger",
+      "tagline": "Escuchamos y caminamos juntos.",
+      "reviewLabel": "Traducción y audio revisados",
+      "labels": {
+        "brand": "Tongxing",
+        "eyebrow": "SERMÓN SEMANAL · ESPAÑOL",
+        "cta": "Lee y escucha el sermón de esta semana",
+        "serviceLine": "Audio en español · Texto en inglés · Transcripción completa",
+        "qrCaption": "Esta semana, en español",
+        "disclaimer": "Proyecto personal independiente, sin afiliación ni respaldo de Mariners Church. El audio en español sintetizado por IA y el texto preparado por IA son para consulta personal.",
+        "header": "Tongxing   ───   SERMÓN SEMANAL",
+        "web": "Versión web",
+        "caption": "Escanea para leer y escuchar",
+        "storeHeading": "Descargar Tongxing",
+        "webHeading": "Abrir sermón semanal",
+        "showReview": "false"
+      },
+      "qrURL": "https://ai-for-god-sermon-audio.web.app/?week=2026-09-27-weekend-sermon-drive-530&contentLang=es&lang=es",
+      "displayTitle": "Jesús\nes digno",
+      "storeURL": "https://apps.apple.com/app/id6809255441"
+    }
+  },
+  "status": "complete",
+  "provenance": {
+    "templateVersion": "tongxing-dual-qr-v2",
+    "templateSha256": "d88e2f2ea84f8bf541878e2f20208d268d400a983c9beacb60a1b3c1964e4f86",
+    "badgeHashes": {
+      "zh-Hans": "65191b2d1182a194e510b27c9985b1367b60ed6ef565f86fc492f585a27bc932",
+      "ko": "fc82d5344d0f2919a7ae697e677fc9c62872f1ee47bd70e24a581245423de9c1",
+      "es": "e4d7c2c1606454536482735c96b933b04ea86a2e72701b3319ae1f3a369b0479"
+    },
+    "artSha256": "bfb7e76027c53c8e5d181a62c59bd0a4709b2d206ab6fb986dc96dafb11dfaca",
+    "promptSha256": "f7b998ecac7d5faaaa699ca03a7ffa9b5b2b86acb15b206833714d53131f96e3",
+    "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+    "builderSha256": "3a3d3dc237f0839d8889df87cdbd7300d2e366a03c53f886c6fffde975cfbbe4"
+  },
+  "outputs": {
+    "poster.png": "70237bb4fea1dc9c2dfc495ce4b93dbcfb9a86bf02bc61d06bd2df89ace96f88",
+    "poster-preview.png": "2f797032716ad9fe1af3b68c6b26c56e0c0c6f171a09d1b23ca59be09265c266",
+    "qr-validation.json": "6ec91f5dbd64fba3f60a9cad338cd293b15f60ca6e1d6e32b409bfa35115fe6a"
+  },
+  "publicVerification": {
+    "checkedAt": "2026-10-14T16:37:07.003044+00:00",
+    "origin": "https://ai-for-god-sermon-audio.web.app",
+    "status": "pass",
+    "checks": [
+      {
+        "path": "/multilingual-v4.json",
+        "sha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+        "sha256": "32755dff59bd449c3199e760d6e280407d56bbd286fafd235ccf4adc94f8b675",
+        "status": 200
+      },
+      {
+        "path": "/content/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+        "sha256": "0d425106d368ebfab59e854f10489aabed025f947f2a61a79863e663e7f67a88",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/ko.json",
+        "sha256": "c7bafcd623bf7bd3658f9c0012ce73a4fcd3aca7e1a766e728874d7e3978b9f7",
+        "status": 200
+      },
+      {
+        "path": "/content/2026-09-27-weekend-sermon-drive-530/ko.json",
+        "sha256": "3e715908a42e33ff57274c3cc4edda68264a74ee030643b280c35526361daa68",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/es.json",
+        "sha256": "89bd0ae679a4c4af3b83d753128a1b729d4a89a80269a2d575855a87eb7508d8",
+        "status": 200
+      },
+      {
+        "path": "/content/2026-09-27-weekend-sermon-drive-530/es.json",
+        "sha256": "9fe8da801ebe139fa1c3fac33622744c9cabd2128e3b4ef8334dc611dc5c5ae7",
+        "status": 200
+      }
+    ]
+  },
+  "visualReview": {
+    "reviewer": "codex",
+    "humanApproval": false
+  },
+  "visualReviewedAt": "2026-10-14T16:37:07.024700+00:00"
+}
