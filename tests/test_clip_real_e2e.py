@@ -13,6 +13,7 @@ from scripts import run_clip_real_e2e as subject
 from scripts import plan_run_budgets as budgets
 from scripts import produce_target_language_candidate as producer
 from scripts import target_language_policy as target_policy
+from scripts import run_target_language_models as language_models
 
 ROOT = Path(__file__).resolve().parents[1]
 DISPLAY = {"series": "[test] s", "title": "[test] t", "speaker": "Speaker", "scripture": "Rev 9", "summary": "[test] x"}
@@ -103,6 +104,25 @@ class SpecificationTests(unittest.TestCase):
         policy.write_text(policy.read_text().replace(old_source, 'c' * 64))
         with self.assertRaisesRegex(ValueError, 'SOURCE_SHA256 differs'):
             subject.clip_plugin(plugin, policy, source, anchor, self.base / 'other.py')
+
+    def test_register_rules_keep_general_and_only_in_clip_source_entries(self):
+        table = [{'sourceUnitId': '0-u100', 'sourceTerm': 'A'},
+                 {'sourceUnitId': '0-u304', 'sourceTerm': 'Yahweh'}]
+        rules = ['Speak naturally.', 'At 0-u100 use an older form.',
+                 'Keep complete utterances. Exact source-unit contextual name interpretations as data: '
+                 + json.dumps(table) + '. At 0-u400 use another form.']
+        kept = subject.scoped_register_rules(rules, {'0-u304'})
+        self.assertEqual(len(kept), 2)
+        self.assertIn('0-u304', kept[1])
+        self.assertNotIn('0-u100', ' '.join(kept))
+        self.assertNotIn('0-u400', ' '.join(kept))
+
+    def test_claude_repair_reuses_only_next_round_in_same_job(self):
+        prior = self.base / 'repair-rounds/round-001'
+        self.assertTrue(language_models.cli_same_job_repair(prior, prior.parent / 'round-002', {'groups': []}))
+        self.assertFalse(language_models.cli_same_job_repair(prior, prior.parent / 'round-003', {'groups': []}))
+        self.assertFalse(language_models.cli_same_job_repair(prior, self.base / 'other/repair-rounds/round-002', {'groups': []}))
+        self.assertFalse(language_models.cli_same_job_repair(prior, prior.parent / 'round-002', None))
 
     def test_the_run_directory_must_be_mirrorable_under_artifacts(self):
         with self.assertRaisesRegex(ValueError, "under artifacts/"):

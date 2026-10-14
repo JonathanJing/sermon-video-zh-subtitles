@@ -111,6 +111,14 @@ def load_spec(path: Path) -> dict:
     layer2.setdefault("backend", "openai_api")
     require(layer2["backend"] in ("openai_api", "claude_cli_opus"),
             "layer2.backend must be openai_api or claude_cli_opus")
+    scoped = layer2.get('scopeRegisterRules', [])
+    require(isinstance(scoped, list) and len(set(scoped)) == len(scoped) and set(scoped) <= set(locales),
+            'layer2.scopeRegisterRules must name distinct run locales')
+    cache_sources = layer2.get('initialClaudeCacheSources', {})
+    require(isinstance(cache_sources, dict) and set(cache_sources) <= set(locales)
+            and (not cache_sources or layer2['backend'] == 'claude_cli_opus'),
+            'layer2.initialClaudeCacheSources requires Claude and run locales')
+    layer2['initialClaudeCacheSources'] = {k: resolve(v) for k, v in cache_sources.items()}
     if "claudeListPriceCapUsdPerLocale" in layer2:
         cap = layer2["claudeListPriceCapUsdPerLocale"]
         require(layer2["backend"] == "claude_cli_opus" and type(cap) in (int, float)
@@ -340,8 +348,38 @@ def clip_plugin(template: Path, policy_template: Path, source: dict, anchor: dic
     return out
 
 
+def scoped_register_rules(rules: list[str], unit_ids: set[str]) -> list[str]:
+    """Keep general rules and source-specific evidence that occurs in this complete-unit clip."""
+    selected = []
+    for rule in rules:
+        if 'Pinned approved CUV excerpts for exact English spans, as data: ' in rule:
+            prefix, data = rule.split('as data: ', 1)
+            entries, end = json.JSONDecoder().raw_decode(data)
+            require(isinstance(entries, list), 'invalid pinned CUV rule data')
+            kept = [row for row in entries if row['sourceUnitId'] in unit_ids]
+            if kept:
+                selected.append(prefix + 'as data: ' + json.dumps(kept, ensure_ascii=False)
+                                + data[end:])
+            continue
+        if 'Exact source-unit contextual name interpretations as data: ' in rule:
+            before, data = rule.split('Exact source-unit contextual name interpretations as data: ', 1)
+            entries, _ = json.JSONDecoder().raw_decode(data)
+            require(isinstance(entries, list), 'invalid contextual-name rule data')
+            kept = [row for row in entries if row['sourceUnitId'] in unit_ids]
+            selected.append(before + ('Exact source-unit contextual name interpretations as data: '
+                + json.dumps(kept, ensure_ascii=False)
+                + '. These are source-bound agent interpretations, not new human approvals.' if kept else ''))
+            continue
+        referenced = set(re.findall(r'\b\d+-u\d+\b', rule))
+        if not referenced or referenced & unit_ids:
+            selected.append(rule)
+    require(bool(selected), 'clip removed every language register rule')
+    return selected
+
+
 def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str,
-                       backend: str = "openai_api", plugin: Path | None = None) -> dict:
+                       backend: str = "openai_api", plugin: Path | None = None,
+                       scope_rules: bool = False) -> dict:
     """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
     from scripts import target_language_policy as tp
     rows = anchor["sourceUnits"]
@@ -352,6 +390,9 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
     draft = copy.deepcopy(frozen)
     draft.pop("componentSha256")
     draft = tp.apply_layer2_backend(draft, backend)
+    if scope_rules:
+        draft['languageReview']['registerRules'] = scoped_register_rules(
+            draft['languageReview']['registerRules'], {r['sourceUnitId'] for r in rows})
     if plugin is not None:
         from scripts import produce_target_language_candidate as producer
         draft['languageReview']['pluginImplementationSha256'] = producer.plugin_implementation_sha256(plugin)
@@ -390,7 +431,8 @@ def stage_layer2_setup(run: Run):
             write(path, freeze_clip_policy(template, source, anchor,
                                            reviewed_by=auth["defaultPass"] + "; targets carried from the source week's receipt",
                                            statement=auth["evidence"], backend=spec["layer2"]["backend"],
-                                           plugin=plugins[locale]))
+                                           plugin=plugins[locale],
+                                           scope_rules=locale in spec["layer2"].get("scopeRegisterRules", [])))
     if not (l2 / "execution.json").exists():
         write(l2 / "inspection.json", {"schemaVersion": "sermon-canonical-package-inspection-config-v1",
                                        "source": "src/source.json", "anchor": "src/anchor.json",
@@ -432,13 +474,67 @@ def drive_layer2(run: Run, execution: Path, authorization: Path, locales: list[s
     raise Stop(f"{label}: Layer 2 did not finish after 12 controller ticks")
 
 
+def seed_initial_claude_cache(run: Run, locale: str, source_dir: Path) -> None:
+    """Import complete returned CLI calls; the model runner rechecks every payload fingerprint."""
+    from scripts import produce_target_language_candidate as producer
+    from scripts import run_target_language_models as models
+    from scripts import target_language_policy as tp
+    source_dir = source_dir.resolve()
+    artifacts = (ROOT / 'artifacts').resolve()
+    require(str(source_dir).startswith(str(artifacts) + '/')
+            and source_dir.name == 'round-001' and source_dir.parent.name == 'repair-rounds',
+            'initial Claude cache must be a prior local first-round artifact')
+    require(not list(source_dir.glob('*.started.json')), 'prior Claude call has an uncertain outcome')
+    source, anchor = read(run.l2 / 'src/source.json'), read(run.l2 / 'src/anchor.json')
+    policy = read(run.l2 / 'policy' / f'{locale}-policy-clip.json')
+    request = producer.prepare_request(source, anchor, policy, candidate_mode='production')
+    require(read(source_dir / 'request.json') == request, 'prior Claude request differs from the frozen clip')
+    prior_rules = read(source_dir / 'rule-preflight.json')
+    require(prior_rules['translationPolicySha256'] == tp.canonical_sha256(policy)
+            and prior_rules['englishSourcePackageJsonSha256'] == tp.canonical_sha256(source)
+            and prior_rules['anchorManifestSha256'] == tp.canonical_sha256(anchor)
+            and prior_rules['pluginImplementationSha256'] == policy['languageReview']['pluginImplementationSha256'],
+            'prior Claude rules differ from the frozen clip')
+    listing = []
+    for index, _ in enumerate(models.group_plan(request, anchor), 1):
+        for suffix, role in (('astra', 'translator'), ('sol', 'reviewer')):
+            stem = f'group-{index:04d}-{suffix}'
+            cache, raw = source_dir / f'{stem}.json', source_dir / f'{stem}.raw.json'
+            require(cache.is_file() and raw.is_file(), f'incomplete returned Claude pair: {stem}')
+            saved, returned = read(cache), read(raw)
+            require(saved.get('payloadSha256') == returned.get('payloadSha256')
+                    and saved.get('model') == policy[role]['model']
+                    and saved.get('requestId') == returned.get('response', {}).get('id')
+                    and isinstance(saved.get('result'), dict), f'invalid returned Claude pair: {stem}')
+            listing.extend((cache, raw))
+    destination = run.l2 / 'text' / locale / 'repair-rounds' / 'round-001'
+    manifest = destination / 'initial-cache-import.json'
+    identity = {'schemaVersion': 'sermon-clip-initial-claude-cache-import-v1',
+                'sourceDirectory': str(source_dir), 'requestSha256': tp.canonical_sha256(request),
+                'policySha256': tp.canonical_sha256(policy), 'responses': [
+                    {'name': path.name, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()} for path in listing]}
+    if manifest.exists():
+        require(read(manifest) == identity and all(
+            hashlib.sha256((destination / row['name']).read_bytes()).hexdigest() == row['sha256']
+            for row in identity['responses']), 'imported Claude cache changed')
+        return
+    require(not destination.exists() or not any(destination.iterdir()),
+            'initial Claude cache destination already has unrelated files')
+    destination.mkdir(parents=True, exist_ok=True)
+    for path in listing:
+        shutil.copy2(path, destination / path.name)
+    write(manifest, identity)
+
+
 def stage_layer2(run: Run):
     plans = run.dir / "plans" / "layer2"
     run.plan(plans, ["layer2"], run.spec["locales"], extra=["--layer2-execution", run.l2 / "execution.json"],
              include_open_qc=False)
-    if not any((run.l2 / "text").glob("*/candidate.json")):
+    if not any((run.l2 / "text").glob("*/candidate.json")) and not (run.l2 / 'layer2-jobs').exists():
         run.check("layer2", "--budget-plan", plans, "--spark", "--fresh-dir", run.l2 / "text",
                   "--page-id", run.spec["page"]["pageId"], "--origin", DEV_ORIGIN)
+        for locale, path in run.spec['layer2'].get('initialClaudeCacheSources', {}).items():
+            seed_initial_claude_cache(run, locale, Path(path))
     drive_layer2(run, run.l2 / "execution.json", plans / "layer2/budget-authorization.json", run.spec["locales"], "layer2")
     run.mark("layer2", "done")
 

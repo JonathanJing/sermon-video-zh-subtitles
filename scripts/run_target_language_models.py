@@ -681,6 +681,17 @@ def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:
     return None
 
 
+def cli_same_job_repair(reuse_from: Path | None, out: Path, brief: dict | None) -> bool:
+    """Permit only the next repair round beside a completed prior round for CLI calls."""
+    if reuse_from is None or brief is None:
+        return False
+    prior, current = reuse_from.resolve(), out.resolve()
+    if prior.parent != current.parent or prior.parent.name != 'repair-rounds':
+        return False
+    before, after = re.fullmatch(r'round-(\d{3})', prior.name), re.fullmatch(r'round-(\d{3})', current.name)
+    return bool(before and after and int(after.group(1)) == int(before.group(1)) + 1)
+
+
 def carry_forward_group(prior_run: Path, out: Path, index: int,
                         group: dict[str, Any], prior_row: dict[str, Any],
                         policy: dict[str, Any]) -> dict[str, Any]:
@@ -1038,10 +1049,11 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             # A bound API repair round may reuse an earlier round of the same job:
             # every cache fingerprint includes this transport identity, and the
             # prior-input check above rejects any cache made under another one.
-            require(resume_cache_from is None
-                    and (reuse_from is None or (partial_repair_brief is not None
-                                                and transport_identity.get("backend") == "openai_api")),
-                    "CLI transport supports same-run resume only; cross-run cache reuse is not enabled")
+            backend = transport_identity.get('backend')
+            require(resume_cache_from is None and (reuse_from is None
+                    or (partial_repair_brief is not None and backend == 'openai_api')
+                    or (backend == 'claude_cli' and cli_same_job_repair(reuse_from, out, partial_repair_brief))),
+                    "CLI transport permits only a bound next repair round in the same job")
         if revision_brief is not None:
             identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
         if partial_repair_brief is not None:
