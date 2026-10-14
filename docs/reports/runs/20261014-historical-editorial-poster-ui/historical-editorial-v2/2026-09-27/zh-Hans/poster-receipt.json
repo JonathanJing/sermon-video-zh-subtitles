@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "sermon-multilingual-poster-v1",
+  "source": {
+    "pageId": "2026-09-27-weekend-sermon-drive-530",
+    "targetLocale": "zh-Hans",
+    "sourceIdentitySha256": "a0cf67203bae17bff080b2d1af41f88bdef786345a435021c2739d14f15394ac",
+    "catalogSha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+    "releasePackageSha256": "32755dff59bd449c3199e760d6e280407d56bbd286fafd235ccf4adc94f8b675",
+    "contentSha256": "0d425106d368ebfab59e854f10489aabed025f947f2a61a79863e663e7f67a88",
+    "brief": {
+      "locale": "zh-Hans",
+      "date": "2026-09-27",
+      "origin": "https://ai-for-god-sermon-audio.web.app",
+      "title": "耶稣配得",
+      "series": "启示录：耶稣带来的安慰与盼望",
+      "scripture": "启示录 4–5 章",
+      "speaker": "Eric Geiger",
+      "tagline": "一起听懂，一路同行。",
+      "reviewLabel": "译文与配音已审核",
+      "labels": {
+        "brand": "同行",
+        "eyebrow": "本周证道 · 中文",
+        "cta": "扫码开启本周证道",
+        "serviceLine": "中文配音 · 英文对照 · 完整文稿",
+        "qrCaption": "直接打开本周 · 中文",
+        "disclaimer": "独立个人项目，与 Mariners Church 无隶属或背书关系。\nAI 合成中文音频与整理文字仅供个人跟读参考。",
+        "header": "同行   ───   本周证道",
+        "web": "网页版",
+        "caption": "扫码阅读 · 收听",
+        "storeHeading": "下载同行 App",
+        "webHeading": "打开本周网页版",
+        "showReview": "false"
+      },
+      "qrURL": "https://ai-for-god-sermon-audio.web.app/?week=2026-09-27-weekend-sermon-drive-530&contentLang=zh-Hans&lang=zh",
+      "displayTitle": "耶稣配得",
+      "storeURL": "https://apps.apple.com/app/id6809255441"
+    }
+  },
+  "status": "complete",
+  "provenance": {
+    "templateVersion": "tongxing-dual-qr-v2",
+    "templateSha256": "d88e2f2ea84f8bf541878e2f20208d268d400a983c9beacb60a1b3c1964e4f86",
+    "badgeHashes": {
+      "zh-Hans": "65191b2d1182a194e510b27c9985b1367b60ed6ef565f86fc492f585a27bc932",
+      "ko": "fc82d5344d0f2919a7ae697e677fc9c62872f1ee47bd70e24a581245423de9c1",
+      "es": "e4d7c2c1606454536482735c96b933b04ea86a2e72701b3319ae1f3a369b0479"
+    },
+    "artSha256": "bfb7e76027c53c8e5d181a62c59bd0a4709b2d206ab6fb986dc96dafb11dfaca",
+    "promptSha256": "f7b998ecac7d5faaaa699ca03a7ffa9b5b2b86acb15b206833714d53131f96e3",
+    "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+    "builderSha256": "3a3d3dc237f0839d8889df87cdbd7300d2e366a03c53f886c6fffde975cfbbe4"
+  },
+  "outputs": {
+    "poster.png": "f0d2cb1acb99c0c1ad52e12dd8808ee27ef28c5d80c7b541fa17c1c55bd19dff",
+    "poster-preview.png": "8c7081835c720164daae8165f83c6416825dc383018d4b795cd53a8e02a2c5ba",
+    "qr-validation.json": "3993c907f501e19e24f49a6d7e679710dd5a4e3ce3b8a240d7ade4ef2346c840"
+  },
+  "publicVerification": {
+    "checkedAt": "2026-10-14T16:37:07.003044+00:00",
+    "origin": "https://ai-for-god-sermon-audio.web.app",
+    "status": "pass",
+    "checks": [
+      {
+        "path": "/multilingual-v4.json",
+        "sha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+        "sha256": "32755dff59bd449c3199e760d6e280407d56bbd286fafd235ccf4adc94f8b675",
+        "status": 200
+      },
+      {
+        "path": "/content/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+        "sha256": "0d425106d368ebfab59e854f10489aabed025f947f2a61a79863e663e7f67a88",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/ko.json",
+        "sha256": "c7bafcd623bf7bd3658f9c0012ce73a4fcd3aca7e1a766e728874d7e3978b9f7",
+        "status": 200
+      },
+      {
+        "path": "/content/2026-09-27-weekend-sermon-drive-530/ko.json",
+        "sha256": "3e715908a42e33ff57274c3cc4edda68264a74ee030643b280c35526361daa68",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/es.json",
+        "sha256": "89bd0ae679a4c4af3b83d753128a1b729d4a89a80269a2d575855a87eb7508d8",
+        "status": 200
+      },
+      {
+        "path": "/content/2026-09-27-weekend-sermon-drive-530/es.json",
+        "sha256": "9fe8da801ebe139fa1c3fac33622744c9cabd2128e3b4ef8334dc611dc5c5ae7",
+        "status": 200
+      }
+    ]
+  },
+  "visualReview": {
+    "reviewer": "codex",
+    "humanApproval": false
+  },
+  "visualReviewedAt": "2026-10-14T16:37:07.013412+00:00"
+}
