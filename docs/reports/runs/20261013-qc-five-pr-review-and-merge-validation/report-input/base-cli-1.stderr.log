@@ -1,0 +1,15 @@
+08:12:45.614 | INFO    | prefect - Starting temporary server on http://127.0.0.1:8140
+See https://docs.prefect.io/v3/concepts/server#how-to-guides for more information on running a dedicated Prefect server.
+08:12:47.736 | INFO    | Flow run 'cunning-wallaby' - Beginning flow run 'cunning-wallaby' for flow 'sermon-local-mock-dag'
+08:12:47.801 | INFO    | Task run 'dispatch-cd3' - Finished in state Completed()
+08:12:47.843 | INFO    | Task run 'dispatch-d3e' - Finished in state Completed()
+08:12:47.847 | INFO    | Task run 'dispatch-d06' - Finished in state Completed()
+08:12:47.878 | INFO    | Task run 'dispatch-ab4' - Finished in state Completed()
+08:12:47.898 | INFO    | Task run 'dispatch-563' - Finished in state Completed()
+08:12:47.924 | INFO    | Task run 'dispatch-dc1' - Finished in state Completed()
+08:12:47.949 | INFO    | Task run 'dispatch-c0c' - Finished in state Completed()
+08:12:47.988 | INFO    | Task run 'dispatch-874' - Finished in state Completed()
+08:12:48.001 | INFO    | Task run 'dispatch-348' - Finished in state Completed()
+08:12:48.007 | INFO    | Task run 'dispatch-04c' - Finished in state Completed()
+08:12:48.749 | INFO    | Flow run 'cunning-wallaby' - Finished in state Completed()
+08:12:48.773 | INFO    | prefect - Stopping temporary server on http://127.0.0.1:8140

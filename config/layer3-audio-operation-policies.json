@@ -3,7 +3,7 @@
     "version": "v2",
     "policy": "exact_approved_text_with_registered_spoken_forms",
     "spokenForms": {
-      "ko": "ko-sino-chapter-verse-numerals-v3"
+      "ko": "ko-sino-chapter-verse-numerals-v4"
     }
   },
   "asrScreening": {

@@ -623,6 +623,15 @@ test('subtitle language switches preserve playback, seeking controls and source 
 });
 
 
+function choosePageLanguage(h, locale) {
+  h.get('language-toggle').click();
+  assert.equal(h.get('page-language-popover').hidden, false);
+  assert.equal(h.get('language-toggle').getAttribute('aria-expanded'), 'true');
+  h.get('page-language-menu').children.find(item => item.dataset.locale === locale).click();
+  assert.equal(h.get('page-language-popover').hidden, true, 'choosing a language closes the menu');
+  assert.equal(h.get('language-toggle').getAttribute('aria-expanded'), 'false');
+}
+
 test('whole-page language change keeps live audio, source identity and grouped English timing', () => {
   const h = setup();
   const bilingualWeek = structuredClone(week);
@@ -633,8 +642,11 @@ test('whole-page language change keeps live audio, source identity and grouped E
   ] };
   h.app.initialize(bilingualWeek); h.audio.metadata(); h.app.setPosition(160); h.get('play').click();
   const loads = h.audio.loadCalls, plays = h.audio.playCalls.length, invalidations = h.fingerprintInvalidations;
-  h.get('language-toggle').click();
+  assert.equal(h.get('language-label').textContent, '中');
+  choosePageLanguage(h, 'en');
   assert.equal(h.context.getLocale(), 'en');
+  assert.equal(h.get('language-label').textContent, 'EN');
+  assert.deepEqual(h.get('page-language-menu').children.map(item => item.getAttribute('aria-checked')), ['false', 'true', 'false', 'false']);
   assert.equal(h.get('play-label').textContent, 'Cancel loading');
   assert.equal(h.get('current-text').textContent, '第二段');
   const rows = h.get('transcript-list').children;
@@ -644,14 +656,14 @@ test('whole-page language change keeps live audio, source identity and grouped E
   assert.equal(h.audio.loadCalls, loads); assert.equal(h.audio.playCalls.length, plays);
   assert.equal(h.fingerprintInvalidations, invalidations);
   assert.equal(h.cues()[0].disabled, false);
-  h.get('language-toggle').click();
+  choosePageLanguage(h, 'ko');
   assert.equal(h.context.getLocale(), 'ko');
   assert.equal(h.get('current-text').textContent, '第二段');
   assert.equal(h.get('play-label').textContent, '불러오기 취소');
-  h.get('language-toggle').click();
+  choosePageLanguage(h, 'es');
   assert.equal(h.context.getLocale(), 'es');
   assert.equal(h.get('current-text').textContent, '第二段');
-  h.get('language-toggle').click();
+  choosePageLanguage(h, 'zh');
   assert.equal(h.context.getLocale(), 'zh');
   assert.equal(h.audio.currentTime, 160);
 });
@@ -693,7 +705,18 @@ test('published week switches language in the existing player and keeps full rea
   h.app.loadCatalog({ defaultWeekId: id, weeks: [published, week] });
   h.audio.metadata(300);
   h.get('play').click();
-  h.get('content-language').value = 'ko'; h.get('content-language').dispatch('change');
+  const sermonLanguages = () => h.get('sermon-language-options').children;
+  assert.equal(h.get('sermon-language').hidden, false);
+  assert.deepEqual(sermonLanguages().map(button => button.dataset.locale), ['zh-Hans', 'ko', 'es']);
+  assert.deepEqual(sermonLanguages().map(button => button.getAttribute('aria-pressed')), ['true', 'false', 'false']);
+  sermonLanguages().find(button => button.dataset.locale === 'ko').click();
+  assert.equal(h.get('content-language').value, 'ko', 'the settings select follows the visible sermon-language buttons');
+  assert.equal(h.get('brand-tagline').getAttribute('data-i18n'), 'app.tagline.ko', 'the subtitle names the sermon language');
+  assert.equal(h.get('footer-title').getAttribute('data-i18n'), 'app.title.ko');
+  assert.equal(h.get('brand-link').getAttribute('data-i18n-aria-label'), 'app.home.ko');
+  assert.equal(h.document.title, 'Title ko · 同行 · 证道韩语听译');
+  assert.equal(h.mediaSessions[0].getSelection().album, '同行 · 证道韩语听译', 'the lock screen names the sermon language too');
+  assert.deepEqual(sermonLanguages().map(button => button.getAttribute('aria-pressed')), ['false', 'true', 'false']);
   assert.equal(h.audio.paused, true, 'old audio stops when the content language changes');
   assert.equal(h.audio.src, `https://example.test/media/${id}/ko.mp3`);
   assert.equal(h.get('title').textContent, 'Title ko');
@@ -710,10 +733,13 @@ test('published week switches language in the existing player and keeps full rea
   assert.equal(h.context.location.href, 'https://example.test/', 'selection stays in this App');
   h.get('content-language').value = 'es'; h.get('content-language').dispatch('change');
   assert.equal(h.audio.src, `https://example.test/media/${id}/es.mp3`);
+  assert.equal(sermonLanguages().find(button => button.dataset.locale === 'es').getAttribute('aria-pressed'), 'true');
   h.app.selectWeek(week.id);
   assert.equal(h.audio.src, 'https://example.test/media/first.mp3');
   assert.equal(h.get('content-language').value, 'zh-Hans');
   assert.equal(h.get('content-language').children.find(option => option.value === 'ko').disabled, true);
+  assert.deepEqual(sermonLanguages().map(button => button.dataset.locale), ['zh-Hans'], 'a single-language week offers only its published language');
+  assert.equal(h.get('brand-tagline').getAttribute('data-i18n'), 'app.tagline', 'Chinese keeps the original subtitle');
 });
 
 

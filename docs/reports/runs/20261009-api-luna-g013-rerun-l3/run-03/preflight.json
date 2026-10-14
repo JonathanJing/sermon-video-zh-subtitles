@@ -1,0 +1,8 @@
+{
+  "budgetReservationMicrousd": 0,
+  "outDir": "artifacts/api-luna-concurrency-20261008/run-03",
+  "providerRequests": 0,
+  "reason": "spark_exclusive_session_required",
+  "schemaVersion": "api-luna-run-attempt-v1",
+  "status": "blocked_before_dispatch"
+}

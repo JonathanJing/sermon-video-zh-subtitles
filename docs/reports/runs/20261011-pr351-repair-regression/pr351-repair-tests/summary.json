@@ -1,0 +1,12 @@
+{
+  "pullRequest": 351,
+  "reviewCommentsAddressed": 4,
+  "command": ".venv/bin/python -m pytest tests/test_dev_clip_fixture.py tests/test_prepare_dev_simulated_publication.py tests/test_run_dev_simulated_delivery.py -q",
+  "coverage": [
+    "original candidate and audio source bindings",
+    "complete sentence boundaries and aligned segment coverage",
+    "bound source media and full decoded audio identity",
+    "exact three locale join requirement"
+  ],
+  "limitation": "No real weekly production run, deployment, API calls, or device test; media tests use synthetic recordings. Audio altered by cleaning or lossy re-encoding is intentionally rejected."
+}
