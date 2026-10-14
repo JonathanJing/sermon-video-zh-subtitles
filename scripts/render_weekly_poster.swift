@@ -54,6 +54,19 @@ func drawOn(_ rep: NSBitmapImageRep, body:() throws -> Void) throws {
     NSGraphicsContext.current = NSGraphicsContext(cgContext:cg,flipped:true)
     try body(); cg.flush()
 }
+func softenHeadlineBackground() {
+    // Dark artwork can swallow the dark-green title. Fade a light scrim out
+    // before the separate source-metadata panel begins at y=505.
+    let colorSpace = CGColorSpaceCreateDeviceRGB()
+    let colors = [CGColor(red:0.953,green:0.941,blue:0.897,alpha:0.88),
+                  CGColor(red:0.953,green:0.941,blue:0.897,alpha:0.62),
+                  CGColor(red:0.953,green:0.941,blue:0.897,alpha:0)] as CFArray
+    guard let gradient = CGGradient(colorsSpace:colorSpace,colors:colors,locations:[0,0.78,1]) else { return }
+    let context = NSGraphicsContext.current!.cgContext
+    context.saveGState(); defer { context.restoreGState() }
+    context.clip(to:CGRect(x:0,y:0,width:1200,height:505))
+    context.drawLinearGradient(gradient,start:CGPoint(x:0,y:0),end:CGPoint(x:0,y:505),options:[])
+}
 func writePNG(_ rep:NSBitmapImageRep, _ url:URL) throws {
     guard let data=rep.representation(using:.png,properties:[:]) else { throw Failure(description:"PNG encoding failed") }; try data.write(to:url,options:.atomic)
 }
@@ -92,6 +105,7 @@ do {
  let ratio=max(CGFloat(W)/art.size.width,CGFloat(H)/art.size.height)
  let area=NSRect(x:(CGFloat(W)-art.size.width*ratio)/2,y:(CGFloat(H)-art.size.height*ratio)/2,width:art.size.width*ratio,height:art.size.height*ratio)
  art.draw(in:area,from:.zero,operation:.copy,fraction:1,respectFlipped:true,hints:[.interpolation:NSImageInterpolation.high])
+ softenHeadlineBackground()
  try text(brief.labels["header"] ?? "",NSRect(x:120,y:75,width:960,height:68),maxSize:33,alignment:.center)
  try text(brief.displayTitle ?? brief.title,NSRect(x:100,y:180,width:1000,height:300),maxSize:brief.locale == "zh-Hans" ? 138 : 100,minSize:66,headline:true,alignment:.center)
  // Group source metadata over a stable light surface across weekly artwork.
