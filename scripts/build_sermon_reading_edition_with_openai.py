@@ -430,11 +430,19 @@ def edit_batch(
         reasoning_effort=reasoning_effort,
         qa_pass=qa_pass,
     )
+    if provider == "openai":
+        from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract, legacy_text_execution_identity
+        payload = bounded_legacy_chat_payload(payload)
+        cache_contract = {**legacy_text_cache_contract(),
+                          "executionIdentity": legacy_text_execution_identity(api_key, payload)}
+    else:
+        cache_contract = None  # Preserve the frozen Codex request/cache policy.
     input_hash = hashlib.sha256(
         json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
     ).hexdigest()[:12]
     identity = hashlib.sha256(
-        f"{prompt_version}|{provider}|{model}|{reasoning_effort}".encode("utf-8")
+        (f"{prompt_version}|{provider}|{model}|{reasoning_effort}" +
+         ("|" + json.dumps(cache_contract, sort_keys=True) if cache_contract else "")).encode("utf-8")
     ).hexdigest()[:12]
     cache = cache_dir / (
         f"{'qa' if qa_pass else 'edit'}_{batch[0]['id']:03d}_{batch[-1]['id']:03d}."
@@ -554,7 +562,8 @@ def codex_json(
     session_verifier=None,
 ) -> dict[str, Any]:
     from scripts.production_spark_admission import SessionBoundCaller
-    return SessionBoundCaller(_codex_json, verifier=session_verifier, purpose="production-reading-edition")(
+    return SessionBoundCaller(_codex_json, verifier=session_verifier, purpose="production-reading-edition",
+                              requires_spark=False)(
         payload, codex_cli=codex_cli, model=model, reasoning_effort=reasoning_effort,
         schema_path=schema_path, output_path=output_path)
 
@@ -605,13 +614,27 @@ def _codex_json(payload, *, codex_cli, model, reasoning_effort, schema_path, out
     with stage("reading.codex_call", billing="codex"):
         completed = subprocess.run(
             command,
-            input=prompt,
-            text=True,
+            input=prompt.encode("utf-8"),
+            text=False,
             capture_output=True,
             cwd=REPO_ROOT,
         )
+        # A returned process is terminal even if decoding/validation below fails.
+        # Timeouts/interruptions never reach this observation.
+        from scripts import api_cli_outcomes
+        try:
+            output_bytes = output_path.read_bytes()
+        except OSError:
+            output_bytes = None
+        api_cli_outcomes.observed_cli_terminal(
+            returncode=completed.returncode,
+            stdout=completed.stdout.encode() if isinstance(completed.stdout, str) else completed.stdout or b'',
+            stderr=completed.stderr.encode() if isinstance(completed.stderr, str) else completed.stderr or b'',
+            output=output_bytes)
         if completed.returncode != 0:
             detail = (completed.stderr or completed.stdout)[-3000:]
+            if isinstance(detail, bytes):
+                detail = detail.decode("utf-8", errors="replace")
             raise RuntimeError(f"Codex reading edit failed ({completed.returncode}): {detail}")
         return parse_json_message(output_path.read_text(encoding="utf-8"))
 

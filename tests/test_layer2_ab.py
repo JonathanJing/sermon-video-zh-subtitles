@@ -53,6 +53,44 @@ class Layer2ABTests(unittest.TestCase):
                            max_api_calls=max_api_calls, max_groups=max_groups,
                            clock=lambda: 10.0)
 
+    def test_real_run_binds_outcomes_and_recovers_returned_started_marker(self):
+        from unittest.mock import patch
+        from scripts import sermon_pipeline
+        def http(_url, key, payload, **kwargs):
+            return self.fake_call(key, payload)
+        original = subject.production.save_new
+        interrupted = []
+        def save(path, value, **kwargs):
+            if str(path).endswith(".raw.json") and not interrupted:
+                interrupted.append(1)
+                raise RuntimeError("crash before raw response")
+            return original(path, value, **kwargs)
+        with patch.dict("os.environ", {}, clear=True), patch.object(sermon_pipeline, "json_request", side_effect=http):
+            with patch.object(subject.production, "save_new", side_effect=save):
+                with self.assertRaisesRegex(RuntimeError, "crash before raw"):
+                    self.run_subject(caller=sermon_pipeline.chat_json)
+            self.assertEqual(len(self.calls), 1)
+            marker = next(self.out.rglob("*.started.json"))
+            self.assertIn("apiCliRequestSha256", json.loads(marker.read_text()))
+            result = self.run_subject(caller=sermon_pipeline.chat_json)
+            self.assertEqual(result["status"], "shadow_only")
+            self.assertEqual(len(self.calls), 12)  # recovered first response, 11 new calls
+            outcomes = list((self.out / "api-cli-outcomes").glob("*/outcome.json"))
+            self.assertEqual(len(outcomes), 12)
+            self.run_subject(caller=sermon_pipeline.chat_json)
+            self.assertEqual(len(self.calls), 12)
+
+    def test_real_run_unknown_started_marker_never_redispatches(self):
+        from unittest.mock import patch
+        from scripts import sermon_pipeline
+        with patch.dict("os.environ", {}, clear=True), patch.object(
+                sermon_pipeline, "json_request", side_effect=TimeoutError("unknown")) as dispatched:
+            with self.assertRaises(TimeoutError):
+                self.run_subject(caller=sermon_pipeline.chat_json)
+            with self.assertRaisesRegex(ValueError, "reconciliation_required"):
+                self.run_subject(caller=sermon_pipeline.chat_json)
+            self.assertEqual(dispatched.call_count, 1)
+
     def test_pairing_fixes_all_inputs_except_translator_model(self):
         summary = self.run_subject()
         self.assertEqual(summary["status"], "shadow_only")

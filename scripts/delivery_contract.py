@@ -92,7 +92,8 @@ def project_human_catalog(catalog):
     """The v3 catalog old clients read: every machine-checked target removed.
 
     Pages left without targets disappear; a removed default moves to a remaining
-    locale or to the latest remaining page. Nothing else changes.
+    locale or to the latest remaining page that is not a simulation or diagnostic
+    test page (any page only when no other remains). Nothing else changes.
     """
     require(catalog.get('schemaVersion') == CATALOG_V4, 'Projection requires a v4 catalog')
     result = {**copy.deepcopy(catalog), 'schemaVersion': CATALOG_V3}
@@ -107,7 +108,9 @@ def project_human_catalog(catalog):
         pages.append(page)
     require(pages, 'A catalog with only machine-checked pages has no human-only projection')
     if result['defaultPageId'] not in {page['id'] for page in pages}:
-        result['defaultPageId'] = max(pages, key=lambda page: page['date'])['id']
+        # A Dev test page dated after every reviewed page must not become what old clients open first.
+        real = [page for page in pages if page.get('simulationOnly') is not True and page.get('diagnosticOnly') is not True]
+        result['defaultPageId'] = max(real or pages, key=lambda page: page['date'])['id']
     result['pages'] = pages
     return result
 

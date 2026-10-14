@@ -1,0 +1,230 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261012-weekly-clip-refused-attempts",
+  "runs": [
+    {
+      "label": "clip-20261012T045611Z",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/artifacts/dev-180s-page-test-20261004/clip-20261012T045611Z",
+      "skipped": {}
+    },
+    {
+      "label": "clip-20261012T045656Z",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/artifacts/dev-180s-page-test-20261004/clip-20261012T045656Z",
+      "skipped": {
+        ".json": 1896,
+        ".js": 53,
+        ".html": 319,
+        ".mjs": 290,
+        ".png": 116,
+        ".svg": 21,
+        ".srt": 12,
+        ".mp3": 867,
+        ".pdf": 24,
+        ".wav": 78,
+        ".mp4": 102,
+        ".jpg": 6,
+        ".css": 26,
+        ".lock": 4,
+        ".txt": 3,
+        ".md": 1,
+        ".cache": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 223961,
+      "truncated": false,
+      "sha256": "3b12566d69e1457bd7d2d42871a8e975896bdd19301bb084db403333dfff152a",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "baseline.log",
+      "kind": "log",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "3a0bd13dc441f482cd8ddbee7bf18cc9d5d869696757707098210a3056d732ee",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "baseline2/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 233517,
+      "truncated": false,
+      "sha256": "d15c87332a966f4172c008ab5ca8525730ae7d6bbd33ea3a1a0ee9150edd318a",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "baseline2/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "baseline2.log",
+      "kind": "log",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "31bb98de7e69326ca7f4d281fe756e95803ae52b0f96cbc89aa0793d5a9f01dc",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "delivery-execute-resume.log",
+      "kind": "log",
+      "bytes": 1907,
+      "truncated": false,
+      "sha256": "02f3503c34e4197dbb66b58b32c74d91ecd729b93ed26313bc96c8c1d8e9a803",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "delivery-execute.log",
+      "kind": "log",
+      "bytes": 3187,
+      "truncated": false,
+      "sha256": "2e294607769018bbd71b688c407848884baf4a6a424b21c36adf0910a34f3f4a",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "delivery-execute2.log",
+      "kind": "log",
+      "bytes": 2875,
+      "truncated": false,
+      "sha256": "dc68f9a985a0b6fb87662e05b0d535fc67a76a2c675e47cc5794921dc35a1082",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "delivery-preflight.log",
+      "kind": "log",
+      "bytes": 1402,
+      "truncated": false,
+      "sha256": "a9bb6b0c60d182f04c5dc10e1513ef6b18157448f875bafa77bd4f169e9bd4ca",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "delivery-preflight2.log",
+      "kind": "log",
+      "bytes": 1402,
+      "truncated": false,
+      "sha256": "6c3d45aaa35ff8458ca90fb9bd2a9cc77d42a2a94e6e9c116d75d28af65dedb9",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "inputs/summary.json",
+      "kind": "whole",
+      "bytes": 463,
+      "truncated": false,
+      "sha256": "6cfe14faf32b5f4f0a0fbc8f03056484aab614d660b8dcc8d8150cad3bf98617",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 209,
+      "truncated": false,
+      "sha256": "d94b4d37ab4234cc9cfcf7704f690dd1e3a604d57d4be55fc306a68ec97d178c",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "workflow/asset-first/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 223961,
+      "truncated": false,
+      "sha256": "3b12566d69e1457bd7d2d42871a8e975896bdd19301bb084db403333dfff152a",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "workflow/asset-first/hosting-publish.log",
+      "kind": "log",
+      "bytes": 143,
+      "truncated": false,
+      "sha256": "751595ed0dacb8df5aa4d0694c42e85ddba31fa2bfd094bf079a1c9b4b26e521",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "workflow/asset-first/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "workflow/live-baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 233209,
+      "truncated": false,
+      "sha256": "362c2df3efaf5e6ec3baf30f6e090b252802a946eb2f819d8116d9db804b70c4",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "workflow/live-baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "workflow/sealed/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "workflow2/asset-first/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 233517,
+      "truncated": false,
+      "sha256": "d15c87332a966f4172c008ab5ca8525730ae7d6bbd33ea3a1a0ee9150edd318a",
+      "redactions": {}
+    },
+    {
+      "run": "clip-20261012T045656Z",
+      "path": "workflow2/asset-first/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "normalization": {
+    "version": "v2",
+    "policy": "exact_approved_text_with_registered_spoken_forms",
+    "spokenForms": {
+      "ko": "ko-sino-chapter-verse-numerals-v4"
+    }
+  },
+  "asrScreening": {
+    "version": "v1",
+    "policy": "all_units_fully_decoded_target_locale_asr_with_human_escalation"
+  },
+  "subtitle": {
+    "version": "v1",
+    "policy": "exact_approved_text_measured_target_audio_times"
+  }
+}

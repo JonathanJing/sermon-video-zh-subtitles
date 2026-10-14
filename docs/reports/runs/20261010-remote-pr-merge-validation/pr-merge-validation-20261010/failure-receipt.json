@@ -1,0 +1,10 @@
+{
+  "stage": "firstIntegrationCI",
+  "runId": 38104684280,
+  "job": "test-group (root-4)",
+  "test": "test_dispatch_lock_wait_is_bounded_and_restart_does_not_regain_call_permission",
+  "observedSleepCalls": 989014,
+  "expectedSleepCalls": 99,
+  "cause": "Observed excess sleep mock calls with mark_request bounded at100; consistent with unrelated calls contaminating a shared global time.sleep mock. Specific thread was not identified.",
+  "resolution": "Patch only adapter.time reference with isolated sleep mock, assert real global sleep unchanged; 38 focused tests passed. Final-head CI pending."
+}
