@@ -1,0 +1,1940 @@
+{
+ "note": "every auto-repair record the Layer 2 independent review triggered; input for deciding whether the second-model pass earns its cost",
+ "count": 12,
+ "records": [
+  {
+   "ledger": ".layer2-jobs-r6-zh.layer2-repair",
+   "file": "8f4aeb667119b223dfb96932e42d8d8c847e165074bb9c54900e4da267f961cf/round-000001.json",
+   "record": {
+    "evidenceSha256": null,
+    "failureReportSha256": "b08095716adfc93fdd76b3ad342c597f4a823e46ac14202532126fdcc4834799",
+    "groups": [
+     {
+      "decision": "repairable_content_failure",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "be1f3084aa51e222bca5f52e5143728131fae2cdb5d9b9d298f91ad394f071fe",
+      "repaired": true,
+      "sourceUnitIds": [
+       "chunk-0001-u008"
+      ],
+      "translationGroupId": "translation-chunk-0001-u008"
+     },
+     {
+      "decision": "repairable_content_failure",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "be4abba0153e4119da0d3fd371fb8d426ed01d21d1c28ebf653bfe7b21de25d8",
+      "repaired": true,
+      "sourceUnitIds": [
+       "chunk-0004-u025"
+      ],
+      "translationGroupId": "translation-chunk-0004-u025"
+     },
+     {
+      "decision": "repairable_content_failure",
+      "failureCodes": [
+       "meaning_omission",
+       "review_uncertainty"
+      ],
+      "fingerprint": "2edf0478d1a4aa102a46016d511d97a035e960f1b200b8b43f455f42fb22b33c",
+      "repaired": true,
+      "sourceUnitIds": [
+       "chunk-0011-u004"
+      ],
+      "translationGroupId": "translation-chunk-0011-u004"
+     }
+    ],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "zh-Hans",
+     "translationPolicySha256": "b526ed4f54bc3454c908953600a502754da998beec427ee002f32a7641e51f76"
+    },
+    "nextBrief": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "groups": [
+      {
+       "failedCacheSha256": "650595750adbb90c8f830888518a16373e2a4ff80e62e0f8dfce558aa8b9c9ae",
+       "failedRole": "reviewer",
+       "failureReason": "language_plugin_failed: target_script: Target script share and placeholder screen; Han share 0.50 < 0.60; untranslated_source: Untranslated English screen; Latin-script share above 0.30",
+       "instruction": "Fix the deterministic language check finding below without changing meaning: keep each utterance at most 180 characters (split at natural clause boundaries), use the policy register, and keep every number, name and reference the English says. Machine-written repair instruction from a failed machine check; check every point against the English source. Language check finding: language_plugin_failed: target_script: Target script share and placeholder screen; Han share 0.50 < 0.60; untranslated_source: Untranslated English screen; Latin-script share above 0.30",
+       "sourceUnitIds": [
+        "chunk-0001-u008"
+       ],
+       "translationGroupId": "translation-chunk-0001-u008"
+      },
+      {
+       "failedCacheSha256": "5e158ea8f9e1cb0aecb2e9d01d8bf4e2a9ab3309af003525c042d0b82f9834b7",
+       "failedRole": "reviewer",
+       "failureReason": "language_plugin_failed: numbers: English cardinals as digits or target-language words; target digits must be said; missing number 0",
+       "instruction": "Fix the deterministic language check finding below without changing meaning: keep each utterance at most 180 characters (split at natural clause boundaries), use the policy register, and keep every number, name and reference the English says. Machine-written repair instruction from a failed machine check; check every point against the English source. Language check finding: language_plugin_failed: numbers: English cardinals as digits or target-language words; target digits must be said; missing number 0",
+       "sourceUnitIds": [
+        "chunk-0004-u025"
+       ],
+       "translationGroupId": "translation-chunk-0004-u025"
+      },
+      {
+       "failedCacheSha256": "5d8772e3703774b1e874ecbbc7934ace4aabaf136e5e1b8dc0e6516deb1e3c10",
+       "failedRole": "reviewer",
+       "failureReason": "meaning_omission, review_uncertainty: 保留了“我们当中还有一些人”的群体指向，以及转向这些听众的“你们”。 将草稿的“走进这里”改为“走进了这里”，保留英文完成式所表达的已经到场。 保留“这一整周”的时间范围，没有补入后续单元关于罪或悔恨的内容。 本单元没有直接引文、经文引用、专名或否定；未添加任何引用或归属。 本单元时间短语与谓语的关系尚未确定，无法确认完整语义已得到自然且准确的表达。",
+       "instruction": "Restore every meaning the English source states; the prior translation omitted some. Resolve the reviewer's stated uncertainty from the English source and its context. Machine-written repair instruction from a failed machine check; check every point against the English source. Reviewer finding: meaning_omission, review_uncertainty: 保留了“我们当中还有一些人”的群体指向，以及转向这些听众的“你们”。 将草稿的“走进这里”改为“走进了这里”，保留英文完成式所表达的已经到场。 保留“这一整周”的时间范围，没有补入后续单元关于罪或悔恨的内容。 本单元没有直接引文、经文引用、专名或否定；未添加任何引用或归属。 本单元时间短语与谓语的关系尚未确定，无法确认完整语义已得到自然且准确的表达。",
+       "sourceUnitIds": [
+        "chunk-0011-u004"
+       ],
+       "translationGroupId": "translation-chunk-0011-u004"
+      }
+     ],
+     "schemaVersion": "sermon-target-language-partial-repair-brief-v1",
+     "targetLocale": "zh-Hans",
+     "translationPolicySha256": "b526ed4f54bc3454c908953600a502754da998beec427ee002f32a7641e51f76"
+    },
+    "outcome": "repairing",
+    "previousEntryJsonSha256": null,
+    "repairBriefSha256": null,
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r6/zh-Hans/repair-rounds/round-001",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 1,
+    "spend": {
+     "calls": 922,
+     "callsWithoutUsage": 0,
+     "tokens": 2165872
+    },
+    "stopped": []
+   }
+  },
+  {
+   "ledger": ".layer2-jobs-r6-zh.layer2-repair",
+   "file": "8f4aeb667119b223dfb96932e42d8d8c847e165074bb9c54900e4da267f961cf/round-000002.json",
+   "record": {
+    "evidenceSha256": null,
+    "failureReportSha256": "f79288ffd9a4151471274cee6887da18fcf3595bb30b83ede48c258a4e5a30d7",
+    "groups": [
+     {
+      "decision": "request_human_review",
+      "failureCodes": [
+       "meaning_omission",
+       "review_uncertainty"
+      ],
+      "fingerprint": "2edf0478d1a4aa102a46016d511d97a035e960f1b200b8b43f455f42fb22b33c",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0011-u004"
+      ],
+      "translationGroupId": "translation-chunk-0011-u004"
+     }
+    ],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "zh-Hans",
+     "translationPolicySha256": "b526ed4f54bc3454c908953600a502754da998beec427ee002f32a7641e51f76"
+    },
+    "nextBrief": null,
+    "outcome": "stopped",
+    "previousEntryJsonSha256": "5fcd3c22a2ee56ef2967abf26ff36b8c28b9ea97ad40a8830766d43ce4f6d23b",
+    "repairBriefSha256": "bce561402550d719f5d122e799723912e276dbe8ed5d2386fa50776173fabed1",
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r6/zh-Hans/repair-rounds/round-002",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 2,
+    "spend": {
+     "calls": 6,
+     "callsWithoutUsage": 0,
+     "tokens": 18091
+    },
+    "stopped": [
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r6/zh-Hans/repair-rounds/round-002/group-0437-sol.json",
+      "failureCodes": [
+       "meaning_omission",
+       "review_uncertainty"
+      ],
+      "reasonCode": "request_human_review",
+      "sourceUnitIds": [
+       "chunk-0011-u004"
+      ],
+      "translationGroupId": "translation-chunk-0011-u004"
+     }
+    ]
+   }
+  },
+  {
+   "ledger": ".layer2-jobs-r6-zh.layer2-repair",
+   "file": "8f4aeb667119b223dfb96932e42d8d8c847e165074bb9c54900e4da267f961cf/round-000003.json",
+   "record": {
+    "evidenceSha256": null,
+    "failureReportSha256": null,
+    "groups": [
+     {
+      "decision": "source_meaning_noted",
+      "failureCodes": [
+       "meaning_omission",
+       "review_uncertainty"
+      ],
+      "fingerprint": "2edf0478d1a4aa102a46016d511d97a035e960f1b200b8b43f455f42fb22b33c",
+      "notedUnits": [
+       "chunk-0011-u004"
+      ],
+      "repaired": true,
+      "sourceUnitIds": [
+       "chunk-0011-u004"
+      ],
+      "translationGroupId": "translation-chunk-0011-u004"
+     }
+    ],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "zh-Hans",
+     "translationPolicySha256": "b526ed4f54bc3454c908953600a502754da998beec427ee002f32a7641e51f76"
+    },
+    "nextBrief": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "groups": [
+      {
+       "failedCacheSha256": "9b42a6581ec7377487fe4699608268f74952931b5465e6060462045284e6bbab",
+       "failedRole": "reviewer",
+       "failureReason": "meaning_omission, review_uncertainty: “Others of us”指我们当中的另一部分人，随后以“you”直接称呼这部分听众；译文保留了这两个指向。 “you've walked in here”表达听众已经来到这里，译文以“已经走进了这里”保留完成意义。 译文保留“this whole week”的完整时间范围，没有将其擅自改成每天到场，也没有补入后续单元关于罪、错误或悔恨的内容。 后文先重复“You've walked in”，再说“You've been thinking”；这提示原话可能存在口语重启，但不足以确定本单元的时间短语究竟修饰哪个谓语。 本单元没有否定、数字、专名、直接引文或经文引用；译文没有添加引用或归属。 时间短语与谓语的关系仍未解决，需要核对原始音频或更完整的源文，不能凭上下文补写缺失的谓语。",
+       "instruction": "Restore every meaning the English source states; the prior translation omitted some. Resolve the reviewer's stated uncertainty from the English source and its context. Source unit chunk-0011-u004 (human ruling by Jony; follow it): Spoken restart. \"This whole week\" leads into the following \"You've been thinking about that one thing...\". Keep it as an open trailing phrase; do not add a predicate. Machine-written repair instruction from a failed machine check; check every point against the English source. Reviewer finding: meaning_omission, review_uncertainty: “Others of us”指我们当中的另一部分人，随后以“you”直接称呼这部分听众；译文保留了这两个指向。 “you've walked in here”表达听众已经来到这里，译文以“已经走进了这里”保留完成意义。 译文保留“this whole week”的完整时间范围，没有将其擅自改成每天到场，也没有补入后续单元关于罪、错误或悔恨的内容。 后文先重复“You've walked in”，再说“You've been thinking”；这提示原话可能存在口语重启，但不足以确定本单元的时间短语究竟修饰哪个谓语。 本单元没有否定、数字、专名、直接引文或经文引用；译文没有添加引用或归属。 时间短语与谓语的关系仍未解决，需要核对原始音频或更完整的源文，不能凭上下文补写缺失的谓语。",
+       "sourceUnitIds": [
+        "chunk-0011-u004"
+       ],
+       "translationGroupId": "translation-chunk-0011-u004"
+      }
+     ],
+     "schemaVersion": "sermon-target-language-partial-repair-brief-v1",
+     "targetLocale": "zh-Hans",
+     "translationPolicySha256": "b526ed4f54bc3454c908953600a502754da998beec427ee002f32a7641e51f76"
+    },
+    "outcome": "repairing",
+    "previousEntryJsonSha256": "7192ecae022b742d78594a4c04c8aa1a641b0c4764eade4b20b12a5e37b10ea2",
+    "reopenedBy": {
+     "evidence": "source_meaning_notes",
+     "failureReports": [
+      {
+       "failureReportSha256": "f79288ffd9a4151471274cee6887da18fcf3595bb30b83ede48c258a4e5a30d7",
+       "sequence": 2
+      }
+     ],
+     "meaningNotesSha256": "57857dbbc247fc5c61dc08398e1f74dd4fd345ee0955f5520d6898cc8ec9a73f",
+     "units": [
+      "chunk-0011-u004"
+     ]
+    },
+    "repairBriefSha256": null,
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r6/zh-Hans/repair-rounds/round-002",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 3,
+    "spend": {
+     "calls": 0,
+     "callsWithoutUsage": 0,
+     "tokens": 0
+    },
+    "stopped": []
+   }
+  },
+  {
+   "ledger": ".layer2-jobs-r5.layer2-repair",
+   "file": "5ce8825a0c6af8a8b1bba105d816275aa854f42678bf7f2f451f950ba8ac6ce8/round-000001.json",
+   "record": {
+    "evidenceSha256": null,
+    "failureReportSha256": "d50154896f68093034dcb676ff8777ebcbfadf20a67783b8f15221525e731384",
+    "groups": [
+     {
+      "decision": "repairable_content_failure",
+      "failureCodes": [
+       "meaning_addition",
+       "meaning_omission",
+       "review_uncertainty"
+      ],
+      "fingerprint": "b71bf60f3e059d92ad34513461c8ad20b492e2982cb446d6bc87b00c9aae7b68",
+      "repaired": true,
+      "sourceUnitIds": [
+       "chunk-0000-u023"
+      ],
+      "translationGroupId": "translation-chunk-0000-u023"
+     },
+     {
+      "decision": "repairable_content_failure",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "161b7163e158a891afb1a254c38958338ca9786a10375b4a2472841da9b410f8",
+      "repaired": true,
+      "sourceUnitIds": [
+       "chunk-0007-u036"
+      ],
+      "translationGroupId": "translation-chunk-0007-u036"
+     }
+    ],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "ko",
+     "translationPolicySha256": "d209b51f648e15b0f9986638ff379a1b325fc6b18e1f4a81a18c348d3fe4fc21"
+    },
+    "nextBrief": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "groups": [
+      {
+       "failedCacheSha256": "2e6244cf1dcec2d15801e31cd1b119a67f64c04db359a359fb8f7ff22bcc5848",
+       "failedRole": "reviewer",
+       "failureReason": "meaning_addition, meaning_omission, review_uncertainty: 앞 문장의 경고라는 맥락에 따라 'No improvement'를 '나아지지 않으면'이라는 조건으로 옮겼으며, 부정 의미를 보존했습니다. Astra 초안의 '망치를 들 때입니다'는 'hammer time'을 실제 망치를 드는 행동으로 해석합니다. 제공된 문맥만으로는 이 해석을 확정할 수 없어 잠정적으로 유지했습니다. 원문에 숫자, 고유명사, 성경 구절이나 명시적인 직접 인용 표시는 없으며, 번역에도 이를 추가하지 않았습니다. '망치를 들 때입니다'는 원문에 명시되지 않은 구체적인 행동을 확정할 수 있으므로, 해당 표현의 의미를 확인한 뒤 번역을 확정해야 합니다.",
+       "instruction": "Remove meaning the English source does not state; the prior translation added some. Restore every meaning the English source states; the prior translation omitted some. Resolve the reviewer's stated uncertainty from the English source and its context. Machine-written repair instruction from a failed machine check; check every point against the English source. Reviewer finding: meaning_addition, meaning_omission, review_uncertainty: 앞 문장의 경고라는 맥락에 따라 'No improvement'를 '나아지지 않으면'이라는 조건으로 옮겼으며, 부정 의미를 보존했습니다. Astra 초안의 '망치를 들 때입니다'는 'hammer time'을 실제 망치를 드는 행동으로 해석합니다. 제공된 문맥만으로는 이 해석을 확정할 수 없어 잠정적으로 유지했습니다. 원문에 숫자, 고유명사, 성경 구절이나 명시적인 직접 인용 표시는 없으며, 번역에도 이를 추가하지 않았습니다. '망치를 들 때입니다'는 원문에 명시되지 않은 구체적인 행동을 확정할 수 있으므로, 해당 표현의 의미를 확인한 뒤 번역을 확정해야 합니다.",
+       "sourceUnitIds": [
+        "chunk-0000-u023"
+       ],
+       "translationGroupId": "translation-chunk-0000-u023"
+      },
+      {
+       "failedCacheSha256": "6b3d2a78378428080f656a2abcb8a446cd04dd51d127cfd0614e78c6eb6a9d01",
+       "failedRole": "reviewer",
+       "failureReason": "language_plugin_failed: register: Forbidden register pattern screen; forbidden register form",
+       "instruction": "Fix the deterministic language check finding below without changing meaning: keep each utterance at most 180 characters (split at natural clause boundaries), use the policy register, and keep every number, name and reference the English says. Machine-written repair instruction from a failed machine check; check every point against the English source. Language check finding: language_plugin_failed: register: Forbidden register pattern screen; forbidden register form",
+       "sourceUnitIds": [
+        "chunk-0007-u036"
+       ],
+       "translationGroupId": "translation-chunk-0007-u036"
+      }
+     ],
+     "schemaVersion": "sermon-target-language-partial-repair-brief-v1",
+     "targetLocale": "ko",
+     "translationPolicySha256": "d209b51f648e15b0f9986638ff379a1b325fc6b18e1f4a81a18c348d3fe4fc21"
+    },
+    "outcome": "repairing",
+    "previousEntryJsonSha256": null,
+    "repairBriefSha256": null,
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r5/ko/repair-rounds/round-001",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 1,
+    "spend": {
+     "calls": 922,
+     "callsWithoutUsage": 0,
+     "tokens": 2151474
+    },
+    "stopped": []
+   }
+  },
+  {
+   "ledger": ".layer2-jobs-r5.layer2-repair",
+   "file": "5ce8825a0c6af8a8b1bba105d816275aa854f42678bf7f2f451f950ba8ac6ce8/round-000002.json",
+   "record": {
+    "evidenceSha256": "9439c95782b8c51040bc3798644027f8a68d800091c130009cb90389528239b4",
+    "failureReportSha256": null,
+    "groups": [],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "ko",
+     "translationPolicySha256": "d209b51f648e15b0f9986638ff379a1b325fc6b18e1f4a81a18c348d3fe4fc21"
+    },
+    "nextBrief": null,
+    "outcome": "passed",
+    "previousEntryJsonSha256": "5a74da3fcbeff0739c4e759b644abe0be766a76fd2398c103739f0800b1032cb",
+    "repairBriefSha256": "2e65cbd34f1af9aa09e9449399adfa600a8a6fdd51243eeca91c7ed67d8e4014",
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r5/ko/repair-rounds/round-002",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 2,
+    "spend": {
+     "calls": 4,
+     "callsWithoutUsage": 0,
+     "tokens": 12683
+    },
+    "stopped": []
+   }
+  },
+  {
+   "ledger": ".layer2-jobs-r5.layer2-repair",
+   "file": "4a9b2d71f8fbffb45ab563cdfcbf51b03d6d2d3eae9fa3a522967ab29c36f04f/round-000001.json",
+   "record": {
+    "evidenceSha256": null,
+    "failureReportSha256": "4b7031f7b2fcbe7e4ab2f7fcc0d37cc39d262f528425177dbbbac43de286da9e",
+    "groups": [
+     {
+      "decision": "repairable_content_failure",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "23c8f584eb812e01931dc28a3ef99cf96cdb476f5f02a4a52dc1ad5163f1ff7e",
+      "repaired": true,
+      "sourceUnitIds": [
+       "chunk-0000-u021"
+      ],
+      "translationGroupId": "translation-chunk-0000-u021"
+     },
+     {
+      "decision": "repairable_content_failure",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "11280145c3648838624883410335c07a388a2c5c3bfc5fd261bd5f209abaae3e",
+      "repaired": true,
+      "sourceUnitIds": [
+       "chunk-0002-u006"
+      ],
+      "translationGroupId": "translation-chunk-0002-u006"
+     },
+     {
+      "decision": "repairable_content_failure",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "679706a0019adebda0d8b623c11411d68d7bba31f69b0cfafe4cffb028769750",
+      "repaired": true,
+      "sourceUnitIds": [
+       "chunk-0006-u009"
+      ],
+      "translationGroupId": "translation-chunk-0006-u009"
+     },
+     {
+      "decision": "repairable_content_failure",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "c2566ada6489585e0fd122d586340be717e8cf740fbe367667825c8e6caacf3b",
+      "repaired": true,
+      "sourceUnitIds": [
+       "chunk-0008-u002"
+      ],
+      "translationGroupId": "translation-chunk-0008-u002"
+     }
+    ],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "es",
+     "translationPolicySha256": "13986bf22176a25ced5c48463b87d202f0f21ebfdaecf66aa90708924d1c9dd1"
+    },
+    "nextBrief": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "groups": [
+      {
+       "failedCacheSha256": "396ee57f73d7bb18060176471a5910c56c6ff3bb4c2c7f8bb6bac9b24cbe3438",
+       "failedRole": "reviewer",
+       "failureReason": "language_plugin_failed: numbers: English cardinals as digits or target-language words; target digits must be said; missing number 1",
+       "instruction": "Fix the deterministic language check finding below without changing meaning: keep each utterance at most 180 characters (split at natural clause boundaries), use the policy register, and keep every number, name and reference the English says. Machine-written repair instruction from a failed machine check; check every point against the English source. Language check finding: language_plugin_failed: numbers: English cardinals as digits or target-language words; target digits must be said; missing number 1",
+       "sourceUnitIds": [
+        "chunk-0000-u021"
+       ],
+       "translationGroupId": "translation-chunk-0000-u021"
+      },
+      {
+       "failedCacheSha256": "35d960d4484c8b49569295780571da2d0fb25789ac37d73d8de4c26fa49ac062",
+       "failedRole": "reviewer",
+       "failureReason": "language_plugin_failed: tts_segmentation: Utterance structure screen; unsafe utterance markup or length",
+       "instruction": "Fix the deterministic language check finding below without changing meaning: keep each utterance at most 180 characters (split at natural clause boundaries), use the policy register, and keep every number, name and reference the English says. Machine-written repair instruction from a failed machine check; check every point against the English source. Language check finding: language_plugin_failed: tts_segmentation: Utterance structure screen; unsafe utterance markup or length",
+       "sourceUnitIds": [
+        "chunk-0002-u006"
+       ],
+       "translationGroupId": "translation-chunk-0002-u006"
+      },
+      {
+       "failedCacheSha256": "93e681c04605a39eebb7ef3fca8f138e883c6fe1e3b82c9705e5dc4efe511fc8",
+       "failedRole": "reviewer",
+       "failureReason": "language_plugin_failed: tts_segmentation: Utterance structure screen; unsafe utterance markup or length",
+       "instruction": "Fix the deterministic language check finding below without changing meaning: keep each utterance at most 180 characters (split at natural clause boundaries), use the policy register, and keep every number, name and reference the English says. Machine-written repair instruction from a failed machine check; check every point against the English source. Language check finding: language_plugin_failed: tts_segmentation: Utterance structure screen; unsafe utterance markup or length",
+       "sourceUnitIds": [
+        "chunk-0006-u009"
+       ],
+       "translationGroupId": "translation-chunk-0006-u009"
+      },
+      {
+       "failedCacheSha256": "2f69b96d5c7b22b07c335a480056dc4e3797d33d45cbe09f431adad3df598515",
+       "failedRole": "reviewer",
+       "failureReason": "language_plugin_failed: tts_segmentation: Utterance structure screen; unsafe utterance markup or length",
+       "instruction": "Fix the deterministic language check finding below without changing meaning: keep each utterance at most 180 characters (split at natural clause boundaries), use the policy register, and keep every number, name and reference the English says. Machine-written repair instruction from a failed machine check; check every point against the English source. Language check finding: language_plugin_failed: tts_segmentation: Utterance structure screen; unsafe utterance markup or length",
+       "sourceUnitIds": [
+        "chunk-0008-u002"
+       ],
+       "translationGroupId": "translation-chunk-0008-u002"
+      }
+     ],
+     "schemaVersion": "sermon-target-language-partial-repair-brief-v1",
+     "targetLocale": "es",
+     "translationPolicySha256": "13986bf22176a25ced5c48463b87d202f0f21ebfdaecf66aa90708924d1c9dd1"
+    },
+    "outcome": "repairing",
+    "previousEntryJsonSha256": null,
+    "repairBriefSha256": null,
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r5/es/repair-rounds/round-001",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 1,
+    "spend": {
+     "calls": 922,
+     "callsWithoutUsage": 0,
+     "tokens": 2072249
+    },
+    "stopped": []
+   }
+  },
+  {
+   "ledger": ".layer2-jobs-r5.layer2-repair",
+   "file": "4a9b2d71f8fbffb45ab563cdfcbf51b03d6d2d3eae9fa3a522967ab29c36f04f/round-000002.json",
+   "record": {
+    "evidenceSha256": "35f1af30afaed5c464a938952f48d678ee5a1c86d9d7548e44371b506c4289ac",
+    "failureReportSha256": null,
+    "groups": [],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "es",
+     "translationPolicySha256": "13986bf22176a25ced5c48463b87d202f0f21ebfdaecf66aa90708924d1c9dd1"
+    },
+    "nextBrief": null,
+    "outcome": "passed",
+    "previousEntryJsonSha256": "a945f8ead327a9baba12d5d8867e2fcfd612f33b11c7cc53bd16151e0af50366",
+    "repairBriefSha256": "321f6f9b40d393ed35b904815df83aa62dc81e1766fe199fd5d48ce3b9d974ea",
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r5/es/repair-rounds/round-002",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 2,
+    "spend": {
+     "calls": 8,
+     "callsWithoutUsage": 0,
+     "tokens": 22509
+    },
+    "stopped": []
+   }
+  },
+  {
+   "ledger": ".layer2-jobs-r12-zh.layer2-repair",
+   "file": "8f4aeb667119b223dfb96932e42d8d8c847e165074bb9c54900e4da267f961cf/round-000001.json",
+   "record": {
+    "evidenceSha256": null,
+    "failureReportSha256": "f66d540580c888ddbfd56b9976c1a35680d18a3407239d191e894d4f65e90174",
+    "groups": [
+     {
+      "decision": "repairable_content_failure",
+      "failureCodes": [
+       "meaning_addition",
+       "meaning_omission",
+       "review_uncertainty"
+      ],
+      "fingerprint": "eb27b6299135fbab1fc466b97dc889ac76eb7bd1ab75d68e212fa12726b83e32",
+      "repaired": true,
+      "sourceUnitIds": [
+       "chunk-0011-u004"
+      ],
+      "translationGroupId": "translation-chunk-0011-u004"
+     }
+    ],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "zh-Hans",
+     "translationPolicySha256": "b526ed4f54bc3454c908953600a502754da998beec427ee002f32a7641e51f76"
+    },
+    "nextBrief": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "groups": [
+      {
+       "failedCacheSha256": "dd4b0775c7cee2e9e51f597863321d149f72fc0b08f9f0a91d83f256295f0904",
+       "failedRole": "reviewer",
+       "failureReason": "meaning_addition, meaning_omission, review_uncertainty: 已按冻结的 modelRules 审核；将草稿的“来到了这里”改为“走进了这里”，保留 walked in 的动作含义。 保留“我们当中还有一些人”的群体指向、对这些人的第二人称称呼，以及“这一整周”的时间信息。 本单元没有否定、专名、经文引用或直接引语；未添加引用或后续单元中关于罪与悔恨的内容。 最终译文暂按当前单元的字面结构保留时间状语，但“这一整周都走进了这里”可能引入反复到访的含义；需核实原始语音或源文后才能确认。",
+       "instruction": "Remove meaning the English source does not state; the prior translation added some. Restore every meaning the English source states; the prior translation omitted some. Resolve the reviewer's stated uncertainty from the English source and its context. Source unit chunk-0011-u004 (human ruling by Jony; follow it): Spoken restart. \"This whole week\" leads into the following \"You've been thinking about that one thing...\". Keep it as an open trailing phrase; do not add a predicate. Machine-written repair instruction from a failed machine check; check every point against the English source. Reviewer finding: meaning_addition, meaning_omission, review_uncertainty: 已按冻结的 modelRules 审核；将草稿的“来到了这里”改为“走进了这里”，保留 walked in 的动作含义。 保留“我们当中还有一些人”的群体指向、对这些人的第二人称称呼，以及“这一整周”的时间信息。 本单元没有否定、专名、经文引用或直接引语；未添加引用或后续单元中关于罪与悔恨的内容。 最终译文暂按当前单元的字面结构保留时间状语，但“这一整周都走进了这里”可能引入反复到访的含义；需核实原始语音或源文后才能确认。",
+       "sourceUnitIds": [
+        "chunk-0011-u004"
+       ],
+       "translationGroupId": "translation-chunk-0011-u004"
+      }
+     ],
+     "schemaVersion": "sermon-target-language-partial-repair-brief-v1",
+     "targetLocale": "zh-Hans",
+     "translationPolicySha256": "b526ed4f54bc3454c908953600a502754da998beec427ee002f32a7641e51f76"
+    },
+    "outcome": "repairing",
+    "previousEntryJsonSha256": null,
+    "repairBriefSha256": null,
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r12/zh-Hans/repair-rounds/round-001",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 1,
+    "spend": {
+     "calls": 922,
+     "callsWithoutUsage": 0,
+     "tokens": 2162631
+    },
+    "stopped": []
+   }
+  },
+  {
+   "ledger": ".layer2-jobs-r12-zh.layer2-repair",
+   "file": "8f4aeb667119b223dfb96932e42d8d8c847e165074bb9c54900e4da267f961cf/round-000002.json",
+   "record": {
+    "evidenceSha256": "07b5a628a9ab02ee8435a6c4a6e8e0a83d7494c84c8735f82e56c8444f9dbb6a",
+    "failureReportSha256": null,
+    "groups": [],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "zh-Hans",
+     "translationPolicySha256": "b526ed4f54bc3454c908953600a502754da998beec427ee002f32a7641e51f76"
+    },
+    "nextBrief": null,
+    "outcome": "passed",
+    "previousEntryJsonSha256": "5e2e0d242627bb1518efc458e1b7520f2b3fc6a08d6c8523d8ab74e85dd93e51",
+    "repairBriefSha256": "471c44870e0b2c0784e23dc38841f0de31120e552220e76dd8f3b5bc3a78db2c",
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r12/zh-Hans/repair-rounds/round-002",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 2,
+    "spend": {
+     "calls": 2,
+     "callsWithoutUsage": 0,
+     "tokens": 6482
+    },
+    "stopped": []
+   }
+  },
+  {
+   "ledger": ".layer2-jobs-r4.layer2-repair",
+   "file": "8f4aeb667119b223dfb96932e42d8d8c847e165074bb9c54900e4da267f961cf/round-000001.json",
+   "record": {
+    "evidenceSha256": null,
+    "failureReportSha256": "149c7cdf6531d713fe12d3e6f61e47304fe8344340b5a98aa5f4c609963f4b1b",
+    "groups": [
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "c32b048f022956f36743cd36f8486bf8c172e7180345c2490de8a3ef01e921ca",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0000-u002"
+      ],
+      "translationGroupId": "translation-chunk-0000-u002"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "e0f41b2f12d572ff8458ac2e4b9bc9473eb0138cae25b547de9e3bf98135cf91",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0000-u017"
+      ],
+      "translationGroupId": "translation-chunk-0000-u017"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "84830c86f297c5ae019f9f7eb3717c4fa20e68cd540add2d246900bae84e400b",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0001-u007"
+      ],
+      "translationGroupId": "translation-chunk-0001-u007"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "73f5717e0d54e747967ade2f6f7cccbb6e22b2b7a6f546dff83be91326dfd68f",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u003"
+      ],
+      "translationGroupId": "translation-chunk-0002-u003"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "14475dde4623366981f31b11908007f9106f1043bc523f1e26e3ca3b4ee5adaf",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u006"
+      ],
+      "translationGroupId": "translation-chunk-0002-u006"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "7d16c8c0de909556eed75cd6c6c25277c8a65aeb3f875207dfdf533ffeba5989",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u008"
+      ],
+      "translationGroupId": "translation-chunk-0002-u008"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "d2d84ab03f5874d4f4e691ccc3b3401135e4561737199159b9f7fa2f955380d8",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u010"
+      ],
+      "translationGroupId": "translation-chunk-0002-u010"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "ab70a0fffb84fe74f39b6810dcf4266c3bdd6780041dd21683e4425b603ad22b",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u020"
+      ],
+      "translationGroupId": "translation-chunk-0002-u020"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "325d4e19d9e5e916e18c07afc78e8cbc723258f1eed5aa8230e84d44384bbabd",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u022"
+      ],
+      "translationGroupId": "translation-chunk-0002-u022"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "5de67f034da453fe39ad54b6c26824e9566797d0eb2a430e4d4b69dc95094fc6",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0004-u001"
+      ],
+      "translationGroupId": "translation-chunk-0004-u001"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "d378a1329ff45a8bf83ef6222b4a3e99c4a92c160bfba3233c2d48d81dc59da3",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0004-u013"
+      ],
+      "translationGroupId": "translation-chunk-0004-u013"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "be4abba0153e4119da0d3fd371fb8d426ed01d21d1c28ebf653bfe7b21de25d8",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0004-u025"
+      ],
+      "translationGroupId": "translation-chunk-0004-u025"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "meaning_omission",
+       "review_uncertainty"
+      ],
+      "fingerprint": "2edf0478d1a4aa102a46016d511d97a035e960f1b200b8b43f455f42fb22b33c",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0011-u004"
+      ],
+      "translationGroupId": "translation-chunk-0011-u004"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "ac378eeb8fa8db8f006fa5109f4c345fa23be8cff887de6d6b963dd0a1ea05ce",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0011-u019"
+      ],
+      "translationGroupId": "translation-chunk-0011-u019"
+     }
+    ],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "zh-Hans",
+     "translationPolicySha256": "b526ed4f54bc3454c908953600a502754da998beec427ee002f32a7641e51f76"
+    },
+    "nextBrief": null,
+    "outcome": "stopped",
+    "previousEntryJsonSha256": null,
+    "repairBriefSha256": null,
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 1,
+    "spend": {
+     "calls": 922,
+     "callsWithoutUsage": 0,
+     "tokens": 2165391
+    },
+    "stopped": [
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0000-u002"
+      ],
+      "translationGroupId": "translation-chunk-0000-u002"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0000-u017"
+      ],
+      "translationGroupId": "translation-chunk-0000-u017"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0001-u007"
+      ],
+      "translationGroupId": "translation-chunk-0001-u007"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u003"
+      ],
+      "translationGroupId": "translation-chunk-0002-u003"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u006"
+      ],
+      "translationGroupId": "translation-chunk-0002-u006"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u008"
+      ],
+      "translationGroupId": "translation-chunk-0002-u008"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u010"
+      ],
+      "translationGroupId": "translation-chunk-0002-u010"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u020"
+      ],
+      "translationGroupId": "translation-chunk-0002-u020"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u022"
+      ],
+      "translationGroupId": "translation-chunk-0002-u022"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0004-u001"
+      ],
+      "translationGroupId": "translation-chunk-0004-u001"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0004-u013"
+      ],
+      "translationGroupId": "translation-chunk-0004-u013"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0004-u025"
+      ],
+      "translationGroupId": "translation-chunk-0004-u025"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-0437-sol.json",
+      "failureCodes": [
+       "meaning_omission",
+       "review_uncertainty"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0011-u004"
+      ],
+      "translationGroupId": "translation-chunk-0011-u004"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/zh-Hans/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0011-u019"
+      ],
+      "translationGroupId": "translation-chunk-0011-u019"
+     }
+    ]
+   }
+  },
+  {
+   "ledger": ".layer2-jobs-r4.layer2-repair",
+   "file": "9c8a760399170836be4e2c581174f68ef799208eba8dee6a68fecf3c849675a1/round-000001.json",
+   "record": {
+    "evidenceSha256": null,
+    "failureReportSha256": "0f0506af7320b89daa75009a5dabbc51a4b2f3dade24bad976052fa69cde0dbe",
+    "groups": [
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "0ed752b6d8463dbc1c4a8874295fd7eef35b2f1e4d99809aa2b2139cd21b59db",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0001-u002"
+      ],
+      "translationGroupId": "translation-chunk-0001-u002"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "21920b514fe26db6d7739dab6f35d37c4b82ae37d823610d8e5266decad918c5",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0001-u033"
+      ],
+      "translationGroupId": "translation-chunk-0001-u033"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "e3b25aa86bb1e8d8a7e8bd74b150de29179921a31b93dc4c2b085e7e0858a93c",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u003"
+      ],
+      "translationGroupId": "translation-chunk-0002-u003"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "43aa9560cad1b54b1406f92003d288c0a4563c2fcbdd4c2c2417119652cd3a57",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u006"
+      ],
+      "translationGroupId": "translation-chunk-0002-u006"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "df9ec678bf9469b00e968017c1700725a4918283fee51293df455aa022fdec7d",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u008"
+      ],
+      "translationGroupId": "translation-chunk-0002-u008"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "47c3befd4245c85d2b0776c9a0bf47e8ed4296c2b07a1cebf91668a7aaf78704",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u010"
+      ],
+      "translationGroupId": "translation-chunk-0002-u010"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "e4ac29d20ca06f0e7d9ecd5b58c20d5dcffce44c8b2fa5f4f12373bacd242338",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u020"
+      ],
+      "translationGroupId": "translation-chunk-0002-u020"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "1df982b58881f648c9361f4961988480ba770459fe919df90fc30b7360221309",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u022"
+      ],
+      "translationGroupId": "translation-chunk-0002-u022"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "6d816da756f687bd697b557377ea7d9d0569f0b3908eba7eedb28987d236b759",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0003-u020"
+      ],
+      "translationGroupId": "translation-chunk-0003-u020"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "8f73ec8b65a18ae3cce40524e5622e6d23727a40f099ae1cc714db8c97c468a6",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0004-u013"
+      ],
+      "translationGroupId": "translation-chunk-0004-u013"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "bfcf8c3f0d484cb213aee91b8fb7c01f8abd06f7059a1b8f8d9b5069847ab497",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0004-u025"
+      ],
+      "translationGroupId": "translation-chunk-0004-u025"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "e41a36b5a61dca33add7f5c30924a0a43ed370c2f29c910fe8cdefb735eadf3b",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0006-u014"
+      ],
+      "translationGroupId": "translation-chunk-0006-u014"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "161faa0034ec75dd7819c65c38f1542cb623c50051c3ca3c47da6f1fb307bfa5",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0006-u015"
+      ],
+      "translationGroupId": "translation-chunk-0006-u015"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "db648d9e415d0108f29d2f3131fb7123000fb30201260a71738062db3667d3c3",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0007-u036"
+      ],
+      "translationGroupId": "translation-chunk-0007-u036"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "ff61d0fd818fc4ab6f8d4c31b0e226f04bfc42271c7a6b584239714ff9e7a9df",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0009-u030"
+      ],
+      "translationGroupId": "translation-chunk-0009-u030"
+     }
+    ],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "ko",
+     "translationPolicySha256": "5f35269f9f93977f488795ff433b50519a87c765dc0373c78c7bab663ee3ddaa"
+    },
+    "nextBrief": null,
+    "outcome": "stopped",
+    "previousEntryJsonSha256": null,
+    "repairBriefSha256": null,
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 1,
+    "spend": {
+     "calls": 922,
+     "callsWithoutUsage": 0,
+     "tokens": 2148335
+    },
+    "stopped": [
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0001-u002"
+      ],
+      "translationGroupId": "translation-chunk-0001-u002"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0001-u033"
+      ],
+      "translationGroupId": "translation-chunk-0001-u033"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u003"
+      ],
+      "translationGroupId": "translation-chunk-0002-u003"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u006"
+      ],
+      "translationGroupId": "translation-chunk-0002-u006"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u008"
+      ],
+      "translationGroupId": "translation-chunk-0002-u008"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u010"
+      ],
+      "translationGroupId": "translation-chunk-0002-u010"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u020"
+      ],
+      "translationGroupId": "translation-chunk-0002-u020"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u022"
+      ],
+      "translationGroupId": "translation-chunk-0002-u022"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0003-u020"
+      ],
+      "translationGroupId": "translation-chunk-0003-u020"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0004-u013"
+      ],
+      "translationGroupId": "translation-chunk-0004-u013"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0004-u025"
+      ],
+      "translationGroupId": "translation-chunk-0004-u025"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0006-u014"
+      ],
+      "translationGroupId": "translation-chunk-0006-u014"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0006-u015"
+      ],
+      "translationGroupId": "translation-chunk-0006-u015"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0007-u036"
+      ],
+      "translationGroupId": "translation-chunk-0007-u036"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/ko/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0009-u030"
+      ],
+      "translationGroupId": "translation-chunk-0009-u030"
+     }
+    ]
+   }
+  },
+  {
+   "ledger": ".layer2-jobs-r4.layer2-repair",
+   "file": "82ca6203c8005eb43a307240f210f1f1747abb273b20906bb7934fa3b1d5012a/round-000001.json",
+   "record": {
+    "evidenceSha256": null,
+    "failureReportSha256": "caffb7f7f27af97082bd9a337337f6df00f3867586a241ca11bf3be7c1157a9d",
+    "groups": [
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "11aa44807c9541cf98078ed3c721567c087529109a4f720d943f238ecdff39e9",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0000-u004"
+      ],
+      "translationGroupId": "translation-chunk-0000-u004"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "e88a9300b94a3e3f87b6f8ba109f8770424c892cad1dfdb1346620b6a89726c7",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0000-u021"
+      ],
+      "translationGroupId": "translation-chunk-0000-u021"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "2c09acc55961c34d3169a1fa095a655c80bd811b9dde8ce39f07d8c17022e6ae",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0000-u025"
+      ],
+      "translationGroupId": "translation-chunk-0000-u025"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "a3027d127e7501f24718170a7f00669928375198a2cbddd4fab9e9b24141ef12",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0001-u003"
+      ],
+      "translationGroupId": "translation-chunk-0001-u003"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "4a3b0473494408315e412fab29110296046d2377af69a2faa67fcb62556c662a",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0001-u013"
+      ],
+      "translationGroupId": "translation-chunk-0001-u013"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "36d101f2de8b2469920ae76cbe57b4020e70f29d0a6ff91fa5d8a0c3f7724a6b",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0001-u017"
+      ],
+      "translationGroupId": "translation-chunk-0001-u017"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "69b5faa1ba6e548480b266a2a0922e80da04e558913761330e044d783fc5ba6a",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0001-u019"
+      ],
+      "translationGroupId": "translation-chunk-0001-u019"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "d13fc2694526f230c9f7537f4cd7c053461ee53acbe44336343f958b6e6948b0",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0001-u039"
+      ],
+      "translationGroupId": "translation-chunk-0001-u039"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "d94ea19d3fdd3bfe65480a6ccf96288170300b04fd3d4e43f6a1f58a081a3d06",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u003"
+      ],
+      "translationGroupId": "translation-chunk-0002-u003"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "72d951a00000bc550550d8b65f2f699a2004923354ae741389fc4d896a09a665",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u006"
+      ],
+      "translationGroupId": "translation-chunk-0002-u006"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "2f4df7412c1354ae69586e3ff898cd8aafd7e0d0499974beda37306aec89b5d3",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0002-u022"
+      ],
+      "translationGroupId": "translation-chunk-0002-u022"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "f4990ed309f813c812f0f6761bf1ea8a4d21fe2ba099a7ae2cb01fc1d82a7b1a",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0004-u015"
+      ],
+      "translationGroupId": "translation-chunk-0004-u015"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "44b6db1d45bb79ac74dc46ba251707c4b448351a6b47e08782150f2dc2abf554",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0004-u018"
+      ],
+      "translationGroupId": "translation-chunk-0004-u018"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "552cae7a072349c36d01a9e0c3b32f741e6122edbfaf070ea65ed8575c1202ce",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0004-u033"
+      ],
+      "translationGroupId": "translation-chunk-0004-u033"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "be4373722dc991fb6dcf8272797f841fc515aa31a11959de05d1e137f8898093",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0005-u003"
+      ],
+      "translationGroupId": "translation-chunk-0005-u003"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "b0428089bb338c16aa0d20005891f7f947c5743ee83be50c801bb48163ee2a71",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0005-u004"
+      ],
+      "translationGroupId": "translation-chunk-0005-u004"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "187e6f57205f795bf958f7a597dc44c17324654501aae1527ed22a7edbae8b5c",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0005-u013"
+      ],
+      "translationGroupId": "translation-chunk-0005-u013"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "3e719f03763f9a0ac0377b668f63d6ba50d0c6fba84df471c3b6c85e85222c75",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0005-u035"
+      ],
+      "translationGroupId": "translation-chunk-0005-u035"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "3237ec67087a26e405db7af8c85c93eb2c8a32a838fd6170c0763b47cb3ec902",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0005-u036"
+      ],
+      "translationGroupId": "translation-chunk-0005-u036"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "9383f8bb6a54412e187248861c7a2e04a958aaee0c1eae6a9d34f1b9868dc2b2",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0006-u009"
+      ],
+      "translationGroupId": "translation-chunk-0006-u009"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "9ecebde6a0a1ee91e83b51c250b2b55488f90b4db5710725b3bee96df2cc6d72",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0006-u022"
+      ],
+      "translationGroupId": "translation-chunk-0006-u022"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "2b64dfc1ffc3e1f71af830d3e3d377bc2e7af8060cae3ba2afb7b75ebd76a9bd",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0007-u013"
+      ],
+      "translationGroupId": "translation-chunk-0007-u013"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "7c56b938d2f14b06520d94fb2589ddb8748d81d8b5e820260ed125385673ccd1",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0008-u002"
+      ],
+      "translationGroupId": "translation-chunk-0008-u002"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "3b0027f920e67dc5278f638aebb4e3e082f6eff205aff87bdf565ee747ab14aa",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0008-u026"
+      ],
+      "translationGroupId": "translation-chunk-0008-u026"
+     },
+     {
+      "decision": "systemic_rule_or_policy_issue",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "fingerprint": "29616a2693f776f6110dde1d5344f7cce19f3b7b13e5bc822ea4b0f5c1ba010d",
+      "repaired": false,
+      "sourceUnitIds": [
+       "chunk-0009-u021"
+      ],
+      "translationGroupId": "translation-chunk-0009-u021"
+     }
+    ],
+    "lineage": {
+     "anchorManifestSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+     "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+     "targetLocale": "es",
+     "translationPolicySha256": "be99c24c5c6c47e128aec8ea1f2b5a6301a60a5e5a2b1d7b7a245d7ec9e3a3c5"
+    },
+    "nextBrief": null,
+    "outcome": "stopped",
+    "previousEntryJsonSha256": null,
+    "repairBriefSha256": null,
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "runDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001",
+    "schemaVersion": "sermon-layer2-repair-ledger-entry-v1",
+    "sequence": 1,
+    "spend": {
+     "calls": 922,
+     "callsWithoutUsage": 0,
+     "tokens": 2072948
+    },
+    "stopped": [
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0000-u004"
+      ],
+      "translationGroupId": "translation-chunk-0000-u004"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0000-u021"
+      ],
+      "translationGroupId": "translation-chunk-0000-u021"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0000-u025"
+      ],
+      "translationGroupId": "translation-chunk-0000-u025"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0001-u003"
+      ],
+      "translationGroupId": "translation-chunk-0001-u003"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0001-u013"
+      ],
+      "translationGroupId": "translation-chunk-0001-u013"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0001-u017"
+      ],
+      "translationGroupId": "translation-chunk-0001-u017"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0001-u019"
+      ],
+      "translationGroupId": "translation-chunk-0001-u019"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0001-u039"
+      ],
+      "translationGroupId": "translation-chunk-0001-u039"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u003"
+      ],
+      "translationGroupId": "translation-chunk-0002-u003"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u006"
+      ],
+      "translationGroupId": "translation-chunk-0002-u006"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0002-u022"
+      ],
+      "translationGroupId": "translation-chunk-0002-u022"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0004-u015"
+      ],
+      "translationGroupId": "translation-chunk-0004-u015"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0004-u018"
+      ],
+      "translationGroupId": "translation-chunk-0004-u018"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0004-u033"
+      ],
+      "translationGroupId": "translation-chunk-0004-u033"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0005-u003"
+      ],
+      "translationGroupId": "translation-chunk-0005-u003"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0005-u004"
+      ],
+      "translationGroupId": "translation-chunk-0005-u004"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0005-u013"
+      ],
+      "translationGroupId": "translation-chunk-0005-u013"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0005-u035"
+      ],
+      "translationGroupId": "translation-chunk-0005-u035"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0005-u036"
+      ],
+      "translationGroupId": "translation-chunk-0005-u036"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0006-u009"
+      ],
+      "translationGroupId": "translation-chunk-0006-u009"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0006-u022"
+      ],
+      "translationGroupId": "translation-chunk-0006-u022"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0007-u013"
+      ],
+      "translationGroupId": "translation-chunk-0007-u013"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0008-u002"
+      ],
+      "translationGroupId": "translation-chunk-0008-u002"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0008-u026"
+      ],
+      "translationGroupId": "translation-chunk-0008-u026"
+     },
+     {
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r4/es/repair-rounds/round-001/group-failures.json",
+      "failureCodes": [
+       "language_plugin_failed"
+      ],
+      "reasonCode": "systemic_rule_or_policy_issue",
+      "sourceUnitIds": [
+       "chunk-0009-u021"
+      ],
+      "translationGroupId": "translation-chunk-0009-u021"
+     }
+    ]
+   }
+  }
+ ]
+}

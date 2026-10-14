@@ -1,6 +1,202 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "本周更新": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week’s update"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 업데이트"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novedades de esta semana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cập nhật tuần này"
+          }
+        }
+      }
+    },
+    "查看本周海报": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View this week’s poster"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 포스터 보기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver el cartel de esta semana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem áp phích tuần này"
+          }
+        }
+      }
+    },
+    "关闭本周提示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss this week’s update"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 알림 닫기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar la novedad semanal"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đóng cập nhật tuần này"
+          }
+        }
+      }
+    },
+    "海报暂不可用，仍可打开本周内容。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The poster is unavailable. You can still open this week’s content."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포스터를 불러올 수 없습니다. 이번 주 콘텐츠는 열 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El cartel no está disponible. Puedes abrir el contenido de esta semana."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp phích chưa khả dụng. Bạn vẫn có thể mở nội dung tuần này."
+          }
+        }
+      }
+    },
+    "打开本周内容": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open this week’s content"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 콘텐츠 열기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir el contenido de esta semana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở nội dung tuần này"
+          }
+        }
+      }
+    },
+    "本周海报": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week’s poster"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 포스터"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cartel de esta semana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp phích tuần này"
+          }
+        }
+      }
+    },
+    "本周海报暂不可用。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week’s poster is unavailable."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 포스터를 불러올 수 없습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El cartel de esta semana no está disponible."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp phích tuần này chưa khả dụng."
+          }
+        }
+      }
+    },
     "正在对齐。{status}": {
       "extractionState": "manual",
       "localizations": {
@@ -5763,6 +5959,122 @@
         }
       }
     },
+    "正在听原声，最长约 15 秒；请保持 App 前台。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening to the original audio for up to about 15 seconds. Keep the app in the foreground."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "원본 소리를 최대 약 15초간 듣고 있습니다. 앱을 전면에 두세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escuchando el audio original hasta unos 15 segundos. Mantén la app en primer plano."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang nghe âm thanh gốc tối đa khoảng 15 giây. Giữ ứng dụng ở phía trước."
+          }
+        }
+      }
+    },
+    "已听约 7 秒，声音较远，继续听取…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heard about 7 seconds; the sound is faint, so still listening…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "약 7초 들었지만 소리가 작아 계속 듣는 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Llevamos unos 7 s; el sonido llega débil, seguimos escuchando…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã nghe khoảng 7 giây; âm thanh còn nhỏ nên tiếp tục nghe…"
+          }
+        }
+      }
+    },
+    "已听约 10 秒，声音较远，继续听取…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heard about 10 seconds; the sound is faint, so still listening…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "약 10초 들었지만 소리가 작아 계속 듣는 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Llevamos unos 10 s; el sonido llega débil, seguimos escuchando…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã nghe khoảng 10 giây; âm thanh còn nhỏ nên tiếp tục nghe…"
+          }
+        }
+      }
+    },
+    "已听约 12 秒，声音较远，继续听取…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heard about 12 seconds; the sound is faint, so still listening…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "약 12초 들었지만 소리가 작아 계속 듣는 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Llevamos unos 12 s; el sonido llega débil, seguimos escuchando…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã nghe khoảng 12 giây; âm thanh còn nhỏ nên tiếp tục nghe…"
+          }
+        }
+      }
+    },
     "现场自动对齐暂不可用": {
       "extractionState": "manual",
       "localizations": {
@@ -6386,30 +6698,30 @@
         }
       }
     },
-    "只有你点击听音对齐时，App 才会请求麦克风权限。根据所选内容，App 会聆听约 8 秒或 10 秒。声音仅在设备内存中匹配，不保存为录音、不上传。取消或进入后台会停止采音。拒绝权限仍可手动收听和定位。": {
+    "只有你点击听音对齐时，App 才会请求麦克风权限。App 会聆听 7 至 15 秒，声音清楚时会提前结束。声音仅在设备内存中匹配，不保存为录音、不上传。取消或进入后台会停止采音。拒绝权限仍可手动收听和定位。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Only when you start sound alignment does the app request microphone permission. Depending on the selected content, it listens for about 8 or 10 seconds. Audio is matched in device memory; it is not saved as a recording or uploaded. Cancelling or backgrounding stops capture. You can still listen and seek manually without permission."
+            "value": "Only when you start sound alignment does the app request microphone permission. It listens for 7 to 15 seconds and stops sooner when the sound is clear. Audio is matched in device memory; it is not saved as a recording or uploaded. Cancelling or backgrounding stops capture. You can still listen and seek manually without permission."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "듣기 정렬을 시작할 때만 앱이 마이크 권한을 요청합니다. 선택한 콘텐츠에 따라 약 8초 또는 10초 동안 소리를 듣습니다. 소리는 기기 메모리에서만 일치 여부를 확인하며 녹음으로 저장하거나 업로드하지 않습니다. 취소하거나 앱이 백그라운드로 전환되면 수음이 중지됩니다. 권한을 거부해도 수동으로 듣고 재생 위치를 이동할 수 있습니다."
+            "value": "듣기 정렬을 시작할 때만 앱이 마이크 권한을 요청합니다. 7~15초 동안 소리를 들으며, 소리가 선명하면 더 일찍 끝납니다. 소리는 기기 메모리에서만 일치 여부를 확인하며 녹음으로 저장하거나 업로드하지 않습니다. 취소하거나 앱이 백그라운드로 전환되면 수음이 중지됩니다. 권한을 거부해도 수동으로 듣고 재생 위치를 이동할 수 있습니다."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La app solo solicita acceso al micrófono cuando inicias la alineación por sonido. Según el contenido seleccionado, escucha durante unos 8 o 10 segundos. El audio se compara en la memoria del dispositivo; no se guarda como grabación ni se sube. La captura se detiene al cancelar o al pasar la app a segundo plano. Puedes seguir escuchando y buscando la posición manualmente sin conceder el permiso."
+            "value": "La app solo solicita acceso al micrófono cuando inicias la alineación por sonido. Escucha de 7 a 15 segundos y termina antes si el sonido es claro. El audio se compara en la memoria del dispositivo; no se guarda como grabación ni se sube. La captura se detiene al cancelar o al pasar la app a segundo plano. Puedes seguir escuchando y buscando la posición manualmente sin conceder el permiso."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ứng dụng chỉ yêu cầu quyền sử dụng micrô khi bạn bắt đầu căn chỉnh bằng âm thanh. Tùy theo nội dung được chọn, ứng dụng nghe trong khoảng 8 hoặc 10 giây. Âm thanh chỉ được đối chiếu trong bộ nhớ thiết bị, không được lưu thành bản ghi hay tải lên. Việc thu âm dừng khi bạn hủy hoặc chuyển ứng dụng sang nền. Bạn vẫn có thể nghe và tua thủ công nếu từ chối cấp quyền."
+            "value": "Ứng dụng chỉ yêu cầu quyền sử dụng micrô khi bạn bắt đầu căn chỉnh bằng âm thanh. Ứng dụng nghe trong 7 đến 15 giây và dừng sớm hơn khi âm thanh rõ. Âm thanh chỉ được đối chiếu trong bộ nhớ thiết bị, không được lưu thành bản ghi hay tải lên. Việc thu âm dừng khi bạn hủy hoặc chuyển ứng dụng sang nền. Bạn vẫn có thể nghe và tua thủ công nếu từ chối cấp quyền."
           }
         }
       }
@@ -6943,6 +7255,35 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bài giảng"
+          }
+        }
+      }
+    },
+    "播客": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podcast"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "팟캐스트"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pódcast"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podcast"
           }
         }
       }

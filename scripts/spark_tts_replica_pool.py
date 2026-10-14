@@ -90,6 +90,8 @@ class SparkTTSReplicaPool(AbstractContextManager):
         self.poll_interval = poll_interval
         self.processes, self.connections = [], []
         self._ready, self._busy, self._pending, self._outputs = set(), {}, {}, {}
+        # Worker-side generation seconds per window; the parent's wait is not this.
+        self._generation = {}
         self._seen = set()
         self._started = self._closed = False
         self.min_available_bytes = None
@@ -175,6 +177,10 @@ class SparkTTSReplicaPool(AbstractContextManager):
                 index = event.get("index")
                 if self._busy.get(worker) != index or index not in self._pending or index in self._outputs:
                     raise ReplicaPoolError("TTS replica result window differs")
+                seconds = event.get("generationSeconds")
+                if type(seconds) not in (float, int) or not math.isfinite(seconds) or seconds < 0:
+                    raise ReplicaPoolError("TTS replica generation timing invalid")
+                self._generation[index] = float(seconds)
                 self._outputs[index] = event["rows"]
                 del self._busy[worker]
             elif kind == "error":
@@ -254,6 +260,12 @@ class SparkTTSReplicaPool(AbstractContextManager):
             self.close()
             raise
 
+    def generation_seconds(self, index: int) -> float:
+        """Worker-side generation time of a window that result() has returned."""
+        if index not in self._generation:
+            raise ValueError("TTS window generation timing is unavailable")
+        return self._generation.pop(index)
+
     def close(self):
         if self._closed:
             return
@@ -271,6 +283,7 @@ class SparkTTSReplicaPool(AbstractContextManager):
         for connection in self.connections:
             connection.close()
         self._outputs.clear()
+        self._generation.clear()
         self._pending.clear()
         try:
             self._event({"kind": "pool_closed", "timestamp": time.time(),

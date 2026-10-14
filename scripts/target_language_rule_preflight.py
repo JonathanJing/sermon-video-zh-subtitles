@@ -106,6 +106,30 @@ def _quoted_rules(facts, request, policy, plan):
                     'targetTextSha256': part['targetTextSha256'], 'reference': quote['reference'],
                     'classification': 'diagnostic_pinned_excerpt', 'citationUseStatus': 'pending',
                     'provenance': copy.deepcopy(bindings['provenance'])})
+    if 'DIAGNOSTIC_ADMITTED_QUOTES' in facts:
+        # Human-admitted CUV sentences from an adjudication receipt; diagnostic only.
+        require(facts.get('DIAGNOSTIC_ONLY') is True and facts.get('DIAGNOSTIC_ADMITTED_QUOTES') is True,
+                'admitted quote plugin must remain diagnostic-only')
+        require(policy["scripture"]["quoteCheckPolicy"] == "source_bound_exact_quote"
+                and policy["scripture"]["citationUseStatus"] == "project_source_reviewed"
+                and all(row["editionId"] == policy["scripture"]["editionId"] for row in facts["ADMITTED_QUOTES"]),
+                "admitted quote plugin differs from scripture policy")
+        from scripts.language_review_plugins.diagnostic_admitted_quotes import validate_admitted, validate_speaker_words
+        for unit_id in validate_speaker_words(list(facts.get('SPEAKER_WORDS_UNITS', [])),
+                                              {u for row in facts['ADMITTED_QUOTES'] for u in row['sourceUnitIds']}):
+            require(unit_id in rows, "speaker-words unit is not in the source")
+        for row in facts['ADMITTED_QUOTES']:
+            validate_admitted([row])
+            units = row['sourceUnitIds']
+            for unit_id in units:
+                require(unit_id in rows, "admitted quote unit is not in the source")
+            groups = [group for group in plan if set(units) <= set(group['sourceUnitIds'])]
+            require(len(groups) == 1, "admitted quote must occupy exactly one translation group")
+            quotes.append({"sourceUnitIds": list(units), "translationGroupId": groups[0]['translationGroupId'],
+                           "english": " ".join(rows[unit_id] for unit_id in units),
+                           "targetText": row['exactSentence'], "targetTextSha256": row['textSha256'],
+                           "reference": row['canonicalRef'], "classification": 'admitted_' + row['classification'],
+                           "editionId": row['editionId'], "citationUseStatus": "project_source_reviewed"})
     if "SOURCE_SHA256" in facts:
         require(facts["SOURCE_SHA256"] == request["englishSourcePackageJsonSha256"],
                 "plugin source differs from request")

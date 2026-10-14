@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "spark-diagnostic-audio execute",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-08T01:30:08Z",
+  "endedAt": "2026-10-08T01:30:12Z",
+  "error": {
+    "type": "ValueError",
+    "message": "'artifacts/next-iteration-repair-20261007/diagnostic-audio-r3/material/source.mp4' is not in the subpath of '<HOME>/sermon-video-zh-subtitles'"
+  }
+}

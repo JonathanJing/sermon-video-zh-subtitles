@@ -1,0 +1,5 @@
+Monitor shell: /bin/zsh -c
+for name in L2_LOG AUDIO_LOG; do
+  tail -F "${!name}" | grep --line-buffered -E 'round:|Traceback|FAILED' &
+done
+wait

@@ -1,0 +1,1 @@
+Why does the batch-001 receipt report inferenceSeconds=0.0 while the replica pool reports generation time for all 13 segments? Both rounds show it.

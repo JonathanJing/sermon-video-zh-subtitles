@@ -56,7 +56,9 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import auto_qc_seeded_errors as seeded
 from scripts import machine_qc_audio_transports as transports
+from scripts import implementation_freeze as freeze
 from scripts import machine_quality_release_basis as basis
+from scripts import machine_audio_waiver_acceptance as acceptance_waiver
 from scripts import machine_repair_ledger as ledger
 from scripts import run_machine_qc_clip_test as text_driver
 from scripts import target_audio_auto_qc as audio_qc
@@ -147,7 +149,11 @@ def audio_coverage(job: dict, locale: str) -> dict:
     dropped = sum(seeded.drop_key_word(text, locale) is not None for text in texts)
     untestable = [kind for kind, count in (("dropped_key_word", dropped), ("wrong_sentence", len(set(texts)) - 1))
                   if count < 1]
-    return {"droppedKeyWordTrials": dropped, "wrongSentenceUnits": len(texts), "untestableKinds": untestable}
+    truncated = min(MAX_TRIALS, sum(seeded.truncation_eligible(unit["text"], locale) for unit in job["units"]))
+    if not truncated:
+        untestable.append("truncated")
+    return {"droppedKeyWordTrials": dropped, "wrongSentenceUnits": len(texts),
+            "truncationEligibleTrials": truncated, "untestableKinds": untestable}
 
 
 def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | None) -> dict:
@@ -244,16 +250,25 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
 
 # ---------------------------------------------------------------- transports
 
+def audio_api_judge_for_resolved(authorization: Path, resolved: dict, *, requested_locales=None):
+    """New audio/secondary-ASR work requires scoped v4 before ledger creation."""
+    from scripts import machine_qc_budget_authorization as qc_authorization
+    qc_authorization.validate(authorization, require_scope=True)
+    return text_driver.api_judge_for_resolved(authorization, resolved, requested_locales=requested_locales)
+
+
 def make_transports(backend: str, args, state: Path, *, locale: str, screening: dict, job: dict,
-                    package: dict) -> tuple:
+                    package: dict, budget=None) -> tuple:
     """``(primary, secondary, tts)`` for one locale."""
     if backend == "fake":
         tts = transports.FakeTts(job)
         texts = {unit["audio"]["sha256"]: job_unit["text"] for unit, job_unit in zip(package["units"], job["units"])}
         return (transports.FakePrimaryAsr(screening, tts), transports.FakeSecondaryAsr(locale, texts, tts), tts)
-    primary = transports.QwenPrimaryAsr(screening, cache=state / "asr-calls" / "primary", model_path=args.asr_model_path)
+    if budget is None:
+        raise ValueError("Real secondary ASR requires an approved SourceBudget ledger")
     secondary = transports.OpenAiTranscribeSecondary(locale, cache=state / "asr-calls" / "secondary",
-                                                     max_calls=args.max_api_calls)
+                                                     max_calls=args.max_api_calls, budget=budget)
+    primary = transports.QwenPrimaryAsr(screening, cache=state / "asr-calls" / "primary", model_path=args.asr_model_path)
     checkpoint = transports.checkpoint_path(job, read(args.tts_checkpoint_map))
     tts = transports.QwenTtsRender(job, checkpoint=checkpoint, cache=state / "tts-renders", seed=args.tts_seed,
                                    device=args.tts_device, dtype=args.tts_dtype,
@@ -294,7 +309,7 @@ def qc_units(job: dict, package: dict, candidate: dict, anchor: dict) -> list[di
 
 
 def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, asr: tuple, timings: Timings,
-               workers: int, *, fake: bool) -> dict:
+               workers: int, *, fake: bool, human_acceptance: dict | None = None) -> dict:
     primary, secondary, tts = asr
     package, job, screening = read(Path(paths["package"])), read(Path(paths["job"])), read(Path(paths["screening"]))
     source, anchor = read(Path(paths["source"])), read(Path(paths["anchor"]))
@@ -329,8 +344,17 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, asr: tup
             return {**result, "status": "blocked_prior_failure",
                     "reason": f"the audio repair ledger head failed and its QC receipt is missing from {head_path}"}
         current = {(unit["groupId"], transports._sha(unit["wav"])) for unit in units}
+        # A person's acceptance of the exact failed audio of this head counts as the repair.
+        person_accepted = set()
+        if human_acceptance is not None:
+            from scripts import audio_qc_human_acceptance as acceptance_rules
+            try:
+                person_accepted = acceptance_rules.check(human_acceptance, package=package, audio_qc=head)
+            except ValueError:
+                person_accepted = set()
         unrepaired = [row["groupId"] for row in head["results"]
-                      if row["status"] == "fail" and (row["groupId"], row["audioSha256"]) in current]
+                      if row["status"] == "fail" and (row["groupId"], row["audioSha256"]) in current
+                      and row["groupId"] not in person_accepted]
         if unrepaired:
             return {**result, "status": "blocked_prior_failure", "failedGroups": unrepaired,
                     "reason": "failed units still have the same audio; re-render them (new seed or revised text) first"}
@@ -365,7 +389,7 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, asr: tup
                 for unit, opinion in zip(flagged, opinions):
                     unit["asr"]["secondary"] = opinion
             qc = timings.run(f"{locale}.audio-qc", lambda: audio_qc.screen(
-                units, locale, repair_position=ledger.position(lineage, entries)))
+                units, locale, repair_position=ledger.position(lineage, entries), speech_job=job))
             save_once(next_path, qc, qc_binding)
         ledger.append(ledger_root, lineage, qc)
         head_path = next_path
@@ -377,10 +401,24 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, asr: tup
                       reason="the audio repair limit is used up; waiver v1 cannot release subtitle-only units")
         return result
     if qc["status"] != "pass":
-        result.update(status="requires_repair",
-                      nextActions={row["groupId"]: row["nextAction"] for row in qc["results"] if row["status"] != "pass"},
-                      reason="audio QC failed; re-render the failed units as the repair ladder says")
-        return result
+        # A person may accept the exact audio of failed units (audio_qc_human_acceptance); the
+        # waiver then becomes v3 and names them. Anything not accepted still needs a repair.
+        accepted = set()
+        if human_acceptance is not None:
+            from scripts import audio_qc_human_acceptance as acceptance_rules
+            try:
+                accepted = acceptance_rules.check(human_acceptance, package=package, audio_qc=qc)
+            except ValueError as error:
+                result.update(status="requires_repair", reason=f"human acceptance does not bind this QC: {error}")
+                return result
+        unaccepted = [row["groupId"] for row in qc["results"] if row["status"] != "pass" and row["groupId"] not in accepted]
+        if unaccepted:
+            result.update(status="requires_repair",
+                          nextActions={row["groupId"]: row["nextAction"] for row in qc["results"]
+                                       if row["status"] != "pass" and row["groupId"] not in accepted},
+                          reason="audio QC failed; re-render the failed units as the repair ladder says")
+            return result
+        result["humanAcceptedGroups"] = sorted(accepted)
 
     # 5. Seeded-error calibration on this candidate and this unit audio.
     groups = text_driver.qc_groups(candidate, anchor)
@@ -410,22 +448,28 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, asr: tup
     entries = ledger.load(ledger_root, lineage)
     waiver_binding = json_sha256({"calibration": calibration_binding, "qc": json_sha256(qc),
                                   "calibrationReceipt": json_sha256(calibration), "track": json_sha256(track),
-                                  "textWaiver": json_sha256(text_waiver), "ledger": entries})
+                                  "textWaiver": json_sha256(text_waiver), "ledger": entries,
+                                  "humanAcceptance": None if human_acceptance is None else json_sha256(human_acceptance)})
     waiver_path = folder / f"audio-waiver-{waiver_binding[:16]}.json"
     if not fake:
         saved = load_once(waiver_path, waiver_binding)
         if saved is not None:
-            basis.validate_audio_waiver(package, saved, screening)
+            acceptance_waiver.validate_audio_waiver(package, saved, screening)
             result.update(status="audio_waiver_issued", audioWaiver=str(waiver_path), reused=True)
             return result
     try:
-        receipt = timings.run(f"{locale}.audio-waiver", lambda: basis.build_audio_waiver(
-            package, screening, qc, text_waiver, calibration, anchor=anchor, candidate=candidate,
-            repair_ledger=entries, speech_job=job, track_check=track))
+        if result.get("humanAcceptedGroups"):
+            receipt = timings.run(f"{locale}.audio-waiver", lambda: acceptance_waiver.build_audio_waiver(
+                package, screening, qc, text_waiver, calibration, human_acceptance=human_acceptance, anchor=anchor,
+                candidate=candidate, repair_ledger=entries, speech_job=job, track_check=track))
+        else:
+            receipt = timings.run(f"{locale}.audio-waiver", lambda: basis.build_audio_waiver(
+                package, screening, qc, text_waiver, calibration, anchor=anchor, candidate=candidate,
+                repair_ledger=entries, speech_job=job, track_check=track))
     except ValueError as error:
         result.update(status="waiver_refused", reason=str(error))
         return result
-    basis.validate_audio_waiver(package, receipt, screening)
+    acceptance_waiver.validate_audio_waiver(package, receipt, screening)
     if fake:
         result.update(status="fake_plumbing_pass", reason="fake transports: waiver built in memory, never saved")
         return result
@@ -443,8 +487,8 @@ def still_valid(row: dict) -> bool:
             if key in row and json_sha256(read(Path(row[key]))) != read(binding_path(Path(row[key]))).get("receiptJsonSha256"):
                 return False
         if row.get("status") == "audio_waiver_issued":
-            basis.validate_audio_waiver(read(Path(row["paths"]["package"])), read(Path(row["audioWaiver"])),
-                                        read(Path(row["paths"]["screening"])))
+            acceptance_waiver.validate_audio_waiver(read(Path(row["paths"]["package"])), read(Path(row["audioWaiver"])),
+                                                    read(Path(row["paths"]["screening"])))
     except (KeyError, OSError, ValueError, TypeError):
         return False
     return True
@@ -471,7 +515,21 @@ def main(argv=None) -> int:
                         help="Cap on new paid gpt-transcribe requests per locale in this process")
     parser.add_argument("--workers", type=int, default=4, help="Parallel back-translation and secondary ASR calls")
     parser.add_argument("--preflight-only", action="store_true", help="Stop before any model call")
+    parser.add_argument("--human-acceptance", action="append", default=[], metavar="LOCALE=PATH",
+                        help="A person's acceptance of failed units in the head audio QC (audio_qc_human_acceptance)")
+    parser.add_argument("--text-backend", choices=("codex", "api"), default="codex",
+                        help="Back-translation judge for text-kind calibration: local Codex CLI or the OpenAI API")
+    parser.add_argument("--api-budget-authorization", type=Path,
+                        help="Required for every real run, including --text-backend codex: planned per-locale "
+                             "QC authorization v4 for judge/secondary ASR; use the same locale and budget as the text driver")
+    freeze.add_argument(parser)
     args = parser.parse_args(argv)
+    if args.expected_implementation:
+        # The run plan froze the QC implementation; refuse other code before any model call.
+        changed = freeze.mismatch(args.expected_implementation)
+        if changed:
+            print(json.dumps(changed, ensure_ascii=False), file=sys.stderr)
+            return freeze.EXIT_CODE
     locales = [locale for locale in args.locales.split(",") if locale]
     if not locales or set(locales) - set(LOCALES):
         parser.error(f"--locales must name one or more of {', '.join(LOCALES)}")
@@ -479,6 +537,9 @@ def main(argv=None) -> int:
         parser.error(f"--workers must be between 1 and {MAX_WORKERS}")
     if args.max_api_calls < 0:
         parser.error("--max-api-calls must not be negative")
+    if args.backend == "real" and not args.preflight_only and not args.api_budget_authorization:
+        parser.error("real audio runs require --api-budget-authorization (planned per-locale QC authorization v4), "
+                     "including --text-backend codex for the secondary ASR budget")
     real = args.backend == "real"
     if real and not args.preflight_only:
         if not args.state_dir:
@@ -495,6 +556,20 @@ def main(argv=None) -> int:
                          "scripts/run_with_openai_environment.py --environment dev (prod for formal content)")
     if not real and args.state_dir:
         parser.error("--backend fake never writes to a persistent state dir")
+    if real and not args.preflight_only:
+        # Validate the new audio authorization before creating any output/state
+        # or constructing a text judge. Legacy authority remains text-only.
+        from scripts import machine_qc_budget_authorization as qc_authorization
+        try:
+            qc_authorization.validate(args.api_budget_authorization.resolve(), require_scope=True)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            parser.error(f"secondary ASR requires scoped v4 audio authorization: {error}")
+    acceptances = {}
+    for item in args.human_acceptance:
+        locale, _, path = item.partition("=")
+        if not path or locale not in locales or locale in acceptances:
+            parser.error(f"--human-acceptance {item!r}: use LOCALE=PATH once per requested locale")
+        acceptances[locale] = read(Path(path))
     overrides = {}
     for item in args.audio_package:
         locale, _, path = item.partition("=")
@@ -542,17 +617,36 @@ def main(argv=None) -> int:
         return 0 if len(resolved) == len(locales) else 2
     groups = {locale: text_driver.qc_groups(read(Path(paths["candidate"])), read(Path(paths["anchor"])))
               for locale, paths in resolved.items()}
-    judge = text_driver.CodexJudge(state / "codex-calls") if real else text_driver.FakeJudge(groups)
+    if not real:
+        judge = text_driver.FakeJudge(groups)
+    elif args.text_backend == "api":
+        # Text-kind calibration replays the text driver's API judge cache when the same budget is reused.
+        judge = audio_api_judge_for_resolved(args.api_budget_authorization.resolve(), resolved, requested_locales=locales)
+    else:
+        judge = text_driver.CodexJudge(state / "codex-calls")
+    secondary_budget = getattr(judge, "ledger", None)
+    if real and secondary_budget is None:
+        if not args.api_budget_authorization:
+            parser.error("Real secondary ASR requires --api-budget-authorization")
+        secondary_budget = audio_api_judge_for_resolved(args.api_budget_authorization.resolve(), resolved, requested_locales=locales).ledger
     for locale, paths in resolved.items():
         uncertain = judge.uncertain() + uncertain_calls(state)
+        if secondary_budget is not None:
+            ledger_path = secondary_budget.root / "source-budget.json"
+            if ledger_path.exists():
+                uncertain += [operation for operation, row in read(ledger_path).get("requests", {}).items()
+                              if row.get("status") == "started_response_unconfirmed"]
+            uncertain = sorted(set(uncertain))
         if uncertain:
             outcome = {"status": "blocked_unknown_outcome", "uncertainCalls": uncertain,
                        "reason": f"model calls with an unknown outcome under {state}; reconcile them first"}
         else:
             try:
                 asr = make_transports(args.backend, args, state, locale=locale, screening=read(Path(paths["screening"])),
-                                      job=read(Path(paths["job"])), package=read(Path(paths["package"])))
-                outcome = run_locale(locale, paths, out, state, judge, asr, timings, args.workers, fake=not real)
+                                      job=read(Path(paths["job"])), package=read(Path(paths["package"])),
+                                      budget=secondary_budget)
+                outcome = run_locale(locale, paths, out, state, judge, asr, timings, args.workers, fake=not real,
+                                     human_acceptance=acceptances.get(locale))
             except Exception as error:  # The summary says what failed.
                 outcome = {"status": "error", "reason": f"{type(error).__name__}: {error}"}
         summary["locales"][locale].update(outcome)

@@ -1,0 +1,7 @@
+{
+  "batch": "batch-000",
+  "segments": 8,
+  "inferenceSeconds": 33.24,
+  "replicas": 8,
+  "status": "succeeded"
+}
