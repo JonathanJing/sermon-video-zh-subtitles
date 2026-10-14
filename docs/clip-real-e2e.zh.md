@@ -36,6 +36,7 @@
 | `openai` | `environment`（dev/prod）和 launcher 读取的 env 文件 |
 | `authorization` | `approvedBy`、`evidence`（批准出处）、`defaultPass`（必须写明 "not a human review"） |
 | `budget` | `totalUsd` 是批准总额；`settledUsdBefore` 是此前已结算的花费，包括未标价转写的预留 |
+| `layer2.backend` | `openai_api`（默认，Sol）或 `claude_cli_opus`：翻译 Opus 5.5 high、审核 Opus 5.5 medium，都经本机订阅登录的 Claude CLI，见[运行时模型政策](production-model-runtime-policy.zh.md)。冻结进片段政策；文本、校准和音频质检仍走 OpenAI API |
 | `layer2.policyTemplates` / `plugins` | 每种语言：源周次冻结的政策，以及语言插件 |
 | `layer3.attestationTemplates` / `speakerRegistry` | 源周次的用户声音授权（会改绑到本片段的来源包）和说话人登记 |
 | `qc.maxRevisions` | 每种语言的文本质检最多打回 Layer 2 几次（0–3，默认 2） |
@@ -92,7 +93,7 @@
 
 - **质检修复回 Layer 2** 需要执行配置 v5（PR #402）。只有确定性检查失败、没有回译问题的组，还不能自动修复。
 - **片段里要有已批准的多词专有名词。** 政策 v4 要求术语回执非空，且回执里每个词都出现在本片段。没有这样的名词时，`layer2-setup` 在任何付费调用前停下，需换一个句子范围。片段里出现的系列名会自动写入 `usedSeriesNames`。
-- **页面信息批准和学习产品复核仍写成批准记录。** 这两项按运行规格的默认放行声明填写，记录本身还是批准的格式（页面信息 `reviewer=user`，提纲和默想 `humanApproval=true`）。对应的"测试默认放行"记录类型另行实现：页面信息只影响交付合同；提纲和默想还牵涉发布包 v5，以及 Python、网页和 iOS 三个读取端。
+- **提纲和默想复核仍写成批准记录。** 页面信息已改为 `sermon-dev-test-metadata-default-pass-v1`（`humanApproval: false`，只接受 mockup 页面和 Dev 发布意图）。提纲和默想的复核按运行规格的默认放行声明填写，但记录本身仍是批准格式（`humanApproval=true`）。改成如实的"测试默认放行"需要发布包 v5，并同步 Python、网页和 iOS 读取端，另行实现。
 - **声音授权模板** 取自源周次的片段证明，`userStatement` 会改写为本次运行的授权说明。
 - **Layer 4 的模板目录** `artifacts/unified-cli-acceptance/native-four-product-fixture-v2` 是本机产物，与 `build_dev_180s_simulated_inputs.py` 共用。
 - **Spark 的运行时路径和镜像摘要** 写在 `config/clip-e2e/spark-runtime.json`。换了镜像或权重要改这里，并重新校准相关质检。

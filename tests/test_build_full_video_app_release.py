@@ -195,6 +195,37 @@ class SimulatedMetadataIsolationTests(unittest.TestCase):
             with self.assertRaises(ValidationError):
                 metadata.checked_metadata(path, proposal, 'mockup-test', '2026-09-27', ['ko'], release_intent=value['releaseIntent'])
 
+    def test_default_pass_metadata_is_not_a_human_approval_and_stays_on_isolated_dev_pages(self):
+        from scripts import build_formal_dev_release_assets as metadata
+        from jsonschema import ValidationError
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            schema = release.read(release.ROOT / 'schemas/sermon-dev-test-metadata-default-pass-v1.schema.json')
+            intent = schema['properties']['releaseIntent']['const']
+            fields = {'series': 'Series', 'title': '[test] Title', 'speaker': 'Speaker',
+                      'scripture': 'Revelation', 'summary': '[test] summary', 'outline': ['Point']}
+            proposal = root / 'proposal.txt'
+            proposal.write_text('\n'.join([value for value in fields.values() if isinstance(value, str)] + fields['outline']))
+            value = {'schemaVersion': 'sermon-dev-test-metadata-default-pass-v1', 'pageId': 'mockup-test',
+                     'date': '2026-09-27', 'proposalFileSha256': release.digest(proposal),
+                     'decision': 'test_default_pass', 'reviewer': 'test-default-pass-not-human', 'humanApproval': False,
+                     'defaultPassStatement': 'isolated-test default pass authorized by J; not a human review',
+                     'recordedAt': '2026-10-14T03:00:00Z', 'approvedLocales': ['ko'], 'locales': {'ko': fields},
+                     'releaseIntent': intent}
+            path = root / 'metadata.json'
+            release.write(path, value)
+            checked = metadata.checked_metadata(path, proposal, 'mockup-test', '2026-09-27', ['ko'], release_intent=intent)
+            self.assertEqual((checked['decision'], checked['humanApproval']), ('test_default_pass', False))
+            with self.assertRaisesRegex(ValueError, 'exact isolated Dev'):
+                metadata.checked_metadata(path, proposal, 'mockup-test', '2026-09-27', ['ko'],
+                                          release_intent={**intent, 'environment': 'production'})
+            for change in ({'humanApproval': True}, {'defaultPassStatement': 'approved by J'},
+                           {'pageId': 'weekly-page'}, {'reviewer': 'user'}):
+                release.write(path, {**value, **change})
+                with self.subTest(change=change), self.assertRaises((ValidationError, ValueError)):
+                    metadata.checked_metadata(path, proposal, change.get('pageId', 'mockup-test'), '2026-09-27', ['ko'],
+                                              release_intent=intent)
+
     def test_catalog_test_flags_are_boolean_and_old_catalog_stays_valid(self):
         from jsonschema import Draft202012Validator, ValidationError
         schema = release.read(release.ROOT / 'schemas/sermon-multilingual-catalog-v3.schema.json')

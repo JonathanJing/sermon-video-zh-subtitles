@@ -47,6 +47,7 @@ class SpecificationTests(unittest.TestCase):
         self.assertEqual((spec["qc"]["maxRevisions"], spec["openai"]["environment"], spec["layer3"]["maxEndLagSeconds"]),
                          (2, "dev", 120.0))
         self.assertEqual(spec["spark"]["sessionId"], "clip-e2e-u101-test")
+        self.assertEqual(spec["layer2"]["backend"], "openai_api")
 
     def test_unsafe_or_incomplete_specifications_are_refused(self):
         page = {"pageId": "dev-weekly", "display": {k: DISPLAY for k in LOCALES}}
@@ -57,6 +58,8 @@ class SpecificationTests(unittest.TestCase):
                ({"page": {"pageId": "mockup-x", "display": {k: DISPLAY for k in LOCALES},
                           "baselineCachePublic": "public"}}, "go together"),
                ({"extra": 1}, "unknown run specification field"),
+               ({"layer2": {"backend": "claude_cli", "policyTemplates": {k: f"{k}-policy.json" for k in LOCALES},
+                            "plugins": {k: f"{k}-plugin.py" for k in LOCALES}}}, "layer2.backend must be"),
                ({"layer3": {"attestationTemplates": {"ko": "ko-att.json", "es": "es-att.json"},
                             "speakerRegistry": "registry.json"}},
                 "attestationTemplates missing a locale"),
@@ -261,7 +264,7 @@ class ReleaseTests(unittest.TestCase):
         common = dict(date="2026-10-11", locales=["ko"], source_path=Path("s"), anchor_path=Path("a"), lanes={},
                       display={"ko": DISPLAY})
         with tempfile.TemporaryDirectory() as out:
-            with self.assertRaisesRegex(ValueError, "isolated mockup-/dev- page"):
+            with self.assertRaisesRegex(ValueError, "isolated mockup- page"):
                 release.prepare(Path(out), page_id="weekly-page", default_pass="x; not a human review", **common)
             with self.assertRaisesRegex(ValueError, "not a human review"):
                 release.prepare(Path(out), page_id="mockup-x", default_pass="approved", **common)

@@ -6,10 +6,11 @@ ASR screening receipt; the output is the frozen ``sermon_unified_delivery`` plan
 release (catalog v4 with a ``machine_checked`` disclosure per locale), ready for
 ``run_dev_simulated_delivery.py --machine-checked``.
 
-Two human gates of the delivery contract have no machine replacement in this path: the page
-metadata approval and the outline/meditation study reviews. For an isolated test page they are
-filled from the run specification's explicit authorization statement, and every such record
-says it is a default pass, not a human review. The study products are deterministic test
+Two human gates of the delivery contract have no machine replacement in this path. The page
+metadata is recorded as ``sermon-dev-test-metadata-default-pass-v1`` (``humanApproval: false``,
+isolated mockup page and Dev intent only). The outline/meditation study reviews still use the
+approval-shaped study review with the run specification's default-pass statement as reviewer;
+an honest default-pass study record needs release v5 and the Python, web and iOS readers. The study products are deterministic test
 sections built from the candidate, not model output. Display texts come from the run
 specification and must label the page as a test. See docs/clip-real-e2e.zh.md.
 """
@@ -61,7 +62,7 @@ def prepare(out: Path, *, page_id: str, date: str, locales: list[str], source_pa
     from scripts import study_artifacts
     from scripts.build_dev_180s_simulated_inputs import read, save, ref
     from scripts.delivery_contract import sha as json_sha
-    require(page_id.startswith(("mockup-", "dev-")), "clip E2E pages must use an isolated mockup-/dev- page ID")
+    require(page_id.startswith("mockup-"), "clip E2E pages must use an isolated mockup- page ID")
     require(isinstance(default_pass, str) and "not a human review" in default_pass,
             "the default-pass statement must say it is not a human review")
     validate_display(display, locales)
@@ -130,10 +131,13 @@ def prepare(out: Path, *, page_id: str, date: str, locales: list[str], source_pa
             names[kind + "_review"] = save(loc / f"{kind}-review.json", review)
         for name, path in names.items():
             config["inputs"][name][locale] = ref(path)
-    metadata = {"schemaVersion": "sermon-formal-dev-metadata-approval-v2", "pageId": page_id, "date": date,
+    # The page metadata is not a person's approval: record it as the test default pass it is.
+    metadata = {"schemaVersion": "sermon-dev-test-metadata-default-pass-v1", "pageId": page_id, "date": date,
                 "proposalFileSha256": hashlib.sha256(proposal_path.read_bytes()).hexdigest(),
-                "decision": "approved_selected_locales", "approvalText": "所列语言页面信息已批准", "reviewer": "user",
-                "recordedAt": recorded_at, "approvedLocales": locales, "locales": {k: shown[k] for k in locales}}
+                "decision": "test_default_pass", "reviewer": "test-default-pass-not-human", "humanApproval": False,
+                "defaultPassStatement": default_pass, "recordedAt": recorded_at, "approvedLocales": locales,
+                "locales": {k: shown[k] for k in locales},
+                "releaseIntent": dict(DEV_ROUTE, schemaVersion="sermon-release-intent-v1", environment="dev")}
     (out / "metadata-approval.evidence.txt").write_text("Metadata approval for this Dev test page: " + default_pass + "\n")
     config["inputs"]["metadata_approval"] = ref(save(out / "metadata-approval.json", metadata))
     config["inputs"]["metadata_proposal"] = ref(proposal_path)

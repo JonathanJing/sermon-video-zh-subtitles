@@ -3,15 +3,26 @@
  "name": "example-u101",
  "notes": "Example only. Paths are relative to this file and point at local artifacts of the 2026-10-11 week; copy it into the run's own folder and fill in the actual approval, settled spend and page ID.",
  "clipSpec": "../../artifacts/clip-test-20261014-u101/clip-spec-u101-116.json",
- "locales": ["ko", "es", "zh-Hans"],
- "openai": {"environment": "dev", "envFile": "../../.env.openai"},
+ "locales": [
+  "ko",
+  "es",
+  "zh-Hans"
+ ],
+ "openai": {
+  "environment": "dev",
+  "envFile": "../../.env.openai"
+ },
  "authorization": {
   "approvedBy": "<who approved the spend>",
   "evidence": "<where: quote the chat line or link>",
   "defaultPass": "isolated-test default pass authorized by <who> (<evidence>); not a human review"
  },
- "budget": {"totalUsd": 30, "settledUsdBefore": 0},
+ "budget": {
+  "totalUsd": 30,
+  "settledUsdBefore": 0
+ },
  "layer2": {
+  "backend": "claude_cli_opus",
   "policyTemplates": {
    "ko": "../../artifacts/weekend-live/layer2-54475d42/policies/ko-policy-frozen-r5.json",
    "es": "../../artifacts/weekend-live/layer2-54475d42/policies/es-policy-frozen-r5.json",
@@ -32,19 +43,35 @@
   "speakerRegistry": "../../artifacts/weekend-live/layer3-54475d42/speaker-voice-registry.json",
   "maxEndLagSeconds": 120
  },
- "qc": {"maxRevisions": 2},
+ "qc": {
+  "maxRevisions": 2
+ },
  "page": {
   "pageId": "mockup-dev-clip-example-u101",
   "baselineCachePublic": "../../artifacts/clip-test-20261013-v4/l4/baseline/public",
   "baselineCacheReceipt": "../../artifacts/clip-test-20261013-v4/l4/baseline/baseline-receipt.json",
   "display": {
-   "zh-Hans": {"series": "[开发测试] 启示录片段", "title": "[开发测试] 两亿大军 · 第九章数字片段", "speaker": "Steve Bang Lee",
-               "scripture": "启示录 9 章", "summary": "[开发测试] 2026-10-11 讲道第 101–116 句的真实模型译文与配音，仅用于 Dev 端到端测试。"},
-   "ko": {"series": "[개발 테스트] 요한계시록 발췌", "title": "[개발 테스트] 2억 군대 · 9장 숫자 발췌", "speaker": "Steve Bang Lee",
-          "scripture": "요한계시록 9장", "summary": "[개발 테스트] 2026-10-11 설교 101–116 문장의 실제 모델 번역과 음성으로, Dev 종단 간 테스트 전용입니다."},
-   "es": {"series": "[Prueba de desarrollo] Fragmento de Apocalipsis", "title": "[Prueba de desarrollo] Un ejército de doscientos millones · capítulo 9",
-          "speaker": "Steve Bang Lee", "scripture": "Apocalipsis 9",
-          "summary": "[Prueba de desarrollo] Traducción y voz reales de las frases 101–116 del sermón del 2026-10-11, solo para la prueba de extremo a extremo en Dev."}
+   "zh-Hans": {
+    "series": "[开发测试] 启示录片段",
+    "title": "[开发测试] 两亿大军 · 第九章数字片段",
+    "speaker": "Steve Bang Lee",
+    "scripture": "启示录 9 章",
+    "summary": "[开发测试] 2026-10-11 讲道第 101–116 句的真实模型译文与配音，仅用于 Dev 端到端测试。"
+   },
+   "ko": {
+    "series": "[개발 테스트] 요한계시록 발췌",
+    "title": "[개발 테스트] 2억 군대 · 9장 숫자 발췌",
+    "speaker": "Steve Bang Lee",
+    "scripture": "요한계시록 9장",
+    "summary": "[개발 테스트] 2026-10-11 설교 101–116 문장의 실제 모델 번역과 음성으로, Dev 종단 간 테스트 전용입니다."
+   },
+   "es": {
+    "series": "[Prueba de desarrollo] Fragmento de Apocalipsis",
+    "title": "[Prueba de desarrollo] Un ejército de doscientos millones · capítulo 9",
+    "speaker": "Steve Bang Lee",
+    "scripture": "Apocalipsis 9",
+    "summary": "[Prueba de desarrollo] Traducción y voz reales de las frases 101–116 del sermón del 2026-10-11, solo para la prueba de extremo a extremo en Dev."
+   }
   }
  }
 }

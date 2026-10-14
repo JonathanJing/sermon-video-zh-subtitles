@@ -104,6 +104,9 @@ def load_spec(path: Path) -> dict:
     for field, table in (("policyTemplates", layer2), ("plugins", layer2), ("attestationTemplates", layer3)):
         require(isinstance(table.get(field), dict) and set(locales) <= set(table[field]), f"{field} missing a locale")
         table[field] = {k: resolve(v) for k, v in table[field].items() if k in locales}
+    layer2.setdefault("backend", "openai_api")
+    require(layer2["backend"] in ("openai_api", "claude_cli_opus"),
+            "layer2.backend must be openai_api or claude_cli_opus (Opus 5.5 through the subscription Claude CLI)")
     require(isinstance(layer3.get("speakerRegistry"), str), "layer3.speakerRegistry required")
     layer3["speakerRegistry"] = resolve(layer3["speakerRegistry"])
     layer3.setdefault("maxEndLagSeconds", 120.0)
@@ -296,7 +299,8 @@ def stage_inputs(run: Run):
     run.mark("inputs", "done", units=len(anchor["sourceUnits"]), inputs=str(inputs), clipSpecSha256=clip_sha)
 
 
-def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str) -> dict:
+def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str,
+                       backend: str = "openai_api") -> dict:
     """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
     from scripts import target_language_policy as tp
     rows = anchor["sourceUnits"]
@@ -329,6 +333,10 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
                    excludedScannerPhrases=[p for p in receipt.get("excludedScannerPhrases", [])
                                            if (p if isinstance(p, str) else p.get("source")) in exclusions],
                    reviewedBy=reviewed_by, reviewedAt=now(), userStatement=statement)
+    if backend != "openai_api":
+        # The run's Layer 2 backend is frozen into the policy hash (claude_cli_opus: PR #430).
+        require(hasattr(tp, "apply_layer2_backend"), "layer2.backend claude_cli_opus needs the Claude CLI backend (PR #430)")
+        draft = tp.apply_layer2_backend(draft, backend)
     policy = tp.freeze_policy(draft, series_table=tp.SERIES_TABLE, language_review="draft")
     tp.validate_source_scope(policy, source, anchor)
     require(tp.validate_policy(policy, series_table=tp.SERIES_TABLE)["productionPolicyReady"], "clip policy not ready")
@@ -344,7 +352,7 @@ def stage_layer2_setup(run: Run):
         if not path.exists():
             write(path, freeze_clip_policy(Path(spec["layer2"]["policyTemplates"][locale]), source, anchor,
                                            reviewed_by=auth["defaultPass"] + "; targets carried from the source week's receipt",
-                                           statement=auth["evidence"]))
+                                           statement=auth["evidence"], backend=spec["layer2"]["backend"]))
     if not (l2 / "execution.json").exists():
         write(l2 / "inspection.json", {"schemaVersion": "sermon-canonical-package-inspection-config-v1",
                                        "source": "src/source.json", "anchor": "src/anchor.json",

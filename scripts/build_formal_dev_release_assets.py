@@ -45,9 +45,11 @@ def checked_metadata(path: Path, proposal: Path, page_id: str, date: str,
     expected_locales = set(locales or stage.LOCALES)
     version = metadata.get("schemaVersion")
     simulated = version == "sermon-dev-simulated-metadata-v1"
+    default_pass = version == "sermon-dev-test-metadata-default-pass-v1"
+    reviewer = "simulation-test-only" if simulated else "test-default-pass-not-human" if default_pass else "user"
     common = (metadata.get("pageId") == page_id
             and metadata.get("date") == date
-            and metadata.get("reviewer") == ("simulation-test-only" if simulated else "user")
+            and metadata.get("reviewer") == reviewer
             and metadata.get("proposalFileSha256") == stage.file_sha(proposal))
     if simulated:
         schema = json.loads((stage.ROOT / "schemas/sermon-dev-simulated-metadata-v1.schema.json").read_text())
@@ -60,6 +62,16 @@ def checked_metadata(path: Path, proposal: Path, page_id: str, date: str,
         require(all("[模拟审核测试]" in row["title"] and "simulation test only" in row["summary"]
                     for row in metadata["locales"].values()),
                 "Simulated metadata must visibly disclose its test scope")
+    elif default_pass:
+        # An isolated Dev test page's display texts under an explicit default-pass authorization:
+        # humanApproval is false and the record says so; it never stands for a person's approval.
+        schema = json.loads((stage.ROOT / "schemas/sermon-dev-test-metadata-default-pass-v1.schema.json").read_text())
+        Draft202012Validator(schema, format_checker=FormatChecker()).validate(metadata)
+        require(common and release_intent == metadata["releaseIntent"],
+                "Default-pass metadata requires the exact isolated Dev release intent")
+        require(set(metadata["approvedLocales"]) == expected_locales
+                and set(metadata["locales"]) == expected_locales,
+                "Default-pass metadata locale coverage differs")
     elif version == "sermon-formal-dev-metadata-approval-v1":
         require(common
                 and expected_locales == set(stage.LOCALES)
