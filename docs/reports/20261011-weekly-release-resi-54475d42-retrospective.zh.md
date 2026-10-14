@@ -639,7 +639,7 @@
 | 合并进 `dev` | 会话执行 `gh pr merge` 被权限分类器拒绝，改由用户在 2026-10-11 23:58 UTC 合并（merge commit 5d7bfcbb）；五个功能分支随后各合并一次 `dev`（不改写历史），PR 的 base 改为 `dev`，CI 启动 | PR #335 |
 | 一次性配置 | fetch refspec 已恢复为全部分支，`worktree prune` 已做；主 checkout 冻在 c344d5d8（detached） | `git config --get-all remote.origin.fetch` |
 | B ASR 规范化 | 完成，PR #342（草稿，base 已改为 `dev`）；实测 42 → 22、101 → 66，二级 ASR 条件触发复核后不做 | `tests/test_screen_transcript_folding.py` |
-| A 发布入口 | 完成，PR #343（草稿，base 已改为 `dev`）：外壳闭包从 24 个模块扩到 42 个文件并在 verify／seal 核对与代码库同哈希；浏览器冒烟 `scripts/smoke_published_page.py` 对线上本周页实跑：三语标题、字幕、全文正常，零 console error，`/api/session` 返回 400 `unknown_source`；`deploy_feedback.py --v4-sealed`／`--previous-runtime` 干跑得到 21 个反馈来源，其中 12 个是 v4（**9-27 以来四个 v4 周次都从未进过反馈目录**，不只本周）；旧版 9-14 听译 release 已过不了今天的校验器，所以保留线上目录改用 `--previous-runtime`。线上基线不需要新脚本：`baseline --environment production` 已具备，问题是没在发布前当场跑，runbook 已写死 | PR #343 |
+| A 发布入口 | 完成，PR #343（草稿，base 已改为 `dev`）：外壳闭包从 24 个模块扩到 42 个文件并在 verify／seal 核对与代码库同哈希；浏览器冒烟 `scripts/smoke_published_page.py` 对线上本周页实跑：三语标题、字幕、全文正常，零 console error，`/api/session` 返回 400 `unknown_source`；反馈目录（**更正**：线上函数 revision 00013 在 09-27 部署，已含 9-27 的 3 条音轨；缺的是 10-02 播客、10-04、10-11 三周共 9 条，不是此前写的四周 12 条）。仓库已有的 `build_language_listening_catalog.py` 就是生成工具，我新写的 `--v4-sealed` 与它重复且 `blockId` 约定不同，已删除；生成器对 v2 发布包的播客页误用原片时长，已修复（PR #343）。线上基线不需要新脚本：`baseline --environment production` 已具备，问题是没在发布前当场跑，runbook 已写死 | PR #343 |
 | C 冻结守卫／Spark | 完成，PR #344：两个 QC 驱动加 `--expected-implementation`（代码不符退出码 2，先于任何模型调用）；独占会话把 `job-reasoning-review.timer` 最先停、最后恢复；`scripts/spark_wait_ready.py` 对会自行消退的状态轮询等待；周预算规则写进 runbook。派发器仍在 `artifacts/` 下，未迁入 `scripts/` | PR #344 |
 | D 运行日志／决定／账本 | 完成，PR #345：`run_journal.py`（阶段事件 + 计算／等待／返工汇总）、`record_decision.py`（替代 `*.evidence.txt`，文件证据按哈希绑定）、账本每条已返回请求带 `settlement`（供应商 token 数 × 冻结费率，缺则 `unknown`），摘要收录 journal／decisions／各类收据并对 JSON 键也脱敏（本周漏出的内网 IP 就在键里）。驱动尚未自动调用 journal | PR #345 |
 | E 发布后抽样表 | 完成，PR #346：`build_listening_sample.py` 每语言列出机器标记的全部句子 + 随机 10 句（种子默认音频包哈希），带译文、冻结英文、单句音频路径与空白结论格；候选与每句文字哈希绑定；填完用 `record_decision.py` 记录 | PR #346 |
@@ -680,8 +680,33 @@
 2. **文字改动（text）。** 只对 `groupIds` 生成新候选修订：译者→复核→语言插件只跑受改组（`run()` 的 partial repair 已支持）；文字 QC 校准复用（校准绑定候选哈希，候选变了要重算——这是本周的真实开销，约 5 分钟／语言，可接受）；文字豁免重签。
 3. **读法改动（reading）。** 候选不变；新 speech job 修订只对受改单元换种子／指令，`--reuse-from` 上一 job 复用其余单元的 WAV（单元缓存已支持）；压缩、筛查只对受改单元重算；音频 QC 全量重跑（它便宜，且整轨核对要全轨）。
 4. **接受收据继承。** 新音频包里哈希未变的单元，其 `audio_qc_human_acceptance` 自动继承（接受收据按单元 audioSha256＋textSha256 绑定，已满足）；只有受改单元需要新的接受或通过校准。这一条需要给 `machine_audio_waiver_acceptance.build` 加「从旧收据继承未变单元」的入口，约 0.5 天。
-5. **Layer 4。** 以新包 prepare→HTTP 验证→seal→publish 一个新版本；默认周不变；`deploy_feedback.py --previous-runtime … --v4-sealed <新 sealed>` 同步反馈目录（新音轨 sha 是新的来源）；`smoke_published_page.py` 三语冒烟。
+5. **Layer 4。** 以新包 prepare→HTTP 验证→seal→publish 一个新版本；默认周不变；`build_language_listening_catalog.py` 重新生成反馈来源目录并重新部署反馈函数（新音轨 sha 是新的来源）；`smoke_published_page.py` 三语冒烟。
 6. **日志。** 全程 `run_journal.py`，决定进 `record_decision.py`。
 
 **预计一次 `fix`（reading，5 句）的机器时间：** TTS 5 句 < 1 分钟，压缩＋筛查 2 分钟，音频 QC 约 5 分钟，Layer 4 约 10 分钟，共约 20 分钟；人工只在第 4 步听 5 句。**真实耗时未测**：按第十四节 G 的要求先用现有路径手工走通 ko 5 句并计时，等用户决定是否修本周的 ko 后再做；在那之前不开发 `fix`。
 
+## 十八、实际花费（OpenAI 用量看板，2026-10-11 UTC）
+
+来源是操作者在聊天里提供的用量看板截图：按 line item 分组、按天汇总，范围 10-05 至 10-12。截图里看不到所选 Project。这是看板数字，不是发票，`invoiceVerified=false`；也进不了 `scripts/import_openai_costs.py`，它只收按 `project_id` 分组的原生 Costs API 分页。逐项数字和推算见 [`docs/evidence/2026-10-11-openai-spend/usage-dashboard.json`](../evidence/2026-10-11-openai-spend/usage-dashboard.json)。
+
+| 模型 | 本周用在 | 10-11 UTC（美元） |
+|---|---|---|
+| gpt-6_1-sol | Layer 2 翻译与复核；文字 QC 回译（`--text-backend api`） | 102.26 |
+| 　其中 缓存写入 / 输入 / 缓存读 / 输出 | | 41.99 / 14.31 / 0.28 / 45.68 |
+| gpt-6-astra | Layer 1 英文判定 | 24.47 |
+| gpt-transcribe | Layer 1 参考转写 | 1.33 |
+| **当天合计** | | **128.07** |
+| **看板范围合计（10-05 至 10-12）** | | **128.38** |
+
+「本周用在」按各环节调用的模型推定，不是逐请求计量。
+
+**与账本对账（零 API，只在账本副本上做）。** 把 Layer 1 的六份来源预算账本复制后用 `SourceBudget.migrate_to_v3()` 结算，原账本未动：
+
+- **Astra 对得上。** 284 次返回，估算 24.48 美元，看板 24.47 美元。冻结的最坏输入价 12.5 美元/百万正是 Astra 的缓存写入价，而看板把几乎全部输入记为缓存写入。预留共 99.53 美元，约为实际的 4 倍。
+- **转写超出预留。** 账本里 48 次转写的预留合计 0.65 美元，看板是 1.33 美元。结算只读 token 数，而转写回复的用量是 `{type: duration, seconds}`，所以这 48 行全部记为成本未知。多出的部分是同一天别处的调用，还是实际单价高于冻结假设，目前不能判定。
+- **Sol 的大头是 Layer 2。** 按仓库价格表（输入 2、缓存读 0.1、缓存写入 2.5、输出 10，美元/百万）反推，当天约 3,100 万 token，其中缓存写入约 1,680 万、输出约 457 万。Layer 2 预算目录里按回复 ID 去重后有 9,622 次回复、输入 1,942 万、输出 292 万 token，按最坏价约 77.81 美元，占 Sol 的四分之三；12 轮 Layer 2 作业平均每个翻译组约 7 次调用（461 组 × 3 语）。其余约 24 美元与文字 QC 的 API 后端相符。第十一节写的「Layer 2 220 次、50 万 token」严重低估。Sol 的冻结最坏输入价 2.5 等于其缓存写入价，所以最坏估算覆盖了缓存写入。
+
+**后续。**
+1. 转写的结算改为按 `usage.seconds` 计价，否则 Layer 1 转写永远是「成本未知」。
+2. Layer 2 的调用次数是主要成本：每组约 7 次来自多轮重做（r2 至 r12）。下周先看每轮重做的起因，再看单轮能否少调用；Layer 2 与文字 QC 的账本都要能直接给出 token 与估算费用。
+3. 每周把原生 Costs API 分页（按 `project_id` 分组）导出一次，走 `import_openai_costs.py`，让看板数字有可重放的证据，而不只是截图。

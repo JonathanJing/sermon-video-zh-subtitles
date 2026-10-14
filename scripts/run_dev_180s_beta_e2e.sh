@@ -15,7 +15,13 @@
 # needs no new build. --with-beta is only for clients that must read catalog v4
 # (machine-checked locales).
 # Optional env: TONGXING_EXPORT_OPTIONS (private ExportOptions.plist),
-#               DEVELOPER_DIR (full Xcode, default /Applications/Xcode.app).
+#               DEVELOPER_DIR (full Xcode, default /Applications/Xcode.app),
+#               CLIP_SPEC (a sermon-dev-clip-spec-v2 JSON (v1 still read): rehearse a clip cut from
+#                 a weekly run instead of the fixed 10/1 clip),
+#               BASELINE_CACHE (a verified Dev baseline directory with public/ and
+#                 baseline-receipt.json, e.g. the previous run's baseline; files whose
+#                 live hash still matches are reused, so large videos are not
+#                 re-downloaded — Dev's 09-27 full video breaks off at ~560 MB).
 set -euo pipefail
 
 EXECUTE=0
@@ -91,8 +97,18 @@ stage() {  # stage <name> <command...>
 
 # 0. Inputs that only exist on this Mac.
 [[ -x "$PY" ]] || { echo "Missing $PY"; exit 1; }
-SOURCE_VIDEO="$SOURCE_RUN/dev-candidate/hosting/public/media/dryrun-20261001-dev-full-180s/source.mp4"
-[[ -f "$SOURCE_VIDEO" ]] || { echo "Missing $SOURCE_VIDEO (10/1 rerun cache)"; exit 1; }
+if [[ -n "${CLIP_SPEC:-}" ]]; then
+  [[ -f "$CLIP_SPEC" ]] || { echo "Missing CLIP_SPEC $CLIP_SPEC"; exit 1; }
+  SOURCE_VIDEO="$OUT/inputs/clip/source.mp4"  # cut by build-inputs
+else
+  SOURCE_VIDEO="$SOURCE_RUN/dev-candidate/hosting/public/media/dryrun-20261001-dev-full-180s/source.mp4"
+  [[ -f "$SOURCE_VIDEO" ]] || { echo "Missing $SOURCE_VIDEO (10/1 rerun cache)"; exit 1; }
+fi
+BASELINE_ARGS=()
+if [[ -n "${BASELINE_CACHE:-}" ]]; then
+  [[ -f "$BASELINE_CACHE/baseline-receipt.json" && -d "$BASELINE_CACHE/public" ]] || { echo "BASELINE_CACHE needs public/ and baseline-receipt.json"; exit 1; }
+  BASELINE_ARGS=(--cache-public "$BASELINE_CACHE/public" --cache-receipt "$BASELINE_CACHE/baseline-receipt.json")
+fi
 [[ -d "$REPO/artifacts/unified-cli-acceptance/native-four-product-fixture-v2" ]] || { echo "Missing native four-product fixture"; exit 1; }
 # The recorded commit must be what builds and publishes the page (and the app).
 if [[ $EXECUTE -eq 1 || $WITH_BETA -eq 1 ]]; then
@@ -103,9 +119,13 @@ COMMIT="$(git rev-parse HEAD)"
 echo "Commit $COMMIT  run $RUN_ID  out $OUT"
 
 # 1. Page: fixed clip checks, simulated inputs, live Dev baseline, local preflight.
-stage verify-clip   "$PY" -m scripts.verify_dev_180s_page_test --source-run "$SOURCE_RUN" --out "$OUT/preflight"
-stage build-inputs  "$PY" scripts/build_dev_180s_simulated_inputs.py --run-id "$RUN_ID" --out "$OUT/inputs"
-stage baseline      "$PY" scripts/prepare_dev_simulated_publication.py baseline --out "$OUT/baseline"
+if [[ -n "${CLIP_SPEC:-}" ]]; then
+  stage build-inputs "$PY" scripts/build_dev_180s_simulated_inputs.py --clip-spec "$CLIP_SPEC" --run-id "$RUN_ID" --out "$OUT/inputs"
+else
+  stage verify-clip  "$PY" -m scripts.verify_dev_180s_page_test --source-run "$SOURCE_RUN" --out "$OUT/preflight"
+  stage build-inputs "$PY" scripts/build_dev_180s_simulated_inputs.py --run-id "$RUN_ID" --out "$OUT/inputs"
+fi
+stage baseline      "$PY" scripts/prepare_dev_simulated_publication.py baseline --out "$OUT/baseline" ${BASELINE_ARGS[@]+"${BASELINE_ARGS[@]}"}
 DELIVERY=("$PY" scripts/run_dev_simulated_delivery.py --baseline "$OUT/baseline"
           --prepared "$OUT/inputs/work/prepared" --out "$OUT/workflow" --source-video "$SOURCE_VIDEO")
 stage delivery-preflight "${DELIVERY[@]}"

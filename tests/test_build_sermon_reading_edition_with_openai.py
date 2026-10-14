@@ -420,7 +420,7 @@ class ReadingEditionTest(unittest.TestCase):
             }
         ]
         openai_result = {
-            "model": "gpt-5.6-sol",
+            "model": "gpt-6.1-sol",
             "choices": [{"message": {"content": '{"blocks":[{"id":0,"zh":"恩典在此与我们相遇。"}]}'}}],
         }
         codex_result = {"blocks": [{"id": 0, "zh": "恩典就在这里与我们相遇。"}]}
@@ -437,7 +437,7 @@ class ReadingEditionTest(unittest.TestCase):
                     blocks,
                     0,
                     root,
-                    model="gpt-5.6-sol",
+                    model="gpt-6.1-sol",
                     reasoning_effort="high",
                     qa_pass=False,
                     provider="openai",
@@ -454,7 +454,7 @@ class ReadingEditionTest(unittest.TestCase):
                     blocks,
                     0,
                     root,
-                    model="gpt-5.6-sol",
+                    model="gpt-6.1-sol",
                     reasoning_effort="high",
                     qa_pass=False,
                     provider="codex",

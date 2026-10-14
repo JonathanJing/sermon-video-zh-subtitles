@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "sermon-target-language-speech-adapter-v1",
+  "targetLocale": "zh-Hans",
+  "adapterId": "qwen3_tts_sft",
+  "adapterVersion": "v1",
+  "provider": "Qwen",
+  "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+  "modelRevision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+  "voice": "steve_bang_lee",
+  "speakerId": "steve_bang_lee",
+  "speakerKey": "steve_bang_lee",
+  "conditioningRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/steve_bang_lee/b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9",
+  "conditioningSha256": "b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9",
+  "registryJsonSha256": "4cee129c4aa11df27e1a0ba4c0ba2d50f46e02cc9772679e7769521e857436f6",
+  "authorizationPurpose": "chinese_dubbing",
+  "authorizationEvidenceSha256": "06c475271c1bf34f82434e9c65e9bf69f6d4998686625bb6546c1fa3c49d9a0c",
+  "capabilityEvidenceSha256": "c335c3ce9b9099faac26244c0e82d82c5448995ee686a258a868abbf09cdf27d",
+  "languageParameter": "Chinese",
+  "capabilityStatus": "verified",
+  "normalizationPolicySha256": "41ef8fbdfad055c8305b57a5132a0fc790ee62e834334cf8ba1dfe3bcea72d07",
+  "asrScreeningPolicySha256": "da8977e42db8e068bd723b6c864cc08c3f401a18c930b50e5112879b5a54e0ea",
+  "subtitlePolicySha256": "3ecbfde57ad5a7706bf748b9fe814fe7640f41b653edd6164f92a5939f77fc33"
+}

@@ -249,7 +249,7 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
     elif kind == 'budget_authorization':
         version = value.get('schemaVersion')
         require(version in {'sermon-source-budget-authorization-v1', 'sermon-canonical-layer2-budget-authorization-v1',
-                            'sermon-canonical-layer2-budget-authorization-v2',
+                            'sermon-canonical-layer2-budget-authorization-v2', 'sermon-canonical-layer2-budget-authorization-v3',
                             'sermon-study-budget-authorization-v1'}, 'budget_schema_invalid')
         binding = value.get('binding', value)
         require(binding.get('productionRunId') == manifest['productionRunId'], 'budget_run_changed')
@@ -277,8 +277,12 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
         else:
             from scripts import canonical_layer2_budget as layer2_budget
             from scripts import canonical_layer2_controller as controller
-            scoped = version == 'sermon-canonical-layer2-budget-authorization-v2'
-            optional = {'ledgerScope'} if scoped else set()
+            runtime_bound = version == layer2_budget.RUNTIME_SCHEMA
+            scoped = version == layer2_budget.LOCALE_SCHEMA or (runtime_bound and value.get('ledgerScope') == 'locale')
+            optional = {'ledgerScope', 'runtimeIdentity'} if runtime_bound else {'ledgerScope'} if scoped else set()
+            if runtime_bound:
+                layer2_budget.validate_runtime_identity(value['runtimeIdentity'])
+                require(value.get('ledgerScope') in ('run', 'locale'), 'budget_schema_invalid')
             require(set(value) == {'schemaVersion','productionRunId','configurationSha256','codeIdentitySha256',
                                    'requestLimits','authority','approvalReceipt'} | optional
                     and (not scoped or value['ledgerScope'] == 'locale'), 'budget_schema_invalid')
@@ -289,24 +293,26 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
                                               'requestLimits','globalBounds','unitBounds','limits'} | optional
                     and (not scoped or expected_binding['ledgerScope'] == 'locale')
                     and all(expected_binding[k] == value[k] for k in ('productionRunId','configurationSha256','codeIdentitySha256'))
+                    and (not runtime_bound or expected_binding['runtimeIdentity'] == value['runtimeIdentity'])
+                    and (not runtime_bound or expected_binding['ledgerScope'] == value['ledgerScope'])
                     and expected_binding['requestLimits'] == limits
                     and all(expected_binding[k] == authority[k] for k in ('globalBounds','unitBounds','limits')), 'budget_approval_binding_changed')
             expected_code = controller.code_identity()
         locale_count = 1
-        if version == 'sermon-canonical-layer2-budget-authorization-v2':
+        if version in {'sermon-canonical-layer2-budget-authorization-v2', 'sermon-canonical-layer2-budget-authorization-v3'}:
             # The slot resolves this path from a verified recipe input. Count
             # the authorization's bound controller lanes, which may differ
             # from the locales handled by the whole unified manifest.
             require('configuration' in inputs, 'budget_configuration_required')
             configuration = controller.load_configuration(inputs['configuration'])
             layer2_budget.load_authorization(configuration, actual['path'], expected_code, actual['sha256'])
-            locale_count = len(configuration.lanes)
+            locale_count = len(configuration.lanes) if scoped else 1
         require(re.fullmatch('[a-f0-9]{64}', str(binding.get(
                     'executionSha256' if version == 'sermon-study-budget-authorization-v1' else 'configurationSha256','')))
                 and binding.get('codeIdentitySha256') == expected_code
                 and value['authority']['globalBounds']['costMicrousd'] * locale_count <= manifest['budget']['limitMicroUsd'], 'budget_execution_binding_changed')
         # Layer 2 v1 and v2 share one approval schema; the scope lives in the binding.
-        approval_schema = ('sermon-canonical-layer2-budget-approval-v1' if version.startswith('sermon-canonical-layer2-')
+        approval_schema = ('sermon-canonical-layer2-budget-approval-v2' if version == 'sermon-canonical-layer2-budget-authorization-v3' else 'sermon-canonical-layer2-budget-approval-v1' if version.startswith('sermon-canonical-layer2-')
                            else version.replace('authorization','approval'))
         require(approved.get('schemaVersion') == approval_schema
                 and approved.get('binding') == expected_binding

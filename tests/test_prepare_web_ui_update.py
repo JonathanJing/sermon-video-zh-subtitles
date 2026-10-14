@@ -104,6 +104,23 @@ def test_modified_hosting_config_rejected_before_output(tmp_path):
     assert not out.exists()
 
 
+def test_dev_overlay_replaces_changed_strings_with_their_ui(tmp_path, monkeypatch):
+    base = baseline(tmp_path, 'dev')
+    (base / 'public' / 'locales-interface.mjs').write_text('old strings')
+    _, source = committed_ui(tmp_path, monkeypatch)
+    (base / 'public' / 'locales-ko.mjs').write_bytes((source / 'locales-ko.mjs').read_bytes())
+    (base / 'seal-report.json').unlink()
+    staging.write(base / 'seal-report.json', {'catalogSha256': staging.digest(base / 'public/multilingual-v3.json'),
+                                            'files': staging.files_report(base / 'public')})
+    out = tmp_path / 'candidate'
+    ui.prepare(base, out, environment='dev')
+    plan = staging.read(out / 'ui-update-plan.json')
+    assert '/locales-interface.mjs' in plan['changedPaths']
+    assert '/locales-ko.mjs' not in plan['changedPaths'], 'unchanged dependencies stay byte-identical'
+    assert (out / 'public/locales-interface.mjs').read_bytes() == (source / 'locales-interface.mjs').read_bytes()
+    assert (out / 'public/old.mp3').read_bytes() == (base / 'public/old.mp3').read_bytes()
+
+
 @pytest.mark.parametrize('environment,requested', [('dev', 'production'), ('production', 'dev')])
 def test_cross_environment_baseline_rejected_before_output(tmp_path, environment, requested):
     base = baseline(tmp_path, environment)

@@ -1,0 +1,724 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261012-clip-real-model-ko",
+  "runs": [
+    {
+      "label": "textqc-out",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/dev-real/textqc-out",
+      "skipped": {
+        ".lock": 1,
+        ".json": 12
+      }
+    },
+    {
+      "label": "ko-real",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/dev-real/ko-real",
+      "skipped": {
+        ".lock": 13,
+        ".json": 269,
+        ".py": 1,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": "ko-real-r2",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/dev-real/ko-real-r2",
+      "skipped": {
+        ".lock": 17,
+        ".json": 287,
+        ".py": 2,
+        ".jsonl": 2,
+        ".csv": 6
+      }
+    },
+    {
+      "label": "ko-textqc",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/dev-real/ko-textqc",
+      "skipped": {
+        ".lock": 55,
+        ".json": 163,
+        ".jsonl": 52,
+        ".txt": 52
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "textqc-out",
+      "path": "es/preflight.json",
+      "kind": "whole",
+      "bytes": 1506,
+      "truncated": false,
+      "sha256": "a03e43183509f6bf919debc497cf794f8957d9974e29db6fe7923fb1d760454d",
+      "redactions": {}
+    },
+    {
+      "run": "textqc-out",
+      "path": "ko/preflight.json",
+      "kind": "whole",
+      "bytes": 1506,
+      "truncated": false,
+      "sha256": "40d91061655155c5430936ff9de2db344a9545df822b1ba7a673701d2a9c408e",
+      "redactions": {}
+    },
+    {
+      "run": "textqc-out",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 9566,
+      "truncated": false,
+      "sha256": "3823c77e8c18515f9bd4dc0ef52c315eaf42bc681f54f3752d1c186425a623ca",
+      "redactions": {}
+    },
+    {
+      "run": "textqc-out",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 466,
+      "truncated": false,
+      "sha256": "e6847c0e79ddac08f528e3dc2e7ec5959ab735405ef0a7e8ff95d41ed0934c1f",
+      "redactions": {}
+    },
+    {
+      "run": "textqc-out",
+      "path": "zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 1540,
+      "truncated": false,
+      "sha256": "9c378721429753477335ab195c6c3d2178c7ac23566be8d6baff730ecb9ae953",
+      "redactions": {}
+    },
+    {
+      "run": "ko-real",
+      "path": "layer2-jobs/2b25117f0760f6c01c9c0caee53e375e5f2c069cf153c7d44709e006cb7cff9b/worker.log",
+      "kind": "log",
+      "bytes": 8871,
+      "truncated": false,
+      "sha256": "d26fc06c26d7971cac8fde220e78e8ef8d55963dd2cd2f7e4b7303efc2e41df0",
+      "redactions": {
+        "secret_field": 1,
+        "email": 3
+      }
+    },
+    {
+      "run": "ko-real",
+      "path": "text/ko/accounting/operations.log",
+      "kind": "log",
+      "bytes": 151621,
+      "truncated": true,
+      "sha256": "74c74546333cc3a86b263d49fe2d8d3e67c695f2d4dfb2089d51e84b00ae5766",
+      "redactions": {}
+    },
+    {
+      "run": "ko-real",
+      "path": "text/ko/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 405634,
+      "truncated": false,
+      "sha256": "ea9a1fdfae06c0d756923327bdd20612b7eee645079afbe7e028a692f9da14c9",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "ko-real-r2",
+      "path": "layer2-jobs/8c85663952370f137c17583f7476c7a1e6839d50e9ae4b5d98337824055cc164/worker.log",
+      "kind": "log",
+      "bytes": 2268,
+      "truncated": false,
+      "sha256": "ef5729203d76465a2119801c7358b4415eb14ad72acbbd0975470a174cd5e039",
+      "redactions": {
+        "secret_field": 1
+      }
+    },
+    {
+      "run": "ko-real-r2",
+      "path": "layer2-jobs-r3/15db12695ad6f1745922a45a5d26f73450b41129adfdeb101d5e67c2b0af5df4/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "4e10ea3c8159ede23c3ba08918dabe0cc1e7a9b9eb67b7ed9cd2f255069828b5",
+      "redactions": {}
+    },
+    {
+      "run": "ko-real-r2",
+      "path": "text/ko/accounting/operations.log",
+      "kind": "log",
+      "bytes": 2377,
+      "truncated": false,
+      "sha256": "05a6a2c4a8300eb5b107ce0cdd5442ddc57fb8bc02c385e2845c4540dc9a2b03",
+      "redactions": {}
+    },
+    {
+      "run": "ko-real-r2",
+      "path": "text/ko/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 19462,
+      "truncated": false,
+      "sha256": "cbb19429dc605912160b9fb1a15a2bdadb8884c8a4ae4585d8d9490b7a14811b",
+      "redactions": {}
+    },
+    {
+      "run": "ko-real-r2",
+      "path": "text-r3/ko/accounting/operations.log",
+      "kind": "log",
+      "bytes": 156100,
+      "truncated": true,
+      "sha256": "7487241d05c0b78692c81f3373c510b3b127a49bcc845a10b12a2d68ac51c381",
+      "redactions": {}
+    },
+    {
+      "run": "ko-real-r2",
+      "path": "text-r3/ko/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 409540,
+      "truncated": false,
+      "sha256": "47fe80db7ba76676f77d03e9cc4c3994d83dbada49b5ff22481c8578483c6c13",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "ko-real-r2",
+      "path": "text-r3/ko/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1462,
+      "truncated": false,
+      "sha256": "d56e541e1f3c4213b0168d9d26787ffb60303568adb445d8f74f0a73cd6d7e06",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "out/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 1513,
+      "truncated": false,
+      "sha256": "3a16489f6d07858fb8d10d4e2896676d1e2e1ff415ee276788870993cd24d0e4",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "out/summary.json",
+      "kind": "whole",
+      "bytes": 2513,
+      "truncated": false,
+      "sha256": "00bf7067ba3a6c21e8baf769c2597f613a9d275f3d8d41d46a6e434e17122bd8",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "out/timings.tsv",
+      "kind": "whole",
+      "bytes": 89,
+      "truncated": false,
+      "sha256": "ad7dc4b64c41bdd04c8d79515214669b612a96bffecda70b5d3b141db432989f",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "preflight/ko/preflight.json",
+      "kind": "whole",
+      "bytes": 1513,
+      "truncated": false,
+      "sha256": "3a16489f6d07858fb8d10d4e2896676d1e2e1ff415ee276788870993cd24d0e4",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "preflight/summary.json",
+      "kind": "whole",
+      "bytes": 2008,
+      "truncated": false,
+      "sha256": "5dc3c0f26bdd3b83db46eeaa02764710450df4213e6b08b562028f46480f789a",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "preflight/timings.tsv",
+      "kind": "whole",
+      "bytes": 39,
+      "truncated": false,
+      "sha256": "447eed9358982b787391fcb580d67eee92bcd9c95c9c32664ef25417527af9f9",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 600,
+      "truncated": false,
+      "sha256": "2d3e3e857e0599a79bb28c6496f9b4b80a0f1938d9e432d55a2ab1a91da394f8",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/06df0bbeb2c0c8159ff12f92a7b49fdb7be2f7bee37af599bfadcd3614287241/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "f89708678b60416a75ee95337d29eca9b0abb8685e7441f3c9469742e342d4fd",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/106d99db5b55ed445c9af21a08ebc76c62b62bb8fd6bc8c084272d26ee05c9ee/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "9c5969eb6c033c5c1be6aa0b66042e3eec4cd5c8ccfd76d6d9a10c08bc91647a",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/1a1ad64715bcb96fc0fd12e4816dc585bdf9a3726bdb5a26f13a499abb557785/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "7e2f6fdb0fc1ed37dec790db5a7e988e3a584d6a8e5a7b8900d89380a17605dd",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/1ab145bad0f13bb23309b23d5145bfce525fc47500e7ef2bdb9ff1320c92adbb/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "36ea3b89be8bd349aaaa8af8809ef3ff756f693f797a33ad13040fa26b333991",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/1b40c235a5d279be94f61d63e203b540a0b1d16f0e122c3896de93bf88a2ea3d/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "0e0a7374d9f2eabc58852b5231d1ab926a9933cc9daa822746d0105f83e62666",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/23297ee120f89fba34dac66026a69093d497dd4c1d83c2448c63dca8bf4e54a6/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "d086f4410441224a9733bb40bdfb83a6c7db57fdff6a6df65f51cb538d0e5bfd",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/35e56a8c00c08d7abb47043ed4305c27183bc627135a56820533e29b7baaf071/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "97de0d116425ca5981ecfb39904898925470131e71ca6342869f632eca5ad7cf",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/3e399066e89227db5dc5b7ed5226f7c0347e167a5ca1d90d1cc193a928e99945/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "85233c3cd03b6a7f2f7786dcadecbdafcaf6246d1d51fb855230a4231fdfebd5",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/3f80dca5487e0858d1b5904aa0b72b6df5df363b2e5ded64d249ccb84047796d/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "c3228616177d47033d30e32b6f5295430ac48d9fa8b7ad2f6d12fc831f710398",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/4047a7a640054cf2c79eb7086f0c1254c03bcb461ebe9ac6d9a40d472d9d6ecd/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "7ae7cb4a95f556ea55b9585062eda3243e554f81e1ea9baeb8570e5529ab7bf0",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/42c6b7b1e3931464360fe777851a6d15bd42419cf14ef4ea5c5655928fa14a73/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "7d5e979c238b65ba30705104cb88fed8507e8ff35e27a1e7272b79f28ca7c3a0",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/47a8278d2891ad585833f6103768695ac9ffd10c2005d8f5e9eddd8df6e5e159/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "cc91a444fc505fe4a379098629f80f252dbbddc83707e63c991a92c965d2a35e",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/5946692e2a248b143bd00ccc2a749da65840a2098ac21b009546125000927c73/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "ab2980f953de5db157f17d34ef77d5875b8ba190493f5801bda28e926826a507",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/5c5a676c98a9f7f490d2cd6871ad6655f7c2643716996a3402a10bec5ff887c3/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "1ef44087b4eb1db2fd786070a5aee1aedf1cf0e3aac7716a5251e7e75f1223c3",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/60c40089fe2a986f631d06c78ce85155a5e4feb23ed148dd4149a61a6e9846e1/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "eee28caff7098a2bd29a8d65536ea87234d67767046b5c981ca19ecc2f349fd0",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/63be9aac8885f9f2da76df1e0b72d96e73aa803afd7abe4aa2c58e42800f3050/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "556f562b6f52488ffe905703cc82b2da45aa79fa5ab52d4325acd10a7f6e8ac7",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/71a4f60c3c121783570c2b2a4f25ad96377252d2f48b8dae934fd467da484981/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "48b851b176d60943d27e830c4176052ba5bfba0c8d35a19e66df4fd4a8181efd",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/781009848b8c6dc21fa9b91e8a13a0258dae34bc5da43e5c5dd38a5eb108d1b8/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "c71eb0f1168dbeea4ed9d22ccbc220dc874012067e2077c7a2a948c2c3f88152",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/82ee7e91b5511e3e07027ba127c09c095ea4385841de7a84deacd6c22a870b82/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "649f173548cdb3110f7d95be6852457ea32c78fa5468932f54608aea01cefa03",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/89b1a591d4e435bbf08769b1b7d8e3f09032a7b0fb300d0e0228b0fa8cfecae2/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "c0daba119674c1d1fa043ef9378abdfb381bfe06634c94a5e2f3d69a4cb9590c",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/8b13fcc69f731030ef16ef36ee07e797d41a249928c35e35a85d76f2a0827a78/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "96b001e0f6f530d050052203cf00ada6cad0a0a196e656a70fef6653f4ec867c",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/8b545b9ee01064dedb3a348329c19f30def7a4e4ea73b8138561f6286e979f15/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "9d2509e203d7bde2172653107e22e3608fa4b97b9e57b2726fe9867b840a4e0b",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/8cd0bc5a8fce58cbf4630c1a4e18aafb69be89ffcca2fb0334eae3f42e1de1ee/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "7e5fc7afb7e3a49869868b6481edab6bed4ea36b07df00e55ba7cdd904e42e21",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/8d5fe153835ec2910ed3e04aedac00079e8e1175daa342d593e2de62146fc3ae/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "e58646ed293f21a42cdea8388a017a59966bf09f4e822ec5e90382c2e19ac815",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/91253c8ceddde702bc619a142742093ec65ccff113f1c143102c86988ac90cde/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "d5d23bdfb8f51f84236249af6ce968ee67d9b759bd6be3b78457cd90d818b039",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/93fe85244bb46ad6e2ebbb4c0157e7d5f55402d01dc569c25d5fd93ea3c975aa/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "8192b90eeea00b087edb4fe6e4b7fd0fe405167e77b333167614151d0516f723",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/949cc298a422c085279d840d966bebb42d32e13ff405840145b6c42fc9cdbbe0/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "28d8b8fb300aa2c89257a08d0052a225816501407f0dec785d720056a91692fa",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/99001c25a533976dda573e7e40c8ffb584d67527e89c87a77a7afc89484d0f22/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "7df51ab614a515c9bbd12c27a083cc8d4cccd03922aed3cba5672b460e7bd787",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/99d6a913f42cc8d76f50947b44148bd4baf2573d46dcbf5e907e565c002970da/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "add861788b6b5c0ff2e21e2d8085eb204d0c7ab6b7d07a6ca1715109f2ed3aac",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/9c1898db9ab1ccb2477b61e20c351839e19dfc57a1eaa8089bb92364e69ef2c8/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "c94f38086bde52a0b76f75f3c1bd3c5f553afe618d12dde386a3607eb361adf1",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/a549e81054b96750829958918816faed3528759976ed3c950e1f23311ae37981/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "4c168f672b1adf0d88424ee6eb32dad67fe7ccc4c30a09c596ea8c74ee557922",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/b0ef9faa11fee822e8cd5473e6e021023c5c4bd8436ddc9771185a23f80233f4/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "37994830af5d54211b997568ad98aa212c2372cd23971e66beb8542739e80edd",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/b295f9d11c6668a806d50fc0365b4fdafe00aed8f0078be0085c274137a5789c/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "9fc3de874b60a7d41a8a703d96e225443b543aff02fe41dedeb3d29651ad6e38",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/b57f89c13b6372307fccbf6defc3151481b2739e9dfd64c9c9a11104157987df/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "e7b591d2514432ad89043fc4d8c656f845b14b6d37885125eb3f9acee34b417b",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/b8319d49aae3d27ae4324ff0fa9cd230c170a47a226d35d897ed6e9bae5151cf/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "054fb4ac1c815d7123c34768087d1ff77df41f4abe62baa01b43b0a14fba4c5b",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/ba7057150e5acd50e9a680c1f1808f0e538c7637831860d086b2a56a80676645/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "27239e857600d5ed284dac4c6b738676678d57834ce3905042373812b1219c4c",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/be090587f6d066924ad6fbf753788140cad0cbc256a404410265dba766047e3a/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "779611bbdc80a769d8eddd18d63b88f0dd904c9434fb4829b7e984188a625711",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/c5ab6fc93ead363d994a28d01758b05e680ea077757433de804a5ebc9eb7b629/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "9904d5ed1b69baf2b6a11de87f900f479345663a5549c6505aa3c31c9d4eeeb7",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/cc36b23e14fd7984526ebe6ce938162e334a133eb184492c749c3cfe93404d66/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "f53b6f6ab07944d7ffdbf380c8caf06630ea7c713a48365cae216938e5315f1f",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/ce2a18ae01fd43f8979e38a8d7d6cf809993ae2a3e2e572c5296b82102172f71/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "440645634bde785c2cb50ca3c55bbe39952d5a72be5db2c131b81a9fc18d74e4",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/d129588a58468f09b738725933d34336a49bdcd6eb8efa0012a248746e634eec/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "93fcaa2489d0e4b35c89d20d63d40f0f0b6238311da5e9fa61a2e4bdf6cb1260",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/d72b6f635b77d4b2569cef9260f6915d0162e1edf1a21e168a541ab1a0f27c07/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "a97eac225702193ba5bf40291749fdc4260f71f282a068670f5d69a25485dd8f",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/d881e45779ddfce6abcfbcb3edc735ce57ad1c4c89568e83f8171d7ea5cc4ddf/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "36ae54566130d1e95367c8c4c0192a6c92824588313147e2f3b5b9fab7ee2ad5",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/db7f5e56a0deab5b3ee1e476c78884fa7b0c17d4ecc634cd6698596bc3b1cf83/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "71cefa091df045d3315b497725d054e38924350f0f95dd38b634083cf05b2747",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/dfb35b04bfc902093c9b736b46b7403526ebc31d0941d01765c89b16c09d1949/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "45b368126e947f1b21c6eb2f41f5fe81c6beaf9a7473f209c5340bd289e288bd",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/dfc7ba9d124cca00569dd3cdd63dad543dfde1260feed922a16f3c0376d7317c/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "d5b8e757d51484a8f2c079ba02daee353542e302cbb54390a3a51d06bf5a510d",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/e15f9640b9fb77d9c7384d60d397469b914bce176cbf017c180a77f16d0625f4/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "85a1ca00ef7ec2b92dec13968b799243b5564fb9008255214edf545dc38e5554",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/e2bbf820b0e859d1a97b3be39d935a220b807963c92d28aba59053969252fd51/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "ca110388b7b71a797726f0d56c32fe24b4dad31bd1eb9cc62f0dd5f347952209",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/e6ee65a875c87fbcfae1023bb146cf8cd1d5eadf3027ad7e7a303b9c7202496f/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "08b9f7f3cdc50c697fb0c023f244c4de0429b33ca808b63e69cbcdd020a57744",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/ee9f0b5242873a2bc2da2fd6f11542101eb727e15b0560ae8a671f4d13403f5e/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "dc94178537158b57e24c1de4d5c26dc339b93485ca9220e2e61cc78174e1447e",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/f3fe1ed07b2c44599a91cdb64a0f3d82cf9dc9e5acb39738c3ec843fa167bba9/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "33cd3f30db326adf436cc545711cf646bab08e5914a607477998dae18b1cb47e",
+      "redactions": {}
+    },
+    {
+      "run": "ko-textqc",
+      "path": "state/codex-calls/f401534683c240161694594c25d15f4cfea25f061d0322e1ff67d1c75aa8d79e/outcome.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "5312cd465708a1723467f736b7eb7cfc7871498b37122ccf0b5cfe28c1acabbc",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

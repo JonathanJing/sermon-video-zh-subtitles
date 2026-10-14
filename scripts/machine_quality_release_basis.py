@@ -373,13 +373,16 @@ def screening_queue(package: dict, screening: dict) -> list[str]:
 def screening_score_problems(screening: dict, candidate: dict) -> list[str]:
     """Rescore each ASR result against the candidate text, as the screener does."""
     # Lazy, as in _asr_threshold: the screener imports the speech-job module.
-    from scripts.screen_target_language_audio_units import KNOWN_SCORINGS, SCORING_V3, score
+    from scripts.screen_target_language_audio_units import KNOWN_SCORINGS, SCORING_V3, score, current_scoring_identity_problems
     locale = screening["targetLocale"]
     # A receipt is rescored by the scoring identity it recorded, so reading evidence from an
     # earlier run never applies newer folding; one without a recorded identity predates v4.
     scoring = (screening.get("asrSettings") or {}).get("scoring", SCORING_V3)
     if scoring not in KNOWN_SCORINGS:
         return ["screening was scored under an unknown scoring identity"]
+    implementation_problems = current_scoring_identity_problems(screening.get("asrSettings") or {})
+    if implementation_problems:
+        return implementation_problems
     groups = candidate.get("groups") or []
     if [group.get("translationGroupId") for group in groups] != [row["textGroupId"] for row in screening["results"]]:
         return ["screening results differ from the spoken candidate groups"]
@@ -494,7 +497,9 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     _require(audio_qc.get("status") == "pass" and not audio_qc.get("subtitleOnlyGroupIds")
              and all(row.get("status") == "pass" and row.get("nextAction") == "keep" for row in results),
              "Every unit must pass audio QC; subtitle-only units are not wired yet")
-    from scripts.target_audio_auto_qc import THRESHOLDS
+    from scripts.target_audio_auto_qc import THRESHOLDS, duration_binding_problems
+    binding_problems = duration_binding_problems(audio_qc, speech_job)
+    _require(not binding_problems, "; ".join(binding_problems))
     _require(audio_qc.get("thresholds") == THRESHOLDS,
              "Audio QC thresholds differ from the calibrated release thresholds")
     # The source-ratio check is only as good as the span the QC caller supplied.

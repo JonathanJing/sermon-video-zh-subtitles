@@ -579,7 +579,7 @@ def spoken_run(test: unittest.TestCase, root: Path, *, backend: str = "codex_cli
     spoken = json.loads(json.dumps(full))
     set_group_text(spoken, SPOKEN_INDEX, SPOKEN_TEXT)
     group = full["groups"][SPOKEN_INDEX]
-    record = {"schemaVersion": condensation.SCHEMA, "targetLocale": LOCALE, "humanApproval": False,
+    record = {"schemaVersion": condensation.LEGACY_SCHEMA, "targetLocale": LOCALE, "humanApproval": False,
               "fullCandidateJsonSha256": basis.json_sha256(full),
               "condenserIdentity": {"backend": backend, "model": "gpt-6.1-sol", "modelRevision": "1",
                                     "cacheNamespace": "spoken-condensation-v1", "settings": {"reasoningEffort": "high"}},
@@ -634,7 +634,7 @@ class SpokenModeTests(unittest.TestCase):
         row = self.real_row()
         self.assertEqual(row["status"], "text_waiver_issued", row.get("reason"))
         waiver = json.loads(Path(row["textWaiver"]).read_text(encoding="utf-8"))
-        self.assertEqual(Path(row["textWaiver"]).parent, self.root / "real" / LOCALE / "spoken")
+        self.assertEqual(Path(row["textWaiver"]).parent.resolve(), (self.root / "real" / LOCALE / "spoken").resolve())
         self.assertEqual(waiver["candidateJsonSha256"], basis.json_sha256(json.loads(
             (self.root / "spoken/spoken-candidate.json").read_text(encoding="utf-8"))))
         self.assertEqual(waiver["condensedGroupIds"], ["g006"])
