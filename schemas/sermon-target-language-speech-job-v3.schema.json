@@ -98,7 +98,10 @@
               "const": "machine_quality_waiver"
             },
             "schemaVersion": {
-              "const": "sermon-target-language-machine-text-waiver-v1"
+              "enum": [
+                "sermon-target-language-machine-text-waiver-v1",
+                "sermon-target-language-machine-text-waiver-v2"
+              ]
             },
             "path": {
               "type": "string",

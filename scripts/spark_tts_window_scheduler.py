@@ -12,6 +12,7 @@ class ParallelBatchEngine:
         self.submitted = []
         self.seed = seed
         self.frozen_check = frozen_check
+        self.last_window_seconds = None
         self.pool.start()
         self._fill()
 
@@ -39,6 +40,8 @@ class ParallelBatchEngine:
                     or "wave" not in value or type(value.get("sampleRate")) is not int
                     or value["sampleRate"] <= 0):
                 raise ValueError("TTS batch output identity/order or sample rate differs")
+        # The worker measured this window; the parent's wait here is not its time.
+        self.last_window_seconds = self.pool.generation_seconds(start)
         self.submitted.pop(0)
         self._fill()
         return values

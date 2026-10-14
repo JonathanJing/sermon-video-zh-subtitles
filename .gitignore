@@ -23,9 +23,14 @@ build/
 coverage/
 .pytest_cache/
 *.log
+# Agent-trial fixtures only: hand-built evidence, plus f09's copies of an already redacted, published run digest.
+# Run output never goes under these two directories.
+!config/agent-trials/failure-cases/*/evidence/*.log
+!config/agent-trials/preflight-plans/*/plan/*.log
 data/raw/
 data/benchmarks/**/work/
 data/benchmarks/**/recording.wav
+data/benchmarks/field-venue-fingerprint/20261011-mid-back.json
 artifacts/
 output/pdf/
 tmp/

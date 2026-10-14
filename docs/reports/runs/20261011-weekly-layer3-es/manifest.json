@@ -1,0 +1,477 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-weekly-layer3-es",
+  "runs": [
+    {
+      "label": "es",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-54475d42/es",
+      "skipped": {
+        ".json": 19885,
+        ".lock": 14,
+        ".jsonl": 7,
+        ".csv": 21,
+        ".sha256": 3244,
+        ".wav": 4306,
+        ".mp3": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "es",
+      "path": "attempts/a1-readonly-home/spark-output/render.log",
+      "kind": "log",
+      "bytes": 2324,
+      "truncated": false,
+      "sha256": "2df45ec92130f53ffdc3008a52972a94a7ce72dc2ff7432e764b574715431fa6",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "es",
+      "path": "attempts/a1-readonly-home/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 2447,
+      "truncated": false,
+      "sha256": "b600b6c02590df95416b51d69497e8b3607b808a7e28f6ee0e3a4ced3317ff9f",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "attempts/a1-readonly-home/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 19160,
+      "truncated": false,
+      "sha256": "e7ad7e72e7f41d9785b8f7821077eb27ad168281ef962f3d81b1bf15537b3b47",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "attempts/a2-home-perm/spark-output/render.log",
+      "kind": "log",
+      "bytes": 4652,
+      "truncated": false,
+      "sha256": "33a04ec8bf5a7a3282154d88dc5ea49fee6788719581162f463b03fa7c27bb34",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "es",
+      "path": "attempts/a2-home-perm/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 4910,
+      "truncated": false,
+      "sha256": "f98e0953f371919724b0e6d8d73a9e75942d0a7fe872da9b03706adc53674ed4",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "attempts/a2-home-perm/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 37176,
+      "truncated": false,
+      "sha256": "ca5e33e28c13502e4f2a73045969474eba6e684570ac9b4365f9b56004535f03",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "attempts/a3-anchor-gate/spark-output/render.log",
+      "kind": "log",
+      "bytes": 6501,
+      "truncated": false,
+      "sha256": "879ace7f489c7ded295e50ee9ac465322dc6ed22db2eab0b2976d34d39a1eb5e",
+      "redactions": {
+        "home_dir": 9
+      }
+    },
+    {
+      "run": "es",
+      "path": "attempts/a3-anchor-gate/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 8092,
+      "truncated": false,
+      "sha256": "499934ee464236721c133c847bfe691a90c27c75709aea8c1aa986fd92d07980",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "attempts/a3-anchor-gate/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 57636,
+      "truncated": false,
+      "sha256": "8f13996288446db9f44caa63e6cc1fa4adeb7e609ae12d6aa7312f60ad3025cc",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "attempts/a4-impl-hash/dispatch-a4.log",
+      "kind": "log",
+      "bytes": 351,
+      "truncated": false,
+      "sha256": "66a14ebfff24af17a59b82b02688c6fe66d0e3b0c96757f0572bb98957a530e8",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "es",
+      "path": "attempts/a4-impl-hash/spark-output/render.log",
+      "kind": "log",
+      "bytes": 9036,
+      "truncated": false,
+      "sha256": "d63b61f4055cd43157c6f35144788f2ae2de06d477cfeff8bf84874c52a317e9",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "es",
+      "path": "attempts/a4-impl-hash/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 11260,
+      "truncated": false,
+      "sha256": "6857680177d0798c07d68c1ee8628225db8a5045ce0f5a2341d2d9d5035d3954",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "attempts/a4-impl-hash/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 79048,
+      "truncated": false,
+      "sha256": "4a76918faa7b119376339a614830ecf923d071a1e9b94fc7036ac688042fc85c",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "attempts/a5-stale-remote-job/spark-output/render.log",
+      "kind": "log",
+      "bytes": 10548,
+      "truncated": false,
+      "sha256": "77097a8c8730370fccb13b3db3774519021916c0a42d55b5fecfb2aca2ffdc17",
+      "redactions": {
+        "home_dir": 11
+      }
+    },
+    {
+      "run": "es",
+      "path": "attempts/a5-stale-remote-job/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 13712,
+      "truncated": false,
+      "sha256": "f5be62d7737a307e3a93e8beb95f8755394a84f0cedb95fe1cce45853494f658",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "attempts/a5-stale-remote-job/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 97424,
+      "truncated": false,
+      "sha256": "d0c0491380a9c6a1cf021022e9aa47fe3393592dc954f2e02f39fbfba1472d96",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "attempts/a6-memguard/dispatch-v2.log",
+      "kind": "log",
+      "bytes": 351,
+      "truncated": false,
+      "sha256": "66a14ebfff24af17a59b82b02688c6fe66d0e3b0c96757f0572bb98957a530e8",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "es",
+      "path": "attempts/a6-memguard/spark-output/render.log",
+      "kind": "log",
+      "bytes": 10159,
+      "truncated": false,
+      "sha256": "395ae2e32c93869d2234b236000ed09f6629596548d1c0199ffe9fe43a3505c7",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "es",
+      "path": "attempts/a6-memguard/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 1553701,
+      "truncated": true,
+      "sha256": "fa3dac09751f4874d480f38ab20f5172022003d741560a0894ca6e62066bbfea",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "attempts/a6-memguard/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 3689898,
+      "truncated": false,
+      "sha256": "3fe5e9f36eed93d1ab570527cca27b9379d36dfa59ec616a405b3363c782c1ba",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "es",
+      "path": "compact-es-v2-c2.log",
+      "kind": "log",
+      "bytes": 52,
+      "truncated": false,
+      "sha256": "a523a7cd6dab666df2cc0c7df64f1eed5d5ff38f8f12d504cfe4cddebb4a586d",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "compact-es-v2-c3.log",
+      "kind": "log",
+      "bytes": 52,
+      "truncated": false,
+      "sha256": "a523a7cd6dab666df2cc0c7df64f1eed5d5ff38f8f12d504cfe4cddebb4a586d",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "compact-es-v2-c4.log",
+      "kind": "log",
+      "bytes": 52,
+      "truncated": false,
+      "sha256": "2a26a05dac6ea49e846a84af98dbd978065987cb0b664f007149cfe948cbea7a",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "compact-es-v2-c5.log",
+      "kind": "log",
+      "bytes": 52,
+      "truncated": false,
+      "sha256": "2a26a05dac6ea49e846a84af98dbd978065987cb0b664f007149cfe948cbea7a",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "dispatch-v3.log",
+      "kind": "log",
+      "bytes": 351,
+      "truncated": false,
+      "sha256": "66a14ebfff24af17a59b82b02688c6fe66d0e3b0c96757f0572bb98957a530e8",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "es",
+      "path": "layer3-start-speech-job-v2.log",
+      "kind": "log",
+      "bytes": 811,
+      "truncated": false,
+      "sha256": "399d83045b37bd7e89f14858a02299dc4a98c5d605764f9cfc223c2705c507dc",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "es",
+      "path": "layer3-start.log",
+      "kind": "log",
+      "bytes": 1306,
+      "truncated": false,
+      "sha256": "981ef5453956025d812fd66458ee4f6b6246a3a5b4e3d27062c915649e625d08",
+      "redactions": {
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "es",
+      "path": "package-c5.log",
+      "kind": "log",
+      "bytes": 3027,
+      "truncated": false,
+      "sha256": "7ebcc06fa52e231394cdc96225b7a09bd026c708f31eec3f8ca99affcabf4955",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "es",
+      "path": "screen-es-v2-c4.log",
+      "kind": "log",
+      "bytes": 55,
+      "truncated": false,
+      "sha256": "e76f6e92087c8b4c5624444fd75d23d67a122c085e95b8dc3c91ae4504863613",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "screen-es-v2-c5.log",
+      "kind": "log",
+      "bytes": 55,
+      "truncated": false,
+      "sha256": "e76f6e92087c8b4c5624444fd75d23d67a122c085e95b8dc3c91ae4504863613",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "spark-es-v2-c2/compact.log",
+      "kind": "log",
+      "bytes": 1288,
+      "truncated": false,
+      "sha256": "ddd75c53e1460c5b44f8f089963fe7c1edfc1aaf91d04c9f5e34160e17310ed1",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "es",
+      "path": "spark-es-v2-c3/compact.log",
+      "kind": "log",
+      "bytes": 1288,
+      "truncated": false,
+      "sha256": "ddd75c53e1460c5b44f8f089963fe7c1edfc1aaf91d04c9f5e34160e17310ed1",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "es",
+      "path": "spark-es-v2-c4/compact.log",
+      "kind": "log",
+      "bytes": 414,
+      "truncated": false,
+      "sha256": "509f27046c47707dfa8a73e7cf8b6c9cecbb2199989ad78ed41ed69881ec49de",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "es",
+      "path": "spark-es-v2-c4/screen-c4.log",
+      "kind": "log",
+      "bytes": 35639,
+      "truncated": true,
+      "sha256": "e15d47dbe1ad4dcd5bcfb64de815c2a92473309a6afeda6c0aca0664984311c9",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "spark-es-v2-c4/speech-job/asr-screening-receipt-c4.json",
+      "kind": "whole",
+      "bytes": 255384,
+      "truncated": false,
+      "sha256": "95f2e8a8eba02646e35878ae480a2fcec543214431e89e257d4f1795c14b2c6b",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "spark-es-v2-c5/compact.log",
+      "kind": "log",
+      "bytes": 414,
+      "truncated": false,
+      "sha256": "91ed2d68fb9b69e11d713af2fdd7162011e45e89c99bb0849c57f2f30cf1c186",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "es",
+      "path": "spark-es-v2-c5/screen-c5.log",
+      "kind": "log",
+      "bytes": 35639,
+      "truncated": true,
+      "sha256": "1ea235be67e46a053204e900a41ef09c01b8d7845210c2c8491b2aeb6d94f44b",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "spark-es-v2-c5/speech-job/asr-screening-receipt-c5.json",
+      "kind": "whole",
+      "bytes": 255384,
+      "truncated": false,
+      "sha256": "3a6a0fb7fd294539af0543c51cee80c23da90b878d6b6b4e2049504c8e7fb5e6",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "spark-output/compact.log",
+      "kind": "log",
+      "bytes": 414,
+      "truncated": false,
+      "sha256": "91ed2d68fb9b69e11d713af2fdd7162011e45e89c99bb0849c57f2f30cf1c186",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "es",
+      "path": "spark-output/render.log",
+      "kind": "log",
+      "bytes": 17077,
+      "truncated": false,
+      "sha256": "ce5d1d22918a754f32c99f7a60d21309f1aff0983f3fc0147e393bbe79e68921",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "es",
+      "path": "spark-output/screen-c4.log",
+      "kind": "log",
+      "bytes": 35639,
+      "truncated": true,
+      "sha256": "e15d47dbe1ad4dcd5bcfb64de815c2a92473309a6afeda6c0aca0664984311c9",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "spark-output/screen-c5.log",
+      "kind": "log",
+      "bytes": 35639,
+      "truncated": true,
+      "sha256": "1ea235be67e46a053204e900a41ef09c01b8d7845210c2c8491b2aeb6d94f44b",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 2952447,
+      "truncated": true,
+      "sha256": "92f1864856b4131b2e1e769c0d9663ac418a830c7c87f74e9592b253d0f8f39b",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 6958372,
+      "truncated": false,
+      "sha256": "6c51611886b8c5063cdd5e097ccae1ac7ee68b1e7fe6555956870141da199f5a",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "es",
+      "path": "spark-output/speech-job/asr-screening-receipt-c4.json",
+      "kind": "whole",
+      "bytes": 255384,
+      "truncated": false,
+      "sha256": "95f2e8a8eba02646e35878ae480a2fcec543214431e89e257d4f1795c14b2c6b",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "spark-output/speech-job/asr-screening-receipt-c5.json",
+      "kind": "whole",
+      "bytes": 255384,
+      "truncated": false,
+      "sha256": "3a6a0fb7fd294539af0543c51cee80c23da90b878d6b6b4e2049504c8e7fb5e6",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

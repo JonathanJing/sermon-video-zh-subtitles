@@ -17,7 +17,7 @@ export class LanguageListeningSession {
   }
   flush(snapshot) {
     if (this.stopped) return Promise.resolve();
-    if (snapshot && (this.endpoint === '/api/interface-usage' || snapshot.listenedSeconds > 0)) this.latest = structuredClone(snapshot);
+    if (snapshot && (this.endpoint === '/api/interface-usage' || snapshot.listenedSeconds > 0 || snapshot.attempts?.length > 0)) this.latest = structuredClone(snapshot);
     if (this.flight) return this.flight;
     this.flight = this.send().finally(() => { this.flight = null; });
     return this.flight;

@@ -34,6 +34,9 @@ from scripts import machine_repair_ledger as ledger
 
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_WAIVER_SCHEMA = "sermon-target-language-machine-text-waiver-v1"
+# v2 records a person's per-group acceptance of text QC findings (text_qc_human_acceptance).
+TEXT_WAIVER_SCHEMA_V2 = "sermon-target-language-machine-text-waiver-v2"
+TEXT_WAIVER_SCHEMAS = (TEXT_WAIVER_SCHEMA, TEXT_WAIVER_SCHEMA_V2)
 AUDIO_WAIVER_SCHEMA = "sermon-target-language-machine-audio-waiver-v2"
 LEGACY_AUDIO_WAIVER_SCHEMA = "sermon-target-language-machine-audio-waiver-v1"
 CONDENSATION_BINDING_SCHEMA = "sermon-spoken-condensation-binding-v2"
@@ -68,7 +71,7 @@ def _asr_threshold() -> float:
 
 
 def is_text_waiver(receipt: dict) -> bool:
-    return isinstance(receipt, dict) and receipt.get("schemaVersion") == TEXT_WAIVER_SCHEMA
+    return isinstance(receipt, dict) and receipt.get("schemaVersion") in TEXT_WAIVER_SCHEMAS
 
 
 def is_audio_waiver(receipt: dict) -> bool:
@@ -97,7 +100,10 @@ def calibration_summary(calibration: dict, locale: str, implementation: str, *,
                 + ([f"spoken.{kind}" for kind in waiver.SPOKEN_KINDS] if require_spoken else []))
     expected = [kind for kind in expected
                 if not waiver.calibration_kind_not_applicable(kind, calibration["kinds"][kind])]
-    rates = [calibration["kinds"][kind]["rate"] for kind in expected]
+    # The per-kind minimum applies from PER_KIND_MINIMUM_TRIALS, as calibration_problems
+    # gates it; smaller samples still count in the overall rate below.
+    gated = [kind for kind in expected if calibration["kinds"][kind]["trials"] >= waiver.PER_KIND_MINIMUM_TRIALS]
+    rates = [calibration["kinds"][kind]["rate"] for kind in (gated or expected)]
     # The admitted rate covers only the kinds this release needs, as admission does.
     trials = sum(calibration["kinds"][kind]["trials"] for kind in expected)
     detected = sum(calibration["kinds"][kind]["detected"] for kind in expected)
@@ -181,8 +187,12 @@ def condensation_problems(candidate: dict, condensed: list[str], binding: dict |
 
 def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict,
                       calibration: dict, *, repair_ledger: list[dict], condensation_binding: dict | None = None,
-                      implementation: str | None = None, created_at: str | None = None) -> dict:
+                      implementation: str | None = None, created_at: str | None = None,
+                      human_acceptance: dict | None = None) -> dict:
     """Issue a text waiver from final text QC; refuse anything not fully passing.
+
+    ``human_acceptance`` (text_qc_human_acceptance) lets a person accept the
+    exact text of failed groups; the waiver is then v2 and names them.
 
     A spoken candidate with groups condensed for dubbing needs the passing
     ``spoken_condensation`` binding of exactly those groups. Such a waiver
@@ -211,10 +221,15 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
     results = text_qc.get("results") or []
     _require([row.get("groupId") for row in results] == group_ids,
              "Text QC must cover every candidate group in order")
-    _require(text_qc.get("status") == "pass"
-             and all(row.get("status") == "pass" and row.get("nextAction") == "keep"
-                     and row.get("backTranslation") is not None for row in results),
-             "Every group must pass text QC, including back-translation")
+    accepted = set()
+    if human_acceptance is not None:
+        from scripts import text_qc_human_acceptance as acceptance_rules
+        accepted = acceptance_rules.check(human_acceptance, candidate=candidate, text_qc=text_qc)
+    _require((text_qc.get("status") == "pass" or accepted)
+             and all(row.get("backTranslation") is not None
+                     and ((row.get("status") == "pass" and row.get("nextAction") == "keep")
+                          or row.get("groupId") in accepted) for row in results),
+             "Every group must pass text QC, including back-translation, or be accepted by a person")
     english_units = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}
     # An omitted unit leaves no row to screen, so the groups must cover the
     # whole frozen source once, in order.
@@ -251,15 +266,19 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
     if condensed and (not full_sha or (calibration.get("inputs") or {}).get("candidateJsonSha256") != full_sha):
         inputs.append("calibration does not bind the condensation's full candidate; recalibrate")
     _require(not inputs, "Calibration does not cover this text: " + "; ".join(inputs))
+    # Only groups that failed this QC and were accepted are marked human_accepted.
+    accepted = {row["groupId"] for row in results if row["groupId"] in accepted and row.get("status") != "pass"}
     receipt = {
-        "schemaVersion": TEXT_WAIVER_SCHEMA, "reviewKind": REVIEW_KIND, "humanApproval": False,
+        "schemaVersion": TEXT_WAIVER_SCHEMA_V2 if accepted else TEXT_WAIVER_SCHEMA,
+        "reviewKind": REVIEW_KIND, "humanApproval": False,
         "decision": "machine_quality_waived", "targetLocale": locale,
         "englishSourcePackageJsonSha256": json_sha256(source),
         "anchorManifestJsonSha256": json_sha256(anchor),
         "translationPolicySha256": candidate["translationPolicySha256"],
         "candidateJsonSha256": json_sha256(candidate),
         "reviewedGroupIds": group_ids,
-        "groupResults": [{"translationGroupId": group["translationGroupId"], "status": "pass",
+        "groupResults": [{"translationGroupId": group["translationGroupId"],
+                          "status": "human_accepted" if group["translationGroupId"] in accepted else "pass",
                           "targetTextSha256": row["targetTextSha256"],
                           "failedAttempts": int(row.get("failedAttempts", 0))}
                          for row, group in zip(results, groups)],
@@ -271,14 +290,30 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
         "disclosure": disclosure(locale), "createdAt": created_at or _now(),
         "postPublicationSpotCheck": "owner_spot_check_after_release",
     }
-    _schema(receipt, TEXT_WAIVER_SCHEMA)
+    if accepted:
+        receipt["humanAcceptance"] = {
+            "schemaVersion": human_acceptance["schemaVersion"], "jsonSha256": json_sha256(human_acceptance),
+            "decidedBy": human_acceptance["decidedBy"], "decidedAt": human_acceptance["decidedAt"],
+            "userStatement": human_acceptance["userStatement"],
+            "textQcJsonSha256": human_acceptance["textQcJsonSha256"],
+            "groupIds": [row["groupId"] for row in results if row["groupId"] in accepted and row.get("status") != "pass"],
+            "groupDecisions": [{"groupId": g["groupId"], "decidedBy": g.get("decidedBy", human_acceptance["decidedBy"]),
+                                "decidedByRole": g.get("decidedByRole", "human_operator")}
+                               for g in human_acceptance["groups"] if g["groupId"] in accepted]}
+    _schema(receipt, receipt["schemaVersion"])
     return receipt
 
 
 def validate_text_waiver(receipt: dict, *, candidate: dict, source_sha: str | None = None,
                          anchor_sha: str | None = None) -> None:
     """Gate-time check that the waiver binds exactly this machine-pending candidate."""
-    _schema(receipt, TEXT_WAIVER_SCHEMA)
+    _require(receipt.get("schemaVersion") in TEXT_WAIVER_SCHEMAS, "Unsupported text waiver schema")
+    _schema(receipt, receipt["schemaVersion"])
+    if receipt["schemaVersion"] == TEXT_WAIVER_SCHEMA_V2:
+        named = (receipt.get("humanAcceptance") or {}).get("groupIds") or []
+        _require(named == [row["translationGroupId"] for row in receipt["groupResults"]
+                           if row["status"] == "human_accepted"],
+                 "Text waiver v2 human acceptance differs from its group results")
     _require(machine_pending_candidate(candidate),
              "Text waiver applies only to a candidate whose human review is still pending")
     group_ids = [group["translationGroupId"] for group in candidate["groups"]]
@@ -338,8 +373,16 @@ def screening_queue(package: dict, screening: dict) -> list[str]:
 def screening_score_problems(screening: dict, candidate: dict) -> list[str]:
     """Rescore each ASR result against the candidate text, as the screener does."""
     # Lazy, as in _asr_threshold: the screener imports the speech-job module.
-    from scripts.screen_target_language_audio_units import score
+    from scripts.screen_target_language_audio_units import KNOWN_SCORINGS, SCORING_V3, score, current_scoring_identity_problems
     locale = screening["targetLocale"]
+    # A receipt is rescored by the scoring identity it recorded, so reading evidence from an
+    # earlier run never applies newer folding; one without a recorded identity predates v4.
+    scoring = (screening.get("asrSettings") or {}).get("scoring", SCORING_V3)
+    if scoring not in KNOWN_SCORINGS:
+        return ["screening was scored under an unknown scoring identity"]
+    implementation_problems = current_scoring_identity_problems(screening.get("asrSettings") or {})
+    if implementation_problems:
+        return implementation_problems
     groups = candidate.get("groups") or []
     if [group.get("translationGroupId") for group in groups] != [row["textGroupId"] for row in screening["results"]]:
         return ["screening results differ from the spoken candidate groups"]
@@ -349,7 +392,7 @@ def screening_score_problems(screening: dict, candidate: dict) -> list[str]:
         if not isinstance(text, str) or hashlib.sha256(text.encode("utf-8")).hexdigest() != result["targetTextSha256"]:
             problems.append(f"{result['textGroupId']}: screened text differs from the candidate")
             continue
-        similarity, differences, passed = score(text, result["recognized"], locale, screening["minSimilarity"])
+        similarity, differences, passed = score(text, result["recognized"], locale, screening["minSimilarity"], scoring)
         if (result["similarity"] != similarity or result["differences"] != differences
                 or (result["status"] == "pass") != passed):
             problems.append(f"{result['textGroupId']}: recorded ASR score or status differs from a rescore")
@@ -454,7 +497,9 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     _require(audio_qc.get("status") == "pass" and not audio_qc.get("subtitleOnlyGroupIds")
              and all(row.get("status") == "pass" and row.get("nextAction") == "keep" for row in results),
              "Every unit must pass audio QC; subtitle-only units are not wired yet")
-    from scripts.target_audio_auto_qc import THRESHOLDS
+    from scripts.target_audio_auto_qc import THRESHOLDS, duration_binding_problems
+    binding_problems = duration_binding_problems(audio_qc, speech_job)
+    _require(not binding_problems, "; ".join(binding_problems))
     _require(audio_qc.get("thresholds") == THRESHOLDS,
              "Audio QC thresholds differ from the calibrated release thresholds")
     # The source-ratio check is only as good as the span the QC caller supplied.

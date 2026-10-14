@@ -1,0 +1,182 @@
+{
+ "schemaVersion": "sermon-audio-qc-human-acceptance-v1",
+ "targetLocale": "es",
+ "targetLanguageAudioPackageJsonSha256": "b84f9a7445d1e873e83b7b67687943e9ef1dbd7c21875502be9d770a2623e1f7",
+ "targetLanguageCandidateJsonSha256": "1df43ebdafb507f988b907b4f4afe02e453f51967262af568f19c2d6f45b8ad9",
+ "audioQcJsonSha256": "c7dd6a50018849f290cf5d3f803a14f53aa4f53ec0119f093e0360951da3850c",
+ "decidedBy": "Jony",
+ "decidedByRole": "human_operator",
+ "humanApproval": true,
+ "decidedAt": "2026-10-11T15:08:28Z",
+ "userStatement": "单独给zh es接受记录，继续发布 (chat 2026-10-11; operator decision to publish the existing zh-Hans and es readings without re-synthesis)",
+ "units": [
+  {
+   "groupId": "translation-chunk-0000-u002",
+   "audioSha256": "d278390232423ce9a8626c7f950523121e58b7df9221724ff2057c8b7b7cd6b9",
+   "textSha256": "f9edf97c0ee9092917d031407b4deebbfc300ef08caf5375a742921f82039f5d",
+   "asrPrimaryRecognized": "Si aún no nos conocemos, mi nombre es Steve Bangley.",
+   "asrSecondaryRecognized": "Si aún no nos conocemos, mi nombre es Steve Bangley.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0000-u021",
+   "audioSha256": "33b28aa6237d3a0949f3066e0e4a17c4e6f411a6f4bd2b48ed9f9507b47918ba",
+   "textSha256": "6309188d64cfbe73b53397a1d20256d4a0129d9ad602ef9f74e241169ae38cfe",
+   "asrPrimaryRecognized": "Lleva décadas como pastor en una iglesia y todos los que lo conocen dan fe de su integridad.",
+   "asrSecondaryRecognized": "Lleva décadas como pastor en una iglesia y todos los que lo conocen dan fe de su integridad.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0000-u022",
+   "audioSha256": "5e571bb50deb2b1ed66fb917b4993102a46a4f368eca3b43b318773364eca5a2",
+   "textSha256": "012792f03d4288a7b27e78199f4b92777cbb1eb4cb5c9db8e761daf90b0b7995",
+   "asrPrimaryRecognized": "Y aún así es la sola advertencia.",
+   "asrSecondaryRecognized": "Y aún así, él lanzó la advertencia.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0002-u020",
+   "audioSha256": "7c6e6c671af126ba3fa980ced6a5a787c05b7f87743b028e8e67de48b883d701",
+   "textSha256": "5bb4f74e2dd85410c3450ec6ded857385eab5cb1d709e14dccdf9b24aa79a8e3",
+   "asrPrimaryRecognized": "Se levanta un ejército de doscientos millones y somete a un tercio de las personas en la tierra.",
+   "asrSecondaryRecognized": "Se levanta un ejército de doscientos millones y somete a un tercio de las personas en la tierra.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0003-u003",
+   "audioSha256": "538e31631fe59ecd093a3ad1617c3a55de2461082e0b5c14959c8a4508c95577",
+   "textSha256": "0917bd498c8db0c891b88c0fd1f46f46c30ac97ac29e6c25e77a3a4c2a2af90e",
+   "asrPrimaryRecognized": "Y escribió en su libro Armagedón que el libro de Apocalipsis celebra el juicio, la condenación.",
+   "asrSecondaryRecognized": "Y escribió en su libro Armagedón que el libro de Apocalipsis celebra el juicio, la condenación.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0003-u005",
+   "audioSha256": "cd3b3bbf3178d7bca1f3ab3d31fc3bdf333f25ecbb03f6861fefdd21e9e269a8",
+   "textSha256": "74d47595b19451a81c55253ec3cf0767d1178afb06e90bed5384ac16decf0ad5",
+   "asrPrimaryRecognized": "Miren, desde la perspectiva de Herman, cuando él examina el libro de Apocalipsis, este no muestra a un Dios de gracia.",
+   "asrSecondaryRecognized": "Miren, desde la perspectiva de Herman, cuando él examina el libro de Apocalipsis, este no muestra a un Dios de gracia.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0003-u008",
+   "audioSha256": "338483b0b9fde40020f4c5f587c9ea3f7ac57e9cf46b1bce0876739e0e35c223",
+   "textSha256": "0e12d31caef2e9a125c404d6eac6218847a331e0b46bde701894ab6d58bf7d2e",
+   "asrPrimaryRecognized": "Erman es muy inteligente y nosotros podemos ser muy inteligentes y aún así al examinar apocalipsis formarnos una imagen incorrecta de Dios.",
+   "asrSecondaryRecognized": "Herman es muy inteligente y nosotros podemos ser muy inteligentes y aun así, al examinar Apocalipsis, formarnos una imagen incorrecta de Dios.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0003-u009",
+   "audioSha256": "690a0cc22e87e7927f8ec9ca707d48cadf9c8fdea560d9cecba4c1da4f224e51",
+   "textSha256": "6a28fef3637f4fce1c6271d2d1b3673f1f824cc06e8bee2f1ea4e4ddff10c448",
+   "asrPrimaryRecognized": "Entonces, ya que Herman sacó el tema, hablemos de ello.",
+   "asrSecondaryRecognized": "Entonces, ya que Herman sacó el tema, hablemos de ello.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0004-u038",
+   "audioSha256": "7b74da2acac65db67f890ad3e94dd19d30f3325fbeb923f55ca4d7e822c0ead7",
+   "textSha256": "ff058209378fde78a38e21ddeaa0190fe4f490e26c4c2391b62e57e7e951dded",
+   "asrPrimaryRecognized": "Por ejemplo, el no toma agua se hidrata.",
+   "asrSecondaryRecognized": "Por ejemplo, el no toma agua, se hidrata.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0009-u028",
+   "audioSha256": "fc5fc4a5a307a2a0a0e2159998718bf5e9dc674f46e238b794745ad928323a29",
+   "textSha256": "f7df1b617e3a24f7211c831ae3da109e871c886dc1002484d9944def3ea8a048",
+   "asrPrimaryRecognized": "Mi hermana hizo el trabajo más difícil: simplemente orar por mí durante diez años.",
+   "asrSecondaryRecognized": "Mi hermana hizo el trabajo más difícil, simplemente orar por mí durante diez años.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0009-u031",
+   "audioSha256": "d7fea06c7bea029aed1747f849efd020a3886b18314083a56d5bd7af517afce5",
+   "textSha256": "3efdb0490324aa399375436bdf294b4eb874ec0219bd0c271bda643fa5d1d79a",
+   "asrPrimaryRecognized": "ella elevó sus oraciones ante la presencia de Dios durante diez años",
+   "asrSecondaryRecognized": "Ella elevó sus oraciones ante la presencia de Dios durante diez años.",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  },
+  {
+   "groupId": "translation-chunk-0010-u005",
+   "audioSha256": "dfc6d648f54d40c29efc64e88ce3b7f42ca57c477dc66813cc3bfd727ad2ffd0",
+   "textSha256": "a2642ec692bbfda6779ad509f5dff0c4009b08370cd405d22d4d200f0cd5d958",
+   "asrPrimaryRecognized": "Quién pagó Quién pagó",
+   "asrSecondaryRecognized": "¿Quién pagó? ¿Quién pagó?",
+   "issues": [
+    "asr_mismatch_confirmed"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Jony",
+   "decidedByRole": "human_operator",
+   "reason": "operator chose to publish the existing reading without re-synthesis"
+  }
+ ]
+}

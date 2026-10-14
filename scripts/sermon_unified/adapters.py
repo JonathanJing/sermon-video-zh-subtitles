@@ -58,6 +58,9 @@ def inspect_step(m, base, step, *, ready=True):
         auth_path=c.binding(m,base,step.get('budgetAuthorization',''))
         auth=budget.load_authorization(config,auth_path,ctl.code_identity())
         cap=auth['value']['authority']['globalBounds']['costMicrousd']
+        if auth.get('scope')=='locale':
+            # Per-locale ledgers: the run can spend the cap once per registered locale.
+            cap*=len(config.lanes)
         if cap>m['budget']['limitMicroUsd'] or cap>step.get('maxCostMicroUsd',0):
             raise c.ContractError('budget_authority_exceeds_manifest')
         if not ready:

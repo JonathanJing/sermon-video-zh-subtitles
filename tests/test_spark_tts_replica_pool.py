@@ -160,5 +160,56 @@ class ReplicaPoolTests(unittest.TestCase):
         self.assert_closed(pool)
 
 
+
+class ReplicaWindowTimingTests(unittest.TestCase):
+    def test_each_window_keeps_its_worker_generation_time_once(self):
+        pool = ReplicaPool("checkpoint", FakeEngine, {"device": "cuda:0", "dtype": "bfloat16"},
+                           replicas=2, memory_reader=enough_memory, startup_timeout=10,
+                           generation_timeout=5, poll_interval=0.02)
+        with pool:
+            pool.start()
+            pool.submit(0, requests(0, delay=0.3), seed=1)
+            pool.submit(8, requests(8), seed=2)
+            pool.result(8)
+            self.assertLess(pool.generation_seconds(8), 0.25)
+            pool.result(0)
+            self.assertGreaterEqual(pool.generation_seconds(0), 0.25)
+            with self.assertRaisesRegex(ValueError, "timing is unavailable"):
+                pool.generation_seconds(0)
+
+
+class ParallelBatchEngineTimingTests(unittest.TestCase):
+    def test_last_window_seconds_is_the_worker_time_not_the_parent_wait(self):
+        import time as clock
+        from scripts.spark_tts_window_scheduler import ParallelBatchEngine
+
+        class FakePool:
+            replicas = 2
+
+            def __init__(self):
+                self.outputs, self.seconds = {}, {}
+
+            def start(self):
+                pass
+
+            def submit(self, index, requests, *, seed):
+                self.outputs[index] = [{"identity": row["identity"], "wave": [seed], "sampleRate": 24000}
+                                       for row in requests]
+                self.seconds[index] = 31.5 if index == 0 else 30.25
+
+            def result(self, index):
+                clock.sleep(0.01)  # the parent's wait is tiny and must not be reported as window time
+                return self.outputs.pop(index)
+
+            def generation_seconds(self, index):
+                return self.seconds.pop(index)
+
+        windows = {0: [{"identity": {"u": 0}, "text": "a"}], 8: [{"identity": {"u": 8}, "text": "b"}]}
+        engine = ParallelBatchEngine(FakePool(), windows, seed=40, frozen_check=lambda: None)
+        engine.batch(windows[0], seed=40)
+        self.assertEqual(engine.last_window_seconds, 31.5)
+        engine.batch(windows[8], seed=48)
+        self.assertEqual(engine.last_window_seconds, 30.25)
+
 if __name__ == "__main__":
     unittest.main()

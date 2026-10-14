@@ -1,0 +1,193 @@
+{
+ "schemaVersion": "sermon-model-response-archive-ref-v1",
+ "week": "2026-10-11",
+ "pageId": "resi-20261011-54475d42",
+ "storage": "private GCS bucket (no public bindings); same project artifact bucket the cloud runs use",
+ "objects": {
+  "archive": "gs://sermon-zh-artifacts-ai-for-god/runs/20261011-weekly-resi-54475d42/model-responses/model-responses-20261011.tar.zst",
+  "sha256": "gs://sermon-zh-artifacts-ai-for-god/runs/20261011-weekly-resi-54475d42/model-responses/model-responses-20261011.tar.zst.sha256",
+  "ledgerIndex": "gs://sermon-zh-artifacts-ai-for-god/runs/20261011-weekly-resi-54475d42/model-responses/ledgers.json"
+ },
+ "archiveSha256": "792103b6cc8546d248355a4ffbce0e514e8cc255b3b6a33909963dedd1990ea8",
+ "archiveBytes": 11267103,
+ "gcsMd5Base64": "NJaENkcEnA5W4g7F7v9FaA==",
+ "contents": "every budget ledger of this week (34: text QC .api-budget-* and Layer 2 .layer2-jobs*.layer2-budget): responses/ (27,292 raw provider responses with usage), live-owners/, ledger JSON; .locks excluded",
+ "ledgers": [
+  {
+   "ledger": "text-qc-54475d42/.api-budget-es",
+   "responseFiles": 235,
+   "bytes": 428014
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-es-v10",
+   "responseFiles": 1482,
+   "bytes": 3919393
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-es-v11",
+   "responseFiles": 915,
+   "bytes": 2397007
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-es-v12",
+   "responseFiles": 915,
+   "bytes": 2396759
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-es-v13",
+   "responseFiles": 2964,
+   "bytes": 7837401
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-es-v2",
+   "responseFiles": 433,
+   "bytes": 778445
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-es-v3",
+   "responseFiles": 915,
+   "bytes": 2259740
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-es-v4",
+   "responseFiles": 915,
+   "bytes": 2260384
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-es-v6",
+   "responseFiles": 1482,
+   "bytes": 3916113
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-es-v7",
+   "responseFiles": 915,
+   "bytes": 2396437
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-ko-es",
+   "responseFiles": 1818,
+   "bytes": 3950529
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-ko-es-v2",
+   "responseFiles": 1075,
+   "bytes": 2559606
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-ko-v10",
+   "responseFiles": 1444,
+   "bytes": 3840728
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-ko-v11",
+   "responseFiles": 915,
+   "bytes": 2410248
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-ko-v12",
+   "responseFiles": 915,
+   "bytes": 2409957
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-ko-v13",
+   "responseFiles": 2888,
+   "bytes": 7678735
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-ko-v3",
+   "responseFiles": 1444,
+   "bytes": 3615805
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-ko-v6",
+   "responseFiles": 915,
+   "bytes": 2409339
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-ko-v7",
+   "responseFiles": 714,
+   "bytes": 1303699
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-ko-v8",
+   "responseFiles": 1444,
+   "bytes": 3835180
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-ko-v9",
+   "responseFiles": 915,
+   "bytes": 2409929
+  },
+  {
+   "ledger": "text-qc-54475d42/.api-budget-zh-v1",
+   "responseFiles": 1414,
+   "bytes": 3768124
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs-r10-zh.layer2-budget",
+   "responseFiles": 0,
+   "bytes": 0
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs-r11-zh.layer2-budget",
+   "responseFiles": 0,
+   "bytes": 0
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs-r12-zh.layer2-budget",
+   "responseFiles": 0,
+   "bytes": 0
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs-r2.layer2-budget",
+   "responseFiles": 58,
+   "bytes": 119818
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs-r3.layer2-budget",
+   "responseFiles": 160,
+   "bytes": 326039
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs-r4.layer2-budget",
+   "responseFiles": 0,
+   "bytes": 0
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs-r5.layer2-budget",
+   "responseFiles": 0,
+   "bytes": 0
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs-r6-zh.layer2-budget",
+   "responseFiles": 0,
+   "bytes": 0
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs-r7-zh.layer2-budget",
+   "responseFiles": 0,
+   "bytes": 0
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs-r8-zh.layer2-budget",
+   "responseFiles": 0,
+   "bytes": 0
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs-r9-zh.layer2-budget",
+   "responseFiles": 0,
+   "bytes": 0
+  },
+  {
+   "ledger": "layer2-54475d42/.layer2-jobs.layer2-budget",
+   "responseFiles": 2,
+   "bytes": 3189
+  }
+ ],
+ "uncompressedBytes": 69230618,
+ "restore": "gcloud storage cp <archive> . && shasum -a 256 -c model-responses-20261011.tar.zst.sha256 && zstd -dc model-responses-20261011.tar.zst | tar -xf - -C artifacts/weekend-live",
+ "notes": [
+  "contains full sermon translations and back-translations (the same text the site publishes), model call identities and usage; no credentials",
+  "restored under artifacts/weekend-live the text QC drivers replay these responses from cache instead of calling the API, so a calibration or rescreen of this week is free"
+ ]
+}
