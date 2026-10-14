@@ -47,7 +47,28 @@ try {
  if(!rejected)throw Error('deadline_did_not_reject');
  if(!cleaned())throw Error('deadline_leaked_resources');
  if(streams.length!==2||contexts.length!==2)throw Error('unexpected_retry');
- await fetch('/result',{method:'POST',body:JSON.stringify({status:'pass',
+ // FIELD-03 early stop: one continuous 15 s capture with 7/10/12 s prefixes.
+ const prefixes=[];
+ const full=await captureFingerprintAudio({seconds:15,checkpoints:[7,10,12],minimumSeconds:7,
+  onCheckpoint:value=>prefixes.push(value),signal:new AbortController().signal,env,onTiming:value=>timings.push(value)});
+ if(full.durationSeconds!==15||prefixes.map(p=>p.durationSeconds).join()!=='7,10,12')throw Error('incorrect_checkpoints');
+ for(const p of prefixes){
+  if(p.samples.length!==p.durationSeconds*p.sampleRate||p.sampleRate!==full.sampleRate)throw Error('incorrect_prefix_length');
+  for(let i=0;i<p.samples.length;i+=997)if(p.samples[i]!==full.samples[i])throw Error('prefix_not_continuous');
+ }
+ if(!(prefixes[0].endedAt<prefixes[1].endedAt&&prefixes[2].endedAt<full.endedAt))throw Error('prefix_clock_not_monotonic');
+ if(!cleaned())throw Error('checkpoint_capture_leaked_resources');
+ // Stopping after the 10 s prefix releases the microphone without a final buffer.
+ const stop=new AbortController();let stoppedAfter=null;
+ try {await captureFingerprintAudio({seconds:15,checkpoints:[7,10,12],minimumSeconds:7,signal:stop.signal,env,
+  onTiming:value=>timings.push(value),onCheckpoint:value=>{if(value.durationSeconds===10){stoppedAfter=10;stop.abort();}}});
+  throw Error('early_stop_ignored');}
+ catch(error){if(error.name!=='AbortError')throw error;}
+ if(stoppedAfter!==10||!cleaned())throw Error('early_stop_leaked_resources');
+ const earlyStopMicrophoneMs=timings.at(-1).microphoneObservedMs;
+ if(!(earlyStopMicrophoneMs<14000))throw Error('early_stop_kept_microphone');
+ await fetch('/result',{method:'POST',body:JSON.stringify({status:'pass',checkpointSeconds:prefixes.map(p=>p.durationSeconds),
+  checkpointFinalSeconds:full.durationSeconds,earlyStopMicrophoneMs,
   scope:'chrome_synthetic_device_audio_worklet_not_hardware_or_safari',
   continuousPcmSeconds:result.durationSeconds,sampleRate:result.sampleRate,
   budgetExhaustedRejected:rejected,streamsEnded:streams.length,contextsClosed:contexts.length,
@@ -115,7 +136,7 @@ def main():
                     f'http://127.0.0.1:{server.server_port}/',
                 ], stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
                 try:
-                    server.done.wait(50)
+                    server.done.wait(110)
                     report = server.result or {'status': 'fail', 'reason': 'browser_deadline'}
                     report['browserVersion'] = subprocess.check_output([chrome, '--version'], text=True).strip()
                     report['moduleSha256'] = {

@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-11。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-13。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -21,6 +21,45 @@ English index: [backlog.md](./backlog.md)
 7. 查某个 ID 或前缀当前在哪几行、状态是什么：`python3 scripts/backlog_ids.py DEV-R242-011`（或 `DEV-R242`）；文件越靠前的小节越新。
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
+
+<a id="backlog-session-budget-20261013"></a>
+
+## 2026-10-13：发布回读、API 会话与预算复用
+
+#379、#380、#381 已由[联合修复 #383](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/383) 合入 Dev（`64f1b58d8ee908cb53ce457625e590a10a3c5ec6`，最终 CI 通过）。#382 的预算规划与启动预检已满足 #381 先进入 Dev 的依赖顺序。此处登记代码合同与剩余运行验收，最终合并状态以远端 PR 收据为准；离线夹具不构成真实 API、Spark、部署或正式放行证明。
+
+| 归属 | 本次约束／实现 | 剩余验收 |
+|---|---|---|
+| `DEV-R242-029`、`DEV-L4-004` | #379：Hosting 将本次部署命令返回的版本先持久化绑定，再在有界期限内核对回读传播；竞争版本、版本漂移或超时仍为未确认，不重复部署来处理传播等待 | 按最终代码分别保存真实发布、HTTP 回读、设备与现场收据；不以部署命令成功替代发布判定 |
+| `DEV-R242-026`、`DEV-COST-002` | #380：纯 API／CLI 阶段不占 Spark 排他会话，GPU 阶段保持原门禁；付费请求未知结果须先对账。#381：只在明确批准的预算根及完全一致请求／身份下复用已返回响应，保留原成本归属，不将旧响应计为新付费调用 | 真实批准预算下验证停止／恢复及费用归属；本次不调用模型、不新增预算授权 |
+| `DEV-R242-026` | #382：计划 v3 将总额、已结算费用、阶段与授权哈希冻结到独立批准收据，将实际 source／anchor／policy、环境、完整 OpenAI 路由与凭据指纹、语言与质检实现绑定进 QC 授权 v4；第二路 ASR 与 judge 共用硬预算。整周 Layer 2 使用 locale 分片账本与路由／凭据绑定的授权 v3，按实际组数预检完整初始轮的请求、输入、输出、费用与时间上界；启动、缓存读取与派发前核对身份，预检拒绝跨 Spark 主机拼接证据及未恢复的调用标记，QC／Layer 2 计划必须核对显式 launcher，页面检查必须指定目标 Hosting origin。二级 ASR 仅接受绑定当前上下文的 v4 授权；跨预算复用保持只读 replay-only，部分运行在原批准身份与额度内继续，不因缓存缺失自动另行付费。复用规划／预检核对来源计划、授权、账本与响应结算；二级 ASR 的同根同操作在进程内合并，完成后读回耐久收据；路由模块纳入质检实现哈希。恢复支付计划在启动预检实时重算请求／时间／费用余额，耗尽即拒绝。新片段 profile 每语 2 美元覆盖 16 组初始最坏预留 1.96608 美元；不提高既有授权或全篇旧上限。序列建议不授权累计超限阶段。旧计划保留原版本，须明确重新规划 | 461 组的 922 次初始译审请求及输出 token 最坏预留不能由旧每语 $5 配置覆盖；预算不足应在写授权前拒绝，另行批准配置／总额，不能自动提额。真实运行需绑定最终代码及输入 |
+| `DEV-QC-001` | #380 改变质检／会话身份，#382 继续改变质检实现闭包 | **合并后的第一次运行使用全新 QC 状态与响应缓存，不传旧 `--reuse-from`／`reuseBudgetRoots`。正式运行须按最终 Dev commit、质检实现哈希、模型／运行设置、来源、候选和音频重新校准并生成新的放行证明。**旧缓存、校准与收据保留原冻结身份，不能改标签或替换哈希充作新证据；后续复用仍需满足 #381 的显式批准及完整身份匹配 |
+
+<a id="backlog-qc-merge-20261013"></a>
+
+## 2026-10-13：五项质检与 Dev 交付合并
+
+[合并验证 #374](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/374) 保留并整合 #366、#367、#369、#370、#371 的原提交：听众指向话语标记的文字质检；按收据的冻结身份重评音频；韩语裸章／节号口播及旧 v2 策略兼容；中文极短句的截短校准排除、有效样本额度与提前预检；隔离的机器质检 Dev 页面交付。分别归既有 `DEV-L2-001`、`DEV-L3-001`／`DEV-R242-030` 和 `DEV-L4-005`，不以代码合并关闭整层验收。
+
+用户此前的真实模型测试使用五项改动的**未推送本地合并版**，不能视为最终 Dev 代码的放行证明。本次合并验证另有代码／离线测试和 CI 身份；本次没有执行正式内容生成、部署、设备播放或现场验收。既有测试页面的 HTTP 结果保留原运行身份。
+
+| 新增验收项／归属 | 优先级／状态 | 完成条件 |
+|---|---|---|
+| `DEV-QC-001` 最终 Dev 代码的重新校准与放行；归 `DEV-L2-001`、`DEV-L3-001`、`DEV-R242-018` | P0 / `waiting_evidence` | 正式运行前冻结最终 Dev commit、质检实现哈希、模型／运行设置、来源、候选和音频；按该身份重新执行所需文字与音频校准、质检，重新生成对应放行／waiver 收据并通过正式消费者校验。#366、#369、#370 改变质检实现哈希，本轮旧校准与放行证明不能直接复用、改标签或替换哈希冒充新证明。旧任务保留原冻结身份；新策略使用新任务／revision。发布 HTTP、设备与现场状态另行验收。 |
+
+<a id="backlog-run-report-closeout-20261014"></a>
+
+## 2026-10-14：运行报告 PR 从旧到新收口
+
+本节归 `DEV-RUNREPORT-001`。2026-10-14 对全部 63 个标题以“运行报告”开头的开放 PR 做了逐份核对；每个 PR 正文已前置高置信结论、证据边界和处置建议，原始摘要保留。没有发现可按同一运行精确重复而普通关闭的报告：连续重跑分别保存失败、修复、费用或发布收据，须各自入库。下面按 PR 编号从旧到新推进；复盘、CI、同步和合并是分开的状态，不以较新的成功报告覆盖较早失败。
+
+| 工作 | 优先级／状态 | 从旧到新的 PR 队列 | 完成条件 |
+|---|---|---|---|
+| `DEV-RUNREPORT-001`／补齐复盘 | P0 / `in_progress` | #288、#302、#303、#312、#313、#319、#320、#348、#365、#368、#372、#373、#378、#406、#418、#421 | 按[运行报告复盘八项](test-run-retrospective.zh.md#复盘检查清单)填写真实覆盖、结束信号、耗时、错误、资源后错误、遗留状态、外部变化和后续；保留失败与 `not_run`，不得把机器检查改写成人工或生产验收。 |
+| `DEV-RUNREPORT-001`／修复当前红 CI | P0 / `in_progress` | #286、#304、#319、#320、#338、#368、#372、#389、#394、#399 | 修复报告自身的 docs gate／`git diff --check`／链接问题；#319、#320、#368、#372 同时属于“补齐复盘”。不得改写原始 outcome、日志或哈希来换取绿色。修复后重新验证报告脱敏、diff 范围和 CI。 |
+| `DEV-RUNREPORT-001`／依次同步并合并 | P0 / `in_progress` | #286、#288、#289、#290、#300、#302、#303、#304、#305、#306、#307、#312、#313、#319、#320、#328、#333、#338、#339、#340、#341、#348、#354、#358、#364、#365、#368、#372、#373、#375、#378、#384、#385、#386、#387、#389、#392、#394、#396、#399、#400、#404、#406、#407、#408、#409、#411、#412、#413、#414、#415、#416、#417、#418、#419、#420、#421、#422、#423、#424、#425、#426、#427 | 每份报告轮到时先合入最新 `origin/dev`，确认差异仍只含其报告目录，运行 `export_run_digest.py --verify` 和 `git diff --check`，等待新 head CI 绿色，再从 Draft 转 Ready 并合并；回读 `dev` merge commit 后才处理下一份。普通 Close 不算入库。 |
+
+当前互斥分类为：41 份只需按序同步并取得绿色；16 份需先补复盘；6 份复盘已完整但需先修红 CI。四份同时有复盘和 CI 缺口的报告只在“补齐复盘”计数，避免重复统计。全部合并且远端回读后，再更新 `DEV-RUNREPORT-001` 状态；本节不证明驱动自动导出、生产发布或设备验收。
 
 <a id="backlog-w42-plan-20261011"></a>
 
@@ -46,7 +85,7 @@ English index: [backlog.md](./backlog.md)
 | 子任务／归属 | 优先级／状态 | 交付与验收 | 依赖 |
 |---|---|---|---|
 | `DEV-R242-029` 发布入口四道门；归 `DEV-L4-004`、`DEV-CICD-003`、`DEV-R242-006/007/014` | P0 / `pending` | 外壳闭包从 `index.html` 解析并冻结进 `runtimeAssets`，`seal` 断言与 web 目录同哈希；`fetch_live_baseline.py` 从 Hosting API 重建线上基线并出 `seal-report.json`；Playwright 冒烟 `smoke_published_page.mjs` 三语各一次（标题、字幕非空、零 `console.error`、`/api/session` 200），发 Dev 与发生产后必跑；反馈目录生成与反馈 API 部署进生产步骤。验收：删掉 `icons.svg` 时 seal 失败；本周 156 文件基线逐一哈希相等；Dev 站本周页三语冒烟通过 | PR #335 合并；夹具 `publication/` |
-| `DEV-R242-030` ASR 评分规范化与二级 ASR 条件触发；归 `DEV-L3-001`、`DEV-R242-018` | P0 / `pending` | `transcript_similarity/transcript_agrees` 前按语言折叠：韩语数词/阿拉伯数字互折但章节读法不折、空格；中文仅同音同调字对；西语 `un/una/1`、重音、标点。二级 ASR 只在一级相似度 < 0.6 或差异涉及否定词/数字时调用。实测（PR #342，2026-10-11 夹具）：试听链判失败的 42 句折叠后剩 22 句真实差异（zh 2、ko 14、es 6），一级筛查 101 个标记降到 66；ko 5 句章号、`참혹합니다`、`义人/一人`、`合宜/合一` 全部仍被标记。原估的“≤ 6”过于乐观，剩余多为人名／固有词的 ASR 听错。二级 ASR 条件触发复核后不做：每次调用成本可忽略，改收据合同不值。哈希文件集内改动，须在下周运行前合并 | PR #335 合并；夹具 `audio-qc/` |
+| `DEV-R242-030` ASR 评分规范化与二级 ASR 条件触发；归 `DEV-L3-001`、`DEV-R242-018` | P0 / `in_progress` | `transcript_similarity/transcript_agrees` 前按语言折叠：韩语数词/阿拉伯数字互折但章节读法不折、空格；中文仅同音同调字对；西语 `un/una/1`、重音、标点。二级 ASR 只在一级相似度 < 0.6 或差异涉及否定词/数字时调用。实测（PR #342，2026-10-11 夹具）：试听链判失败的 42 句折叠后剩 22 句真实差异（zh 2、ko 14、es 6），一级筛查 101 个标记降到 66；ko 5 句章号、`참혹합니다`、`义人/一人`、`合宜/合一` 全部仍被标记。原估的“≤ 6”过于乐观，剩余多为人名／固有词的 ASR 听错。二级 ASR 条件触发复核后不做：每次调用成本可忽略，改收据合同不值。2026-10-13：#367/#369 由 #374 整合评分身份校验、冻结 v2 兼容与裸章／节规则；新实现的正式校准及放行仍待 `DEV-QC-001`，旧实测不能外推 | PR #335 合并；夹具 `audio-qc/`；[合并验证 #374](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/374) |
 | `DEV-R242-031` 发布后抽样听审表；归 `DEV-R242-018`，替代 `DEV-REVIEW-001` 近期范围 | P1 / `pending` | `build_listening_sample.py` 每语随机 10 句 + 全部 ASR 标记句生成 Markdown（译文、英文、单句音频路径、勾选框）；填完由 `record_decision.py` 写回 `decisions.ndjson`。周一执行，不阻塞发布。验收：10 分钟内填完，结果可被 `export_run_digest.py` 收录 | `DEV-R242-016` 的决定记录 |
 
 复盘其余计划不另取 ID：冻结守卫归 `DEV-R242-001`，周预算一份授权归 `DEV-R242-026`，Spark 定时器冻结与派发器等待重试归 `DEV-R242-028`；运行日志 `run_journal.py`、决定记录 `record_decision.py` 归 `DEV-R242-016`，账本 `costMicrousd` 折算归 `DEV-R242-010/017`，摘要收录归 `DEV-RUNREPORT-001`；渲染器直接吃运行计划策略并入 PR #335 的 CI 修复并记在 `DEV-R242-004`；12 条修复记录量化归 `DEV-R242-022`，`fix` 单句修正命令设计归 `DEV-R242-005`／`DEV-SPD-004`。
@@ -142,7 +181,7 @@ English index: [backlog.md](./backlog.md)
 | **L2 canonical 独立复核及编辑** | [run_target_language_models.py](../scripts/run_target_language_models.py)：`_run_prepared_groups` 构造 reviewer、`normalize_semantic_review`、`model_payload` | 实际允许修正最终 `targetUtterances/coverage`，同时产生 `semanticReview`；保留未解决 issues／uncertainty，不能把此角色写成只读审核；评估修改后文本的验收及是否仍需独立验证 |
 | **L2 strict 初译／修订与只读 verifier** | [sermon_strict_layer2.py](../scripts/sermon_strict_layer2.py)：`prompt`、`generation_prompt`、`response_contract`、`_payload` | verifier 禁止改写；修复走新 revision。与 canonical 分条登记，不把实验／strict 支持状态冒充正式能力 |
 | L2 中文逐句口播译审 | [sermon_sentence_interpretation.py](../scripts/sermon_sentence_interpretation.py)：`TRANSLATION_SYSTEM_PROMPT`／`REVIEW_SYSTEM_PROMPT`；[run_sentence_interpretation_models.py](../scripts/run_sentence_interpretation_models.py)：`_translation_payload`／`_review_payload` | sourceUnit coverage、中文子串证据、否定／数字／引语归属；复核含修订职责，不能以机器 pass 代替人审或实测 timing fit |
-| Legacy 中文字幕翻译及最终双语审核 | [review_prompts.py](../scripts/review_prompts.py)：`CHINESE_TRANSLATION_SYSTEM_PROMPT`；[sermon_pipeline.py](../scripts/sermon_pipeline.py)：`translate_chinese`；[review_sermon_subtitles_with_openai.py](../scripts/review_sermon_subtitles_with_openai.py)：`SYSTEM_PROMPT`、`batch_payload` | 单段与完整句 producer 的边界不同；当前最终字幕审核脚本默认仍为旧模型，需配置审计。完整模板／系列规则／wrapper 变化必须进入缓存身份，不能只看 promptVersion |
+| Legacy 中文字幕翻译及最终双语审核 | [review_prompts.py](../scripts/review_prompts.py)：`CHINESE_TRANSLATION_SYSTEM_PROMPT`；[sermon_pipeline.py](../scripts/sermon_pipeline.py)：`translate_chinese`；[review_sermon_subtitles_with_openai.py](../scripts/review_sermon_subtitles_with_openai.py)：`SYSTEM_PROMPT`、`batch_payload` | 单段与完整句 producer 的边界不同；当前最终字幕审核脚本默认 `gpt-6.1-sol` medium，见[实际工具命令](subtitle-review-tool.zh.md)。完整模板／系列规则／wrapper 变化必须进入缓存身份，不能只看 promptVersion |
 | 经文发现／选句／翻译／独立引用审计／修复 | [sermon_cuv_translation.py](../scripts/sermon_cuv_translation.py)：`SYSTEM`、`DISCOVER`、`SELECT`、`AUDIT_QUOTES` 与各阶段 instruction／payload | 分别登记每个阶段；原音／经文版次／引用权威、完整句与引用 offsets、不可凭模型补经文或扩大引用；timing repair 不删原义 |
 | 阅读稿编辑与 QA | [build_sermon_reading_edition_with_openai.py](../scripts/build_sermon_reading_edition_with_openai.py)：`READING_SYSTEM_PROMPT`、`QA_SYSTEM_PROMPT`、`request_payload` | 书面稿与口播规则分离，整块覆盖／禁省略／神学与引语忠实；QA 实际返回修订后的段落，应单列 reviewer-editor |
 | 大纲／讲道解读／引用／学习产物 | [review_prompts.py](../scripts/review_prompts.py)：`NOTES_SYSTEM_PROMPT`；[generate_notes_with_openai.py](../scripts/generate_notes_with_openai.py)：`build_openai_request` | 每项有 sourceSliceIndexes，引用必须逐字；当前 notes prompt 明确不生成讨论／默想问题，不能据此宣称已覆盖独立默想 producer。库条目须补已合并的[Study v2 builder](../scripts/sermon_study_generation.py)（`PROMPT`、kind=outline/meditation、payload）与[独立审核ingest](../scripts/sermon_unified_reviews.py)；R242-013待新篇生成/两份人审，不能写成producer尚不存在 |
@@ -665,6 +704,12 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 | `FIELD-10` | 更早 checkpoint、增量特征、鲁棒匹配或受控播放器信号 | 非阻塞后续实验，须独立预算/保留集；不引入默认 ASR/说话人识别 |
 
 实施顺序：先 `FIELD-01` + `FIELD-09` 建立可核对基线，再 `FIELD-02`—`04`，随后 `FIELD-05`—`06`；`FIELD-07`—`08` 贯穿全部步骤，`FIELD-10` 不作为本轮 P0 关闭条件。跨轨映射复用 `DEV-IOS-001` 和 Layer 4 合同，不在现场修复上游内容。专项中的样本扩围和精度数值是待基线后、试验前冻结的候选目标，不是当前成绩；未实施优化继续保持 `pending`。
+
+**2026-10-13 会场中后排基准：** 10/11 主日中后排座位用 iPhone 内置麦和 AirPods 录的两段，离线回放中生产索引可命中。本批负样本未观察到误命中；iPhone 15 秒窗口的失败主要卡在 matchFraction 门槛，不能据此降门槛。下一步是同时录制的保留集（`FIELD-09`）、声道选择（`FIELD-04`）以及查询端去噪 profile（`FIELD-10`）。真实素材清单和逐窗口报告留在本机，脱敏运行摘要见[报告 PR #412](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/412)；不算设备或会场通过。
+
+**2026-10-13 后台统计：** 应维护者要求，Web 每次听声定位都在匿名统计开关下上报一条计数记录，私有报表给出触发次数和成功率；生产失败时附带 `cmn-v1` 影子对照结果。iOS 尚未接入。范围与隐私边界见[专项第 6 节](field-fingerprint-alignment-backlog.zh.md#6-2026-10-13-听声定位后台统计与影子对照)。
+
+**2026-10-13 Web 早停：** Web 改为与 iOS 相同的 7→10→12→15 秒连续采集早停，占麦预算 21 秒（15 秒录音 + 5 秒启动 + 1 秒余量），门槛不变；见[专项第 7 节](field-fingerprint-alignment-backlog.zh.md#7-2026-10-13-web-早停7101215-秒)。iOS 侧随后完成这四项（15 秒从首个样本起算、整次截止 45 秒、定位统计、提示本地化），待 TestFlight 与真机验证，见[专项第 8 节](field-fingerprint-alignment-backlog.zh.md#8-2026-10-13-ios-早停预算统计与本地化)。
 
 ## P1：稳定性、恢复与运营效率
 

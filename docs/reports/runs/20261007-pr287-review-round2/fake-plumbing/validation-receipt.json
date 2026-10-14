@@ -1,0 +1,18 @@
+{
+  "scope": "PR 287 second review; offline only",
+  "unitTests": {
+    "command": ".venv/bin/python -m unittest tests.test_agent_api_trials tests.test_sermon_agents_api tests.test_source_bound_diagnostic_audio tests.test_replay_fixed_clip_local_models",
+    "passed": 93,
+    "exitCode": 0
+  },
+  "initialTestFailure": "One abstention test cited a nonexistent fixture filename; corrected the test citation, then targeted suite passed.",
+  "fakeRun": {
+    "initialAgentSessions": 26,
+    "reusedAgentSessionsStarted": 0,
+    "riskActions": 26,
+    "partialBlockedPlanCorrect": false
+  },
+  "liveCalls": 0,
+  "sparkCalls": 0,
+  "productionEligible": false
+}
