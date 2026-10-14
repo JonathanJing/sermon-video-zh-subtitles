@@ -102,7 +102,7 @@ GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node admin.mjs usage --from 2026-09-
 
 `action: "upsert"` 增加 `day`（洛杉矶 YYYY-MM-DD）、`clientId`（每日轮换随机 UUIDv4 或 null）、`platform`（`web` 或 `ios`）、`interfaceLocale`（`zh-Hans/en/ko/es/vi`）。`/api/listening` 另需 `contentLocale`（同语言枚举）、`listenedSeconds`（累计实际播放秒数，可为小数）、`ranges`（音频时间轴上已听区间，排序且合并相邻区间的 `[start,end]`，最多 256 组）。累计时长及已覆盖区间不得回退；时长不能超过凭据创建以来的墙钟时间加 10 秒容差；覆盖不能超过播放时长的 3 倍加 1 秒。
 
-来源目录每条已标注音轨增加成对的 `pageId/audioLocale`，其中 `audioLocale` 由服务端读取；客户端不可上传或冒充。`contentLocale` 必须属于同一页面的已发布目录语言集合。没有标注的旧来源仍可记录界面访问，不能冒充某语言页面收听；先补目录来源证据。界面语言与内容语言都冻结于该接口凭据，切换时先发旧快照，再换新凭据。每日匿名键只在服务端保存 `SHA256(day + NUL + platform + NUL + lowercaseUUID)`，不保存原 UUID。
+运行目录每条音轨有成对的 `pageId/audioLocale`，由部署程序从经过哈希校验的公开 `weekly.json` 派生，与原版 v1 `feedback-catalog.json` 的音轨、哈希和 cue 逐条核对；原版 v1 文件仍拒绝新增字段。旧页面没有显式语言时，按 Web 客户端既有规则视为 `zh-Hans`；页面与音轨语言冲突则停止暂存。客户端不可上传或冒充音轨语言。`contentLocale` 必须属于同一页面的已发布目录语言集合。界面语言与内容语言都冻结于该接口凭据，切换时先发旧快照，再换新凭据。每日匿名键只在服务端保存 `SHA256(day + NUL + platform + NUL + lowercaseUUID)`，不保存原 UUID。
 
 凭据固定到签发时的洛杉矶日期。跨日必须换每日 ID 和新凭据；前一天延迟快照仍归属前一天，不可通过改 `day` 重归属。统计时间不足以证明真实人在场或确实听见音频。
 

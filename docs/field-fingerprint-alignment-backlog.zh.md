@@ -134,7 +134,7 @@
 
 ## 5. 2026-10-13 会场中后排离线基准
 
-`FIELD-09` 增加第一份会场录音基准：固定清单 [`20261011-mid-back.json`](../data/benchmarks/field-venue-fingerprint/20261011-mid-back.json) 与可复现脚本 `scripts/field_venue_fingerprint_benchmark.mjs`。结果和建议见[基准报告](reports/20261013-field-venue-mid-back-benchmark.zh.md)。要点：远场失败集中在 matchFraction 门槛，`FIELD-03` 的延长不能解决这一类；`FIELD-04` 应加入输入声道选择；`FIELD-10` 的查询端 `cmn` 在开发集上有提升但不一致，须用保留集验证。本批只作开发集，上方各项勾选和状态不变。
+`FIELD-09` 增加第一份会场录音基准：真实素材清单与完整报告留在本机 `artifacts/field-benchmark/`，仓库只保留可复现脚本 `scripts/field_venue_fingerprint_benchmark.mjs` 和脱敏[运行报告 PR #412](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/412)。远场失败集中在 matchFraction 门槛，`FIELD-03` 的延长不能解决这一类；`FIELD-04` 应加入输入声道选择；`FIELD-10` 的查询端 `cmn` 在开发集上有提升但不一致，须用保留集验证。本批只作开发集，上方各项勾选和状态不变。
 
 ## 6. 2026-10-13 听声定位后台统计与影子对照
 

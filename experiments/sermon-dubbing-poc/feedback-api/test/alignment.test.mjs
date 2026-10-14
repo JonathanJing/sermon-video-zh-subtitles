@@ -81,6 +81,15 @@ test('report counts presses, recordings, jumps, reasons and shadow rescues', () 
   assert.ok(html.includes('33.3%')); assert.equal(html.includes('<script'), false);
 });
 
+test('report counts a confirmed match that expires before playback', () => {
+  const record = { schemaVersion: 1, expiresAt: new Date(start + 30 * DAY), day: '2026-10-11', platform: 'web',
+    pageId: 'p', contentLocale: 'zh-Hans', dailyClientKey: 'a', updatedAt: new Date(start),
+    attempts: [applied(start, { outcome: 'expired' })] };
+  const report = summarizeAlignment([record], { from: '2026-10-11', to: '2026-10-11', now: start + 3600000 });
+  assert.equal(report.totals.matched, 1);
+  assert.equal(report.totals.applied, 0);
+});
+
 test('a full 40-attempt list with every field at its longest stays well under the request limit', async () => {
   const longest = (at) => ({ at, outcome: 'play_blocked', stage: 'matched_audio', reason: 'matched', errorCode: 'MIC_START_TIMEOUT', level: 'very_low',
     fractionBand: '0_045_to_0_055', captureSeconds: 15, totalMs: 600000, shadow: { profile: 'cmn-v1', matched: false, agrees: null } });
