@@ -1,0 +1,10 @@
+{
+  "replicas": 8,
+  "loadSecondsRange": [
+    47.8,
+    49.1
+  ],
+  "poolWallSeconds": 41.4,
+  "generationSeconds": 31.6,
+  "segments": 13
+}

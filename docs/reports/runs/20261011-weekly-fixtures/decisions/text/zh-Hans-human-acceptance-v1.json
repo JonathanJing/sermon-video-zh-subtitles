@@ -1,0 +1,386 @@
+{
+ "schemaVersion": "sermon-text-qc-human-acceptance-v1",
+ "targetLocale": "zh-Hans",
+ "candidateJsonSha256": "e402fab4e25f0274f87c14e14f4ceb760411b79260469e9488be3ce779e4ed31",
+ "textQcJsonSha256": "590a9e08aa56bcd231fa9c807ca2020edeaf98a583936dd49f189a48cc9fd47d",
+ "decidedBy": "Jony",
+ "decidedByRole": "human_operator",
+ "humanApproval": true,
+ "decidedAt": "2026-10-11T09:50:00Z",
+ "userStatement": "zh 检查好后也放行; 你直接做机器检查，修改好后，开始做l3，跳过api调用 (delegation, 2026-10-11)",
+ "groups": [
+  {
+   "groupId": "translation-chunk-0000-u002",
+   "englishSha256": "30e0aed63a8aae7cadfdc8d121e623b8f99bae433e82cac95ad3a46bf7899e80",
+   "targetTextSha256": "9d9a3e00d86d185d00976fdb3bd82ed0c8b1f1b85b5fa77fcd8c453a8e360e8d",
+   "problems": [
+    "Han share 0.48 < 0.60"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "Latin-script proper noun/title (Steve Bang Lee, PlayStation, Hope Has Its Reasons) lowers the Han share; Chinese text is complete"
+  },
+  {
+   "groupId": "translation-chunk-0000-u012",
+   "englishSha256": "e3dc3b1e8ac8a25749e2973f8d39fbd980a1a5e9d127d054833231b3ce44f413",
+   "targetTextSha256": "9523dfccf8c45f570fe1f1c0f619eebdced9bada5a9ac74a6cbd9d2e5d241850",
+   "problems": [
+    "back_translation addition: my brother -> my younger brother"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0000-u017",
+   "englishSha256": "6d2cdfdeb9bab8480181f094e85f29f966539b9415385ba534df610506367c45",
+   "targetTextSha256": "a19d4d8c3732de4f7419938c61691c4ff0149977ff6dede09597a266678d23d4",
+   "problems": [
+    "Han share 0.52 < 0.60"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "Latin-script proper noun/title (Steve Bang Lee, PlayStation, Hope Has Its Reasons) lowers the Han share; Chinese text is complete"
+  },
+  {
+   "groupId": "translation-chunk-0000-u027",
+   "englishSha256": "9d8140e1070ec22d172ebf458562cabe34e79e28c295aa4169da2f8c3db2dffb",
+   "targetTextSha256": "d816d40e6c7499ff51787f9445885b8034ae97f88dbe31a024b8d2bfc6c161c0",
+   "problems": [
+    "back_translation meaning_shift: Because we are. -> Because we really are stronger than our younger brothers and sisters."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "elliptical 'Because we are.' completed from the preceding clause (older siblings stronger than younger)"
+  },
+  {
+   "groupId": "translation-chunk-0000-u035",
+   "englishSha256": "5f9a2b795615ba6a3d5455fd5624d773fbca5bcd16249c421fd37411dc9837da",
+   "targetTextSha256": "82891c89056e63f77133f8deaab3ce50a093b3c0e273c5319f3ea9c9f76dc0d1",
+   "problems": [
+    "back_translation meaning_shift: Yes. -> Remember."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "'Yes.' answering '你还记得…吗' is idiomatically 记得"
+  },
+  {
+   "groupId": "translation-chunk-0000-u037",
+   "englishSha256": "5f9a2b795615ba6a3d5455fd5624d773fbca5bcd16249c421fd37411dc9837da",
+   "targetTextSha256": "82891c89056e63f77133f8deaab3ce50a093b3c0e273c5319f3ea9c9f76dc0d1",
+   "problems": [
+    "back_translation meaning_shift: Yes. -> Remember."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "'Yes.' answering '你还记得…吗' is idiomatically 记得"
+  },
+  {
+   "groupId": "translation-chunk-0001-u007",
+   "englishSha256": "f7fa6f3b7dfc65ebcbbd51151af8c339ac317db7b77269eef8bd466705d1b222",
+   "targetTextSha256": "7d7055fc6694e1d1ec584083efe5dbb7ccddffe34fe13e9ef8cd16f322825bee",
+   "problems": [
+    "Han share 0.42 < 0.60"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "Latin-script proper noun/title (Steve Bang Lee, PlayStation, Hope Has Its Reasons) lowers the Han share; Chinese text is complete"
+  },
+  {
+   "groupId": "translation-chunk-0001-u010",
+   "englishSha256": "cfdd0cb5bc90cdfd84c5480a06c9b3466205248b9cef18f3cd258fb470089142",
+   "targetTextSha256": "cdaa12da8588ff1b222d49597acbd51c4351a0c444e46086e1dea0d5e4472d7d",
+   "problems": [
+    "back_translation number: we're going to see God give warnings -> we will see God give a warning"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0001-u012",
+   "englishSha256": "5b1812b8a6c173cd226aca577410608e4eca05670030691dacc1f0b7c8578bec",
+   "targetTextSha256": "91f666a66677c61b293742d4ec39da64e122e0de8e6947bfbe26bafd84f6f022",
+   "problems": [
+    "back_translation number: He's going to give warnings -> God will give a warning"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0001-u020",
+   "englishSha256": "085dd8d60bf772e352c50edc4542cf4cb94e50f63ecfcf4cf18a3dad67ab790e",
+   "targetTextSha256": "e07f618360880d824ffd7b0b0d91a5d1f3f1c094ba3ccf4ab791c4b4b37a7ee3",
+   "problems": [
+    "back_translation addition: That's where we're going to be. -> Next, we will focus on this part."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0001-u029",
+   "englishSha256": "96e9d98fbef8b14c2572dee57d42143a7ab9d23a91f9ef952856f11ed9fb5ab2",
+   "targetTextSha256": "9e5e3a422f866030105c6a75b85ad4af9d4c5ef2426a837f8d0add11e55784c4",
+   "problems": [
+    "back_translation meaning_shift: God's people would blow a trumpet as a warning that they were about to attack. -> God's people will blow the trumpet and sound a warning, indicating that they are about to launch an attack."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0001-u035",
+   "englishSha256": "5b6355e6e892442ad4a5696a9f99a0e0f61af47348fccd0d268f7ef7397d7334",
+   "targetTextSha256": "0986d4d320e60a6a51089a8ba343782409b98a918ea708998ec32d6694111237",
+   "problems": [
+    "back_translation addition: the walls of Jericho came tumbling down. -> Then the walls of Jericho collapsed."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0001-u036",
+   "englishSha256": "8b195dc821dce20293c2b38b71980c0c48aff993234b7ef3674e051455c4f482",
+   "targetTextSha256": "7f18497786a1fbf3a04f3cd192d822ceaabc3c9cdd911cd841c3f09c8ce8aebe",
+   "problems": [
+    "back_translation number: The trumpets -> The sound of that trumpet"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0003-u037",
+   "englishSha256": "3158879f70f081d5d2d24eaeeb0d4d09b2eb2abcf517a819bd4c74e66b9dbda5",
+   "targetTextSha256": "b08e627b6ed3e277a7b00ba7831433d2ded70866bd1b1d3db97884746097e004",
+   "problems": [
+    "back_translation meaning_shift: I felt angry. -> I feel angry."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0003-u038",
+   "englishSha256": "63454910c856fc5aa4d8afe0fceb67ea51aa729cc80fd9cc1106532b61bf23d4",
+   "targetTextSha256": "67ca9d21d3147f5ae98507248b8511f71ca119152108b42eb0d9438901484cfc",
+   "problems": [
+    "back_translation meaning_shift: I felt angry -> that makes me angry"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0003-u044",
+   "englishSha256": "ac3cf641c9d7c9fd0bc83f60242064d197429388a2c3d04f96849b21ff78b0e7",
+   "targetTextSha256": "e8869db2772dfac67232aac3a0194015dfbda310d6679b1b0d1a6a30e2160bad",
+   "problems": [
+    "back_translation meaning_shift: He called me names. -> He scolded me."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0004-u001",
+   "englishSha256": "325cf649ace316796dc74a016e1d7b6d5eb75b9f42acccf7a7acd878a2fa1ae4",
+   "targetTextSha256": "98faad2f0f8f4bda550463360424bf1622760757c53d54dda9ed54f7f8406244",
+   "problems": [
+    "Han share 0.59 < 0.60"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "Latin-script proper noun/title (Steve Bang Lee, PlayStation, Hope Has Its Reasons) lowers the Han share; Chinese text is complete"
+  },
+  {
+   "groupId": "translation-chunk-0004-u013",
+   "englishSha256": "479e04a9b8f8865fc2282880a91bbea7a9e51feae67cbf7978ca5f22fa331403",
+   "targetTextSha256": "a5270711cd04eadf7de0cbdccad305fa455e9bae0c01638c071bf4ee7ca2efbc",
+   "problems": [
+    "Han share 0.59 < 0.60"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "Latin-script proper noun/title (Steve Bang Lee, PlayStation, Hope Has Its Reasons) lowers the Han share; Chinese text is complete"
+  },
+  {
+   "groupId": "translation-chunk-0004-u037",
+   "englishSha256": "75b9567950c6bc22e0f220f0c8f9381783c1c266f1f25cc3cc1953245492ff96",
+   "targetTextSha256": "1a2a8c935ad65becc867a6023f1ed663f10890f43b8192a3185deb079ed10fc8",
+   "problems": [
+    "back_translation meaning_shift: Like the intense guy, his core attribute is intensity. -> Just like that person who is such a stickler, his core trait is being a stickler."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "'intense guy / intensity' rendered 较真 (overly earnest); fits the following hydration joke but differs from the prior line's 性情强烈 — accepted for release, listed for post-release wording fix"
+  },
+  {
+   "groupId": "translation-chunk-0005-u032",
+   "englishSha256": "f44e0aeca610ad042cc25872848d29162c23da0f1e965c113d8dbdfc166c27d8",
+   "targetTextSha256": "5e82dd6807fe756570f51f5b36b6bd1444aa922d7de082567edfae3b800ed87c",
+   "problems": [
+    "back_translation number: Trumpets. -> Trumpet."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0006-u028",
+   "englishSha256": "d729aaa5ab19177866aa4b204a5ace013aaa6878568e2d4a31c0c8ee99861ce8",
+   "targetTextSha256": "1cee77690247e4ffd06e1a93ceaf530d730e2a10cb9d6a725171ee1bbdf350b9",
+   "problems": [
+    "back_translation meaning_shift: I've stood with people on our church patio -> I have stood with everyone in the courtyard of our church"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0006-u035",
+   "englishSha256": "7198797c3502bc183218fbafde50613c1f94422fa3ec8af45c5c6ea15e8e42e1",
+   "targetTextSha256": "4010c70b205eb62b6c527f4e86065fc85370c9440d713f99543da1d7709bd01f",
+   "problems": [
+    "back_translation number: trumpet warnings -> trumpet warning"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0007-u007",
+   "englishSha256": "4384f569cc66f3cb5ed22b93e0cea8dfb19c0415c5b803cb2cfeb224c40fbc58",
+   "targetTextSha256": "060e204fb2128d7a41a861aa5d0410f62249099c60b0e791088282dba415061a",
+   "problems": [
+    "back_translation meaning_shift: He was unhappy. -> God is not pleased."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0007-u008",
+   "englishSha256": "7038b61f37cf01c1b2a7cff7fac34ab50ad02fce7212a739ecadaac61f94394c",
+   "targetTextSha256": "96f05dc2f39e95c15398a4f9e1eaaec760e4f70fa925c1d9b458b4b43c9a2864",
+   "problems": [
+    "back_translation meaning_shift: He'd send a plague. -> He will then send down a plague.",
+    "back_translation addition:  -> then"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0009-u010",
+   "englishSha256": "bb442c2d3a2ab286faed92d212ef09db227b073230c6c96d068b18e159f33c7b",
+   "targetTextSha256": "5a8b08842bd683999d6e230ce4bd3aa535d0af24b0c15726a24f0002cb2cb367",
+   "problems": [
+    "back_translation addition: the prayers of the saints -> the prayers of all the saints"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0009-u022",
+   "englishSha256": "1a15ed0a9fa5bba6e700c31c3b26aff5fa6c9c6b3fff316f91f0d4014e23a549",
+   "targetTextSha256": "9c8e493120f2fb3b233b1e728f82b168bf852534352ca8e554337cc82f2db8ff",
+   "problems": [
+    "back_translation meaning_shift: really convicted me -> really made me reflect deeply"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0009-u027",
+   "englishSha256": "f110d4154c3ab13f6c4dacd1263acc2bcfe1efad857e0d2ea96368022979846d",
+   "targetTextSha256": "e6eace34a6f15aadf186566541f9ac0f9c5d26efd1af497e96181fdfd5b1fb2c",
+   "problems": [
+    "back_translation meaning_shift: It was my sister. -> She is my sister."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0009-u034",
+   "englishSha256": "e057cd3974fc8ac02fa08523de81951e93392020592d49df77a29ad360321dff",
+   "targetTextSha256": "5ce10b9be28ff6dba76d4dc41e28be702bd1b7fe5f3b171558700070183f90d0",
+   "problems": [
+    "back_translation meaning_shift: And anytime we walk by, -> And whenever we walked past there,"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0010-u021",
+   "englishSha256": "79c286f572853623984199d891afda0b0d2a377708521b026ff4b6ed1852d7a7",
+   "targetTextSha256": "42be7bf185eed70bc2d2a1f1ee3b60eebbbfacae94893c9dd861556baf62c5a8",
+   "problems": [
+    "back_translation addition: And I will lead us in this room. -> And in this room, I will lead all of us in taking Communion together."
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "communion context (previous two sentences) supplies 领圣餐"
+  },
+  {
+   "groupId": "translation-chunk-0010-u026",
+   "englishSha256": "15282a8f9830cff8de4200a07a2d433bde590794cb0ab2e11d8b05ee78cd70ba",
+   "targetTextSha256": "8ad10a4f711700bee0010848df521d7395c933847d1f19f9150d65b651aae99d",
+   "problems": [
+    "back_translation meaning_shift: our older brother -> our eldest brother"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge flagged Chinese tense/number/referent neutrality or a context-licensed referent; meaning preserved"
+  },
+  {
+   "groupId": "translation-chunk-0011-u019",
+   "englishSha256": "7d6df550234a7593d2f4492f155d582ff8a2e5aea5eca1f8fa530ec9b581de29",
+   "targetTextSha256": "881a5a0939a9e0a583575a0a9b49c85f1391ad0c31ae12a190d57cfdbc7ceb5d",
+   "problems": [
+    "back_translation addition: And remember, not 99% of your sins, 100% of all of your sins. -> your sins are forgiven"
+   ],
+   "decision": "accepted",
+   "decidedBy": "Claude (delegated by Jony)",
+   "decidedByRole": "delegated_agent",
+   "reason": "back-translation judge truncated its own rendering; Chinese carries the full 99%/100% sentence"
+  }
+ ]
+}

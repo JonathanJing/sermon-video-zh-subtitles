@@ -1,0 +1,12 @@
+2026-10-12T06:02:01.904709+00:00 INFO run=2cad04f0f8b348deaacb15ad0dc03227 run_started workflowId=a5253f4eca9148be912d9b98ea02c5a7
+2026-10-12T06:02:01.960125+00:00 INFO run=2cad04f0f8b348deaacb15ad0dc03227 workflow_started workflowId=a5253f4eca9148be912d9b98ea02c5a7
+2026-10-12T06:02:01.964257+00:00 INFO run=2cad04f0f8b348deaacb15ad0dc03227 workflow_evidence workflowId=a5253f4eca9148be912d9b98ea02c5a7
+2026-10-12T06:02:01.964605+00:00 INFO run=2cad04f0f8b348deaacb15ad0dc03227 stage_started workflowId=a5253f4eca9148be912d9b98ea02c5a7 stage=canonical_layer2_worker spanId=89720a4c33b9476c9df68284dc700fcc attemptId=f564e42c687f4e589e9d152d20510b4a
+2026-10-12T06:02:01.964857+00:00 INFO run=2cad04f0f8b348deaacb15ad0dc03227 workload workflowId=a5253f4eca9148be912d9b98ea02c5a7 stage=timing.inline_dispatch_v1 spanId=89720a4c33b9476c9df68284dc700fcc
+2026-10-12T06:02:01.965065+00:00 INFO run=2cad04f0f8b348deaacb15ad0dc03227 stage_started workflowId=a5253f4eca9148be912d9b98ea02c5a7 stage=layer2.worker_admission.ko spanId=cd7fe2746faf4050bdf11043382e9858 attemptId=c30f404ce1e44bc8acf56b0b23de5e6c
+2026-10-12T06:02:01.965223+00:00 INFO run=2cad04f0f8b348deaacb15ad0dc03227 workload workflowId=a5253f4eca9148be912d9b98ea02c5a7 stage=timing.inline_dispatch_v1 spanId=cd7fe2746faf4050bdf11043382e9858
+2026-10-12T06:02:01.982222+00:00 INFO run=2cad04f0f8b348deaacb15ad0dc03227 stage_finished workflowId=a5253f4eca9148be912d9b98ea02c5a7 stage=layer2.worker_admission.ko spanId=cd7fe2746faf4050bdf11043382e9858 attemptId=c30f404ce1e44bc8acf56b0b23de5e6c status=completed elapsedSeconds=0.017108
+2026-10-12T06:02:02.570978+00:00 ERROR run=2cad04f0f8b348deaacb15ad0dc03227 stage_finished workflowId=a5253f4eca9148be912d9b98ea02c5a7 stage=canonical_layer2_worker spanId=89720a4c33b9476c9df68284dc700fcc attemptId=f564e42c687f4e589e9d152d20510b4a status=failed elapsedSeconds=0.605232 errorType=SessionError at=scripts/spark_exclusive_session.py:790
+2026-10-12T06:02:02.573969+00:00 INFO run=2cad04f0f8b348deaacb15ad0dc03227 workflow_evidence workflowId=a5253f4eca9148be912d9b98ea02c5a7
+2026-10-12T06:02:02.574396+00:00 ERROR run=2cad04f0f8b348deaacb15ad0dc03227 workflow_finished workflowId=a5253f4eca9148be912d9b98ea02c5a7 status=failed
+2026-10-12T06:02:02.574814+00:00 ERROR run=2cad04f0f8b348deaacb15ad0dc03227 run_finished workflowId=a5253f4eca9148be912d9b98ea02c5a7 status=failed

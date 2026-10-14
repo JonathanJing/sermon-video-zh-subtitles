@@ -1,0 +1,23 @@
+{
+ "note": "ko c3 PCM master re-encoded at three bitrates and compared with target_audio_auto_qc._waveform_comparison (TRACK_ENVELOPE settings)",
+ "results": {
+  "64k": {
+   "audibleWindows": 34820,
+   "deviantWindows": 53,
+   "minCorrelation": 0.732888,
+   "maxRelativeError": 0.827209
+  },
+  "96k": {
+   "audibleWindows": 34819,
+   "deviantWindows": 0,
+   "minCorrelation": 0.970151,
+   "maxRelativeError": 0.243291
+  },
+  "128k": {
+   "audibleWindows": 34819,
+   "deviantWindows": 0,
+   "minCorrelation": 0.985098,
+   "maxRelativeError": 0.175409
+  }
+ }
+}

@@ -1,0 +1,11 @@
+{
+  "holds": [
+    {
+      "id": "hold_7f3a",
+      "createdAt": "2026-10-08T01:30:10Z",
+      "status": "held",
+      "owner": "haiku-round-20261007",
+      "gpuProcesses": 0
+    }
+  ]
+}

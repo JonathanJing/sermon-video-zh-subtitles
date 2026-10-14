@@ -1,0 +1,5 @@
+2026-10-07T23:10:44Z 646d9356 Wire machine QC for a full dev run: condensation, audio waiver driver, ko/es plugins, v4 add-on tools (#282)
+  M scripts/language_review_plugins/zh_hans.py
+  M scripts/language_review_plugins/common.py
+2026-10-07T18:02:11Z e3bef70b Merge pull request #279 from codex/qc-spanish-name-exemptions
+2026-10-05T21:31:55Z 1e0959bd Unify production models on Codex CLI and preserve receipt-driven recovery (#248)

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "spark-session begin",
+  "status": "failed",
+  "exitCode": 2,
+  "startedAt": "2026-10-08T01:25:01Z",
+  "endedAt": "2026-10-08T01:25:03Z",
+  "error": {
+    "type": "SessionError",
+    "message": "interrupted_restart_authorization_required"
+  }
+}

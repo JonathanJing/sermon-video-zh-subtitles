@@ -418,6 +418,137 @@ class FormalRenderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Spoken form changes"):
             subject.unit_instructions(self.context["job"], map_path)
 
+    def test_legacy_korean_job_refuses_external_spoken_override_but_keeps_delivery_instructions(self):
+        from scripts import ko_spoken_numerals
+        job = self.context["job"]
+        job["units"][0]["text"] = "시편 101편을 읽습니다."
+        document = ko_spoken_numerals.build(job)
+        path = self.root.parent / "legacy-ko-instructions.json"
+        path.write_text(json.dumps(document))
+        with self.assertRaisesRegex(ValueError, "new job frozen with normalization-v2"):
+            subject.unit_instructions(job, path)
+        self.assertEqual(subject.unit_instructions(job, None), {})
+        document["schemaVersion"] = "sermon-unit-delivery-instructions-v1"
+        row = document["units"][0]
+        row.pop("spokenText")
+        row["instruction"] = "Read clearly."
+        path.write_text(json.dumps(document))
+        self.assertEqual(subject.unit_instructions(job, path), {
+            job["units"][0]["translationGroupId"]: {"instruction": "Read clearly."}})
+
+    def test_korean_chapter_numbers_are_spoken_with_sino_numerals(self):
+        from scripts import ko_spoken_numerals
+        approved = "예를 들어 하박국 2장을 보십시오."
+        spoken = "예를 들어 하박국 이장을 보십시오."
+        self.assertEqual(ko_spoken_numerals.spoken_form(approved), spoken)
+        self.assertTrue(subject._spoken_equivalent(approved, spoken, "ko"))
+        self.assertFalse(subject._spoken_equivalent(approved, "예를 들어 하박국 두 장을 보십시오.", "ko"))
+        self.assertFalse(subject._spoken_equivalent(approved, "예를 들어 하박국 삼장을 보십시오.", "ko"))
+
+        job = self.context["job"]
+        job["units"][0]["text"] = approved
+        job["adapter"]["normalizationPolicySha256"] = subject.identity.json_sha256(
+            subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
+        document = ko_spoken_numerals.build(job)
+        self.assertEqual([row["translationGroupId"] for row in document["units"]],
+                         [job["units"][0]["translationGroupId"]])
+        self.assertNotIn("instruction", document["units"][0])
+        map_path = self.root.parent / "ko-spoken-instructions.json"
+        map_path.write_text(json.dumps(document))
+        overrides = subject.unit_instructions(job, map_path)
+        self.assertEqual(overrides, {job["units"][0]["translationGroupId"]: {"spokenText": spoken}})
+        subject.render_units(self.context, self.paths, self.root, self.root / "checkpoint-map.json",
+                             instructions_by_group=overrides, synth_factory=FakeSynth)
+        self.assertEqual(FakeSynth.calls[0][0], spoken)
+        intent = subject.package.read_object(self.root / "receipts/unit-0000.intent.json")
+        self.assertEqual(intent["textSha256"], hashlib.sha256(approved.encode()).hexdigest())
+        self.assertEqual(intent["spokenTextSha256"], hashlib.sha256(spoken.encode()).hexdigest())
+
+        # v1 keeps its meaning: an instruction on every row and no Korean spoken form.
+        for version, row, message in (
+                ("sermon-unit-delivery-instructions-v1", {}, "operator evidence"),
+                ("sermon-unit-delivery-instructions-v1", {"instruction": "Read clearly."}, "unsupported locale"),
+                ("sermon-unit-delivery-instructions-v2", {"spokenText": "예를 들어 하박국 두 장을 보십시오."},
+                 "Spoken form changes"),
+                ("sermon-unit-delivery-instructions-v2", {"spokenText": None}, "operator evidence")):
+            changed = dict(document, schemaVersion=version,
+                           units=[{**document["units"][0], **row}])
+            map_path.write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError, message):
+                subject.unit_instructions(job, map_path)
+
+    def test_korean_spoken_overrides_preserve_audible_symbols(self):
+        from scripts import ko_spoken_numerals
+        job = self.context["job"]
+        approved = "요한복음 3장과 50%를 읽습니다."
+        job["units"][0]["text"] = approved
+        job["adapter"]["normalizationPolicySha256"] = subject.identity.json_sha256(
+            subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
+        document = ko_spoken_numerals.build(job)
+        document["units"][0]["spokenText"] = "요한복음 삼장과 50를 읽습니다."
+        map_path = self.root.parent / "invalid-symbol-instructions.json"
+        map_path.write_text(json.dumps(document))
+        with self.assertRaisesRegex(ValueError, "Spoken form changes"):
+            subject.unit_instructions(job, map_path)
+
+    def test_automatic_korean_policy_leaves_bare_and_ordinary_counters_exact(self):
+        job = self.context["job"]
+        job["adapter"]["normalizationPolicySha256"] = subject.identity.json_sha256(
+            subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
+        for text in ("사진 2장과 영화 2편", "영화 2편"):
+            with self.subTest(text=text):
+                job["units"][0]["text"] = text
+                self.assertEqual(subject.unit_instructions(job, None), {})
+        # v3: a bare chapter in sermon prose is read in Sino-Korean.
+        job["units"][0]["text"] = "8장을 보십시오."
+        self.assertEqual(subject.unit_instructions(job, None),
+                         {job["units"][0]["translationGroupId"]: {"spokenText": "팔장을 보십시오."}})
+
+    def test_the_spoken_forms_policy_speaks_korean_chapter_numbers_without_a_file(self):
+        job = self.context["job"]
+        approved = "예를 들어 하박국 2장을 보십시오."
+        job["units"][0]["text"] = approved
+        group = job["units"][0]["translationGroupId"]
+        # A job bound to the exact-text policy keeps its identity: no spoken form.
+        self.assertEqual(subject.unit_instructions(job, None), {})
+        job["adapter"]["normalizationPolicySha256"] = subject.identity.json_sha256(
+            subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
+        overrides = subject.unit_instructions(job, None)
+        self.assertEqual(overrides, {group: {"spokenText": "예를 들어 하박국 이장을 보십시오."}})
+        subject.render_units(self.context, self.paths, self.root, self.root / "checkpoint-map.json",
+                             instructions_by_group=overrides, synth_factory=FakeSynth)
+        self.assertEqual(FakeSynth.calls[0][0], "예를 들어 하박국 이장을 보십시오.")
+
+        # A file may add an instruction to the same unit but not a different spoken form.
+        document = {"schemaVersion": "sermon-unit-delivery-instructions-v1", "targetLocale": "ko",
+                    "speechJobJsonSha256": subject.identity.json_sha256(job),
+                    "units": [{"translationGroupId": group,
+                               "approvedTextSha256": hashlib.sha256(approved.encode()).hexdigest(),
+                               "instruction": "Read clearly.", "operatorEvidence": "Operator note"}]}
+        map_path = self.root.parent / "policy-instructions.json"
+        map_path.write_text(json.dumps(document))
+        self.assertEqual(subject.unit_instructions(job, map_path)[group],
+                         {"instruction": "Read clearly.", "spokenText": "예를 들어 하박국 이장을 보십시오."})
+        document["schemaVersion"] = "sermon-unit-delivery-instructions-v2"
+        document["units"][0]["spokenText"] = "예를 들어 하박국 이 장을 보십시오."
+        map_path.write_text(json.dumps(document))
+        with self.assertRaisesRegex(ValueError, "differs from the normalization policy"):
+            subject.unit_instructions(job, map_path)
+
+    def test_tracked_layer3_adapters_bind_the_tracked_policies(self):
+        config = Path(subject.__file__).resolve().parents[1] / "config"
+        policies = subject.package.read_object(config / "layer3-audio-operation-policies.json")
+        self.assertEqual(policies["normalization"], subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
+        for locale in ("zh-Hans", "ko", "es"):
+            adapter = subject.package.read_object(config / f"layer3-adapters/adapter-{locale}.json")
+            self.assertEqual(adapter["targetLocale"], locale)
+            for name, field in (("normalization", "normalizationPolicySha256"),
+                                ("asrScreening", "asrScreeningPolicySha256"),
+                                ("subtitle", "subtitlePolicySha256")):
+                self.assertEqual(adapter[field], subject.identity.json_sha256(policies[name]))
+            self.assertEqual(adapter["registryJsonSha256"], subject.identity.json_sha256(
+                subject.package.read_object(config / "speaker-voice-registry.json")))
+
     def test_tampered_audio_and_orphan_are_rejected(self):
         rows = self.render_units()
         (self.root / rows[0]["audio"]["path"]).write_bytes(b"tampered")

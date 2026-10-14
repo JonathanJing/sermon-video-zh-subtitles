@@ -1,0 +1,24 @@
+{
+  "id": "f08-monitor-bad-substitution",
+  "reconstructedFrom": "docs/reports/20261008-haiku-180s-8x8-round2-retrospective.zh.md Monitor 启动即失败",
+  "category": "shell_incompatibility",
+  "abstain": false,
+  "causeKeywords": [
+    [
+      "zsh"
+    ],
+    [
+      "indirect",
+      "${!",
+      "bash"
+    ]
+  ],
+  "fixKeywords": [
+    [
+      "bash",
+      "shebang",
+      "separate",
+      "file"
+    ]
+  ]
+}
