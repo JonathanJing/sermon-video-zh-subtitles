@@ -45,9 +45,11 @@ SCORING_V4 = ("token-sequence-ratio-v4; readings a listener cannot tell apart ar
            "a Korean native numeral before a Sino counter is not folded); "
            "short units (<4 tokens) must match exactly; "
            "no negation, number or protected name may differ; numbers and names keep their order")
-SCORING = SCORING_V4.replace("token-sequence-ratio-v4", "token-sequence-ratio-v5") + (
+SCORING_V5 = SCORING_V4.replace("token-sequence-ratio-v4", "token-sequence-ratio-v5") + (
     "; book-anchored Korean scripture range endpoints are folded together")
-KNOWN_SCORINGS = (SCORING_V3, SCORING_V4, SCORING)
+SCORING = SCORING_V5.replace("token-sequence-ratio-v5", "token-sequence-ratio-v6") + (
+    "; a Spanish digit string grouped by thousands separators (2.700 or 2,700) is one number")
+KNOWN_SCORINGS = (SCORING_V3, SCORING_V4, SCORING_V5, SCORING)
 MODEL = "Qwen/Qwen3-ASR-0.6B"
 BATCH_SIZES = (1, 2, 4, 8)
 
@@ -531,7 +533,15 @@ def _take_spanish_cardinal(pieces: list[str], index: int) -> tuple[int | None, i
     return total + thousands + section, stop
 
 
-def _fold_spanish(text: str) -> str:
+# ASR writes 2 700 000 000 as "2.700 millones" (Spanish thousands point) or "2,700 millones";
+# a spelled "dos mil setecientos millones" folds to the same value only if the groups join.
+# Only complete three-digit groups join; "2,7" or "3,14" stay a decimal written two ways.
+_ES_GROUPED_DIGITS = re.compile(r"(?<![\d.,])\d{1,3}(?:([.,])\d{3})(?:\1\d{3})*(?![\d]|[.,]\d)")
+
+
+def _fold_spanish(text: str, *, grouped_digits: bool = True) -> str:
+    if grouped_digits:
+        text = _ES_GROUPED_DIGITS.sub(lambda match: re.sub(r"[.,]", "", match.group()), text)
     text = re.sub(r"(\d+)\s*%", r"\1 por 100", text)  # 10% is read "diez por ciento".
     pieces = re.findall(r"[^\W_]+|[\W_]+", text)
     index, out = 0, []
@@ -547,7 +557,7 @@ def _fold_spanish(text: str) -> str:
     return "".join(out)
 
 
-def fold_transcript(text: str, locale: str, *, citation_ranges: bool = True) -> str:
+def fold_transcript(text: str, locale: str, *, citation_ranges: bool = True, grouped_digits: bool = True) -> str:
     """One spelling for readings a listener cannot tell apart; see the notes above."""
     text = unicodedata.normalize("NFKC", text)
     if locale == "zh-Hans":
@@ -555,7 +565,7 @@ def fold_transcript(text: str, locale: str, *, citation_ranges: bool = True) -> 
     if locale == "ko":
         return _fold_korean(text, citation_ranges=citation_ranges)
     if locale == "es":
-        return _fold_spanish(text)
+        return _fold_spanish(text, grouped_digits=grouped_digits)
     return text
 
 
@@ -572,7 +582,8 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
         raise ValueError("Unknown ASR scoring identity: " + str(scoring))
     folded = scoring != SCORING_V3
     if folded:
-        expected, recognized = (fold_transcript(text, locale, citation_ranges=scoring == SCORING)
+        expected, recognized = (fold_transcript(text, locale, citation_ranges=scoring in (SCORING_V5, SCORING),
+                                                grouped_digits=scoring == SCORING)
                                 for text in (expected, recognized))
     expected_tokens, actual_tokens = tokens(expected, locale), tokens(recognized, locale)
     matcher = difflib.SequenceMatcher(None, expected_tokens, actual_tokens, autojunk=False)
@@ -598,7 +609,7 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
         return [["-" if item in "-~–" else item
                  for item in re.findall(r"\d+|" + _RANGE_PARTICLE + "|" + _CONNECTOR + r"|장|절|편", citation) if item != ","]
                 for _, citation in spans]
-    structure_agrees = (scoring != SCORING or locale != "ko"
+    structure_agrees = (scoring not in (SCORING_V5, SCORING) or locale != "ko"
                         or number_structure(expected) == number_structure(recognized))
     passed = (structure_agrees and similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
               and not any(key_word(row["expected"], locale) or key_word(row["recognized"], locale)
