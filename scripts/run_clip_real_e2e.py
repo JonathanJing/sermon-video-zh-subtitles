@@ -788,7 +788,7 @@ def stage_layer4(run: Run):
 def stage_report(run: Run):
     name = datetime.now(timezone.utc).strftime("%Y%m%d") + "-clip-e2e-" + run.spec["name"]
     run.sh("report", [PY, ROOT / "scripts/export_run_digest.py", run.dir, "--name", name])
-    run.mark("report", "done", name=name)
+    run.mark("report", "done", reportName=name)
 
 
 # ---------------------------------------------------------------- driver
