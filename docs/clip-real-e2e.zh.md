@@ -50,7 +50,7 @@
 - **续跑：** 同一条命令。已完成的阶段跳过；运行目录绑定首次使用的规格，改过的规格会被拒绝。
 - **只跑到某一步：** 加 `--through layer2`，或 `qc.ko`、`audio.es` 等。
 - **发布到 Dev：** 加 `--publish`。
-- **修复音频质检失败：** 当 `audio.<语言>` 的 `nextActions` 全部为 `resynthesize_new_seed` 时，运行 `repair-audio --spec artifacts/<run>/run-spec.json --run-dir artifacts/<run> --locale ko --seed 43`。它在独立渲染根保留旧失败与账本，对新音频重新压缩、筛查、打包和质检。通过后再用原 `run --publish` 续跑 Layer 4；结果未知先对账，不换种子盲试。
+- **修复音频质检失败：** 当 `audio.<语言>` 的 `nextActions` 全部为 `resynthesize_new_seed` 时，运行 `repair-audio --spec artifacts/<run>/run-spec.json --run-dir artifacts/<run> --locale ko --seed 43`。它按同一总预算为新提交规划独立质检授权，在独立渲染根保留旧失败与修复账本，对新音频重新压缩、筛查、打包和质检。通过后再用原 `run --publish` 续跑 Layer 4；结果未知先对账，不换种子盲试。
 - **查看状态：** `run_clip_real_e2e.py status --spec … --run-dir …`，显示各阶段状态、已结算花费和仍未结束的质检上限。
 
 运行目录必须在 `artifacts/` 下，因为音频质检会把它镜像到 Spark，并挂载在同一个绝对路径。每一步的输出在 `logs/<步骤>.log`，耗时记在 `timings.tsv`，结束时写 `summary.json`。

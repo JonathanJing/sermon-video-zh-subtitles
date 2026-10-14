@@ -624,7 +624,8 @@ def repair_audio(run: Run, locale: str, seed: int, code: str):
         require(job.read_bytes() == original_job.read_bytes(), "repair speech job differs from frozen original")
     else:
         shutil.copyfile(original_job, job)
-    run.check(f"gpu-{locale}-seed-{seed}", "--budget-plan", run.dir / "plans" / f"qc-{locale}",
+    repair_plan = run.dir / "plans" / f"qc-{locale}-audio-seed-{seed}"
+    run.check(f"gpu-{locale}-seed-{seed}", "--budget-plan", repair_plan,
               "--spark-stages", "--spark-code-dir", f"{run.stage_dir}/{code}")
     inputs = ["--source", src, "--anchor", anchor, "--candidate", candidate, "--policy", policy,
               "--human-review-receipt", waiver, "--speaker-registry", registry, "--adapter", adapter,
@@ -673,7 +674,7 @@ def repair_audio(run: Run, locale: str, seed: int, code: str):
             shutil.copyfile(source_path, target)
     mirror_run_to_spark(run)
     out = run.dir / "aqc" / f"{locale}-seed-{seed}"
-    authorization = run.dir / "plans" / f"qc-{locale}" / f"qc-{locale}" / "api-budget-authorization.json"
+    authorization = repair_plan / f"qc-{locale}" / "api-budget-authorization.json"
     if not (out / "summary.json").exists():
         run.sh(f"audio-qc.{locale}.seed-{seed}", [*spark, "audio-qc", *common, "--audio-package", package,
                "--state-dir", run.dir / f"textqc-{locale}" / "state", "--api-budget-authorization", authorization,
@@ -846,6 +847,8 @@ def main(argv=None) -> int:
         require(prior.get("nextActions") and set(prior["nextActions"].values()) == {"resynthesize_new_seed"},
                 "audio QC did not request resynthesize_new_seed")
         require(args.seed >= 0 and args.seed != 42, "repair seed must differ from the original seed 42")
+        run.plan(run.dir / "plans" / f"qc-{args.locale}-audio-seed-{args.seed}",
+                 [f"qc.{args.locale}"], [args.locale], extra=["--qc-inputs", run.l2 / "qc-inputs.json"])
         stopped = []
         try:
             ensure_session(run)
