@@ -1,0 +1,121 @@
+........................................................................ [ 20%]
+........................................................................ [ 40%]
+........................................................................ [ 60%]
+........................................................................ [ 80%]
+.............FFFFFFFF............................. [ 94%]
+....................                                         [100%]
+=================================== FAILURES ===================================
+_________ test_terminal_compound_marker_asr_space[\ubd80\ud130\ub294] __________
+
+terminal = '부터는'
+
+    @pytest.mark.parametrize("terminal", ["부터는", "부터만", "부터도", "에서는", "에서도", "까지는", "까지만", "까지도"])
+    def test_terminal_compound_marker_asr_space(terminal):
+        from scripts import screen_target_language_audio_units as screen
+        approved = "요한복음 3장부터4장" + terminal
+        spoken = "요한복음 삼장부터사장" + terminal[:-1] + " " + terminal[-1]
+>       assert screen.score(approved, spoken, "ko", 0.88)[2]
+E       assert False
+
+tests/test_ko_spoken_numerals.py:387: AssertionError
+_________ test_terminal_compound_marker_asr_space[\ubd80\ud130\ub9cc] __________
+
+terminal = '부터만'
+
+    @pytest.mark.parametrize("terminal", ["부터는", "부터만", "부터도", "에서는", "에서도", "까지는", "까지만", "까지도"])
+    def test_terminal_compound_marker_asr_space(terminal):
+        from scripts import screen_target_language_audio_units as screen
+        approved = "요한복음 3장부터4장" + terminal
+        spoken = "요한복음 삼장부터사장" + terminal[:-1] + " " + terminal[-1]
+>       assert screen.score(approved, spoken, "ko", 0.88)[2]
+E       assert False
+
+tests/test_ko_spoken_numerals.py:387: AssertionError
+_________ test_terminal_compound_marker_asr_space[\ubd80\ud130\ub3c4] __________
+
+terminal = '부터도'
+
+    @pytest.mark.parametrize("terminal", ["부터는", "부터만", "부터도", "에서는", "에서도", "까지는", "까지만", "까지도"])
+    def test_terminal_compound_marker_asr_space(terminal):
+        from scripts import screen_target_language_audio_units as screen
+        approved = "요한복음 3장부터4장" + terminal
+        spoken = "요한복음 삼장부터사장" + terminal[:-1] + " " + terminal[-1]
+>       assert screen.score(approved, spoken, "ko", 0.88)[2]
+E       assert False
+
+tests/test_ko_spoken_numerals.py:387: AssertionError
+_________ test_terminal_compound_marker_asr_space[\uc5d0\uc11c\ub294] __________
+
+terminal = '에서는'
+
+    @pytest.mark.parametrize("terminal", ["부터는", "부터만", "부터도", "에서는", "에서도", "까지는", "까지만", "까지도"])
+    def test_terminal_compound_marker_asr_space(terminal):
+        from scripts import screen_target_language_audio_units as screen
+        approved = "요한복음 3장부터4장" + terminal
+        spoken = "요한복음 삼장부터사장" + terminal[:-1] + " " + terminal[-1]
+>       assert screen.score(approved, spoken, "ko", 0.88)[2]
+E       assert False
+
+tests/test_ko_spoken_numerals.py:387: AssertionError
+_________ test_terminal_compound_marker_asr_space[\uc5d0\uc11c\ub3c4] __________
+
+terminal = '에서도'
+
+    @pytest.mark.parametrize("terminal", ["부터는", "부터만", "부터도", "에서는", "에서도", "까지는", "까지만", "까지도"])
+    def test_terminal_compound_marker_asr_space(terminal):
+        from scripts import screen_target_language_audio_units as screen
+        approved = "요한복음 3장부터4장" + terminal
+        spoken = "요한복음 삼장부터사장" + terminal[:-1] + " " + terminal[-1]
+>       assert screen.score(approved, spoken, "ko", 0.88)[2]
+E       assert False
+
+tests/test_ko_spoken_numerals.py:387: AssertionError
+_________ test_terminal_compound_marker_asr_space[\uae4c\uc9c0\ub294] __________
+
+terminal = '까지는'
+
+    @pytest.mark.parametrize("terminal", ["부터는", "부터만", "부터도", "에서는", "에서도", "까지는", "까지만", "까지도"])
+    def test_terminal_compound_marker_asr_space(terminal):
+        from scripts import screen_target_language_audio_units as screen
+        approved = "요한복음 3장부터4장" + terminal
+        spoken = "요한복음 삼장부터사장" + terminal[:-1] + " " + terminal[-1]
+>       assert screen.score(approved, spoken, "ko", 0.88)[2]
+E       assert False
+
+tests/test_ko_spoken_numerals.py:387: AssertionError
+_________ test_terminal_compound_marker_asr_space[\uae4c\uc9c0\ub9cc] __________
+
+terminal = '까지만'
+
+    @pytest.mark.parametrize("terminal", ["부터는", "부터만", "부터도", "에서는", "에서도", "까지는", "까지만", "까지도"])
+    def test_terminal_compound_marker_asr_space(terminal):
+        from scripts import screen_target_language_audio_units as screen
+        approved = "요한복음 3장부터4장" + terminal
+        spoken = "요한복음 삼장부터사장" + terminal[:-1] + " " + terminal[-1]
+>       assert screen.score(approved, spoken, "ko", 0.88)[2]
+E       assert False
+
+tests/test_ko_spoken_numerals.py:387: AssertionError
+_________ test_terminal_compound_marker_asr_space[\uae4c\uc9c0\ub3c4] __________
+
+terminal = '까지도'
+
+    @pytest.mark.parametrize("terminal", ["부터는", "부터만", "부터도", "에서는", "에서도", "까지는", "까지만", "까지도"])
+    def test_terminal_compound_marker_asr_space(terminal):
+        from scripts import screen_target_language_audio_units as screen
+        approved = "요한복음 3장부터4장" + terminal
+        spoken = "요한복음 삼장부터사장" + terminal[:-1] + " " + terminal[-1]
+>       assert screen.score(approved, spoken, "ko", 0.88)[2]
+E       assert False
+
+tests/test_ko_spoken_numerals.py:387: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_compound_marker_asr_space[\ubd80\ud130\ub294]
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_compound_marker_asr_space[\ubd80\ud130\ub9cc]
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_compound_marker_asr_space[\ubd80\ud130\ub3c4]
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_compound_marker_asr_space[\uc5d0\uc11c\ub294]
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_compound_marker_asr_space[\uc5d0\uc11c\ub3c4]
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_compound_marker_asr_space[\uae4c\uc9c0\ub294]
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_compound_marker_asr_space[\uae4c\uc9c0\ub9cc]
+FAILED tests/test_ko_spoken_numerals.py::test_terminal_compound_marker_asr_space[\uae4c\uc9c0\ub3c4]
+8 failed, 350 passed, 34 subtests passed in 1.79s

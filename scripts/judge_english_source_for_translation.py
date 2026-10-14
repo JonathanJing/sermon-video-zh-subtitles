@@ -401,7 +401,8 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
 
     if caller is None:
         from scripts.production_spark_admission import SessionBoundCaller
-        caller = SessionBoundCaller(chat_json, purpose="english-machine-review")
+        caller = SessionBoundCaller(chat_json, purpose="english-machine-review", requires_spark=False,
+                                    outcome_directory=cache_root / "api-cli-outcomes")
     deterministic = deterministic_review(aligned_path, manifest)
     sentences = _sentence_inputs(manifest)
     reviewed: list[dict[str, Any]] = []

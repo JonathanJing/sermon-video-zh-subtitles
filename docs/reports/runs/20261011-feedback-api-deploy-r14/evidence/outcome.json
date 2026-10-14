@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "revision": "sermon-feedback-api-00014-bej",
+  "trafficPercent": 100,
+  "httpStatus": 405,
+  "browserSmoke": "not_run",
+  "details": "# Feedback API deployment\n\n- Project: ai-for-god-caption-dev; region: us-west1\n- Previous revision: sermon-feedback-api-00013-xom\n- Deployed revision: sermon-feedback-api-00014-bej\n- Deploy exit: 0; function ACTIVE; ready revision receives 100% traffic\n- HTTP GET /api/session: 405, method_not_allowed (expected)\n- Local catalog validation: seven source cases passed; unknown source refused\n- Browser three-language session smoke: not_run\n- Rollback source saved under artifacts/feedback-api-20261012/rollback-00013; rollback not executed\n"
+}

@@ -45,9 +45,13 @@ SCORING_V4 = ("token-sequence-ratio-v4; readings a listener cannot tell apart ar
            "a Korean native numeral before a Sino counter is not folded); "
            "short units (<4 tokens) must match exactly; "
            "no negation, number or protected name may differ; numbers and names keep their order")
-SCORING = SCORING_V4.replace("token-sequence-ratio-v4", "token-sequence-ratio-v5") + (
+SCORING_V5 = SCORING_V4.replace("token-sequence-ratio-v4", "token-sequence-ratio-v5") + (
     "; book-anchored Korean scripture range endpoints are folded together")
-KNOWN_SCORINGS = (SCORING_V3, SCORING_V4, SCORING)
+SCORING = SCORING_V5.replace("token-sequence-ratio-v5", "token-sequence-ratio-v6") + (
+    "; a Spanish digit string grouped by thousands points (2.700) or by two or more comma groups (1,000,000) "
+    "is one number; "
+    "comma decimals and numbers starting with 0 stay as written, their fractional digits unfolded")
+KNOWN_SCORINGS = (SCORING_V3, SCORING_V4, SCORING_V5, SCORING)
 MODEL = "Qwen/Qwen3-ASR-0.6B"
 BATCH_SIZES = (1, 2, 4, 8)
 
@@ -406,7 +410,7 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
         # range 삼-사장 the first one-syllable endpoint has no counter of its own.
         # Do not grant that interpretation to bare words or ordinary counters.
         from scripts.language_review_plugins import auto_qc_text_common as rules
-        from scripts.ko_spoken_numerals import _PARTICLES, _CONNECTOR, _RANGE_PARTICLE, _DELIMITERS
+        from scripts.ko_spoken_numerals import _PARTICLES, _CONNECTOR, _RANGE_PARTICLE, _DELIMITERS, bare_context_allowed, _NUMERIC_TOKEN
         # ASR may space an already registered compound connector internally.
         asr_connector = re.sub(r"(?<=[가-힣])(?=[가-힣])", lambda _: r"\s*", _CONNECTOR)
         asr_terminal = re.sub(r"(?<=[가-힣])(?=[가-힣])", lambda _: r"\s*", _RANGE_PARTICLE)
@@ -448,6 +452,14 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
             for book, counter in ((books, r"(?:장|절)"), (asr_book("시편"), r"(?:장|절|편)")):
                 text = citation_pattern(book, counter, opening, closing).sub(
                     lambda match: fold_citation(match, opening, closing), text)
+        # v3 spoken rules also emit bare chapter/verse ranges. Fold their first
+        # endpoint under the same conservative context, never arbitrary counters.
+        protected = [match.span() for match in _NUMERIC_TOKEN.finditer(text)]
+        text = citation_pattern("", r"(?:장|절)").sub(
+            lambda match: fold_citation(match)
+            if bare_context_allowed(text, match.start(), match.end())
+            and not any(start <= match.start() < end for start, end in protected)
+            else match.group(), text)
 
     text = _KO_FRACTION.sub(fraction, text)
     text = _KO_DIGITS_WITH_UNIT.sub(lambda m: str(int(m.group(1)) * _KO_SINO_BIG[m.group(2)]), text)
@@ -523,12 +535,36 @@ def _take_spanish_cardinal(pieces: list[str], index: int) -> tuple[int | None, i
     return total + thousands + section, stop
 
 
-def _fold_spanish(text: str) -> str:
+# ASR writes 2 700 000 000 as "2.700 millones" (Spanish thousands point) or "2,700 millones";
+# a spelled "dos mil setecientos millones" folds to the same value only if the groups join.
+# Spanish writes decimals with a comma (0,001 %, 1,500 millones = 1.5 million), so a single
+# comma group is never joined, even before a scale word: only a point-grouped number (2.700,
+# 1.000.000) or a comma-grouped one with two or more groups (1,000,000) is. A number starting
+# with 0 never joins (0.001), and neither does an incomplete group (2,7, 3,14, 1,234,56).
+# A unit whose primary ASR wrote "2,700 millones" is then settled by the secondary ASR.
+_ES_POINT_GROUPS = re.compile(r"(?<![\d.,])[1-9]\d{0,2}(?:\.\d{3})+(?![\d]|[.,]\d)")
+_ES_COMMA_GROUPS = re.compile(r"(?<![\d.,])[1-9]\d{0,2}(?:,\d{3}){2,}(?![\d]|[.,]\d)")
+
+
+def _join_spanish_groups(text: str) -> str:
+    join = lambda match: re.sub(r"[.,]", "", match.group())
+    for pattern in (_ES_POINT_GROUPS, _ES_COMMA_GROUPS):
+        text = pattern.sub(join, text)
+    return text
+
+
+def _fold_spanish(text: str, *, grouped_digits: bool = True) -> str:
+    if grouped_digits:
+        text = _join_spanish_groups(text)
     text = re.sub(r"(\d+)\s*%", r"\1 por 100", text)  # 10% is read "diez por ciento".
     pieces = re.findall(r"[^\W_]+|[\W_]+", text)
     index, out = 0, []
     while index < len(pieces):
-        value, stop = _take_spanish_cardinal(pieces, index)
+        # v6: the digits after a decimal comma or point are a fraction, not a cardinal; folding
+        # "001" to 1 would make 0,001 equal 0,1.
+        fraction = (grouped_digits and index >= 2 and pieces[index].isdigit() and pieces[index - 1] in (",", ".")
+                    and pieces[index - 2][-1:].isdigit())
+        value, stop = (None, index) if fraction else _take_spanish_cardinal(pieces, index)
         if value is None:
             piece = pieces[index]
             out.append(_ES_DIACRITIC_PAIRS.get(piece.casefold(), piece))
@@ -539,7 +575,7 @@ def _fold_spanish(text: str) -> str:
     return "".join(out)
 
 
-def fold_transcript(text: str, locale: str, *, citation_ranges: bool = True) -> str:
+def fold_transcript(text: str, locale: str, *, citation_ranges: bool = True, grouped_digits: bool = True) -> str:
     """One spelling for readings a listener cannot tell apart; see the notes above."""
     text = unicodedata.normalize("NFKC", text)
     if locale == "zh-Hans":
@@ -547,7 +583,7 @@ def fold_transcript(text: str, locale: str, *, citation_ranges: bool = True) -> 
     if locale == "ko":
         return _fold_korean(text, citation_ranges=citation_ranges)
     if locale == "es":
-        return _fold_spanish(text)
+        return _fold_spanish(text, grouped_digits=grouped_digits)
     return text
 
 
@@ -564,7 +600,8 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
         raise ValueError("Unknown ASR scoring identity: " + str(scoring))
     folded = scoring != SCORING_V3
     if folded:
-        expected, recognized = (fold_transcript(text, locale, citation_ranges=scoring == SCORING)
+        expected, recognized = (fold_transcript(text, locale, citation_ranges=scoring in (SCORING_V5, SCORING),
+                                                grouped_digits=scoring == SCORING)
                                 for text in (expected, recognized))
     expected_tokens, actual_tokens = tokens(expected, locale), tokens(recognized, locale)
     matcher = difflib.SequenceMatcher(None, expected_tokens, actual_tokens, autojunk=False)
@@ -579,16 +616,18 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
     # Character tokens cannot distinguish 12-3 from 1-23. New Korean scoring
     # preserves complete digit runs and range structure only inside anchored citations.
     def number_structure(text):
-        from scripts.ko_spoken_numerals import _CITATIONS, _CONNECTOR, _RANGE_PARTICLE
+        from scripts.ko_spoken_numerals import _CITATIONS, _CONNECTOR, _RANGE_PARTICLE, bare_citation_matches
         def with_terminal_marker(match):
             marker = re.match(r"\s*(" + _RANGE_PARTICLE + r")", text[match.end():])
             return match.group() + (re.sub(r"\s+", "", marker.group(1)) if marker else "")
-        spans = sorted((match.start(), with_terminal_marker(match)) for pattern in _CITATIONS
-                       for match in pattern.finditer(text))
+        anchored = [match for pattern in _CITATIONS for match in pattern.finditer(text)]
+        bare = [match for match in bare_citation_matches(text)
+                if not any(book.start() <= match.start() < book.end() for book in anchored)]
+        spans = sorted((match.start(), with_terminal_marker(match)) for match in anchored + bare)
         return [["-" if item in "-~–" else item
                  for item in re.findall(r"\d+|" + _RANGE_PARTICLE + "|" + _CONNECTOR + r"|장|절|편", citation) if item != ","]
                 for _, citation in spans]
-    structure_agrees = (scoring != SCORING or locale != "ko"
+    structure_agrees = (scoring not in (SCORING_V5, SCORING) or locale != "ko"
                         or number_structure(expected) == number_structure(recognized))
     passed = (structure_agrees and similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
               and not any(key_word(row["expected"], locale) or key_word(row["recognized"], locale)

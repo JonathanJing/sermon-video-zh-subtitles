@@ -48,7 +48,10 @@
 | 纯文档，PR 或 push | 保留既有文档结构、链接与图片验证 |
 | PR 仅修改 `apps/tongxing-ios/`，可附带文档 | 原生和共享客户端合同：8 个 Python 模块、6 个 Web Node 测试文件；覆盖共用 fixture、界面语言和指纹基准消费者 |
 | producer、后端、Web、schema、测试或工作流；混合、未知路径；缺失 base／空 diff | 完整八 shard、producer 模拟流程及 Web／API 检查 |
-| 非文档 push 到 `dev`／`main` | 完整检查，包括纯 iOS 改动 |
+| 非文档 push 到 `main` | 完整检查，包括纯 iOS 改动 |
+| 手动运行，含 `nightly-dev.yml` 每日 UTC 10:17 在 `dev` 上触发的运行 | 完整八 shard 及其余检查，不做路径分类 |
+
+2026-10-14 起 push 到 `dev` 不再触发 Python workflow：每个 dev 改动已在 PR 上跑过同一套件，8 月至 10 月 288 次 dev push 运行只重复暴露 flaky 测试，未发现 PR 检查漏掉的回归。合并顺序造成的语义冲突改由每日定时运行发现：`nightly-dev.yml` 在 `dev` 上手动触发 Python workflow，结果记在 `dev` 的提交上。定时任务读取 `main` 上的 workflow 文件，本改动推广到 `main` 后才生效。复盘数据见 [CI 必要性复盘](reports/20261014-ci-necessity-review.zh.md)。
 
 独立的 iOS workflow 继续按原生／共享合同与目标分支执行 Swift 或模拟器检查。此处的小合同套件不代替它，`DEV-CICD-002` 的完整领域矩阵仍待完善。
 

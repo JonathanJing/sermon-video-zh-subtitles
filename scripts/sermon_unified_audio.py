@@ -141,8 +141,7 @@ def inspect(job_path, output_path=None):
     explicit_instructions = (json.loads(extra['unitInstructions'].read_text())
                              if extra.get('unitInstructions') else {})
     if (context['job']['targetLocale'] == 'ko'
-            and (context['job']['adapter'].get('normalizationPolicySha256')
-                 == identity.json_sha256(renderer.SPOKEN_FORMS_NORMALIZATION_POLICY)
+            and (renderer.registered_normalization_policy(context['job']) is not None
                  or explicit_instructions.get('schemaVersion') == 'sermon-unit-delivery-instructions-v2')):
         code_paths.extend(Path(renderer.ko_spoken_numerals.__file__).parent / name for name in
                           ('ko_spoken_numerals.py', 'language_review_plugins/auto_qc_text_common.py',

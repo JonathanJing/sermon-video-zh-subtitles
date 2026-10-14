@@ -42,7 +42,8 @@ if __package__ in (None, ""):
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "sermon-machine-quality-waiver-v1"
-CALIBRATION_SCHEMA = "sermon-auto-qc-calibration-v2"
+CALIBRATION_SCHEMA = "sermon-auto-qc-calibration-v3"
+LEGACY_CALIBRATION_SCHEMA = "sermon-auto-qc-calibration-v2"
 IMPLEMENTATION_FILES = (
     "scripts/language_review_plugins/common.py",
     "scripts/language_review_plugins/auto_qc_text_common.py",
@@ -59,6 +60,13 @@ IMPLEMENTATION_FILES = (
     "scripts/render_formal_target_language_speech.py",
     "scripts/machine_qc_audio_transports.py",
     "scripts/run_machine_qc_audio_test.py",
+    "scripts/run_machine_qc_clip_test.py",
+    "scripts/machine_qc_budget_authorization.py",
+    # Request routing and project-header enforcement are part of the QC runtime.
+    "scripts/sermon_openai_runtime.py",
+    "scripts/sermon_source_budget.py",
+    "scripts/sermon_transcription_request.py",
+    "scripts/sermon_workflow_jobs.py",
     "scripts/sermon_sentence_interpretation.py",
     # The gates that admit candidates and issue or accept waivers on calibrated evidence.
     "scripts/machine_quality_waiver.py",
@@ -130,7 +138,8 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
     if calibration is None:
         return ["seeded-error calibration missing"]
     problems = []
-    if calibration.get("schemaVersion") != CALIBRATION_SCHEMA:
+    schema = calibration.get("schemaVersion")
+    if schema not in (CALIBRATION_SCHEMA, LEGACY_CALIBRATION_SCHEMA):
         problems.append("unsupported calibration schema")
     if calibration.get("locale") != locale:
         problems.append("calibration belongs to another locale")
@@ -156,6 +165,15 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
         if not isinstance(row, dict):
             problems.append(f"invalid trial counts for {kind}")
             continue
+        if "excludedShortGroupIds" in row:
+            excluded = row["excludedShortGroupIds"]
+            if schema != CALIBRATION_SCHEMA:
+                problems.append("short-unit exclusions require calibration v3; recalibrate, do not relabel v2")
+            if (kind != "audio.truncated" or locale != "zh-Hans"
+                    or not isinstance(excluded, list)
+                    or any(not isinstance(group, str) or not group for group in excluded)
+                    or len(excluded) != len(set(excluded))):
+                problems.append(f"invalid short-unit exclusions for {kind}")
         trials, detected = row.get("trials"), row.get("detected")
         if (type(trials) is not int or type(detected) is not int
                 or trials < 0 or not 0 <= detected <= trials):

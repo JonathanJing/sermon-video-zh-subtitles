@@ -1,0 +1,4333 @@
+{
+  "baselineVersion": "sites/ai-for-god-sermon-audio-dev/versions/eb4e551b41e69726",
+  "catalogSha256": "dccdbfe7b1688f2f93fa18c2ec829cf098075a726ba61cc9d570d90ca1dacfbf",
+  "channel": "dev",
+  "checkedAt": "2026-10-09T06:28:43.989400+00:00",
+  "configSemanticEqual": true,
+  "deployment": "not_started",
+  "environment": "dev",
+  "firebaseJsonSha256": "e89b3d9f04cb15e6e27d73bc174f0aa2f09bb35ab15e86be6fc3eb46d3b627bf",
+  "liveConfig": {
+    "headers": [
+      {
+        "glob": "**",
+        "headers": {
+          "Cache-Control": "no-cache",
+          "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; media-src 'self' https://storage.googleapis.com blob:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; worker-src 'self'",
+          "Referrer-Policy": "no-referrer",
+          "X-Content-Type-Options": "nosniff",
+          "X-Frame-Options": "DENY"
+        }
+      },
+      {
+        "glob": "**/*.mjs",
+        "headers": {
+          "Content-Type": "text/javascript; charset=utf-8"
+        }
+      },
+      {
+        "glob": "/weekly.json",
+        "headers": {
+          "Cache-Control": "no-store"
+        }
+      },
+      {
+        "glob": "/multilingual-v2.json",
+        "headers": {
+          "Cache-Control": "no-store"
+        }
+      },
+      {
+        "glob": "/media/**",
+        "headers": {
+          "Cache-Control": "public,max-age=31536000,immutable"
+        }
+      },
+      {
+        "glob": "/downloads/**",
+        "headers": {
+          "Cache-Control": "public,max-age=31536000,immutable"
+        }
+      },
+      {
+        "glob": "/fingerprints/**",
+        "headers": {
+          "Cache-Control": "public,max-age=31536000,immutable"
+        }
+      },
+      {
+        "glob": "**",
+        "headers": {
+          "X-Robots-Tag": "noindex, nofollow"
+        }
+      },
+      {
+        "glob": "/multilingual-v3.json",
+        "headers": {
+          "Cache-Control": "no-store"
+        }
+      }
+    ],
+    "redirects": [
+      {
+        "glob": "/dry-run/video-bucket-20260928.mp4",
+        "location": "https://storage.googleapis.com/ai-for-god-sermon-media-dev/weekly/dev-video-smoke-20260928/529879a2894fca1218ce45cacdc7a56b66319779c340547d48464c59169adec8.mp4",
+        "statusCode": 302
+      },
+      {
+        "glob": "/pages/dryrun-20260927-clip-01/full-video-browser.mp4",
+        "location": "https://storage.googleapis.com/ai-for-god-sermon-media-dev/weekly/dryrun-20260927-clip-01/4736fdffb44f9006bb60104636e9249135da031e282f1ed47c502615b055720e.mp4",
+        "statusCode": 302
+      },
+      {
+        "glob": "/pages/dryrun-20260927-clip-02/full-video-browser.mp4",
+        "location": "https://storage.googleapis.com/ai-for-god-sermon-media-dev/weekly/dryrun-20260927-clip-02/4736fdffb44f9006bb60104636e9249135da031e282f1ed47c502615b055720e.mp4",
+        "statusCode": 302
+      },
+      {
+        "glob": "/pages/dryrun-20260927-clip-03/full-video-browser.mp4",
+        "location": "https://storage.googleapis.com/ai-for-god-sermon-media-dev/weekly/dryrun-20260927-clip-03/4736fdffb44f9006bb60104636e9249135da031e282f1ed47c502615b055720e.mp4",
+        "statusCode": 302
+      },
+      {
+        "glob": "/pages/resi-20261004-69ba7a66/full-video-browser.mp4",
+        "location": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/resi-20261004-69ba7a66/41b6d4cad62c396158609cba873655b6aa8aec9d36fc793507ca996d06cbc87d.mp4",
+        "statusCode": 302
+      }
+    ],
+    "rewrites": [
+      {
+        "glob": "/pages/**",
+        "path": "/index.html"
+      }
+    ],
+    "trailingSlashBehavior": "REMOVE"
+  },
+  "liveFileCount": 527,
+  "managedFileCount": 2,
+  "modelCalls": 0,
+  "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "project": "ai-for-god-sermon-audio-dev",
+  "publicFileCount": 525,
+  "rows": [
+    {
+      "liveGzipSha256": "1687cb61d5a86fba0f2e51ece9d29510642377ac831e0fb27c80f078d47e1abd",
+      "managed": false,
+      "path": "/404.html",
+      "rawBytes": 266,
+      "rawSha256": "3c2aed32d1a4e2d34105b862438a3c3ee5e09498fcfed34c7b82746ee02e2b5c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "67e692d3a54428f6fd1329e69fa613536715b6badb5ca074e98b82af70025f91",
+      "managed": true,
+      "path": "/__/firebase/init.js",
+      "rawBytes": 529,
+      "rawSha256": "c842ecbb1b2a204f172f5d6a168279e853f3c13106d551948088df8a55fad49f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2901ca993d04854bb7e9679771f84acdcbae777f9c790ab77d59bf9ad91b8448",
+      "managed": true,
+      "path": "/__/firebase/init.json",
+      "rawBytes": 352,
+      "rawSha256": "ce806c0da76c5c6500ce6897284e17c3c38b4d4426077765ea49414a2084fb01",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "dbc627ce891e66aa833d2c018bf5d5dad005a78dceef315d22b5b2879a76c60f",
+      "managed": false,
+      "path": "/alignment/2026-09-27-weekend-sermon-drive-530.json",
+      "rawBytes": 2555,
+      "rawSha256": "a1546994a9f1f551a82b90758f816ada68b88c7cef9fcc689486c0cdfa85a141",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "178513d6ed1dd2297d17b9c565618439af1caa03d73ccc8fb2de2a3ea1a128e7",
+      "managed": false,
+      "path": "/alignment/dryrun-20260927-clip-01.json",
+      "rawBytes": 2106,
+      "rawSha256": "935da8f4d2854e7cbc43cdc0eb3f74df974deb3fb1b0c7b4795cc1e136f5831b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "294ceff7465f940fd8e6a841f917abbe1e89eed07541ab9e035829482f8f7214",
+      "managed": false,
+      "path": "/alignment/dryrun-20260927-clip-02.json",
+      "rawBytes": 2106,
+      "rawSha256": "803d387a351d002ab13e400c0a122d20a803f4acc8955b79ae18ef7ba3623f6e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1ef8aa56ce6828a1f7ac715422a30a2b6ac320475b4a930c45c4baf3989eaff7",
+      "managed": false,
+      "path": "/alignment/dryrun-20260927-clip-03.json",
+      "rawBytes": 2106,
+      "rawSha256": "11c9377f0d3799de2cd775a6b36cd068254901b474f31762ff28cca086e4f955",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4479af04c8518bc3dd802b3adcaf1551d45e6151caa77db6ba9041ed27934b49",
+      "managed": false,
+      "path": "/alignment/resi-20261004-69ba7a66.json",
+      "rawBytes": 2515,
+      "rawSha256": "341c4ca2d0254597fa1e9ea08237892a90803c539bda54ab52246d4ac9bbc2a0",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d3acc9efc2f81cfa1a1d7b2292e9868738af1a12d4ad254167a018f34a7d1293",
+      "managed": false,
+      "path": "/app.js",
+      "rawBytes": 59127,
+      "rawSha256": "2cb16725606949e1bed160c7a6728cac867da4284915ed8e377d97eab53cbb96",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f423703d74f148f780d6b89ae340af66e48f3b9db7adf92d0012e6da05f5fba9",
+      "managed": false,
+      "path": "/app.mjs",
+      "rawBytes": 57828,
+      "rawSha256": "c9e7b60be16a5d3d09151ac9e91574a52aa92869a8eed7a177fe9ed3efdf05a9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7cd07c9c157971bead3d35bbc41fb8b862d8de57d0e5940b7cf617bd9216f473",
+      "managed": false,
+      "path": "/audio-extension-preparation-receipt.json",
+      "rawBytes": 433,
+      "rawSha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "109144924e4c28d30a671fc66281843414ad92d3802e6f86a30a896c8f4c6968",
+      "managed": false,
+      "path": "/brand-icon-light.svg",
+      "rawBytes": 418,
+      "rawSha256": "b97138d54655d70eedcf88d4d1b9353753cc3139db4d010bb869fa236ae875a1",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3e0816caf570357a3c1ae2db00b63edfcffa82624bfd90debf29ab86d4eff6f2",
+      "managed": false,
+      "path": "/brand-icon.png",
+      "rawBytes": 923395,
+      "rawSha256": "12e138ca3e35ec7613eda6de48441a4362665b24977a43faca1472517747f36d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5d57364c5bffbf76683c0768c6a85c7400105476ff07dfb7806d15364bbec0e0",
+      "managed": false,
+      "path": "/brand-icon.svg",
+      "rawBytes": 418,
+      "rawSha256": "ee5956f7f490642baa72c68da8aa5d6ae4c3075da359b891c5244f3045e55b5e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "be217800aa8648fb13ad450e96b101dc41b03f2af723881667c6089f3f87dd4c",
+      "managed": false,
+      "path": "/captions/2026-09-20-laodicea-clip/es.json",
+      "rawBytes": 3343,
+      "rawSha256": "4095db50c6e91340ddfaf5474258145fd18adb87ced7c013d0bdde8f0fb952d7",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1da50bb24963c528046428d15593ca782d40dca906a8d58b2617847e98a79e3f",
+      "managed": false,
+      "path": "/captions/2026-09-20-laodicea-clip/ko.json",
+      "rawBytes": 4215,
+      "rawSha256": "0d8fb9c4b8919fb4f6434371dfd65188189a7ab267465b34bac99071b033b550",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "45be82bb175242a44da86288625d937720a407e247ae1296e7be52f0de9ade98",
+      "managed": false,
+      "path": "/captions/2026-09-20-laodicea-clip/zh-Hans.json",
+      "rawBytes": 3440,
+      "rawSha256": "96e5d41e62b0f138c6b83f4bed5ff0a95c8dd280dc7db07275b0dbdc269291a5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c51ed0d403a27a26cb693b7ed0393723ebfc9eee4b18e0f8a00625dfaa027a3e",
+      "managed": false,
+      "path": "/captions/2026-09-20-revelation-clip/es.json",
+      "rawBytes": 7784,
+      "rawSha256": "5af78e392d907777e6a4f08ec7101ab640ecdeacf4ecce5753d80130eb081c9f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8b9262761333605815d3ab3b6618da20cbed02b71a73382ef73bb781cb7757a1",
+      "managed": false,
+      "path": "/captions/2026-09-20-revelation-clip/ko.json",
+      "rawBytes": 8605,
+      "rawSha256": "80bf72d543c695020423a72d16b80e452e607312d7351a28df29a598192b303e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "9d0089b4d3047785147f09669567be1cfb4b8de22ead9eddce460ebd8e072204",
+      "managed": false,
+      "path": "/captions/2026-09-20-revelation-clip/zh-Hans.json",
+      "rawBytes": 7649,
+      "rawSha256": "2c22ac424a3c418c58ab792dea6f521c0a8fcae1b4ac09834a28a5bf31a4ad0b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7f838edd1dd94d97ec5166e55f618db137e548f4be99d367e0ab985bccdc3c21",
+      "managed": false,
+      "path": "/captions/2026-09-27-weekend-sermon-drive-530/es.json",
+      "rawBytes": 78238,
+      "rawSha256": "e2ad9d114c89c46583685db51eb1d32d7c0319e5b00480d6154150e5d598948b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fe677c5e8c2f94da3285c22425973cfac24a349f7ecad8251b3579a9bd00499b",
+      "managed": false,
+      "path": "/captions/2026-09-27-weekend-sermon-drive-530/ko.json",
+      "rawBytes": 84757,
+      "rawSha256": "f8498df0dde06e5de6e9ce6d9c4796459dbf50daac0d626dfccee1e8ea9adf97",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7f838edd1dd94d97ec5166e55f618db137e548f4be99d367e0ab985bccdc3c21",
+      "managed": false,
+      "path": "/captions/2026-09-27-weekend-sermon-drive-530/spoken/es-e2ad9d114c89c465.json",
+      "rawBytes": 78238,
+      "rawSha256": "e2ad9d114c89c46583685db51eb1d32d7c0319e5b00480d6154150e5d598948b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fe677c5e8c2f94da3285c22425973cfac24a349f7ecad8251b3579a9bd00499b",
+      "managed": false,
+      "path": "/captions/2026-09-27-weekend-sermon-drive-530/spoken/ko-f8498df0dde06e5d.json",
+      "rawBytes": 84757,
+      "rawSha256": "f8498df0dde06e5de6e9ce6d9c4796459dbf50daac0d626dfccee1e8ea9adf97",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2d20a6f0ad4ad8a1e1e916c7d6398d258cdd24db262e63d96cd91e2c0fca5095",
+      "managed": false,
+      "path": "/captions/2026-09-27-weekend-sermon-drive-530/spoken/zh-Hans-f7e811f9fcd9be4c.json",
+      "rawBytes": 80486,
+      "rawSha256": "f7e811f9fcd9be4cb8d6522ad57b083036a983b37932c5d2929951062836b0a0",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2d20a6f0ad4ad8a1e1e916c7d6398d258cdd24db262e63d96cd91e2c0fca5095",
+      "managed": false,
+      "path": "/captions/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+      "rawBytes": 80486,
+      "rawSha256": "f7e811f9fcd9be4cb8d6522ad57b083036a983b37932c5d2929951062836b0a0",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5551260244adc19b9bd47c60ea7ee6a6d5b1ceca56f3373fbcd3cf9b111cf2a8",
+      "managed": false,
+      "path": "/captions/dryrun-20260927-clip-01/es.json",
+      "rawBytes": 1349,
+      "rawSha256": "8b4cc407b82e8d90fba7c3ff54f375ddd896e861488edaec8fc23b8ddcd13603",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4cb3e4f130c92f7877b84fec55873469b024fd2b6a4bee041573782aaffe3079",
+      "managed": false,
+      "path": "/captions/dryrun-20260927-clip-01/ko.json",
+      "rawBytes": 1438,
+      "rawSha256": "9ae57943ff9b01027e38fe94a2fc96f307768ea7d6e179c20ffe7e03fcf0f7a0",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2244ec3b9e6bd8fa32c4168b07bad89a812097b1f8cab1b5ea33e7be5ce255d5",
+      "managed": false,
+      "path": "/captions/dryrun-20260927-clip-01/zh-Hans.json",
+      "rawBytes": 1368,
+      "rawSha256": "653c3632d428ba2ce89ec959fff40a60a5c24b6ecbb23df4d617c5b25cb04a9d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b43e79865ee31b40a9ccff10ffdeea46681db9454e6c11abb889eb165a174b8e",
+      "managed": false,
+      "path": "/captions/dryrun-20260927-clip-02/es.json",
+      "rawBytes": 1349,
+      "rawSha256": "23256f36e90a135ea147fa6dff59ccc099c7b9d8b68d63bd6bbeef097971afbf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b7a7da0f3ff0b9333031d987dfbc89ca1a6b0bb41b5b095fb8698e9e28b96d3d",
+      "managed": false,
+      "path": "/captions/dryrun-20260927-clip-02/ko.json",
+      "rawBytes": 1438,
+      "rawSha256": "5e4acded3e8fb18e0a600112c4c5434dfa845c2c24d9a3eadda4429875aa53b4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1350e16bb8f4aae87f7007a62cf6757d5c0afa04d371a44386de878e35949134",
+      "managed": false,
+      "path": "/captions/dryrun-20260927-clip-02/zh-Hans.json",
+      "rawBytes": 1368,
+      "rawSha256": "e05af9a932cc2cb609d7f6f464db28392ffae87cb1d6d6e51d0608518d342eb5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "bb5eb1b8b7621e1fc0996169a031c8ba32bb6707ec54f2919e5f44c48000c16d",
+      "managed": false,
+      "path": "/captions/dryrun-20260927-clip-03/es.json",
+      "rawBytes": 1349,
+      "rawSha256": "ebd1c53a526d2744a340b935de3237a800b4276d0a17196b9db27a7877195a60",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4ce312089af84c98232be0d1b60db7a085aa92e9bf0afb76ba8284eae2c224d4",
+      "managed": false,
+      "path": "/captions/dryrun-20260927-clip-03/ko.json",
+      "rawBytes": 1438,
+      "rawSha256": "c85f89e4d825fa644c8139952263b9a831c2869989553a3cfa9d425e3529c47d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f75359a12ca69476efc3b574d5ef2654bca38829e9d860ad88c829336341f953",
+      "managed": false,
+      "path": "/captions/dryrun-20260927-clip-03/zh-Hans.json",
+      "rawBytes": 1368,
+      "rawSha256": "4d9180c1335629f1c4519837c5dbb0ae079250654e2db8b0e4316e438a57837a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "98dc91eb47235221b12e89e99a4771f5245fade46d2d7a9b4d0246b0bf7b83eb",
+      "managed": false,
+      "path": "/captions/if-i-had-more-time-jesus-is-worthy/es.json",
+      "rawBytes": 202734,
+      "rawSha256": "a5d1ef29a39eb82a49dd5cab37425e13924a9927f151c7e8f0582b77e1dee202",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "bd51ba11e1b423d2def20c82229634405567631cb06763e789b275419374fdca",
+      "managed": false,
+      "path": "/captions/if-i-had-more-time-jesus-is-worthy/ko.json",
+      "rawBytes": 225507,
+      "rawSha256": "5da206f6d288151643f0f6fd408abbf7b4de86c4a9f49af87277715880319a47",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ceac1c029174110df66daffb5689581b48bd4439bd8f63d6f4f49ba152320433",
+      "managed": false,
+      "path": "/captions/if-i-had-more-time-jesus-is-worthy/zh-Hans.json",
+      "rawBytes": 197593,
+      "rawSha256": "cf40e69e05d83283e6d89e8d748cdd3c51e6be0c010fd090529fb4ba744de840",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "989c456be3e338fe8fd4b10a1a14ae8159e43d0ba83729b3455bac7ce5e7fabb",
+      "managed": false,
+      "path": "/captions/mockup-20261005-dev-180s-luna-rerun/es.json",
+      "rawBytes": 5010,
+      "rawSha256": "bd842a33d1a7bcb4d2d6518fc07e0044581edfed98b593e822888e2c7e8ca441",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2a511ad200af48704e0236e4f058bcbe29d62a56da922c99382eef0e10b4609c",
+      "managed": false,
+      "path": "/captions/mockup-20261005-dev-180s-luna-rerun/ko.json",
+      "rawBytes": 6015,
+      "rawSha256": "853385de24449b58d6b22aa0cf103af3368de01e44e7f562d32d18b587069388",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "06a2617e99713ad63e9e70ac26bdd6dddb66901dd8c899a0581124a6bd40c19f",
+      "managed": false,
+      "path": "/captions/mockup-20261005-dev-180s-luna-rerun/zh-Hans.json",
+      "rawBytes": 4684,
+      "rawSha256": "b5c83a2e696c8c86d32b10e753f5a44990ecaefa30941fa06fdad9f3ab7b36dc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "989c456be3e338fe8fd4b10a1a14ae8159e43d0ba83729b3455bac7ce5e7fabb",
+      "managed": false,
+      "path": "/captions/mockup-20261005-dev-180s/es.json",
+      "rawBytes": 5010,
+      "rawSha256": "bd842a33d1a7bcb4d2d6518fc07e0044581edfed98b593e822888e2c7e8ca441",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2a511ad200af48704e0236e4f058bcbe29d62a56da922c99382eef0e10b4609c",
+      "managed": false,
+      "path": "/captions/mockup-20261005-dev-180s/ko.json",
+      "rawBytes": 6015,
+      "rawSha256": "853385de24449b58d6b22aa0cf103af3368de01e44e7f562d32d18b587069388",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "06a2617e99713ad63e9e70ac26bdd6dddb66901dd8c899a0581124a6bd40c19f",
+      "managed": false,
+      "path": "/captions/mockup-20261005-dev-180s/zh-Hans.json",
+      "rawBytes": 4684,
+      "rawSha256": "b5c83a2e696c8c86d32b10e753f5a44990ecaefa30941fa06fdad9f3ab7b36dc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "989c456be3e338fe8fd4b10a1a14ae8159e43d0ba83729b3455bac7ce5e7fabb",
+      "managed": false,
+      "path": "/captions/mockup-dev-180s-dev-merged-rerun-20261005/es.json",
+      "rawBytes": 5010,
+      "rawSha256": "bd842a33d1a7bcb4d2d6518fc07e0044581edfed98b593e822888e2c7e8ca441",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2a511ad200af48704e0236e4f058bcbe29d62a56da922c99382eef0e10b4609c",
+      "managed": false,
+      "path": "/captions/mockup-dev-180s-dev-merged-rerun-20261005/ko.json",
+      "rawBytes": 6015,
+      "rawSha256": "853385de24449b58d6b22aa0cf103af3368de01e44e7f562d32d18b587069388",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "06a2617e99713ad63e9e70ac26bdd6dddb66901dd8c899a0581124a6bd40c19f",
+      "managed": false,
+      "path": "/captions/mockup-dev-180s-dev-merged-rerun-20261005/zh-Hans.json",
+      "rawBytes": 4684,
+      "rawSha256": "b5c83a2e696c8c86d32b10e753f5a44990ecaefa30941fa06fdad9f3ab7b36dc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "989c456be3e338fe8fd4b10a1a14ae8159e43d0ba83729b3455bac7ce5e7fabb",
+      "managed": false,
+      "path": "/captions/mockup-dev-180s-e2e-20261007T191648Z/es.json",
+      "rawBytes": 5010,
+      "rawSha256": "bd842a33d1a7bcb4d2d6518fc07e0044581edfed98b593e822888e2c7e8ca441",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2a511ad200af48704e0236e4f058bcbe29d62a56da922c99382eef0e10b4609c",
+      "managed": false,
+      "path": "/captions/mockup-dev-180s-e2e-20261007T191648Z/ko.json",
+      "rawBytes": 6015,
+      "rawSha256": "853385de24449b58d6b22aa0cf103af3368de01e44e7f562d32d18b587069388",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "06a2617e99713ad63e9e70ac26bdd6dddb66901dd8c899a0581124a6bd40c19f",
+      "managed": false,
+      "path": "/captions/mockup-dev-180s-e2e-20261007T191648Z/zh-Hans.json",
+      "rawBytes": 4684,
+      "rawSha256": "b5c83a2e696c8c86d32b10e753f5a44990ecaefa30941fa06fdad9f3ab7b36dc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "989c456be3e338fe8fd4b10a1a14ae8159e43d0ba83729b3455bac7ce5e7fabb",
+      "managed": false,
+      "path": "/captions/mockup-dev-180s-e2e-20261007T193332Z/es.json",
+      "rawBytes": 5010,
+      "rawSha256": "bd842a33d1a7bcb4d2d6518fc07e0044581edfed98b593e822888e2c7e8ca441",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2a511ad200af48704e0236e4f058bcbe29d62a56da922c99382eef0e10b4609c",
+      "managed": false,
+      "path": "/captions/mockup-dev-180s-e2e-20261007T193332Z/ko.json",
+      "rawBytes": 6015,
+      "rawSha256": "853385de24449b58d6b22aa0cf103af3368de01e44e7f562d32d18b587069388",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "06a2617e99713ad63e9e70ac26bdd6dddb66901dd8c899a0581124a6bd40c19f",
+      "managed": false,
+      "path": "/captions/mockup-dev-180s-e2e-20261007T193332Z/zh-Hans.json",
+      "rawBytes": 4684,
+      "rawSha256": "b5c83a2e696c8c86d32b10e753f5a44990ecaefa30941fa06fdad9f3ab7b36dc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "50bc1172046bdfe5719a5bbf7845c79265485c208e13417968064608c628f294",
+      "managed": false,
+      "path": "/captions/resi-20261004-69ba7a66/es.json",
+      "rawBytes": 86732,
+      "rawSha256": "320f52c7491722efde5b282b45c6512c9c56f08ae523a5beb83bd18d047df819",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8cca558f69e85cbfc83657384f5e9b7b9c6ad356a22be5ab123f1a4ab130205e",
+      "managed": false,
+      "path": "/captions/resi-20261004-69ba7a66/ko.json",
+      "rawBytes": 92498,
+      "rawSha256": "0b0a3a9035fbf0f6df2e599f03d7bc7d188a02bb9f7004629db95f8a01188a3e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ae1c65eca41b89283bbd3508483c3085528d2a427a68b5382cffbcd9d91587a7",
+      "managed": false,
+      "path": "/captions/resi-20261004-69ba7a66/zh-Hans.json",
+      "rawBytes": 84241,
+      "rawSha256": "2df2aec8a5745f7b9ff547523320afa8bfe4ac6627f85f526dd5775cc2ab9869",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f72c04ae64413c0ebe82c9990919b9bedfb69a1c6e89075a4dd901d7fc6c6855",
+      "managed": false,
+      "path": "/catalog.mjs",
+      "rawBytes": 13820,
+      "rawSha256": "6e07ac571fe3631a9603084e87dd378bea4dae42f90aa36f9f187f26b19b3856",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3cfe79165c6ed8b8256fd87eb0e061b8d07f2d1ce99559186b6cc540176ca430",
+      "managed": false,
+      "path": "/content-locales.mjs",
+      "rawBytes": 78659,
+      "rawSha256": "81c09781caf40fa46b1cdf5ada758ff259cae05853c4724eb0841b62711fd5df",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1fa0aa282459e4b7f6ea15199761274d234d7747013defb153170bd4fa677ea7",
+      "managed": false,
+      "path": "/content/2026-09-20-laodicea-clip/es.json",
+      "rawBytes": 5974,
+      "rawSha256": "906fbc9831f0e91a756eb2a30caac494a14f42b81f86cdefb39d378733748612",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a5d918103874dcd72bc10e4ddd38d0b9e40b8a1c074fefff7e3c725058bcc4a6",
+      "managed": false,
+      "path": "/content/2026-09-20-laodicea-clip/ko.json",
+      "rawBytes": 6994,
+      "rawSha256": "f41e6545064dbe2214522b7ca9554393faad8781ef14df71d147a27bccf51d93",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "afc3d1492cc50604f0f899927d54bfe69141c5d45fb2061182fbf14c009b586c",
+      "managed": false,
+      "path": "/content/2026-09-20-laodicea-clip/zh-Hans.json",
+      "rawBytes": 5947,
+      "rawSha256": "ddb644f88f17c7bae7e1adcc2187813a1178eb7655c7d3a11608086fcc6be554",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "dab01fe862f17ad456ad2385cf0b7abf59ede60ff8cec50a50e6e0263b58edd7",
+      "managed": false,
+      "path": "/content/2026-09-20-lion-of-judah-poc/en.json",
+      "rawBytes": 2873,
+      "rawSha256": "5fef620dda6d214bd004a117d38dc6a15f0a3b5bebb21d89d4aa0e0348ed2203",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "38658b6f1e410e1b2fa93150d6820f0549058f1889c7c9d54b609ac4875c695f",
+      "managed": false,
+      "path": "/content/2026-09-20-lion-of-judah-poc/es.json",
+      "rawBytes": 2867,
+      "rawSha256": "335486a91ac60e8e6208a66cb042c49c847f25b4a569d5e1d4eb29029725e391",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "44a5109e13a145971a5332116ae6fda57b32a23f749f2bab9db5c19b4504740a",
+      "managed": false,
+      "path": "/content/2026-09-20-lion-of-judah-poc/ko.json",
+      "rawBytes": 3123,
+      "rawSha256": "78b765aad1965403d7123b44d54ad4872e61eb63b2ac98f492f756647c2280b8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1f519533e3f76e3e7c52d5eb5bdfeccd193ae5caa9de09896fc35f678b550605",
+      "managed": false,
+      "path": "/content/2026-09-20-lion-of-judah-poc/vi.json",
+      "rawBytes": 3177,
+      "rawSha256": "c67c22aabca80af6b7c10db2063cd02d03e1f58cb874a8fdc25ff39194968b1f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b44c62aa41bd6c14d3743cb6a24c347b9edd353f8a3beb81f4116617e7e5be4f",
+      "managed": false,
+      "path": "/content/2026-09-20-lion-of-judah-poc/zh-Hans.json",
+      "rawBytes": 2769,
+      "rawSha256": "ce96effa8e2ed0bc51ff26c532f84b7c4460c02c5fe83061e89a5100955280c8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7f9872ada173d809e02395e5066d7d9453cb480c390a1c5ebf58010a0e76e093",
+      "managed": false,
+      "path": "/content/2026-09-20-revelation-clip/es.json",
+      "rawBytes": 11795,
+      "rawSha256": "71888a21f1ff297852794c90e866cdedb88070685cdc70eb44be199415341aa9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3a30cc474dccd611b27c9803a3fc3e85a7484ffefcc3d246a123476bc2647d0b",
+      "managed": false,
+      "path": "/content/2026-09-20-revelation-clip/ko.json",
+      "rawBytes": 12665,
+      "rawSha256": "15867a3abcdd6fb0a7b72738b0be0a1f715b2d3e980c2f222aedcd9c61ad3576",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8b240599ebfe3fb8ec7ca22754b1df8136edc4fe72335d31570d213364c8d75f",
+      "managed": false,
+      "path": "/content/2026-09-20-revelation-clip/zh-Hans.json",
+      "rawBytes": 11561,
+      "rawSha256": "20d4d59908e9c6d0fe31b902900a10ddb9a290b2dd6f79706437c944289c8814",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "dc1f3602a0f0cb28e2dab394fcaf24d85c042cf9b586c5b998b5e5cd6fd7bd0a",
+      "managed": false,
+      "path": "/content/2026-09-27-weekend-sermon-drive-530/es.json",
+      "rawBytes": 109716,
+      "rawSha256": "9fe8da801ebe139fa1c3fac33622744c9cabd2128e3b4ef8334dc611dc5c5ae7",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ff6cda7b2fcbd13db62023d44522b0af3ca5b0030d047f571d2d4a865318cd03",
+      "managed": false,
+      "path": "/content/2026-09-27-weekend-sermon-drive-530/ko.json",
+      "rawBytes": 121920,
+      "rawSha256": "3e715908a42e33ff57274c3cc4edda68264a74ee030643b280c35526361daa68",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7cd19d5cfdb853754577474f0ab88fe2c4a0c728723ba5759cad51439eac4368",
+      "managed": false,
+      "path": "/content/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+      "rawBytes": 105186,
+      "rawSha256": "0d425106d368ebfab59e854f10489aabed025f947f2a61a79863e663e7f67a88",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8d88c6b637ba14a957bd120ea1acd9be3c86583e86e821f3e75505d31fcd9bed",
+      "managed": false,
+      "path": "/content/dryrun-20260927-clip-01/es.json",
+      "rawBytes": 2071,
+      "rawSha256": "9d633b0e98e4491aebdd92bea632b1f74924e2d2d9aa92ed2fd548d194087be9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "12de7363a38703e244c64b3662547aec197d71e19d3e55088aecb575e19162bb",
+      "managed": false,
+      "path": "/content/dryrun-20260927-clip-01/ko.json",
+      "rawBytes": 2263,
+      "rawSha256": "33aaa9c3ae044357998644c0555f363d806dc48a5526c04e75f97efc6f5a0187",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4c4434fbc96b4e7aabdd043f6c5ece9258ca2840f65015ef201b0765a1f5aa93",
+      "managed": false,
+      "path": "/content/dryrun-20260927-clip-01/zh-Hans.json",
+      "rawBytes": 1997,
+      "rawSha256": "9c9f1345da27f78e9250c0901d986ad534293855d488c88a14107d18b5f1cb3d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4e7ee06576fe7d4554ba66fb1b01e1b967e791d2149f97ef011dadc1d3dc5375",
+      "managed": false,
+      "path": "/content/dryrun-20260927-clip-02/es.json",
+      "rawBytes": 2071,
+      "rawSha256": "3d4d87da013e17bfa617a2d55317870e50112e5229e62f39f46e7791c9c427d5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a5bf84801bac00a7d5a3b20f6ff1c17a687eebd6a1297afaf84915dd1823b878",
+      "managed": false,
+      "path": "/content/dryrun-20260927-clip-02/ko.json",
+      "rawBytes": 2263,
+      "rawSha256": "b8651062646c6a4a94f62e1aef6b7c210db5ab15f82a1bed3d379e3149d9c989",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c498567bd9ceee291f6209ca8db923077f517778fb8260a703716b2467af86d2",
+      "managed": false,
+      "path": "/content/dryrun-20260927-clip-02/zh-Hans.json",
+      "rawBytes": 1997,
+      "rawSha256": "69f89367acd28552f3864eba719fd0654c975347624a36094c69996239789a34",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "085bd39b7740aef89aee6f52283285808520ce3a82e0f172c2c03fb445014e6f",
+      "managed": false,
+      "path": "/content/dryrun-20260927-clip-03/es.json",
+      "rawBytes": 2071,
+      "rawSha256": "40d28c8ed2fd556a2a73c38aeda9f5d3b37a84b1905fa6f2cc37c214c6bf113c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "57121356f88d673dac8e3126c11b266a54046fb9c4c514f4936bb22681ce6ae8",
+      "managed": false,
+      "path": "/content/dryrun-20260927-clip-03/ko.json",
+      "rawBytes": 2263,
+      "rawSha256": "764e1748cb4b68f6b1d61c380b8fd505362729befdd3ac917d19cf01c46b0d7f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "08d0cab104dbd9b59d9bb560749f18142e90b62bfbb774f4abe909228d16d28e",
+      "managed": false,
+      "path": "/content/dryrun-20260927-clip-03/zh-Hans.json",
+      "rawBytes": 1997,
+      "rawSha256": "3aa12d4638bbf9f8de8480b8662640d394d9399f322da28a299edcb0162ffbb1",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7cdf80d5cfebc46aa6b1d4891399802101e34fb97a45e76952347abb6dc77c2c",
+      "managed": false,
+      "path": "/content/if-i-had-more-time-jesus-is-worthy/es.json",
+      "rawBytes": 204512,
+      "rawSha256": "0c67d14600e7ddfd5738ca29b42035fd54a8f0dbfe2a593c843cd325d3ec0ef8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "80d2d46d65026448c6c3919f6599e28c57261be021a52d826b16d1a0b88fedf5",
+      "managed": false,
+      "path": "/content/if-i-had-more-time-jesus-is-worthy/ko.json",
+      "rawBytes": 227285,
+      "rawSha256": "592f0ef911eaaa5b56334a529011eab3b2e16860c588e47a1c73eb4ffa7f02d8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "eba8d968636295b61e9d901a7028f39ba6ab3fec20e81348fb34416ba0c0f886",
+      "managed": false,
+      "path": "/content/if-i-had-more-time-jesus-is-worthy/zh-Hans.json",
+      "rawBytes": 199358,
+      "rawSha256": "0e9cb02f42fcd49ee41ef442ba1ebfeaa94685379f9027142b299b60a0a6c8d8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3f702647b47f6d163be554eadd0962f149f83d0db326b6ab8d8116d360607e88",
+      "managed": false,
+      "path": "/content/mockup-20261005-dev-180s-luna-rerun/es.json",
+      "rawBytes": 8008,
+      "rawSha256": "b73ee965c5a6324fa6386e5b286ba2a374f3717a140334a661c3e455806a2b4f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c948d6e3848f53a8d040192e9cc8d615e08eb52244350145a29a1a67b08f682f",
+      "managed": false,
+      "path": "/content/mockup-20261005-dev-180s-luna-rerun/ko.json",
+      "rawBytes": 8974,
+      "rawSha256": "0805c949c21e8557d0ff5bdb94b7e759e03c4f485377eee3b12b0aa0902d2266",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "087684b091bf8be882cbaaca9ae302b2510970577edad85c901f39e778221bc4",
+      "managed": false,
+      "path": "/content/mockup-20261005-dev-180s-luna-rerun/zh-Hans.json",
+      "rawBytes": 7753,
+      "rawSha256": "57e341ffdbf1e8f67760989675cfa42c9a2c8b2945077574b58da566adaa866c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b22ea6737cfbdd8775e56b074acfdaf5338c6fcc996f10acceaea4e02b75fbdf",
+      "managed": false,
+      "path": "/content/mockup-20261005-dev-180s/es.json",
+      "rawBytes": 7922,
+      "rawSha256": "8034be5d4a395fac026fd2811105aab5f55b32d075d90d6445ab0f95936441a3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d4d52959e301e57a4221ddc7b65cba93e3a91e361c59b2ee9dfaa1e234bd28c6",
+      "managed": false,
+      "path": "/content/mockup-20261005-dev-180s/ko.json",
+      "rawBytes": 8889,
+      "rawSha256": "87f1c86751f4f87b2d0333c8490e3510edf95e93e66e2c53a0baf68c25284491",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0094f0263e6657ffa7f658e641b0cd07a333deec6e4b9615f10e2be3ca4ee871",
+      "managed": false,
+      "path": "/content/mockup-20261005-dev-180s/zh-Hans.json",
+      "rawBytes": 7668,
+      "rawSha256": "b8a8e4086663daebc26de282485ee2b7b9d5a2aa2581490f4ab7705c051016d4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "387dabdad09f178355441631c4a02fbd5a520d7f7801b48f1519dae2c2844e02",
+      "managed": false,
+      "path": "/content/mockup-dev-180s-dev-merged-rerun-20261005/es.json",
+      "rawBytes": 8020,
+      "rawSha256": "6b573d41ebfbbc7faf2dee98f7962d5a5ba41d4d2abc1611638c822e67e540a4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e7ba20cdfa399afc4b0eed43c809f4f2d26dcf6485c1a1a776c3618041f4730c",
+      "managed": false,
+      "path": "/content/mockup-dev-180s-dev-merged-rerun-20261005/ko.json",
+      "rawBytes": 8986,
+      "rawSha256": "079eac254f17779253a3b098233e70af0635499e0c29a14b279ca1c944477364",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "72df20c4aa5c897d93e51ab61da1fc2e47f6c73638a90f681926b71e8479408d",
+      "managed": false,
+      "path": "/content/mockup-dev-180s-dev-merged-rerun-20261005/zh-Hans.json",
+      "rawBytes": 7765,
+      "rawSha256": "a634a28f04db4e8d334aab9b034c055e4e8b450f89658917089633bf8b770b7a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7343d4626cc881c10040a95081145be96c079e8b08ca0dbecf996e0060895a1c",
+      "managed": false,
+      "path": "/content/mockup-dev-180s-e2e-20261007T191648Z/es.json",
+      "rawBytes": 8010,
+      "rawSha256": "e2697394f7acfb239c7fd4cb7edaaffc2dc9e3b52de0663a3fb856a34158bbd1",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5d3ca03ff677a19fc659408d9281f9fc7e1515e1ca99da20badf63b5c951e79f",
+      "managed": false,
+      "path": "/content/mockup-dev-180s-e2e-20261007T191648Z/ko.json",
+      "rawBytes": 8976,
+      "rawSha256": "f4f1341a5bd28e88d41b48029291cb78a4fe41172a088af234e7a62abc3a5163",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "9dc408be30e4122fd069887926b50adc8b40deee3ba372c965ed0015a3a1a2db",
+      "managed": false,
+      "path": "/content/mockup-dev-180s-e2e-20261007T191648Z/zh-Hans.json",
+      "rawBytes": 7755,
+      "rawSha256": "c8e5f9d5f29994430b774db2952b9800fd55c0f27cab49da1a234e5cb82f93e3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f40e196014b662cf713e1c1457400e2788b7744cde801a5fe24bbb859cafadde",
+      "managed": false,
+      "path": "/content/mockup-dev-180s-e2e-20261007T193332Z/es.json",
+      "rawBytes": 8010,
+      "rawSha256": "85719792d35c87cb5b896a207d9db7b70688339e9b2d1312023eca127b2e77f0",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "267c93633ea9ce8da509ca24f11ba8201a75190cd74d1a78003d0a05795b3067",
+      "managed": false,
+      "path": "/content/mockup-dev-180s-e2e-20261007T193332Z/ko.json",
+      "rawBytes": 8976,
+      "rawSha256": "3da751382795ca7e454a7095d098ec51c49ba10bcee4ca0f86dfabbba130bbdf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4756c619c75756ba0aa16fea0cf70545733356a5d84875b16f69c0c059258310",
+      "managed": false,
+      "path": "/content/mockup-dev-180s-e2e-20261007T193332Z/zh-Hans.json",
+      "rawBytes": 7755,
+      "rawSha256": "7886dfabad0574ed67fa558ce7a448b287d405feb41fac1d281e1c836ddcd232",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7316c3ad6fdaf55db44edb6c2f7f24842d48ad6f786f4711fa7457cb55b16271",
+      "managed": false,
+      "path": "/content/resi-20261004-69ba7a66/es.json",
+      "rawBytes": 114938,
+      "rawSha256": "642eee2cd730c9b56f5d0a7b7a91d9b7fa60b8773c3e2da3e2ac74784a511a7f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8789924844168a67dbd25d7368ecde5e97f0ad4d43bcf297262b2d9d6f05a29f",
+      "managed": false,
+      "path": "/content/resi-20261004-69ba7a66/ko.json",
+      "rawBytes": 118053,
+      "rawSha256": "075ad4a58237ce1cd6d4f565110b9dc99699a7ddc4b141fc3451a9be619a242c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "97a90a7c6d14d9c481f4c4d82b45e2e4033041dcebfe76829d66c1f3e9fbb600",
+      "managed": false,
+      "path": "/content/resi-20261004-69ba7a66/zh-Hans.json",
+      "rawBytes": 110909,
+      "rawSha256": "1c3cb8cd34129083983de4221b799565bac0adbec6571c86082da6972bccaa9d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "01fa7cb83d4004fe6bf7d2cc9c1cdba34072934e2f78e244a191d014ce979afa",
+      "managed": false,
+      "path": "/current-week-router.js",
+      "rawBytes": 144,
+      "rawSha256": "781ef032da038aa9587acfe22c2fc76e3a85138485ea4af22a6f1b00c3db7a40",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "91c5066c5973171701d761127cde20718575385387206e193d18d63eb8193217",
+      "managed": false,
+      "path": "/dev-integrity.mjs",
+      "rawBytes": 6834,
+      "rawSha256": "1f7aa343812d04901d2146e85904ccb054491ee4a8e0c32933d1bfa33b2d6770",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "be16edd292c388cf36e813917ae8ce775b14e14615a2e7572832c8cf06ba7108",
+      "managed": false,
+      "path": "/dev-poc-app.js",
+      "rawBytes": 55670,
+      "rawSha256": "d96dacd2548bdab89f303377b725841c79cd133d568cbd05403c1505f0b834c4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a031552c8fe85a552bd02055cf6b7f021ea5e2f5b4513b4c201750de88fe7a55",
+      "managed": false,
+      "path": "/dev-poc-formal-dev-adapter.mjs",
+      "rawBytes": 11388,
+      "rawSha256": "48d924b603de8c2710ffeec3b9bbfb96d5a86d037fc93f01dd00093141a312a9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fbf26b4598b790b22ee53c454dd1139360388364f45ec91018a559f152a5a23c",
+      "managed": false,
+      "path": "/dev-poc-weekly.json",
+      "rawBytes": 13363,
+      "rawSha256": "b35380d274ec8e7424860d93779b9792cfb5684563e41d839bdae6e15dd7cfa2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fd321b7bfbaa5efde1bdc914ef78e158c45874fbfef1330dc1b6ba1eca449601",
+      "managed": false,
+      "path": "/dev-poc.html",
+      "rawBytes": 9736,
+      "rawSha256": "24c91c64083020a740f1f637e9671bed56add3a1256b934a6f9af97e88af39c1",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "dd10cc05c75d6bbefcd2bb9a2d4ab632036c1b11c81b27735dda36fee11c3384",
+      "managed": false,
+      "path": "/dev-preview-label.mjs",
+      "rawBytes": 2185,
+      "rawSha256": "9d6dd826949b892ce8eaa8590c1d8528563f207c79f5dee48a0b6f467c396d8b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8ebee9346b5e967dd5140f4645455616f8e30f9b243a4b1529d93033fb064b2c",
+      "managed": false,
+      "path": "/diagnostic-180s/dryrun-20260930-real-180s/english-asr.json",
+      "rawBytes": 3426,
+      "rawSha256": "19d9ebcbd7ea7ceb9707d4b3ee2918a85997ccc03463dbe476836898c1df2fa6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "de4afe56fe586acf287e5f6db003d8436fd359a3ee8026e5bb62cc3793372271",
+      "managed": false,
+      "path": "/diagnostic-180s/dryrun-20260930-real-180s/index.html",
+      "rawBytes": 5857,
+      "rawSha256": "ec8ef9c38305367a32f3dbeca2c86e46a57408f82fe4f35d780e1e6a1e259368",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f9360963ba61f92b8d158023f93b36422fa0ae4f7ffd4985f457fb5475b0a63d",
+      "managed": false,
+      "path": "/diagnostic-180s/dryrun-20260930-real-180s/report.json",
+      "rawBytes": 4607,
+      "rawSha256": "3f70a5d6a616c178182847a7c9b7ec0fcdcf7066a3a41825e390d5444f7d04a1",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a5fc517cb5cebfc62f22f5d6b2fabd75bc4b4b208ae58ebbf643032f540bdc77",
+      "managed": false,
+      "path": "/diagnostic-180s/latest.json",
+      "rawBytes": 7300,
+      "rawSha256": "c11b7262228284b4a0f5f448c2269c5c64931f76df7b15c17fc8d505ded0e1f2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "53f4335bd4b462872af2a67a2d42ac11812a1aa8147a1108a0f0e140728a07b1",
+      "managed": false,
+      "path": "/diagnostic/dryrun-20261001-dev-full-180s/latest.json",
+      "rawBytes": 93535,
+      "rawSha256": "1dd3b085605f34df7a82ace3b937f9fb2022c98891d85a636246b178f3f3cbba",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "bea4ec3e205e4a968f5fd8293f95da471ea658a9ae8a5225a1d7f049ada44e5d",
+      "managed": false,
+      "path": "/diagnostic/dryrun-20261001-fresh-native-180s/latest.json",
+      "rawBytes": 93542,
+      "rawSha256": "0f196a199b25b86b99c84871a125e0b83bfd8476cb545239f3a6c84a3dd49be6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d3c3fd6a99b9be0b84695ef3d337e8e10bea8f7a51beba6235e25e0971fcd8ef",
+      "managed": false,
+      "path": "/downloads/007764790a1e3b72-full-video-clock.srt",
+      "rawBytes": 30427,
+      "rawSha256": "007764790a1e3b728cfdbb38fbb793d90798e25f848c16539a26b89ffedeeda3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "59853e1e71f437502c8ed6be8ff6923a84edf30a906601fce704bd4bf413cbf2",
+      "managed": false,
+      "path": "/downloads/19688e762c661a38-full-video-clock.mp3",
+      "rawBytes": 73077932,
+      "rawSha256": "19688e762c661a3885963cacd691ee2ec920a97cd19a8d2c21e60f673471ec58",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "99eb6eb39f912d82fc5506af9128e239bcf2accc0be3d0f7bb1d15349602434d",
+      "managed": false,
+      "path": "/downloads/2c1c6d6a7cd37a83-reading.pdf",
+      "rawBytes": 528843,
+      "rawSha256": "2c1c6d6a7cd37a831a30d1230526efc4fdcc168f43aba6d6f6a9346a7fb7ffd3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2c233fa8b0247e9ceb9cbdc2cf3349a763f2db033942fc9766b76b0354140075",
+      "managed": false,
+      "path": "/downloads/7270acd5d4650649-full-video-clock.srt",
+      "rawBytes": 34887,
+      "rawSha256": "7270acd5d46506492e2ed1386d9e2b087aca0042ab39505812899a8516db05bc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2adeb25e4fdfaa67d5b98dba932fd9e40b2ee22800b327942520ebcd5227e524",
+      "managed": false,
+      "path": "/downloads/735b6b83330a323f-full-video-clock.mp3",
+      "rawBytes": 76831532,
+      "rawSha256": "735b6b83330a323fb642e7310bf10e1e0a8d9ac7116dd5848d3d80ebb29c5151",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0ec86fb31dcd747ed940e26b58d5bf946b57b2e4a4f2a1f70b0892a313e0f5cb",
+      "managed": false,
+      "path": "/downloads/9963891d1b5d842e-sermon_zh_en_reading.pdf",
+      "rawBytes": 502711,
+      "rawSha256": "9963891d1b5d842e6679a51752832b08971c738b43968c0d37b7b465ac3058fa",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8c9235b7d39eb47b7fd0044d6841983d3be9c1e31762dd99691cfd2a97199da8",
+      "managed": false,
+      "path": "/downloads/e47d97bef378bc33-companion.pdf",
+      "rawBytes": 290587,
+      "rawSha256": "e47d97bef378bc33892430bd1292cc6b36160d2474de5b011fba93b2b58a92da",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b12f88dda64fd21c7e06bbfad07f947ab7e65eed0bebc79027d78b95a773f08a",
+      "managed": false,
+      "path": "/downloads/fe30fd8cc921b945-sermon_interpretation_zh.pdf",
+      "rawBytes": 316168,
+      "rawSha256": "fe30fd8cc921b945663d6d88174f6033f43b6dd33cfb0be2e1cc8142d1ab820d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3c0beb46521767eee86677ea5f665adadfdaae4fb6d5fb7033a484900789e1c8",
+      "managed": false,
+      "path": "/dry-run-app-weeks.mjs",
+      "rawBytes": 6740,
+      "rawSha256": "0ded3676af4afd6641d7b90af888ef7cc676b7ba40509d3ad3261c241b19c180",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "aed3f5a8edf70e9b89be03288838b4317b80b5cade829b1f2d87ffd1187d3466",
+      "managed": false,
+      "path": "/dry-run/2026-10-04-preflight/index.html",
+      "rawBytes": 25686,
+      "rawSha256": "ec68d5d82f2157fd89e59843212c299cb2c1a11a5f50d1fbe64c942642afbf55",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "07cfc51879988ccda2702814920b3c45668f537242b86005b6fd1a35bd5d51fe",
+      "managed": false,
+      "path": "/dry-run/2026-10-04-preflight/manifest.json",
+      "rawBytes": 3539,
+      "rawSha256": "94226546cfa1052b3f89c10d6305f36289236b8ff5b9f0e7b2ff4e89369f0152",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b3811989b0b98f172d9dcca7809d7a19256fae7598a27fd67eb89567337eda3f",
+      "managed": false,
+      "path": "/dry-run/2026-10-09-env-l1-l4-mock/flow/index.html",
+      "rawBytes": 1871,
+      "rawSha256": "b0fe67142d3018e4bfc8a41c68855c1f13693aad011872b62e971bc92c8f2a7a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5c9e81a79a06edaa8609870276bdae51ebce66a954376b415c9d3e9c49b1678b",
+      "managed": false,
+      "path": "/dry-run/2026-10-09-env-l1-l4-mock/flow/media/es.wav",
+      "rawBytes": 144044,
+      "rawSha256": "f9853d9e427cf4532a0368d36ce65fa12af3d9fdb038fa07ec42b4d3543eec16",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "808004456dc68baafb9fd729dbdf051ee3a8fdd20018305c1bdc0adeb55c3955",
+      "managed": false,
+      "path": "/dry-run/2026-10-09-env-l1-l4-mock/flow/media/ko.wav",
+      "rawBytes": 144044,
+      "rawSha256": "b2aec021045fbeec0cd274fbe9c2fcad629d7578f6cea2e1d27aa270591bd755",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6a45a47cd1b93830bdf9dc280500628473f8439cf8b6f8b00b6a613ebbbfec9b",
+      "managed": false,
+      "path": "/dry-run/2026-10-09-env-l1-l4-mock/flow/media/zh-Hans.wav",
+      "rawBytes": 144044,
+      "rawSha256": "d31b8ad7b2435ce77c55f802ee4f540cae578813268b45efcb4b2775818070b5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "52edc2073ebf7d65208578787dca82c8587f5c9c9cbd33981a710690321abc46",
+      "managed": false,
+      "path": "/dry-run/2026-10-09-env-l1-l4-mock/flow/report.json",
+      "rawBytes": 9631,
+      "rawSha256": "c67c38d079bc07a38f4ae817729c1383d6a9ac3940bffbde3cac7d690269495c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "34f1055c042e949b17c8acc8bef8e3b6dc7c078c0323814df934e9c11bee93c4",
+      "managed": false,
+      "path": "/dry-run/2026-10-09-env-l1-l4-mock/index.html",
+      "rawBytes": 35731,
+      "rawSha256": "5298789177b59864efc1756c17bff2a29257c1dc2b013a229f71359ff9856c70",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "946ca0b5444a8ba5594b387a0faaeb0e7d9613e4710722aa91b5d64d1b6fd986",
+      "managed": false,
+      "path": "/dry-run/2026-10-09-env-l1-l4-mock/manifest.json",
+      "rawBytes": 4341,
+      "rawSha256": "3aaf32c1dbc5b2db01d02fb67ecf79ce6efe2d8e1929e1a68bf9d4d9040623ae",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2d2b58093755547adce04d52196505631c6de02e61ba17946f94b738ba90fa37",
+      "managed": false,
+      "path": "/dry-run/dryrun-20260927-clip-01/catalog.json",
+      "rawBytes": 1818,
+      "rawSha256": "fab905d6437c0778e825eb274a5b12729fe73f63d99c92a354827e9fc5b87115",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c553024d4abfc432700c2c12e9c29a983d1d3cc576db8566b9525e9eac12738c",
+      "managed": false,
+      "path": "/dry-run/dryrun-20260927-clip-02/catalog.json",
+      "rawBytes": 1818,
+      "rawSha256": "fa36feba677aea23ec5b63755d3eb9cdca143cf59b462fb85bbb080cece53db2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "aea4ffff2919c5912b317fe1edbf8c8c059251e79d92a05e35b4e7a84633157c",
+      "managed": false,
+      "path": "/dry-run/dryrun-20260927-clip-03/catalog.json",
+      "rawBytes": 1818,
+      "rawSha256": "ac7b686c7bc179c0a8f4588bec493e63b73a4fcbf882a3affeed9b8f32173945",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ac033a2a1d2ca7e1ee004c2136ff89d27c0c578f20ddb31d8b78660f8dfd4ff1",
+      "managed": false,
+      "path": "/dry-run/latest.json",
+      "rawBytes": 281,
+      "rawSha256": "0cb74c040a4aef77098b362eda07c1dcd3432a00d0ee0a0ab62134342f6efab2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6e429a7563c30217b57aab590bfb7fef6e2c232ad381bf2e2cdf018a0f95b651",
+      "managed": false,
+      "path": "/dry-run/video-bucket-20260928/index.html",
+      "rawBytes": 310,
+      "rawSha256": "3b95ef83f21a2aedd82025c632b69ba00a63fae2c38bb8ac1c68bede296044e1",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c2b443aca9bffd1556d3c70481b9307a3d31f09b58ce25f0fd983069e47f5ce9",
+      "managed": false,
+      "path": "/engagement.json",
+      "rawBytes": 81,
+      "rawSha256": "7ed2e8a30543486fc13dab1a759cac036d0b856d0a81effad4b0e93fcabd02ec",
+      "sourceKind": "live_get_identity_exact_gzip_version_hash_reconstructed"
+    },
+    {
+      "liveGzipSha256": "67affc0e080669e0aafc4d21c6f2016ca69baaab4c2ffa6a877187d23441a0ae",
+      "managed": false,
+      "path": "/english-reference/2026-09-27-weekend-sermon-drive-530.json",
+      "rawBytes": 282866,
+      "rawSha256": "380bc949e821600a98e38994147f85614b63bf48331e7d297ebba72d520b1c9b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f5dcdc427f661761d9bd50eb5e071e06dd9cbb61422bef240a421ad6f2bee805",
+      "managed": false,
+      "path": "/english-reference/dryrun-20260927-clip-01.json",
+      "rawBytes": 1333,
+      "rawSha256": "d4d491fe707f1006a0e63a2ad0189b0329b3ff7a2de4c597e0d7b502751ddaed",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fce77a8096913a86fd4f96c58b292be4d27f9ee849d7510d0e68e68fe6bc7b74",
+      "managed": false,
+      "path": "/english-reference/dryrun-20260927-clip-02.json",
+      "rawBytes": 1333,
+      "rawSha256": "1bebada1ccc4890fc3b29920885484649ecf187a2c73aa09f0a9623306b20ff3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6c21555ea7448fa1ff49e875de92a7539f6e8625aeb0ab72ac3564f6adf90e31",
+      "managed": false,
+      "path": "/english-reference/dryrun-20260927-clip-03.json",
+      "rawBytes": 1333,
+      "rawSha256": "6950fbf9dd58f889d35c6029d9dca3c412fd9b1f8412282c41c84f095321d0d8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "65e75fa66212c8cf766c381fcb77517912ed50faae82d67b225ac98b53940a8c",
+      "managed": false,
+      "path": "/english-reference/resi-20261004-69ba7a66.json",
+      "rawBytes": 311055,
+      "rawSha256": "5501abdf42602ccb5132080a0a362cd5920fdeb46e123f636cde7f381bef8220",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6fd4096ed3e9f891388d17ac33220903b18e52781b732b4b6c4b58b15fcd7e9b",
+      "managed": false,
+      "path": "/feedback-client.mjs",
+      "rawBytes": 5419,
+      "rawSha256": "fcee2848c2725f1c7df0c946c14069009a1c318814e102f2232308041f49f017",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c73ab37f7082a2ad2ef95ef894ede33a764220a7ddc769ad993205b19222f822",
+      "managed": false,
+      "path": "/feedback.mjs",
+      "rawBytes": 13371,
+      "rawSha256": "75e6c59d6df3df6835f865cc43daeccba6f2ab921f5d2778734febb717a5e48b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d5419451ca8ea87a7346357cef939ab93f860f9d0ee4c0e99b8582be9e32ac61",
+      "managed": false,
+      "path": "/fingerprint-capture.mjs",
+      "rawBytes": 8516,
+      "rawSha256": "55b114beccb9bdf953fbc27c0e72c6a49714d2435005e5d73977a11d1a009647",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8862d9f801afebcf2e7ea5c02a3d30f387e587ce5da14a70582d2dbba6895a62",
+      "managed": false,
+      "path": "/fingerprint-core.mjs",
+      "rawBytes": 6448,
+      "rawSha256": "d1a76ed47c066e9f19d8bf0a8cb2d3961cf876af6de14ae2cc4a8b3699d391c5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b7224eec7945694df43e851d83a951272a7cc1b65ce561bca7dc9ddd28e3a264",
+      "managed": false,
+      "path": "/fingerprint-diagnostics.mjs",
+      "rawBytes": 4090,
+      "rawSha256": "ac2a1bbce2f9f7668415b067749dd5ec5fde9eda93b4ce9ac9cd7df5144a17ff",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4b1333763e0ddcb4cd7442454ceb34ba7a8bad8d864f78d36f07b6c32558a0eb",
+      "managed": false,
+      "path": "/fingerprint-ui.mjs",
+      "rawBytes": 15031,
+      "rawSha256": "6bac8d762332aed9bbfc44471b8468aa44777811edb439d0e6899856e340de15",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b3092e667aa11eee6a29334480d2999f04e08ac4fe1d61ef4042260b0907e4bb",
+      "managed": false,
+      "path": "/fingerprint-worker.mjs",
+      "rawBytes": 2279,
+      "rawSha256": "5a45c4149b258526553822892918e7ceb0b156042405273e74e15d343febaedf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b6ed1e14dfffee11d35fa76ab697003cf2160b012f6ee39a9b856539974015d2",
+      "managed": false,
+      "path": "/fingerprint-worklet.mjs",
+      "rawBytes": 3424,
+      "rawSha256": "4b665f0e3e02237c102d111a40866d90173132dc219a979ccbbc60dad4ac5aa2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "220a6ace1fadf15f500a50c60dcc5ae4231a84ab139d84020dc4fd035d028641",
+      "managed": false,
+      "path": "/fingerprints/003e1983708381ad-landmarks.json",
+      "rawBytes": 2677675,
+      "rawSha256": "003e1983708381adc25233f67898fa32eebb9f0f151ba7aa7c4f74109947dba6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b36792d2db4d8c79f59c905eaf82178277dadc844b69ef1e368b324d8a858b3e",
+      "managed": false,
+      "path": "/fingerprints/1e52515b350ddee4-landmarks.json",
+      "rawBytes": 2758423,
+      "rawSha256": "1e52515b350ddee4fa92a00d73ac02dfb2211e7632e88bd9d66ae8e2c28528d4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "87345f248c78c4ad7e6fbfbc2c898ae326f09d993b54e7fc66d3967395fd4c27",
+      "managed": false,
+      "path": "/fingerprints/220445a2338f2607-landmarks.json",
+      "rawBytes": 111553,
+      "rawSha256": "220445a2338f260716b2b4ea9171de306af455e9b03efb8fc6cb3b4f8a0b4aaa",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a723008f88a38c7670340539c23d09b205be193fc0afc3b8f164feadd295d292",
+      "managed": false,
+      "path": "/fingerprints/28c42d66527e39f5-landmarks.json",
+      "rawBytes": 2758423,
+      "rawSha256": "28c42d66527e39f5097b3cb5c8bad02b7f0405039e5cb4e741610804c3ba766e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a6552dd0a97133e0c1955b732e3368257c0827dc872611a962b47f59e9143c29",
+      "managed": false,
+      "path": "/fingerprints/4cda22a17d051100-landmarks.json",
+      "rawBytes": 2670771,
+      "rawSha256": "4cda22a17d0511002c228cc161f94ce3c2cd05fb2403ba8ef0a159375452b057",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c8e5a411b96a2d5e24f4c73a8cc6c3d5c119ec5d934af0f6708b77a3469d799b",
+      "managed": false,
+      "path": "/fingerprints/4e4dbc564376fa8a-landmarks.json",
+      "rawBytes": 111553,
+      "rawSha256": "4e4dbc564376fa8a6a2550c0eb7c6b2aaedfa1917413359e5584bea2ea360e65",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1aade0ab6a0c73cd2b4db4d0b02fa044c5a390b9d773ecd26665017683ff8ac3",
+      "managed": false,
+      "path": "/fingerprints/8dd91029156ca990-landmarks.json",
+      "rawBytes": 111553,
+      "rawSha256": "8dd91029156ca9901a67ae2629799cf3cad196216bc95494d0e0436428f25381",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "17f6acfb455e10558ea85f29c00787786b937002ee79c8ac3e2dc23cf48e9db2",
+      "managed": false,
+      "path": "/fingerprints/ae274a6b4ba914fa-landmarks.json",
+      "rawBytes": 6289426,
+      "rawSha256": "ae274a6b4ba914faf3b8f0adb9deebc3294f2b0513312eb912218d908edf5cfa",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b7f48395e3e9f1a28a5dfb2ce111bf5c9a1ab7231214a5c8ec750435e35772bc",
+      "managed": false,
+      "path": "/fingerprints/cb443e455d5c440f-landmarks.json",
+      "rawBytes": 2758423,
+      "rawSha256": "cb443e455d5c440f37b74ab87b395d435ba6fb417991ba153ceb8ad76b6fff6e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c53cc83eef23c6f945709c3085ac0f633dc721e00d1f6aded1ed9c63d5953ac2",
+      "managed": false,
+      "path": "/fingerprints/ccf97f9ad6f70626-landmarks.json",
+      "rawBytes": 234078,
+      "rawSha256": "ccf97f9ad6f706266fd68ecfb26670d931f4efd5d85c3a7b79d96ecce1d6b349",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "66200aa20275f2980a47168c48cc9c914f6b00a9319d8127afa371a04ade99c5",
+      "managed": false,
+      "path": "/fingerprints/cd5db14b2db2cadb-landmarks.json",
+      "rawBytes": 111553,
+      "rawSha256": "cd5db14b2db2cadbec9d562ffd14333abf12e54af16e6c21245c2d6ee7bc7c21",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0f919fa145a7e28031ac9561a37d2ff984687d77472f118727dc3593215c9070",
+      "managed": false,
+      "path": "/fingerprints/cf89a62d4fd96f4e-landmarks.json",
+      "rawBytes": 111553,
+      "rawSha256": "cf89a62d4fd96f4e9ad274d0f0608e0f4f96a3d67482b552a64308962563e0c6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fe230c966141cddcb4e5ff5d74e01d9f540d9b5582c5d755edb2b0798991d90e",
+      "managed": false,
+      "path": "/fingerprints/d04b7ff48dc1fae6-landmarks.json",
+      "rawBytes": 111553,
+      "rawSha256": "d04b7ff48dc1fae68ae8adf1b2665e66a028912891838ce652ed85f5e0159e8d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "70abf1f8bdda1d89e6ab64dd77f80d33640f84edf10668357b33f922b2b66019",
+      "managed": false,
+      "path": "/fingerprints/d0a2f640435d4860-landmarks.json",
+      "rawBytes": 234078,
+      "rawSha256": "d0a2f640435d48609bab76723e658ca5e7552bd469df8fdc7e3b37ff078afc1d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "eb32d0e6118d428601943ca75b27c0fb8e3904084287235bf3c3cdff814d7faf",
+      "managed": false,
+      "path": "/fingerprints/d4772e56a6b2b476-landmarks.json",
+      "rawBytes": 111553,
+      "rawSha256": "d4772e56a6b2b476ff6a3fc4534aea02a939b15d4ff5f6b6bb7b3109db4d7ecf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7d98189e97db58e2858890cdc2b24a9231bed94d0b421a29991b0b527616c958",
+      "managed": false,
+      "path": "/fingerprints/f593299bf316810d-landmarks.json",
+      "rawBytes": 111553,
+      "rawSha256": "f593299bf316810d1925532fff9329bf130cb9bfc071fb87cc12d82a499508eb",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2359ed65c8b9701cfb8d8a1f95575cc282e8a7657e07ca5cf0682275805bc975",
+      "managed": false,
+      "path": "/fingerprints/fa2eda8815f463e2-landmarks.json",
+      "rawBytes": 111553,
+      "rawSha256": "fa2eda8815f463e2be14a194dfa26d98bd6fc32ea5bcc8f7eadaba42523b684f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a2a15d6a59d43a9176b652bf83855f63141142a0fab5ea2deaa2036e219d6617",
+      "managed": false,
+      "path": "/fingerprints/faee5bf40f4e1816-landmarks.json",
+      "rawBytes": 2670771,
+      "rawSha256": "faee5bf40f4e1816f3280cf4a083c5415c36032811f0aea49f5d438952b6d10e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5e1402167441716dcf8710653f3f0abbabf23dbb57589167bbb81fc6dd0509c2",
+      "managed": false,
+      "path": "/fingerprints/fc9a848099c9b728-landmarks.json",
+      "rawBytes": 234079,
+      "rawSha256": "fc9a848099c9b7286e46b7b624ba97ed77eb0e2ef615f1cff5769b79a0eff6b1",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b3bde21657148287b50a030e425577a5c2025f382d46c967a47bfded3ad3afd7",
+      "managed": false,
+      "path": "/fingerprints/fd64741693dc955b-landmarks.json",
+      "rawBytes": 2670771,
+      "rawSha256": "fd64741693dc955bf6169fa2d29b7156230c0e1163e7bf6532031e06eeddd8e5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a031552c8fe85a552bd02055cf6b7f021ea5e2f5b4513b4c201750de88fe7a55",
+      "managed": false,
+      "path": "/formal-dev-adapter.mjs",
+      "rawBytes": 11388,
+      "rawSha256": "48d924b603de8c2710ffeec3b9bbfb96d5a86d037fc93f01dd00093141a312a9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "bdf8a2612789d30982c05f9796c0f67efad6d829b0ab9ab26e5dc84738f7aeb3",
+      "managed": false,
+      "path": "/i18n.mjs",
+      "rawBytes": 4675,
+      "rawSha256": "9e30fcd05147a623778fea255be86dbc0336092009cf52fd4d658566844687cb",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fea616aa0813858470fc5004cfac0ecad962c565c8589123e949cd64cbeae8f7",
+      "managed": false,
+      "path": "/icons.mjs",
+      "rawBytes": 1465,
+      "rawSha256": "a95c89111411f18f62d7cb7f399a8e1f578018875797e5e6ade23dc40b0ed29c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c709a2adda77831bc13693070c25d6f3846dd8bfca7fc8970908201b6e8a01c6",
+      "managed": false,
+      "path": "/icons.svg",
+      "rawBytes": 11685,
+      "rawSha256": "1c84f9acdedbfe1f059ccb7e0bccc1b6d9a72a548f833105791bd8a2f8096405",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "cfb32c0aab91d8901fd5c34f88a54f146273252df26846711579786724233bfe",
+      "managed": false,
+      "path": "/index.html",
+      "rawBytes": 34944,
+      "rawSha256": "171c56f203f85c3a50e33c3add80f420fbb4999c460650f85e4868b3ee1392a2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "05bd0a276c5c5ec979ee45fae86c43487b00b234cbc15b896366587eaccd5cbe",
+      "managed": false,
+      "path": "/language-listening-client.mjs",
+      "rawBytes": 2960,
+      "rawSha256": "18ac826fbe6e1930e8cc310a6cc7e2045c1a9d851bee471fbf413f40ecbd4892",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "306308e80f0b475a038df6ad12fa8774914d1792b56c4702fed246022c5c32ba",
+      "managed": false,
+      "path": "/language-listening.mjs",
+      "rawBytes": 7439,
+      "rawSha256": "60d06bd7bd0a6fb0edc43d6918e06f39a986221b13760c1855a1441dfcca068c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7d9b4719a5168b2d6409c3daa38b5ace0b2af628ae14a899ee858209f8465cc3",
+      "managed": false,
+      "path": "/legacy-query-router.js",
+      "rawBytes": 685,
+      "rawSha256": "af4b29350ca7771942625a70b514b324010c6780fed95d2119a68842189dce1c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "14eca57c0a9abc67905d7bc33b07fefdd5e5e4f88b43a60deca0fcd78e4fe67c",
+      "managed": false,
+      "path": "/legacy-reader.html",
+      "rawBytes": 23436,
+      "rawSha256": "10f871a1967a379789157c35c195e3fe9036fd09c3409dade244350889522917",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "45b4afe1c79c6eff3b0a36cfb715c1de139cdd7f4b2cb80e779ec2fc2e651fe8",
+      "managed": false,
+      "path": "/listening.mjs",
+      "rawBytes": 2301,
+      "rawSha256": "fd9e914f2bbf8ef3302fb5e639f131aa77ba54228c4d7d090a1a10936fc419fd",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e9dd1f13bf0b8a7d66b231a6ca998b9ac1ebe1788a652c16efb9126a3cd70fcb",
+      "managed": false,
+      "path": "/locales-app.mjs",
+      "rawBytes": 17406,
+      "rawSha256": "4199aad6dcdb22a8b8a6e9dc2f5bc7cea798b55c843fda3ec6dbf366206c919d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "22cde9aa9f2e8ace9c57f50244d86c7d09e9b88b82b5122f17280edf0b10a916",
+      "managed": false,
+      "path": "/locales-es.mjs",
+      "rawBytes": 10670,
+      "rawSha256": "b9a6e81b354481e1f3e1ed2d058a4ced4901267ca8fbff3ae68b0f86b1e692ab",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "508a6cbe424d649d2a5ef6e78531b6e635122e9c966a87f6eb9754aace0234df",
+      "managed": false,
+      "path": "/locales-feedback.mjs",
+      "rawBytes": 14661,
+      "rawSha256": "14d5d10af4aee18df938fad0b2da73412e309dda729f0cb3dd9dbc02e430d116",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1f261230d99e2bd5c0628b4f1974d26172bc157308d4aafa5eb3b1ecd518d3d4",
+      "managed": false,
+      "path": "/locales-interface.mjs",
+      "rawBytes": 18397,
+      "rawSha256": "4f91e2027fd7021a919129a238550cfebb7d347ef8625c808e42ee1323de8604",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ff033a5600ed6d5698ef3fb9b4dd85c2692fae3576ab65e8b5d894fe31ba1f33",
+      "managed": false,
+      "path": "/locales-ko.mjs",
+      "rawBytes": 14449,
+      "rawSha256": "27564513bfb881bdb3ae171aee26c219bbcfe9c89694d6fa05f0726afbdc19fc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "20f2e1099be99717c8f7985e7d82ea07a5c39c67317875bb05e183da7e8a2a67",
+      "managed": false,
+      "path": "/locales-reader.mjs",
+      "rawBytes": 6787,
+      "rawSha256": "f043bc3505f1f9c3d586db4df62a0cf77d760674f3a4a02520af57a605543da9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6fbfe434d45ceddbc252aa9444d91102a14cf58699e7b9224b20a6eaf9c5e23d",
+      "managed": false,
+      "path": "/media-session.mjs",
+      "rawBytes": 2659,
+      "rawSha256": "7a8aae478204c46a361d05a844180ea00812463f62519da775f1eca2548f06e9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8ba966ee7eedf50b748130955faaf7783ede883c26c87598928a2237887c9a95",
+      "managed": false,
+      "path": "/media/00c22d24b3c723f8-christine_caine-zh.mp3",
+      "rawBytes": 680300,
+      "rawSha256": "00c22d24b3c723f8fa63df92fdba553e355b8b217903dd2caf223573b4652d07",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f249ab01074081a8847f01dc95b55d0bd42164f740229c4f10db9b4252d30873",
+      "managed": false,
+      "path": "/media/0661d53954b41e34-steve_bang_lee-reference.mp3",
+      "rawBytes": 274796,
+      "rawSha256": "0661d53954b41e34ac96255c9cb67c73e80a06297f19a0b2976854c81eae3950",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "24116a2e5424fa7fccb0089ce42af8e7d7757c3ef7bd76e97495eb24bece4144",
+      "managed": false,
+      "path": "/media/0e654628269dd944-jared_kirkwood-zh.mp3",
+      "rawBytes": 637676,
+      "rawSha256": "0e654628269dd944c79e3aa00ac8614bb746df13eaf95c00e9da2e6097fe939a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4b6f1ed5f8d6987faab5b3e0090f94db819244d06390b54dbc573c8dad1eb2fb",
+      "managed": false,
+      "path": "/media/1175dcd29bb72d56-zh-natural.mp3",
+      "rawBytes": 43869356,
+      "rawSha256": "1175dcd29bb72d56fe49898b90f83ce498569b983e20cb6b85801b9de80d3f97",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e9f36d029c8eb35ae0960c1cc992adf8c3e5829ea7b63e015d5673e7c978087d",
+      "managed": false,
+      "path": "/media/2026-09-20-laodicea-clip/es.wav",
+      "rawBytes": 6624262,
+      "rawSha256": "2a9f92a07a26fafee636b79ae1f1329faeeb49ed4c7b75a3ba1e9063abc16c34",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d50f44a60de59eeb2f03d9162a05c066ae2eaee3a6f33e11e83945d35c8bcc21",
+      "managed": false,
+      "path": "/media/2026-09-20-laodicea-clip/ko.wav",
+      "rawBytes": 6624262,
+      "rawSha256": "92f77059ce4f71be112dd6cb44beef7be98077c59d6041a6f8616cf94ce44710",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d69de1e91410c807bf6b9e377703a92b71f3facbfff17f948b6ea793ae7bb134",
+      "managed": false,
+      "path": "/media/2026-09-20-laodicea-clip/zh-Hans.wav",
+      "rawBytes": 6624262,
+      "rawSha256": "2f011df221f91c35ae545267baabbacc7e746b134d9e05344c33705305b18b35",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a3ad4926ef6207da8bfc7e30c737909636b04051c6e0e28fa51d81fc20aa531c",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc-en.mp3",
+      "rawBytes": 654568,
+      "rawSha256": "95d9117fa1d8706bea22bbfbefd7ff6852f264eaf32a8c4a8027ff22aab94d33",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "9a435d8e428af9b2392556f05e9a7bea6320af67fa3e7c3aa096029fbe97ea74",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc-es.mp3",
+      "rawBytes": 360741,
+      "rawSha256": "b4910d9f885b6c6fd91647b39cb51dd30ff42decaafb0e1b2ed41bf63a72517c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6aa9c1bd47c31a6cfc05258dfe9af75ebc10c0b77bdd97a55779d2b89045076f",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc-ko.mp3",
+      "rawBytes": 464395,
+      "rawSha256": "ff02082b5799d1bcdcff0ad151e3c3f7e1794eb3dd42229bb97dd09fa77a5656",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1ad9ad9277f6dc79f9254e9b09fb6a0b0d96766b62965d4c8715ab0fba6af87a",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc-vi.mp3",
+      "rawBytes": 621966,
+      "rawSha256": "627a57e3eb5e51a3aed66c5107c88706a8b35e4de175b4dbf37097a2f70af10a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1a99b7f74ccf46143994ed6b5ed7c63d7d06ab38d57e044367d744e2884ed7e1",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc-zh-Hans.mp3",
+      "rawBytes": 386237,
+      "rawSha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a3ad4926ef6207da8bfc7e30c737909636b04051c6e0e28fa51d81fc20aa531c",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/en.mp3",
+      "rawBytes": 654568,
+      "rawSha256": "95d9117fa1d8706bea22bbfbefd7ff6852f264eaf32a8c4a8027ff22aab94d33",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "9a435d8e428af9b2392556f05e9a7bea6320af67fa3e7c3aa096029fbe97ea74",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/es.mp3",
+      "rawBytes": 360741,
+      "rawSha256": "b4910d9f885b6c6fd91647b39cb51dd30ff42decaafb0e1b2ed41bf63a72517c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6aa9c1bd47c31a6cfc05258dfe9af75ebc10c0b77bdd97a55779d2b89045076f",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/ko.mp3",
+      "rawBytes": 464395,
+      "rawSha256": "ff02082b5799d1bcdcff0ad151e3c3f7e1794eb3dd42229bb97dd09fa77a5656",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1ad9ad9277f6dc79f9254e9b09fb6a0b0d96766b62965d4c8715ab0fba6af87a",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/vi.mp3",
+      "rawBytes": 621966,
+      "rawSha256": "627a57e3eb5e51a3aed66c5107c88706a8b35e4de175b4dbf37097a2f70af10a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7cc7ce4722e5fdabc74f3d727e2357e6218e96760a78c058ee08739f6b7a960e",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-adaptive-pauses.mp3",
+      "rawBytes": 96591,
+      "rawSha256": "65a8559bf2bef194d10010b68bcf2ce959f110499a89037546e3496c4868b857",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "db92ee28b5d8edcdc3a4840f920e0249d682ea6cb9d1db6ba0fe0676fc9cd6da",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-baseline.mp3",
+      "rawBytes": 52287,
+      "rawSha256": "0cabe56bec5e61d65aea0a332291d2de4598f270060a8b7594ba8a684cf3a383",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2b70470dbe63d746382314c3bc4dfd2e6052f42df4b3d74dc9a9700707d7904a",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-internal-instruct.mp3",
+      "rawBytes": 51034,
+      "rawSha256": "0d525676aab6e2026bbc79d6017329084b5b3564e49bebf26b1a5e423448f42e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "dbc2cb0d4f951d7e6cb4554036c004e990a92433d6d69fb5d77ab2b770f575ea",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-phrase-pauses.mp3",
+      "rawBytes": 99099,
+      "rawSha256": "bd0f3143b2891aa48a9bf215bee72b08b12c31bbba374083842482d9cce554fd",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "848592d6bfa3660c1cf0bd9bb2222bc7cc5569cc8a01efe7c52f30002516e793",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-long-adaptive-pauses.mp3",
+      "rawBytes": 658328,
+      "rawSha256": "120b08ca3557b559fc539591a6972cd199623525959e0db1351b8f68fcbf437c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d3a5f830725099513431ba837939f0134a3382b9170583b805408c5dbd90ed4e",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-prosody-natural.mp3",
+      "rawBytes": 486966,
+      "rawSha256": "ed6ed84fc24af5a795e80cdb8feebe43472066057a82b0061bd61a1811f92659",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fb84835dfc42c55db787b78b09a8dcfe225b2f5ae2244e3252cc3dac1124cd6c",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-prosody-paced.mp3",
+      "rawBytes": 525418,
+      "rawSha256": "432d9bc65513f58710a3817bf74853f2840fb7ceb406ccb6de41a624ac900135",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4b679dcac401146e09d164b7b5388d79e0555cfb4b71bd958edd1f2ca3c6e3df",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-source-acoustic-pauses-v3.mp3",
+      "rawBytes": 651641,
+      "rawSha256": "8e098c71fe34b7bd11cf80f50c111af2c9b3d0aea37a6b9cd2616a820918155c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1a99b7f74ccf46143994ed6b5ed7c63d7d06ab38d57e044367d744e2884ed7e1",
+      "managed": false,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans.mp3",
+      "rawBytes": 386237,
+      "rawSha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0734167405da6f6c307d1f6dabd88bc09e4831ff79e648bde782f31f5f70b89a",
+      "managed": false,
+      "path": "/media/2026-09-20-revelation-clip/es.wav",
+      "rawBytes": 8552588,
+      "rawSha256": "fac1c70ea88ff787d9150e075d6e6834d47126e6492f63d4b71c3e3aea88ec34",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "524a43f337d0e00d19b5a970ea8f4f6e035ebe4ee9ffc4b8e0ce57ef6d55b92e",
+      "managed": false,
+      "path": "/media/2026-09-20-revelation-clip/ko.wav",
+      "rawBytes": 8552588,
+      "rawSha256": "57c1a9d61c2c31b8f450ebe07e239f8d43f72bd8308e1659c7646fd23a24215d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e26a3ba165613fd1e76ad805dedca7345c69a679df814cc58e4bbe330aa6dd6c",
+      "managed": false,
+      "path": "/media/2026-09-20-revelation-clip/zh-Hans.wav",
+      "rawBytes": 8552588,
+      "rawSha256": "a626c1105bfea2c51dedcc5d9b1534b21f536abf658c6230003a95d8d1981356",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "65c39631f573d1597c355bfa79fa504acbae31db1b8c8ac4a4a346dccd219d1d",
+      "managed": false,
+      "path": "/media/2026-09-27-weekend-sermon-drive-530/es.mp3",
+      "rawBytes": 15134061,
+      "rawSha256": "17990aaa6369922a2a7b2ad2d8bf9f4486b5a0d7a282deb2ae2fe6569b876496",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "083870bed8f720d03b804202f4ecc03de62f4b6cc6b0f2be8b8e3076e8321ce0",
+      "managed": false,
+      "path": "/media/2026-09-27-weekend-sermon-drive-530/ko.mp3",
+      "rawBytes": 15134061,
+      "rawSha256": "b6317fa0589ef7ae2805e73862f75f6b9b81b8b81cfb97310e0f33b6539ade46",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "65c39631f573d1597c355bfa79fa504acbae31db1b8c8ac4a4a346dccd219d1d",
+      "managed": false,
+      "path": "/media/2026-09-27-weekend-sermon-drive-530/spoken/es-17990aaa6369922a.mp3",
+      "rawBytes": 15134061,
+      "rawSha256": "17990aaa6369922a2a7b2ad2d8bf9f4486b5a0d7a282deb2ae2fe6569b876496",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "083870bed8f720d03b804202f4ecc03de62f4b6cc6b0f2be8b8e3076e8321ce0",
+      "managed": false,
+      "path": "/media/2026-09-27-weekend-sermon-drive-530/spoken/ko-b6317fa0589ef7ae.mp3",
+      "rawBytes": 15134061,
+      "rawSha256": "b6317fa0589ef7ae2805e73862f75f6b9b81b8b81cfb97310e0f33b6539ade46",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8048d4446503c2f2a4e15adba8304fb3304cbb457b4246fcb44970450f82caad",
+      "managed": false,
+      "path": "/media/2026-09-27-weekend-sermon-drive-530/spoken/zh-Hans-5ef201d0fd4d726d.mp3",
+      "rawBytes": 15134061,
+      "rawSha256": "5ef201d0fd4d726d2927301fcd776415652fc1251c52971213e2665ad0f3faeb",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8048d4446503c2f2a4e15adba8304fb3304cbb457b4246fcb44970450f82caad",
+      "managed": false,
+      "path": "/media/2026-09-27-weekend-sermon-drive-530/zh-Hans.mp3",
+      "rawBytes": 15134061,
+      "rawSha256": "5ef201d0fd4d726d2927301fcd776415652fc1251c52971213e2665ad0f3faeb",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "eabce4cbac1ee81137a517a083528f14a0e6543830d8e582cca0cb09d15dad45",
+      "managed": false,
+      "path": "/media/2556a9a3416c5511-kenton_beshore-zh.mp3",
+      "rawBytes": 709100,
+      "rawSha256": "2556a9a3416c55115d8ab6732745d507619d66efcf487c91354efa4dd89577e2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "503dd679d72f3fc286bdcd5b6cf06319bdeb325bec7f6f7011f4b8861a76e2e6",
+      "managed": false,
+      "path": "/media/286eaa0bf6cd281e-zh-natural.mp3",
+      "rawBytes": 44473004,
+      "rawSha256": "286eaa0bf6cd281e844b8391f8659647abb486ef7cd677d1f1f1ab55b0b83db6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6d79f4d10f91dd021d19124790c4553ef2d84a14212588fff0748c0302ce88dc",
+      "managed": false,
+      "path": "/media/394552afddac93e0-kenton_beshore-reference.mp3",
+      "rawBytes": 288620,
+      "rawSha256": "394552afddac93e08f3049b40ecb52fb62c382205418910e721520e4786d7ab3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "93021b2f9a981c566f8e01f694c3de4cacca17b3d288f79e8a347052852c6ef2",
+      "managed": false,
+      "path": "/media/396a469da3730b41-zh-natural.mp3",
+      "rawBytes": 40716908,
+      "rawSha256": "396a469da3730b41cfd8bd20a3f1611671041bd4019abdd6c305463416fbd4f2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5ae6d04c82de166b070b665b57d4a2861f662da0275eb19030659dc4daec6828",
+      "managed": false,
+      "path": "/media/5d9c1f7a4b3be528-zh-natural.mp3",
+      "rawBytes": 39558572,
+      "rawSha256": "5d9c1f7a4b3be528204c1d4ce1a15fa39bdf1ab45602bddf9a607af8abbd72e1",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5cc03b954154fbffc7582b48245c0c0b319ca66b154adf5d1785514ef02c5915",
+      "managed": false,
+      "path": "/media/7cb57ace1d05bd18-zh-synced.mp3",
+      "rawBytes": 53761580,
+      "rawSha256": "7cb57ace1d05bd183f76da0e5c14925edefa69a834ec2ccc66df78a9865839d9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "91caec176e811dd96b29b0d2fa0e48d43ce96f03965787723b33635330c964dd",
+      "managed": false,
+      "path": "/media/8672c7398848aeb3-zh-natural.mp3",
+      "rawBytes": 42315308,
+      "rawSha256": "8672c7398848aeb36bedbc8c4fd534b9c15ea586dd55cd138917ac3babb62981",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "55f5b59a8395f21f11971ad958feae5b7147d326b54e56c3ae28a5c477494d30",
+      "managed": false,
+      "path": "/media/89e92f9a1efd4982-zh-natural.mp3",
+      "rawBytes": 47353004,
+      "rawSha256": "89e92f9a1efd4982223b618a24adb7963191c9bc57ccdba7ceaee9f4329abcc9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a605407db38bde4ea07d58e0ec209fea220eefee1ca8cb301b4c0f5bfc1ba5cc",
+      "managed": false,
+      "path": "/media/8c83cca82f89987b-sft_expanded.mp3",
+      "rawBytes": 1806380,
+      "rawSha256": "8c83cca82f89987b9432cc68b7795dd4f92c308bc298b153e0926be795e9d6c7",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "91f8c423ce26a1433624e78a8fbc46cbad16d85f0ebf80106a876ee33bbb947d",
+      "managed": false,
+      "path": "/media/926e37b4f92c5c9c-jared_kirkwood-reference.mp3",
+      "rawBytes": 286316,
+      "rawSha256": "926e37b4f92c5c9c33c841886f4e22f54d6b214b1c1a1c3c1be2f22b61987e17",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "495aec0bf03d86cf80c299dd2ae5e2eb376d9bdc52271a34fe2de5ea9e0cd4c3",
+      "managed": false,
+      "path": "/media/95fb563d94990e64-doug_fields-reference.mp3",
+      "rawBytes": 286316,
+      "rawSha256": "95fb563d94990e64012cd0463d75313eefe08cfe785ef306ddccaf5001423440",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "08c900d691c62a02605b401e2c41be382c44b45545b596d49c929e5943a8ff26",
+      "managed": false,
+      "path": "/media/a96bdd6abf2b9419-christine_caine-reference.mp3",
+      "rawBytes": 288620,
+      "rawSha256": "a96bdd6abf2b94197c56a3d76f94504145e88f79b14372ec53328216c34c2f81",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4cf886acca7282955061a4aecda86c0987a56bbdf5743e85ae412fcb27222c07",
+      "managed": false,
+      "path": "/media/ba2346ac01d28981-steve_bang_lee-zh.mp3",
+      "rawBytes": 739628,
+      "rawSha256": "ba2346ac01d28981889309355c54a9f3873a584aa6d48f857de79a3aa555ecd5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "add14fe6acb50694379b71faa61f939bc90f76dcfeb3a3789f810edc22cab3a4",
+      "managed": false,
+      "path": "/media/bb156cd1c68422d9-zh-natural.mp3",
+      "rawBytes": 46346156,
+      "rawSha256": "bb156cd1c68422d979be41a9d1d9ac61335b4076c81ed4c9199468bd048f7159",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "630dd0404610b03f870eedce0c99b87ae0aa508dddc8eea43327e6ee8abb5afb",
+      "managed": false,
+      "path": "/media/d19357e195618b6b-zh-synced.mp3",
+      "rawBytes": 53761580,
+      "rawSha256": "d19357e195618b6bb98079470345e853b862a66c356b73a5739c470de0cad248",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "525b5c52af041e80811e7404f9dad748e12cfa2ab77a00c0fd0aa04180ba017f",
+      "managed": false,
+      "path": "/media/de6cbfb214255348-zh-synced.mp3",
+      "rawBytes": 46561580,
+      "rawSha256": "de6cbfb214255348260c42221733e02ca70d5eb19bb485e83830eac309fb7798",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "21685cb54bd335552a7fdbeb2c180f0493e6fa61d9fb05f83e01611dddcd173b",
+      "managed": false,
+      "path": "/media/dryrun-20260927-clip-01/es.mp3",
+      "rawBytes": 241580,
+      "rawSha256": "b39be206f51ce0cf1fc3055318f53cb57e020cf95ef31cb4f11ada446525e29f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ca7d41beca874f967752b0bd69da7e4289566290f43203039a6c1851fd144ef7",
+      "managed": false,
+      "path": "/media/dryrun-20260927-clip-01/ko.mp3",
+      "rawBytes": 241580,
+      "rawSha256": "ca2e604a35c6352ef71ec0c24985690a8176c67e38fc2ed149407d972beb9ad4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "eebe76f34f411cd0ab0a3a1ad8f9eb979251b18f52dbdad25c2f1e726909721b",
+      "managed": false,
+      "path": "/media/dryrun-20260927-clip-01/zh-Hans.mp3",
+      "rawBytes": 241580,
+      "rawSha256": "9376791f2ac4bce23e574c736035276edd5ee9f34c8fafede40295874141c055",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "21685cb54bd335552a7fdbeb2c180f0493e6fa61d9fb05f83e01611dddcd173b",
+      "managed": false,
+      "path": "/media/dryrun-20260927-clip-02/es.mp3",
+      "rawBytes": 241580,
+      "rawSha256": "b39be206f51ce0cf1fc3055318f53cb57e020cf95ef31cb4f11ada446525e29f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ca7d41beca874f967752b0bd69da7e4289566290f43203039a6c1851fd144ef7",
+      "managed": false,
+      "path": "/media/dryrun-20260927-clip-02/ko.mp3",
+      "rawBytes": 241580,
+      "rawSha256": "ca2e604a35c6352ef71ec0c24985690a8176c67e38fc2ed149407d972beb9ad4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "eebe76f34f411cd0ab0a3a1ad8f9eb979251b18f52dbdad25c2f1e726909721b",
+      "managed": false,
+      "path": "/media/dryrun-20260927-clip-02/zh-Hans.mp3",
+      "rawBytes": 241580,
+      "rawSha256": "9376791f2ac4bce23e574c736035276edd5ee9f34c8fafede40295874141c055",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "21685cb54bd335552a7fdbeb2c180f0493e6fa61d9fb05f83e01611dddcd173b",
+      "managed": false,
+      "path": "/media/dryrun-20260927-clip-03/es.mp3",
+      "rawBytes": 241580,
+      "rawSha256": "b39be206f51ce0cf1fc3055318f53cb57e020cf95ef31cb4f11ada446525e29f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ca7d41beca874f967752b0bd69da7e4289566290f43203039a6c1851fd144ef7",
+      "managed": false,
+      "path": "/media/dryrun-20260927-clip-03/ko.mp3",
+      "rawBytes": 241580,
+      "rawSha256": "ca2e604a35c6352ef71ec0c24985690a8176c67e38fc2ed149407d972beb9ad4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "eebe76f34f411cd0ab0a3a1ad8f9eb979251b18f52dbdad25c2f1e726909721b",
+      "managed": false,
+      "path": "/media/dryrun-20260927-clip-03/zh-Hans.mp3",
+      "rawBytes": 241580,
+      "rawSha256": "9376791f2ac4bce23e574c736035276edd5ee9f34c8fafede40295874141c055",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5cb1c95624ee8b8e65a754fbb2bfb8a06558f76cbdbfc02674471f82929695ed",
+      "managed": false,
+      "path": "/media/dryrun-20260930-real-180s/source-180s.mp4",
+      "rawBytes": 113034700,
+      "rawSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ac03b5703ffe247dc3cdbe1666284dc53c7f3101ee65f6864493641c0ee52d9c",
+      "managed": false,
+      "path": "/media/dryrun-20261001-dev-full-180s/es-86d3172c2b2ac889.mp3",
+      "rawBytes": 1553324,
+      "rawSha256": "86d3172c2b2ac889b3edc82f89f8e2d5706cf36e9a7ac3ecd198ecf772da5406",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "994b104fc7eef925a3fe70ce924b7ebca9058ce5de1770337717b3dd25bbce74",
+      "managed": false,
+      "path": "/media/dryrun-20261001-dev-full-180s/ko-b715f62a1156f180.mp3",
+      "rawBytes": 1722284,
+      "rawSha256": "b715f62a1156f180736611f0ce2a5c37df80778dcaad121b932765c3186e295c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5cb1c95624ee8b8e65a754fbb2bfb8a06558f76cbdbfc02674471f82929695ed",
+      "managed": false,
+      "path": "/media/dryrun-20261001-dev-full-180s/source.mp4",
+      "rawBytes": 113034700,
+      "rawSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0d0252a112cea12bc43ec79e9fda273d49a8ded7dbf69323a1fe232cc9255a4b",
+      "managed": false,
+      "path": "/media/dryrun-20261001-dev-full-180s/zh-Hans-4946cd9c72825cd2.mp3",
+      "rawBytes": 1533548,
+      "rawSha256": "4946cd9c72825cd269337bbed68294cfb1e89f0029a1a0bfae5eac22296b98bf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "224056fd35f4d1d7a3381150a2ea56a8a9f6acd49c9d0e9879f49df950e30f61",
+      "managed": false,
+      "path": "/media/dryrun-20261001-fresh-native-180s/es-a0acd3003e91a248.mp3",
+      "rawBytes": 1595564,
+      "rawSha256": "a0acd3003e91a2484861ab90624e3a6de642ed5b83e74cc935062840426f0eca",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c50bf22a9a0d1086615b2e28357019262d8a458fa7e48ffc9e18352238964eb3",
+      "managed": false,
+      "path": "/media/dryrun-20261001-fresh-native-180s/ko-6cbfb46bbef2b8e5.mp3",
+      "rawBytes": 1710188,
+      "rawSha256": "6cbfb46bbef2b8e5b1618e78687024c0928f0a1d21276ab6e47acc2eeb959652",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5cb1c95624ee8b8e65a754fbb2bfb8a06558f76cbdbfc02674471f82929695ed",
+      "managed": false,
+      "path": "/media/dryrun-20261001-fresh-native-180s/source.mp4",
+      "rawBytes": 113034700,
+      "rawSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "416a8fb2df4386e53eb945a46f5494ed417c889e7a57abc06e3216956f596d09",
+      "managed": false,
+      "path": "/media/dryrun-20261001-fresh-native-180s/zh-Hans-922ac77a8eafee9b.mp3",
+      "rawBytes": 1532780,
+      "rawSha256": "922ac77a8eafee9be93e4b79a125cbe173e37c01f5230a1f3d57175699968f4f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e8c9c2661a5e6a76ccde99eaa303b4d3aeb26a3e46d021acc9559244dea5d0c9",
+      "managed": false,
+      "path": "/media/e0dc64453d8ba46e-zh-synced.mp3",
+      "rawBytes": 46561580,
+      "rawSha256": "e0dc64453d8ba46ec5ea3fc13b029df2e774973ea41bf041a03497f49bffba27",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3799be22f905d152052a01db40749b4e778acf71f9cd620eefe0ea5e5493f8dc",
+      "managed": false,
+      "path": "/media/e4d768bd86ef4c33-eric-reference.mp3",
+      "rawBytes": 208583,
+      "rawSha256": "e4d768bd86ef4c3377acd086aa9fdf254ea1ea72d4957e39feae9d44dc8770e4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "923be6fafb390077e184e3f9800991cd626e1ed495cb63d18e05559cbc6c83ae",
+      "managed": false,
+      "path": "/media/f65553b0574524cd-doug_fields-zh.mp3",
+      "rawBytes": 728108,
+      "rawSha256": "f65553b0574524cd5afa60a280f651fd870550a0345f7597fc9c21a7c2e09168",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "32550d344700eddf180fa4e28e99cbb22755c86f06cbc558e04c7718ffc107be",
+      "managed": false,
+      "path": "/media/if-i-had-more-time-jesus-is-worthy/es.wav",
+      "rawBytes": 197420204,
+      "rawSha256": "7568e181cf65222b4b249ee507303d8f27b80d05294b33a35a5b23ff9270d727",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6c90951f1639ba07969f27610734d9b8894982a1ea52b4f46bbf5ca14eb7667b",
+      "managed": false,
+      "path": "/media/if-i-had-more-time-jesus-is-worthy/ko.wav",
+      "rawBytes": 221266604,
+      "rawSha256": "abe519b96c316391ba855ac4e90f66dfd5f80aef3183573588deb3d3bf822616",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5d4728bec43e7be544fd6e83e991368eb365547940dfa9b2dfeac8efdd4551d0",
+      "managed": false,
+      "path": "/media/if-i-had-more-time-jesus-is-worthy/zh-Hans.wav",
+      "rawBytes": 182624718,
+      "rawSha256": "d1967bbb01fb11b722594c21ac359c00430a5650ab4f008d4cc65e70bffe0bf2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ac03b5703ffe247dc3cdbe1666284dc53c7f3101ee65f6864493641c0ee52d9c",
+      "managed": false,
+      "path": "/media/mockup-20261005-dev-180s-luna-rerun/es.mp3",
+      "rawBytes": 1553324,
+      "rawSha256": "86d3172c2b2ac889b3edc82f89f8e2d5706cf36e9a7ac3ecd198ecf772da5406",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "994b104fc7eef925a3fe70ce924b7ebca9058ce5de1770337717b3dd25bbce74",
+      "managed": false,
+      "path": "/media/mockup-20261005-dev-180s-luna-rerun/ko.mp3",
+      "rawBytes": 1722284,
+      "rawSha256": "b715f62a1156f180736611f0ce2a5c37df80778dcaad121b932765c3186e295c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5cb1c95624ee8b8e65a754fbb2bfb8a06558f76cbdbfc02674471f82929695ed",
+      "managed": false,
+      "path": "/media/mockup-20261005-dev-180s-luna-rerun/source.mp4",
+      "rawBytes": 113034700,
+      "rawSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0d0252a112cea12bc43ec79e9fda273d49a8ded7dbf69323a1fe232cc9255a4b",
+      "managed": false,
+      "path": "/media/mockup-20261005-dev-180s-luna-rerun/zh-Hans.mp3",
+      "rawBytes": 1533548,
+      "rawSha256": "4946cd9c72825cd269337bbed68294cfb1e89f0029a1a0bfae5eac22296b98bf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ac03b5703ffe247dc3cdbe1666284dc53c7f3101ee65f6864493641c0ee52d9c",
+      "managed": false,
+      "path": "/media/mockup-20261005-dev-180s/es.mp3",
+      "rawBytes": 1553324,
+      "rawSha256": "86d3172c2b2ac889b3edc82f89f8e2d5706cf36e9a7ac3ecd198ecf772da5406",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "994b104fc7eef925a3fe70ce924b7ebca9058ce5de1770337717b3dd25bbce74",
+      "managed": false,
+      "path": "/media/mockup-20261005-dev-180s/ko.mp3",
+      "rawBytes": 1722284,
+      "rawSha256": "b715f62a1156f180736611f0ce2a5c37df80778dcaad121b932765c3186e295c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5cb1c95624ee8b8e65a754fbb2bfb8a06558f76cbdbfc02674471f82929695ed",
+      "managed": false,
+      "path": "/media/mockup-20261005-dev-180s/source.mp4",
+      "rawBytes": 113034700,
+      "rawSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0d0252a112cea12bc43ec79e9fda273d49a8ded7dbf69323a1fe232cc9255a4b",
+      "managed": false,
+      "path": "/media/mockup-20261005-dev-180s/zh-Hans.mp3",
+      "rawBytes": 1533548,
+      "rawSha256": "4946cd9c72825cd269337bbed68294cfb1e89f0029a1a0bfae5eac22296b98bf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ac03b5703ffe247dc3cdbe1666284dc53c7f3101ee65f6864493641c0ee52d9c",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-dev-merged-rerun-20261005/es.mp3",
+      "rawBytes": 1553324,
+      "rawSha256": "86d3172c2b2ac889b3edc82f89f8e2d5706cf36e9a7ac3ecd198ecf772da5406",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "994b104fc7eef925a3fe70ce924b7ebca9058ce5de1770337717b3dd25bbce74",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-dev-merged-rerun-20261005/ko.mp3",
+      "rawBytes": 1722284,
+      "rawSha256": "b715f62a1156f180736611f0ce2a5c37df80778dcaad121b932765c3186e295c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5cb1c95624ee8b8e65a754fbb2bfb8a06558f76cbdbfc02674471f82929695ed",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-dev-merged-rerun-20261005/source.mp4",
+      "rawBytes": 113034700,
+      "rawSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0d0252a112cea12bc43ec79e9fda273d49a8ded7dbf69323a1fe232cc9255a4b",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-dev-merged-rerun-20261005/zh-Hans.mp3",
+      "rawBytes": 1533548,
+      "rawSha256": "4946cd9c72825cd269337bbed68294cfb1e89f0029a1a0bfae5eac22296b98bf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ac03b5703ffe247dc3cdbe1666284dc53c7f3101ee65f6864493641c0ee52d9c",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-e2e-20261007T191648Z/es.mp3",
+      "rawBytes": 1553324,
+      "rawSha256": "86d3172c2b2ac889b3edc82f89f8e2d5706cf36e9a7ac3ecd198ecf772da5406",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "994b104fc7eef925a3fe70ce924b7ebca9058ce5de1770337717b3dd25bbce74",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-e2e-20261007T191648Z/ko.mp3",
+      "rawBytes": 1722284,
+      "rawSha256": "b715f62a1156f180736611f0ce2a5c37df80778dcaad121b932765c3186e295c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5cb1c95624ee8b8e65a754fbb2bfb8a06558f76cbdbfc02674471f82929695ed",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-e2e-20261007T191648Z/source.mp4",
+      "rawBytes": 113034700,
+      "rawSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0d0252a112cea12bc43ec79e9fda273d49a8ded7dbf69323a1fe232cc9255a4b",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-e2e-20261007T191648Z/zh-Hans.mp3",
+      "rawBytes": 1533548,
+      "rawSha256": "4946cd9c72825cd269337bbed68294cfb1e89f0029a1a0bfae5eac22296b98bf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ac03b5703ffe247dc3cdbe1666284dc53c7f3101ee65f6864493641c0ee52d9c",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-e2e-20261007T193332Z/es.mp3",
+      "rawBytes": 1553324,
+      "rawSha256": "86d3172c2b2ac889b3edc82f89f8e2d5706cf36e9a7ac3ecd198ecf772da5406",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "994b104fc7eef925a3fe70ce924b7ebca9058ce5de1770337717b3dd25bbce74",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-e2e-20261007T193332Z/ko.mp3",
+      "rawBytes": 1722284,
+      "rawSha256": "b715f62a1156f180736611f0ce2a5c37df80778dcaad121b932765c3186e295c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5cb1c95624ee8b8e65a754fbb2bfb8a06558f76cbdbfc02674471f82929695ed",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-e2e-20261007T193332Z/source.mp4",
+      "rawBytes": 113034700,
+      "rawSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0d0252a112cea12bc43ec79e9fda273d49a8ded7dbf69323a1fe232cc9255a4b",
+      "managed": false,
+      "path": "/media/mockup-dev-180s-e2e-20261007T193332Z/zh-Hans.mp3",
+      "rawBytes": 1533548,
+      "rawSha256": "4946cd9c72825cd269337bbed68294cfb1e89f0029a1a0bfae5eac22296b98bf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b9c567f43eae04635c0894b4e76c6c14a96827d2a0d30b96857db35274822ede",
+      "managed": false,
+      "path": "/media/resi-20261004-69ba7a66/es.mp3",
+      "rawBytes": 15537644,
+      "rawSha256": "4fca575d373c3c800d0f4f3755aef4dd9dc71a31b9dcafb8432e10ef542cbe01",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6af6a84fe4e5ac0d2acb74fbc8329d24ede2fefba370dd746aa5722b4ad9783e",
+      "managed": false,
+      "path": "/media/resi-20261004-69ba7a66/ko.mp3",
+      "rawBytes": 15537644,
+      "rawSha256": "804c81b719c0dfd3c992c96dee3abdab33a4a5b97025dbd1409986dba428fb47",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6a59b935e7cc4bb8d48268106cbe5f092310614560aae6d24f6601cb4bf6c174",
+      "managed": false,
+      "path": "/media/resi-20261004-69ba7a66/zh-Hans.mp3",
+      "rawBytes": 15537645,
+      "rawSha256": "d34c0e2c2d3c8f5bf79337871d0a9dc5e8549eefd81c4e6a2a37c90bbbad58aa",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "053262a1b2164cb2e84bcbbd33117e4f9d4d7063697d4324ccd231f60ae00d91",
+      "managed": false,
+      "path": "/multilingual-reader.html",
+      "rawBytes": 10262,
+      "rawSha256": "e2239da5cefe8736f0b29470bc9bf8dbe4c10dd568f470b76f5d8edc6ef11b90",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1685e4bc3221d17e1a8539c50030f31073dc0f54c989003d2a9b4dea11280eb0",
+      "managed": false,
+      "path": "/multilingual-v2.json",
+      "rawBytes": 6199,
+      "rawSha256": "0c729e71b9a95897c9bcb16f2336f0478a5aa7efaccbef48476c60d535bc2cc9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "dbd90eedb2ee9cb52a66999ebad5b4b3f2434dc8ca72f0e74b6048ecf7a7ca50",
+      "managed": false,
+      "path": "/multilingual-v3.json",
+      "rawBytes": 18664,
+      "rawSha256": "dccdbfe7b1688f2f93fa18c2ec829cf098075a726ba61cc9d570d90ca1dacfbf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a365298acb41c739604a90daa1b943e6a34a098d0b298904d9f64b7a97e1992d",
+      "managed": false,
+      "path": "/multilingual.json",
+      "rawBytes": 3224,
+      "rawSha256": "f1121b99b222193eb568a772e9d5732816668a26f70bf4ff585f64081a5dfe36",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "537ee6fb0ad0547404a4d153657625bc648be398255bb9e8a71f7180431cf2fb",
+      "managed": false,
+      "path": "/offline-worker.js",
+      "rawBytes": 8042,
+      "rawSha256": "3256ff368aaa870b37c62a7cac10440593b5b8fb18160818a651cc4dc4d62578",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "aabf4a15cbf694072ef47c3727eddb93c827d929ea564aa78c07f2ad97eeff3d",
+      "managed": false,
+      "path": "/offline.mjs",
+      "rawBytes": 4438,
+      "rawSha256": "b969a05b20b64d6370329aed0bdd557531e5d67966ddd0869fb3e44da7de4fa0",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "544e7fd271a37c2adda25071938029a17d40235097aa5fbc119bd792f82bedcd",
+      "managed": false,
+      "path": "/packages/layer2/2026-09-20-lion-of-judah-poc-es.json",
+      "rawBytes": 4177,
+      "rawSha256": "3f0ec6f01e1fc0790de8f3b09f4d1e4bde91f4f9d683cce1aacd6b247823e5ff",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "21df08150099dd94a3dd5d3139c165fc4a8caed03cf150a5dc3493bc04035d9c",
+      "managed": false,
+      "path": "/packages/layer2/2026-09-20-lion-of-judah-poc-ko.json",
+      "rawBytes": 4632,
+      "rawSha256": "b46aca3b9568274124898b80e11863df753f0cceba24ba8a97253e359bcc555b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d922fe517c1b8c29284237408598dbfd162452c820c1fa7a8f0d058c4f04b74f",
+      "managed": false,
+      "path": "/packages/layer2/2026-09-20-lion-of-judah-poc-vi.json",
+      "rawBytes": 4699,
+      "rawSha256": "49d0f526565443767e34010b5c2fe57355aabe87b8564a955a0b7f3d6f460e7c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2ee6aa13439d43601f9648f00824890a634c03f90056b855d1ae6ad6967afa47",
+      "managed": false,
+      "path": "/packages/layer2/2026-09-20-lion-of-judah-poc-zh-Hans.json",
+      "rawBytes": 4065,
+      "rawSha256": "0c0fc2d9df155a5ade095d28a4c6c1b27b24457cdaaab3c8378988a5f5ab09e3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5e4ab9a4c0aa41ebb0d3cf966fde874b7d61072ba67e2ae8795360e247f4edfc",
+      "managed": false,
+      "path": "/packages/layer3/2026-09-20-lion-of-judah-poc-es.json",
+      "rawBytes": 2057,
+      "rawSha256": "37df8d32edbdf2d56fea16703b579d4b2fb311dc0c0e204d7967d679a36f89a5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a821a74be53fa13f20b2cd3cce2de360d3ca3b89fa8038f540268e67945d98c9",
+      "managed": false,
+      "path": "/packages/layer3/2026-09-20-lion-of-judah-poc-ko.json",
+      "rawBytes": 2057,
+      "rawSha256": "b6f52479e6a53d7ebfa60003607a002d74c837eafa292dee5bc6bdf47ed8baa3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f3d93f80b9894eed7bdd05d919093bb5ff587fbff3f4e1fd3ac0e4f1b79e7419",
+      "managed": false,
+      "path": "/packages/layer3/2026-09-20-lion-of-judah-poc-vi.json",
+      "rawBytes": 2188,
+      "rawSha256": "ae294e672469d8a84db14230ae2792ae5652a18ebf8a3061f905857bfd9821c5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "85c03c5b6480e61416c1f881e8c07cc399b11a4a8ee23575994aaca51735eb67",
+      "managed": false,
+      "path": "/packages/layer3/2026-09-20-lion-of-judah-poc-zh-Hans.json",
+      "rawBytes": 2071,
+      "rawSha256": "cfe4ac945cf307e0309ea80417c08f017d55cfe10f9b3da9885c82851669cf43",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ad4aac2a68356812063b9029ad65d68a6fa00a810b153805b4b79c6fe5f1bf1b",
+      "managed": false,
+      "path": "/packages/layer3/2026-09-27-weekend-sermon-drive-530/es.json",
+      "rawBytes": 1170,
+      "rawSha256": "0d322c17cad6b22bcdaa5708b1524204d086885e608d23aecd6de27933597467",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a0c87dc064fc4024b3763cee4dc6ecca91cd8bc24ee75f846454773a56734efc",
+      "managed": false,
+      "path": "/packages/layer3/2026-09-27-weekend-sermon-drive-530/ko.json",
+      "rawBytes": 1170,
+      "rawSha256": "86ff665eed52fa0991aa4aa6a6cca09e5bfb5041321dc26363fd905d898b2a8a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fa244dc7f13c1fa236de67b644bf18c5f96846d66a4fb4aba84b8c3ac2bfaa10",
+      "managed": false,
+      "path": "/packages/layer3/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+      "rawBytes": 1180,
+      "rawSha256": "39c1c0a49abc2b734d813142621e43ed0b8c0541623a447bff548c70ad230684",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "bb38c0374260c6de17a281ce7067a5780773b105779ee560d3c00442e111f3ec",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/audio-extension.json",
+      "rawBytes": 3870,
+      "rawSha256": "ff13ff72db597e415b087e7dd50f8aaf552437713a719c8b2168d40f6f49f6bc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "92f3195af01402bac17dcc6e19edd3ca441c4b642b9d11a12dba2e38286eeb02",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/es/index.html",
+      "rawBytes": 54124,
+      "rawSha256": "9d537bb6e0b039e21c28c8b31fed4f65a9119a31b9e8d5828201d276db6ed90e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "52717671a221065357a5e156056f828ee9f753b43ca437d79580acbdeab73f32",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/full-video-browser.mp4",
+      "rawBytes": 972090864,
+      "rawSha256": "01cdde6f014192dff4b2243372c0a0b1ad61f018dfaa98b5256715916bfe56cd",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "22bec4187d570581a189f95f2e7c2be2e659e5e7cb85f2cf3646fa61b490bed4",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/index.html",
+      "rawBytes": 1785,
+      "rawSha256": "7c015005663ed87cd1f8909ea3913fc12e813ce9f68ac9a27c244961a5f76912",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3cdbd1d026310af6018c3a5114d6c003dbeafe70a4cd164336be5151b71c264a",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/ko/index.html",
+      "rawBytes": 66344,
+      "rawSha256": "9ebf44a5ad788964474d189d29e9bb6fa3eaaf8a2fae3bd0b0f926bb1a6728c6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8780457ad2b3c3c6a4e04e66082671642d6fe5e1c0cda16d11c862d603790fe2",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/page-data.js",
+      "rawBytes": 222411,
+      "rawSha256": "fa071d1b7678eeaad7c5ae4c1539d2b6f8b908322b2e12283881b0be304362f3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "287bd98f150ab8be1920da69f0df6a5f54cca8324a65b20de8b3c2750dba561d",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/page.js",
+      "rawBytes": 2896,
+      "rawSha256": "07dfd1990bed804d083346bd85f43fdbdc9bdc372645f2a7caa1b804e5c4271d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "413351329be95ccd8c6bd8e928028c426e49b2d778db7a2062554777280f7375",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/poster.jpg",
+      "rawBytes": 47052,
+      "rawSha256": "61d25b947f347ea46ee90521390ce48d08e2fd75b3ccaf978d0ae4ca03842bfd",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b26c5bbcd647737a06865a58bd394b8fc98e85f9d1063555981cc134d5c196ec",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/sep27-page-audio-extension.mjs",
+      "rawBytes": 12590,
+      "rawSha256": "073524cbfe0f8123d71fd10381f80307360e92901fc8b343fe8a43ca2d18e676",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "46c99c5c49b1114f87e27628890196a0d51135542a014f51770ac92625ee2e58",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/style.css",
+      "rawBytes": 2565,
+      "rawSha256": "6ee92eef144edd6a7a091668467f4fa524d12f8101cfbf0a32cbd2f478c22f15",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d99d24bc7e2c92cbaaa41dfa8b2f8221da9a8ea856d3910544c40e38b736d50d",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/zh-Hans/index.html",
+      "rawBytes": 49698,
+      "rawSha256": "2feb02398dbeb545e8c2d7c3d68b09187c473381cb965720c376e8bb2ec5e63f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6603b372bca1983639e1cd9cb321df5be5b747e4e8ac04f5741ccfa475f0bdd6",
+      "managed": false,
+      "path": "/pages/dryrun-20260927-clip-01/es/index.html",
+      "rawBytes": 2733,
+      "rawSha256": "c529c04c3d255c50f2cc85eb1d51891ab991d9ede15e4dc083bc0a331eadd655",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3c4e48d25faf7d140c4943eefc874544f83ab6541e62c8aeb65dc997ea346767",
+      "managed": false,
+      "path": "/pages/dryrun-20260927-clip-01/ko/index.html",
+      "rawBytes": 2908,
+      "rawSha256": "d62b941d492b16435917df8170a42afab63f98d7a060570ec91034bebef4da0b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "72d5222bd5038a623309c2ccefa796252d92f7cceedfcc3da61733a43ad38cd5",
+      "managed": false,
+      "path": "/pages/dryrun-20260927-clip-01/zh-Hans/index.html",
+      "rawBytes": 2680,
+      "rawSha256": "f8f5c664f27a8170e5c551620d81886f4ea4b6f3a6aac9c24da8221340d59b23",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "baec49dbdd9770930cecf81921feb3903dd1e781d5a0e53d50ea96ef1392aa8a",
+      "managed": false,
+      "path": "/pages/dryrun-20260927-clip-02/es/index.html",
+      "rawBytes": 2733,
+      "rawSha256": "8a619ba2917fc1a2e9da77666a7424dddb7a861483f8ae9ce9768582c57826aa",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "aed6b173cd795596306480686b8c24c0cd9390dd163b066252a7e3e8e1f37a70",
+      "managed": false,
+      "path": "/pages/dryrun-20260927-clip-02/ko/index.html",
+      "rawBytes": 2908,
+      "rawSha256": "01ba9ba17f7c4c2388ebfa63159329b66a5410b15299d623d69778a0ad6a54d8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f5dafa461a11099625a20112fbc141b0af6505354ba1912a428656cce0bbbd95",
+      "managed": false,
+      "path": "/pages/dryrun-20260927-clip-02/zh-Hans/index.html",
+      "rawBytes": 2680,
+      "rawSha256": "b4bedabded9f43d69b6a02d2b9a48b6fbb1bace759dd4f6879f27da53ce14a03",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ddf7d1d9cd8a8d6be8a1b893e581a0797537aaae6b59d49c4ae1d1fa56182e9f",
+      "managed": false,
+      "path": "/pages/dryrun-20260927-clip-03/es/index.html",
+      "rawBytes": 2733,
+      "rawSha256": "1d50567b8fe424d0accac28357d70ccd5d1a4d00a4ea68f4d5e89095a81fe91e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1b3b50358d7600dff37cee6b9a83fce99beae15f91e654afabe88a4db5788ead",
+      "managed": false,
+      "path": "/pages/dryrun-20260927-clip-03/ko/index.html",
+      "rawBytes": 2908,
+      "rawSha256": "95b52a3b35481b4d03f0cbc63e233e084e2bafc79330071230ee61df13aaa34d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3c37c799d4a17c6b148280df9b0339e8f44c7b3a5bd48e8e31b2635e7c955a23",
+      "managed": false,
+      "path": "/pages/dryrun-20260927-clip-03/zh-Hans/index.html",
+      "rawBytes": 2680,
+      "rawSha256": "5c08ddca1da11bc8d3fb6132473f241763b0b5cd108fc9cdf0aeb296771cfde4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d17d8a69ba5ac28724322fb948353fd8d9c425235db5bd0462cd03b5a40a5887",
+      "managed": false,
+      "path": "/pages/if-i-had-more-time-jesus-is-worthy/es/index.html",
+      "rawBytes": 92380,
+      "rawSha256": "823f7b9f25f553cefeaa0c45f0b74e79494337cafa6a5e47989c8f374256d69b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5fe7c7627a83004d8b0970ca024be21e78e16d3d3aa764ea287bdefefe5868a0",
+      "managed": false,
+      "path": "/pages/if-i-had-more-time-jesus-is-worthy/ko/index.html",
+      "rawBytes": 115117,
+      "rawSha256": "09090fde5c04edbfec0d0078e35a2a55b126b80ab7ae07dc0560a69c9fd49a29",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f2204174cc2ff5fd0ab88e156220978c6686ce471f9d0c1feff684856a2e0cf8",
+      "managed": false,
+      "path": "/pages/if-i-had-more-time-jesus-is-worthy/zh-Hans/index.html",
+      "rawBytes": 86141,
+      "rawSha256": "1687554d4c20e6bb294f9301dd79ea4f410df03c6d085c47a187649f95c70ff0",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a8a4017980595bf21ad92b268a4104c38fa9868b8371d6cc5e82001d35077790",
+      "managed": false,
+      "path": "/pages/mockup-20261005-dev-180s-luna-rerun/es/index.html",
+      "rawBytes": 16210,
+      "rawSha256": "3a4b196853da5a0e68086f35793eb21a342e46d42a68e8b57810fc172aa2fdc8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4351dfcc389d22a3d2d0e9e803fedf6015d620d053dd926248f6bcc755259877",
+      "managed": false,
+      "path": "/pages/mockup-20261005-dev-180s-luna-rerun/ko/index.html",
+      "rawBytes": 19085,
+      "rawSha256": "f757ac01c645b1fa59fb14b7293436613e3e2247f7f005025ebc0e1f038cc176",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "02a0e70f51c015bd1c0bea0f4f5d03b5b4836dafaa0cf0bc3593aa639aaef8d4",
+      "managed": false,
+      "path": "/pages/mockup-20261005-dev-180s-luna-rerun/zh-Hans/index.html",
+      "rawBytes": 15029,
+      "rawSha256": "fd04bbc685a6b0fdc7d191f8a823932bdd742d38b8c17390e4e442ce4c51e4a3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c4a3296a6dd487c9df4bcf8a40a194465462b5b70e0fea639f0b7e7379c78ba3",
+      "managed": false,
+      "path": "/pages/mockup-20261005-dev-180s/es/index.html",
+      "rawBytes": 16156,
+      "rawSha256": "0ed6781c512167a05c49e6125f3055bdb676906cd43b0e155e43fe003533f68a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "80bf7efb58538ee9693a7f6149cfa81a5925ca415ac9aede845cbd3ff44e0e43",
+      "managed": false,
+      "path": "/pages/mockup-20261005-dev-180s/ko/index.html",
+      "rawBytes": 19031,
+      "rawSha256": "055cbc881f75007417eb3f1be49d0fa7914a6396128482cc357a974cb2fbea12",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c475f1f389c20ebae51df35eea85d8ca5efa7d3682ddaad0a4f8105b0de1137f",
+      "managed": false,
+      "path": "/pages/mockup-20261005-dev-180s/zh-Hans/index.html",
+      "rawBytes": 14975,
+      "rawSha256": "85cb54fa0cfad525d223dbd2746a2c062f1d88c79d9b08c49eede29ed2fcb816",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a8a4017980595bf21ad92b268a4104c38fa9868b8371d6cc5e82001d35077790",
+      "managed": false,
+      "path": "/pages/mockup-dev-180s-dev-merged-rerun-20261005/es/index.html",
+      "rawBytes": 16210,
+      "rawSha256": "3a4b196853da5a0e68086f35793eb21a342e46d42a68e8b57810fc172aa2fdc8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4351dfcc389d22a3d2d0e9e803fedf6015d620d053dd926248f6bcc755259877",
+      "managed": false,
+      "path": "/pages/mockup-dev-180s-dev-merged-rerun-20261005/ko/index.html",
+      "rawBytes": 19085,
+      "rawSha256": "f757ac01c645b1fa59fb14b7293436613e3e2247f7f005025ebc0e1f038cc176",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "02a0e70f51c015bd1c0bea0f4f5d03b5b4836dafaa0cf0bc3593aa639aaef8d4",
+      "managed": false,
+      "path": "/pages/mockup-dev-180s-dev-merged-rerun-20261005/zh-Hans/index.html",
+      "rawBytes": 15029,
+      "rawSha256": "fd04bbc685a6b0fdc7d191f8a823932bdd742d38b8c17390e4e442ce4c51e4a3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a8a4017980595bf21ad92b268a4104c38fa9868b8371d6cc5e82001d35077790",
+      "managed": false,
+      "path": "/pages/mockup-dev-180s-e2e-20261007T191648Z/es/index.html",
+      "rawBytes": 16210,
+      "rawSha256": "3a4b196853da5a0e68086f35793eb21a342e46d42a68e8b57810fc172aa2fdc8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4351dfcc389d22a3d2d0e9e803fedf6015d620d053dd926248f6bcc755259877",
+      "managed": false,
+      "path": "/pages/mockup-dev-180s-e2e-20261007T191648Z/ko/index.html",
+      "rawBytes": 19085,
+      "rawSha256": "f757ac01c645b1fa59fb14b7293436613e3e2247f7f005025ebc0e1f038cc176",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "02a0e70f51c015bd1c0bea0f4f5d03b5b4836dafaa0cf0bc3593aa639aaef8d4",
+      "managed": false,
+      "path": "/pages/mockup-dev-180s-e2e-20261007T191648Z/zh-Hans/index.html",
+      "rawBytes": 15029,
+      "rawSha256": "fd04bbc685a6b0fdc7d191f8a823932bdd742d38b8c17390e4e442ce4c51e4a3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a8a4017980595bf21ad92b268a4104c38fa9868b8371d6cc5e82001d35077790",
+      "managed": false,
+      "path": "/pages/mockup-dev-180s-e2e-20261007T193332Z/es/index.html",
+      "rawBytes": 16210,
+      "rawSha256": "3a4b196853da5a0e68086f35793eb21a342e46d42a68e8b57810fc172aa2fdc8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4351dfcc389d22a3d2d0e9e803fedf6015d620d053dd926248f6bcc755259877",
+      "managed": false,
+      "path": "/pages/mockup-dev-180s-e2e-20261007T193332Z/ko/index.html",
+      "rawBytes": 19085,
+      "rawSha256": "f757ac01c645b1fa59fb14b7293436613e3e2247f7f005025ebc0e1f038cc176",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "02a0e70f51c015bd1c0bea0f4f5d03b5b4836dafaa0cf0bc3593aa639aaef8d4",
+      "managed": false,
+      "path": "/pages/mockup-dev-180s-e2e-20261007T193332Z/zh-Hans/index.html",
+      "rawBytes": 15029,
+      "rawSha256": "fd04bbc685a6b0fdc7d191f8a823932bdd742d38b8c17390e4e442ce4c51e4a3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "83770c46c229e8765409b7680d8d9e2c3a737e109e0e51b016e77d262a4df43a",
+      "managed": false,
+      "path": "/pages/resi-20261004-69ba7a66/es/index.html",
+      "rawBytes": 52109,
+      "rawSha256": "2d536af90ada2b1365ac63ae0575c8999fb1bc119a26a4177f3eaaea274a7b9d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "330b2f04aa3eaefbe7adfe82d9d1e4ab4631f087fc56eb4967248f725e4c6bd8",
+      "managed": false,
+      "path": "/pages/resi-20261004-69ba7a66/ko/index.html",
+      "rawBytes": 55247,
+      "rawSha256": "1c334ddb3b88f98cba42c5283ac11e393ef75884aa1603d04ea4ecb0f2a7bcb8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b257fc0c1929d7b003caf6e48ab82f68da441bbe140a55d723d9cb18612f498a",
+      "managed": false,
+      "path": "/pages/resi-20261004-69ba7a66/zh-Hans/index.html",
+      "rawBytes": 48080,
+      "rawSha256": "a81aaeabb2b5009c2be63729eb2fad9e5b31068909be7d15b79e073f95c71b2e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0e70eb8278fb7ccfec450031f3c36b164688588c4ea62cfc4b47191b25a96694",
+      "managed": false,
+      "path": "/playback-memory.mjs",
+      "rawBytes": 5338,
+      "rawSha256": "448b32804b26bb36c3e8a8da70f712cca884350e2fc08a0ff88a950cd15755df",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8a6bf45f7b9ab31e03d5ea9c40cea017148005ad1aa9677116d021de87a7bedb",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/en-1dc7480b17ce70dbf9f835af318d2e542d6983913cf8c18ad111652fb14823b5.png",
+      "rawBytes": 2119509,
+      "rawSha256": "1dc7480b17ce70dbf9f835af318d2e542d6983913cf8c18ad111652fb14823b5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "610f5dc8d03b98375fb8b21118674f42fd31a3a7eb5925698b2502cc0b4a5ecd",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/en-preview-59302a7a513d9c0338343f749b750a0dc94f98c942bad1241ca682d00614ccdd.png",
+      "rawBytes": 636938,
+      "rawSha256": "59302a7a513d9c0338343f749b750a0dc94f98c942bad1241ca682d00614ccdd",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "bff1b72f38fafaacec5288cd7857069b5f2a9b47fb6cb8daa2a486b18022783a",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/es-8047c6384035f83b3bfe71de7ba99e376f89d424e4d87e7013ed02a0e4229112.png",
+      "rawBytes": 2120028,
+      "rawSha256": "8047c6384035f83b3bfe71de7ba99e376f89d424e4d87e7013ed02a0e4229112",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1db88a46f835a4c38f8333112e1dfc082db01e965c37162e474fd439c99008db",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/es-882181fa04b98a72b68b9155f1cf8fa97fc4c3c013efd78c57e778fe9b5cb447.png",
+      "rawBytes": 1057836,
+      "rawSha256": "882181fa04b98a72b68b9155f1cf8fa97fc4c3c013efd78c57e778fe9b5cb447",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d08f462886fd352c2226cd18b0e195d21010fca2c29d91e9b85af067b4786288",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/es-preview-696581f6257d7f4116f36467de599434b6022c3b4a011da9bb72517140fb59b3.png",
+      "rawBytes": 637293,
+      "rawSha256": "696581f6257d7f4116f36467de599434b6022c3b4a011da9bb72517140fb59b3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1b167a43ea264e7ca4869274f41f3ac42126918145fc4b68ef68d734cb15b060",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/ko-80d73dea581798eee7b8d1200c6dc54c60a8425d93116cc0ba6d23a0ab50c7d9.png",
+      "rawBytes": 2103355,
+      "rawSha256": "80d73dea581798eee7b8d1200c6dc54c60a8425d93116cc0ba6d23a0ab50c7d9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0906ccfd8cd705b79910712b34cacaa353ff6c151b10277b47feb4c90ce82165",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/ko-84c5896f9149973e299038a05cdb63bf777ca72da626033dbfa2a049e873b2f5.png",
+      "rawBytes": 1055460,
+      "rawSha256": "84c5896f9149973e299038a05cdb63bf777ca72da626033dbfa2a049e873b2f5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "454b771d8ffebd771196379ef3869600d0638a49d41a2e660e367d92a9729d94",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/ko-preview-0cac2b0234e87f2420dd5d791a4516b427fbe991ae4522ab4ead3b82fa86602c.png",
+      "rawBytes": 631827,
+      "rawSha256": "0cac2b0234e87f2420dd5d791a4516b427fbe991ae4522ab4ead3b82fa86602c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f8ccf824fbbcb299aee818014da379e80fbffa756f319615cdb970ed0d563b17",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/zh-Hans-1d62e7106041110e33ea1e71fd4d8cdbea62daf50a03e1074e37979e77fe3e28.png",
+      "rawBytes": 1054205,
+      "rawSha256": "1d62e7106041110e33ea1e71fd4d8cdbea62daf50a03e1074e37979e77fe3e28",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ba10bd792ca946eb450734654d73a60619bbfe52bea6e8fe66d315f1dfd4c158",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/zh-Hans-36f7f483b56db4dfe0e282c2edebaab9cae4c618fd57085d789786f932bc9beb.png",
+      "rawBytes": 2095075,
+      "rawSha256": "36f7f483b56db4dfe0e282c2edebaab9cae4c618fd57085d789786f932bc9beb",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "dc365e622c119f0fb3e30150480f59dd8470431049ea1b4b4c7879963f43b55b",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/zh-Hans-preview-d881e8c10ffa6f007f59fd51d81a76e1d5762f807d6367621ca5533ca7ceb6f0.png",
+      "rawBytes": 628371,
+      "rawSha256": "d881e8c10ffa6f007f59fd51d81a76e1d5762f807d6367621ca5533ca7ceb6f0",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6c8d3dc1c508585893dc83faf390c01ccae27aa8758f7bbdce9efa45e077ff1a",
+      "managed": false,
+      "path": "/published-weeks-base.mjs",
+      "rawBytes": 28687,
+      "rawSha256": "34ec9e4bd3c74b058a9d6abb8451d9b33471d6e4e2fa9eb393217b4ab953c34b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f631ba434ebb9782a93c2fe60069d34e24918e283ce90c401f69c922e38cd67e",
+      "managed": false,
+      "path": "/published-weeks-before-diagnostic.mjs",
+      "rawBytes": 629,
+      "rawSha256": "a9ef604a5892cf6e51e6cfd5c14883e8db49bae79bc68bfef5cc2f216386461d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "56dbb61ebfb9de9dfa1fc2039c3bb5508d562ac1852993280020999ad71f289e",
+      "managed": false,
+      "path": "/published-weeks-parent-1c5b779fdc9e41bd.mjs",
+      "rawBytes": 813,
+      "rawSha256": "b71a9e11ab2d72e5836a4d66934403bf84d9185f94fd67161aba8f1a276d36d6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "aaa41c6c1836ba3eae792a5c646e4347bedb6b33a6695072d1ef33b897e94632",
+      "managed": false,
+      "path": "/published-weeks-parent-fc391c0c07c7e1ac.mjs",
+      "rawBytes": 573,
+      "rawSha256": "7470ac1295d979f255c154f5962b8c2d84948c7546d36667e5fc36d0dee7c788",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6755d7e18a950ffdebf926bf042f455545f57f2d894966bfbadea4a51cf06c71",
+      "managed": false,
+      "path": "/published-weeks.mjs",
+      "rawBytes": 39806,
+      "rawSha256": "a50a48c1c77a87f9bf9368b6c99e4fab4c7ccf2d1d2d0b3b3b22bd0e53af8d7f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e1dab24b2c2f204a45f8d84742167715c3edc2428518c6b387f22e10b788f5a2",
+      "managed": false,
+      "path": "/reading-mode.mjs",
+      "rawBytes": 2114,
+      "rawSha256": "e7c196ef9ba1ae476fea30940f31397151bb1a9340b8057ed605b61e04b42410",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f9a8437d7ae1ff43ecf9fdb91cb763dc9bf7fea00582be750ff4c364e5ffaefb",
+      "managed": false,
+      "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/es.json",
+      "rawBytes": 1848,
+      "rawSha256": "89bd0ae679a4c4af3b83d753128a1b729d4a89a80269a2d575855a87eb7508d8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2b779beed6c71082803bae75bf915b3cb7b18003a1bd3ec555b071a920a7d369",
+      "managed": false,
+      "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/ko.json",
+      "rawBytes": 1848,
+      "rawSha256": "c7bafcd623bf7bd3658f9c0012ce73a4fcd3aca7e1a766e728874d7e3978b9f7",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c2006e02a94a8c4aa376883bfe3b9f171b1776fccc6c21bb55b76a817ae43fa8",
+      "managed": false,
+      "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+      "rawBytes": 1893,
+      "rawSha256": "32755dff59bd449c3199e760d6e280407d56bbd286fafd235ccf4adc94f8b675",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "247ab5b0604e4b112b6e6e5b0c759b0a428a0236fd3764e66e5bca4352a618be",
+      "managed": false,
+      "path": "/releases-v2/dryrun-20260927-clip-01/es.json",
+      "rawBytes": 857,
+      "rawSha256": "ef242bbf4be357f890b08cb927916454d423a1b003d6327dda4261ecfdb44b43",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4af413d099dff4be3142f3a4c035c7b76737d42ccd879ef0040e1c4dd3964c0c",
+      "managed": false,
+      "path": "/releases-v2/dryrun-20260927-clip-01/ko.json",
+      "rawBytes": 857,
+      "rawSha256": "e1360e50044496c98d3a64a4c67630b01f8a2b89bcae1f1cd39889b0914a87c5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4c4aadc7ff5d1c32f966347cb5f0b182fa8635974b57ba92dbed5dae81908fb0",
+      "managed": false,
+      "path": "/releases-v2/dryrun-20260927-clip-01/zh-Hans.json",
+      "rawBytes": 862,
+      "rawSha256": "e4bd91707969b33d3f3730e2eae2cce0ff0053047e0e9283c30b389935b8dff2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "12b828d3c932e46fa6bcbbd4fa78e06d680c38c5efebba227505209f8a714275",
+      "managed": false,
+      "path": "/releases-v2/dryrun-20260927-clip-02/es.json",
+      "rawBytes": 857,
+      "rawSha256": "b6ed57366296c9f83b157aa6c06dd643f284a739baefdffc4d1e5a7f61fab4be",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "846132f8dba554ecc1aaa507a3c96d6bbc3d7bf1da8c25543c1a1564a941cfd6",
+      "managed": false,
+      "path": "/releases-v2/dryrun-20260927-clip-02/ko.json",
+      "rawBytes": 857,
+      "rawSha256": "fbb3695d81804d2f1a604de03b220d2c02374d607e8fad21895a21fa27f15259",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f4670b5129095df487ae91e7530ce79debd1a6b849b744ea7a955d5665653711",
+      "managed": false,
+      "path": "/releases-v2/dryrun-20260927-clip-02/zh-Hans.json",
+      "rawBytes": 862,
+      "rawSha256": "37c67463be89bd46ef36635dd4f3e52266d3ad900ac9891c58541b48e9f2be26",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ca135505ee975d6118e2fbaa8d735f82099e2954386acb62f750748e8be051a5",
+      "managed": false,
+      "path": "/releases-v2/dryrun-20260927-clip-03/es.json",
+      "rawBytes": 857,
+      "rawSha256": "16c5fe07620d191ef8eb93711273d21d0a59315ecd24e44d28a0095f8f459a09",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a59a6c1b09187d60756c0868f7ef02bef90df29c9454d4325dffda78fb8bcba3",
+      "managed": false,
+      "path": "/releases-v2/dryrun-20260927-clip-03/ko.json",
+      "rawBytes": 857,
+      "rawSha256": "aa615019f971f2485a4c623bce1bd58401fa942be96e2f8d22e1690adb453212",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5e3e386eb3706d471ba70f2ccdb176e45eaf9b1d842cd3d8f91212bcce9a5247",
+      "managed": false,
+      "path": "/releases-v2/dryrun-20260927-clip-03/zh-Hans.json",
+      "rawBytes": 862,
+      "rawSha256": "cb975e185a6982940454514e835db099395701961fe61b22f695a9b0e9ea4631",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6f2ff51beb1818378d08e95c89c7c7f4cbf4cfc82d253afdd05e92b45170341f",
+      "managed": false,
+      "path": "/releases-v2/if-i-had-more-time-jesus-is-worthy/es.json",
+      "rawBytes": 1888,
+      "rawSha256": "15e3504e173cab3a38e892d6cc4298cac1f0e30571d74f37465c2b5c03aad033",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "081801df73129793f31833a20e05c2e14f77604f33426e3c73cab85624e72e6b",
+      "managed": false,
+      "path": "/releases-v2/if-i-had-more-time-jesus-is-worthy/ko.json",
+      "rawBytes": 1888,
+      "rawSha256": "8b9a3d05d1eaf2e16ec877e3549a283893f44105f39d46608419710b47f5dfd1",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "75894bc068f10e8990666d9e930882794f258ff716ba4cf262a0dbf8348fd4cc",
+      "managed": false,
+      "path": "/releases-v2/if-i-had-more-time-jesus-is-worthy/zh-Hans.json",
+      "rawBytes": 1819,
+      "rawSha256": "0db717775b78d835b1648ad99546149a8355ca52a218959bae10187f66d0a4e1",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "af4dc0e27368a1ab7141e1e67b8fbbc513a8f50ef70532c02a96dd52e9aef09c",
+      "managed": false,
+      "path": "/releases-v2/mockup-20261005-dev-180s-luna-rerun/es.json",
+      "rawBytes": 4003,
+      "rawSha256": "f5e8466fd7892aa3e62c8b7a2611007e6d7e21d0b8fc01fa4eb227ae98db32c1",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0bb115716e94dffc40e4dc6650c1533e1b0840720332ec8a70e06b7330d5d86d",
+      "managed": false,
+      "path": "/releases-v2/mockup-20261005-dev-180s-luna-rerun/ko.json",
+      "rawBytes": 4003,
+      "rawSha256": "bef553da2633e003915cfc5ffa2a05f433396bdfd4b5c148b592aab4662b3149",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5bb4b013700ff005fbaecf0813e1d82e12d48d5fab6b905d3ecf3b1069299da6",
+      "managed": false,
+      "path": "/releases-v2/mockup-20261005-dev-180s-luna-rerun/zh-Hans.json",
+      "rawBytes": 4063,
+      "rawSha256": "3b22a6925eb988486dd44d398f6f7c968d995cc8b283dd9553601748b64d15d4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1191593dabf80fabe93af843be6eac9bb7eba032ab32f5a9c8eee9ffaf3f1585",
+      "managed": false,
+      "path": "/releases-v2/mockup-20261005-dev-180s/es.json",
+      "rawBytes": 3904,
+      "rawSha256": "c7bf89c2768a94faa0b4cbcd1f8a0ee4af21c8c7ca9ce94ef7c59e503c71e6d6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "793aef3bd788baa979547667ac2bc7f34b9500e5cd35a35305508149466fbd82",
+      "managed": false,
+      "path": "/releases-v2/mockup-20261005-dev-180s/ko.json",
+      "rawBytes": 3904,
+      "rawSha256": "4c2b27b868d3a5d6d9db07ca21f71c488c8a98200f4a33d4168574ba961de88e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5df9378ec72f8fe23bd208aa726c4ec3967e5d6a4e131497fb315eb52d72becc",
+      "managed": false,
+      "path": "/releases-v2/mockup-20261005-dev-180s/zh-Hans.json",
+      "rawBytes": 3964,
+      "rawSha256": "0c31f2b74c2993a15e604cffc8a6ead967a449f7e1ab28fbab0b915ef10f2055",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7e35dd46dd23823fd09b32933d7def7666c8c7861500476f02d9e09755d90033",
+      "managed": false,
+      "path": "/releases-v2/mockup-dev-180s-dev-merged-rerun-20261005/es.json",
+      "rawBytes": 4057,
+      "rawSha256": "28d32fd0bcfcc9f2a7c48d38e304557738dfa35d9df17577a3fa55215f354339",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a1a16b9749d14dc4a44e522459cc8a3743a29aee062dec6b50554795d6c9f5d4",
+      "managed": false,
+      "path": "/releases-v2/mockup-dev-180s-dev-merged-rerun-20261005/ko.json",
+      "rawBytes": 4057,
+      "rawSha256": "0a89e0b2ccef09031d1a8af40fe1c478b6ed5978b3d2752de1ba66e961ffccf6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c514685256d8431a903d5505601f0fcd065427b1005639b13b44153b144504c3",
+      "managed": false,
+      "path": "/releases-v2/mockup-dev-180s-dev-merged-rerun-20261005/zh-Hans.json",
+      "rawBytes": 4117,
+      "rawSha256": "5407e4b5ee4624ad74c41f58a4e85cbe32bd649b636206e426eb300e422338bd",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7a664a15ebb65380ed857e86ecd9e27e4098cd9e009f1142c4e73418f3e13920",
+      "managed": false,
+      "path": "/releases-v2/mockup-dev-180s-e2e-20261007T193332Z/es.json",
+      "rawBytes": 4012,
+      "rawSha256": "3d572785acfa3671faee55412bf18a9b18e0a2b552bba22082216422d3f53b17",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "075e63b11b46ab1242cff32248a25f060febaba58b214480d1821fbf3a76af07",
+      "managed": false,
+      "path": "/releases-v2/mockup-dev-180s-e2e-20261007T193332Z/ko.json",
+      "rawBytes": 4012,
+      "rawSha256": "51e8ea17aac06c3c785095c04c01923ddaa991ba5e2b751da370ed8d913f0451",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "56c7e01f8ffec2c48ca80e9430b8ac78e3abcd083dc36f8c6c2f8895c1c9733d",
+      "managed": false,
+      "path": "/releases-v2/mockup-dev-180s-e2e-20261007T193332Z/zh-Hans.json",
+      "rawBytes": 4072,
+      "rawSha256": "15fcc7e17e28787ad96f64d5702e99055f5478ed6397168343d6a1ba9448508c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6e85cf2c41a81bd678824c09a7e52f7a1549eaa97294f969dc084f6aaf9a7667",
+      "managed": false,
+      "path": "/releases-v2/resi-20261004-69ba7a66/es.json",
+      "rawBytes": 1770,
+      "rawSha256": "54af77001ec1d303a7f2bc9e8a21472693ab30c6f454e2d90b7e3e5ff6a91357",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "289fb36455dce3e22dca4bb6180fd204ee5acde7ada2a2d3491439b9aa2bcd9a",
+      "managed": false,
+      "path": "/releases-v2/resi-20261004-69ba7a66/ko.json",
+      "rawBytes": 1770,
+      "rawSha256": "5eb3c49741cf8489d27d76785378aa6d08f966484a5d0ec8398db78ef31ba2a7",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d30e056ccf49771d04ed91764664cf2be9967d2cbe6a0ab684392ae5817df397",
+      "managed": false,
+      "path": "/releases-v2/resi-20261004-69ba7a66/zh-Hans.json",
+      "rawBytes": 1815,
+      "rawSha256": "0e886efc3a83ba9a58d4c808930b6b9955deedf02fc787eaa773c450d2e83df7",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1034b39c9f512588eb86727ca4ebf3f6d59a9d02bdf45996ddfe861cacf51a5b",
+      "managed": false,
+      "path": "/releases/2026-09-20-laodicea-clip/es.json",
+      "rawBytes": 1403,
+      "rawSha256": "189970f94625cff1898c091d60d987b24f0da90609a5e431f847edc81f5321c7",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d328ac04e07dffbe5171d45541752e154fb58d5d5fbee145c78fbdd73db970dd",
+      "managed": false,
+      "path": "/releases/2026-09-20-laodicea-clip/ko.json",
+      "rawBytes": 1403,
+      "rawSha256": "e55eccbff61b88a28529e11ca84b7c4697c960f412f2cefa477de86df076349e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "cb0eb083b66040bd425272c9f09a2d65bfb45a9d01079ea89938f3d1ea91b199",
+      "managed": false,
+      "path": "/releases/2026-09-20-laodicea-clip/zh-Hans.json",
+      "rawBytes": 1443,
+      "rawSha256": "d2b9228130e275c1ab71782bd43c687368ccbf1a8ea306b2b2d78da13d71f2b4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7e53a2f80ab5294de9030aef6e223aeb8ab08976fddd90f5c10f3847d8784962",
+      "managed": false,
+      "path": "/releases/2026-09-20-lion-of-judah-poc/en.json",
+      "rawBytes": 1328,
+      "rawSha256": "cab812b492f93274d66908c826189e7eec1407f1330120b169b0d6a8c4875960",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fb4e9a0fcc4f66c1421154fe25ce085682e9574210966b9b5b7674f363ef6b46",
+      "managed": false,
+      "path": "/releases/2026-09-20-lion-of-judah-poc/es.json",
+      "rawBytes": 1376,
+      "rawSha256": "4da4ae499876d9fecb8e0693895526d5204cca05f22d8791665cccc3dfd18d8c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "28a2021d599a414dede269989af6f632f18b90fd612bfb1e96e5847c43231856",
+      "managed": false,
+      "path": "/releases/2026-09-20-lion-of-judah-poc/ko.json",
+      "rawBytes": 1376,
+      "rawSha256": "ba9c0d78f31606f58006973d5ec023d102e7a0bd4aa12159d65953072f2a5764",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3bca46e6574e115ad276993a4090ba4fb59792583f27fdf93458d79643147924",
+      "managed": false,
+      "path": "/releases/2026-09-20-lion-of-judah-poc/vi.json",
+      "rawBytes": 1371,
+      "rawSha256": "14770b145e24ae02c6cf6acca6038f8da27862db5eb59ea5600236127de5b285",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "090de35ea9ee14fed414f0387e34fc6174172eb6afe8b279dc4c627ba05eed10",
+      "managed": false,
+      "path": "/releases/2026-09-20-lion-of-judah-poc/zh-Hans.json",
+      "rawBytes": 17761,
+      "rawSha256": "6825e41c2ffb5bf0f05da611abe17523334b7520cc44a18a2705e84b229aa8d6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0581d9724e7b457d6bea35199479e182fc8bedf79fe6f9f7f5222937079a9b21",
+      "managed": false,
+      "path": "/releases/2026-09-20-revelation-clip/es.json",
+      "rawBytes": 1413,
+      "rawSha256": "3124f8dc63daa54ffbbb3d3356bb2e1e7be021def68130083656123d49202e59",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "98075b4c5e7e9a9d534223f8acc73430e2d637dc87a2caa4aa7ac2925d4895a3",
+      "managed": false,
+      "path": "/releases/2026-09-20-revelation-clip/ko.json",
+      "rawBytes": 1413,
+      "rawSha256": "d4243c43084d1c779e1290390ee2ec1527594e0efce6ee3122ef2e0f5422060d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7ce20bf18ba1693ca6d3669b469b865d3b0622dea73ee83cf62589f54b8636b0",
+      "managed": false,
+      "path": "/releases/2026-09-20-revelation-clip/zh-Hans.json",
+      "rawBytes": 1453,
+      "rawSha256": "b4acdb4fb75069fd23239c5babeb74367f9f2faa8b6f4c5536efa75f8f62317d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "216eaddeea871768c30ab078e99f241409f677effa2aba250436e03c98bd88a7",
+      "managed": false,
+      "path": "/releases/2026-09-27-weekend-sermon-drive-530/es.json",
+      "rawBytes": 1467,
+      "rawSha256": "39fbbb9760cca6c7cf620bb864c3845cac8a76c029765c66a6d5db15694b8893",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b0f0f4d0fbdc0688f8356d2cecfb3d211da0ea05aee09a6b192bf9598ac7e07d",
+      "managed": false,
+      "path": "/releases/2026-09-27-weekend-sermon-drive-530/ko.json",
+      "rawBytes": 1467,
+      "rawSha256": "902fa115f91dd32f6b63189adbc389cd4ff678dc697410a7bf7c8032a9cadc84",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "9e8f4355048dfdec325d4bf94c40dc29d27ad3634053499b9695056a31f3cadd",
+      "managed": false,
+      "path": "/releases/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+      "rawBytes": 1492,
+      "rawSha256": "bb7c689da46de7a1efd108328b3d3e2d7220372e52dc40bb59662f96d54942d8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "bd4bfec1651177faffa0ed03139a046ee7cd96914b2c88b007ea35ced31ab0be",
+      "managed": false,
+      "path": "/releases/if-i-had-more-time-jesus-is-worthy/zh-Hans.json",
+      "rawBytes": 1510,
+      "rawSha256": "6d95f77b83d96586eb3ffcae81c32135ebafa8193a8727e73622ea3d1bd54cd2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2c62a5bfe9ac4c0f481efa81eede048989fc3574eb44da3f1b7e3822b08becef",
+      "managed": false,
+      "path": "/speaker-clip-demos.mjs",
+      "rawBytes": 24629,
+      "rawSha256": "b1a649903fca043fc69a0e99522cfbf05e756a60f0e950a0ec47950f2b706e88",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5ea5c2c7d528593943b37c4a726649514d3444a4fa07b57cf68d8c3757fc0b8c",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s-luna-rerun/es/meditation.json",
+      "rawBytes": 8032,
+      "rawSha256": "b1296a25f56f9720ab4ccfea3126ac96be25e644c9395ea1cd4f4b922c4dfec4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "dc8769728bc0c5a9a2c6585da89a5039abe8c048d8f808fffd3f426af4c0ad96",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s-luna-rerun/es/outline.json",
+      "rawBytes": 6638,
+      "rawSha256": "eb1f5de10b4f1dc6e5998ec59b26995dba3885b91cb4bded8c5e21919867db93",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "25d18cd04b08a29efff08c553d2d4090cd6fd81d5c10cb22f1ac5819d079035a",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s-luna-rerun/es/products.json",
+      "rawBytes": 1568,
+      "rawSha256": "8329130353ede864c4e797ffd488bb9f522dec752ac3bf30a0a950e1ae585f6f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e3d3c5136c1936389f3ea8558265a5805701b22a2ca3ca9e5e8db690f55fa265",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s-luna-rerun/ko/meditation.json",
+      "rawBytes": 8973,
+      "rawSha256": "9fd1f7161d3e9c0fdae64df463a908adc76af45dd489b4b033a97b424fba57d5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "86a4073a45496deadfd01e8c0144361d4930e45b647b8ba90b5b675430d4af50",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s-luna-rerun/ko/outline.json",
+      "rawBytes": 7605,
+      "rawSha256": "04f7e2c8f3efb80ddcb6c895fd6a739f006c0ce1f9faa38e7f6fe2cd196e9371",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6e512f6dd0a0ec337bf988b754d5ce2a68ded9f039d16bd181d5c673ae4b3378",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s-luna-rerun/ko/products.json",
+      "rawBytes": 1568,
+      "rawSha256": "9c8f0a20a9d381aeecbc11031fe0c841feab5914448782eb375d6fe997ed0086",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c1fc94d8e3b3d31707e60aaf327c8b890b8856e2cf30c6303c17967112540485",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s-luna-rerun/zh-Hans/meditation.json",
+      "rawBytes": 7383,
+      "rawSha256": "0aa045aaedb537dd854ec092504abd0e311668de3e761b673efd28fad89b894c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "43ba65b62f0532825fc02be97df5aeb1148de6618b054bab0255bebf1dba1bd7",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s-luna-rerun/zh-Hans/outline.json",
+      "rawBytes": 6379,
+      "rawSha256": "c01c6b4b6b6e2797bcc07295eeee3604bf9abefdc3b9622406e9b73ab5e0b9a2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f27b953d1b4375cc74c3faf89ba2d84062e3827654803c3083ef17a81efe9013",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s-luna-rerun/zh-Hans/products.json",
+      "rawBytes": 1573,
+      "rawSha256": "eb3e68d8cfb6a120368b004c4f948dae3e36498dbb046c8ce9069c0ecb412522",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "39ae251654561c11fa339e8be8399d9c0880d40f0cf1c077e03988300ea4686d",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s/es/meditation.json",
+      "rawBytes": 8021,
+      "rawSha256": "60af0bf40a48581fc75879548b9c4c0272a56a7f69807af3554edb8cf18742a4",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b871aa8d45c95103bfb604500db6cdda51cc9baccc7ae0eec2968869d1d83186",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s/es/outline.json",
+      "rawBytes": 6627,
+      "rawSha256": "e740bbcfb2457430f1d0c4f4830b8ad2f8e3c1c2f2db1715d2907a2d3dab3a62",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "15422131ecafed4f5c6074ddd88f4d630af80fcabb1bee1fcdb3313e59c0c079",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s/es/products.json",
+      "rawBytes": 1557,
+      "rawSha256": "852b5cc73adc40a120fe0fef4ca8542103b4975c61fe97c00920fd1db6c02c42",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "192f3af98512346557f9f8732e7377ad0044b55f3c937412b39dffe13afe9d3d",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s/ko/meditation.json",
+      "rawBytes": 8962,
+      "rawSha256": "0a7c7fb4ac6eeb976d5d1012e24c47e66f165613d62e70810b62b8f596df1962",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "47622fb80646b35dffe28bc6cbbf1c71656c2be9565ebea87a87e2e6a59a7c64",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s/ko/outline.json",
+      "rawBytes": 7594,
+      "rawSha256": "6bf60d3258c147e36d02520b539c0741560b0c6ae7630e2b8ae5c7cc5b0b0d3e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fa5b3d60b28921b8101f15a10f6108481bf57a92064d0d1c9737d584b5ff4ae2",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s/ko/products.json",
+      "rawBytes": 1557,
+      "rawSha256": "a38b1165a7f27caa52081ac8e66a5d841f2066688c424032d3545bab6707f2e6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7e038b1fc8f3fda9f245b8bbad29a8796df79ba273aa21d166da58a962e5d56d",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s/zh-Hans/meditation.json",
+      "rawBytes": 7372,
+      "rawSha256": "0be16ea4a92572ea993b4cb14055c30d8529920bd74e81124cd13efb8e66879b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "07d19a04e40d47be933605bbe13082b80baf41ee74bd29505dd56052920e71a6",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s/zh-Hans/outline.json",
+      "rawBytes": 6368,
+      "rawSha256": "adacabfb9aa1e56fc69edf68bf7f339cf3c2c313d6405f40aaf8768d2793a49d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c349212bfb0c9a959d1ff7a3d7efb6f40f2812bc957c450423871283965a42af",
+      "managed": false,
+      "path": "/study/mockup-20261005-dev-180s/zh-Hans/products.json",
+      "rawBytes": 1562,
+      "rawSha256": "4050023d80d113165ab4a11df9938b9e5849c8f3def0702119b4cad3bf56433b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "cc0a08baba463d3fd3582e30252d7cb96024c3a507decfd73d001c89822fd169",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-dev-merged-rerun-20261005/es/meditation.json",
+      "rawBytes": 8038,
+      "rawSha256": "65dd174e7697675b9b75ffb1890b934bae3a52c44f5185cab4253a660cc53d01",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c4244b81077d2c158b63884b50922f6aa8cb2c42d6e1c69a9477855b9bae6871",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-dev-merged-rerun-20261005/es/outline.json",
+      "rawBytes": 6644,
+      "rawSha256": "6b73ca5e4d6ba591d2401cf29112307f716647a4957ef3489b18621ebfbf4aaf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e201ea1c53fc7d8cfa8e6725b4d7b64692c253e766c7abbe7900ab82f32f0981",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-dev-merged-rerun-20261005/es/products.json",
+      "rawBytes": 1574,
+      "rawSha256": "cffbfc663e30ce40d709883390de3e3d72f3d7f8ec44d18d9be7dc491605c722",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "af0aa7bec71d0dda9c6b5d98092e2a7e90b5bd5979fc2fa800d9bea858f75f70",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-dev-merged-rerun-20261005/ko/meditation.json",
+      "rawBytes": 8979,
+      "rawSha256": "410e8cb00ac505e8eee1b4a632f1afd1167277a1301c9b41a4bb042373a02406",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "546e2c8ba072b84adaf1122c2e559048ec0551e203e2357aa04695840f0afc05",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-dev-merged-rerun-20261005/ko/outline.json",
+      "rawBytes": 7611,
+      "rawSha256": "f0ef51afd40da59acaaf1c47f03583fc6a09c8c077597f2f448ddb2ed9f15096",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e4e1406ca05a9ee4e6ecca7af0d38b45cd8ce21905b2aadd94728c156ac0677b",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-dev-merged-rerun-20261005/ko/products.json",
+      "rawBytes": 1574,
+      "rawSha256": "eb335eeb6156aa5f0bdb9f4b14ffd47127e468395430283035d928dc91377094",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "51338ea5c70a146d8b60b41325b2b202ddaeac0406f06a515b741501d764f3de",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-dev-merged-rerun-20261005/zh-Hans/meditation.json",
+      "rawBytes": 7389,
+      "rawSha256": "d3f3c33c1da2e397a172d733509caee53a32418f9d32a1da3648ee3d02d3a0e2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fe186cf636b49f87e286770e911e52c9e90ce6101e43d6a0551d858330ba1bec",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-dev-merged-rerun-20261005/zh-Hans/outline.json",
+      "rawBytes": 6385,
+      "rawSha256": "c41a0fa89d15de8c712d440731593a9e3fae7a34a36068f763467d99a71c1d3a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "57ca2190b18517ffdf7952b1273b5ade415ced82967c103ad650d2adc1954562",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-dev-merged-rerun-20261005/zh-Hans/products.json",
+      "rawBytes": 1579,
+      "rawSha256": "2c4ec96e69a6a7d9b783ade7b4da4f693156b589a0326334c66ff753e4f11324",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "23eaa70cc853b214e69d3d5364bb00ebff0a268e1b67928c70b36c22341ba827",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T191648Z/es/meditation.json",
+      "rawBytes": 8033,
+      "rawSha256": "5abb05f404c6b4c21fdd2eb67b59de5913352a04a23478be8ffbd9519e690b27",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8ba158960c2dab38ee6b4b20b256b554e633b41fe6da247eadd5e1a108c8a5a1",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T191648Z/es/outline.json",
+      "rawBytes": 6639,
+      "rawSha256": "ad39d81c8c02541bbe91f7698abb3998cce135212a56a946200b03d621ef8c46",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8e43b4f8c54b3769138e2ddc96d73572391b09fba37321e2eb383726c46c7684",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T191648Z/es/products.json",
+      "rawBytes": 1569,
+      "rawSha256": "36bb1dd69d1596d6859bdb838df73e43328638a920728537d5e1154e66372540",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3d393913489f2a0108fa92b61805f2ae3c9589665f15f410e821a223b274fa3d",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T191648Z/ko/meditation.json",
+      "rawBytes": 8974,
+      "rawSha256": "3ecb02797cebff409b5709c494a3bc875ac83e101cd9ec18d8d038d6fd19bbe3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1446fee3772ceafe704e1a25709987ae9c73b6ce0e97a23b9432ffce40ce9bcc",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T191648Z/ko/outline.json",
+      "rawBytes": 7606,
+      "rawSha256": "ee5033404e1b6cfbf98163cc8fc397c1b96ae1cac82a52e3c53e757b8452fcec",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e4e84e10648c8115a548f2adcf2fb661296081b8fc18069fe7ceccd5175c0209",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T191648Z/ko/products.json",
+      "rawBytes": 1569,
+      "rawSha256": "72287fb38c4cd7a5a94dffd4b29bc1ffb9a5d67ea14d27fd09e781e3565d3843",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b0cd6598be6014904a1186ea9740a30c1d1ed9fd0279bba634d685d413335297",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T191648Z/zh-Hans/meditation.json",
+      "rawBytes": 7384,
+      "rawSha256": "5b5893af88228dbaf655e77520734e1cffc588e8477962f54b93706808956a66",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "40e94e55d4db846d84cc430875bb92e217a8c22098aebdf2af642a5cd129e7d4",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T191648Z/zh-Hans/outline.json",
+      "rawBytes": 6380,
+      "rawSha256": "67fafdf80668320b6bb91eb92ba80d9cd3974ebdf598ff3df3021b78c0702791",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "9df911fd06f904c395b31062157ac93ab9147e592f4a14f32d8414b3830f3c73",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T191648Z/zh-Hans/products.json",
+      "rawBytes": 1574,
+      "rawSha256": "7073a053378869bd54ccfd49561098987b778ba233611641d56e1a0ad6f55cb6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7a9b293978663bffa68cb6e1666737d2993ec415beda43766b63d5c4b218a2b7",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T193332Z/es/meditation.json",
+      "rawBytes": 8033,
+      "rawSha256": "63ca6652e9f805be5b6fd6611a9d19a77f03e7c4b04988e402d04b7aa481df77",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8d5d7bcfc395ad1c3dca871572e2ca48f25fe5d1744050ce12e1f81f9b9b79b5",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T193332Z/es/outline.json",
+      "rawBytes": 6639,
+      "rawSha256": "be085fceb6e5657a1a8ebc68448a2545d3353bfaf44a11879c7d3916e1aa96a8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6f0dbd3ceb379cfa1d165fc9068824c8e0fb712b4b3b75b9c4d828998f7c3339",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T193332Z/es/products.json",
+      "rawBytes": 1569,
+      "rawSha256": "9fe33ac83a4d44571442d781ccbb44af59e4b8bf9e0e8866cc0bb727ed2735fc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0fd90d54cd1ab1092ece7d137a2ae05d6854346b6b5ef570c298310264bacf3d",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T193332Z/ko/meditation.json",
+      "rawBytes": 8974,
+      "rawSha256": "153d39759372298a9cf546cdd0bc2d323a262a11d6cb48a281618ca28c31d0d5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "20e045467e245911965476bb986ceb8dac0340098e5e5833bae9349316569bee",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T193332Z/ko/outline.json",
+      "rawBytes": 7606,
+      "rawSha256": "5bb4cad239bed7cc3bdc6d45145a12e678f993fb3526e25decaddc97b66c7583",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f028f3f7b2206f135bfb69d4f7956e71c690b7a3912da2a931ace391b1a2c980",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T193332Z/ko/products.json",
+      "rawBytes": 1569,
+      "rawSha256": "d5a88e6770c52f41759a97d27a85a46071dd51f4ad457d036894564d119813c5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "bb96befceab128a581c65330737975b82f95fcacd4e67948fc7fbfb0c001960a",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T193332Z/zh-Hans/meditation.json",
+      "rawBytes": 7384,
+      "rawSha256": "23ec428b471c5f62fd3f6df2a012ef168cd6e93e6f44323f2a764e2949767588",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b3b7ada19085937ed49094ce2d22d1f17706406cd7b8ff4e77f2545d5f0d78d2",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T193332Z/zh-Hans/outline.json",
+      "rawBytes": 6380,
+      "rawSha256": "5fe2b8c700c1ebb71d5834261849d6799bd0b801a0ce5d0f33d1e3ccf2b2c4f2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "9a38bc46963b5d0a1d0bd05892645d2c0b6c636b0ea08f4cbb110e862dfc7c2c",
+      "managed": false,
+      "path": "/study/mockup-dev-180s-e2e-20261007T193332Z/zh-Hans/products.json",
+      "rawBytes": 1574,
+      "rawSha256": "bf54c403a91f5cea62e021c9868dcc31d91545ce6fdc58db6c0a0ef4383fc4d6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "57814ce98e3c79417f34949e25d92073c0c09106362f91ece385b360414571c8",
+      "managed": false,
+      "path": "/style.css",
+      "rawBytes": 43864,
+      "rawSha256": "6d0d3df51fb8b7829f62a5506c6dee73e67dcc37920abebed0a7ff1c089fc2fa",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2a47a8cd0e624be15871dad11d89e310cd8cd9bb11c1070306b2eaf46a042d40",
+      "managed": false,
+      "path": "/styles.css",
+      "rawBytes": 42647,
+      "rawSha256": "617abeafb1a17e2217a9c5bd4f6802b222d04ce25fc18a8f09d08ca6041b81e2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "758a3ea4338bbf551e00a009f855e180e535742bf1c38cc7df0b6300ef1d6221",
+      "managed": false,
+      "path": "/theme.js",
+      "rawBytes": 2096,
+      "rawSha256": "557cf797bbc1ce8553131a6264e5a9d52701db363189854d9fa118803f5bc54c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "61c5d5bd50587729b3bb2e30398c95ee571d4d749903bdbeb5194d57bf3ff216",
+      "managed": false,
+      "path": "/timing.mjs",
+      "rawBytes": 727,
+      "rawSha256": "74c007ea62d54a6c851fa828465e2a55f442e20d328bd65ee4b7c0738b52b888",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "84614706addacca7e43ff246987992e498f5be3234025b137fa1d410be73dc41",
+      "managed": false,
+      "path": "/usage-client.mjs",
+      "rawBytes": 4626,
+      "rawSha256": "5a0f646b22f8851f5eb88f699a7aa059f1167a7f0d4292009a0f3c375536047f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2583471800be1297d28e2c5da29b957f5547ec6ec7aa68414a3f29dad293d983",
+      "managed": false,
+      "path": "/usage.mjs",
+      "rawBytes": 6586,
+      "rawSha256": "d6b002cd63a12c80180d0065930abfe3de5333cd0232f3adb355f917e1c4e4d6",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "da396c83413fa7d16807b0a8839e44545339f88cf98f6a58d59643b97ff24fe8",
+      "managed": false,
+      "path": "/voice-demo.css",
+      "rawBytes": 2793,
+      "rawSha256": "4511dfd39236c9171c7789b516fb11bb40379947e35b7deb9767f637250b9771",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5b610b67aa2dd4a2c8ffa4a438f387a51c976efc32bcfc1bd5e5ed0dc846572e",
+      "managed": false,
+      "path": "/voice-demo.mjs",
+      "rawBytes": 9905,
+      "rawSha256": "d3d6a548bc2cbb999bfe52f4a934880fb233eac2b6d7d5abef52475863f9bf03",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8897b53aa35c17851b0351d55279165bf2c1ef392725cd12672806f986e5bbee",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/catalog.json",
+      "rawBytes": 19077,
+      "rawSha256": "bc767df192307b464ddf8677a3074d6926f2d2946563c5247b52d8c561de0e1b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "08c900d691c62a02605b401e2c41be382c44b45545b596d49c929e5943a8ff26",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/christine_caine/en-original.mp3",
+      "rawBytes": 288620,
+      "rawSha256": "a96bdd6abf2b94197c56a3d76f94504145e88f79b14372ec53328216c34c2f81",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "df60b8fea9eca5dc41fd5fc3816621e377e9ead94ee3db8ee3d9218be72bacd7",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/christine_caine/es.mp3",
+      "rawBytes": 235354,
+      "rawSha256": "fb84701435afa32187ba02c207be9ee24c0687b4f63a798ae8d5512d1aa1045c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1b688f12079f65f49665fad0313646cbc557866a6dd6424cf13dbfd65bdd8467",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/christine_caine/ko.mp3",
+      "rawBytes": 236607,
+      "rawSha256": "685830e7c8afc7e4917448b742c07a92536cfbf49bd0be22534ccc7894285eee",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "8fd8934e74ad7fe681ed8b7c1b62f0d0fd14583fcf795f99a4c271ac0cab1114",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/christine_caine/vi.mp3",
+      "rawBytes": 397104,
+      "rawSha256": "35cb612b78538bda60c6b648373aa1b4a516cf1be42a1cb4176011fe906e8f62",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "738bb60a6b4f60388c0f7edbf13a1f1a4569848a54346daae1227a9a11a3a003",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/christine_caine/zh-Hans.mp3",
+      "rawBytes": 255834,
+      "rawSha256": "177a90f785fdad6fdc7105bad3f2c16ea2ee94fc5b3baaa1acf60ba459fdc868",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "495aec0bf03d86cf80c299dd2ae5e2eb376d9bdc52271a34fe2de5ea9e0cd4c3",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/doug_fields/en-original.mp3",
+      "rawBytes": 286316,
+      "rawSha256": "95fb563d94990e64012cd0463d75313eefe08cfe785ef306ddccaf5001423440",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "10de67d842059aafa54770c86e6ec8d4f6b9be655dd714417eff10a817291095",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/doug_fields/es.mp3",
+      "rawBytes": 226158,
+      "rawSha256": "00ae97eb6bbf4531492d5bdf11138c9ee3ca1fca552bc3b4b213294847a04759",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "87f4df2089a46c99c949c52c02240231189c13f0689adc323216fecf44c9bccb",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/doug_fields/ko.mp3",
+      "rawBytes": 270044,
+      "rawSha256": "eeb6314b9eda4fdae57ae287a4ef9663cc269b81e8e201a62258201952dd7572",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ba0029fcbeec33db5297c783acc2a9a78bb5c618c0bed27cc89783306ecd7270",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/doug_fields/vi.mp3",
+      "rawBytes": 431794,
+      "rawSha256": "02175b94c246d06de4ca055276b214544a77810611d671f0cc6b3a8cac5b0812",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "28d16255b935a7bb7f7f84ad7128f289474ccdce04fd511eed424ee1a5f54ef0",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/doug_fields/zh-Hans.mp3",
+      "rawBytes": 229084,
+      "rawSha256": "e15732fd9b1d9fb580b5daebf50b64941b5ebe96d44aa397cec2cf1a0e644e77",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b0cac6dff8aac9577d6341973865b7aacc479af96cd816c21cf8e6bdfbe56d62",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/eric_geiger/en-original.wav",
+      "rawBytes": 933246,
+      "rawSha256": "26688c073a93e551e05a19169d236d53ed1e9bddeb140249c8ac228bf418c807",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "89039cb4a975a8d4cbd463d8c62475e9552b8cfac8c932583cbfaededfa56f73",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/eric_geiger/es.mp3",
+      "rawBytes": 211112,
+      "rawSha256": "908c0ebe4c11426b07eb468233451125c57ea9b7f3d9e6148ec90a66102ffb5d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5bc40b13c7cc52f22074240a12d9235fc7754ba6c8b573e7f0c573a8005c499b",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/eric_geiger/ko.mp3",
+      "rawBytes": 258341,
+      "rawSha256": "5ecd6c2a969e45b770fe0c8835e1b193f99fd67b2f939cb25d32f8b13555c053",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "7a00a83cf94c3c3bffb451695962d842b587052326b0183d8327210bb8d35ca8",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/eric_geiger/vi.mp3",
+      "rawBytes": 367847,
+      "rawSha256": "229a40b176e0b7d98bf0142b89eb708b2227890ab68bb991da43618a6faa4d96",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "93c0fc76368e085da60b0c899a4e50794501aaee9797de242b491a334b58f7c7",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/eric_geiger/zh-Hans.mp3",
+      "rawBytes": 219889,
+      "rawSha256": "e08e38b9e45123304e9f1d6f42f68bfc7285b54c8f30c5ee70f42dc3f8bd697c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "91f8c423ce26a1433624e78a8fbc46cbad16d85f0ebf80106a876ee33bbb947d",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/jared_kirkwood/en-original.mp3",
+      "rawBytes": 286316,
+      "rawSha256": "926e37b4f92c5c9c33c841886f4e22f54d6b214b1c1a1c3c1be2f22b61987e17",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5a269e5da284b107322aa87ca929e151b1b207d2ff9278ad902e11aea8fb43ef",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/jared_kirkwood/es.mp3",
+      "rawBytes": 221143,
+      "rawSha256": "0cf737da42e264a7e56aa76f7d415ed5a9361f4f80ebba2f7f2077bc1515e613",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "771c27d3826b49e12a5dc85ce7a8b6edf5a908915a3750c7618cb4ff37219fe8",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/jared_kirkwood/ko.mp3",
+      "rawBytes": 226158,
+      "rawSha256": "aa17eafeeb43b59735dc10aa04bf42a0bba91181b941331ba8f74f62c4a22819",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c5ab8255e1d424fe2715927fe2f4c348cd60608dec791a649b6686717cd05461",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/jared_kirkwood/vi.mp3",
+      "rawBytes": 434302,
+      "rawSha256": "ccf9bf16721ab763a18452db5a8149441b9697675e1dc9bccff2fc30ceb023c7",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "9cd88cd121dfcda4c15c872875ba150600b0206bd1b403e1efc038358c88b7be",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/jared_kirkwood/zh-Hans.mp3",
+      "rawBytes": 226158,
+      "rawSha256": "6c3b667ff025db5a26b6df238acaeec9f9ae0f328de0549f7d57d695ccef4131",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6d79f4d10f91dd021d19124790c4553ef2d84a14212588fff0748c0302ce88dc",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/kenton_beshore/en-original.mp3",
+      "rawBytes": 288620,
+      "rawSha256": "394552afddac93e08f3049b40ecb52fb62c382205418910e721520e4786d7ab3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a24e14cfe26d3dccfb94d1f8b1b36ef3c333b1d8f36f9e6a8d9f139045092c27",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/kenton_beshore/es.mp3",
+      "rawBytes": 230338,
+      "rawSha256": "8292b3d5816a48f4a185edc522f76fd27bac488bc8ad90e1080380c0afc30e42",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b259ad9dfb4e99fa77059632c9809751af90b876260a3b243783996779193961",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/kenton_beshore/ko.mp3",
+      "rawBytes": 276314,
+      "rawSha256": "ca765d0dbb2b28a5ba63b49cb601075d79da1cffa5eaea39227bc2ff318f4d0a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4290c650d866115326d67ecd7a0e988ddac4222a4dcebd2177878bc68487f4d0",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/kenton_beshore/vi.mp3",
+      "rawBytes": 372862,
+      "rawSha256": "cad3c490ab100b0d00c386f2af69ecaef75148f3b37d49ba351f81039ef04742",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1b3ac54097c73e63111d01ea029c425d3720e2c16323bae9efb2615e99238ee7",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/kenton_beshore/zh-Hans.mp3",
+      "rawBytes": 236607,
+      "rawSha256": "f73b8d6761f661e5a9879cde771419c06f6b4c6390e3d370f7e9d4a2bd7e1654",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "537c7bc3bdb407501b389fc791ff72fd3b93fbeab76baa498edd2d80c7f89057",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/production-ko-es.json",
+      "rawBytes": 8111,
+      "rawSha256": "bf6dcfbe6a745c0198e0ca02d6653c14914b79a5213e63565b20061421f5ae2c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f249ab01074081a8847f01dc95b55d0bd42164f740229c4f10db9b4252d30873",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/steve_bang_lee/en-original.mp3",
+      "rawBytes": 274796,
+      "rawSha256": "0661d53954b41e34ac96255c9cb67c73e80a06297f19a0b2976854c81eae3950",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e6c6adcb0c557ecff53ef5500279b9837ee5c1b2502729523200bd4c2541c716",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/steve_bang_lee/es.mp3",
+      "rawBytes": 217381,
+      "rawSha256": "88561dfccbcb7938a6d28951b7801fe94f5db22b9c419ce0e1d58c1a1f904437",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "30e8c5d5353e0c2ce7c5ffcc423eaaa8301fee99455c21d0e111e7400e45e144",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/steve_bang_lee/ko.mp3",
+      "rawBytes": 253326,
+      "rawSha256": "ea566e3e9566b1b2216e36996937c1e4e8f55be036fae8e4cd1615684dbbf94f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c8ac733846911f65f16632ec2da5e91625ef4b8dc94829c31b67f1b9b4c279e2",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/steve_bang_lee/vi.mp3",
+      "rawBytes": 448513,
+      "rawSha256": "42472b6bf04e4fd0dd401468ee4f948242b05999bdfe19252eb52cd43771c10c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b28de098ed2398d6b4097cbd504e74831de9b81863b9493da4faa7664755d93e",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/steve_bang_lee/zh-Hans.mp3",
+      "rawBytes": 219889,
+      "rawSha256": "f4b6beba78bf5f9750ae37977dd759cdf8fad1915242b307cb16ed91be83f932",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a6db683468f6d7b9872b1906b03a2121914bcb377e82b070edf76b912f39932a",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/catalog.json",
+      "rawBytes": 35217,
+      "rawSha256": "ea3723eb3f10003db06d09fa81eed473fac17aaa3b8ec32bea29cfee04de25a2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d2069f7d04d0e8fd08fd77e84527c434077cfe75f5d9f3ad3dbf2fdcef0a840b",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/christine_caine/en-original.mp3",
+      "rawBytes": 192304,
+      "rawSha256": "d9d1acdf028df3121fc66f9960c34e2cbcec5514dfe775a823232dd3ebfe6bd0",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "cfd7edc8e0c0ca90b1db035881bcc1b50836adf15fbc5c4849f33f268511877c",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/christine_caine/en-video.mp4",
+      "rawBytes": 748024,
+      "rawSha256": "0547346138b7c17eccac0b49c0630f902b31e05f92c82b127e6f0ea2a330d097",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5c345fb156e43152008f7c00e9660383cccb2d2d00995cc4f17693ef2e8cefb3",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/christine_caine/es.mp3",
+      "rawBytes": 199409,
+      "rawSha256": "c72566c6ee74aff48e1ce0f8d5e3094f54b0718beda9aab36273cbcbd3ae34e2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a549da4ed2e256acfe3373bd898c7a6b99cdf7f43e6e57bceb09632c26b29eaf",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/christine_caine/ko.mp3",
+      "rawBytes": 191886,
+      "rawSha256": "d275d976a878822f457d10131495b9b711a4bcfe20c25e4e7179496366d6cf55",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5e487b33625a1230f1fbfeccdd0d5f7c25a7bf4d554b30b4fb2723ac124bc71a",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/christine_caine/zh-Hans.mp3",
+      "rawBytes": 239115,
+      "rawSha256": "29163f2f04c83a8b766c95ffe8941c2d76b10afbc15b583c97587eddb22f694b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "96f304a7e3f7cd14eb3eabbd3605c6015e5f6c15e186e202411e6c22773e03f5",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/doug_fields/en-original.mp3",
+      "rawBytes": 191050,
+      "rawSha256": "9f23c52b18d3935270ea8abfef49122cfe5f785562af1fa13cdf8469e793dbb2",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "795cb683d380de803e35548b3237ecd51f6dd3fcb8a7f7e25c8150efbc24a94a",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/doug_fields/en-video.mp4",
+      "rawBytes": 602017,
+      "rawSha256": "b7b42c1272214414f93963ddbdeea6b3f091f7554abfb72d8665e54a3b924367",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "bd6bcc8ffa9dba1a66729c818c2c36a4dfb87a8c2c89037b5de98401926c5eb8",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/doug_fields/es.mp3",
+      "rawBytes": 208604,
+      "rawSha256": "6acd5a43c4b08e5aac7049c7e58699bb98753aaf273453286b1b1a4f58cc5480",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4706ef6e0b085f9c7ba697df63eedc07bf2ae6666610592deea8689b6f11bd69",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/doug_fields/ko.mp3",
+      "rawBytes": 194394,
+      "rawSha256": "94c08096e0a592d05fe99c356f165e4961dd0fbc6487434a9ddd2f010252b448",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "c055b39f59abc468f88f8249e7a1ecfb2935969ce05030fa6e936d39ab57e80b",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/doug_fields/zh-Hans.mp3",
+      "rawBytes": 186870,
+      "rawSha256": "4a85acfaa718978f166d851549d05e07e31825567907b342c5e26b10ff152d13",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "265d561b760eadb8089a81c2a673982e6bbb460c43d258474cd45fc9bc86fbcf",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/eric_geiger/en-original.mp3",
+      "rawBytes": 208631,
+      "rawSha256": "24e8b6c22468b3e2cad9911fe7fed7c81bc8e10af24f7eb8b7019de6ab91631e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4836d7d9d3b55cb87ceb7c4897ccf73faa4d1fb6c2f1b5e3ac7f749da9991a20",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/eric_geiger/en-video.mp4",
+      "rawBytes": 903946,
+      "rawSha256": "1a3d5a3bb73e76cc4ced2ad73043a730c5a66a21ea632e7947ed8827b3511f04",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d2ab57ce1885f79539806b04da5e6b432ac4cb668be967ff5c8a2f7ae51c324e",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/eric_geiger/es.mp3",
+      "rawBytes": 234100,
+      "rawSha256": "402ee08ac9b421349df4a2a0b84212be71fa6604b52f00c06fc29b39d3ec0a22",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5a3784c4f86ddec962f02ad8c43190522488b2ad64f5265403dfb5e8419c92be",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/eric_geiger/ko.mp3",
+      "rawBytes": 294286,
+      "rawSha256": "c19011c8b39e92fb7f3a88b099b2318519a15b53ac2eaffa9b02b189aa2e1075",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5b0b9d8633388671e6025d9f3ad3dcac015ff852191a3a14a3e2587675fedcc1",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/eric_geiger/zh-Hans.mp3",
+      "rawBytes": 257087,
+      "rawSha256": "09adc7f6e3260abe0e070e37baffd8beae4b16fa083d533eab6db71fbcafc820",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "bf5d07458067b4dd8c3af797e1b74ce58442eedba1c204745e7d465f1d4325c2",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/jared_kirkwood/en-original.mp3",
+      "rawBytes": 191050,
+      "rawSha256": "4567f641215d4b25ca7ee9d335078c7972d5a9244c5bad7b5854de3091c32dc0",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "4b58cb785d6408be56bed15c5f1b8c161fc12c340fd3f0656a55e8a6fc32c08f",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/jared_kirkwood/en-video.mp4",
+      "rawBytes": 614476,
+      "rawSha256": "230732147a6770e6bb11a4efaa0edaf182a9f6815009786af3a7505e3d304f10",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3c7b7e5c19f25135d259b6fa728bc282361c9133631d1f1f2554c4b1792e7dd3",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/jared_kirkwood/es.mp3",
+      "rawBytes": 172660,
+      "rawSha256": "a06045dd8d6f6493f8fd44787c81c381493fc4c731e80c996c653480ddfbffb3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6f9f28035485f18fe231ba7493975a319e34f77bd7e59417fdebddae7fc75638",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/jared_kirkwood/ko.mp3",
+      "rawBytes": 163465,
+      "rawSha256": "91aa2354672bf92c51bfb605459b1b81bd283dc3e330c176c00425d38f43ee1f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "05fa45cd7969ce1dd21f94f6de3ed155ca4d8ba03bd8ce6aa163c6932740a44b",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/jared_kirkwood/zh-Hans.mp3",
+      "rawBytes": 172660,
+      "rawSha256": "37057e3d0c139f1041f2e0e6056258854229d36225bca5ef027f20959556f301",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "515292380b80ab6658fd45d77560ffa331a58bf501d7ce938f117c94e5f83582",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/kenton_beshore/en-original.mp3",
+      "rawBytes": 192304,
+      "rawSha256": "2d48abd2bb30d00d758568051fb4cc8d998c128fa21cca920b7790cde650f0cd",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b51911aa13fd7e1381c6f4357ce268b84e1af7cf494fbeb252b0189ee8649780",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/kenton_beshore/en-video.mp4",
+      "rawBytes": 620825,
+      "rawSha256": "937f4308b3e7c1f6e228a666e6e4a51180bda368b5c70e1c9723235bdc01f21f",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b5e66ac798516c1893128d6ec100a45efca41acde8aaa64f78cc0ea14b7b7248",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/kenton_beshore/es.mp3",
+      "rawBytes": 209858,
+      "rawSha256": "eec7350feefbe2fcdab4afbc66e45d5ceb372f62bff623acf360326b40574dec",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ffcc312bb2ea55cae72c7148078f9b3b74f893a5fcbfff052516c0337c2068c1",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/kenton_beshore/ko.mp3",
+      "rawBytes": 230338,
+      "rawSha256": "699a1433b8b1318e7a5588e94b68a80a6428ccc52026512cee8666ee15483da3",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3e39da9a16c3689af5a63ed7ecd67b7722f29f5fae7eb190c77c93bd51e52f9b",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/kenton_beshore/zh-Hans.mp3",
+      "rawBytes": 204425,
+      "rawSha256": "54a72a3fb3254bb3b1050bfbca1bbd63e700767d70bfa992f6edac13a1159e96",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "e1e966244a858b606631b356196ccc84d926396e0f03ce8f34c56fb89bdd8113",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/steve_bang_lee/en-original.mp3",
+      "rawBytes": 183527,
+      "rawSha256": "34ba8753d73e1090f321e5c82d89c460750c6c5939773e54cc95fc3495a43023",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f8016021a64e3e11d4410aa2e58da80f13ee1e51ce3cb8b7a4b0baf76185c127",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/steve_bang_lee/en-video.mp4",
+      "rawBytes": 640146,
+      "rawSha256": "d8217983fa5f74e90cb3f6a41e4200fabd3fd6000a9f88a85cc26fe4de6c81f9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "04201033d47991defa06036667d21976fb3ed7de10d5ad8f1eeb2c375712f1d6",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/steve_bang_lee/es.mp3",
+      "rawBytes": 188124,
+      "rawSha256": "99d23908decdeaa1fe11d37d941be4ed94bae2e62441df37845f36133e07f56a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "d0e298c3d3dcd1bfc1867f23ef2394d11e9aab7f0342d9572a6c0d41af74e2ee",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/steve_bang_lee/ko.mp3",
+      "rawBytes": 167644,
+      "rawSha256": "6483ee444207100398b65c54420c4b7ceec73b23955a81bad59953b1f1079631",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2b39991386f9d7ed3bfec4a7f671285166ead6081e04656fda3ac4a84b4b7543",
+      "managed": false,
+      "path": "/voice-demos/speaker-clips-v2/steve_bang_lee/zh-Hans.mp3",
+      "rawBytes": 194394,
+      "rawSha256": "9b2840ee026415b432c734c28aa60ed5878fc91972f214fbaef3af1ef891b17e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "cc2f7f6b6d9cfebdce831d690a230a904227cc1856fd01fc043d98653f93295d",
+      "managed": false,
+      "path": "/voice-samples.mjs",
+      "rawBytes": 6359,
+      "rawSha256": "3c3f6a73d8866213317040a05ebb790b70d0e328a5e5db3788500b2acec80b7d",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "315d0d6697795ca4e5183c65a734060a78af5b684342b0d491df5e636839fec1",
+      "managed": false,
+      "path": "/weekly-announcements-v1.json",
+      "rawBytes": 2215,
+      "rawSha256": "72edef910da32a39232783604a708d5e0121ac8d3265277bd054faf07ffef3aa",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "5f966758011a1855023ed461e423897cdb82b212d39dbec25c5ae4163b1ac2c7",
+      "managed": false,
+      "path": "/weekly.json",
+      "rawBytes": 1180600,
+      "rawSha256": "6b7bbd018e1df2d39ea5287c9e6a3114ee6a6a0c953e2f39cdc4d3d3244204bf",
+      "sourceKind": "live_get_version_hash_verified"
+    }
+  ],
+  "schemaVersion": "sermon-dev-simulated-baseline-v1",
+  "site": "ai-for-god-sermon-audio-dev",
+  "status": "complete_verified_not_deployed"
+}

@@ -20,13 +20,19 @@ ROOT = Path(__file__).resolve().parents[1]
     ("창세기 1장 1절에서 3절", "창세기 일장 일절에서 삼절"),
     ("하박국 2 장", "하박국 이 장"),
     ("요한복음 3장16절", "요한복음 삼장십육절"),
+    # v3: a sermon names chapters and verses without the book.
+    ("그래서 8장을 보면 정말 놀랍습니다.", "그래서 팔장을 보면 정말 놀랍습니다."),
+    ("8장의 맨 첫 절", "팔장의 맨 첫 절"),
+    ("16-17절", "십육-십칠절"),
+    ("2 장", "이 장"),
+    ("3장부터 4장까지", "삼장부터 사장까지"),
 ])
 def test_scripture_numbers_are_spelled_in_sino_korean(text, spoken):
     assert subject.spoken_form(text) == spoken
     assert subject.equivalent(text, spoken)
 
 
-@pytest.mark.parametrize("text", ["두 사람", "3:16", "3,000장", "1.5장", "2026년", "8명", "1234장", "8장의 맨 첫 절", "16-17절", "2 장", "사진 2장", "영화 2편",
+@pytest.mark.parametrize("text", ["두 사람", "3:16", "3,000장", "1.5장", "2026년", "8명", "1234장", "사진 2장", "영화 2편", "종이 3장", "편지 2장", "영화 2편과 시 3편",
                                   "요한복음 3,000장", "요한복음 1.5장", "요한복음 1234장",
                                   "영화 요한복음 2편"])
 def test_other_numbers_are_left_alone(text):
@@ -65,6 +71,7 @@ def test_build_lists_only_changed_units_and_binds_the_job(tmp_path):
 def test_context_does_not_leak_from_a_citation_to_an_ordinary_counter():
     text = "요한복음 3장16절을 읽고 사진 2장과 영화 2편을 봅니다."
     assert subject.spoken_form(text) == "요한복음 삼장십육절을 읽고 사진 2장과 영화 2편을 봅니다."
+    # An unknown word followed by a counter is ambiguous, not a book anchor.
     assert subject.spoken_form("새요한복음 3장") == "새요한복음 3장"
 
 
@@ -91,7 +98,8 @@ def test_numeric_separators_cannot_be_removed_or_replaced(number):
     ("사진 2장부터 4장까지", "사진 2장부터 4장까지"),
     ("영화 2편에서 3편까지", "영화 2편에서 3편까지"),
     ("요한복음 3장부터 읽고 사진 4장까지 봅니다.", "요한복음 삼장부터 읽고 사진 4장까지 봅니다."),
-    ("창세기 1장 1절에서 배운 뒤 3절을 읽습니다.", "창세기 일장 일절에서 배운 뒤 3절을 읽습니다."),
+    # v3: a later bare verse in prose is read as a verse too.
+    ("창세기 1장 1절에서 배운 뒤 3절을 읽습니다.", "창세기 일장 일절에서 배운 뒤 삼절을 읽습니다."),
 ])
 def test_range_particles_do_not_expand_book_anchored_scope(text, spoken):
     assert subject.spoken_form(text) == spoken
@@ -129,7 +137,8 @@ def test_range_folding_keeps_legacy_scoring_and_non_citations():
     spoken = subject.spoken_form(approved)
     assert not screen.score(approved, spoken, "ko", 0.88, screen.SCORING_V4)[2]
     assert not screen.score(approved, spoken, "ko", 0.88, screen.SCORING_V3)[2]
-    assert screen.fold_transcript("삼-사장", "ko") == "삼-4장"
+    assert screen.fold_transcript("삼-사장", "ko") == "3-4장"
+    assert screen.fold_transcript("삼-사장", "ko", citation_ranges=False) == "삼-4장"
     for text in ["사진 2장-4장", "영화 2편~3편", "요한복음 3장 읽고 사진 2장-4장"]:
         expected = text.replace("요한복음 3장", "요한복음 삼장")
         assert subject.spoken_form(text) == expected
@@ -409,8 +418,11 @@ def test_balanced_book_citation_delimiters(opening, closing, reference):
     assert not any(c.isdigit() for c in spoken)
     assert screen.score(approved, spoken, "ko", 0.88)[2]
     assert not screen.score(approved, spoken.replace("삼", "오"), "ko", 0.88)[2]
-    for text in ["사진" + opening + reference + closing, "요한복음" + opening + reference, "요한복음" + opening + reference + ("]" if closing != "]" else ")"), "요한복음" + opening + "사진 " + reference + closing]:
+    for text in ["사진" + opening + reference + closing, "요한복음" + opening + "사진 " + reference + closing]:
         assert subject.spoken_form(text) == text
+    # v3: an unbalanced citation is still a bare chapter or verse in prose, converted as a whole.
+    for text in ["요한복음" + opening + reference, "요한복음" + opening + reference + ("]" if closing != "]" else ")")]:
+        assert not any(c.isdigit() for c in subject.spoken_form(text))
 
 
 @pytest.mark.parametrize("ending", ["였습니다", "였습니까", "였다", "였다고", "였지만", "였는데", "였으나", "였으면", "였어요", "였죠", "였네요", "였으므로", "였으니까", "였으며", "였고"])
@@ -422,3 +434,25 @@ def test_stacked_range_uses_complete_registered_past_copula_family(ending):
     assert screen.score(approved, spoken, "ko", 0.88)[2]
     assert not screen.score(approved, spoken.replace("사장", "오장"), "ko", 0.88)[2]
     assert subject.spoken_form(approved + "상점") == "요한복음 삼장부터4장까지" + ending + "상점"
+
+
+@pytest.mark.parametrize("text, spoken", [
+    ("3장부터4장", "삼장부터사장"),
+    ("8장과 9장을 보십시오.", "팔장과 구장을 보십시오."),
+    ("2장 3절", "이장 삼절"),
+])
+def test_v3_bare_chapter_and_verse_chains_convert_whole(text, spoken):
+    assert subject.spoken_form(text) == spoken
+    assert subject.equivalent(text, spoken)
+
+
+@pytest.mark.parametrize("text", ["사진 2장부터 4장까지", "사진(3-4장)", "종이 3장과 4장", "페이지 2장", "영화 2편", "시 3편"])
+def test_v3_counted_objects_and_bare_pieces_stay(text):
+    assert subject.spoken_form(text) == text
+
+
+def test_v3_screening_hears_the_sino_reading_and_still_flags_native_numerals():
+    from scripts import screen_target_language_audio_units as screen
+    approved = "8장의 맨 첫 절에 주목하십시오."
+    assert screen.score(approved, subject.spoken_form(approved), "ko", 0.88)[2]
+    assert not screen.score(approved, "여덟 장의 맨 첫 절에 주목하십시오.", "ko", 0.88)[2]
