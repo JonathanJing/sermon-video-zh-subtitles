@@ -1,4 +1,4 @@
-zh-Hans	pass	[开发测试] 耶稣警告 · 第八章片段 · 同行 · 证道中文听译	
+zh-Hans	pass	[开发测试] 耶稣警告 · 第八章片段 · 同行 · 证道中文听译
 	warning: optional resource failed: /alignment/if-i-had-more-time-jesus-is-worthy.json: Failed to load resource: the server responded with a status of 404 ()
 	warning: optional resource failed: /alignment/mockup-dev-clip-e2e-20261013T034422Z.json: Failed to load resource: the server responded with a status of 404 ()
 	warning: optional resource failed: /alignment/mockup-dev-clip-real-20261013.json: Failed to load resource: the server responded with a status of 404 ()
@@ -23,7 +23,7 @@ zh-Hans	pass	[开发测试] 耶稣警告 · 第八章片段 · 同行 · 证道�
 	warning: optional resource failed: /english-reference/mockup-dev-180s-e2e-20261012T044117Z.json: Failed to load resource: the server responded with a status of 404 ()
 	warning: optional resource failed: /alignment/mockup-dev-180s-e2e-20261007T193332Z.json: Failed to load resource: the server responded with a status of 404 ()
 	warning: optional resource failed: /english-reference/mockup-dev-180s-e2e-20261007T193332Z.json: Failed to load resource: the server responded with a status of 404 ()
-ko	pass	[개발 테스트] 예수님은 경고하십니다 · 8장 발췌 · 同行 · 证道韩语听译	
+ko	pass	[개발 테스트] 예수님은 경고하십니다 · 8장 발췌 · 同行 · 证道韩语听译
 	warning: optional resource failed: /alignment/mockup-dev-clip-real-20261013.json: Failed to load resource: the server responded with a status of 404 ()
 	warning: optional resource failed: /alignment/if-i-had-more-time-jesus-is-worthy.json: Failed to load resource: the server responded with a status of 404 ()
 	warning: optional resource failed: /english-reference/mockup-dev-clip-real-20261013.json: Failed to load resource: the server responded with a status of 404 ()
@@ -48,7 +48,7 @@ ko	pass	[개발 테스트] 예수님은 경고하십니다 · 8장 발췌 · 同
 	warning: optional resource failed: /alignment/mockup-dev-180s-e2e-20261012T044117Z.json: Failed to load resource: the server responded with a status of 404 ()
 	warning: optional resource failed: /english-reference/mockup-dev-180s-e2e-20261007T193332Z.json: Failed to load resource: the server responded with a status of 404 ()
 	warning: optional resource failed: /english-reference/mockup-dev-180s-e2e-20261012T044117Z.json: Failed to load resource: the server responded with a status of 404 ()
-es	pass	[Prueba de desarrollo] Jesús advierte · fragmento del capítulo 8 · 同行 · 证道西语听译	
+es	pass	[Prueba de desarrollo] Jesús advierte · fragmento del capítulo 8 · 同行 · 证道西语听译
 	warning: optional resource failed: /alignment/mockup-dev-clip-real-20261013.json: Failed to load resource: the server responded with a status of 404 ()
 	warning: optional resource failed: /english-reference/mockup-dev-clip-real-20261013.json: Failed to load resource: the server responded with a status of 404 ()
 	warning: optional resource failed: /alignment/mockup-20261005-dev-180s.json: Failed to load resource: the server responded with a status of 404 ()
