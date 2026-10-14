@@ -1,0 +1,25 @@
+{
+  "codeRevision": "4d8cc08769bd6b11e66067ebed07febe5347758d",
+  "languageContracts": {
+    "tests": 312,
+    "subtests": 34,
+    "elapsedSeconds": 1.29
+  },
+  "deliveryFixture": {
+    "tests": 8,
+    "elapsedSeconds": 3.3
+  },
+  "observedCI": {
+    "head": "306d57ba",
+    "root1": "3 failed, 78 passed, 3 errors, 5 subtests in 24.25s",
+    "cause": "test_machine_checked_delivery SCREENING_ASR dummy d*64 fails current v5 closure gate",
+    "fix": "fixture binds actual implementation_sha256, production gate unchanged"
+  },
+  "developmentStages": [
+    "293 passed/34subtests 1.33s",
+    "4 failed/308passed/34subtests 1.44s terminal compound spacing",
+    "2 failed/310passed/34subtests 1.36s terminal suffix deletion guard"
+  ],
+  "modelsCalled": false,
+  "fullConsumerRepeated": false
+}

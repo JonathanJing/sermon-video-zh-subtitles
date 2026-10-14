@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-budget-settlement-v1",
+  "status": "summarized",
+  "ledgerSchemaVersion": "sermon-source-budget-ledger-v3",
+  "requests": 155,
+  "statuses": {
+    "returned": 155
+  },
+  "reservedMicrousd": 1489941,
+  "returned": 155,
+  "withoutSettlement": 0,
+  "priced": 155,
+  "estimatedMicrousd": 245610,
+  "unknownCost": {},
+  "tokens": {
+    "inputTokens": 43694,
+    "outputTokens": 13634,
+    "cachedInputTokens": 0,
+    "reasoningTokens": 7975
+  },
+  "byModel": {
+    "gpt-6.1-sol": {
+      "returned": 155,
+      "priced": 155,
+      "estimatedMicrousd": 245610
+    }
+  },
+  "invoiceVerified": false
+}

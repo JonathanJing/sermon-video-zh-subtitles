@@ -1,0 +1,35 @@
+{
+  "investigatedHead": "5cbe68443d89e547769b5bd0a1cfa741aafbae36",
+  "ciRun": 38417312621,
+  "ciResult": "local-mock failure: complete pilot CLI returned2; original pilot stdout/node root not retained by its test",
+  "currentRepro": {
+    "tests": 1,
+    "elapsedSeconds": 42.158,
+    "result": "pass",
+    "cliReturncodes": [
+      0,
+      0,
+      2
+    ]
+  },
+  "baseRepro": {
+    "revision": "c1719208edd37073201efd3c827e1afd7e4cc62a",
+    "tests": 1,
+    "elapsedSeconds": 37.703,
+    "result": "pass",
+    "cliReturncodes": [
+      0,
+      0,
+      2
+    ]
+  },
+  "codeComparison": "19 runtime closure files and target test byte-identical between base and investigated head",
+  "conclusion": "Failure not reproduced; root cause unknown. No evidence establishes a change regression or proves preexisting flakiness. Mac/Python3.11 isolated repro differs from CI Linux/Python3.12.",
+  "sourceChanges": false,
+  "modelsCalled": false,
+  "deployment": "not_run",
+  "originalArtifactDownloaded": "mock-tts-sdk-evidence-95cb4fe5c1b49815189a29c3d864c49ac8e4195d contained other mock-TTS test evidence, not failed pilot root",
+  "evidenceRoot": "~/.codex/worktrees/merge-qc-dev-prs/sermon-video-zh-subtitles/artifacts/run/20261013-pr374-pilot-investigation",
+  "runtime": "/tmp/pr374-prefect-venv",
+  "reproDriver": "/tmp/pr374-pilot-repro.py"
+}
