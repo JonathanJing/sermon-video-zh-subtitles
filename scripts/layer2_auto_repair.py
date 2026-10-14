@@ -707,14 +707,14 @@ def reopenable_groups(entries: list[dict], meaning_notes: dict | None) -> dict[s
     return eligible
 
 
-def token_cap(initial_tokens: int, token_bound: int | None) -> int:
+def token_cap(initial_tokens: int, token_bound: int | None, spend_fraction: float = SPEND_FRACTION) -> int:
     """The repair token allowance: 10% of the initial round, but never less than the
     worst-case reservation of ``MINIMUM_REPAIR_CALLS`` calls, like the call cap.
 
     Repairs are reserved at the enforced request bound (input plus completion limit),
     about ten times a real call, so 10% alone could not pay for one repair on a
     16-group clip and for about four on a full week (user decision 2026-10-14)."""
-    fraction = math.ceil(initial_tokens * SPEND_FRACTION)
+    fraction = math.ceil(initial_tokens * spend_fraction)
     return fraction if token_bound is None else max(fraction, MINIMUM_REPAIR_CALLS * token_bound)
 
 
@@ -725,6 +725,7 @@ def _affordable_repairs(entries: list[dict]) -> tuple[int, str]:
     initial calls and of the initial tokens, each at least ``MINIMUM_REPAIR_CALLS``
     calls (``token_cap``), reserved at the enforced worst case per call."""
     initial = entries[0]["spend"]
+    spend_fraction = entries[0].get("repairSpendFraction", SPEND_FRACTION)
     if initial["callsWithoutUsage"] or any(e["spend"]["callsWithoutUsage"] for e in entries[1:]):
         return 0, "repair_token_usage_unavailable"
     token_bound = _repair_token_bound()
@@ -732,8 +733,8 @@ def _affordable_repairs(entries: list[dict]) -> tuple[int, str]:
         return 0, "repair_token_bound_unavailable"
     calls = sum(e["spend"]["calls"] for e in entries[1:])
     tokens = sum(e["spend"]["tokens"] for e in entries[1:])
-    cap_calls = max(MINIMUM_REPAIR_CALLS, math.ceil(initial["calls"] * SPEND_FRACTION))
-    cap_tokens = token_cap(initial["tokens"], token_bound)
+    cap_calls = max(MINIMUM_REPAIR_CALLS, math.ceil(initial["calls"] * spend_fraction))
+    cap_tokens = token_cap(initial["tokens"], token_bound, spend_fraction)
     return min(max(0, (cap_calls - calls) // CALLS_PER_REPAIR),
                max(0, (cap_tokens - tokens) // (CALLS_PER_REPAIR * token_bound))), "repair_spend_cap"
 
@@ -811,7 +812,8 @@ def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], val
 
 def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Path,
           ledger_root: Path, *, group_workers: int = 1, meaning_notes: dict | None = None,
-          meaning_notes_sha256: str | None = None, back_translation_qc: dict | None = None) -> dict:
+          meaning_notes_sha256: str | None = None, back_translation_qc: dict | None = None,
+          repair_spend_fraction: float | None = None) -> dict:
     """Run rounds until every group passes or repair stops; write and return a receipt.
 
     ``run_round(out, reuse_from, brief, collector)`` returns evidence when every
@@ -827,9 +829,16 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
     ``back_translation_qc`` is a failed text QC receipt of this chain's passed head
     (gate 4): its failed groups reopen the chain for one repair round (``_reopen_for_qc``).
     """
+    if repair_spend_fraction is None:
+        repair_spend_fraction = SPEND_FRACTION
+    _require(type(repair_spend_fraction) in (int, float)
+             and SPEND_FRACTION <= repair_spend_fraction <= max(0.30, SPEND_FRACTION),
+             "invalid_repair_spend_fraction")
     value = lineage(request)
     out_root = Path(out_root)
     entries = load_ledger(ledger_root, value)
+    _require(not entries or entries[0].get("repairSpendFraction", SPEND_FRACTION) == repair_spend_fraction,
+             "repair_spend_fraction_changed_within_ledger")
     if back_translation_qc is not None:
         # A QC receipt repairs the passed chain it judged; it never starts or silently skips a chain.
         consumed = any((entry.get("reopenedBy") or {}).get("qcReceiptSha256") == json_sha256(back_translation_qc)
@@ -866,7 +875,7 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
                      and not initial["callsWithoutUsage"]
                      and not any(e["spend"]["callsWithoutUsage"] for e in entries[1:])
                      and spent["tokens"] + len(brief["groups"]) * CALLS_PER_REPAIR * token_bound
-                     <= token_cap(initial["tokens"], token_bound),
+                     <= token_cap(initial["tokens"], token_bound, repair_spend_fraction),
                      "repair_token_reservation_unavailable")
         collector = FailureCollector(
             total_groups, [row["translationGroupId"] for row in brief["groups"]] if brief else None,
@@ -913,9 +922,9 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
             for skipped in report["notDispatched"]:
                 stopped.append({**skipped, "failureCodes": [], "reasonCode": "not_dispatched_after_systemic_stop",
                                 "evidencePath": None})
-            cap_calls = max(MINIMUM_REPAIR_CALLS, math.ceil(initial["calls"] * SPEND_FRACTION))
+            cap_calls = max(MINIMUM_REPAIR_CALLS, math.ceil(initial["calls"] * repair_spend_fraction))
             token_bound = _repair_token_bound()
-            cap_tokens = token_cap(initial["tokens"], token_bound)
+            cap_tokens = token_cap(initial["tokens"], token_bound, repair_spend_fraction)
             known_usage = not initial["callsWithoutUsage"] and not spend["callsWithoutUsage"] \
                 and not any(e["spend"]["callsWithoutUsage"] for e in entries[1:])
             # Repair as many groups as the cap still allows, in source order.
@@ -939,7 +948,8 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
             if not repairs:
                 outcome = "stopped"
         elif brief is not None and (spend["callsWithoutUsage"]
-                                    or spent["tokens"] > token_cap(initial["tokens"], _repair_token_bound())):
+                                    or spent["tokens"] > token_cap(initial["tokens"], _repair_token_bound(),
+                                                                   repair_spend_fraction)):
             # Even a passing injected/misbehaving transport cannot hide unknown
             # or excessive usage behind successful semantic/plugin checks.
             outcome = "stopped"
@@ -960,6 +970,7 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
                 "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256",
                 "translationPolicySha256")}, "groups": [repair_row(failure, meaning_notes) for failure in repairs]}
         entry = append_ledger(ledger_root, value, entries, {
+            **({"repairSpendFraction": repair_spend_fraction} if not entries and repair_spend_fraction != SPEND_FRACTION else {}),
             "runDirectory": str(out.resolve()), "routingVersion": ROUTING_VERSION,
             "repairBriefSha256": json_sha256(brief) if brief else None,
             "evidenceSha256": json_sha256(evidence) if evidence is not None else None,
@@ -981,6 +992,8 @@ def _receipt(out_root: Path, ledger_root: Path, value: dict, entries: list[dict]
                "initialSpend": entries[0]["spend"],
                "repairSpend": {"calls": sum(e["spend"]["calls"] for e in entries[1:]),
                                "tokens": sum(e["spend"]["tokens"] for e in entries[1:])},
+               **({"repairSpendFraction": entries[0]["repairSpendFraction"]}
+                  if "repairSpendFraction" in entries[0] else {}),
                "stoppedGroups": stopped,
                "gatesPassed": ["independent_review", "language_plugin"] if outcome == "passed" else [],
                "releaseAuthority": "none",

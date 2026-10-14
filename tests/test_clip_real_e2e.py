@@ -53,6 +53,23 @@ class SpecificationTests(unittest.TestCase):
                          (2, "dev", 120.0))
         self.assertEqual(spec["spark"]["sessionId"], "clip-e2e-u101-test")
 
+    def test_raised_repair_fraction_is_scoped_to_named_dev_locales(self):
+        base = json.loads(spec_files(self.base).read_text())
+        layer2 = {**base["layer2"], "repairSpendFractionByLocale": {"ko": 0.30}}
+        spec = subject.load_spec(spec_files(self.base, schemaVersion=subject.SCOPED_REPAIR_SPEC_SCHEMA,
+                                            layer2=layer2))
+        self.assertEqual(spec["layer2"]["repairSpendFractionByLocale"], {"ko": 0.30})
+        with self.assertRaisesRegex(ValueError, "specification v2"):
+            subject.load_spec(spec_files(self.base, layer2=layer2))
+        for bad in ({"fr": 0.30}, {"ko": 0.31}, {"ko": True}):
+            with self.assertRaisesRegex(ValueError, "repairSpendFractionByLocale"):
+                subject.load_spec(spec_files(self.base, schemaVersion=subject.SCOPED_REPAIR_SPEC_SCHEMA,
+                    layer2={**base["layer2"],
+                    "repairSpendFractionByLocale": bad}))
+        with self.assertRaisesRegex(ValueError, "only supported in isolated Dev runs"):
+            subject.load_spec(spec_files(self.base, schemaVersion=subject.SCOPED_REPAIR_SPEC_SCHEMA,
+                                         layer2=layer2, openai={"environment": "prod"}))
+
     def test_unsafe_or_incomplete_specifications_are_refused(self):
         page = {"pageId": "dev-weekly", "display": {"ko": DISPLAY, "es": DISPLAY}}
         bad = [({"page": page}, "mockup- page"),

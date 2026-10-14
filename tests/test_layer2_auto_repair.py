@@ -155,8 +155,9 @@ class LoopTests(unittest.TestCase):
         bound.start()
         self.addCleanup(bound.stop)
 
-    def drive(self, fleet, out="runs"):
-        return subject.drive(REQUEST, fleet.groups, fleet, self.root / out, self.root / f"state-{out}")
+    def drive(self, fleet, out="runs", *, repair_spend_fraction=subject.SPEND_FRACTION):
+        return subject.drive(REQUEST, fleet.groups, fleet, self.root / out, self.root / f"state-{out}",
+                             repair_spend_fraction=repair_spend_fraction)
 
     def test_one_repair_then_release(self):
         fleet = Fleet(self, 46, [{"g21": failing("quotationAttribution")}])
@@ -182,6 +183,18 @@ class LoopTests(unittest.TestCase):
         self.assertEqual(receipt["repairSpend"], {"calls": 4, "tokens": 400})
         self.assertEqual([(row["translationGroupId"], row["reasonCode"]) for row in receipt["stoppedGroups"]],
                          [("g21", "repair_spend_cap")])
+
+    def test_scoped_thirty_percent_cap_repairs_third_group_and_is_frozen(self):
+        three = {"g2": failing("completeMeaning"), "g5": failing("noAddedMeaning"),
+                 "g21": failing("negationsNumbersNames")}
+        fleet = Fleet(self, 46, [three])
+        with patch.object(subject, "_repair_token_bound", return_value=400):
+            receipt = self.drive(fleet, repair_spend_fraction=0.30)
+        self.assertEqual(receipt["status"], "all_groups_passed")
+        self.assertEqual(fleet.calls, ["all", ["g2", "g21", "g5"]])
+        self.assertEqual(receipt["repairSpendFraction"], 0.30)
+        with self.assertRaisesRegex(ValueError, "repair_spend_fraction_changed_within_ledger"):
+            self.drive(fleet)
 
     def test_token_floor_is_four_worst_case_calls_and_never_lowers_the_fraction(self):
         self.assertEqual(subject.token_cap(59_363, 18_432), 4 * 18_432)  # 2026-10-14 clip: 10% is 5,937

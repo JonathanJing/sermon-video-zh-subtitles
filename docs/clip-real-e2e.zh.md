@@ -40,6 +40,7 @@
 | `layer2.policyTemplates` / `plugins` | 每种语言：源周次冻结的政策，以及语言插件 |
 | `layer2.backend` | 可选，默认 `openai_api`；显式 `claude_cli_opus` 会把片段政策重新冻结为 Opus 5.5 high 初译及 medium 复核。Claude 订阅调用的列价等价金额单列，不计入 `budget.totalUsd`；文本和音频质检仍计入批准的美元总额。 |
 | `layer2.claudeListPriceCapUsdPerLocale` | 仅用于明确批准的单次 Claude 片段测试；覆盖该次 Layer 2 规划中的每语订阅列价等值上限，随运行规格和预算收据冻结，不改周更配置。 |
+| `layer2.repairSpendFractionByLocale` | 运行规格 v2 专有，仅限隔离 Dev 且需本次明确授权；按语言把 Layer 2 自动修订的调用和 token 子上限从默认 10% 提高到最多 30%。执行配置用 v6；旧 v1/v3/v5 保持原语义。全局预算、单句次数及质检放行条件不变；比例写入修复账本，续跑不得更改。 |
 | `layer2.scopeRegisterRules` | 可列出需要裁去片段外来源单元规则的语言；保留通用规则、片段内的来源绑定条目，并把结果重新冻结到片段政策。 |
 | `layer2.initialClaudeCacheSources` | 可按语言引用先前失败运行第一轮已返回的 Claude 缓存。导入前核对来源、锚点、政策、插件、运行身份和每个返回；正式运行再次核对请求指纹。未返回的启动标记须由终态作业及有效预算账本证明没有预留，才能只跳过这些未派发项；其余未知结果拒绝导入。 |
 | `layer3.attestationTemplates` / `speakerRegistry` | 源周次的用户声音授权（会改绑到本片段的来源包）和说话人登记 |

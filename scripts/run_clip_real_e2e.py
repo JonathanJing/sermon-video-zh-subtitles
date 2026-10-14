@@ -47,6 +47,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 SPEC_SCHEMA = "sermon-clip-real-e2e-run-v1"
+SCOPED_REPAIR_SPEC_SCHEMA = "sermon-clip-real-e2e-run-v2"
 LOCALES = ("zh-Hans", "ko", "es")
 DEV_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app"
 PY = sys.executable
@@ -86,7 +87,8 @@ def load_spec(path: Path) -> dict:
     spec = read(path)
     base = path.parent
     resolve = lambda value: str((base / value).resolve())
-    require(spec.get("schemaVersion") == SPEC_SCHEMA, "unsupported run specification")
+    require(spec.get("schemaVersion") in (SPEC_SCHEMA, SCOPED_REPAIR_SPEC_SCHEMA),
+            "unsupported run specification")
     require(set(spec) <= {"schemaVersion", "name", "clipSpec", "locales", "openai", "authorization", "budget", "layer1",
                           "layer2", "layer3", "qc", "spark", "page", "notes"}, "unknown run specification field")
     require(isinstance(spec.get("name"), str) and spec["name"].replace("-", "").isalnum() and len(spec["name"]) <= 60,
@@ -124,6 +126,13 @@ def load_spec(path: Path) -> dict:
         require(layer2["backend"] == "claude_cli_opus" and type(cap) in (int, float)
                 and math.isfinite(cap) and 0 < cap <= 100,
                 "layer2.claudeListPriceCapUsdPerLocale needs Claude and a cap in (0, 100]")
+    repair_fractions = layer2.get("repairSpendFractionByLocale", {})
+    require(isinstance(repair_fractions, dict) and set(repair_fractions) <= set(locales)
+            and all(type(fraction) in (int, float) and math.isfinite(fraction)
+                    and 0.10 <= fraction <= 0.30 for fraction in repair_fractions.values()),
+            "layer2.repairSpendFractionByLocale needs run locales and fractions in [0.10, 0.30]")
+    require(not repair_fractions or spec["schemaVersion"] == SCOPED_REPAIR_SPEC_SCHEMA,
+            "raised Layer 2 repair spend requires run specification v2")
     for field, table in (("policyTemplates", layer2), ("plugins", layer2), ("attestationTemplates", layer3)):
         require(isinstance(table.get(field), dict) and set(locales) <= set(table[field]), f"{field} missing a locale")
         table[field] = {k: resolve(v) for k, v in table[field].items() if k in locales}
@@ -134,6 +143,8 @@ def load_spec(path: Path) -> dict:
     openai = spec.setdefault("openai", {})
     openai.setdefault("environment", "dev")
     require(openai["environment"] in ("dev", "prod"), "openai.environment must be dev or prod")
+    require(not repair_fractions or openai["environment"] == "dev",
+            "raised Layer 2 repair spend is only supported in isolated Dev runs")
     openai["envFile"] = resolve(openai.get("envFile", str(ROOT / ".env.openai")))
     qc = spec.setdefault("qc", {})
     qc.setdefault("maxRevisions", 2)
@@ -441,11 +452,15 @@ def stage_layer2_setup(run: Run):
         from scripts import layer2_auto_repair as auto_repair
         run_id = hashlib.sha256(("clip-real-e2e " + spec["name"] + " " + ",".join(spec["locales"])).encode()).hexdigest()
         write(l2 / "execution.json", {
-            "schemaVersion": controller.AUTO_REPAIR_SCHEMA, "productionRunId": run_id, "inspectionConfig": "inspection.json",
+            "schemaVersion": (controller.DEV_REPAIR_SCHEMA if spec["layer2"].get("repairSpendFractionByLocale")
+                              else controller.AUTO_REPAIR_SCHEMA),
+            "productionRunId": run_id, "inspectionConfig": "inspection.json",
             "jobRoot": "layer2-jobs",
             "locales": {k: {"outputDirectory": f"text/{k}", "plugin": str(plugins[k])} for k in spec["locales"]},
             "layer2AutoRepair": {"routingVersion": auto_repair.ROUTING_VERSION, "groupWorkers": 8,
-                                 "maxActiveLocales": len(spec["locales"])}})
+                                 "maxActiveLocales": len(spec["locales"]),
+                                 **({"repairSpendFractionByLocale": spec["layer2"]["repairSpendFractionByLocale"]}
+                                    if spec["layer2"].get("repairSpendFractionByLocale") else {})}})
     if not (l2 / "qc-inputs.json").exists():
         run.sh("route-probe", [PY, Path(__file__).resolve(), "_route", "--out", run.dir / "logs/route.json"], launcher=True)
         route = read(run.dir / "logs/route.json")
@@ -597,7 +612,8 @@ def text_qc(run: Run, locale: str, candidate: Path, out_name: str) -> dict:
 def revise(run: Run, locale: str, receipt: str, number: int) -> Path:
     """A Layer 2 revision of one locale carrying its failed QC receipt (execution v5, gate 4)."""
     from scripts import canonical_layer2_controller as controller
-    schema = getattr(controller, "QC_REPAIR_SCHEMA", None)
+    schema = getattr(controller, "DEV_REPAIR_SCHEMA" if run.spec["layer2"].get("repairSpendFractionByLocale")
+                     else "QC_REPAIR_SCHEMA", None)
     require(schema is not None, "QC repair needs execution schema v5 (PR #402)")
     revision = run.dir / f"l2-{locale}-r{number}"
     base = read(run.l2 / "execution.json")

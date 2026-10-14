@@ -66,11 +66,22 @@ class ControllerAutoRepairTests(unittest.TestCase):
         config = subject.load_configuration(self.base.path)
         self.assertEqual(config.auto_repair, BINDING)
         self.assertEqual(subject._locale_capacity(config), 3)
+        self.base.config_data["schemaVersion"] = subject.DEV_REPAIR_SCHEMA
+        self.base.config_data["layer2AutoRepair"] = {**BINDING, "repairSpendFractionByLocale": {"ko": 0.30}}
+        self.base.save_config()
+        self.assertEqual(subject.load_configuration(self.base.path).auto_repair["repairSpendFractionByLocale"],
+                         {"ko": 0.30})
+        self.base.config_data["schemaVersion"] = subject.AUTO_REPAIR_SCHEMA
+        self.base.save_config()
+        with self.assertRaisesRegex(ValueError, "invalid_execution_configuration"):
+            subject.load_configuration(self.base.path)
         for bad in ({**BINDING, "routingVersion": "other"}, {**BINDING, "groupWorkers": 17},
                     {**BINDING, "groupWorkers": 0}, {**BINDING, "maxActiveLocales": 4},
                     {**BINDING, "sourceMeaningNotes": 7}, {**BINDING, "sourceMeaningNotes": ""},
                     # v3 keeps its field set: a QC repair needs execution v5.
                     {**BINDING, "backTranslationQc": {"zh-Hans": "qc.json"}},
+                    {**BINDING, "repairSpendFractionByLocale": {"ko": 0.31}},
+                    {**BINDING, "repairSpendFractionByLocale": {"fr": 0.30}},
                     {"routingVersion": auto_repair.ROUTING_VERSION}):
             self.base.config_data["layer2AutoRepair"] = bad
             self.base.save_config()

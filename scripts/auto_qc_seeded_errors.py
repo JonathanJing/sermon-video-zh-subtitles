@@ -377,27 +377,32 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
         clean_checked += 1
         false_positives += bool(problems)
     for kind in TEXT_KINDS:
-        # Applicability searches the complete bound candidate, before trial caps
-        # and surface screens; zero executed trials alone never grants an exemption.
-        # Every kind records where it could be seeded in the complete candidate; a kind
-        # with no site anywhere is not applicable to this text (zero trials alone never is).
-        applicable = [group["groupId"] for group in groups
-                      if mutate_text(group, kind, locale, policy, groups) is not None]
+        # A semantic trial must leave the deterministic surface checks unchanged:
+        # otherwise it cannot measure whether back-translation catches the error.
+        # Search the complete candidate before the trial cap, and retain excluded
+        # sites so an empty applicability record does not hide why no trial ran.
+        applicable, surface_excluded, mutations = [], [], {}
+        for group in groups:
+            mutated = mutate_text(group, kind, locale, policy, groups)
+            if mutated is None or mutated == group["targetText"]:
+                continue
+            if kind in SEMANTIC_KINDS:
+                surface, _ = text_qc.group_problems({**group, "targetText": mutated}, locale,
+                                                   policy=policy, median=median)
+                baseline_surface, _ = text_qc.group_problems(group, locale, policy=policy, median=median)
+                if set(surface) - set(baseline_surface):
+                    surface_excluded.append(group["groupId"])
+                    continue
+            applicable.append(group["groupId"])
+            mutations[group["groupId"]] = mutated
         trials = detected = 0
         misses = []
         for group in groups:
             if trials >= max_trials:
                 break
-            mutated = mutate_text(group, kind, locale, policy, groups)
-            if mutated is None or mutated == group["targetText"]:
+            mutated = mutations.get(group["groupId"])
+            if mutated is None:
                 continue
-            if kind in SEMANTIC_KINDS:
-                # Do not let a surface or length failure satisfy this trial.
-                surface, _ = text_qc.group_problems({**group, "targetText": mutated}, locale,
-                                                  policy=policy, median=median)
-                baseline_surface, _ = text_qc.group_problems(group, locale, policy=policy, median=median)
-                if set(surface) - set(baseline_surface):
-                    continue
             trials += 1
             problems, _ = text_qc.group_problems({**group, "targetText": mutated}, locale,
                                                  policy=policy, median=median, call=call)
@@ -411,6 +416,8 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
                        "missedGroupIds": misses}
         if applicable is not None:
             kinds[kind]["applicableGroupIds"] = applicable
+        if surface_excluded:
+            kinds[kind]["surfaceExcludedGroupIds"] = surface_excluded
     return {"kinds": kinds, "cleanChecked": clean_checked, "cleanFalsePositives": false_positives}
 
 

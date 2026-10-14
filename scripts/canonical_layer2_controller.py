@@ -50,13 +50,21 @@ SHADOW_SCHEMA = 'sermon-canonical-layer2-execution-v4'
 # receipt of that lane's passed repair chain. v3/v4 keep their exact field set; a v3
 # configuration needs no migration and becomes v5 only to carry a QC repair.
 QC_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v5'
+# v6 keeps v5 behavior and binds a per-locale repair spend fraction for an
+# explicitly authorized isolated Dev clip. Older execution schemas remain exact.
+DEV_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v6'
 MAX_AUTO_REPAIR_LOCALES = 3
 
 
-def _auto_repair_binding(value, *, allow_qc=False):
+def _auto_repair_binding(value, *, allow_qc=False, allow_scoped_fraction=False):
     required = {'routingVersion', 'groupWorkers', 'maxActiveLocales'}
     qc = value.get('backTranslationQc', {}) if isinstance(value, dict) else None
-    optional = {'sourceMeaningNotes', 'backTranslationQc'} if allow_qc else {'sourceMeaningNotes'}
+    optional = {'sourceMeaningNotes'}
+    if allow_qc:
+        optional.add('backTranslationQc')
+    if allow_scoped_fraction:
+        optional.add('repairSpendFractionByLocale')
+    fractions = value.get('repairSpendFractionByLocale', {}) if isinstance(value, dict) else None
     require(isinstance(value, dict) and required <= set(value) <= required | optional
             and value['routingVersion'] == auto_repair.ROUTING_VERSION
             # Optional: the Layer 1 machine audio adjudication notes (meaning-notes.json beside its receipt)
@@ -66,6 +74,13 @@ def _auto_repair_binding(value, *, allow_qc=False):
             # its failed groups reopen the chain for one repair round (layer2_auto_repair._reopen_for_qc).
             and isinstance(qc, dict) and ('backTranslationQc' not in value or bool(qc))
             and all(locale in pipeline.LOCALES and type(path) is str and path for locale, path in qc.items())
+            # A single Dev run may explicitly raise the repair sub-cap for named
+            # locales; the default production policy remains ten percent.
+            and isinstance(fractions, dict)
+            and (allow_scoped_fraction or 'repairSpendFractionByLocale' not in value)
+            and all(locale in pipeline.LOCALES and type(fraction) in (int, float)
+                    and auto_repair.SPEND_FRACTION <= fraction <= 0.30
+                    for locale, fraction in fractions.items())
             and type(value['groupWorkers']) is int
             and 1 <= value['groupWorkers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE
             and type(value['maxActiveLocales']) is int
@@ -127,14 +142,19 @@ def load_configuration(path):
              or (set(value) == required_keys | {'concurrencyProfile', 'resourcePolicy'}
                  and value['schemaVersion'] == CONCURRENT_SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair'}
-                 and value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, QC_REPAIR_SCHEMA})
+                 and value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, QC_REPAIR_SCHEMA, DEV_REPAIR_SCHEMA})
              or (set(value) == required_keys | {'layer2AutoRepair', 'candidateMode'}
                  and value['schemaVersion'] == SHADOW_SCHEMA and candidate_mode == 'shadow'))
             and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
-    repair_binding = (_auto_repair_binding(value['layer2AutoRepair'], allow_qc=value['schemaVersion'] == QC_REPAIR_SCHEMA)
-                      if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA, QC_REPAIR_SCHEMA} else None)
+    repair_binding = (_auto_repair_binding(
+        value['layer2AutoRepair'], allow_qc=value['schemaVersion'] in {QC_REPAIR_SCHEMA, DEV_REPAIR_SCHEMA},
+        allow_scoped_fraction=value['schemaVersion'] == DEV_REPAIR_SCHEMA)
+                      if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA, QC_REPAIR_SCHEMA,
+                                                    DEV_REPAIR_SCHEMA} else None)
+    require(repair_binding is None or set(repair_binding.get('repairSpendFractionByLocale', {})) <= set(value['locales']),
+            'invalid_execution_configuration')
     inspection_path = _path(path.parent, value['inspectionConfig'])
     inspection = _json(inspection_path)
     require(inspection.get('schemaVersion') == packages.SCHEMA
@@ -620,7 +640,9 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
         require(qc_digest is not None and jobs._digest(qc_receipt) == qc_digest, 'back_translation_qc_changed_after_admission')
     receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
                                 group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
-                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt)
+                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt,
+                                repair_spend_fraction=config.auto_repair.get('repairSpendFractionByLocale', {}).get(
+                                    policy['targetLocale'], auto_repair.SPEND_FRACTION))
     require(receipt['status'] == 'all_groups_passed', 'layer2_auto_repair_stopped')
     final = Path(receipt['finalRunDirectory'])
     require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),

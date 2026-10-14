@@ -1079,10 +1079,13 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             # every cache fingerprint includes this transport identity, and the
             # prior-input check above rejects any cache made under another one.
             backend = transport_identity.get('backend')
-            require(resume_cache_from is None and (reuse_from is None
-                    or (partial_repair_brief is not None and backend == 'openai_api')
-                    or (backend == 'claude_cli' and cli_same_job_repair(reuse_from, out, partial_repair_brief))),
-                    "CLI transport permits only a bound next repair round in the same job")
+            if backend == 'openai_api':
+                require(resume_cache_from is None and (reuse_from is None or partial_repair_brief is not None),
+                        "cross-run cache reuse is not enabled")
+            else:
+                require(backend == 'claude_cli' and resume_cache_from is None
+                        and (reuse_from is None or cli_same_job_repair(reuse_from, out, partial_repair_brief)),
+                        "CLI transport permits only a bound next repair round in the same job")
         if revision_brief is not None:
             identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
         if partial_repair_brief is not None:

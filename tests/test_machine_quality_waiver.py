@@ -970,6 +970,15 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         self.assertIn("invalid applicability record for text.swapped_name",
                       waiver.calibration_problems(calibration, "zh-Hans", waiver.implementation_sha256()))
 
+    def test_semantic_calibration_excludes_chapter_swap_caught_by_surface_check(self):
+        group = {"groupId": "g0", "english": "When they read Revelation 6 and 7, they understood.",
+                 "targetText": "Cuando leían Apocalipsis 6 y 7, entendieron."}
+        row = seeded.calibrate_text([group], "es")["kinds"]["swapped_quantity"]
+        self.assertEqual(row["applicableGroupIds"], [])
+        self.assertEqual(row["surfaceExcludedGroupIds"], ["g0"])
+        self.assertEqual(row["trials"], 0)
+        self.assertTrue(waiver.calibration_kind_not_applicable("text.swapped_quantity", row))
+
     def test_malformed_swapped_name_row_is_rejected_without_crashing(self):
         calibration = self.calibration("zh-Hans")
         for malformed in (None, [], "invalid"):
