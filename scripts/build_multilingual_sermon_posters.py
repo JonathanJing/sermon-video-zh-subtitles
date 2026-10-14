@@ -63,6 +63,7 @@ def review_label(locale, package):
 
 
 PRODUCTION_ORIGIN = 'https://ai-for-god-sermon-audio.web.app'
+TEMPLATE_VERSION = 'tongxing-dual-qr-v2'
 
 
 def poster_origin(value, non_production=False):
@@ -224,7 +225,7 @@ def main():
     renderer = Path(__file__).with_name('render_weekly_poster.swift')
     art, prompt = Path(args.art).resolve(), Path(args.art_prompt).resolve()
     badges = prepare_badges(out, bundles)
-    provenance = dict(templateVersion='tongxing-dual-qr-v1', templateSha256=digest(Path(__file__).with_name('weekly_poster_template.py')), badgeHashes={loc:digest(path) for loc,path in badges.items()}, artSha256=digest(art), promptSha256=digest(prompt),
+    provenance = dict(templateVersion=TEMPLATE_VERSION, templateSha256=digest(Path(__file__).with_name('weekly_poster_template.py')), badgeHashes={loc:digest(path) for loc,path in badges.items()}, artSha256=digest(art), promptSha256=digest(prompt),
                       rendererSha256=digest(renderer), builderSha256=digest(__file__))
     swift = shutil.which('swift')
     if not swift:
@@ -256,7 +257,7 @@ def main():
             receipt.update(visualReview=dict(reviewer='codex', humanApproval=False),
                            visualReviewedAt=datetime.datetime.now(datetime.timezone.utc).isoformat())
         write(receipt_path, receipt)
-    write(out / 'poster-manifest.json', dict(schemaVersion='tongxing-poster-manifest-v1', templateVersion='tongxing-dual-qr-v1', origin=origin, productionOrigin=production, artSha256=provenance['artSha256'], locales={loc:dict(receipt=str((out / loc / 'poster-receipt.json').relative_to(out)), contentLocale=b['source']['targetLocale'], announcementEligible=b['source'].get('announcementEligible',True)) for loc,b in bundles.items()}))
+    write(out / 'poster-manifest.json', dict(schemaVersion='tongxing-poster-manifest-v1', templateVersion=TEMPLATE_VERSION, origin=origin, productionOrigin=production, artSha256=provenance['artSha256'], locales={loc:dict(receipt=str((out / loc / 'poster-receipt.json').relative_to(out)), contentLocale=b['source']['targetLocale'], announcementEligible=b['source'].get('announcementEligible',True)) for loc,b in bundles.items()}))
     completed = all(read(out / loc / 'poster-receipt.json')['status'] == 'complete' for loc in bundles)
     status = 'complete' if completed else 'qr_verified_visual_review_pending'
     print(json.dumps(dict(status=status if production else 'non_production_proof_' + status,
