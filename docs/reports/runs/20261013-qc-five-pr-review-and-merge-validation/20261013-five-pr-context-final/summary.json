@@ -1,0 +1,16 @@
+{
+  "status": "pass",
+  "exitCode": 0,
+  "testedCommit": "a0eaf047caab7dc36b7839a7a0ffa81c7a3ea7ff",
+  "tests": 735,
+  "subtests": 25,
+  "durationSeconds": 44.07,
+  "qcImplementationSha256": "02c34f07cadd06d2ddb3c97a8a6f7c24a98d3d9e27d70e01999c45ea5627fae0",
+  "scoringImplementationSha256": "10711b5d9d2309ddb2461c4442c61c55ccb1fd167fd95d9bee1a06d0453c394b",
+  "modelCalls": 0,
+  "deployment": "not_run",
+  "ci": "pending",
+  "formalRun": "requires recalibration and new waiver receipts under final code",
+  "scope": "Seven targeted modules on final combined tree including backlog and v5 bare-range guards",
+  "oldEvidence": "5cbe stages and the unpushed real-model local combination cannot authorize this code; 5cbe local-mock CI failure not reproduced and root cause unknown"
+}

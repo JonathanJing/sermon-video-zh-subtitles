@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261009-dev-180s-e2e-20261009T062736Z",
+  "runs": [
+    {
+      "label": "e2e-20261009T062736Z",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/local-environment-setup-9a27e4/artifacts/dev-180s-page-test-20261004/e2e-20261009T062736Z",
+      "skipped": {
+        ".json": 338,
+        ".js": 9,
+        ".html": 48,
+        ".mjs": 70,
+        ".svg": 3,
+        ".png": 12,
+        ".srt": 2,
+        ".mp3": 138,
+        ".pdf": 4,
+        ".wav": 13,
+        ".mp4": 15,
+        ".jpg": 1,
+        ".css": 4,
+        ".lock": 5,
+        ".md": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 193787,
+      "truncated": false,
+      "sha256": "ef7b28c1cdd37f28e31c7a753c25e956f46d63c793bdcfdccc6ff0c020c4222f",
+      "redactions": {}
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "baseline.log",
+      "kind": "log",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "ca98a008bb9cc8b663272b78aa7762947f415a27336c3dd1892349726524dc9b",
+      "redactions": {}
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "build-inputs.log",
+      "kind": "log",
+      "bytes": 619,
+      "truncated": false,
+      "sha256": "47d5dae435ae1e7ee1b48cd5c09bef05e98e97c745654fad6a89d5c77b905dca",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "delivery-preflight.log",
+      "kind": "log",
+      "bytes": 1401,
+      "truncated": false,
+      "sha256": "fdd4c48291eb16cfed1a337b4eef3ad0d91e14427efd249428fe59b951e9f2d2",
+      "redactions": {}
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "inputs/summary.json",
+      "kind": "whole",
+      "bytes": 469,
+      "truncated": false,
+      "sha256": "3ecbff226f39800446ba26fe5918baf021cb47b8ed6b8001b37294aa9533c78d",
+      "redactions": {}
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "preflight/media-plan.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "preflight/media-result.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "preflight/media-submit.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "preflight/store/owners/56f570d491ab953d6f905dfc7d4a7f169de97fd23e346d6f400b6e95bf11b9d4/worker.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "preflight/summary.json",
+      "kind": "whole",
+      "bytes": 3746,
+      "truncated": false,
+      "sha256": "3836e988de2c7ceb34b60ec0fb4e5eb9f2dc772a2c1d5ea102bf8fb2de87678c",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "preflight/unapproved-source-plan.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 103,
+      "truncated": false,
+      "sha256": "7656e55ca4b0058ca11716e4ac2d8f51953a81376e9cccdbc8af064f87424375",
+      "redactions": {}
+    },
+    {
+      "run": "e2e-20261009T062736Z",
+      "path": "verify-clip.log",
+      "kind": "log",
+      "bytes": 3746,
+      "truncated": false,
+      "sha256": "3836e988de2c7ceb34b60ec0fb4e5eb9f2dc772a2c1d5ea102bf8fb2de87678c",
+      "redactions": {
+        "home_dir": 7
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
