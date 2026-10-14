@@ -19,15 +19,21 @@ let ink = NSColor(calibratedRed: 0.055, green: 0.23, blue: 0.24, alpha: 1)
 let muted = NSColor(calibratedRed: 0.29, green: 0.39, blue: 0.39, alpha: 1)
 let paper = NSColor(calibratedRed: 0.953, green: 0.941, blue: 0.897, alpha: 1)
 var posterLocale = "zh-Hans"
-func font(_ size: CGFloat, serif: Bool = false) -> NSFont {
-    return NSFont.systemFont(ofSize: size, weight: serif ? .bold : .regular)
+func font(_ size: CGFloat, headline: Bool = false) throws -> NSFont {
+    guard headline else { return NSFont.systemFont(ofSize: size, weight: .regular) }
+    let titleFonts = ["zh-Hans": "STSongti-SC-Bold", "ko": "AppleMyungjo",
+                      "es": "Georgia-Bold", "en": "Georgia-Bold"]
+    guard let name = titleFonts[posterLocale], let face = NSFont(name: name, size: size) else {
+        throw Failure(description: "Editorial title font unavailable for \(posterLocale)")
+    }
+    return face
 }
-func text(_ value: String, _ rect: NSRect, maxSize: CGFloat, minSize: CGFloat = 16, serif: Bool = false, color: NSColor = ink, alignment: NSTextAlignment = .left) throws {
+func text(_ value: String, _ rect: NSRect, maxSize: CGFloat, minSize: CGFloat = 16, headline: Bool = false, color: NSColor = ink, alignment: NSTextAlignment = .left) throws {
     guard !value.isEmpty else { return }
     let style = NSMutableParagraphStyle(); style.alignment = alignment; style.lineBreakMode = .byWordWrapping; style.lineSpacing = 2
     var size = maxSize
     while size >= minSize {
-        let attrs: [NSAttributedString.Key:Any] = [.font:font(size,serif:serif),.foregroundColor:color,.paragraphStyle:style]
+        let attrs: [NSAttributedString.Key:Any] = [.font:try font(size,headline:headline),.foregroundColor:color,.paragraphStyle:style]
         let str = NSAttributedString(string:value,attributes:attrs)
         let measured = str.boundingRect(with:NSSize(width:rect.width,height:100000), options:[.usesLineFragmentOrigin,.usesFontLeading])
         if ceil(measured.height) <= rect.height && ceil(measured.width) <= rect.width + 1 {
@@ -74,6 +80,7 @@ do {
  try need(CommandLine.arguments.count == 5,"Usage: render_weekly_poster brief.json art.png badge.svg outDir")
  let brief=try JSONDecoder().decode(Brief.self,from:Data(contentsOf:URL(fileURLWithPath:CommandLine.arguments[1])))
  try need(["zh-Hans","en","ko","es"].contains(brief.locale ?? ""),"Unsupported poster locale")
+ posterLocale = brief.locale ?? "zh-Hans"
  let storeURL=brief.storeURL,webURL=brief.qrURL
  try need(storeURL == "https://apps.apple.com/app/id6809255441","Unexpected App Store identity")
  let out=URL(fileURLWithPath:CommandLine.arguments[4],isDirectory:true)
@@ -86,9 +93,9 @@ do {
  let area=NSRect(x:(CGFloat(W)-art.size.width*ratio)/2,y:(CGFloat(H)-art.size.height*ratio)/2,width:art.size.width*ratio,height:art.size.height*ratio)
  art.draw(in:area,from:.zero,operation:.copy,fraction:1,respectFlipped:true,hints:[.interpolation:NSImageInterpolation.high])
  try text(brief.labels["header"] ?? "",NSRect(x:120,y:75,width:960,height:68),maxSize:33,alignment:.center)
- try text(brief.displayTitle ?? brief.title,NSRect(x:100,y:180,width:1000,height:300),maxSize:brief.locale == "zh-Hans" ? 138 : 100,minSize:66,serif:true,alignment:.center)
+ try text(brief.displayTitle ?? brief.title,NSRect(x:100,y:180,width:1000,height:300),maxSize:brief.locale == "zh-Hans" ? 138 : 100,minSize:66,headline:true,alignment:.center)
  // Group source metadata over a stable light surface across weekly artwork.
- paper.withAlphaComponent(0.90).setFill()
+ paper.withAlphaComponent(0.70).setFill()
  NSBezierPath(roundedRect:NSRect(x:80,y:505,width:1040,height:255),xRadius:20,yRadius:20).fill()
  try text(brief.series,NSRect(x:120,y:525,width:960,height:54),maxSize:34,minSize:27,alignment:.center)
  try text(brief.date.replacingOccurrences(of:"-",with:".")+" · "+brief.speaker,NSRect(x:120,y:605,width:960,height:55),maxSize:33,minSize:28,alignment:.center)

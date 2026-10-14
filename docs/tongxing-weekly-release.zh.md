@@ -181,7 +181,7 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 
 ## 每周海报交付
 
-新增海报采用用户已确认的 [格式规范 v1](tongxing-weekly-poster-format.zh.md)：2:3 竖版、App 系统字体、两个独立二维码和 App 原文免责声明。多语言入口 `build_multilingual_sermon_posters.py` 默认使用新模板。下方 `build_sermon_poster.py` 示例仅保留旧 `weekly.json` 单语言兼容流程，不能作为新模板入口。
+新增海报采用用户已确认的 [格式规范 v2](tongxing-weekly-poster-format.zh.md)：2:3 竖版、书卷风格标题及系统字体正文、两个独立二维码和 App 原文免责声明。多语言入口 `build_multilingual_sermon_posters.py` 默认使用新模板。下方 `build_sermon_poster.py` 示例仅保留旧 `weekly.json` 单语言兼容流程，不能作为新模板入口。
 
 海报生成是 Layer 4 页面发布后的收尾步骤，默认先完成中／韩／西三种语言的内容页面与逐语言 HTTP 核验，再制作三种语言海报；详细步骤见 [Layer 4 收尾顺序](multilingual-production-interfaces.zh.md#layer-4-收尾先三语页面再三语海报)。页面的设备／现场验收独立记录，不要求等现场完成才做海报。
 
@@ -222,7 +222,7 @@ python3 scripts/build_sermon_poster.py \
 
 ### 多语言已发布页面海报（新模板默认入口）
 
-对于 v3 或 v4 目录中的多语言正式页面，使用 `scripts/build_multilingual_sermon_posters.py`，从同一发布目录中按 page ID 读取每个 locale 的已发布包和完整文稿，沿用发布包里的标题、系列、日期、讲员与经文。发布目录有 `multilingual-v4.json` 时读 v4；机器质检的语言仍须有同语言的发布包披露文案；海报保留完整的 AI 内容及独立项目免责声明，不显示单独的审核状态横幅。机器质检状态和披露继续在正式页面及发布包中呈现。中文、韩语和西班牙语各交付 1200 × 1800 PNG、600 × 900 预览及收据，复用同一 ImageGen 主视觉。新渲染器使用系统字体、官方语言徽章、正式 App Store 下载码和本周网页码，最终两尺寸各验证两个码。传入绑定原始来源和中文文稿的 `--english-reference` 时，同时自动排版英语参考海报；它的 `targetLocale` 保持 zh-Hans，manifest 标为不适用 App announcement。该适配器不改变旧中文周次的海报路径。
+对于 v3 或 v4 目录中的多语言正式页面，使用 `scripts/build_multilingual_sermon_posters.py`，从同一发布目录中按 page ID 读取每个 locale 的已发布包和完整文稿，沿用发布包里的标题、系列、日期、讲员与经文。发布目录有 `multilingual-v4.json` 时读 v4；机器质检的语言仍须有同语言的发布包披露文案；海报保留完整的 AI 内容及独立项目免责声明，不显示单独的审核状态横幅。机器质检状态和披露继续在正式页面及发布包中呈现。中文、韩语和西班牙语各交付 1200 × 1800 PNG、600 × 900 预览及收据，复用同一 ImageGen 主视觉。新渲染器使用书卷风格标题与系统字体正文、官方语言徽章、正式 App Store 下载码和本周网页码，最终两尺寸各验证两个码。传入绑定原始来源和中文文稿的 `--english-reference` 时，同时自动排版英语参考海报；它的 `targetLocale` 保持 zh-Hans，manifest 标为不适用 App announcement。该适配器不改变旧中文周次的海报路径。
 
 ```bash
 # 页面先发布并 HTTP 验证；不传 art 时准备来源绑定的各语言 brief。
