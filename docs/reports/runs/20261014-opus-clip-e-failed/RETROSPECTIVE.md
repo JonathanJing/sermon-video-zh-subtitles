@@ -1,54 +1,68 @@
 # 复盘：20261014-opus-clip-e-failed
 
-数据见同目录 INDEX.md 和 manifest.json。未填写的小节删掉前请写明原因。
+## 结论先行
 
-## 实际覆盖范围
+本轮结论为 **failed**，不能表述为四层交付完成。16 个单元的三语 Layer 2 候选及机器文本 QC 已完成，但三语 Layer 2 收据均为 `humanApproval=false`、`releaseAuthority=none`，worker 结束状态为 `machine_review_pass_human_review_pending` / `releaseEligible=false`。Layer 3 仅西语取得 `audio_waiver_issued`；韩语为 `requires_repair`，简体中文为 `waiver_refused`。Layer 4 和所有外部发布、浏览器、设备、场地验收均为 `not_run`。
 
-<!-- 按 L1–L4 写本轮执行、复用和未执行的部分；模拟审核和诊断级结果原样写出。 -->
-复用 2026-10-11 已确认的源窗口和媒体，重新构建第 216–231 句、16 单元片段。基于最新 dev 的 PR #430（798089bd）及未合并的片段修复 PR #410，以提交 7dda928f 冻结三语 Opus 5.5 high 初译、medium 复核。96 次调用全部完成，三语文本 QC 一次通过，均为机器审核且 `humanApproval=false`。三语首次音频包均生成；西语放行，韩语需返工，中文校准拒绝 waiver。Layer 4 未执行。
+证据边界：本复盘只使用同目录 `INDEX.md`、`manifest.json` 和脱敏导出副本。`manifest.json` 记录了源文件哈希，并明确跳过大量原始 JSON、CSV、音视频等文件；因此未导出的原始媒体、账单、现场状态和运行后本地文件状态都不在本报告可证明范围内。报告修订不会改变上述失败结果。
 
-## 结果和结束信号
+## 真实覆盖
 
-<!-- 各运行目录的 outcome.json；独占 Spark 的运行以 round: 行为准。 -->
-`summary.json` 停在韩语和中文音频门禁；`settledUsd=8.010202`，其中前轮累计 6.759385，本轮新增计入 30 美元上限 1.250817。Claude 严格账本列价折算 3.808408 美元，CLI 按缓存计价显示值约 2.835970 美元；两者均非实际扣款，不计入美元上限。`spark-finish` 通过，独占会话状态 `closed`，原服务恢复 `running`。
+- 输入构建记录为 `succeeded`，共 16 个单元，`fourProducts=validated`，同时明确 `productionEligible=false`；这是模拟输入覆盖，不是生产交付证明。
+- Layer 2 的韩语、西语、简体中文各记录 32 次初始调用，共 96 次；三份 auto-repair 收据均为 `all_groups_passed`、`rounds=1`、`repairSpend.calls=0`，但都是 `machine_review` 且 `humanApproval=false`。
+- 三语机器文本 QC 均为 `text_waiver_issued`，校准分别检出韩语 92/92、西语 94/94、简体中文 91/91；这些是机器 waiver，不是人工批准。
+- 三语均生成 `candidate` 音频包并完成正式音频 QC。西语为 `audio_waiver_issued`；韩语和简体中文在音频门禁失败。Layer 4 未运行。
+- 运行绑定提交为 `7dda928f099dcc722c1f75860bf33a452f095855`，QC implementation SHA-256 为 `70078f905f6ddbd06550e0520fa21c6cadc63cef30aea823f26fa6d59b198eb6`。
+
+## 结束信号
+
+顶层 `summary.json` 的停止原因保留为：韩语 `audio.ko: requires_repair ['translation-chunk-0005-u007']`，简体中文 `audio.zh-Hans: waiver_refused`，后者因 `audio.dropped_key_word` 注入错误检出率未达最低要求。内部汇总记录 `settledUsd=8.010202`、`claudeListPriceEquivalentUsd=3.808408`；三份 QC source-budget settlement 都是 `invoiceVerified=false`，不能当作外部账单确认。
+
+`timings.tsv` 记录 `spark-finish` 为 `pass`、7 秒；但脱敏导出的 `logs/spark-finish.log` 在最终 JSON 行显示 `[line truncated]`，没有完整的 closed/服务恢复 readback。因此本报告只能确认 finish 命令被计时为通过，不能据此宣称独占会话最终关闭或原服务已恢复运行。
 
 ## 耗时
 
-<!-- 按 timings.tsv 列阶段并与上一轮比较，把等待和计算分开。 -->
-秒数取 `timings.tsv`；Layer 2 的 `layer2=1s` 只是异步 controller tick，不是模型耗时。模型时间取 `accounting/model-calls.csv`。同源、同 96 次初始调用的最早开始到最晚结束：Opus E 63.70 秒，Sol D 37.95 秒；包含并发与 CLI/API transport，运行时段不同。
+以下均直接取自导出的 `timings.tsv`。`layer2=1s` 是驱动阶段记录，不代表 96 次模型调用的总模型耗时；本导出未包含可重算完整模型吞吐的 CSV，所以不在此报告中给出模型速度对照。
 
-| 阶段 | Opus E | 同源 Sol D |
-|---|---:|---:|
-| 输入构建 | 8s | 7s |
-| 文本 QC 韩／西／中 | 135／103／113s | 120／94／18+104s（中文先失败后修订） |
-| 韩语 render／compact／screen／package／audio QC | 104／17／40／4／23s | 92／16／40／3／23s |
-| 西语 render／compact／screen／package／audio QC | 90／17／39／4／143s | 87／17／38／3／131s |
-| 中文 render／compact／screen／package／audio QC | 92／17／38／3／154s | 88／17／38／3／157s |
-| Spark 开始／结束 | 4／7s | 4／7s |
+| 阶段 | 韩语 | 西语 | 简体中文 |
+|---|---:|---:|---:|
+| 机器文本 QC | 135s | 103s | 113s |
+| render | 104s（`fail(1)`） | 90s（`fail(1)`） | 92s（`fail(1)`） |
+| compact | 17s | 17s | 17s |
+| ASR screen | 40s | 39s | 38s |
+| package | 4s | 4s | 3s |
+| 音频 QC | 23s（`fail(1)`） | 143s（pass） | 154s（`fail(1)`） |
 
-每角色三语各 48 次：初译请求耗时中位数 Opus 4.99s、Sol 5.52s；复核 Opus 6.79s、Sol 6.69s。Opus 初译／复核最长分别 10.88／42.15s，Sol 分别 11.58／12.21s，复核长尾拉长了 Opus 批次。按韩／西／中拆开的初译、复核中位数（Opus 对 Sol，秒）：韩 5.94／7.48 对 6.62／7.73；西 4.25／6.77 对 4.44／5.60；中 4.63／6.63 对 5.57／6.76。输出 token 含模型思考及格式差异，不以 token/s 直接判定译文生成速度；本次是链路观测，不是受控纯模型基准。
+另有输入构建 8 秒、Spark 独占开始 4 秒、结束 7 秒。各语言阶段顺序执行且包含远程等待，不能把表中秒数解释为纯计算时间或相加后当作准确墙钟总时长。
 
 ## 错误
 
-<!-- 现象、原因、处理、回归测试、对应提交或 PR。 -->
-韩语组 `u007` 的音频 QC 为 `requires_repair`，收据指定 `resynthesize_new_seed`；`u015` 虽被标记但二级 ASR 未判失败。三语 render 的退出码 1 是初筛提示，后续压缩与正式筛查均完成。中文实际音频 QC 为 `pass`，但注入错误校准 `audio.dropped_key_word` 仅检出 8/9（0.888889，最低 0.9），因此 `waiver_refused`。唯一漏检的 `u012` 含普通词“在一起”；当前注入器把词内“一”当数字删除成“在起”，是无效的漏数字样本。不能通过放宽门槛放行。96 次 Opus 调用均有完成收据，未见限流、未知结果或后端回退。
+- 韩语音频 QC：`translation-chunk-0005-u007` 属于 `failedGroups`，下一动作明确为 `resynthesize_new_seed`；`u015` 仅在 `flaggedGroups` / `secondaryAsrGroups` 中，不能写成同样失败。
+- 简体中文音频 QC 本身为 `pass`，但 waiver 校准仅在 `audio.dropped_key_word` 检出 8/9，漏检组为 `translation-chunk-0005-u012`，比率 0.888889，最终为 `waiver_refused`。导出的 ASR 收据显示该组识别文本含“在一起”，但导出证据不足以判定注入器实现层面的根因。
+- 三语 render 均返回退出码 1，随后 compact、screen 和 package 均完成并产生候选包。报告保留这些 `fail(1)`，不把后续阶段成功反写为 render 成功。
+- 导出的 Layer 2 操作日志以 `run_finished ... status=completed` 结束，96 次初始调用收据均有用量；本导出没有显示 Layer 2 未知结果，但这不覆盖 manifest 中跳过的文件。
 
-## 占用资源之后才暴露的错误
+## 占用资源后错误
 
-<!-- 哪些本可以在预检发现，要补哪项预检。 -->
-中文 `u012` 的无效注入词可在文本预检中识别；当前直到占用 Spark 的 TTS/ASR 校准才暴露。应排除嵌在普通词里的单字汉字数字，并用“在一起”和“第八章”回归用例固定差别。
+韩语 `u007` 的音频问题只能在 TTS、压缩、ASR 筛查和正式音频 QC 后确认，属于实际占用 Spark 后暴露的内容错误。简体中文的 waiver 拒绝也发生在 92 秒 render、17 秒 compact、38 秒 screen、3 秒 package 和 154 秒音频 QC 之后；其直接证据是校准漏检 `u012`，但当前导出不足以证明该漏检必然可由既有预检提前发现。
+
+可执行的预防项是：在再次占用 Spark 前，对 `audio.dropped_key_word` 注入样本做边界有效性检查，并为含“在一起”的 `u012` 类样本增加定向回归；只有该检查能够稳定复现并拒绝无效样本后，才能声称错误已前移。韩语实际音频缺陷仍需按既定 repair ladder 处理，不能用静态预检替代音频 QC。
 
 ## 遗留状态
 
-<!-- Dev 上无引用的文件、未结束的 job hold、已用构建号、待删除的本地产物。 -->
-Spark 会话已关闭。原运行目录、失败音频包、QC 收据和预算账本保留在被忽略的 `artifacts/`，没有提交原始媒体或日志。本轮没有新线上页面；韩语返工和中文校准修复尚未计入本报告快照。
+- 韩语保持 `failed/requires_repair`，待对 `translation-chunk-0005-u007` 执行 `resynthesize_new_seed` 后重新走受影响的 Layer 3 门禁。
+- 简体中文保持 `failed/waiver_refused`，`nextActions=null`；需先定位并修复或证明校准样本问题，再以新实现身份重跑相关校准和 waiver。
+- 西语 Layer 3 为 `audio_waiver_issued`，但不改变整轮失败，也不构成 Layer 4 交付。
+- Layer 2 候选仍是 `humanApproval=false`、`releaseAuthority=none`、`releaseEligible=false`；Layer 4 为 `not_run`。
+- 独占会话最终 closed 状态、原服务恢复 readback、原始 `artifacts/` 是否仍存在以及清理情况，均未由当前脱敏导出完整证明，列为未核实状态而不是成功结论。
 
-## 外部可见的变化
+## 外部变化
 
-<!-- Dev 发布、TestFlight、受保护分支推送各自的证据；没做的验收写 not_run。 -->
-本轮 Firebase Dev 发布、HTTP、浏览器、设备与场地验收均 `not_run`。代码分支 7dda928f 已推送，不能当作线上交付证明。
+Firebase Dev 发布、生产发布、HTTP readback、浏览器渲染、设备播放和场地验收均为 `not_run`。本报告没有导出任何部署或外部接收回执；报告 PR 和运行绑定提交的存在都不能替代外部交付证据。
 
 ## 后续
 
-<!-- 每条写负责人和跟踪的 PR 或 backlog 条目。 -->
-本地执行者将按韩语 QC 指示用新种子定向返工；修复中文汉字数字注入有效性并做定向回归。实现哈希改变后须新冻结运行重做相关机器 QC，完成四层门禁才准备并核对 Dev 发布。随后更新模型速度对照与最终运行报告。
+1. 运行负责人按收据对韩语 `u007` 用新 seed 定向重合成，并重新执行相关 screen、package、audio QC；保留本轮失败收据。
+2. 校准负责人围绕简体中文 `u012` 调查 `audio.dropped_key_word` 漏检，先补边界有效性定向回归，再以新的实现哈希重跑相关校准；不得通过降低阈值把本轮改写为通过。
+3. 只有韩语和简体中文门禁产生新的通过证据后，才评估 Layer 4；发布、HTTP、浏览器、设备和场地状态必须分别留存回执。
+4. 本报告 PR 仅在与最新 `dev` 同步且所需检查为绿色后合并；合并报告不代表失败运行被修复或产品已发布。
