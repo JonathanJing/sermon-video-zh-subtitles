@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261012-pr356-review-ci-fix",
+  "runs": [
+    {
+      "label": "pr356-offline-fix-20261012",
+      "source": "/private/tmp/sermon-fix-356/artifacts/pr356-offline-fix-20261012",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr356-offline-fix-20261012",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 34,
+      "truncated": false,
+      "sha256": "dee0764a81f96e76c29c02bc9e93d64f218e4d3a1bb7885726819b550a9ddc3f",
+      "redactions": {}
+    },
+    {
+      "run": "pr356-offline-fix-20261012",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 934,
+      "truncated": false,
+      "sha256": "524f28d74eca8cfa902ac170baf8f9d765d4089d6db479e65847c307a48a1f19",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "pr356-offline-fix-20261012",
+      "path": "tests.log",
+      "kind": "log",
+      "bytes": 146,
+      "truncated": false,
+      "sha256": "514128c45c79ca5bc55cdb30897fe34d08ab60ea8899e2134c0ac55bd48b0e3a",
+      "redactions": {}
+    },
+    {
+      "run": "pr356-offline-fix-20261012",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 71,
+      "truncated": false,
+      "sha256": "340817c8808033f7ad412052db7070509809d0beb69513b9ad488e85ee317df8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "exitCode": 0,
+  "testedCommit": "978357084740264d439129382239f3c249577363",
+  "tests": 647,
+  "subtests": 3,
+  "durationSeconds": 39.32,
+  "modelCalls": 0,
+  "deployment": "not_run"
+}

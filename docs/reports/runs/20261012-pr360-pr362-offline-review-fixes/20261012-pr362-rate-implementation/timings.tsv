@@ -1,0 +1,3 @@
+stage	status	elapsedSeconds
+pytest	pass	11.71
+initial_broad_run	interrupted	96.67

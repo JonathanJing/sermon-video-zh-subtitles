@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "sermon-ko-hosting-readback-v1",
+  "environment": "dev",
+  "checkedAt": "2026-10-13T20:24:34.912416+00:00",
+  "sourceCommit": "4938a7f23b4b5ac1b54629887224b0333a831c4c",
+  "status": "passed",
+  "browserInteraction": "not_checked",
+  "devicePlayback": "not_checked",
+  "liveVersion": "sites/ai-for-god-sermon-audio-dev/versions/ae7dd119129a4680",
+  "baselineVersion": "sites/ai-for-god-sermon-audio-dev/versions/bc4e94edeec02a88",
+  "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "providerFileCount": 733,
+  "providerPages": 1,
+  "changedPaths": [
+    "/locales-ko.mjs"
+  ],
+  "preservedProviderFiles": 732,
+  "candidateGzipHashMatched": true,
+  "localesKoProviderGzipSha256": "6434e03e665f71f0d9058f2fe69836f736d670f7fec73df4de57e6476e09aaf3",
+  "http": [
+    {
+      "path": "/locales-ko.mjs",
+      "status": 200,
+      "bytes": 16371,
+      "sha256": "2746cdba5da5e5074203be32efc0b5e7f4ddd5d0938f9356d5ea654a461af683",
+      "candidateMatched": true
+    },
+    {
+      "path": "/multilingual-v3.json",
+      "status": 200,
+      "bytes": 24736,
+      "sha256": "a35252c06df53ca5fa59d02ed7ef269d032c2f198fb6c23930a5fe79d1cd66ae",
+      "candidateMatched": true
+    },
+    {
+      "path": "/multilingual-v4.json",
+      "status": 200,
+      "bytes": 34706,
+      "sha256": "df3f94fdfe342b2666140cd4d63d3390f3bef0b4aa8db72a06f3d7836b412130",
+      "candidateMatched": true
+    }
+  ],
+  "liveVersionStable": true
+}
