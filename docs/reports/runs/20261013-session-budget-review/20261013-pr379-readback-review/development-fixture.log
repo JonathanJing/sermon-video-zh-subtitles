@@ -1,0 +1,54 @@
+......................................F.....................             [100%]
+=================================== FAILURES ===================================
+______ test_baseline_retries_incomplete_http_reads_with_remaining_budget _______
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-102/test_baseline_retries_incomple0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109aa2580>
+
+    def test_baseline_retries_incomplete_http_reads_with_remaining_budget(tmp_path, monkeypatch):
+        import http.client
+        import io
+        from types import SimpleNamespace
+        target = publication.hosting_target('production')
+        version = 'sites/' + target['site'] + '/versions/fresh'
+        raw = b'{"pages": []}'
+        compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+        digest = hashlib.sha256(compressed).hexdigest()
+        def request(method, url):
+            if url.endswith('/files?pageSize=1000'): return {'files': [{'path': '/multilingual-v3.json', 'hash': digest}]}
+            return {'config': {}, 'status': 'FINALIZED'}
+        now, timeouts = [0.0], []
+        class Response(io.BytesIO):
+            status = 200
+            headers = {'Content-Encoding': 'gzip'}
+        def download(req, *, timeout):
+            timeouts.append(timeout)
+            if len(timeouts) == 1: raise http.client.IncompleteRead(b'partial', 10)
+            return Response(compressed)
+        monkeypatch.setattr(publication.publisher, 'authenticated_transport', lambda: request)
+        monkeypatch.setattr(publication.publisher, 'live_version', lambda req, site: version)
+        monkeypatch.setattr(publication, 'urlopen', download)
+        monkeypatch.setattr(publication.publisher, 'PROPAGATION_TIMEOUT_SECONDS', 12)
+        monkeypatch.setattr(publication.publisher, 'time', SimpleNamespace(
+            monotonic=lambda: now[0], sleep=lambda seconds: now.__setitem__(0, now[0] + seconds)))
+        out = tmp_path/'baseline'
+>       assert publication.baseline(out, environment='production')['status'] == 'complete_verified_not_deployed'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_prepare_dev_simulated_publication.py:311:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts/prepare_dev_simulated_publication.py:174: in baseline
+    contract.require(rows and len({r['path'] for r in rows}) == len(rows) and all(r.get('status') == 'ACTIVE' for r in rows), 'Invalid live file inventory')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+ok = False, message = 'Invalid live file inventory'
+
+    def require(ok, message):
+        if not ok:
+>           raise ValueError(message)
+E           ValueError: Invalid live file inventory
+
+scripts/delivery_contract.py:18: ValueError
+=========================== short test summary info ============================
+FAILED tests/test_prepare_dev_simulated_publication.py::test_baseline_retries_incomplete_http_reads_with_remaining_budget
+1 failed, 59 passed in 0.57s
