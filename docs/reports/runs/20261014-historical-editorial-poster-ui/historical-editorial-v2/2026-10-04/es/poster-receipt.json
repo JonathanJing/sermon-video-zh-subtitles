@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "sermon-multilingual-poster-v1",
+  "source": {
+    "pageId": "resi-20261004-69ba7a66",
+    "targetLocale": "es",
+    "sourceIdentitySha256": "dc9104063404d44866f762c76af7449e4f8d25ca6dd03f2312b256fb32f88502",
+    "catalogSha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+    "releasePackageSha256": "55988ec5bd280f6980485d261c4bb5930aeccb6305373818bf4d5794ba2aaff6",
+    "contentSha256": "642eee2cd730c9b56f5d0a7b7a91d9b7fa60b8773c3e2da3e2ac74784a511a7f",
+    "brief": {
+      "locale": "es",
+      "date": "2026-10-04",
+      "origin": "https://ai-for-god-sermon-audio.web.app",
+      "title": "Jesús juzga y guarda",
+      "series": "Apocalipsis: El consuelo y la esperanza que Jesús trae",
+      "scripture": "Apocalipsis 6–8:1",
+      "speaker": "Eric Geiger",
+      "tagline": "Escuchamos y caminamos juntos.",
+      "reviewLabel": "Traducción y audio revisados",
+      "labels": {
+        "brand": "Tongxing",
+        "eyebrow": "SERMÓN SEMANAL · ESPAÑOL",
+        "cta": "Lee y escucha el sermón de esta semana",
+        "serviceLine": "Audio en español · Texto en inglés · Transcripción completa",
+        "qrCaption": "Esta semana, en español",
+        "disclaimer": "Proyecto personal independiente, sin afiliación ni respaldo de Mariners Church. El audio en español sintetizado por IA y el texto preparado por IA son para consulta personal.",
+        "header": "Tongxing   ───   SERMÓN SEMANAL",
+        "web": "Versión web",
+        "caption": "Escanea para leer y escuchar",
+        "storeHeading": "Descargar Tongxing",
+        "webHeading": "Abrir sermón semanal",
+        "showReview": "false"
+      },
+      "qrURL": "https://ai-for-god-sermon-audio.web.app/?week=resi-20261004-69ba7a66&contentLang=es&lang=es",
+      "displayTitle": "Jesús juzga\ny guarda",
+      "storeURL": "https://apps.apple.com/app/id6809255441"
+    }
+  },
+  "status": "complete",
+  "provenance": {
+    "templateVersion": "tongxing-dual-qr-v2",
+    "templateSha256": "d88e2f2ea84f8bf541878e2f20208d268d400a983c9beacb60a1b3c1964e4f86",
+    "badgeHashes": {
+      "zh-Hans": "65191b2d1182a194e510b27c9985b1367b60ed6ef565f86fc492f585a27bc932",
+      "ko": "fc82d5344d0f2919a7ae697e677fc9c62872f1ee47bd70e24a581245423de9c1",
+      "es": "e4d7c2c1606454536482735c96b933b04ea86a2e72701b3319ae1f3a369b0479"
+    },
+    "artSha256": "da58209cce9faa94c735d89efcf948a7a0cfe968b9ba2922508339f6f3960ecc",
+    "promptSha256": "04c0612a5f3351616256f4aea8a5a71f89d308dc466612386b7bb80958896e8a",
+    "rendererSha256": "765c29e6078a90d90b2346129221290e9d9b5b3aa5d648268e307cd2c385eba4",
+    "builderSha256": "3a3d3dc237f0839d8889df87cdbd7300d2e366a03c53f886c6fffde975cfbbe4"
+  },
+  "outputs": {
+    "poster.png": "d36e36772d7b4357f35ba220746053086d1d562d5e52c30fd5faa7179314bb6c",
+    "poster-preview.png": "b0ad75dd7b3e1467083c9c3936eda71fa590eedea340ce30813d13e1e145ea91",
+    "qr-validation.json": "c00d51517fed9f7a4369f968f00baeac2bab178fb7ebe055c1b120957ad2e312"
+  },
+  "publicVerification": {
+    "checkedAt": "2026-10-14T16:37:08.040339+00:00",
+    "origin": "https://ai-for-god-sermon-audio.web.app",
+    "status": "pass",
+    "checks": [
+      {
+        "path": "/multilingual-v4.json",
+        "sha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/resi-20261004-69ba7a66/zh-Hans.json",
+        "sha256": "6d85d1c27c7cfcf676c9a77bdae55153389265e0056efe2e25ba2eec30e51063",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261004-69ba7a66/zh-Hans.json",
+        "sha256": "1c3cb8cd34129083983de4221b799565bac0adbec6571c86082da6972bccaa9d",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/resi-20261004-69ba7a66/ko.json",
+        "sha256": "4a3712ae8ac69d37f84f9798a1c94a8e2c1efc51b39272677410ede7a50341c9",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261004-69ba7a66/ko.json",
+        "sha256": "075ad4a58237ce1cd6d4f565110b9dc99699a7ddc4b141fc3451a9be619a242c",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/resi-20261004-69ba7a66/es.json",
+        "sha256": "55988ec5bd280f6980485d261c4bb5930aeccb6305373818bf4d5794ba2aaff6",
+        "status": 200
+      },
+      {
+        "path": "/content/resi-20261004-69ba7a66/es.json",
+        "sha256": "642eee2cd730c9b56f5d0a7b7a91d9b7fa60b8773c3e2da3e2ac74784a511a7f",
+        "status": 200
+      }
+    ]
+  },
+  "visualReview": {
+    "reviewer": "codex",
+    "humanApproval": false
+  },
+  "visualReviewedAt": "2026-10-14T16:37:08.066874+00:00"
+}

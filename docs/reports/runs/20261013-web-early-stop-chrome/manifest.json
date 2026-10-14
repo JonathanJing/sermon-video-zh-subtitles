@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261013-web-early-stop-chrome",
+  "runs": [
+    {
+      "label": "20261013-web-early-stop-chrome",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/field-benchmark/20261013-web-early-stop-chrome",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261013-web-early-stop-chrome",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1777,
+      "truncated": false,
+      "sha256": "8d03ae77ee7951f12a006496ecae3f79c663cf03c308e26c7771820f58e1184b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

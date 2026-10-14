@@ -6,6 +6,10 @@
 
 #332 已合并独立 A/B runner v3：缓存绑定实际 preview payload、schema 与 transport identity；调用前独占写入 started 标记并同步文件/目录，响应同样持久化。未知结果不自动重发，缺用量保持 unknown。下文 v2 和测速结果是其原始日期的历史记录，不代表当前版本重新运行。新生产政策的 Claude freeze 在写出前拒绝；实验 runner 与已有冻结身份恢复不改变 canonical Sol API 默认，也不构成生产晋级。
 
+## 正式 Layer 2 后端 `claude_cli_opus`（2026-10-14）
+
+初译 Opus 5.5 high、复核 Opus 5.5 medium，两者都走本 transport；冻结、预算和 controller 接线见[运行时模型政策](production-model-runtime-policy.zh.md#layer-2-后端openai-api-或-claude-cliopus-55)。下文的 A/B 实验保持原样。
+
 ## 调用方式
 
 ```

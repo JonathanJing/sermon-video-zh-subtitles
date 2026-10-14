@@ -1,0 +1,252 @@
+﻿2026-10-13T03:11:22.0362864Z Current runner version: '2.337.0'
+2026-10-13T03:11:22.0380794Z ##[group]Runner Image Provisioner
+2026-10-13T03:11:22.0381438Z Hosted Compute Agent
+2026-10-13T03:11:22.0381831Z Version: 20261002.596
+2026-10-13T03:11:22.0382204Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-13T03:11:22.0382686Z Build Date: 2026-10-02T22:28:27Z
+2026-10-13T03:11:22.0383100Z Worker ID: {185b3623-92cb-45b4-8bc4-0d739c726447}
+2026-10-13T03:11:22.0383581Z Region: westus2
+2026-10-13T03:11:22.0383946Z Cloud: Azure
+2026-10-13T03:11:22.0384265Z ##[endgroup]
+2026-10-13T03:11:22.0385300Z ##[group]Operating System
+2026-10-13T03:11:22.0385670Z Ubuntu
+2026-10-13T03:11:22.0386025Z 24.04.5
+2026-10-13T03:11:22.0386381Z LTS
+2026-10-13T03:11:22.0386697Z ##[endgroup]
+2026-10-13T03:11:22.0387064Z ##[group]Runner Image
+2026-10-13T03:11:22.0387441Z Image: ubuntu-24.04
+2026-10-13T03:11:22.0387999Z Version: 20261004.327.1
+2026-10-13T03:11:22.0388833Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-13T03:11:22.0389748Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-13T03:11:22.0390337Z ##[endgroup]
+2026-10-13T03:11:22.0391046Z ##[group]GITHUB_TOKEN Permissions
+2026-10-13T03:11:22.0392456Z Contents: read
+2026-10-13T03:11:22.0392842Z Metadata: read
+2026-10-13T03:11:22.0393191Z ##[endgroup]
+2026-10-13T03:11:22.0394523Z Secret source: Actions
+2026-10-13T03:11:22.0395161Z Cache mode: write
+2026-10-13T03:11:22.0395738Z Prepare workflow directory
+2026-10-13T03:11:22.0605059Z Prepare all required actions
+2026-10-13T03:11:22.0637203Z Getting action download info
+2026-10-13T03:11:22.3979821Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-13T03:11:22.4818080Z Download action repository 'actions/setup-python@v7' (SHA:5fda3b95a4ea91299a34e894583c3862153e4b97)
+2026-10-13T03:11:22.5731087Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-13T03:11:22.7694196Z Complete job name: test-group (root-6)
+2026-10-13T03:11:22.8187995Z ##[group]Run actions/checkout@v7
+2026-10-13T03:11:22.8188409Z with:
+2026-10-13T03:11:22.8188678Z   repository: JonathanJing/sermon-video-zh-subtitles
+2026-10-13T03:11:22.8190828Z   token: <redacted>
+2026-10-13T03:11:22.8191052Z   ssh-strict: true
+2026-10-13T03:11:22.8191276Z   ssh-user: git
+... 1339 lines omitted; 10 error-like lines, 10 kept below ...
+[line 368] 2026-10-13T03:11:39.9931516Z [36;1m  apt_options=(-o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20)[0m
+[line 381] 2026-10-13T03:11:39.9934619Z [36;1m  sudo apt-get "${apt_options[@]}" -o APT::Update::Error-Mode=any update[0m
+[line 986] 2026-10-13T03:14:49.2879769Z runtime_tts_mac.py: error: this bounded diagnostic writes only its declared output directory
+[line 1062] 2026-10-13T03:15:15.5049136Z     "status": "error",
+[line 1063] 2026-10-13T03:15:15.5049564Z     "reason": "ValueError: /tmp/tmpsgm27btn/real/ko/text-waiver-dce4f2bc6b17eb12.json changed after it was written",
+[line 1081] 2026-10-13T03:15:17.3600746Z   "reason": "every shorten group failed its checks; those groups stay subtitle-only in the dub",
+[line 1085] 2026-10-13T03:15:17.3602039Z   "failedGroupIds": [
+[line 1092] 2026-10-13T03:18:49.6145235Z ...............................................................................E...............s....................s....................................................................................................s.........................................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 1147] 2026-10-13T03:19:28.6060394Z     "failedPreflightSteps": [
+[line 1152] 2026-10-13T03:19:28.6061152Z     "goalAuditFailedChecks": [
+... end of omitted section ...
+2026-10-13T03:19:28.6113388Z           "--live-url",
+2026-10-13T03:19:28.6113525Z           "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+2026-10-13T03:19:28.6113693Z           "--api-key-secret",
+2026-10-13T03:19:28.6113840Z           "<OPENAI_API_KEY_SECRET_RESOURCE>",
+2026-10-13T03:19:28.6113991Z           "--sunday",
+2026-10-13T03:19:28.6114108Z           "2026-06-28",
+2026-10-13T03:19:28.6114230Z           "--asr-model",
+2026-10-13T03:19:28.6114362Z           "gpt-4o-transcribe",
+2026-10-13T03:19:28.6114506Z           "--translation-model",
+2026-10-13T03:19:28.6114646Z           "gpt-5.4-mini"
+2026-10-13T03:19:28.6114763Z         ]
+2026-10-13T03:19:28.6114866Z       ],
+2026-10-13T03:19:28.6114974Z       "currentEvidence": {
+2026-10-13T03:19:28.6115111Z         "matrixRow": "offline_asr_route",
+2026-10-13T03:19:28.6115262Z         "state": "missing"
+2026-10-13T03:19:28.6115384Z       },
+2026-10-13T03:19:28.6115486Z       "dependsOn": [
+2026-10-13T03:19:28.6115616Z         "required_model_recovery"
+2026-10-13T03:19:28.6115750Z       ],
+2026-10-13T03:19:28.6115860Z       "expandedCommands": [
+2026-10-13T03:19:28.6115987Z         [
+2026-10-13T03:19:28.6116089Z           "python3",
+2026-10-13T03:19:28.6116224Z           "scripts/prepare_live_link_playback.py",
+2026-10-13T03:19:28.6116383Z           "--asr-model",
+2026-10-13T03:19:28.6116514Z           "gpt-4o-transcribe",
+2026-10-13T03:19:28.6116647Z           "--web-out",
+2026-10-13T03:19:28.6116985Z           "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js"
+2026-10-13T03:19:28.6117239Z         ],
+2026-10-13T03:19:28.6117340Z         [
+2026-10-13T03:19:28.6117442Z           "python3",
+2026-10-13T03:19:28.6117582Z           "scripts/translate_playback_with_openai.py",
+2026-10-13T03:19:28.6117912Z           "--model",
+2026-10-13T03:19:28.6118032Z           "gpt-5.4-mini"
+2026-10-13T03:19:28.6118151Z         ],
+2026-10-13T03:19:28.6118250Z         [
+2026-10-13T03:19:28.6118354Z           "python3",
+2026-10-13T03:19:28.6118485Z           "scripts/validate_offline_chain.py",
+2026-10-13T03:19:28.6118640Z           "--out",
+2026-10-13T03:19:28.6118813Z           "artifacts/evidence/no-caption-offline-chain-validation.json"
+2026-10-13T03:19:28.6119008Z         ]
+2026-10-13T03:19:28.6119105Z       ],
+2026-10-13T03:19:28.6119275Z       "handoffReport": "/tmp/tmpgbgqhtfu/no-caption-asr-fallback-plan.json",
+2026-10-13T03:19:28.6119497Z       "id": "real_no_caption_asr_validation",
+2026-10-13T03:19:28.6120036Z       "nextAction": "Run the no-caption ASR fallback plan against a real source, then feed artifacts/evidence/no-caption-offline-chain-validation.json into collect_production_evidence_matrix.py via --offline-asr-chain-validation-report.",
+2026-10-13T03:19:28.6120574Z       "passCriteria": [
+2026-10-13T03:19:28.6120765Z         "run_offline_archive_preflight.py reports decision=use_asr_fallback.",
+2026-10-13T03:19:28.6121027Z         "Prepared offline report has caption_source.kind=openai_asr.",
+2026-10-13T03:19:28.6121428Z         "validate_offline_chain.py confirms no requested English caption track exists before ASR fallback.",
+2026-10-13T03:19:28.6121803Z         "validate_offline_chain.py confirms the openai_asr output source_file is an extracted audio artifact.",
+2026-10-13T03:19:28.6122073Z         "ASR model is gpt-4o-transcribe.",
+2026-10-13T03:19:28.6122248Z         "Chinese translation model is gpt-5.4-mini.",
+2026-10-13T03:19:28.6122479Z         "validate_offline_chain.py status is ok and not_realtime_chain passes."
+2026-10-13T03:19:28.6122680Z       ],
+2026-10-13T03:19:28.6122790Z       "requiredModels": {
+2026-10-13T03:19:28.6122953Z         "forbiddenOfflineModel": "gpt-realtime-translate",
+2026-10-13T03:19:28.6123143Z         "offlineAsr": "gpt-4o-transcribe",
+2026-10-13T03:19:28.6123304Z         "offlineTranslation": "gpt-5.4-mini"
+2026-10-13T03:19:28.6123454Z       },
+2026-10-13T03:19:28.6123562Z       "requiredReports": [
+2026-10-13T03:19:28.6123744Z         "artifacts/evidence/no-caption-archive-preflight.json",
+2026-10-13T03:19:28.6123988Z         "artifacts/evidence/no-caption-offline-chain-validation.json",
+2026-10-13T03:19:28.6124210Z         "artifacts/evidence/asr-route-readiness.json"
+2026-10-13T03:19:28.6124371Z       ],
+2026-10-13T03:19:28.6124570Z       "requiredSource": "Authorized YouTube live archive without requested English captions.",
+2026-10-13T03:19:28.6124819Z       "state": "needs_real_no_caption_archive"
+2026-10-13T03:19:28.6124972Z     },
+2026-10-13T03:19:28.6125070Z     {
+2026-10-13T03:19:28.6125174Z       "commands": [
+2026-10-13T03:19:28.6125284Z         [
+2026-10-13T03:19:28.6125386Z           "python3",
+2026-10-13T03:19:28.6125540Z           "scripts/refresh_production_preflight_evidence.py",
+2026-10-13T03:19:28.6125717Z           "--sunday",
+2026-10-13T03:19:28.6125834Z           "2026-06-28",
+2026-10-13T03:19:28.6125951Z           "--out",
+2026-10-13T03:19:28.6126110Z           "artifacts/evidence/production-preflight-refresh.json"
+2026-10-13T03:19:28.6126294Z         ],
+2026-10-13T03:19:28.6126394Z         [
+2026-10-13T03:19:28.6126494Z           "python3",
+2026-10-13T03:19:28.6126638Z           "scripts/write_production_go_live_sequence.py",
+2026-10-13T03:19:28.6126804Z           "--sunday",
+2026-10-13T03:19:28.6126922Z           "2026-06-28",
+2026-10-13T03:19:28.6127037Z           "--out",
+2026-10-13T03:19:28.6127191Z           "artifacts/evidence/production-go-live-sequence.json"
+2026-10-13T03:19:28.6127469Z         ]
+2026-10-13T03:19:28.6127570Z       ],
+2026-10-13T03:19:28.6127805Z       "dependsOn": [
+2026-10-13T03:19:28.6127933Z         "operator_approval",
+2026-10-13T03:19:28.6128077Z         "post_approval_validation",
+2026-10-13T03:19:28.6128225Z         "live_1130_realtime_run",
+2026-10-13T03:19:28.6128369Z         "required_model_recovery",
+2026-10-13T03:19:28.6128517Z         "real_no_caption_asr_validation"
+2026-10-13T03:19:28.6128658Z       ],
+2026-10-13T03:19:28.6128765Z       "id": "final_readiness_audit",
+2026-10-13T03:19:28.6128915Z       "requiredReports": [
+2026-10-13T03:19:28.6129088Z         "artifacts/evidence/production-preflight-refresh.json",
+2026-10-13T03:19:28.6129310Z         "artifacts/evidence/production-evidence-matrix.json",
+2026-10-13T03:19:28.6129538Z         "artifacts/evidence/production-goal-readiness-audit.json",
+2026-10-13T03:19:28.6129766Z         "artifacts/evidence/production-go-live-sequence.json"
+2026-10-13T03:19:28.6129943Z       ],
+2026-10-13T03:19:28.6130054Z       "state": "pending_final_audit"
+2026-10-13T03:19:28.6130197Z     }
+2026-10-13T03:19:28.6130295Z   ],
+2026-10-13T03:19:28.6130402Z   "status": "not_ready_for_go_live",
+2026-10-13T03:19:28.6130545Z   "sunday": "2026-06-28"
+2026-10-13T03:19:28.7849135Z ...........................................................................................................................................
+2026-10-13T03:19:28.7849663Z ======================================================================
+2026-10-13T03:19:28.7850878Z ERROR: test_a_record_from_the_fake_condenser_never_backs_a_real_run (test_run_machine_qc_clip_test.SpokenModeTests.test_a_record_from_the_fake_condenser_never_backs_a_real_run)
+2026-10-13T03:19:28.7851570Z ----------------------------------------------------------------------
+2026-10-13T03:19:28.7851897Z Traceback (most recent call last):
+2026-10-13T03:19:28.7859801Z   File "~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/tests/test_run_machine_qc_clip_test.py", line 645, in test_a_record_from_the_fake_condenser_never_backs_a_real_run
+2026-10-13T03:19:28.7860810Z     run, binding = spoken_run(self, self.root, backend="fake-clause-drop-not-evidence")
+2026-10-13T03:19:28.7861268Z                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-13T03:19:28.7861944Z   File "~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/tests/test_run_machine_qc_clip_test.py", line 589, in spoken_run
+2026-10-13T03:19:28.7862749Z     binding = condensation.bind_spoken_candidate(record, read(run / "anchor-manifest.json"), full, spoken,
+2026-10-13T03:19:28.7863271Z               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-13T03:19:28.7863965Z   File "~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/scripts/spoken_condensation.py", line 349, in bind_spoken_candidate
+2026-10-13T03:19:28.7864750Z     "maxSpeechUnits": row["maxSpeechUnits"], "synthesisIdentity": record["synthesisIdentity"],
+2026-10-13T03:19:28.7865225Z                                                                   ~~~~~~^^^^^^^^^^^^^^^^^^^^^
+2026-10-13T03:19:28.7865544Z KeyError: 'synthesisIdentity'
+2026-10-13T03:19:28.7865709Z
+2026-10-13T03:19:28.7865853Z ----------------------------------------------------------------------
+2026-10-13T03:19:28.7866174Z Ran 685 tests in 438.417s
+2026-10-13T03:19:28.7866316Z
+2026-10-13T03:19:28.7866415Z FAILED (errors=1, skipped=3)
+2026-10-13T03:19:28.7874389Z }
+2026-10-13T03:19:28.7874604Z  109.05s     9  test_machine_quality_waiver
+2026-10-13T03:19:28.7874865Z   53.32s     2  test_sermon_mock_tts_dag
+2026-10-13T03:19:28.7875112Z   38.88s     2  test_sermon_fresh_full_dag
+2026-10-13T03:19:28.7875362Z   14.40s     2  test_run_machine_qc_audio_test
+2026-10-13T03:19:28.7875633Z   13.05s     7  test_sermon_delivery_intent_binding
+2026-10-13T03:19:28.7875897Z   12.02s     3  test_sermon_pilot_evidence
+2026-10-13T03:19:28.7876151Z    9.71s     3  test_sermon_historical_layer2
+2026-10-13T03:19:28.7876625Z    8.89s     3  test_canonical_layer2_cache_recovery
+2026-10-13T03:19:28.7876909Z    8.70s     3  test_sermon_job_liveness
+2026-10-13T03:19:28.7877169Z    8.35s     2  test_sermon_fresh_source_prefect
+2026-10-13T03:19:29.5115046Z ##[error]Process completed with exit code 1.
+2026-10-13T03:19:29.5173397Z ##[group]Run actions/upload-artifact@v4
+2026-10-13T03:19:29.5173569Z with:
+2026-10-13T03:19:29.5173691Z   name: unittest-timings-root-6
+2026-10-13T03:19:29.5173861Z   path: ~/work/_temp/unittest-root-6.json
+2026-10-13T03:19:29.5174038Z   if-no-files-found: warn
+2026-10-13T03:19:29.5174166Z   compression-level: 6
+2026-10-13T03:19:29.5174286Z   overwrite: false
+2026-10-13T03:19:29.5174406Z   include-hidden-files: false
+2026-10-13T03:19:29.5174537Z env:
+2026-10-13T03:19:29.5174682Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T03:19:29.5174918Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.15/x64/lib/pkgconfig
+2026-10-13T03:19:29.5175150Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T03:19:29.5175370Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T03:19:29.5175578Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T03:19:29.5175805Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.15/x64/lib
+2026-10-13T03:19:29.5175984Z ##[endgroup]
+2026-10-13T03:19:29.6264374Z (node:11167) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-13T03:19:29.6265064Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-13T03:19:29.6298027Z With the provided path, there will be 1 file uploaded
+2026-10-13T03:19:29.6338891Z Artifact name is valid!
+2026-10-13T03:19:29.6348050Z Root directory input is valid!
+2026-10-13T03:19:30.0155878Z Beginning upload of artifact content to blob storage
+2026-10-13T03:19:30.0299746Z (node:11167) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-13T03:19:30.3125072Z Uploaded bytes 5541
+2026-10-13T03:19:30.3854067Z Finished uploading artifact content to blob storage!
+2026-10-13T03:19:30.3854673Z SHA256 digest of uploaded artifact zip is b575620bf8cabc7fa715adff8d2b9e19a58e0923cbfd10e0418dbe8b4bb967d8
+2026-10-13T03:19:30.3855534Z Finalizing artifact upload
+2026-10-13T03:19:30.6554214Z Artifact unittest-timings-root-6.zip successfully finalized. Artifact ID 11787155759
+2026-10-13T03:19:30.6554928Z Artifact unittest-timings-root-6 has been successfully uploaded! Final size is 5541 bytes. Artifact ID is 11787155759
+2026-10-13T03:19:30.6559561Z Artifact download URL: https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/38340462868/artifacts/11787155759
+2026-10-13T03:19:30.6741256Z Post job cleanup.
+2026-10-13T03:19:30.7368472Z [command]/usr/bin/git version
+2026-10-13T03:19:30.7388807Z git version 2.55.0
+2026-10-13T03:19:30.7417268Z Temporarily overriding HOME='~/work/_temp/fef19679-79d3-409d-a959-4664422ff05d' before making global git config changes
+2026-10-13T03:19:30.7418275Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-13T03:19:30.7422048Z [command]/usr/bin/git config --global --add safe.directory ~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles
+2026-10-13T03:19:30.7451854Z Removing SSH command configuration
+2026-10-13T03:19:30.7456967Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-13T03:19:30.7492008Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-13T03:19:30.7701769Z Removing HTTP extra header
+2026-10-13T03:19:30.7714782Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-13T03:19:30.7752530Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-13T03:19:30.7966645Z Removing includeIf entries pointing to credentials config files
+2026-10-13T03:19:30.7972643Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-13T03:19:30.8000971Z includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git.path
+2026-10-13T03:19:30.8001593Z includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git/worktrees/*.path
+2026-10-13T03:19:30.8001911Z includeif.gitdir:/github/workspace/.git.path
+2026-10-13T03:19:30.8002128Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-13T03:19:30.8008361Z [command]/usr/bin/git config --local --get-all includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git.path
+2026-10-13T03:19:30.8031283Z ~/work/_temp/git-credentials-de147b05-13a7-4a17-af8c-9f28b9256a6e.config
+2026-10-13T03:19:30.8039357Z [command]/usr/bin/git config --local --unset includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-de147b05\-13a7\-4a17\-af8c\-9f28b9256a6e\.config
+2026-10-13T03:19:30.8078896Z [command]/usr/bin/git config --local --get-all includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git/worktrees/*.path
+2026-10-13T03:19:30.8101714Z ~/work/_temp/git-credentials-de147b05-13a7-4a17-af8c-9f28b9256a6e.config
+2026-10-13T03:19:30.8108700Z [command]/usr/bin/git config --local --unset includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-de147b05\-13a7\-4a17\-af8c\-9f28b9256a6e\.config
+2026-10-13T03:19:30.8138506Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-13T03:19:30.8159877Z /github/runner_temp/git-credentials-de147b05-13a7-4a17-af8c-9f28b9256a6e.config
+2026-10-13T03:19:30.8164916Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-de147b05\-13a7\-4a17\-af8c\-9f28b9256a6e\.config
+2026-10-13T03:19:30.8194543Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-13T03:19:30.8215617Z /github/runner_temp/git-credentials-de147b05-13a7-4a17-af8c-9f28b9256a6e.config
+2026-10-13T03:19:30.8220945Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-de147b05\-13a7\-4a17\-af8c\-9f28b9256a6e\.config
+2026-10-13T03:19:30.8253416Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-13T03:19:30.8442717Z Removing credentials config '~/work/_temp/git-credentials-de147b05-13a7-4a17-af8c-9f28b9256a6e.config'
+2026-10-13T03:19:30.8570145Z Cleaning up orphan processes
+2026-10-13T03:19:30.8784546Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
