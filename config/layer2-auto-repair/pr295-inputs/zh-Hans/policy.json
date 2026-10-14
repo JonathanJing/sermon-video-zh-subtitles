@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "sermon-target-language-policy-v2",
+  "sourceLocale": "en",
+  "translator": {
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "high",
+    "promptVersion": "sermon-target-language-translator-zh-Hans-diagnostic-v1"
+  },
+  "reviewer": {
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "medium",
+    "promptVersion": "sermon-target-language-reviewer-zh-Hans-diagnostic-v1"
+  },
+  "batching": {
+    "batchSize": 1,
+    "workers": 1
+  },
+  "targetLocale": "zh-Hans",
+  "terminology": {
+    "seriesTableSha256": "a76c75e531d5860fbc485d16f1debec2b78fa8b6fd08f1a8b0d194ed1cdbffb9",
+    "seriesNames": [
+      {
+        "source": "Revelation: The Comfort and Hope Jesus Brings",
+        "target": "启示录：耶稣带来的安慰与盼望",
+        "reviewStatus": "project_established"
+      },
+      {
+        "source": "When Life Doesn’t Make Sense",
+        "target": "当生活令人费解",
+        "reviewStatus": "project_established"
+      },
+      {
+        "source": "A Study of the Book of Numbers",
+        "target": "民数记研读",
+        "reviewStatus": "project_established"
+      }
+    ],
+    "properNames": [
+      {
+        "source": "Asia Minor",
+        "target": "小亚细亚",
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "If I Had More Time",
+        "target": "If I Had More Time",
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "Lord God",
+        "target": "主神",
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "Lord God Almighty",
+        "target": "主神全能者",
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "Nicholas Carr",
+        "target": "尼古拉斯·卡尔",
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "Old Testament",
+        "target": "旧约",
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "Roman Empire",
+        "target": "罗马帝国",
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "Super Bloom",
+        "target": "Super Bloom",
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "World War",
+        "target": "世界大战",
+        "reviewStatus": "pending"
+      }
+    ]
+  },
+  "scripture": {
+    "editionId": "diagnostic-pinned-excerpts",
+    "citationUseStatus": "pending",
+    "quoteCheckPolicy": "source_bound_exact_quote",
+    "referenceStyle": "Preserve only actually spoken references; this diagnostic does not approve direct scripture quotations."
+  },
+  "languageReview": {
+    "pluginId": "diagnostic-pinned-quotes-v1",
+    "pluginImplementationSha256": "c810cf0ded0d46cdee65b357cb27397c975b8be415988f5036c27e29716c544f",
+    "implementationStatus": "verified",
+    "requiredChecks": [
+      "target_script",
+      "term_surface_preservation",
+      "number_surface_preservation",
+      "utterance_structure",
+      "pinned_quote_integrity"
+    ],
+    "registerRules": [
+      "Natural spoken Simplified Chinese; preserve complete meaning and explicit names/numbers. Diagnostic trial surfaces remain human pending."
+    ]
+  },
+  "formatting": {
+    "speechRegister": "natural_spoken_simplified_chinese",
+    "punctuationRules": [
+      "Use punctuation to reflect meaning, not as acoustic pause evidence."
+    ],
+    "segmentationRules": [
+      "Keep complete semantic clauses; do not split only to chase English word timing."
+    ]
+  },
+  "componentSha256": {
+    "translator": "2c533c33f8ef6899fb6734c1a33e481b7c30cba8e65d9eebc86500f802f0f109",
+    "reviewer": "4ae6ffb2f20490b74faf08037153f7a785c562fd6a7deb7ca0bd6c0aebef223a",
+    "terminology": "8ddffc82328f7ede8a3960342aa924a0cf0cf22d230ab3cadc70ffbf943b9f39",
+    "scripture": "4712f68ba96232f485c7fb633af8f1d5ecffe32e572a355a670fefad2e2eea17",
+    "languageReview": "2e615a49ae0c6715982af756cce49dcbd816fceb73738cfe4292536c33026496",
+    "formatting": "c89601cde85a6be36e671cf17f0a4771d9dc13749e372f1f6eee992584f6cd06",
+    "batching": "e07870c4a83888b3266158ceee0af1e1ef1d34caf1b0f73742ad5f4d05914059",
+    "sourceScope": "0396d9e8b1078c970300b1c14d0b784e01ad3620d4d17d2cc37616ed610c397b"
+  },
+  "sourceScope": {
+    "englishSourcePackageJsonSha256": "483fd864120bd467b01c682153150ec49ede24e3e4cab52ec564a7e29c23b6b9",
+    "anchorManifestSha256": "aa9b07efe4e632b31c40f8841afd02d1f39314de360d6607efca064dbadb9f03",
+    "usedSeriesNames": [],
+    "usedProperNames": [
+      "Asia Minor",
+      "If I Had More Time",
+      "Lord God",
+      "Lord God Almighty",
+      "Nicholas Carr",
+      "Old Testament",
+      "Roman Empire",
+      "Super Bloom",
+      "World War"
+    ],
+    "termApprovalEvidence": []
+  },
+  "simulationModelConfiguration": {
+    "schemaVersion": "codex-layer2-simulation-models-v1",
+    "simulationOnly": true,
+    "translator": {
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "serviceTier": "fast"
+    },
+    "reviewer": {
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "medium",
+      "serviceTier": "fast"
+    }
+  }
+}

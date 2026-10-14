@@ -61,6 +61,15 @@ class TimingPlanTests(unittest.TestCase):
                 subject.plan(10, rows)
         with self.assertRaises(ValueError):
             subject.plan(10, [self.row('a', 0, 2, 1)], policy={'maxEndLagSeconds': 8})
+        three = {k: v for k, v in subject.formal.DEFAULT_POLICY.items() if k != 'tailOverrunSeconds'}
+        # The tail allowance is optional, bounded, and absent from the recorded policy
+        # when the caller did not set it, so older plan identities are unchanged.
+        self.assertEqual(subject.plan(10, [self.row('a', 0, 2, 1)], policy=three)['policy'], three)
+        self.assertEqual(subject.plan(10, [self.row('a', 0, 2, 1)],
+                                      policy={**three, 'tailOverrunSeconds': 0.5})['policy']['tailOverrunSeconds'], 0.5)
+        for bad in ({**three, 'tailOverrunSeconds': 1.5}, {**three, 'extra': 1}):
+            with self.subTest(policy=bad), self.assertRaises(ValueError):
+                subject.plan(10, [self.row('a', 0, 2, 1)], policy=bad)
 
     def test_schedule_is_exact_formal_scheduler_output(self):
         result = subject.plan(30, [self.row('a', 4, 8, 3), self.row('b', 10, 15, 7)])

@@ -2,6 +2,7 @@ import hashlib
 import json
 import pytest
 from scripts import guarded_hosting_publish as p
+from tests.test_guarded_hosting_publish import write_deploy_result
 
 
 class Remote:
@@ -30,7 +31,7 @@ def test_deployed_receipt_with_failed_lease_release_is_recoverable(tmp_path):
     remote = Remote()
     # No v4 catalog has been published yet.
     reader = lambda url: (404, b'') if url.endswith('/multilingual-v4.json') else (200, data)
-    def run(*args, **kwargs): remote.version = 'new'
+    def run(*args, **kwargs): remote.version = 'new'; write_deploy_result(kwargs)
     failing = {'on': True}
     def flaky(method, url, **kwargs):
         if method == 'DELETE' and failing['on']: raise ValueError('Remote operation rejected: HTTP 503')

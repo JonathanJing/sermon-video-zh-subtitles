@@ -163,3 +163,32 @@ def load(edition_id: str, *, directory: Path = DOWNLOAD_DIR) -> Edition:
         return Edition(edition_id=edition_id, verification=spec['verification'], verses=_index_flat(data))
     index, ambiguous = _index_chapters(data)
     return Edition(edition_id=edition_id, verification=spec['verification'], verses=index, ambiguous=ambiguous)
+
+
+
+class LazyEdition:
+    """A registered edition whose file is read on first use, not on construction.
+
+    Adjudication and the receipt gate need the edition's verification status
+    for every unit, but its verses only when a whole-verse quotation is emitted
+    or verified; a locale whose file is absent from the checkout still settles
+    paraphrase-only units and receipts."""
+
+    def __init__(self, edition_id: str, *, directory: Path = DOWNLOAD_DIR) -> None:
+        if edition_id not in EDITIONS:
+            raise EditionError('unknown pinned edition')
+        self.edition_id = edition_id
+        self.verification = EDITIONS[edition_id]['verification']
+        self._directory = directory
+        self._edition: Edition | None = None
+
+    def load(self) -> Edition:
+        if self._edition is None:
+            self._edition = load(self.edition_id, directory=self._directory)
+        return self._edition
+
+    def lookup(self, ref: cuv_scripture.Reference | str, *, excerpt: str | None = None) -> dict[str, Any]:
+        return self.load().lookup(ref, excerpt=excerpt)
+
+    def verify_text(self, ref: cuv_scripture.Reference | str, text: str, *, excerpt: bool = False) -> dict[str, Any]:
+        return self.load().verify_text(ref, text, excerpt=excerpt)

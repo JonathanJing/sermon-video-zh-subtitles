@@ -153,6 +153,80 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(result['reason'],'reconciliation_required')
         self.assertFalse(self.root.exists())
 
+    def test_bound_delivery_document_resolves_l3_package_and_review_references(self):
+        package = self.source.root/'audio-package.json'; package.write_text('{"schemaVersion":"audio"}')
+        review = self.source.root/'audio-review.json'; review.write_text('{"schemaVersion":"review"}')
+        document = self.source.root/'delivery-draft.json'
+        document.write_text(json.dumps({'endpoint':'https://delivery.example.invalid/weekly',
+            'inputs':{'audioPackage':{'path':token('port','audio'), 'sha256':{'$port':'audio','field':'sha256'}},
+                      'reviewReceipt':binding('binding','audioReview')}}))
+        port_ref = {'path':str(package),'sha256':c.file_sha(package)}
+        review_ref = {'path':str(review),'sha256':c.file_sha(review)}
+        stage = {'id':'l4','ports':{'audio':{'stepId':'audio','role':'audio_package'}},'configs':{}}
+        subject._template({'$document':'deliveryDraft'},stage)
+        resolved = subject._resolve({'$document':'deliveryDraft'}, ports={'audio':port_ref},
+            bindings={'deliveryDraft':{'path':str(document),'sha256':c.file_sha(document)},
+                      'audioReview':review_ref}, configs={}, directory=self.source.root/'out')
+        self.assertEqual(resolved['endpoint'],'https://delivery.example.invalid/weekly')
+        self.assertEqual(resolved['inputs']['audioPackage'],port_ref)
+        self.assertEqual(resolved['inputs']['reviewReceipt'],
+                         {'path':str(review),'sha256':review_ref['sha256']})
+        with self.assertRaisesRegex(ValueError,'document_reference_invalid'):
+            subject._resolve({'$document':'deliveryDraft'}, ports={'audio':port_ref},
+                bindings={'deliveryDraft':{'path':str(document),'sha256':c.file_sha(document)}},
+                configs={}, directory=self.source.root/'out', in_document=True)
+
+    def test_prepare_revision_materializes_bound_delivery_document_from_audio_receipt(self):
+        package = self.source.root/'audio-package.json'; package.write_text('{"schemaVersion":"audio"}')
+        review = self.source.root/'audio-review.json'; review.write_text('{"schemaVersion":"review"}')
+        document = self.source.root/'delivery-draft.json'
+        document.write_text(json.dumps({'endpoint':'https://delivery.example.invalid/weekly',
+            'inputs':{'audioPackage':{'path':token('port','audio'), 'sha256':{'$port':'audio','field':'sha256'}},
+                      'reviewReceipt':binding('binding','audioReview')}}))
+        self.manifest['steps'].append({'id':'audio','stageId':'layer3_unit','adapter':'canonical.audio',
+            'locale':'zh-Hans','dependsOn':['source'],'scope':'english_ready_for_translation'})
+        self.manifest['bindings'].update({
+            'deliveryDraft':{'path':str(document),'sha256':c.file_sha(document)},
+            'audioReview':{'path':str(review),'sha256':c.file_sha(review)},
+        })
+        audio_step = self.manifest['steps'][-1]
+        audio_response = runtime.folder(self.root,self.state['runKey'])/('response-'+
+            c.digest(c.job_identity(self.manifest,audio_step))+'.json')
+        audio_response.parent.mkdir(parents=True,exist_ok=True)
+        audio_result = {'artifact':'verified','review':'human_pending','productionEligible':False,
+            'audioPackage':{'path':str(package),'sha256':c.file_sha(package)}}
+        audio_response.write_text(json.dumps({'identity':c.job_identity(self.manifest,audio_step),
+                                              'result':audio_result}))
+        self.state['steps']['audio']={'process':'succeeded','artifact':'verified','review':'human_pending',
+            'responseSha256':c.file_sha(audio_response),'completionEventId':'audio-complete'}
+        stage = copy.deepcopy(self.recipe['stages'][0])
+        stage.update(id='l4-bound-delivery',ports={'audio':{'stepId':'audio','role':'audio_package'}},
+            configs={'delivery':{'adapter':'app.delivery','template':{'$document':'deliveryDraft'}}},
+            manifestTemplate={'bindings':{'deliveryConfig':binding('config','delivery')},
+                'steps':[{'id':'release','adapter':'app.delivery','stageId':'publish_endpoint',
+                    'locale':'zh-Hans','configuration':'deliveryConfig','dependsOn':['audio'],
+                    'scope':'english_ready_for_translation'}]})
+        stage['requiredEvidence']=[]
+        self.recipe['stages']=[stage]
+        self.bind_recipe()
+        self.state['planHash']=c.plan_hash(self.manifest)
+        # Recipe binding participates in the frozen job identity.
+        audio_response=runtime.folder(self.root,self.state['runKey'])/('response-'+
+            c.digest(c.job_identity(self.manifest,audio_step))+'.json')
+        audio_response.write_text(json.dumps({'identity':c.job_identity(self.manifest,audio_step),
+                                              'result':audio_result}))
+        self.state['steps']['audio']['responseSha256']=c.file_sha(audio_response)
+        with patch.object(subject.adapters,'inspect_step'), patch.object(subject.adapters,'verify_result'):
+            prepared=subject.prepare_next_revision(self.state,self.recipe_path,self.root)
+        self.assertEqual(prepared['status'],'ready')
+        config_ref=prepared['manifest']['bindings']['deliveryConfig']
+        config=c.read(config_ref['path'])
+        self.assertEqual(config['endpoint'],'https://delivery.example.invalid/weekly')
+        self.assertEqual(config['inputs']['audioPackage']['path'],str(package))
+        self.assertEqual(config['inputs']['audioPackage']['sha256'],c.file_sha(package))
+        self.assertEqual(config['inputs']['reviewReceipt']['path'],str(review))
+        self.assertEqual(config['inputs']['reviewReceipt']['sha256'],c.file_sha(review))
+
     def test_changed_upstream_response_is_rejected(self):
         path=self.complete_source();path.write_text(path.read_text()+' ')
         with self.assertRaisesRegex(ValueError,'upstream_evidence_changed'):
@@ -232,6 +306,95 @@ class ContinuationTests(unittest.TestCase):
         draft=waiting['inputContext']['configurationDrafts']['reviewConfig']
         self.assertEqual(c.digest(draft['value']),draft['jsonSha256'])
         self.assertFalse(Path(draft['path']).exists())
+
+    def test_locale_scoped_layer2_budget_ingestion_and_invalid_scope(self):
+        from tests import test_canonical_layer2_budget_shards as budget_fixture
+        f = budget_fixture.LocaleLedgerTests('test_locale_authorization_shards_the_ledger_by_locale')
+        f.setUp(); self.addCleanup(f.doCleanups)
+        authorization = f.write_locale_authorization()
+        self.manifest['productionRunId'] = f.base.config.run_id
+        self.recipe['productionRunId'] = f.base.config.run_id
+        self.manifest['bindings']['layer2Configuration'] = {
+            'path': str(f.base.config.path), 'sha256': c.file_sha(f.base.config.path)}
+        self.recipe['stages'][0]['requiredEvidence'] = [
+            {'kind': 'budget_authorization', 'binding': 'localeBudget',
+             'inputs': {'configuration': token('binding', 'layer2Configuration')}}]
+        self.bind_recipe()
+        before = copy.deepcopy(self.state)
+        with patch.object(subject.adapters, 'execute', side_effect=AssertionError('dispatch forbidden')):
+            admitted = subject.validate_evidence(
+                self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.assertEqual(admitted['sha256'], c.file_sha(authorization))
+        self.assertEqual(admitted['kind'], 'budget_authorization')
+        self.assertEqual(self.state, before)
+        self.assertFalse(self.root.exists())
+        # Additional manifest locales handled elsewhere do not enlarge this
+        # one-lane controller's authorization or reject its valid budget.
+        self.manifest['locales'] = ['zh-Hans', 'ko', 'es']
+        template = self.manifest['policies'][0]
+        self.manifest['policies'] = [{**template, 'locale': locale}
+                                    for locale in self.manifest['locales']]
+        before = copy.deepcopy(self.state)
+        subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.assertEqual(self.state, before)
+        self.assertFalse(self.root.exists())
+
+        # Conversely a one-locale manifest cannot reduce an authorization
+        # bound to a controller registering three independently spendable lanes.
+        from scripts import canonical_layer2_controller as controller
+        for locale in ('ko', 'es'):
+            f.base.fixture.config_data['locales'][locale] = {
+                'outputDirectory': 'outputs/' + locale,
+                'plugin': f.base.fixture.config_data['locales']['zh-Hans']['plugin']}
+            f.base.fixture.fixture.config['locales'][locale] = copy.deepcopy(
+                f.base.fixture.fixture.config['locales']['zh-Hans'])
+        f.base.fixture.fixture.write('inspection.json', f.base.fixture.fixture.config)
+        f.base.fixture.save_config()
+        f.base.config = controller.load_configuration(f.base.fixture.path)
+        for path in (f.base.receipt, f.base.auth_path):
+            value = c.read(path)
+            value.get('binding', value)['configurationSha256'] = f.base.config.sha256
+            path.write_text(json.dumps(value))
+        authorization = f.write_locale_authorization()
+        self.manifest['bindings']['layer2Configuration']['sha256'] = c.file_sha(f.base.config.path)
+        self.manifest['locales'] = ['zh-Hans']
+        self.manifest['policies'] = [template]
+        before = copy.deepcopy(self.state)
+        with self.assertRaisesRegex(ValueError, 'budget_execution_binding_changed'):
+            subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.assertEqual(self.state, before)
+        self.manifest['budget']['limitMicroUsd'] = 3 * c.read(authorization)['authority']['globalBounds']['costMicrousd']
+        before = copy.deepcopy(self.state)
+        subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.assertEqual(self.state, before)
+
+        value = c.read(authorization)
+        value['ledgerScope'] = 'run'
+        authorization.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'continuation_budget_schema_invalid'):
+            subject.validate_evidence(
+                self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.assertEqual(self.state, before)
+
+    def test_locale_scoped_budget_requires_verified_configuration_input(self):
+        from tests import test_canonical_layer2_budget_shards as budget_fixture
+        f = budget_fixture.LocaleLedgerTests('test_locale_authorization_shards_the_ledger_by_locale')
+        f.setUp(); self.addCleanup(f.doCleanups)
+        authorization = f.write_locale_authorization()
+        self.manifest['productionRunId'] = f.base.config.run_id
+        self.recipe['productionRunId'] = f.base.config.run_id
+        self.recipe['stages'][0]['requiredEvidence'] = [
+            {'kind': 'budget_authorization', 'binding': 'localeBudget'}]
+        self.bind_recipe()
+        with self.assertRaisesRegex(ValueError, 'budget_configuration_required'):
+            subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.manifest['bindings']['layer2Configuration'] = {
+            'path': str(f.base.config.path), 'sha256': 'f' * 64}
+        self.recipe['stages'][0]['requiredEvidence'][0]['inputs'] = {
+            'configuration': token('binding', 'layer2Configuration')}
+        self.bind_recipe()
+        with self.assertRaisesRegex(ValueError, 'binding_changed'):
+            subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
 
     def test_generated_bytes_cannot_be_overwritten_after_restart(self):
         self.complete_source()

@@ -19,13 +19,14 @@ from scripts import target_language_policy as policies
 SCHEMA = 'sermon-scripture-candidate-queue-v1'
 BOOKS = (
     'Genesis|Exodus|Leviticus|Numbers|Deuteronomy|Joshua|Judges|Ruth|Samuel|Kings|Chronicles|Ezra|Nehemiah|'
-    'Esther|Job|Psalms?|Proverbs|Ecclesiastes|Song of Songs|Isaiah|Jeremiah|Lamentations|Ezekiel|Daniel|Hosea|'
+    'Esther|Job|Psalms?|Proverbs|Ecclesiastes|Song of (?:Songs|Solomon)|Isaiah|Jeremiah|Lamentations|Ezekiel|Daniel|Hosea|'
     'Joel|Amos|Obadiah|Jonah|Micah|Nahum|Habakkuk|Zephaniah|Haggai|Zechariah|Malachi|Matthew|Mark|Luke|John|'
     'Acts|Romans|Corinthians|Galatians|Ephesians|Philippians|Colossians|Thessalonians|Timothy|Titus|Philemon|'
     'Hebrews|James|Peter|Jude|Revelation'
 )
 SIGNALS = (
-    ('book_reference', re.compile(r'\b(?:' + BOOKS + r')\s+\d+(?::\d+(?:[-–]\d+)?)?', re.I)),
+    # ASR punctuates "John, chapter 3, verse 16"; a comma after the book still names the reference.
+    ('book_reference', re.compile(r'\b(?:' + BOOKS + r')[\s,]+(?:chapter\s+)?\d+(?::\d+(?:[-–]\d+)?)?', re.I)),
     ('chapter_verse', re.compile(r'\b(?:chapter|verse)s?\s+\d+', re.I)),
     ('speech_verb', re.compile(r'\b(?:says?|said|reads?|writes?|wrote|saying|written)\b', re.I)),
     ('quotation_marks', re.compile(r'["“”「」『』]')),

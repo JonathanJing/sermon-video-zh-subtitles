@@ -229,7 +229,41 @@ class ReaderClosureTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'dependency is missing'):
                 release.runtime_web_files(root)
 
+    def test_page_shell_styles_workers_and_images_are_sealed_with_the_modules(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'index.html').write_text('<link rel="icon" href="/brand.svg"><script src="/theme.js"></script>'
+                                             '<link rel="stylesheet" href="/style.css"><a href="/">home</a>'
+                                             '<svg><use href="/icons.svg#calendar"></use></svg>'
+                                             '<script type="module" src="/app.mjs"></script>'
+                                             '<script type="module" src="/extra.mjs"></script>')
+            (root / 'app.mjs').write_text("import {x} from '/catalog.mjs'; fetch('/weekly.json');"
+                                          "navigator.serviceWorker.register('/offline-worker.js');")
+            (root / 'catalog.mjs').write_text("export const x = new URL('./worklet.mjs', import.meta.url);")
+            (root / 'worklet.mjs').write_text('export const w = 1;')
+            (root / 'extra.mjs').write_text("const css = '/voice-demo.css';")
+            (root / 'offline-worker.js').write_text("const SHELL = ['/index.html', '/style.css', '/brand-light.png'];")
+            (root / 'style.css').write_text("body { background: url('/bg.png') }")
+            (root / 'theme.js').write_text('icon.src = "/brand-light.svg";')
+            for name in ('brand.svg', 'brand-light.svg', 'brand-light.png', 'bg.png', 'icons.svg', 'voice-demo.css',
+                         'published-weeks.mjs', 'content-locales.mjs'):
+                (root / name).write_text('')
+            self.assertEqual(set(release.runtime_web_files(root)),
+                             {'index.html', 'app.mjs', 'catalog.mjs', 'worklet.mjs', 'extra.mjs', 'offline-worker.js',
+                              'style.css', 'theme.js', 'brand.svg', 'brand-light.svg', 'brand-light.png', 'bg.png',
+                              'icons.svg', 'voice-demo.css', 'published-weeks.mjs', 'content-locales.mjs'})
+            (root / 'icons.svg').unlink()
+            with self.assertRaisesRegex(ValueError, 'dependency is missing'):
+                release.runtime_web_files(root)
+
     def test_actual_reader_contains_catalog_navigation_dependency(self):
         self.assertIn('catalog.mjs', release.RUNTIME_WEB_FILES)
         self.assertIn('fingerprint-capture.mjs', release.RUNTIME_WEB_FILES)
         self.assertIn('locales-ko.mjs', release.RUNTIME_WEB_FILES)
+        # The shell ships with the modules: the page, its styles, theme, icons,
+        # offline worker and the fingerprint worker and worklet.
+        for name in ('index.html', 'style.css', 'theme.js', 'icons.svg', 'brand-icon.svg', 'brand-icon-light.svg',
+                     'brand-icon.png', 'offline-worker.js', 'fingerprint-worker.mjs', 'fingerprint-worklet.mjs',
+                     'voice-samples.mjs', 'voice-demo.css'):
+            self.assertIn(name, release.RUNTIME_WEB_FILES, name)
+        self.assertFalse(any(name.endswith('.json') or '.test.' in name for name in release.RUNTIME_WEB_FILES))
