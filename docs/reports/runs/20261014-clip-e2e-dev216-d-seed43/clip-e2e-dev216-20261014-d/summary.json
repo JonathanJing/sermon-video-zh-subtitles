@@ -1,0 +1,121 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-14T16:41:42+00:00",
+      "units": 16,
+      "inputs": "~/.codex/worktrees/clip-e2e-dev-20261014/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/clip-e2e-dev216-20261014-d/inputs"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-14T16:41:43+00:00"
+    },
+    "layer2": {
+      "status": "done",
+      "at": "2026-10-14T16:42:35+00:00"
+    },
+    "qc.ko": {
+      "status": "done",
+      "at": "2026-10-14T16:44:35+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/text/ko/candidate.json",
+          "out": "out",
+          "status": "text_waiver_issued",
+          "failedGroups": [],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/state/qc-receipts/text/ko/b6380f06a7ae6cc9743013f3759f5f4b5b38979d85fdcbb1662b13f74a1fead8/entry-000001.json",
+          "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/out/ko"
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/text/ko/candidate.json",
+      "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-ko/out/ko"
+    },
+    "qc.es": {
+      "status": "done",
+      "at": "2026-10-14T16:46:09+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/text/es/candidate.json",
+          "out": "out",
+          "status": "text_waiver_issued",
+          "failedGroups": [],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-es/state/qc-receipts/text/es/329612c1bda21fcfa24c91728eaf6773efb67c746d05e60839f979726445a440/entry-000001.json",
+          "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-es/out/es"
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/text/es/candidate.json",
+      "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-es/out/es"
+    },
+    "qc.zh-Hans": {
+      "status": "done",
+      "at": "2026-10-14T16:48:43+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2/text/zh-Hans/candidate.json",
+          "out": "out",
+          "status": "requires_repair",
+          "failedGroups": [
+            "translation-chunk-0005-u003"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-zh-Hans/state/qc-receipts/text/zh-Hans/1ea05f110038977c17eb7934dc9cc782d95f6a79eeac182d813f8812531934fd/entry-000001.json",
+          "waiverDir": null
+        },
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2-zh-Hans-r1/text/zh-Hans/candidate.json",
+          "out": "out-r1",
+          "status": "text_waiver_issued",
+          "failedGroups": [],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-zh-Hans/state/qc-receipts/text/zh-Hans/1ea05f110038977c17eb7934dc9cc782d95f6a79eeac182d813f8812531934fd/entry-000002.json",
+          "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-zh-Hans/out-r1/zh-Hans"
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l2-zh-Hans-r1/text/zh-Hans/candidate.json",
+      "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/textqc-zh-Hans/out-r1/zh-Hans"
+    },
+    "audio.ko": {
+      "status": "failed",
+      "at": "2026-10-14T17:08:14+00:00",
+      "qcStatus": "requires_repair",
+      "failedGroups": [
+        "translation-chunk-0005-u007"
+      ],
+      "nextActions": {
+        "translation-chunk-0005-u007": "resynthesize_new_seed"
+      },
+      "repairAttempts": [
+        {
+          "seed": 43,
+          "status": "failed",
+          "startedAt": "2026-10-14T17:05:24+00:00",
+          "failedGroupsBefore": [
+            "translation-chunk-0005-u007"
+          ],
+          "finishedAt": "2026-10-14T17:08:14+00:00",
+          "qcStatus": "requires_repair",
+          "failedGroups": [
+            "translation-chunk-0005-u007"
+          ],
+          "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l3/ko-repair-seed-43/audio-package.json",
+          "audioQcOut": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/ko-seed-43/ko"
+        }
+      ]
+    },
+    "audio.es": {
+      "status": "done",
+      "at": "2026-10-14T16:56:34+00:00",
+      "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l3/es/audio-package.json",
+      "audioQcOut": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/es/es"
+    },
+    "audio.zh-Hans": {
+      "status": "done",
+      "at": "2026-10-14T17:01:40+00:00",
+      "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l3/zh-Hans/audio-package.json",
+      "audioQcOut": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/zh-Hans/zh-Hans"
+    }
+  },
+  "stopped": [
+    "audio.ko seed 43: requires_repair ['translation-chunk-0005-u007'] audio QC failed; re-render the failed units as the repair ladder says"
+  ],
+  "settledUsd": 6.304642
+}
