@@ -111,6 +111,14 @@ class RunTests(unittest.TestCase):
                   "settlement": {"costStatus": "reused", "costMicrousd": 0}}}})
         self.assertAlmostEqual(self.run.settled(), 15.3 + 0.2 + 0.003 + 0.0135)
 
+    def test_claude_layer2_list_price_settlements_stay_outside_settled_spend(self):
+        root = self.run_dir / "l2/.layer2-jobs.layer2-budget"
+        subject.write(root / "ko/x/a.result.json", {"result": {"usage": {"costMicrousd": 5_500_000}}})
+        self.assertAlmostEqual(self.run.settled(), 15.3 + 5.5)
+        subject.write(self.run_dir / "plans/layer2/plan.json",
+                      {"stages": [{"stage": "layer2", "budgetRoot": str(root), "countsTowardTotal": False}]})
+        self.assertAlmostEqual(self.run.settled(), 15.3)
+
     def test_open_qc_caps_count_until_the_locale_finishes_audio(self):
         for locale in LOCALES:
             subject.write(self.run_dir / f"plans/qc-{locale}/plan.json", {"stages": [{"capUsd": 5.525}]})

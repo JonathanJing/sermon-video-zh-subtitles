@@ -220,9 +220,15 @@ class Run:
     def settled(self) -> float:
         """Earlier spend plus this run's Layer 2 results and QC ledgers; unpriced rows count at their reservation."""
         from scripts.export_run_digest import budget_summary
+        # A Claude CLI Layer 2 (claude_cli_opus) settles list-price equivalents on subscription quota:
+        # its plan marks the stage countsTowardTotal false, and none of it is money.
+        unpaid = [Path(stage["budgetRoot"]).resolve() for plan in self.dir.glob("plans/layer2*/plan.json")
+                  for stage in read(plan)["stages"] if stage.get("countsTowardTotal") is False]
         total = 0
         for path in self.dir.rglob("*.result.json"):
             if "layer2-budget" in str(path) and "responses" not in path.parts:
+                if any(path.resolve().is_relative_to(root) for root in unpaid):
+                    continue
                 total += read(path)["result"]["usage"]["costMicrousd"]
         for path in self.dir.rglob("source-budget.json"):
             ledger = read(path)
