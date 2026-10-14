@@ -787,7 +787,15 @@ def stage_layer4(run: Run):
 
 def stage_report(run: Run):
     name = datetime.now(timezone.utc).strftime("%Y%m%d") + "-clip-e2e-" + run.spec["name"]
-    run.sh("report", [PY, ROOT / "scripts/export_run_digest.py", run.dir, "--name", name])
+    digest = ROOT / "artifacts/run-reports" / name
+    if digest.exists():
+        manifest = read(digest / "manifest.json")
+        require(manifest.get("name") == name and
+                [row.get("label") for row in manifest.get("runs", [])] == [run.dir.name],
+                "existing run digest does not match this run")
+        run.sh("report-verify", [PY, ROOT / "scripts/export_run_digest.py", digest, "--verify"])
+    else:
+        run.sh("report", [PY, ROOT / "scripts/export_run_digest.py", run.dir, "--name", name])
     run.mark("report", "done", reportName=name)
 
 
