@@ -1,0 +1,4 @@
+stage	status	seconds
+discover	pass	10.5
+ko.text-qc.prefetch	pass	176.0
+ko.text-qc	pass	12.2

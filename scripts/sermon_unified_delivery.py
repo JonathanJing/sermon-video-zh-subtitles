@@ -210,7 +210,10 @@ def inspect(config_path):
     machine_checked = any(read(refs[locale]).get('reviewKind') == 'machine_quality_waiver'
                           or read(refs[locale]).get('schemaVersion') in (
                               'sermon-target-language-machine-text-waiver-v1',
-                              'sermon-target-language-machine-audio-waiver-v1')
+                              'sermon-target-language-machine-text-waiver-v2',
+                              'sermon-target-language-machine-audio-waiver-v1',
+                              'sermon-target-language-machine-audio-waiver-v2',
+                              'sermon-target-language-machine-audio-waiver-v3')
                           for name in ('full_review_receipt', 'spoken_review_receipt', 'audio_review_receipt')
                           for refs in [builder.assignment_map(getattr(args, name), args.locales)] for locale in args.locales)
     result = {'machineChecked': machine_checked, 'status': 'ready_to_prepare', 'planHash': plan_hash, 'kind': 'app_delivery',
@@ -260,8 +263,8 @@ def _authorization(value, paths, state, sealed):
     return receipt
 
 
-def _reader(url):
-    with urlopen(Request(url, headers={'Cache-Control': 'no-cache'}), timeout=120) as response:
+def _reader(url, *, timeout=120):
+    with urlopen(Request(url, headers={'Cache-Control': 'no-cache'}), timeout=timeout) as response:
         return response.status, response.read()
 
 

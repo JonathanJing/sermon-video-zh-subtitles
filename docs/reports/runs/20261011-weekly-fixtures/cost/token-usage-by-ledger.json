@@ -1,0 +1,247 @@
+{
+ "note": "summed from cached provider responses; the ledgers' own costMicrousd fields are 0 for every request (gap noted in the retrospective)",
+ "ledgers": {
+  ".api-budget-es": {
+   "responses": 235,
+   "totalTokens": 41927,
+   "promptTokens": 26667,
+   "completionTokens": 15260,
+   "reasoningTokens": 7519
+  },
+  ".api-budget-es-v10": {
+   "responses": 1482,
+   "totalTokens": 505673,
+   "promptTokens": 421010,
+   "completionTokens": 84663,
+   "reasoningTokens": 36205
+  },
+  ".api-budget-es-v11": {
+   "responses": 915,
+   "totalTokens": 300681,
+   "promptTokens": 258680,
+   "completionTokens": 42001,
+   "reasoningTokens": 16689
+  },
+  ".api-budget-es-v12": {
+   "responses": 915,
+   "totalTokens": 302011,
+   "promptTokens": 258686,
+   "completionTokens": 43325,
+   "reasoningTokens": 17988
+  },
+  ".api-budget-es-v13": {
+   "responses": 2964,
+   "totalTokens": 1010861,
+   "promptTokens": 842060,
+   "completionTokens": 168801,
+   "reasoningTokens": 71968
+  },
+  ".api-budget-es-v2": {
+   "responses": 433,
+   "totalTokens": 79013,
+   "promptTokens": 49441,
+   "completionTokens": 29572,
+   "reasoningTokens": 14950
+  },
+  ".api-budget-es-v3": {
+   "responses": 915,
+   "totalTokens": 271278,
+   "promptTokens": 229623,
+   "completionTokens": 41655,
+   "reasoningTokens": 16506
+  },
+  ".api-budget-es-v4": {
+   "responses": 915,
+   "totalTokens": 271755,
+   "promptTokens": 229652,
+   "completionTokens": 42103,
+   "reasoningTokens": 16788
+  },
+  ".api-budget-es-v6": {
+   "responses": 1482,
+   "totalTokens": 504364,
+   "promptTokens": 420800,
+   "completionTokens": 83564,
+   "reasoningTokens": 35422
+  },
+  ".api-budget-es-v7": {
+   "responses": 915,
+   "totalTokens": 300546,
+   "promptTokens": 258692,
+   "completionTokens": 41854,
+   "reasoningTokens": 16662
+  },
+  ".api-budget-ko-es": {
+   "responses": 1818,
+   "totalTokens": 419700,
+   "promptTokens": 321855,
+   "completionTokens": 97845,
+   "reasoningTokens": 44580
+  },
+  ".api-budget-ko-es-v2": {
+   "responses": 1075,
+   "totalTokens": 308563,
+   "promptTokens": 250081,
+   "completionTokens": 58482,
+   "reasoningTokens": 27437
+  },
+  ".api-budget-ko-v10": {
+   "responses": 1444,
+   "totalTokens": 512908,
+   "promptTokens": 414121,
+   "completionTokens": 98787,
+   "reasoningTokens": 49822
+  },
+  ".api-budget-ko-v11": {
+   "responses": 915,
+   "totalTokens": 313455,
+   "promptTokens": 260873,
+   "completionTokens": 52582,
+   "reasoningTokens": 26201
+  },
+  ".api-budget-ko-v12": {
+   "responses": 915,
+   "totalTokens": 313570,
+   "promptTokens": 260868,
+   "completionTokens": 52702,
+   "reasoningTokens": 26384
+  },
+  ".api-budget-ko-v13": {
+   "responses": 2888,
+   "totalTokens": 1025627,
+   "promptTokens": 828160,
+   "completionTokens": 197467,
+   "reasoningTokens": 99920
+  },
+  ".api-budget-ko-v3": {
+   "responses": 1444,
+   "totalTokens": 462298,
+   "promptTokens": 368026,
+   "completionTokens": 94272,
+   "reasoningTokens": 46962
+  },
+  ".api-budget-ko-v6": {
+   "responses": 915,
+   "totalTokens": 311538,
+   "promptTokens": 260858,
+   "completionTokens": 50680,
+   "reasoningTokens": 24502
+  },
+  ".api-budget-ko-v7": {
+   "responses": 714,
+   "totalTokens": 148775,
+   "promptTokens": 85289,
+   "completionTokens": 63486,
+   "reasoningTokens": 37904
+  },
+  ".api-budget-ko-v8": {
+   "responses": 1444,
+   "totalTokens": 512615,
+   "promptTokens": 413778,
+   "completionTokens": 98837,
+   "reasoningTokens": 50513
+  },
+  ".api-budget-ko-v9": {
+   "responses": 915,
+   "totalTokens": 313533,
+   "promptTokens": 260887,
+   "completionTokens": 52646,
+   "reasoningTokens": 26400
+  },
+  ".api-budget-zh-v1": {
+   "responses": 1414,
+   "totalTokens": 508222,
+   "promptTokens": 406497,
+   "completionTokens": 101725,
+   "reasoningTokens": 53238
+  },
+  ".layer2-jobs-r10-zh.layer2-budget": {
+   "responses": 0,
+   "totalTokens": 0,
+   "promptTokens": 0,
+   "completionTokens": 0,
+   "reasoningTokens": 0
+  },
+  ".layer2-jobs-r11-zh.layer2-budget": {
+   "responses": 0,
+   "totalTokens": 0,
+   "promptTokens": 0,
+   "completionTokens": 0,
+   "reasoningTokens": 0
+  },
+  ".layer2-jobs-r12-zh.layer2-budget": {
+   "responses": 0,
+   "totalTokens": 0,
+   "promptTokens": 0,
+   "completionTokens": 0,
+   "reasoningTokens": 0
+  },
+  ".layer2-jobs-r2.layer2-budget": {
+   "responses": 58,
+   "totalTokens": 132803,
+   "promptTokens": 115842,
+   "completionTokens": 16961,
+   "reasoningTokens": 4830
+  },
+  ".layer2-jobs-r3.layer2-budget": {
+   "responses": 160,
+   "totalTokens": 364024,
+   "promptTokens": 317737,
+   "completionTokens": 46287,
+   "reasoningTokens": 13720
+  },
+  ".layer2-jobs-r4.layer2-budget": {
+   "responses": 0,
+   "totalTokens": 0,
+   "promptTokens": 0,
+   "completionTokens": 0,
+   "reasoningTokens": 0
+  },
+  ".layer2-jobs-r5.layer2-budget": {
+   "responses": 0,
+   "totalTokens": 0,
+   "promptTokens": 0,
+   "completionTokens": 0,
+   "reasoningTokens": 0
+  },
+  ".layer2-jobs-r6-zh.layer2-budget": {
+   "responses": 0,
+   "totalTokens": 0,
+   "promptTokens": 0,
+   "completionTokens": 0,
+   "reasoningTokens": 0
+  },
+  ".layer2-jobs-r7-zh.layer2-budget": {
+   "responses": 0,
+   "totalTokens": 0,
+   "promptTokens": 0,
+   "completionTokens": 0,
+   "reasoningTokens": 0
+  },
+  ".layer2-jobs-r8-zh.layer2-budget": {
+   "responses": 0,
+   "totalTokens": 0,
+   "promptTokens": 0,
+   "completionTokens": 0,
+   "reasoningTokens": 0
+  },
+  ".layer2-jobs-r9-zh.layer2-budget": {
+   "responses": 0,
+   "totalTokens": 0,
+   "promptTokens": 0,
+   "completionTokens": 0,
+   "reasoningTokens": 0
+  },
+  ".layer2-jobs.layer2-budget": {
+   "responses": 2,
+   "totalTokens": 4027,
+   "promptTokens": 3583,
+   "completionTokens": 444,
+   "reasoningTokens": 228
+  }
+ },
+ "totals": {
+  "responses": 27292,
+  "totalTokens": 9239767
+ }
+}

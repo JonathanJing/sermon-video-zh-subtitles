@@ -25,20 +25,16 @@ function fft(re, im) {
   }
 }
 function hash(f1,f2,dt){return (f1<<14)|(f2<<6)|dt;}
-export function fingerprint(samples,sampleRate) {
-  const x=resample(samples,sampleRate), frames=Math.max(0,Math.floor((x.length-N)/H)+1), candidates=[];
-  let energy=0;for(const v of x){if(!Number.isFinite(v))throw new TypeError('Non-finite sample');energy+=v*v;}
-  const rms=Math.sqrt(energy/Math.max(1,x.length)), re=new Float64Array(N), im=new Float64Array(N), log=new Float64Array(N/2), win=Float64Array.from({length:N},(_,i)=>.5-.5*Math.cos(2*Math.PI*i/(N-1)));
-  for(let t=0;t<frames;t++){
-    for(let i=0;i<N;i++){re[i]=x[t*H+i]*win[i];im[i]=0;}fft(re,im);
-    let avg=0;for(let b=24;b<440;b++){log[b]=Math.log(1e-16+re[b]*re[b]+im[b]*im[b]);avg+=log[b];}avg/=416;
-    const peaks=[];
-    for(let b=27;b<436;b++)if(log[b]>log[b-1]&&log[b]>=log[b+1]&&log[b]>avg+1.2){
-      let local=0;for(let k=-10;k<=10;k++)local+=log[Math.max(24,Math.min(439,b+k))];
-      peaks.push({t,b,score:log[b]-.65*local/21-.35*avg});
-    }
-    peaks.sort((a,b)=>b.score-a.score);candidates.push(peaks.slice(0,5));
+function framePeaks(log,t) {
+  let avg=0;for(let b=24;b<440;b++)avg+=log[b];avg/=416;
+  const peaks=[];
+  for(let b=27;b<436;b++)if(log[b]>log[b-1]&&log[b]>=log[b+1]&&log[b]>avg+1.2){
+    let local=0;for(let k=-10;k<=10;k++)local+=log[Math.max(24,Math.min(439,b+k))];
+    peaks.push({t,b,score:log[b]-.65*local/21-.35*avg});
   }
+  peaks.sort((a,b)=>b.score-a.score);return peaks.slice(0,5);
+}
+function landmarksFrom(candidates,frames) {
   const bySecond=new Map();
   for(let t=0;t<frames;t++)for(const p of candidates[t]){
     let strongest=true;
@@ -51,7 +47,39 @@ export function fingerprint(samples,sampleRate) {
     const q=peaks[j],dt=q.t-p.t;if(dt<5)continue;if(dt>44)break;
     landmarks.push([hash(Math.round(p.b/2),Math.round(q.b/2),dt),p.t]);if(++count>=8)break;
   }}
-  return {schemaVersion:'sermon-fingerprint-query-v1',algorithmVersion:CONFIG.algorithmVersion,sampleRate:SR,hopSize:H,durationSeconds:samples.length/sampleRate,rms,peakCount:peaks.length,landmarks};
+  return {peakCount:peaks.length,landmarks};
+}
+// Streams frames so whole-sermon index builds never hold every spectrum.
+function spectra(samples,sampleRate,visit) {
+  const x=resample(samples,sampleRate), frames=Math.max(0,Math.floor((x.length-N)/H)+1);
+  let energy=0;for(const v of x){if(!Number.isFinite(v))throw new TypeError('Non-finite sample');energy+=v*v;}
+  const rms=Math.sqrt(energy/Math.max(1,x.length)), re=new Float64Array(N), im=new Float64Array(N), log=new Float64Array(N/2), win=Float64Array.from({length:N},(_,i)=>.5-.5*Math.cos(2*Math.PI*i/(N-1)));
+  for(let t=0;t<frames;t++){
+    for(let i=0;i<N;i++){re[i]=x[t*H+i]*win[i];im[i]=0;}fft(re,im);
+    for(let b=24;b<440;b++)log[b]=Math.log(1e-16+re[b]*re[b]+im[b]*im[b]);
+    visit(log,t);
+  }
+  return {frames,rms};
+}
+const query=(samples,sampleRate,rms,result)=>({schemaVersion:'sermon-fingerprint-query-v1',algorithmVersion:CONFIG.algorithmVersion,sampleRate:SR,hopSize:H,durationSeconds:samples.length/sampleRate,rms,peakCount:result.peakCount,landmarks:result.landmarks});
+export function fingerprint(samples,sampleRate) {
+  const candidates=[];
+  const {frames,rms}=spectra(samples,sampleRate,(log,t)=>candidates.push(framePeaks(log,t)));
+  return query(samples,sampleRate,rms,landmarksFrom(candidates,frames));
+}
+export const QUERY_PROFILES=Object.freeze(['cmn-v1']);
+/**
+ * FIELD-10 candidate query profile, used only for shadow comparison. `cmn-v1`
+ * subtracts each bin's median log power over this query before peak picking,
+ * suppressing steady room noise. Same hash layout and index; never changes a
+ * production match decision.
+ */
+export function fingerprintProfile(samples,sampleRate,profile) {
+  if(!QUERY_PROFILES.includes(profile))throw new TypeError('Unknown query profile');
+  const logs=[];
+  const {frames,rms}=spectra(samples,sampleRate,log=>logs.push(log.slice()));
+  for(let b=24;b<440;b++){const column=logs.map(row=>row[b]).sort((a,c)=>a-c),median=column[Math.floor(column.length/2)];for(const row of logs)row[b]-=median;}
+  return query(samples,sampleRate,rms,landmarksFrom(logs.map((log,t)=>framePeaks(log,t)),frames));
 }
 export function matchFingerprint(features,index) {
   const fail=(reason,more={})=>({matched:false,queryStartSeconds:null,confidence:0,diagnostics:{reason,...more}});

@@ -187,7 +187,7 @@ class PilotEngineEvidenceTests(unittest.TestCase):
                 argv = [sys.executable, str(pilot.REPO/'scripts/run_sermon_prefect_dag.py'),
                         'mock', '--root', str(root), '--plan', str(plan_path)]
                 first = subprocess.run(argv, capture_output=True, text=True, timeout=120)
-                self.assertEqual(first.returncode, 0 if name=='complete' else 2, first.stderr[-4000:])
+                self.assertEqual(first.returncode, 0 if name=='complete' else 2, (first.stdout[-4000:], first.stderr[-4000:]))
                 original = evidence.inventory(root)
                 report = evidence.inspect(root, diagnose_offline=True)
                 self.assertEqual(original, evidence.inventory(root))
@@ -195,7 +195,7 @@ class PilotEngineEvidenceTests(unittest.TestCase):
                 self.assertEqual(report['progress']['gateCompletionPercent'], 100 if name=='complete' else 70)
                 if name=='complete':
                     second = subprocess.run(argv, capture_output=True, text=True, timeout=120)
-                    self.assertEqual(second.returncode, 0, second.stderr[-4000:])
+                    self.assertEqual(second.returncode, 0, (second.stdout[-4000:], second.stderr[-4000:]))
                     replay = evidence.inspect(root)
                     self.assertEqual(report['validatedNodeEvidence'], replay['validatedNodeEvidence'])
                     self.assertEqual(report['progress']['counts'], replay['progress']['counts'])

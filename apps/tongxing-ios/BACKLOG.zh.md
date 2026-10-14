@@ -4,7 +4,7 @@
 
 更新：2026-10-06。已对照 `origin/dev@14c050f3`，#256 已整合全文跟随与返回、学习内容、系统播放、前台定位反馈、锁屏最近同步字幕及 PR251—255；最新已分发包为 Beta 1.26.15（56），源码后续修复不自动进入该冻结安装包。IOS-06—11 下方分别记录实现、模拟器验证及仍待真机验收；不能将合并或 TestFlight 分发视为设备验收。保留离线播放，App 内实时逐句，锁屏仅显示带同步时间与过期降级的最近字幕快照；系统灵动岛在 iOS27.0.1 实机未恢复的问题仍待复验。
 
-9 月 20 日实际播放暴露的英文覆盖、词级时间轴和中文语速问题属于上游质量门禁，不因客户端可播放而视为通过；9 月 27 日三语正式站已有单次发布记录，也不自动批准其他周次。Gemini 音视频 sidecar 的全篇 POC 仍只保留为 Discovery/shadow 审阅辅助，待人工 Gold 和分类质量优化后再评估生产接入。历史证据见 [当日播放复盘](../../docs/production-2026-09-20.zh.md#当日实际播放复盘)和[全篇 sidecar 结果](../../experiments/omni-annotation-poc/FULL-SERMON-RESULT-2026-09-20.zh.md)。早期 Web／实时字幕需求已移到 [Dev 统一 Backlog 的历史附录](../../docs/backlog.zh.md#历史附录2026-06-22-1130-会众中文字幕-backlog)。
+9 月 20 日实际播放暴露的英文覆盖、词级时间轴和中文语速问题属于上游质量门禁，不因客户端可播放而视为通过；9 月 27 日三语正式站已有单次发布记录，也不自动批准其他周次。Gemini 音视频 sidecar 的全篇 POC 仍只保留为 Discovery/shadow 审阅辅助，待人工 Gold 和分类质量优化后再评估生产接入。历史证据见 [当日播放复盘](../../docs/production-2026-09-20.zh.md#当日实际播放复盘)和[全篇 sidecar 结果](../../experiments/omni-annotation-poc/FULL-SERMON-RESULT-2026-09-20.zh.md)。早期 Web／实时字幕需求现由 `DEV-LIVE-001` 与 [Live POC 说明](../../experiments/local-live-poc/README.md) 承接，2026-06 的原始 backlog 保留在 git 历史中。
 
 | 编号 | 需求 | 已完成基线与剩余验收 |
 | --- | --- | --- |

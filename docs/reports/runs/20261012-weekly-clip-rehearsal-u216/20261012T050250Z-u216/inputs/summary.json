@@ -1,0 +1,16 @@
+{
+  "models": {
+    "referenceAsr": "gpt-transcribe (historical cache)"
+  },
+  "pipelineInputIdentity": {
+    "sourceAudio": {
+      "sha256": "0b8c6729f37540faf5b9dcdb1d2af5ecaf97d481e6e448aad0645c443cd2e006",
+      "sizeBytes": 9560204
+    }
+  },
+  "readingAligner": "mfa",
+  "sermonEndSeconds": 130.7306,
+  "sermonStartSeconds": 0,
+  "sourceDurationSeconds": 130.7306,
+  "sourceUrl": "https://simulation-test-only.invalid/weekly-clip/resi-20261011-54475d42"
+}

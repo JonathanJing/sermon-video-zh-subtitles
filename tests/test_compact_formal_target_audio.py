@@ -102,6 +102,67 @@ class CompactAudioTests(unittest.TestCase):
         self.assertEqual(manifest['track']['sha256'], identity.sha256(track))
         self.assertEqual(subject.integrity.probe_full_decode(track)['codec'], 'mp3')
         self.assertTrue((destination / 'review/leading-silence-trim.json').is_file())
+        # The delivery MP3 keeps the master's waveform in every audible window.
+        from scripts import target_audio_auto_qc as qc
+        settings = qc.TRACK_ENVELOPE
+        reference = qc._mono_pcm(track.with_suffix('.wav'), settings['sampleRate'])
+        compressed = qc._mono_pcm(track, settings['sampleRate'])
+        self.assertEqual(qc._waveform_comparison(reference, compressed, settings['sampleRate'], settings)['deviantWindows'], 0)
+
+    def test_operator_end_lag_budget_is_recorded_not_applied_silently(self):
+        fixture = render_tests.FormalRenderTests(
+            'test_two_units_full_decode_and_resume_without_synthesis')
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        subject.renderer.render_units(fixture.context, fixture.paths, fixture.root,
+                                      fixture.root / 'checkpoint-map.json',
+                                      synth_factory=EdgeSynth)
+        destination = fixture.root.parent / 'lag-compacted'
+        with patch.object(subject.renderer, 'checked_context', return_value=fixture.context):
+            with self.assertRaisesRegex(ValueError, 'End-lag budget'):
+                subject.compact(fixture.paths, fixture.paths['job'], destination,
+                                fixture.root / 'checkpoint-map.json',
+                                fixture.root / 'audio-operation-policies.json',
+                                trim_trailing=True, max_end_lag_seconds=1.0)
+            manifest = subject.compact(
+                fixture.paths, fixture.paths['job'], destination,
+                fixture.root / 'checkpoint-map.json',
+                fixture.root / 'audio-operation-policies.json',
+                trim_trailing=True, max_end_lag_seconds=120.0)
+        trim = json.loads((destination / 'review/leading-silence-trim.json').read_text())
+        self.assertEqual(trim['schemaVersion'], subject.EDGE_SCHEMA)
+        self.assertEqual(trim['maxEndLagSeconds'], 120.0)
+        schedule = json.loads((destination / manifest['schedule']['path']).read_text())
+        self.assertEqual(schedule['policy']['maxEndLagSeconds'], 120.0)
+        self.assertEqual(schedule['policy']['tailOverrunSeconds'], 0.0)
+
+    def test_tail_overrun_budget_is_capped_and_recorded(self):
+        fixture = render_tests.FormalRenderTests(
+            'test_two_units_full_decode_and_resume_without_synthesis')
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        subject.renderer.render_units(fixture.context, fixture.paths, fixture.root,
+                                      fixture.root / 'checkpoint-map.json',
+                                      synth_factory=EdgeSynth)
+        destination = fixture.root.parent / 'tail-compacted'
+        with patch.object(subject.renderer, 'checked_context', return_value=fixture.context):
+            with self.assertRaisesRegex(ValueError, 'Tail overrun budget'):
+                subject.compact(fixture.paths, fixture.paths['job'], destination,
+                                fixture.root / 'checkpoint-map.json',
+                                fixture.root / 'audio-operation-policies.json',
+                                trim_trailing=True, tail_overrun_seconds=1.5)
+            manifest = subject.compact(
+                fixture.paths, fixture.paths['job'], destination,
+                fixture.root / 'checkpoint-map.json',
+                fixture.root / 'audio-operation-policies.json',
+                trim_trailing=True, max_end_lag_seconds=120.0, tail_overrun_seconds=1.0)
+        trim = json.loads((destination / 'review/leading-silence-trim.json').read_text())
+        self.assertEqual(trim['tailOverrunSeconds'], 1.0)
+        schedule = json.loads((destination / manifest['schedule']['path']).read_text())
+        self.assertEqual(schedule['policy']['tailOverrunSeconds'], 1.0)
+        clip = fixture.context['clip_timeline_map']['clipDurationSeconds']
+        self.assertLessEqual(schedule['entries'][-1]['plannedEnd'], clip + 1.0 + 1e-6)
+        self.assertGreaterEqual(schedule['trackDurationSeconds'], clip - 1e-6)
 
 
 if __name__ == '__main__':

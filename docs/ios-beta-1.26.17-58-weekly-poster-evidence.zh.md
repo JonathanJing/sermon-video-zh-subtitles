@@ -23,3 +23,7 @@ TestFlight 上传、处理、Rooted 组分发与 What to Test 读回通过；准
 APNs Key 由账户持有人或 Admin 在 Apple Developer 创建，步骤见 [APNS-SETUP.zh.md](../apps/tongxing-ios/APNS-SETUP.zh.md)。设备登记和服务器发送将在专用密钥配置后接通。
 
 私有可复核证据位于本轮忽略目录 `artifacts/weekly-announcements/`、`artifacts/tongxing-ios/beta-1.26.17-58/` 和 `artifacts/tongxing-ios/testflight/`；凭据及媒体未提交 Git。
+
+## 后续源码合并（2026-10-10）
+
+PR #322 已将本页记录的海报功能带入 `dev`。PR #275 随后同步当前 `dev`，保留正式/Dev `1.26.18 (58)` 和 Beta `1.26.18 (59)` 的项目配置及 APNs 测试引用；本页的 `1.26.17 (58)` 仍是历史冻结候选。此次同步只归并源码历史，不产生新的归档、上传或发布回执。
