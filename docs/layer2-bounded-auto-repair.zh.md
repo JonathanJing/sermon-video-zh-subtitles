@@ -1,6 +1,6 @@
 # L2 自动修复与放行：复盘与设计
 
-状态：修复循环的核心和 controller 正式执行路径已实现并离线测试（门 1、门 2，见第八节）；门 3、门 4 和英文回退尚未实现，也还没有真实付费运行。本页不改变任何现有门限，也不把自动修复后的结果称为人工批准。
+状态：修复循环的核心和 controller 正式执行路径已实现并离线测试（门 1、门 2，见第八节）；门 4 的“QC 失败回到循环”已实现并离线测试（2026-10-14，见第八节）；门 3 和英文回退尚未实现。本页不改变任何现有门限，也不把自动修复后的结果称为人工批准。
 
 2026-10-08，Jony 在项目线程里确定：**修几次不重要，通过门限就放行**。修复次数不是质量通过的证据；实现仍保留每个英文单元最多 4 次（先 2 次、再 2 次）的安全上限，并按没有进展、花费上限和需要复核的证据提前停止。
 
@@ -42,7 +42,7 @@
 
 四道门都过，在**最终成品**上重新做注错校准（修复改变了候选和组输入哈希，修复前的校准不能签发），再签发译文豁免（`machine_quality_release_basis.py`），按 10-06 决定自动发布，页面显示机器质检说明，发布后人工抽查。
 
-门 4 的重跑只能检查改过的组：`target_text_auto_qc.screen` 现在每次对整篇每组调用两次模型，修复后整篇重跑（474 组约 948 次）会远超修复花费上限。接入门 4 之前，要先给 QC 加按组、绑定产物哈希的复用：未改的组只复用两次付费的回译响应，整篇的长度中位数和每组的确定性检查仍在最终候选上全部重算（长度离群按整篇中位数判，修复一组会改变中位数），再组装最终的 QC 收据。或者把整篇 QC 和最终校准作为单独授权的一次花费，不计入修复上限。
+门 4 的重跑只能检查改过的组（2026-10-14 实现方式：每种语言的文本质检、校准和音频质检共用一个预算根，它的账本就是回译评判的回复缓存；未改的组发出的评判请求完全相同，直接重放已付回复，长度中位数和确定性检查仍在新候选上全部重算）：`target_text_auto_qc.screen` 现在每次对整篇每组调用两次模型，修复后整篇重跑（474 组约 948 次）会远超修复花费上限。接入门 4 之前，要先给 QC 加按组、绑定产物哈希的复用：未改的组只复用两次付费的回译响应，整篇的长度中位数和每组的确定性检查仍在最终候选上全部重算（长度离群按整篇中位数判，修复一组会改变中位数），再组装最终的 QC 收据。或者把整篇 QC 和最终校准作为单独授权的一次花费，不计入修复上限。
 
 第 1 道门不改提示词：Sol 仍可以在复核时直接改正初译。它的通过不算放行，独立性由第 4 道门保证。改复核提示词会改变 policy 和缓存身份，不在本设计范围内。
 
@@ -96,7 +96,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 
 对每个要重译的组，生成 `partial_repair_brief`（schema `sermon-target-language-partial-repair-brief-v1`）：
 
-- `failedRole`、`failedCacheSha256`：指向不通过的 Sol 缓存；门 4 触发的修复（Sol 已通过、回译 QC 不通过）不能借用 Sol 缓存当失败证据，修复说明要升版，带上回译 QC 收据哈希和它绑定的候选与组，派发前独立核对（门 4 实现时一并做）；
+- `failedRole`、`failedCacheSha256`：指向不通过的 Sol 缓存；门 4 触发的修复（Sol 已通过、回译 QC 不通过）不能借用 Sol 缓存当失败证据，所以修复说明升为 `sermon-target-language-partial-repair-brief-v2`：该行另带 `backTranslationQc`（QC 收据哈希、被判失败的确切译文哈希、失败码），runner 派发前核对复核缓存里的译文正是这段文字；
 - `failureReason`：失败码和 Sol 或回译 QC 的证据原文（截断到固定长度）；
 - `instruction`：按失败码的模板，加上证据和英文源句，标明是机器写的修复说明。
 
@@ -109,11 +109,11 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 | 没有进展 | 同一组再次出现相同的失败指纹（英文单元 + 失败码集合 + 规则身份） | 这一组停止重译 |
 | 耐心用完 | 同一组连续 2 轮重译后，失败码数量都没有比重译前少（失败码换了但没减少也算） | 这一组停止重译 |
 | 修复次数 | 每个英文 source unit 已修复 4 次 | 这一组停止重译，写 `repair_limit_per_source_unit` |
-| 花费上限 | 修复调用超过初跑调用的 10%（至少 4 次，够修 2 组），或修复 token 超过初跑 token 的 10% | 整个语言停止重译 |
+| 花费上限 | 修复调用超过初跑调用的 10%（至少 4 次，够修 2 组），或修复 token 超过初跑 token 的 10%（至少 4 次调用的最坏预留，同样够修 2 组） | 整个语言停止重译 |
 | 系统性 | 第 3 节 | 整个语言停止，修复调用为 0 |
 | 需要人或源文 | 分类为请求人工、源文复核或交给工程 | 这一组停止重译 |
 
-修复的付费调用从 `canonical_layer2_budget.py` 的授权和共享账本里预留，10% 是其下的子上限。循环派发前同时检查调用和 token 余量，按完整的译者／复核对选择可修的组：每对保守占用 `2 × (maxInputTokens + maxCompletionTokens)`，采用 controller 已绑定并由 transport 强制执行的请求上界，不把上轮实际用量当成下轮上界。余量不足的组写 `repair_spend_cap`；初跑或此前修复用量缺失、请求上界缺失时停止修复。恢复派发前重新检查同一子上限，成功轮也核对实际 token，超限或用量缺失不能出通过收据。这种保守选择可能提前停止实际用量本来能容纳的组。全局预算仍按单次请求预留；万一复核在译者之后被全局预算拒绝，job 失败待对账，未经复核的译文不会进入候选。
+修复的付费调用从 `canonical_layer2_budget.py` 的授权和共享账本里预留，10% 是其下的子上限。token 子上限取“初跑 token 的 10%”与“4 次调用的最坏预留”中较大者（`token_cap`，2026-10-14 用户决定）：每次调用按请求上界（输入加输出上限，约 18,432 tokens）预留，约为实际用量的 10 倍，只按 10% 算时 16 组的片段一组都修不了（初跑约 5.9 万 tokens，10% 约 5,900），全篇也只够约 4 组；下限与调用数的“至少 4 次”一致，最坏约多花每语言 0.25 美元，仍在 Layer 2 预算授权之内。循环派发前同时检查调用和 token 余量，按完整的译者／复核对选择可修的组：每对保守占用 `2 × (maxInputTokens + maxCompletionTokens)`，采用 controller 已绑定并由 transport 强制执行的请求上界，不把上轮实际用量当成下轮上界。余量不足的组写 `repair_spend_cap`；初跑或此前修复用量缺失、请求上界缺失时停止修复。恢复派发前重新检查同一子上限，成功轮也核对实际 token，超限或用量缺失不能出通过收据。这种保守选择可能提前停止实际用量本来能容纳的组。全局预算仍按单次请求预留；万一复核在译者之后被全局预算拒绝，job 失败待对账，未经复核的译文不会进入候选。
 
 ### 6. 停下之后
 
@@ -174,10 +174,12 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 - 备注到达后经正式路径重开（`reopen-repair`，2026-10-09 Jony 选定，测试 `tests/test_canonical_layer2_auto_repair.py`、`tests/test_canonical_durable_jobs.py`）：循环以 `request_source_review` 停下时 `_run_auto_repair` 失败、持久 job 记为 failed、该语言 `blocked`（`failed_durable_job`），`start_job` 也不重启失败的身份。备注写进执行配置的 `sourceMeaningNotes` 后，`package_view` 把备注文件的规范哈希记为 `packageIdentities.sourceMeaningNotes`，它是 `text.<locale>` 输入身份的一部分（只进文本节点；不配备注时身份和以前完全一样），所以那个旧身份的失败 job 显示为 `reconciliation_required`。这时运行 `python3 scripts/canonical_layer2_controller.py reopen-repair --config <执行配置> --locale <语言> --expected-state-revision <shadow tick 看到的 stateRevision>`。命令在准入锁、job 锁和 lane 写锁下检查：这个语言恰好一个失败的文本 job，没有在跑或结果未知的 job，没有结果未知的付费调用；失败 job 的请求是这个执行配置、这个语言的 worker；节点身份（`nodeIdentity`）不变而输入身份因备注变了；账本链尾是 `stopped`，链在这个 lane 的 `repair-rounds/` 下；备注经 `load_meaning_notes` 绑定本运行的 source/anchor 并与收据核对，且确实能重开至少一个组（与 `drive` 用同一个判断 `reopenable_groups`）。修复额度不在这里核：每次调用的最坏 token 数取决于新 job 运行时绑定的预算档，命令还不知道；付不起时新 job 的 worker 按上一项的规则把这些组记为 `repair_spend_cap` 停下，链尾仍是 `stopped`。通过后只在失败 job 目录里写一份不可改的 `canonical-reopen-<新身份摘要>.json`（`sermon-canonical-layer2-reopen-v1`：失败 job 的身份、请求和状态哈希、新身份、执行配置和代码哈希、账本链头哈希和序号、备注哈希、要重开的组），不改 `state.json`、`request.json`、日志和账本，不调用模型，不产生候选或批准。durable 视图把带有效收据、且收据指向当前身份（或指向一个本身也被重开、最终指向当前身份的 job）的失败 job 记为 `superseded`（保留 `originalJobStatus: failed`），但只在 controller 用收据指名的证据核对过之后：链上每份收据的序号处必须正是它哈希过的那条账本记录、那条记录是 `stopped`、收据里每个组都在那里因 `request_source_review` 停着；指向当前身份的那份（新 job 就按它运行）再全量核对：备注哈希等于当前配置的备注，组等于这些备注从那条记录重开的组（`reopenable_groups`），新 job 已开始重开时则等于它的 worker 写下的重开记录里的组，且那条记录必须是在这些备注下写的（`reopenedBy.meaningNotesSha256` 等于当前备注的哈希），所以备注换过之后，旧备注下写的重开记录（那条链可能已经通过）不能替指向新备注的收据作证。对不上就整个视图要求 reconciliation（诊断 `unverified_reopen_receipt`），手写或改过哈希、组的收据不能让 controller 派发新 job。收据里的执行配置和代码哈希只记录 controller 当时的运行条件，不拿来比对：两者在重开之后都可能正当地变化（部署、改配置），而不改变收据证明的事，新 job 的 worker 在任何付费调用前会核对自己的配置和代码。controller 的 shadow/execute tick、worker 准入和统一预检都走这一核对；节点回到 `ready`，下一次 execute tick 以新身份派发 job，它的 worker 在同一条账本链上走上面的重开。收据被改、job 状态在收据之后变了、或节点又变到收据没写到的输入，失败 job 重新阻塞。备注在新 job 开始前又变了，就对同一个失败 job 再写一份指向更新身份的收据，旧收据不改。只看 inspection 配置的独立 durable 检查（`canonical_durable_jobs.py` 命令行）不读执行配置、看不到备注哈希和账本，会把带备注启动的 job 显示为身份不符，也不让任何重开收据取代失败 job；以 controller 的视图为准。
 - 修复循环 `drive`：分类（路由表 `layer2-auto-repair-routing-v1`，含回译 QC 问题类型的映射）、系统性判断、指纹重现、耐心、调用和 token 上限（按最坏请求对在派发前检查）、每单元 4 次上限、生成 `partial_repair_brief`、按轮记账、写机器收据（`sermon-layer2-auto-repair-receipt-v1`，记录账本根目录和链头哈希，`humanApproval: false`）。未知结果和执行错误原样抛出，不记账，不重发。
 
+- 门 4，回译 QC 失败回到循环（2026-10-14，测试 `tests/test_layer2_auto_repair.py` 的 `BackTranslationQcTests`、`tests/test_canonical_layer2_auto_repair.py`、`tests/test_run_target_language_models.py`）：执行配置 `sermon-canonical-layer2-execution-v5`（v3 加上本字段；v3/v4 字段集不变，原有 v3 配置无需迁移，只在需要质检修复时改为 v5）的 `layer2AutoRepair.backTranslationQc` 按语言指向一份失败的文本质检收据（`sermon-target-text-auto-qc-v1`，`status=requires_repair`），它是该语言 `text.<locale>` 的输入身份（`packageIdentities.backTranslationQc.<locale>`）。修订作为新的 lane 输出目录运行（同一 jobRoot，因而同一修复账本；旧候选不动），新身份的 job 由 worker 读一次收据，要求其哈希等于准入时 job 身份绑定的那份（`back_translation_qc_changed_after_admission`），再交给 `drive`：同一 jobRoot 的修复账本必须已有 `passed` 链尾（或这份收据已重开过这条链），账本为空或链尾不是 `passed` 时拒绝（`back_translation_qc_requires_passed_repair_chain`），不会改跑一轮完整初译；收据必须属于本链的语言和冻结政策（政策的 `sourceScope` 绑定来源包和锚点，所以 Codex 和旧版 API 收据没有 `qcContext` 也能核对；带 `qcContext` 的 API 收据再逐项核对），且每个失败组判的正是链尾那轮复核缓存里的确切译文（哈希核对），否则在派发前拒绝。由质检自己的修复阶梯决定能做什么：只有 `nextAction=revise_translation` 的组重开；质检次数已用完、`nextAction=source_text_fallback` 的组记为 `qc_source_text_fallback` 停止，不再重译；其他动作或尚未完成回译的收据拒绝。失败组的问题类型按 `QC_KIND_CODES` 映射为失败码（只有确定性检查失败、没有回译问题的组拒绝），按同一套每单元 4 次、指纹重现、耐心和花费上限决定修复或停止；在链上追加一条 `repairing` 记录（`reopenedBy: {"evidence": "back_translation_qc", "qcReceiptSha256", "groups"}`，花费为零），修复说明为 v2，指令写明原译文、回译和英文。同一份收据只重开一次。修好后照常产出候选，再用原质检 state 和同一预算根重跑文本质检：未改的组重放已付评判，最终成品重新校准后才签豁免。同一组以同一失败码再次被判失败时按指纹重现停下（`repeated_failure_without_progress`），不会循环。
+
 尚未实现，按顺序：
 
 1. 英文回退的候选、豁免和 L4 表示。没有它，一组停下就整个语言发不了，循环只在"所有失败都修得好"时有用。
-2. 门 4：按组复用的回译 QC（只复用付费回译响应，中位数和确定性检查全部重算）、QC 失败回到循环、最终成品校准。
+2. 门 4 的剩余部分：确定性 QC 检查失败（没有回译问题）回到循环；QC 修复后自动重跑 QC（目前由操作者用原 state 和预算根重跑）。
 3. 门 3 的失败回到循环。
 4. 插件修好后的零调用续跑（扩展缓存迁移）。
 5. 605 端到端实测（先做 0-u076 源文裁定；需要付费调用，等授权）。
