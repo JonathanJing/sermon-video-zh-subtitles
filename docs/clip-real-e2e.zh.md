@@ -64,7 +64,7 @@
 | 阶段 | 做什么 | 结果 |
 |---|---|---|
 | `inputs` | 默认由 `build_dev_180s_simulated_inputs.py --clip-spec` 截出片段；`layer1.backend=claude_cli_opus` 时由 `prepare_clip_layer1_opus.py` 只截真实来源、按原周次已批准范围检查裁切和时间轴，再调用 Opus 做 Layer 1 机器审核；`clip_timeline_map.py` 生成片段时间轴映射 | 片段输入在 `artifacts/dev-180s-page-test-20261004/clip-e2e-<name>/inputs/`；运行目录里有 `l2/src/` 的副本和 `l3/clip-timeline-map.json`。Opus 路径另有 `layer1-opus-summary.json`、逐批返回收据和来源包绑定 |
-| `layer2-setup` | 每种语言：把源周次的冻结政策收窄到本片段的来源范围和术语后重新冻结（片段里出现、但源周次回执没有译法的术语会被拒绝）；写 canonical 执行配置（v3）；在 launcher 里取得非秘密的 API 路由和凭据指纹，写入质检输入 | `l2/policy/`、`l2/execution.json`、`l2/qc-inputs.json` |
+| `layer2-setup` | 每种语言：把源周次的冻结政策收窄到本片段的来源范围和术语后重新冻结（片段里出现、但源周次回执没有译法的术语会被拒绝）；来源绑定的原周次语言插件经原政策哈希核实后只改绑片段来源和锚点哈希，生成独立插件并重新冻结其哈希；写 canonical 执行配置（v3）；在 launcher 里取得非秘密的 API 路由和凭据指纹，写入质检输入 | `l2/policy/`、必要时的 `l2/plugin/`、`l2/execution.json`、`l2/qc-inputs.json` |
 | `layer2` | 规划 Layer 2 预算 → 开工检查 → 逐语言 tick controller，直到全部 `succeeded`；有语言 `blocked` 就停 | `l2/text/<语言>/candidate.json` |
 | `qc.<语言>` | 为该语言规划质检预算（文本质检、校准、音频质检共用一个根）→ 开工检查 → 文本质检。失败的组带着质检收据回到 Layer 2，开新修订（执行配置 v5，[gate 4](layer2-bounded-auto-repair.zh.md)），再质检新候选，最多 `maxRevisions` 次 | `textqc-<语言>/`；修订在 `l2-<语言>-r<N>/` |
 | `audio.<语言>` | 开 Spark 会话、部署代码（每次运行一次）→ 带 `--spark-stages` 的开工检查 → 声音授权、配音作业 → `clip_e2e_spark.py` 依次 render、compact、screen → 构建音频包 → 镜像到 Spark → 音频质检 | `l3/<语言>/audio-package.json`、`aqc/<语言>/` |

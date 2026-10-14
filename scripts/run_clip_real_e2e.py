@@ -35,6 +35,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import shlex
 import shutil
 import subprocess
@@ -312,8 +313,35 @@ def stage_inputs(run: Run):
              layer1Backend=run.spec["layer1"]["backend"])
 
 
+def clip_plugin(template: Path, policy_template: Path, source: dict, anchor: dict, out: Path) -> Path:
+    """Rebind a source-specific weekly plugin to the unchanged units in this test clip."""
+    from scripts import produce_target_language_candidate as producer
+    from scripts import target_language_policy as tp
+    original = read(policy_template)
+    require(producer.plugin_implementation_sha256(template) == original['languageReview']['pluginImplementationSha256'],
+            'the weekly plugin differs from its frozen policy')
+    old = original['sourceScope']
+    replacements = {'SOURCE_SHA256': (old['englishSourcePackageJsonSha256'], tp.canonical_sha256(source)),
+                    'ANCHOR_SHA256': (old['anchorManifestSha256'], tp.canonical_sha256(anchor))}
+    content = template.read_text()
+    present = [key for key in replacements if re.search(rf'(?m)^{key}\s*=', content)]
+    if not present:
+        return template
+    require(set(present) == set(replacements), 'source-bound plugin must pin both source and anchor')
+    for key, (before, after) in replacements.items():
+        pattern = rf'(?m)^({key}\s*=\s*)([\x27\"]){re.escape(before)}\2$'
+        content, count = re.subn(pattern, lambda match: match.group(1) + match.group(2) + after + match.group(2), content)
+        require(count == 1, f'{key} differs from the weekly policy binding')
+    if out.exists():
+        require(out.read_text() == content, 'rebased clip plugin changed after freezing')
+    else:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(content)
+    return out
+
+
 def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str,
-                       backend: str = "openai_api") -> dict:
+                       backend: str = "openai_api", plugin: Path | None = None) -> dict:
     """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
     from scripts import target_language_policy as tp
     rows = anchor["sourceUnits"]
@@ -324,6 +352,9 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
     draft = copy.deepcopy(frozen)
     draft.pop("componentSha256")
     draft = tp.apply_layer2_backend(draft, backend)
+    if plugin is not None:
+        from scripts import produce_target_language_candidate as producer
+        draft['languageReview']['pluginImplementationSha256'] = producer.plugin_implementation_sha256(plugin)
     draft["terminology"]["properNames"] = [t for t in draft["terminology"]["properNames"] if t["source"] in used]
     scope = draft["sourceScope"]
     scope.update(englishSourcePackageJsonSha256=tp.canonical_sha256(source), anchorManifestSha256=tp.canonical_sha256(anchor),
@@ -349,12 +380,17 @@ def stage_layer2_setup(run: Run):
     spec, l2 = run.spec, run.l2
     source, anchor = read(l2 / "src/source.json"), read(l2 / "src/anchor.json")
     auth = spec["authorization"]
+    plugins = {}
     for locale in spec["locales"]:
+        template = Path(spec["layer2"]["policyTemplates"][locale])
+        plugins[locale] = clip_plugin(Path(spec["layer2"]["plugins"][locale]), template,
+                                      source, anchor, l2 / "plugin" / f"{locale}-clip.py")
         path = l2 / "policy" / f"{locale}-policy-clip.json"
         if not path.exists():
-            write(path, freeze_clip_policy(Path(spec["layer2"]["policyTemplates"][locale]), source, anchor,
+            write(path, freeze_clip_policy(template, source, anchor,
                                            reviewed_by=auth["defaultPass"] + "; targets carried from the source week's receipt",
-                                           statement=auth["evidence"], backend=spec["layer2"]["backend"]))
+                                           statement=auth["evidence"], backend=spec["layer2"]["backend"],
+                                           plugin=plugins[locale]))
     if not (l2 / "execution.json").exists():
         write(l2 / "inspection.json", {"schemaVersion": "sermon-canonical-package-inspection-config-v1",
                                        "source": "src/source.json", "anchor": "src/anchor.json",
@@ -365,7 +401,7 @@ def stage_layer2_setup(run: Run):
         write(l2 / "execution.json", {
             "schemaVersion": controller.AUTO_REPAIR_SCHEMA, "productionRunId": run_id, "inspectionConfig": "inspection.json",
             "jobRoot": "layer2-jobs",
-            "locales": {k: {"outputDirectory": f"text/{k}", "plugin": spec["layer2"]["plugins"][k]} for k in spec["locales"]},
+            "locales": {k: {"outputDirectory": f"text/{k}", "plugin": str(plugins[k])} for k in spec["locales"]},
             "layer2AutoRepair": {"routingVersion": auto_repair.ROUTING_VERSION, "groupWorkers": 8,
                                  "maxActiveLocales": len(spec["locales"])}})
     if not (l2 / "qc-inputs.json").exists():

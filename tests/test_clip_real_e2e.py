@@ -11,6 +11,8 @@ from scripts import clip_e2e_release as release
 from scripts import clip_e2e_spark as spark
 from scripts import run_clip_real_e2e as subject
 from scripts import plan_run_budgets as budgets
+from scripts import produce_target_language_candidate as producer
+from scripts import target_language_policy as target_policy
 
 ROOT = Path(__file__).resolve().parents[1]
 DISPLAY = {"series": "[test] s", "title": "[test] t", "speaker": "Speaker", "scripture": "Rev 9", "summary": "[test] x"}
@@ -84,6 +86,23 @@ class SpecificationTests(unittest.TestCase):
                           original["layer2"]["claudeCliListPriceCapUsdPerLocale"]["clip"]), (20, 8))
         with self.assertRaisesRegex(ValueError, 'requires a clip'):
             budgets.with_clip_claude_cap(original, scale="week", backend="claude_cli_opus", cap=20)
+
+    def test_source_bound_plugin_rebases_only_from_its_frozen_weekly_binding(self):
+        old_source, old_anchor = 'a' * 64, 'b' * 64
+        plugin = self.base / 'weekly.py'
+        plugin.write_text(f"SOURCE_SHA256 = '{old_source}'\nANCHOR_SHA256 = '{old_anchor}'\n")
+        policy = self.base / 'weekly-policy.json'
+        policy.write_text(json.dumps({'sourceScope': {'englishSourcePackageJsonSha256': old_source,
+            'anchorManifestSha256': old_anchor}, 'languageReview': {
+            'pluginImplementationSha256': producer.plugin_implementation_sha256(plugin)}}))
+        source, anchor = {'source': 'clip'}, {'anchor': 'clip'}
+        output = subject.clip_plugin(plugin, policy, source, anchor, self.base / 'clip.py')
+        self.assertIn(target_policy.canonical_sha256(source), output.read_text())
+        self.assertIn(target_policy.canonical_sha256(anchor), output.read_text())
+        self.assertIn(old_source, plugin.read_text())
+        policy.write_text(policy.read_text().replace(old_source, 'c' * 64))
+        with self.assertRaisesRegex(ValueError, 'SOURCE_SHA256 differs'):
+            subject.clip_plugin(plugin, policy, source, anchor, self.base / 'other.py')
 
     def test_the_run_directory_must_be_mirrorable_under_artifacts(self):
         with self.assertRaisesRegex(ValueError, "under artifacts/"):
