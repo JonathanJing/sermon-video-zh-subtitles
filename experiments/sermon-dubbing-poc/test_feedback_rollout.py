@@ -13,6 +13,7 @@ import unittest
 from unittest.mock import patch
 
 import deploy_feedback_compat as deploy
+import deploy_feedback as standard_deploy
 from deploy_feedback import verified_feedback_catalog as verify_standard_catalog, public_week_date
 from poc import sha256, write_json
 
@@ -92,7 +93,7 @@ def api_fixture(root, real_runtime=False):
     if real_runtime:
         # Freeze once into a test-local manifest. Only the copied bundle is later
         # imported; no API, Firestore, credentials or production files are used.
-        for name in ["index.mjs", "core.mjs", "firestore-store.mjs", "usage-core.mjs", "listening-core.mjs"]:
+        for name in ["index.mjs", "core.mjs", "firestore-store.mjs", "usage-core.mjs", "listening-core.mjs", "alignment-core.mjs"]:
             path = deploy.HERE / "feedback-api" / name
             if path.exists():
                 (source / path.name).write_bytes(path.read_bytes())
@@ -146,6 +147,34 @@ class FeedbackRolloutTests(unittest.TestCase):
             self.assertEqual(len({deploy.source_identity(source) for source in compatible["sources"]}), 2)
             self.assertEqual(snapshot(current), before)
 
+    def test_runtime_catalog_adds_verified_page_and_audio_locale_to_legacy_sources(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            current = source_pages_fixture(Path(tmp))
+            weekly = read(current / "public/weekly.json")
+            weekly["weeks"][0]["targetLocale"] = "ko"
+            write_json(current / "public/weekly.json", weekly)
+            refresh_report(current)
+            before = snapshot(current)
+            expected = {(weekly["weeks"][0]["id"], "ko"), (weekly["weeks"][1]["id"], "zh-Hans")}
+            for publisher in (standard_deploy, deploy):
+                runtime, _, _ = publisher.merge_release_catalogs(current)
+                self.assertEqual({(source["pageId"], source["audioLocale"]) for source in runtime["sources"]}, expected)
+            self.assertEqual(snapshot(current), before)
+            self.assertTrue(all("pageId" not in source for source in read(current / "feedback-catalog.json")["sources"]))
+            staged = Path(tmp) / "staged-api"
+            compatible_staged = Path(tmp) / "compatible-staged-api"
+            standard_deploy.prepare(current, staged)
+            deploy.prepare(current, compatible_staged, api_source=api_fixture(Path(tmp)))
+            for output in (staged, compatible_staged):
+                self.assertEqual({(source["pageId"], source["audioLocale"]) for source in read(output / "catalog.json")["sources"]}, expected)
+
+            catalog = read(current / "feedback-catalog.json")
+            catalog["sources"][0]["pageId"] = weekly["weeks"][0]["id"]
+            write_json(current / "feedback-catalog.json", catalog)
+            refresh_report(current)
+            with self.assertRaisesRegex(ValueError, "Invalid feedback source fields"):
+                standard_deploy.merge_release_catalogs(current)
+
     def test_dual_source_compat_plan_preserves_previous_pages_and_exact_api(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -160,6 +189,7 @@ class FeedbackRolloutTests(unittest.TestCase):
             self.assertEqual(manifest["runtimeSourceCount"], 3)
             self.assertEqual(merged["weekIds"], ["2026-08-30", "2026-09-06"])
             self.assertEqual(len({deploy.source_identity(source) for source in merged["sources"]}), 3)
+            self.assertTrue(all(source["pageId"] and source["audioLocale"] == "zh-Hans" for source in merged["sources"]))
             self.assertEqual(manifest["compatibleReleases"][0]["addedSourceCount"], 1)
             for item in manifest["apiSource"]["runtimeFiles"]:
                 self.assertEqual((root / "new-api" / item["path"]).read_bytes(), (api / item["path"]).read_bytes())
@@ -192,7 +222,14 @@ class FeedbackRolloutTests(unittest.TestCase):
             current = release_fixture(root, "current")
             before = snapshot(current)
             manifest = prepare(current, root / "api")
-            self.assertEqual(read(root / "api/catalog.json"), read(current / "feedback-catalog.json"))
+            runtime = read(root / "api/catalog.json")
+            release_catalog = read(current / "feedback-catalog.json")
+            stripped = {**runtime, "sources": [{key: value for key, value in source.items()
+                                                  if key not in {"pageId", "audioLocale"}}
+                                                 for source in runtime["sources"]]}
+            self.assertEqual(stripped, release_catalog)
+            self.assertEqual((runtime["sources"][0]["pageId"], runtime["sources"][0]["audioLocale"]),
+                             ("2026-08-30", "zh-Hans"))
             self.assertEqual(manifest["compatibleReleases"], [])
             self.assertEqual(manifest["releaseBuildSha256"], sha256(current / "build-report.json"))
             self.assertEqual(manifest["feedbackCatalogSha256"], sha256(current / "feedback-catalog.json"))
@@ -291,7 +328,9 @@ class FeedbackRolloutTests(unittest.TestCase):
             manifest = prepare(current, root / "api", [old, older, old, current])
             sources = read(root / "api/catalog.json")["sources"]
             self.assertEqual(len(sources), 3)
-            self.assertEqual(sources[0], read(current / "feedback-catalog.json")["sources"][0])
+            self.assertEqual({key: value for key, value in sources[0].items() if key not in {"pageId", "audioLocale"}},
+                             read(current / "feedback-catalog.json")["sources"][0])
+            self.assertEqual((sources[0]["pageId"], sources[0]["audioLocale"]), ("2026-08-30", "zh-Hans"))
             self.assertEqual(len({deploy.source_identity(s) for s in sources}), 3)
             self.assertEqual(manifest["currentSourceCount"], 1)
             self.assertEqual(manifest["runtimeSourceCount"], 3)

@@ -1,0 +1,16 @@
+{
+  "models": {
+    "referenceAsr": "gpt-transcribe (historical cache)"
+  },
+  "pipelineInputIdentity": {
+    "sourceAudio": {
+      "sha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+      "sizeBytes": 113034700
+    }
+  },
+  "readingAligner": "mfa",
+  "sermonEndSeconds": 180.013167,
+  "sermonStartSeconds": 0,
+  "sourceDurationSeconds": 180.013167,
+  "sourceUrl": "https://simulation-test-only.invalid/unverified-original-url/fixed-180s"
+}

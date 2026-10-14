@@ -980,6 +980,55 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertEqual(len(evidence["groups"]), 2)
         self.assertTrue((self.out / "evidence.json").exists())
 
+    def test_back_translation_qc_repair_binds_the_rejected_reviewer_text(self):
+        f = self.fixture
+        previous = self.out.parent / "passed"
+        self.production_run(f.source, f.anchor, f.policy, previous, "fixture-key", self.fake_call)
+        self.assertTrue((previous / "evidence.json").exists())
+        group = subject.group_plan(f.request, f.anchor)[1]
+        cache = previous / "group-0002-sol.json"
+        text = "".join(json.loads(cache.read_text())["result"]["targetUtterances"])
+
+        def brief(text_sha256, schema=subject.PARTIAL_REPAIR_SCHEMA_V2):
+            return {"schemaVersion": schema, **{key: f.request[key] for key in (
+                "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256")},
+                "groups": [{"translationGroupId": group["translationGroupId"], "sourceUnitIds": group["sourceUnitIds"],
+                            "failedRole": "reviewer", "failedCacheSha256": hashlib.sha256(cache.read_bytes()).hexdigest(),
+                            "failureReason": "meaning_shift: intense read back as amazing",
+                            "instruction": "Restore the meaning of the English source.",
+                            "backTranslationQc": {"receiptSha256": "d" * 64, "targetTextSha256": text_sha256,
+                                                  "failureCodes": ["meaning_shift"]}}]}
+        self.calls.clear()
+        for bad, message in ((brief("0" * 64), "does not match the reviewer text"),
+                             (brief(hashlib.sha256(text.encode()).hexdigest(), subject.PARTIAL_REPAIR_SCHEMA),
+                              "Invalid partial repair row")):
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
+                                    reuse_from=previous, partial_repair_brief=bad)
+            self.assertFalse(self.calls)
+        good = brief(hashlib.sha256(text.encode()).hexdigest())
+        calls = []
+
+        def repaired(api_key, payload):
+            calls.append(payload)
+            data = json.loads(payload["messages"][1]["content"])
+            self.assertEqual(data["translationGroupId"], group["translationGroupId"])
+            self.assertEqual(data["partialRepair"]["failureReason"], "meaning_shift: intense read back as amazing")
+            keys = ["translationGroupId", "sourceUnitIds", "targetUtterances", "coverage"]
+            if payload["reasoning_effort"] == "medium":
+                keys.append("semanticReview")
+            result = {key: copy.deepcopy(f.evidence["groups"][1][key]) for key in keys}
+            result["translationGroupId"] = group["translationGroupId"]
+            return {"id": f"qc-repaired-{len(calls)}", "model": payload["model"],
+                    "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(result)}}]}
+
+        evidence = self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", repaired,
+                                       reuse_from=previous, partial_repair_brief=good)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(evidence["groups"]), 2)
+        self.assertEqual(json.loads((self.out / "effective-repairs.json").read_text())[group["translationGroupId"]],
+                         good["groups"][0])
+
     def test_partial_repair_rejects_stale_failed_cache_before_calls(self):
         f = self.fixture
         previous = self.out.parent / "incomplete"

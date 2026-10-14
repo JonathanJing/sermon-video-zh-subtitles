@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "spark-diagnostic-audio-dispatch-reconciliation-v1",
+  "outcome": "known_terminal_before_model_load",
+  "status": "failed",
+  "reasonCode": "remote_tts_input_validation_missing_series_terminology_document",
+  "remoteProcessExited": true,
+  "sessionJobId": "369f76c290114fa58cbef9048ea6cfcf",
+  "activeLabeledContainers": 0,
+  "ttsManifestPresent": false,
+  "asrManifestPresent": false,
+  "remoteLogSha256": "54bab2b80395955a7794d31315a9930766a9bb9a0cd03700cde82d36bd849541",
+  "apiCalls": 0,
+  "audioGenerationInferred": false,
+  "remoteLogReadback": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/audio-r1/outputs/tts.log"
+}
