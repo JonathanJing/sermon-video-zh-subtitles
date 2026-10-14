@@ -1,0 +1,19 @@
+discover	pass	0.0
+es.calibration.prefetch	pass	76.1
+es.calibration	pass	0.8
+es.text-waiver	pass	0.0
+Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/20261013-035559-machine-qc-text
+{
+  "es": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 95,
+      "detected": 95
+    }
+  }
+}
+Digest: /private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-smoke/artifacts/run-reports/20261013-035559-machine-qc-text (3 files, 11 redactions)

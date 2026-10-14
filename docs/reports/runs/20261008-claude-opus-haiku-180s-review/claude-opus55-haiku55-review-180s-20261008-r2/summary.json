@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "claude-layer2-180s-test-summary-v1",
+  "groups": 13,
+  "units": 39,
+  "translatorModel": "claude-opus-5-5",
+  "reviewerModel": "claude-haiku-5-5",
+  "translatorValidation": "schema, group/unit identity, coverage",
+  "reviewerValidation": "schema from CLI, group/unit identity, machine verdict (strict: non-pass, issue or uncertainty blocks)",
+  "reviewerPassedGroups": 12,
+  "reviewerFailedGroups": [
+    "group-0006"
+  ],
+  "translatorSumSeconds": 86.02320179200069,
+  "reviewerSumSeconds": 133.06309300099383,
+  "translatorMedianSeconds": 6.56920941700082,
+  "reviewerMedianSeconds": 9.283861500000057,
+  "translatorUsage": {
+    "inputTokens": 31593,
+    "cachedInputTokens": 13091,
+    "outputTokens": 7815,
+    "reasoningTokens": 1850
+  },
+  "reviewerUsage": {
+    "inputTokens": 63117,
+    "cachedInputTokens": 32984,
+    "outputTokens": 28316,
+    "reasoningTokens": 13938
+  },
+  "listPriceUsdEquivalent": 1.16727,
+  "maxReviewAttempts": 2,
+  "reviewerAttemptsTotal": 13,
+  "freshCalls": {
+    "translator": 13,
+    "reviewer": 13
+  },
+  "humanApproval": false,
+  "productionEligible": false,
+  "releaseEligible": false,
+  "stages": {
+    "translation": "machine_schema_and_coverage_checked",
+    "review": "haiku_machine_verdict",
+    "languagePlugin": "not_run",
+    "candidateAdmission": "not_run",
+    "humanReview": "not_run",
+    "tts": "not_run",
+    "asr": "not_run",
+    "publication": "not_run"
+  }
+}

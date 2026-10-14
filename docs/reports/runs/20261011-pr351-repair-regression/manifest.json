@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-pr351-repair-regression",
+  "runs": [
+    {
+      "label": "pr351-repair-tests",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/artifacts/pr351-repair-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr351-repair-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 326,
+      "truncated": false,
+      "sha256": "e8d454ecaae6981662797822272566847bffde1a1b0531dd85fb5a2ed297c36e",
+      "redactions": {}
+    },
+    {
+      "run": "pr351-repair-tests",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 100,
+      "truncated": false,
+      "sha256": "5411606071bb2e2a3dc8d8d195387028338b7009f7f7d1af34db3ff37821084f",
+      "redactions": {}
+    },
+    {
+      "run": "pr351-repair-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 662,
+      "truncated": false,
+      "sha256": "8f15acecb464d0ae6b4f4f8f5aa07d8e30375b3fb4cbfedd37f43bbcdcbbbe5f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
