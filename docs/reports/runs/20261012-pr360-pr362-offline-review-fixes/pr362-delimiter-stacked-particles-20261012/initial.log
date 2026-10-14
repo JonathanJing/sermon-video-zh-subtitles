@@ -1,0 +1,292 @@
+..................................................FFFFFFFFFFFFFFFFFFFFFF [ 21%]
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.F.FF.F.F................................. [ 42%]
+.......FFFFFFFFFF.......FFFFFF...FFFFFFFFFFFF........................... [ 63%]
+........................................................................ [ 84%]
+...................................................                                                            [100%]
+=================================== FAILURES ===================================
+_ test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-4--] _
+
+template = '요한복음 {start}{dash}{end}장', start = 3, end = 4, dash = '-'
+
+    @pytest.mark.parametrize("dash", ["-", "~", "–"])
+    @pytest.mark.parametrize("start, end", [(3, 4), (16, 27), (3, 17), (16, 3)])
+    @pytest.mark.parametrize("template", ["요한복음 {start}{dash}{end}장", "요한복음 {start}장{dash}{end}장", "창세기 1장{start}절{dash}{end}절", "창세기 1장 {start}{dash}{end}절"])
+    def test_citation_ranges_generate_fold_and_score(template, start, end, dash):
+        from scripts import screen_target_language_audio_units as screen
+        approved = template.format(start=start, end=end, dash=dash)
+        spoken = subject.spoken_form(approved)
+        assert spoken != approved
+        assert not any(char.isdigit() for char in spoken)
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음3-4장' == '요한복음 3-4장'
+E
+E         - 요한복음 3-4장
+E         ?     -
+E         + 요한복음3-4장
+
+tests/test_ko_spoken_numerals.py:109: AssertionError
+_ test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-4-~] _
+
+template = '요한복음 {start}{dash}{end}장', start = 3, end = 4, dash = '~'
+
+    @pytest.mark.parametrize("dash", ["-", "~", "–"])
+    @pytest.mark.parametrize("start, end", [(3, 4), (16, 27), (3, 17), (16, 3)])
+    @pytest.mark.parametrize("template", ["요한복음 {start}{dash}{end}장", "요한복음 {start}장{dash}{end}장", "창세기 1장{start}절{dash}{end}절", "창세기 1장 {start}{dash}{end}절"])
+    def test_citation_ranges_generate_fold_and_score(template, start, end, dash):
+        from scripts import screen_target_language_audio_units as screen
+        approved = template.format(start=start, end=end, dash=dash)
+        spoken = subject.spoken_form(approved)
+        assert spoken != approved
+        assert not any(char.isdigit() for char in spoken)
+... 1563 lines omitted; 156 error-like lines, 50 kept below ...
+[line 42] E       AssertionError: assert '요한복음3~4장' == '요한복음 3~4장'
+[line 48] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 63] E       AssertionError: assert '요한복음3–4장' == '요한복음 3–4장'
+[line 69] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 84] E       AssertionError: assert '요한복음16-27장' == '요한복음 16-27장'
+[line 90] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 105] E       AssertionError: assert '요한복음16~27장' == '요한복음 16~27장'
+[line 111] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 126] E       AssertionError: assert '요한복음16–27장' == '요한복음 16–27장'
+[line 132] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 147] E       AssertionError: assert '요한복음3-17장' == '요한복음 3-17장'
+[line 153] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 168] E       AssertionError: assert '요한복음3~17장' == '요한복음 3~17장'
+[line 174] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 189] E       AssertionError: assert '요한복음3–17장' == '요한복음 3–17장'
+[line 195] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 210] E       AssertionError: assert '요한복음16-3장' == '요한복음 16-3장'
+[line 216] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 231] E       AssertionError: assert '요한복음16~3장' == '요한복음 16~3장'
+[line 237] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 252] E       AssertionError: assert '요한복음16–3장' == '요한복음 16–3장'
+[line 258] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 273] E       AssertionError: assert '요한복음3장-4장' == '요한복음 3장-4장'
+[line 279] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 294] E       AssertionError: assert '요한복음3장~4장' == '요한복음 3장~4장'
+[line 300] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 315] E       AssertionError: assert '요한복음3장–4장' == '요한복음 3장–4장'
+[line 321] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 336] E       AssertionError: assert '요한복음16장-27장' == '요한복음 16장-27장'
+[line 342] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 357] E       AssertionError: assert '요한복음16장~27장' == '요한복음 16장~27장'
+[line 363] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 378] E       AssertionError: assert '요한복음16장–27장' == '요한복음 16장–27장'
+[line 384] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 399] E       AssertionError: assert '요한복음3장-17장' == '요한복음 3장-17장'
+[line 405] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 420] E       AssertionError: assert '요한복음3장~17장' == '요한복음 3장~17장'
+[line 426] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 441] E       AssertionError: assert '요한복음3장–17장' == '요한복음 3장–17장'
+[line 447] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 462] E       AssertionError: assert '요한복음16장-3장' == '요한복음 16장-3장'
+[line 468] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 483] E       AssertionError: assert '요한복음16장~3장' == '요한복음 16장~3장'
+[line 489] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 504] E       AssertionError: assert '요한복음16장–3장' == '요한복음 16장–3장'
+[line 510] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 525] E       AssertionError: assert '창세기1장3절-4절' == '창세기 1장3절-4절'
+[line 531] tests/test_ko_spoken_numerals.py:109: AssertionError
+[line 546] E       AssertionError: assert '창세기1장3절~4절' == '창세기 1장3절~4절'
+[line 552] tests/test_ko_spoken_numerals.py:109: AssertionError
+... end of omitted section ...
+
+connector = '이나', spacing = ' '
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음3장이나 4장까지' == '요한복음 3장이나 4장까지'
+E
+E         - 요한복음 3장이나 4장까지
+E         ?     -
+E         + 요한복음3장이나 4장까지
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+____ test_shared_existing_alternative_and_range_connectors[ -\uc774\ub4e0] _____
+
+connector = '이든', spacing = ' '
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음3장이든 4장까지' == '요한복음 3장이든 4장까지'
+E
+E         - 요한복음 3장이든 4장까지
+E         ?     -
+E         + 요한복음3장이든 4장까지
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+_ test_shared_existing_alternative_and_range_connectors[ -\uc5d0\uc11c\ubd80\ud130] _
+
+connector = '에서부터', spacing = ' '
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음3장에서부터 4장까지' == '요한복음 3장에서부터 4장까지'
+E
+E         - 요한복음 3장에서부터 4장까지
+E         ?     -
+E         + 요한복음3장에서부터 4장까지
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+_ test_shared_existing_alternative_and_range_connectors[ -\ubd80\ud130\ub294] __
+
+connector = '부터는', spacing = ' '
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음3장부터는 4장까지' == '요한복음 3장부터는 4장까지'
+E
+E         - 요한복음 3장부터는 4장까지
+E         ?     -
+E         + 요한복음3장부터는 4장까지
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+_ test_shared_existing_alternative_and_range_connectors[ -\ubd80\ud130\ub9cc] __
+
+connector = '부터만', spacing = ' '
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음3장부터만 4장까지' == '요한복음 3장부터만 4장까지'
+E
+E         - 요한복음 3장부터만 4장까지
+E         ?     -
+E         + 요한복음3장부터만 4장까지
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+_ test_shared_existing_alternative_and_range_connectors[ -\ubd80\ud130\ub3c4] __
+
+connector = '부터도', spacing = ' '
+
+    @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
+    @pytest.mark.parametrize("spacing", ["", " "])
+    def test_shared_existing_alternative_and_range_connectors(connector, spacing):
+        from scripts import screen_target_language_audio_units as screen
+        approved = f"요한복음 3장{connector}{spacing}4장까지"
+        spoken = subject.spoken_form(approved)
+        assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
+>       assert screen.fold_transcript(spoken, "ko") == approved
+E       AssertionError: assert '요한복음3장부터도 4장까지' == '요한복음 3장부터도 4장까지'
+E
+E         - 요한복음 3장부터도 4장까지
+E         ?     -
+E         + 요한복음3장부터도 4장까지
+
+tests/test_ko_spoken_numerals.py:260: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-4--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-4-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-4-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-27--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-27-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-27-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-17--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-17-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-3-17-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-3--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-3-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}{dash}{end}\uc7a5-16-3-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-4--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-4-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-4-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-27--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-27-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-27-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-17--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-17-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-3-17-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-3--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-3-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c {start}\uc7a5{dash}{end}\uc7a5-16-3-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-4--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-4-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-4-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-27--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-27-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-27-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-17--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-17-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-3-17-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-3--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-3-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5{start}\uc808{dash}{end}\uc808-16-3-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-4--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-4-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-4-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-27--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-27-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-27-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-17--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-17-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-3-17-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-3--]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-3-~]
+FAILED tests/test_ko_spoken_numerals.py::test_citation_ranges_generate_fold_and_score[\ucc3d\uc138\uae30 1\uc7a5 {start}{dash}{end}\uc808-16-3-\u2013]
+FAILED tests/test_ko_spoken_numerals.py::test_particle_ranges_generate_fold_and_score[3-4-\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_particle_ranges_generate_fold_and_score[3-4-\uc5d0\uc11c]
+FAILED tests/test_ko_spoken_numerals.py::test_particle_ranges_generate_fold_and_score[16-27-\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_particle_ranges_generate_fold_and_score[16-27-\uc5d0\uc11c]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a516\uc808]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a5 16\uc808]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a516-17\uc808]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc2dc\ud3b8 1-2\ud3b8]
+FAILED tests/test_ko_spoken_numerals.py::test_adjacent_and_psalm_citations_generate_fold_and_score[\uc2dc\ud3b8 16\ud3b8\ubd80\ud130 27\ud3b8\uae4c\uc9c0]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc694\ud55c\ubcf5\uc74c-\uc7a5-\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc694\ud55c\ubcf5\uc74c-\uc7a5-\uc5d0\uc11c]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc694\ud55c\ubcf5\uc74c-\uc7a5-\uacfc]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc694\ud55c\ubcf5\uc74c-\uc7a5-\uc640]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc694\ud55c\ubcf5\uc74c-\uc7a5-\ubc0f]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc2dc\ud3b8-\ud3b8-\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc2dc\ud3b8-\ud3b8-\uc5d0\uc11c]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc2dc\ud3b8-\ud3b8-\uacfc]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc2dc\ud3b8-\ud3b8-\uc640]
+FAILED tests/test_ko_spoken_numerals.py::test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned[\uc2dc\ud3b8-\ud3b8-\ubc0f]
+FAILED tests/test_ko_spoken_numerals.py::test_added_subject_and_quotation_particles_have_symmetric_asr_boundaries[\uc774]
+FAILED tests/test_ko_spoken_numerals.py::test_added_subject_and_quotation_particles_have_symmetric_asr_boundaries[\uc774\ub77c\uace0]
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a5\uc774\ub098 4\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc694\ud55c\ubcf5\uc74c 3\uc7a5\uc774\ub0984\uc7a5]
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc2dc\ud3b8 3\ud3b8\uc774\ub098 4\ud3b8]
+FAILED tests/test_ko_spoken_numerals.py::test_book_anchored_alternatives_generate_fold_and_score[\uc2dc\ud3b8 3\ud3b8\uc774\ub0984\ud3b8]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\uc774\ub098]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\uc774\ub4e0]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\uc5d0\uc11c\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\ubd80\ud130\ub294]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\ubd80\ud130\ub9cc]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[-\ubd80\ud130\ub3c4]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\uc774\ub098]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\uc774\ub4e0]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\uc5d0\uc11c\ubd80\ud130]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\ubd80\ud130\ub294]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\ubd80\ud130\ub9cc]
+FAILED tests/test_ko_spoken_numerals.py::test_shared_existing_alternative_and_range_connectors[ -\ubd80\ud130\ub3c4]
+85 failed, 254 passed, 34 subtests passed in 1.93s

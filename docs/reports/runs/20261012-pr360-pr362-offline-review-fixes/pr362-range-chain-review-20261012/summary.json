@@ -1,0 +1,9 @@
+{
+  "codeRevision": "1df273e3",
+  "scope": "tests/test_ko_spoken_numerals.py",
+  "passed": 50,
+  "elapsedSeconds": 0.23,
+  "reviewThread": "PRRT_kwDOTCFsGM6rqUui",
+  "models": "not_run",
+  "deployment": "not_run"
+}
