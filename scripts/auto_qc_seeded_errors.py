@@ -434,7 +434,16 @@ def drop_key_word(text: str, locale: str) -> str | None:
         # Korean 안 negates only as its own word (안 갑니다), not inside 동안 or 평안.
         markers = [r"(?<![가-힣])안(?=\s)" if marker == "안" else re.escape(marker)
                    for marker in sorted(NEGATIONS[locale], key=len, reverse=True)]
-        numerals = "[" + ZH_NUMERALS + "]+|" if locale == "zh-Hans" else ""
+        # A Chinese numeral is a useful dropped-key-word trial only in a numeric
+        # context. A bare 一 inside 一起 is an ordinary word and yields an invalid
+        # calibration trial that TTS/ASR may legitimately normalize away.
+        if locale == "zh-Hans":
+            number = "[" + ZH_NUMERALS + "]+"
+            numerals = (r"(?:(?<=第)" + number + "|" + number
+                        + r"(?=[章節节位个個人年天次岁歲点點分秒名本句])|"
+                        + number + r"(?=$|[\s，。！？、；：]))|")
+        else:
+            numerals = ""
         match = re.search("|".join(markers) + "|" + numerals + r"\d+", text)
     spans = [] if match is None else [(match.start(), match.end())]
     if locale == "ko":
