@@ -1,0 +1,8 @@
+stage	status	elapsedSeconds
+initial	fail	1.93
+terminal_iteration	fail	1.79
+intermediate	pass	1.71
+complete_grammar	pass	1.79
+integrated	pass	14.55
+shadow_compat	pass	11.32
+shadow_driver	pass	47.61

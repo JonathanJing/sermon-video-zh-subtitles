@@ -222,5 +222,94 @@ class ClaudeBudgetedCallerTests(unittest.TestCase):
             self.caller(claude_transport=FakeClaudeTransport(broken))('', self.payload)
 
 
+class ClaudeCliOpusBackendTests(unittest.TestCase):
+    """claude_cli_opus: translator Opus high and reviewer Opus medium, both through the subscription CLI."""
+
+    def setUp(self):
+        from tests.test_canonical_layer2_budget import CanonicalLayer2BudgetTests
+        setup = CanonicalLayer2BudgetTests('test_provider_payload_cap_is_enforced_before_transport')
+        setup.setUp()
+        self.addCleanup(setup.fixture.doCleanups)
+        self.h = setup
+        self.policy = copy.deepcopy(setup.policy)
+        self.policy['translator'].update(model=CLAUDE, reasoningEffort='high')
+        self.policy['reviewer'].update(model=CLAUDE, reasoningEffort='medium')
+
+    def payload(self, effort):
+        return budget.limits.bounded_payload({
+            'model': CLAUDE, 'reasoning_effort': effort,
+            'messages': [{'role': 'system', 'content': 'instruction'}, {'role': 'user', 'content': 'A full sentence.'}],
+            'response_format': {'type': 'json_object'}}, self.h.limits)
+
+    def transports(self):
+        translator, reviewer = FakeClaudeTransport(), FakeClaudeTransport()
+        reviewer.effort = 'medium'
+        return {'translator': translator, 'reviewer': reviewer}
+
+    def test_backend_names_both_roles_and_the_runner_dispatches_it(self):
+        self.assertEqual(policy_tools.layer2_backend(self.policy), 'claude_cli_opus')
+        self.assertEqual(models.production_backend(self.policy), 'claude_cli_opus')
+        self.assertEqual(models.production_models(self.policy), {'translator': CLAUDE, 'reviewer': CLAUDE})
+        self.assertEqual(models.production_efforts(self.policy), {'translator': 'high', 'reviewer': 'medium'})
+        # The historical Opus-translator beside the Sol reviewer is still not a production backend.
+        with self.assertRaisesRegex(ValueError, 'experimental_only'):
+            models.production_backend(translator_policy(CLAUDE, 'high'))
+
+    def test_each_role_goes_to_its_own_cli_transport_without_an_api_key(self):
+        transports = self.transports()
+        caller = budget.BudgetedCaller(self.h.auth, self.h.config, self.h.source, self.h.anchor, self.policy,
+                                       claude_transports=transports)
+        # The fixture budget fits one list-price reservation; the translator path is covered above.
+        response = caller('sk-openai-must-not-leak', self.payload('medium'))
+        self.assertEqual((transports['translator'].calls, transports['reviewer'].calls), ([], [('', 'reviewer')]))
+        self.assertEqual(response['model'], CLAUDE)
+        data = jobs._read(self.h.auth['root'] / ledger.STORE_ID / 'state.json')
+        self.assertEqual([row['request']['kind'] for row in data['reservations'].values()], ['review'])
+
+    def test_a_claude_reviewer_needs_the_claude_cli_opus_policy(self):
+        sol_reviewer = copy.deepcopy(self.policy)
+        sol_reviewer['reviewer'].update(model='gpt-6.1-sol', reasoningEffort='medium')
+        with self.assertRaisesRegex(ValueError, 'claude_reviewer_requires_claude_cli_opus_policy'):
+            budget.BudgetedCaller(self.h.auth, self.h.config, self.h.source, self.h.anchor, sol_reviewer,
+                                  claude_transports=self.transports())
+        missing = {'translator': self.transports()['translator']}
+        caller = budget.BudgetedCaller(self.h.auth, self.h.config, self.h.source, self.h.anchor, self.policy,
+                                       claude_transports=missing)
+        with self.assertRaisesRegex(ValueError, 'claude_transport_required'):
+            caller('', self.payload('medium'))
+
+    def test_controller_builds_one_subscription_transport_per_role(self):
+        from pathlib import Path
+        from unittest import mock
+        from scripts import canonical_layer2_controller as controller
+        built = []
+
+        class Recording:
+            def __init__(self, *, model, effort, receipts_dir):
+                built.append((model, effort, receipts_dir))
+        with mock.patch.object(claude, 'ClaudeLayer2Transport', Recording):
+            transports = controller.claude_transports(self.policy, {'output': Path('/lane')})
+        self.assertEqual(sorted(transports), ['reviewer', 'translator'])
+        self.assertEqual(sorted(built), [(CLAUDE, 'high', Path('/lane/claude-calls')),
+                                         (CLAUDE, 'medium', Path('/lane/claude-calls'))])
+
+
+class ClaudeCliOpusPlanTests(unittest.TestCase):
+    """The planner caps a claude_cli_opus Layer 2 by list price, outside the approved USD total."""
+
+    def test_claude_layer2_cap_is_a_list_price_equivalent_outside_the_total(self):
+        from scripts import plan_run_budgets as planner
+        profile = json.loads((planner.PROFILE).read_text())
+        self.assertEqual(profile['schemaVersion'], planner.PROFILE_SCHEMA)
+        self.assertEqual(planner.layer2_cap_per_locale(profile, 'clip', 'claude_cli_opus'), (8.0, False))
+        self.assertEqual(planner.layer2_cap_per_locale(profile, 'clip', 'openai_api'), (2.0, True))
+        stages = [{'stage': 'layer2', 'capUsd': 24.0, 'countsTowardTotal': False}, {'stage': 'qc.ko', 'capUsd': 5.525}]
+        planned = planner.schedule(stages, total=20, settled=14)
+        self.assertEqual((planned['mode'], planned['worstCaseUsd']), ('all_stages_may_run_together', 19.525))
+        # A clip's first Opus round (16 groups x 2 calls at list-price worst case) fits the 8 USD cap.
+        first_round = 16 * (limits._cost(CLAUDE, 16384, 2048) * 2)
+        self.assertLessEqual(first_round, planner.micro(8.0))
+
+
 if __name__ == '__main__':
     unittest.main()

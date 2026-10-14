@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "tongxing-apns-single-device-attempt-v1",
+  "apnsID": "4bc2ab5b-dfc3-4284-a516-f84faaa72721",
+  "bundleID": "com.jonathanjing.tongxing.beta",
+  "environment": "production",
+  "httpStatus": 200,
+  "reason": null,
+  "curlExitCode": 0,
+  "timestamp": 1791737214,
+  "notice": {
+    "schemaVersion": "tongxing-beta-notification-v1",
+    "environment": "beta-dev",
+    "pageID": "resi-20261011-54475d42",
+    "locale": "zh-Hans",
+    "releaseSHA256": "2503ca70abb2372d513bd9a14603d42b5aac6401d5cc0e635dbc988ec8c84e51"
+  },
+  "apnsAccepted": true,
+  "deviceDisplayed": "not_run",
+  "contentOpened": "not_run",
+  "posterVerified": "not_run",
+  "phase": "response_observed"
+}
