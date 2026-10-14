@@ -202,6 +202,30 @@ def verify(dest: Path, secrets: list[str]) -> list[str]:
     return leaks
 
 
+def tidy_whitespace(dest: Path) -> list[str]:
+    """Strip trailing whitespace and blank lines at EOF from every text file, as `git diff --check` requires.
+
+    Copied logs (torch warnings, xcodebuild output) and hand-edited Markdown often carry both, and the docs
+    gate rejects the report PR for it. Binary or non-UTF-8 files are left untouched. Returns changed paths."""
+    changed = []
+    for path in sorted(p for p in dest.rglob("*") if p.is_file() and not p.is_symlink()):
+        raw = path.read_bytes()
+        if b"\0" in raw:
+            continue
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        lines = [line.rstrip(" \t\r\f\v") for line in text.split("\n")]
+        while lines and not lines[-1]:
+            lines.pop()
+        tidy = "\n".join(lines) + "\n" if lines else ""
+        if tidy != text:
+            path.write_text(tidy, encoding="utf-8")
+            changed.append(str(path.relative_to(dest)))
+    return changed
+
+
 def read_log(path: Path, digest) -> tuple[str, bool]:
     """Stream a log: keep head, tail and the first error lines in between, hashing as it goes."""
     head: list[str] = []
@@ -521,6 +545,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("run_dirs", nargs="+", type=Path, help="Run directories (usually under artifacts/)")
     parser.add_argument("--verify", action="store_true",
                         help="Only check that existing digest directories hold nothing the redaction rules would change")
+    parser.add_argument("--tidy-whitespace", action="store_true",
+                        help="Only strip trailing whitespace and blank lines at EOF in existing digest directories")
     parser.add_argument("--name", help="YYYYMMDD-<label> (default: today UTC + first run directory name)")
     parser.add_argument("--out", type=Path, default=ROOT / "artifacts/run-reports")
     parser.add_argument("--zip", action="store_true", help="Also write <name>.zip next to the digest")
@@ -533,6 +559,11 @@ def main(argv: list[str] | None = None) -> int:
         leaks = [f"{d}/{leak}" for d in args.run_dirs for leak in verify(d, env_secret_values())]
         print("\n".join(leaks) or "No unredacted values found.", file=sys.stderr if leaks else sys.stdout)
         return 1 if leaks else 0
+    if args.tidy_whitespace:
+        for run_dir in args.run_dirs:
+            for path in tidy_whitespace(run_dir):
+                print(f"Tidied whitespace: {run_dir}/{path}")
+        return 0
     label = re.sub(r"[^A-Za-z0-9._-]+", "-", args.run_dirs[0].resolve().name).strip("-") or "run"
     name = args.name or f"{datetime.now(timezone.utc):%Y%m%d}-{label}"
     if not NAME.fullmatch(name):
@@ -561,6 +592,7 @@ def main(argv: list[str] | None = None) -> int:
     (dest / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (dest / "INDEX.md").write_text(index_markdown(name, dest, entries, runs), encoding="utf-8")
     (dest / "RETROSPECTIVE.md").write_text(retrospective_markdown(name), encoding="utf-8")
+    tidy_whitespace(dest)
     size = sum(p.stat().st_size for p in dest.rglob("*") if p.is_file())
     if size > MAX_DIGEST_BYTES:
         shutil.rmtree(dest)
