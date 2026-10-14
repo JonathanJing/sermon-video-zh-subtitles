@@ -46,13 +46,18 @@ CONCURRENT_SCHEMA = 'sermon-canonical-layer2-execution-v2'
 # API requests still share the job root's 24 in-flight slots.
 AUTO_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v3'
 SHADOW_SCHEMA = 'sermon-canonical-layer2-execution-v4'
+# v5 = v3 plus gate 4: layer2AutoRepair may name, per locale, a failed back-translation QC
+# receipt of that lane's passed repair chain. v3/v4 keep their exact field set; a v3
+# configuration needs no migration and becomes v5 only to carry a QC repair.
+QC_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v5'
 MAX_AUTO_REPAIR_LOCALES = 3
 
 
-def _auto_repair_binding(value):
+def _auto_repair_binding(value, *, allow_qc=False):
     required = {'routingVersion', 'groupWorkers', 'maxActiveLocales'}
     qc = value.get('backTranslationQc', {}) if isinstance(value, dict) else None
-    require(isinstance(value, dict) and required <= set(value) <= required | {'sourceMeaningNotes', 'backTranslationQc'}
+    optional = {'sourceMeaningNotes', 'backTranslationQc'} if allow_qc else {'sourceMeaningNotes'}
+    require(isinstance(value, dict) and required <= set(value) <= required | optional
             and value['routingVersion'] == auto_repair.ROUTING_VERSION
             # Optional: the Layer 1 machine audio adjudication notes (meaning-notes.json beside its receipt)
             # that ride the repair briefs of the groups holding their units.
@@ -122,14 +127,14 @@ def load_configuration(path):
              or (set(value) == required_keys | {'concurrencyProfile', 'resourcePolicy'}
                  and value['schemaVersion'] == CONCURRENT_SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair'}
-                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA)
+                 and value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, QC_REPAIR_SCHEMA})
              or (set(value) == required_keys | {'layer2AutoRepair', 'candidateMode'}
                  and value['schemaVersion'] == SHADOW_SCHEMA and candidate_mode == 'shadow'))
             and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
-    repair_binding = (_auto_repair_binding(value['layer2AutoRepair'])
-                      if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA} else None)
+    repair_binding = (_auto_repair_binding(value['layer2AutoRepair'], allow_qc=value['schemaVersion'] == QC_REPAIR_SCHEMA)
+                      if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA, QC_REPAIR_SCHEMA} else None)
     inspection_path = _path(path.parent, value['inspectionConfig'])
     inspection = _json(inspection_path)
     require(inspection.get('schemaVersion') == packages.SCHEMA
@@ -533,7 +538,8 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 if config.auto_repair:
                     evidence, model_output = _run_auto_repair(
                         config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
-                        admission_span, model_completion)
+                        admission_span, model_completion,
+                        qc_digest=current['packageIdentities'].get('backTranslationQc.' + locale))
                 else:
                     model_output = lane['output']
                     evidence = models.run_accounted(source, anchor, policy, model_output, api_key,
@@ -570,7 +576,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
 
 
 def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progress, admission_span,
-                     completion_spans):
+                     completion_spans, *, qc_digest=None):
     """Run repair rounds inside this durable job, its budget and its lease.
 
     Every round is a separate runner output under the lane; repaired groups get a
@@ -602,8 +608,10 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
     qc_receipt = None
     qc_path = (config.auto_repair.get('backTranslationQc') or {}).get(policy['targetLocale'])
     if qc_path:
-        # Checked against this lineage and the chain head's reviewer caches by the loop before any dispatch.
+        # Exactly the receipt the admitted job identity bound (``qc_digest``), read once; the loop then
+        # checks it against this lineage and the chain head's reviewer caches before any dispatch.
         qc_receipt = _json(Path(qc_path))
+        require(qc_digest is not None and jobs._digest(qc_receipt) == qc_digest, 'back_translation_qc_changed_after_admission')
     receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
                                 group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
                                 meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt)

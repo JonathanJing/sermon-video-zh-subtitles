@@ -756,6 +756,18 @@ class BackTranslationQcTests(unittest.TestCase):
                               back_translation_qc=bad)
         self.assertEqual(fleet.calls, ["all"])
 
+    def test_a_qc_receipt_without_a_passed_chain_is_refused_not_ignored(self):
+        # An empty ledger (new job root, lost state) must not dispatch a full initial round instead.
+        receipt = qc_receipt(self.root, {})
+        with self.assertRaisesRegex(ValueError, "back_translation_qc_requires_passed_repair_chain"):
+            self.drive(receipt)
+        self.assertEqual(self.fleet.calls, [])
+        stopped = QcFleet(self, 16, [{"g2": failing("completeMeaning")}] * 9)
+        subject.drive(REQUEST, 16, stopped, self.root / "stopped", self.root / "state-stopped")
+        with self.assertRaisesRegex(ValueError, "back_translation_qc_requires_passed_repair_chain"):
+            subject.drive(REQUEST, 16, stopped, self.root / "stopped", self.root / "state-stopped",
+                          back_translation_qc=receipt)
+
     def test_qc_repairs_share_the_chain_spend_cap(self):
         # 16 groups: 32 initial calls and 3,200 tokens. The call minimum (4) and the token floor
         # (4 x 100 = 400, above 10% = 320) both allow two repairs; the third group stops.

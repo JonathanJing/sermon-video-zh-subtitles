@@ -830,6 +830,12 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
     value = lineage(request)
     out_root = Path(out_root)
     entries = load_ledger(ledger_root, value)
+    if back_translation_qc is not None:
+        # A QC receipt repairs the passed chain it judged; it never starts or silently skips a chain.
+        consumed = any((entry.get("reopenedBy") or {}).get("qcReceiptSha256") == json_sha256(back_translation_qc)
+                       for entry in entries)
+        _require(consumed or (entries and entries[-1]["outcome"] == "passed"),
+                 "back_translation_qc_requires_passed_repair_chain")
     if entries and entries[-1]["outcome"] != "repairing":
         reopened = _reopen_for_notes(request, total_groups, entries, value, ledger_root, meaning_notes, meaning_notes_sha256)
         if reopened is None and back_translation_qc is not None and entries[-1]["outcome"] == "passed":

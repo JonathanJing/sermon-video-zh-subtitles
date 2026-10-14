@@ -69,8 +69,8 @@ class ControllerAutoRepairTests(unittest.TestCase):
         for bad in ({**BINDING, "routingVersion": "other"}, {**BINDING, "groupWorkers": 17},
                     {**BINDING, "groupWorkers": 0}, {**BINDING, "maxActiveLocales": 4},
                     {**BINDING, "sourceMeaningNotes": 7}, {**BINDING, "sourceMeaningNotes": ""},
-                    {**BINDING, "backTranslationQc": {}}, {**BINDING, "backTranslationQc": {"zh-Hans": ""}},
-                    {**BINDING, "backTranslationQc": {"fr": "qc.json"}}, {**BINDING, "backTranslationQc": "qc.json"},
+                    # v3 keeps its field set: a QC repair needs execution v5.
+                    {**BINDING, "backTranslationQc": {"zh-Hans": "qc.json"}},
                     {"routingVersion": auto_repair.ROUTING_VERSION}):
             self.base.config_data["layer2AutoRepair"] = bad
             self.base.save_config()
@@ -82,6 +82,16 @@ class ControllerAutoRepairTests(unittest.TestCase):
         config = subject.load_configuration(self.base.path)
         self.assertEqual(config.auto_repair["sourceMeaningNotes"],
                          str(subject._path(self.base.path.parent, "notes/meaning-notes.json")))
+        self.base.config_data["schemaVersion"] = subject.QC_REPAIR_SCHEMA
+        for bad in ({**BINDING, "backTranslationQc": {}}, {**BINDING, "backTranslationQc": {"zh-Hans": ""}},
+                    {**BINDING, "backTranslationQc": {"fr": "qc.json"}}, {**BINDING, "backTranslationQc": "qc.json"}):
+            self.base.config_data["layer2AutoRepair"] = bad
+            self.base.save_config()
+            with self.assertRaisesRegex(ValueError, "invalid_execution_configuration"):
+                subject.load_configuration(self.base.path)
+        self.base.config_data["layer2AutoRepair"] = dict(BINDING)  # v5 without a receipt is v3's shape
+        self.base.save_config()
+        self.assertEqual(subject.load_configuration(self.base.path).auto_repair, BINDING)
         self.base.config_data["schemaVersion"] = subject.SCHEMA
         self.base.config_data["layer2AutoRepair"] = dict(BINDING)
         self.base.save_config()
@@ -192,7 +202,17 @@ class ControllerAutoRepairTests(unittest.TestCase):
         self.base.config_data["locales"]["zh-Hans"]["outputDirectory"] = "outputs-r2/zh-Hans"
         self.base.config_data["layer2AutoRepair"] = {**BINDING, "backTranslationQc": {"zh-Hans": "qc/text-qc-receipt.json"}}
         self.base.save_config()
+        with self.assertRaisesRegex(ValueError, "invalid_execution_configuration"):
+            subject.load_configuration(self.base.path)  # still labelled v3
+        self.base.config_data["schemaVersion"] = subject.QC_REPAIR_SCHEMA
+        self.base.save_config()
         revised = subject.load_configuration(self.base.path)
+        # The worker reads the receipt once and requires the digest its admitted job identity bound.
+        source2, anchor2, policy2 = subject._inputs(revised, "zh-Hans", subject.snapshot(revised))
+        with self.assertRaisesRegex(ValueError, "back_translation_qc_changed_after_admission"):
+            subject._run_auto_repair(revised, revised.lanes["zh-Hans"], source2, anchor2, policy2, "fixture-key",
+                                     api, lambda *_: None, None, [], qc_digest="0" * 64)
+        self.assertEqual(len(self.calls), 4)
         view = subject.package_view(revised)
         self.assertEqual(view["packageIdentities"]["backTranslationQc.zh-Hans"], jobs._digest(receipt))
         self.assertNotEqual(subject.durable.identity(view, revised.run_id, "text.zh-Hans"), old_identity)
