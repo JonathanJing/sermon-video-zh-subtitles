@@ -635,6 +635,32 @@ test('simulation review mode requires isolated page and target flags', async () 
   assert.equal((await loadPublishedWeeks(f.fetchImpl, {allowDevCandidates:true})).weeks.length, 0);
 });
 
+test('formal podcast keeps target audio time, bilingual groups and two-speaker attribution without a video asset', async () => {
+  const f = fixture(({content,captions}) => {
+    content.schemaVersion = 'sermon-full-video-text-content-v2';
+    content.reviewMode = 'formal'; content.audioDurationSeconds = 20;
+    content.speaker = 'Eric Geiger · Steve Bang Lee';
+    content.outline = [{title:'One point', body:'The approved explanation.'}];
+    delete content.sourceVideoUrl; captions.cues[0].end = 18;
+  });
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  catalog.pages[0].mediaType = 'podcast';
+  catalog.pages[0].sourceUrl = 'https://www.youtube.com/watch?v=N-y3EqlUtdU';
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  for (const [locale, variant] of Object.entries(result.weeks[0].contentVariants)) {
+    assert.equal(variant.sourceRoute, 'podcast');
+    assert.equal(variant.sourceLabel, {'zh-Hans': '播客', ko: '팟캐스트', es: 'Pódcast'}[locale]);
+    assert.equal(variant.sourceUrl, catalog.pages[0].sourceUrl);
+    assert.equal(variant.tracks[0].durationSeconds, 20);
+    assert.equal(variant.tracks[0].cues[0].end, 18);
+    assert.equal(variant.tracks[0].subtitleTiming, 'target_audio_clock');
+    assert.match(variant.tracks[0].voiceLabel, /Steve Bang Lee/);
+    assert.deepEqual(variant.outline, [{title:'One point', points:['The approved explanation.']}]);
+    assert.equal(variant.audioFingerprint, undefined);
+  }
+});
 // Synthetic machine-checked locales: v4 release + content v3 under /releases-v4/,
 // listed only in /multilingual-v4.json. /multilingual-v3.json is the human-only projection.
 const DISCLOSURES = {
@@ -901,4 +927,34 @@ test('present catalog source media identity binds reviewed content for video and
   const result = await loadPublishedWeeks(bindCatalogMedia(partial, 'd'.repeat(64)).fetchImpl);
   assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
   assert.equal(result.errors.length, 1);
+});
+
+test('v3 content without a hosted source video keeps all three machine-checked audio and reading variants', async () => {
+  const both = ['machine_checked', 'machine_checked'];
+  const f = machineFixture({ 'zh-Hans': both, ko: both, es: both }, ({ content }) => {
+    delete content.sourceVideoUrl;
+    content.sourceWindow = { schemaVersion: 'sermon-original-recording-window-v1', startSeconds: 100, endSeconds: 110, mediaSha256: content.sourceMediaSha256 };
+  });
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.defaultWeekId, pageId);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'ko', 'es']);
+  for (const variant of Object.values(result.weeks[0].contentVariants)) {
+    assert.equal(variant.sourceUrl, null);
+    assert.equal(variant.sourceFingerprintWindow.startSeconds, 100);
+    assert.equal(variant.tracks.length, 1);
+    assert.equal(variant.fullTranscript.length, 1);
+    assert.equal(variant.machineChecked, true);
+  }
+});
+
+test('optional v3 source video does not relax validation for declared unsafe or empty URLs', async () => {
+  for (const sourceVideoUrl of [null, '', '//other.test/video.mp4', 'https://other.test/video.mp4']) {
+    const f = machineFixture(undefined, ({ content, locale }) => {
+      if (locale === 'ko') content.sourceVideoUrl = sourceVideoUrl;
+    });
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.equal(result.weeks[0].contentVariants.ko, undefined);
+    assert.match(result.errors.join('\n'), /Unsafe published asset path/);
+  }
 });

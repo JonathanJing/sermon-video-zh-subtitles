@@ -1,0 +1,22 @@
+{
+ "schemaVersion": "sermon-clip-e2e-spark-runtime-v1",
+ "documentation": "docs/clip-real-e2e.zh.md",
+ "host": "achillesjing@192.168.1.152",
+ "remoteHome": "/home/achillesjing",
+ "stageRoot": "/home/achillesjing/dgx-spark-benchmark/results",
+ "openaiEnvFile": "/home/achillesjing/.config/tongxing/openai.env",
+ "images": {
+  "tts": "sha256:e615da846c45d026d221bda0f168ae35022af18ac7ec4e5245d04fb62c314f14",
+  "pytorchFfmpeg": "sha256:06576684aa3e4e2ec7eb2df6ecd2c6afd95e6644608195b8362cad43e51c3690"
+ },
+ "voicePackages": "/home/achillesjing/dgx-spark-benchmark/results/sermon-voice-poc-20260905/venv/lib/python3.12/site-packages",
+ "asrRuntime": "/home/achillesjing/dgx-spark-benchmark/results/weekly-20261004-resi-69ba7a66-formal8-d190535-v3/runtime-asr-v1/site-packages",
+ "modelRoot": "/home/achillesjing/.cache/huggingface/hub",
+ "asrSnapshot": "models--Qwen--Qwen3-ASR-0.6B/snapshots/deba00eb976b8daf9805ffd5d0fdcd7cafbb21b2",
+ "asrRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+ "speaker": {
+  "id": "steve_bang_lee",
+  "checkpoint": "/home/achillesjing/dgx-spark-benchmark/results/sermon-speaker-bank-20260905/steve_bang_lee/checkpoints/checkpoint-epoch-0",
+  "checkpointRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/steve_bang_lee/b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9"
+ }
+}

@@ -272,6 +272,11 @@ def snapshot(config_path, *, sunday=None):
     state = _job_state(config, key)
     if state:
         result['workflowJob'] = state
+        # Admission may create this job after the directory scan above. A new
+        # active job has no complete bundle yet; it is waiting, not a failure.
+        if state['status'] in jobs.ACTIVE:
+            result['recommendedAction'] = {'action': 'wait_for_workflow_job', 'humanActionRequired': False}
+            return result
         try:
             prepared = _verify_bundle(config, identity, core, inventory)
             if state['status'] != 'succeeded' and not _reconciled(config, key, state):

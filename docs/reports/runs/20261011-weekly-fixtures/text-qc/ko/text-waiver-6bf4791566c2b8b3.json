@@ -1,0 +1,3402 @@
+{
+  "anchorManifestJsonSha256": "6e6c901cd5cf333c73cbc510b510c214860d85e8554e545da99675d57cb339e2",
+  "calibration": {
+    "cleanFalsePositiveRate": 0.043384,
+    "implementationSha256": "49f4e9bf63276b1ede7a3229bcfb11febbfa7f07aaaee83c268885d9a46d4508",
+    "jsonSha256": "30b715e6aafaa65c1e27fcb4b0ca34838acd03177781dee55fdeec2115986794",
+    "minimumKindDetectionRate": 1.0,
+    "overallDetectionRate": 0.996226,
+    "runtimeIdentitySha256": "1d8af0d6edd9e42e477ad1e0f8890cd96b20188d184ac57b5810e4a596996ac4",
+    "semanticChecksIncluded": true
+  },
+  "candidateJsonSha256": "efc5043b3a57ec3973245163a88d40139a4cc9a1c15aef482b4a587b69da1a1b",
+  "condensationBindingJsonSha256": null,
+  "condensedGroupIds": [],
+  "createdAt": "2026-10-11T09:51:03.293760+00:00",
+  "decision": "machine_quality_waived",
+  "disclosure": {
+    "english": "Published automatically after machine quality checks, without human review.",
+    "locale": "ko",
+    "text": "이 언어 콘텐츠는 기계 품질 검사 후 자동으로 게시되었으며 사람의 검토를 거치지 않았습니다."
+  },
+  "englishSourcePackageJsonSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+  "groupResults": [
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6e4d1b6e335328246001ba69178c70a6438d4da2761673213fc2955dafb4dba2",
+      "translationGroupId": "translation-chunk-0000-u001"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "08b69d354421bac774d444e0782dad465dc986687a6b8a8ea3af985a5a7843d9",
+      "translationGroupId": "translation-chunk-0000-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "91e162adb0bd811399ed1f1ca3d0aa4236b36e5b01ebfcc5d6f375f778bc1d97",
+      "translationGroupId": "translation-chunk-0000-u003"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3f5c54dd112f3a6e5c1c73d14f88ae335af440d6386fc9129cd52160570cfb06",
+      "translationGroupId": "translation-chunk-0000-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "be5107f77c0726f88e0fb912914cb2e7e46566f1e3f31da98095ad1b77a8b84d",
+      "translationGroupId": "translation-chunk-0000-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "975e8eb6255acbd60eca9ab58277a780a8c47bc2bf97053e969ea0b89bc9df42",
+      "translationGroupId": "translation-chunk-0000-u006"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "90ef73e1a79b58b211af81a7d32d7bbe55740f6d2efb05d02d4cc1acaa4fddce",
+      "translationGroupId": "translation-chunk-0000-u007"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7577ecf06b179b54645662179de7df9f62edf153954cd48055dafe183156fc7e",
+      "translationGroupId": "translation-chunk-0000-u008"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e443c7638f00d05baabedeb8d57b80780cf0fd8b3d87a7114b017eb992db051a",
+      "translationGroupId": "translation-chunk-0000-u009"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "108a293087629f0f4ccfdfb7df7533f35413f17aee7b83f92c6df73accd0b053",
+      "translationGroupId": "translation-chunk-0000-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a53e5420291c68fb25d0c9593e1b866ef126782137f9a3d46766aff3bdd37de4",
+      "translationGroupId": "translation-chunk-0000-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "79224bbb11c3cc7ab87fb539566a9eb77731c131321333267217f081e424885f",
+      "translationGroupId": "translation-chunk-0000-u012"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b09d0bfbbb1365377d72c67a5d0e51ae9f5cfc96eb79fe7d47332c978d29467c",
+      "translationGroupId": "translation-chunk-0000-u013"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3a54195c8d94b97c69d1c4fe1fa860a227422f00c108bf52835d7838dcaea25a",
+      "translationGroupId": "translation-chunk-0000-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "745bf113b31df141459e2355e3e34a6c5e30bdba79da556224d4fd0a77a93f10",
+      "translationGroupId": "translation-chunk-0000-u015"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "d03f33e55f1b512ca3882266c9c857a247aa5292953ea780073067b9ac26c189",
+      "translationGroupId": "translation-chunk-0000-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f54d39d12618c75d32b30e5c097ec1294edba2f836f1b07cdd38c3bc1f2b96df",
+      "translationGroupId": "translation-chunk-0000-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "adc860b5b145dc18541e85e5fe524ef1c1bf9fb87c7112301fb1fdcf2374a385",
+      "translationGroupId": "translation-chunk-0000-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6eccd5c5b09056d956f15031cdad7be99f681eb5ac0bdf434b659144a909b567",
+      "translationGroupId": "translation-chunk-0000-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "88288485d60961feceb71aef098cb2d2222d366b8d95feae69d12c7363dfc102",
+      "translationGroupId": "translation-chunk-0000-u020"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "bf4b9b41c83c8c70e5c69872ff95ce977ef0b9170729b7c2972f157283438712",
+      "translationGroupId": "translation-chunk-0000-u021"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "096c2567f58eef87f5aa384cf0ca56c2f330f7e1c9bc3234f5813f1206ea39ea",
+      "translationGroupId": "translation-chunk-0000-u022"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b9645d9b9c2b1fc99fe0e2d86d5b711612da3a6d31377591191cd82997333fc4",
+      "translationGroupId": "translation-chunk-0000-u023"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7d6e260d07e5c3f13a0a203034a5a08348a0a754376e330a258255c81a0ae34f",
+      "translationGroupId": "translation-chunk-0000-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "230db9e0a372ea251fce838a99eb8017f2667cab86dd3ad9ccb5ba24f6c23abd",
+      "translationGroupId": "translation-chunk-0000-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0e213cb6b501fe1aecf83cdf7c1bddab0344aba9ba601ddbd71a79beccf29cce",
+      "translationGroupId": "translation-chunk-0000-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0ac99c2ab5cfd30a564e24ba555e5ae7b029d8181f06ec824ecb38cef48a7ae7",
+      "translationGroupId": "translation-chunk-0000-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ff73c368bf9d7a155e288e4710ad7b8b43688120d5fd6cdad727de6e30c91c85",
+      "translationGroupId": "translation-chunk-0000-u028"
+    },
+    {
+      "failedAttempts": 1,
+      "status": "human_accepted",
+      "targetTextSha256": "737480d37f8f6405ff06e4e0e007e9c154f7f41f5a944e274737805d5885eb59",
+      "translationGroupId": "translation-chunk-0000-u029"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f8c5cb78ab981de6ea27e6953520f5a059f5762daa1b93a30181612ac32a479e",
+      "translationGroupId": "translation-chunk-0000-u030"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "75b46c92648e9f4860a89b2e1a31186e43dce0dbdd507772ef50e9fb49eb3db8",
+      "translationGroupId": "translation-chunk-0000-u031"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "9bf7ab6efbede1a09faf363272637bb0ebdb65c0665016f53c9b11ea56f6a226",
+      "translationGroupId": "translation-chunk-0000-u032"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "234b3959f04454d10afeefd93da62299af7025e21010929484a254ca789b6ddd",
+      "translationGroupId": "translation-chunk-0000-u033"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "01682cc60e46122f562409f0a466c399ab843fe5f9c259c81aed5d89389807ed",
+      "translationGroupId": "translation-chunk-0000-u034"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8445741d7d6a831276e8794b874cebee94940ba0e963d4f109bf72f437426789",
+      "translationGroupId": "translation-chunk-0000-u035"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "dc7eb6b84b3fa8f3f8980a23f157d97763bb45e0683848d82242ee1a010924ad",
+      "translationGroupId": "translation-chunk-0000-u036"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8445741d7d6a831276e8794b874cebee94940ba0e963d4f109bf72f437426789",
+      "translationGroupId": "translation-chunk-0000-u037"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "5b4a26371196097be2e6a705a00600abde41eda672f4106b8fb726749a88edc5",
+      "translationGroupId": "translation-chunk-0000-u038"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7888c31ff1ff0f23f3d5057dc74695c167e761e1f6b5a35f3017f7c70280acb8",
+      "translationGroupId": "translation-chunk-0000-u039"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "a5ff5d4bb019949569da9c2c3c27802ee6a19a8379a9b4a20fa268a8371fdf51",
+      "translationGroupId": "translation-chunk-0000-u040"
+    },
+    {
+      "failedAttempts": 1,
+      "status": "human_accepted",
+      "targetTextSha256": "d2dc5c54127133bdba1df48167560eb9933748900978980069c0e23db8ef660e",
+      "translationGroupId": "translation-chunk-0000-u041"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f0c7a87ecb2ca69299f6469cfb95dbaa5ec36da989a6dfea370f9f06e36e936c",
+      "translationGroupId": "translation-chunk-0000-u042"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "9d03f225e6897f0c2784e16b6a9d141a46ad7c88c3c6ac5d3f4dc33644065461",
+      "translationGroupId": "translation-chunk-0000-u043"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c80d83665ce6aa2ff2a1f86f821600f0be7ee75f46238c31d656269f03040441",
+      "translationGroupId": "translation-chunk-0001-u001"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3594ec48bbf6a3cf87f0ee8d6f8a4f82bbf1dc87b55758317871fe2e5eeb6cc2",
+      "translationGroupId": "translation-chunk-0001-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b84093e7546697094ca5d727e5a06766863740cfe91b91fbf516458fa199c31c",
+      "translationGroupId": "translation-chunk-0001-u003"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ca8f95cff294ec6ea93503c31eca263f5bf2de16588bff3df2fd33aae3992930",
+      "translationGroupId": "translation-chunk-0001-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b616cab92f5a6b08377a5838eb0252b4f9e547ea86c20d707692a2598e5aca96",
+      "translationGroupId": "translation-chunk-0001-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "423ee83b39403c737a8c9c850f62d9441b7a7f0c96a5fb89b3e01ccddc77a574",
+      "translationGroupId": "translation-chunk-0001-u006"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a1b95f7472dd7c527b3ef3c0cd3cd1589ebbbb44e4ba18a7b28a597d9c1e323b",
+      "translationGroupId": "translation-chunk-0001-u007"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3b6cf629134d0bfeac9cb6d971263353f587bf515716aaa4496601ee783bb1c0",
+      "translationGroupId": "translation-chunk-0001-u008"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "07e1265a9e001f5540497a70fbd54ab6f8e561c023959e19532cc032329c9bd0",
+      "translationGroupId": "translation-chunk-0001-u009"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "96a5d6e69861cd32b681d3c7979a9d13ad61e8f876a6a9fe51f660b0d39585d0",
+      "translationGroupId": "translation-chunk-0001-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "2d9b9866d09ea7daa3e03fa23b9e417c7bcece6b4fbe8c38394a64d0cc292c3d",
+      "translationGroupId": "translation-chunk-0001-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "76ee3d0954a1758197630c48e0f003d9eb2e68be838811f08505bb27f8cb2528",
+      "translationGroupId": "translation-chunk-0001-u012"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6373b9554830decf89e8c78235fae1bd7d4ee6c79dd6e9b964a9f96d4580ef36",
+      "translationGroupId": "translation-chunk-0001-u013"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a2745f26833e058c4efd33185d5928330cb68682a94e6dafcffde18e3ebf7205",
+      "translationGroupId": "translation-chunk-0001-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "58e6d80e37a9d974986c0c620890ba25324603ab00a574aae7e23696bcc9208b",
+      "translationGroupId": "translation-chunk-0001-u015"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7917c9b1eaf5f5475759fb7a3b27b9db2dd96abd2dade189bb623f9a0fc2beb5",
+      "translationGroupId": "translation-chunk-0001-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f1cbb72b33f7a7e47cb926670c05b1e4eb8c13b2fd448fb6ee30436f94e5e861",
+      "translationGroupId": "translation-chunk-0001-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "61e4aa71f55db429b137b4c23c8393717baa6c04b8d09885b08b15f1f5bd3a72",
+      "translationGroupId": "translation-chunk-0001-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "9fe52b1001bec692a1c9b82ae213aafe18a3534ea472a113cefeb0260a512784",
+      "translationGroupId": "translation-chunk-0001-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "1df3e367c81dce446dbdaed19c154fb00502a529d367108e9f211026664443d8",
+      "translationGroupId": "translation-chunk-0001-u020"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "490cc0c277446b4e0d43777e04e39b7d21b6dc54883958acae880d517828f098",
+      "translationGroupId": "translation-chunk-0001-u021"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "41748571b090277997dc4c4191696189d2a94b23a32953b73ddee722dca6b187",
+      "translationGroupId": "translation-chunk-0001-u022"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e28467c7b82be85875c709fe977fe422039f632a41e73d9e054d824f018e49da",
+      "translationGroupId": "translation-chunk-0001-u023"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4a50d2e8512bd7961c7af7eb12dea92650a20225c91eff3df571041d9b670c68",
+      "translationGroupId": "translation-chunk-0001-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "13c2d854ba04c1548618529d0273d9ce97d2627a38ef550849d501ed9a02baa9",
+      "translationGroupId": "translation-chunk-0001-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "104faab91b4e840a3f86abb53c164b00c1ada2ad43485253c010c31b2c8da420",
+      "translationGroupId": "translation-chunk-0001-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ba27ac45aaaa83bb0f651b9eb3052e9517dd2ab7434ac7ce8269f766d53f5709",
+      "translationGroupId": "translation-chunk-0001-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "317eaf018cc034a9cb9a445725b6f567ccacbeb6259eee4daa4b0833bcfb9056",
+      "translationGroupId": "translation-chunk-0001-u028"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f9749614bed17eabbaa758d329ee579069f41d77489f41e9413c915f0b21a8e6",
+      "translationGroupId": "translation-chunk-0001-u029"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "2e471ec3bd02ebd80bdd0dcafe723c46a1d4864b8eca81167b52d46066a914d0",
+      "translationGroupId": "translation-chunk-0001-u030"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0845ae3d39f36828761762896197337af089c32fb6f6b757021874d4c0b44fe9",
+      "translationGroupId": "translation-chunk-0001-u031"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e6e1aa767533ae930b800b99ae465e844bf291bf30e3ddbc19ea8edb745c4286",
+      "translationGroupId": "translation-chunk-0001-u032"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e05bceab0593abd6bc39c16deff897f72fbb65702ccc344cd9d93540402d0cc3",
+      "translationGroupId": "translation-chunk-0001-u033"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "5a8f496558d393aeffa6fe9d794f424229aafaa28a51906a6586939a9a741a01",
+      "translationGroupId": "translation-chunk-0001-u034"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4fd5cba9c5c2eab1f2df5d265b56410f1108107957f0ebb69aa979dbf71a9933",
+      "translationGroupId": "translation-chunk-0001-u035"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "698ce65ee608cec5f2b391b3ac9af54d0540cdeab7a08b43e5c42c12d22aae9f",
+      "translationGroupId": "translation-chunk-0001-u036"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "93764bc4655179d0f82e34dc6c6e8e04011ac814bc3c92df36ac071463fc3d7c",
+      "translationGroupId": "translation-chunk-0001-u037"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a9bc343f1f3542592e10b06e39a4ad5d0e258130b6dc4c9a09c3fafba8807487",
+      "translationGroupId": "translation-chunk-0001-u038"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8cbf693aa24aeea61cf4a138287a2b34e3b050542a0f1d849b923da0ce602fa6",
+      "translationGroupId": "translation-chunk-0001-u039"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "33dabe4299ccffc82b948d2a43c3cf06056a647248431bfa77a5d9cfdb22f942",
+      "translationGroupId": "translation-chunk-0001-u040"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6bf992460c155974205a41b7cbafddf732212f5c85efe0ba6e707ff2e963b865",
+      "translationGroupId": "translation-chunk-0001-u041"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7d5c6754fa777a5f00897a7919da0946056db11e990af608e6d3dc9a56f9c723",
+      "translationGroupId": "translation-chunk-0001-u042"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0c249a643376cc0fd9d9a1adeae2199f3a68cb05abf206ebd69f61635c00bf08",
+      "translationGroupId": "translation-chunk-0002-u001"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "bc47cc3e21b267d1cf2a8cced9f6afdc3255e48f303da4cd0e376e4014fae88b",
+      "translationGroupId": "translation-chunk-0002-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a383bf77ea4eadb1c9482edf931870e4392ef9f1802f3dd65da28ec216a9dee2",
+      "translationGroupId": "translation-chunk-0002-u003"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "cbb332e395cc54be0d985559dfb9fd7c054fcf958e59e8f38f7369638a3a4d95",
+      "translationGroupId": "translation-chunk-0002-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "d94c804bcd530c3548a1a690c90c10072b0a780bb91456a2fd51b68ed86fd9f8",
+      "translationGroupId": "translation-chunk-0002-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e3bfb6ea244e10807ccdf3dd4200d7673c333741748a76c9fd1f926210a6091b",
+      "translationGroupId": "translation-chunk-0002-u006"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "95e2c9aa7523a927a0562e271e7c3998209ab28866f869d0741a7dbeb086e7b7",
+      "translationGroupId": "translation-chunk-0002-u007"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "d2195a8f0a0407a1db07b007f0744a1577ebd03c4a7bb9541030d1b239f677c7",
+      "translationGroupId": "translation-chunk-0002-u008"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "04732d4d448afeee16e109a3eaf6c9f21b254fd053fba1a82250b74866b2b9be",
+      "translationGroupId": "translation-chunk-0002-u009"
+    },
+    {
+      "failedAttempts": 1,
+      "status": "pass",
+      "targetTextSha256": "545a118761268d6eb69ba4fdd78f2915f5903070b052e20f16db553ed0e32b48",
+      "translationGroupId": "translation-chunk-0002-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "fc335151e06db9a6db40a9da57a3fba9b546ec1baa7c40ea55639a4ae45c751b",
+      "translationGroupId": "translation-chunk-0002-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "1d4f0525da7f6e1d6041c7c60dd30830998710354f9ba9d3d9c94dcd0ed4b43d",
+      "translationGroupId": "translation-chunk-0002-u012"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e867ef193db1bef53b11b81abb42cf2d37824276b2dfde0408ab05c15dcf1932",
+      "translationGroupId": "translation-chunk-0002-u013"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "730b3aeb22ef3265de04a42c5fedd06c9d07dcce2472ded9d4ddd6cfe08e8367",
+      "translationGroupId": "translation-chunk-0002-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "da303a4890131576c3aadcf7aaa4b8f5c64184725d141ecd51de1403fcad59de",
+      "translationGroupId": "translation-chunk-0002-u015"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "05613ea14f3d455536f1c3ea5206d3d42fcd25361047e406ad7a79d65772e24b",
+      "translationGroupId": "translation-chunk-0002-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b5d6e11be9c155738336607196d8b067f8f12e9260c629bd15cddd972251ee90",
+      "translationGroupId": "translation-chunk-0002-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "423a1daa4ed8858e32b70fbce2f8111e7b65697e86a3e47c89fba7d1962d983e",
+      "translationGroupId": "translation-chunk-0002-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "436bb695fdf580f22fc7dcc5472557c9a2cdb18a84620095bde7c28e26f05167",
+      "translationGroupId": "translation-chunk-0002-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "28e224e27795011f18fc2c6f6c6c0756f3ae36c7b61c5b4167ef9be1d138b89b",
+      "translationGroupId": "translation-chunk-0002-u020"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c00081645551443f40207f74c64467130c9ed31aa4110d9461713de6d0bd33d7",
+      "translationGroupId": "translation-chunk-0002-u021"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4975d8b4e5d7832cef2708137f7b6043f63174b71863dda404e893c9e67418a9",
+      "translationGroupId": "translation-chunk-0002-u022"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4becc3f75e4ea7dd1aee1228578143e6cfdaef4ccf70ef373ba2d882842fb0b8",
+      "translationGroupId": "translation-chunk-0002-u023"
+    },
+    {
+      "failedAttempts": 1,
+      "status": "human_accepted",
+      "targetTextSha256": "80812db4a65d6bc752874d27b5e7cb44fb3e5102f6678c755ba21558754fbb4b",
+      "translationGroupId": "translation-chunk-0002-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b96a5c13f80a2a6f091dbe6f49e1e0fcfb50bdf5fe10a8d7e0afd91d517b7697",
+      "translationGroupId": "translation-chunk-0002-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "cb6c0e0abb6ceb210baa1a5a1e21dda565599c5b472b0d57eccbe10524472a29",
+      "translationGroupId": "translation-chunk-0002-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "578be24a43bbf06c4eab33d8373ee5fcd613bb830b79afbe5782ea8a725678c5",
+      "translationGroupId": "translation-chunk-0002-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "74c46388fe89e2e807d47004ca87025047689e7eab18f46e7364f01ad9e6abfc",
+      "translationGroupId": "translation-chunk-0002-u028"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c0af8547e259064e4dd069e09ffe8a15426ec364454455c00855c9965c704c56",
+      "translationGroupId": "translation-chunk-0002-u029"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "bcb28ecf5b1e7abe60948d2039b1da0a44a323e44f8909c1c57fb3aa83b4d718",
+      "translationGroupId": "translation-chunk-0002-u030"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "928cc659b1649fc2f162a1c3bc4355d1394a25031fa3ff806ac6ee21e7754f2a",
+      "translationGroupId": "translation-chunk-0002-u031"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "70b3dcffd01b3fad4c1ac448d5de1cc80c38f2c0048ba292b0d123579956c81c",
+      "translationGroupId": "translation-chunk-0002-u032"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "aaf71c162948eda8c916ecf05f7eec5b576ac0fa4769af546797d454b52bd32a",
+      "translationGroupId": "translation-chunk-0002-u033"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6ca065a69b8d857a46eedc9c9b18d6552a316613e5f685f106cb4d879f039f4c",
+      "translationGroupId": "translation-chunk-0002-u034"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "25ca14363dcc7227633e88e70e0cde15ba6624bf9c9259d74c7a4a72944fe879",
+      "translationGroupId": "translation-chunk-0002-u035"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "2ac5b0e12c9810d18ed09b7bba142a0d054f32a5348ab28d32907fc4c3b6282a",
+      "translationGroupId": "translation-chunk-0002-u036"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "207e13ac9512d0e0c48207a7cb4bd28c38854914422732166811b90251c01cd5",
+      "translationGroupId": "translation-chunk-0002-u037"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6bc9ad03320cb1d7c89b784ac4ed7d5ed7126ad0c5c928e747c9c56eed21aa18",
+      "translationGroupId": "translation-chunk-0002-u038"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7877276c81cb756399a521fcdcb7db65cd8b2012c6bd663331879e968fc8a0a1",
+      "translationGroupId": "translation-chunk-0002-u039"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4b55c7a9f5a231b655dd8434f35ca696926c570db50e77531ac88e22f1492931",
+      "translationGroupId": "translation-chunk-0003-u001"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "afbc2fee184179a44f6f381f1aa4ed5bbb3695f62f16415d0358f9df5bd864cf",
+      "translationGroupId": "translation-chunk-0003-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "69fcdb54ed1f1f843eb7bd4ee042e3f16fa0c08fb9269f3514dbaa66812e9240",
+      "translationGroupId": "translation-chunk-0003-u003"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "7d0480cb931b519bfa1b0eacccac0adbc9b49f0a7f83aa2ae2d9bdf6d7455b80",
+      "translationGroupId": "translation-chunk-0003-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4d27428d46863cbba792ae188f1f6bcdc1d8ab3e8c633721afafaaafc3b99828",
+      "translationGroupId": "translation-chunk-0003-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c4555de2b71fc4106648111bb42e90cb4355126f140486e0e119b518a09a6692",
+      "translationGroupId": "translation-chunk-0003-u006"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a96f505979333860733e0f9d619e4fe208b28fd8eacd08824da7df87035ce20d",
+      "translationGroupId": "translation-chunk-0003-u007"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "68a11b7775ddfbb6b76a874e040afaad4256d4798f8f4c072fc317756ac95e48",
+      "translationGroupId": "translation-chunk-0003-u008"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4f711dd0c25e013abecb6df6aa3bd35dfcc242910c4574617f94b782b6fded81",
+      "translationGroupId": "translation-chunk-0003-u009"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0bbc5d85770852f54c239f63606229923e978b02c7a97f2ce8f12bcda7dad11d",
+      "translationGroupId": "translation-chunk-0003-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0bbc5d85770852f54c239f63606229923e978b02c7a97f2ce8f12bcda7dad11d",
+      "translationGroupId": "translation-chunk-0003-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "d3d4577047e98a9b9fd45b819f0988f02653597722a5eb913c8aed70629b64ae",
+      "translationGroupId": "translation-chunk-0003-u012"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "2e6f8315dee5ca1c95f7ad1275a1dfe82861821c924afb14141438675ec03b00",
+      "translationGroupId": "translation-chunk-0003-u013"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7de143a5193bdb5a9def611a6a0546760c1a773336baf84660e2681c69251d1b",
+      "translationGroupId": "translation-chunk-0003-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b60b14124a2d05ccb52a6a63e3aa6631e85dfdf131df015f0ea14a01188023bc",
+      "translationGroupId": "translation-chunk-0003-u015"
+    },
+    {
+      "failedAttempts": 1,
+      "status": "human_accepted",
+      "targetTextSha256": "8bbec12db73a4672e7d00b33fd87c39c0219a7723a55056a156374743ec96f49",
+      "translationGroupId": "translation-chunk-0003-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4a50b9d19369f985bdbe806e5f8edc5de0d0fbd288e3ea8796c6b876bf9e66d8",
+      "translationGroupId": "translation-chunk-0003-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ef9ccb250e9d67d452de4f2f5afbeba3659c7fbf3393d2c5165da15513207102",
+      "translationGroupId": "translation-chunk-0003-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e6cb1325b0140ebaf101d1f7451d3fabab9ef5f97b8e46f3311348bdabe124ce",
+      "translationGroupId": "translation-chunk-0003-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4db20a95f0f9ebac689ce0aa16d2104ef814832dc04e45ed4bcf27d42be023c5",
+      "translationGroupId": "translation-chunk-0003-u020"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "37c2ed3b7598e08bcbf61f252fde453cf630dc624ee7e45d827b25847d73186f",
+      "translationGroupId": "translation-chunk-0003-u021"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7e0cab9ed59024ee664280a27306506a78cce840313175335479203adbf46cc0",
+      "translationGroupId": "translation-chunk-0003-u022"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6bc9ad03320cb1d7c89b784ac4ed7d5ed7126ad0c5c928e747c9c56eed21aa18",
+      "translationGroupId": "translation-chunk-0003-u023"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "cfad7d5d6041db27d04de4c1b4bdf1fa687930a7d0affa483384e11927d17a43",
+      "translationGroupId": "translation-chunk-0003-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "cb85e189996b37941e598173aa1736dc7672267528f18f760a1562797d6f6846",
+      "translationGroupId": "translation-chunk-0003-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "d420bb7631acaa4c7b254efa617517f4da413fe34434470527cd13539ebfdb74",
+      "translationGroupId": "translation-chunk-0003-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0b86ed7a6fdd74d347d0e9ed8435c62f5e83f42b91c227d1d8512a0f8fbbad5d",
+      "translationGroupId": "translation-chunk-0003-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f834ec9fa921a09cd3a7bd84c05190b61eefb732a405bcfcb9f1d571144597ec",
+      "translationGroupId": "translation-chunk-0003-u028"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "02647294e1bb646da599358b80c43ee7ac781da69ce4eb3417820e6eab93e47b",
+      "translationGroupId": "translation-chunk-0003-u029"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "45083735ee9bf25e6bab743073c37c56d0e690b55968a5f717a947c9d1532e3f",
+      "translationGroupId": "translation-chunk-0003-u030"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8555821e162d575398f152c6cfb86a027a58d6d3795b4efcef50230fd2e1669a",
+      "translationGroupId": "translation-chunk-0003-u031"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "22f1b8cbef9372c9fb228ec8fcad81b8d5518bd3a5007a112d87ae1c29f701c1",
+      "translationGroupId": "translation-chunk-0003-u032"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "46b93290d5d9cef52a290cc44804b633b00d2b5c2f04ede9af0a6817fe19cf1c",
+      "translationGroupId": "translation-chunk-0003-u033"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "fa23239e31e1f00674e9eeae14845fde6fe171663f31e6f9247693afd6ff53c1",
+      "translationGroupId": "translation-chunk-0003-u034"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0b56e6ba56041d0ee86dc0a4f009712ea4e7b2a71e6e8d569c27a5d801724819",
+      "translationGroupId": "translation-chunk-0003-u035"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "25f2605a0653e360dd0f3b19066fce5b9524e4d079b0f1d48382b7d891649282",
+      "translationGroupId": "translation-chunk-0003-u036"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "69c8db7039e185cc40c2fb4bf22797694249ee21d221719e90d700e5b38a9a4e",
+      "translationGroupId": "translation-chunk-0003-u037"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0908a23ebdcad009fef580ce983426fcc026e995fa60a71e7096e496cbe4c1b4",
+      "translationGroupId": "translation-chunk-0003-u038"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3b300d34098778440f9868bb08da50933fa87f20e44da26d7d2546bd8ec9bf3d",
+      "translationGroupId": "translation-chunk-0003-u039"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ffb2802ad61939c79943bb8b617f1c64d1e65fdce712c65ad329b3f82edec4f2",
+      "translationGroupId": "translation-chunk-0003-u040"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7bf7539f0f7927a6dee8525a635664136f64fee024c93a7624ad7a78d6aebbfb",
+      "translationGroupId": "translation-chunk-0003-u041"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4828da20183c9b8b0a5d47ce780ee541b819d03e44bb6fced7cbf451dc219a9a",
+      "translationGroupId": "translation-chunk-0003-u042"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "068770bcb094b5d6605c5cf5532b0e32baed639097ccff53c51727f752ceecef",
+      "translationGroupId": "translation-chunk-0003-u043"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "391bed1c4386fae78e96c916207294e2525d9eee5e1bdac3aca48b3fd830388d",
+      "translationGroupId": "translation-chunk-0003-u044"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "56f41149419aec33b33b3e10ebc21fed8801fd95c70ed911b11894812c9e833b",
+      "translationGroupId": "translation-chunk-0003-u045"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "048c14f0f03bbaaa0d0f245a5dc31e0cf62c2fb73d61876984b81dab8b43d063",
+      "translationGroupId": "translation-chunk-0003-u046"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "71f7820609b584e615240ebb44e5183fc614b6cb7930b3a18e3f75796491b81d",
+      "translationGroupId": "translation-chunk-0004-u001"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3d5a42842eea6d17ae385fceb9da0abf253e7b8d89089ca4a0f355c045d20d6a",
+      "translationGroupId": "translation-chunk-0004-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "24689880d5bbc65518a84057cc046698fee5c1a385528d7405eae18471ea3580",
+      "translationGroupId": "translation-chunk-0004-u003"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8fb366a1d18fa95a9d82a660a8548fb17edfaf5409405ec0724545c6181c91f6",
+      "translationGroupId": "translation-chunk-0004-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "1acce8e28ca5348fcc1329ef51cdc0da32567764708130b2a413d2c12b2ca2e5",
+      "translationGroupId": "translation-chunk-0004-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "9857c02ad2db84c575ed1c93e44cd70e525b3269f47a5b314181ac4811595712",
+      "translationGroupId": "translation-chunk-0004-u006"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6fc754bfa47ebf1e877e52735897c26b681705d1eb1f77736eb2d600429fe467",
+      "translationGroupId": "translation-chunk-0004-u007"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "748c6372935529e15019196448bc4f874e721a7a50b30bd4581fc2a759bb4979",
+      "translationGroupId": "translation-chunk-0004-u008"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3bfa3c0e985852ce737ea5f203282e5a94103dabcb721a1b52dd0ca5a1b2a254",
+      "translationGroupId": "translation-chunk-0004-u009"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e6d1c277781739e5f6cbd3f74480dc717b5e9599b19431e9d282c7583950daee",
+      "translationGroupId": "translation-chunk-0004-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8ca3eb9c61fcf8a3f1f97826212666b8df423aff2a2957be53156d389c7b8bbe",
+      "translationGroupId": "translation-chunk-0004-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c6512d8bca2d4ba201eb7cf184530822b8e615ab12704c58d5e37848a4298af6",
+      "translationGroupId": "translation-chunk-0004-u012"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "508144aee9d583ca4709cb0534180a860d8497b6fa9076b1710192824d15c374",
+      "translationGroupId": "translation-chunk-0004-u013"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "45bec762d8ac6f8a1b49e76e9f1fb7d860015ee4559fdc4a97f74e7f2b78abeb",
+      "translationGroupId": "translation-chunk-0004-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7a33f324a1d97dff4af07dd75c9756fa7d121807c2e36336fb414f62acfef140",
+      "translationGroupId": "translation-chunk-0004-u015"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "1be79cc71e43f336e579be761bf2eb192e6139f6e7dd1876d387a7df56eff3c7",
+      "translationGroupId": "translation-chunk-0004-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "eca3f6f05dc2ae09901d40238ddd32dbf12f4d9c4d1b9d64a454af2c8b252f39",
+      "translationGroupId": "translation-chunk-0004-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "dce9a760a8525fb7c27eb8548904cb004d4e1a0363330eb454b95f0edb224f1b",
+      "translationGroupId": "translation-chunk-0004-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7004169d1a97bc2b5adbd3f34d9c18d5304609499749afa38adab6b127258bc1",
+      "translationGroupId": "translation-chunk-0004-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "38ecc71ce269c09562353921e3f4d29aab455efe3189d638545b32c8bbf75a5a",
+      "translationGroupId": "translation-chunk-0004-u020"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e5ccc6b1dd1d1909926678167b54f6a97b94a3324961e540f581c3f1135b692a",
+      "translationGroupId": "translation-chunk-0004-u021"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "9e648f30478bd434342d1142d266b0404d66bfdc5fd9ef12ea6f09d41121ab97",
+      "translationGroupId": "translation-chunk-0004-u022"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a77402516900493e056f7891af2c505c8168404f2e89bc4083439da2fcf58357",
+      "translationGroupId": "translation-chunk-0004-u023"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "bcd8f660c8adf4cc06fa77ee90d2bce4d5ab79b8ec5f61e0badd32fb38e6224d",
+      "translationGroupId": "translation-chunk-0004-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "60b99af82986963d906ae408a797741248e062e2486ec46c96187a8df1e8fea0",
+      "translationGroupId": "translation-chunk-0004-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e972a229b3c2dd1a5c3794c0d91b5f5273c74f8dac874809f826c387848c7c2e",
+      "translationGroupId": "translation-chunk-0004-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0362fb9c2f8344141d5b17103526aa14b322e813e006a399521055b6518707ef",
+      "translationGroupId": "translation-chunk-0004-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "fdb7c265020ea86ec4d8ff99b36c2cf3f5604831ad0e47a765170f885d21a69d",
+      "translationGroupId": "translation-chunk-0004-u028"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8527ee0e1f3b9b43c78a2a269dad40cdfa4d3cac08220eb1626b2d60ec704aa5",
+      "translationGroupId": "translation-chunk-0004-u029"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "1cbb1375e7ce5d5c180f91a1d6cc49d96abc4d9a89f824cb4e6265194487c484",
+      "translationGroupId": "translation-chunk-0004-u030"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "600b3aee4759a42f718443217332a6bdd9c9d42b36dd586ac48c9756ca5f6d46",
+      "translationGroupId": "translation-chunk-0004-u031"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "5a07f674654aa6a155effd1026179b99c3a4b7e00e09b526bf0838921ebf776b",
+      "translationGroupId": "translation-chunk-0004-u032"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "fae63cfbd496014818e1377eb4a1560ec6022d39cbba42dcd17af46525108501",
+      "translationGroupId": "translation-chunk-0004-u033"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8a36f9386afacea17efcc5802ade093229d96b80557ab9b4b9b84849fdb03896",
+      "translationGroupId": "translation-chunk-0004-u034"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "2880f04ac3a6b4ae54576a998826c91e50e80a871b492aa5182476bc313768d7",
+      "translationGroupId": "translation-chunk-0004-u035"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f2b62dbf912f89dc6e812b97b43650bcbbd761a60c465cce5d32ebe4d85cb363",
+      "translationGroupId": "translation-chunk-0004-u036"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "77121b4a0990bea2f26e7bc63c749c91b98002ce7fff6022fe1af88f207b5fe7",
+      "translationGroupId": "translation-chunk-0004-u037"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7a90066409e4adc2af544fccb6c4ebf8ef8c3e2ba92ee734109835a0d50c1940",
+      "translationGroupId": "translation-chunk-0004-u038"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c70d637a5a64280b061727abea5e8eee66a43ed0c7b8a16e7f706fba7e110566",
+      "translationGroupId": "translation-chunk-0004-u039"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "84134060c4b2c181125477a2424748fb55ead35bb6a0df0c8c59cc6341eb1887",
+      "translationGroupId": "translation-chunk-0004-u040"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "03cb56e6f47a62ccbb23152e77b7f5c6d143218a78c3bf3196b4d7142a70e973",
+      "translationGroupId": "translation-chunk-0004-u041"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "997f3b403818f1e917ebf32673bc0de164e672ba47fcd5917024f2434afe0702",
+      "translationGroupId": "translation-chunk-0004-u042"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a7f685847f1c7a706152e7ab5adfb9b235f4db873747100338ceb844d81037e7",
+      "translationGroupId": "translation-chunk-0004-u043"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "9d143d7c022f4dcb510bfa0f4eeb26d6cb9517c91ff549d049a0a57b3e0a3874",
+      "translationGroupId": "translation-chunk-0004-u044"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "65635b1830d43b7e3f0c8d12f06f59ae1999f7e7125faebe3559d92b04b1592d",
+      "translationGroupId": "translation-chunk-0005-u001"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3774692f20aafed858eab85b5ed40555618502b01eb205bfaa8c11c7569ae2b0",
+      "translationGroupId": "translation-chunk-0005-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "15727e9cb2ac94422887a34e270ceca777525864284bd6896939b98e60ddce17",
+      "translationGroupId": "translation-chunk-0005-u003"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f6f5557c43764850c502fc9cd7fd6ac04e1ca20d50d3939fac4d74b152cc7d1c",
+      "translationGroupId": "translation-chunk-0005-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "2f101ec4a70a3c425b14c62c3c5299c1ab627fa5361f6a38ced05780f6c2c8d5",
+      "translationGroupId": "translation-chunk-0005-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "27acbdb3500d7d84e31d549030ded3b52a3289575e19376c9c7146b318ea33b8",
+      "translationGroupId": "translation-chunk-0005-u006"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "5a76e6251110f4f7b4d870f4156b81daa105b831d7c1c8084a5065b39b504cb6",
+      "translationGroupId": "translation-chunk-0005-u007"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "cbe39b64495f42cda4ae43fddabafb28b91e1929cbe2e0beff52a2ebaf7b62d7",
+      "translationGroupId": "translation-chunk-0005-u008"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "25b9d12d4f08c2d2224dcd45fd5a8d13a76352a0380b1bc763339108637150a0",
+      "translationGroupId": "translation-chunk-0005-u009"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3ed62ae206364d87fca88106adaf3c3687cb7d62f1412f751f983b4fd5614564",
+      "translationGroupId": "translation-chunk-0005-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b9aaa355bd9984b1858a5d726f319ef35d0aff44c79bd620e15dd2a2970db3cc",
+      "translationGroupId": "translation-chunk-0005-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e6b6e12ea8a9e9d208826bc650a7bda6cd6b1825cd8cecddf929bd4763f8563a",
+      "translationGroupId": "translation-chunk-0005-u012"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b64ed5293c795a1c662a3a866f3f05862f56a8794898209d2d507dcbe278e460",
+      "translationGroupId": "translation-chunk-0005-u013"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ba6a5a04f62e3f763908aa68b705b82ae543694718d54d9af13c24a26e7e3da6",
+      "translationGroupId": "translation-chunk-0005-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f79a267387b75c9b213b3280920e97cf58c04c6c632c22691079d2089c74db72",
+      "translationGroupId": "translation-chunk-0005-u015"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "83d098e80808a92ccd475cf2426e81070f05a4e11c5266b438cb8c4a7f36bbc7",
+      "translationGroupId": "translation-chunk-0005-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ecc19bb8a561bfa73a3c052c1a725509537314da5c5264ce560cc1a2b4aa4529",
+      "translationGroupId": "translation-chunk-0005-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e57b385ed4d26bf0b1a37918e8b69ca641eb164c7a63777ed0249c91164a38ae",
+      "translationGroupId": "translation-chunk-0005-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c4281cf02c5317ca4ff1732dec0f191d4a005ca5c60abb791135fb3136790525",
+      "translationGroupId": "translation-chunk-0005-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ad624722eed4e732d79ab3013bd81ec27d0e103bc3031df3575ea0fa8aa08481",
+      "translationGroupId": "translation-chunk-0005-u020"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "c6ed4a098cb7be2cafeab181a164cddb43ab100177e1ee96db7c719366b42681",
+      "translationGroupId": "translation-chunk-0005-u021"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "147731db31ec1297d1501359318f30c0a4b03b108a175e88214d73dec9213f07",
+      "translationGroupId": "translation-chunk-0005-u022"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4fb6f2e49b50c0a1392204229df139aae23f5d68bb0b7c59339f8de2c2e629b9",
+      "translationGroupId": "translation-chunk-0005-u023"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "784c130ba07bc19482ed5e7cf775bd6e499dc559fbc3eae6a9f5e559ffb33061",
+      "translationGroupId": "translation-chunk-0005-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "01906209a129cd5206702dfe2e572e5142a62d8ac11c1bed0e0fef988740ead4",
+      "translationGroupId": "translation-chunk-0005-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "306d4c78745867203a697b1b0b48c5d4d0e4a1a11427e96f4f9257fe8a66adca",
+      "translationGroupId": "translation-chunk-0005-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b69c009492ca7605813633567f80dfb586b7dea9b611f86aa781bbd0602f340b",
+      "translationGroupId": "translation-chunk-0005-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "07123ecd1291b9ae0156da7f24e7c7573a3eb80db2414e381859210297962224",
+      "translationGroupId": "translation-chunk-0005-u028"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "1ee139b3508e49788ad35726f6ac7528f643b53a441c9ca5a2adf894e1ea4926",
+      "translationGroupId": "translation-chunk-0005-u029"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "40d78adfa6e4e43c415fab739a399ba5bf2fbd12a9b3c1fac634bca139f8ad9b",
+      "translationGroupId": "translation-chunk-0005-u030"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a1ac4da247e8cbf55dff955a5d0ba004c30f5f2a5907fc35b65882e8b00a76b8",
+      "translationGroupId": "translation-chunk-0005-u031"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "507d1977014b6e095d1772b2f3843c7e044f9e500481d769b8b6e86bf133af8a",
+      "translationGroupId": "translation-chunk-0005-u032"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4e315ab0e75a1169f1011d53003e80b5da4874c465565bea8905e64ae92c0078",
+      "translationGroupId": "translation-chunk-0005-u033"
+    },
+    {
+      "failedAttempts": 1,
+      "status": "pass",
+      "targetTextSha256": "2b17452cf0564046b4718b426e87789f8ab876bee24b823e63c515cdffd739d6",
+      "translationGroupId": "translation-chunk-0005-u034"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c374ef5ada54c4b3f1eb19d53df6f262bf614f5e1619302bb5db3edcda64fa22",
+      "translationGroupId": "translation-chunk-0005-u035"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "2b501eed0aece0fa4a0933145add6c078f9d5f3fcbc5529b17f44ae42455a902",
+      "translationGroupId": "translation-chunk-0005-u036"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3b936adfec0ac7216b092808cf44f453184fd7c74b333560f7ca3c5c1848fff5",
+      "translationGroupId": "translation-chunk-0005-u037"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "68d997a87e332998b6cc00b33213edc962e2ec18070a5d4431eeef3de740dd8e",
+      "translationGroupId": "translation-chunk-0005-u038"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "918e70fa4679bbe14c06b70367c56b7b2e68326f0e5bd380300b18a956f6fb40",
+      "translationGroupId": "translation-chunk-0006-u001"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b468d5f4217d466d15a7b05e663f666f6269626b2fa09405e6c6d2eb0f847836",
+      "translationGroupId": "translation-chunk-0006-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "2349fb9ef3a8414c1f75552c03b74a3b99d54380d92090a9ae0d6d70e9768fc1",
+      "translationGroupId": "translation-chunk-0006-u003"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6b2ef3db75b9ee449ce3efc04eddcf245b8cb9d3476f49068a9111f368231c2d",
+      "translationGroupId": "translation-chunk-0006-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "939bc0543184dea5520a7bd11417115d7c3ea42815e0eb078f5a27505210f34c",
+      "translationGroupId": "translation-chunk-0006-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "507fc723b1786300fd12aba6bf8551816fb3a5e7d9814567b11f5bd400f55cbf",
+      "translationGroupId": "translation-chunk-0006-u006"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "89f5397e6d043e8deaec21443d832f32490431b6e438fb310cb1bfce6d371319",
+      "translationGroupId": "translation-chunk-0006-u007"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8411e837824caa43c912010904122b12e3da4a6cb14980cf729dc1f1b5fd85e4",
+      "translationGroupId": "translation-chunk-0006-u008"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "87b53680102ab1c2a796dae28a9d1462ed2ad5cd1a142e99da5ff0d5a32b2e65",
+      "translationGroupId": "translation-chunk-0006-u009"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "70401cab8088f7851b0a94df7db64fd51205b5152ada66efffdc43a72f7e40a4",
+      "translationGroupId": "translation-chunk-0006-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "89d47ff3152282316f6ee2ea28337c36c98961a90e0828ec37eaedd64a704186",
+      "translationGroupId": "translation-chunk-0006-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f51730cb9392342ea3df57a86952a4ac1249e6a8e8807f55b06f6161df111bde",
+      "translationGroupId": "translation-chunk-0006-u012"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "d0985313300ea56e5e3fa5146bfa4b1eda9f543bb6c9d4b6b2daf750a9c596a5",
+      "translationGroupId": "translation-chunk-0006-u013"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ca15c538afa40e009fc2c94c3941bba5d690825514f701de1f86acf577a2016c",
+      "translationGroupId": "translation-chunk-0006-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ca15c538afa40e009fc2c94c3941bba5d690825514f701de1f86acf577a2016c",
+      "translationGroupId": "translation-chunk-0006-u015"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6e2bd52866d1596e4692cd3e1fe1f3f3f6df07c8a609808762579643dc5de87f",
+      "translationGroupId": "translation-chunk-0006-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4b1c3e45f2107e75205b588ce3fa8d209ac660dd6dc01788103eb685557f07cc",
+      "translationGroupId": "translation-chunk-0006-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "198e6378aba99952dacd4424db1cc4f36facfb9e2fdcd1a7297226bd016943cd",
+      "translationGroupId": "translation-chunk-0006-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4d483c0b474af2ea86310ffbbf19633a0e3f91fe59f333e3b81cafad423e89d7",
+      "translationGroupId": "translation-chunk-0006-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4132473a085555a51bbf742c1352cfa4ffb45923ca57a9c2e617b0e02849d7ab",
+      "translationGroupId": "translation-chunk-0006-u020"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b1493f94fe348cb999b3a76acc8a94682b15d707d344d6cc2edd86425404a5a0",
+      "translationGroupId": "translation-chunk-0006-u021"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3875d2c6e242ce6e51487ae88ea1bfce670f234df9b41f9404964557d286e6ba",
+      "translationGroupId": "translation-chunk-0006-u022"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "39f58e71788ea3acb6a255cee7fccfa14e554cb3e80e9e437ec619d1b31abea6",
+      "translationGroupId": "translation-chunk-0006-u023"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b0548e132f0a4cefdd1006341594758b613749367ebd98b0a47857470d3b63a1",
+      "translationGroupId": "translation-chunk-0006-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c525d23529eb3c231a58e8e18516d36c7578e27da144929ba507e9f43a3a5380",
+      "translationGroupId": "translation-chunk-0006-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e508343248138001e4f0c7c28f091a8871d351eb2b44008a8a763e6f62799c96",
+      "translationGroupId": "translation-chunk-0006-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "49708897e4265fd9e140062cac4619ac639b626ac2dd34a2b2b6c414e09aca24",
+      "translationGroupId": "translation-chunk-0006-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "09f4912b3adb0bc9e24011686667f2b78f770129f056aaa9186742e5137723b2",
+      "translationGroupId": "translation-chunk-0006-u028"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3760fa3625175e32f847f6b1691d581325e2117ff115f088bd993d10bac774d1",
+      "translationGroupId": "translation-chunk-0006-u029"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f970c6f94ec9b0c7548dd722e1bede039e3a0ba78c85f179773a748612f36938",
+      "translationGroupId": "translation-chunk-0006-u030"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "49b7010123c6206cf0ef8d0214c751d08748cee75f9a203c6ea6b638b62881d0",
+      "translationGroupId": "translation-chunk-0006-u031"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b36531de93d314348e88ad2667fafdd60c7556d2b32551149de184324288417b",
+      "translationGroupId": "translation-chunk-0006-u032"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b6c0995ef1be35e9a2abe7c18d5119e873f71bfa90c2fdd4fb0f69bb1b8c5970",
+      "translationGroupId": "translation-chunk-0006-u033"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "923d21543e13b6f252f7fdd6d5bc4257eb722d92615df95a0e0a3db10e220823",
+      "translationGroupId": "translation-chunk-0006-u034"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "dff86199d38f02cbfd01e9081d9fa157757f0e67be9ed7bf20abc68630609b5d",
+      "translationGroupId": "translation-chunk-0006-u035"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e87af48cb7824902c17359449e943556759b583e43b1540a2d75a827068c6240",
+      "translationGroupId": "translation-chunk-0006-u036"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c787696e577d76f09ee507175dbb39b1f86c64325710587fad3b9d0806297137",
+      "translationGroupId": "translation-chunk-0006-u037"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "461de126bb786f19d2ef4c7b84e6a9c2cbc4f25af78ade9ed96464e49aa4e7cd",
+      "translationGroupId": "translation-chunk-0006-u038"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4cb567718b06131fbab70acfae96ff46dbdae8506dce1641c2ec02395e32c845",
+      "translationGroupId": "translation-chunk-0006-u039"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "99bcb345e3c5eeb2c1cd05c966bd7c36a3db0906e9fefde8016e21604042b5d5",
+      "translationGroupId": "translation-chunk-0006-u040"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c5fc322cadd971a22965b7417ace91f32a7f9681515ad5dff19b20e5b665c65e",
+      "translationGroupId": "translation-chunk-0006-u041"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "d38c4878e6244ba01a23fc4cb805ac778d73dc611a7e68de4f482fcda7c0a05a",
+      "translationGroupId": "translation-chunk-0006-u042"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e4eadacacc376b6999cd3ed4c55a923e850914216d27bf1e78d9635874cf6bf9",
+      "translationGroupId": "translation-chunk-0006-u043"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7d6a8f678507a7cce931abd32e8083c32219745e3727c6c41ca2833ed51a2677",
+      "translationGroupId": "translation-chunk-0007-u001"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "bfd58c82f154a056aa0a19aecabed27decd0d3e3347234ba9df139756b965f78",
+      "translationGroupId": "translation-chunk-0007-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "517a99edc2f27b70af2172eb298f2dfd17c338794483af2600235b5660ff8eb1",
+      "translationGroupId": "translation-chunk-0007-u003"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "9aaa31521c1f9dd5b0952cdf92ec68260f0d54f0c96ef98ca94d5d220e684c39",
+      "translationGroupId": "translation-chunk-0007-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0971546cadb93bda90c40e259a030e7b639a08d5b33ee1872ae0a0b82fd68cf9",
+      "translationGroupId": "translation-chunk-0007-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4f6c9c4768a0f135e316c7bb7ce98020f0a36e6e891d22ecf452421c2da331e4",
+      "translationGroupId": "translation-chunk-0007-u006"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "045e2d68d066896bedfbbba3434f4a4ba95ef8cd9f66b37e6ea6eef8acaf3deb",
+      "translationGroupId": "translation-chunk-0007-u007"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "b8e1e0b4457ebe8c66a44b2aae20823ca76e6504ac486a722226ab877461d6bb",
+      "translationGroupId": "translation-chunk-0007-u008"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3662a01510754a35fc0c63f6b34a363475996d2bca15cf7c0ec3b2cff77b73e6",
+      "translationGroupId": "translation-chunk-0007-u009"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c9294b9b4c9601b320d6f307aa4ee5bbf021be15ceaf89d3edf4fd9959e4ad6f",
+      "translationGroupId": "translation-chunk-0007-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "9fce46ac05afbdc8274791adb741a20118ccdffaa740ef07f624e9c65d5b0f8d",
+      "translationGroupId": "translation-chunk-0007-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "1a2096786f054c8843d0c1fe4a1e27dae20287cfa4f1fa9450305b70a62fba02",
+      "translationGroupId": "translation-chunk-0007-u012"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "187c5119b752412dfa6e682e60094d5dc6f5dcae87e1766182ca7c3cd854ca41",
+      "translationGroupId": "translation-chunk-0007-u013"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "65d0a162610882cf3bbb86c3663cb549480693bd9b82a69a54029b7c0724c059",
+      "translationGroupId": "translation-chunk-0007-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8e01883a0569b80a70d362f8d7f4054574f7682efdf0c5b096bcf61abe3414c1",
+      "translationGroupId": "translation-chunk-0007-u015"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "2fe28345e2781727bc80c5e5292d4b9fc438af928fe9ccae46ad50ce76eb749e",
+      "translationGroupId": "translation-chunk-0007-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "473143a65ce0b8d7de9eb5a88477e6ec6c85fb7d8a4c95145e461e6882f1c6a7",
+      "translationGroupId": "translation-chunk-0007-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "02f410f3edb42ab336bb5f5f2e391f03f617d2da549e10be3ee2d18a43fb2cde",
+      "translationGroupId": "translation-chunk-0007-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8c11b7a3ddedc2b82ed165fd8790c558baf9788ebf85a909ea67448c709c4604",
+      "translationGroupId": "translation-chunk-0007-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e4996319bfd002f30e21d24940e9f837ab949357e842aa757baf2880567b187e",
+      "translationGroupId": "translation-chunk-0007-u020"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "289695515d205e7f6f33ca36acfa30364e5cf0dbf4d385609ed4c52edac44f78",
+      "translationGroupId": "translation-chunk-0007-u021"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7a01881287fe4579d94d6d0dc74c294462155ccd1b50a28c12d5bfa4a36e52a9",
+      "translationGroupId": "translation-chunk-0007-u022"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "12a0443509ac702b0f90a8500d69accc26295005750bfdc7f0eddb1139182bc6",
+      "translationGroupId": "translation-chunk-0007-u023"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ccbe9664b13344e9441cd6595c5fddc14040591c79da83430474dd7ba1676bcc",
+      "translationGroupId": "translation-chunk-0007-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "15ad6966beec079808244d942522693f6f448bec27f856ba8a3066db45a1d820",
+      "translationGroupId": "translation-chunk-0007-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ccbe9664b13344e9441cd6595c5fddc14040591c79da83430474dd7ba1676bcc",
+      "translationGroupId": "translation-chunk-0007-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "092a6919be8d7160e76a99752a8d1deecf1ba33d5c18e99978ea9434f7cab763",
+      "translationGroupId": "translation-chunk-0007-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "23adae9a2114fef08b0fae74aacec2ea839f1972893e67f4fda76f88e86dcac6",
+      "translationGroupId": "translation-chunk-0007-u028"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a608fc1395c1e40e724e1731ab1396b2e5fbe963ceaacce9ecd87045c79684eb",
+      "translationGroupId": "translation-chunk-0007-u029"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "bf5593869429954acef68e5131ec9712b4a6188051ca17b83409b73ee76cc7e4",
+      "translationGroupId": "translation-chunk-0007-u030"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "133bb707cbe77c3308fcdf9b262c3fdacaae45ca832509ce907e82af861f28a5",
+      "translationGroupId": "translation-chunk-0007-u031"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8da17c55780a2b47466308aa9b2618f0fe2935d83c87f9d97acd4777a351bbdd",
+      "translationGroupId": "translation-chunk-0007-u032"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a0887c4e28f2d75c89b74dcd71fde27f429f83037c44209bc0aa5718115aa16d",
+      "translationGroupId": "translation-chunk-0007-u033"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "861b88fe7008d3e448e7ef65e2caa6b276b7decf72d0f43f34ec1c96162cd265",
+      "translationGroupId": "translation-chunk-0007-u034"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6bd449bfee9cd763bc1e40369e3e3db9bd30605b002d01896b041dec83809ab4",
+      "translationGroupId": "translation-chunk-0007-u035"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "dd7b092999ce604c457d48c163d880300ade5193ebbd71e6c753e418030bf682",
+      "translationGroupId": "translation-chunk-0007-u036"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7d9d2cbb708d5c80b4439c6a754d8e2226bf1ed14e36ceee8f5f3b6850d23208",
+      "translationGroupId": "translation-chunk-0007-u037"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c55d2bc51efed9c44995512a7954cdf55ac8e027f01ea1651a877fa72849afa4",
+      "translationGroupId": "translation-chunk-0007-u038"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "45a5d549e29f62c1979409f4419f117fe97efb64324eda867f57d7e3c001603b",
+      "translationGroupId": "translation-chunk-0007-u039"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "76731555bc6eccd9a5a1267537848ac216b28c623b8a4c579225c6ba7ecc0cc3",
+      "translationGroupId": "translation-chunk-0007-u040"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "5976b69c6e234dc743c5e37f88750655986d75478e97b4f6c39598f195abb21c",
+      "translationGroupId": "translation-chunk-0007-u041"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a0493afaac83ee54e9ea0b47644f97af7f89954f89a5da0f3adb10f8d732e77e",
+      "translationGroupId": "translation-chunk-0007-u042"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ae0f43cc71e741af4dbc7b5124182edfba7a4cd3a793d1d938a43403ab37c96e",
+      "translationGroupId": "translation-chunk-0008-u001"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "45b1901ada85c7359f483247a51a8d23785245567a011fc407696815be090fb0",
+      "translationGroupId": "translation-chunk-0008-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "17faf3b2b7f156c925a3c2f0a4cd82565b87f33f93eea18ca57bec75e771b652",
+      "translationGroupId": "translation-chunk-0008-u003"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "dac19fa4902c18480d24902cbe4dcc600d8db56b29d1eb5033e914f6805b80d4",
+      "translationGroupId": "translation-chunk-0008-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "265deb30361705a42f3fc1605283a986eee6f9bfde5ccfc94aec363ffa9a2f85",
+      "translationGroupId": "translation-chunk-0008-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "fb80de35114ef95f44492048aabdba204077840a628664cb7070f488ed2bf780",
+      "translationGroupId": "translation-chunk-0008-u006"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "fd321c95f3f5fd2bcac90aea931626f445edce215afce866e46b87f555b5d93d",
+      "translationGroupId": "translation-chunk-0008-u007"
+    },
+    {
+      "failedAttempts": 1,
+      "status": "pass",
+      "targetTextSha256": "b4620ebc1ac4055c9f9f04bba315c4362ef2fcb51aad117a3994663ead3ea39d",
+      "translationGroupId": "translation-chunk-0008-u008"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a24e7acd5e19274f3405eed28ddb8ad341451c8e052a958704a8031014cb38cb",
+      "translationGroupId": "translation-chunk-0008-u009"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7f6c3181fd553918eceb10388b394541bb01bf36320fd377100b38f8b8db92bc",
+      "translationGroupId": "translation-chunk-0008-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "87e11158ebdc2a96dcbcac596ddc045eee4167d82faa09f4272fe343b7e15613",
+      "translationGroupId": "translation-chunk-0008-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "33df7edc7ed575ae35c2395aac6ae27932b744f3999766dbccd84ac83dcb9d50",
+      "translationGroupId": "translation-chunk-0008-u012"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "fd57cedf9d5374ca5892221d7aaee0ec89f4d7ed0dd5914d70c3821ff685890d",
+      "translationGroupId": "translation-chunk-0008-u013"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "d36d2eb837e3b3a11c8d8112268603602ff57cd4d7cf8b0482898d33f3a0c30a",
+      "translationGroupId": "translation-chunk-0008-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "811da28274e327353009bc0598d49f13272a6beaceac2c7ef1b248694756a42d",
+      "translationGroupId": "translation-chunk-0008-u015"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "acfe84bb55d5c3f2ab554587c94157163ddbd37b3506d3e18e992b969c450f93",
+      "translationGroupId": "translation-chunk-0008-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "66d2ce4beab979626c048776db9ea4ff9d9f51b040606957a91563c95a9fb240",
+      "translationGroupId": "translation-chunk-0008-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3992802619a7ddae758a32467acabdf1f9b6e529145d8fac1ec35787613744bc",
+      "translationGroupId": "translation-chunk-0008-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4a090f9dc20f2921152c604075cb8737aea8b7dc86aa356df1032df51910c103",
+      "translationGroupId": "translation-chunk-0008-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "1325776d95caaba8da1eae8e22cc0a278e3686cb37f09f8b08aac11fc8bf941f",
+      "translationGroupId": "translation-chunk-0008-u020"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "bfec1f59e2b9152e52bf1edf69475f7c01eedbe507970fb7877a1c19fb55c983",
+      "translationGroupId": "translation-chunk-0008-u021"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "c3b7115a91c968458550a1ed0495d756f2accb380b60c2c3e853410dffee7b73",
+      "translationGroupId": "translation-chunk-0008-u022"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "55b3aa47c61de8ffe81b0cd66c3ac53c8bd452cba917d328ea77d7dae78478c3",
+      "translationGroupId": "translation-chunk-0008-u023"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "771fa71b9d8bc55d7a80e9ad24344852c575ce55d3c49dc85acd55fbe610d1bc",
+      "translationGroupId": "translation-chunk-0008-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ef7df65a9d732598380417cf4818fe580066a864ea643d939385f0aba23facf4",
+      "translationGroupId": "translation-chunk-0008-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "46670e9bea3f1565efa2c9f7181af4df9cf784b3415c45fd725f3bed169a002a",
+      "translationGroupId": "translation-chunk-0008-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "30d07bec85fab34b1c66d64c196d1cc2afde5d443ab6bd50b03e8b22b3bf4dbb",
+      "translationGroupId": "translation-chunk-0008-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "bede0d7b059a72973161f86eba5bc27fbf71eb8af483dc4b05fafcb0540e5da0",
+      "translationGroupId": "translation-chunk-0008-u028"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "80e7f83a3292b58fd4d4522833daeae9f5ff1a78a900be24ddd7eeb18b3c88f7",
+      "translationGroupId": "translation-chunk-0008-u029"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e291e8e1be4505546e152ec0fdaa3f70d757bafb6bd06c7ec6589fbcb58a0397",
+      "translationGroupId": "translation-chunk-0008-u030"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "d1a57aa18e810bcd0cd7ad9c2017c13b180ff2225915be08f099e6cb142f0231",
+      "translationGroupId": "translation-chunk-0008-u031"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "70eaf8995f04f9fa1a228471e311a9c08c81e24a9ae29af5e47e131c0f93e5ec",
+      "translationGroupId": "translation-chunk-0008-u032"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "426c4e7b34c8059bf427657f147802d893444e19abc911323cf1e6dc23ebfb21",
+      "translationGroupId": "translation-chunk-0008-u033"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "9e20208177b3ee8ebeaf2fd369ae710b8f107bc5f2d4d0b47a18152eb99c1cca",
+      "translationGroupId": "translation-chunk-0009-u001"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "ba765dc69b3012e68ab25348eacad63d14f66e3ec23bfb84520a59b26802b127",
+      "translationGroupId": "translation-chunk-0009-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "216d48b1ab226c173412c309ea113a72d2d6bf4f38c23bc4d85c1a89c0b15ea7",
+      "translationGroupId": "translation-chunk-0009-u003"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "dafdfd794e39216fac9cc50a7f16de7652d1eefc617a9a060fa34822ae28742f",
+      "translationGroupId": "translation-chunk-0009-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4d411f5d1134ed6a81c169c7569b017135c771ded1f585330e023774f644aecd",
+      "translationGroupId": "translation-chunk-0009-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f11e95ded11c2aaa74ebcf6904c6b7fbd5a6f28cc6c1391b809599c4c7275d62",
+      "translationGroupId": "translation-chunk-0009-u006"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0640ee6f54a939d74ceadd19f6b43e826260438dc407a1e96097d0a5d58d098c",
+      "translationGroupId": "translation-chunk-0009-u007"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b48953971d3d7de7648dc52c63bb80365e90b13d2b75ad0150c550d67a1957e7",
+      "translationGroupId": "translation-chunk-0009-u008"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b083c1daf1f76dc8841e36af924704fee72b980d4cac8496f9ca2d13b4bd586e",
+      "translationGroupId": "translation-chunk-0009-u009"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a51e118c7b0fa3bfe6e13d7150b7b95d530dfd2225c57b0de26c3c6520736144",
+      "translationGroupId": "translation-chunk-0009-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "86bc6534353279b622c4a505edba50908fc9ae7662c24833976508a5a60f4cee",
+      "translationGroupId": "translation-chunk-0009-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6edf43821aeaca67126f0525320f133f374e1e2c4ac80d4d589ce2e74075c576",
+      "translationGroupId": "translation-chunk-0009-u012"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3677c0c14e37f883273275427d0a69638c48dc287932c05ff341bca0ee822f4c",
+      "translationGroupId": "translation-chunk-0009-u013"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "173941a4ef42c4c8115d385289606d85680a9ab794b6280ea94335f6ec3b67c8",
+      "translationGroupId": "translation-chunk-0009-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0adc6f7ff54ce80c71dd63a409e134975a52fbafc76cb7f8aa799205bce06a0e",
+      "translationGroupId": "translation-chunk-0009-u015"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c1e013876f542317bd578ef458d3c429f8765af1beda43b05dc3e370a5798f05",
+      "translationGroupId": "translation-chunk-0009-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4a943ba754aa183d13e48cc81ca7437d0e4766feab0c648832395c8db0a9a355",
+      "translationGroupId": "translation-chunk-0009-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "207fa26843da53c65ffb70c298c0adf6047a155df02d993fe12f8834f036c093",
+      "translationGroupId": "translation-chunk-0009-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "04fa6a5390156c2212910b8c88cee01eb83028c685bf01587e8642c4c9d2357d",
+      "translationGroupId": "translation-chunk-0009-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "2938543f24e3f26362f669ff6a2c0d55b7072689d3fceb5acca6049e7708596a",
+      "translationGroupId": "translation-chunk-0009-u020"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "778ce476ba2699c4bca92f9bd718e0e3d7b6c80ea3dca70667e4746d4e49ff4c",
+      "translationGroupId": "translation-chunk-0009-u021"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3cba27edc4a4d6433d8f781173881b7cb44be2b537b22ac5a85eb39711a1a1d7",
+      "translationGroupId": "translation-chunk-0009-u022"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "5bdf914d9fb163971173e9218444b26745eb9bce8b041520fec2b6f7dd974d9f",
+      "translationGroupId": "translation-chunk-0009-u023"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c9f1191dc129e439c88f26b7acfc09831c29f6a2c02896ccee70c530856eacb1",
+      "translationGroupId": "translation-chunk-0009-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "02a28009202282a55349730e954349271537ec364bef4b46a623619fd342bcf8",
+      "translationGroupId": "translation-chunk-0009-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ae32792f9c7358f378562eb4ab1cb5fd91295bdd055101f386de6343f6cf8c2e",
+      "translationGroupId": "translation-chunk-0009-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "503124dfbf0cdf8b51592d834be2c72f636fc58ab1c2a2562e5183e43d5e15ad",
+      "translationGroupId": "translation-chunk-0009-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8b74d53be12564c704edaf20bc456487efab7be1d50fb29f0899990022ee366b",
+      "translationGroupId": "translation-chunk-0009-u028"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "78966ab4146ed8266b5e7b1859bf2fd4668681f11d8bc676a4a7d71dd3740e9f",
+      "translationGroupId": "translation-chunk-0009-u029"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "34bbd54e97b2dbafc081b53bccdf57076724d79ee8a8d137cb73ac98334e9052",
+      "translationGroupId": "translation-chunk-0009-u030"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "d1c44e8cf446ccb7112471356a58e87771364d5c2a0f293c86cdf0cfc74e994d",
+      "translationGroupId": "translation-chunk-0009-u031"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8bddfab906441c0f48c074cddb1014619b7d12b8f24a31d5426aeaa91b243d54",
+      "translationGroupId": "translation-chunk-0009-u032"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4522f2c76532dccb9c121bc82e33b2579a737b2d56442e00ce68a00c28003298",
+      "translationGroupId": "translation-chunk-0009-u033"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3cca2ed9d6aa9f358f97d23ae479496ac651bd6710f33f07865b69483b364b37",
+      "translationGroupId": "translation-chunk-0009-u034"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "d413fc03bd01995666ed6ad54e990ae0ffe9530dd445f2838cde4fe6bc6ef297",
+      "translationGroupId": "translation-chunk-0010-u001"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "5248b9b3e544eb2f3fe8835533458c48da1d085e0c9c170b9269026d4b770ede",
+      "translationGroupId": "translation-chunk-0010-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8445741d7d6a831276e8794b874cebee94940ba0e963d4f109bf72f437426789",
+      "translationGroupId": "translation-chunk-0010-u003"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "eb073c01a7cfbef0967c02c4fbf499c022ec00831af453889b4336979c88d6ef",
+      "translationGroupId": "translation-chunk-0010-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b8784f775176aa154e9d111f7398fb8f19470230fb8ab5fd282b0dca0d83036e",
+      "translationGroupId": "translation-chunk-0010-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "71759886cc8e90426da2dffc936654a2d4109e5dcd75a813e404e9feb2c7db2e",
+      "translationGroupId": "translation-chunk-0010-u006"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "13b148da13208ece25a2dfee68b9aea44603080f4188ebcd10ca575d39b2bfea",
+      "translationGroupId": "translation-chunk-0010-u007"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "af8eb2dfb06fb8ffe76175d13a1c0893682183501a9edb27ba28d8ab8476e69e",
+      "translationGroupId": "translation-chunk-0010-u008"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "654cb2bfd62f3eac83913fc5bd501e578b4ebb5b1477ab790508fec74a2aae18",
+      "translationGroupId": "translation-chunk-0010-u009"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "7603fb4168d0c726e8efc076dd5b9dcbdb3e0fbeb5656e503deffbd3b0b18a5b",
+      "translationGroupId": "translation-chunk-0010-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "426003f9dcde997c1bc089b63f06c189bc2479e154d7cc958667f7f329b75757",
+      "translationGroupId": "translation-chunk-0010-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "1afc879da5b1e5f515c3a9a08d0e37651bcd7a0afc168a096417717406b21569",
+      "translationGroupId": "translation-chunk-0010-u012"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "2845500bc1436dd879dd6f35e719580d33e03a3d66c2b0f07e6f9dbd2e85d16d",
+      "translationGroupId": "translation-chunk-0010-u013"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "1cd6d8431bb8858d261d98b83a954c1aac88aab5c06274cc6d2a7eb12d5e5c3b",
+      "translationGroupId": "translation-chunk-0010-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a1429dbffc1287a21df6fed0ea368525d40b7a0c66edf48056e8967b4df66f46",
+      "translationGroupId": "translation-chunk-0010-u015"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e62577b5f49c38c3a7de7958170d977fae9bbdd251e3521b4bef56b0f8a4d2ff",
+      "translationGroupId": "translation-chunk-0010-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b6526bea93310c017742d0a1a6dfa61a85bb6b2668b360763fd52dc35fd382ce",
+      "translationGroupId": "translation-chunk-0010-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a088fa07b52ea5a275387b95befaf933c78a291ac5555496e6032c7ff90d5aac",
+      "translationGroupId": "translation-chunk-0010-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c72e91a3df5d93e3a1714a20fd5a60da74d49f0ad05106f9643ac57fed2e04c3",
+      "translationGroupId": "translation-chunk-0010-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e5a21a3a7c8f5cf6257fd7763bab8efcc0209c25f697ac87be9838e8e024e113",
+      "translationGroupId": "translation-chunk-0010-u020"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "4a5d8c0b5f3cfbc668a05642cc93a24d00b334fa32fa7c3fbf86db258fe0f7b3",
+      "translationGroupId": "translation-chunk-0010-u021"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "0eee6e36cd495985a5c77fb34ae97e306feaa6429c151ba24d7929e5f4fec1d8",
+      "translationGroupId": "translation-chunk-0010-u022"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "9aa1b765c6e404e6ad908af5058ccfd9c704794e343cae2581bf56efbf66fe48",
+      "translationGroupId": "translation-chunk-0010-u023"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "71715a79b8422efcefb819b1344d56cc5100946df040fd28fc2c8ec5327bce44",
+      "translationGroupId": "translation-chunk-0010-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "ca1f145deeb6f52c6562dd44ad14bc91a306ea0156419ea0febf712a1bdf1548",
+      "translationGroupId": "translation-chunk-0010-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "9dcbef701c62a99c84ed604f74d91bb95c2135f033649b10490ed6aa0d5e566e",
+      "translationGroupId": "translation-chunk-0010-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a41bd0b43650b40130096b511338f0efacebd9e14c92859ad093869c37f25f32",
+      "translationGroupId": "translation-chunk-0010-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e85750ffa1b2766d81369d4dddf99d10a86ff3cabee777641a95864bb41f263c",
+      "translationGroupId": "translation-chunk-0010-u028"
+    },
+    {
+      "failedAttempts": 2,
+      "status": "human_accepted",
+      "targetTextSha256": "7ab0d851d77827bfd3e7c6a63e04f49b0531c7b6d2ed30571a17f1f59e6a8c83",
+      "translationGroupId": "translation-chunk-0010-u029"
+    },
+    {
+      "failedAttempts": 1,
+      "status": "pass",
+      "targetTextSha256": "3e00d51095c2e93948ed39ee12c215154b9f4ed183c1f5a86b48a5f723f42d6e",
+      "translationGroupId": "translation-chunk-0011-u001"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3730c8f6c422d3b311164e8e3ac30bf373b065f0f2dede27ebe2938c8319ff51",
+      "translationGroupId": "translation-chunk-0011-u002"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6d8b2077b4f56ca976136aa4ed3c8b5dc080fc2e959353234959e392a0be2a5b",
+      "translationGroupId": "translation-chunk-0011-u003"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f2587019cfa08e00e0cb83197cb91a1dbc784a25a2a7f6b25011df9ce787e058",
+      "translationGroupId": "translation-chunk-0011-u004"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c9d60b5f51ec696928fc0241ffb08c1d7802642d48f99941a3d47f82cc3c4cea",
+      "translationGroupId": "translation-chunk-0011-u005"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "44c7e17be1f996c5c110282c6b8752fa0d491f9c187fa8025ca10a9cd883fcfe",
+      "translationGroupId": "translation-chunk-0011-u006"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b28df505467325c861337b4ab106f4b350844dae419643ce908840453aa978a9",
+      "translationGroupId": "translation-chunk-0011-u007"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "e7ec7f80807e5feb4dffc7c545f0f7c4b41035f0e74dff8423758b2b7b5f5a4b",
+      "translationGroupId": "translation-chunk-0011-u008"
+    },
+    {
+      "failedAttempts": 1,
+      "status": "pass",
+      "targetTextSha256": "160d9947483f6d1ce04d5e647f73600b701740d1c7382f5de2573ca7dcc875a7",
+      "translationGroupId": "translation-chunk-0011-u009"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c7a6ed5d7bb3f2eedbc0593486ea03425344365847a85493121ea4363affb667",
+      "translationGroupId": "translation-chunk-0011-u010"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "6b441f050a8edd64fefab4c6e0f7fd3d7f9c9076e74809ce2127230bfd3e1aa1",
+      "translationGroupId": "translation-chunk-0011-u011"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "a31c8729dcf6dda41bf950a5a8ec4ea85838155dc75a217d5ff2805443054cf4",
+      "translationGroupId": "translation-chunk-0011-u012"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "b95b9b1d25cf16f5f73c935b970124c1650dfcf8f1cfc52c31568cfce40187a5",
+      "translationGroupId": "translation-chunk-0011-u013"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "3909e47d76647e6778dfde635ad957ab177d6a4fd48357baa218d2c3a3873dfb",
+      "translationGroupId": "translation-chunk-0011-u014"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "fd41fc89f7ffe1974372f00a9053cd3ff1f28d718fab0d247710f0546bd22957",
+      "translationGroupId": "translation-chunk-0011-u015"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "f1a77c47ebe5642d32e63f44205bb13a2db30a1a59cd50d3b5758296b8c433c7",
+      "translationGroupId": "translation-chunk-0011-u016"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "63fb4352bdcf783b712e8e4bc4a8e36e9b85e834a20b393a4d197125f3391528",
+      "translationGroupId": "translation-chunk-0011-u017"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "bee266316b759b4eebee64af8d372aa8c35c033fb904e06985eb6738ad5e33dc",
+      "translationGroupId": "translation-chunk-0011-u018"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "25439d563ef97c76c1866a41a78f46cb04de0f09ad8a9000d12cbd589fd05dc6",
+      "translationGroupId": "translation-chunk-0011-u019"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "58efb97bc03d3f5802ce53373ac734980c0422e8662a86d22abd8bc9d714cf35",
+      "translationGroupId": "translation-chunk-0011-u020"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "465e15faeacc78bf068ed649e506b058838d0e7cec2af6857b3509d42960dddb",
+      "translationGroupId": "translation-chunk-0011-u021"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "c71422225aa271c6529414add69040b6466dbafeca045236d3074c761ed28932",
+      "translationGroupId": "translation-chunk-0011-u022"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8445741d7d6a831276e8794b874cebee94940ba0e963d4f109bf72f437426789",
+      "translationGroupId": "translation-chunk-0011-u023"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "8c1fe8fdaac55c492823e38e705ec85a7b6621adfd04e2f418abf2442ac6994f",
+      "translationGroupId": "translation-chunk-0011-u024"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "80251ec7cddb9ed8e2d2464f73d617b1a6f2d5b7a940eb3198cb8e40ee561b7d",
+      "translationGroupId": "translation-chunk-0011-u025"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "696fa44db47ac09bb39db41087ed76910b261eb23360cde6234adae8a9be9c50",
+      "translationGroupId": "translation-chunk-0011-u026"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "1eb84027f1d9e82e12085e84fc68a391c9092321c3e32bbcb79deef910bcc11f",
+      "translationGroupId": "translation-chunk-0011-u027"
+    },
+    {
+      "failedAttempts": 0,
+      "status": "pass",
+      "targetTextSha256": "78cfea0c60d5910057b2f2a2bae45272435272ecbbd43a6683165799e5ac4a47",
+      "translationGroupId": "translation-chunk-0011-u028"
+    }
+  ],
+  "humanAcceptance": {
+    "decidedAt": "2026-10-11T09:55:00Z",
+    "decidedBy": "Jony",
+    "groupDecisions": [
+      {
+        "decidedBy": "Claude (delegated by Jony)",
+        "decidedByRole": "delegated_agent",
+        "groupId": "translation-chunk-0000-u029"
+      },
+      {
+        "decidedBy": "Jony",
+        "decidedByRole": "human_operator",
+        "groupId": "translation-chunk-0000-u040"
+      },
+      {
+        "decidedBy": "Claude (delegated by Jony)",
+        "decidedByRole": "delegated_agent",
+        "groupId": "translation-chunk-0000-u041"
+      },
+      {
+        "decidedBy": "claude-code (delegated by Jony)",
+        "decidedByRole": "delegated_agent",
+        "groupId": "translation-chunk-0001-u037"
+      },
+      {
+        "decidedBy": "Claude (delegated by Jony)",
+        "decidedByRole": "delegated_agent",
+        "groupId": "translation-chunk-0002-u024"
+      },
+      {
+        "decidedBy": "claude-code (delegated by Jony)",
+        "decidedByRole": "delegated_agent",
+        "groupId": "translation-chunk-0003-u004"
+      },
+      {
+        "decidedBy": "Claude (delegated by Jony)",
+        "decidedByRole": "delegated_agent",
+        "groupId": "translation-chunk-0003-u016"
+      },
+      {
+        "decidedBy": "Jony",
+        "decidedByRole": "human_operator",
+        "groupId": "translation-chunk-0003-u044"
+      },
+      {
+        "decidedBy": "claude-code (delegated by Jony)",
+        "decidedByRole": "delegated_agent",
+        "groupId": "translation-chunk-0004-u001"
+      },
+      {
+        "decidedBy": "Jony",
+        "decidedByRole": "human_operator",
+        "groupId": "translation-chunk-0004-u013"
+      },
+      {
+        "decidedBy": "claude-code (delegated by Jony)",
+        "decidedByRole": "delegated_agent",
+        "groupId": "translation-chunk-0005-u021"
+      },
+      {
+        "decidedBy": "Jony",
+        "decidedByRole": "human_operator",
+        "groupId": "translation-chunk-0005-u032"
+      },
+      {
+        "decidedBy": "Jony",
+        "decidedByRole": "human_operator",
+        "groupId": "translation-chunk-0007-u008"
+      },
+      {
+        "decidedBy": "claude-code (delegated by Jony)",
+        "decidedByRole": "delegated_agent",
+        "groupId": "translation-chunk-0008-u014"
+      },
+      {
+        "decidedBy": "claude-code (delegated by Jony)",
+        "decidedByRole": "delegated_agent",
+        "groupId": "translation-chunk-0008-u016"
+      },
+      {
+        "decidedBy": "Jony",
+        "decidedByRole": "human_operator",
+        "groupId": "translation-chunk-0008-u022"
+      },
+      {
+        "decidedBy": "Jony",
+        "decidedByRole": "human_operator",
+        "groupId": "translation-chunk-0008-u023"
+      },
+      {
+        "decidedBy": "Jony",
+        "decidedByRole": "human_operator",
+        "groupId": "translation-chunk-0009-u002"
+      },
+      {
+        "decidedBy": "Jony",
+        "decidedByRole": "human_operator",
+        "groupId": "translation-chunk-0010-u007"
+      },
+      {
+        "decidedBy": "claude-code (delegated by Jony)",
+        "decidedByRole": "delegated_agent",
+        "groupId": "translation-chunk-0010-u029"
+      }
+    ],
+    "groupIds": [
+      "translation-chunk-0000-u029",
+      "translation-chunk-0000-u040",
+      "translation-chunk-0000-u041",
+      "translation-chunk-0001-u037",
+      "translation-chunk-0002-u024",
+      "translation-chunk-0003-u004",
+      "translation-chunk-0003-u016",
+      "translation-chunk-0003-u044",
+      "translation-chunk-0004-u001",
+      "translation-chunk-0004-u013",
+      "translation-chunk-0005-u021",
+      "translation-chunk-0005-u032",
+      "translation-chunk-0007-u008",
+      "translation-chunk-0008-u014",
+      "translation-chunk-0008-u016",
+      "translation-chunk-0008-u022",
+      "translation-chunk-0008-u023",
+      "translation-chunk-0009-u002",
+      "translation-chunk-0010-u007",
+      "translation-chunk-0010-u029"
+    ],
+    "jsonSha256": "8416b2b2b4798bc4280b5df443dc7ca4ce4f5e2ad7e45db17bd1d6689e964870",
+    "schemaVersion": "sermon-text-qc-human-acceptance-v1",
+    "textQcJsonSha256": "60a8eac5e69131106a31d1adeb23281590012fe429f825cffc8b765cf7712639",
+    "userStatement": "按建议 / Ship as-is, fix later; 你直接做机器检查，修改好后，开始做l3 (delegation, 2026-10-11)"
+  },
+  "humanApproval": false,
+  "implementationSha256": "49f4e9bf63276b1ede7a3229bcfb11febbfa7f07aaaee83c268885d9a46d4508",
+  "postPublicationSpotCheck": "owner_spot_check_after_release",
+  "reviewKind": "machine_quality_waiver",
+  "reviewedGroupIds": [
+    "translation-chunk-0000-u001",
+    "translation-chunk-0000-u002",
+    "translation-chunk-0000-u003",
+    "translation-chunk-0000-u004",
+    "translation-chunk-0000-u005",
+    "translation-chunk-0000-u006",
+    "translation-chunk-0000-u007",
+    "translation-chunk-0000-u008",
+    "translation-chunk-0000-u009",
+    "translation-chunk-0000-u010",
+    "translation-chunk-0000-u011",
+    "translation-chunk-0000-u012",
+    "translation-chunk-0000-u013",
+    "translation-chunk-0000-u014",
+    "translation-chunk-0000-u015",
+    "translation-chunk-0000-u016",
+    "translation-chunk-0000-u017",
+    "translation-chunk-0000-u018",
+    "translation-chunk-0000-u019",
+    "translation-chunk-0000-u020",
+    "translation-chunk-0000-u021",
+    "translation-chunk-0000-u022",
+    "translation-chunk-0000-u023",
+    "translation-chunk-0000-u024",
+    "translation-chunk-0000-u025",
+    "translation-chunk-0000-u026",
+    "translation-chunk-0000-u027",
+    "translation-chunk-0000-u028",
+    "translation-chunk-0000-u029",
+    "translation-chunk-0000-u030",
+    "translation-chunk-0000-u031",
+    "translation-chunk-0000-u032",
+    "translation-chunk-0000-u033",
+    "translation-chunk-0000-u034",
+    "translation-chunk-0000-u035",
+    "translation-chunk-0000-u036",
+    "translation-chunk-0000-u037",
+    "translation-chunk-0000-u038",
+    "translation-chunk-0000-u039",
+    "translation-chunk-0000-u040",
+    "translation-chunk-0000-u041",
+    "translation-chunk-0000-u042",
+    "translation-chunk-0000-u043",
+    "translation-chunk-0001-u001",
+    "translation-chunk-0001-u002",
+    "translation-chunk-0001-u003",
+    "translation-chunk-0001-u004",
+    "translation-chunk-0001-u005",
+    "translation-chunk-0001-u006",
+    "translation-chunk-0001-u007",
+    "translation-chunk-0001-u008",
+    "translation-chunk-0001-u009",
+    "translation-chunk-0001-u010",
+    "translation-chunk-0001-u011",
+    "translation-chunk-0001-u012",
+    "translation-chunk-0001-u013",
+    "translation-chunk-0001-u014",
+    "translation-chunk-0001-u015",
+    "translation-chunk-0001-u016",
+    "translation-chunk-0001-u017",
+    "translation-chunk-0001-u018",
+    "translation-chunk-0001-u019",
+    "translation-chunk-0001-u020",
+    "translation-chunk-0001-u021",
+    "translation-chunk-0001-u022",
+    "translation-chunk-0001-u023",
+    "translation-chunk-0001-u024",
+    "translation-chunk-0001-u025",
+    "translation-chunk-0001-u026",
+    "translation-chunk-0001-u027",
+    "translation-chunk-0001-u028",
+    "translation-chunk-0001-u029",
+    "translation-chunk-0001-u030",
+    "translation-chunk-0001-u031",
+    "translation-chunk-0001-u032",
+    "translation-chunk-0001-u033",
+    "translation-chunk-0001-u034",
+    "translation-chunk-0001-u035",
+    "translation-chunk-0001-u036",
+    "translation-chunk-0001-u037",
+    "translation-chunk-0001-u038",
+    "translation-chunk-0001-u039",
+    "translation-chunk-0001-u040",
+    "translation-chunk-0001-u041",
+    "translation-chunk-0001-u042",
+    "translation-chunk-0002-u001",
+    "translation-chunk-0002-u002",
+    "translation-chunk-0002-u003",
+    "translation-chunk-0002-u004",
+    "translation-chunk-0002-u005",
+    "translation-chunk-0002-u006",
+    "translation-chunk-0002-u007",
+    "translation-chunk-0002-u008",
+    "translation-chunk-0002-u009",
+    "translation-chunk-0002-u010",
+    "translation-chunk-0002-u011",
+    "translation-chunk-0002-u012",
+    "translation-chunk-0002-u013",
+    "translation-chunk-0002-u014",
+    "translation-chunk-0002-u015",
+    "translation-chunk-0002-u016",
+    "translation-chunk-0002-u017",
+    "translation-chunk-0002-u018",
+    "translation-chunk-0002-u019",
+    "translation-chunk-0002-u020",
+    "translation-chunk-0002-u021",
+    "translation-chunk-0002-u022",
+    "translation-chunk-0002-u023",
+    "translation-chunk-0002-u024",
+    "translation-chunk-0002-u025",
+    "translation-chunk-0002-u026",
+    "translation-chunk-0002-u027",
+    "translation-chunk-0002-u028",
+    "translation-chunk-0002-u029",
+    "translation-chunk-0002-u030",
+    "translation-chunk-0002-u031",
+    "translation-chunk-0002-u032",
+    "translation-chunk-0002-u033",
+    "translation-chunk-0002-u034",
+    "translation-chunk-0002-u035",
+    "translation-chunk-0002-u036",
+    "translation-chunk-0002-u037",
+    "translation-chunk-0002-u038",
+    "translation-chunk-0002-u039",
+    "translation-chunk-0003-u001",
+    "translation-chunk-0003-u002",
+    "translation-chunk-0003-u003",
+    "translation-chunk-0003-u004",
+    "translation-chunk-0003-u005",
+    "translation-chunk-0003-u006",
+    "translation-chunk-0003-u007",
+    "translation-chunk-0003-u008",
+    "translation-chunk-0003-u009",
+    "translation-chunk-0003-u010",
+    "translation-chunk-0003-u011",
+    "translation-chunk-0003-u012",
+    "translation-chunk-0003-u013",
+    "translation-chunk-0003-u014",
+    "translation-chunk-0003-u015",
+    "translation-chunk-0003-u016",
+    "translation-chunk-0003-u017",
+    "translation-chunk-0003-u018",
+    "translation-chunk-0003-u019",
+    "translation-chunk-0003-u020",
+    "translation-chunk-0003-u021",
+    "translation-chunk-0003-u022",
+    "translation-chunk-0003-u023",
+    "translation-chunk-0003-u024",
+    "translation-chunk-0003-u025",
+    "translation-chunk-0003-u026",
+    "translation-chunk-0003-u027",
+    "translation-chunk-0003-u028",
+    "translation-chunk-0003-u029",
+    "translation-chunk-0003-u030",
+    "translation-chunk-0003-u031",
+    "translation-chunk-0003-u032",
+    "translation-chunk-0003-u033",
+    "translation-chunk-0003-u034",
+    "translation-chunk-0003-u035",
+    "translation-chunk-0003-u036",
+    "translation-chunk-0003-u037",
+    "translation-chunk-0003-u038",
+    "translation-chunk-0003-u039",
+    "translation-chunk-0003-u040",
+    "translation-chunk-0003-u041",
+    "translation-chunk-0003-u042",
+    "translation-chunk-0003-u043",
+    "translation-chunk-0003-u044",
+    "translation-chunk-0003-u045",
+    "translation-chunk-0003-u046",
+    "translation-chunk-0004-u001",
+    "translation-chunk-0004-u002",
+    "translation-chunk-0004-u003",
+    "translation-chunk-0004-u004",
+    "translation-chunk-0004-u005",
+    "translation-chunk-0004-u006",
+    "translation-chunk-0004-u007",
+    "translation-chunk-0004-u008",
+    "translation-chunk-0004-u009",
+    "translation-chunk-0004-u010",
+    "translation-chunk-0004-u011",
+    "translation-chunk-0004-u012",
+    "translation-chunk-0004-u013",
+    "translation-chunk-0004-u014",
+    "translation-chunk-0004-u015",
+    "translation-chunk-0004-u016",
+    "translation-chunk-0004-u017",
+    "translation-chunk-0004-u018",
+    "translation-chunk-0004-u019",
+    "translation-chunk-0004-u020",
+    "translation-chunk-0004-u021",
+    "translation-chunk-0004-u022",
+    "translation-chunk-0004-u023",
+    "translation-chunk-0004-u024",
+    "translation-chunk-0004-u025",
+    "translation-chunk-0004-u026",
+    "translation-chunk-0004-u027",
+    "translation-chunk-0004-u028",
+    "translation-chunk-0004-u029",
+    "translation-chunk-0004-u030",
+    "translation-chunk-0004-u031",
+    "translation-chunk-0004-u032",
+    "translation-chunk-0004-u033",
+    "translation-chunk-0004-u034",
+    "translation-chunk-0004-u035",
+    "translation-chunk-0004-u036",
+    "translation-chunk-0004-u037",
+    "translation-chunk-0004-u038",
+    "translation-chunk-0004-u039",
+    "translation-chunk-0004-u040",
+    "translation-chunk-0004-u041",
+    "translation-chunk-0004-u042",
+    "translation-chunk-0004-u043",
+    "translation-chunk-0004-u044",
+    "translation-chunk-0005-u001",
+    "translation-chunk-0005-u002",
+    "translation-chunk-0005-u003",
+    "translation-chunk-0005-u004",
+    "translation-chunk-0005-u005",
+    "translation-chunk-0005-u006",
+    "translation-chunk-0005-u007",
+    "translation-chunk-0005-u008",
+    "translation-chunk-0005-u009",
+    "translation-chunk-0005-u010",
+    "translation-chunk-0005-u011",
+    "translation-chunk-0005-u012",
+    "translation-chunk-0005-u013",
+    "translation-chunk-0005-u014",
+    "translation-chunk-0005-u015",
+    "translation-chunk-0005-u016",
+    "translation-chunk-0005-u017",
+    "translation-chunk-0005-u018",
+    "translation-chunk-0005-u019",
+    "translation-chunk-0005-u020",
+    "translation-chunk-0005-u021",
+    "translation-chunk-0005-u022",
+    "translation-chunk-0005-u023",
+    "translation-chunk-0005-u024",
+    "translation-chunk-0005-u025",
+    "translation-chunk-0005-u026",
+    "translation-chunk-0005-u027",
+    "translation-chunk-0005-u028",
+    "translation-chunk-0005-u029",
+    "translation-chunk-0005-u030",
+    "translation-chunk-0005-u031",
+    "translation-chunk-0005-u032",
+    "translation-chunk-0005-u033",
+    "translation-chunk-0005-u034",
+    "translation-chunk-0005-u035",
+    "translation-chunk-0005-u036",
+    "translation-chunk-0005-u037",
+    "translation-chunk-0005-u038",
+    "translation-chunk-0006-u001",
+    "translation-chunk-0006-u002",
+    "translation-chunk-0006-u003",
+    "translation-chunk-0006-u004",
+    "translation-chunk-0006-u005",
+    "translation-chunk-0006-u006",
+    "translation-chunk-0006-u007",
+    "translation-chunk-0006-u008",
+    "translation-chunk-0006-u009",
+    "translation-chunk-0006-u010",
+    "translation-chunk-0006-u011",
+    "translation-chunk-0006-u012",
+    "translation-chunk-0006-u013",
+    "translation-chunk-0006-u014",
+    "translation-chunk-0006-u015",
+    "translation-chunk-0006-u016",
+    "translation-chunk-0006-u017",
+    "translation-chunk-0006-u018",
+    "translation-chunk-0006-u019",
+    "translation-chunk-0006-u020",
+    "translation-chunk-0006-u021",
+    "translation-chunk-0006-u022",
+    "translation-chunk-0006-u023",
+    "translation-chunk-0006-u024",
+    "translation-chunk-0006-u025",
+    "translation-chunk-0006-u026",
+    "translation-chunk-0006-u027",
+    "translation-chunk-0006-u028",
+    "translation-chunk-0006-u029",
+    "translation-chunk-0006-u030",
+    "translation-chunk-0006-u031",
+    "translation-chunk-0006-u032",
+    "translation-chunk-0006-u033",
+    "translation-chunk-0006-u034",
+    "translation-chunk-0006-u035",
+    "translation-chunk-0006-u036",
+    "translation-chunk-0006-u037",
+    "translation-chunk-0006-u038",
+    "translation-chunk-0006-u039",
+    "translation-chunk-0006-u040",
+    "translation-chunk-0006-u041",
+    "translation-chunk-0006-u042",
+    "translation-chunk-0006-u043",
+    "translation-chunk-0007-u001",
+    "translation-chunk-0007-u002",
+    "translation-chunk-0007-u003",
+    "translation-chunk-0007-u004",
+    "translation-chunk-0007-u005",
+    "translation-chunk-0007-u006",
+    "translation-chunk-0007-u007",
+    "translation-chunk-0007-u008",
+    "translation-chunk-0007-u009",
+    "translation-chunk-0007-u010",
+    "translation-chunk-0007-u011",
+    "translation-chunk-0007-u012",
+    "translation-chunk-0007-u013",
+    "translation-chunk-0007-u014",
+    "translation-chunk-0007-u015",
+    "translation-chunk-0007-u016",
+    "translation-chunk-0007-u017",
+    "translation-chunk-0007-u018",
+    "translation-chunk-0007-u019",
+    "translation-chunk-0007-u020",
+    "translation-chunk-0007-u021",
+    "translation-chunk-0007-u022",
+    "translation-chunk-0007-u023",
+    "translation-chunk-0007-u024",
+    "translation-chunk-0007-u025",
+    "translation-chunk-0007-u026",
+    "translation-chunk-0007-u027",
+    "translation-chunk-0007-u028",
+    "translation-chunk-0007-u029",
+    "translation-chunk-0007-u030",
+    "translation-chunk-0007-u031",
+    "translation-chunk-0007-u032",
+    "translation-chunk-0007-u033",
+    "translation-chunk-0007-u034",
+    "translation-chunk-0007-u035",
+    "translation-chunk-0007-u036",
+    "translation-chunk-0007-u037",
+    "translation-chunk-0007-u038",
+    "translation-chunk-0007-u039",
+    "translation-chunk-0007-u040",
+    "translation-chunk-0007-u041",
+    "translation-chunk-0007-u042",
+    "translation-chunk-0008-u001",
+    "translation-chunk-0008-u002",
+    "translation-chunk-0008-u003",
+    "translation-chunk-0008-u004",
+    "translation-chunk-0008-u005",
+    "translation-chunk-0008-u006",
+    "translation-chunk-0008-u007",
+    "translation-chunk-0008-u008",
+    "translation-chunk-0008-u009",
+    "translation-chunk-0008-u010",
+    "translation-chunk-0008-u011",
+    "translation-chunk-0008-u012",
+    "translation-chunk-0008-u013",
+    "translation-chunk-0008-u014",
+    "translation-chunk-0008-u015",
+    "translation-chunk-0008-u016",
+    "translation-chunk-0008-u017",
+    "translation-chunk-0008-u018",
+    "translation-chunk-0008-u019",
+    "translation-chunk-0008-u020",
+    "translation-chunk-0008-u021",
+    "translation-chunk-0008-u022",
+    "translation-chunk-0008-u023",
+    "translation-chunk-0008-u024",
+    "translation-chunk-0008-u025",
+    "translation-chunk-0008-u026",
+    "translation-chunk-0008-u027",
+    "translation-chunk-0008-u028",
+    "translation-chunk-0008-u029",
+    "translation-chunk-0008-u030",
+    "translation-chunk-0008-u031",
+    "translation-chunk-0008-u032",
+    "translation-chunk-0008-u033",
+    "translation-chunk-0009-u001",
+    "translation-chunk-0009-u002",
+    "translation-chunk-0009-u003",
+    "translation-chunk-0009-u004",
+    "translation-chunk-0009-u005",
+    "translation-chunk-0009-u006",
+    "translation-chunk-0009-u007",
+    "translation-chunk-0009-u008",
+    "translation-chunk-0009-u009",
+    "translation-chunk-0009-u010",
+    "translation-chunk-0009-u011",
+    "translation-chunk-0009-u012",
+    "translation-chunk-0009-u013",
+    "translation-chunk-0009-u014",
+    "translation-chunk-0009-u015",
+    "translation-chunk-0009-u016",
+    "translation-chunk-0009-u017",
+    "translation-chunk-0009-u018",
+    "translation-chunk-0009-u019",
+    "translation-chunk-0009-u020",
+    "translation-chunk-0009-u021",
+    "translation-chunk-0009-u022",
+    "translation-chunk-0009-u023",
+    "translation-chunk-0009-u024",
+    "translation-chunk-0009-u025",
+    "translation-chunk-0009-u026",
+    "translation-chunk-0009-u027",
+    "translation-chunk-0009-u028",
+    "translation-chunk-0009-u029",
+    "translation-chunk-0009-u030",
+    "translation-chunk-0009-u031",
+    "translation-chunk-0009-u032",
+    "translation-chunk-0009-u033",
+    "translation-chunk-0009-u034",
+    "translation-chunk-0010-u001",
+    "translation-chunk-0010-u002",
+    "translation-chunk-0010-u003",
+    "translation-chunk-0010-u004",
+    "translation-chunk-0010-u005",
+    "translation-chunk-0010-u006",
+    "translation-chunk-0010-u007",
+    "translation-chunk-0010-u008",
+    "translation-chunk-0010-u009",
+    "translation-chunk-0010-u010",
+    "translation-chunk-0010-u011",
+    "translation-chunk-0010-u012",
+    "translation-chunk-0010-u013",
+    "translation-chunk-0010-u014",
+    "translation-chunk-0010-u015",
+    "translation-chunk-0010-u016",
+    "translation-chunk-0010-u017",
+    "translation-chunk-0010-u018",
+    "translation-chunk-0010-u019",
+    "translation-chunk-0010-u020",
+    "translation-chunk-0010-u021",
+    "translation-chunk-0010-u022",
+    "translation-chunk-0010-u023",
+    "translation-chunk-0010-u024",
+    "translation-chunk-0010-u025",
+    "translation-chunk-0010-u026",
+    "translation-chunk-0010-u027",
+    "translation-chunk-0010-u028",
+    "translation-chunk-0010-u029",
+    "translation-chunk-0011-u001",
+    "translation-chunk-0011-u002",
+    "translation-chunk-0011-u003",
+    "translation-chunk-0011-u004",
+    "translation-chunk-0011-u005",
+    "translation-chunk-0011-u006",
+    "translation-chunk-0011-u007",
+    "translation-chunk-0011-u008",
+    "translation-chunk-0011-u009",
+    "translation-chunk-0011-u010",
+    "translation-chunk-0011-u011",
+    "translation-chunk-0011-u012",
+    "translation-chunk-0011-u013",
+    "translation-chunk-0011-u014",
+    "translation-chunk-0011-u015",
+    "translation-chunk-0011-u016",
+    "translation-chunk-0011-u017",
+    "translation-chunk-0011-u018",
+    "translation-chunk-0011-u019",
+    "translation-chunk-0011-u020",
+    "translation-chunk-0011-u021",
+    "translation-chunk-0011-u022",
+    "translation-chunk-0011-u023",
+    "translation-chunk-0011-u024",
+    "translation-chunk-0011-u025",
+    "translation-chunk-0011-u026",
+    "translation-chunk-0011-u027",
+    "translation-chunk-0011-u028"
+  ],
+  "rules": {
+    "calibration": {
+      "maxCleanFalsePositiveRate": 0.1,
+      "overallDetectionRate": 0.95,
+      "perKindDetectionRate": 0.9
+    },
+    "maxRepairAttemptsPerSentence": 4
+  },
+  "schemaVersion": "sermon-target-language-machine-text-waiver-v2",
+  "targetLocale": "ko",
+  "textQcJsonSha256": "60a8eac5e69131106a31d1adeb23281590012fe429f825cffc8b765cf7712639",
+  "translationPolicySha256": "d209b51f648e15b0f9986638ff379a1b325fc6b18e1f4a81a18c348d3fe4fc21"
+}

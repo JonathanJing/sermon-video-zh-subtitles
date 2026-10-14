@@ -97,11 +97,11 @@ def reviewed_candidate(candidate: dict) -> bool:
 
 def validate_audio_screening_review(audio: dict, receipt: dict,
                                     screening: dict | None) -> None:
-    from scripts import machine_quality_release_basis as machine_basis
-    if machine_basis.is_audio_waiver(receipt):
-        # A machine listening waiver, never a human approval of the track.
+    from scripts import machine_audio_waiver_acceptance as machine_waivers
+    if machine_waivers.is_audio_waiver(receipt):
+        # A machine listening waiver (v3: with a person's per-unit acceptance), never a human approval of the track.
         try:
-            machine_basis.validate_audio_waiver(audio, receipt, screening)
+            machine_waivers.validate_audio_waiver(audio, receipt, screening)
         except ValueError as error:
             raise StageError(str(error)) from error
         return

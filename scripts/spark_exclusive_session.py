@@ -31,10 +31,21 @@ import uuid
 
 SCHEMA = 'tongxing-spark-exclusive-v1'
 DEFAULT_HOST = 'achillesjing@192.168.1.152'
-UNITS = ('spark-api.service', 'spark-agent.service', 'llama-performance-collector.service', 'llama-server.service')
+DEFAULT_MINIMUM_AVAILABLE_GIB = 110.0
+# Python multiprocessing helper that the spark-agent scheduler starts for itself. It is the only
+# launcher child the admission check accepts, and only when it is a direct child with no children.
+RESOURCE_TRACKER_HELPER = 'multiprocessing_resource_tracker'
+RESOURCE_TRACKER_ARGUMENT = re.compile(r'^from multiprocessing\.resource_tracker import main;main\(\d+\)$')
+# The reasoning-review timer restarts llama-server on its own schedule; on 2026-10-11 it
+# did so in the middle of a held session and the next dispatch failed on memory. It is
+# frozen first and restored last. It may be absent on a host; then it is recorded as such.
+UNITS = ('job-reasoning-review.timer', 'spark-api.service', 'spark-agent.service',
+         'llama-performance-collector.service', 'llama-server.service')
+OPTIONAL_UNITS = ('job-reasoning-review.timer',)
 LAUNCHERS = ('spark-api.service', 'spark-agent.service')
 STOP_ORDER = UNITS
-RESTORE_ORDER = ('llama-server.service', 'llama-performance-collector.service', 'spark-agent.service', 'spark-api.service')
+RESTORE_ORDER = ('llama-server.service', 'llama-performance-collector.service', 'spark-agent.service',
+                 'spark-api.service', 'job-reasoning-review.timer')
 IDENTIFIER = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$')
 
 class SessionError(RuntimeError):
@@ -90,6 +101,9 @@ class LinuxBackend:
         properties = ('Id', 'LoadState', 'ActiveState', 'SubState', 'MainPID', 'ControlGroup', 'FragmentPath', 'DropInPaths', 'KillMode')
         output = self.command(['systemctl', '--user', 'show', name] + [f'--property={p}' for p in properties])
         raw = dict(line.split('=', 1) for line in output.splitlines() if '=' in line)
+        if raw.get('LoadState') == 'not-found' and name in OPTIONAL_UNITS:
+            return {'name': name, 'active': 'inactive', 'sub': 'dead', 'mainPid': 0, 'controlGroup': None,
+                    'identity': 'not-found', 'killMode': None}
         if raw.get('LoadState') != 'loaded': raise SessionError('unit_not_loaded:' + name)
         files = [raw.get('FragmentPath', '')] + shlex.split(raw.get('DropInPaths', ''))
         hashes = []
@@ -117,8 +131,11 @@ class LinuxBackend:
                     role = 'model'
                 if names & {'task_worker.py', 'job_runtime.py', 'replay_fixed_clip_local_models.py', 'render_formal_target_language_speech.py'}:
                     role = 'worker'
+                helper = None
+                if len(arguments) == 3 and arguments[1] == '-c' and Path(arguments[0]).name.startswith('python') and RESOURCE_TRACKER_ARGUMENT.match(arguments[2]):
+                    helper = RESOURCE_TRACKER_HELPER
                 values.append({'pid': pid, 'ppid': ppid, 'startTicks': ticks, 'executable': executable,
-                               'role': role, 'cgroup': cgroup.strip()})
+                               'role': role, 'cgroup': cgroup.strip(), 'helper': helper})
             except (FileNotFoundError, ProcessLookupError): continue
             except PermissionError:
                 # GPU and launcher checks cannot prove an unreadable process identity.
@@ -242,12 +259,18 @@ class LinuxBackend:
         os.kill(main['pid'], signal.SIGSTOP)
         # Intent was fsynced by Engine before SIGSTOP. If SSH is lost here,
         # explicit reconciliation can SIGCONT this exact frozen process.
-        processes = self.processes()
-        children = Engine.descendants(processes, [(main['pid'], main['startTicks'])]) - {main['pid']}
-        queue = self.queue()
-        if not preempt and (children or queue['pending'] or queue['claimed'] or queue['outstanding'] or queue.get('legacyRunning') or queue.get('legacyQueued')):
-            os.kill(main['pid'], signal.SIGCONT)
-            raise SessionError('launcher_became_busy_before_stop')
+        try:
+            processes = self.processes()
+            helpers = Engine.launcher_helpers(processes, main['pid'], self.gpu())
+            children = Engine.descendants(processes, [(main['pid'], main['startTicks'])]) - {main['pid']} - helpers
+            queue = self.queue()
+            if not preempt and (children or queue['pending'] or queue['claimed'] or queue['outstanding'] or queue.get('legacyRunning') or queue.get('legacyQueued')):
+                raise SessionError('launcher_became_busy_before_stop')
+        except BaseException:
+            # Nothing has been stopped yet, so resuming the frozen launcher is safe.
+            try: os.kill(main['pid'], signal.SIGCONT)
+            except ProcessLookupError: pass
+            raise
         self.command(['systemctl', '--user', 'stop', '--no-block', name])
         try: os.kill(main['pid'], signal.SIGCONT)
         except ProcessLookupError: pass
@@ -334,6 +357,14 @@ class Engine:
                     known.add(item['pid']); changed = True
         return known
 
+    @staticmethod
+    def launcher_helpers(processes, launcher_pid, gpu):
+        gpu_pids = {row.get('pid') for row in gpu}
+        parents = {item.get('ppid') for item in processes}
+        return {item['pid'] for item in processes
+                if item.get('helper') == RESOURCE_TRACKER_HELPER and item.get('ppid') == launcher_pid
+                and item['pid'] not in parents and item['pid'] not in gpu_pids}
+
     def idle_launcher(self, inventory, *, begin=False):
         queue = inventory['queue']
         if queue['claimed'] or queue['outstanding'] or queue.get('legacyRunning') or (begin and (queue['pending'] or queue.get('legacyQueued'))): raise SessionError('scheduler_work_outstanding')
@@ -343,9 +374,10 @@ class Engine:
             roots = [p for p in processes if p['pid'] == launcher['mainPid']]
             if launcher['active'] == 'active':
                 if len(roots) != 1 or roots[0].get('unreadable'): raise SessionError('launcher_process_unknown')
-                descendants = self.descendants(processes, [(roots[0]['pid'], roots[0]['startTicks'])])
+                helpers = self.launcher_helpers(processes, launcher['mainPid'], inventory.get('gpu', []))
+                descendants = self.descendants(processes, [(roots[0]['pid'], roots[0]['startTicks'])]) - helpers
                 cgroup = launcher['controlGroup']
-                if not cgroup or descendants != {launcher['mainPid']} or any(cgroup in p.get('cgroup', '') and p['pid'] != launcher['mainPid'] for p in processes):
+                if not cgroup or descendants != {launcher['mainPid']} or any(cgroup in p.get('cgroup', '') and p['pid'] not in helpers | {launcher['mainPid']} for p in processes):
                     raise SessionError('launcher_workers_active')
             elif launcher['active'] != 'inactive': raise SessionError('launcher_state_unknown')
 
@@ -364,11 +396,15 @@ class Engine:
                 if unit['active'] not in {'active', 'inactive'}: raise SessionError('unit_state_unknown')
                 main = next((p for p in inventory['processes'] if p['pid'] == unit['mainPid']), None)
                 if unit['active'] == 'active':
+                    if unit['name'].endswith('.timer') and not unit['mainPid']:
+                        continue  # A timer has no main process; stopping it only removes a future start.
                     if not main or main.get('unreadable'): raise SessionError('unit_process_unknown')
                     roots.append((main['pid'], main['startTicks']))
         else:
             for name, unit in inventory['units'].items():
-                if unit['identity'] != state['snapshot']['units'][name]['identity']: raise SessionError('unit_identity_changed')
+                frozen = state['snapshot']['units'].get(name)
+                if frozen is None: raise SessionError('snapshot_lacks_unit:' + name)
+                if unit['identity'] != frozen['identity']: raise SessionError('unit_identity_changed')
                 if unit['active'] != 'inactive' or unit['mainPid']: raise SessionError('competing_service_active:' + name)
             if not require_idle:
                 for job in state['jobs'].values():
@@ -421,7 +457,7 @@ class Engine:
             self.save(state, 'effect_unknown', operation=key, errorCode=str(exc) if isinstance(exc, SessionError) else type(exc).__name__)
             raise SessionError('effect_requires_reconciliation:' + key) from exc
 
-    def begin(self, session_id, owner, minimum_available_gib, container_ids=(), preempt=False, allow_interrupted_restart=False):
+    def begin(self, session_id, owner, minimum_available_gib=DEFAULT_MINIMUM_AVAILABLE_GIB, container_ids=(), preempt=False, allow_interrupted_restart=False):
         check_id(session_id); check_id(owner)
         if not isinstance(minimum_available_gib, (int, float)) or not math.isfinite(minimum_available_gib) or minimum_available_gib <= 0: raise SessionError('explicit_positive_memory_minimum_required')
         with self.locked():
@@ -565,6 +601,19 @@ class Engine:
                 state['status'] = 'exclusive_ready'; self.save(state, 'jobs_idle')
             return job
 
+    def close_without_effects(self, state, inventory):
+        """Close a planning session that never stopped anything: every snapshot unit and container is unchanged."""
+        for name, original in state['snapshot']['units'].items():
+            current = inventory['units'][name]
+            if current['identity'] != original['identity'] or current['active'] != original['active']: raise SessionError('planning_unit_changed:' + name)
+        for container_id in state['containerIds']:
+            original = next((c for c in state['snapshot']['containers'] if c['id'] == container_id), None)
+            current = next((c for c in inventory['containers'] if c['id'] == container_id), None)
+            if not original or not current or current['identity'] != original['identity'] or current['running'] != original['running']: raise SessionError('planning_container_changed')
+        state['status'] = 'closed'
+        self.save(state, 'closed_without_effects')
+        return state
+
     def finish(self, session_id, owner):
         with self.locked():
             state = self.load()
@@ -574,6 +623,8 @@ class Engine:
             if any(j['status'] != 'terminal' for j in state['jobs'].values()): raise SessionError('active_or_unknown_jobs_prevent_restore')
             if state.get('interruptedWork', {}).get('requiresDispatchReconciliation') and (inventory['queue']['claimed'] or inventory['queue']['outstanding'] or inventory['queue'].get('legacyRunning') or inventory['queue'].get('legacyQueued')): raise SessionError('interrupted_foreign_dispatch_requires_terminal_reconciliation')
             if any(v['status'] in {'unknown', 'intent'} for v in state['operations'].values()): raise SessionError('effects_require_reconciliation')
+            if state['status'] == 'planning' and all(v['status'] == 'not_started' for v in state['operations'].values()):
+                return self.close_without_effects(state, inventory)
             if state['status'] not in {'restoring', 'restoring_failed'}:
                 self.resource_check(state, inventory, require_idle=True)
             state['status'] = 'restoring'; self.save(state, 'restore_started')
@@ -775,7 +826,7 @@ def main():
         command.add_argument('--session-id', required=True)
         command.add_argument('--owner', required=True)
         if action == 'begin':
-            command.add_argument('--minimum-available-gib', type=float, required=True)
+            command.add_argument('--minimum-available-gib', type=float, default=DEFAULT_MINIMUM_AVAILABLE_GIB, help='Minimum MemAvailable in GiB before exclusive_ready (default 110)')
             command.add_argument('--container-id', action='append', dest='container_ids', default=[])
             command.add_argument('--preempt', action='store_true')
             command.add_argument('--allow-interrupted-restart', action='store_true')

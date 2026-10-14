@@ -32,6 +32,11 @@ AUTHORITIES = {AUTHORITY, MACHINE_AUTHORITY}
 # review is valid under either, and every new machine-authority review is v2.
 SCHEMA_V2 = "sermon-source-text-review-v2"
 SCHEMAS = (SCHEMA, SCHEMA_V2)
+# v3 records a correction the human operator confirmed in conversation. It names the operator,
+# carries humanApproval=true and no model identity, and keeps every audio, ASR, evidence and
+# original-text binding of the model reviews.
+SCHEMA_V3 = "sermon-source-text-review-v3"
+HUMAN_AUTHORITY = "operator_confirmed_correction"
 # Before v2 existed the source-meaning adjudicator labelled its machine reviews v1 (its git history
 # from 9a34493 through 907c998, keyed here by the adjudicator file's SHA-256). Such a frozen review
 # stays readable under the same machine checks, but only resting on a v1 receipt one of those writers
@@ -224,7 +229,17 @@ def apply_review(
     """
     review_path = Path(review_path).resolve()
     review, review_hash = _load_review(review_path)
-    if not (
+    human = review.get("schemaVersion") == SCHEMA_V3
+    if human:
+        if not (
+            review.get("reviewType") == "human"
+            and "model" not in review
+            and review.get("humanApproval") is True
+            and review.get("status") == STATUS
+            and review.get("authority") == HUMAN_AUTHORITY
+        ):
+            raise ValueError("An operator-confirmed source correction review must be human, approved and model-free")
+    elif not (
         review.get("schemaVersion") in SCHEMAS
         and review.get("reviewType") == "model"
         and review.get("model") in SUPPORTED_MODELS
@@ -343,9 +358,9 @@ def apply_review(
             segment["text"] = changes[segment["id"]]
     provenance = {
         "schemaVersion": review["schemaVersion"],
-        "reviewType": "model",
-        "model": review["model"],
-        "humanApproval": False,
+        "reviewType": "human" if human else "model",
+        **({} if human else {"model": review["model"]}),
+        "humanApproval": human,
         "status": STATUS,
         "authority": review["authority"],
         "reviewedAt": reviewed_at,

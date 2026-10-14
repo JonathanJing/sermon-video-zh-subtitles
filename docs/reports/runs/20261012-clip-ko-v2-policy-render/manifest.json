@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261012-clip-ko-v2-policy-render",
+  "runs": [
+    {
+      "label": "l3f",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/l3f",
+      "skipped": {
+        ".json": 313,
+        ".sha256": 40,
+        ".wav": 65,
+        ".mp3": 2,
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "l3f",
+      "path": "ko/spark-ko-c-f/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "447e7270f9380d04ec5f7b73c5f659ab67ca0a84256258504deda694ee7d73be",
+      "redactions": {}
+    },
+    {
+      "run": "l3f",
+      "path": "ko/spark-ko-c-f/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "447e7270f9380d04ec5f7b73c5f659ab67ca0a84256258504deda694ee7d73be",
+      "redactions": {}
+    },
+    {
+      "run": "l3f",
+      "path": "ko/spark-ko-c-f/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 1944,
+      "truncated": false,
+      "sha256": "6b5a75d00674e9f4fd08c8f64523b520bb8a7802275102000758aa9f0d4aafda",
+      "redactions": {}
+    },
+    {
+      "run": "l3f",
+      "path": "ko/spark-ko-c-f/spark-output/speech-job/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 11034,
+      "truncated": false,
+      "sha256": "4d24321175e7879570bc39f37001c04869dbf1b82ace55b4a77d9914e17cc9cb",
+      "redactions": {}
+    },
+    {
+      "run": "l3f",
+      "path": "ko/spark-output/render.log",
+      "kind": "log",
+      "bytes": 5939,
+      "truncated": false,
+      "sha256": "ed2d3f302f5fee0ef090d7556928a9a5889968a64bec14652bbed5a467502342",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "ba1ca8df3fb84b75be4c153fb88b0fece7d40561ba0997b733af1f6d74292c08",
+        "bytes": 5899,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "l3f",
+      "path": "ko/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 81304,
+      "truncated": true,
+      "sha256": "b2059507f419ba5b22e264c0569b40fc42acfae322d8af5b57df639d7820be11",
+      "redactions": {}
+    },
+    {
+      "run": "l3f",
+      "path": "ko/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 207095,
+      "truncated": false,
+      "sha256": "37f8a8ba864c4b69426ee416484ce658f2c01bd0d0f9ce68b1aa341098e059ff",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

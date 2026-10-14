@@ -69,6 +69,8 @@ class ControllerAutoRepairTests(unittest.TestCase):
         for bad in ({**BINDING, "routingVersion": "other"}, {**BINDING, "groupWorkers": 17},
                     {**BINDING, "groupWorkers": 0}, {**BINDING, "maxActiveLocales": 4},
                     {**BINDING, "sourceMeaningNotes": 7}, {**BINDING, "sourceMeaningNotes": ""},
+                    # v3 keeps its field set: a QC repair needs execution v5.
+                    {**BINDING, "backTranslationQc": {"zh-Hans": "qc.json"}},
                     {"routingVersion": auto_repair.ROUTING_VERSION}):
             self.base.config_data["layer2AutoRepair"] = bad
             self.base.save_config()
@@ -80,6 +82,16 @@ class ControllerAutoRepairTests(unittest.TestCase):
         config = subject.load_configuration(self.base.path)
         self.assertEqual(config.auto_repair["sourceMeaningNotes"],
                          str(subject._path(self.base.path.parent, "notes/meaning-notes.json")))
+        self.base.config_data["schemaVersion"] = subject.QC_REPAIR_SCHEMA
+        for bad in ({**BINDING, "backTranslationQc": {}}, {**BINDING, "backTranslationQc": {"zh-Hans": ""}},
+                    {**BINDING, "backTranslationQc": {"fr": "qc.json"}}, {**BINDING, "backTranslationQc": "qc.json"}):
+            self.base.config_data["layer2AutoRepair"] = bad
+            self.base.save_config()
+            with self.assertRaisesRegex(ValueError, "invalid_execution_configuration"):
+                subject.load_configuration(self.base.path)
+        self.base.config_data["layer2AutoRepair"] = dict(BINDING)  # v5 without a receipt is v3's shape
+        self.base.save_config()
+        self.assertEqual(subject.load_configuration(self.base.path).auto_repair, BINDING)
         self.base.config_data["schemaVersion"] = subject.SCHEMA
         self.base.config_data["layer2AutoRepair"] = dict(BINDING)
         self.base.save_config()
@@ -88,14 +100,19 @@ class ControllerAutoRepairTests(unittest.TestCase):
 
     def test_groups_run_concurrently_in_the_worker(self):
         import threading
-        import time
         active, peak, lock = [0], [0], threading.Lock()
+        overlapped = threading.Event()
 
         def slow(key, payload):
             with lock:
                 active[0] += 1
                 peak[0] = max(peak[0], active[0])
-            time.sleep(0.05)
+                if active[0] >= 2:
+                    overlapped.set()
+            # Hold the first call until a second one is in flight instead of a
+            # fixed sleep a slow runner can outlast. A serial worker still ends
+            # with peak 1 once the wait expires.
+            overlapped.wait(5)
             try:
                 return self.caller(key, payload)
             finally:
@@ -158,6 +175,62 @@ class ControllerAutoRepairTests(unittest.TestCase):
         self.assertEqual(receipt["ledgerRoot"], str(subject.repair_ledger_root(config).resolve()))
         self.assertTrue((rounds / "round-002" / "evidence.json").is_file())
         self.assertFalse((self.base.output / "evidence.json").exists())
+
+    def test_back_translation_qc_reopens_a_passed_lane_as_a_new_revision(self):
+        from tests.test_layer2_auto_repair import qc_receipt
+        api = lambda key, payload: self.caller(key, payload)
+        api.execution_identity = dict(API_IDENTITY)
+        first, config = self.run_worker(api)
+        self.assertEqual((first["status"], len(self.calls)), ("machine_review_pass_human_review_pending", 4))
+        old_candidate = self.base.output.joinpath("candidate.json").read_bytes()
+        source, anchor, policy = subject._inputs(config, "zh-Hans", subject.snapshot(config))
+        request = subject.producer.prepare_request(source, anchor, policy)
+        lineage = auto_repair.lineage(request)
+        head = auto_repair.load_ledger(subject.repair_ledger_root(config), lineage)[-1]
+        failed = self.group_ids()[0]
+        receipt = qc_receipt(subject.Path(head["runDirectory"]), {failed: "intense -> amazing"}, request=request)
+        qc_path = self.base.root / "qc" / "text-qc-receipt.json"
+        qc_path.parent.mkdir()
+        qc_path.write_text(json.dumps(receipt))
+        old_identity = subject.durable.identity(subject.package_view(config), config.run_id, "text.zh-Hans")
+        # The harness leaves its fixed job running; a real dispatcher records it succeeded.
+        old_key = jobs._digest(old_identity)
+        with jobs._lock(config.job_root, old_key) as (folder, _, held):
+            self.assertTrue(held)
+            jobs._write_state(folder, old_key, "succeeded")
+        # The revision is a new lane output under the same job root and repair ledger.
+        self.base.config_data["locales"]["zh-Hans"]["outputDirectory"] = "outputs-r2/zh-Hans"
+        self.base.config_data["layer2AutoRepair"] = {**BINDING, "backTranslationQc": {"zh-Hans": "qc/text-qc-receipt.json"}}
+        self.base.save_config()
+        with self.assertRaisesRegex(ValueError, "invalid_execution_configuration"):
+            subject.load_configuration(self.base.path)  # still labelled v3
+        self.base.config_data["schemaVersion"] = subject.QC_REPAIR_SCHEMA
+        self.base.save_config()
+        revised = subject.load_configuration(self.base.path)
+        # The worker reads the receipt once and requires the digest its admitted job identity bound.
+        source2, anchor2, policy2 = subject._inputs(revised, "zh-Hans", subject.snapshot(revised))
+        with self.assertRaisesRegex(ValueError, "back_translation_qc_changed_after_admission"):
+            subject._run_auto_repair(revised, revised.lanes["zh-Hans"], source2, anchor2, policy2, "fixture-key",
+                                     api, lambda *_: None, None, [], qc_digest="0" * 64)
+        self.assertEqual(len(self.calls), 4)
+        view = subject.package_view(revised)
+        self.assertEqual(view["packageIdentities"]["backTranslationQc.zh-Hans"], jobs._digest(receipt))
+        self.assertNotEqual(subject.durable.identity(view, revised.run_id, "text.zh-Hans"), old_identity)
+        second, _ = self.run_worker(api)
+        self.assertEqual(second["status"], "machine_review_pass_human_review_pending")
+        repaired = [json.loads(p["messages"][1]["content"]) for p in self.calls[4:]]
+        self.assertEqual([row["translationGroupId"] for row in repaired], [failed, failed])
+        self.assertIn("Back-translation QC finding", repaired[0]["partialRepair"]["instruction"])
+        self.assertEqual(self.base.output.joinpath("candidate.json").read_bytes(), old_candidate)
+        self.assertTrue((self.base.root / "outputs-r2" / "zh-Hans" / "candidate.json").is_file())
+        entries = auto_repair.load_ledger(subject.repair_ledger_root(revised), lineage)
+        self.assertEqual([entry["outcome"] for entry in entries], ["passed", "repairing", "passed"])
+        self.assertEqual(entries[1]["reopenedBy"]["qcReceiptSha256"], auto_repair.json_sha256(receipt))
+        # A receipt for a lane not in this configuration is refused.
+        self.base.config_data["layer2AutoRepair"] = {**BINDING, "backTranslationQc": {"ko": "qc/text-qc-receipt.json"}}
+        self.base.save_config()
+        with self.assertRaisesRegex(ValueError, "invalid_execution_configuration"):
+            subject.load_configuration(self.base.path)
 
     def test_stopped_loop_fails_the_job_and_writes_no_candidate(self):
         self.fail_first_review = set(self.group_ids())
@@ -278,6 +351,38 @@ class ControllerAutoRepairTests(unittest.TestCase):
             receipt_path.write_text(json.dumps(dict(receipt, reopenedGroups=[other])))
             view = subject.snapshot(config)
         self.assertEqual(view["durableJobInspection"]["diagnostics"], ["unverified_reopen_receipt"])
+        # Metadata outside the normalized note rows is still part of the Layer 1 artifact identity.
+        # A forged receipt for changed bytes must not reuse the completed repair chain.
+        self.assertEqual(ledger[2]["reopenedBy"]["meaningNotesSha256"],
+                         subject.package_view(config)["packageIdentities"]["sourceMeaningNotes"])
+        original_notes_bytes = notes_path.read_bytes()
+        notes_path.write_text(json.dumps({"units": sorted(notes), "notice": "new metadata"}), encoding="utf-8")
+        with patch.object(subject.source_meaning, "load_meaning_notes", return_value=notes):
+            current = subject.package_view(config)
+            metadata_identity = subject.durable.identity(current, config.run_id, "text.zh-Hans")
+            self.assertNotEqual(metadata_identity, following)
+            forged_path = folder / subject.durable.reopen_file(metadata_identity)
+            jobs._persist(forged_path, dict(receipt, nextIdentity=metadata_identity,
+                          meaningNotesSha256=current["packageIdentities"]["sourceMeaningNotes"]))
+            self.assertEqual(subject.snapshot(config)["durableJobInspection"]["diagnostics"],
+                             ["unverified_reopen_receipt"])
+        forged_path.unlink()
+        notes_path.write_bytes(original_notes_bytes)
+        # Notes changed after the chain passed cannot borrow the reopen entry written under the earlier
+        # notes: a receipt toward the new identity with the same groups is refused.
+        receipt_path.write_bytes(written)
+        revised = {units[0]: dict(notes[units[0]], meaningNote=marker + " (revised)")}
+        notes_path.write_text(json.dumps({"units": sorted(revised), "revision": 2}), encoding="utf-8")
+        with patch.object(subject.source_meaning, "load_meaning_notes", return_value=revised):
+            config = subject.load_configuration(self.base.path)
+            current = subject.package_view(config)
+            newer = subject.durable.identity(current, config.run_id, "text.zh-Hans")
+            self.assertNotEqual(newer, following)
+            jobs._persist(folder / subject.durable.reopen_file(newer), dict(
+                receipt, nextIdentity=newer, meaningNotesSha256=current["packageIdentities"]["sourceMeaningNotes"]))
+            view = subject.snapshot(config)
+        self.assertEqual(view["durableJobInspection"]["diagnostics"], ["unverified_reopen_receipt"])
+        (folder / subject.durable.reopen_file(newer)).unlink()
         # A receipt edited after the fact no longer binds the failed job: the run needs inspection.
         receipt["reopenedGroups"] = []
         receipt_path.write_text(json.dumps(receipt))
