@@ -59,15 +59,15 @@ test('diagnostic timing on failed attempts does not change retry and cancellatio
 
 test('microphone budget: the deadline begins at permission grant and stops retained input',async()=>{
  let clock=0;const timing=[];const h=make({clock:()=>clock,onTiming:v=>timing.push(v)});
- try {await flush();const timer=h.jobs.find(j=>j.ms===15000);assert.ok(timer);h.started();clock=15000;timer.fn();await assert.rejects(h.p,/capture_budget_exhausted/);assert.equal(h.stats.stops,1);assert.equal(h.stats.closes,1);assert.equal(h.node.port.onmessage,null);assert.equal(timing[0].microphoneObservedMs,15000);assert.ok(timer.cancelled);}finally{h.abort.abort();}
+ try {await flush();const timer=h.jobs.find(j=>j.ms===21000);assert.ok(timer);h.started();clock=21000;timer.fn();await assert.rejects(h.p,/capture_budget_exhausted/);assert.equal(h.stats.stops,1);assert.equal(h.stats.closes,1);assert.equal(h.node.port.onmessage,null);assert.equal(timing[0].microphoneObservedMs,21000);assert.ok(timer.cancelled);}finally{h.abort.abort();}
 });
-test('microphone budget: six spent seconds cannot reopen for another full ten-second capture',async()=>{
+test('microphone budget: eleven spent seconds cannot reopen for another full ten-second capture',async()=>{
  let clock=0;const h=make({recovery:true,clock:()=>clock});
- try {await flush();h.started();clock=6000;h.node.port.onmessage({data:{error:'capture_interrupted',captureDetail:'frame_gap'}});await flush();assert.equal(h.jobs.filter(j=>j.ms===600&&!j.cancelled).length,0);await assert.rejects(h.p,/capture_budget_exhausted/);assert.equal(h.stats.requests,1);assert.equal(h.stats.stops,1);}finally{h.abort.abort();}
+ try {await flush();h.started();clock=11000;h.node.port.onmessage({data:{error:'capture_interrupted',captureDetail:'frame_gap'}});await flush();assert.equal(h.jobs.filter(j=>j.ms===600&&!j.cancelled).length,0);await assert.rejects(h.p,/capture_budget_exhausted/);assert.equal(h.stats.requests,1);assert.equal(h.stats.stops,1);}finally{h.abort.abort();}
 });
 test('microphone budget: a retry inherits remaining time and returns only its continuous PCM',async()=>{
  let clock=0;const timing=[];const h=make({recovery:true,clock:()=>clock,onTiming:v=>timing.push(v)});
- try {await flush();h.started();clock=3000;const old=h.node;old.port.onmessage({data:{error:'capture_interrupted',captureDetail:'frame_gap'}});await flush();assert.equal(h.stats.stops,1);h.track.readyState='live';h.jobs.find(j=>j.ms===600&&!j.cancelled).fn();await flush();assert.ok(h.jobs.some(j=>j.ms===12000&&!j.cancelled));assert.notEqual(h.node,old);h.started();clock=13000;h.complete();const value=await h.p;assert.equal(value.durationSeconds,10);assert.equal(value.samples.length,480000);assert.deepEqual(timing.map(v=>v.microphoneObservedMs),[3000,10000]);assert.equal(h.stats.requests,2);assert.equal(h.stats.stops,2);}finally{h.abort.abort();}
+ try {await flush();h.started();clock=3000;const old=h.node;old.port.onmessage({data:{error:'capture_interrupted',captureDetail:'frame_gap'}});await flush();assert.equal(h.stats.stops,1);h.track.readyState='live';h.jobs.find(j=>j.ms===600&&!j.cancelled).fn();await flush();assert.ok(h.jobs.some(j=>j.ms===18000&&!j.cancelled));assert.notEqual(h.node,old);h.started();clock=13000;h.complete();const value=await h.p;assert.equal(value.durationSeconds,10);assert.equal(value.samples.length,480000);assert.deepEqual(timing.map(v=>v.microphoneObservedMs),[3000,10000]);assert.equal(h.stats.requests,2);assert.equal(h.stats.stops,2);}finally{h.abort.abort();}
 });
 test('microphone budget: startup and late interruption spend the same allowance',async()=>{
  let clock=0;const h=make({recovery:true,clock:()=>clock});
@@ -75,19 +75,19 @@ test('microphone budget: startup and late interruption spend the same allowance'
 });
 test('microphone budget: a delayed completed buffer cannot beat an overdue main-thread timer',async()=>{
  let clock=0;const h=make({clock:()=>clock});
- try {await flush();h.started();clock=16000;h.complete();await assert.rejects(h.p,/capture_budget_exhausted/);assert.equal(h.stats.stops,1);assert.equal(h.stats.closes,1);}finally{h.abort.abort();}
+ try {await flush();h.started();clock=22000;h.complete();await assert.rejects(h.p,/capture_budget_exhausted/);assert.equal(h.stats.stops,1);assert.equal(h.stats.closes,1);}finally{h.abort.abort();}
 });
 test('microphone budget: diagnostic mutation or failure cannot replenish spent time',async()=>{
  let clock=0;const h=make({recovery:true,clock:()=>clock,onTiming:v=>{v.microphoneObservedMs=0;throw Error('broken consumer');}});
- try {await flush();h.started();clock=6000;h.node.port.onmessage({data:{error:'capture_interrupted',captureDetail:'frame_gap'}});await flush();assert.equal(h.jobs.filter(j=>j.ms===600&&!j.cancelled).length,0);await assert.rejects(h.p,/capture_budget_exhausted/);assert.equal(h.stats.requests,1);}finally{h.abort.abort();}
+ try {await flush();h.started();clock=11000;h.node.port.onmessage({data:{error:'capture_interrupted',captureDetail:'frame_gap'}});await flush();assert.equal(h.jobs.filter(j=>j.ms===600&&!j.cancelled).length,0);await assert.rejects(h.p,/capture_budget_exhausted/);assert.equal(h.stats.requests,1);}finally{h.abort.abort();}
 });
 test('microphone budget: permission wait is separate and does not invent occupied input time',async()=>{
  let clock=0;const timing=[];const h=make({latePermission:true,clock:()=>clock,onTiming:v=>timing.push(v)});
- try {await flush();assert.equal(h.jobs.some(j=>j.ms===15000),false);clock=70000;h.grant();await flush();assert.ok(h.jobs.some(j=>j.ms===15000&&!j.cancelled));h.started();clock=80000;h.complete();await h.p;assert.equal(timing[0].permissionMs,70000);assert.equal(timing[0].microphoneObservedMs,10000);}finally{h.abort.abort();}
+ try {await flush();assert.equal(h.jobs.some(j=>j.ms===21000),false);clock=70000;h.grant();await flush();assert.ok(h.jobs.some(j=>j.ms===21000&&!j.cancelled));h.started();clock=80000;h.complete();await h.p;assert.equal(timing[0].permissionMs,70000);assert.equal(timing[0].microphoneObservedMs,10000);}finally{h.abort.abort();}
 });
 test('microphone budget: cancellation clears the active deadline and all input',async()=>{
- const h=make();try {await flush();const timer=h.jobs.find(j=>j.ms===15000);assert.ok(timer);h.started();h.abort.abort();await assert.rejects(h.p,{name:'AbortError'});assert.ok(timer.cancelled);assert.equal(h.stats.stops,1);assert.equal(h.node.port.onmessage,null);}finally{h.abort.abort();}
+ const h=make();try {await flush();const timer=h.jobs.find(j=>j.ms===21000);assert.ok(timer);h.started();h.abort.abort();await assert.rejects(h.p,{name:'AbortError'});assert.ok(timer.cancelled);assert.equal(h.stats.stops,1);assert.equal(h.node.port.onmessage,null);}finally{h.abort.abort();}
 });
 test('microphone budget: invalid or enlarged allowance cannot request the microphone',async()=>{
- for(const budget of [20000,Infinity,NaN,-1,9000]){const h=make({microphoneBudgetMs:budget});try {await flush();assert.equal(h.stats.requests,0);await assert.rejects(h.p,/capture_budget_exhausted/);}finally{h.abort.abort();}}
+ for(const budget of [21001,Infinity,NaN,-1,9000]){const h=make({microphoneBudgetMs:budget});try {await flush();assert.equal(h.stats.requests,0);await assert.rejects(h.p,/capture_budget_exhausted/);}finally{h.abort.abort();}}
 });
