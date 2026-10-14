@@ -71,6 +71,32 @@ def revision_boundary_instruction(target_locale: str, *, revising: bool) -> str:
             "Korean unit may state that reason as its own sentence. Do not force a "
             "trailing comma merely to mirror the English clause boundary. ")
 PARTIAL_REPAIR_SCHEMA = "sermon-target-language-partial-repair-brief-v1"
+# v2 adds gate 4: a row may carry the back-translation QC finding that rejected the reviewer's
+# text (layer2_auto_repair). Sol passed that text, so its cache is not failure evidence by itself;
+# the row binds the QC receipt and the exact rejected text, which is checked against the cache.
+PARTIAL_REPAIR_SCHEMA_V2 = "sermon-target-language-partial-repair-brief-v2"
+PARTIAL_REPAIR_ROW_KEYS = frozenset({"translationGroupId", "sourceUnitIds", "failedRole",
+                                     "failedCacheSha256", "failureReason", "instruction"})
+BACK_TRANSLATION_QC_KEYS = frozenset({"receiptSha256", "targetTextSha256", "failureCodes"})
+
+
+def _repair_row_keys_valid(row: Any, *, allow_qc: bool) -> bool:
+    if not isinstance(row, dict):
+        return False
+    keys = set(row)
+    if keys == PARTIAL_REPAIR_ROW_KEYS:
+        return True
+    return allow_qc and keys == PARTIAL_REPAIR_ROW_KEYS | {"backTranslationQc"} and _qc_evidence_valid(row)
+
+
+def _qc_evidence_valid(row: dict[str, Any]) -> bool:
+    qc = row["backTranslationQc"]
+    return (isinstance(qc, dict) and set(qc) == BACK_TRANSLATION_QC_KEYS
+            and all(isinstance(qc[key], str) and re.fullmatch(r"[a-f0-9]{64}", qc[key]) is not None
+                    for key in ("receiptSha256", "targetTextSha256"))
+            and isinstance(qc["failureCodes"], list) and bool(qc["failureCodes"])
+            and all(isinstance(code, str) and code for code in qc["failureCodes"])
+            and row["failedRole"] == "reviewer")
 
 
 def scripture_prompt_instruction(policy: dict[str, Any], *, frozen_rules=False) -> str:
@@ -473,8 +499,9 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
             and set(brief) == {"schemaVersion", "targetLocale",
                                "englishSourcePackageJsonSha256", "anchorManifestSha256",
                                "translationPolicySha256", "groups"}
-            and brief["schemaVersion"] == PARTIAL_REPAIR_SCHEMA,
+            and brief["schemaVersion"] in (PARTIAL_REPAIR_SCHEMA, PARTIAL_REPAIR_SCHEMA_V2),
             "Invalid partial repair brief")
+    allow_qc = brief["schemaVersion"] == PARTIAL_REPAIR_SCHEMA_V2
     for key in ("targetLocale", "englishSourcePackageJsonSha256",
                 "anchorManifestSha256", "translationPolicySha256"):
         require(brief[key] == request[key], f"Partial repair source or policy changed: {key}")
@@ -485,10 +512,7 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
     model_roles = expected_models or MODEL_ROLES
     result: dict[str, dict[str, Any]] = {}
     for row in entries:
-        require(isinstance(row, dict) and set(row) == {
-            "translationGroupId", "sourceUnitIds", "failedRole",
-            "failedCacheSha256", "failureReason", "instruction"},
-            "Invalid partial repair row")
+        require(_repair_row_keys_valid(row, allow_qc=allow_qc), "Invalid partial repair row")
         group_id = row["translationGroupId"]
         require(group_id in plan_by_id and group_id not in result,
                 f"Unknown or duplicate partial repair group: {group_id}")
@@ -512,6 +536,11 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
                 and prior_result.get("translationGroupId") == group_id
                 and prior_result.get("sourceUnitIds") == group["sourceUnitIds"],
                 f"Partial repair failed cache has different group identity: {group_id}")
+        if "backTranslationQc" in row:
+            # The QC rejected exactly the text this reviewer cache holds, not some other revision.
+            _require_rejected_reviewer_text(failed_cache, row["backTranslationQc"]["targetTextSha256"],
+                                            group["sourceUnitIds"],
+                                            "back-translation QC finding does not match the reviewer text")
         result[group_id] = row
     return result
 
@@ -569,13 +598,14 @@ def partial_repair_brief_for_plugin_stop(reuse_from: Path, request: dict[str, An
 
 
 def _require_rejected_reviewer_text(cache: Path, expected_sha256: str,
-                                    source_unit_ids: list[str]) -> None:
+                                    source_unit_ids: list[str],
+                                    message: str = "plugin group stop does not match the rejected reviewer text") -> None:
     saved = producer._load(cache)
     result = saved.get("result") if isinstance(saved, dict) else None
     utterances = result.get("targetUtterances") if isinstance(result, dict) else None
     utterances = _utterances(utterances, source_unit_ids)
     actual = hashlib.sha256("".join(utterances).encode("utf-8")).hexdigest()
-    require(actual == expected_sha256, "plugin group stop does not match the rejected reviewer text")
+    require(actual == expected_sha256, message)
 
 
 def carried_repairs(reuse_from: Path | None, request: dict[str, Any], plan: list[dict[str, Any]],
@@ -591,8 +621,7 @@ def carried_repairs(reuse_from: Path | None, request: dict[str, Any], plan: list
     prior = producer._load(reuse_from / "effective-repairs.json")
     plan_by_id = {row["translationGroupId"]: row for row in plan}
     require(isinstance(prior, dict) and all(
-        isinstance(row, dict) and set(row) == {"translationGroupId", "sourceUnitIds", "failedRole",
-                                              "failedCacheSha256", "failureReason", "instruction"}
+        _repair_row_keys_valid(row, allow_qc=True)
         and row["translationGroupId"] == group_id and group_id in plan_by_id
         and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
         for group_id, row in prior.items()), "Prior effective repairs do not match this group plan")
