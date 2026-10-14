@@ -50,6 +50,7 @@
 - **续跑：** 同一条命令。已完成的阶段跳过；运行目录绑定首次使用的规格，改过的规格会被拒绝。
 - **只跑到某一步：** 加 `--through layer2`，或 `qc.ko`、`audio.es` 等。
 - **发布到 Dev：** 加 `--publish`。
+- **修复音频质检失败：** 当 `audio.<语言>` 的 `nextActions` 全部为 `resynthesize_new_seed` 时，运行 `repair-audio --spec artifacts/<run>/run-spec.json --run-dir artifacts/<run> --locale ko --seed 43`。它在独立渲染根保留旧失败与账本，对新音频重新压缩、筛查、打包和质检。通过后再用原 `run --publish` 续跑 Layer 4；结果未知先对账，不换种子盲试。
 - **查看状态：** `run_clip_real_e2e.py status --spec … --run-dir …`，显示各阶段状态、已结算花费和仍未结束的质检上限。
 
 运行目录必须在 `artifacts/` 下，因为音频质检会把它镜像到 Spark，并挂载在同一个绝对路径。每一步的输出在 `logs/<步骤>.log`，耗时记在 `timings.tsv`，结束时写 `summary.json`。
@@ -85,7 +86,7 @@
 - **结果未知时先对账。** 每个 Spark 阶段派发前会写 `*.started.json`，有标记但没有结果文件，说明结果未知，同一阶段会拒绝再跑。Layer 2 的未知结果由 controller 的持久 job 处理。
 - **Spark 会话开不起来。** `begin` 最多尝试 3 次，每次的输出都保留在 `logs/spark-begin-<n>.log`。编排器退出前一定会 `finish` 会话。
 - **渲染退出码为 1。** 渲染器自身的初筛标出了句子，后续的压缩和正式 ASR 筛查照常进行；只有退出码不在 0–2 才算未知。
-- **音频质检失败。** 该语言记为 `failed`，并记录 `nextActions`，例如 `resynthesize_new_seed`。修复阶梯目前不自动执行。
+- **音频质检失败。** 该语言记为 `failed`，并记录 `nextActions`，例如 `resynthesize_new_seed`。修复不会自动执行；按上面的显式命令使用新的种子和独立根。修复沿原语言的音频修复账本计数，只有新音频通过质检才把该语言改为 `done`。
 - **部署结果未知。** 按 [Layer 4 公开交付](layer4-four-product-public-delivery.zh.md)的规则，用 `guarded_hosting_publish.reconcile()` 对账，不要重新部署。
 
 ## 已知限制

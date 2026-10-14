@@ -171,6 +171,61 @@ class RunTests(unittest.TestCase):
         self.assertEqual(checks, [(str(self.run_dir / "l2-ko-r1/candidate.json"), "out-r1")])
         self.assertEqual(self.run.stages["qc.ko"]["status"], "done")
 
+    def test_audio_repair_keeps_the_failed_render_and_checks_a_fresh_seed(self):
+        locale, seed = "ko", 43
+        source = self.run_dir / "l2/src"
+        policy = self.run_dir / "l2/policy"
+        waiver_dir = self.run_dir / "textqc-ko/out/ko"
+        original = self.run_dir / "l3/ko"
+        for folder in (source, policy, waiver_dir, original / "speech-job"):
+            folder.mkdir(parents=True, exist_ok=True)
+        candidate = self.run_dir / "l2/text/ko/candidate.json"
+        files = [source / "source.json", source / "anchor.json", policy / "ko-policy-clip.json",
+                 waiver_dir / "text-waiver-test.json", candidate,
+                 self.run_dir / "l3/clip-timeline-map.json", original / "clip-voice-authorization.json",
+                 original / "speech-job/job.json"]
+        for path in files:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("{}")
+        self.run.mark("qc.ko", "done", candidate=str(candidate), waiverDir=str(waiver_dir))
+        self.run.mark("audio.ko", "failed", qcStatus="requires_repair",
+                      failedGroups=["g7"], nextActions={"g7": "resynthesize_new_seed"})
+        original_state = dict(self.run.stages["audio.ko"])
+        repair = self.run_dir / f"l3/ko-repair-seed-{seed}"
+        rendered = repair / f"spark-ko-seed-{seed}-c/spark-output/speech-job"
+        qc_out = self.run_dir / f"aqc/ko-seed-{seed}"
+        calls = []
+
+        def fake_sh(label, argv, **kwargs):
+            calls.append((label, [str(arg) for arg in argv]))
+            if label.startswith("render."):
+                subject.write(repair / "dispatch.result.json", {"outcome": "known_terminal"})
+            elif label.startswith("compact."):
+                subject.write(repair / f"compact-ko-seed-{seed}-c.result.json", {"outcome": "known_terminal"})
+            elif label.startswith("screen."):
+                subject.write(repair / f"spark-ko-seed-{seed}-c/screen-v1.result.json", {"outcome": "known_terminal"})
+                for name in ("job.json", "asr-screening-receipt-v1.json", "render-manifest-screened-v1.json"):
+                    (rendered / name).parent.mkdir(parents=True, exist_ok=True)
+                    (rendered / name).write_text("{}")
+            elif label.startswith("package."):
+                subject.write(repair / "audio-package.json", {})
+            elif label.startswith("audio-qc."):
+                subject.write(qc_out / "summary.json", {"locales": {locale: {"status": "audio_waiver_issued"}}})
+            return mock.Mock(returncode=0)
+
+        with mock.patch.object(self.run, "check"), mock.patch.object(self.run, "sh", side_effect=fake_sh), \
+                mock.patch.object(subject, "mirror_run_to_spark"):
+            subject.repair_audio(self.run, locale, seed, "repo-test")
+        self.assertEqual(self.run.stages["audio.ko"]["status"], "done")
+        self.assertEqual(self.run.stages["audio.ko"]["repairedFrom"], ["g7"])
+        self.assertEqual(self.run.stages["audio.ko"]["repairAttempts"][0]["status"], "done")
+        self.assertEqual(original_state["status"], "failed")
+        self.assertFalse((original / "audio-package.json").exists())
+        self.assertIn("--seed", calls[0][1])
+        self.assertEqual(calls[0][1][calls[0][1].index("--seed") + 1], str(seed))
+        self.assertEqual([label.split(".")[0] for label, _ in calls],
+                         ["render", "compact", "screen", "package", "audio-qc"])
+
 
 class SparkTests(unittest.TestCase):
     def test_tracked_runtime_is_valid_and_a_stage_must_sit_under_its_root(self):
@@ -191,6 +246,7 @@ class SparkTests(unittest.TestCase):
         self.assertEqual(tail[0], "--tmpfs")
         self.assertIn(runtime["images"]["tts"], command)
         self.assertEqual(command[command.index("--max-end-lag-seconds") + 1], "120.0")
+        self.assertEqual(command[command.index("--seed") + 1], "42")
         self.assertNotIn("--unit-instructions", command)
 
     def test_mirrored_paths_must_be_under_the_mirror_root(self):

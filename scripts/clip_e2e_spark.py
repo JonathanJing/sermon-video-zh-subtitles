@@ -182,7 +182,7 @@ RENDER_PREFIX = ["docker", "run", "--rm", "--gpus", "all", "--ipc", "host", "--n
 
 
 def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, max_end_lag: float,
-                   unit_instructions: str | None) -> list[str]:
+                   unit_instructions: str | None, seed: int = 42) -> list[str]:
     """The render container arguments after the docker prefix and the session labels."""
     command = ["--tmpfs", "/tmp:rw,exec,nosuid,size=2g,mode=1777", "--tmpfs", "/Users:rw,nosuid,size=64m,mode=1777",
                "--tmpfs", "/private:rw,nosuid,size=64m,mode=1777", "--tmpfs", "/home:rw,nosuid,size=64m,mode=1777",
@@ -201,7 +201,7 @@ def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, 
                "--job", job_dir + "/job.json", "--checkpoint-map", blob("checkpoint-map"),
                "--audio-operation-policies", blob("audio-operation-policies"),
                "--path-map", blob("path-map"), "--spark-production",
-               "--track-format", "mp3", "--max-end-lag-seconds", str(max_end_lag)]
+               "--track-format", "mp3", "--max-end-lag-seconds", str(max_end_lag), "--seed", str(seed)]
     if unit_instructions:
         command += ["--unit-instructions", unit_instructions]
     return command
@@ -209,6 +209,7 @@ def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, 
 
 def render(args, runtime, spark, session) -> int:
     loc, stage = args.locale, args.stage
+    require(args.seed >= 0, "render_seed_must_be_nonnegative")
     remote_name = args.remote_name or loc
     local_out = args.job.parent.parent
     require(not (local_out / "dispatch.started.json").exists(), "unknown_spark_dispatch_requires_reconciliation")
@@ -249,7 +250,8 @@ def render(args, runtime, spark, session) -> int:
              "checkpoint-map": f"/work/blobs/{sha(cmap)}", "path-map": f"/work/blobs/{sha(pmap)}"}
     tail = render_command(runtime, stage, args.code, blobs.__getitem__, f"/work/output/{remote_name}/speech-job",
                           max_end_lag=args.max_end_lag_seconds,
-                          unit_instructions=f"/work/blobs/{sha(extra[0])}" if extra else None)
+                          unit_instructions=f"/work/blobs/{sha(extra[0])}" if extra else None,
+                          seed=args.seed)
     command_for = lambda hold: [*RENDER_PREFIX, *session_labels(session, hold), *tail]
     returncode, outcome, hold = dispatch(spark, session, "render", loc, stage=stage, code=args.code, command_for=command_for,
                                          log=f"{remote_out}/render.log", marker=local_out / "dispatch.started.json",
@@ -482,6 +484,7 @@ def parser() -> argparse.ArgumentParser:
     for name in CLI_INPUTS:
         sub.add_argument("--" + name, type=Path, required=True)
     sub.add_argument("--max-end-lag-seconds", type=float, default=8.0)
+    sub.add_argument("--seed", type=int, default=42, help="Frozen TTS seed; a repair needs a fresh render root")
     sub.add_argument("--unit-instructions", type=Path, default=None)
     sub.add_argument("--remote-name", default=None, help="Spark output directory under output/ (a rebuilt job needs its own)")
     sub = common("compact", "edge-silence compaction and track assembly (CPU)")
