@@ -120,3 +120,29 @@ test('real backend stores appended attempts, rolls to a new credential after 40 
   await stats.retract();
   assert.equal(rows().length, 0);
 });
+
+test('a permanently rejected alignment credential is closed instead of resent on every flush', async () => {
+  let now = Date.parse('2026-10-11T17:40:00Z'); const ticks = [], errors = [], posts = [];
+  const source = { week: '2026-10-11', trackId: 'legacy', audioSha256: sha, appVersion: 'test' };
+  // A legacy catalog source has no pageId/audioLocale, so the API rejects every alignment upload.
+  const service = createService({ store: { transaction: async action => action({ get: async () => null, set() {}, delete() {} }) },
+    catalog: { schemaVersion: 1, sources: [{ ...source, durationSeconds: 2131, cueIds: [], blockIds: [], cues: [] }] },
+    origins: ['https://example.test'], now: () => now, ipLimiter: () => {} });
+  const makeSession = (selected, options) => new LanguageListeningSession(selected, { ...options, client: new FeedbackClient(selected, { now: () => now, fetchImpl: async (path, request) => {
+    if (path === '/api/alignment-usage') posts.push(JSON.parse(request.body).seq);
+    try { const result = await service({ method: 'POST', path, origin: 'https://example.test', contentType: 'application/json', body: JSON.parse(request.body), rawBytes: request.body.length, authorization: request.headers.Authorization });
+      return { ok: true, json: async () => result }; }
+    catch (error) { return { ok: false, status: error.status, json: async () => ({}) }; }
+  } }) });
+  const stats = createLanguageListening({ audio: Object.assign(new Surface(), { paused: true }), config: { appVersion: 'test' }, document: Object.assign(new Surface(), { visibilityState: 'hidden' }), window: new Surface(),
+    now: () => now, makeSession, identity: async () => '11111111-1111-4111-8111-111111111111', schedule: fn => ticks.push(fn), onError: error => errors.push(error), storage: null, getInterfaceLocale: () => 'zh' });
+  stats.select({ id: source.week, targetLocale: 'zh-Hans' }, { id: source.trackId, sha256: sha, durationSeconds: 2131 });
+  stats.setEnabled(true);
+  const press = () => stats.recordAlignment(alignmentAttempt({ stage: 'index_ready', timings: { totalMs: 2000 } }, 'cancelled', now));
+  press(); await new Promise(resolve => setTimeout(resolve, 10)); await settle();
+  for (let n = 0; n < 3; n++) { ticks.forEach(fn => fn()); await new Promise(resolve => setTimeout(resolve, 5)); await settle(); }
+  assert.deepEqual(posts, [1], 'the rejected body is not resent by scheduled flushes');
+  now += 30000; press(); await new Promise(resolve => setTimeout(resolve, 10)); await settle();
+  assert.deepEqual(posts, [1, 1], 'the next press starts a new credential');
+  assert.equal(errors.length, 0, 'a permanent rejection is not shown as a delayed upload');
+});

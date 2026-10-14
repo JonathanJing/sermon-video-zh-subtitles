@@ -108,18 +108,29 @@ export function createLanguageListening({ audio, config, onError = () => {},
     const day = usageDay(now()), { week, track } = selected;
     const base = `${day}:${week.id}:${track.id}:${track.sha256}:${interfaceLocale()}:${interfaceEpoch}`;
     let chunk = 0;
-    while (alignments.get(`${base}:${chunk}`)?.session.stopped || alignments.get(`${base}:${chunk}`)?.attempts.length >= ALIGNMENT_ATTEMPTS_PER_SESSION) chunk++;
+    const closed = target => target && (target.session.stopped || target.rejected || target.attempts.length >= ALIGNMENT_ATTEMPTS_PER_SESSION);
+    while (closed(alignments.get(`${base}:${chunk}`))) chunk++;
     const key = `${base}:${chunk}`;
     if (!alignments.has(key)) alignments.set(key, { attempts: [], session: makeSession({ week: week.id, trackId: track.id, audioSha256: track.sha256, appVersion: config.appVersion },
       { day, clientId: identity(storage, day, () => enabled), endpoint: '/api/alignment-usage', interfaceLocale: interfaceLocale(), contentLocale: week.targetLocale || track.targetLocale || 'zh-Hans' }) });
     const target = alignments.get(key);
     target.attempts.push(structuredClone(attempt));
-    target.session.flush({ attempts: target.attempts.slice() }).catch(onError);
+    flushAlignment(target, { attempts: target.attempts.slice() });
+  }
+  // A permanent rejection (4xx other than rate limiting) would resend the same
+  // body forever; close that credential so later presses use a new one.
+  function flushAlignment(target, snapshot) {
+    if (target.rejected) return;
+    target.session.flush(snapshot).catch(error => {
+      const status = error?.status;
+      if (Number.isInteger(status) && status >= 400 && status < 500 && status !== 429) target.rejected = true;
+      else onError(error);
+    });
   }
   function flushAll() {
     if (!enabled) return;
     for (const target of sessions.values()) flush(target);
-    for (const target of alignments.values()) target.session.flush().catch(onError);
+    for (const target of alignments.values()) flushAlignment(target);
     for (const session of visits.values()) session.flush({}).catch(onError);
   }
   onInterfaceLocaleChange(() => { interfaceEpoch += 1; clearSample(); rotate(); visit(); });
