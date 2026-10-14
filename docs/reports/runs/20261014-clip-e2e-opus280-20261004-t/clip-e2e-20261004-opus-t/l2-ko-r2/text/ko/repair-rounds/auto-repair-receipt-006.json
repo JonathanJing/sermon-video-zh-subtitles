@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "sermon-layer2-auto-repair-receipt-v1",
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "lineage": {
+    "targetLocale": "ko",
+    "englishSourcePackageJsonSha256": "95f3f48f6a2ce27aba563e7e7d9777764c1dc446a4cac23bb5c4ac696f55ae41",
+    "anchorManifestSha256": "ad3a80ae16c4fac27648d79645301f9b4029b6a87a7b01b89218db63343fda22",
+    "translationPolicySha256": "1afffd33d85b20f6e774d697e68fd2c1416adcbe0614cf274f800f519c9df437"
+  },
+  "status": "repair_stopped",
+  "rounds": 6,
+  "finalRunDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l2-ko-r2/text/ko/repair-rounds/round-006",
+  "evidenceSha256": "ca96bcc5f8b2294bbe6654201a3cc01875081aaf3e2c6b1cac58899a0c64bb76",
+  "initialSpend": {
+    "calls": 100,
+    "callsWithoutUsage": 0,
+    "tokens": 615614
+  },
+  "repairSpend": {
+    "calls": 14,
+    "tokens": 102336
+  },
+  "repairSpendFraction": 0.3,
+  "stoppedGroups": [
+    {
+      "translationGroupId": "translation-0-u285",
+      "sourceUnitIds": [
+        "0-u285"
+      ],
+      "failureCodes": [
+        "negation_number_name_error"
+      ],
+      "reasonCode": "repeated_failure_without_progress",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l2-ko-r1/text/ko/repair-rounds/round-004"
+    }
+  ],
+  "gatesPassed": [],
+  "releaseAuthority": "none",
+  "ledgerRoot": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l2/.layer2-jobs.layer2-repair",
+  "ledgerHeadSha256": "29f7bdd4272bf411d4bb1830afe37b86cef2fc6130bbc5f1d3b56f7e1648ae75",
+  "humanApproval": false,
+  "reviewKind": "machine_review"
+}
