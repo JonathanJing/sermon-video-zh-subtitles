@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-clip-e2e-dev216-d-seed44",
+  "runs": [
+    {
+      "label": "ko-seed-44",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/aqc/ko-seed-44",
+      "skipped": {
+        ".lock": 1,
+        ".json": 9
+      }
+    },
+    {
+      "label": "ko-repair-seed-44",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-dev216-20261014-d/l3/ko-repair-seed-44",
+      "skipped": {
+        ".json": 311,
+        ".sha256": 40,
+        ".wav": 65,
+        ".mp3": 2,
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "ko-seed-44",
+      "path": "ko/preflight.json",
+      "kind": "whole",
+      "bytes": 2313,
+      "truncated": false,
+      "sha256": "e2ef702fdcb3cb3f5ebfd8e450432d6ac2cc7f82fbaf5097c4d921b53afd75af",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "ko-seed-44",
+      "path": "spark-driver.log",
+      "kind": "log",
+      "bytes": 2545,
+      "truncated": false,
+      "sha256": "4e43e5adbc52e1cfe96d3a6e98376bfbcf976cee9529ca5fc4273b0493f18340",
+      "redactions": {}
+    },
+    {
+      "run": "ko-seed-44",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 4509,
+      "truncated": false,
+      "sha256": "328ade24655c71ecf6ad41360001d8bc308cf9e627b9a6b3c0df85698c094b45",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "ko-seed-44",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "95687e60b2d28731549e879c9e291e117bd331275099388f29bdf94b1a575d53",
+      "redactions": {}
+    },
+    {
+      "run": "ko-repair-seed-44",
+      "path": "spark-ko-seed-44-c/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "b4e80ff06da55a62ed61fa1e9862aea0f1f001cbc7baccad32138eefb0f24c98",
+      "redactions": {}
+    },
+    {
+      "run": "ko-repair-seed-44",
+      "path": "spark-ko-seed-44-c/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "b4e80ff06da55a62ed61fa1e9862aea0f1f001cbc7baccad32138eefb0f24c98",
+      "redactions": {}
+    },
+    {
+      "run": "ko-repair-seed-44",
+      "path": "spark-ko-seed-44-c/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 1975,
+      "truncated": false,
+      "sha256": "4aff0a58d6632097af777b6844388e64dd8838d9be1dc0f9cc2ed008e1ee8f89",
+      "redactions": {}
+    },
+    {
+      "run": "ko-repair-seed-44",
+      "path": "spark-ko-seed-44-c/spark-output/speech-job/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 11495,
+      "truncated": false,
+      "sha256": "c4b3c3a1f0f9e59ad44bb8fea01e90ae34c12eb7175099e26c460cc91f10d7d2",
+      "redactions": {}
+    },
+    {
+      "run": "ko-repair-seed-44",
+      "path": "spark-output/render.log",
+      "kind": "log",
+      "bytes": 5939,
+      "truncated": false,
+      "sha256": "9d057438715d6bd12aef9cfb58dd92715fc9735b5dd1176ccdf70514bb563e82",
+      "redactions": {}
+    },
+    {
+      "run": "ko-repair-seed-44",
+      "path": "spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 81300,
+      "truncated": true,
+      "sha256": "93c75e6efec8557133aa131e4358df0b405aa5c7460cb199e39c2f37e9812af1",
+      "redactions": {}
+    },
+    {
+      "run": "ko-repair-seed-44",
+      "path": "spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 207067,
+      "truncated": false,
+      "sha256": "81cb521f6d9b0869196de5b43846401293e68eb92111f3ac2294c8dd6bb2cb3d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
