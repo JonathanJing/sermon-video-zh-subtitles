@@ -81,6 +81,14 @@ class RunTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "another specification"):
             subject.Run(other, self.run_dir, publish=False)
 
+    def test_audio_qc_mirror_creates_remote_parent_before_rsync(self):
+        calls=[]
+        with mock.patch.object(subject.subprocess, "run", side_effect=lambda args, **kwargs: calls.append(args)):
+            subject.mirror_run_to_spark(self.run)
+        self.assertEqual([args[0] for args in calls], ["ssh", "rsync"])
+        self.assertIn("mkdir -p -- ", calls[0][-1])
+        self.assertIn("/mac-artifacts/", calls[1][-1])
+
     def test_settled_spend_counts_layer2_results_priced_qc_and_unpriced_reservations(self):
         subject.write(self.run_dir / "l2/.layer2-jobs.layer2-budget/x/a.result.json",
                       {"result": {"usage": {"costMicrousd": 200_000}}})

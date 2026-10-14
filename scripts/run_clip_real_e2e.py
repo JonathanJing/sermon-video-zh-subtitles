@@ -34,6 +34,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -496,6 +497,15 @@ def attestation(run: Run, locale: str) -> Path:
     return path
 
 
+def mirror_run_to_spark(run: Run):
+    relative = run.dir.relative_to((ROOT / "artifacts").resolve())
+    mirror = f"{run.stage_dir}/mac-artifacts/{relative}"
+    subprocess.run(["ssh", "-o", "BatchMode=yes", run.runtime["host"],
+                    "mkdir -p -- " + shlex.quote(mirror)], check=True)
+    subprocess.run(["rsync", "-a", "-e", "ssh", "--exclude", "logs/", f"{run.dir}/",
+                    f"{run.runtime['host']}:{mirror}/"], check=True)
+
+
 def stage_audio(run: Run, locale: str, code: str):
     l3, q = run.dir / "l3" / locale, run.stages["qc." + locale]
     candidate, waiver_dir = Path(q["candidate"]), Path(q["waiverDir"])
@@ -562,9 +572,7 @@ def stage_audio(run: Run, locale: str, code: str):
                                 (rendered / "render-manifest-screened-v1.json", qc_run / "l3/render-manifest-screened-v1.json"),
                                 (rendered / "job.json", qc_run / "l3/speech-job.json")):
         shutil.copyfile(source_path, target)
-    relative = run.dir.relative_to((ROOT / "artifacts").resolve())
-    subprocess.run(["rsync", "-a", "-e", "ssh", "--exclude", "logs/", f"{run.dir}/",
-                    f"{run.runtime['host']}:{run.stage_dir}/mac-artifacts/{relative}/"], check=True)
+    mirror_run_to_spark(run)
     out = run.dir / "aqc" / locale
     authorization = run.dir / "plans" / f"qc-{locale}" / f"qc-{locale}" / "api-budget-authorization.json"
     run.sh(f"audio-qc.{locale}", [*spark, "audio-qc", *common, "--audio-package", package,
