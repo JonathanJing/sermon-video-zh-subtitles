@@ -2,8 +2,13 @@
 class FingerprintCaptureProcessor extends AudioWorkletProcessor {
   constructor(options) {
     super();
-    this.limit = Math.round(sampleRate * Math.min(12, Math.max(1, options.processorOptions?.seconds || 10)));
+    const seconds = Math.min(15, Math.max(1, options.processorOptions?.seconds || 10));
+    this.limit = Math.round(sampleRate * seconds);
     this.pcm = new Float32Array(this.limit); this.used = 0; this.nextFrame = null;
+    // FIELD-03 early stop: copies of the same continuous PCM prefix at each
+    // checkpoint; capture continues until the caller stops it or the limit.
+    const checkpoints = Array.isArray(options.processorOptions?.checkpoints) ? options.processorOptions.checkpoints : [];
+    this.checkpoints = [...new Set(checkpoints.filter(value => Number.isFinite(value) && value >= 1 && value < seconds))].sort((a, b) => a - b).map(value => Math.round(sampleRate * value));
     // Discard startup audio until 150 ms of input has a stable render clock.
     // Some WebKit versions initialize currentFrame at zero before adopting the
     // running context's clock. Rebase only before retaining any query samples.
@@ -52,6 +57,10 @@ class FingerprintCaptureProcessor extends AudioWorkletProcessor {
       this.pcm[this.used + i] = value / channels.length;
     }
     this.used += count;
+    while (this.checkpoints.length && this.used >= this.checkpoints[0] && this.used < this.limit) {
+      const frames = this.checkpoints.shift();
+      this.port.postMessage({ checkpoint: true, samples: this.pcm.slice(0, frames), sampleRate, endContextTime: (currentFrame + count - (this.used - frames)) / sampleRate });
+    }
     if (this.used === this.limit) {
       // Keep the endpoint of the last retained sample, including a partial final
       // quantum. Startup wait is reflected only in the absolute render clock.

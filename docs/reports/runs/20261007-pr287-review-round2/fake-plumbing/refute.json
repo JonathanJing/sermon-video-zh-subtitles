@@ -1,0 +1,226 @@
+{
+  "rows": [
+    {
+      "case": "f01-plugin-identity",
+      "sessionId": "sess_fake_17",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "alternative_category": "other",
+        "alternative_cause": "",
+        "counter_evidence": [],
+        "reason": "fake",
+        "summary_zh": "假数据，仅验证接线。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": false,
+        "refuterRight": false,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": true
+      }
+    },
+    {
+      "case": "f02-preempt-authorization",
+      "sessionId": "sess_fake_18",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "alternative_category": "other",
+        "alternative_cause": "",
+        "counter_evidence": [],
+        "reason": "fake",
+        "summary_zh": "假数据，仅验证接线。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": false,
+        "refuterRight": false,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": true
+      }
+    },
+    {
+      "case": "f03-relative-out",
+      "sessionId": "sess_fake_19",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "alternative_category": "other",
+        "alternative_cause": "",
+        "counter_evidence": [],
+        "reason": "fake",
+        "summary_zh": "假数据，仅验证接线。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": false,
+        "refuterRight": false,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": true
+      }
+    },
+    {
+      "case": "f04-missing-terminology",
+      "sessionId": "sess_fake_20",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "alternative_category": "other",
+        "alternative_cause": "",
+        "counter_evidence": [],
+        "reason": "fake",
+        "summary_zh": "假数据，仅验证接线。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": false,
+        "refuterRight": false,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": true
+      }
+    },
+    {
+      "case": "f05-asr-symlink-mount",
+      "sessionId": "sess_fake_21",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "alternative_category": "other",
+        "alternative_cause": "",
+        "counter_evidence": [],
+        "reason": "fake",
+        "summary_zh": "假数据，仅验证接线。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": false,
+        "refuterRight": false,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": true
+      }
+    },
+    {
+      "case": "f06-zero-inference-seconds",
+      "sessionId": "sess_fake_22",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "alternative_category": "other",
+        "alternative_cause": "",
+        "counter_evidence": [],
+        "reason": "fake",
+        "summary_zh": "假数据，仅验证接线。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": false,
+        "refuterRight": false,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": true
+      }
+    },
+    {
+      "case": "f07-services-not-yet-restored",
+      "sessionId": "sess_fake_23",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "alternative_category": "other",
+        "alternative_cause": "",
+        "counter_evidence": [],
+        "reason": "fake",
+        "summary_zh": "假数据，仅验证接线。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": false,
+        "refuterRight": false,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": true
+      }
+    },
+    {
+      "case": "f08-monitor-bad-substitution",
+      "sessionId": "sess_fake_24",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "alternative_category": "other",
+        "alternative_cause": "",
+        "counter_evidence": [],
+        "reason": "fake",
+        "summary_zh": "假数据，仅验证接线。",
+        "verdict": "upheld"
+      },
+      "score": {
+        "submitted": true,
+        "verdict": "upheld",
+        "diagnosisCorrect": false,
+        "refuterRight": false,
+        "falseRefutation": false,
+        "missedWrongDiagnosis": true
+      }
+    }
+  ],
+  "summary": {
+    "sessions": 8,
+    "refuterRight": 0,
+    "falseRefutations": 0,
+    "missedWrongDiagnoses": 8
+  }
+}

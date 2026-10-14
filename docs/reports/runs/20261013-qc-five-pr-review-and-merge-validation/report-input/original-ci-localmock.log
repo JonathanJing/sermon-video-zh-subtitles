@@ -1,0 +1,247 @@
+﻿2026-10-13T14:57:29.9155505Z Current runner version: '2.337.0'
+2026-10-13T14:57:29.9178885Z ##[group]Runner Image Provisioner
+2026-10-13T14:57:29.9179655Z Hosted Compute Agent
+2026-10-13T14:57:29.9180258Z Version: 20261002.596
+2026-10-13T14:57:29.9180850Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-13T14:57:29.9181496Z Build Date: 2026-10-02T22:28:27Z
+2026-10-13T14:57:29.9182420Z Worker ID: {2cea62ed-21c0-4b11-8634-eb9a65f033f0}
+2026-10-13T14:57:29.9183061Z Region: westus3
+2026-10-13T14:57:29.9183604Z Cloud: Azure
+2026-10-13T14:57:29.9184105Z ##[endgroup]
+2026-10-13T14:57:29.9185478Z ##[group]Operating System
+2026-10-13T14:57:29.9186093Z Ubuntu
+2026-10-13T14:57:29.9186561Z 24.04.5
+2026-10-13T14:57:29.9187033Z LTS
+2026-10-13T14:57:29.9187516Z ##[endgroup]
+2026-10-13T14:57:29.9188006Z ##[group]Runner Image
+2026-10-13T14:57:29.9188565Z Image: ubuntu-24.04
+2026-10-13T14:57:29.9189057Z Version: 20261004.327.1
+2026-10-13T14:57:29.9190193Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-13T14:57:29.9191581Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-13T14:57:29.9192758Z ##[endgroup]
+2026-10-13T14:57:29.9193758Z ##[group]GITHUB_TOKEN Permissions
+2026-10-13T14:57:29.9195682Z Contents: read
+2026-10-13T14:57:29.9196207Z Metadata: read
+2026-10-13T14:57:29.9196737Z ##[endgroup]
+2026-10-13T14:57:29.9199042Z Secret source: Actions
+2026-10-13T14:57:29.9199852Z Cache mode: write
+2026-10-13T14:57:29.9200572Z Prepare workflow directory
+2026-10-13T14:57:29.9509998Z Prepare all required actions
+2026-10-13T14:57:29.9559673Z Getting action download info
+2026-10-13T14:57:30.3028701Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-13T14:57:30.4187601Z Download action repository 'actions/setup-python@v7' (SHA:5fda3b95a4ea91299a34e894583c3862153e4b97)
+2026-10-13T14:57:30.5119069Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-13T14:57:30.7219262Z Complete job name: local-mock
+2026-10-13T14:57:30.7985326Z ##[group]Run actions/checkout@v7
+2026-10-13T14:57:30.7986061Z with:
+2026-10-13T14:57:30.7986529Z   repository: JonathanJing/sermon-video-zh-subtitles
+2026-10-13T14:57:30.7989977Z   token: <redacted>
+2026-10-13T14:57:30.7990362Z   ssh-strict: true
+2026-10-13T14:57:30.7990746Z   ssh-user: git
+... 946 lines omitted; 5 error-like lines, 5 kept below ...
+[line 201] 2026-10-13T14:57:39.7913951Z Collecting exceptiongroup>=1.0.0 (from prefect==3.8.7->-r requirements-prefect.txt (line 2))
+[line 202] 2026-10-13T14:57:39.7926205Z   Using cached exceptiongroup-1.3.1-py3-none-any.whl.metadata (6.7 kB)
+[line 429] 2026-10-13T14:57:43.4051108Z Using cached exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+[line 482] 2026-10-13T14:57:44.0435252Z Installing collected packages: text-unidecode, pytz, websockets, urllib3, uncalled-for, tzlocal, tzdata, typing-extensions, toml, sniffio, six, shellingham, semver, ruamel-yaml-clib, ruamel-yaml, rpds-py, regex, redis, readchar, pyyaml, python-slugify, python-json-logger, python-dotenv, pygments, pycparser, prometheus-client, pluggy, pathspec, packaging, orjson, oauthlib, mdurl, MarkupSafe, markdown, jsonpointer, idna, hyperframe, humanize, hpack, h11, griffelib, greenlet, graphviz, fsspec, docstring-parser, cronsim, coolname, colorama, cloudpickle, click, charset_normalizer, certifi, cachetools, burner-redis, beartype, attrs, asyncpg, annotated-types, annotated-doc, amplitude-analytics, aiosqlite, uvicorn, typing-inspection, sqlalchemy, rfc3339-validator, requests, referencing, python-dateutil, pydantic-core, py-key-value-aio, opentelemetry-api, markdown-it-py, Mako, jsonpatch, jinja2, httpcore, h2, griffecli, exceptiongroup, cffi, asgi-lifespan, anyio, starlette, rich, requests-oauthlib, pydantic, pendulum, jsonschema-specifications, jinja2-humanize-extension, httpx, griffe, docker, dateparser, cryptography, alembic, typer, rich-rst, pydantic-settings, pydantic-extra-types, jsonschema, fastapi, apprise, pydocket, cyclopts, prefect
+[line 484] 2026-10-13T14:57:53.0483603Z Successfully installed Mako-1.4.3 MarkupSafe-3.0.4 aiosqlite-0.22.1 alembic-1.20.0 amplitude-analytics-1.2.3 annotated-doc-0.0.5 annotated-types-0.8.0 anyio-4.15.1 apprise-1.13.1 asgi-lifespan-2.1.0 asyncpg-0.32.0 attrs-26.1.0 beartype-0.23.1 burner-redis-0.1.7 cachetools-7.2.1 certifi-2026.7.22 cffi-2.1.1 charset_normalizer-3.5.2 click-8.5.0 cloudpickle-3.1.2 colorama-0.4.6 coolname-5.0.0 cronsim-2.7 cryptography-50.0.2 cyclopts-5.2.0 dateparser-1.4.3 docker-7.2.0 docstring-parser-0.18.0 exceptiongroup-1.3.1 fastapi-0.143.0 fsspec-2026.9.0 graphviz-0.21 greenlet-3.5.6 griffe-2.3.2 griffecli-2.3.2 griffelib-2.3.2 h11-0.16.0 h2-4.4.1 hpack-4.2.0 httpcore-1.0.9 httpx-0.28.1 humanize-4.16.0 hyperframe-6.1.0 idna-3.20 jinja2-3.1.6 jinja2-humanize-extension-0.4.0 jsonpatch-1.35 jsonpointer-3.2.1 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 markdown-3.11 markdown-it-py-4.2.0 mdurl-0.1.2 oauthlib-4.0.0 opentelemetry-api-1.45.1 orjson-3.13.0 packaging-26.3 pathspec-1.1.1 pendulum-3.3.0 pluggy-1.6.0 prefect-3.8.7 prometheus-client-0.26.0 py-key-value-aio-0.4.6 pycparser-3.11 pydantic-2.14.1 pydantic-core-2.50.1 pydantic-extra-types-2.11.1 pydantic-settings-2.15.0 pydocket-0.27.0 pygments-2.21.0 python-dateutil-2.9.0.post0 python-dotenv-1.2.4 python-json-logger-4.2.0 python-slugify-9.0.0 pytz-2026.5 pyyaml-6.0.3 readchar-4.2.2 redis-8.1.0 referencing-0.37.0 regex-2026.9.29 requests-2.34.2 requests-oauthlib-2.0.0 rfc3339-validator-0.1.4 rich-15.0.0 rich-rst-2.2.0 rpds-py-2026.9.1 ruamel-yaml-0.19.1 ruamel-yaml-clib-0.2.15 semver-3.1.0 shellingham-1.5.4 six-1.17.0 sniffio-1.3.1 sqlalchemy-2.1.4 starlette-1.8.0 text-unidecode-1.3 toml-0.10.2 typer-0.27.3 typing-extensions-4.16.0 typing-inspection-0.4.4 tzdata-2026.5 tzlocal-5.4.4 uncalled-for-0.4.1 urllib3-2.8.0 uvicorn-0.54.0 websockets-16.1.1
+... end of omitted section ...
+2026-10-13T14:58:11.4860041Z Setting up libx265-199:amd64 (3.5-2build1) ...
+2026-10-13T14:58:11.4875178Z Setting up libsndio7.0:amd64 (1.9.0-0.3build3) ...
+2026-10-13T14:58:11.4893552Z Setting up libvidstab1.1:amd64 (1.1.0-2build1) ...
+2026-10-13T14:58:11.4909900Z Setting up libvpx9:amd64 (1.14.0-1ubuntu2.3) ...
+2026-10-13T14:58:11.4928775Z Setting up libsrt1.5-gnutls:amd64 (1.5.3-1build2) ...
+2026-10-13T14:58:11.4944100Z Setting up libflite1:amd64 (2.2-6build3) ...
+2026-10-13T14:58:11.4963237Z Setting up libdav1d7:amd64 (1.4.1-1build1) ...
+2026-10-13T14:58:11.4976623Z Setting up libva-drm2:amd64 (2.20.0-2ubuntu0.2) ...
+2026-10-13T14:58:11.4992068Z Setting up ocl-icd-libopencl1:amd64 (2.3.2-1build1) ...
+2026-10-13T14:58:11.5009090Z Setting up libasyncns0:amd64 (0.8-6build4) ...
+2026-10-13T14:58:11.5026348Z Setting up libvdpau1:amd64 (1.5-2build1) ...
+2026-10-13T14:58:11.5048758Z Setting up libbs2b0:amd64 (3.1.0+dfsg-7build1) ...
+2026-10-13T14:58:11.5062576Z Setting up libtheora0:amd64 (1.1.1+dfsg.1-16.1build3) ...
+2026-10-13T14:58:11.5078958Z Setting up libdecor-0-0:amd64 (0.2.2-1build2) ...
+2026-10-13T14:58:11.5094011Z Setting up libzimg2:amd64 (3.0.5+ds1-1build1) ...
+2026-10-13T14:58:11.5107033Z Setting up libopenal-data (1:1.23.1-4build1) ...
+2026-10-13T14:58:11.5126141Z Setting up libflac12t64:amd64 (1.4.3+ds-2.1ubuntu2) ...
+2026-10-13T14:58:11.5138386Z Setting up libbluray2:amd64 (1:1.3.4-1build1) ...
+2026-10-13T14:58:11.5152061Z Setting up libsamplerate0:amd64 (0.2.2-4build1) ...
+2026-10-13T14:58:11.5165729Z Setting up libva-x11-2:amd64 (2.20.0-2ubuntu0.2) ...
+2026-10-13T14:58:11.5177997Z Setting up libopenmpt0t64:amd64 (0.7.3-1.1build3) ...
+2026-10-13T14:58:11.5193947Z Setting up libzvbi-common (0.2.42-2) ...
+2026-10-13T14:58:11.5208711Z Setting up libmp3lame0:amd64 (3.100-6build1) ...
+2026-10-13T14:58:11.5223818Z Setting up libvorbisenc2:amd64 (1.3.7-1build3) ...
+2026-10-13T14:58:11.5238579Z Setting up libiec61883-0:amd64 (1.2.0-6build1) ...
+2026-10-13T14:58:11.5251138Z Setting up libserd-0-0:amd64 (0.32.2-1) ...
+2026-10-13T14:58:11.5265108Z Setting up libavc1394-0:amd64 (0.5.4-5build3) ...
+2026-10-13T14:58:11.5278098Z Setting up liblapack3:amd64 (3.12.0-3build1.1) ...
+2026-10-13T14:58:11.5326108Z update-alternatives: using /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3 to provide /usr/lib/x86_64-linux-gnu/liblapack.so.3 (liblapack.so.3-x86_64-linux-gnu) in auto mode
+2026-10-13T14:58:11.5336801Z Setting up libzvbi0t64:amd64 (0.2.42-2) ...
+2026-10-13T14:58:11.5351367Z Setting up libavutil58:amd64 (7:6.1.1-3ubuntu5) ...
+2026-10-13T14:58:11.5375216Z Setting up libopenal1:amd64 (1:1.23.1-4build1) ...
+2026-10-13T14:58:11.5389416Z Setting up libass9:amd64 (1:0.17.1-2build1) ...
+2026-10-13T14:58:11.5403073Z Setting up libswresample4:amd64 (7:6.1.1-3ubuntu5) ...
+2026-10-13T14:58:11.5418697Z Setting up libavcodec60:amd64 (7:6.1.1-3ubuntu5) ...
+2026-10-13T14:58:11.5432119Z Setting up librubberband2:amd64 (3.3.0+dfsg-2build1) ...
+2026-10-13T14:58:11.5445663Z Setting up libjack-jackd2-0:amd64 (1.9.21~dfsg-3ubuntu3) ...
+2026-10-13T14:58:11.5458365Z Setting up libsord-0-0:amd64 (0.16.16-2build1) ...
+2026-10-13T14:58:11.5470469Z Setting up libpostproc57:amd64 (7:6.1.1-3ubuntu5) ...
+2026-10-13T14:58:11.5483977Z Setting up libsratom-0-0:amd64 (0.6.16-1build1) ...
+2026-10-13T14:58:11.5497318Z Setting up libsndfile1:amd64 (1.2.2-1ubuntu5.24.04.1) ...
+2026-10-13T14:58:11.5511455Z Setting up liblilv-0-0:amd64 (0.24.22-1build1) ...
+2026-10-13T14:58:11.5524413Z Setting up libswscale7:amd64 (7:6.1.1-3ubuntu5) ...
+2026-10-13T14:58:11.5539887Z Setting up libpulse0:amd64 (1:16.1+dfsg1-2ubuntu10.1) ...
+2026-10-13T14:58:11.5598707Z Setting up libavformat60:amd64 (7:6.1.1-3ubuntu5) ...
+2026-10-13T14:58:11.5615134Z Setting up libsphinxbase3t64:amd64 (0.8+5prealpha+1-17build2) ...
+2026-10-13T14:58:11.5627592Z Setting up libsdl2-2.0-0:amd64 (2.30.0+dfsg-1ubuntu3.1) ...
+2026-10-13T14:58:11.5803557Z Setting up libpocketsphinx3:amd64 (0.8.0+real5prealpha+1-15ubuntu5) ...
+2026-10-13T14:58:11.5815280Z Setting up libavfilter9:amd64 (7:6.1.1-3ubuntu5) ...
+2026-10-13T14:58:11.5831489Z Setting up libavdevice60:amd64 (7:6.1.1-3ubuntu5) ...
+2026-10-13T14:58:11.5843221Z Setting up ffmpeg (7:6.1.1-3ubuntu5) ...
+2026-10-13T14:58:11.5860770Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-10-13T14:58:11.5881127Z Not building database; man-db/auto-update is not 'true'.
+2026-10-13T14:58:11.5892560Z Processing triggers for libc-bin (2.39-0ubuntu8.9) ...
+2026-10-13T14:58:12.1505422Z
+2026-10-13T14:58:12.1506086Z Running kernel seems to be up-to-date.
+2026-10-13T14:58:12.1506321Z
+2026-10-13T14:58:12.1506434Z No services need to be restarted.
+2026-10-13T14:58:12.1506604Z
+2026-10-13T14:58:12.1506711Z No containers need to be restarted.
+2026-10-13T14:58:12.1506912Z
+2026-10-13T14:58:12.1507031Z No user sessions are running outdated binaries.
+2026-10-13T14:58:12.1507232Z
+2026-10-13T14:58:12.1507428Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-10-13T14:58:13.3849555Z ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers
+2026-10-13T14:58:13.3850110Z built with gcc 13 (Ubuntu 13.2.0-23ubuntu3)
+2026-10-13T14:58:13.3856200Z configuration: --prefix=/usr --extra-version=3ubuntu5 --toolchain=hardened --libdir=/usr/lib/x86_64-linux-gnu --incdir=/usr/include/x86_64-linux-gnu --arch=amd64 --enable-gpl --disable-stripping --disable-omx --enable-gnutls --enable-libaom --enable-libass --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libglslang --enable-libgme --enable-libgsm --enable-libharfbuzz --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-openal --enable-opencl --enable-opengl --disable-sndio --enable-libvpl --disable-libmfx --enable-libdc1394 --enable-libdrm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-ladspa --enable-libbluray --enable-libjack --enable-libpulse --enable-librabbitmq --enable-librist --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libx264 --enable-libzmq --enable-libzvbi --enable-lv2 --enable-sdl2 --enable-libplacebo --enable-librav1e --enable-pocketsphinx --enable-librsvg --enable-libjxl --enable-shared
+2026-10-13T14:58:13.3862307Z libavutil      58. 29.100 / 58. 29.100
+2026-10-13T14:58:13.3862614Z libavcodec     60. 31.102 / 60. 31.102
+2026-10-13T14:58:13.3862913Z libavformat    60. 16.100 / 60. 16.100
+2026-10-13T14:58:13.3863536Z libavdevice    60.  3.100 / 60.  3.100
+2026-10-13T14:58:13.3863834Z libavfilter     9. 12.100 /  9. 12.100
+2026-10-13T14:58:13.3864128Z libswscale      7.  5.100 /  7.  5.100
+2026-10-13T14:58:13.3864421Z libswresample   4. 12.100 /  4. 12.100
+2026-10-13T14:58:13.3864728Z libpostproc    57.  3.100 / 57.  3.100
+2026-10-13T14:58:13.4329889Z ffprobe version 6.1.1-3ubuntu5 Copyright (c) 2007-2023 the FFmpeg developers
+2026-10-13T14:58:13.4330565Z built with gcc 13 (Ubuntu 13.2.0-23ubuntu3)
+2026-10-13T14:58:13.4336731Z configuration: --prefix=/usr --extra-version=3ubuntu5 --toolchain=hardened --libdir=/usr/lib/x86_64-linux-gnu --incdir=/usr/include/x86_64-linux-gnu --arch=amd64 --enable-gpl --disable-stripping --disable-omx --enable-gnutls --enable-libaom --enable-libass --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libglslang --enable-libgme --enable-libgsm --enable-libharfbuzz --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-openal --enable-opencl --enable-opengl --disable-sndio --enable-libvpl --disable-libmfx --enable-libdc1394 --enable-libdrm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-ladspa --enable-libbluray --enable-libjack --enable-libpulse --enable-librabbitmq --enable-librist --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libx264 --enable-libzmq --enable-libzvbi --enable-lv2 --enable-sdl2 --enable-libplacebo --enable-librav1e --enable-pocketsphinx --enable-librsvg --enable-libjxl --enable-shared
+2026-10-13T14:58:13.4342707Z libavutil      58. 29.100 / 58. 29.100
+2026-10-13T14:58:13.4343018Z libavcodec     60. 31.102 / 60. 31.102
+2026-10-13T14:58:13.4343321Z libavformat    60. 16.100 / 60. 16.100
+2026-10-13T14:58:13.4343622Z libavdevice    60.  3.100 / 60.  3.100
+2026-10-13T14:58:13.4343923Z libavfilter     9. 12.100 /  9. 12.100
+2026-10-13T14:58:13.4344215Z libswscale      7.  5.100 /  7.  5.100
+2026-10-13T14:58:13.4344569Z libswresample   4. 12.100 /  4. 12.100
+2026-10-13T14:58:13.4344995Z libpostproc    57.  3.100 / 57.  3.100
+2026-10-13T14:58:13.4408164Z ##[group]Run python -m unittest tests.test_sermon_prefect_runtime.PrefectRuntimeTests tests.test_sermon_pilot_evidence.PilotEngineEvidenceTests tests.test_sermon_business_prefect_flow.PrefectBusinessRuntimeTests tests.test_sermon_diagnostic_prefect_flow.ActualPrefectRuntimeTests tests.test_sermon_mock_tts_dag.ActualMockTTSPrefectTests -v
+2026-10-13T14:58:13.4410420Z [36;1mpython -m unittest tests.test_sermon_prefect_runtime.PrefectRuntimeTests tests.test_sermon_pilot_evidence.PilotEngineEvidenceTests tests.test_sermon_business_prefect_flow.PrefectBusinessRuntimeTests tests.test_sermon_diagnostic_prefect_flow.ActualPrefectRuntimeTests tests.test_sermon_mock_tts_dag.ActualMockTTSPrefectTests -v[0m
+2026-10-13T14:58:13.4447588Z shell: /usr/bin/bash -e {0}
+2026-10-13T14:58:13.4447840Z env:
+2026-10-13T14:58:13.4448105Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T14:58:13.4448532Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.15/x64/lib/pkgconfig
+2026-10-13T14:58:13.4448976Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T14:58:13.4449343Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T14:58:13.4449708Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T14:58:13.4450080Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.15/x64/lib
+2026-10-13T14:58:13.4450397Z   SERMON_TEST_PREFECT: 1
+2026-10-13T14:58:13.4450741Z   SERMON_MOCK_TEST_EVIDENCE_DIR: ~/work/_temp/mock-tts-sdk-evidence
+2026-10-13T14:58:13.4451113Z ##[endgroup]
+2026-10-13T14:58:16.0108023Z test_actual_sdk_import_non_ci_interactive_has_no_network_or_outside_writes (tests.test_sermon_prefect_runtime.PrefectRuntimeTests.test_actual_sdk_import_non_ci_interactive_has_no_network_or_outside_writes) ... ok
+2026-10-13T14:58:47.7190273Z test_three_locales_engine_processes_trace_replay_and_capacity (tests.test_sermon_prefect_runtime.PrefectRuntimeTests.test_three_locales_engine_processes_trace_replay_and_capacity) ... ok
+2026-10-13T14:59:09.4428201Z test_engine_then_readonly_report_replay_and_failure (tests.test_sermon_pilot_evidence.PilotEngineEvidenceTests.test_engine_then_readonly_report_replay_and_failure) ... FAIL
+2026-10-13T14:59:24.3053470Z test_fresh_sdk_real_business_callbacks_and_serialized_transport_guards (tests.test_sermon_business_prefect_flow.PrefectBusinessRuntimeTests.test_fresh_sdk_real_business_callbacks_and_serialized_transport_guards) ... ok
+2026-10-13T14:59:44.6877494Z test_fresh_clean_process_actual_session_workers_and_readonly_delivery (tests.test_sermon_diagnostic_prefect_flow.ActualPrefectRuntimeTests.test_fresh_clean_process_actual_session_workers_and_readonly_delivery) ... ok
+2026-10-13T15:01:22.9795452Z test_actual_frozen_graph_and_normal_clean_process_repeat (tests.test_sermon_mock_tts_dag.ActualMockTTSPrefectTests.test_actual_frozen_graph_and_normal_clean_process_repeat) ... ok
+2026-10-13T15:02:58.3771628Z test_actual_known_failure_explicit_partial_retry_and_successful_neighbor_reuse (tests.test_sermon_mock_tts_dag.ActualMockTTSPrefectTests.test_actual_known_failure_explicit_partial_retry_and_successful_neighbor_reuse) ... ok
+2026-10-13T15:04:23.6058149Z test_actual_observer_timeout_then_original_receipt_reconciliation (tests.test_sermon_mock_tts_dag.ActualMockTTSPrefectTests.test_actual_observer_timeout_then_original_receipt_reconciliation) ... ok
+2026-10-13T15:04:23.6061661Z
+2026-10-13T15:04:23.6062439Z ======================================================================
+2026-10-13T15:04:23.6063245Z FAIL: test_engine_then_readonly_report_replay_and_failure (tests.test_sermon_pilot_evidence.PilotEngineEvidenceTests.test_engine_then_readonly_report_replay_and_failure)
+2026-10-13T15:04:23.6064028Z ----------------------------------------------------------------------
+2026-10-13T15:04:23.6064372Z Traceback (most recent call last):
+2026-10-13T15:04:23.6072319Z   File "~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/tests/test_sermon_pilot_evidence.py", line 190, in test_engine_then_readonly_report_replay_and_failure
+2026-10-13T15:04:23.6073287Z     self.assertEqual(first.returncode, 0 if name=='complete' else 2, first.stderr[-4000:])
+2026-10-13T15:04:23.6073918Z AssertionError: 2 != 0 : 14:58:51.259 | INFO    | prefect - Starting temporary server on http://127.0.0.1:8755
+2026-10-13T15:04:23.6074642Z See https://docs.prefect.io/v3/concepts/server#how-to-guides for more information on running a dedicated Prefect server.
+2026-10-13T15:04:23.6075388Z 14:58:59.622 | INFO    | Flow run 'fearless-stork' - Beginning flow run 'fearless-stork' for flow 'sermon-local-mock-dag'
+2026-10-13T15:04:23.6075979Z 14:59:01.090 | INFO    | Task run 'dispatch-fea' - Finished in state Completed()
+2026-10-13T15:04:23.6076427Z 14:59:02.574 | INFO    | Task run 'dispatch-d3c' - Finished in state Completed()
+2026-10-13T15:04:23.6076858Z 14:59:02.583 | INFO    | Task run 'dispatch-abe' - Finished in state Completed()
+2026-10-13T15:04:23.6077289Z 14:59:03.746 | INFO    | Task run 'dispatch-62d' - Finished in state Completed()
+2026-10-13T15:04:23.6077711Z 14:59:03.753 | INFO    | Task run 'dispatch-562' - Finished in state Completed()
+2026-10-13T15:04:23.6078141Z 14:59:04.774 | INFO    | Task run 'dispatch-e00' - Finished in state Completed()
+2026-10-13T15:04:23.6078561Z 14:59:05.204 | INFO    | Task run 'dispatch-ed5' - Finished in state Completed()
+2026-10-13T15:04:23.6078981Z 14:59:06.687 | INFO    | Task run 'dispatch-006' - Finished in state Completed()
+2026-10-13T15:04:23.6079404Z 14:59:06.692 | INFO    | Task run 'dispatch-be5' - Finished in state Completed()
+2026-10-13T15:04:23.6079939Z 14:59:08.164 | INFO    | Task run 'dispatch-eaa' - Finished in state Completed()
+2026-10-13T15:04:23.6080383Z 14:59:08.720 | INFO    | Flow run 'fearless-stork' - Finished in state Completed()
+2026-10-13T15:04:23.6080855Z 14:59:08.750 | INFO    | prefect - Stopping temporary server on http://127.0.0.1:8755
+2026-10-13T15:04:23.6081150Z
+2026-10-13T15:04:23.6081155Z
+2026-10-13T15:04:23.6081315Z ----------------------------------------------------------------------
+2026-10-13T15:04:23.6081647Z Ran 8 tests in 368.696s
+2026-10-13T15:04:23.6081786Z
+2026-10-13T15:04:23.6082024Z FAILED (failures=1)
+2026-10-13T15:04:23.6413981Z ##[error]Process completed with exit code 1.
+2026-10-13T15:04:23.6497125Z ##[group]Run actions/upload-artifact@v4
+2026-10-13T15:04:23.6497446Z with:
+2026-10-13T15:04:23.6497784Z   name: mock-tts-sdk-evidence-95cb4fe5c1b49815189a29c3d864c49ac8e4195d
+2026-10-13T15:04:23.6498196Z   path: ~/work/_temp/mock-tts-sdk-evidence
+2026-10-13T15:04:23.6498500Z   if-no-files-found: warn
+2026-10-13T15:04:23.6498746Z   compression-level: 6
+2026-10-13T15:04:23.6498962Z   overwrite: false
+2026-10-13T15:04:23.6499174Z   include-hidden-files: false
+2026-10-13T15:04:23.6499402Z env:
+2026-10-13T15:04:23.6499648Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T15:04:23.6500055Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.15/x64/lib/pkgconfig
+2026-10-13T15:04:23.6500458Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T15:04:23.6500822Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T15:04:23.6501178Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+2026-10-13T15:04:23.6501578Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.15/x64/lib
+2026-10-13T15:04:23.6502110Z ##[endgroup]
+2026-10-13T15:04:23.8112866Z (node:5115) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-13T15:04:23.8113687Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-13T15:04:23.9104842Z With the provided path, there will be 383 files uploaded
+2026-10-13T15:04:23.9110023Z Artifact name is valid!
+2026-10-13T15:04:23.9110623Z Root directory input is valid!
+2026-10-13T15:04:24.2963840Z Beginning upload of artifact content to blob storage
+2026-10-13T15:04:24.5691681Z (node:5115) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-13T15:04:25.0796589Z Uploaded bytes 582400
+2026-10-13T15:04:25.1592265Z Finished uploading artifact content to blob storage!
+2026-10-13T15:04:25.1593697Z SHA256 digest of uploaded artifact zip is a5eef1cb22d68cc236a8a089c28fb68e068f783c63ed95d22e733794ada43d87
+2026-10-13T15:04:25.1595827Z Finalizing artifact upload
+2026-10-13T15:04:25.4343722Z Artifact mock-tts-sdk-evidence-95cb4fe5c1b49815189a29c3d864c49ac8e4195d.zip successfully finalized. Artifact ID 11826015387
+2026-10-13T15:04:25.4345652Z Artifact mock-tts-sdk-evidence-95cb4fe5c1b49815189a29c3d864c49ac8e4195d has been successfully uploaded! Final size is 582400 bytes. Artifact ID is 11826015387
+2026-10-13T15:04:25.4351477Z Artifact download URL: https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/38417312621/artifacts/11826015387
+2026-10-13T15:04:25.4544115Z Post job cleanup.
+2026-10-13T15:04:25.5344946Z [command]/usr/bin/git version
+2026-10-13T15:04:25.5382783Z git version 2.55.0
+2026-10-13T15:04:25.5415566Z Temporarily overriding HOME='~/work/_temp/ad638b51-ddb8-4291-acc6-1ee648cc17a7' before making global git config changes
+2026-10-13T15:04:25.5417078Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-13T15:04:25.5421641Z [command]/usr/bin/git config --global --add safe.directory ~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles
+2026-10-13T15:04:25.5449125Z Removing SSH command configuration
+2026-10-13T15:04:25.5454892Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-13T15:04:25.5486793Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-13T15:04:25.5711229Z Removing HTTP extra header
+2026-10-13T15:04:25.5716201Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-13T15:04:25.5746746Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-13T15:04:25.5946273Z Removing includeIf entries pointing to credentials config files
+2026-10-13T15:04:25.5952670Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-13T15:04:25.5978724Z includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git.path
+2026-10-13T15:04:25.5980391Z includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git/worktrees/*.path
+2026-10-13T15:04:25.5981677Z includeif.gitdir:/github/workspace/.git.path
+2026-10-13T15:04:25.5982842Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-13T15:04:25.5987651Z [command]/usr/bin/git config --local --get-all includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git.path
+2026-10-13T15:04:25.6010218Z ~/work/_temp/git-credentials-22482d06-a824-45fe-a136-43380e1cd347.config
+2026-10-13T15:04:25.6021016Z [command]/usr/bin/git config --local --unset includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-22482d06\-a824\-45fe\-a136\-43380e1cd347\.config
+2026-10-13T15:04:25.6055425Z [command]/usr/bin/git config --local --get-all includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git/worktrees/*.path
+2026-10-13T15:04:25.6088252Z ~/work/_temp/git-credentials-22482d06-a824-45fe-a136-43380e1cd347.config
+2026-10-13T15:04:25.6097581Z [command]/usr/bin/git config --local --unset includeif.gitdir:~/work/sermon-video-zh-subtitles/sermon-video-zh-subtitles/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-22482d06\-a824\-45fe\-a136\-43380e1cd347\.config
+2026-10-13T15:04:25.6130369Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-13T15:04:25.6150659Z /github/runner_temp/git-credentials-22482d06-a824-45fe-a136-43380e1cd347.config
+2026-10-13T15:04:25.6158335Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-22482d06\-a824\-45fe\-a136\-43380e1cd347\.config
+2026-10-13T15:04:25.6194031Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-13T15:04:25.6215274Z /github/runner_temp/git-credentials-22482d06-a824-45fe-a136-43380e1cd347.config
+2026-10-13T15:04:25.6222856Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-22482d06\-a824\-45fe\-a136\-43380e1cd347\.config
+2026-10-13T15:04:25.6255168Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-13T15:04:25.6486383Z Removing credentials config '~/work/_temp/git-credentials-22482d06-a824-45fe-a136-43380e1cd347.config'
+2026-10-13T15:04:25.6636719Z Cleaning up orphan processes
+2026-10-13T15:04:25.6885372Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

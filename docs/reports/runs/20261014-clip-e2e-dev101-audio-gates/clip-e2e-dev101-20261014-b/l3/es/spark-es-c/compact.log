@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/work/repo-fe6178a8/scripts/compact_formal_target_audio.py", line 317, in <module>
+    main()
+  File "/work/repo-fe6178a8/scripts/compact_formal_target_audio.py", line 302, in main
+    manifest = compact(paths, args.source_job, args.destination_root, args.checkpoint_map,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-fe6178a8/scripts/compact_formal_target_audio.py", line 254, in compact
+    manifest = renderer.assemble(context, adapted_paths, destination_root,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-fe6178a8/scripts/render_formal_target_language_speech.py", line 1375, in assemble
+    raise ValueError(f"Measured target audio exceeds 1x clip schedule: {plan['issues'][0]}")
+ValueError: Measured target audio exceeds 1x clip schedule: {'unitIndex': 15, 'textGroupId': 'translation-chunk-0002-u032', 'plannedEnd': 76.739999, 'sourceEnd': 67.040008, 'clipDuration': 75.04, 'maxEndLagSeconds': 120.0}
