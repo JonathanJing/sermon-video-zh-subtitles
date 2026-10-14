@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-13。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-14。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -21,6 +21,21 @@ English index: [backlog.md](./backlog.md)
 7. 查某个 ID 或前缀当前在哪几行、状态是什么：`python3 scripts/backlog_ids.py DEV-R242-011`（或 `DEV-R242`）；文件越靠前的小节越新。
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
+
+<a id="backlog-clip-e2e-20261014"></a>
+
+## 2026-10-14：真实片段三语 E2E 后续
+
+[D 轮最终脱敏报告](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/427)记录了约 96 秒片段最终在隔离 Dev 页完成三语机器质检和四层发布，A／B／C 失败分别见报告 [#409](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/409)、[#414](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/414)、[#417](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/417)；累计结算 $6.759385。下列是可重复交付所需的工程后续，属于表中既有能力的子任务，不将本次 Dev 页、PR 或机器豁免提升为正式人审、设备或生产验收。
+
+| ID／既有归属 | 优先级／状态 | 本次证据与完成条件 |
+|---|---|---|
+| `DEV-L2-001`、`DEV-R242-026`、`DEV-R242-005`；[代码 PR #410](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/410) | P0 / `in_progress` | A 轮修订命中旧 API 缓存指纹而阻断，C 轮修订遇 `budget_authority_changed`；D 轮韩语音频失败后需要隔离种子、同一总预算下续跑，发布成功后浏览器重查不能重复部署。PR #410 已实现稳定缓存身份、按修订隔离预算根、定向音频修复和已发布续跑保护；待代码 PR 合并及最终检查收据后，按各原 ID 的范围更新状态。D 轮真实成功只证明其冻结分支和输入。 |
+| `DEV-CLIP-001`；归 `DEV-L3-001`、`DEV-R242-012` | P1 / `pending` | D 轮三语和韩语修复的远端 `render` 在已生成单元后因容器缺少 `ffmpeg` 退出 1，随后 `compact` 才完成组装。让正式渲染容器具备受控编码依赖，或把原始合成与组装明确拆成两个成功阶段；同一冻结 16 单元真实路径的渲染／组装均返回正确终态，WAV 和轨道哈希可验，恢复不重新合成已成功单元。 |
+| `DEV-CLIP-002`；归 `DEV-SPD-003`、`DEV-R242-004` | P1 / `pending` | B 轮西语计划末尾 81.25 秒超出 75.04 秒片段，D 轮改用完整句及约 20 秒尾部余量。片段计划在派发前写明源句末端、允许的尾部窗口和新 clip 身份；得到真实音频后在组装前校验排程。超界时保留旧失败产物，要求新的来源／时间线绑定，不静默扩大已批准窗口或放宽音频阈值。 |
+| `DEV-CLIP-003`；归 `DEV-STE-005`、`DEV-R242-030`、`DEV-L3-001` | P1 / `pending` | D 轮韩语 `8장` 首轮与 seed 43 均读错，seed 44 的冻结单元读法提示通过；单例通过不证明通用规则。用真实失败句和相邻章／节号夹具评估最小口播规范或有界单元提示，保持译文、speaker、音色与音频质检身份绑定；不得把章节读法差异折叠成 ASR 通过，修改规则后按新实现重新校准。 |
+| `DEV-CLIP-004`；归 `DEV-L4-004/005`、`DEV-R242-029` | P1 / `pending` | 首次发布后 4 秒浏览器读到旧页，延长等待后仍曾出现一次中文切换回韩语，最终完整三语检查通过。发布后冒烟绑定 pageId、locale、部署版本和当前内容 hash，在有界传播等待内重复读取并保存每次旧页／语言回退；只有三语稳定命中本次身份才通过，超时保持未确认；已有有效发布收据时不重部署。 |
+| `DEV-CLIP-005`；归 `DEV-TRACK-001`、`DEV-SPD-002` | P1 / `pending` | 本次 GPT 请求只量到含传输延迟，Qwen TTS 每语冷加载约 50 秒，ASR 筛查和音频质检只有阶段墙钟；不能把阶段耗时当模型推理速度。按模型／locale／冻结输入记录请求排队与首 token、加载、推理、音频秒数、编码、传输、缓存命中、校准和发布等待；区分首轮、修复、累计及并发关键路径。先用本次收据验证字段缺测呈 unknown；同输入跨模型测速另按预算和质量门禁执行。 |
 
 <a id="backlog-session-budget-20261013"></a>
 
