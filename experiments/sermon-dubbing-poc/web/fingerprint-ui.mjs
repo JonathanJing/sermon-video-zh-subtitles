@@ -71,8 +71,8 @@ export async function prepareInWorker(metadata, signal, WorkerClass = globalThis
   try {
     const result = await request('prepare');
     if (result.ready !== true) throw new Error('index_binding');
-    return { timings: result.timings, close, match: recording => request('match',
-      { samples: recording.samples, sampleRate: recording.sampleRate }, [recording.samples.buffer]) };
+    return { timings: result.timings, close, match: (recording, { shadow = false } = {}) => request('match',
+      { samples: recording.samples, sampleRate: recording.sampleRate, shadow: shadow === true }, [recording.samples.buffer]) };
   } catch (error) { close(error); throw error; }
 }
 
@@ -119,6 +119,10 @@ export function playAlignmentAudio(audio, { signal, timeoutMs = 8000, timers = g
     } catch (error) { finish(error || new Error('audio_play_failed')); }
   });
 }
+// FIELD-03 Web early stop, matching iOS: continuous PCM up to 15 s with checkpoints.
+export const CAPTURE_SECONDS = 15;
+export const CAPTURE_CHECKPOINTS = Object.freeze([7, 10, 12]);
+const RECORD_TIMEOUT_MS = 45000;
 const ATTEMPT_OUTCOMES = new Set(['applied', 'matched', 'play_failed', 'play_blocked', 'no_match', 'expired', 'timeout', 'cancelled', 'error', 'permission_denied', 'unavailable', 'unsupported']);
 const MATCH_HELD = ['matched', 'play_failed', 'play_blocked'];
 const ERROR_CODES = new Set('MIC_BUDGET MIC_START_TIMEOUT INPUT_INTERRUPTED AUDIO_INTERRUPTED MIC_ENDED PROCESSOR_ERROR INVALID_CAPTURE INDEX_MISMATCH INDEX_UNAVAILABLE MATCH_ERROR MIC_PERMISSION MIC_MISSING MIC_BUSY MIC_SETTINGS AUDIO_UNSUPPORTED WORKLET_LOAD AUDIO_START UNKNOWN'.split(' '));
@@ -143,7 +147,7 @@ export function alignmentAttempt(observation, finalPhase, at) {
     errorCode: ERROR_CODES.has(observation.errorCode) ? observation.errorCode : null,
     level: LEVELS.has(observation.match?.level) ? observation.match.level : null,
     fractionBand: heard ? observation.match?.fractionBand ?? null : null,
-    captureSeconds: ['recording', 'matched_audio'].includes(observation.stage) ? 10 : null,
+    captureSeconds: [7, 10, 12, 15].includes(observation.captureSeconds) ? observation.captureSeconds : null,
     totalMs: Number.isFinite(total) && total >= 0 ? Math.min(600000, Math.round(total / 100) * 100) : null,
     shadow: heard && !matched && observation.shadow?.profile === 'cmn-v1' && typeof observation.shadow.matched === 'boolean' ? { profile: 'cmn-v1', matched: observation.shadow.matched, agrees: null } : null,
   };
@@ -224,31 +228,74 @@ export function createFingerprintController({ context, pause, seek, play, positi
       prepared.close(); cancel('expired'); return;
     }
     let timedOut = false;
-    const timeout = timers.setTimeout(() => {timedOut = true; controller.abort();}, 35000);
+    // Permission wait, up to 20 s of microphone (15 s PCM + startup) and checkpoint matches.
+    const timeout = timers.setTimeout(() => {timedOut = true; controller.abort();}, RECORD_TIMEOUT_MS);
+    // Internal early stop must not look like a user cancel.
+    const stopCapture = new AbortController(), relay = () => stopCapture.abort();
+    controller.signal.addEventListener('abort', relay, { once: true });
+    let captured = null;
     try {
       pause(); emit({ phase: 'permission' });
-      const recording = await capture({ onTiming: value => {
+      // FIELD-03 early stop: one continuous capture is matched at the 7/10/12 s
+      // prefixes and the final 15 s buffer. The first reliable hit stops the
+      // microphone; thresholds are unchanged and a miss never seeks.
+      let pending = null, final = null, wake = null, captureDone = false, captureError = null;
+      const notify = () => { const resume = wake; wake = null; resume?.(); };
+      captured = capture({ onTiming: value => {
         observation.attempts++;
         for (const name of ['permissionMs', 'startupMs', 'captureMs', 'microphoneObservedMs']) {
           if (typeof value[name] === 'number' && Number.isFinite(value[name]) && value[name] >= 0)
             observation.timings[name] = (observation.timings[name] || 0) + value[name];
         }
-      }, seconds: 10, signal: controller.signal, onRecovering: () => { if (valid(token, binding)) emit({ phase: 'recovering' }); }, onPreparing: () => { if (valid(token, binding)) emit({ phase: 'starting' }); }, onRecording: () => { if (valid(token, binding)) emit({ phase: 'recording' }); } });
-      if (!valid(token, binding) || controller.signal.aborted) return;
-      if (!Number.isFinite(recording.endedAt) || !Number.isFinite(recording.durationSeconds) || recording.durationSeconds < 9 || recording.durationSeconds > 11 || recording.endedAt > now() + 50) throw new Error('capture_failed');
-      emit({ phase: 'matching' });
-      const workerStarted = now();
-      const answer = await (match ? match(recording, binding.metadata, controller.signal) : prepared.match(recording));
-      if (!valid(token, binding) || controller.signal.aborted) return;
-      observation.timings.workerMs = elapsedMs(workerStarted);
-      for (const name of ['indexMs', 'featureMs', 'matchMs']) {
-        const value = answer.timings?.[name];
-        if (typeof value === 'number' && Number.isFinite(value) && value >= 0) observation.timings[name] = value;
+      }, seconds: CAPTURE_SECONDS, checkpoints: CAPTURE_CHECKPOINTS, minimumSeconds: CAPTURE_CHECKPOINTS[0],
+      onCheckpoint: recording => { pending = recording; notify(); },
+      signal: stopCapture.signal, onRecovering: () => { if (valid(token, binding)) emit({ phase: 'recovering' }); }, onPreparing: () => { if (valid(token, binding)) emit({ phase: 'starting' }); }, onRecording: () => { if (valid(token, binding)) emit({ phase: 'recording' }); } })
+        .then(recording => { final = recording; }, error => { captureError = error; })
+        .finally(() => { captureDone = true; notify(); });
+      let recording = null, answer = null;
+      observation.timings.workerMs = 0;
+      while (true) {
+        if (!valid(token, binding)) return;
+        // A timeout reaches the catch below as 'timeout'; a user cancel is already stale.
+        if (controller.signal.aborted) throw abortError();
+        // A failed capture invalidates every prefix still waiting (matches iOS):
+        // an interruption is an error, never a partial jump.
+        if (captureError) break;
+        // Only the newest prefix is matched; the final buffer follows every prefix.
+        const next = pending ?? (captureDone ? final : null);
+        if (!next) {
+          if (captureDone) break;
+          await new Promise(resolve => { wake = resolve; });
+          continue;
+        }
+        // The candidate-profile shadow runs only on the final buffer (FIELD-10).
+        const finalBuffer = next !== pending;
+        if (next === pending) pending = null; else final = null;
+        if (!Number.isFinite(next.endedAt) || !Number.isFinite(next.durationSeconds) || next.durationSeconds < CAPTURE_CHECKPOINTS[0] - .1 || next.durationSeconds > CAPTURE_SECONDS + .1 || next.endedAt > now() + 50) throw new Error('capture_failed');
+        if (captureDone) emit({ phase: 'matching' });
+        const workerStarted = now();
+        answer = await (match ? match(next, binding.metadata, controller.signal, { shadow: finalBuffer }) : prepared.match(next, { shadow: finalBuffer }));
+        if (!valid(token, binding)) return;
+        if (controller.signal.aborted) throw abortError();
+        // Recording may fail while this prefix was matching; never accept its hit.
+        if (captureError) break;
+        observation.timings.workerMs += elapsedMs(workerStarted);
+        for (const name of ['indexMs', 'featureMs', 'matchMs']) {
+          const value = answer.timings?.[name];
+          if (typeof value === 'number' && Number.isFinite(value) && value >= 0) observation.timings[name] = value;
+        }
+        observation.match = answer.summary;
+        observation.stage = 'matched_audio'; observation.reason = answer.result?.matched ? 'matched' : matchReason(answer.result?.diagnostics?.reason);
+        observation.captureSeconds = Math.round(next.durationSeconds);
+        // Shadow evidence: would the candidate profile have locked at any checkpoint?
+        if (answer.shadow) observation.shadow = { ...answer.shadow, matched: Boolean(observation.shadow?.matched || answer.shadow.matched) };
+        if (answer.result?.matched) { recording = next; break; }
+        if (!captureDone) emit({ phase: 'listening_more', heardSeconds: Math.round(next.durationSeconds) });
       }
-      observation.match = answer.summary;
-      observation.stage = 'matched_audio'; observation.reason = answer.result?.matched ? 'matched' : matchReason(answer.result?.diagnostics?.reason);
-      observation.shadow = answer.shadow ?? null;
-      const found = answer.result;
+      if (recording) { stopCapture.abort(); await captured; captured = null; }
+      else if (captureError) throw captureError;
+      if (!valid(token, binding) || controller.signal.aborted) return;
+      const found = answer?.result;
       if (!found?.matched) { emit({ phase: 'no_match', reason: matchReason(found?.diagnostics?.reason) }); return; }
       const end = found.queryStartSeconds + recording.durationSeconds;
       const elapsed = (now() - recording.endedAt) / 1000;
@@ -260,6 +307,8 @@ export function createFingerprintController({ context, pause, seek, play, positi
     } catch (error) {
       if (valid(token, binding)) emit({ phase: timedOut ? 'timeout' : error.name === 'AbortError' ? 'cancelled' : error.name === 'NotAllowedError' || error.name === 'SecurityError' ? 'permission_denied' : error.message === 'unsupported' ? 'unsupported' : 'error', diagnostic: captureDiagnostic(error) });
     } finally {
+      // Never leave the microphone open, whatever ended the loop.
+      stopCapture.abort(); controller.signal.removeEventListener('abort', relay);
       prepared?.close();
       timers.clearTimeout(timeout);
       if (active === controller) { controller.abort(); active = null; }
@@ -315,15 +364,15 @@ export function fingerprintStatusTone(phase) {
   if (['idle', 'cancelled'].includes(phase)) return 'neutral';
   if (['matched', 'applied'].includes(phase)) return 'success';
   if (['preparing_index', 'ready_to_record', 'permission', 'recovering', 'starting',
-       'recording', 'matching', 'play_starting'].includes(phase)) return 'pending';
+       'recording', 'listening_more', 'matching', 'play_starting'].includes(phase)) return 'pending';
   return 'failure';
 }
 export function mountFingerprintUI(options) {
   const $ = id => document.getElementById(id);
   const dialog = $('fingerprint-dialog');
-  const phases = new Set(["idle", "preparing_index", "ready_to_record", "permission", "recovering", "starting", "recording", "matching", "cancelled", "unavailable", "unsupported", "permission_denied", "timeout", "error", "no_match", "expired", "play_starting", "play_blocked", "play_failed"]);
+  const phases = new Set(["idle", "preparing_index", "ready_to_record", "permission", "recovering", "starting", "recording", "listening_more", "matching", "cancelled", "unavailable", "unsupported", "permission_denied", "timeout", "error", "no_match", "expired", "play_starting", "play_blocked", "play_failed"]);
   function renderState(value) {
-    const busy = ['preparing_index', 'permission', 'starting', 'recovering', 'recording', 'matching', 'play_starting'].includes(value.phase);
+    const busy = ['preparing_index', 'permission', 'starting', 'recovering', 'recording', 'listening_more', 'matching', 'play_starting'].includes(value.phase);
     $('fingerprint-start').disabled = busy;
     $('fingerprint-start').hidden = busy;
     setButtonLabel($('fingerprint-start'), t(value.phase === 'ready_to_record' ? 'fingerprint.record' : value.phase === 'idle' ? 'fingerprint.start' : 'fingerprint.restart'));
@@ -333,7 +382,7 @@ export function mountFingerprintUI(options) {
     message.setAttribute('data-tone', fingerprintStatusTone(value.phase));
     message.hidden = ['idle', 'cancelled'].includes(value.phase);
     $('fingerprint-stop').hidden = !busy;
-    message.textContent = value.phase === 'matched' ? t('fingerprint.matched', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'applied' ? t('fingerprint.applied', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'no_match' ? t(`fingerprint.reason.${matchReason(value.reason)}`) : value.phase === 'error' && value.diagnostic ? diagnosticMessage(value.diagnostic, { includeDetails: false }) : t(`fingerprint.phase.${phases.has(value.phase) ? value.phase : 'error'}`);
+    message.textContent = value.phase === 'matched' ? t('fingerprint.matched', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'applied' ? t('fingerprint.applied', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'listening_more' ? t('fingerprint.phase.listening_more', { seconds: value.heardSeconds }) : value.phase === 'no_match' ? t(`fingerprint.reason.${matchReason(value.reason)}`) : value.phase === 'error' && value.diagnostic ? diagnosticMessage(value.diagnostic, { includeDetails: false }) : t(`fingerprint.phase.${phases.has(value.phase) ? value.phase : 'error'}`);
   }
   const controller = createFingerprintController({ ...options, onState(value) {
     renderState(value);

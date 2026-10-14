@@ -17,7 +17,7 @@ const metadata = { schemaVersion: 'sermon-audio-fingerprint-binding-v1', algorit
 const settle = async () => { for (let n = 0; n < 30; n += 1) await Promise.resolve(); };
 
 test('attempt records keep only whitelisted enums and buckets', () => {
-  const heard = { stage: 'matched_audio', reason: 'low_confidence', errorCode: 'Some native text', match: { level: 'low', fractionBand: '0_045_to_0_055', landmarks: 1062 }, timings: { totalMs: 14349 }, shadow: { profile: 'cmn-v1', matched: true, extra: 'x' } };
+  const heard = { stage: 'matched_audio', captureSeconds: 10, reason: 'low_confidence', errorCode: 'Some native text', match: { level: 'low', fractionBand: '0_045_to_0_055', landmarks: 1062 }, timings: { totalMs: 14349 }, shadow: { profile: 'cmn-v1', matched: true, extra: 'x' } };
   assert.deepEqual(alignmentAttempt({ ...heard, lastPhase: 'matching' }, 'no_match', at), { at: Date.parse('2026-10-11T17:44:39Z'), outcome: 'no_match', stage: 'matched_audio', reason: 'low_confidence', errorCode: null, level: 'low', fractionBand: '0_045_to_0_055', captureSeconds: 10, totalMs: 14300, shadow: { profile: 'cmn-v1', matched: true, agrees: null } });
   const matched = { ...heard, reason: 'matched', match: { level: 'moderate', fractionBand: 'at_least_0_055' } };
   assert.equal(alignmentAttempt(matched, 'applied', at).shadow, null);
@@ -66,7 +66,7 @@ test('a throwing statistics sink never changes alignment', async () => {
   assert.equal(h.controller.getState().phase, 'applied');
 });
 
-test('worker runs the shadow profile only after a production miss and still zeroes PCM', async () => {
+test('worker runs the shadow profile only when requested after a production miss and still zeroes PCM', async () => {
   const code = fs.readFileSync(new URL('./fingerprint-worker.mjs', import.meta.url), 'utf8').replace(/^import .*;\n/gm, '');
   const index = { schemaVersion: 'sermon-landmark-index-v1', algorithmVersion: CONFIG.algorithmVersion, pageId: 'week', sourceSha256: sha, trackSha256: trackSha, sourceStartSeconds: 20, sourceEndSeconds: 220, durationSeconds: 200, sampleRate: 8000, hopSize: 256, postings: { 123: [1, 20] } };
   const bytes = new TextEncoder().encode(JSON.stringify(index)), replies = [];
@@ -79,11 +79,14 @@ test('worker runs the shadow profile only after a production miss and still zero
   vm.runInNewContext(code, scope);
   await scope.self.onmessage({ data: { operation: 'prepare', metadata: binding, requestId: 1 } });
   let seed = 3; const noise = Float32Array.from({ length: 80000 }, () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 2 ** 32 - .5) * .2);
-  await scope.self.onmessage({ data: { operation: 'match', metadata: binding, requestId: 2, samples: noise, sampleRate: 8000 } });
+  const unrequested = Float32Array.from(noise);
+  await scope.self.onmessage({ data: { operation: 'match', metadata: binding, requestId: 2, samples: unrequested, sampleRate: 8000 } });
+  assert.equal(replies.at(-1).shadow, null, 'checkpoint prefixes never pay for the shadow'); assert.equal(profiles, 0); assert.ok(unrequested.every(v => v === 0));
+  await scope.self.onmessage({ data: { operation: 'match', metadata: binding, requestId: 2, samples: noise, sampleRate: 8000, shadow: true } });
   const reply = replies.at(-1);
   assert.equal(reply.result.matched, false); assert.equal(JSON.stringify(reply.shadow), JSON.stringify({ profile: 'cmn-v1', matched: false, agrees: null }));
   assert.equal(profiles, 1); assert.ok(noise.every(v => v === 0));
-  await scope.self.onmessage({ data: { operation: 'match', metadata: binding, requestId: 3, samples: new Float32Array(80000), sampleRate: 8000 } });
+  await scope.self.onmessage({ data: { operation: 'match', metadata: binding, requestId: 3, samples: new Float32Array(80000), sampleRate: 8000, shadow: true } });
   assert.equal(replies.at(-1).shadow, null); assert.equal(profiles, 1);
 });
 
