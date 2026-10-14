@@ -90,7 +90,7 @@ class ClaudeTransportTests(unittest.TestCase):
             'sourceSentenceId': 's1', 'sourceUnitIds': ['u1'], 'verdict': 'pass',
             'risk': 'low', 'checks': {name: 'pass' for name in CHECKS},
             'evidence': 'The complete sentence remains in order.', 'unresolvedIssues': []}]}
-        self.set_state(result(structured_output=source_result))
+        self.set_state(result(structured_output=source_result, num_turns=3))
         response = self.transport()('', PAYLOAD, role='source')
         self.assertEqual(json.loads(response['content']), source_result)
         call = json.loads(self.log.read_text().splitlines()[0])

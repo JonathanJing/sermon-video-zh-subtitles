@@ -174,8 +174,10 @@ class ClaudeLayer2Transport:
             if process.returncode or result.get('is_error') is not False or result.get('subtype') != 'success' \
                     or result.get('permission_denials') or content is None:
                 raise RuntimeError('claude_language_terminal_failure_inspect_receipt')
-            # One task turn plus the StructuredOutput finalizer; retries add turns.
-            if type(result.get('num_turns')) is not int or not 1 <= result['num_turns'] <= 2:
+            # Source batches may need the one configured structured-output retry;
+            # language calls retain their stricter two-turn contract.
+            max_turns = 3 if role == 'source' else 2
+            if type(result.get('num_turns')) is not int or not 1 <= result['num_turns'] <= max_turns:
                 raise RuntimeError('claude_language_unexpected_turn_count')
             if set(model_usage) != {self.model}:
                 raise RuntimeError('claude_language_model_identity_missing')
