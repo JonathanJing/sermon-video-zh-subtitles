@@ -16,7 +16,7 @@
 # (machine-checked locales).
 # Optional env: TONGXING_EXPORT_OPTIONS (private ExportOptions.plist),
 #               DEVELOPER_DIR (full Xcode, default /Applications/Xcode.app),
-#               CLIP_SPEC (a sermon-dev-clip-spec-v1 JSON: rehearse a clip cut from
+#               CLIP_SPEC (a sermon-dev-clip-spec-v2 JSON (v1 still read): rehearse a clip cut from
 #                 a weekly run instead of the fixed 10/1 clip),
 #               BASELINE_CACHE (a verified Dev baseline directory with public/ and
 #                 baseline-receipt.json, e.g. the previous run's baseline; files whose

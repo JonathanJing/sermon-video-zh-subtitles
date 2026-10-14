@@ -15,7 +15,7 @@ LOCALE = "zh-Hans"
 IDENTITY = {"targetLocale": LOCALE, "adapterId": "zh-tts", "adapterVersion": "1", "configSha256": "a" * 64,
             "provider": "local", "model": "tts", "modelRevision": "r1", "voice": "v1", "speakerId": "s1",
             "conditioningSha256": "b" * 64, "languageParameter": "zh", "normalizationPolicySha256": "c" * 64}
-RATE = {"schemaVersion": predicted.RATE_SCHEMA, "locale": LOCALE, "secondsPerUnit": 0.35,
+RATE = {"schemaVersion": predicted.RATE_SCHEMA_V1, "locale": LOCALE, "secondsPerUnit": 0.35,
         "interceptSeconds": 0.2, "p90Factor": 1.0, "synthesisIdentity": IDENTITY}
 CONDENSER = {"backend": "fake-transport", "model": "fake-condenser", "modelRevision": "r1",
              "cacheNamespace": "condense-fixtures-v1", "settings": {"reasoningEffort": "medium"}}

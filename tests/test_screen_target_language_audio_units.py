@@ -144,7 +144,7 @@ class FormalAudioScreenTests(unittest.TestCase):
         settings = receipt["asrSettings"]
         self.assertEqual((settings["model"], settings["modelRevision"], settings["batchSize"],
                           settings["minSimilarity"]), ("fixture-asr", "fixture-v1", 1, 0.88))
-        self.assertEqual(settings["implementationSha256"], subject.file_sha(Path(subject.__file__)))
+        self.assertEqual(settings["implementationSha256"], subject.implementation_sha256())
         self.assertEqual(receipt["asrSettingsSha256"], identity.json_sha256(settings))
         self.assertEqual(screening_asr_settings(receipt), settings)
         # A receipt that does not name its ASR backend cannot back a machine waiver.
@@ -154,6 +154,22 @@ class FormalAudioScreenTests(unittest.TestCase):
                                  model="fixture-asr", model_revision="fixture-v1")
         with self.assertRaisesRegex(ValueError, "backend"):
             screening_asr_settings(bare)
+
+    def test_v5_settings_reject_changed_dependency_and_legacy_single_file_digest(self):
+        import copy
+        from unittest.mock import patch
+        from scripts.target_audio_auto_qc import screening_asr_settings
+        receipt, _ = self.run_screen([unit["text"] for unit in self.job["units"]])
+        self.assertEqual(screening_asr_settings(receipt), receipt['asrSettings'])
+        for digest in ('0' * 64, subject.file_sha(Path(subject.__file__))):
+            changed = copy.deepcopy(receipt)
+            changed['asrSettings']['implementationSha256'] = digest
+            changed['asrSettingsSha256'] = identity.json_sha256(changed['asrSettings'])
+            with self.assertRaisesRegex(ValueError, 'dependency closure'):
+                screening_asr_settings(changed)
+        with patch.object(subject, 'implementation_sha256', return_value='0' * 64):
+            with self.assertRaisesRegex(ValueError, 'dependency closure'):
+                screening_asr_settings(receipt)
 
     def test_missing_word_stays_in_review_queue(self):
         receipt, screened = self.run_screen(["세 가지", "처음 사랑을 버렸느니라"])

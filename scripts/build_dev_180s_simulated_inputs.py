@@ -18,6 +18,7 @@ import ast
 import copy
 import hashlib
 import json
+import math
 import re
 from datetime import datetime, timezone
 from uuid import uuid4
@@ -41,7 +42,8 @@ STAMP = '2026-10-05T00:00:00Z'
 LOCALES = ['zh-Hans', 'ko', 'es']
 LEGACY_PAGE_ID = 'mockup-20261005-dev-180s'
 TEST_ROOT = ROOT / 'artifacts/dev-180s-page-test-20261004'
-CLIP_SPEC_SCHEMA = 'sermon-dev-clip-spec-v1'
+CLIP_SPEC_SCHEMA = 'sermon-dev-clip-spec-v2'
+CLIP_SPEC_SCHEMA_V1 = 'sermon-dev-clip-spec-v1'
 MEDITATION_PROMPT = {
     'zh-Hans': '默想问题：这段文字怎样影响我对技术与盼望的理解？\n',
     'ko': '묵상 질문: 이 내용은 기술과 소망에 대한 나의 이해에 어떤 영향을 줍니까?\n',
@@ -178,9 +180,36 @@ def _audio_digest(path):
         '-f', 'hash', '-hash', 'sha256', '-'], text=True).strip()
 
 
+def migrate_clip_spec(spec):
+    """Return a v2 clip spec. v1 has one number for both margins (default 1 s); v2 needs {"before", "after"}."""
+    version = spec.get('schemaVersion')
+    if version == CLIP_SPEC_SCHEMA:
+        margin = spec.get('marginSeconds')
+        contract.require(isinstance(margin, dict) and set(margin) == {'before', 'after'},
+                         'marginSeconds needs exactly before and after')
+        migrated = spec
+    else:
+        contract.require(version == CLIP_SPEC_SCHEMA_V1, 'Unsupported clip spec')
+        margin = spec.get('marginSeconds', 1.0)
+        contract.require(isinstance(margin, (int, float)) and not isinstance(margin, bool),
+                         'A v1 clip spec takes one number for marginSeconds; use v2 for separate margins')
+        migrated = dict(spec, schemaVersion=CLIP_SPEC_SCHEMA, marginSeconds={'before': margin, 'after': margin})
+    for margin in migrated['marginSeconds'].values():
+        contract.require(isinstance(margin, (int, float)) and not isinstance(margin, bool),
+                         'Clip margins must be finite numbers')
+        try:
+            finite = math.isfinite(float(margin))
+        except OverflowError:
+            finite = False
+        contract.require(finite, 'Clip margins must be finite numbers')
+        contract.require(margin >= 0, 'Clip margins must not be negative')
+    return migrated
+
+
 def weekly_clip(spec, clip_dir):
     """Cut a contiguous run of English units, with each locale's text and unit audio, from a weekly run."""
-    contract.require(spec.get('schemaVersion') == CLIP_SPEC_SCHEMA, 'Unsupported clip spec')
+    original_sha = contract.sha(spec)
+    spec = migrate_clip_spec(spec)
     contract.require(set(spec.get('locales', {})) == set(LOCALES),
                      'Clip rehearsal requires exactly zh-Hans, ko and es')
     lo, hi = spec['unitRange']
@@ -218,9 +247,11 @@ def weekly_clip(spec, clip_dir):
     sentences = {unit['sourceSentenceId'] for unit in units[lo:hi]}
     contract.require(not any(unit['sourceSentenceId'] in sentences for unit in units[:lo] + units[hi:]),
                      'Clip unit range must retain complete source sentences')
-    margin = float(spec.get('marginSeconds', 1.0))
-    start = max(0.0, units[lo]['start'] - margin)
-    end = units[hi - 1]['end'] + margin
+    # A dub usually runs longer than its English, so the tail needs room the head does not
+    # (2026-10-12 Korean clip: 3 s past a 1 s tail).
+    before, after = float(spec['marginSeconds']['before']), float(spec['marginSeconds']['after'])
+    start = max(0.0, units[lo]['start'] - before)
+    end = units[hi - 1]['end'] + after
     window_start = float(spec['approvedWindowStartSeconds'])
     clip_dir.mkdir(parents=True)
     media = clip_dir / 'source.mp4'
@@ -301,7 +332,7 @@ def weekly_clip(spec, clip_dir):
             'window_media_bound': True,
             'scope': {'originalSourceWindowSeconds': [round(window_start + start, 3), round(window_start + end, 3)],
                       'sermonRelativeWindowSeconds': [round(start, 3), round(end, 3)], 'unitRange': [lo, hi],
-                      'clipSpecSha256': contract.sha(spec), 'sourcePageId': spec.get('pageId'),
+                      'clipSpecSha256': original_sha, 'sourcePageId': spec.get('pageId'),
                       'englishSourceMediaSha256': spec['englishSourceMedia']['sha256']}}
 
 

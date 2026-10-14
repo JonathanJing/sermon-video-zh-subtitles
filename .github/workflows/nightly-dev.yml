@@ -1,0 +1,20 @@
+name: Nightly dev tests
+
+# Schedules run from main's copy of this file. Dispatching on dev gives the run
+# dev's SHA and ref, so its result is reported against dev, not main.
+on:
+  schedule:
+    - cron: "17 10 * * *"
+
+permissions:
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Run the full Python suite on dev
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run python-tests.yml --repo "$GITHUB_REPOSITORY" --ref dev
