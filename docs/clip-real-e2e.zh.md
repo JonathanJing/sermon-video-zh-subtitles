@@ -41,7 +41,7 @@
 | `layer2.backend` | 可选，默认 `openai_api`；显式 `claude_cli_opus` 会把片段政策重新冻结为 Opus 5.5 high 初译及 medium 复核。Claude 订阅调用的列价等价金额单列，不计入 `budget.totalUsd`；文本和音频质检仍计入批准的美元总额。 |
 | `layer2.claudeListPriceCapUsdPerLocale` | 仅用于明确批准的单次 Claude 片段测试；覆盖该次 Layer 2 规划中的每语订阅列价等值上限，随运行规格和预算收据冻结，不改周更配置。 |
 | `layer2.scopeRegisterRules` | 可列出需要裁去片段外来源单元规则的语言；保留通用规则、片段内的来源绑定条目，并把结果重新冻结到片段政策。 |
-| `layer2.initialClaudeCacheSources` | 可按语言引用先前失败运行第一轮已完整返回的 Claude 结果。导入前核对来源、锚点、政策、插件、完整请求与每组双角色返回；正式运行再次核对每个请求指纹。未知结果拒绝导入。 |
+| `layer2.initialClaudeCacheSources` | 可按语言引用先前失败运行第一轮已返回的 Claude 缓存。导入前核对来源、锚点、政策、插件、运行身份和每个返回；正式运行再次核对请求指纹。未返回的启动标记须由终态作业及有效预算账本证明没有预留，才能只跳过这些未派发项；其余未知结果拒绝导入。 |
 | `layer3.attestationTemplates` / `speakerRegistry` | 源周次的用户声音授权（会改绑到本片段的来源包）和说话人登记 |
 | `qc.maxRevisions` | 每种语言的文本质检最多打回 Layer 2 几次（0–3，默认 2） |
 | `page` | `pageId`（`mockup-…`）、三语展示文案（必须标明是测试）、可选的 Dev 基线缓存 |
@@ -90,6 +90,7 @@
 ## 失败与续跑
 
 - **结果未知时先对账。** 每个 Spark 阶段派发前会写 `*.started.json`，有标记但没有结果文件，说明结果未知，同一阶段会拒绝再跑。Layer 2 的未知结果由 controller 的持久 job 处理。
+- **长片段 Claude 账本。** Claude 片段 Layer 2 按语言分别授权和记账，每语仍受冻结的订阅标价等值上限约束；这避免数百次调用挤满默认的共享账本文件。
 - **Spark 会话开不起来。** `begin` 最多尝试 3 次，每次的输出都保留在 `logs/spark-begin-<n>.log`。编排器退出前一定会 `finish` 会话。
 - **渲染退出码为 1。** 渲染器自身的初筛标出了句子，后续的压缩和正式 ASR 筛查照常进行；只有退出码不在 0–2 才算未知。
 - **音频质检失败。** 该语言记为 `failed`，并记录 `nextActions`，例如 `resynthesize_new_seed`。修复不会自动执行；按上面的显式命令使用新的种子和独立根。修复沿原语言的音频修复账本计数，只有新音频通过质检才把该语言改为 `done`。

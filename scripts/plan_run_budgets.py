@@ -144,6 +144,10 @@ def layer2_cap_per_locale(profile, scale, backend):
     return layer2["capUsdPerLocale"][scale], True
 
 
+def layer2_ledger_scope(scale, backend):
+    return 'locale' if scale == 'week' or backend == 'claude_cli_opus' else 'run'
+
+
 def with_clip_claude_cap(profile, *, scale, backend, cap):
     """Apply one explicitly approved clip-run subscription cap without changing the weekly profile."""
     if cap is None:
@@ -211,7 +215,10 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
     config, per_locale, sizing = prepared or layer2_spec(execution, locales, profile, scale)
     layer2 = profile["layer2"]
     runtime_identity = budget_tools.selected_runtime_identity()
-    sharded = scale == "week"
+    backend = layer2_backend_of(execution)
+    # A long Claude clip can have hundreds of call receipts. Give each locale
+    # its own bounded ledger and the existing 8 MiB per-locale snapshot limit.
+    sharded = layer2_ledger_scope(scale, backend) == 'locale'
     bounds = per_locale if sharded else {k: v * len(locales) for k, v in per_locale.items()}
     limits, rules = layer2["requestLimits"], layer2["limits"]
     root = budget_tools.budget_root(config)
@@ -232,7 +239,6 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
                       "unitBounds": bounds, "limits": rules}, "approvalReceipt": approval.name,
         "ledgerScope": "locale" if sharded else "run", "runtimeIdentity": runtime_identity})
     budget_tools.load_authorization(config, authorization, binding["codeIdentitySha256"])
-    backend = layer2_backend_of(execution)
     cap, counts = layer2_cap_per_locale(profile, scale, backend)
     return {"stage": "layer2", "authorization": str(authorization),
             "authorizationSha256": file_sha256(authorization), "approvalSha256": file_sha256(approval),

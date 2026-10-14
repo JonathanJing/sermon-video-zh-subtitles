@@ -87,6 +87,8 @@ class SpecificationTests(unittest.TestCase):
                           original["layer2"]["claudeCliListPriceCapUsdPerLocale"]["clip"]), (20, 8))
         with self.assertRaisesRegex(ValueError, 'requires a clip'):
             budgets.with_clip_claude_cap(original, scale="week", backend="claude_cli_opus", cap=20)
+        self.assertEqual(budgets.layer2_ledger_scope('clip', 'claude_cli_opus'), 'locale')
+        self.assertEqual(budgets.layer2_ledger_scope('clip', 'openai_api'), 'run')
 
     def test_source_bound_plugin_rebases_only_from_its_frozen_weekly_binding(self):
         old_source, old_anchor = 'a' * 64, 'b' * 64

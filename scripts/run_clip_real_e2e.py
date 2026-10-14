@@ -475,16 +475,40 @@ def drive_layer2(run: Run, execution: Path, authorization: Path, locales: list[s
 
 
 def seed_initial_claude_cache(run: Run, locale: str, source_dir: Path) -> None:
-    """Import complete returned CLI calls; the model runner rechecks every payload fingerprint."""
+    """Import returned calls with their run identity; the model runner rechecks every fingerprint."""
     from scripts import produce_target_language_candidate as producer
     from scripts import run_target_language_models as models
     from scripts import target_language_policy as tp
+    from scripts import sermon_review_contracts as contracts
     source_dir = source_dir.resolve()
     artifacts = (ROOT / 'artifacts').resolve()
     require(str(source_dir).startswith(str(artifacts) + '/')
             and source_dir.name == 'round-001' and source_dir.parent.name == 'repair-rounds',
             'initial Claude cache must be a prior local first-round artifact')
-    require(not list(source_dir.glob('*.started.json')), 'prior Claude call has an uncertain outcome')
+    markers = sorted(source_dir.glob('*.started.json'))
+    reconciled = []
+    if markers:
+        prior_l2 = source_dir.parents[3]
+        jobs = list((prior_l2 / 'layer2-jobs').glob('*/state.json'))
+        require(jobs and all(read(path).get('status') in {'failed', 'succeeded', 'cancelled'} for path in jobs),
+                'prior Claude workers must be terminal before reconciling markers')
+        ledgers = list((prior_l2 / '.layer2-jobs.layer2-budget').glob('*/state.json'))
+        require(len(ledgers) == 1, 'prior Claude markers need one intact run ledger')
+        ledger, _ = contracts.read_snapshot(ledgers[0], max_bytes=8 * 1024 * 1024)
+        operation_ids = {row['request']['operationId'] for row in ledger['reservations'].values()}
+        for marker in markers:
+            stem = marker.name.removesuffix('.started.json')
+            fingerprint = read(marker).get('payloadSha256')
+            require(isinstance(fingerprint, str) and re.fullmatch(r'[0-9a-f]{64}', fingerprint)
+                    and 'model.' + fingerprint not in operation_ids
+                    and not (source_dir / f'{stem}.json').exists()
+                    and not (source_dir / f'{stem}.raw.json').exists(),
+                    'prior Claude marker may have reached a paid call; reconcile separately')
+            reconciled.append({'marker': marker.name,
+                'markerSha256': hashlib.sha256(marker.read_bytes()).hexdigest(),
+                'result': 'not_dispatched_no_budget_reservation'})
+        reconciled.append({'ledger': str(ledgers[0]),
+                           'ledgerSha256': hashlib.sha256(ledgers[0].read_bytes()).hexdigest()})
     source, anchor = read(run.l2 / 'src/source.json'), read(run.l2 / 'src/anchor.json')
     policy = read(run.l2 / 'policy' / f'{locale}-policy-clip.json')
     request = producer.prepare_request(source, anchor, policy, candidate_mode='production')
@@ -495,28 +519,35 @@ def seed_initial_claude_cache(run: Run, locale: str, source_dir: Path) -> None:
             and prior_rules['anchorManifestSha256'] == tp.canonical_sha256(anchor)
             and prior_rules['pluginImplementationSha256'] == policy['languageReview']['pluginImplementationSha256'],
             'prior Claude rules differ from the frozen clip')
-    listing = []
+    listing = [source_dir / name for name in ('run-identity.json', 'request.json', 'rule-preflight.json')]
+    require(all(path.is_file() for path in listing), 'prior Claude run identity is incomplete')
     for index, _ in enumerate(models.group_plan(request, anchor), 1):
         for suffix, role in (('astra', 'translator'), ('sol', 'reviewer')):
             stem = f'group-{index:04d}-{suffix}'
             cache, raw = source_dir / f'{stem}.json', source_dir / f'{stem}.raw.json'
-            require(cache.is_file() and raw.is_file(), f'incomplete returned Claude pair: {stem}')
+            require(cache.is_file() == raw.is_file(), f'incomplete returned Claude pair: {stem}')
+            if not cache.is_file():
+                continue
             saved, returned = read(cache), read(raw)
             require(saved.get('payloadSha256') == returned.get('payloadSha256')
                     and saved.get('model') == policy[role]['model']
                     and saved.get('requestId') == returned.get('response', {}).get('id')
-                    and isinstance(saved.get('result'), dict), f'invalid returned Claude pair: {stem}')
+                    and isinstance(saved.get('result'), dict)
+                    and type((returned.get('response', {}).get('claudeCli') or {}).get('listPriceUsd')) in (int, float),
+                    f'invalid returned Claude pair: {stem}')
             listing.extend((cache, raw))
+    require(len(listing) > 3, 'prior Claude run has no complete returned calls')
     destination = run.l2 / 'text' / locale / 'repair-rounds' / 'round-001'
     manifest = destination / 'initial-cache-import.json'
     identity = {'schemaVersion': 'sermon-clip-initial-claude-cache-import-v1',
                 'sourceDirectory': str(source_dir), 'requestSha256': tp.canonical_sha256(request),
-                'policySha256': tp.canonical_sha256(policy), 'responses': [
-                    {'name': path.name, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()} for path in listing]}
+                'policySha256': tp.canonical_sha256(policy), 'reconciledMarkers': reconciled,
+                'files': [{'name': path.name, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+                          for path in listing]}
     if manifest.exists():
         require(read(manifest) == identity and all(
             hashlib.sha256((destination / row['name']).read_bytes()).hexdigest() == row['sha256']
-            for row in identity['responses']), 'imported Claude cache changed')
+            for row in identity['files']), 'imported Claude cache changed')
         return
     require(not destination.exists() or not any(destination.iterdir()),
             'initial Claude cache destination already has unrelated files')
