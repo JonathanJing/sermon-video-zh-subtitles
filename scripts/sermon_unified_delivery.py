@@ -263,8 +263,8 @@ def _authorization(value, paths, state, sealed):
     return receipt
 
 
-def _reader(url):
-    with urlopen(Request(url, headers={'Cache-Control': 'no-cache'}), timeout=120) as response:
+def _reader(url, *, timeout=120):
+    with urlopen(Request(url, headers={'Cache-Control': 'no-cache'}), timeout=timeout) as response:
         return response.status, response.read()
 
 

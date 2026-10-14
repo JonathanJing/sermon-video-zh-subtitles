@@ -495,10 +495,14 @@ class FormalRenderTests(unittest.TestCase):
         job = self.context["job"]
         job["adapter"]["normalizationPolicySha256"] = subject.identity.json_sha256(
             subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
-        for text in ("사진 2장과 영화 2편", "8장을 보십시오."):
+        for text in ("사진 2장과 영화 2편", "영화 2편"):
             with self.subTest(text=text):
                 job["units"][0]["text"] = text
                 self.assertEqual(subject.unit_instructions(job, None), {})
+        # v3: a bare chapter in sermon prose is read in Sino-Korean.
+        job["units"][0]["text"] = "8장을 보십시오."
+        self.assertEqual(subject.unit_instructions(job, None),
+                         {job["units"][0]["translationGroupId"]: {"spokenText": "팔장을 보십시오."}})
 
     def test_the_spoken_forms_policy_speaks_korean_chapter_numbers_without_a_file(self):
         job = self.context["job"]

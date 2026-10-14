@@ -112,12 +112,12 @@ class SeriesTerminologyTests(unittest.TestCase):
         glossary = pipeline.load_glossary(None)
         changed = copy.deepcopy(glossary)
         changed["seriesTerminology"]["entries"][0]["chinese"] = "修订后的标题"
-        payload = {"choices": [{"message": {"content": '{"id": 1, "zh": "耶稣与你同在。"}'}}], "model": "test"}
+        payload = {"choices": [{"message": {"content": '{"id": 1, "zh": "耶稣与你同在。"}'}}], "model": "gpt-6.1-sol"}
         segments = [{"id": 1, "start": 0, "end": 5, "text": "Jesus is with you."}]
         with tempfile.TemporaryDirectory() as tmp, patch.object(pipeline, "chat_json", return_value=payload) as request:
             out = Path(tmp)
             for terms in (glossary, glossary, changed):
-                pipeline.translate_chinese("unused-test-key", segments, out, "test", terms)
+                pipeline.translate_chinese("unused-test-key", segments, out, "gpt-6.1-sol", terms)
             self.assertEqual(request.call_count, 2)
             self.assertEqual(len(list((out / "translation_segments").glob("*.json"))), 2)
             self.assertIn(names.PROMPT_INSTRUCTION, request.call_args.args[1]["messages"][0]["content"])

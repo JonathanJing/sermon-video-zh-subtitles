@@ -30,6 +30,7 @@ coverage/
 data/raw/
 data/benchmarks/**/work/
 data/benchmarks/**/recording.wav
+data/benchmarks/field-venue-fingerprint/20261011-mid-back.json
 artifacts/
 output/pdf/
 tmp/
