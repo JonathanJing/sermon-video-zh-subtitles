@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "tongxing-ios-targeted-test-summary-v1",
+  "status": "passed",
+  "suite": "TongxingTests/AudioAlignmentControllerTests",
+  "totalTestCount": 43,
+  "passedTests": 41,
+  "failedTests": 0,
+  "skippedTests": 2,
+  "evidenceScope": "iOS-27.1-simulator",
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run",
+  "resultBundleSha256": null,
+  "statusSha256": "d4afbff47859db5859bd38d63c8b31ebc7b9e8f73f8fc6bbf356c6c3309702ae",
+  "xcresultSummarySha256": "d113244ee37404d074b38a867900f7134bbdcc336bc7ce56f1a4286a75661e3a"
+}
