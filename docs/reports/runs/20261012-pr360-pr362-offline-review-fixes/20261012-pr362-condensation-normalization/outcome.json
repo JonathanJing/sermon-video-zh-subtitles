@@ -1,0 +1,9 @@
+{
+  "status": "pass",
+  "testsPassed": 22,
+  "subtestsPassed": 26,
+  "modelCalls": 0,
+  "paidCalls": 0,
+  "scope": "condensation frozen synthesis policy length and legacy compatibility",
+  "initialFixtureFailures": "Two exploratory runs failed due test setup: no shorten action; then pre-existing Psalm chapter detector on English reference. Both logs preserved; final fixture isolates number retention without changing production code."
+}

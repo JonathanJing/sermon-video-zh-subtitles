@@ -1,0 +1,36 @@
+{
+  "uiAndHostedResults": [
+    {
+      "source": "tongxing-category-ios-check.log",
+      "sha256": "84a8f6ebeafac72de65fa950cb551638a4b49134b8e79cb6684e6a7df1fed7df",
+      "line": 1157,
+      "result": "Test Case '-[TongxingTests.PlaybackControllerTests testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback]' passed (1.165 seconds)."
+    },
+    {
+      "source": "tongxing-category-ios-check.log",
+      "sha256": "84a8f6ebeafac72de65fa950cb551638a4b49134b8e79cb6684e6a7df1fed7df",
+      "line": 1305,
+      "result": "Test Case '-[TongxingUITests.ListeningFlowUITests testRemoteCategoriesUseInterfaceLanguageForNewPageTypes]' passed (29.985 seconds)."
+    },
+    {
+      "source": "tongxing-category-ios-check.log",
+      "sha256": "84a8f6ebeafac72de65fa950cb551638a4b49134b8e79cb6684e6a7df1fed7df",
+      "line": 1585,
+      "result": "Test Case '-[TongxingUITests.ListeningFlowUITests testRemoteCategoryRefreshWithoutRebuildPreservesPausedPlayback]' failed (36.157 seconds)."
+    },
+    {
+      "source": "tongxing-category-ios-recheck.log",
+      "sha256": "2d695f531c1f15c2ce7bbd42172e47f56c73bc9404780bae42c0bfdd45c83e77",
+      "line": 277,
+      "result": "Test Case '-[TongxingTests.PlaybackControllerTests testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback]' passed (1.093 seconds)."
+    },
+    {
+      "source": "tongxing-category-ios-recheck.log",
+      "sha256": "2d695f531c1f15c2ce7bbd42172e47f56c73bc9404780bae42c0bfdd45c83e77",
+      "line": 398,
+      "result": "Test Case '-[TongxingUITests.ListeningFlowUITests testRemoteCategoryRefreshWithoutRebuildPreservesPausedPlayback]' passed (22.966 seconds)."
+    }
+  ],
+  "python": "...........\n----------------------------------------------------------------------\nRan 11 tests in 0.322s\n\nOK\n",
+  "note": "Unique UI pass count is 2. Failed refresh attempt is retained; its passing retry is not a separate scenario."
+}

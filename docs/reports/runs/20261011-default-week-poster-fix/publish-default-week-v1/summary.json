@@ -1,0 +1,44 @@
+{
+  "status": "published_http_verified",
+  "version": "sites/ai-for-god-sermon-audio/versions/c10d222bd231b959",
+  "defaultPageId": "resi-20261011-54475d42",
+  "files": [
+    {
+      "path": "/multilingual-v4.json",
+      "sha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+      "passed": true
+    },
+    {
+      "path": "/multilingual-v3.json",
+      "sha256": "7a0dda6c3311067bc409b775a3fdb20f54c39e3cd5824d54c1715ce28c5825fc",
+      "passed": true
+    },
+    {
+      "path": "/weekly-announcements-v1.json",
+      "sha256": "9938d6780c9a5e34e2d5c6309bc61364666fbd92cb44fe81ae79db01d5e28b5d",
+      "passed": true
+    }
+  ],
+  "appDefaultPosterSelection": [
+    {
+      "locale": "zh-Hans",
+      "pageID": "resi-20261011-54475d42",
+      "title": "耶稣警告",
+      "imageHashPassed": true
+    },
+    {
+      "locale": "ko",
+      "pageID": "resi-20261011-54475d42",
+      "title": "예수님은 경고하십니다",
+      "imageHashPassed": true
+    },
+    {
+      "locale": "es",
+      "pageID": "resi-20261011-54475d42",
+      "title": "Jesús advierte",
+      "imageHashPassed": true
+    }
+  ],
+  "deviceDisplay": "not_run",
+  "push": "not_sent_no_production_channel"
+}

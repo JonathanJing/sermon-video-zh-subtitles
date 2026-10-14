@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261010-ios-pr-merge-validation",
+  "runs": [
+    {
+      "label": "ios-pr-merge-20261010",
+      "source": "/private/tmp/tongxing-ios-report-input/ios-pr-merge-20261010",
+      "skipped": {}
+    },
+    {
+      "label": "ios-pr-merge-heading-20261010",
+      "source": "/private/tmp/tongxing-ios-report-input/ios-pr-merge-heading-20261010",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "core.log",
+      "kind": "log",
+      "bytes": 3327,
+      "truncated": false,
+      "sha256": "3db3af7409c0745f36f39494788db39ceddc41210a3c7613ac01c3789ca02e0e",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "initial-ios.log",
+      "kind": "log",
+      "bytes": 344023,
+      "truncated": true,
+      "sha256": "84a8f6ebeafac72de65fa950cb551638a4b49134b8e79cb6684e6a7df1fed7df",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "ios-recheck.log",
+      "kind": "log",
+      "bytes": 96871,
+      "truncated": true,
+      "sha256": "2d695f531c1f15c2ce7bbd42172e47f56c73bc9404780bae42c0bfdd45c83e77",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 554,
+      "truncated": false,
+      "sha256": "74391f31e08ffd3f659efe8520f7292c79473bb8b7f94630805405bb2d017928",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "python.log",
+      "kind": "log",
+      "bytes": 110,
+      "truncated": false,
+      "sha256": "ae6ad4d8195d28d8d5037a0c8092615c1fc65b192c83c8e8409b83d58dc797b0",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "test-result-receipt.json",
+      "kind": "whole",
+      "bytes": 1914,
+      "truncated": false,
+      "sha256": "3a7194f395218d7aa63062c97700c726eb8bc82dedd78f0c6290ebf7b9ff9312",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "web.log",
+      "kind": "log",
+      "bytes": 5354,
+      "truncated": false,
+      "sha256": "4e9c1c83877547fea42e3da44d3671e4793ea136b3e696ea01a3dbc2dc24e733",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-heading-20261010",
+      "path": "heading-initial.log",
+      "kind": "log",
+      "bytes": 100695,
+      "truncated": true,
+      "sha256": "60265faa14ec1bd2ec378b316613fa4062f92e3df5946532ea526ba1ad4397af",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-heading-20261010",
+      "path": "heading-recheck.log",
+      "kind": "log",
+      "bytes": 78414,
+      "truncated": true,
+      "sha256": "e86fb8a0ea3297f6bd86e5b7df6dcf26ce5fe100327b63c3a6f81d59688cf1f7",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-heading-20261010",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 595,
+      "truncated": false,
+      "sha256": "01172f2abf10c0b70f2bc94d0637915e8283de0a9253e14611193cc95a23cdf8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

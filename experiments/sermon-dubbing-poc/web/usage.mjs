@@ -17,7 +17,7 @@ const nudgeActions = { '-1': 'nudge_back_1_click', '-0.25': 'nudge_back_quarter_
 
 export function createUsage({ catalog, config, audio, context, onError = () => {} }) {
   const bootstrapWeek = catalog.weeks.find(week => week.tracks.length);
-  if (!config?.enabled || !bootstrapWeek) return { setEnabled() {}, retract: async () => {}, record() {} };
+  if (!config?.enabled || !bootstrapWeek) return { setEnabled() {}, retract: async () => {}, record() {}, recordAlignment() {} };
   const bootstrapTrack = bootstrapWeek.tracks[0];
   const source = { week: bootstrapWeek.id, trackId: bootstrapTrack.id, audioSha256: bootstrapTrack.sha256, appVersion: config.appVersion };
   const listening = createLanguageListening({ audio, config, onError, bootstrapSource: source,
@@ -98,6 +98,7 @@ export function createUsage({ catalog, config, audio, context, onError = () => {
       if (failed) throw failed.reason;
     },
     record,
+    recordAlignment: attempt => listening.recordAlignment(attempt),
     select: (week, track) => listening.select(week, track),
   };
 }

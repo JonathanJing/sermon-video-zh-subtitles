@@ -22,11 +22,35 @@ class TargetLanguagePolicyTests(unittest.TestCase):
         draft.pop("componentSha256")
         selected = subject.apply_translator_backend(draft, 'claude_cli')
         for policy in (selected, {**draft, 'reviewer': {**draft['reviewer'], 'model': 'claude-opus-5-5'}}):
-            with self.assertRaisesRegex(ValueError, 'separate experimental policy contract'):
+            with self.assertRaisesRegex(ValueError, 'freezes only as the claude_cli_opus'):
                 subject.freeze_policy(policy)
         strict = {**selected, 'schemaVersion': subject.POLICY_V3}
-        with self.assertRaisesRegex(ValueError, 'separate experimental policy contract'):
+        with self.assertRaisesRegex(ValueError, 'freezes only as the claude_cli_opus'):
             subject.freeze_strict_policy(strict, {})
+
+    def test_claude_cli_opus_backend_freezes_both_roles_through_claude(self):
+        draft = read_policy("ko")
+        draft.pop("componentSha256")
+        selected = subject.apply_layer2_backend(draft, 'claude_cli_opus')
+        self.assertEqual({role: (selected[role]['model'], selected[role]['reasoningEffort'])
+                          for role in ('translator', 'reviewer')},
+                         {'translator': ('claude-opus-5-5', 'high'), 'reviewer': ('claude-opus-5-5', 'medium')})
+        self.assertEqual(selected['translator']['promptVersion'], draft['translator']['promptVersion'])
+        policy = subject.freeze_policy(selected)
+        self.assertEqual(subject.layer2_backend(policy), 'claude_cli_opus')
+        self.assertEqual(subject.layer2_backend(subject.freeze_policy(subject.apply_layer2_backend(draft, 'openai_api'))),
+                         'openai_api')
+        # Any other Claude combination stays refused: e.g. an Opus reviewer at high effort.
+        wrong = {**selected, 'reviewer': {**selected['reviewer'], 'reasoningEffort': 'high'}}
+        with self.assertRaisesRegex(ValueError, 'freezes only as the claude_cli_opus'):
+            subject.freeze_policy(wrong)
+        with tempfile.TemporaryDirectory() as folder:
+            source, out = Path(folder) / 'draft.json', Path(folder) / 'policy.json'
+            source.write_text(json.dumps(draft))
+            with patch('sys.argv', ['policy', 'freeze', '--policy', str(source), '--out', str(out),
+                                    '--layer2-backend', 'claude_cli_opus']):
+                subject.main()
+            self.assertEqual(subject.layer2_backend(json.loads(out.read_text())), 'claude_cli_opus')
 
     def test_claude_cli_freeze_leaves_no_policy_artifact(self):
         draft = read_policy("ko")
@@ -36,7 +60,7 @@ class TargetLanguagePolicyTests(unittest.TestCase):
             source.write_text(json.dumps(draft))
             with patch('sys.argv', ['policy', 'freeze', '--policy', str(source), '--out', str(out),
                                     '--translator-backend', 'claude_cli']):
-                with self.assertRaisesRegex(ValueError, 'separate experimental policy contract'):
+                with self.assertRaisesRegex(ValueError, 'freezes only as the claude_cli_opus'):
                     subject.main()
             self.assertFalse(out.exists())
             self.assertFalse(out.parent.exists())
