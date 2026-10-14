@@ -8,7 +8,6 @@ import { ALIGNMENT_OUTCOMES, ALIGNMENT_REASONS, ALIGNMENT_FRACTION_BANDS, ALIGNM
 
 const DAY = 86400000;
 const RECORDED = new Set(['recording', 'matched_audio']);
-const MATCHED = new Set(['applied', 'matched', 'play_failed', 'play_blocked']);
 export const fetchAlignmentSessions = (db, options) => fetchListeningSessions(db, { ...options, collection: 'alignmentUsageSessions30d' });
 
 const newRow = () => ({ presses: 0, recorded: 0, matched: 0, applied: 0, clients: new Set() });
@@ -41,7 +40,7 @@ export function summarizeAlignment(records, { from, to, now = Date.now(), query 
       for (const row of rows) {
         row.presses++;
         if (RECORDED.has(attempt.stage)) row.recorded++;
-        if (MATCHED.has(attempt.outcome)) row.matched++;
+        if (attempt.stage === 'matched_audio' && attempt.reason === 'matched') row.matched++;
         if (attempt.outcome === 'applied') row.applied++;
         if (client) row.clients.add(client);
       }
