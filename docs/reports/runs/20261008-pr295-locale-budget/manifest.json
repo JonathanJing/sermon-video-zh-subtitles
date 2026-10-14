@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261008-pr295-locale-budget",
+  "runs": [
+    {
+      "label": "pr295-locale-budget",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/pr295-locale-budget",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr295-locale-budget",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 161,
+      "truncated": false,
+      "sha256": "047140fa5667ff26045acc7a92ac27192ee1b4d6fa35100a2dffaa077d2144cc",
+      "redactions": {}
+    },
+    {
+      "run": "pr295-locale-budget",
+      "path": "tests.log",
+      "kind": "log",
+      "bytes": 115,
+      "truncated": false,
+      "sha256": "9aeca4d66a73f3fff7bfd02b2b116c28ef0d12c4cf7fffc1a4ae599ab4095c87",
+      "redactions": {}
+    },
+    {
+      "run": "pr295-locale-budget",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 55,
+      "truncated": false,
+      "sha256": "5285ead8a126785f3b18bff432708b2f1833ed7b2a7e4eb67da48ad2df764f16",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
