@@ -430,7 +430,12 @@
       "bytes": 778,
       "truncated": false,
       "sha256": "6dc1068c4d9f2abf9d756abba0f7ee06ccbfc37218fed761cd7d9c5e4405a2b5",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "938e61375251be38300836f5e382ff0620a08c00544b5c9af09ca8e07901e77a",
+        "bytes": 773,
+        "normalization": "strip_line_end_whitespace"
+      }
     },
     {
       "run": "audio-r2",
@@ -439,7 +444,12 @@
       "bytes": 4425,
       "truncated": false,
       "sha256": "160305e4862cbc88d8bad3c75306160b5e728d6b754ef9e8edff4f1f5b1ececb",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "97038ef3db42173a726b3d0851696df30afef1e5adc2bf9b33a5ad5d9eccd5ef",
+        "bytes": 4385,
+        "normalization": "strip_line_end_whitespace"
+      }
     }
   ],
   "limits": {

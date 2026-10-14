@@ -36,6 +36,8 @@
 - `audio-r1`：代码 stage 漏了 `docs/series-terminology.zh.md`，因此运行时 policy 校验在 TTS 模型加载前失败。新 stage 加入该文件并验证全部 618 个代码/配置文件哈希后，`audio-r2` 成功。
 - 修复代码已提交并推送至工作分支：`9278ace1df96a95ef3d5487ed0f33dba77006fa1`。完成了 `py_compile` 和 `git diff --check`；未新增专门的单元测试，端到端证据仅限上述诊断路径。
 
+报告初始 CI 另因 `audio-r2` 导出的 `asr.log`、`tts.log` 含行尾空白而未通过 `git diff --check`。本次只规范化报告中的日志副本，不改错误内容或原运行文件；manifest 原有 `sha256`/`bytes` 继续绑定原来源，新增 `exportedCopy` 记录规范化副本。
+
 ## 占用资源之后才暴露的错误
 
 `audio-r1` 的术语表路径错误在独占 Spark job 和输入 staging 之后才暴露，尽管 TTS 容器尚未加载模型。代码清单通过了哈希核验，但清单并未保证所有运行时数据依赖都在 stage 中。后续应让 L3 预检或 code-stage manifest 显式校验 policy 引用的系列术语表等静态数据文件，再申请独占 job。
