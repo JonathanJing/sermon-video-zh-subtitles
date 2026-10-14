@@ -88,5 +88,5 @@ dev/main 的 push 运行共红过 11 次：9 次是上面的 flaky 测试，2 �
 - `test_groups_run_concurrently_in_the_worker`：第一个调用等第二个调用到达（最多 5 秒），不再赌 50 ms sleep；串行实现仍会以 peak=1 失败。
 - `test_engine_then_readonly_report_replay_and_failure`：没能复现，先让断言同时打印 stdout（每个节点的 executionStatus/reason），下次失败能看到原因。
 - `export_run_digest.py` 新增 `--tidy-whitespace`，导出时自动执行；`publish_run_report.sh` 在提交前再整理一次，并用 `git diff --cached --check` 拦住剩余问题，不再推到 CI 才发现。
-- Python tests：去掉 push 到 dev 的触发，新增每日 UTC 10:17 定时运行（检出 dev，全量）和手动触发。定时任务读取 main 上的 workflow 文件，下次推广到 main 后生效；失败时 GitHub 通知最后修改 cron 的人。
+- Python tests：去掉 push 到 dev 的触发，新增手动触发（全量）。新的 `nightly-dev.yml` 每日 UTC 10:17 在 dev 上触发它，运行的 SHA 和 ref 都是 dev 的，结果不会记到 main 的提交上。定时任务读取 main 上的 workflow 文件，下次推广到 main 后生效。
 - iOS UI 测试已经只在推广到 main 和手动触发时运行，不需要改。
