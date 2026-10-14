@@ -1093,7 +1093,8 @@
       "bytes": 5939,
       "truncated": false,
       "sha256": "362b00fa07eb2075c5ee2282cfa9505c5c4394247fd048b9f64607c811f00440",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {"sha256": "78d37374327a07bf235d70f22c260d3f6c447b040f1a93beb21a962ad9d111b9", "bytes": 5899, "normalization": "strip_line_end_whitespace"}
     },
     {
       "run": "l3g",
@@ -1156,7 +1157,8 @@
       "bytes": 5939,
       "truncated": false,
       "sha256": "89175c76d77c2ffbcd522856ad5b8d8957b59c088c88b84e166e53fc08824a21",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {"sha256": "6af18854b36b5632972a1dca46fbd7e77b554e31f40d772db194d3965417d5af", "bytes": 5899, "normalization": "strip_line_end_whitespace"}
     },
     {
       "run": "l3g",
@@ -1183,7 +1185,8 @@
       "bytes": 5939,
       "truncated": false,
       "sha256": "2205f447836c0b5caa0f14facc067c8ef30269ebde8ff21eac3d0af9e2ed8342",
-      "redactions": {}
+      "redactions": {},
+      "exportedCopy": {"sha256": "b29f512f4ca4e6c108036714dc152ea385332659edeaa3c1d112339a739cf156", "bytes": 5899, "normalization": "strip_line_end_whitespace"}
     },
     {
       "run": "l3g",
