@@ -1,0 +1,8 @@
+stage	status	seconds
+build-inputs	pass	18
+baseline	pass	7
+delivery-preflight	pass	2
+delivery-execute	fail	63
+delivery-execute-resume	fail	4
+delivery-execute-resume2	pass	100
+browser-smoke-no-session	pass	-

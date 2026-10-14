@@ -113,6 +113,24 @@ class SentenceInterpretationTests(unittest.TestCase):
         self.assertEqual(manifest["sourceUnits"][0]["sourceWordIds"][0], "block-00-w0210")
         self.assertEqual(manifest["sourceUnits"][0]["sourceUnitId"], "block-00-u015")
 
+    def test_operator_can_accept_parallel_infinitive_boundaries_explicitly(self):
+        words = ["Alpha", "bravo", "charlie", "delta,", "to", "echo", "foxtrot", "golf,",
+                 "to", "hotel", "india", "juliet."]
+        source = [segment(" ".join(words), words)]
+        self.source.write_text(json.dumps(source), encoding="utf-8")
+        build = lambda overrides: subject.build_anchor_manifest(
+            source, source_path=self.source, unit_policy=subject.UNIT_POLICY_V2,
+            max_unit_seconds=3.0, boundary_overrides=overrides)
+        with self.assertRaisesRegex(ValueError, "safe clause split"):
+            build({"block-00-s001": ["block-00-w0004", "block-00-w0008"]})
+        split = ["block-00-w0004", "block-00-w0008"]
+        manifest = build({"block-00-s001": {"splitAfter": split, "acceptDependentBoundaryAfter": split}})
+        self.assertEqual([unit["sourceWordIds"][0] for unit in manifest["sourceUnits"]],
+                         ["block-00-w0001", "block-00-w0005", "block-00-w0009"])
+        self.assertTrue(manifest["sourceUnits"][0]["boundary"]["splitEvidence"]["operatorAcceptedDependency"])
+        with self.assertRaises(ValueError):
+            build({"block-00-s001": {"splitAfter": ["block-00-w0004"], "acceptDependentBoundaryAfter": ["block-00-w0008"]}})
+
     def test_explicit_boundary_override_uses_existing_safe_punctuation(self):
         words = ["Alpha", "bravo", "charlie", "delta,", "echo", "foxtrot,",
                  "golf", "hotel", "india", "juliet."]

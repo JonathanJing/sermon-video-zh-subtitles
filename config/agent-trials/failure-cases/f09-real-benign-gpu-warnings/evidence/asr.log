@@ -1,0 +1,12 @@
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+The following generation flags are not valid and may be ignored: ['temperature']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"stage": "asr", "batchIndex": 0, "completedGroups": 8}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"stage": "asr", "batchIndex": 1, "completedGroups": 13}
+{"status": "completed_diagnostic", "groups": 13, "diagnosticOnly": true, "humanApproval": false, "formalEligible": false}

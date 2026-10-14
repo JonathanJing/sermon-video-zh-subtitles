@@ -62,6 +62,10 @@ def _input_identity(view, unit):
         # Machine audio meaning notes the Layer 2 controller hands its repair loop are a Layer 1 input:
         # new notes make a new text job, which continues the same repair chain.
         selected['sourceMeaningNotes'] = hashes['sourceMeaningNotes']
+    if phase == 'text' and locale and 'backTranslationQc.' + locale in hashes:
+        # A failed back-translation QC receipt of this lane's passed chain (gate 4): a new receipt is a
+        # new text job, which reopens the same repair chain for the groups it failed.
+        selected['backTranslationQc.' + locale] = hashes['backTranslationQc.' + locale]
     if locale:
         for name in ('policy', 'candidate', 'review')[:{'text': 1, 'audio': 3, 'page': 3}[phase]]:
             key = name + '.' + locale

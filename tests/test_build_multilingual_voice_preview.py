@@ -118,8 +118,10 @@ class VoicePreviewTests(unittest.TestCase):
         preview.build(self.root, page, decode=False)
         html = page.read_text(encoding="utf-8")
         self.assertEqual(html.count("本次样音待听审"), 24)
-        self.assertEqual(html.count("旧中文样片已有能力认可"), 6)
-        self.assertEqual(html.count("语言能力尚未晋升"), 18)
+        # Six Chinese capabilities plus Steve Bang Lee's human-reviewed ko/es
+        # (config/speaker-voice-registry.json, acceptance 2026-10-11).
+        self.assertEqual(html.count("旧中文样片已有能力认可"), 8)
+        self.assertEqual(html.count("语言能力尚未晋升"), 16)
 
     def test_changed_checkpoint_is_rejected_even_if_manifest_hash_is_updated(self) -> None:
         self.change_source("manifest.json", "checkpointSha256", "0" * 64)

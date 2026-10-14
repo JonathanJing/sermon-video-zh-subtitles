@@ -8,8 +8,8 @@ All paths in the render manifest are relative to its artifact root.
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
 import difflib
+from datetime import datetime
 import hashlib
 import json
 import math
@@ -180,7 +180,12 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
                 "sentenceAndPauseBoundaries"))
             and window.get("status") == "approved"
             and window.get("humanApproval") is True
-            and (source.get("anchors", {}).get("issueCount") == 0 or anchor_exception),
+            and (source.get("anchors", {}).get("issueCount") == 0 or anchor_exception
+                 # Layer 1 keeps accepted anchor warnings in the manifest count but clears
+                 # them from the package only when its machine judge, the human source
+                 # review and any operator timing acceptance all cover them.
+                 or (source.get("issues") == [] and source.get("status") == "ready_for_translation"
+                     and source.get("translationEligible") is True)),
             "English Source Package lacks source/window/anchor human gates")
     speech.validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
     text_policy = speech.validate_text_release_basis(source, anchor, candidate, human_receipt)
@@ -278,16 +283,19 @@ def validate_schedule(schedule: dict[str, Any], candidate: dict[str, Any], ancho
             and math.isfinite(scheduled_duration)
             and abs(track_duration - scheduled_duration) <= track_tolerance,
             "Schedule track duration differs from measured audio")
-    require(track_duration <= clip_duration_seconds + track_tolerance
-            and scheduled_duration <= clip_duration_seconds + track_tolerance,
-            "Dubbed track exceeds approved 1x source clip duration")
     policy = schedule.get("policy", {})
     reaction = policy.get("reactionLagSeconds")
     gap = policy.get("interUtteranceGapSeconds")
     max_lag = policy.get("maxEndLagSeconds")
+    tail = policy.get("tailOverrunSeconds", 0.0)
     require(all(isinstance(x, (int, float)) and not isinstance(x, bool)
-                and math.isfinite(x) and x >= 0 for x in (reaction, gap, max_lag)),
+                and math.isfinite(x) and x >= 0 for x in (reaction, gap, max_lag, tail))
+            and tail <= 1.0,
             "Schedule policy is invalid")
+    clip_limit = clip_duration_seconds + tail
+    require(track_duration <= clip_limit + track_tolerance
+            and scheduled_duration <= clip_limit + track_tolerance,
+            "Dubbed track exceeds approved 1x source clip duration")
     entries = schedule.get("entries")
     require(isinstance(entries, list) and len(entries) == len(durations),
             "Schedule group count mismatch")
@@ -305,7 +313,7 @@ def validate_schedule(schedule: dict[str, Any], candidate: dict[str, Any], ancho
         near(start, entry.get("plannedStart"), f"Schedule start {index}")
         near(end, entry.get("plannedEnd"), f"Schedule end {index}")
         require(end - source_end <= max_lag + EPSILON, f"Schedule overflow at {index}")
-        require(end <= clip_duration_seconds + EPSILON,
+        require(end <= clip_limit + EPSILON,
                 f"Schedule exceeds approved 1x source clip at {index}")
         require(end <= track_duration + EPSILON, f"Schedule exceeds track at {index}")
         cursor = end
@@ -331,6 +339,21 @@ def validate_captions(captions: dict[str, Any], candidate: dict[str, Any],
         near(float(entry["plannedStart"]), start, f"Caption start {index}")
         near(float(entry["plannedEnd"]), end, f"Caption end {index}")
         previous_end = end
+
+
+def legacy_v1_screening_score(expected: str, recognized: str, locale: str,
+                              min_similarity: float) -> tuple[float, list[dict], bool]:
+    """Reproduce the v1 producer: unfolded ratio and short-unit exactness only.
+
+    Keyword/protected-text checks were introduced with v2; adding them when
+    reading v1 would change frozen historical evidence.
+    """
+    left, right = audio_screen.tokens(expected, locale), audio_screen.tokens(recognized, locale)
+    matcher = difflib.SequenceMatcher(None, left, right, autojunk=False)
+    similarity = round(matcher.ratio(), 6)
+    differences = [{"kind": kind, "expected": left[start:end], "recognized": right[other_start:other_end]}
+                   for kind, start, end, other_start, other_end in matcher.get_opcodes() if kind != "equal"]
+    return similarity, differences, similarity >= min_similarity and (len(left) >= 4 or not differences)
 
 
 def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_root: Path, *,
@@ -501,8 +524,6 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         pcm_track = Path(track["path"]).with_suffix(".wav")
         require(pcm_track.is_file(), "MP3 source PCM track is missing")
         pcm_duration, _, _ = probe_audio(pcm_track)
-        require(abs(pcm_duration - clip_timeline["clipDurationSeconds"]) <= EPSILON,
-                "MP3 source PCM differs from approved 1x source clip duration")
     schedule_artifact = checked_artifact(artifact_root, manifest.get("schedule"), json_artifact=True)
     captions_artifact = checked_artifact(artifact_root, manifest.get("captions"))
     locale_root = (artifact_root / "languages" / locale).resolve()
@@ -511,9 +532,23 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         require(Path(item["path"]).is_relative_to(locale_root),
                 f"{label} belongs to another locale")
     schedule = read_object(Path(schedule_artifact["path"]))
-    if "silenceTrimEvidence" in manifest and trim.get("schemaVersion") == "sermon-formal-edge-silence-trim-v1":
+    if track_format == "mp3":
+        # The PCM master is the approved clip, extended only by an evidenced tail of the final unit.
+        planned_ends = [entry.get("plannedEnd", 0.0) for entry in schedule.get("entries", []) if isinstance(entry, dict)]
+        expected_pcm = max([clip_timeline["clipDurationSeconds"], *planned_ends])
+        require(abs(pcm_duration - expected_pcm) <= EPSILON,
+                "MP3 source PCM differs from approved 1x source clip duration")
+    edge_trim = "silenceTrimEvidence" in manifest and trim.get("schemaVersion") == "sermon-formal-edge-silence-trim-v1"
+    # A tail past the approved clip is admitted only when edge-trim evidence records that exact budget.
+    require(schedule.get("policy", {}).get("tailOverrunSeconds", 0.0)
+            == (trim.get("tailOverrunSeconds", 0.0) if edge_trim else 0.0),
+            "Tail overrun budget differs from evidence")
+    if edge_trim:
         require(schedule["policy"]["interUtteranceGapSeconds"] == trim["interUtteranceGapSeconds"]
-                and schedule["policy"]["reactionLagSeconds"] == trim.get("reactionLagSeconds", 0.05),
+                and schedule["policy"]["reactionLagSeconds"] == trim.get("reactionLagSeconds", 0.05)
+                # An end-lag budget beyond the renderer default is admitted only when the trim evidence records it.
+                and (schedule["policy"]["maxEndLagSeconds"] == trim["maxEndLagSeconds"] if "maxEndLagSeconds" in trim
+                     else schedule["policy"]["maxEndLagSeconds"] <= 8.0),
                 "Edge trim schedule policy differs from evidence")
     captions = read_object(Path(captions_artifact["path"]))
     validate_schedule(schedule, candidate, anchor, durations, track_duration,
@@ -545,19 +580,26 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
                 "Machine screening receipt does not cover this exact audio set")
         require(len(screening["results"]) == len(units),
                 "Machine screening result count differs from audio units")
+        # Check the complete v2 settings/implementation identity before any score runs.
+        # Legacy v1 has its own historical ratio rule, predating v2's protected checks.
+        scoring = None
+        if screening["schemaVersion"] == "sermon-target-language-audio-screening-v2":
+            from scripts.target_audio_auto_qc import screening_asr_settings
+            scoring = screening_asr_settings(screening)["scoring"]
         for index, (result, unit, job_unit) in enumerate(zip(
                 screening["results"], units, job["units"])):
-            expected_tokens = audio_screen.tokens(job_unit["text"], locale)
-            actual_tokens = audio_screen.tokens(result["recognized"], locale)
-            similarity = round(difflib.SequenceMatcher(
-                None, expected_tokens, actual_tokens, autojunk=False).ratio(), 6)
+            if scoring is None:
+                similarity, differences, passed = legacy_v1_screening_score(
+                    job_unit["text"], result["recognized"], locale, screening["minSimilarity"])
+            else:
+                similarity, differences, passed = audio_screen.score(
+                    job_unit["text"], result["recognized"], locale, screening["minSimilarity"], scoring=scoring)
             require(result["textGroupId"] == unit["textGroupId"]
                     and result["targetTextSha256"] == unit["targetTextSha256"]
                     and result["audioSha256"] == unit["audio"]["sha256"]
                     and result["status"] == "pass"
                     and result["similarity"] == similarity
-                    and similarity >= screening["minSimilarity"]
-                    and (len(expected_tokens) >= 4 or expected_tokens == actual_tokens),
+                    and passed,
                     f"Machine screening result is incomplete or below threshold: {index}")
     else:
         require(screen.get("status") != "fail", "Failed machine screening cannot produce package")
