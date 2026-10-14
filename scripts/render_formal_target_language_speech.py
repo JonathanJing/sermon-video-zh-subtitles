@@ -84,9 +84,14 @@ SPOKEN_FORMS_NORMALIZATION_POLICY = {
 FROZEN_V2_NORMALIZATION_POLICY = {
     "version": "v2", "policy": "exact_approved_text_with_registered_spoken_forms",
     "spokenForms": {"ko": ko_spoken_numerals.RULE_V2}}
-REGISTERED_NORMALIZATION_POLICIES = (FROZEN_V2_NORMALIZATION_POLICY, SPOKEN_FORMS_NORMALIZATION_POLICY)
+FROZEN_V3_NORMALIZATION_POLICY = {
+    "version": "v2", "policy": "exact_approved_text_with_registered_spoken_forms",
+    "spokenForms": {"ko": ko_spoken_numerals.RULE_V3}}
+REGISTERED_NORMALIZATION_POLICIES = (FROZEN_V2_NORMALIZATION_POLICY, FROZEN_V3_NORMALIZATION_POLICY,
+                                     SPOKEN_FORMS_NORMALIZATION_POLICY)
 SPOKEN_FORM_RULES = {
     ko_spoken_numerals.RULE_V2: ("ko", ko_spoken_numerals.spoken_form_v2),
+    ko_spoken_numerals.RULE_V3: ("ko", ko_spoken_numerals.spoken_form_v3),
     ko_spoken_numerals.RULE: ("ko", ko_spoken_numerals.spoken_form)}
 
 

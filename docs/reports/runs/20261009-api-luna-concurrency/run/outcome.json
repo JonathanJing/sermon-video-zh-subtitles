@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "codex-layer2-test",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-09T01:09:46.363359+00:00",
+  "endedAt": "2026-10-09T01:09:46.408346+00:00",
+  "error": {
+    "type": "SessionError",
+    "message": "spark_exclusive_session_required"
+  }
+}

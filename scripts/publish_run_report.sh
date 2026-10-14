@@ -45,8 +45,12 @@ TARGET="$WORKTREE/docs/reports/runs/$NAME"
 mkdir -p "$TARGET"
 cp -R "$REPORT/." "$TARGET/"
 find "$TARGET" -name '*.zip' -delete
+# The docs gate runs `git diff --check`; hand edits after export can add trailing whitespace again.
+"$PY" "$REPO/scripts/export_run_digest.py" --tidy-whitespace "$TARGET"
 # -f: the repository ignores *.log, but these logs are the verified, redacted copies.
 git -C "$WORKTREE" add -f "docs/reports/runs/$NAME"
+git -C "$WORKTREE" diff --cached --check \
+  || { echo "Whitespace errors remain in the report; fix them before publishing." >&2; exit 1; }
 git -C "$WORKTREE" commit -q -m "Add run report $NAME"
 git -C "$WORKTREE" push -q origin "HEAD:refs/heads/$BRANCH"
 echo "Pushed $BRANCH ($(git -C "$WORKTREE" rev-parse --short HEAD))"

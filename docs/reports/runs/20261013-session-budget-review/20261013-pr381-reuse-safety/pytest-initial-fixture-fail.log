@@ -1,0 +1,60 @@
+................FF......................                         [100%]
+=================================== FAILURES ===================================
+_ test_legacy_ledgers_keep_their_contract_and_require_explicit_reuse_upgrade[sermon-source-budget-ledger-v2] _
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-104/test_legacy_ledgers_keep_their0')
+version = 'sermon-source-budget-ledger-v2'
+
+    @pytest.mark.parametrize('version', [budget.LEDGER_V2, budget.LEDGER_V3])
+    def test_legacy_ledgers_keep_their_contract_and_require_explicit_reuse_upgrade(tmp_path, version):
+        source, dest = tmp_path/'source', tmp_path/'dest'
+        call(store(source))
+        legacy = {'schemaVersion':version, 'authority':AUTHORITY, 'requests':{}, 'maxConcurrent':1, 'resourcePolicySha256':None}
+>       jobs._persist(dest/'source-budget.json', legacy)
+
+tests/test_source_budget_reuse_safety.py:71:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts/sermon_workflow_jobs.py:104: in _persist
+    directory_fd = _directory_fd(path.parent)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-104/test_legacy_ledgers_keep_their0/dest')
+
+    def _directory_fd(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-104/test_legacy_ledgers_keep_their0/dest'
+
+scripts/sermon_workflow_jobs.py:56: FileNotFoundError
+_ test_legacy_ledgers_keep_their_contract_and_require_explicit_reuse_upgrade[sermon-source-budget-ledger-v3] _
+
+tmp_path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-104/test_legacy_ledgers_keep_their1')
+version = 'sermon-source-budget-ledger-v3'
+
+    @pytest.mark.parametrize('version', [budget.LEDGER_V2, budget.LEDGER_V3])
+    def test_legacy_ledgers_keep_their_contract_and_require_explicit_reuse_upgrade(tmp_path, version):
+        source, dest = tmp_path/'source', tmp_path/'dest'
+        call(store(source))
+        legacy = {'schemaVersion':version, 'authority':AUTHORITY, 'requests':{}, 'maxConcurrent':1, 'resourcePolicySha256':None}
+>       jobs._persist(dest/'source-budget.json', legacy)
+
+tests/test_source_budget_reuse_safety.py:71:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts/sermon_workflow_jobs.py:104: in _persist
+    directory_fd = _directory_fd(path.parent)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-104/test_legacy_ledgers_keep_their1/dest')
+
+    def _directory_fd(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/pytest-of-jonathan_jing/pytest-104/test_legacy_ledgers_keep_their1/dest'
+
+scripts/sermon_workflow_jobs.py:56: FileNotFoundError
+=========================== short test summary info ============================
+FAILED tests/test_source_budget_reuse_safety.py::test_legacy_ledgers_keep_their_contract_and_require_explicit_reuse_upgrade[sermon-source-budget-ledger-v2]
+FAILED tests/test_source_budget_reuse_safety.py::test_legacy_ledgers_keep_their_contract_and_require_explicit_reuse_upgrade[sermon-source-budget-ledger-v3]
+2 failed, 38 passed, 8 subtests passed in 0.60s
