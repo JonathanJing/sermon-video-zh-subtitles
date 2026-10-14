@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Firestore } from '@google-cloud/firestore';
 import { fetchListeningSessions, fetchInterfaceUsageSessions, parseListeningArgs, summarizeListening, writeListeningReport } from './listening-report.mjs';
+import { fetchAlignmentSessions, summarizeAlignment, writeAlignmentReport } from './alignment-report.mjs';
 import { fetchUsageSessions, parseUsageArgs, summarizeUsage, writeUsageReport } from './usage-report.mjs';
 
 // IAM/ADC-only local operator tool; never imported into the HTTP runtime.
@@ -16,6 +17,11 @@ if (command === 'listening') {
   const { records: interfaceRecords, query: interfaceQuery } = await fetchInterfaceUsageSessions(db, { ...options, now });
   const report = summarizeListening(records, { ...options, now, query, interfaceRecords, interfaceQuery });
   console.log(JSON.stringify(await writeListeningReport(options.out, report)));
+} else if (command === 'alignment') {
+  const options = parseListeningArgs(args);
+  const now = Date.now();
+  const { records, query } = await fetchAlignmentSessions(db, { ...options, now });
+  console.log(JSON.stringify(await writeAlignmentReport(options.out, summarizeAlignment(records, { ...options, now, query }))));
 } else if (command === 'usage') {
   const options = parseUsageArgs(args);
   const now = Date.now();
@@ -41,4 +47,4 @@ if (command === 'listening') {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(week || '')) throw new Error('Usage: node admin.mjs metrics YYYY-MM-DD');
   const result = await db.collection('weeklyMetrics').where('week', '==', week).get();
   for (const doc of result.docs) console.log(JSON.stringify(doc.data()));
-} else throw new Error('Commands: listening|usage --from YYYY-MM-DD --to YYYY-MM-DD --out NEW_DIRECTORY; list YYYY-MM-DD; metrics YYYY-MM-DD; status ID pending|confirmed|fixed [FIXED_VERSION]');
+} else throw new Error('Commands: listening|usage|alignment --from YYYY-MM-DD --to YYYY-MM-DD --out NEW_DIRECTORY; list YYYY-MM-DD; metrics YYYY-MM-DD; status ID pending|confirmed|fixed [FIXED_VERSION]');

@@ -1,0 +1,296 @@
+{
+ "assets": [
+  {
+   "bytes": 91524,
+   "path": "/captions/resi-20261011-54475d42/es.json",
+   "sha256": "d86aad24d3c6ca94d0abb349aea87d6cca4569d0080b606767c62f3eaae3731f",
+   "status": "pass"
+  },
+  {
+   "bytes": 99074,
+   "path": "/captions/resi-20261011-54475d42/ko.json",
+   "sha256": "0978e7d96ee345520a64f1bcee2e745fbb35fc9ff7429f49cb552c02055f689b",
+   "status": "pass"
+  },
+  {
+   "bytes": 90008,
+   "path": "/captions/resi-20261011-54475d42/zh-Hans.json",
+   "sha256": "ce3b1a8760ba8aa7208a6db56042bc23413a8af04823bdaa9dd01c3b810d5cf1",
+   "status": "pass"
+  },
+  {
+   "bytes": 106182,
+   "path": "/content/resi-20261011-54475d42/es.json",
+   "sha256": "53c410eaff3daf834d5fde77a1faaa902dfdfc9925e5ce30a927d496fa62c606",
+   "status": "pass"
+  },
+  {
+   "bytes": 116089,
+   "path": "/content/resi-20261011-54475d42/ko.json",
+   "sha256": "0cc3477233f017b9e5bc9d7d2e2e2e9aed6e9b03bf994c76abee224de346f7d6",
+   "status": "pass"
+  },
+  {
+   "bytes": 104632,
+   "path": "/content/resi-20261011-54475d42/zh-Hans.json",
+   "sha256": "cf426269ff6e34acbc126f78639630aab30921913221b8e8d90c20990588e9e6",
+   "status": "pass"
+  },
+  {
+   "bytes": 25578765,
+   "path": "/media/resi-20261011-54475d42/es.mp3",
+   "sha256": "d4b2845f28b2b7fe1c761604b7b3ffc26489648056958de49908f4e76fd41369",
+   "status": "pass"
+  },
+  {
+   "bytes": 25573005,
+   "path": "/media/resi-20261011-54475d42/ko.mp3",
+   "sha256": "f77d72241cffe5ffe4a74be5dfa4cc7ed5c5388c5254f6449ff46ef642982562",
+   "status": "pass"
+  },
+  {
+   "bytes": 25579341,
+   "path": "/media/resi-20261011-54475d42/zh-Hans.mp3",
+   "sha256": "e16380a609b2dc75059a12b7ad3cfedc304b73ac4aa49578e9264de6ba22d1b7",
+   "status": "pass"
+  },
+  {
+   "bytes": 61953,
+   "path": "/pages/resi-20261011-54475d42/es/index.html",
+   "sha256": "9054d4552823744d9f25e6f1f323518fe8c346411bf3ba06f353e346b2d5eaeb",
+   "status": "pass"
+  },
+  {
+   "bytes": 74313,
+   "path": "/pages/resi-20261011-54475d42/ko/index.html",
+   "sha256": "35ad105bee908a413e5c074104e94941a7345a32611ca6a662b9be11b52d2b3b",
+   "status": "pass"
+  },
+  {
+   "bytes": 59042,
+   "path": "/pages/resi-20261011-54475d42/zh-Hans/index.html",
+   "sha256": "a355e394f2a1ed699187ab44948e739b369df43f5763672f82ea49f83461a4ce",
+   "status": "pass"
+  },
+  {
+   "bytes": 6666,
+   "path": "/study/resi-20261011-54475d42/es/meditation.json",
+   "sha256": "43fb9c1061bafb5a05e6769264c7e6f698b1c4b1f131f649e977baa94b89c875",
+   "status": "pass"
+  },
+  {
+   "bytes": 12600,
+   "path": "/study/resi-20261011-54475d42/es/outline.json",
+   "sha256": "72d1b44dad5aa3ab05522da596716557953b9688646372df400a78a19a5137e6",
+   "status": "pass"
+  },
+  {
+   "bytes": 1559,
+   "path": "/study/resi-20261011-54475d42/es/products.json",
+   "sha256": "caf40a51a48da3fb8fbb2a071ba0d775ec87be1bc40553e75d2ddfba19656e5e",
+   "status": "pass"
+  },
+  {
+   "bytes": 7819,
+   "path": "/study/resi-20261011-54475d42/ko/meditation.json",
+   "sha256": "6cd6e0e90ca4b0dd02c838e8c017fbdca169a4dba6acffc35c6af1729ab9f1c9",
+   "status": "pass"
+  },
+  {
+   "bytes": 13893,
+   "path": "/study/resi-20261011-54475d42/ko/outline.json",
+   "sha256": "1ab3850e974e998173b03fec9011a094cb5d554812ec7497d935a55731756ddc",
+   "status": "pass"
+  },
+  {
+   "bytes": 1559,
+   "path": "/study/resi-20261011-54475d42/ko/products.json",
+   "sha256": "85fbc4981b830147ff6ae52e95c7aaaea18a1ed97de4fe217797757d0677dc65",
+   "status": "pass"
+  },
+  {
+   "bytes": 6409,
+   "path": "/study/resi-20261011-54475d42/zh-Hans/meditation.json",
+   "sha256": "e132281a3277c76ff55b3c9993b32bb53846d06b7bc48f2f46d3272fb2b68ca1",
+   "status": "pass"
+  },
+  {
+   "bytes": 11541,
+   "path": "/study/resi-20261011-54475d42/zh-Hans/outline.json",
+   "sha256": "acc9348c28f7e004de90e1dde406868f4bca973af762f3d0e59176c2855a7231",
+   "status": "pass"
+  },
+  {
+   "bytes": 1564,
+   "path": "/study/resi-20261011-54475d42/zh-Hans/products.json",
+   "sha256": "c61828b55e70a528613239765f7255c59ab79711e4f277c5aac3e5d3587d4d59",
+   "status": "pass"
+  },
+  {
+   "bytes": 60000,
+   "path": "/app.mjs",
+   "sha256": "81cbad6c876a85dbacb2b9f30375b47ef93437e997339867556ab04c6a26102f",
+   "status": "pass"
+  },
+  {
+   "bytes": 14238,
+   "path": "/catalog.mjs",
+   "sha256": "ef1242783050bbf8329d3169eb7bb81ff771aeeff4deff95d4ba9f7ed7e05da5",
+   "status": "pass"
+  },
+  {
+   "bytes": 78659,
+   "path": "/content-locales.mjs",
+   "sha256": "81c09781caf40fa46b1cdf5ada758ff259cae05853c4724eb0841b62711fd5df",
+   "status": "pass"
+  },
+  {
+   "bytes": 5419,
+   "path": "/feedback-client.mjs",
+   "sha256": "fcee2848c2725f1c7df0c946c14069009a1c318814e102f2232308041f49f017",
+   "status": "pass"
+  },
+  {
+   "bytes": 13371,
+   "path": "/feedback.mjs",
+   "sha256": "75e6c59d6df3df6835f865cc43daeccba6f2ab921f5d2778734febb717a5e48b",
+   "status": "pass"
+  },
+  {
+   "bytes": 10726,
+   "path": "/fingerprint-capture.mjs",
+   "sha256": "2d66440203957f9948cc655a6962edfd7b1eb98518309a8b7391b97cc2c1889d",
+   "status": "pass"
+  },
+  {
+   "bytes": 4090,
+   "path": "/fingerprint-diagnostics.mjs",
+   "sha256": "ac2a1bbce2f9f7668415b067749dd5ec5fde9eda93b4ce9ac9cd7df5144a17ff",
+   "status": "pass"
+  },
+  {
+   "bytes": 22259,
+   "path": "/fingerprint-ui.mjs",
+   "sha256": "5eaa6ee021c407c98ab6814ace561e23038087b5ac1f632db9b9b688997830c2",
+   "status": "pass"
+  },
+  {
+   "bytes": 4675,
+   "path": "/i18n.mjs",
+   "sha256": "9e30fcd05147a623778fea255be86dbc0336092009cf52fd4d658566844687cb",
+   "status": "pass"
+  },
+  {
+   "bytes": 1465,
+   "path": "/icons.mjs",
+   "sha256": "a95c89111411f18f62d7cb7f399a8e1f578018875797e5e6ade23dc40b0ed29c",
+   "status": "pass"
+  },
+  {
+   "bytes": 2960,
+   "path": "/language-listening-client.mjs",
+   "sha256": "18ac826fbe6e1930e8cc310a6cc7e2045c1a9d851bee471fbf413f40ecbd4892",
+   "status": "pass"
+  },
+  {
+   "bytes": 7439,
+   "path": "/language-listening.mjs",
+   "sha256": "60d06bd7bd0a6fb0edc43d6918e06f39a986221b13760c1855a1441dfcca068c",
+   "status": "pass"
+  },
+  {
+   "bytes": 2301,
+   "path": "/listening.mjs",
+   "sha256": "fd9e914f2bbf8ef3302fb5e639f131aa77ba54228c4d7d090a1a10936fc419fd",
+   "status": "pass"
+  },
+  {
+   "bytes": 19527,
+   "path": "/locales-app.mjs",
+   "sha256": "02983ff7db0eab004c3b3b94cdd89155fc165f8ee1c36239b3b05ce679afe4d3",
+   "status": "pass"
+  },
+  {
+   "bytes": 11965,
+   "path": "/locales-es.mjs",
+   "sha256": "12dae2117b96798f9c528fde66c3799eed4e011f78eb50f3507a3361b9c5811a",
+   "status": "pass"
+  },
+  {
+   "bytes": 14661,
+   "path": "/locales-feedback.mjs",
+   "sha256": "14d5d10af4aee18df938fad0b2da73412e309dda729f0cb3dd9dbc02e430d116",
+   "status": "pass"
+  },
+  {
+   "bytes": 18397,
+   "path": "/locales-interface.mjs",
+   "sha256": "4f91e2027fd7021a919129a238550cfebb7d347ef8625c808e42ee1323de8604",
+   "status": "pass"
+  },
+  {
+   "bytes": 15841,
+   "path": "/locales-ko.mjs",
+   "sha256": "885e936ba0c8b42bdcacb275001d0b569515bb976c76c701b25431bb02b3b01e",
+   "status": "pass"
+  },
+  {
+   "bytes": 7543,
+   "path": "/locales-reader.mjs",
+   "sha256": "e55d77ca7b747a7d2a795c8e03d6c225620be9188f0e8c24f4b3cf40f64be499",
+   "status": "pass"
+  },
+  {
+   "bytes": 2659,
+   "path": "/media-session.mjs",
+   "sha256": "7a8aae478204c46a361d05a844180ea00812463f62519da775f1eca2548f06e9",
+   "status": "pass"
+  },
+  {
+   "bytes": 5217,
+   "path": "/offline.mjs",
+   "sha256": "1026aa4b42a69b2652f5cc5f4566f94e7ac9c8f06a0a290baff06a292789a654",
+   "status": "pass"
+  },
+  {
+   "bytes": 5338,
+   "path": "/playback-memory.mjs",
+   "sha256": "448b32804b26bb36c3e8a8da70f712cca884350e2fc08a0ff88a950cd15755df",
+   "status": "pass"
+  },
+  {
+   "bytes": 56767,
+   "path": "/published-weeks.mjs",
+   "sha256": "f44c21fce869245f2dcbfe7c296ca23e2e18454ef0955fd4fca7353c396586b1",
+   "status": "pass"
+  },
+  {
+   "bytes": 2495,
+   "path": "/reading-mode.mjs",
+   "sha256": "a2320e16e6d680e95d46771a013da7a58e6908cfbdf9abe74c4e48b618acd916",
+   "status": "pass"
+  },
+  {
+   "bytes": 727,
+   "path": "/timing.mjs",
+   "sha256": "74c007ea62d54a6c851fa828465e2a55f442e20d328bd65ee4b7c0738b52b888",
+   "status": "pass"
+  },
+  {
+   "bytes": 4626,
+   "path": "/usage-client.mjs",
+   "sha256": "5a0f646b22f8851f5eb88f699a7aa059f1167a7f0d4292009a0f3c375536047f",
+   "status": "pass"
+  },
+  {
+   "bytes": 6586,
+   "path": "/usage.mjs",
+   "sha256": "d6b002cd63a12c80180d0065930abfe3de5333cd0232f3adb355f917e1c4e4d6",
+   "status": "pass"
+  }
+ ],
+ "origin": "https://ai-for-god-sermon-audio.web.app",
+ "schemaVersion": "sermon-app-assets-http-verification-v1",
+ "status": "pass",
+ "verifiedAt": "2026-10-11T15:17:53.195105+00:00"
+}

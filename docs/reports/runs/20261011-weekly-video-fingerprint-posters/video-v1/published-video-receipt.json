@@ -1,0 +1,28 @@
+{
+  "status": "published_video_http_verified",
+  "sha256": "9865990575af53071fb6486a86e6092caa16766664026bd7bfe89fce83392be9",
+  "bytes": 1148263358,
+  "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/resi-20261011-54475d42/9865990575af53071fb6486a86e6092caa16766664026bd7bfe89fce83392be9.mp4",
+  "canonicalUrl": "/pages/resi-20261011-54475d42/full-video-browser.mp4",
+  "generation": 1791733468754667,
+  "contentType": "video/mp4",
+  "sourceStartSeconds": 1749,
+  "sourceEndSeconds": 3880,
+  "fullGetSha256": "9865990575af53071fb6486a86e6092caa16766664026bd7bfe89fce83392be9",
+  "fullGetBytes": 1148263358,
+  "ranges": [
+    {
+      "range": "bytes=0-1023",
+      "status": 206,
+      "passed": true
+    },
+    {
+      "range": "bytes=-1024",
+      "status": 206,
+      "passed": true
+    }
+  ],
+  "cors": "pass",
+  "redirectStatus": 302,
+  "canonicalRangeStatus": 206
+}

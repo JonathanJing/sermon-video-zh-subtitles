@@ -1,0 +1,56 @@
+{
+  "implementationSha256": "833f97bc8bf505fa5948d17bbe0291b308951a39ff36557be250e1de7593880b",
+  "locales": {
+    "es": {
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 461,
+          "added_number": 385,
+          "added_reference": 454,
+          "dropped_half": 337,
+          "dropped_name": 12,
+          "english_leak": 367,
+          "placeholder": 461,
+          "semantic_negation": 26,
+          "swapped_name": 0,
+          "swapped_quantity": 4,
+          "wrong_book": 5,
+          "wrong_number": 38,
+          "wrong_ordinal": 453
+        },
+        "untestableKinds": []
+      },
+      "candidateJsonSha256": "1df43ebdafb507f988b907b4f4afe02e453f51967262af568f19c2d6f45b8ad9",
+      "failedGroups": [
+        "translation-chunk-0000-u008",
+        "translation-chunk-0000-u011",
+        "translation-chunk-0003-u045",
+        "translation-chunk-0003-u046",
+        "translation-chunk-0004-u006",
+        "translation-chunk-0007-u001",
+        "translation-chunk-0007-u002",
+        "translation-chunk-0008-u020",
+        "translation-chunk-0009-u007",
+        "translation-chunk-0009-u033",
+        "translation-chunk-0010-u006",
+        "translation-chunk-0010-u013",
+        "translation-chunk-0011-u001",
+        "translation-chunk-0011-u007"
+      ],
+      "locale": "es",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-54475d42/output4-rebuild2/anchor-manifest.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/recovered/es/candidate.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/policies/es-policy-frozen-r5.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-54475d42/formal/english-source-package.json"
+      },
+      "problems": [],
+      "reason": "text QC failed; repair the failed groups in a new candidate revision",
+      "status": "requires_repair",
+      "textQc": "requires_repair",
+      "textQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-54475d42/state-es-v3/qc-receipts/text/es/cddd839b303f78e1d76f218e59dc0b8eafa8e00e8f11856254a034b1258c9281/entry-000002.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live",
+  "textBackend": "api"
+}

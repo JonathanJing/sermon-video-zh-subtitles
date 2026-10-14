@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "codex-layer2-test",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-09T01:09:53.185090+00:00",
+  "endedAt": "2026-10-09T01:11:05.377592+00:00",
+  "error": {
+    "type": "ValueError",
+    "message": "Language plugin rejected a group"
+  }
+}

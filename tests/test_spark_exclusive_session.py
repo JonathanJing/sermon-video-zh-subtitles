@@ -12,7 +12,15 @@ class FakeBackend:
         self.value = {'host': 'spark', 'bootId': 'boot-1', 'units': {}, 'containers': [], 'gpu': [], 'processes': [],
                       'queue': {'pending': 0, 'claimed': 0, 'outstanding': 0}, 'memAvailableBytes': 100 * 1024**3,
                       'modelHealth': {'healthy': True, 'modelIds': ['original-model'], 'processingSlots': 0}}
-        for index, name in enumerate(UNITS, 10):
+        pids = {'spark-api.service': 10, 'spark-agent.service': 11, 'llama-performance-collector.service': 12,
+                'llama-server.service': 13}
+        for name in UNITS:
+            if name.endswith('.timer'):
+                # An active timer waits without a main process; it is stopped first and restored last.
+                self.value['units'][name] = {'name': name, 'active': 'active', 'sub': 'waiting', 'mainPid': 0,
+                                             'identity': name + '-hash', 'controlGroup': None, 'killMode': None}
+                continue
+            index = pids[name]
             self.value['units'][name] = {'name': name, 'active': 'active', 'sub': 'running', 'mainPid': index,
                                          'identity': name + '-hash', 'controlGroup': '/user/' + name, 'killMode': 'control-group'}
             self.value['processes'].append({'pid': index, 'ppid': 1, 'startTicks': index * 100, 'executable': 'service',
@@ -508,3 +516,33 @@ def test_linux_stop_unit_resumes_frozen_launcher_when_preflight_fails(monkeypatc
     with pytest.raises(AttributeError): backend.stop_unit('spark-api.service')
     assert kills == [sig.SIGSTOP, sig.SIGCONT]
     backend.command.assert_not_called()
+
+
+def test_reasoning_review_timer_is_frozen_first_and_restored_last(engine):
+    begin(engine)
+    stops = [call[1] for call in engine.backend.calls if call[0] == 'stop']
+    assert stops[0] == 'job-reasoning-review.timer'
+    assert engine.backend.value['units']['job-reasoning-review.timer']['active'] == 'inactive'
+    assert engine.finish('session', 'owner')['status'] == 'closed'
+    starts = [call[1] for call in engine.backend.calls if call[0] == 'start']
+    assert starts[-1] == 'job-reasoning-review.timer'
+    assert starts.index('llama-server.service') < starts.index('job-reasoning-review.timer')
+
+
+def test_absent_timer_is_recorded_and_never_started(engine):
+    engine.backend.value['units']['job-reasoning-review.timer'] = {
+        'name': 'job-reasoning-review.timer', 'active': 'inactive', 'sub': 'dead', 'mainPid': 0,
+        'controlGroup': None, 'identity': 'not-found', 'killMode': None}
+    begin(engine)
+    assert engine.load()['snapshot']['units']['job-reasoning-review.timer']['identity'] == 'not-found'
+    engine.finish('session', 'owner')
+    assert all(call[1] != 'job-reasoning-review.timer' for call in engine.backend.calls if call[0] in {'stop', 'start'})
+
+
+def test_snapshot_from_before_the_timer_is_refused_on_require(engine):
+    begin(engine)
+    state = engine.load()
+    del state['snapshot']['units']['job-reasoning-review.timer']
+    engine.save(state, 'test_fixture_old_snapshot')
+    with pytest.raises(SessionError, match='snapshot_lacks_unit:job-reasoning-review.timer'):
+        engine.require('session', 'owner')

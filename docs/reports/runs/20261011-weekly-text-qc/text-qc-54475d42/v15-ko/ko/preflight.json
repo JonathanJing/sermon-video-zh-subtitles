@@ -1,0 +1,32 @@
+{
+  "calibrationCoverage": {
+    "applicableGroups": {
+      "added_content": 461,
+      "added_number": 385,
+      "added_reference": 454,
+      "dropped_half": 337,
+      "dropped_name": 12,
+      "english_leak": 367,
+      "placeholder": 461,
+      "semantic_negation": 9,
+      "swapped_name": 0,
+      "swapped_quantity": 4,
+      "wrong_book": 5,
+      "wrong_number": 27,
+      "wrong_ordinal": 438
+    },
+    "notApplicableKinds": [
+      "swapped_name"
+    ],
+    "untestableKinds": []
+  },
+  "candidateJsonSha256": "efc5043b3a57ec3973245163a88d40139a4cc9a1c15aef482b4a587b69da1a1b",
+  "locale": "ko",
+  "paths": {
+    "anchor": "artifacts/weekend-live/layer1-54475d42/output4-rebuild2/anchor-manifest.json",
+    "candidate": "artifacts/weekend-live/layer2-54475d42/recovered/ko/candidate.json",
+    "policy": "artifacts/weekend-live/layer2-54475d42/policies/ko-policy-frozen-r5.json",
+    "source": "artifacts/weekend-live/layer1-54475d42/formal/english-source-package.json"
+  },
+  "problems": []
+}

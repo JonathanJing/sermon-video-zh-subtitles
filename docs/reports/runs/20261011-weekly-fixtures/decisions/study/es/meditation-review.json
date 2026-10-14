@@ -1,0 +1,18 @@
+{
+ "schemaVersion": "sermon-study-review-v1",
+ "kind": "meditation",
+ "pageId": "resi-20261011-54475d42",
+ "locale": "es",
+ "sourcePackageSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+ "textCandidateSha256": "1df43ebdafb507f988b907b4f4afe02e453f51967262af568f19c2d6f45b8ad9",
+ "artifactSha256": "4715c3b59bd681589a7c48a5edf9d093b99c8491c5fc4a407a479bc676cd0cd4",
+ "decision": "approved",
+ "humanApproval": true,
+ "reviewedBy": "Jony",
+ "reviewedAt": "2026-10-11T14:21:20Z",
+ "checks": {
+  "faithfulness": "pass",
+  "scriptureIntegrity": "pass",
+  "localeReadability": "pass"
+ }
+}

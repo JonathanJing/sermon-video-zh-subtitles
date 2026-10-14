@@ -10,6 +10,7 @@ evidence for a machine quality waiver. No check here grants human approval.
 """
 from __future__ import annotations
 
+from fractions import Fraction
 import re
 import unicodedata
 
@@ -727,13 +728,25 @@ def target_references(text: str, locale: str, *, spoken_clocks: set[tuple[int, i
     return pairs, chapters
 
 
+def _es_bare_chapter(code: str, chapter: int, text: str) -> bool:
+    """The Spanish names the said book followed by the said chapter ("Apocalipsis 8 y 9")."""
+    names = [name for (_, name), book in _ES_BOOK_CODES.items() if book == code]
+    forms = {str(chapter), spanish_words(chapter)}
+    folded = _fold(text)
+    return any(re.search(r"\b" + re.escape(name) + r"\s+(?:capitulo\s+)?" + re.escape(form) + r"\b", folded)
+               for name in names for form in forms)
+
+
 def scripture_reference_problems(english: str, target: str, locale: str) -> list[str]:
     english_pairs, english_chapters = english_references(english)
     target_pairs, target_chapters = target_references(
         target, locale, spoken_clocks=english_spoken_clock_pairs(english))
     problems = [f"missing reference {c}:{v}" for c, v in sorted(english_pairs - target_pairs)]
+    said_books = {chapter: code for code, chapter, verse in english_book_citations(english)
+                  if code is not None and verse is None}
     problems += [f"missing chapter {c}" for c in sorted(english_chapters - target_chapters)
-                 if not any(pair[0] == c for pair in english_pairs)]
+                 if not any(pair[0] == c for pair in english_pairs)
+                 and not (locale == "es" and c in said_books and _es_bare_chapter(said_books[c], c, target))]
     # The speaker's words decide which references exist; a reference the
     # English did not say is an editorial addition (the 2026-10-04 ko issue).
     colon_pairs = english_colon_pairs(english)
@@ -790,7 +803,26 @@ _TRADITIONAL_ONLY = frozenset(
     "裡裏臺隻爺賜惡")
 
 
-def script_problems(text: str, locale: str) -> list[str]:
+def source_name_words(english: str) -> frozenset[str]:
+    """Capitalized words the English itself spells that way (names, brands, titles).
+
+    Sentence-initial function words are not names. A target may keep these in
+    Latin script ("Steve Bang Lee", "PlayStation", "C. S. Lewis").
+    """
+    return frozenset(word for word in re.findall(r"[A-Za-z][A-Za-z']*", english)
+                     if word[0].isupper() and word.casefold() not in _ENGLISH_FUNCTION_WORDS
+                     and word.casefold() not in {"i", "a", "so", "but", "now", "if", "when", "as", "my", "our",
+                                                 "your", "his", "her", "he", "she", "god", "jesus", "lord"})
+
+
+def _without_source_names(text: str, english: str) -> str:
+    names = source_name_words(english)
+    return re.sub(r"[A-Za-z][A-Za-z']*", lambda match: "" if match.group(0) in names else match.group(0), text)
+
+
+def script_problems(text: str, locale: str, english: str = "") -> list[str]:
+    if locale in {"ko", "zh-Hans"} and english:
+        text = _without_source_names(text, english)
     letters = [char for char in text if char.isalpha()]
     if not letters:
         return ["no target-language letters"]
@@ -799,7 +831,7 @@ def script_problems(text: str, locale: str) -> list[str]:
     han = sum("一" <= char <= "鿿" or "㐀" <= char <= "䶿" for char in letters)
     cjk = han + kana
     problems = []
-    if re.search(r"\b(?:TODO|TBD|PLACEHOLDER|FIXME)\b|\?\?\?", text, re.I):
+    if re.search(r"\b(?:TODO|TBD|PLACEHOLDER|FIXME)\b|\?\?\?", text):
         problems.append("placeholder marker")
     if locale == "ko" and hangul / len(letters) < 0.6:
         problems.append(f"Hangul share {hangul / len(letters):.2f} < 0.60")
@@ -827,6 +859,8 @@ _SHARED_SINGLE_WORDS = frozenset({"no", "amen", "hallelujah", "hosanna", "selah"
 def untranslated_problems(english: str, text: str, locale: str,
                           shared_terms: frozenset[str] = frozenset()) -> list[str]:
     """``shared_terms``: complete folded glossary terms that may stay in English."""
+    if locale in {"ko", "zh-Hans"}:
+        text = _without_source_names(text, english)
     words = re.findall(r"[a-zA-Z']+", text)
     if locale in {"ko", "zh-Hans"}:
         latin_letters = sum(len(word) for word in words)
@@ -859,6 +893,13 @@ def untranslated_problems(english: str, text: str, locale: str,
                 continue
             name_starts.add(start)
             shared_word[start:start + width] = [True] * width
+    # An initialed name the English spells the same way ("C. S. Lewis") keeps its form.
+    for match in re.finditer(r"\b(?:[A-Z]\.\s*){1,3}[A-Z][a-z]+", text):
+        if re.search(r"\b" + re.escape(match.group(0)).replace(r"\ ", r"\s*") + r"\b", english):
+            initialed = re.findall(r"[a-z']+", _fold(match.group(0)))
+            for start in range(len(target_words) - len(initialed) + 1):
+                if target_words[start:start + len(initialed)] == initialed:
+                    shared_word[start:start + len(initialed)] = [True] * len(initialed)
     # Spanish-valid shared titles are allowed only before a glossary name.
     # Other words beside a title still have to pass the English-leak screens.
     shared_titles = {"pastor", "pastora", "dr", "dra", "doctor", "doctora"}
@@ -1001,10 +1042,97 @@ def target_without_citations(text: str, locale: str, pairs: set[tuple[int, int]]
     return _blank(text, spans)
 
 
+# "one third", "two thirds", "a half": target languages build fractions their
+# own way (三分之一, 삼분의 일, una tercera parte); the numerator is not a count.
+_EN_FRACTION = re.compile(r"\b(?:a|one|two|three|four|five|\d)[ -](?:thirds?|halves|half|quarters?|fourths?|fifths?|tenths?)\b", re.I)
+_ZH_ORDINAL_PREFIX = "第"
+_KO_ORDINALS = {1: ("첫 번째", "첫째", "첫번째", "첫"), 2: ("두 번째", "둘째", "두번째"), 3: ("세 번째", "셋째", "세번째"),
+                4: ("네 번째", "넷째", "네번째"), 5: ("다섯 번째", "다섯째"), 6: ("여섯 번째", "여섯째"),
+                7: ("일곱 번째", "일곱째"), 8: ("여덟 번째", "여덟째"), 9: ("아홉 번째", "아홉째"), 10: ("열 번째", "열째")}
+_ES_ORDINAL_STEMS = {1: "primer", 2: "segund", 3: "tercer", 4: "cuart", 5: "quint", 6: "sext",
+                     7: "septim", 8: "octav", 9: "noven", 10: "decim"}
+# Day counts have their own native Korean words ("six days", 엿새).
+_KO_DAY_WORDS = {1: "하루", 2: "이틀", 3: "사흘", 4: "나흘", 5: "닷새", 6: "엿새", 7: "이레", 8: "여드레",
+                 9: "아흐레", 10: "열흘"}
+# "Zero sins" is said as "not a single sin" (一次都没有, 하나도 없, ningún).
+_ZERO_AS_NEGATION = {"zh-Hans": r"没有|无|未|零|都不", "ko": r"없|않|아무|영", "es": r"\b(?:ningun[oa]?|nada|cero|sin|ni un[oa]?)\b"}
+_LARGE_SCALES = {"million": 10 ** 6, "billion": 10 ** 9}
+
+
+def _scaled_english(english: str) -> list[tuple[int | str, int]]:
+    """Numbers said with million/billion: ("2.7", 10**9) for "2.7 billion"."""
+    found = []
+    for number, scale in re.findall(r"(\d+(?:\.\d+)?)\s+(million|billion)\b", english.casefold()):
+        found.append((number if "." in number else int(number), _LARGE_SCALES[scale]))
+    return found
+
+
+def _large_value_present(text: str, value: int, locale: str) -> bool:
+    """A million/billion value written in the target's own units (27亿, 2억, 200 millones)."""
+    if locale in {"zh-Hans", "ko"}:
+        units = (("亿", 10 ** 8), ("万", 10 ** 4)) if locale == "zh-Hans" else (("억", 10 ** 8), ("만", 10 ** 4))
+        for unit, size in units:
+            if value % size == 0 and value >= size:
+                head = value // size
+                heads = {str(head), f"{head:,}"} | ({chinese_numeral(head)} if locale == "zh-Hans" and head < 10000
+                                                    else {korean_sino(head)} if locale == "ko" and head < 10000 else set())
+                if locale == "zh-Hans" and head == 2:
+                    heads.add("两")
+                if any(re.search(re.escape(form) + r"\s*" + unit, text) for form in heads):
+                    return True
+        return False
+    folded = _fold(text)
+    if value % 10 ** 6 == 0:
+        millions = value // 10 ** 6
+        forms = {str(millions), f"{millions:,}".replace(",", "."), f"{millions:,}"}
+        if millions < 1_000_000:
+            forms.add(spanish_words(millions))
+        if any(re.search(r"\b" + re.escape(form) + r"\s+millon(?:es)?\b", folded) for form in forms):
+            return True
+    if value % 10 ** 8 == 0:  # 2.7 billion = 2,7 mil millones
+        thousands = value / 10 ** 9
+        forms = {f"{thousands:g}", f"{thousands:g}".replace(".", ",")}
+        if any(re.search(r"\b" + re.escape(form) + r"\s+mil\s+millones\b", folded) for form in forms):
+            return True
+    return False
+
+
+_ES_BOOK_WORD_ORDINAL = re.compile(r"\b(?:primer[ao]?|segund[ao]|tercer[ao]?)\s+(?:de\s+)?(?=(?:" + _alternation(
+    name for number, name in _ES_BOOK_CODES if number is not None) + r")\b)")
+
+
+def _ordinal_present(text: str, value: int, locale: str) -> bool:
+    """A cardinal label said as an ordinal ("trumpet one" -> 第一, 첫 번째, primera)."""
+    if not isinstance(value, int) or not 1 <= value <= 10:
+        return False
+    if locale == "zh-Hans":
+        return any(_ZH_ORDINAL_PREFIX + form in text for form in (chinese_numeral(value), str(value)))
+    if locale == "ko":
+        return any(form in text for form in _KO_ORDINALS[value])
+    # "Primera de Juan" names a book (1 John); it is not the cardinal said beside it.
+    folded = _ES_BOOK_WORD_ORDINAL.sub(" ", _fold(text))
+    return re.search(r"\b" + _ES_ORDINAL_STEMS[value] + r"(?:o|a|os|as)?\b", folded) is not None
+
+
+def _alternate_number_present(text: str, value: int | str, locale: str) -> bool:
+    if value == 0:
+        return re.search(_ZERO_AS_NEGATION[locale], _fold(text) if locale == "es" else text) is not None
+    if locale == "zh-Hans" and value == 100 and re.search(r"百分之?百", text):
+        return True
+    if locale == "ko" and isinstance(value, int):
+        if value in _KO_DAY_WORDS and _KO_DAY_WORDS[value] in text:
+            return True
+        if value == 2 and re.search(r"양(?:면|쪽|측|손|편)", text):  # "two sides" -> 양면
+            return True
+    return _ordinal_present(text, value, locale)
+
+
 def number_problems(english: str, text: str, locale: str) -> list[str]:
     count = {"ko": korean_number_count, "es": spanish_number_count, "zh-Hans": chinese_number_count}[locale]
     english, pairs = english_without_citations(english)
     text = target_without_citations(text, locale, pairs)
+    scaled = _scaled_english(english)
+    english = _EN_FRACTION.sub(" ", english)
     said = english_numbers(english)
     ordinals = [int(value) for value in _ENGLISH_BOOK_ORDINAL.findall(english)]
     problems = []
@@ -1015,6 +1143,11 @@ def number_problems(english: str, text: str, locale: str) -> list[str]:
             continue
         found = count(text, value)
         if not found:
+            large = [scale for number, scale in scaled if number == value]
+            if any(_large_value_present(text, int(Fraction(str(value)) * scale), locale) for scale in large):
+                continue
+            if _alternate_number_present(text, value, locale):
+                continue
             problems.append(f"missing number {value}")
         elif found < needed:
             problems.append(f"missing number {value} ({found} of {needed})")
@@ -1049,6 +1182,10 @@ def english_number_values(english: str) -> set[int | str]:
     for word, scale in (("million", 10 ** 6), ("billion", 10 ** 9)):
         if word in tokens:
             values |= {value * scale for value in list(values) if isinstance(value, int)}
+            values |= {int(Fraction(value) * scale) for value in list(values)
+                       if isinstance(value, str) and (Fraction(value) * scale).denominator == 1}
+    if "decade" in tokens:
+        values.add(10)
     return values
 
 
@@ -1094,7 +1231,7 @@ def review_auto_group(policy: dict, english_units: list[dict], group: dict, *,
     text = group["targetText"]
     english = " ".join(unit["english"] for unit in english_units)
     checks = [
-        ("target_script", script_problems(text, locale), "Target script share and placeholder screen"),
+        ("target_script", script_problems(text, locale, english), "Target script share and placeholder screen"),
         ("untranslated_source", untranslated_problems(english, text, locale, shared_terms(policy)),
          "Untranslated English screen"),
         ("register", ["forbidden register form"] if re.search(forbidden_register, text, re.I) else [],

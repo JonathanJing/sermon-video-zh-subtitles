@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-weekly-layer2-zh-r12",
+  "runs": [
+    {
+      "label": "text-r12",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/text-r12",
+      "skipped": {
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".json": 5543
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "text-r12",
+      "path": "zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 4991257,
+      "truncated": true,
+      "sha256": "dcc491c729085dc7df4c4abd1416e1caa1a6dee8bf726d521409eb041ce72047",
+      "redactions": {}
+    },
+    {
+      "run": "text-r12",
+      "path": "zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 7880146,
+      "truncated": false,
+      "sha256": "f28eb76216943b74baea8112fd531d9874d8c662dc2d348cf7caec580ab2d54d",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "text-r12",
+      "path": "zh-Hans/repair-rounds/auto-repair-receipt-002.json",
+      "kind": "whole",
+      "bytes": 1377,
+      "truncated": false,
+      "sha256": "80faf7ec747e7f8f3ed5ee5fba0b2e4900a6a56c946a4059d35bd1f653242fab",
+      "redactions": {
+        "home_dir": 2
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

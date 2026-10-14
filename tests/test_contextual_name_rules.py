@@ -16,6 +16,31 @@ SPEC.loader.exec_module(mod)
 
 
 class ContextualNameRulesTest(unittest.TestCase):
+    def test_real_main_binds_worker_outcome_without_accounting_environment(self):
+        from types import SimpleNamespace
+        from scripts import sermon_pipeline
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            source = [{"id": 0, "start": 0, "end": 2, "text": "Do not fear."}]
+            (out / "segments_timed_en_corrected.json").write_text(json.dumps(source))
+            (out / "segments_timed_zh.json").write_text(json.dumps([dict(source[0], zh="不要害怕。")]))
+            args = SimpleNamespace(outdir=out, sermon_start_seconds=None, batch_size=1,
+                                   workers=2, model="gpt-6.1-sol", reasoning_effort="medium")
+            def http(_url, _key, payload, **kwargs):
+                return {"model": payload["model"], "choices": [{"message": {"content": json.dumps(
+                    {"segments": [{"id": 0, "zh": "不要害怕。"}], "notes": []})}}]}
+            with patch.dict("os.environ", {"OPENAI_API_KEY": "fixture"}, clear=True), \
+                    patch.object(mod, "parse_args", return_value=args), \
+                    patch.object(sermon_pipeline, "json_request", side_effect=http) as dispatched:
+                self.assertEqual(mod.main(), 0)
+                paths = list((out / "api-cli-outcomes").glob("*/outcome.json"))
+                self.assertEqual(len(paths), 1)
+                self.assertEqual(json.loads(paths[0].read_text())["status"], "returned")
+                for cache in (out / "review_windows").glob("*.json"):
+                    cache.unlink()
+                self.assertEqual(mod.main(), 0)
+                self.assertEqual(dispatched.call_count, 1)
+
     def test_generic_daughter_context_cannot_change_noah_identity(self):
         en = [{"id": 1, "text": "Noah's daughter-in-law was with him."}]
         zh = [{"id": 1, "zh": "挪亚的儿媳与他在一起。"}]
@@ -36,7 +61,7 @@ class ContextualNameRulesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, patch.object(mod, "chat_json", side_effect=response) as request:
             for text in ("First sermon", "First sermon", "Another sermon"):
                 rows = [{"id": 8, "text": text}]
-                result = mod.review_batch("fixture", rows, rows, 0, Path(temp), "fixture", "low")
+                result = mod.review_batch("fixture", rows, rows, 0, Path(temp), "gpt-6.1-sol", "low")
                 self.assertEqual(result["segments"][0]["zh"], text)
             self.assertEqual(request.call_count, 2)
 
@@ -46,9 +71,9 @@ class ContextualNameRulesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, patch.object(mod, "chat_json") as request:
             request.side_effect = [{"choices": [{"message": {"content": json.dumps(result)}}]} for result in responses]
             with self.assertRaises(RuntimeError):
-                mod.review_batch("fixture", rows, rows, 0, Path(temp), "fixture", "low")
+                mod.review_batch("fixture", rows, rows, 0, Path(temp), "gpt-6.1-sol", "low")
             self.assertEqual(list(Path(temp).iterdir()), [])
-            result = mod.review_batch("fixture", rows, rows, 0, Path(temp), "fixture", "low")
+            result = mod.review_batch("fixture", rows, rows, 0, Path(temp), "gpt-6.1-sol", "low")
             self.assertEqual(result["segments"][0]["zh"], "另一篇讲道")
             self.assertEqual(len(list(Path(temp).iterdir())), 1)
 
