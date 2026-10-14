@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-pr395-ios-integrated-targeted-slim",
+  "runs": [
+    {
+      "label": "20261014-pr395-ios-integrated",
+      "source": "~/.codex/worktrees/pr395-review-fix/sermon-video-zh-subtitles/artifacts/test-digests/20261014-pr395-ios-integrated",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261014-pr395-ios-integrated",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 546,
+      "truncated": false,
+      "sha256": "35feec35309f3f8baf482037df5dacb5fb5fa57b6fda903140ab237b04c15795",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

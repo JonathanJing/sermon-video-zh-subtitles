@@ -1,0 +1,26 @@
+{
+  "pr": 379,
+  "codeRevision": "c960a6db8758bb0df0de7b277ec94c0182732ce3",
+  "scope": [
+    "tests/test_guarded_hosting_publish.py",
+    "tests/test_guarded_hosting_publish_lease_release.py",
+    "tests/test_prepare_dev_simulated_publication.py",
+    "tests/test_run_dev_simulated_delivery.py",
+    "tests/test_sermon_unified_delivery.py"
+  ],
+  "tests": 63,
+  "elapsedSeconds": 0.57,
+  "modelCalls": 0,
+  "paidCalls": 0,
+  "deployment": "not_run",
+  "realHttpRequests": 0,
+  "covered": [
+    "first observed postdeploy version durable pin; race between retries/during catalogs/to baseline rejects",
+    "unknown pinned receipt cannot reconcile to unrelated version",
+    "runtime-resolved fake clock and sleep",
+    "remaining deadline passed per request/reader and baseline GET; expired success rejected; next read refused",
+    "IncompleteRead only retries safe GET and one deployment call",
+    "existing lease, baseline, unified and delivery guards"
+  ],
+  "developmentErrors": "initial tests used zero budget and new_attempt newVersion=None; corrected positive one-read fixture and nonempty pin. Later missing finalized/ACTIVE fields in new fake fixture and overly broad timeout replacement corrected; failure logs preserved. No original guard was relaxed."
+}

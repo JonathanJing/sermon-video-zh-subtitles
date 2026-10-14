@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-default-week-poster-fix",
+  "runs": [
+    {
+      "label": "publish-default-week-v1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-54475d42/publish-default-week-v1",
+      "skipped": {
+        ".json": 1,
+        ".py": 1
+      }
+    },
+    {
+      "label": "push-preparation-v1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-54475d42/push-preparation-v1",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "publish-default-week-v1",
+      "path": "deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 925,
+      "truncated": false,
+      "sha256": "f58f0067fb4e31f0dab7e466016cedf6a337406a84454e7941e05fc88287a19e",
+      "redactions": {}
+    },
+    {
+      "run": "publish-default-week-v1",
+      "path": "http-receipt.json",
+      "kind": "whole",
+      "bytes": 1207,
+      "truncated": false,
+      "sha256": "b20322ad93557f8da218092fad5486f182b6d625af1fe9360452f27810a4ab7f",
+      "redactions": {}
+    },
+    {
+      "run": "publish-default-week-v1",
+      "path": "preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 831,
+      "truncated": false,
+      "sha256": "42620804032877b116f01d5a9b21a28cb194c478d5890a13b34ed7a04d62493e",
+      "redactions": {}
+    },
+    {
+      "run": "publish-default-week-v1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1207,
+      "truncated": false,
+      "sha256": "b20322ad93557f8da218092fad5486f182b6d625af1fe9360452f27810a4ab7f",
+      "redactions": {}
+    },
+    {
+      "run": "push-preparation-v1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1693,
+      "truncated": false,
+      "sha256": "cb2f5102058618b6148b94ec56f394f12755918b2ef8ad6b27cc8a238de8fd1d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
