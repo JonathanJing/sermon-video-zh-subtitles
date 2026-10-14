@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "sermon-targeted-test-outcome-v1",
+  "status": "pass_after_entrypoint_retry",
+  "exitCode": 0,
+  "startedAt": "2026-10-14T17:01:00Z",
+  "endedAt": "2026-10-14T17:02:07Z",
+  "commit": "ace03ce8ba8c2ebf015795162393f4f631e39b46",
+  "scope": "PR 390 review fixes and dev merge conflicts",
+  "productionDeployment": "not_run",
+  "deviceAcceptance": "not_run"
+}
