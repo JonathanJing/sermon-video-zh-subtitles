@@ -642,7 +642,14 @@ def stage_qc(run: Run, locale: str):
         if result["status"] != "requires_repair" or revisions >= run.spec["qc"]["maxRevisions"]:
             run.mark("qc." + locale, "failed", history=history, candidate=str(candidate))
             raise Stop(f"qc.{locale}: {result['status']} after {revisions} revision(s); failed {result['failedGroups']}")
-        candidate = revise(run, locale, result["receipt"], revisions + 1)
+        try:
+            candidate = revise(run, locale, result["receipt"], revisions + 1)
+        except Stop as stop:
+            # A durable revision job has terminated; do not leave the QC stage
+            # looking active or retry that job on the next driver invocation.
+            status = "failed" if "failed_durable_job" in str(stop) else "blocked"
+            run.mark("qc." + locale, status, history=history, candidate=str(candidate), reason=str(stop))
+            raise
         run.mark("qc." + locale, "running", history=history, candidate=str(candidate))
 
 

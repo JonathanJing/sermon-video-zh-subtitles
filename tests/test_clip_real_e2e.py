@@ -262,6 +262,20 @@ class RunTests(unittest.TestCase):
         self.assertEqual(checks, [(str(self.run_dir / "l2-ko-r1/candidate.json"), "out-r1")])
         self.assertEqual(self.run.stages["qc.ko"]["status"], "done")
 
+    def test_qc_records_failed_revision_job_without_rechecking_original_candidate(self):
+        candidate = str(self.run_dir / "l2/text/ko/candidate.json")
+        self.run.mark("qc.ko", "running", candidate=candidate, history=[
+            {"candidate": candidate, "out": "out", "status": "requires_repair",
+             "failedGroups": ["g8"], "receipt": "receipt.json", "waiverDir": None}])
+        with mock.patch.object(subject.Run, "plan", lambda *a, **k: None), \
+                mock.patch.object(subject, "text_qc", side_effect=AssertionError("QC repeated")), \
+                mock.patch.object(subject, "revise", side_effect=subject.Stop(
+                    'layer2-ko-r1: failed_durable_job')):
+            with self.assertRaises(subject.Stop):
+                subject.stage_qc(self.run, "ko")
+        self.assertEqual(self.run.stages["qc.ko"]["status"], "failed")
+        self.assertEqual(self.run.stages["qc.ko"]["history"][0]["candidate"], candidate)
+
     def test_audio_repair_keeps_the_failed_render_and_checks_a_fresh_seed(self):
         locale, seed = "ko", 43
         source = self.run_dir / "l2/src"
