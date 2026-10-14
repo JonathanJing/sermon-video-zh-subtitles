@@ -54,6 +54,8 @@ python scripts/canonical_layer2_controller.py reopen-repair \
 
 前提是执行配置的 `layer2AutoRepair.sourceMeaningNotes` 已指向新备注（它进入 `text.<locale>` 的输入身份）。命令在失败 job 旁写重开收据，controller 用账本和备注核对收据后，durable 视图把那个 job 记为 `superseded`，下一次 execute tick 以新身份派发，worker 在同一条修复账本链上只重修备注覆盖的组。检查项和收据字段见[有界自动修复](layer2-bounded-auto-repair.zh.md)和[durable 检查](canonical-durable-job-inspection.zh.md)。
 
+文本质检（回译 QC）判某个语言的若干组失败时（门 4），按质检意见出新修订，不调用 `reopen-repair`：复制执行配置，`schemaVersion` 改为 `sermon-canonical-layer2-execution-v5`（v3 加上 `backTranslationQc`；v3 配置本身无需迁移），把该语言的 `outputDirectory` 改到新的目录（例如 `text-r2/<locale>`，旧候选保持不变），`jobRoot` 不变（修复账本在 jobRoot 旁，换 jobRoot 会因账本为空被拒绝），并在 `layer2AutoRepair.backTranslationQc` 写 `{"<locale>": "<失败的文本质检收据路径>"}`；inspection 配置若写了该语言的 `candidate` 也随之改。收据进入 `text.<locale>` 的输入身份，用 `plan_run_budgets.py` 为新配置签发 Layer 2 预算后照常 `drive`，worker 只重译收据判失败的组，其余组复用缓存。检查项见[有界自动修复](layer2-bounded-auto-repair.zh.md)。
+
 默认顺序是排序后的可准入 locale，没有循环轮询或无限 Agent 对话。工作中可重复调用 tick
 检查，但 active/failed/unknown durable receipt 不会产生第二个相同工作。
 
