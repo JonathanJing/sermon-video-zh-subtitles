@@ -2,6 +2,12 @@
 
 Generated 2026-10-14T19:02:07+00:00. Redacted copies only; source hashes are in manifest.json.
 
+## 结论先行
+
+- 高置信结论：16 单元的 Layer 2 初始候选完成，韩语和西语签发文字机器豁免；中文 `translation-chunk-0005-u005` 要求修订，返修在缓存输入预检时报错且 `dispatched=false`，本轮以失败状态停止。
+- 证据边界：中文没有文字豁免，Layer 3、Layer 4、Dev 发布、HTTP、浏览器、设备、场地和人工审核均未完成；返修 accounting 记录 0 次 API attempt，不得把本轮写成端到端通过。
+- 处置建议：失败报告的复盘已按八项补齐；同步最新 `dev` 并确认新 CI 绿色后再转 Ready／合并报告 PR，后续修复使用新运行身份，不能改写本轮失败。
+
 ## opus-e2e-dev216-20261014-f
 
 Source: `~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-f`
