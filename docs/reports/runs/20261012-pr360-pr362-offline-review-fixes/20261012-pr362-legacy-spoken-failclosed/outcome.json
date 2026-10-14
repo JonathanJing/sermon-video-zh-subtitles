@@ -1,0 +1,8 @@
+{
+  "status": "pass",
+  "testsPassed": 44,
+  "subtestsPassed": 14,
+  "modelCalls": 0,
+  "paidCalls": 0,
+  "scope": "Reject unbound legacy Korean Sino override before plan freezing/synthesis; retain instruction-only legacy, other locales, matching v2"
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "spark-diagnostic-audio-execute",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-09T01:41:18.067104+00:00",
+  "endedAt": "2026-10-09T01:41:44.537574+00:00",
+  "error": {
+    "type": "CalledProcessError",
+    "message": "Command '['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5', '<email>', '/usr/bin/python3 -c \\'import fcntl,json,pathlib,subprocess,sys,time,os\\nc=json.loads(sys.argv[1]);sys.path.insert(0,c[\\'\"\\'\"\\'codeRoot\\'\"\\'\"\\'])\\nos.environ.update(c[\\'\"\\'\"\\'sessionEnvironment\\'\"\\'\"\\']);os.environ[\\'\"\\'\"\\'SPARK_EXCLUSIVE_REMOTE_LOCAL\\'\"\\'\"\\']=\\'\"\\'\"\\'1\\'\"\\'\"\\'\\nfrom scripts.spark_exclusive_session import Client\\nfrom scripts.experiments.run_spark_diagnostic_audio import AdmissionGate"
+  }
+}

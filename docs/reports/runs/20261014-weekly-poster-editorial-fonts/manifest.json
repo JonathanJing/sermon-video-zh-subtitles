@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-weekly-poster-editorial-fonts",
+  "runs": [
+    {
+      "label": "font-editorial-opacity70-v1",
+      "source": "~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/sermon-poster/font-editorial-opacity70-v1",
+      "skipped": {
+        ".png": 6,
+        ".json": 4,
+        ".md": 1,
+        "(none)": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "font-editorial-opacity70-v1",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 128,
+      "truncated": false,
+      "sha256": "d800aa56b53a213a13c2ef801ae00334d2bd450beea51237e8a24efc432eb866",
+      "redactions": {}
+    },
+    {
+      "run": "font-editorial-opacity70-v1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 811,
+      "truncated": false,
+      "sha256": "d1df6b116be7bfe8235d69304c5de36bdf2199e74b8501492f60df3370da0a09",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

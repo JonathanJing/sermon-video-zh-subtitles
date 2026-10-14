@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { createHash, webcrypto } from 'node:crypto';
-import { CONFIG, fingerprint, matchFingerprint } from './fingerprint-core.mjs';
+import { CONFIG, fingerprint, fingerprintProfile, matchFingerprint } from './fingerprint-core.mjs';
 import { captureQuality, summarizeMatch } from './fingerprint-diagnostics.mjs';
 import { prepareInWorker } from './fingerprint-ui.mjs';
 const sourceSha256='a'.repeat(64),trackSha256='b'.repeat(64);
@@ -13,7 +13,7 @@ function worker(index=base,{status=true,hash,fetchError}={}){
  const bytes=new TextEncoder().encode(JSON.stringify(index));
  const metadata={schemaVersion:'sermon-audio-fingerprint-binding-v1',algorithmVersion:CONFIG.algorithmVersion,pageId:'week',sourceSha256,trackSha256,sourceStartSeconds:20,sourceEndSeconds:220,captureSeconds:10,indexUrl:'/fingerprints/week.json',indexSha256:hash||createHash('sha256').update(bytes).digest('hex')};
  let requests=0;const replies=[],calls=[];
- const scope={CONFIG,fingerprint,matchFingerprint,captureQuality,summarizeMatch,TextDecoder,Uint8Array,Float32Array,URL,crypto:webcrypto,performance,
+ const scope={CONFIG,fingerprint,fingerprintProfile,matchFingerprint,captureQuality,summarizeMatch,TextDecoder,Uint8Array,Float32Array,URL,crypto:webcrypto,performance,
   self:{location:{href:'https://example.test/fingerprint-worker.mjs',origin:'https://example.test'},postMessage:value=>replies.push(value)},
   fetch:async(url,options)=>{requests++;calls.push({url:String(url),options});if(fetchError)throw new Error(fetchError);return{ok:status,arrayBuffer:async()=>bytes.buffer};}};
  vm.runInNewContext(code,scope);
