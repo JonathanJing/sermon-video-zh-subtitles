@@ -181,6 +181,21 @@ class ExportRunDigestTests(unittest.TestCase):
                 (dest / "INDEX.md").write_text(leak)
                 self.assertEqual(digest.main([str(dest), "--verify"]), 1, leak)
 
+    def test_tidy_whitespace_satisfies_git_diff_check_and_skips_binary(self):
+        (self.run / "render.log").write_text("UserWarning: x  \r\n  indented\t\n\n\n")
+        dest = self.export()
+        (dest / "INDEX.md").write_text((dest / "INDEX.md").read_text() + "edited by hand  \n\n")
+        (dest / "blob.bin").write_bytes(b"a  \0b  \n\n")
+        self.assertEqual(digest.main([str(dest), "--tidy-whitespace"]), 0)
+        self.assertEqual(digest.tidy_whitespace(dest), [])
+        self.assertEqual((dest / "blob.bin").read_bytes(), b"a  \0b  \n\n")
+        for path in (p for p in dest.rglob("*") if p.is_file() and p.suffix != ".bin"):
+            text = path.read_text(encoding="utf-8")
+            self.assertFalse(text.endswith("\n\n"), path)
+            self.assertFalse(any(line != line.rstrip() for line in text.split("\n")), path)
+        self.assertTrue((dest / "INDEX.md").read_text().endswith("edited by hand\n"))
+        self.assertEqual(digest.main([str(dest), "--verify"]), 0)
+
     def test_json_stays_valid_and_summary_status_is_indexed(self):
         (self.run / "summary.json").write_text(json.dumps({"locales": {
             "ko": {"status": "requires_repair", "reason": "g003 back-translation drift"},
