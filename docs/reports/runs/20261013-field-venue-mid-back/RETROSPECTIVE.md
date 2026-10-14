@@ -1,6 +1,6 @@
 # 复盘：20261013-field-venue-mid-back
 
-数据见同目录 INDEX.md 和 manifest.json。分析与建议见 [基准报告](../../../20261013-field-venue-mid-back-benchmark.zh.md)（PR #388）。
+数据见同目录 INDEX.md 和 manifest.json。分析与建议见 [基准报告](../../20261013-field-venue-mid-back-benchmark.zh.md)（PR #388）。
 
 ## 实际覆盖范围
 
