@@ -1,0 +1,21 @@
+== 15:15:03 ko
+ko settled before 11.578
+{"plan": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-merged/plans/qc-ko/plan.json", "schedule": {"mode": "all_stages_may_run_together", "worstCaseUsd": 17.103, "fits": true}}
+check ko-api pass []
+ko text text_waiver_issued [] {'cleanFalsePositiveRate': 0.0, 'detected': 92, 'overallDetectionRate': 1.0, 'trials': 92} None
+check ko-gpu pass []
+ko package candidate requires_review
+ko audio requires_repair ['translation-chunk-0005-u007'] None audio QC failed; re-render the failed units as the repair ladder says
+locale_run:28: no matches found: ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261013-merged/aqc/ko/ko/audio-waiver-*.json
+ko stopped
+settled after 11.934
+== 15:19:39 done
+zh-Hans.text-qc	fail(1)	1	19
+zh-Hans.text-qc	pass	1	115
+ko.text-qc	pass	1	98
+ko.job	pass	105	1
+ko.render	fail(1)	106	86
+ko.compact	pass	192	17
+ko.screen	pass	209	40
+ko.package	pass	249	3
+ko.audio-qc	fail(1)	253	23

@@ -1,0 +1,3 @@
+stage	status	elapsedSeconds
+core_pytest	pass	38.99
+transport_pytest	pass	0.21

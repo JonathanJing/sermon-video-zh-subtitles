@@ -1,0 +1,17 @@
+{
+  "status": "published_http_verified",
+  "version": "sites/ai-for-god-sermon-audio/versions/23e73e929047d76a",
+  "pageId": "resi-20261011-54475d42",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "pngUploaded": 6,
+  "appAnnouncementsUpdated": 3,
+  "httpHashesPassed": 9,
+  "unchangedExistingFiles": 200,
+  "catalogAndConfig": "unchanged",
+  "nativeDeviceDisplay": "not_run",
+  "externalNotification": "not_sent"
+}

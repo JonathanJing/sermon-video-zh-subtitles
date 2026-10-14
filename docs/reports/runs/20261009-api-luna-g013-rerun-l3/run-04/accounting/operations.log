@@ -1,0 +1,13 @@
+2026-10-09T01:37:01.871410+00:00 INFO run=74b25fd59525481f8316e41bf2f8b8bd run_started workflowId=d0affb5676224072a15b715f669ddcb9
+2026-10-09T01:37:01.912805+00:00 INFO run=74b25fd59525481f8316e41bf2f8b8bd workflow_started workflowId=d0affb5676224072a15b715f669ddcb9
+2026-10-09T01:37:01.914767+00:00 INFO run=74b25fd59525481f8316e41bf2f8b8bd workflow_evidence workflowId=d0affb5676224072a15b715f669ddcb9
+2026-10-09T01:37:01.915089+00:00 INFO run=74b25fd59525481f8316e41bf2f8b8bd stage_started workflowId=d0affb5676224072a15b715f669ddcb9 stage=codex_layer2_diagnostic_test spanId=7e28c407e13e48b9977e4622ddb46a29 attemptId=1774aa04688a4c2cb6dfae38e7246ece
+2026-10-09T01:37:01.915301+00:00 INFO run=74b25fd59525481f8316e41bf2f8b8bd workload workflowId=d0affb5676224072a15b715f669ddcb9 stage=timing.inline_dispatch_v1 spanId=7e28c407e13e48b9977e4622ddb46a29
+2026-10-09T01:37:01.915785+00:00 INFO run=74b25fd59525481f8316e41bf2f8b8bd stage_started workflowId=d0affb5676224072a15b715f669ddcb9 stage=layer2.run_admission.zh-Hans spanId=65d2e71676ec41789a68cef9990c9413 attemptId=08684c51cdcd4f08a7b270f4f186d030
+2026-10-09T01:37:01.915961+00:00 INFO run=74b25fd59525481f8316e41bf2f8b8bd workload workflowId=d0affb5676224072a15b715f669ddcb9 stage=timing.inline_dispatch_v1 spanId=65d2e71676ec41789a68cef9990c9413
+2026-10-09T01:37:01.925373+00:00 INFO run=74b25fd59525481f8316e41bf2f8b8bd workload workflowId=d0affb5676224072a15b715f669ddcb9 stage=layer2.rule_preflight spanId=65d2e71676ec41789a68cef9990c9413
+2026-10-09T01:37:01.926972+00:00 ERROR run=74b25fd59525481f8316e41bf2f8b8bd stage_finished workflowId=d0affb5676224072a15b715f669ddcb9 stage=layer2.run_admission.zh-Hans spanId=65d2e71676ec41789a68cef9990c9413 attemptId=08684c51cdcd4f08a7b270f4f186d030 status=failed elapsedSeconds=0.010919 errorType=ValueError at=scripts/target_language_rule_preflight.py:39
+2026-10-09T01:37:01.928053+00:00 ERROR run=74b25fd59525481f8316e41bf2f8b8bd stage_finished workflowId=d0affb5676224072a15b715f669ddcb9 stage=codex_layer2_diagnostic_test spanId=7e28c407e13e48b9977e4622ddb46a29 attemptId=1774aa04688a4c2cb6dfae38e7246ece status=failed elapsedSeconds=0.012689 errorType=ValueError at=scripts/target_language_rule_preflight.py:39
+2026-10-09T01:37:01.929090+00:00 INFO run=74b25fd59525481f8316e41bf2f8b8bd workflow_evidence workflowId=d0affb5676224072a15b715f669ddcb9
+2026-10-09T01:37:01.929324+00:00 ERROR run=74b25fd59525481f8316e41bf2f8b8bd workflow_finished workflowId=d0affb5676224072a15b715f669ddcb9 status=failed
+2026-10-09T01:37:01.929512+00:00 ERROR run=74b25fd59525481f8316e41bf2f8b8bd run_finished workflowId=d0affb5676224072a15b715f669ddcb9 status=failed

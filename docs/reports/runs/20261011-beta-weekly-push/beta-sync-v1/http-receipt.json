@@ -1,0 +1,217 @@
+{
+  "status": "published_http_verified",
+  "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "pageId": "resi-20261011-54475d42",
+  "files": [
+    {
+      "path": "/alignment/resi-20261011-54475d42.json",
+      "sha256": "703d1fe26a2006048b82460e77e7af7714d26fc08a356a64a651ad3c1acb5ac1",
+      "passed": true
+    },
+    {
+      "path": "/captions/resi-20261011-54475d42/es.json",
+      "sha256": "d86aad24d3c6ca94d0abb349aea87d6cca4569d0080b606767c62f3eaae3731f",
+      "passed": true
+    },
+    {
+      "path": "/captions/resi-20261011-54475d42/ko.json",
+      "sha256": "0978e7d96ee345520a64f1bcee2e745fbb35fc9ff7429f49cb552c02055f689b",
+      "passed": true
+    },
+    {
+      "path": "/captions/resi-20261011-54475d42/zh-Hans.json",
+      "sha256": "ce3b1a8760ba8aa7208a6db56042bc23413a8af04823bdaa9dd01c3b810d5cf1",
+      "passed": true
+    },
+    {
+      "path": "/content/resi-20261011-54475d42/es.json",
+      "sha256": "392cae6952eeabaf2833ce1890c422d00f91c2c1f42b22b358f9db1dc72f6187",
+      "passed": true
+    },
+    {
+      "path": "/content/resi-20261011-54475d42/ko.json",
+      "sha256": "55dc057013c01cbf127aa0e58196aa78ef6cddede0734d10111facf95d0cca4e",
+      "passed": true
+    },
+    {
+      "path": "/content/resi-20261011-54475d42/zh-Hans.json",
+      "sha256": "fa95a519ae45ed699d72011db56f1f4c5e88d964c01d79745d2ff40b58b2e2d3",
+      "passed": true
+    },
+    {
+      "path": "/english-reference/resi-20261011-54475d42.json",
+      "sha256": "ebb7c832f424771de3f941ce9e0bebf189e632c3b50ac82a255ca99d62741e75",
+      "passed": true
+    },
+    {
+      "path": "/fingerprints/a5501bffe077cb9b-landmarks.json",
+      "sha256": "a5501bffe077cb9b480314de43e98ab0bc755ea5cbd6f59119c8e2668fe27d35",
+      "passed": true
+    },
+    {
+      "path": "/fingerprints/b91e6d9ca4061db1-landmarks.json",
+      "sha256": "b91e6d9ca4061db123bd9f8706f24f44f2c84c5b7e71d0d61ff6f57bfd2ea086",
+      "passed": true
+    },
+    {
+      "path": "/fingerprints/ebe4a4f40bf36271-landmarks.json",
+      "sha256": "ebe4a4f40bf3627142906625dfea0b0c587353cc5523a92578b088797adab73c",
+      "passed": true
+    },
+    {
+      "path": "/media/resi-20261011-54475d42/es.mp3",
+      "sha256": "d4b2845f28b2b7fe1c761604b7b3ffc26489648056958de49908f4e76fd41369",
+      "passed": true
+    },
+    {
+      "path": "/media/resi-20261011-54475d42/ko.mp3",
+      "sha256": "f77d72241cffe5ffe4a74be5dfa4cc7ed5c5388c5254f6449ff46ef642982562",
+      "passed": true
+    },
+    {
+      "path": "/media/resi-20261011-54475d42/zh-Hans.mp3",
+      "sha256": "e16380a609b2dc75059a12b7ad3cfedc304b73ac4aa49578e9264de6ba22d1b7",
+      "passed": true
+    },
+    {
+      "path": "/pages/resi-20261011-54475d42/es/index.html",
+      "sha256": "9054d4552823744d9f25e6f1f323518fe8c346411bf3ba06f353e346b2d5eaeb",
+      "passed": true
+    },
+    {
+      "path": "/pages/resi-20261011-54475d42/ko/index.html",
+      "sha256": "35ad105bee908a413e5c074104e94941a7345a32611ca6a662b9be11b52d2b3b",
+      "passed": true
+    },
+    {
+      "path": "/pages/resi-20261011-54475d42/zh-Hans/index.html",
+      "sha256": "a355e394f2a1ed699187ab44948e739b369df43f5763672f82ea49f83461a4ce",
+      "passed": true
+    },
+    {
+      "path": "/posters/resi-20261011-54475d42/es-395dd1afece977903bdf3fac970f0772d0c8e9cc2a42f9dd906376b94bb7648e.png",
+      "sha256": "395dd1afece977903bdf3fac970f0772d0c8e9cc2a42f9dd906376b94bb7648e",
+      "passed": true
+    },
+    {
+      "path": "/posters/resi-20261011-54475d42/es-preview-d0bf68a72e71b7ac0226363e97ee2eda3a0125567c2a99cfad0274662f16413e.png",
+      "sha256": "d0bf68a72e71b7ac0226363e97ee2eda3a0125567c2a99cfad0274662f16413e",
+      "passed": true
+    },
+    {
+      "path": "/posters/resi-20261011-54475d42/ko-0d298c3bca3d4ad60a633b11e07ca89a701a3047e658201ccbe5b6dc7df7e23b.png",
+      "sha256": "0d298c3bca3d4ad60a633b11e07ca89a701a3047e658201ccbe5b6dc7df7e23b",
+      "passed": true
+    },
+    {
+      "path": "/posters/resi-20261011-54475d42/ko-preview-fe82e5a76183c5575bc8ea59655d249ad31820d8f728871b29cba606989a2285.png",
+      "sha256": "fe82e5a76183c5575bc8ea59655d249ad31820d8f728871b29cba606989a2285",
+      "passed": true
+    },
+    {
+      "path": "/posters/resi-20261011-54475d42/zh-Hans-f0edf7eab5b3cde7ec3b683e90853b31a761016ece482b2342f702ba720f9611.png",
+      "sha256": "f0edf7eab5b3cde7ec3b683e90853b31a761016ece482b2342f702ba720f9611",
+      "passed": true
+    },
+    {
+      "path": "/posters/resi-20261011-54475d42/zh-Hans-preview-25cccc7f4b98337db1aab688e805b6b1c2f4d94074c70111718c5c6a43290455.png",
+      "sha256": "25cccc7f4b98337db1aab688e805b6b1c2f4d94074c70111718c5c6a43290455",
+      "passed": true
+    },
+    {
+      "path": "/releases-v4/resi-20261011-54475d42/es.json",
+      "sha256": "bbaf5a8576efb00708d27f0016936f4f9493f3d42c4d55a053de8cab5158576c",
+      "passed": true
+    },
+    {
+      "path": "/releases-v4/resi-20261011-54475d42/ko.json",
+      "sha256": "0c9e90e0d9554252ad62fe124c7637f7485a45d0583b2cd044686e456711e1c6",
+      "passed": true
+    },
+    {
+      "path": "/releases-v4/resi-20261011-54475d42/zh-Hans.json",
+      "sha256": "2503ca70abb2372d513bd9a14603d42b5aac6401d5cc0e635dbc988ec8c84e51",
+      "passed": true
+    },
+    {
+      "path": "/study/resi-20261011-54475d42/es/meditation.json",
+      "sha256": "43fb9c1061bafb5a05e6769264c7e6f698b1c4b1f131f649e977baa94b89c875",
+      "passed": true
+    },
+    {
+      "path": "/study/resi-20261011-54475d42/es/outline.json",
+      "sha256": "72d1b44dad5aa3ab05522da596716557953b9688646372df400a78a19a5137e6",
+      "passed": true
+    },
+    {
+      "path": "/study/resi-20261011-54475d42/es/products.json",
+      "sha256": "2f5e610073ed46f05fd38d3b39b1390463c0470e8c9e9e06a16c8c20c8d3433b",
+      "passed": true
+    },
+    {
+      "path": "/study/resi-20261011-54475d42/ko/meditation.json",
+      "sha256": "6cd6e0e90ca4b0dd02c838e8c017fbdca169a4dba6acffc35c6af1729ab9f1c9",
+      "passed": true
+    },
+    {
+      "path": "/study/resi-20261011-54475d42/ko/outline.json",
+      "sha256": "1ab3850e974e998173b03fec9011a094cb5d554812ec7497d935a55731756ddc",
+      "passed": true
+    },
+    {
+      "path": "/study/resi-20261011-54475d42/ko/products.json",
+      "sha256": "31e99d283850556b16be5f1018a79a8cbde4e23acf71a81cfc74620d98efaa0e",
+      "passed": true
+    },
+    {
+      "path": "/study/resi-20261011-54475d42/zh-Hans/meditation.json",
+      "sha256": "e132281a3277c76ff55b3c9993b32bb53846d06b7bc48f2f46d3272fb2b68ca1",
+      "passed": true
+    },
+    {
+      "path": "/study/resi-20261011-54475d42/zh-Hans/outline.json",
+      "sha256": "acc9348c28f7e004de90e1dde406868f4bca973af762f3d0e59176c2855a7231",
+      "passed": true
+    },
+    {
+      "path": "/study/resi-20261011-54475d42/zh-Hans/products.json",
+      "sha256": "9e2677f3a1667879ef35fab3dc155025b61931889e9a27cea21a75806df6257a",
+      "passed": true
+    },
+    {
+      "path": "/multilingual-v4.json",
+      "sha256": "b6f856a4e1920f7dca60f9768abde12158dfabf6b98be85f7780d9484e1e5506",
+      "passed": true
+    },
+    {
+      "path": "/multilingual-v3.json",
+      "sha256": "dccdbfe7b1688f2f93fa18c2ec829cf098075a726ba61cc9d570d90ca1dacfbf",
+      "passed": true
+    },
+    {
+      "path": "/weekly-announcements-v1.json",
+      "sha256": "a95a07b6c1cdf163c3604b74413239360be9698626d6cfdc2097237bd501577a",
+      "passed": true
+    }
+  ],
+  "posterSelections": [
+    {
+      "locale": "es",
+      "title": "Jesús advierte",
+      "posterBinding": "pass"
+    },
+    {
+      "locale": "ko",
+      "title": "예수님은 경고하십니다",
+      "posterBinding": "pass"
+    },
+    {
+      "locale": "zh-Hans",
+      "title": "耶稣警告",
+      "posterBinding": "pass"
+    }
+  ],
+  "deviceDisplayed": "not_run",
+  "contentOpened": "not_run",
+  "posterVerified": "not_run"
+}

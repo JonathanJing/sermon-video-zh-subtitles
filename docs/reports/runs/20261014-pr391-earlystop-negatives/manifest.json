@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-pr391-earlystop-negatives",
+  "runs": [
+    {
+      "label": "run-v5-pr391-earlystop",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/field-benchmark/20261011-venue-mid-back/run-v5-pr391-earlystop",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "run-v5-pr391-earlystop",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 992,
+      "truncated": false,
+      "sha256": "6ce0e71499382e4570ef2d9203bd9b4c698d59dbeba7f0525972d707470fe082",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

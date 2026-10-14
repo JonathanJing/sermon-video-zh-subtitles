@@ -130,8 +130,9 @@ final class MicrophoneCapture: MicrophoneCapturing {
     }
 
     /// FIELD-03: one continuous session for checkpointed early-stop alignment.
-    /// Single mic budget: at most 15 seconds per session (shared with the Web
-    /// batch's budget); the caller's checkpoint loop decides when to stop early.
+    /// Up to 15 seconds of PCM counted from the first sample, plus at most
+    /// `ContinuousCaptureSession.startupSeconds` of engine startup (the same
+    /// 15 s + 5 s budget as Web); the caller's checkpoint loop stops it early.
     func beginContinuousCapture(maxSeconds: Double = 15) async throws -> any ContinuousCaptureSessionProtocol {
         guard maxSeconds >= 7, maxSeconds <= 15, requestID == nil, activeStream == nil else {
             throw AudioAlignmentError.invalidCapture
@@ -223,6 +224,7 @@ final class ContinuousCaptureSession: ContinuousCaptureSessionProtocol {
     private var terminalError: Error?
     private var finished = false
     private var budgetTask: Task<Void, Never>?
+    private var startupTask: Task<Void, Never>?
     private let engineSetup: (() throws -> Void)?
     private let restorePlayback: @MainActor (UUID) -> Void
 
@@ -251,9 +253,23 @@ final class ContinuousCaptureSession: ContinuousCaptureSessionProtocol {
 
     func cancel() { finish(.failure(CancellationError())) }
 
-    func startEngine(maxSeconds: Double) throws {
-        // Freeze the monotonic deadline before synchronous engine setup.
-        let stopAt = ContinuousClock.now.advanced(by: .seconds(maxSeconds))
+    /// Engine startup allowance before the first buffer (matches Web's 5 s).
+    static let startupSeconds: Double = 5
+
+    func startEngine(maxSeconds: Double, startupSeconds: Double = ContinuousCaptureSession.startupSeconds) throws {
+        // Freeze both monotonic deadlines before synchronous engine setup. PCM
+        // length is capped by the accumulator from the first sample; these
+        // watchdogs only end a session that stalls without buffers.
+        let setupStarted = ContinuousClock.now
+        let firstBufferBy = setupStarted.advanced(by: .seconds(startupSeconds))
+        let stopAt = setupStarted.advanced(by: .seconds(startupSeconds + maxSeconds + 0.5))
+        startupTask = Task { [weak self] in
+            do {
+                try await ContinuousClock().sleep(until: firstBufferBy)
+                guard let self, self.accumulatedSeconds == 0 else { return }
+                self.finish(.failure(AudioAlignmentError.invalidCapture))
+            } catch {}
+        }
         budgetTask = Task { [weak self] in
             do {
                 try await ContinuousClock().sleep(until: stopAt)
@@ -312,6 +328,7 @@ final class ContinuousCaptureSession: ContinuousCaptureSessionProtocol {
 
     private func teardown() {
         budgetTask?.cancel(); budgetTask = nil
+        startupTask?.cancel(); startupTask = nil
         engine?.stop()
         if hasTap { engine?.inputNode.removeTap(onBus: 0) }
         hasTap = false
