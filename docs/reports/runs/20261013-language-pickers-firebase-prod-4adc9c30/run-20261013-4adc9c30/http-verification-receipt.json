@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "production-ui-http-verification-v1",
+  "checkedAt": "2026-10-13T17:54:38.992177+00:00",
+  "origin": "https://ai-for-god-sermon-audio.web.app",
+  "liveVersionBefore": "sites/ai-for-god-sermon-audio/versions/a0b4d399c4d38e81",
+  "liveVersionAfter": "sites/ai-for-god-sermon-audio/versions/a0b4d399c4d38e81",
+  "baselineVersion": "sites/ai-for-god-sermon-audio/versions/c10d222bd231b959",
+  "fileList": {
+    "baselineCount": 209,
+    "liveCount": 209,
+    "added": [],
+    "removed": [],
+    "changed": [
+      "/app.mjs",
+      "/index.html",
+      "/locales-app.mjs",
+      "/locales-es.mjs",
+      "/locales-interface.mjs",
+      "/locales-ko.mjs",
+      "/locales-reader.mjs",
+      "/style.css"
+    ],
+    "unchangedCount": 201,
+    "providerHashesAreGzipBytes": true,
+    "changedCandidateChecks": [
+      {
+        "path": "/app.mjs",
+        "providerGzipHash": "4e485a81664636bef1b3d52e32a886fce1d9d391e31840bcbeca59f5c68abdaa",
+        "candidateGzipHashMatch": true
+      },
+      {
+        "path": "/index.html",
+        "providerGzipHash": "0b224480cf0edf87e88d9a30702b53262abf92fc4b8316c4e16849e9dcc3cbc0",
+        "candidateGzipHashMatch": true
+      },
+      {
+        "path": "/locales-app.mjs",
+        "providerGzipHash": "f297a75106467ab610b7ceceaf333396932dad66013c4a612dd46a2d7a1b47c2",
+        "candidateGzipHashMatch": true
+      },
+      {
+        "path": "/locales-es.mjs",
+        "providerGzipHash": "5373a4c476bfe99b261a04e75e9ea77182e481f613b26e3b22702088fbe7c057",
+        "candidateGzipHashMatch": true
+      },
+      {
+        "path": "/locales-interface.mjs",
+        "providerGzipHash": "5ce719388cbf70a758e9030aaf53223fa3cf8b1482c581bc335f3805246f245b",
+        "candidateGzipHashMatch": true
+      },
+      {
+        "path": "/locales-ko.mjs",
+        "providerGzipHash": "9afa43512a4bbbc82641bb50d99f03e50d296d5c3f3b930b1eaac08d5eee9cc2",
+        "candidateGzipHashMatch": true
+      },
+      {
+        "path": "/locales-reader.mjs",
+        "providerGzipHash": "a570a6ed8d12f00a708158b572aaa14351c520885559eb53603e0c3fd061c115",
+        "candidateGzipHashMatch": true
+      },
+      {
+        "path": "/style.css",
+        "providerGzipHash": "fd843a9c80d800abb278ca4b5f8423477a36109329a9260b3d96a31dccdeb600",
+        "candidateGzipHashMatch": true
+      }
+    ]
+  },
+  "httpFullGetChecks": [
+    {
+      "path": "/app.mjs",
+      "status": 200,
+      "bytes": 64928,
+      "sha256": "28cc0a14eae6c774a05cb34563902fe6912e9d55a0ad2ed781dcfe776a805237",
+      "candidateRawSha256": "28cc0a14eae6c774a05cb34563902fe6912e9d55a0ad2ed781dcfe776a805237",
+      "matchesCandidate": true
+    },
+    {
+      "path": "/index.html",
+      "status": 200,
+      "bytes": 35641,
+      "sha256": "5a1de7a36f7da665b9d314fad7cc3350af4d52eca38ff604f47602664d6a5a5f",
+      "candidateRawSha256": "5a1de7a36f7da665b9d314fad7cc3350af4d52eca38ff604f47602664d6a5a5f",
+      "matchesCandidate": true
+    },
+    {
+      "path": "/locales-app.mjs",
+      "status": 200,
+      "bytes": 19738,
+      "sha256": "9f7758d56bde369f34431e6bf65e37aeba56ed24a30722064785a5bdc890f48f",
+      "candidateRawSha256": "9f7758d56bde369f34431e6bf65e37aeba56ed24a30722064785a5bdc890f48f",
+      "matchesCandidate": true
+    },
+    {
+      "path": "/locales-es.mjs",
+      "status": 200,
+      "bytes": 12456,
+      "sha256": "27465f754eb4b999b93ac372e81a29fb2aafd1fac87a601b35e81a19666e667b",
+      "candidateRawSha256": "27465f754eb4b999b93ac372e81a29fb2aafd1fac87a601b35e81a19666e667b",
+      "matchesCandidate": true
+    },
+    {
+      "path": "/locales-interface.mjs",
+      "status": 200,
+      "bytes": 19088,
+      "sha256": "333e861a35fb90b3ef0e34ff229678373f0bba48711f2cd3aa5bf7fa3421113d",
+      "candidateRawSha256": "333e861a35fb90b3ef0e34ff229678373f0bba48711f2cd3aa5bf7fa3421113d",
+      "matchesCandidate": true
+    },
+    {
+      "path": "/locales-ko.mjs",
+      "status": 200,
+      "bytes": 16287,
+      "sha256": "cc67af2e2ce317c29e9439cbb911fbf250d983afa98a2cdda9643f3225c2bdb3",
+      "candidateRawSha256": "cc67af2e2ce317c29e9439cbb911fbf250d983afa98a2cdda9643f3225c2bdb3",
+      "matchesCandidate": true
+    },
+    {
+      "path": "/locales-reader.mjs",
+      "status": 200,
+      "bytes": 7535,
+      "sha256": "f5b86c5d3f1d68354d6a43a614e30c2a7a5e085d9a0d7d8946aee73274c0cf7b",
+      "candidateRawSha256": "f5b86c5d3f1d68354d6a43a614e30c2a7a5e085d9a0d7d8946aee73274c0cf7b",
+      "matchesCandidate": true
+    },
+    {
+      "path": "/style.css",
+      "status": 200,
+      "bytes": 47723,
+      "sha256": "f4286e098a8a6e396cefe10fe6251fb067eb4243c53330ac617be5b7b54a1ba8",
+      "candidateRawSha256": "f4286e098a8a6e396cefe10fe6251fb067eb4243c53330ac617be5b7b54a1ba8",
+      "matchesCandidate": true
+    },
+    {
+      "path": "/multilingual-v3.json",
+      "status": 200,
+      "bytes": 10834,
+      "sha256": "7a0dda6c3311067bc409b775a3fdb20f54c39e3cd5824d54c1715ce28c5825fc",
+      "candidateRawSha256": "7a0dda6c3311067bc409b775a3fdb20f54c39e3cd5824d54c1715ce28c5825fc",
+      "matchesCandidate": true
+    },
+    {
+      "path": "/multilingual-v4.json",
+      "status": 200,
+      "bytes": 15106,
+      "sha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+      "candidateRawSha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+      "matchesCandidate": true
+    }
+  ],
+  "audioRange": {
+    "path": "/media/resi-20261011-54475d42/zh-Hans.mp3",
+    "status": 206,
+    "bytes": 1024,
+    "contentRange": "bytes 0-1023/25579341",
+    "sha256": "05f696eb6cdd6485e15894507f6f1058b8c956338a775faa3b05f78cf741d58a"
+  },
+  "feedbackReadOnlyGet": {
+    "path": "/api/feedback",
+    "status": 405,
+    "body": {
+      "ok": false,
+      "error": "method_not_allowed"
+    },
+    "sourceRoute": "experiments/sermon-dubbing-poc/feedback-api/core.mjs:104",
+    "expectation": "GET rejected before writes with method_not_allowed"
+  },
+  "status": "passed",
+  "limitations": [
+    "browser interaction not covered",
+    "device playback not covered",
+    "Four-language interface controls do not establish complete translation coverage; not evaluated in this HTTP verification."
+  ]
+}
