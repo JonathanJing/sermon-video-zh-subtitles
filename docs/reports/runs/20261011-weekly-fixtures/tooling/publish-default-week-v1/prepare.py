@@ -1,0 +1,12 @@
+import json,hashlib,shutil,sys
+from pathlib import Path
+sys.path.insert(0,str(Path.cwd()))
+from scripts.delivery_contract import validate_catalog_snapshot,project_human_catalog
+from scripts.guarded_hosting_publish import authenticated_transport,live_version
+p=Path('artifacts/weekend-live/layer4-54475d42');b=p/'prod-posters-v1';s=p/'prod-default-week-v1';proof=p/'publish-default-week-v1';sha=lambda f:hashlib.sha256(f.read_bytes()).hexdigest();version=live_version(authenticated_transport(),'ai-for-god-sermon-audio');assert version.endswith('/23e73e929047d76a'),version
+s.mkdir();shutil.copytree(b/'public',s/'public');shutil.copy2(b/'firebase.json',s/'firebase.json');v4=s/'public/multilingual-v4.json';cat=json.loads(v4.read_text());before=cat['defaultPageId'];cat['defaultPageId']='resi-20261011-54475d42';v4.write_text(json.dumps(cat,ensure_ascii=False,indent=2)+'\n');assert project_human_catalog(cat)==json.loads((s/'public/multilingual-v3.json').read_text())
+r=json.loads((b/'seal-report.json').read_text());r['catalogV4Sha256']=sha(v4);r['files']=[{'path':'/'+str(f.relative_to(s/'public')),'sha256':sha(f),'bytes':f.stat().st_size} for f in sorted((s/'public').rglob('*')) if f.is_file()];(s/'seal-report.json').write_text(json.dumps(r,indent=2)+'\n');validate_catalog_snapshot(s)
+side=json.loads((s/'public/weekly-announcements-v1.json').read_text());page=next(x for x in cat['pages'] if x['id']==cat['defaultPageId']);chosen=[]
+for l in ['zh-Hans','ko','es']:
+ a=next(x for x in side['announcements'] if x['pageID']==cat['defaultPageId'] and x['locale']==l);assert a['releaseSHA256']==page['targets'][l]['releasePackageJsonSha256'];assert a['sourceIdentitySHA256']==page['sourceIdentitySha256'];chosen.append({'locale':l,'title':a['title'],'poster':a['poster']['url']})
+c=json.loads((p/'publish-posters-v1/config.json').read_text());c.update(snapshot=str(s.resolve()),baseline_version=version,baseline_catalog_sha=sha(b/'public/multilingual-v3.json'),baseline_catalog_v4_sha=sha(b/'public/multilingual-v4.json'));(proof/'config.json').write_text(json.dumps(c,indent=2)+'\n');(proof/'preparation-receipt.json').write_text(json.dumps({'status':'prepared','beforeDefault':before,'afterDefault':cat['defaultPageId'],'changedFiles':['/multilingual-v4.json'],'humanProjectionUnchanged':True,'appPosterSelection':chosen},ensure_ascii=False,indent=2)+'\n');print('default page and three poster bindings verified')

@@ -120,6 +120,16 @@ class ProviderLimitsTests(unittest.TestCase):
             self.assertEqual(evidence['priceVerifiedAt'], '2026-10-05')
             self.assertNotIn('synthetic input', json.dumps(evidence))
 
+    def test_luna_request_reservation_uses_verified_model_specific_price(self):
+        measured = limits.request_bounds(payload('gpt-6-luna'), self.limits)
+        expected = measured['inputTokens'] * 0.125 + measured['outputTokens'] * 0.5
+        self.assertGreaterEqual(measured['costMicrousd'], expected)
+        self.assertLess(measured['costMicrousd'] - expected, 1)
+        evidence = limits.request_cost_evidence(payload('gpt-6-luna'), self.limits)
+        self.assertEqual(evidence['priceSource'], limits.PRICE_SOURCES['gpt-6-luna'])
+        self.assertEqual(evidence['priceVerifiedAt'], '2026-10-08')
+        self.assertEqual(evidence['priceAssumptionVersion'], 'strict-chat-luna-2026-10-08-v1')
+
     def test_usage_requires_real_model_tier_token_counts_and_elapsed(self):
         for key in ('requestedModel','providerModel','serviceTier','providerUsage','elapsedSeconds'):
             observed = observation(); observed.pop(key)

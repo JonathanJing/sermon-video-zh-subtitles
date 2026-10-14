@@ -1,0 +1,5 @@
+stage	status	seconds
+discover	pass	11.0
+es.calibration.prefetch	pass	244.0
+es.calibration	pass	35.4
+es.text-waiver	pass	0.1

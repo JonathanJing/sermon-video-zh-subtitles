@@ -42,6 +42,10 @@ FIELDS = {'schemaVersion', 'productionRunId', 'sourceId', 'sourceUrlHash', 'serv
           'jobRoot', 'outputDirectory', 'budgetAuthorization', 'mfa', 'anchorPolicy', 'judge'}
 LOCAL_MFA_FIELDS = {'mfa_executable', 'dictionary_path', 'acoustic_model', 'g2p_model', 'spoken_forms_path'}
 SPARK_MFA_FIELDS = LOCAL_MFA_FIELDS | {'host', 'proxy_jump', 'relay_host', 'relay_host_key_alias', 'python', 'root'}
+# Optional v2 field: the path of a source text review (scripts/sermon_source_text_review.py) applied to the
+# ASR reference text before MFA. The review binds this run's own ASR and clip hashes, so it can only be
+# written after ASR; its hash is therefore frozen in the run's provenance, not in the configuration.
+TEXT_REVIEW_FIELDS = {'sourceTextReview'}
 
 
 def require(ok, code):
@@ -126,7 +130,8 @@ def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _load(path)
     require(isinstance(value, dict) and value.get('schemaVersion') in (SCHEMA, SCHEMA_V2)
-            and set(value) == (FIELDS if value['schemaVersion'] == SCHEMA else FIELDS | {'asrWorkers'}),
+            and (set(value) == FIELDS if value['schemaVersion'] == SCHEMA else
+                 set(value) in (FIELDS | {'asrWorkers'}, FIELDS | {'asrWorkers'} | TEXT_REVIEW_FIELDS)),
             'invalid_source_preparation_configuration')
     if value['schemaVersion'] == SCHEMA_V2:
         require(type(value['asrWorkers']) is int and 1 <= value['asrWorkers'] <= 4,
@@ -146,6 +151,8 @@ def load_configuration(path):
         return _safe_path(path.parent / value[key])
     media, output, job_root, receipt_path = (resolve(k) for k in
         ('media', 'outputDirectory', 'jobRoot', 'windowApproval'))
+    if 'sourceTextReview' in value:
+        resolve('sourceTextReview')
     require(media.is_file() and _sha(media) == value['mediaSha256'], 'source_media_identity_changed')
     require(not any(output == p or output in p.parents for p in (media, path, receipt_path, job_root))
             and not (job_root == output or job_root in output.parents), 'source_paths_overlap')
@@ -384,6 +391,17 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
     _freeze(out / 'speaker-turns.json', {'schemaVersion': 'sermon-source-anonymous-turns-v1',
         'identityMapping': 'not_performed', 'crossChunkIdentity': 'unknown',
         'turns': [{k: row[k] for k in ('id', 'start', 'end', 'speakerId', 'speakerIdentityStatus')} for row in references]})
+    if 'sourceTextReview' in value:
+        # Apply the bound review to the reference text only; asr_reference*.json keep the raw ASR.
+        from scripts.sermon_source_text_review import apply_review
+        review_path = _safe_path(config.path.parent / value['sourceTextReview'])
+        # Stop before MFA until the operator's review of this run's ASR exists; ASR replays on resume.
+        require(review_path.is_file(), 'source_text_review_required')
+        segments = [{'id': index, 'text': row['text']} for index, row in enumerate(references)]
+        reviewed, provenance = apply_review(segments, review_path, clip, out / 'asr_reference.json')
+        provenance = {k: v for k, v in provenance.items() if k != 'reviewPath'}
+        _freeze(out / 'source-text-review-provenance.json', provenance)
+        references = [{**row, 'text': segment['text']} for row, segment in zip(references, reviewed)]
     alignment_marker = out / 'mfa-started.json'
     if aligned_path.exists():
         aligned = _load(aligned_path)
@@ -423,7 +441,8 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
         'readingAlignmentRuntime': _load(out / 'alignment-receipt.json')['runtime'],
         'timingPrecision': 'mfa_word_aligned',
         'sourceAsrEvidence': english.artifact(out / 'asr_reference.json', value=_load(out / 'asr_reference.json')),
-        'sourceChunkEvidence': english.artifact(out / 'asr_reference_chunks.json', value=references),
+        'sourceChunkEvidence': english.artifact(out / 'asr_reference_chunks.json',
+                                                value=json.loads((out / 'asr_reference_chunks.json').read_text())),
         'speakerTurnEvidence': english.artifact(out / 'speaker-turns.json', value=_load(out / 'speaker-turns.json')),
         'speakerIdentityMapping': 'not_performed',
         'pipelineInputIdentity': {'sourceAudio': {'sha256': value['mediaSha256'], 'sizeBytes': config.media.stat().st_size},
@@ -452,12 +471,102 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
             'machineJudgeStatus': judged['status']}
 
 
+REBUILD_OVERRIDES_SCHEMA = 'sermon-anchor-boundary-overrides-v3'
+
+
+def rebuild(config_path, base_output, out_dir, overrides_path, authorization_path, *, api_key=None, transport=None,
+            operator_acceptance=None):
+    """Rebuild anchors, judge and candidate from a run's frozen alignment; no ASR or MFA.
+
+    The base run's aligned segments, summary and window approval are reused by hash. Boundary
+    overrides (sentence ID -> ordered word IDs to split after) must name the same aligned
+    segments. The judge spends only under its own authorization and budget root.
+    """
+    config_path = _safe_path(Path(config_path).absolute())
+    value = _load(config_path)
+    require(value.get('schemaVersion') in (SCHEMA, SCHEMA_V2), 'invalid_source_preparation_configuration')
+    base_identity = jobs._digest({k: v for k, v in value.items() if k != 'budgetAuthorization'})
+    base, out = _safe_path(Path(base_output).absolute()), _safe_path(Path(out_dir).absolute())
+    aligned_path = base / 'aligned-segments.json'
+    receipt = _load(base / 'alignment-receipt.json')
+    require(receipt['alignedSha256'] == _sha(aligned_path), 'source_alignment_cache_changed')
+    aligned = _load(aligned_path)
+    overrides = _load(_safe_path(Path(overrides_path).absolute()))
+    require(set(overrides) == {'schemaVersion', 'alignedSegmentsSha256', 'overrides'}
+            and overrides['schemaVersion'] == REBUILD_OVERRIDES_SCHEMA
+            and overrides['alignedSegmentsSha256'] == receipt['alignedSha256']
+            and isinstance(overrides['overrides'], dict), 'invalid_boundary_overrides')
+    acceptance_path = _safe_path(Path(operator_acceptance).absolute()) if operator_acceptance else None
+    identity = jobs._digest({'baseConfiguration': base_identity, 'alignedSha256': receipt['alignedSha256'],
+                             'boundaryOverrides': overrides, 'judge': value['judge'],
+                             'maxUnitSeconds': value['anchorPolicy']['maxUnitSeconds'],
+                             **({'operatorAcceptanceSha256': _sha(acceptance_path)} if acceptance_path else {})})
+    authorization_path = _safe_path(Path(authorization_path).absolute())
+    auth = _load(authorization_path)
+    budget_root = out.parent / f'.{out.name}.judge-budget'
+    expected = {'productionRunId': value['productionRunId'], 'configurationSha256': identity,
+                'codeIdentitySha256': code.code_identity(), 'budgetRoot': str(budget_root)}
+    require(isinstance(auth, dict) and auth.get('schemaVersion') == 'sermon-source-budget-authorization-v1'
+            and auth.get('binding') == expected, 'source_budget_execution_binding_changed')
+    authority = auth['authority']
+    approval_path = _safe_path(authorization_path.parent / auth['approvalReceipt'])
+    approval = _load(approval_path)
+    require(_sha(approval_path) == authority['approvalSha256']
+            and approval.get('schemaVersion') == 'sermon-source-budget-approval-v1'
+            and approval.get('binding') == {**expected, 'globalBounds': authority['globalBounds'],
+                                            'requestLimits': authority['requestLimits']}
+            and approval.get('humanApproval') is True and approval.get('decision') == 'approved',
+            'source_budget_approval_not_bound')
+    out.mkdir(parents=True, exist_ok=True)
+    manifest = anchors.build_anchor_manifest(aligned, source_path=aligned_path,
+        unit_policy=anchors.UNIT_POLICY_V2, max_unit_seconds=value['anchorPolicy']['maxUnitSeconds'],
+        boundary_overrides=overrides['overrides'])
+    manifest_path = out / 'anchor-manifest.json'
+    _freeze(manifest_path, manifest)
+    _freeze(out / 'summary.json', _load(base / 'summary.json'))
+    caller = budget.SourceBudget(budget_root, authority, verify=lambda: None, transport=transport,
+                                 max_concurrent=value['judge']['workers'])
+    with budget.judge_limits(authority['requestLimits']):
+        judged = judge.run(aligned_path=aligned_path, manifest_path=manifest_path, out=out / 'machine-judge.json',
+            api_key=api_key if api_key is not None else os.environ.get('OPENAI_API_KEY', ''),
+            caller=caller.judge, cache_root=out / 'judge-requests',
+            model=value['judge']['model'], effort=value['judge']['reasoningEffort'],
+            batch_size=value['judge']['batchSize'], workers=value['judge']['workers'],
+            operator_acceptance=acceptance_path)
+    window_receipt = _safe_path(config_path.parent / value['windowApproval'])
+    package = english.build_package(aligned_path, manifest_path, summary_path=out / 'summary.json',
+        approval_evidence_path=window_receipt, machine_judge_path=out / 'machine-judge.json',
+        source_id=value['sourceId'], source_url_hash=value['sourceUrlHash'], service_date=value['serviceDate'])
+    require(package['translationEligible'] is False, 'source_preparation_cannot_grant_human_review')
+    _freeze(out / 'english-source-candidate.json', package)
+    _freeze(out / 'rebuild-receipt.json', {'schemaVersion': 'sermon-source-anchor-rebuild-v1',
+        'baseOutput': str(base), 'baseConfigurationSha256': base_identity, 'rebuildIdentity': identity,
+        'alignedSha256': receipt['alignedSha256'], 'boundaryOverridesSha256': _sha(_safe_path(Path(overrides_path).absolute())),
+        'budgetAuthorizationSha256': _sha(authorization_path), 'asrOrMfaRerun': False,
+        'operatorAcceptanceSha256': _sha(acceptance_path) if acceptance_path else None})
+    return {'status': 'succeeded' if judged['layer2DevelopmentEligible'] else 'blocked',
+            'kind': 'english_source_candidate',
+            'reason': 'human_source_review_required' if judged['layer2DevelopmentEligible'] else 'source_machine_judge_rejected',
+            'review': 'human_pending', 'productionEligible': False, 'humanApprovalCreated': False,
+            'candidatePath': str(out / 'english-source-candidate.json'), 'candidateSha256': jobs._digest(package),
+            'machineJudgeStatus': judged['status']}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=('inspect', 'execute'))
+    parser.add_argument('command', choices=('inspect', 'execute', 'rebuild'))
     parser.add_argument('--config', required=True, type=Path)
+    parser.add_argument('--base-output', type=Path)
+    parser.add_argument('--out', type=Path)
+    parser.add_argument('--boundary-overrides', type=Path)
+    parser.add_argument('--budget-authorization', type=Path)
+    parser.add_argument('--operator-acceptance', type=Path)
     args = parser.parse_args()
-    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+    if args.command == 'rebuild':
+        result = rebuild(args.config, args.base_output, args.out, args.boundary_overrides, args.budget_authorization,
+                         operator_acceptance=args.operator_acceptance)
+    else:
+        result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result['status'] in {'ready', 'succeeded'} else 2
 
