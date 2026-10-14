@@ -191,16 +191,17 @@
       },
       "authorization": {
         "status": "authorized",
-        "purposes": ["chinese_dubbing", "multilingual_voice_demo"],
+        "purposes": ["chinese_dubbing", "multilingual_voice_demo", "multilingual_dubbing"],
         "evidence": [
           "artifacts/sermon-dubbing/2026-09-05-speaker-bank/steve_bang_lee/authorization.json",
-          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制",
+          "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json"
         ]
       },
       "localeCapabilities": [
         {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"]},
-        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
-        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
+        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json"]},
+        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json"]},
         {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://steve_bang_lee/0661d53954b41e34ac96255c9cb67c73e80a06297f19a0b2976854c81eae3950"}, "reviewEvidence": []}
       ]
     }

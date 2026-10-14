@@ -1,0 +1,4 @@
+# rsync include list for spark:/stage/repo
+scripts/
+schemas/
+config/

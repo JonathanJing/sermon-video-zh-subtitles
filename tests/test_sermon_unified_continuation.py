@@ -153,6 +153,80 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(result['reason'],'reconciliation_required')
         self.assertFalse(self.root.exists())
 
+    def test_bound_delivery_document_resolves_l3_package_and_review_references(self):
+        package = self.source.root/'audio-package.json'; package.write_text('{"schemaVersion":"audio"}')
+        review = self.source.root/'audio-review.json'; review.write_text('{"schemaVersion":"review"}')
+        document = self.source.root/'delivery-draft.json'
+        document.write_text(json.dumps({'endpoint':'https://delivery.example.invalid/weekly',
+            'inputs':{'audioPackage':{'path':token('port','audio'), 'sha256':{'$port':'audio','field':'sha256'}},
+                      'reviewReceipt':binding('binding','audioReview')}}))
+        port_ref = {'path':str(package),'sha256':c.file_sha(package)}
+        review_ref = {'path':str(review),'sha256':c.file_sha(review)}
+        stage = {'id':'l4','ports':{'audio':{'stepId':'audio','role':'audio_package'}},'configs':{}}
+        subject._template({'$document':'deliveryDraft'},stage)
+        resolved = subject._resolve({'$document':'deliveryDraft'}, ports={'audio':port_ref},
+            bindings={'deliveryDraft':{'path':str(document),'sha256':c.file_sha(document)},
+                      'audioReview':review_ref}, configs={}, directory=self.source.root/'out')
+        self.assertEqual(resolved['endpoint'],'https://delivery.example.invalid/weekly')
+        self.assertEqual(resolved['inputs']['audioPackage'],port_ref)
+        self.assertEqual(resolved['inputs']['reviewReceipt'],
+                         {'path':str(review),'sha256':review_ref['sha256']})
+        with self.assertRaisesRegex(ValueError,'document_reference_invalid'):
+            subject._resolve({'$document':'deliveryDraft'}, ports={'audio':port_ref},
+                bindings={'deliveryDraft':{'path':str(document),'sha256':c.file_sha(document)}},
+                configs={}, directory=self.source.root/'out', in_document=True)
+
+    def test_prepare_revision_materializes_bound_delivery_document_from_audio_receipt(self):
+        package = self.source.root/'audio-package.json'; package.write_text('{"schemaVersion":"audio"}')
+        review = self.source.root/'audio-review.json'; review.write_text('{"schemaVersion":"review"}')
+        document = self.source.root/'delivery-draft.json'
+        document.write_text(json.dumps({'endpoint':'https://delivery.example.invalid/weekly',
+            'inputs':{'audioPackage':{'path':token('port','audio'), 'sha256':{'$port':'audio','field':'sha256'}},
+                      'reviewReceipt':binding('binding','audioReview')}}))
+        self.manifest['steps'].append({'id':'audio','stageId':'layer3_unit','adapter':'canonical.audio',
+            'locale':'zh-Hans','dependsOn':['source'],'scope':'english_ready_for_translation'})
+        self.manifest['bindings'].update({
+            'deliveryDraft':{'path':str(document),'sha256':c.file_sha(document)},
+            'audioReview':{'path':str(review),'sha256':c.file_sha(review)},
+        })
+        audio_step = self.manifest['steps'][-1]
+        audio_response = runtime.folder(self.root,self.state['runKey'])/('response-'+
+            c.digest(c.job_identity(self.manifest,audio_step))+'.json')
+        audio_response.parent.mkdir(parents=True,exist_ok=True)
+        audio_result = {'artifact':'verified','review':'human_pending','productionEligible':False,
+            'audioPackage':{'path':str(package),'sha256':c.file_sha(package)}}
+        audio_response.write_text(json.dumps({'identity':c.job_identity(self.manifest,audio_step),
+                                              'result':audio_result}))
+        self.state['steps']['audio']={'process':'succeeded','artifact':'verified','review':'human_pending',
+            'responseSha256':c.file_sha(audio_response),'completionEventId':'audio-complete'}
+        stage = copy.deepcopy(self.recipe['stages'][0])
+        stage.update(id='l4-bound-delivery',ports={'audio':{'stepId':'audio','role':'audio_package'}},
+            configs={'delivery':{'adapter':'app.delivery','template':{'$document':'deliveryDraft'}}},
+            manifestTemplate={'bindings':{'deliveryConfig':binding('config','delivery')},
+                'steps':[{'id':'release','adapter':'app.delivery','stageId':'publish_endpoint',
+                    'locale':'zh-Hans','configuration':'deliveryConfig','dependsOn':['audio'],
+                    'scope':'english_ready_for_translation'}]})
+        stage['requiredEvidence']=[]
+        self.recipe['stages']=[stage]
+        self.bind_recipe()
+        self.state['planHash']=c.plan_hash(self.manifest)
+        # Recipe binding participates in the frozen job identity.
+        audio_response=runtime.folder(self.root,self.state['runKey'])/('response-'+
+            c.digest(c.job_identity(self.manifest,audio_step))+'.json')
+        audio_response.write_text(json.dumps({'identity':c.job_identity(self.manifest,audio_step),
+                                              'result':audio_result}))
+        self.state['steps']['audio']['responseSha256']=c.file_sha(audio_response)
+        with patch.object(subject.adapters,'inspect_step'), patch.object(subject.adapters,'verify_result'):
+            prepared=subject.prepare_next_revision(self.state,self.recipe_path,self.root)
+        self.assertEqual(prepared['status'],'ready')
+        config_ref=prepared['manifest']['bindings']['deliveryConfig']
+        config=c.read(config_ref['path'])
+        self.assertEqual(config['endpoint'],'https://delivery.example.invalid/weekly')
+        self.assertEqual(config['inputs']['audioPackage']['path'],str(package))
+        self.assertEqual(config['inputs']['audioPackage']['sha256'],c.file_sha(package))
+        self.assertEqual(config['inputs']['reviewReceipt']['path'],str(review))
+        self.assertEqual(config['inputs']['reviewReceipt']['sha256'],c.file_sha(review))
+
     def test_changed_upstream_response_is_rejected(self):
         path=self.complete_source();path.write_text(path.read_text()+' ')
         with self.assertRaisesRegex(ValueError,'upstream_evidence_changed'):

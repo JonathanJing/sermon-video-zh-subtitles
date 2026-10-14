@@ -1,0 +1,18 @@
+{
+ "schemaVersion": "sermon-study-review-v1",
+ "kind": "outline",
+ "pageId": "resi-20261011-54475d42",
+ "locale": "ko",
+ "sourcePackageSha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+ "textCandidateSha256": "efc5043b3a57ec3973245163a88d40139a4cc9a1c15aef482b4a587b69da1a1b",
+ "artifactSha256": "4bad94c63540251c8eda5d66fd87c360055f1bf415867505fe5e147547ea26c1",
+ "decision": "approved",
+ "humanApproval": true,
+ "reviewedBy": "Jony",
+ "reviewedAt": "2026-10-11T14:21:20Z",
+ "checks": {
+  "faithfulness": "pass",
+  "scriptureIntegrity": "pass",
+  "localeReadability": "pass"
+ }
+}

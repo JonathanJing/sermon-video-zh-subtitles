@@ -31,6 +31,7 @@ struct TongxingApp: App {
                     if phase == .active {
                         model.setAlignmentFeedbackForeground(true)
                         model.playback.refreshLiveActivityPresentation()
+                        Task { await model.checkWeeklyUpdates() }
                     }
                     model.playback.setStatisticsForeground(phase == .active)
                 }

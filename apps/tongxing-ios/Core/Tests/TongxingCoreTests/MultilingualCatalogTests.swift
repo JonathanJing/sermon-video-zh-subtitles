@@ -64,6 +64,88 @@ struct MultilingualCatalogTests {
                 == "/releases/page-1/ko.json")
     }
 
+    @Test func sourceCategoriesPreserveKnownArchivesAndExplicitPodcastType() throws {
+        func page(_ id: String, mediaType: String? = nil, simulated: Bool = false) throws -> MultilingualPage {
+            try MultilingualCatalog.decode(catalogData { root in
+                root["defaultPageId"] = id
+                var pages = root["pages"] as! [[String: Any]]
+                pages[0]["id"] = id
+                pages[0]["mediaType"] = mediaType
+                var targets = pages[0]["targets"] as! [String: [String: Any]]
+                for locale in targets.keys { targets[locale]!["releasePackageUrl"] = "/releases/\(id)/\(locale).json" }
+                pages[0]["targets"] = targets
+                if simulated { pages[0]["simulationOnly"] = true }
+                root["pages"] = pages
+            }, allowDevCandidates: simulated).defaultPage
+        }
+        #expect(try page("resi-20261004-69ba7a66").displayEdition == "正式播放版")
+        #expect(try page("2026-09-27-weekend-sermon-drive-530").displayEdition == "正式播放版")
+        #expect(try page("if-i-had-more-time-jesus-is-worthy", mediaType: "podcast").displayEdition == "播客")
+        #expect(try page("unknown-video", mediaType: "video").displayEdition == nil)
+        #expect(try page("resi-unconfirmed").displayEdition == nil)
+        #expect(try page("resi-20261004-69ba7a66", simulated: true).displayEdition == nil)
+        #expect(try page("synthetic-podcast", mediaType: "podcast", simulated: true).displayEdition == nil)
+    }
+
+    @Test func remoteCategoryOverridesLegacyAndSurvivesBothCatalogProjections() throws {
+        let data = try catalogData { root in
+            var pages = root["pages"] as! [[String: Any]]
+            pages[0]["mediaType"] = "podcast"
+            pages[0]["displayCategory"] = ["schemaVersion": "sermon-page-display-category-v1",
+                "labels": ["zh-Hans": "专题访谈", "en": "Special interview", "ko": "특별 인터뷰"]]
+            root["pages"] = pages
+        }
+        let catalog = try MultilingualCatalog.decode(data)
+        #expect(catalog.defaultPage.displayEdition(locale: "zh-CN") == "专题访谈")
+        #expect(catalog.defaultPage.displayEdition(locale: "ZH_hANS_cn") == "专题访谈")
+        #expect(catalog.defaultPage.displayEdition(locale: "EN_us") == "Special interview")
+        #expect(catalog.defaultPage.displayEdition(locale: "en-US") == "Special interview")
+        #expect(catalog.defaultPage.displayEdition(locale: "ko-KR") == "특별 인터뷰")
+        #expect(catalog.defaultPage.displayEdition(locale: "es") == "Special interview")
+        let singapore = PageDisplayCategory(schemaVersion: PageDisplayCategory.supportedSchemaVersion,
+                                            labels: ["en": "Fallback", "zh-SG": "新加坡类别"])
+        #expect(singapore.label(locale: "zh-CN") == "新加坡类别")
+        // Refresh only presentation bytes; releases and source identities stay unchanged.
+        let wire = try JSONDecoder().decode(MultilingualCatalog.self, from: data)
+        let retained = try wire.retainingHumanLocales(["page-1": ["zh-Hans"]])
+        #expect(retained.defaultPage.displayCategory == catalog.defaultPage.displayCategory)
+        #expect(retained.defaultPage.targets["zh-Hans"] == catalog.defaultPage.targets["zh-Hans"])
+        #expect(retained.defaultPage.sourceIdentitySha256 == catalog.defaultPage.sourceIdentitySha256)
+        var root = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        var pages = root["pages"] as! [[String: Any]]
+        pages[0]["displayCategory"] = ["schemaVersion": "sermon-page-display-category-v1",
+            "labels": ["zh-Hans": "听众问答", "en": "Listener Q&A"]]
+        root["pages"] = pages
+        let refreshed = try MultilingualCatalog.decode(JSONSerialization.data(withJSONObject: root))
+        #expect(refreshed.defaultPage.displayEdition == "听众问答")
+        #expect(refreshed.defaultPage.targets == catalog.defaultPage.targets)
+    }
+
+    @Test func remoteCategoryFailsClosedAndCannotLabelSimulationAsFormal() throws {
+        for category: [String: Any] in [
+            ["schemaVersion": "unknown-v2", "labels": ["en": "Archive"]],
+            ["schemaVersion": "sermon-page-display-category-v1", "labels": ["en": "Archive"], "unexpected": true],
+            ["schemaVersion": "sermon-page-display-category-v1", "labels": ["zh-Hans": "正式播放版"]],
+            ["schemaVersion": "sermon-page-display-category-v1", "labels": ["en": "   "]],
+            ["schemaVersion": "sermon-page-display-category-v1", "labels": ["en": "line1\nline2"]],
+            ["schemaVersion": "sermon-page-display-category-v1", "labels": ["en": String(repeating: "a", count: 49)]],
+            ["schemaVersion": "sermon-page-display-category-v1", "labels": ["bad_locale!": "Archive", "en": "Archive"]]
+        ] {
+            let data = try catalogData { root in
+                var pages = root["pages"] as! [[String: Any]]
+                pages[0]["displayCategory"] = category; root["pages"] = pages
+            }
+            #expect(throws: (any Error).self) { try MultilingualCatalog.decode(data) }
+        }
+        let simulated = try MultilingualCatalog.decode(catalogData { root in
+            var pages = root["pages"] as! [[String: Any]]
+            pages[0]["simulationOnly"] = true
+            pages[0]["displayCategory"] = ["schemaVersion": "sermon-page-display-category-v1", "labels": ["en": "Archive"]]
+            root["pages"] = pages
+        }, allowDevCandidates: true)
+        #expect(simulated.defaultPage.displayEdition == nil)
+    }
+
     @Test func productionCatalogV3UsesV2ReleasePathsAndPageTitle() throws {
         let data = try catalogData { root in
             root["schemaVersion"] = "sermon-multilingual-catalog-v3"

@@ -1,5 +1,8 @@
 """Actual D3 plus D5 with synthetic transport only; no paid calls or admission."""
 from copy import deepcopy
+from contextlib import contextmanager
+from types import SimpleNamespace
+import time
 import io
 import json
 from pathlib import Path
@@ -19,6 +22,14 @@ from scripts import sermon_repair_planning as planning
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_layer2 as strict
 from tests import test_sermon_strict_layer2 as strict_fixtures
+
+
+@contextmanager
+def dispatch_sleep_mock(**options):
+    # The time module is shared by all threads. Replace only the adapter's
+    # reference so unrelated accounting/workflow workers retain real sleeps.
+    with patch.object(adapter, 'time', SimpleNamespace(sleep=Mock(**options))) as clock:
+        yield clock.sleep
 
 
 def bounds():
@@ -96,7 +107,7 @@ class StrictBudgetTests(unittest.TestCase):
             release.set();thread.join(3);self.assertFalse(thread.is_alive())
         try:
             with self.f.session(), patch.object(self.store,'mark_request',side_effect=contend), \
-                    patch.object(adapter.time,'sleep',side_effect=unlock):
+                    dispatch_sleep_mock(side_effect=unlock):
                 result=self.generate()
         finally:
             release.set()
@@ -107,9 +118,11 @@ class StrictBudgetTests(unittest.TestCase):
         self.assertEqual(len(self.snapshot()['reservations']),1)
 
     def test_dispatch_lock_wait_is_bounded_and_restart_does_not_regain_call_permission(self):
+        real_sleep = time.sleep
         with self.f.session(), patch.object(self.store,'mark_request',
                 side_effect=contracts.ContractError('budget_store_busy')) as mark, \
-                patch.object(adapter.time,'sleep') as sleep:
+                dispatch_sleep_mock() as sleep:
+            self.assertIs(time.sleep, real_sleep)
             with self.assertRaisesRegex(ValueError,'budget_store_busy'):self.generate()
         self.assertEqual(mark.call_count,adapter.DISPATCH_LOCK_ATTEMPTS)
         self.assertEqual(sleep.call_count,adapter.DISPATCH_LOCK_ATTEMPTS-1)
@@ -125,7 +138,7 @@ class StrictBudgetTests(unittest.TestCase):
             original(rid)
             raise contracts.ContractError('budget_store_busy')
         with self.f.session(), patch.object(self.store,'mark_request',side_effect=uncertain) as mark, \
-                patch.object(adapter.time,'sleep') as sleep:
+                dispatch_sleep_mock() as sleep:
             with self.assertRaisesRegex(ValueError,'budget_store_busy'):self.generate()
         self.assertEqual(mark.call_count,1);sleep.assert_not_called()
         self.assertEqual(len(self.f.calls),0)

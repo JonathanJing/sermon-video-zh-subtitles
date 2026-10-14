@@ -1,0 +1,2295 @@
+{
+ "note": "Qwen3-ASR screening (c5) flagged units per locale with recognized text and differences",
+ "locales": {
+  "zh-Hans": {
+   "status": "requires_review",
+   "counts": {
+    "pass": 441,
+    "requires_review": 20
+   },
+   "asrSettings": {
+    "protocol": "formal-back-asr-batch-v1",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+    "language": "zh-Hans",
+    "batchSize": 1,
+    "maxNewTokens": 2048,
+    "dtype": "bfloat16",
+    "executionDevice": "cuda:0",
+    "runtime": {
+     "backend": "qwen-asr-local",
+     "torchVersion": "2.13.0a0+8145d630e8.nv26.06",
+     "qwenAsrVersion": "0.0.6",
+     "modelMetadataSha256s": {
+      "chat_template.json": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff",
+      "config.json": "76d3ae4601ce939830b2517f4a6cadb86cc51316c3900af6b020b051c21a478c",
+      "generation_config.json": "1da527824d81e07118facff437e03f2e24a23311e3bdeb2368973fe77e5f275c",
+      "preprocessor_config.json": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d",
+      "tokenizer_config.json": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+     }
+    },
+    "implementationSha256": "604fa0f06cc3accf95fbcf74921b13a324491317a444fe53d7dd783bdce412aa",
+    "minSimilarity": 0.88,
+    "scoring": "token-sequence-ratio-v3; short units (<4 tokens) must match exactly; no negation, number or protected name may differ; numbers and names keep their order"
+   },
+   "flagged": [
+    {
+     "textGroupId": "translation-chunk-0000-u002",
+     "similarity": 0.826087,
+     "recognized": "如果我们还没见过面，我叫Steve Benelli。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "a"
+       ],
+       "recognized": [
+        "e"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "g"
+       ],
+       "recognized": [
+        "e"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "e",
+        "e"
+       ],
+       "recognized": [
+        "l",
+        "i"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "如果我们还没见过面，我叫 Steve Bang Lee。"
+    },
+    {
+     "textGroupId": "translation-chunk-0000-u019",
+     "similarity": 0.846154,
+     "recognized": "他是我认识的最近前的人之一。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "敬",
+        "虔"
+       ],
+       "recognized": [
+        "近",
+        "前"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "他是我认识的最敬虔的人之一。"
+    },
+    {
+     "textGroupId": "translation-chunk-0001-u038",
+     "similarity": 0.857143,
+     "recognized": "一共有七只号角。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "支"
+       ],
+       "recognized": [
+        "只"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "一共有七支号角。"
+    },
+    {
+     "textGroupId": "translation-chunk-0002-u014",
+     "similarity": 0.916667,
+     "recognized": "不过，接下来的这一号，也就是第五号，似乎涉及数零的层面。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "属",
+        "灵"
+       ],
+       "recognized": [
+        "数",
+        "零"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "不过，接下来的这一号，也就是第五号，似乎涉及属灵的层面。"
+    },
+    {
+     "textGroupId": "translation-chunk-0002-u022",
+     "similarity": 0.871795,
+     "recognized": "你算一算，就会发现地球上会有二十七亿人丧生。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "2",
+        "7"
+       ],
+       "recognized": [
+        "二",
+        "十",
+        "七"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "你算一算就会发现，地球上会有27亿人丧生。"
+    },
+    {
+     "textGroupId": "translation-chunk-0003-u013",
+     "similarity": 0.833333,
+     "recognized": "神是有愤怒的。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "忿"
+       ],
+       "recognized": [
+        "愤"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "神是有忿怒的。"
+    },
+    {
+     "textGroupId": "translation-chunk-0003-u016",
+     "similarity": 0.857143,
+     "recognized": "而正是因为神有慈爱，他也有愤怒。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "祂"
+       ],
+       "recognized": [
+        "他"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "忿"
+       ],
+       "recognized": [
+        "愤"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "而正是因为神有慈爱，祂也有忿怒。"
+    },
+    {
+     "textGroupId": "translation-chunk-0003-u032",
+     "similarity": 0.8,
+     "recognized": "他是最棒的。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "她"
+       ],
+       "recognized": [
+        "他"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "她是最棒的。"
+    },
+    {
+     "textGroupId": "translation-chunk-0004-u038",
+     "similarity": 0.866667,
+     "recognized": "比如，它不是在喝水，它是在补充水分。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "他"
+       ],
+       "recognized": [
+        "它"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "他"
+       ],
+       "recognized": [
+        "它"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "比如，他不是在喝水，他是在补充水分。"
+    },
+    {
+     "textGroupId": "translation-chunk-0006-u036",
+     "similarity": 0.857143,
+     "recognized": "你们做出了回应。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "作"
+       ],
+       "recognized": [
+        "做"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "你们作出了回应。"
+    },
+    {
+     "textGroupId": "translation-chunk-0007-u008",
+     "similarity": 0.857143,
+     "recognized": "它就会降下瘟疫。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "他"
+       ],
+       "recognized": [
+        "它"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "他就会降下瘟疫。"
+    },
+    {
+     "textGroupId": "translation-chunk-0007-u020",
+     "similarity": 0.833333,
+     "recognized": "这些吹号的审判呼应了时哉。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "十",
+        "灾"
+       ],
+       "recognized": [
+        "时",
+        "哉"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "这些吹号的审判呼应了十灾。"
+    },
+    {
+     "textGroupId": "translation-chunk-0007-u021",
+     "similarity": 0.94382,
+     "recognized": "如果你手边有《series》杂志，可以看看第八十一页上方的表格。不过两者之间的相似之处确实多得惊人。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "8",
+        "1"
+       ],
+       "recognized": [
+        "八",
+        "十",
+        "一"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "如果你手边有《Series》杂志，可以看看第81页上方的表格，不过，两者之间的相似之处确实多得惊人。"
+    },
+    {
+     "textGroupId": "translation-chunk-0007-u029",
+     "similarity": 0.920635,
+     "recognized": "在第八十一页的底部，你们会看到另一张表，里面讲的是创造和对创造的逆转。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "8",
+        "1"
+       ],
+       "recognized": [
+        "八",
+        "十",
+        "一"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "在第81页的底部，你们会看到另一张表，里面讲的是创造和对创造的逆转。"
+    },
+    {
+     "textGroupId": "translation-chunk-0010-u009",
+     "similarity": 0.954545,
+     "recognized": "他牺牲了自己的生命，为要使你我在他里面成为一人。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "义"
+       ],
+       "recognized": [
+        "一"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "他牺牲了自己的生命，为要使你我在他里面成为义人。"
+    },
+    {
+     "textGroupId": "translation-chunk-0010-u029",
+     "similarity": 0.954545,
+     "recognized": "今晚你走进了这里，而在你穿过那些门走进这个房间之前，你先快速查看了一下自己那张旧的数零成绩单。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "属",
+        "灵"
+       ],
+       "recognized": [
+        "数",
+        "零"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "今晚你走进了这里，而在你穿过那些门、走进这个房间之前，你先快速查看了一下自己那张旧的属灵成绩单。"
+    },
+    {
+     "textGroupId": "translation-chunk-0011-u001",
+     "similarity": 0.909091,
+     "recognized": "你去教会之前，有没有这样检查过自己的数零成绩单？",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "属",
+        "灵"
+       ],
+       "recognized": [
+        "数",
+        "零"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "你去教会之前，有没有这样检查过自己的属灵成绩单？"
+    },
+    {
+     "textGroupId": "translation-chunk-0011-u009",
+     "similarity": 0.933333,
+     "recognized": "所以今晚我们领受圣餐的合一方式。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "宜"
+       ],
+       "recognized": [
+        "一"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "所以，今晚我们领受圣餐的合宜方式"
+    },
+    {
+     "textGroupId": "translation-chunk-0011-u010",
+     "similarity": 0.939394,
+     "recognized": "就是我们要记住，我们那张旧的、破碎的数零成绩单已经被钉在耶稣的十字架上。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "属",
+        "灵"
+       ],
+       "recognized": [
+        "数",
+        "零"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "就是我们要记住，我们那张旧的、破碎的属灵成绩单，已经被钉在耶稣的十字架上，"
+    },
+    {
+     "textGroupId": "translation-chunk-0011-u011",
+     "similarity": 0.935484,
+     "recognized": "并且，因着信，耶稣已经把他那份完美的成绩单记在你的数零成绩记录里了。",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "属",
+        "灵"
+       ],
+       "recognized": [
+        "数",
+        "零"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "并且，因着信，耶稣已经把他那份完美的成绩单记在你的属灵成绩记录里了。"
+    }
+   ]
+  },
+  "ko": {
+   "status": "requires_review",
+   "counts": {
+    "pass": 420,
+    "requires_review": 41
+   },
+   "asrSettings": {
+    "protocol": "formal-back-asr-batch-v1",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+    "language": "ko",
+    "batchSize": 1,
+    "maxNewTokens": 2048,
+    "dtype": "bfloat16",
+    "executionDevice": "cuda:0",
+    "runtime": {
+     "backend": "qwen-asr-local",
+     "torchVersion": "2.13.0a0+8145d630e8.nv26.06",
+     "qwenAsrVersion": "0.0.6",
+     "modelMetadataSha256s": {
+      "chat_template.json": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff",
+      "config.json": "76d3ae4601ce939830b2517f4a6cadb86cc51316c3900af6b020b051c21a478c",
+      "generation_config.json": "1da527824d81e07118facff437e03f2e24a23311e3bdeb2368973fe77e5f275c",
+      "preprocessor_config.json": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d",
+      "tokenizer_config.json": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+     }
+    },
+    "implementationSha256": "604fa0f06cc3accf95fbcf74921b13a324491317a444fe53d7dd783bdce412aa",
+    "minSimilarity": 0.88,
+    "scoring": "token-sequence-ratio-v3; short units (<4 tokens) must match exactly; no negation, number or protected name may differ; numbers and names keep their order"
+   },
+   "flagged": [
+    {
+     "textGroupId": "translation-chunk-0000-u008",
+     "similarity": 0.764706,
+     "recognized": "여러분 중에는 마시로 잘한 사람이 많군요.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "맏",
+        "이"
+       ],
+       "recognized": [
+        "마",
+        "시"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "자",
+        "란"
+       ],
+       "recognized": [
+        "잘",
+        "한"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "여러분 중에는 맏이로 자란 사람이 많군요."
+    },
+    {
+     "textGroupId": "translation-chunk-0000-u009",
+     "similarity": 0.809524,
+     "recognized": "그래서 저는 우리 집에서 마지 마평으로 자랐습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "맏",
+        "이",
+        "맏",
+        "형"
+       ],
+       "recognized": [
+        "마",
+        "지",
+        "마",
+        "평"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그래서 저는 우리 집에서 맏이, 맏형으로 자랐습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0000-u015",
+     "similarity": 0.976744,
+     "recognized": "그리고 아버지는 이렇게 말했습니다. 다음 성적표에서 내 잠재력에 걸맞은 성적을 내지 못하면 내가 할 거야.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "네"
+       ],
+       "recognized": [
+        "내"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그리고 아버지는 이렇게 말했습니다. “다음 성적표에서 네 잠재력에 걸맞은 성적을 내지 못하면, 내가 …할 거야.”"
+    },
+    {
+     "textGroupId": "translation-chunk-0000-u025",
+     "similarity": 0.857143,
+     "recognized": "그 시간 내내 저는 위층에 있었고 얼굴에는 한바구심이 가득했습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "함",
+        "박",
+        "웃",
+        "음"
+       ],
+       "recognized": [
+        "한",
+        "바",
+        "구",
+        "심"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그 시간 내내 저는 위층에 있었고, 얼굴에는 함박웃음이 가득했습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0001-u006",
+     "similarity": 0.923077,
+     "recognized": "야 그건 전적으로 내 책임이었어.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "네"
+       ],
+       "recognized": [
+        "내"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "야, 그건 전적으로 네 책임이었어."
+    },
+    {
+     "textGroupId": "translation-chunk-0001-u019",
+     "similarity": 0.903226,
+     "recognized": "그래서 오늘 우리는 요한계시록 여덟 장과 아홉 장을 집중해서 살펴보겠습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "8"
+       ],
+       "recognized": [
+        "여",
+        "덟"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "9"
+       ],
+       "recognized": [
+        "아",
+        "홉"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그래서 오늘 우리는 요한계시록 8장과 9장을 집중해서 살펴보겠습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0001-u033",
+     "similarity": 0.875,
+     "recognized": "그들은 여섯 동안 매일 이렇게 했습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "엿",
+        "새"
+       ],
+       "recognized": [
+        "여",
+        "섯"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그들은 엿새 동안 매일 이렇게 했습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0001-u035",
+     "similarity": 0.705882,
+     "recognized": "열이고 성벽이 왈을 류 무너져 내렸습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "여",
+        "리"
+       ],
+       "recognized": [
+        "열",
+        "이"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "와",
+        "르",
+        "르"
+       ],
+       "recognized": [
+        "왈",
+        "을",
+        "류"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "여리고 성벽이 와르르 무너져 내렸습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0001-u039",
+     "similarity": 0.920635,
+     "recognized": "우리는 요한계시록 여덟 장과 구 장에서 그 중 여섯 개의 나팔을 살펴보게 됩니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "8"
+       ],
+       "recognized": [
+        "여",
+        "덟"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "9"
+       ],
+       "recognized": [
+        "구"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "우리는 요한계시록 8장과 9장에서 그중 여섯 개의 나팔을 살펴보게 됩니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0002-u002",
+     "similarity": 0.892857,
+     "recognized": "그리고 이것이 땅의 약 3분의 1과 그 위에 모든 초목을 태워버립니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "삼"
+       ],
+       "recognized": [
+        "3"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "일"
+       ],
+       "recognized": [
+        "1"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "의"
+       ],
+       "recognized": [
+        "에"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그리고 이것이 땅의 약 삼분의 일과 그 위의 모든 초목을 태워 버립니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0002-u006",
+     "similarity": 0.918367,
+     "recognized": "바다 생물의 3분의 1이 죽고 선박의 3분의 1이 영향을 받습니다. 이는 식량 공급망도 영향을 받았다는 것을 보여줍니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "삼"
+       ],
+       "recognized": [
+        "3"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "일"
+       ],
+       "recognized": [
+        "1"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "삼"
+       ],
+       "recognized": [
+        "3"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "일"
+       ],
+       "recognized": [
+        "1"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "바다 생물의 삼분의 일이 죽고, 선박의 삼분의 일이 영향을 받습니다. 이는 식량 공급망도 영향을 받았다는 것을 보여 줍니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0002-u008",
+     "similarity": 0.896552,
+     "recognized": "그리고 네 번째 나팔이 울리면 달과 별과 해에 3분의 1이 어두워집니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "의",
+        "삼"
+       ],
+       "recognized": [
+        "에",
+        "3"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "일"
+       ],
+       "recognized": [
+        "1"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그리고 네 번째 나팔이 울리면 달과 별과 해의 삼분의 일이 어두워집니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0002-u010",
+     "similarity": 0.9375,
+     "recognized": "자 여러분도 아마 이 첫 네 나팔이 세상을 이루는 요소들에 약 3분의 1에 영향을 미쳤다는 점을 알아차리셨을 것입니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "의"
+       ],
+       "recognized": [
+        "에"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "삼"
+       ],
+       "recognized": [
+        "3"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "일"
+       ],
+       "recognized": [
+        "1"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "자, 여러분도 아마 이 첫 네 나팔이 세상을 이루는 요소들의 약 삼분의 일에 영향을 미쳤다는 점을 알아차리셨을 것입니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0002-u012",
+     "similarity": 0.935484,
+     "recognized": "하지만 이 천 내 나팔은 세상을 이루는 요소들에 영향을 미쳤습니다. 그렇지요.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "첫",
+        "네"
+       ],
+       "recognized": [
+        "천",
+        "내"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "하지만 이 첫 네 나팔은 세상을 이루는 요소들에 영향을 미쳤습니다. 그렇지요?"
+    },
+    {
+     "textGroupId": "translation-chunk-0002-u020",
+     "similarity": 0.882353,
+     "recognized": "이용명으로 이루어진 군대가 일어나 땅 위의 사람들 가운데 삼 분의 일을 정복합니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "2",
+        "억"
+       ],
+       "recognized": [
+        "이",
+        "용"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "3"
+       ],
+       "recognized": [
+        "삼"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "1"
+       ],
+       "recognized": [
+        "일"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "2억 명으로 이루어진 군대가 일어나 땅 위의 사람들 가운데 3분의 1을 정복합니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0002-u022",
+     "similarity": 0.888889,
+     "recognized": "계산해 보면 지구상에서 이십칠억 명이 목숨을 잃습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "2",
+        "7"
+       ],
+       "recognized": [
+        "이",
+        "십",
+        "칠"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "계산해 보면, 지구상에서 27억 명이 목숨을 잃습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0002-u023",
+     "similarity": 0.6,
+     "recognized": "삼옥합니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "참",
+        "혹"
+       ],
+       "recognized": [
+        "삼",
+        "옥"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "참혹합니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0003-u002",
+     "similarity": 0.875,
+     "recognized": "바트 어마는 불가지론자인 학자입니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "만",
+        "은"
+       ],
+       "recognized": [
+        "마",
+        "는"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "바트 어만은 불가지론자인 학자입니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0003-u003",
+     "similarity": 1.0,
+     "recognized": "그리고 그는 자신의 책 아마겟돈에서 요한계 시록이 심판과 정죄를 찬양한다고 썼습니다.",
+     "differences": [],
+     "status": "requires_review",
+     "targetText": "그리고 그는 자신의 책 『아마겟돈』에서 요한계시록이 심판과 정죄를 찬양한다고 썼습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0003-u042",
+     "similarity": 0.95,
+     "recognized": "초등학교 이학년 때 무슨 일이 있었는지 아십니까?",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "2"
+       ],
+       "recognized": [
+        "이"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "초등학교 2학년 때 무슨 일이 있었는지 아십니까?"
+    },
+    {
+     "textGroupId": "translation-chunk-0005-u007",
+     "similarity": 0.962025,
+     "recognized": "그렇기 때문에 여덟 장을 보면 참으로 놀랍습니다. 하나님의 경고, 곧 나팔의 경고가 주어지기도 전에.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "8"
+       ],
+       "recognized": [
+        "여",
+        "덟"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그렇기 때문에 8장을 보면 참으로 놀랍습니다. 하나님의 경고, 곧 나팔의 경고가 주어지기도 전에,"
+    },
+    {
+     "textGroupId": "translation-chunk-0005-u013",
+     "similarity": 0.857143,
+     "recognized": "예를 들어 하박곡 두 장을 보십시오.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "국",
+        "2"
+       ],
+       "recognized": [
+        "곡",
+        "두"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "예를 들어, 하박국 2장을 보십시오."
+    },
+    {
+     "textGroupId": "translation-chunk-0005-u016",
+     "similarity": 0.896552,
+     "recognized": "여덟 장의 맨 첫 절에 주목해 보십시오.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "8"
+       ],
+       "recognized": [
+        "여",
+        "덟"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "8장의 맨 첫 절에 주목해 보십시오."
+    },
+    {
+     "textGroupId": "translation-chunk-0005-u020",
+     "similarity": 0.914286,
+     "recognized": "그 천사들에게 나팔 칠 개가 주어졌습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "일",
+        "곱"
+       ],
+       "recognized": [
+        "칠"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그 천사들에게 나팔 일곱 개가 주어졌습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0005-u025",
+     "similarity": 0.864865,
+     "recognized": "그 마지막 부분에 나오는 울의 소리, 울으른 거리는 소리, 번쩍이는 번개, 그리고 지진 말입니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "우",
+        "레"
+       ],
+       "recognized": [
+        "울",
+        "의"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "우",
+        "르",
+        "릉"
+       ],
+       "recognized": [
+        "울",
+        "으",
+        "른"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그 마지막 부분에 나오는 우레 소리, 우르릉거리는 소리, 번쩍이는 번개, 그리고 지진 말입니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0005-u027",
+     "similarity": 0.740741,
+     "recognized": "신해산 기술계에서 볼 수 있습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "시",
+        "내"
+       ],
+       "recognized": [
+        "신",
+        "해"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "슭"
+       ],
+       "recognized": [
+        "술",
+        "계"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "시내산 기슭에서 볼 수 있습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0006-u014",
+     "similarity": 0.875,
+     "recognized": "삼 분의 일 분입니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "뿐"
+       ],
+       "recognized": [
+        "분"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "삼분의 일뿐입니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0006-u015",
+     "similarity": 0.875,
+     "recognized": "삼 분의 일 분입니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "뿐"
+       ],
+       "recognized": [
+        "분"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "삼분의 일뿐입니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0006-u039",
+     "similarity": 0.833333,
+     "recognized": "짐 개피거는 목사가 아닙니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "건",
+        "은"
+       ],
+       "recognized": [
+        "거",
+        "는"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "짐 개피건은 목사가 아닙니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0007-u021",
+     "similarity": 0.94382,
+     "recognized": "시리즈 잡지가 있다면 팔십일쪽 맨 위에 있는 표를 볼 수 있습니다. 그런데 겹치는 부분이 놀라울 정도로 많습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "8",
+        "1"
+       ],
+       "recognized": [
+        "팔",
+        "십",
+        "일"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "시리즈 잡지가 있다면 81쪽 맨 위에 있는 표를 볼 수 있습니다. 그런데 겹치는 부분이 놀라울 정도로 많습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0007-u029",
+     "similarity": 0.920635,
+     "recognized": "팔십일쪽 아래쪽을 보시면 창조와 창조의 해체를 다루는 또 다른 표가 있습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "8",
+        "1"
+       ],
+       "recognized": [
+        "팔",
+        "십",
+        "일"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "81쪽 아래쪽을 보시면 창조와 창조의 해체를 다루는 또 다른 표가 있습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0008-u026",
+     "similarity": 0.923077,
+     "recognized": "그리고 성경에서 가장 유명한 이야기 중 하나인 누가복음 열 다섯 장의 이야기에서.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "1",
+        "5"
+       ],
+       "recognized": [
+        "열",
+        "다",
+        "섯"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그리고 성경에서 가장 유명한 이야기 중 하나인 누가복음 15장의 이야기에서,"
+    },
+    {
+     "textGroupId": "translation-chunk-0008-u033",
+     "similarity": 0.970588,
+     "recognized": "사실 우리는 교회에 모여 찬양까지 부르면서도 여전히 세상을 없신 여길 수 있습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "업"
+       ],
+       "recognized": [
+        "없"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "사실 우리는 교회에 모여 찬양까지 부르면서도 여전히 세상을 업신여길 수 있습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0009-u021",
+     "similarity": 0.955224,
+     "recognized": "그리고 요한계시록 여덟 장은 제가 이 사람을 위해 다시 기도하도록 저를 초대합니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "8"
+       ],
+       "recognized": [
+        "여",
+        "덟"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그리고 요한계시록 8장은 제가 이 사람을 위해 다시 기도하도록 저를 초대합니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0009-u028",
+     "similarity": 0.947368,
+     "recognized": "제 누이는 십 년 동안 그저 저를 위해 기도하는 가장 힘든 일을 했습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "1",
+        "0"
+       ],
+       "recognized": [
+        "십"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "제 누이는 10년 동안 그저 저를 위해 기도하는 가장 힘든 일을 했습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0009-u030",
+     "similarity": 0.923077,
+     "recognized": "그녀는 그저 십 년 동안 저를 위해 기도했습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "1",
+        "0"
+       ],
+       "recognized": [
+        "십"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그녀는 그저 10년 동안 저를 위해 기도했습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0009-u031",
+     "similarity": 0.926829,
+     "recognized": "그녀는 십 년 동안 하나님 앞에 기도를 올렸습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "1",
+        "0"
+       ],
+       "recognized": [
+        "십"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그녀는 10년 동안 하나님 앞에 기도를 올렸습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0010-u017",
+     "similarity": 0.935484,
+     "recognized": "그러므로 우리는 살아가면서 거듭 또 거듭 또 거듭 예술을 바라보아야 합니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "수",
+        "를"
+       ],
+       "recognized": [
+        "술",
+        "을"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "그러므로 우리는 살아가면서 거듭, 또 거듭, 또 거듭 예수를 바라보아야 합니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0011-u006",
+     "similarity": 0.977778,
+     "recognized": "여러분은 1년 전이나 수십 년 전에 저질러서 후회하는 그 한 가지 일 그 한 가지 죄 그 실수를 계속 생각해 왔습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "일"
+       ],
+       "recognized": [
+        "1"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "여러분은 일 년 전이나 수십 년 전에 저질러서 후회하는 그 한 가지 일, 그 한 가지 죄, 그 실수를 계속 생각해 왔습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0011-u020",
+     "similarity": 0.8,
+     "recognized": "정주에는 없습니다.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "죄"
+       ],
+       "recognized": [
+        "주",
+        "에"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "정죄는 없습니다."
+    },
+    {
+     "textGroupId": "translation-chunk-0011-u024",
+     "similarity": 0.777778,
+     "recognized": "우리 함께 이뤄설까요.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "일",
+        "어"
+       ],
+       "recognized": [
+        "이",
+        "뤄"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "우리 함께 일어설까요?"
+    }
+   ]
+  },
+  "es": {
+   "status": "requires_review",
+   "counts": {
+    "pass": 421,
+    "requires_review": 40
+   },
+   "asrSettings": {
+    "protocol": "formal-back-asr-batch-v1",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "modelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+    "language": "es",
+    "batchSize": 1,
+    "maxNewTokens": 2048,
+    "dtype": "bfloat16",
+    "executionDevice": "cuda:0",
+    "runtime": {
+     "backend": "qwen-asr-local",
+     "torchVersion": "2.13.0a0+8145d630e8.nv26.06",
+     "qwenAsrVersion": "0.0.6",
+     "modelMetadataSha256s": {
+      "chat_template.json": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff",
+      "config.json": "76d3ae4601ce939830b2517f4a6cadb86cc51316c3900af6b020b051c21a478c",
+      "generation_config.json": "1da527824d81e07118facff437e03f2e24a23311e3bdeb2368973fe77e5f275c",
+      "preprocessor_config.json": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d",
+      "tokenizer_config.json": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+     }
+    },
+    "implementationSha256": "604fa0f06cc3accf95fbcf74921b13a324491317a444fe53d7dd783bdce412aa",
+    "minSimilarity": 0.88,
+    "scoring": "token-sequence-ratio-v3; short units (<4 tokens) must match exactly; no negation, number or protected name may differ; numbers and names keep their order"
+   },
+   "flagged": [
+    {
+     "textGroupId": "translation-chunk-0000-u002",
+     "similarity": 0.857143,
+     "recognized": "Si aún no nos conocemos, mi nombre es Steve Bangley.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "bang",
+        "lee"
+       ],
+       "recognized": [
+        "bangley"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Si aún no nos conocemos, mi nombre es Steve Bang Lee."
+    },
+    {
+     "textGroupId": "translation-chunk-0000-u021",
+     "similarity": 0.944444,
+     "recognized": "Lleva décadas como pastor en una iglesia y todos los que lo conocen dan fe de su integridad.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "1"
+       ],
+       "recognized": [
+        "una"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Lleva décadas como pastor en 1 iglesia, y todos los que lo conocen dan fe de su integridad."
+    },
+    {
+     "textGroupId": "translation-chunk-0000-u022",
+     "similarity": 0.571429,
+     "recognized": "Y aún así es la sola advertencia.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "aun"
+       ],
+       "recognized": [
+        "aún"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "él",
+        "lanzó"
+       ],
+       "recognized": [
+        "es"
+       ]
+      },
+      {
+       "kind": "insert",
+       "expected": [],
+       "recognized": [
+        "sola"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Y aun así, él lanzó la advertencia."
+    },
+    {
+     "textGroupId": "translation-chunk-0000-u027",
+     "similarity": 0.666667,
+     "recognized": "porque los somos",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "lo"
+       ],
+       "recognized": [
+        "los"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Porque lo somos."
+    },
+    {
+     "textGroupId": "translation-chunk-0000-u035",
+     "similarity": 0.0,
+     "recognized": "si",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "sí"
+       ],
+       "recognized": [
+        "si"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Sí."
+    },
+    {
+     "textGroupId": "translation-chunk-0000-u043",
+     "similarity": 0.0,
+     "recognized": "Yenes.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "y",
+        "en",
+        "ese"
+       ],
+       "recognized": [
+        "yenes"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Y en ese..."
+    },
+    {
+     "textGroupId": "translation-chunk-0001-u014",
+     "similarity": 0.857143,
+     "recognized": "Preguntas cómo, ¿por qué haría él eso?",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "como"
+       ],
+       "recognized": [
+        "cómo"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Preguntas como: ¿por qué haría él eso?"
+    },
+    {
+     "textGroupId": "translation-chunk-0001-u020",
+     "similarity": 0.833333,
+     "recognized": "Allí es donde vamos a estar.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "ahí"
+       ],
+       "recognized": [
+        "allí"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Ahí es donde vamos a estar."
+    },
+    {
+     "textGroupId": "translation-chunk-0002-u020",
+     "similarity": 0.944444,
+     "recognized": "Se levanta un ejército de doscientos millones y somete a un tercio de las personas en la tierra.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "200"
+       ],
+       "recognized": [
+        "doscientos"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Se levanta un ejército de 200 millones y somete a un tercio de las personas en la tierra."
+    },
+    {
+     "textGroupId": "translation-chunk-0003-u003",
+     "similarity": 0.9375,
+     "recognized": "Y escribió en su libro Armagedón que el libro de Apocalipsis celebra el juicio, la condenación.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "armageddon"
+       ],
+       "recognized": [
+        "armagedón"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "y escribió en su libro Armageddon que el libro de Apocalipsis celebra el juicio, la condenación,"
+    },
+    {
+     "textGroupId": "translation-chunk-0003-u005",
+     "similarity": 0.952381,
+     "recognized": "Miren, desde la perspectiva de Herman, cuando él examina el libro de Apocalipsis, este no muestra a un Dios de gracia.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "ehrman"
+       ],
+       "recognized": [
+        "herman"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Miren, desde la perspectiva de Ehrman, cuando él examina el libro de Apocalipsis, este no muestra a un Dios de gracia."
+    },
+    {
+     "textGroupId": "translation-chunk-0003-u008",
+     "similarity": 0.909091,
+     "recognized": "Erman es muy inteligente y nosotros podemos ser muy inteligentes y aún así al examinar apocalipsis formarnos una imagen incorrecta de Dios.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "ehrman"
+       ],
+       "recognized": [
+        "erman"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "aun"
+       ],
+       "recognized": [
+        "aún"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Ehrman es muy inteligente, y nosotros podemos ser muy inteligentes y aun así, al examinar Apocalipsis, formarnos una imagen incorrecta de Dios."
+    },
+    {
+     "textGroupId": "translation-chunk-0003-u009",
+     "similarity": 0.9,
+     "recognized": "Entonces, ya que Herman sacó el tema, hablemos de ello.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "ehrman"
+       ],
+       "recognized": [
+        "herman"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Entonces, ya que Ehrman sacó el tema, hablemos de ello."
+    },
+    {
+     "textGroupId": "translation-chunk-0004-u013",
+     "similarity": 0.48,
+     "recognized": "Becky Manly Pipert en Sueobra Hope has its reasons looks persoa si.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "manley",
+        "pippert"
+       ],
+       "recognized": [
+        "manly",
+        "pipert"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "su",
+        "obra"
+       ],
+       "recognized": [
+        "sueobra"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "lo",
+        "expresó",
+        "así"
+       ],
+       "recognized": [
+        "looks",
+        "persoa",
+        "si"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Becky Manley Pippert, en su obra Hope Has Its Reasons, lo expresó así."
+    },
+    {
+     "textGroupId": "translation-chunk-0004-u038",
+     "similarity": 0.875,
+     "recognized": "Por ejemplo, el no toma agua se hidrata.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "él"
+       ],
+       "recognized": [
+        "el"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Por ejemplo, él no toma agua; se hidrata."
+    },
+    {
+     "textGroupId": "translation-chunk-0005-u013",
+     "similarity": 0.545455,
+     "recognized": "Por ejemplo, miren Haba Cook dos.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "habacuc",
+        "2"
+       ],
+       "recognized": [
+        "haba",
+        "cook",
+        "dos"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Por ejemplo, miren Habacuc 2."
+    },
+    {
+     "textGroupId": "translation-chunk-0005-u026",
+     "similarity": 0.75,
+     "recognized": "Donde más vemos eso.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "dónde"
+       ],
+       "recognized": [
+        "donde"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "¿Dónde más vemos eso?"
+    },
+    {
+     "textGroupId": "translation-chunk-0005-u027",
+     "similarity": 0.8,
+     "recognized": "Al pie del monte Sinai.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "sinaí"
+       ],
+       "recognized": [
+        "sinai"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Al pie del monte Sinaí."
+    },
+    {
+     "textGroupId": "translation-chunk-0005-u029",
+     "similarity": 0.961538,
+     "recognized": "De hecho, Dios es tan santo que tiene que ordenarle a Moisés que le diga al pueblo que no se acerque al monte sinahí como quiera.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "sinaí"
+       ],
+       "recognized": [
+        "sinahí"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "De hecho, Dios es tan santo que tiene que ordenarle a Moisés que le diga al pueblo que no se acerque al monte Sinaí como quiera."
+    },
+    {
+     "textGroupId": "translation-chunk-0006-u015",
+     "similarity": 0.75,
+     "recognized": "Sólo una tercera parte.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "solo"
+       ],
+       "recognized": [
+        "sólo"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Solo una tercera parte."
+    },
+    {
+     "textGroupId": "translation-chunk-0006-u022",
+     "similarity": 0.5,
+     "recognized": "Si es Luis lo expresó así.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "c",
+        "s",
+        "lewis"
+       ],
+       "recognized": [
+        "si",
+        "es",
+        "luis"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "C. S. Lewis lo expresó así."
+    },
+    {
+     "textGroupId": "translation-chunk-0006-u023",
+     "similarity": 0.909091,
+     "recognized": "Dios no susurra en nuestros placeres, él habla en nuestra conciencia.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "nos"
+       ],
+       "recognized": [
+        "no"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Dios nos susurra en nuestros placeres; él habla en nuestra conciencia,"
+    },
+    {
+     "textGroupId": "translation-chunk-0006-u025",
+     "similarity": 0.888889,
+     "recognized": "Es un megáfono para despertar a un mundo sordo.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "su"
+       ],
+       "recognized": [
+        "un"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Es su megáfono para despertar a un mundo sordo."
+    },
+    {
+     "textGroupId": "translation-chunk-0006-u033",
+     "similarity": 0.896552,
+     "recognized": "Levanta en la mano un momento. Esa es la historia de alguno de ustedes hoy.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "levanten"
+       ],
+       "recognized": [
+        "levanta",
+        "en"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Levanten la mano un momento: ¿esa es la historia de alguno de ustedes hoy?"
+    },
+    {
+     "textGroupId": "translation-chunk-0006-u039",
+     "similarity": 0.666667,
+     "recognized": "Jim Gaffigan, Noé Pastor.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "no",
+        "es"
+       ],
+       "recognized": [
+        "noé"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Jim Gaffigan no es pastor."
+    },
+    {
+     "textGroupId": "translation-chunk-0006-u040",
+     "similarity": 0.833333,
+     "recognized": "Es un comediente de stand up.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "comediante"
+       ],
+       "recognized": [
+        "comediente"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Es un comediante de stand-up."
+    },
+    {
+     "textGroupId": "translation-chunk-0007-u017",
+     "similarity": 0.931034,
+     "recognized": "Por eso me encanta que él haya mencionado las ranas y las plagas de Echódo, porque no era eso exactamente lo que Dios estaba tratando de hacer en Echódo.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "éxodo"
+       ],
+       "recognized": [
+        "echódo"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "éxodo"
+       ],
+       "recognized": [
+        "echódo"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Por eso me encanta que él haya mencionado las ranas y las plagas de Éxodo, porque ¿no era eso exactamente lo que Dios estaba tratando de hacer en Éxodo?"
+    },
+    {
+     "textGroupId": "translation-chunk-0007-u033",
+     "similarity": 0.842105,
+     "recognized": "porque el faraón se comportaba como un niñito mal criado",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "malcriado"
+       ],
+       "recognized": [
+        "mal",
+        "criado"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Porque el faraón se comportaba como un niñito malcriado."
+    },
+    {
+     "textGroupId": "translation-chunk-0008-u017",
+     "similarity": 0.857143,
+     "recognized": "Primero, sé el hermano mayor que ahora.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "ora"
+       ],
+       "recognized": [
+        "ahora"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Primero, sé el hermano mayor que ora."
+    },
+    {
+     "textGroupId": "translation-chunk-0008-u018",
+     "similarity": 0.833333,
+     "recognized": "Sé quién ora por nuestro mundo.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "quien"
+       ],
+       "recognized": [
+        "quién"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Sé quien ora por nuestro mundo."
+    },
+    {
+     "textGroupId": "translation-chunk-0008-u026",
+     "similarity": 0.928571,
+     "recognized": "Y en una de las historias más famosas de la Biblia, en Lucas quince.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "15"
+       ],
+       "recognized": [
+        "quince"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Y en una de las historias más famosas de la Biblia, en Lucas 15,"
+    },
+    {
+     "textGroupId": "translation-chunk-0009-u011",
+     "similarity": 0.875,
+     "recognized": "Elvan sus oraciones hasta la presencia de Dios.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "elevan"
+       ],
+       "recognized": [
+        "elvan"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Elevan sus oraciones hasta la presencia de Dios."
+    },
+    {
+     "textGroupId": "translation-chunk-0009-u015",
+     "similarity": 0.0,
+     "recognized": "Ustedesoran",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "ustedes",
+        "oran"
+       ],
+       "recognized": [
+        "ustedesoran"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "¿Ustedes oran?"
+    },
+    {
+     "textGroupId": "translation-chunk-0009-u021",
+     "similarity": 0.916667,
+     "recognized": "Y apocalipsis ocho me invita a volver a orar por esta persona.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "8"
+       ],
+       "recognized": [
+        "ocho"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Y Apocalipsis 8 me invita a volver a orar por esta persona."
+    },
+    {
+     "textGroupId": "translation-chunk-0009-u028",
+     "similarity": 0.928571,
+     "recognized": "Mi hermana hizo el trabajo más difícil: simplemente orar por mí durante diez años.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "10"
+       ],
+       "recognized": [
+        "diez"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Mi hermana hizo el trabajo más difícil: simplemente orar por mí durante 10 años."
+    },
+    {
+     "textGroupId": "translation-chunk-0009-u031",
+     "similarity": 0.916667,
+     "recognized": "ella elevó sus oraciones ante la presencia de Dios durante diez años",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "10"
+       ],
+       "recognized": [
+        "diez"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Ella elevó sus oraciones ante la presencia de Dios durante 10 años."
+    },
+    {
+     "textGroupId": "translation-chunk-0010-u002",
+     "similarity": 0.833333,
+     "recognized": "Sé el hermano mayor que ahora.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "ora"
+       ],
+       "recognized": [
+        "ahora"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Sé el hermano mayor que ora."
+    },
+    {
+     "textGroupId": "translation-chunk-0010-u005",
+     "similarity": 0.5,
+     "recognized": "Quién pagó Quién pagó",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "quien"
+       ],
+       "recognized": [
+        "quién"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "quien"
+       ],
+       "recognized": [
+        "quién"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "quien pagó, quien pagó."
+    },
+    {
+     "textGroupId": "translation-chunk-0011-u019",
+     "similarity": 0.722222,
+     "recognized": "y recuerden no el noventa y nueve por ciento de sus pecados sino el cien por ciento de todos sus pecados",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "99"
+       ],
+       "recognized": [
+        "noventa",
+        "y",
+        "nueve",
+        "por",
+        "ciento"
+       ]
+      },
+      {
+       "kind": "replace",
+       "expected": [
+        "100"
+       ],
+       "recognized": [
+        "cien",
+        "por",
+        "ciento"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Y recuerden: no el 99% de sus pecados, sino el 100% de todos sus pecados."
+    },
+    {
+     "textGroupId": "translation-chunk-0011-u023",
+     "similarity": 0.0,
+     "recognized": "C.",
+     "differences": [
+      {
+       "kind": "replace",
+       "expected": [
+        "sí"
+       ],
+       "recognized": [
+        "c"
+       ]
+      }
+     ],
+     "status": "requires_review",
+     "targetText": "Sí."
+    }
+   ]
+  }
+ }
+}

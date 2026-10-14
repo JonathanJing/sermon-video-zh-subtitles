@@ -47,6 +47,11 @@ from scripts.language_review_plugins import auto_qc_text_common as rules
 
 TEXT_KINDS = waiver.TEXT_KINDS
 AUDIO_KINDS = waiver.AUDIO_KINDS
+# A very short Chinese sentence gives the duration check no reliable expectation: a
+# quarter-length cut of 静默 or 第一，是通过静默 stays within natural variation
+# (2026-10-12 clip test). Per the user's decision such sentences get no truncation
+# trial; they are recorded as excluded, and the ASR still checks every sentence.
+TRUNCATION_MIN_SPEECH_UNITS = {"zh-Hans": 8}
 SPOKEN_KINDS = waiver.SPOKEN_KINDS
 # The first negation found is removed or reversed (않으십니다 -> 으십니다 reads as an affirmation).
 NEGATIONS = {"zh-Hans": (("没有", "有"), ("不", "")),
@@ -116,10 +121,14 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None,
     if kind == "added_content":
         # An ordinary sentence from elsewhere in the sermon, appended: the shortest
         # one without a number, so that only the back-translation check can see it.
-        pool = sorted((row["targetText"] for row in others
+        # Prefer the shortest sentence that still states something (at least six
+        # English words): a two-word interjection reads as filler, not as a claim.
+        pool = sorted((row for row in others
                        if row["groupId"] != group.get("groupId") and row["targetText"] not in text
-                       and not rules.english_number_values(row["english"])), key=len)
-        return None if not pool else text + ("" if locale == "zh-Hans" else " ") + pool[0]
+                       and not rules.english_number_values(row["english"])), key=lambda row: len(row["targetText"]))
+        claims = [row for row in pool if len(re.findall(r"[A-Za-z']+", row["english"])) >= 6]
+        chosen = (claims or pool)[0]["targetText"] if pool else None
+        return None if chosen is None else text + ("" if locale == "zh-Hans" else " ") + chosen
     if kind == "semantic_negation":
         # Flip a target negation without changing names, numbers, references or
         # script. Only groups with source negation supply this semantic trial.
@@ -190,6 +199,30 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None,
             if (chapter, verse) in cited:
                 john, romans = OTHER_BOOK[locale]
                 return text[:start] + (romans if code == "JOH" else john) + text[end:]
+        if locale == "zh-Hans":
+            # Chinese writes a said chapter as 《启示录》第八章; swap the book inside the brackets.
+            john, romans = OTHER_BOOK[locale]
+            for code, chapter, verse in rules.english_book_citations(english):
+                if code is None or verse is not None:
+                    continue
+                for name, book in rules._ZH_BOOK_CODES.items():
+                    if book != code:
+                        continue
+                    match = re.search("《" + re.escape(name) + "》(?=\\s*第)", text)
+                    if match:
+                        return text[:match.start()] + "《" + (romans if code == "JOH" else john) + "》" + text[match.end():]
+        if locale == "es":
+            # Spanish often names a said chapter without "capitulo" ("Lucas 15").
+            john, romans = OTHER_BOOK[locale]
+            folded = "".join(rules._fold(char)[:1] or " " for char in text)
+            for code, chapter, verse in rules.english_book_citations(english):
+                if code is None or verse is not None:
+                    continue
+                names = [name for (_, name), book in rules._ES_BOOK_CODES.items() if book == code]
+                for name in names:
+                    match = re.search(r"\b" + re.escape(name) + r"(?=\s+(?:capitulo\s+)?" + str(chapter) + r"\b)", folded)
+                    if match:
+                        return text[:match.start()] + (romans if code == "JOH" else john) + text[match.end():]
         return None
     if kind == "english_leak":
         return english if len(re.findall(r"[A-Za-z]+", english)) >= 6 else None
@@ -346,9 +379,10 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
     for kind in TEXT_KINDS:
         # Applicability searches the complete bound candidate, before trial caps
         # and surface screens; zero executed trials alone never grants an exemption.
-        applicable = ([group["groupId"] for group in groups
-                       if mutate_text(group, kind, locale, policy, groups) is not None]
-                      if kind == "swapped_name" else None)
+        # Every kind records where it could be seeded in the complete candidate; a kind
+        # with no site anywhere is not applicable to this text (zero trials alone never is).
+        applicable = [group["groupId"] for group in groups
+                      if mutate_text(group, kind, locale, policy, groups) is not None]
         trials = detected = 0
         misses = []
         for group in groups:
@@ -413,7 +447,15 @@ def drop_key_word(text: str, locale: str) -> str | None:
     return re.sub(r"\s{2,}", " ", text[:start] + text[end:]).strip()
 
 
-def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, max_trials: int = 30) -> dict:
+def truncation_eligible(text: str, locale: str) -> bool:
+    """Whether a seeded truncation can be audible under the locale's frozen rule."""
+    from scripts.target_audio_predicted_schedule import speech_units
+    minimum = TRUNCATION_MIN_SPEECH_UNITS.get(locale)
+    return minimum is None or speech_units(text, locale) >= minimum
+
+
+def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, max_trials: int = 30,
+                    normalization_policy_sha256: str | None = None) -> dict:
     """``asr(role, wav, text, locale) -> opinion`` (see ``target_audio_auto_qc.asr_opinion``)
     is the production ASR transport; without it wrong_sentence has no trials.
     ``render(text, locale) -> wav`` is the production TTS; dropped_key_word renders the
@@ -424,7 +466,7 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, ma
     units = [{key: value for key, value in unit.items() if key != "metrics"} for unit in units]
     decoded = [audio_qc.decode_pcm16(unit["wav"]) for unit in units]
     base = list(units)
-    clean = audio_qc.screen(base, locale)["results"]
+    clean = audio_qc.screen(base, locale, calibration_policy_sha256=normalization_policy_sha256)["results"]
     false_positives = sum(row["status"] == "fail" for row in clean)
     kinds, models = {}, {"primary": set(), "secondary": set()}
 
@@ -436,10 +478,18 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, ma
 
     for row in clean:
         note_runtime(row)
+    too_short = {index for index, unit in enumerate(units)
+                 if not truncation_eligible(unit["text"], locale)}
     for kind in AUDIO_KINDS:
         trials = detected = 0
-        misses = []
-        for index, (samples, rate) in enumerate(decoded[:max_trials]):
+        misses, excluded = [], []
+        candidates = decoded if kind == "truncated" else decoded[:max_trials]
+        for index, (samples, rate) in enumerate(candidates):
+            if trials >= max_trials:
+                break
+            if kind == "truncated" and index in too_short:
+                excluded.append(units[index]["groupId"])
+                continue
             rows = list(base)
             if kind == "wrong_sentence":
                 # Another sentence's audio; identical bytes would not be a wrong sentence.
@@ -461,7 +511,7 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, ma
             else:
                 # The screen decodes the mutated bytes, as it would a real faulty render.
                 rows[index] = {**base[index], "wav": audio_qc.encode_pcm16(*mutate_audio(samples, rate, kind))}
-            result = audio_qc.screen(rows, locale)["results"][index]
+            result = audio_qc.screen(rows, locale, calibration_policy_sha256=normalization_policy_sha256)["results"][index]
             note_runtime(result)
             trials += 1
             new = set(result["issues"]) - set(clean[index]["issues"])
@@ -473,6 +523,8 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, ma
                 misses.append(units[index]["groupId"])
         kinds[kind] = {"trials": trials, "detected": detected, "rate": _rate(detected, trials),
                        "missedGroupIds": misses}
+        if excluded:
+            kinds[kind]["excludedShortGroupIds"] = excluded
     if any(len(values) > 1 for values in models.values()):
         raise ValueError("ASR transport reported more than one model or runtime per role during calibration")
     runtime = {role: json.loads(next(iter(values))) if values else [None, None] for role, values in models.items()}
@@ -531,7 +583,9 @@ def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, 
     bound = text_qc.semantic_identity(identity) if call is not None else None
     inputs = calibration_inputs(groups, units, spoken_groups, policy, candidate, spoken_candidate)
     text = calibrate_text(groups, locale, policy=policy, call=call, max_trials=max_trials)
-    audio = calibrate_audio(units, locale, asr=asr, render=render, max_trials=max_trials) if units else None
+    audio = calibrate_audio(units, locale, asr=asr, render=render, max_trials=max_trials,
+                            normalization_policy_sha256=(render_identity or {}).get("synthesis", {}).get(
+                                "normalizationPolicySha256")) if units else None
     spoken = (calibrate_spoken(spoken_groups, locale, policy=policy, call=call, max_trials=max_trials)
               if spoken_groups else None)
     kinds = {f"text.{k}": v for k, v in text["kinds"].items()}

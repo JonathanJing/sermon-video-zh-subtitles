@@ -9,6 +9,7 @@
 - fallback 使用同一冻结来源、文字、声音身份和生成设置；换设备／精度进入新的执行身份及独立产物目录。不能把部分 MPS 与 CUDA 音频拼成同一正式 render。已经完成或可恢复的旧任务继续原后端，不因默认策略改变全篇重算。
 - 两端不可用时保留产物并停止。MacBook 缺少匹配的授权 checkpoint 不自动换声音；远端结果未知先对账，不并发制造第二份结果。
 - 项目代码中的默认值与后台任务的实际部署分开验证。显式指定后端用于诊断或恢复，不能改变四层门禁与发布范围。
+- 没有跨主机 adapter 的 canonical producer 仍须显式派发；不能仅凭本政策声称已有自动回退。
 
 ## 当前接入范围
 
@@ -21,6 +22,8 @@
 | canonical 配音回转写 | CUDA worker 当前硬编码 CUDA；按本策略在 Spark 运行。完整 MacBook 自动 fallback adapter 尚未接入，不把 legacy 适配器代称为正式 producer |
 | 转写、翻译、复核 API | 继续当前周次的生产 policy；迁移机器只迁移调用与账本，不更换内容模型和人审要求 |
 | FFmpeg、打包、hash、发布 | 选靠近输入的 CPU worker，减少媒体搬运；发布目标及 HTTP、设备、现场证据保持各自边界 |
+
+Spark 上需要调 OpenAI API 的任务读 `~/.config/tongxing/openai.env`（dev 与 prod 同一文件，权限 600，经启动器选环境），见 [OpenAI 凭据](openai-minimal-project-setup.zh.md#spark-上的副本2026-10-12-起长期保存)。
 
 这是项目默认选择与已接入口的策略；不声称所有 canonical producer 已由统一控制器自动完成 Spark→MacBook 切换。
 

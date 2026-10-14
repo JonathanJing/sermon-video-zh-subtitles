@@ -22,6 +22,7 @@ import re
 import shutil
 import struct
 import subprocess
+import sys
 import tempfile
 from typing import Any, Callable
 import wave as wave_module
@@ -32,6 +33,7 @@ try:
     from scripts import render_multilingual_voice_demos as demos
     from scripts import sermon_accounting as accounting
     from scripts import sermon_sentence_interpretation as identity
+    from scripts import ko_spoken_numerals
     from scripts import validate_target_language_audio_unit as integrity
     from scripts import dev_audio_test_profile as dev_profile
     from scripts import target_audio_recovery as recovery
@@ -46,6 +48,7 @@ except ImportError:
     import render_multilingual_voice_demos as demos
     import sermon_accounting as accounting
     import sermon_sentence_interpretation as identity
+    import ko_spoken_numerals
     import validate_target_language_audio_unit as integrity
     import dev_audio_test_profile as dev_profile
     import target_audio_recovery as recovery
@@ -60,9 +63,43 @@ VERSION = "sermon-formal-target-speech-render-v1"
 # Observability-only edits must not invalidate already rendered sound. The
 # accounting execution identity still records the current file's actual hash.
 RENDERER_SOUND_IDENTITY_SHA256 = "fef7604882470137f46f1b01fbd06c7c3c9a07166da91003243608785fa47f0b"
+# tailOverrunSeconds: how far the final unit may end after the approved clip; the
+# default admits none, and a compaction records any operator budget in its evidence.
+# The delivery MP3 must keep every audible window of the PCM master within the track
+# check's waveform bounds; 64 kbit/s smeared sharp sentence onsets on a full sermon.
+TRACK_MP3_BITRATE = "96k"
 DEFAULT_POLICY = {"reactionLagSeconds": 0.05, "interUtteranceGapSeconds": 0.05,
-                  "maxEndLagSeconds": 8.0}
+                  "maxEndLagSeconds": 8.0, "tailOverrunSeconds": 0.0}
+# The renderer, the compactor, the timing plan and the package builder all bound
+# the tail allowance here; a release plan cannot ask for more.
+MAX_TAIL_OVERRUN_SECONDS = 1.0
 BATCH_SIZES = (1, 2, 4, 8)
+EXACT_TEXT_POLICY = "exact_human_approved_target_text_no_rewrite"
+# v2 keeps the approved text exact but has the dub speak a registered spoken form of it.
+# Jobs whose adapter binds this policy's hash get the forms with no extra input; jobs
+# bound to v1 keep their render identities.
+SPOKEN_FORMS_NORMALIZATION_POLICY = {
+    "version": "v2", "policy": "exact_approved_text_with_registered_spoken_forms",
+    "spokenForms": {"ko": ko_spoken_numerals.RULE}}
+FROZEN_V2_NORMALIZATION_POLICY = {
+    "version": "v2", "policy": "exact_approved_text_with_registered_spoken_forms",
+    "spokenForms": {"ko": ko_spoken_numerals.RULE_V2}}
+FROZEN_V3_NORMALIZATION_POLICY = {
+    "version": "v2", "policy": "exact_approved_text_with_registered_spoken_forms",
+    "spokenForms": {"ko": ko_spoken_numerals.RULE_V3}}
+REGISTERED_NORMALIZATION_POLICIES = (FROZEN_V2_NORMALIZATION_POLICY, FROZEN_V3_NORMALIZATION_POLICY,
+                                     SPOKEN_FORMS_NORMALIZATION_POLICY)
+SPOKEN_FORM_RULES = {
+    ko_spoken_numerals.RULE_V2: ("ko", ko_spoken_numerals.spoken_form_v2),
+    ko_spoken_numerals.RULE_V3: ("ko", ko_spoken_numerals.spoken_form_v3),
+    ko_spoken_numerals.RULE: ("ko", ko_spoken_numerals.spoken_form)}
+
+
+def registered_normalization_policy(job):
+    policy_sha = (job.get("adapter") or {}).get("normalizationPolicySha256")
+    return next((policy for policy in REGISTERED_NORMALIZATION_POLICIES
+                 if identity.json_sha256(policy) == policy_sha), None)
+
 BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_full_window_v2"
 BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
 LEGACY_BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_missing_units_v1"
@@ -122,7 +159,8 @@ def validate_operation_policies(policies: dict[str, Any], adapter: dict[str, Any
                 and identity.json_sha256(policies[name]) == adapter.get(field) == job["adapter"].get(field)
                 for name, field in expected),
             "Audio operation policy content differs from speech adapter/job hashes")
-    require(policies["normalization"].get("policy") == "exact_human_approved_target_text_no_rewrite",
+    require(policies["normalization"].get("policy") == EXACT_TEXT_POLICY
+            or policies["normalization"] in REGISTERED_NORMALIZATION_POLICIES,
             "Renderer requires exact approved text policy")
 
 
@@ -166,8 +204,12 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
                 f"Mapped evidence missing or hash mismatch: {original}")
         if "jsonSha256" in ref:
             value = json.loads(staged.read_text(encoding="utf-8"))
-            require(identity.json_sha256(value) == ref["jsonSha256"],
-                    f"Mapped evidence JSON hash mismatch: {original}")
+            if identity.json_sha256(value) != ref["jsonSha256"]:
+                # The byte hash above proves this exact file. A recorder that hashed a
+                # later-mutated in-memory object (2026-10-11 Layer 1 chunk evidence) leaves
+                # a JSON hash no canonicalization of the file reproduces; report it.
+                print(f"path-map: recorded jsonSha256 does not canonicalize the byte-verified file: {original}",
+                      file=sys.stderr)
             pending.extend(_evidence_paths(value))
         references.append(ref)
     # Only after all hash checks pass may aliases be made visible to legacy
@@ -376,8 +418,12 @@ RECOVERY_SETTINGS_FIELDS = {"schemaVersion", "seed", "batchSize", "replicas", "d
 
 
 def recovery_render_settings(value: dict[str, Any]) -> dict[str, Any]:
-    """Require explicit complete settings; never infer them from old cache files."""
-    require(isinstance(value, dict) and set(value) == RECOVERY_SETTINGS_FIELDS
+    """Require explicit complete settings; never infer them from old cache files.
+
+    ``tailOverrunSeconds`` is the one optional field: settings recorded before the
+    tail allowance existed stay valid and mean 0.0, and a run that sets it records
+    it explicitly."""
+    require(isinstance(value, dict) and set(value) - {"tailOverrunSeconds"} == RECOVERY_SETTINGS_FIELDS
             and value["schemaVersion"] == RECOVERY_SETTINGS_VERSION,
             "Complete explicit recovery render settings required")
     require(type(value["seed"]) is int and value["seed"] >= 0
@@ -392,8 +438,10 @@ def recovery_render_settings(value: dict[str, Any]) -> dict[str, Any]:
             "Invalid recovery instruction")
     require(value["unitInstructions"] is None or (isinstance(value["unitInstructions"], str)
             and Path(value["unitInstructions"]).is_absolute()), "Explicit unit instruction path required")
-    require(all(type(value[key]) in (int, float) and math.isfinite(value[key]) and value[key] >= 0
-                for key in DEFAULT_POLICY), "Invalid recovery scheduling policy")
+    require(all(type(value.get(key, 0.0)) in (int, float) and math.isfinite(value.get(key, 0.0))
+                and value.get(key, 0.0) >= 0 for key in DEFAULT_POLICY)
+            and value.get("tailOverrunSeconds", 0.0) <= MAX_TAIL_OVERRUN_SECONDS,
+            "Invalid recovery scheduling policy")
     if value["replicas"] == 8:
         require(value["batchSize"] == 8 and value["device"] == "cuda:0"
                 and value["dtype"] == "bfloat16" and value["attention"] == "sdpa",
@@ -428,9 +476,15 @@ def build_expected_intents(context, paths, settings, *, instructions_by_group=No
     """
     settings = recovery_render_settings(settings)
     job = context["job"]
-    require((settings["unitInstructions"] is None and not instructions_by_group)
-            or (settings["unitInstructions"] is not None and instructions_by_group is not None),
-            "Recovery unit instructions must be explicitly bound and validated")
+    if settings["unitInstructions"] is None:
+        # Without a file, only the normalization policy's spoken forms apply.
+        derived = unit_instructions(job, None)
+        require(not instructions_by_group or instructions_by_group == derived,
+                "Recovery unit instructions must be explicitly bound and validated")
+        instructions_by_group = derived
+    else:
+        require(instructions_by_group is not None,
+                "Recovery unit instructions must be explicitly bound and validated")
     require(len(job["units"]) == len(context["candidate"]["groups"]), "Recovery input coverage differs")
     require(all(unit["unitIndex"] == index
                 and unit["translationGroupId"] == group["translationGroupId"]
@@ -521,19 +575,55 @@ def _generation_batch_matches(commit: dict[str, Any], intent: dict[str, Any]) ->
     return policy in {intent.get("batchSeedPolicy"), LEGACY_BATCH_SEED_POLICY, BATCH_SEED_POLICY}
 
 
-def _spoken_equivalent(approved: str, spoken: str) -> bool:
-    """Allow only punctuation and the confirmed Revelation 3:16 reading."""
+def _spoken_equivalent(approved: str, spoken: str, locale: str = "zh-Hans", *,
+                       spoken_rule: str = ko_spoken_numerals.RULE) -> bool:
+    """Allow only punctuation and the confirmed Revelation 3:16 reading (zh-Hans), or the
+    Sino-Korean reading of chapter and verse numbers (ko: 8장 spoken 팔장)."""
+    if locale == "ko":
+        return ko_spoken_numerals.equivalent(approved, spoken, rule=spoken_rule)
     def normalized(value: str) -> str:
         value = re.sub(r"第3章第16节|3:16|第三章第十六节", "第三章第十六节", value)
         return "".join(char for char in value if char.isalnum())
     return normalized(approved) == normalized(spoken)
 
 
-def unit_instructions(job: dict[str, Any], path: Path | None) -> dict[str, dict[str, str]]:
-    if path is None:
+def policy_spoken_forms(job: dict[str, Any]) -> dict[str, str]:
+    """Spoken forms the job's normalization policy gives its units, by group."""
+    policy = registered_normalization_policy(job)
+    if policy is None:
         return {}
+    rule = policy["spokenForms"].get(job["targetLocale"])
+    if rule is None:
+        return {}
+    locale, spell = SPOKEN_FORM_RULES[rule]
+    require(locale == job["targetLocale"], "Spoken form rule belongs to another locale")
+    forms = {}
+    for unit in job["units"]:
+        spoken = spell(unit["text"])
+        if spoken != unit["text"]:
+            forms[unit["translationGroupId"]] = spoken
+    return forms
+
+
+def unit_instructions(job: dict[str, Any], path: Path | None) -> dict[str, dict[str, str]]:
+    result = _file_unit_instructions(job, path) if path is not None else {}
+    for group, spoken in policy_spoken_forms(job).items():
+        row = result.setdefault(group, {})
+        require(row.get("spokenText", spoken) == spoken,
+                "Unit instruction spoken form differs from the normalization policy's form")
+        row["spokenText"] = spoken
+    return result
+
+
+def _file_unit_instructions(job: dict[str, Any], path: Path) -> dict[str, dict[str, str]]:
     document = package.read_object(path)
-    require(document.get("schemaVersion") == "sermon-unit-delivery-instructions-v1"
+    registered = registered_normalization_policy(job)
+    spoken_rule = (registered or {}).get("spokenForms", {}).get("ko", ko_spoken_numerals.RULE)
+    # v1: every row carries a delivery instruction; only zh-Hans may add a spoken form.
+    # v2: a row may carry only a spoken form, which keeps the run's default instruction,
+    # and ko may give the Sino reading of chapter and verse numbers.
+    version = document.get("schemaVersion")
+    require(version in ("sermon-unit-delivery-instructions-v1", "sermon-unit-delivery-instructions-v2")
             and document.get("targetLocale") == job["targetLocale"]
             and document.get("speechJobJsonSha256") == identity.json_sha256(job)
             and isinstance(document.get("units"), list)
@@ -543,17 +633,27 @@ def unit_instructions(job: dict[str, Any], path: Path | None) -> dict[str, dict[
     for row in document["units"]:
         group = row.get("translationGroupId")
         instruction = row.get("instruction")
+        spoken = row.get("spokenText")
+        optional = version == "sermon-unit-delivery-instructions-v2" and spoken is not None
         require(group in allowed and group not in result
                 and row.get("approvedTextSha256") == hashlib.sha256(allowed[group]["text"].encode()).hexdigest()
-                and isinstance(instruction, str) and instruction.strip()
+                and ((instruction is None and optional) or (isinstance(instruction, str) and instruction.strip()))
                 and isinstance(row.get("operatorEvidence"), str) and row["operatorEvidence"].strip(),
                 "Unit delivery instruction lacks approved text or operator evidence")
-        spoken = row.get("spokenText")
         if spoken is not None:
-            require(job["targetLocale"] == "zh-Hans" and isinstance(spoken, str)
-                    and spoken.strip() and _spoken_equivalent(allowed[group]["text"], spoken),
+            locales = ("zh-Hans", "ko") if version == "sermon-unit-delivery-instructions-v2" else ("zh-Hans",)
+            require(job["targetLocale"] in locales and isinstance(spoken, str) and spoken.strip()
+                    and _spoken_equivalent(allowed[group]["text"], spoken, job["targetLocale"], spoken_rule=spoken_rule),
                     "Spoken form changes approved words or unsupported locale")
-        result[group] = {"instruction": instruction.strip()}
+            if job["targetLocale"] == "ko":
+                # An external override is not part of the legacy synthesis identity.
+                # Duration budgets/QC consume the frozen policy, so only its identical
+                # registered form can be used on this path.
+                require(registered_normalization_policy(job) is not None,
+                        "Korean spoken overrides require a new job frozen with normalization-v2; legacy jobs stay raw")
+                require(policy_spoken_forms(job).get(group) == spoken.strip(),
+                        "Unit instruction spoken form differs from the normalization policy's form")
+        result[group] = {} if instruction is None else {"instruction": instruction.strip()}
         if spoken is not None:
             result[group]["spokenText"] = spoken.strip()
     return result
@@ -1163,6 +1263,7 @@ def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
     anchor = {u["sourceUnitId"]: u for u in context["anchor"]["sourceUnits"]}
     offset = context["clip_timeline_map"]["anchorOffsetSeconds"]
     clip_duration = context["clip_timeline_map"]["clipDurationSeconds"]
+    tail_limit = clip_duration + policy.get("tailOverrunSeconds", 0.0)
     cursor = 0.0
     entries = []
     issues = []
@@ -1176,7 +1277,7 @@ def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
         entry = {"textGroupId": group["translationGroupId"], "sourceUnitIds": source_ids,
                  "plannedStart": round(start, 6), "plannedEnd": round(end, 6)}
         entries.append(entry)
-        if end > clip_duration + 1e-6 or end - source_end > policy["maxEndLagSeconds"] + 1e-6:
+        if end > tail_limit + 1e-6 or end - source_end > policy["maxEndLagSeconds"] + 1e-6:
             issues.append({"unitIndex": index, "textGroupId": group["translationGroupId"],
                            "plannedEnd": round(end, 6), "sourceEnd": round(source_end, 6),
                            "clipDuration": clip_duration,
@@ -1185,7 +1286,8 @@ def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
     return {"targetLocale": context["job"]["targetLocale"],
             "timingKind": "measured_target_audio",
             "status": "pass" if not issues else "fail", "issues": issues,
-            "trackDurationSeconds": clip_duration, "policy": policy,
+            "trackDurationSeconds": round(max([clip_duration, *(e["plannedEnd"] for e in entries)]), 6),
+            "policy": policy,
             "entries": entries}
 
 
@@ -1225,6 +1327,8 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
                           cache_hit=(root / "render-manifest.json").is_file(),
                           work_unit_id=f"l3.{locale}.assembly_admission") as admission_span:
         policy = DEFAULT_POLICY.copy() if policy is None else policy.copy()
+        # Callers predating the tail budget pass the three original knobs; they admit no tail.
+        policy.setdefault("tailOverrunSeconds", DEFAULT_POLICY["tailOverrunSeconds"])
         require(all(isinstance(value, (float, int)) and not isinstance(value, bool)
                     and math.isfinite(value) and value >= 0 for value in policy.values())
                 and set(policy) == set(DEFAULT_POLICY), "Invalid schedule policy")
@@ -1290,7 +1394,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
             require(rate == sample_rate and channel_count == channels,
                     "Units differ in sample rate or channel count; renderer does not resample")
             waves.append(signal)
-        track = assemble_pcm16_track(plan, waves, sample_rate, channels, clip_duration)
+        track = assemble_pcm16_track(plan, waves, sample_rate, channels, plan["trackDurationSeconds"])
         # No time stretching, truncation, loudness normalization, or omitted units.
         wav_path.parent.mkdir(parents=True, exist_ok=True)
         partial = wav_path.with_suffix(".partial.wav")
@@ -1311,7 +1415,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
             encoded = subprocess.run([
                 "ffmpeg", "-nostdin", "-xerror", "-v", "error", "-y",
                 "-i", str(wav_path), "-map", "0:a:0", "-ac", "1",
-                "-c:a", "libmp3lame", "-b:a", "64k", "-write_xing", "1",
+                "-c:a", "libmp3lame", "-b:a", TRACK_MP3_BITRATE, "-write_xing", "1",
                 "-map_metadata", "-1", "-f", "mp3", str(partial_mp3),
             ], capture_output=True, text=True, check=False)
             require(encoded.returncode == 0 and partial_mp3.is_file(),
@@ -1501,8 +1605,11 @@ def main(argv=None) -> None:
     parser.add_argument("--reaction-lag-seconds", type=float, default=0.05)
     parser.add_argument("--inter-utterance-gap-seconds", type=float, default=0.05)
     parser.add_argument("--max-end-lag-seconds", type=float, default=8.0)
+    parser.add_argument("--tail-overrun-seconds", type=float, default=DEFAULT_POLICY["tailOverrunSeconds"],
+                        help=f"How far the final unit may end after the approved clip, at most "
+                             f"{MAX_TAIL_OVERRUN_SECONDS} s; the release plan's audio policy sets it")
     parser.add_argument("--track-format", choices=("wav", "mp3"), default="wav",
-                        help="Use reviewed 64 kbps mono MP3 for a full-length web release")
+                        help=f"Use reviewed {TRACK_MP3_BITRATE}bit/s mono MP3 for a full-length web release")
     parser.add_argument("--max-synthesis-units", type=int,
                         help="Bound generated units including full-window batch replay")
     parser.add_argument("--quarantine-unit", type=int, action="append", default=[],
@@ -1543,9 +1650,14 @@ def main(argv=None) -> None:
         paths["source_voice_authorization"] = args.source_voice_authorization
     if args.clip_voice_capability:
         paths["clip_voice_capability"] = args.clip_voice_capability
+    require(0 <= args.tail_overrun_seconds <= MAX_TAIL_OVERRUN_SECONDS,
+            f"--tail-overrun-seconds must be between 0 and {MAX_TAIL_OVERRUN_SECONDS}")
     policy = {"reactionLagSeconds": args.reaction_lag_seconds,
               "interUtteranceGapSeconds": args.inter_utterance_gap_seconds,
               "maxEndLagSeconds": args.max_end_lag_seconds}
+    if args.tail_overrun_seconds:
+        # Recorded only when set, so runs without a tail allowance keep their identity.
+        policy["tailOverrunSeconds"] = args.tail_overrun_seconds
     result = render_accounted(
         paths, args.checkpoint_map, args.audio_operation_policies,
         progress_ledger=args.progress_ledger,

@@ -45,5 +45,25 @@
         "/asr-hub"
       ]
     ]
-  }
+  },
+  "requiredChecks": [
+    {
+      "tool": "check_staged",
+      "argument": "docs/series-terminology.zh.md",
+      "expect": false
+    },
+    {
+      "tool": "check_out_path",
+      "argument": "artifacts/r/diagnostic-audio-r4",
+      "expect": false
+    },
+    {
+      "tool": "check_mount_resolves",
+      "expect": false
+    },
+    {
+      "tool": "compare_plugin_identity",
+      "expect": false
+    }
+  ]
 }

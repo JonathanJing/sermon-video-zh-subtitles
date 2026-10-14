@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261012-clip-ko-sino-chapter-rerun",
+  "runs": [
+    {
+      "label": "l3e",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/l3e",
+      "skipped": {
+        ".json": 312,
+        ".sha256": 40,
+        ".wav": 65,
+        ".mp3": 2,
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": "aqc-out3",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/aqc-out3",
+      "skipped": {
+        ".lock": 1,
+        ".json": 9
+      }
+    },
+    {
+      "label": "aqc-run2",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-test-20261012/aqc-run2",
+      "skipped": {
+        ".json": 8
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "l3e",
+      "path": "ko/spark-ko-c-e/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "447e7270f9380d04ec5f7b73c5f659ab67ca0a84256258504deda694ee7d73be",
+      "redactions": {}
+    },
+    {
+      "run": "l3e",
+      "path": "ko/spark-ko-c-e/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "447e7270f9380d04ec5f7b73c5f659ab67ca0a84256258504deda694ee7d73be",
+      "redactions": {}
+    },
+    {
+      "run": "l3e",
+      "path": "ko/spark-ko-c-e/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 1944,
+      "truncated": false,
+      "sha256": "5ecf9e337b755a13b517f2d3e6a4754039ef352a1a15ec364745050a2a9d7911",
+      "redactions": {}
+    },
+    {
+      "run": "l3e",
+      "path": "ko/spark-ko-c-e/spark-output/speech-job/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 11034,
+      "truncated": false,
+      "sha256": "1bf675f2428ee13bbac501f9b6af1231a87365d043ad6096b3673fdca9ba21d0",
+      "redactions": {}
+    },
+    {
+      "run": "l3e",
+      "path": "ko/spark-output/render.log",
+      "kind": "log",
+      "bytes": 5939,
+      "truncated": false,
+      "sha256": "d729c4c0ebb6bbf3151c68bf5f41fa0f33bd8f91d5756e870835228f68d7991f",
+      "redactions": {},
+      "exportedCopy": {
+        "sha256": "b8cda61411ed0d022ed088f369fc634a5f8fd31024e7a270766b953a498d8d0b",
+        "bytes": 5899,
+        "normalization": "strip_line_end_whitespace"
+      }
+    },
+    {
+      "run": "l3e",
+      "path": "ko/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 81290,
+      "truncated": true,
+      "sha256": "8c511b97a9114ee0e2cd32b5f86156e8bf84ef842e01923ac07c08faaa277c3c",
+      "redactions": {}
+    },
+    {
+      "run": "l3e",
+      "path": "ko/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 207043,
+      "truncated": false,
+      "sha256": "5900722ab0f273feb836206bd14f4591dabee8b14ebc5b29d07257383cf01aac",
+      "redactions": {}
+    },
+    {
+      "run": "aqc-out3",
+      "path": "ko/preflight.json",
+      "kind": "whole",
+      "bytes": 2160,
+      "truncated": false,
+      "sha256": "121b768c76448a42cb1df0a70418d1f1d1db558f33d1fd61de6b0b47f9b3a20a",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "aqc-out3",
+      "path": "spark-driver.log",
+      "kind": "log",
+      "bytes": 2543,
+      "truncated": false,
+      "sha256": "f37c624dacdee426e03b2f4ff959b127df0a2e126d21f41a78f0b772b25b6fa2",
+      "redactions": {}
+    },
+    {
+      "run": "aqc-out3",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 4257,
+      "truncated": false,
+      "sha256": "d0463a279d001f17fdc8084d3823c6d791439d608dd7c08d002e9f434c912663",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "aqc-out3",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 194,
+      "truncated": false,
+      "sha256": "97790a479950396547937bdf0183727e86f842042695c306d7975aecffaa87d9",
+      "redactions": {}
+    },
+    {
+      "run": "aqc-run2",
+      "path": "l3/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 11034,
+      "truncated": false,
+      "sha256": "1bf675f2428ee13bbac501f9b6af1231a87365d043ad6096b3673fdca9ba21d0",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

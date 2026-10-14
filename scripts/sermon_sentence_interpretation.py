@@ -298,9 +298,30 @@ def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
     return False
 
 
+def _outlier_phone_evidence(segment: dict[str, Any], words: list[dict[str, Any]],
+                            word: dict[str, Any], first_word: int) -> dict[str, Any]:
+    """MFA phone intervals and neighboring word times for a long word, so a reviewer can
+    tell an absorbed pause or held sound from a misplaced word. Evidence only; no edits."""
+    match = re.fullmatch(r".*-w(\d{4})[ab]?", str(word["wordId"]))
+    raw_words = segment.get("wordTimes") or []
+    offset = int(match.group(1)) - first_word if match else -1
+    raw = raw_words[offset] if 0 <= offset < len(raw_words) and isinstance(raw_words[offset], dict) else {}
+    phones = [{"phone": str(p.get("phone", "")), "start": round(float(p["start"]), 3), "end": round(float(p["end"]), 3)}
+              for p in raw.get("phones") or [] if isinstance(p, dict) and _finite(p.get("start")) and _finite(p.get("end"))]
+    position = next((i for i, item in enumerate(words) if item["wordId"] == word["wordId"]), None)
+    previous = words[position - 1] if position not in (None, 0) else None
+    following = words[position + 1] if position is not None and position + 1 < len(words) else None
+    return {
+        "phoneIntervals": phones,
+        "longestPhoneSeconds": round(max((p["end"] - p["start"] for p in phones), default=0.0), 3),
+        "previousWordEnd": previous["end"] if previous else None,
+        "nextWordStart": following["start"] if following else None,
+    }
+
+
 def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
                          min_unit_seconds: float, pause_seconds: float,
-                         forced_after_word_id: str | None = None
+                         forced_after_word_id: str | list[str] | dict[str, list[str]] | None = None
                          ) -> tuple[list[tuple[list[dict[str, Any]], dict[str, Any]]], bool]:
     """Build v2 subunits without inventing a word-level boundary.
 
@@ -311,31 +332,50 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
     boundary while retaining explicit evidence when a unit exceeds the target.
     """
     if forced_after_word_id is not None:
+        # One word ID (historical form) or an ordered list of word IDs to split after. Every
+        # resulting part and boundary must pass the same safety rules as a single split.
+        # A dict form names the split points and, separately, the boundaries where the operator
+        # has confirmed the grammatical dependency (for example parallel ", to ..." infinitives).
+        accepted_dependencies: set[str] = set()
+        if isinstance(forced_after_word_id, dict):
+            accepted_dependencies = set(forced_after_word_id["acceptDependentBoundaryAfter"])
+            forced_ids = list(forced_after_word_id["splitAfter"])
+        else:
+            forced_ids = [forced_after_word_id] if isinstance(forced_after_word_id, str) else list(forced_after_word_id)
         if float(words[-1]["end"]) - float(words[0]["start"]) <= max_seconds + 0.5:
             raise ValueError("Boundary override is unnecessary for a sentence within the duration target")
-        matches = [index for index, word in enumerate(words[:-1])
-                   if word["wordId"] == forced_after_word_id]
-        if len(matches) != 1:
-            raise ValueError(f"Boundary override word is missing or terminal: {forced_after_word_id}")
-        index = matches[0]
-        first_duration = float(words[index]["end"]) - float(words[0]["start"])
-        second_duration = float(words[-1]["end"]) - float(words[index + 1]["start"])
-        gap = float(words[index + 1]["start"]) - float(words[index]["end"])
-        if (first_duration < min_unit_seconds or second_duration < min_unit_seconds
-                or max(first_duration, second_duration) > max_seconds + 0.5
-                or not (gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
-                or _dependent_clause_boundary(words, index)):
-            raise ValueError(f"Boundary override lacks a safe clause split: {forced_after_word_id}")
-        return [
-            (words[:index + 1], _clause_boundary_evidence(words, index, pause_seconds, max_seconds)),
-            (words[index + 1:], {
-                "kind": "source_sentence_end",
-                "afterWordId": words[-1]["wordId"],
-                "pauseSeconds": 0.0,
-                "punctuation": None,
-                "withinTargetSeconds": second_duration <= max_seconds,
-            }),
-        ], False
+        indexes = []
+        for forced_id in forced_ids:
+            matches = [index for index, word in enumerate(words[:-1]) if word["wordId"] == forced_id]
+            if len(matches) != 1:
+                raise ValueError(f"Boundary override word is missing or terminal: {forced_id}")
+            indexes.append(matches[0])
+        if indexes != sorted(set(indexes)):
+            raise ValueError(f"Boundary override words must be distinct and in order: {forced_ids}")
+        starts = [0] + [index + 1 for index in indexes]
+        ends = indexes + [len(words) - 1]
+        for start, end in zip(starts, ends):
+            duration = float(words[end]["end"]) - float(words[start]["start"])
+            if duration < min_unit_seconds or duration > max_seconds + 0.5:
+                raise ValueError(f"Boundary override lacks a safe clause split: {forced_ids}")
+        for index in indexes:
+            gap = float(words[index + 1]["start"]) - float(words[index]["end"])
+            if (not (gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
+                    or (_dependent_clause_boundary(words, index)
+                        and words[index]["wordId"] not in accepted_dependencies)):
+                raise ValueError(f"Boundary override lacks a safe clause split: {words[index]['wordId']}")
+        parts = [(words[start:end + 1], {**_clause_boundary_evidence(words, end, pause_seconds, max_seconds),
+                  **({"operatorAcceptedDependency": True} if words[end]["wordId"] in accepted_dependencies else {})})
+                 for start, end in zip(starts[:-1], ends[:-1])]
+        last_duration = float(words[-1]["end"]) - float(words[starts[-1]]["start"])
+        parts.append((words[starts[-1]:], {
+            "kind": "source_sentence_end",
+            "afterWordId": words[-1]["wordId"],
+            "pauseSeconds": 0.0,
+            "punctuation": None,
+            "withinTargetSeconds": last_duration <= max_seconds,
+        }))
+        return parts, False
 
     parts: list[tuple[list[dict[str, Any]], dict[str, Any]]] = []
     cursor = 0
@@ -397,7 +437,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                           max_end_lag_seconds: float = 8.0,
                           unit_policy: str = UNIT_POLICY_V1,
                           word_duration_outlier_seconds: float = 2.5,
-                          boundary_overrides: dict[str, str] | None = None,
+                          boundary_overrides: dict[str, str | list[str]] | None = None,
                           identity_offsets: dict[str, dict[str, int]] | None = None,
                           allow_out_of_scope_overrides: bool = False) -> dict[str, Any]:
     _require(segments, "MFA segments must be a nonempty list")
@@ -429,7 +469,13 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
              "Out-of-scope boundary overrides require stable identity offsets")
     _require(unit_policy == UNIT_POLICY_V2 or not overrides,
              "Boundary overrides require clause_stable_v2")
-    _require(all(isinstance(key, str) and key and isinstance(value, str) and value
+    def _override_ids(value: Any) -> bool:
+        return isinstance(value, list) and bool(value) and all(isinstance(item, str) and item for item in value)
+    _require(all(isinstance(key, str) and key and (
+                     (isinstance(value, str) and value) or _override_ids(value)
+                     or (isinstance(value, dict) and set(value) == {"splitAfter", "acceptDependentBoundaryAfter"}
+                         and _override_ids(value["splitAfter"]) and _override_ids(value["acceptDependentBoundaryAfter"])
+                         and set(value["acceptDependentBoundaryAfter"]) <= set(value["splitAfter"])))
                  for key, value in overrides.items()), "Boundary override IDs must be nonempty strings")
 
     ordered = sorted(segments, key=lambda item: (float(item.get("start", -1)), int(item.get("id", 0))))
@@ -480,6 +526,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                         "text": word["text"],
                         "durationSeconds": round(word_duration, 6),
                         "maximumSeconds": word_duration_outlier_seconds,
+                        **_outlier_phone_evidence(segment, words, word, first_word),
                     })
             clause_parts, unresolved = _split_clause_stable(
                 words,
