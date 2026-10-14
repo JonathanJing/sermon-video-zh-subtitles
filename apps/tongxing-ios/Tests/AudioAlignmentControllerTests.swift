@@ -687,6 +687,32 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(none.attempts.first?.stage, .opened)
     }
 
+    func testAttemptKeepsStartContextAndFlagsMatchBudgetTimeouts() async throws {
+        let hash = String(repeating: "a", count: 64)
+        let first = AlignmentStatisticsContext(source: .init(week: "2026-10-11", trackId: "zh", audioSha256: hash), interfaceLocale: "en", contentLocale: "zh-Hans")
+        let second = AlignmentStatisticsContext(source: .init(week: "2026-10-11", trackId: "ko", audioSha256: hash), interfaceLocale: "en", contentLocale: "ko")
+        let gate = ResultGate()
+        let switched = try Fixture(matcher: { _, _ in await gate.result() })
+        switched.statisticsContext = first
+        switched.controller.start()
+        try await gate.waitUntilStarted()
+        switched.statisticsContext = second
+        switched.player.alignmentRevision = UUID() // the listener switched source mid-press
+        await gate.finish(Self.match)
+        try await eventually { !switched.controller.busy }
+        XCTAssertEqual(switched.attempts.map(\.outcome), [.cancelled])
+        XCTAssertEqual(switched.contexts, [first], "a press stays counted where it started")
+
+        let slow = try Fixture(matchBudget: .milliseconds(5), matcher: { _, _ in
+            try await Task.sleep(for: .milliseconds(200)); return Self.match
+        })
+        slow.controller.start()
+        try await eventually { !slow.controller.busy }
+        XCTAssertEqual(slow.attempts.map(\.outcome), [.error])
+        XCTAssertEqual(slow.attempts.first?.errorCode, "MATCH_ERROR", "matcher too slow is distinguishable from capture failure")
+        XCTAssertEqual(slow.player.seeks, [])
+    }
+
     func testListeningHintsAreLocalizedForEveryCheckpoint() throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("lang.json")
         let localization = AppLocalization(preferenceURL: url)
@@ -787,6 +813,8 @@ final class AudioAlignmentControllerTests: XCTestCase {
         var phases: [ListeningAlignmentPhase] = []
         var resultPosition: Double?
         var attempts: [AlignmentAttemptRecord] = []
+        var contexts: [AlignmentStatisticsContext?] = []
+        var statisticsContext: AlignmentStatisticsContext?
         var controller: AudioAlignmentController!
 
         init(playing: Bool = false, result: FingerprintMatchResult = AudioAlignmentControllerTests.match,
@@ -848,7 +876,8 @@ final class AudioAlignmentControllerTests: XCTestCase {
                 }, deadline: deadline, matchBudget: matchBudget, onState: { [weak self] status, _, position in self?.status = status; self?.resultPosition = position },
                 onFailure: { [weak self] message in self?.failures.append(message) },
                 onPhase: { [weak self] phase in self?.phases.append(phase) },
-                onAttempt: { [weak self] attempt in self?.attempts.append(attempt) })
+                statisticsContext: { [weak self] in self?.statisticsContext },
+                onAttempt: { [weak self] attempt, context in self?.attempts.append(attempt); self?.contexts.append(context) })
         }
     }
 

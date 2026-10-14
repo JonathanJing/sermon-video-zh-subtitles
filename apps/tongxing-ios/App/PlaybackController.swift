@@ -139,12 +139,18 @@ final class PlaybackController: ObservableObject {
         }
     }
 
+    /// Snapshot taken when an alignment press starts, so a later source or
+    /// language switch cannot move the press to another page.
+    func alignmentStatisticsContext() -> AlignmentStatisticsContext? {
+        statisticsSource.map { .init(source: $0, interfaceLocale: statisticsInterfaceLocale, contentLocale: statisticsContentLocale) }
+    }
+
     /// One anonymous count per sound-alignment press, under the same opt-in
     /// statistics switch and withdrawal as listening time.
-    func recordAlignmentAttempt(_ attempt: AlignmentAttemptRecord) {
-        guard let statistics, let source = statisticsSource else { return }
-        let ui = statisticsInterfaceLocale, content = statisticsContentLocale
-        Task { await statistics.recordAlignment(attempt, source: source, interfaceLocale: ui, contentLocale: content) }
+    func recordAlignmentAttempt(_ attempt: AlignmentAttemptRecord, context: AlignmentStatisticsContext?) {
+        guard let statistics, let context else { return }
+        Task { await statistics.recordAlignment(attempt, source: context.source, interfaceLocale: context.interfaceLocale,
+                                                contentLocale: context.contentLocale) }
     }
 
     private func sampleStatistics(playing: Bool? = nil, clearing: Bool = false) {

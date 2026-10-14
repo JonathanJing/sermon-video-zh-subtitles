@@ -95,10 +95,12 @@ final class AudioAlignmentController {
     private var wasPlaying = false
     private var runningTask: Task<Void, Never>?
     private var timeoutTask: Task<Void, Never>?
-    private let onAttempt: (AlignmentAttemptRecord) -> Void
+    private let onAttempt: (AlignmentAttemptRecord, AlignmentStatisticsContext?) -> Void
+    private let statisticsContext: () -> AlignmentStatisticsContext?
     /// Progress of the current press, reported once as an anonymous count record.
     private struct AttemptProgress {
         let started: ContinuousClock.Instant
+        let context: AlignmentStatisticsContext?
         var stage: AlignmentAttemptRecord.Stage = .opened
         var result: FingerprintMatchResult?
         var captureSeconds: Double?
@@ -123,12 +125,14 @@ final class AudioAlignmentController {
          onState: @escaping (String, Bool, Double?) -> Void,
          onFailure: @escaping (String) -> Void = { _ in },
          onPhase: @escaping (ListeningAlignmentPhase) -> Void = { _ in },
-         onAttempt: @escaping (AlignmentAttemptRecord) -> Void = { _ in }) {
+         statisticsContext: @escaping () -> AlignmentStatisticsContext? = { nil },
+         onAttempt: @escaping (AlignmentAttemptRecord, AlignmentStatisticsContext?) -> Void = { _, _ in }) {
         self.playback = playback; self.capture = capture; self.getSelection = getSelection
         self.loadIndex = loadIndex; self.match = match; self.onState = onState
         self.onFailure = onFailure
         self.onPhase = onPhase
         self.onAttempt = onAttempt
+        self.statisticsContext = statisticsContext
         self.now = now; self.deadline = deadline; self.matchBudget = matchBudget
         self.loadPublishedIndex = loadPublishedIndex
         self.getPublishedSelection = getPublishedSelection
@@ -184,13 +188,13 @@ final class AudioAlignmentController {
     func start() {
         guard !busy else { return }
         guard playback.isReady, available, let selected = activeSelection() else {
-            onAttempt(AlignmentAttemptRecord(at: Date(), outcome: .unavailable, stage: .opened))
+            onAttempt(AlignmentAttemptRecord(at: Date(), outcome: .unavailable, stage: .opened), statisticsContext())
             onPhase(.failed)
             onState("当前音频没有可用的听声对齐资料。", false, nil); return
         }
         let token = UUID()
         requestID = token; selectionKey = key()
-        progress = AttemptProgress(started: now())
+        progress = AttemptProgress(started: now(), context: statisticsContext())
         switch selected {
         case .legacy(let value):
             capability = value.track.alignment; publishedCapability = value.week.audioFingerprint
@@ -239,7 +243,7 @@ final class AudioAlignmentController {
         onAttempt(AlignmentAttemptRecord(at: Date(), outcome: outcome, stage: attempt.stage,
             reason: attempt.result?.matched == true ? "matched" : diagnostics?.reason, errorCode: errorCode,
             rms: diagnostics?.rms, matchFraction: diagnostics?.supportFraction, captureSeconds: attempt.captureSeconds,
-            totalSeconds: Double(parts.seconds) + Double(parts.attoseconds) / 1e18))
+            totalSeconds: Double(parts.seconds) + Double(parts.attoseconds) / 1e18), attempt.context)
     }
 
     /// Status keys for the localized "still listening" hint after each missed checkpoint.
@@ -299,8 +303,9 @@ final class AudioAlignmentController {
             if requestID == token {
                 let sameSelection = sourceStillCurrent
                 // A source switch abandons the press; it is not a matcher or device failure.
-                reportAttempt(confirmedPosition != nil && !failed ? .applied : unmatched ? .noMatch
-                              : sameSelection ? outcome : .cancelled, errorCode: sameSelection ? errorCode : nil)
+                let applied = confirmedPosition != nil && !failed
+                reportAttempt(applied ? .applied : unmatched ? .noMatch : sameSelection ? outcome : .cancelled,
+                              errorCode: sameSelection && !applied ? errorCode : nil)
                 requestID = nil; runningTask = nil
                 timeoutTask?.cancel(); timeoutTask = nil
                 capture.cancel()
@@ -348,7 +353,7 @@ final class AudioAlignmentController {
             for (i, checkpoint) in Self.checkpoints.enumerated() {
                 try await session.waitUntil(seconds: checkpoint)
                 guard current(token) else { return }
-                guard let prefix = session.snapshot() else { break }
+                guard let prefix = session.snapshot() else { errorCode = errorCode ?? "INVALID_CAPTURE"; break }
                 onPhase(.matching)
                 onState("正在本机匹配播放位置…", true, nil)
                 let attempt = try await matchWithBudget(prefix, matchFn)
@@ -357,6 +362,9 @@ final class AudioAlignmentController {
                 // Check its terminal error before accepting a result or retrying.
                 try await session.waitUntil(seconds: 0)
                 guard current(token) else { return }
+                // A checkpoint that exceeds its compute budget is not a no-match:
+                // keep the slow-device signal for the report.
+                if attempt == nil { errorCode = "MATCH_ERROR" }
                 if let attempt {
                     progress?.stage = .matchedAudio; progress?.result = attempt
                     progress?.captureSeconds = Double(prefix.samples.count) / prefix.sampleRate

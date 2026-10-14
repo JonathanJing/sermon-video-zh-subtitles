@@ -64,7 +64,7 @@ public struct AlignmentAttemptRecord: Sendable, Equatable {
     static let reasons: Set<String> = ["matched", "silence", "insufficient_audio", "no_consensus", "ambiguous",
                                        "low_confidence", "incompatible_index", "incompatible_query", "unknown"]
     static let errorCodes: Set<String> = ["MIC_PERMISSION", "INPUT_INTERRUPTED", "INVALID_CAPTURE",
-                                          "INDEX_UNAVAILABLE", "AUDIO_UNSUPPORTED", "UNKNOWN"]
+                                          "INDEX_UNAVAILABLE", "AUDIO_UNSUPPORTED", "MATCH_ERROR", "UNKNOWN"]
 
     public let atMilliseconds: Int
     public let outcome: Outcome
@@ -108,6 +108,17 @@ public struct AlignmentAttemptRecord: Sendable, Equatable {
                 "reason": reason ?? null, "errorCode": errorCode ?? null, "level": level ?? null,
                 "fractionBand": fractionBand ?? null, "captureSeconds": captureSeconds ?? null,
                 "totalMs": totalMilliseconds ?? null, "shadow": null]
+    }
+}
+
+/// Where an alignment press is counted: the page, track and languages selected
+/// when the press started, even if the listener switches before it ends.
+public struct AlignmentStatisticsContext: Sendable, Equatable {
+    public let source: ListeningSource
+    public let interfaceLocale: String
+    public let contentLocale: String
+    public init(source: ListeningSource, interfaceLocale: String, contentLocale: String) {
+        self.source = source; self.interfaceLocale = interfaceLocale; self.contentLocale = contentLocale
     }
 }
 
