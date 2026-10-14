@@ -2,8 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {mkdtempSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {fingerprint} from './fingerprint-core.mjs';
-import {assertBenchmarkPlan, assertCompatibleIndex, assertIndependentTruth, assertVariantParity, failingGates, fingerprintVariant, nearestRank, scoreNegatives, scorePositive} from '../../../scripts/field_venue_fingerprint_benchmark.mjs';
+import {assertBenchmarkPlan, assertCompatibleIndex, assertIndependentTruth, assertPositiveRecordingSpan, assertVariantParity, failingGates, fingerprintVariant, nearestRank, scoreNegatives, scorePositive} from '../../../scripts/field_venue_fingerprint_benchmark.mjs';
 
 function speechLike(seconds, seed = 7) {
   let s = seed; const rand = () => ((s = (s * 1103515245 + 12345) >>> 0) / 2 ** 32) - .5;
@@ -68,22 +71,37 @@ test('reference correctness uses the expected offset, not merely an accepted mat
   assert.ok(result.windows[10].rows.some(row => row.reference.matched && !row.reference.correct));
   assert.equal(result.windows[10].referenceCorrect, 0);
   assert.ok(result.windows[10].referenceWrong > 0);
+  assert.ok(result.windows[10].wrong > 0);
+  assert.ok(result.absErrorMs.max >= 4900);
 });
 
 test('benchmark plan rejects empty comparisons and mismatched published source identity', () => {
   const sourceUrl = 'https://example.org/sermon', sourceUrlHash = createHash('sha256').update(sourceUrl).digest('hex');
-  const source = {sourceId: 'sermon-1', sourceUrl, sourceUrlHash, mediaSha256: 'a'.repeat(64), durationSeconds: 80,
-    window: {startSeconds: 10, endSeconds: 70, approvalReceiptSha256: 'b'.repeat(64)}};
-  const manifest = {sourceIdentity: source, reference: {sha256: source.mediaSha256}, index: {pageId: 'page-1', targetLocale: 'zh-Hans'}, recordings: [{channels: ['mix']}],
-    negatives: {referenceRanges: [[0, 20]], otherIndexes: [{id: 'other'}]}};
-  const index = {pageId: 'page-1', sourceSha256: source.mediaSha256, sourceStartSeconds: 10, sourceEndSeconds: 70, durationSeconds: 60};
-  const release = {pageId: 'page-1', targetLocale: 'zh-Hans', sourceIdentity: {sourceId: source.sourceId, sourceUrlHash, mediaSha256: source.mediaSha256, durationSeconds: source.durationSeconds, window: source.window}};
+  const source = {sourceId: 'sermon-1', sourceUrl, sourceUrlHash, serviceDate: '2026-10-11', mediaSha256: 'a'.repeat(64), durationSeconds: 100,
+    window: {startSeconds: 20, endSeconds: 80, approvalReceiptSha256: 'b'.repeat(64)}};
+  const pageId = '2026-10-11-page-1';
+  const manifest = {sourceIdentity: source, reference: {sha256: source.mediaSha256}, index: {pageId, targetLocale: 'zh-Hans'}, recordings: [{channels: ['mix'], truthIndexStartSeconds: 0}],
+    negatives: {referenceRanges: [[0, 10]], otherIndexes: [{id: 'other'}]}};
+  const index = {pageId, sourceSha256: source.mediaSha256, sourceStartSeconds: 20, sourceEndSeconds: 80, durationSeconds: 60};
+  const release = {pageId, targetLocale: 'zh-Hans', sourceIdentity: {sourceId: source.sourceId, sourceUrlHash, mediaSha256: source.mediaSha256, durationSeconds: source.durationSeconds, window: source.window}};
   assert.doesNotThrow(() => assertBenchmarkPlan(manifest, index, release));
   assert.throws(() => assertBenchmarkPlan({...manifest, recordings: []}, index, release), /empty_benchmark_plan/);
   assert.throws(() => assertBenchmarkPlan({...manifest, negatives: {...manifest.negatives, referenceRanges: [[0, 9]]}}, index, release), /empty_benchmark_plan/);
+  assert.throws(() => assertBenchmarkPlan({...manifest, negatives: {...manifest.negatives, referenceRanges: [[15, 25]]}}, index, release), /invalid_negative_range/);
+  assert.throws(() => assertBenchmarkPlan({...manifest, negatives: {...manifest.negatives, referenceRanges: [[95, 105]]}}, index, release), /invalid_negative_range/);
+  assert.throws(() => assertBenchmarkPlan({...manifest, recordings: [{channels: ['mono'], truthIndexStartSeconds: 0}]}, index, release), /unsupported_channel/);
   assert.throws(() => assertBenchmarkPlan(manifest, {...index, sourceStartSeconds: 11}, release), /source_identity_mismatch/);
+  assert.throws(() => assertBenchmarkPlan({...manifest, sourceIdentity: {...source, serviceDate: undefined}}, index, release), /source_identity_mismatch/);
+  assert.throws(() => assertBenchmarkPlan({...manifest, sourceIdentity: {...source, serviceDate: '2026-10-12'}}, index, release), /source_identity_mismatch/);
+  assert.throws(() => assertBenchmarkPlan(manifest, index, {...release, pageId: '2026-10-12-page-1'}), /source_identity_mismatch/);
   assert.throws(() => assertBenchmarkPlan({...manifest, sourceIdentity: {...source, sourceUrl: 'https://example.org/other'}}, index, release), /source_identity_mismatch/);
   assert.throws(() => assertBenchmarkPlan(manifest, index, {...release, sourceIdentity: {...release.sourceIdentity, sourceId: 'other'}}), /source_identity_mismatch/);
+});
+
+test('positive recordings must stay inside the indexed source span', () => {
+  assert.doesNotThrow(() => assertPositiveRecordingSpan(0, 60, 60));
+  assert.throws(() => assertPositiveRecordingSpan(-1, 20, 60), /outside index/);
+  assert.throws(() => assertPositiveRecordingSpan(50, 15, 60), /outside index/);
 });
 
 test('report quantiles use nearest rank on even counts', () => {
@@ -101,4 +119,34 @@ test('independent truth binds the source and recording before scoring', () => {
   assert.doesNotThrow(() => assertIndependentTruth(manifest, index, truth));
   assert.throws(() => assertIndependentTruth({...manifest, recordings: [{...manifest.recordings[0], truthIndexStartSeconds: 13}]}, index, truth), /independent_truth_mismatch/);
   assert.throws(() => assertIndependentTruth(manifest, index, {...truth, sourceSha256: 'c'.repeat(64)}), /independent_truth_mismatch/);
+  assert.throws(() => assertIndependentTruth(manifest, index, {...truth, recordings: [{...truth.recordings[0], segmentStartMinSeconds: 114.29, segmentStartMaxSeconds: 114.31}]}), /independent_truth_mismatch/);
+});
+
+test('variant selection rejects inherited property names', () => {
+  const cli = new URL('../../../scripts/field_venue_fingerprint_benchmark.mjs', import.meta.url);
+  const r = spawnSync(process.execPath, [cli.pathname, 'missing.json', '--out', 'unused', '--variants', '__proto__'], {encoding: 'utf8'});
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /unknown variant __proto__/);
+});
+
+test('filesystem errors do not reveal private paths', () => {
+  const cli = new URL('../../../scripts/field_venue_fingerprint_benchmark.mjs', import.meta.url);
+  const work = mkdtempSync(join(tmpdir(), 'field-benchmark-'));
+  try {
+    const privateManifest = join(work, 'private-user-recordings', 'manifest.json');
+    const r = spawnSync(process.execPath, [cli.pathname, privateManifest, '--out', join(work, 'run')], {encoding: 'utf8'});
+    assert.equal(r.status, 1);
+    assert.equal(r.stderr.trim(), 'filesystem_error');
+    assert.ok(!r.stderr.includes(privateManifest));
+  } finally {
+    rmSync(work, {recursive: true, force: true});
+  }
+});
+
+test('independent truth requires a private output file', () => {
+  const cli = new URL('../../../scripts/field_venue_independent_truth.py', import.meta.url);
+  const r = spawnSync('python3', [cli.pathname, 'manifest.json', '--data-root', '.'], {encoding: 'utf8'});
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /required: --out/);
+  assert.equal(r.stdout, '');
 });

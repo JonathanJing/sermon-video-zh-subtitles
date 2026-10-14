@@ -30,6 +30,7 @@ export const VARIANTS = Object.freeze({
   cmn_gate30: {cmn: true, gatePct: .3},
   cmn_gate50: {cmn: true, gatePct: .5},
 });
+const CHANNELS = new Set(['mix', 'left', 'right']);
 
 // Mirrors the accept gates in fingerprint-core matchFingerprint; used only to label rejections.
 export function failingGates(d) {
@@ -114,6 +115,10 @@ export function assertVariantParity(x) {
 const query = (variant, x) => variant ? fingerprintVariant(x, variant) : fingerprint(x, SR);
 const sha256 = p => createHash('sha256').update(readFileSync(p)).digest('hex');
 const hashText = s => createHash('sha256').update(s).digest('hex');
+const isServiceDate = value => {
+  const parsed = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? Date.parse(`${value}T00:00:00Z`) : NaN;
+  return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 10) === value;
+};
 const at = p => {
   if (typeof p !== 'string' || !p || p.startsWith('/') || p.includes('\\') || p.split('/').includes('..') || /^[a-z]+:/i.test(p)) {
     throw new Error('invalid_input_path');
@@ -130,6 +135,7 @@ function verifyInput(entry, label) {
 }
 
 function decode(path, {stream = 'a:0', channel = 'mix', startSeconds, durationSeconds} = {}) {
+  if (!CHANNELS.has(channel)) throw new Error('unsupported_channel');
   const pan = channel === 'mix' ? ['-ac', '1'] : ['-af', `pan=mono|c0=c${channel === 'left' ? 0 : 1}`];
   const args = ['-v', 'error'];
   if (startSeconds != null) args.push('-ss', String(startSeconds));
@@ -203,7 +209,7 @@ export function scorePositive(x, index, truth, variant, {tolerance = .5, ref = n
     for (const L of CHECKPOINTS) { const r = windows[L].rows.find(v => v.startSeconds === s); if (r.matched) { if (r.correct) lockSeconds = L; else wrong = true; break; } }
     strategy.push({startSeconds: s, lockSeconds, wrong});
   }
-  const errors = Object.values(windows).flatMap(w => w.rows).filter(r => r.correct).map(r => Math.abs(r.errorMs)).sort((p, q) => p - q);
+  const errors = Object.values(windows).flatMap(w => w.rows).filter(r => r.matched).map(r => Math.abs(r.errorMs)).sort((p, q) => p - q);
   return {windows, checkpoint: {sessions: strategy.length, locked: strategy.filter(v => v.lockSeconds).length, wrong: strategy.filter(v => v.wrong).length,
     medianLockSeconds: median(strategy.map(v => v.lockSeconds ?? NaN)), sessionsByStart: strategy},
     absErrorMs: errors.length ? {p50: nearestRank(errors, .5), p95: nearestRank(errors, .95), max: errors.at(-1)} : null};
@@ -218,10 +224,17 @@ export function assertBenchmarkPlan(manifest, index, release) {
     || !Array.isArray(manifest.negatives.otherIndexes) || !manifest.negatives.otherIndexes.length) {
     throw new Error('empty_benchmark_plan');
   }
+  if (manifest.recordings.some(r => r.channels.some(channel => !CHANNELS.has(channel)))) throw new Error('unsupported_channel');
+  if (manifest.recordings.some(r => !Number.isFinite(r.truthIndexStartSeconds))) throw new Error('invalid_positive_truth');
   const source = manifest.sourceIdentity, window = source?.window;
+  // Release packages bind a dated canonical page ID even when they do not repeat
+  // the catalog's `date` field directly.
+  const releaseDate = release?.serviceDate ?? release?.date ?? /^(\d{4}-\d{2}-\d{2})(?:-|$)/.exec(release?.pageId ?? '')?.[1];
   if (typeof source?.sourceId !== 'string' || !source.sourceId
     || typeof source.sourceUrl !== 'string' || !/^https:\/\/[^\s]+$/.test(source.sourceUrl)
     || source.sourceUrlHash !== hashText(source.sourceUrl)
+    || !isServiceDate(source.serviceDate)
+    || releaseDate !== source.serviceDate
     || !/^[a-f0-9]{64}$/.test(source.mediaSha256 ?? '')
     || !Number.isFinite(source.durationSeconds) || source.durationSeconds <= 0
     || !Number.isFinite(window?.startSeconds) || !Number.isFinite(window?.endSeconds)
@@ -243,6 +256,10 @@ export function assertBenchmarkPlan(manifest, index, release) {
     || index.durationSeconds !== window.endSeconds - window.startSeconds) {
     throw new Error('source_identity_mismatch');
   }
+  if (manifest.negatives.referenceRanges.some(([start, end]) => end > source.durationSeconds
+    || (start < index.sourceEndSeconds && end > index.sourceStartSeconds))) {
+    throw new Error('invalid_negative_range');
+  }
 }
 
 export function assertIndependentTruth(manifest, index, truth) {
@@ -262,11 +279,22 @@ export function assertIndependentTruth(manifest, index, truth) {
       || !Number.isFinite(verified.segmentStartMaxSeconds)
       || !Number.isFinite(verified.bestScore) || !Number.isFinite(verified.runnerUpScore)
       || verified.bestScore <= verified.runnerUpScore
+      || verified.segmentStartMinSeconds > verified.segmentStartMaxSeconds
       || verified.segmentStartMaxSeconds - verified.segmentStartMinSeconds > .1
+      || verified.sourceStartSecondsAbsolute < verified.segmentStartMinSeconds - .1
+      || verified.sourceStartSecondsAbsolute > verified.segmentStartMaxSeconds + .1
       || Math.abs(verified.sourceStartSecondsAbsolute - index.sourceStartSeconds - verified.indexStartSeconds) > .001
       || Math.abs(recording.truthIndexStartSeconds - verified.indexStartSeconds) > .1) {
       throw new Error('independent_truth_mismatch');
     }
+  }
+}
+
+export function assertPositiveRecordingSpan(truthIndexStartSeconds, spanSeconds, indexDurationSeconds) {
+  if (!Number.isFinite(truthIndexStartSeconds) || !Number.isFinite(spanSeconds) || spanSeconds <= 0
+    || !Number.isFinite(indexDurationSeconds) || indexDurationSeconds <= 0
+    || truthIndexStartSeconds < 0 || truthIndexStartSeconds + spanSeconds > indexDurationSeconds + 1e-6) {
+    throw new Error('empty_benchmark_plan: positive recording outside index');
   }
 }
 
@@ -297,7 +325,7 @@ function parseArgs(argv) {
   }
   if (!a.manifest || !a.out) throw new Error('usage: field_venue_fingerprint_benchmark.mjs <manifest.json> --out <dir> [--variants base,cmn] [--neg-step 5]');
   if (!Number.isFinite(a.negStep) || a.negStep <= 0) throw new Error('invalid_neg_step: expected a finite positive number');
-  for (const v of a.variants) if (!(v in VARIANTS)) throw new Error(`unknown variant ${v}`);
+  for (const v of a.variants) if (!Object.hasOwn(VARIANTS, v)) throw new Error(`unknown variant ${v}`);
   return a;
 }
 
@@ -339,8 +367,10 @@ async function main() {
     const x = decode(r.path, {stream: r.stream, channel});
     if (x.length < CHECKPOINTS.at(-1) * SR) throw new Error('empty_benchmark_plan: positive recording too short');
     assertVariantParity(x.slice(0, 10 * SR));
-    const span = x.length / SR, refStart = r.truthIndexStartSeconds + W0 - 1;
-    const ref = {indexStartSeconds: refStart - W0, samples: decode(manifest.reference.path, {startSeconds: refStart, durationSeconds: span + 2})};
+    const span = x.length / SR;
+    assertPositiveRecordingSpan(r.truthIndexStartSeconds, span, index.durationSeconds);
+    const referenceLeadSeconds = Math.min(1, r.truthIndexStartSeconds), refStart = r.truthIndexStartSeconds + W0 - referenceLeadSeconds;
+    const ref = {indexStartSeconds: refStart - W0, samples: decode(manifest.reference.path, {startSeconds: refStart, durationSeconds: span + referenceLeadSeconds})};
     positives.push({id: `${r.id}:${channel}`, x, truth: r.truthIndexStartSeconds, ref});
     report.recordings[`${r.id}:${channel}`] = {durationSeconds: round(span, 2), device: r.device, captureApp: r.captureApp, channel};
   }
@@ -369,4 +399,12 @@ async function main() {
     elapsedSeconds: report.elapsedSeconds}, null, 1) + '\n', {flag: 'wx', mode: 0o600});
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] || '').href) main().catch(e => { console.error(e.message); process.exit(1); });
+export function publicErrorMessage(error) {
+  if (error && typeof error === 'object'
+    && (typeof error.path === 'string' || typeof error.syscall === 'string' || /^E[A-Z0-9_]+$/.test(error.code ?? ''))) {
+    return 'filesystem_error';
+  }
+  return typeof error?.message === 'string' && error.message ? error.message : 'benchmark_failed';
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] || '').href) main().catch(e => { console.error(publicErrorMessage(e)); process.exit(1); });

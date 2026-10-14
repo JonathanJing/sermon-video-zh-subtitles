@@ -2,13 +2,13 @@
 """Independently align field recordings to their full source audio.
 
 This uses spectral-band correlation and waveform correlation, not the production
-landmark matcher. Private audio stays under --data-root. stdout and optional JSON
-contain only identifiers, hashes, offsets and scores.
+landmark matcher. Private audio stays under --data-root. The complete report is
+written only to the required mode-0600 --out file; stdout carries a fixed status.
 
 Requires ffmpeg and numpy. The repository's main .venv may not include numpy;
 the Codex desktop bundled Python does. Example (from the PR worktree):
   "$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3" \
-    scripts/field_venue_independent_truth.py MANIFEST --data-root CHECKOUT
+    scripts/field_venue_independent_truth.py MANIFEST --data-root CHECKOUT --out TRUTH.json
 """
 
 import argparse
@@ -19,10 +19,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-try:
-    import numpy as np
-except ImportError as exc:
-    raise SystemExit("numpy is required for independent truth alignment") from exc
+np = None
 
 
 SAMPLE_RATE = 8000
@@ -123,8 +120,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--data-root", type=Path, required=True)
-    parser.add_argument("--out", type=Path, help="new 0600 JSON file; never overwritten")
+    parser.add_argument("--out", type=Path, required=True,
+                        help="new 0600 JSON file; never overwritten")
     args = parser.parse_args()
+    global np
+    try:
+        import numpy as numpy_module
+    except ImportError as exc:
+        raise SystemExit("numpy is required for independent truth alignment") from exc
+    np = numpy_module
     root = args.data_root.resolve()
     manifest = json.loads(args.manifest.read_text())
     if manifest.get("schemaVersion") not in ("field-venue-fingerprint-benchmark-v1", "field-venue-fingerprint-benchmark-v2"):
@@ -168,12 +172,10 @@ def main():
             "coarseSourceStartSecondsAbsolute": round(coarse, 4),
         })
     encoded = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
-    if args.out:
-        fd = os.open(args.out, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        with os.fdopen(fd, "w", encoding="utf-8") as output:
-            output.write(encoded)
-    else:
-        sys.stdout.write(encoded)
+    fd = os.open(args.out, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as output:
+        output.write(encoded)
+    print("independent truth written")
 
 
 if __name__ == "__main__":
