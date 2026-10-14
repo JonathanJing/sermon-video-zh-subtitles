@@ -1,0 +1,21 @@
+discover	pass	0.0
+zh-Hans.text-qc.prefetch	pass	16.9
+zh-Hans.text-qc	pass	0.1
+zh-Hans.calibration.prefetch	pass	84.0
+zh-Hans.calibration	pass	0.8
+zh-Hans.text-waiver	pass	0.0
+Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/20261013-041019-machine-qc-text
+{
+  "zh-Hans": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 91,
+      "detected": 91
+    }
+  }
+}
+Digest: /private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-qc/artifacts/run-reports/20261013-041019-machine-qc-text (3 files, 11 redactions)
