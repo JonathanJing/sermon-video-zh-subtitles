@@ -121,8 +121,10 @@ class SpecificationTests(unittest.TestCase):
         (self.base / "eric-adapter.json").write_text("{}")
         (self.base / "capability.json").write_text("{}")
         (self.base / "runtime.json").write_text("{}")
+        (self.base / "operation-policies.json").write_text("{}")
         raw["layer3"]["adapters"] = {"es": "eric-adapter.json"}
         raw["layer3"]["capabilities"] = {"es": "capability.json"}
+        raw["layer3"]["audioOperationPolicies"] = "operation-policies.json"
         raw["spark"] = {"runtimeConfig": "runtime.json"}
         path = self.base / "source-specific.json"
         path.write_text(json.dumps(raw))
@@ -130,6 +132,8 @@ class SpecificationTests(unittest.TestCase):
         self.assertEqual(loaded["layer3"]["adapters"]["es"], str((self.base / "eric-adapter.json").resolve()))
         self.assertEqual(loaded["layer3"]["capabilities"]["es"], str((self.base / "capability.json").resolve()))
         self.assertEqual(loaded["spark"]["runtimeConfig"], str((self.base / "runtime.json").resolve()))
+        self.assertEqual(loaded["layer3"]["audioOperationPolicies"],
+                         str((self.base / "operation-policies.json").resolve()))
         raw["layer3"]["capabilities"] = {"fr": "capability.json"}
         path.write_text(json.dumps(raw))
         with self.assertRaisesRegex(ValueError, "layer3.capabilities"):
@@ -403,7 +407,8 @@ class RunTests(unittest.TestCase):
             return mock.Mock(returncode=0)
 
         with mock.patch.object(self.run, "check"), mock.patch.object(self.run, "sh", side_effect=fake_sh), \
-                mock.patch.object(subject, "mirror_run_to_spark"):
+                mock.patch.object(subject, "mirror_run_to_spark"), \
+                mock.patch("scripts.render_formal_target_language_speech.validate_operation_policies"):
             subject.repair_audio(self.run, locale, seed, "repo-test", unit_instructions=instructions)
         self.assertEqual(self.run.stages["audio.ko"]["status"], "done")
         self.assertEqual(self.run.stages["audio.ko"]["repairedFrom"], ["g7"])

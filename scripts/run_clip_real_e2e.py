@@ -143,6 +143,10 @@ def load_spec(path: Path) -> dict:
         layer3[field] = {k: resolve(v) for k, v in overrides.items()}
     require(isinstance(layer3.get("speakerRegistry"), str), "layer3.speakerRegistry required")
     layer3["speakerRegistry"] = resolve(layer3["speakerRegistry"])
+    if layer3.get("audioOperationPolicies"):
+        require(isinstance(layer3["audioOperationPolicies"], str),
+                "layer3.audioOperationPolicies must be a path")
+        layer3["audioOperationPolicies"] = resolve(layer3["audioOperationPolicies"])
     layer3.setdefault("maxEndLagSeconds", 120.0)
     spec["clipSpec"] = resolve(spec["clipSpec"])
     openai = spec.setdefault("openai", {})
@@ -247,6 +251,10 @@ class Run:
         if self.spec["spark"].get("runtimeConfig"):
             command += ["--runtime", self.spec["spark"]["runtimeConfig"]]
         return command
+
+    def audio_operation_policies(self) -> Path:
+        return Path(self.spec["layer3"].get("audioOperationPolicies")
+                    or ROOT / "config/layer3-audio-operation-policies.json")
 
     def impl(self) -> str:
         from scripts import machine_quality_waiver as waiver
@@ -823,12 +831,18 @@ def stage_audio(run: Run, locale: str, code: str):
                                         "--speaker-registry", registry, "--clip-voice-authorization", voice,
                                         *capability_args,
                                         "--clip-timeline-map", timeline, "--out", job_dir])
+    from scripts import render_formal_target_language_speech as renderer
+    renderer.validate_operation_policies(read(run.audio_operation_policies()), read(adapter),
+                                         read(job_dir / "job.json"))
+    require(run.runtime["speaker"]["id"] == read(adapter)["speakerId"]
+            and run.runtime["speaker"]["checkpointRef"] == read(adapter)["conditioningRef"],
+            "Spark runtime speaker differs from the speech adapter")
     run.check(f"gpu-{locale}", "--budget-plan", run.dir / "plans" / f"qc-{locale}", "--spark-stages",
               "--spark-code-dir", f"{run.stage_dir}/{code}")
     inputs = ["--source", src, "--anchor", anchor, "--candidate", candidate, "--policy", policy,
               "--human-review-receipt", waiver, "--speaker-registry", registry, "--adapter", adapter,
               "--clip-voice-authorization", voice, "--clip-timeline-map", timeline,
-              "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json",
+              "--audio-operation-policies", run.audio_operation_policies(),
               *capability_args]
     spark = run.spark_command()
     common = ["--locale", locale, "--stage", run.stage_dir, "--code", code]
@@ -931,13 +945,18 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
         require(job.read_bytes() == original_job.read_bytes(), "repair speech job differs from frozen original")
     else:
         shutil.copyfile(original_job, job)
+    from scripts import render_formal_target_language_speech as renderer
+    renderer.validate_operation_policies(read(run.audio_operation_policies()), read(adapter), read(job))
+    require(run.runtime["speaker"]["id"] == read(adapter)["speakerId"]
+            and run.runtime["speaker"]["checkpointRef"] == read(adapter)["conditioningRef"],
+            "Spark runtime speaker differs from the speech adapter")
     repair_plan = run.dir / "plans" / f"qc-{locale}-audio-seed-{seed}"
     run.check(f"gpu-{locale}-seed-{seed}", "--budget-plan", repair_plan,
               "--spark-stages", "--spark-code-dir", f"{run.stage_dir}/{code}")
     inputs = ["--source", src, "--anchor", anchor, "--candidate", candidate, "--policy", policy,
               "--human-review-receipt", waiver, "--speaker-registry", registry, "--adapter", adapter,
               "--clip-voice-authorization", voice, "--clip-timeline-map", timeline,
-              "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json",
+              "--audio-operation-policies", run.audio_operation_policies(),
               *capability_args]
     spark = run.spark_command()
     common = ["--locale", locale, "--stage", run.stage_dir, "--code", code]
