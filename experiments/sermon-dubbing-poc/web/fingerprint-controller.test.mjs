@@ -37,7 +37,7 @@ test('unsupported and denied permissions leave playback paused or untouched with
  const denied=harness({capture:async()=>{throw new DOMException('No','NotAllowedError');}});await listen(denied.controller);assert.equal(denied.controller.getState().phase,'permission_denied');assert.equal(denied.pauseCalls,1);assert.equal(denied.playCalls,0);
 });
 test('capture timeout aborts and releases operation',async()=>{
- let signal;const h=harness({capture:({signal:s})=>{signal=s;return new Promise((_,reject)=>s.addEventListener('abort',()=>reject(new DOMException('stop','AbortError'))));}});const pending=listen(h.controller);await new Promise(r=>setImmediate(r));h.jobs.find(x=>x.ms===35000&&!x.cancelled).fn();await pending;assert.ok(signal.aborted);assert.equal(h.controller.getState().phase,'timeout');
+ let signal;const h=harness({capture:({signal:s})=>{signal=s;return new Promise((_,reject)=>s.addEventListener('abort',()=>reject(new DOMException('stop','AbortError'))));}});const pending=listen(h.controller);await new Promise(r=>setImmediate(r));h.jobs.find(x=>x.ms===45000&&!x.cancelled).fn();await pending;assert.ok(signal.aborted);assert.equal(h.controller.getState().phase,'timeout');
 });
 test('out-of-window match and wait past sermon end reject instead of clamp',async()=>{
  const h=harness({match:async()=>({result:{matched:true,queryStartSeconds:2228,confidence:.9}})});await listen(h.controller);h.setClock(13000);assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);
@@ -136,4 +136,37 @@ test('original recording window stays separate from zero-based playback clip', a
  h.context.week.sourceFingerprintWindow={schemaVersion:'sermon-original-recording-window-v1',startSeconds:1793,endSeconds:4033,mediaSha256:sha};
  assert.ok(fingerprintBinding(h.context));await listen(h.controller);h.setClock(12500);assert.equal(h.controller.apply(),true);assert.deepEqual(h.seekCalls,[112.5]);
  for(const mutation of [c=>c.week.sourceFingerprintWindow.mediaSha256=trackSha,c=>c.week.sourceFingerprintWindow.startSeconds=1794,c=>c.week.sourceFingerprintWindow.endSeconds=4034]){const c=structuredClone(h.context);mutation(c);assert.equal(fingerprintBinding(c),null);}
+});
+
+
+test('original-window binding admits bounded natural tails for the weekly locale tracks', () => {
+ const h=harness();
+ h.context.week.sourceSha256=sha;
+ h.context.week.sourceFingerprintWindow={schemaVersion:'sermon-original-recording-window-v1',startSeconds:1793,endSeconds:3924,mediaSha256:sha};
+ h.context.week.audioFingerprint.sourceEndSeconds=3924;
+ for(const duration of [2131,2131.52,2131.47,2132.09]) {
+  h.context.track.durationSeconds=duration;
+  assert.ok(fingerprintBinding(h.context), `duration ${duration}`);
+  assert.equal(h.controller.available(),true);
+ }
+ for(const duration of [2130.89,2132.11,2200,NaN,Infinity,undefined,'2131']) {
+  h.context.track.durationSeconds=duration;
+  assert.equal(fingerprintBinding(h.context),null, `duration ${duration}`);
+  assert.equal(h.controller.available(),false);
+ }
+ // A tail allowance does not relax the exact original source-window binding.
+ h.context.track.durationSeconds=2131.52;
+ for(const mutation of [c=>c.week.sourceFingerprintWindow.mediaSha256=trackSha,c=>c.week.sourceFingerprintWindow.endSeconds+=.5,c=>c.week.sourceFingerprintWindow.startSeconds+=.5]) {
+  const c=structuredClone(h.context);mutation(c);assert.equal(fingerprintBinding(c),null);
+ }
+});
+
+test('legacy fingerprint tracks retain their narrow duration tolerance', () => {
+ const h=harness();
+ for(const duration of [2240,2240.09,2239.91]) {
+  h.context.track.durationSeconds=duration;assert.ok(fingerprintBinding(h.context));
+ }
+ for(const duration of [2240.11,2240.52,2239.89,NaN,Infinity,undefined]) {
+  h.context.track.durationSeconds=duration;assert.equal(fingerprintBinding(h.context),null);
+ }
 });

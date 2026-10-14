@@ -157,6 +157,12 @@ def _dictionary_words(path):
             if line.strip() and not line.lstrip().startswith('#')}
 
 
+# The aligner can place the last interval of a hard-cut chunk a few milliseconds before the end of the
+# previous one when the chunk boundary falls inside a word. Only the final phone reaching the chunk boundary may overlap
+# its predecessor; word tiers and other overlaps retain strict ordering.
+FINAL_ENTRY_OVERLAP_SECONDS = 0.02
+
+
 def _entries(raw, tier, duration):
     try:
         entries = raw['tiers'][tier]['entries']
@@ -164,17 +170,21 @@ def _entries(raw, tier, duration):
         raise ValueError(f'MFA output missing {tier} tier') from exc
     validated = []
     previous = 0.0
-    for entry in entries:
+    last_index = len(entries) - 1
+    for index, entry in enumerate(entries):
         if not isinstance(entry, list) or len(entry) != 3:
             raise ValueError(f'Invalid MFA {tier} interval')
         start, end, label = entry
         if (isinstance(start, bool) or isinstance(end, bool)
                 or not isinstance(start, (int, float)) or not isinstance(end, (int, float))
                 or not math.isfinite(start) or not math.isfinite(end)
-                or start < previous - 1e-6 or end < start or start < 0 or end > duration + 0.025
+                or start < previous - (FINAL_ENTRY_OVERLAP_SECONDS + 1e-6
+                    if tier == "phones" and index == last_index and abs(end - duration) <= 0.025
+                    else 1e-6)
+                or end < start or start < 0 or end > duration + 0.025
                 or not isinstance(label, str)):
             raise ValueError(f'Invalid MFA {tier} timing')
-        previous = end
+        previous = max(previous, end)
         if label in ('spn', '<unk>', '<UNK>'):
             raise ValueError('Unknown MFA word/phone: reference cannot be trusted')
         if label not in ('', '<eps>', 'sil', 'sp'):

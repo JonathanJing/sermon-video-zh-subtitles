@@ -63,6 +63,41 @@ class BackendFourLayerDryRunTests(unittest.TestCase):
                 self.assertEqual(report["layers"]["layer3"][locale]["schedule"], "pass")
             checked_backend_run(root)
 
+    def test_l3_completion_automatically_hands_bound_audio_to_layer4(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder) / "run"
+            report = dry.run(self.fixture, root)
+            self.assertEqual(report["status"], "pass_simulated")
+            layer4_started = next(event for event in report["events"]
+                                  if event["step"] == "layer4")["startedAt"]
+            for locale in dry.LOCALES:
+                l3_event = next(event for event in report["events"]
+                                if event["step"] == f"layer3:{locale}")
+                self.assertEqual(l3_event["status"], "pass")
+                self.assertLessEqual(l3_event["endedAt"], layer4_started)
+
+            assets = {row["path"]: row for row in report["layers"]["layer4"]["assets"]}
+            for locale in dry.LOCALES:
+                relative_path = f"/media/{locale}.wav"
+                expected_sha = report["layers"]["layer3"][locale]["audioSha256"]
+                self.assertEqual(assets[relative_path]["sha256"], expected_sha)
+                copied = root / "public/flow" / relative_path.lstrip("/")
+                self.assertEqual(dry.digest(copied), expected_sha)
+            self.assertFalse(report["formalApproval"])
+            self.assertFalse(report["productionReleaseEligible"])
+
+    def test_l3_failure_stops_before_automatic_layer4_handoff(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder) / "failed-l3"
+            report = dry.run(self.fixture, root, fail_at="layer3:ko")
+            self.assertEqual(report["status"], "failed")
+            self.assertEqual(report["events"][-1]["step"], "layer3:ko")
+            self.assertEqual(report["events"][-1]["status"], "fail")
+            self.assertNotIn("layer4", report["layers"])
+            self.assertFalse((root / "public/flow/index.html").exists())
+            with self.assertRaises(ValueError):
+                checked_backend_run(root)
+
     def test_current_same_model_roles_keep_independent_review_and_legacy_failure_ids(self):
         call = dry.layer2_runner._model_call
         with TemporaryDirectory() as folder, patch.object(dry.layer2_runner, "_model_call", wraps=call) as observed:

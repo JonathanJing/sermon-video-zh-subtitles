@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261011-weekly-layer2-recovered",
+  "runs": [
+    {
+      "label": "recovered",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-54475d42/recovered",
+      "skipped": {
+        ".json": 4
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "recovered",
+      "path": "es/recovery-receipt.json",
+      "kind": "whole",
+      "bytes": 1955,
+      "truncated": false,
+      "sha256": "2278e7c3559c7e26130a28fd05fbde2955e70863e4399ed6b905b9fd1d4cc47e",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "recovered",
+      "path": "ko/recovery-receipt.json",
+      "kind": "whole",
+      "bytes": 1955,
+      "truncated": false,
+      "sha256": "baaff32fdb32027906dbf62cb7f04422c54ea005e076de1f83f0b6bca9270e8e",
+      "redactions": {
+        "home_dir": 4
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -11,7 +11,8 @@ export function createLanguageListening({ audio, config, onError = () => {},
   getInterfaceLocale = () => 'zh', onInterfaceLocaleChange = () => {}, bootstrapSource,
   storage: providedStorage,
 } = {}) {
-  const sessions = new Map(), visits = new Map();
+  const sessions = new Map(), visits = new Map(), alignments = new Map();
+  const ALIGNMENT_ATTEMPTS_PER_SESSION = 40;
   let current = null, selected = null, enabled = false, playing = false, interfaceEpoch = 0;
   const interfaceLocale = () => getInterfaceLocale() === 'zh' ? 'zh-Hans' : getInterfaceLocale();
   let storage = providedStorage;
@@ -100,14 +101,42 @@ export function createLanguageListening({ audio, config, onError = () => {},
     }
     visits.get(key).flush({}).catch(onError);
   }
+  // Each "听声定位" press is appended to a cumulative per-credential list on its
+  // own endpoint; a full list continues in a new credential.
+  function recordAlignment(attempt) {
+    if (!enabled || !selected || !attempt) return;
+    const day = usageDay(now()), { week, track } = selected;
+    const base = `${day}:${week.id}:${track.id}:${track.sha256}:${interfaceLocale()}:${interfaceEpoch}`;
+    let chunk = 0;
+    const closed = target => target && (target.session.stopped || target.rejected || target.attempts.length >= ALIGNMENT_ATTEMPTS_PER_SESSION);
+    while (closed(alignments.get(`${base}:${chunk}`))) chunk++;
+    const key = `${base}:${chunk}`;
+    if (!alignments.has(key)) alignments.set(key, { attempts: [], session: makeSession({ week: week.id, trackId: track.id, audioSha256: track.sha256, appVersion: config.appVersion },
+      { day, clientId: identity(storage, day, () => enabled), endpoint: '/api/alignment-usage', interfaceLocale: interfaceLocale(), contentLocale: week.targetLocale || track.targetLocale || 'zh-Hans' }) });
+    const target = alignments.get(key);
+    target.attempts.push(structuredClone(attempt));
+    flushAlignment(target, { attempts: target.attempts.slice() });
+  }
+  // A permanent rejection (4xx other than rate limiting) would resend the same
+  // body forever; close that credential so later presses use a new one.
+  function flushAlignment(target, snapshot) {
+    if (target.rejected) return;
+    target.session.flush(snapshot).catch(error => {
+      const status = error?.status;
+      if (Number.isInteger(status) && status >= 400 && status < 500 && status !== 429) target.rejected = true;
+      else onError(error);
+    });
+  }
   function flushAll() {
     if (!enabled) return;
     for (const target of sessions.values()) flush(target);
+    for (const target of alignments.values()) flushAlignment(target);
     for (const session of visits.values()) session.flush({}).catch(onError);
   }
   onInterfaceLocaleChange(() => { interfaceEpoch += 1; clearSample(); rotate(); visit(); });
   schedule(() => { visit(); observe(); flushAll(); }, 30000);
   return {
+    recordAlignment,
     select(week, track) {
       flush(); clearSample(); playing = false;
       selected = week && track ? { week, track } : null;
@@ -126,6 +155,7 @@ export function createLanguageListening({ audio, config, onError = () => {},
       const results = await Promise.allSettled([
         ...[...new Set(sessions.values())].map(target => target.session.retract()),
         ...[...new Set(visits.values())].map(session => session.retract()),
+        ...[...alignments.values()].map(target => target.session.retract()),
       ]);
       const failure = results.find(result => result.status === 'rejected');
       if (failure) throw failure.reason;

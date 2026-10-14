@@ -42,7 +42,8 @@ if __package__ in (None, ""):
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "sermon-machine-quality-waiver-v1"
-CALIBRATION_SCHEMA = "sermon-auto-qc-calibration-v2"
+CALIBRATION_SCHEMA = "sermon-auto-qc-calibration-v3"
+LEGACY_CALIBRATION_SCHEMA = "sermon-auto-qc-calibration-v2"
 IMPLEMENTATION_FILES = (
     "scripts/language_review_plugins/common.py",
     "scripts/language_review_plugins/auto_qc_text_common.py",
@@ -54,6 +55,19 @@ IMPLEMENTATION_FILES = (
     "scripts/spoken_condensation.py",
     # Scores every ASR transcript the audio QC and the waivers rescore.
     "scripts/screen_target_language_audio_units.py",
+    "scripts/ko_spoken_numerals.py",
+    # Calibration executes these paths to derive and synthesize registered spoken forms.
+    "scripts/render_formal_target_language_speech.py",
+    "scripts/machine_qc_audio_transports.py",
+    "scripts/run_machine_qc_audio_test.py",
+    "scripts/run_machine_qc_clip_test.py",
+    "scripts/machine_qc_budget_authorization.py",
+    # Request routing and project-header enforcement are part of the QC runtime.
+    "scripts/sermon_openai_runtime.py",
+    "scripts/sermon_source_budget.py",
+    "scripts/sermon_transcription_request.py",
+    "scripts/sermon_workflow_jobs.py",
+    "scripts/sermon_sentence_interpretation.py",
     # The gates that admit candidates and issue or accept waivers on calibrated evidence.
     "scripts/machine_quality_waiver.py",
     "scripts/machine_quality_release_basis.py",
@@ -63,6 +77,9 @@ MAX_UNDUBBED_SHARE = 0.05
 MAX_SOURCE_FALLBACK_SHARE = 0.05
 CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.9,
                         "maxCleanFalsePositiveRate": 0.1}
+# A per-kind rate from fewer trials than this cannot show 0.9 either way (one miss
+# in two trials is 0.5); such kinds still count in the overall rate.
+PER_KIND_MINIMUM_TRIALS = 5
 # Every seeded error kind must be tried and caught; a kind with no trial was never tested.
 TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "placeholder",
               "dropped_name", "dropped_half", "semantic_negation", "added_number", "wrong_ordinal",
@@ -104,8 +121,12 @@ def _rate(value) -> float | None:
 
 
 def calibration_kind_not_applicable(kind: str, row: dict) -> bool:
-    """Only the role-swap kind supports an explicit whole-candidate exemption."""
-    return (isinstance(row, dict) and kind == "text.swapped_name" and row.get("applicableGroupIds") == []
+    """A text kind the candidate offers no site for, recorded as an explicit empty applicability.
+
+    The seeder searches the complete candidate for each kind (``applicableGroupIds``);
+    an empty list with zero trials means the error class cannot occur in this text as
+    screened, not that it went untested. Audio and spoken kinds have no such record."""
+    return (isinstance(row, dict) and kind.startswith("text.") and row.get("applicableGroupIds") == []
             and type(row.get("trials")) is int and row["trials"] == 0
             and type(row.get("detected")) is int and row["detected"] == 0)
 
@@ -117,7 +138,8 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
     if calibration is None:
         return ["seeded-error calibration missing"]
     problems = []
-    if calibration.get("schemaVersion") != CALIBRATION_SCHEMA:
+    schema = calibration.get("schemaVersion")
+    if schema not in (CALIBRATION_SCHEMA, LEGACY_CALIBRATION_SCHEMA):
         problems.append("unsupported calibration schema")
     if calibration.get("locale") != locale:
         problems.append("calibration belongs to another locale")
@@ -143,24 +165,35 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
         if not isinstance(row, dict):
             problems.append(f"invalid trial counts for {kind}")
             continue
+        if "excludedShortGroupIds" in row:
+            excluded = row["excludedShortGroupIds"]
+            if schema != CALIBRATION_SCHEMA:
+                problems.append("short-unit exclusions require calibration v3; recalibrate, do not relabel v2")
+            if (kind != "audio.truncated" or locale != "zh-Hans"
+                    or not isinstance(excluded, list)
+                    or any(not isinstance(group, str) or not group for group in excluded)
+                    or len(excluded) != len(set(excluded))):
+                problems.append(f"invalid short-unit exclusions for {kind}")
         trials, detected = row.get("trials"), row.get("detected")
         if (type(trials) is not int or type(detected) is not int
                 or trials < 0 or not 0 <= detected <= trials):
             problems.append(f"invalid trial counts for {kind}")
             continue
         counts[kind] = (trials, detected)
-        if kind == "text.swapped_name" and "applicableGroupIds" in row:
+        if "applicableGroupIds" in row:
             applicable = row["applicableGroupIds"]
             if (not isinstance(applicable, list) or any(not isinstance(g, str) or not g for g in applicable)
                     or len(applicable) != len(set(applicable)) or trials > len(applicable)):
-                problems.append("invalid swapped-name applicability")
+                problems.append(f"invalid applicability record for {kind}")
         derived = round(detected / trials, 6) if trials else 0.0
         reported = _rate(row.get("rate"))
         if reported is None or not math.isclose(reported, derived, abs_tol=1e-6):
             problems.append(f"inconsistent detection rate for {kind}")
-        if kind in expected and trials > 0 and (reported is None or
+        if kind in expected and trials >= PER_KIND_MINIMUM_TRIALS and (reported is None or
                 derived < CALIBRATION_MINIMUMS["perKindDetectionRate"]):
             weak.append(kind)
+        elif kind in expected and 0 < trials < PER_KIND_MINIMUM_TRIALS and reported is None:
+            problems.append(f"inconsistent detection rate for {kind}")
     for kind in expected:
         if kind not in kinds:
             missing.append(kind)

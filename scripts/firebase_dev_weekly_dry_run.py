@@ -160,6 +160,9 @@ def build(base: Path, feature_public: Path, preview_id: str, out: Path,
     try:
         public = temporary / "public"
         shutil.copytree(public_base, public, copy_function=copy_or_link)
+        if (base / "bucket-video-receipt.json").is_file():
+            # Verification receipt for a bucket-hosted browser video; validated, never uploaded.
+            shutil.copyfile(base / "bucket-video-receipt.json", temporary / "bucket-video-receipt.json")
         link = f'<a id="devDryRunLink" href="/{page_path}?week={sample_id}&amp;contentLang=zh-Hans">每周演练页</a>'
         if "devDryRunLink" in source:
             home, count = DRY_RUN_LINK.subn(link, source)
