@@ -1,0 +1,6 @@
+{
+  "schemaVersion": "agent-trials-rubric-v1",
+  "stage": "diagnose",
+  "expectedSha256": "71998382a96a7a02d65055b56f5fec400338b8908b27515b844a56fb3c39b065",
+  "scorerSha256": "269213685c3f11fa6b3e7645ab72938061663d8e46e32061231ca5c390d32c66"
+}
