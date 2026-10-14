@@ -32,6 +32,7 @@ import copy
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import shlex
@@ -109,6 +110,11 @@ def load_spec(path: Path) -> dict:
     layer2.setdefault("backend", "openai_api")
     require(layer2["backend"] in ("openai_api", "claude_cli_opus"),
             "layer2.backend must be openai_api or claude_cli_opus")
+    if "claudeListPriceCapUsdPerLocale" in layer2:
+        cap = layer2["claudeListPriceCapUsdPerLocale"]
+        require(layer2["backend"] == "claude_cli_opus" and type(cap) in (int, float)
+                and math.isfinite(cap) and 0 < cap <= 100,
+                "layer2.claudeListPriceCapUsdPerLocale needs Claude and a cap in (0, 100]")
     for field, table in (("policyTemplates", layer2), ("plugins", layer2), ("attestationTemplates", layer3)):
         require(isinstance(table.get(field), dict) and set(locales) <= set(table[field]), f"{field} missing a locale")
         table[field] = {k: resolve(v) for k, v in table[field].items() if k in locales}
@@ -253,6 +259,9 @@ class Run:
                 "--approved-by", auth["approvedBy"],
                 "--evidence", auth["evidence"] + f" Run {self.spec['name']}; settled and open caps {round(settled, 3)} USD.",
                 *[arg for stage in stages for arg in ("--stage", stage)], *extra]
+        if "layer2" in stages and "claudeListPriceCapUsdPerLocale" in self.spec["layer2"]:
+            argv += ["--claude-list-price-cap-usd-per-locale",
+                     self.spec["layer2"]["claudeListPriceCapUsdPerLocale"]]
         self.sh("plan-" + out.name, argv, launcher=True)
 
     def check(self, label, *extra):

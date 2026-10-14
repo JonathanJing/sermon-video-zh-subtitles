@@ -10,6 +10,7 @@ from unittest import mock
 from scripts import clip_e2e_release as release
 from scripts import clip_e2e_spark as spark
 from scripts import run_clip_real_e2e as subject
+from scripts import plan_run_budgets as budgets
 
 ROOT = Path(__file__).resolve().parents[1]
 DISPLAY = {"series": "[test] s", "title": "[test] t", "speaker": "Speaker", "scripture": "Rev 9", "summary": "[test] x"}
@@ -64,6 +65,25 @@ class SpecificationTests(unittest.TestCase):
         for changes, message in bad:
             with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
                 subject.load_spec(spec_files(self.base, **changes))
+
+    def test_claude_cap_is_scoped_to_a_valid_claude_run(self):
+        layer2 = {"backend": "claude_cli_opus", "claudeListPriceCapUsdPerLocale": 20,
+                  "policyTemplates": {"ko": "ko-policy.json", "es": "es-policy.json"},
+                  "plugins": {"ko": "ko.py", "es": "es.py"}}
+        self.assertEqual(subject.load_spec(spec_files(self.base, layer2=layer2))["layer2"]
+                         ["claudeListPriceCapUsdPerLocale"], 20)
+        for invalid in (0, float('nan'), 101):
+            layer2["claudeListPriceCapUsdPerLocale"] = invalid
+            with self.assertRaisesRegex(ValueError, 'claudeListPriceCapUsdPerLocale'):
+                subject.load_spec(spec_files(self.base, layer2=layer2))
+
+    def test_plan_profile_override_does_not_mutate_weekly_policy(self):
+        original = {"layer2": {"claudeCliListPriceCapUsdPerLocale": {"clip": 8, "week": 200}}}
+        scoped = budgets.with_clip_claude_cap(original, scale="clip", backend="claude_cli_opus", cap=20)
+        self.assertEqual((scoped["layer2"]["claudeCliListPriceCapUsdPerLocale"]["clip"],
+                          original["layer2"]["claudeCliListPriceCapUsdPerLocale"]["clip"]), (20, 8))
+        with self.assertRaisesRegex(ValueError, 'requires a clip'):
+            budgets.with_clip_claude_cap(original, scale="week", backend="claude_cli_opus", cap=20)
 
     def test_the_run_directory_must_be_mirrorable_under_artifacts(self):
         with self.assertRaisesRegex(ValueError, "under artifacts/"):

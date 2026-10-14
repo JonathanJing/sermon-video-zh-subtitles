@@ -7,6 +7,7 @@ locale and OpenAI environment, and include the secondary-ASR reservation cap.
 """
 from __future__ import annotations
 import argparse
+import copy
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -143,6 +144,20 @@ def layer2_cap_per_locale(profile, scale, backend):
     return layer2["capUsdPerLocale"][scale], True
 
 
+def with_clip_claude_cap(profile, *, scale, backend, cap):
+    """Apply one explicitly approved clip-run subscription cap without changing the weekly profile."""
+    if cap is None:
+        return profile
+    if scale != 'clip' or backend != 'claude_cli_opus':
+        raise ValueError('A Claude list-price override requires a clip Layer 2 Claude execution')
+    micro(cap)
+    if cap <= 0 or cap > 100:
+        raise ValueError('Clip Claude list-price cap must be in (0, 100] USD-equivalent per locale')
+    result = copy.deepcopy(profile)
+    result['layer2']['claudeCliListPriceCapUsdPerLocale']['clip'] = cap
+    return result
+
+
 def layer2_spec(execution, locales, profile, scale):
     from scripts import canonical_layer2_controller as controller
     from scripts import sermon_provider_limits as limits
@@ -255,6 +270,8 @@ def main(argv=None):
     parser.add_argument("--approved-by", required=True)
     parser.add_argument("--evidence", required=True)
     parser.add_argument("--layer2-execution", type=Path)
+    parser.add_argument("--claude-list-price-cap-usd-per-locale", type=float,
+                        help="Explicitly approved cap for this clip Claude Layer 2 plan only")
     parser.add_argument("--qc-inputs", type=Path, help="Frozen source, anchor and per-locale policy manifest")
     parser.add_argument("--reuse-from", type=Path, action="append", default=[],
                         help="QC replay-only roots: missing operations refuse payment; not partial-run continuation")
@@ -274,6 +291,12 @@ def main(argv=None):
         parser.error("Locales must be distinct supported values")
     if not args.approved_by.strip() or not args.evidence.strip():
         parser.error("Approval needs an actual approver and evidence")
+    if args.claude_list_price_cap_usd_per_locale is not None:
+        if not args.layer2_execution or 'layer2' not in args.stage:
+            parser.error('Claude list-price override requires a selected Layer 2 execution')
+        profile = with_clip_claude_cap(profile, scale=args.scale,
+            backend=layer2_backend_of(args.layer2_execution.resolve()),
+            cap=args.claude_list_price_cap_usd_per_locale)
     if args.out.exists() and (not args.out.is_dir() or any(args.out.iterdir())):
         parser.error("Output must be new or empty")
     validate_request_limits(profile["layer2"]["requestLimits"])
@@ -378,6 +401,7 @@ def main(argv=None):
     from scripts import machine_quality_waiver as waiver
     plan = {"schemaVersion": PLAN_SCHEMA, "createdAt": now, "scale": args.scale, "locales": locales,
             "profileSha256": file_sha256(args.profile), "profile": str(args.profile.resolve()),
+            "clipClaudeListPriceCapUsdPerLocale": args.claude_list_price_cap_usd_per_locale,
             "totalUsd": args.total_usd, "settledUsd": args.settled_usd, "approvedBy": args.approved_by,
             "evidence": args.evidence, "stages": stages, "schedule": schedule(stages, total=args.total_usd, settled=args.settled_usd),
             "qcInputs": {"path": str(args.qc_inputs.resolve()), "sha256": file_sha256(args.qc_inputs)} if qc_locales else None,

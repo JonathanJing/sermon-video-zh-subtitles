@@ -39,6 +39,7 @@
 | `budget` | `totalUsd` 是批准总额；`settledUsdBefore` 是此前已结算的花费，包括未标价转写的预留 |
 | `layer2.policyTemplates` / `plugins` | 每种语言：源周次冻结的政策，以及语言插件 |
 | `layer2.backend` | 可选，默认 `openai_api`；显式 `claude_cli_opus` 会把片段政策重新冻结为 Opus 5.5 high 初译及 medium 复核。Claude 订阅调用的列价等价金额单列，不计入 `budget.totalUsd`；文本和音频质检仍计入批准的美元总额。 |
+| `layer2.claudeListPriceCapUsdPerLocale` | 仅用于明确批准的单次 Claude 片段测试；覆盖该次 Layer 2 规划中的每语订阅列价等值上限，随运行规格和预算收据冻结，不改周更配置。 |
 | `layer3.attestationTemplates` / `speakerRegistry` | 源周次的用户声音授权（会改绑到本片段的来源包）和说话人登记 |
 | `qc.maxRevisions` | 每种语言的文本质检最多打回 Layer 2 几次（0–3，默认 2） |
 | `page` | `pageId`（`mockup-…`）、三语展示文案（必须标明是测试）、可选的 Dev 基线缓存 |
