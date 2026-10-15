@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { fingerprint, CONFIG } from './web/fingerprint-core.mjs';
+import { fingerprint, CONFIG } from '../src/fingerprint-core.mjs';
 const flags=new Set(['source','source-sha','track-sha','track','page-id','start','end','out','mode','precomputed','precomputed-sha']),args={};
 for(let i=2;i<process.argv.length;i+=2){const key=process.argv[i]?.replace(/^--/,'');if(!flags.has(key)||args[key]!==undefined||!process.argv[i+1])throw Error('Invalid or repeated fingerprint flag');args[key]=process.argv[i+1];}
 const mode=args.mode??'build';

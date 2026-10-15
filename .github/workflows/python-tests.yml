@@ -227,7 +227,7 @@ jobs:
 
       - name: Check listening app behavior
         if: matrix.shard_index == 1
-        run: node --test experiments/sermon-dubbing-poc/web/*.test.mjs
+        run: node --test packages/fingerprint/test/*.test.mjs experiments/sermon-dubbing-poc/web/*.test.mjs
 
       - name: Check feedback API contracts
         if: matrix.shard_index == 1

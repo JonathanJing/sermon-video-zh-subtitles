@@ -1661,10 +1661,10 @@ def precompute_source_fingerprint(source, start, end, outdir):
     node = shutil.which("node")
     if not node or not shutil.which("ffmpeg"):
         raise RuntimeError("Fingerprint precompute requires node and ffmpeg")
-    script = REPO_ROOT / "experiments" / "sermon-dubbing-poc" / "build_fingerprint_index.mjs"
+    script = REPO_ROOT / "packages" / "fingerprint" / "bin" / "build_fingerprint_index.mjs"
     identity = {"sourceSha256": file_sha256(source), "sourceStartSeconds": start,
                 "sourceEndSeconds": end, "scriptSha256": file_sha256(script),
-                "algorithmSha256": file_sha256(script.parent / "web" / "fingerprint-core.mjs")}
+                "algorithmSha256": file_sha256(script.parents[1] / "src" / "fingerprint-core.mjs")}
     root = outdir / "source-fingerprint" / json_sha256(identity)
     root.mkdir(parents=True, exist_ok=True)
     receipt_path = root / "receipt.json"

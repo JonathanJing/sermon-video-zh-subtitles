@@ -57,7 +57,7 @@ def bind_weekly_fingerprint(job, week, public, *, synchronized, process_runner=N
         "sourceStartSeconds": start, "sourceEndSeconds": end, "algorithmVersion": "spectral-landmarks-v1"}
     with tempfile.TemporaryDirectory(prefix="weekly-fingerprint-") as tmp:
         index_path = Path(tmp) / "landmarks.json"
-        process_runner(["node", str(HERE / "build_fingerprint_index.mjs"), "--source", str(path), "--source-sha", digest,
+        process_runner(["node", str(HERE.parents[1] / "packages/fingerprint/bin/build_fingerprint_index.mjs"), "--source", str(path), "--source-sha", digest,
             "--track-sha", track["sha256"], "--page-id", week["id"], "--start", str(start), "--end", str(end), "--out", str(index_path)],
             check=True, capture_output=True, text=True, timeout=1800)
         index = json.loads(index_path.read_text())
