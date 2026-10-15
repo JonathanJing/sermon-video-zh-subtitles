@@ -231,7 +231,7 @@ jobs:
 
       - name: Check feedback API contracts
         if: matrix.shard_index == 1
-        run: node --test experiments/sermon-dubbing-poc/feedback-api/test/*.test.mjs experiments/sermon-dubbing-poc/feedback-api/usage-report.test.mjs
+        run: node --test services/feedback/test/*.test.mjs services/feedback/usage-report.test.mjs
 
   # Keep this job name stable: branch protection requires the unittest check.
   unittest:

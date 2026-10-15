@@ -94,11 +94,11 @@ def api_fixture(root, real_runtime=False):
         # Freeze once into a test-local manifest. Only the copied bundle is later
         # imported; no API, Firestore, credentials or production files are used.
         for name in ["index.mjs", "core.mjs", "firestore-store.mjs", "usage-core.mjs", "listening-core.mjs", "alignment-core.mjs"]:
-            path = deploy.HERE / "feedback-api" / name
+            path = deploy.SOURCE / name
             if path.exists():
                 (source / path.name).write_bytes(path.read_bytes())
         for name in ["package.json", "package-lock.json"]:
-            (source / name).write_bytes((deploy.HERE / "feedback-api" / name).read_bytes())
+            (source / name).write_bytes((deploy.SOURCE / name).read_bytes())
     else:
         (source / "index.mjs").write_text("export { value } from './core.mjs';\n")
         (source / "core.mjs").write_text("import { value } from './helper.mjs'; export { value };\n")

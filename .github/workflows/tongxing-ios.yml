@@ -83,6 +83,7 @@ jobs:
               non_native_roots = {
                   "backend": {".py", ".md"},
                   "packages": {".py", ".toml", ".md", ".mjs", ".js", ".json"},
+                  "services": {".mjs", ".js", ".json", ".md", ".rules"},
                   "scripts": {".py", ".sh", ".mjs", ".md"},
                   "tests": {".py", ".json", ".md"},
                   "web": {".html", ".css", ".js", ".mjs", ".md"},

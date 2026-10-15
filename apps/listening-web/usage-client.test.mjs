@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { UsageSession, usageDay, dailyBrowserId, lockedDailyBrowserId, DAILY_BROWSER_KEY } from './usage-client.mjs';
 import { FeedbackClient } from './feedback-client.mjs';
-import { createService } from '../../experiments/sermon-dubbing-poc/feedback-api/core.mjs';
+import { createService } from '../../services/feedback/core.mjs';
 
 const now = Date.parse('2026-09-05T19:00:00Z');
 const source = { week: '2026-08-30', trackId: 'full', audioSha256: 'a'.repeat(64), appVersion: 'usage-test' };
