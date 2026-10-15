@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tongxing-production"
+version = "0.1.0"
+description = "Production Python package for the sermon four-layer pipeline; modules move here from scripts/ one at a time."
+requires-python = ">=3.12"
+# Base import must stay light: no torch, MLX, orchestration SDK or provider
+# client here. Hardware and engine adapters declare their own optional extras
+# when they move in.
+dependencies = [
+    "jsonschema>=4.23,<5",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

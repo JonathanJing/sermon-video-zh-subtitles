@@ -40,9 +40,9 @@ def clean_child(payload_path):
     expected = value['plan']['executionIdentity']
     repository = Path(engine.__file__).resolve().parents[1]
     for name, digest in expected['loadedProjectCodeSha256'].items():
-        assert name.startswith('scripts/') and name.endswith('.py')
+        module_name = accounting.code_module_name(name)
         assert c.bytes_sha256((repository/name).read_bytes()) == digest
-        importlib.import_module(name[:-3].replace('/', '.'))
+        importlib.import_module(module_name)
     assert accounting.execution_identity() == expected, 'fresh clean code identity must match'
     def respond(request, timeout, *, deadline):
         assert value['allowSourceCalls'], 'normal repeat must not call synthetic providers'

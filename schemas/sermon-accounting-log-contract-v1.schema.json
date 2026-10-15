@@ -652,7 +652,7 @@
                 "properties": {
                   "file": {
                     "type": "string",
-                    "pattern": "^(?:scripts|backend|experiments|tests)/(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.py(?![\\s\\S])",
+                    "pattern": "^(?:scripts|backend|experiments|tests|packages/production/src/tongxing_production)/(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.py(?![\\s\\S])",
                     "maxLength": 256
                   },
                   "line": {
@@ -3755,7 +3755,7 @@
           "type": "object",
           "maxProperties": 1024,
           "patternProperties": {
-            "^(?:scripts|backend|experiments)/(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.py$": {
+            "^(?:scripts|backend|experiments|packages/production/src/tongxing_production)/(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.py$": {
               "type": "string",
               "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
             }
