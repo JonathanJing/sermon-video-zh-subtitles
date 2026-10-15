@@ -20,7 +20,7 @@ class UnifiedCliTests(unittest.TestCase):
         self.media=self.base/'source.wav'
         with wave.open(str(self.media),'wb') as w:
             w.setparams((1,2,16000,0,'NONE','not compressed'));w.writeframes(b'\0\0'*1600)
-        self.modules=['scripts/sermon_unified/contracts.py']
+        self.modules=['packages/production/src/tongxing_production/orchestration/unified/contracts.py']
         self.addCleanup(patch.stopall)
         patch.object(c,'required_modules',return_value=self.modules).start()
         t=datetime.now(timezone.utc)

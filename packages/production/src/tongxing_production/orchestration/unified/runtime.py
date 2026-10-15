@@ -11,13 +11,25 @@ import os
 from pathlib import Path
 import time
 import uuid
-from scripts import sermon_workflow_jobs as jobs
-from scripts.sermon_unified import contracts as c
-from scripts.sermon_unified import adapters
+from . import backend as _backend
+from . import contracts as c
+from . import adapters
 
 _OWNER_TOKEN = object()
 
-DEFAULT_ROOT = c.ROOT / 'artifacts' / 'unified-production'
+
+def _jobs():
+    return _backend.current().jobs
+
+
+def __getattr__(name):
+    # Host-resolved attributes: the durable job store (tests patch it) and the
+    # default state root under the host's artifact directory.
+    if name == 'jobs':
+        return _jobs()
+    if name == 'DEFAULT_ROOT':
+        return _backend.current().artifact_root / 'unified-production'
+    raise AttributeError(name)
 
 
 def now():
@@ -29,7 +41,7 @@ def run_key(m):
 
 
 def folder(root, key):
-    return jobs._paths(Path(root), key)[1]
+    return _jobs().paths(Path(root), key)[1]
 
 
 def load(root, key):
@@ -47,7 +59,7 @@ def load(root, key):
 def locked(root, key):
     deadline=time.monotonic()+10
     while True:
-        with jobs._lock(Path(root), c.digest({'unifiedStateLock':key})) as (_, _, held):
+        with _jobs().lock(Path(root), c.digest({'unifiedStateLock':key})) as (_, _, held):
             if held:
                 yield
                 return
@@ -65,7 +77,7 @@ def save(root, key, state, expected=None):
             raise c.ContractError('state_revision_conflict',7)
         state['stateRevision']=(previous['stateRevision']+1 if previous else 1)
         state['updatedAt']=now()
-        jobs._persist(path/'unified-state.json',state)
+        _jobs().persist(path/'unified-state.json',state)
     return state
 
 
@@ -105,7 +117,7 @@ def submit(m,base,root,expected_hash,expected_revision=None,*,_owner_token=None,
                 raise c.ContractError('revision_cas_required',7)
             if (current['admission']!='closed' and _owner_token is not _OWNER_TOKEN) or any(x['process'] in ('running','waiting_reconciliation') for x in current['steps'].values()):
                 raise c.ContractError('drain_and_reconcile_required',6)
-            if _owner_token is not _OWNER_TOKEN and current.get('ownerJobId') and jobs.peek_job(Path(root)/'owners',current['ownerJobId'])['status'] in jobs.ACTIVE:
+            if _owner_token is not _OWNER_TOKEN and current.get('ownerJobId') and _jobs().peek_job(Path(root)/'owners',current['ownerJobId'])['status'] in _jobs().ACTIVE:
                 raise c.ContractError('durable_owner_still_active',7)
         target.mkdir(parents=True,exist_ok=True)
         # Freeze absolute locators, while planHash excludes local paths.
@@ -126,7 +138,7 @@ def submit(m,base,root,expected_hash,expected_revision=None,*,_owner_token=None,
             state['revisionHistory']=current.get('revisionHistory',[])+[{
                 'runRevision':old['runRevision'],'planHash':current['planHash'],
                 'stateSha256':c.digest(current),'attemptId':current['attemptId']}]
-            jobs._persist(target/('revision-'+str(old['runRevision'])+'.json'),current)
+            _jobs().persist(target/('revision-'+str(old['runRevision'])+'.json'),current)
             # Each reused row keeps its original receipt/event identity. A
             # changed dependency invalidates its entire downstream closure.
             reused=[]
@@ -154,7 +166,7 @@ def submit(m,base,root,expected_hash,expected_revision=None,*,_owner_token=None,
             state['revisionReuse']={'reused':reused,'changed':[s['id'] for s in m['steps'] if s['id'] not in reused]}
         if _owner_token is _OWNER_TOKEN:
             state['continuationReceipt']=_continuation_receipt
-        jobs._persist(target/'unified-state.json',state)
+        _jobs().persist(target/'unified-state.json',state)
         return state
 
 
@@ -166,7 +178,7 @@ def reusable_evidence(root,key,state,step):
             path=folder(root,key)/('review-'+receipt['originalSha256']+'.json')
             if c.file_sha(path)!=receipt['storedSha256']:
                 return False
-            from scripts.sermon_unified_reviews import validate_review
+            validate_review=_backend.stage('reviews').validate_review
             config=c.read(adapters.config_path(m,'/',step))
             inputs={name:c.binding(m,'/',reference) for name,reference in config['inputs'].items()}
             adapters.inspect_step(m,'/',step)
@@ -323,17 +335,10 @@ def continue_owner(root,key):
     state=load(root,key)
     if state.get('scheduler','canonical')=='canonical':
         return start_owner(root,key)
-    # The SDK runtime is isolated from the project interpreter. Wake its
-    # existing workflow; the same pump/ledger revalidates every resumed step.
-    import subprocess
-    sdk=c.ROOT/'artifacts/temporal/runtime/venv/bin/python'
-    if sdk.is_file():
-        try:
-            subprocess.run([str(sdk),'-m','scripts.sermon_temporal','client','unified-submit',
-                '--state-root',str(Path(root).absolute()),'--run-key',key,'--plan-hash',state['planHash']],
-                cwd=c.ROOT,capture_output=True,timeout=20,check=True)
-        except (OSError,subprocess.SubprocessError):
-            pass  # Accepted evidence remains stored; job.resume can wake later.
+    # The SDK runtime is isolated from the project interpreter. The host wakes
+    # its existing workflow; the same pump/ledger revalidates every resumed step.
+    # Accepted evidence remains stored whether or not the wake succeeds.
+    _backend.current().temporal_wake(Path(root).absolute(),key,state['planHash'])
     return load(root,key)
 
 
@@ -348,29 +353,28 @@ def start_owner(root,key):
         state=load(root,key)
         # An existing live owner can continue; never launch a second pump.
         if state.get('ownerJobId'):
-            prior=jobs.peek_job(Path(root)/'owners',state['ownerJobId'])
-            if prior['status'] in jobs.ACTIVE:
+            prior=_jobs().peek_job(Path(root)/'owners',state['ownerJobId'])
+            if prior['status'] in _jobs().ACTIVE:
                 return state
         if any(row['process']=='running' for row in state['steps'].values()):
             for row in state['steps'].values():
                 if row['process']=='running':
                     row.update(process='waiting_reconciliation',reason='owner_lost_after_dispatch')
             state['stateRevision']+=1
-            jobs._persist(folder(root,key)/'unified-state.json',state)
+            _jobs().persist(folder(root,key)/'unified-state.json',state)
             return state
         state['ownerEpoch']+=1
         ident={'unifiedOwner':key,'epoch':state['ownerEpoch'],'planHash':state['planHash']}
-        command=[os.sys.executable,str(c.ROOT/'scripts/sermon.py'),'worker','run',
-                 '--state-root',str(Path(root).absolute()),'--run-id',key]
-        result=jobs.start_job(Path(root)/'owners',ident,command,timeout_seconds=86400)
+        command=_backend.current().worker_command(Path(root).absolute(),key)
+        result=_jobs().start_job(Path(root)/'owners',ident,command,timeout_seconds=86400)
         state['ownerJobId']=result['jobId'];state['stateRevision']+=1
-        jobs._persist(folder(root,key)/'unified-state.json',state)
+        _jobs().persist(folder(root,key)/'unified-state.json',state)
         return state
 
 
 def run_owner(root,key):
     """One owner lease covers dispatch and all recipe-driven revisions."""
-    with jobs._lock(Path(root), c.digest({'unifiedOwnerLease':key})) as (_, _, held):
+    with _jobs().lock(Path(root), c.digest({'unifiedOwnerLease':key})) as (_, _, held):
         if not held:
             raise c.ContractError('owner_lease_busy',7)
         return _run_owner(root,key)
@@ -379,7 +383,7 @@ def run_owner(root,key):
 def _advance_continuation(root,key,state):
     if 'continuationRecipe' not in state['manifest']['bindings']:
         return state,False
-    from scripts import sermon_unified_continuation as continuation
+    continuation=_backend.stage('continuation')
     recipe=c.binding(state['manifest'],'/','continuationRecipe')
     prepared=continuation.prepare_next_revision(state,recipe,root)
     if prepared['status']=='ready':
@@ -445,7 +449,7 @@ def _run_owner(root,key):
 def resource_policy(manifest):
     if 'resourcePolicy' not in manifest['bindings']:
         return None
-    from scripts.sermon_unified import resources
+    from . import resources
     return resources.validate_policy(c.read(c.binding(manifest,'/','resourcePolicy')))
 
 
@@ -467,7 +471,7 @@ def resource_claim(policy, step):
 
 
 def release_completed_resources(state):
-    from scripts.sermon_unified import resources
+    from . import resources
     for sid,row in state['steps'].items():
         claim=row.get('resourceReservation')
         if not claim or row['process'] not in ('succeeded','blocked','failed') or not row.get('responseSha256'):
@@ -518,7 +522,7 @@ def _prepare_dispatch(root,key,state,step):
     row['reservedMicroUsd']=bound
     policy=resource_policy(m)
     if policy is not None:
-        from scripts.sermon_unified import resources
+        from . import resources
         operation=c.digest(c.job_identity(m,step))
         owner={'runKey':key,'attemptId':state['attemptId']}
         resource,units=resource_claim(policy,step)
@@ -557,24 +561,24 @@ def _prepare_dispatch(root,key,state,step):
 
 def _execute_dispatch(executor,m,step,output,state,row):
     if m['transport']=='provider' and step['adapter'] in ('source.prepare','canonical.layer2','canonical.audio','app.delivery','study.produce'):
-        from scripts.sermon_unified_accounting import execute as execute_observed
+        execute_observed=_backend.stage('accounting').execute
         result=execute_observed(executor,m,step,output,state,row)
     else:
         result=executor(m,'/',step,output)
     if not isinstance(result,dict) or result.get('status') not in ('succeeded','blocked','failed'):
         raise c.ContractError('invalid_adapter_result')
-    jobs._persist(output,{'identity':c.job_identity(m,step),'result':result})
+    _jobs().persist(output,{'identity':c.job_identity(m,step),'result':result})
     return output
 
 
 def pump(root,key, *, executor=None, scheduler="canonical"):
     executor=executor or adapters.execute
-    with jobs._lock(Path(root),c.digest({'unifiedPump':key})) as (_,_,held):
+    with _jobs().lock(Path(root),c.digest({'unifiedPump':key})) as (_,_,held):
         if not held:
             raise c.ContractError('owner_busy',7)
         recovered=load(root,key)
         if 'concurrencyProfile' in recovered['manifest']['bindings']:
-            from scripts.sermon_unified_parallel import pump_locked
+            pump_locked=_backend.stage('parallel').pump_locked
             return pump_locked(root,key,executor=executor,scheduler=scheduler)
         release_completed_resources(recovered)
         abandoned=[sid for sid,row in recovered['steps'].items() if row['process']=='running']
@@ -690,7 +694,7 @@ def ingest_review(root,key,job_id,receipt_path,expected):
         raise c.ContractError('review_upstream_incomplete')
     if m['transport']=='fixture':
         raise c.ContractError('fixture_cannot_grant_human_approval')
-    from scripts.sermon_unified_reviews import validate_review,validate_window
+    validate_review=_backend.stage('reviews').validate_review;validate_window=_backend.stage('reviews').validate_window
     adapters.inspect_step(m,'/',step)
     original_sha=c.file_sha(receipt_path)
     config=c.read(adapters.config_path(m,'/',step))
@@ -708,11 +712,11 @@ def ingest_review(root,key,job_id,receipt_path,expected):
     if c.file_sha(receipt_path)!=original_sha:
         raise c.ContractError('review_changed_during_validation',7)
     if validated.get('reviewKind')=='machine_quality_waiver':
-        from scripts.sermon_unified_capabilities import require_machine_capabilities
+        require_machine_capabilities=_backend.stage('capabilities').require_machine_capabilities
         require_machine_capabilities(c.binding(m,'/','consumerCapabilities'))
     doc=c.read(receipt_path)
     dst=folder(root,key)/('review-'+original_sha+'.json')
-    jobs._persist(dst,doc)
+    _jobs().persist(dst,doc)
     # This is a new review observation; it cannot alter prior machine evidence.
     # A machine quality waiver satisfies the gate as 'waived', never 'approved'.
     waived=validated.get('reviewKind')=='machine_quality_waiver'
@@ -753,7 +757,7 @@ def ingest_continuation_evidence(root,key,binding_name,path,expected):
         raise c.ContractError('state_revision_conflict',7)
     if state['manifest']['transport']=='fixture':
         raise c.ContractError('fixture_cannot_grant_human_approval')
-    from scripts import sermon_unified_continuation as continuation
+    continuation=_backend.stage('continuation')
     recipe=c.binding(state['manifest'],'/','continuationRecipe')
     ref=continuation.validate_evidence(state,recipe,root,binding_name,path)
     prior=state.get('continuationEvidence',{}).get(binding_name)

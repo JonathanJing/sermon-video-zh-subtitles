@@ -13,6 +13,7 @@ class RuntimeClosureTests(unittest.TestCase):
                      'services/feedback/index.mjs',
                      'tools/ops/tracker-publisher/publish.mjs',
                      'packages/tracker-contract/src/sanitize.mjs',
-                     'packages/production/src/tongxing_production/compute/provider_limits.py'):
+                     'packages/production/src/tongxing_production/compute/provider_limits.py',
+                     'packages/production/src/tongxing_production/orchestration/unified/runtime.py'):
             self.assertIn(name,modules)
         self.assertFalse(any('/node_modules/' in name for name in modules))

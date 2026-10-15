@@ -412,6 +412,28 @@ def _worker(root, job_id, lock_fd):
     return 0
 
 
+# Public names for the orchestration package. Each delegates at call time, so
+# a test that patches the private implementation still intercepts the call.
+def digest(value):
+    return _digest(value)
+
+
+def paths(root, job_id):
+    return _paths(root, job_id)
+
+
+def lock(root, job_id):
+    return _lock(root, job_id)
+
+
+def persist(path, value):
+    return _persist(path, value)
+
+
+def sync_directory(path):
+    return _sync_directory(path)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("worker",))

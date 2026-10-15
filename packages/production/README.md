@@ -36,3 +36,13 @@ python -m pip install -e packages/production
 | Module | Old path | Since |
 |---|---|---|
 | `tongxing_production.compute.provider_limits` | `scripts/sermon_provider_limits.py` (facade kept) | 2026-10-15 |
+| `tongxing_production.orchestration.unified` (`contracts`, `adapters`, `resources`, `runtime`, `backend`) | `scripts/sermon_unified/` (facade kept: binds the `Backend` and aliases the four modules) | 2026-10-15 |
+
+## Injected collaborators
+
+`orchestration.unified` never imports the job store, filesystem helpers, stage
+implementations or the checkout. The host builds one
+`orchestration.unified.backend.Backend` and calls `configure()`; the package
+reads it at call time (`backend.current()`), so importing the package has no
+host dependency and a missing host fails with `BackendUnbound`. Today the only
+host is `scripts/sermon_unified/__init__.py`.

@@ -11,10 +11,12 @@ import copy
 from pathlib import Path
 import time
 
-from scripts import sermon_workflow_jobs as jobs
-from scripts.sermon_execution_harness import atomic_json, utc_now
-from scripts.sermon_release_workflow import _safe_path
-from scripts.sermon_unified import contracts
+from . import backend as _backend
+from . import contracts
+
+def _safe_path(path):
+    return _backend.current().safe_path(path)
+
 
 POLICY_VERSION = 'sermon-unified-resource-policy-v1'
 LEDGER_VERSION = 'sermon-unified-resource-ledger-v1'
@@ -100,9 +102,9 @@ def _load(folder, policy):
 def _save(folder, ledger):
     folder = _safe_path(folder)
     folder.mkdir(exist_ok=True, mode=0o700)
-    atomic_json(_safe_path(folder / 'resources.json'), ledger)
-    jobs._sync_directory(folder)
-    jobs._sync_directory(folder.parent)
+    _backend.current().atomic_json(_safe_path(folder / 'resources.json'), ledger)
+    _backend.current().jobs.sync_directory(folder)
+    _backend.current().jobs.sync_directory(folder.parent)
 
 
 def reserve(policy, *, operation_id, owner, resource, units=1):
@@ -114,7 +116,7 @@ def reserve(policy, *, operation_id, owner, resource, units=1):
     if type(units) is not int or units < 1 or (policy['capacities'][resource] > 0
                                              and units > policy['capacities'][resource]):
         raise contracts.ContractError('resource_units_invalid', 2)
-    with jobs._lock(_safe_path(policy['brokerRoot']), BROKER_LOCK_ID) as (folder, _, held):
+    with _backend.current().jobs.lock(_safe_path(policy['brokerRoot']), BROKER_LOCK_ID) as (folder, _, held):
         if not held:
             return False
         ledger = _load(folder, policy)
@@ -130,7 +132,7 @@ def reserve(policy, *, operation_id, owner, resource, units=1):
             _save(folder, ledger)
             return False
         ledger['reservations'][key] = {'operationId': operation_id, 'owner': owner,
-            'resource': resource, 'units': units, 'status': 'held', 'reservedAt': utc_now()}
+            'resource': resource, 'units': units, 'status': 'held', 'reservedAt': _backend.current().utc_now()}
         _save(folder, ledger)
         return True
 
@@ -146,7 +148,7 @@ def release(policy, *, operation_id, owner):
     key, owner = _operation(operation_id), _owner(owner)
     deadline = time.monotonic() + 10
     while True:
-        with jobs._lock(_safe_path(policy['brokerRoot']), BROKER_LOCK_ID) as (folder, _, held):
+        with _backend.current().jobs.lock(_safe_path(policy['brokerRoot']), BROKER_LOCK_ID) as (folder, _, held):
             if held:
                 ledger = _load(folder, policy)
                 previous = ledger['reservations'].get(key)
@@ -156,7 +158,7 @@ def release(policy, *, operation_id, owner):
                     raise contracts.ContractError('resource_owner_changed', 7)
                 if previous['status'] == 'released':
                     return
-                previous.update(status='released', releasedAt=utc_now())
+                previous.update(status='released', releasedAt=_backend.current().utc_now())
                 _save(folder, ledger)
                 return
         if time.monotonic() >= deadline:
