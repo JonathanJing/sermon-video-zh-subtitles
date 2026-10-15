@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "targeted-ios-test-summary-v1",
+  "scope": "PR 395 local simulator AudioAlignmentControllerTests; SwiftPM ListeningStatisticsTests separately",
+  "result": "passed",
+  "simulator": {
+    "executed": 43,
+    "skipped": 2,
+    "failures": 0
+  },
+  "swiftPackage": {
+    "result": "passed",
+    "scope": "ListeningStatisticsTests"
+  },
+  "runLogSha256": "0bb1adf3575b5e89f69e13da789c2aca74b3453c61e76ae9b7dc91a332972c67",
+  "realDeviceAcceptance": "not_run",
+  "testFlight": "not_run",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-14T15:53:25Z",
+  "endedAt": "2026-10-14T15:55:00Z"
+}

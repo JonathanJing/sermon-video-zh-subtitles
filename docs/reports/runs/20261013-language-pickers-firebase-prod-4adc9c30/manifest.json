@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261013-language-pickers-firebase-prod-4adc9c30",
+  "runs": [
+    {
+      "label": "run-20261013-4adc9c30",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/web-language-pickers/prod-deploy/run-20261013-4adc9c30",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "run-20261013-4adc9c30",
+      "path": "browser-verification-receipt.json",
+      "kind": "whole",
+      "bytes": 513,
+      "truncated": false,
+      "sha256": "c001f6c2a92f133bbad0e8f0cb675062c8b48cb72e3c57e4077e98eee009a8fe",
+      "redactions": {}
+    },
+    {
+      "run": "run-20261013-4adc9c30",
+      "path": "hosting-deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 925,
+      "truncated": false,
+      "sha256": "7b527a883e42bf71a8eff9b268ba1cd5418a0e98b029e315c826a91a7a7c41e7",
+      "redactions": {}
+    },
+    {
+      "run": "run-20261013-4adc9c30",
+      "path": "http-verification-receipt.json",
+      "kind": "whole",
+      "bytes": 6164,
+      "truncated": false,
+      "sha256": "10dee423224bf07844aa720f88d14aec9e7a5dec6501d523f94c47f8c9a4f0b0",
+      "redactions": {}
+    },
+    {
+      "run": "run-20261013-4adc9c30",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 604,
+      "truncated": false,
+      "sha256": "f17d6cac8aeab2e78305a81a476c726240352c9925e6b3c3938b24670650f231",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

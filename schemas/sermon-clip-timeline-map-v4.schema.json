@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-clip-timeline-map-v4.schema.json",
+  "title": "Window-relative anchors bound to the unified source preparation clip",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "timebase",
+    "englishSourcePackageJsonSha256",
+    "anchorManifestJsonSha256",
+    "sourceMedia",
+    "approvedWindow",
+    "windowApproval",
+    "timelineReport",
+    "sourceClipIdentity",
+    "clipMedia",
+    "clipDurationSeconds",
+    "anchorOffsetSeconds",
+    "anchorFirstStartSeconds",
+    "anchorLastEndSeconds"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "sermon-clip-timeline-map-v4"},
+    "timebase": {"const": "anchor_window_relative_to_unified_source_clip"},
+    "englishSourcePackageJsonSha256": {"$ref": "#/$defs/sha256"},
+    "anchorManifestJsonSha256": {"$ref": "#/$defs/sha256"},
+    "sourceMedia": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes", "durationSeconds"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1},
+        "durationSeconds": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "approvedWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startSeconds", "endSeconds"],
+      "properties": {
+        "startSeconds": {"type": "number", "minimum": 0},
+        "endSeconds": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "windowApproval": {"$ref": "#/$defs/jsonArtifact"},
+    "timelineReport": {"$ref": "#/$defs/jsonArtifact"},
+    "sourceClipIdentity": {"$ref": "#/$defs/jsonArtifact"},
+    "clipMedia": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "clipDurationSeconds": {"type": "number", "exclusiveMinimum": 0},
+    "anchorOffsetSeconds": {"const": 0},
+    "anchorFirstStartSeconds": {"type": "number", "minimum": 0},
+    "anchorLastEndSeconds": {"type": "number", "exclusiveMinimum": 0}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "jsonArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "jsonSha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "jsonSha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

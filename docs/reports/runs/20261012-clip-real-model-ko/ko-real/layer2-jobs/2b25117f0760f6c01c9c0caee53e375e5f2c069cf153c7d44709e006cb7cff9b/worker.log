@@ -1,0 +1,84 @@
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/canonical_layer2_controller.py", line 748, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/canonical_layer2_controller.py", line 742, in main
+    result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
+                     budget_authorization=<redacted>, expected_budget=args.expected_budget)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/canonical_layer2_controller.py", line 513, in execute
+    evidence, model_output = _run_auto_repair(
+                             ~~~~~~~~~~~~~~~~^
+        config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        admission_span, model_completion)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/canonical_layer2_controller.py", line 581, in _run_auto_repair
+    receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
+                                group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
+                                meaning_notes_sha256=notes_artifact_sha256)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/layer2_auto_repair.py", line 727, in drive
+    evidence = run_round(out, reuse_from, brief, collector)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/canonical_layer2_controller.py", line 567, in run_round
+    return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                None, reuse_from, partial_repair_brief=brief,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                progress_callback=progress, predecessor_spans=[admission_span],
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                completion_spans=completion_spans, failure_collector=collector,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                candidate_mode=config.candidate_mode)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_target_language_models.py", line 1317, in run_accounted
+    evidence = _run_prepared_groups(
+        request, anchor, policy, out_dir, api_key, call, plan, plugin,
+    ...<2 lines>...
+        progress_callback=progress_callback, completion_spans=completion_spans,
+        failure_collector=failure_collector)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_target_language_models.py", line 1252, in _run_prepared_groups
+    ordered_group_results(list(enumerate(plan, 1)), process_group, workers))
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_target_language_models.py", line 681, in ordered_group_results
+    results[index] = future.result()
+                     ~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_target_language_models.py", line 1249, in process_group
+    return _process_group(item)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_target_language_models.py", line 1185, in _process_group
+    reviewed_response = _model_call("reviewer", review_prompt, policy,
+                                    sol_path, api_key, caller,
+    ...<3 lines>...
+                                    if brief is None and repair is None else None, cache_only=cache_only,
+                                    rule_receipt=rule_receipt)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/run_target_language_models.py", line 292, in _model_call
+    response = caller(api_key, payload)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/canonical_layer2_controller.py", line 504, in bound_call
+    return caller(key, payload)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/production_spark_admission.py", line 109, in __call__
+    result = self.caller(*args, **kwargs)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/canonical_layer2_budget.py", line 169, in __call__
+    reservation = self._ledger(lambda: self.store.reserve(identity, operation_id='model.' + fingerprint,
+        kind='initial_generation' if role == 'translator' else 'review', revision_id='initial',
+        revision_number=1, input_sha256=fingerprint, bounds=bounds))
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/canonical_layer2_budget.py", line 226, in _ledger
+    return operation()
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/canonical_layer2_budget.py", line 169, in <lambda>
+    reservation = self._ledger(lambda: self.store.reserve(identity, operation_id='model.' + fingerprint,
+                                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        kind='initial_generation' if role == 'translator' else 'review', revision_id='initial',
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        revision_number=1, input_sha256=fingerprint, bounds=bounds))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/sermon_review_budget.py", line 232, in reserve
+    require(all(used[k] + bounds[k] <= cap[k] for k in METRICS), 'budget_exhausted')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/59a9f28b-4e1e-4368-ac91-f9155989452b/scratchpad/wt-clip/scripts/sermon_review_contracts.py", line 35, in require
+    if not condition: raise ContractError(code)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts.sermon_review_contracts.ContractError: budget_exhausted

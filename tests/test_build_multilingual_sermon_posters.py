@@ -125,6 +125,7 @@ class MultilingualPosterTests(unittest.TestCase):
             label = result['brief']['reviewLabel']
             self.assertEqual(label, poster.MACHINE_REVIEW_LABELS[locale][('machine_checked', 'machine_checked')])
             self.assertNotEqual(label, poster.COPY[locale]['reviewLabel'])
+            self.assertEqual(result['brief']['labels']['showReview'], 'true')
         self.assertEqual(bundles['zh-Hans']['brief']['reviewLabel'], '译文与配音经机器质检 · 未经人工审核')
 
     def test_mixed_review_discloses_unreviewed_product_in_label_and_brief(self):
@@ -149,11 +150,13 @@ class MultilingualPosterTests(unittest.TestCase):
                     self.assertEqual(poster.review_label(locale, package), label)
                     self.assertEqual(bundles[locale]['brief']['reviewLabel'], label)
                     self.assertEqual(bundles[locale]['source']['brief']['reviewLabel'], label)
+                    self.assertEqual(bundles[locale]['brief']['labels']['showReview'], 'true')
 
     def test_human_only_label_stays_human_only(self):
         bundles, _ = self.load()
         for locale, bundle in bundles.items():
             self.assertEqual(bundle['brief']['reviewLabel'], poster.COPY[locale]['reviewLabel'])
+            self.assertEqual(bundle['brief']['labels']['showReview'], 'false')
 
     def test_machine_checked_release_requires_its_disclosure(self):
         self.machine_week(disclosure=False)

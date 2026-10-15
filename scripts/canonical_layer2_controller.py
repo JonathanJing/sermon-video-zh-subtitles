@@ -45,16 +45,27 @@ CONCURRENT_SCHEMA = 'sermon-canonical-layer2-execution-v2'
 # locale jobs at once. It does not accept the v2 Codex CLI concurrency profile;
 # API requests still share the job root's 24 in-flight slots.
 AUTO_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v3'
+SHADOW_SCHEMA = 'sermon-canonical-layer2-execution-v4'
+# v5 = v3 plus gate 4: layer2AutoRepair may name, per locale, a failed back-translation QC
+# receipt of that lane's passed repair chain. v3/v4 keep their exact field set; a v3
+# configuration needs no migration and becomes v5 only to carry a QC repair.
+QC_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v5'
 MAX_AUTO_REPAIR_LOCALES = 3
 
 
-def _auto_repair_binding(value):
+def _auto_repair_binding(value, *, allow_qc=False):
     required = {'routingVersion', 'groupWorkers', 'maxActiveLocales'}
-    require(isinstance(value, dict) and required <= set(value) <= required | {'sourceMeaningNotes'}
+    qc = value.get('backTranslationQc', {}) if isinstance(value, dict) else None
+    optional = {'sourceMeaningNotes', 'backTranslationQc'} if allow_qc else {'sourceMeaningNotes'}
+    require(isinstance(value, dict) and required <= set(value) <= required | optional
             and value['routingVersion'] == auto_repair.ROUTING_VERSION
             # Optional: the Layer 1 machine audio adjudication notes (meaning-notes.json beside its receipt)
             # that ride the repair briefs of the groups holding their units.
             and (type(value.get('sourceMeaningNotes', 'x')) is str and value.get('sourceMeaningNotes', 'x'))
+            # Optional (gate 4): per locale, the failed text QC receipt of that lane's passed repair chain;
+            # its failed groups reopen the chain for one repair round (layer2_auto_repair._reopen_for_qc).
+            and isinstance(qc, dict) and ('backTranslationQc' not in value or bool(qc))
+            and all(locale in pipeline.LOCALES and type(path) is str and path for locale, path in qc.items())
             and type(value['groupWorkers']) is int
             and 1 <= value['groupWorkers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE
             and type(value['maxActiveLocales']) is int
@@ -103,22 +114,27 @@ class Configuration:
     concurrency_profile: dict | None = None
     resource_policy: dict | None = None
     auto_repair: dict | None = None
+    candidate_mode: str = 'production'
 
 
 def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _json(path)
     required_keys = {'schemaVersion', 'productionRunId', 'inspectionConfig', 'jobRoot', 'locales'}
+    # v1-v3 remain production contracts; shadow has a distinct v4 identity.
+    candidate_mode = value.get('candidateMode', 'production') if isinstance(value, dict) else 'production'
     require(((set(value) == required_keys and value['schemaVersion'] == SCHEMA)
              or (set(value) == required_keys | {'concurrencyProfile', 'resourcePolicy'}
                  and value['schemaVersion'] == CONCURRENT_SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair'}
-                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA))
+                 and value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, QC_REPAIR_SCHEMA})
+             or (set(value) == required_keys | {'layer2AutoRepair', 'candidateMode'}
+                 and value['schemaVersion'] == SHADOW_SCHEMA and candidate_mode == 'shadow'))
             and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
-    repair_binding = (_auto_repair_binding(value['layer2AutoRepair'])
-                      if value['schemaVersion'] == AUTO_REPAIR_SCHEMA else None)
+    repair_binding = (_auto_repair_binding(value['layer2AutoRepair'], allow_qc=value['schemaVersion'] == QC_REPAIR_SCHEMA)
+                      if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA, QC_REPAIR_SCHEMA} else None)
     inspection_path = _path(path.parent, value['inspectionConfig'])
     inspection = _json(inspection_path)
     require(inspection.get('schemaVersion') == packages.SCHEMA
@@ -132,6 +148,11 @@ def load_configuration(path):
         notes_path = _path(path.parent, repair_binding['sourceMeaningNotes'])
         repair_binding['sourceMeaningNotes'] = str(notes_path)
         input_paths.append(notes_path)
+    if repair_binding and repair_binding.get('backTranslationQc'):
+        require(set(repair_binding['backTranslationQc']) <= set(value['locales']), 'invalid_execution_configuration')
+        qc_paths = {locale: _path(path.parent, item) for locale, item in repair_binding['backTranslationQc'].items()}
+        repair_binding['backTranslationQc'] = {locale: str(item) for locale, item in qc_paths.items()}
+        input_paths.extend(qc_paths.values())
     concurrency_profile = resource_policy = None
     if 'concurrencyProfile' in value:
         from scripts.production_concurrency_profile import load_profile
@@ -169,7 +190,8 @@ def load_configuration(path):
         binding.update(concurrencyProfile=concurrency_profile, resourcePolicy=resource_policy)
     sha = jobs._digest(binding)
     return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha,
-                         concurrency_profile, resource_policy, repair_binding)
+                         concurrency_profile, resource_policy, repair_binding,
+                         candidate_mode)
 
 
 def repair_ledger_root(config):
@@ -196,7 +218,7 @@ def package_view(config):
             # Only this registered future output may be absent. An existing
             # invalid package is always validated and blocks the lane.
             effective['locales'][locale].pop('candidate', None)
-    view = packages.inspect_configuration(config.inspection_root, effective)
+    view = packages.inspect_configuration(config.inspection_root, effective, candidate_mode=config.candidate_mode)
     notes = (getattr(config, 'auto_repair', None) or {}).get('sourceMeaningNotes')
     if notes:
         # The meaning notes the repair loop reads are a Layer 1 input of every text job: new notes are
@@ -204,6 +226,13 @@ def package_view(config):
         digest = jobs._digest(_json(Path(notes)))
         view['packageIdentities']['sourceMeaningNotes'] = digest
         view['stateRevision'] = jobs._digest({'packages': view['stateRevision'], 'sourceMeaningNotes': digest})
+    for locale, qc in sorted(((getattr(config, 'auto_repair', None) or {}).get('backTranslationQc') or {}).items()):
+        # A failed back-translation QC receipt is an input of that locale's text job (gate 4):
+        # a new receipt is a new job identity whose worker reopens the passed repair chain.
+        digest = jobs._digest(_json(Path(qc)))
+        view['packageIdentities']['backTranslationQc.' + locale] = digest
+        view['stateRevision'] = jobs._digest({'packages': view['stateRevision'],
+                                              'backTranslationQc.' + locale: digest})
     return view
 
 
@@ -220,7 +249,8 @@ def _reopen_verifier(config):
     reopened was stopped there for source review. The receipt naming the text node's
     identity now is the one a new job runs under, so it is checked in full: its notes are
     the configured notes, and its groups are the ones those notes reopen from that entry
-    or, once the reopened job has begun, the ones its worker's reopen entry records. Its
+    or, once the reopened job has begun, the ones its worker's reopen entry records under
+    those same notes. Its
     configuration and code hashes record what the controller ran under; both may change
     after a reopen (a deploy, a configuration edit) without changing what it proved, and
     the worker checks its own before any paid call."""
@@ -232,26 +262,32 @@ def _reopen_verifier(config):
         if locale not in ledgers:
             source, anchor, policy = _lane_values(config, locale, observed)
             ledgers[locale] = (auto_repair.load_ledger(repair_ledger_root(config), auto_repair.lineage(
-                producer.prepare_request(source, anchor, policy))), source, anchor)
+                producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode))), source, anchor)
         entries, source, anchor = ledgers[locale]
         sequence, groups = receipt['repairLedgerSequence'], receipt['reopenedGroups']
         head = entries[sequence - 1] if sequence <= len(entries) else None
         require(head is not None and auto_repair.json_sha256(head) == receipt['repairLedgerHeadSha256']
                 and head['outcome'] == 'stopped', 'reopen_ledger_head_changed')
-        held = {row['translationGroupId'] for row in head['stopped'] if row['reasonCode'] == 'request_source_review'}
+        # A human ruling (layer2_human_ruling) may also answer a request_human_review stop.
+        reasons = {'request_source_review', 'request_human_review'}
+        held = {row['translationGroupId'] for row in head['stopped'] if row['reasonCode'] in reasons}
         require(set(groups) <= held, 'reopen_group_not_stopped_for_source_review')
         if receipt['nextIdentity'] != expected:
             return
         require(receipt['meaningNotesSha256'] == observed['packageIdentities'].get('sourceMeaningNotes'),
                 'reopen_meaning_notes_changed')
+        notes = source_meaning.load_meaning_notes(Path(config.auto_repair['sourceMeaningNotes']),
+                                                  source=source, anchor=anchor)
         if len(entries) > sequence:
+            # The reopen entry must be the one a worker wrote under these notes: an entry written under
+            # earlier notes (whose chain may since have passed) cannot vouch for a receipt toward new ones.
             reopened = entries[sequence]
             require('reopenedBy' in reopened
-                    and sorted(row['translationGroupId'] for row in reopened['groups']) == groups,
+                    and reopened['reopenedBy']['meaningNotesSha256'] == observed['packageIdentities']['sourceMeaningNotes'],
+                    'reopen_entry_notes_changed')
+            require(sorted(row['translationGroupId'] for row in reopened['groups']) == groups,
                     'reopen_groups_changed')
         else:
-            notes = source_meaning.load_meaning_notes(Path(config.auto_repair['sourceMeaningNotes']),
-                                                      source=source, anchor=anchor)
             require(sorted(auto_repair.reopenable_groups(entries, notes)) == groups, 'reopen_groups_changed')
     return verify
 
@@ -291,11 +327,13 @@ def _inputs(config, locale, view):
     require(producer.plugin_implementation_sha256(lane['plugin']) == policy['languageReview']['pluginImplementationSha256'],
             'plugin_does_not_match_frozen_policy')
     # Fixed production models and the canonical runner's worker budget bound paid work.
-    require(all(policy[role]['model'] == model and policy[role]['reasoningEffort'] == models.MODEL_EFFORTS[role] for role, model in models.MODEL_ROLES.items()), 'production_model_policy_changed')
+    efforts = models.production_efforts(policy)
+    require(all(policy[role]['model'] == model and policy[role]['reasoningEffort'] == efforts[role]
+                for role, model in models.production_models(policy).items()), 'production_model_policy_changed')
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
-    request = producer.prepare_request(source, anchor, policy)
+    request = producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode)
     plan = models.group_plan(request, anchor)
     rule_preflight.preflight(request, policy, lane['plugin'], plan)
     return source, anchor, policy
@@ -342,6 +380,8 @@ class Controller:
         self.mode = mode
         self.budget_authorization = (budget_tools.load_authorization(
             self.config, budget_authorization, self.code_sha) if budget_authorization is not None else None)
+        if self.budget_authorization is not None:
+            budget_tools.verify_runtime(self.budget_authorization)
 
     def _result(self, status, reason, **fields):
         return {'schemaVersion': 'sermon-canonical-layer2-controller-result-v1',
@@ -359,6 +399,7 @@ class Controller:
         if self.budget_authorization is not None:
             budget_tools.load_authorization(current, self.budget_authorization['path'], self.code_sha,
                                             self.budget_authorization['sha256'])
+            budget_tools.verify_runtime(self.budget_authorization)
         return current, snapshot(current)
 
     def _capacity_full(self, view):
@@ -455,17 +496,29 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
         with liveness.report(request_path.parent, request) as progress:
             if caller is None:
                 require(budget_binding is not None, 'bound_budget_authorization_required')
-                spark_admission.require_session()
+                # OpenAI API only: no Spark session (2026-10-13; only GPU stages occupy Spark).
                 from scripts.sermon_openai_runtime import selected_route
                 route = selected_route()
                 require(route is not None, 'openai_layer2_requires_explicit_dev_or_prod_launcher')
                 api_key = os.environ['OPENAI_API_KEY']
-                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy)
-                caller.execution_identity = {
-                    'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
-                    'backend': 'openai_api', 'route': route,
-                    'budgetAuthorizationSha256': budget_binding['sha256']}
-                caller = spark_admission.SessionBoundCaller(caller)
+                # The policy's frozen Layer 2 backend picks the transport: the OpenAI API (Sol), or
+                # the subscription Claude CLI for both roles (claude_cli_opus).
+                backend = models.production_backend(policy)
+                transports = claude_transports(policy, lane) if backend == 'claude_cli_opus' else None
+                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
+                                                     claude_transports=transports)
+                if transports is not None:
+                    caller.execution_identity = {
+                        'schemaVersion': 'claude-layer2-budget-transport-identity-v1', 'backend': 'claude_cli',
+                        'layer2Backend': backend,
+                        'transports': {role: t.execution_identity for role, t in sorted(transports.items())},
+                        'budgetAuthorizationSha256': budget_binding['sha256']}
+                elif budget_binding.get('runtimeIdentity') is None:
+                    caller.execution_identity = {
+                        'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
+                        'backend': 'openai_api', 'route': route,
+                        'budgetAuthorizationSha256': budget_binding['sha256']}
+                caller = spark_admission.SessionBoundCaller(caller, requires_spark=False, outcome_guarded=True)
             elif budget_binding is not None:
                 from scripts.strict_budget_capability import reject_codex_cli_transport
                 reject_codex_cli_transport(caller)
@@ -487,7 +540,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     return caller(key, payload)
             # Preserve terminal decoding and transport identity through the
             # state-binding wrapper. A CLI envelope is not an API response.
-            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing'):
+            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing', 'verify_execution'):
                 if hasattr(caller, attribute):
                     setattr(bound_call, attribute, getattr(caller, attribute))
             model_completion = []
@@ -495,13 +548,14 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 if config.auto_repair:
                     evidence, model_output = _run_auto_repair(
                         config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
-                        admission_span, model_completion)
+                        admission_span, model_completion,
+                        qc_digest=current['packageIdentities'].get('backTranslationQc.' + locale))
                 else:
                     model_output = lane['output']
                     evidence = models.run_accounted(source, anchor, policy, model_output, api_key,
                                                  bound_call, None, lane['plugin'], None, None,
                                                  progress_callback=progress.progress, predecessor_spans=[admission_span],
-                                                 completion_spans=model_completion)
+                                                 completion_spans=model_completion, candidate_mode=config.candidate_mode)
             # Paid results remain recoverable if approval/source/config/code drifted
             # while a request was outstanding. Never turn those results into approval.
             with accounting.stage('layer2.post_model_binding.' + locale, depends_on=model_completion,
@@ -532,7 +586,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
 
 
 def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progress, admission_span,
-                     completion_spans):
+                     completion_spans, *, qc_digest=None):
     """Run repair rounds inside this durable job, its budget and its lease.
 
     Every round is a separate runner output under the lane; repaired groups get a
@@ -541,7 +595,7 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
     bound budget transport; the loop's 10% repair cap sits below it. A stopped
     loop leaves its receipt and fails the job: no candidate, no automatic retry.
     """
-    request = producer.prepare_request(source, anchor, policy)
+    request = producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode)
     total_groups = len(models.group_plan(request, anchor))
     rounds_root = lane['output'] / 'repair-rounds'
 
@@ -550,15 +604,27 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
         return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
                                     None, reuse_from, partial_repair_brief=brief,
                                     progress_callback=progress, predecessor_spans=[admission_span],
-                                    completion_spans=completion_spans, failure_collector=collector)
+                                    completion_spans=completion_spans, failure_collector=collector,
+                                    candidate_mode=config.candidate_mode)
 
     notes = None
+    notes_artifact_sha256 = None
     if config.auto_repair.get('sourceMeaningNotes'):
         # Bound to this run's source and anchor and reproduced from their receipt, or refused before dispatch.
-        notes = source_meaning.load_meaning_notes(Path(config.auto_repair['sourceMeaningNotes']),
-                                                  source=source, anchor=anchor)
+        notes_path = Path(config.auto_repair['sourceMeaningNotes'])
+        notes_artifact_sha256 = jobs._digest(_json(notes_path))
+        notes = source_meaning.load_meaning_notes(notes_path, source=source, anchor=anchor)
+        require(jobs._digest(_json(notes_path)) == notes_artifact_sha256, 'meaning_notes_changed_during_load')
+    qc_receipt = None
+    qc_path = (config.auto_repair.get('backTranslationQc') or {}).get(policy['targetLocale'])
+    if qc_path:
+        # Exactly the receipt the admitted job identity bound (``qc_digest``), read once; the loop then
+        # checks it against this lineage and the chain head's reviewer caches before any dispatch.
+        qc_receipt = _json(Path(qc_path))
+        require(qc_digest is not None and jobs._digest(qc_receipt) == qc_digest, 'back_translation_qc_changed_after_admission')
     receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
-                                group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes)
+                                group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
+                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt)
     require(receipt['status'] == 'all_groups_passed', 'layer2_auto_repair_stopped')
     final = Path(receipt['finalRunDirectory'])
     require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),
@@ -595,7 +661,7 @@ def _reopen_plan(config, locale, view):
             'reopen_requires_new_meaning_notes')
     source, anchor, policy = _inputs(config, locale, current)
     entries = auto_repair.load_ledger(repair_ledger_root(config),
-                                      auto_repair.lineage(producer.prepare_request(source, anchor, policy)))
+                                      auto_repair.lineage(producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode)))
     require(bool(entries) and entries[-1]['outcome'] == 'stopped', 'reopen_requires_stopped_repair_chain')
     rounds = (config.lanes[locale]['output'] / 'repair-rounds').resolve()
     head = Path(entries[-1]['runDirectory']).resolve()
@@ -665,6 +731,18 @@ def reopen_repair(config_path, locale, expected_revision):
                         'originalJobStatus': 'failed', 'nextJobId': jobs._digest(plan['nextIdentity']),
                         'reopenedGroups': plan['reopenedGroups'], 'modelCalls': 0, 'runtimeCodexTurns': 0,
                         'humanApprovalCreated': False}
+
+
+def claude_transports(policy, lane):
+    """One subscription-login Claude CLI transport per role, at the policy's frozen model and effort.
+
+    Receipts of every CLI call stay under the lane (``claude-calls/``). The transport refuses an
+    API key, strips OpenAI and Anthropic credentials from the child environment and requires a
+    subscription login, so these calls use subscription quota, not an API project."""
+    from scripts.claude_layer2_transport import ClaudeLayer2Transport
+    return {role: ClaudeLayer2Transport(model=policy[role]['model'], effort=policy[role]['reasoningEffort'],
+                                        receipts_dir=lane['output'] / 'claude-calls')
+            for role in ('translator', 'reviewer')}
 
 
 def drive(config_path, locale, *, budget_authorization=None):

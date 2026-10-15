@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-weekly-poster-single-line",
+  "runs": [
+    {
+      "label": "historical-editorial-single-line-v1",
+      "source": "~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/sermon-poster/historical-editorial-single-line-v1",
+      "skipped": {
+        ".json": 18,
+        ".png": 18,
+        ".md": 1,
+        ".html": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "historical-editorial-single-line-v1",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 237,
+      "truncated": false,
+      "sha256": "0fbbb2d0c37df33d0c34e80e08dd91596c47ef04f03b8aba7c8ee5a3cf28caf6",
+      "redactions": {}
+    },
+    {
+      "run": "historical-editorial-single-line-v1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2830,
+      "truncated": false,
+      "sha256": "4a0c23d770603e10d81e222d80486f5bba447d7eed49a6cb0834b94273e54745",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

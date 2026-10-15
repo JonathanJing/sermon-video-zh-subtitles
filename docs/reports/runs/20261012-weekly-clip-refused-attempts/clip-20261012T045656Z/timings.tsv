@@ -1,0 +1,9 @@
+stage	status	seconds
+build-inputs	pass	-
+baseline	pass	10
+delivery-preflight	pass	3
+delivery-execute	fail	92
+delivery-execute-resume	fail	2
+baseline2	pass	7
+delivery-preflight2	pass	2
+delivery-execute2	fail	6

@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "sermon-weekly-run-profile-v3",
+  "documentation": "docs/weekly-run-profile.zh.md",
+  "measuredFrom": [
+    "2026-10-11 full week (461 sentences, three locales)",
+    "2026-10-12/13 clip E2E and profile test (16 sentences, three locales)"
+  ],
+  "layer2": {
+    "requestLimits": {
+      "schemaVersion": "sermon-openai-chat-request-limits-v1",
+      "maxInputTokens": 16384,
+      "maxCompletionTokens": 2048,
+      "wallTimeMs": 300000,
+      "serviceTier": "default"
+    },
+    "groupWorkers": 8,
+    "maxActiveLocales": {
+      "formal": 3,
+      "dev": 1
+    },
+    "limits": {
+      "contentRevisions": 2,
+      "reviewAttemptsPerRevision": 2,
+      "decisionProposals": 1
+    },
+    "boundsPerLocale": {
+      "clip": {
+        "requests": 400,
+        "inputTokens": 4000000,
+        "outputTokens": 1200000,
+        "wallTimeMs": 120000000
+      },
+      "week": {
+        "requests": 4000,
+        "inputTokens": 64000000,
+        "outputTokens": 8192000,
+        "wallTimeMs": 1200000000
+      }
+    },
+    "capUsdPerLocale": {
+      "clip": 2.0,
+      "week": 5.0
+    },
+    "claudeCliListPriceCapUsdPerLocale": {
+      "clip": 8.0,
+      "week": 200.0
+    },
+    "claudeCliComment": "claude_cli_opus Layer 2 runs on the Claude subscription: the ledger reserves and settles each call at list-price worst case (strict-claude-list-worst-case-2026-10-08-v1) up to this cap per locale, but list-price equivalents are not money and do not count toward an approved USD total (user decision 2026-10-14)."
+  },
+  "qc": {
+    "comment": "One root per locale shared by text QC, calibration and audio QC; its ledger is the judge response cache.",
+    "requestLimits": {
+      "schemaVersion": "sermon-openai-chat-request-limits-v1",
+      "maxInputTokens": 16384,
+      "maxCompletionTokens": 512,
+      "wallTimeMs": 300000,
+      "serviceTier": "default"
+    },
+    "requests": {
+      "clip": 800,
+      "week": 4000
+    },
+    "wallTimeMs": 600000000,
+    "capUsdPerLocale": {
+      "clip": 3.5,
+      "week": 30.0
+    },
+    "secondaryAsr": {
+      "requests": {
+        "clip": 150,
+        "week": 1500
+      },
+      "wallTimeMs": 300000,
+      "capUsdPerLocale": {
+        "clip": 2.025,
+        "week": 20.25
+      },
+      "basis": "Existing transcription_request-v1: max 180s input, whole-minute reservation at 4500 microusd/min; conservative request cap, not observed or invoice cost"
+    }
+  }
+}

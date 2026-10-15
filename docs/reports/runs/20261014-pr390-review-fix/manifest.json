@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-pr390-review-fix",
+  "runs": [
+    {
+      "label": "pr390-review-fix-tests",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/pr390-review-fix-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr390-review-fix-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 377,
+      "truncated": false,
+      "sha256": "baabb22987f84e8c228fd1033d4f3001f888138356d182bcfac0d04c7371e1f6",
+      "redactions": {}
+    },
+    {
+      "run": "pr390-review-fix-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 859,
+      "truncated": false,
+      "sha256": "750e009c965ebbb84f8f4c826b5b0f3cf901e5dd865775b9b6e929dea2016d3b",
+      "redactions": {}
+    },
+    {
+      "run": "pr390-review-fix-tests",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 147,
+      "truncated": false,
+      "sha256": "843993357b0430fb9e9be272036bdcefdf0d045fc133c41ece8fe49541f96fad",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

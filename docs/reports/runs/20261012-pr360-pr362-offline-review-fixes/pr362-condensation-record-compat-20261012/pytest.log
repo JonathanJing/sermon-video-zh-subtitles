@@ -1,0 +1,43 @@
+F.................................             [100%]
+=================================== FAILURES ===================================
+_ SpokenModeTests.test_a_real_run_issues_the_spoken_waiver_and_refuses_a_fake_record _
+
+self = <test_run_machine_qc_clip_test.SpokenModeTests testMethod=test_a_real_run_issues_the_spoken_waiver_and_refuses_a_fake_record>
+
+    def test_a_real_run_issues_the_spoken_waiver_and_refuses_a_fake_record(self):
+        run, binding = spoken_run(self, self.root)
+        echo = driver.FakeJudge  # Stands in for the Codex judge; the driver treats it as real.
+        stack, argv = self.real_runs(run)
+        with stack, patch.object(driver, "CodexJudge", lambda cache: echo(
+                {LOCALE: [g for part in driver.screened_groups(self.paths(run, binding)) for g in part]})):
+            self.assertEqual(driver.main([*argv, "--spoken-binding", f"{LOCALE}={binding}"]), 0)
+        row = self.real_row()
+        self.assertEqual(row["status"], "text_waiver_issued", row.get("reason"))
+        waiver = json.loads(Path(row["textWaiver"]).read_text(encoding="utf-8"))
+>       self.assertEqual(Path(row["textWaiver"]).parent, self.root / "real" / LOCALE / "spoken")
+E       AssertionError: PosixPath('/private/var/folders/s2/0bt6pz_51h1899zqs3[38 chars]ken') != PosixPath('/var/folders/s2/0bt6pz_51h1899zqs32x4vm800[30 chars]ken')
+
+tests/test_run_machine_qc_clip_test.py:637: AssertionError
+----------------------------- Captured stdout call -----------------------------
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.1
+ko.calibration	pass	0.1
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 93,
+      "detected": 93
+    }
+  }
+}
+=========================== short test summary info ============================
+FAILED tests/test_run_machine_qc_clip_test.py::SpokenModeTests::test_a_real_run_issues_the_spoken_waiver_and_refuses_a_fake_record
+1 failed, 33 passed, 26 subtests passed in 1.02s

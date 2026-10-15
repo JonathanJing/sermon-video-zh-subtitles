@@ -255,6 +255,33 @@ def _review_payload(
     }, review
 
 
+OPERATOR_ACCEPTANCE_SCHEMA = "sermon-source-issue-acceptance-v1"
+OPERATOR_ACCEPTABLE_ISSUES = {"alignment_word_duration_outlier", "clause_unit_exceeds_target_without_safe_boundary"}
+
+
+def _operator_accepted_ids(acceptance: Any, manifest_issues: list[dict[str, Any]]) -> set[str]:
+    """Sentence IDs an operator accepted for a timing-only manifest issue, as frozen in the judge receipt."""
+    if acceptance is None:
+        return set()
+    issue_keys = {(issue.get("sourceSentenceId"), issue.get("type")) for issue in manifest_issues}
+    items = acceptance.get("items") if isinstance(acceptance, dict) else None
+    ids = acceptance.get("acceptedSentenceIds") if isinstance(acceptance, dict) else None
+    if not (acceptance.get("schemaVersion") == OPERATOR_ACCEPTANCE_SCHEMA
+            and isinstance(acceptance.get("acceptedBy"), str) and acceptance["acceptedBy"].strip()
+            and isinstance(items, list) and isinstance(ids, list)
+            and all(isinstance(item, dict) and item.get("issueType") in OPERATOR_ACCEPTABLE_ISSUES
+                    and (item.get("sourceSentenceId"), item.get("issueType")) in issue_keys for item in items)
+            and set(ids) <= {item["sourceSentenceId"] for item in items}):
+        raise ValueError("English source machine judge operator acceptance is invalid")
+    return set(ids)
+
+
+def _accepted_timing_failure(item: dict[str, Any], accepted_ids: set[str]) -> bool:
+    checks = item.get("checks", {})
+    return (item.get("sourceSentenceId") in accepted_ids and set(checks) == MACHINE_JUDGE_CHECKS
+            and [name for name in sorted(MACHINE_JUDGE_CHECKS) if checks[name] != "pass"] == ["timelineCoherent"])
+
+
 def _machine_judge_payload(
     machine_judge_path: Path | None,
     *,
@@ -290,6 +317,15 @@ def _machine_judge_payload(
     sentences = judge.get("sentences")
     sentence_ids = [item.get("sourceSentenceId") for item in sentences or [] if isinstance(item, dict)]
     counts = judge.get("counts", {})
+    accepted_ids = _operator_accepted_ids(judge.get("operatorAcceptance"), manifest_issues)
+
+    def sentence_ok(item):
+        return ((item.get("verdict") == "pass" and item.get("risk") != "high"
+                 and set(item.get("checks", {})) == MACHINE_JUDGE_CHECKS
+                 and all(item["checks"][name] == "pass" for name in MACHINE_JUDGE_CHECKS)
+                 and item.get("unresolvedIssues") == [])
+                or _accepted_timing_failure(item, accepted_ids))
+
     pass_state = bool(
         judge.get("status") == "approved_for_layer2_shadow"
         and judge.get("layer2DevelopmentEligible") is True
@@ -301,19 +337,13 @@ def _machine_judge_payload(
         and len(deterministic["checks"]) == sum(isinstance(item, dict) for item in deterministic["checks"])
         and deterministic.get("issues") == []
         and sentence_ids == source_sentence_ids
-        and all(
-            item.get("verdict") == "pass"
-            and item.get("risk") != "high"
-            and set(item.get("checks", {})) == MACHINE_JUDGE_CHECKS
-            and all(item["checks"][name] == "pass" for name in MACHINE_JUDGE_CHECKS)
-            and item.get("unresolvedIssues") == []
-            for item in sentences or [] if isinstance(item, dict)
-        )
+        and all(sentence_ok(item) for item in sentences or [] if isinstance(item, dict))
         and len(sentences or []) == len(source_sentence_ids)
         and counts.get("sourceSentences") == len(source_sentence_ids)
         and counts.get("sourceUnits") > 0
         and counts.get("manifestIssues") == len(manifest_issues)
-        and counts.get("sentencePass") == len(source_sentence_ids)
+        and counts.get("sentencePass") + counts.get("operatorAcceptedSentences", 0) == len(source_sentence_ids)
+        and counts.get("operatorAcceptedSentences", 0) == len(accepted_ids)
         and counts.get("sentenceFail") == 0
         and counts.get("highRiskSentences") == 0
         and isinstance(judge.get("requestIds"), list) and bool(judge["requestIds"])
@@ -421,11 +451,21 @@ def build_package(
     # A long intact clause is a latency warning when both reviews explicitly
     # accept this exact manifest. Keep the warning in the bound anchor manifest.
     accepted_anchor_warnings = machine_judge_pass and review["humanApproval"]
+    # A word-duration outlier clears only when the judge receipt's operator acceptance
+    # names that exact word and the human source review approves the same manifest.
+    accepted_outliers = set()
+    if accepted_anchor_warnings and machine_judge_path is not None:
+        acceptance = read_object(machine_judge_path.resolve(), "English source machine judge receipt").get("operatorAcceptance")
+        accepted_outliers = {(item.get("sourceSentenceId"), item.get("wordId"))
+                             for item in (acceptance or {}).get("items", [])
+                             if item.get("issueType") == "alignment_word_duration_outlier"}
     issues: list[dict[str, Any]] = [
         {"stage": "anchors", "type": str(item.get("type", "unknown_anchor_issue")), "detail": item}
         for item in manifest_issues if isinstance(item, dict)
         and not (accepted_anchor_warnings
-                 and item.get("type") in MACHINE_AND_HUMAN_REVIEWABLE_ANCHOR_ISSUES)
+                 and (item.get("type") in MACHINE_AND_HUMAN_REVIEWABLE_ANCHOR_ISSUES
+                      or (item.get("type") == "alignment_word_duration_outlier"
+                          and (item.get("sourceSentenceId"), item.get("wordId")) in accepted_outliers)))
     ]
     issues.extend(source_gate_issues(media, start, end, approval_pass))
     for name, value in review["checks"].items():

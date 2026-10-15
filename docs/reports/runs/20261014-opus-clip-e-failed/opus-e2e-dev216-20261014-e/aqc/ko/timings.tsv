@@ -1,0 +1,5 @@
+stage	status	seconds
+discover	pass	0.0
+ko.track-check	pass	0.3
+ko.secondary-asr	pass	1.5
+ko.audio-qc	pass	0.3

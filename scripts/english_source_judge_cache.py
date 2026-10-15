@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import fcntl
+import inspect
 import json
 import os
 from pathlib import Path
@@ -9,6 +10,8 @@ import tempfile
 from typing import Any, Callable
 
 from scripts import sermon_sentence_interpretation as contract
+from scripts import api_cli_outcomes as outcomes
+from scripts.production_spark_admission import SessionBoundCaller
 from scripts.run_sentence_interpretation_models import RUN_SCHEMA, _model_result
 
 
@@ -37,6 +40,16 @@ def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
     # Preserve the established request identity and receipt format. Both prewarm
     # and final runs resolve out to the same canonical cache root.
     request = {'schemaVersion': RUN_SCHEMA, 'stage': stage, 'payload': payload}
+    outcome_identity = None
+    if isinstance(caller,SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
+        outcome_identity = outcomes.request_identity(caller.caller,(api_key,payload),{},caller.purpose)
+        request['apiCliRequestSha256'] = outcome_identity
+        # A valid local cache does not waive an unresolved sibling operation.
+        # Check the shared scope read-only before creating cache metadata.
+        arguments = inspect.signature(caller.caller).bind(api_key, payload)
+        arguments.apply_defaults()
+        outcomes.assert_replay_admitted(caller.outcome_directory, purpose=caller.purpose,
+            binding=outcomes.execution_binding(caller.caller, arguments.arguments))
     request_hash = contract.json_sha256(request)
     directory = out.resolve() / 'cache'
     directory.mkdir(parents=True, exist_ok=True)
@@ -51,13 +64,27 @@ def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
                 raise ValueError('Cached L1 request or response identity changed')
         else:
             if marker.exists():
-                raise ValueError(f'Unknown L1 request outcome; reconcile original response before retry: {marker}')
-            admission = getattr(caller, 'admit_resource', None)
-            if admission is not None:
-                admission(payload)
-            _atomic(marker, {'requestSha256': request_hash, 'request': request,
-                             'status': 'started_response_unconfirmed'})
-            response = caller(api_key, payload)
+                saved=json.loads(marker.read_text())
+                if (outcome_identity is None or saved.get('request') != request
+                        or saved.get('requestSha256') != request_hash):
+                    raise ValueError(f'Unknown L1 request outcome; reconcile original response before retry: {marker}')
+                response=outcomes.recover(caller.outcome_directory,outcome_identity,caller.purpose)
+            else:
+                admission = getattr(caller, 'admit_resource', None)
+                if admission is not None:
+                    admission(payload)
+                def mark_started():
+                    _atomic(marker, {'requestSha256': request_hash, 'request': request,
+                                     'status': 'started_response_unconfirmed'})
+                if outcome_identity is not None:
+                    # Shared unknowns can refuse this request before dispatch.
+                    # Only admitted new work gets a marker; returned replay does
+                    # not need one, and genuine unknowns keep their marker.
+                    with outcomes.before_dispatch(mark_started):
+                        response = caller(api_key, payload)
+                else:
+                    mark_started()
+                    response = caller(api_key, payload)
             # Save before parsing: an invalid returned response cannot trigger a
             # second paid call. A crash before this save leaves the marker unknown.
             receipt = {'schemaVersion': RUN_SCHEMA, 'request': request,

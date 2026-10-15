@@ -1,0 +1,6 @@
+stage	status	elapsedSeconds
+initial_alternative	fail	1.01
+shared_connector	fail	1.06
+numeric_atom	fail	1.02
+connector_token_import	fail	3.42
+final	pass	1.01

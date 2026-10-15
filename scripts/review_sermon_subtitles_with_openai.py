@@ -53,9 +53,9 @@ Rules:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--outdir", type=Path, required=True)
-    parser.add_argument("--model", default="gpt-5.6")
+    parser.add_argument("--model", default="gpt-6.1-sol")
     parser.add_argument("--sermon-start-seconds", type=float, help="Verified archive offset; omit to export only relative subtitles.")
-    parser.add_argument("--reasoning-effort", choices=["low", "medium", "high"], default="high")
+    parser.add_argument("--reasoning-effort", choices=["low", "medium", "high"], default="medium")
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--workers", type=int, default=3)
     return parser.parse_args()
@@ -97,6 +97,7 @@ def batch_payload(
     start_index: int,
     model: str,
     reasoning_effort: str,
+    *, caller=None,
 ) -> dict:
     before = all_segments[start_index - 1] if start_index > 0 else None
     after_index = start_index + len(batch)
@@ -128,17 +129,20 @@ def review_batch(
     cache_dir: Path,
     model: str,
     reasoning_effort: str,
+    *, caller=None,
 ) -> dict:
-    payload = batch_payload(all_segments, batch, start_index, model, reasoning_effort)
+    from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract, legacy_text_execution_identity
+    payload = bounded_legacy_chat_payload(batch_payload(all_segments, batch, start_index, model, reasoning_effort))
+    execution = legacy_text_execution_identity(api_key, payload, caller=caller)
     identity = hashlib.sha256(
-        json.dumps({"promptVersion": PROMPT_VERSION, "payload": payload},
+        json.dumps({"promptVersion": PROMPT_VERSION, "cacheContract": legacy_text_cache_contract(), "executionIdentity": execution, "payload": payload},
                    sort_keys=True, ensure_ascii=False).encode("utf-8")
     ).hexdigest()
     cache = cache_dir / f"review_{batch[0]['id']:04d}_{batch[-1]['id']:04d}.{identity}.json"
     if cache.exists():
         parsed = read_json(cache)
     else:
-        result = chat_json(
+        result = (caller or chat_json)(
             api_key,
             payload,
         )
@@ -184,6 +188,10 @@ def main() -> int:
     cache_dir = args.outdir / "review_windows"
     cache_dir.mkdir(parents=True, exist_ok=True)
 
+    from scripts.production_spark_admission import SessionBoundCaller
+    caller = SessionBoundCaller(chat_json, purpose="subtitle-review",
+                                requires_spark=False, outcome_directory=args.outdir / "api-cli-outcomes")
+
     def run_one(item: tuple[int, list[dict]]) -> tuple[int, dict]:
         start, batch = item
         parsed = review_batch(
@@ -194,6 +202,7 @@ def main() -> int:
             cache_dir,
             args.model,
             args.reasoning_effort,
+            caller=caller,
         )
         print(f"reviewed {batch[0]['id']}-{batch[-1]['id']}", flush=True)
         return start, parsed

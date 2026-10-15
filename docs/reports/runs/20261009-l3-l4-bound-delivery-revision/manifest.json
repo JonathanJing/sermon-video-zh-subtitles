@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261009-l3-l4-bound-delivery-revision",
+  "runs": [
+    {
+      "label": "run-02",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/l3-l4-bound-delivery-20261009/run-02",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "run-02",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 470,
+      "truncated": false,
+      "sha256": "1df900dfe667dfd6086089a0519d87c0d83eec23debabe372d3581d7663821c9",
+      "redactions": {}
+    },
+    {
+      "run": "run-02",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 559,
+      "truncated": false,
+      "sha256": "9d8f5273569b392d05b53b5d421dbff30d8525d43d24ad12ca2a8f0f42c42cd2",
+      "redactions": {}
+    },
+    {
+      "run": "run-02",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 50,
+      "truncated": false,
+      "sha256": "090eed467ce10a07e0b58bc44fb4e30a216cbc33986aa5d1272a345ee64746fa",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

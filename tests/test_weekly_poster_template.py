@@ -22,6 +22,13 @@ class TemplateTests(unittest.TestCase):
         return dict(**{k:source[k] for k in ('pageId','sourceIdentitySha256','contentSha256')},
                     title='Jesus Judges and Keeps', series='Revelation', scripture='Revelation 6–8:1')
 
+    def test_title_copy_stays_on_one_line_without_losing_words(self):
+        for locale, title in [('zh-Hans','耶稣审判并保守'),
+                              ('ko','예수님은 심판하시고 지키십니다'),
+                              ('es','Jesús juzga y guarda')]:
+            self.assertEqual(template.title_lines(title, locale), title)
+        self.assertEqual(template.title_lines('Jesus\nJudges and Keeps', 'en'), 'Jesus Judges and Keeps')
+
     def test_fourth_artwork_never_becomes_english_content_release(self):
         bundles, _ = self.load()
         template.add_english_reference(bundles, self.reference(bundles))

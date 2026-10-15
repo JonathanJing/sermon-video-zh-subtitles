@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-clip-e2e-final-evidence-v1",
+  "pageId": "mockup-dev-clip-20261011-u216-231-d",
+  "settledUsd": 6.759385,
+  "status": "dev_http_and_browser_verified",
+  "humanApproval": false,
+  "physicalDevice": "not_run",
+  "venueAcceptance": "not_run",
+  "evidence": {
+    "workflow": {
+      "relativePath": "l4/workflow/run-report.json",
+      "sha256": "a3b7bc2cc08aa3f42803d96fdbcd81b1e8958fac5873d2838ec023f5092701ec"
+    },
+    "httpReadback": {
+      "relativePath": "l4/workflow/live-readback-1791998602437650000.json",
+      "sha256": "f96b46b88459fee5299253886671d343dfa96920d2dad68622182581ff786819"
+    },
+    "browserInitial": {
+      "relativePath": "l4/browser-smoke.json",
+      "sha256": "ad5796dcec8c1e13b470a18e35bf7e55af8234c51ce54a42a1d456af937c8b4b"
+    },
+    "browserFinal": {
+      "relativePath": "l4/browser-smoke-settle15s-all.json",
+      "sha256": "0d3f7be1c9068878282f6eedaaa02b12bdcf8f340a35c6854ffa8fd9cb2dc7ae"
+    }
+  }
+}

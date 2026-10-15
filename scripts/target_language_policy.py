@@ -319,12 +319,60 @@ def verify_shadow_term_evidence(policy: dict[str, Any], candidate: dict[str, Any
             raise ValueError("Shadow approval does not cover the unchanged clip-scoped term")
 
 
+# Per-run translator choice (historical): an Opus translator with the Sol reviewer. Its freeze
+# stays refused; already frozen identities replay cache-only.
+TRANSLATOR_BACKENDS = {"openai_api": ("gpt-6.1-sol", "high"), "claude_cli": ("claude-opus-5-5", "high")}
+# Per-run Layer 2 backend: translator and reviewer together, frozen into the policy hash.
+# claude_cli_opus (2026-10-14 user decision) runs both roles through the subscription-login
+# Claude Code CLI; like Sol, the translator is high and the independent reviewer medium, so the
+# role of every call stays identifiable from its model and effort.
+LAYER2_BACKENDS = {
+    "openai_api": {"translator": ("gpt-6.1-sol", "high"), "reviewer": ("gpt-6.1-sol", "medium")},
+    "claude_cli_opus": {"translator": ("claude-opus-5-5", "high"), "reviewer": ("claude-opus-5-5", "medium")},
+}
+
+
+def layer2_backend(policy: dict[str, Any]) -> str | None:
+    """The Layer 2 backend whose exact translator and reviewer pair this policy freezes, or None."""
+    pair = {role: (policy.get(role, {}).get("model"), policy.get(role, {}).get("reasoningEffort"))
+            for role in ("translator", "reviewer")}
+    return next((name for name, roles in LAYER2_BACKENDS.items() if roles == pair), None)
+
+
+def apply_layer2_backend(draft: dict[str, Any], backend: str) -> dict[str, Any]:
+    """Return a draft whose translator and reviewer are the backend's pair; prompts are untouched."""
+    if not isinstance(draft, dict) or "componentSha256" in draft:
+        raise ValueError("Layer 2 backend requires an unresolved policy draft without component hashes")
+    if backend not in LAYER2_BACKENDS:
+        raise ValueError(f"Unsupported Layer 2 backend: {backend}")
+    roles = LAYER2_BACKENDS[backend]
+    return {**draft, **{role: {**draft[role], "model": model, "reasoningEffort": effort}
+                        for role, (model, effort) in roles.items()}}
+
+
+def apply_translator_backend(draft: dict[str, Any], backend: str) -> dict[str, Any]:
+    """Return a draft whose translator is the requested backend; reviewer is untouched."""
+    if not isinstance(draft, dict) or "componentSha256" in draft:
+        raise ValueError("Translator backend requires an unresolved policy draft without component hashes")
+    if backend not in TRANSLATOR_BACKENDS:
+        raise ValueError(f"Unsupported translator backend: {backend}")
+    model, effort = TRANSLATOR_BACKENDS[backend]
+    return {**draft, "translator": {**draft["translator"], "model": model, "reasoningEffort": effort}}
+
+
 def freeze_policy(draft: dict[str, Any], *, series_table: Path = SERIES_TABLE,
                   shadow_candidate: dict[str, Any] | None = None,
                   content_approval: dict[str, Any] | None = None,
                   language_review: str | None = None) -> dict[str, Any]:
     if not isinstance(draft, dict) or "componentSha256" in draft:
         raise ValueError("Freeze requires an unresolved policy draft without component hashes")
+    # A Claude model freezes only as the complete claude_cli_opus pair (both roles through the
+    # Claude CLI). A translator-only Claude draft beside the Sol reviewer stays refused; frozen
+    # identities of that experiment replay cache-only.
+    if any(str(draft.get(role, {}).get("model", "")).startswith("claude-")
+           for role in ("translator", "reviewer")) and layer2_backend(draft) != "claude_cli_opus":
+        raise ValueError("A Claude policy freezes only as the claude_cli_opus Layer 2 backend "
+                         "(translator claude-opus-5-5 high, reviewer claude-opus-5-5 medium)")
     policy = dict(bind_language_review(draft, language_review))
     if policy.get("schemaVersion") == POLICY_V2 and policy["sourceScope"]["termApprovalEvidence"]:
         if shadow_candidate is None or content_approval is None:
@@ -407,11 +455,23 @@ def main() -> None:
     parser.add_argument("--language-review", choices=LANGUAGE_REVIEW_MODES, default="draft",
                         help="draft: keep the draft's plugin binding (ko/es drafts without one get "
                              "the machine-QC plugin); machine_qc: bind ko/es-weekly-auto-v1")
+    parser.add_argument("--translator-backend", choices=tuple(TRANSLATOR_BACKENDS),
+                        help="Per-run translator for a new freeze; omit to keep the draft's translator "
+                             "(openai_api = gpt-6.1-sol high; translator-only claude_cli stays refused)")
+    parser.add_argument("--layer2-backend", choices=tuple(LAYER2_BACKENDS),
+                        help="Translator and reviewer together: openai_api (Sol high / Sol medium) or "
+                             "claude_cli_opus (Opus 5.5 high / Opus 5.5 medium through the subscription Claude CLI)")
     args = parser.parse_args()
     policy = json.loads(args.policy.read_text(encoding="utf-8"))
     if args.command == "freeze":
         if not args.out or args.out.exists():
             parser.error("freeze requires a new --out path")
+        if args.translator_backend and args.layer2_backend:
+            parser.error("choose --translator-backend or --layer2-backend, not both")
+        if args.translator_backend:
+            policy = apply_translator_backend(policy, args.translator_backend)
+        if args.layer2_backend:
+            policy = apply_layer2_backend(policy, args.layer2_backend)
         resolved = freeze_policy(
             policy, series_table=args.series_terminology,
             shadow_candidate=json.loads(args.shadow_candidate.read_text(encoding="utf-8"))

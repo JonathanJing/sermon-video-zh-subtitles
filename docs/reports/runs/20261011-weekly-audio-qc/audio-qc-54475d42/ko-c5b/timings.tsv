@@ -1,0 +1,6 @@
+stage	status	seconds
+discover	pass	10.1
+ko.track-check	pass	7.9
+ko.calibration.prefetch	pass	37.1
+ko.calibration	pass	1547.9
+ko.audio-waiver	fail	0.8

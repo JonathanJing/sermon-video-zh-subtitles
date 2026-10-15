@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "PR 388 targeted review-repair verification",
+  "status": "succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-10-14T16:49:44.154248+00:00",
+  "endedAt": "2026-10-14T16:49:46.229511+00:00"
+}
