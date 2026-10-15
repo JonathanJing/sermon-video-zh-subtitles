@@ -17,7 +17,7 @@ LOCAL_REQUIREMENTS = [
     {
         "id": "realtime_model_route",
         "description": "Realtime draft uses gpt-realtime-translate.",
-        "files": ["backend/realtime.py", "backend/worker.py", "web/app.js"],
+        "files": ["backend/realtime.py", "backend/worker.py", "apps/operator-web/app.js"],
         "needles": ["gpt-realtime-translate"],
     },
     {
@@ -29,7 +29,7 @@ LOCAL_REQUIREMENTS = [
     {
         "id": "browser_webrtc_public_caption_view",
         "description": "iPad/iPhone mic uses browser WebRTC and the public caption view consumes backend SSE deltas.",
-        "files": ["web/app.js", "backend/app.py"],
+        "files": ["apps/operator-web/app.js", "backend/app.py"],
         "needles": [
             "navigator.mediaDevices.getUserMedia",
             "new RTCPeerConnection()",
@@ -74,7 +74,7 @@ LOCAL_REQUIREMENTS = [
         "description": "Realtime captions expose draft/stable/final layers with stabilizer window and admin visibility.",
         "files": [
             "backend/realtime.py",
-            "web/app.js",
+            "apps/operator-web/app.js",
             "scripts/validate_public_caption_view_runtime.py",
             "scripts/run_realtime_stable_reconnect_smoke.py",
             "scripts/validate_realtime_session.py",
@@ -119,7 +119,7 @@ LOCAL_REQUIREMENTS = [
             "scripts/prepare_live_link_playback.py",
             "scripts/export_playback_captions.py",
             "scripts/validate_offline_chain.py",
-            "web/app.js",
+            "apps/operator-web/app.js",
         ],
         "needles": [
             "offline-caption-polisher",
