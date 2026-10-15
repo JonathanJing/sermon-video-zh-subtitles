@@ -1,6 +1,6 @@
 # Repository layout and module boundary proposal
 
-[中文](repository-layout-proposal.zh.md) · [Current system overview](../backend-workflow-system-design.zh-en.md) · [Four-layer contract](../multilingual-production-interfaces.zh.md)
+[中文](repository-layout-proposal.zh.md) · [Current repository map (zh)](repository-current-map.zh.md) · [Current system overview](../backend-workflow-system-design.zh-en.md) · [Four-layer contract](../multilingual-production-interfaces.zh.md)
 
 Status: **proposal for review, not approval to migrate**. Evidence date: 2026-10-02. Original inventory baseline: [dev@84e9d71d24ae86170efbb4c57755246f369ec9d9][baseline]. Amendment review baseline: [dev@8c64502404f9ae7110ee49aa990bcaeb2f8cd24d][review-baseline], fetched and checked against the remote branch on 2026-10-02. The original counts below remain tied to the original baseline; the delta inventory in §1.1 covers the amendment review. This document designs directory ownership, dependency boundaries and migration gates. It does not change production contracts or claim that the proposed packages, directories or unified execution capabilities already exist.
 
