@@ -70,7 +70,8 @@ class CompletionTests(unittest.TestCase):
         # Isolate the real Source predecessor gate using in-memory upstream
         # inputs. Stop immediately after it, before alignment or output writes.
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            # Resolve like _safe_path does (macOS /var -> /private/var).
+            root = Path(directory).resolve()
             config = dict(runId='a' * 64, sourceAudioSha256='c' * 64,
                 sourceMediaSha256='d' * 64, sourceClipSha256='e' * 64,
                 sourceWindowSeconds=[0, 1], totalWallSeconds=60)
