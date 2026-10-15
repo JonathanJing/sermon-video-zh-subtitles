@@ -1,7 +1,7 @@
 {
   "hosting": {
     "site": "ai-for-god-tongxing-support",
-    "public": "public",
+    "public": "../../../apps/support-web",
     "ignore": [
       "**/.*",
       "**/node_modules/**"
