@@ -48,7 +48,7 @@ flowchart LR
 
 普通浏览器不能直接读写 Firestore，数据库安全规则全部拒绝；只有 API 专用运行身份获得该命名库限定的数据权限。构建身份单独授权专用镜像仓库、源码桶对象和构建日志，不复用字幕发布身份，也不依赖默认账号的 Editor 权限。
 
-API 校验来源、JSON 类型/大小、音频允许目录、字段和序号，设定单会话、全局分钟/日创建限额。Origin 检查不能证明真实用户，额外防滥用约束见 [API 合同](../experiments/sermon-dubbing-poc/feedback-api/README.zh.md)。最少实例数 0、最多 2；配额控制不等于账单上限。
+API 校验来源、JSON 类型/大小、音频允许目录、字段和序号，设定单会话、全局分钟/日创建限额。Origin 检查不能证明真实用户，额外防滥用约束见 [API 合同](../services/feedback/README.zh.md)。最少实例数 0、最多 2；配额控制不等于账单上限。
 
 ## 发布、查看与回退
 
@@ -69,10 +69,10 @@ API 必须先部署匹配的音频允许目录，再发布依赖它的页面。�
 管理员在仓库根目录运行：
 
 ```sh
-GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node experiments/sermon-dubbing-poc/feedback-api/admin.mjs list 2026-08-30
-GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node experiments/sermon-dubbing-poc/feedback-api/admin.mjs metrics 2026-08-30
-GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node experiments/sermon-dubbing-poc/feedback-api/admin.mjs status RECORD_ID confirmed
-GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node experiments/sermon-dubbing-poc/feedback-api/admin.mjs status RECORD_ID fixed AUDIO_VERSION
+GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node services/feedback/admin.mjs list 2026-08-30
+GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node services/feedback/admin.mjs metrics 2026-08-30
+GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node services/feedback/admin.mjs status RECORD_ID confirmed
+GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node services/feedback/admin.mjs status RECORD_ID fixed AUDIO_VERSION
 ```
 
 需要本机 ADC/IAM 授权和 API 目录的已安装依赖，不提供公网管理路由。反馈列表一次最多 100 条；输出为私人审阅资料，不能提交 Git 或发布到 App。

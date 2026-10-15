@@ -138,7 +138,7 @@
 
 ## 6. 2026-10-13 听声定位后台统计与影子对照
 
-维护者要求在后台统计触发次数和定位成功率。Web 新增 `POST /api/alignment-usage`（集合 `alignmentUsageSessions30d`，30 天 TTL）和私有报表 `admin.mjs alignment`，字段与口径见 [API 说明](../experiments/sermon-dubbing-poc/feedback-api/README.zh.md#听声定位统计alignment-v1)。
+维护者要求在后台统计触发次数和定位成功率。Web 新增 `POST /api/alignment-usage`（集合 `alignmentUsageSessions30d`，30 天 TTL）和私有报表 `admin.mjs alignment`，字段与口径见 [API 说明](../services/feedback/README.zh.md#听声定位统计alignment-v1)。
 
 - 这是维护者对 `FIELD-01`“不借匿名收听统计开关自动上传新增诊断”的明确调整，范围仅限每次触发一条计数记录：结束状态、最远步骤、匹配原因、错误码、音量区间、matchFraction 区间、采集秒数和 100 ms 取整的总耗时。会话诊断详情、PCM、landmark、设备与路由仍只留在本机。
 - 沿用现有匿名统计开关：Web 默认开启、可关闭，关闭即撤回；iOS 尚未接入（且 iOS 统计默认关闭）。

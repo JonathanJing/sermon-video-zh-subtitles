@@ -45,7 +45,7 @@ API 凭据仍只存在当前页面内存中。每个页面、日期及重新开�
 
 ```sh
 GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev \
-  node experiments/sermon-dubbing-poc/feedback-api/admin.mjs usage \
+  node services/feedback/admin.mjs usage \
   --from 2026-09-05 --to 2026-09-05 \
   --out artifacts/sermon-dubbing/usage-report-20260905
 ```
@@ -56,7 +56,7 @@ GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev \
 
 可以按一次实际周日使用周期读取报表，先观察播放入口使用率、跳转/微调集中位置、音色试听需求、下载与大纲使用率，再结合主动反馈决定开发优先级。刚上线没有数据时应显示空状态，不用测试数据冒充真实用户。
 
-相关：[反馈与原有收听摘要](sermon-listening-feedback.zh.md)、[API 合同](../experiments/sermon-dubbing-poc/feedback-api/README.zh.md)。
+相关：[反馈与原有收听摘要](sermon-listening-feedback.zh.md)、[API 合同](../services/feedback/README.zh.md)。
 
 ## 2026-09-05 发布验证
 
