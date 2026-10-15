@@ -481,7 +481,11 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     _require(locale in LOCALES, "Machine waivers cover zh-Hans, ko and es only")
     _require(_machine_screened(package),
              "Audio waiver requires a complete machine-screened package with no human decision")
-    _schema(text_waiver, TEXT_WAIVER_SCHEMA)
+    _require(text_waiver.get("schemaVersion") in TEXT_WAIVER_SCHEMAS, "Unsupported text waiver schema")
+    _schema(text_waiver, text_waiver["schemaVersion"])
+    if text_waiver["schemaVersion"] == TEXT_WAIVER_SCHEMA_V2:
+        validate_text_waiver(text_waiver, candidate=candidate,
+                             source_sha=package["englishSourcePackageJsonSha256"])
     _require(text_waiver["targetLocale"] == locale
              and text_waiver["candidateJsonSha256"] == package["targetLanguageCandidateJsonSha256"]
              and text_waiver["englishSourcePackageJsonSha256"] == package["englishSourcePackageJsonSha256"]

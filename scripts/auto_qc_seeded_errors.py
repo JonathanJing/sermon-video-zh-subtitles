@@ -531,7 +531,8 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, ma
             note_runtime(result)
             trials += 1
             new = set(result["issues"]) - set(clean[index]["issues"])
-            hit = ("asr_mismatch_confirmed" in new if kind in ("wrong_sentence", "dropped_key_word")
+            hit = (bool({"asr_mismatch_confirmed", "asr_primary_protected_mismatch"} & new)
+                   if kind in ("wrong_sentence", "dropped_key_word")
                    else bool(new))
             if result["status"] == "fail" and hit:
                 detected += 1

@@ -223,6 +223,19 @@ def transcript_agrees(text: str, recognized: str, locale: str,
     return score(text, recognized, locale, threshold)[2]
 
 
+def primary_protected_mismatch(text: str, recognized: str, locale: str) -> bool:
+    """A primary ASR difference contains a negation or number in the frozen scorer.
+
+    A secondary ASR can normalize a missing word back into the expected sentence.
+    Such an opinion remains useful evidence, but cannot clear this material
+    difference in the primary transcript.
+    """
+    from scripts.screen_target_language_audio_units import key_word, score
+    _, differences, _ = score(text, recognized, locale, THRESHOLDS["asrMinSimilarity"])
+    return any(key_word(row["expected"], locale) or key_word(row["recognized"], locale)
+               for row in differences)
+
+
 # The runtime fields every ASR opinion records, for the primary and the secondary alike.
 # ``runtime`` holds whatever else the transport varies (backend, decoding, prompt and
 # language options, cache namespace, device); the rest must agree with the opinion itself.
@@ -424,6 +437,11 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
                                else transcript_agrees(row["text"], secondary["recognized"], locale, threshold))
             if asr == "fail":
                 issues.append("asr_mismatch_confirmed")
+            elif secondary is not None and primary_protected_mismatch(row["text"], primary["recognized"], locale):
+                # Both opinions were heard; a second ASR's semantic normalization
+                # cannot erase a primary report of a missing negation or number.
+                asr = "fail"
+                issues.append("asr_primary_protected_mismatch")
         prior = ledger.prior(repair_position, row.get("sourceUnitIds"))
         if issues:
             status, action = "fail", next_action(prior)

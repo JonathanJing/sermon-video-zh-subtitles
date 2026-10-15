@@ -326,7 +326,9 @@ class AudioQcTests(unittest.TestCase):
         self.assertEqual(audio_qc.asr_decision(False, True), "pass")
         self.assertEqual(audio_qc.asr_decision(False, False), "fail")
         units = fixtures.units("zh-Hans")
-        low = audio_qc.asr_opinion(fixtures.misheard(units[0]["text"]), audio=units[0]["wav"], text=units[0]["text"],
+        benign_miss = units[0]["text"].replace("耶稣在这里对撒狄的教会说话", "耶稣在这里讲话")
+        self.assertFalse(audio_qc.primary_protected_mismatch(units[0]["text"], benign_miss, "zh-Hans"))
+        low = audio_qc.asr_opinion(benign_miss, audio=units[0]["wav"], text=units[0]["text"],
             locale="zh-Hans", model=fixtures.PRIMARY_ASR,
             settings=fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR])
         units[0] = {**units[0], "asr": {"primary": low}}
@@ -343,6 +345,31 @@ class AudioQcTests(unittest.TestCase):
         units[0] = {**units[0], "asr": {"primary": low, "secondary": same}}
         with self.assertRaisesRegex(ValueError, "different model"):
             audio_qc.screen(units, "zh-Hans")
+
+    def test_secondary_cannot_clear_primary_missing_negation(self):
+        units = fixtures.units("zh-Hans")
+        text = "她名叫喇合。神把她留下，并不是因为她忠心，也不是因为她勇敢。"
+        heard = "他名叫拉和。神把他留下，并是因为他忠心，也不是因为他勇敢。"
+        units[0]["text"] = text
+        primary = audio_qc.asr_opinion(heard, audio=units[0]["wav"], text=text,
+                                       locale="zh-Hans", model=fixtures.PRIMARY_ASR,
+                                       settings=fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR])
+        secondary = audio_qc.asr_opinion(text, audio=units[0]["wav"], text=text,
+                                         locale="zh-Hans", model=fixtures.SECONDARY_ASR,
+                                         settings=fixtures.ASR_SETTINGS[fixtures.SECONDARY_ASR])
+        self.assertTrue(audio_qc.primary_protected_mismatch(text, heard, "zh-Hans"))
+        units[0]["asr"] = {"primary": primary, "secondary": secondary}
+        row = audio_qc.screen(units, "zh-Hans")["results"][0]
+        self.assertEqual(row["asrDecision"], "fail")
+        self.assertIn("asr_primary_protected_mismatch", row["issues"])
+        self.assertEqual(row["status"], "fail")
+        for locale, expected, missing in (
+                ("zh-Hans", "这不是第三章。", "这是第三章。"),
+                ("ko", "그는 가지 않았습니다.", "그는 갔습니다."),
+                ("es", "No fueron tres personas.", "Fueron tres personas."),
+                ("es", "Fueron tres personas.", "Fueron personas.")):
+            with self.subTest(locale=locale, missing=missing):
+                self.assertTrue(audio_qc.primary_protected_mismatch(expected, missing, locale))
 
     def test_asr_similarity_is_the_score_of_its_transcript(self):
         units = fixtures.units("ko")
