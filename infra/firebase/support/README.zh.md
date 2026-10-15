@@ -2,4 +2,6 @@
 
 从现有生产版本 `7497a1c38b5498a7` 保存的公开站点；此次仅修改隐私政策，说明 build 42 起的自愿匿名语言统计。
 
-发布：在本目录运行 `firebase deploy --only hosting:ai-for-god-tongxing-support --project ai-for-god-caption-dev --non-interactive`。公开页面不包含统计报表或用户数据。
+页面源码在 [`apps/support-web/`](../../../apps/support-web/)，`firebase.json` 的 `public` 指向该目录，不经构建直接上传；该目录只放这四个公开文件，放入的任何非点文件都会被一并发布。
+
+发布：在本目录（`infra/firebase/support/`）运行 `firebase deploy --only hosting:ai-for-god-tongxing-support --project ai-for-god-caption-dev --non-interactive`。公开页面不包含统计报表或用户数据。
