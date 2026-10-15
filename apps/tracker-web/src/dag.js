@@ -1,6 +1,6 @@
 import { tr } from './i18n.js';
 import { formatDuration } from './timing.js';
-import { sanitizeDag } from './dag-contract.js';
+import { sanitizeDag } from '../../../packages/tracker-contract/src/dag-contract.js';
 import { snapshotFreshness } from './snapshot-state.js';
 
 const el = (tag, cls = '', text) => { const node = document.createElement(tag); node.className = cls; if (text !== undefined) node.textContent = text; return node; };

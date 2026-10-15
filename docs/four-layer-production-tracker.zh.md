@@ -4,7 +4,7 @@ Dev 跨层优先级与稳定任务 ID 统一维护在 [Dev 统一 Backlog](backl
 
 本页是**每次制作**的操作清单和状态入口。正式包、门禁和失效规则以[四层接口合同](multilingual-production-interfaces.zh.md)为准；本地 tracker 是工作记录，**不能**凭勾选、文件路径或百分比授予人工批准、发布资格、HTTP、设备或现场验收。
 
-需要跨设备查看时，使用[Firebase 四层公开 Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md)：它从本地账本、source monitor 与发行收据生成脱敏的实时只读页面，显示每语言页面、语音和声纹状态。
+需要跨设备查看时，使用[Firebase 四层公开 Tracker](../apps/tracker-web/README.zh.md)：它从本地账本、source monitor 与发行收据生成脱敏的实时只读页面，显示每语言页面、语音和声纹状态。
 
 ## 四层制作 Backlog
 
@@ -50,7 +50,7 @@ Layer 4 的发布包、catalog、Web／iOS 语言选择、回滚和验证矩阵�
 
 ### 多语言人工审核后台 Backlog
 
-- [ ] **REV-001（P1）私有多同工审核工作台**：为不同语言和职责的同工提供登录后的待审队列、逐段审核窗口与明确的决定按钮；与现有[公开只读 Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md)分开。[远程审核到本机续跑通信设计](tracker-remote-review-bridge.zh.md)规定 Firebase 指令队列、本机领取、收据校验和 Agent 交接。先交付 Layer 2 译文与 Layer 3 音轨审核，再接 Layer 1 英文来源和 Layer 4 发布验收。
+- [ ] **REV-001（P1）私有多同工审核工作台**：为不同语言和职责的同工提供登录后的待审队列、逐段审核窗口与明确的决定按钮；与现有[公开只读 Tracker](../apps/tracker-web/README.zh.md)分开。[远程审核到本机续跑通信设计](tracker-remote-review-bridge.zh.md)规定 Firebase 指令队列、本机领取、收据校验和 Agent 交接。先交付 Layer 2 译文与 Layer 3 音轨审核，再接 Layer 1 英文来源和 Layer 4 发布验收。
   - **分配和权限**：任务按 `pageId + layer + targetLocale + artifact hash + unit/group ID` 定位；管理员分配审核者及其语言／步骤权限。同工只读取获授权的原文、译文、音视频和审核证据；公开 Tracker 不接收正文、私有媒体或审核原因。不同语言可并行认领；当前正式 Layer 2 候选只接受同一审核者的全部组收据。同语言任务产生首个决定后若移交，新审核者须重审整份候选；跨审核者聚合要另做版本化 schema／validator 迁移。
   - **需要审核的窗口**：Layer 1 对照原视频、英文逐字稿、词时间、句界和来源范围；Layer 2 左右对照英文单元与本语言译文，显示覆盖、术语／经文出处、机器复核和风险标记；Layer 3 对照原视频、已批准文字、逐单元与整轨音频、字幕 cue、排程及回转写问题，提供 1 倍速和时间点定位；Layer 4 展示同语言页面字段、清单、线上 HTTP／Range 与客户端验收项目。每个窗口明确显示当前 hash、状态、尚未审核的范围和上游变更。
   - **人工输入与按钮**：逐段可输入改文、时间点／时间范围、问题类别与说明，并可“保存草稿”“标记问题”“提交修订”“通过当前段”“退回”。Layer 1 的“批准英文范围与锚点”、Layer 2 的“批准本语言文字”、Layer 3 的“批准本语言整轨”分别在规定范围已审完且无未解决问题时启用；Layer 3 还须记录全文 1 倍速听审与同视频同步检查。Layer 4 分开记录发布、HTTP、设备和现场验收，不用一个“通过”按钮合并这些状态。批量批准须预览所含 ID 与 hash。

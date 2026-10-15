@@ -80,7 +80,7 @@ test('concurrent starts reserve one PID before health; lifecycle commands respec
 test('Git ignores derived health, reservation, lock and temporary files', () => {
   for (const suffix of ['publisher-health.json', 'publisher-health.json.123.tmp',
     'publisher-runtime.json', 'publisher-runtime.json.123.tmp', 'publisher-start.lock']) {
-    const path = `experiments/sermon-dubbing-poc/tracker-admin/watch-config.json.${suffix}`;
+    const path = `tools/ops/tracker-publisher/watch-config.json.${suffix}`;
     assert.equal(execFileSync('git', ['check-ignore', path], { encoding: 'utf8' }).trim(), path);
   }
 });

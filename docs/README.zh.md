@@ -40,7 +40,7 @@
 - [机器质检豁免与 TTS 前时长预算](machine-quality-waiver.zh.md)：三语机器质检自动发布、单句 4 次修复、5% 规则、注错校准与 8 秒预测排程
 - [Dev 统一 Backlog](backlog.zh.md)：跨 Layer 1–4、Firebase Dev、Web／iOS、现场对齐、CI 与审核工具的唯一顶层优先级
 - [四层制作 Tracker](four-layer-production-tracker.zh.md)：单次制作的每层检查点、状态记录和有条件 ETA
-- [Firebase 四层公开 Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md)：每周源视频、三语分层制作、页面／语音／声纹的脱敏实时只读视图
+- [Firebase 四层公开 Tracker](../apps/tracker-web/README.zh.md)：每周源视频、三语分层制作、页面／语音／声纹的脱敏实时只读视图
 - [稳定 post-live 双 PDF 流程](stable-post-live-reading-pdf-workflow.zh.md)及[英文版](stable-post-live-reading-pdf-workflow.md)
 - [中文阅读版质量规范](chinese-reading-edition-quality.zh.md)
 - [系列名称表](series-terminology.zh.md)：页面、字幕、阅读稿、大纲和配音共用术语

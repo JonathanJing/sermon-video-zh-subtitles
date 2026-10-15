@@ -1,7 +1,7 @@
 {
   "hosting": {
     "target": "sermonTrackerAdmin",
-    "public": "dist",
+    "public": "../../../apps/tracker-web/dist",
     "ignore": ["**/.*", "**/node_modules/**"],
     "headers": [
       {

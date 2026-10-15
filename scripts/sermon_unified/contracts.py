@@ -97,7 +97,7 @@ def required_modules():
     # Producers late-load the legacy renderer/publisher and copy its web assets.
     # Enumerate tracked source files, never node_modules or ignored output trees.
     # packages/ holds the installable production and fingerprint code that moved out of scripts/.
-    tracked=subprocess.run(['git','ls-files','--','experiments/sermon-dubbing-poc','packages','apps/listening-web','services'],cwd=ROOT,
+    tracked=subprocess.run(['git','ls-files','--','experiments/sermon-dubbing-poc','packages','apps/listening-web','apps/tracker-web','services','tools','infra'],cwd=ROOT,
                            capture_output=True,text=True,timeout=10)
     if tracked.returncode:
         raise ContractError('legacy_execution_closure_unavailable')

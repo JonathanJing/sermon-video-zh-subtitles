@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
-import { sanitizeSnapshot } from './sanitize.mjs';
+import { sanitizeSnapshot } from '../../../packages/tracker-contract/src/sanitize.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '../../..');
