@@ -80,8 +80,13 @@ test('separate original / video / synthesis controllers enforce one active media
   media.forEach((item, i) => { const controller = createDemoPlayer(item, { pauseOthers, resolveURL: async () => `blob:${i}` }); controller.select({ path: `clip${i}` }); controllers.push(controller); });
   for (let i = 0; i < 3; i++) { await controllers[i].toggle(); assert.deepEqual(media.map(item => item.paused), media.map((_, index) => index !== i)); }
 });
-test('Dev and production renderers and styles are byte identical', async () => {
-  for (const name of ['speaker-clip-demos.mjs', 'voice-demo.css']) assert.equal(await readFile(new URL(`./${name}`, import.meta.url), 'utf8'), await readFile(new URL(`../../firebase/dev/public/${name}`, import.meta.url), 'utf8'));
+test('Dev and production share one renderer and stylesheet: the reader entry ships no copies', async () => {
+  for (const name of ['speaker-clip-demos.mjs', 'voice-demo.css']) {
+    await readFile(new URL(`./${name}`, import.meta.url), 'utf8');
+    await assert.rejects(readFile(new URL(`./reader/${name}`, import.meta.url), 'utf8'), { code: 'ENOENT' });
+  }
+  // The Dev panel imports the shared renderer by sibling name; stagings copy both into one public/ directory.
+  assert.match(await readFile(new URL('./reader/voice-demo.mjs', import.meta.url), 'utf8'), /from '\.\/speaker-clip-demos\.mjs'/);
 });
 
 test('a cancelled A download is never cached or played as B after language switch', async () => {
