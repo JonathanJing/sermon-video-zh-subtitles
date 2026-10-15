@@ -89,6 +89,27 @@ class SpecificationTests(unittest.TestCase):
                          (2, "dev", 120.0))
         self.assertEqual(spec["spark"]["sessionId"], "clip-e2e-u101-test")
 
+    def test_dev_delivery_render_override_is_bound_before_dispatch(self):
+        layer3 = {"attestationTemplates": {"ko": "ko-att.json", "es": "es-att.json"},
+                  "speakerRegistry": "registry.json",
+                  "renderOverrides": {"ko": {"seed": 43, "unitInstructions": "ko-instructions.json"}}}
+        spec = subject.load_spec(spec_files(self.base, layer3=layer3))
+        instruction_path = self.base / "ko-instructions.json"
+        self.assertEqual(spec["layer3"]["renderOverrides"]["ko"]["unitInstructions"],
+                         str(instruction_path.resolve()))
+        instruction_path.write_text("{}")
+        job_path = self.base / "job.json"
+        job_path.write_text("{}")
+        with mock.patch("scripts.render_formal_target_language_speech.unit_instructions") as validate:
+            args = subject.delivery_render_args(SimpleNamespace(spec=spec), "ko", job_path)
+        validate.assert_called_once_with({}, instruction_path.resolve())
+        self.assertEqual(args, ["--seed", "43", "--unit-instructions", str(instruction_path.resolve())])
+        with self.assertRaisesRegex(ValueError, "renderOverrides"):
+            subject.load_spec(spec_files(self.base, layer3={**layer3, "renderOverrides": {
+                "ko": {"seed": "43", "unitInstructions": "ko-instructions.json"}}}))
+        with self.assertRaisesRegex(ValueError, "isolated Dev"):
+            subject.load_spec(spec_files(self.base, layer3=layer3, openai={"environment": "prod"}))
+
     def test_group_acceptance_is_scoped_to_a_run_locale(self):
         spec = subject.load_spec(spec_files(self.base, qc={
             "maxRevisions": 0, "humanAcceptanceByLocale": {"ko": "ko-acceptance.json"},

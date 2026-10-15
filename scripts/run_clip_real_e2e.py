@@ -141,6 +141,17 @@ def load_spec(path: Path) -> dict:
         require(isinstance(overrides, dict) and set(overrides) <= set(locales),
                 f"layer3.{field} must name run locales")
         layer3[field] = {k: resolve(v) for k, v in overrides.items()}
+    render_overrides = layer3.get("renderOverrides", {})
+    require(isinstance(render_overrides, dict) and set(render_overrides) <= set(locales),
+            "layer3.renderOverrides must name run locales")
+    for locale, override in render_overrides.items():
+        require(isinstance(override, dict) and set(override) == {"seed", "unitInstructions"}
+                and type(override["seed"]) is int and override["seed"] >= 0
+                and isinstance(override["unitInstructions"], str) and override["unitInstructions"],
+                f"layer3.renderOverrides.{locale} needs seed and unitInstructions")
+        override["unitInstructions"] = resolve(override["unitInstructions"])
+    require(not render_overrides or spec.get("openai", {}).get("environment", "dev") == "dev",
+            "delivery render overrides require an isolated Dev run")
     reused_audio = layer3.get("reuseAudioFrom", {})
     require(isinstance(reused_audio, dict) and set(reused_audio) <= set(locales),
             "layer3.reuseAudioFrom must name run locales")
@@ -907,6 +918,16 @@ def stage_reused_audio(run: Run, locale: str, code: str, binding: dict, q: dict)
              reusedFrom=str(prior), packageSha256=binding["packageSha256"])
 
 
+def delivery_render_args(run: Run, locale: str, job_path: Path) -> list[str]:
+    override = run.spec["layer3"].get("renderOverrides", {}).get(locale)
+    if not override:
+        return []
+    from scripts import render_formal_target_language_speech as renderer
+    instructions = Path(override["unitInstructions"])
+    renderer.unit_instructions(read(job_path), instructions)
+    return ["--seed", str(override["seed"]), "--unit-instructions", str(instructions)]
+
+
 def stage_audio(run: Run, locale: str, code: str):
     l3, q = run.dir / "l3" / locale, run.stages["qc." + locale]
     reused = run.spec["layer3"].get("reuseAudioFrom", {}).get(locale)
@@ -933,6 +954,7 @@ def stage_audio(run: Run, locale: str, code: str):
                                         *capability_args,
                                         "--clip-timeline-map", timeline, "--out", job_dir])
     from scripts import render_formal_target_language_speech as renderer
+    render_args = delivery_render_args(run, locale, job_dir / "job.json")
     renderer.validate_operation_policies(read(run.audio_operation_policies()), read(adapter),
                                          read(job_dir / "job.json"))
     require(run.runtime["speaker"]["id"] == read(adapter)["speakerId"]
@@ -952,7 +974,7 @@ def stage_audio(run: Run, locale: str, code: str):
     if not (l3 / "dispatch.result.json").exists():
         # The renderer exits 1 when its own unit screening flags units; the ASR screen below decides.
         run.sh(f"render.{locale}", [*spark, "render", *common, "--job", job_dir / "job.json", *inputs,
-                                    "--remote-name", raw, "--max-end-lag-seconds", lag], check=False)
+                                    "--remote-name", raw, "--max-end-lag-seconds", lag, *render_args], check=False)
         require(read(l3 / "dispatch.result.json")["outcome"] == "known_terminal", f"render.{locale}: unknown outcome")
     compact_job = l3 / f"spark-{compacted}" / "speech-job" / "job.json"
     if not (l3 / f"compact-{compacted}.result.json").exists():
