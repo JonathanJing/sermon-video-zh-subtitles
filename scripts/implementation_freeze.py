@@ -29,7 +29,8 @@ EXIT_CODE = 2
 
 def file_hashes(root: Path = ROOT) -> dict[str, str]:
     """Each hashed implementation file's own SHA-256, for explaining a mismatch."""
-    return {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in waiver.IMPLEMENTATION_FILES}
+    return {name: hashlib.sha256(waiver.implementation_path(name, root).read_bytes()).hexdigest()
+            for name in waiver.IMPLEMENTATION_FILES}
 
 
 def mismatch(expected: str, *, recorded_files: dict[str, str] | None = None, root: Path = ROOT) -> dict | None:
@@ -38,7 +39,7 @@ def mismatch(expected: str, *, recorded_files: dict[str, str] | None = None, roo
     the files that differ."""
     if not isinstance(expected, str) or not SHA.fullmatch(expected):
         raise ValueError("--expected-implementation must be the 64-hex implementation sha256 the run plan recorded")
-    current = waiver.implementation_sha256() if root == ROOT else _implementation_sha256(root)
+    current = waiver.implementation_sha256(root)
     if current == expected:
         return None
     files = file_hashes(root)
@@ -50,12 +51,6 @@ def mismatch(expected: str, *, recorded_files: dict[str, str] | None = None, roo
             "exitCode": EXIT_CODE,
             "advice": "Run the driver from the checkout the run plan froze, or start a new run plan on this code."}
 
-
-def _implementation_sha256(root: Path) -> str:
-    digest = hashlib.sha256()
-    for name in waiver.IMPLEMENTATION_FILES:
-        digest.update(name.encode("utf-8") + b"\0" + (root / name).read_bytes() + b"\0")
-    return digest.hexdigest()
 
 
 def add_argument(parser) -> None:

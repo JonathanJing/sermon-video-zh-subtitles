@@ -20,9 +20,10 @@ class ImplementationFreezeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             for name in waiver.IMPLEMENTATION_FILES:
-                (root / name).parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(freeze.ROOT / name, root / name)
-            frozen_hash = freeze._implementation_sha256(root)
+                destination = waiver.implementation_path(name, root)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(waiver.implementation_path(name), destination)
+            frozen_hash = waiver.implementation_sha256(root)
             frozen_files = freeze.file_hashes(root)
             self.assertEqual(frozen_hash, waiver.implementation_sha256())
             edited = root / "scripts/target_audio_auto_qc.py"
