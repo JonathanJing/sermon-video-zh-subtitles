@@ -74,7 +74,7 @@ print('isolated-interactive-import-ok')
             plan_path.write_text(json.dumps(plan))
             argv=[sys.executable,str(pilot.REPO/'scripts/run_sermon_prefect_dag.py'),'mock',
                   '--root',str(root),'--plan',str(plan_path)]
-            first=subprocess.run(argv,capture_output=True,text=True,timeout=120)
+            first=subprocess.run(argv,cwd=temp,capture_output=True,text=True,timeout=120)
             self.assertEqual(first.returncode,0,first.stderr[-6000:])
             snapshot=pilot.read(root/'snapshot.json')
             self.assertEqual(len(snapshot['nodes']),10)
@@ -106,7 +106,7 @@ print('isolated-interactive-import-ok')
                 if prefix=='text.':self.assertEqual(peak,2,'independent branches did not overlap')
             original={p:p.read_bytes() for p in (root/'nodes').rglob('*.json')}
             budget_before=(root/'mock-budget'/pilot.budget.STORE_ID/'state.json').read_bytes()
-            second=subprocess.run(argv,capture_output=True,text=True,timeout=120)
+            second=subprocess.run(argv,cwd=temp,capture_output=True,text=True,timeout=120)
             self.assertEqual(second.returncode,0,second.stderr[-4000:])
             self.assertEqual(original,{p:p.read_bytes() for p in original})
             self.assertEqual(budget_before,(root/'mock-budget'/pilot.budget.STORE_ID/'state.json').read_bytes())
