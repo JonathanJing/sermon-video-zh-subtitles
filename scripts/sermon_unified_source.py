@@ -23,8 +23,19 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts import build_english_source_package as english
-from scripts import canonical_layer2_controller as code
 from scripts import english_source_judge_cache as immutable
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import backend as _source
+
+
+class _CodeIdentity:
+    """Code identity through the Layer 1 port; `code.code_identity` stays a test seam."""
+    @staticmethod
+    def code_identity():
+        return _source.current().code.code_identity()
+
+
+code = _CodeIdentity()
 from scripts import judge_english_source_for_translation as judge
 from scripts import mfa_backend
 from scripts import sermon_accounting as accounting

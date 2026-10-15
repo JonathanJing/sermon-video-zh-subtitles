@@ -24,8 +24,19 @@ if str(ROOT) not in sys.path:
 
 from scripts import build_english_source_package as layer1  # noqa: E402
 from scripts import sermon_sentence_interpretation as anchors  # noqa: E402
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
 from scripts.english_source_judge_cache import cached_call  # noqa: E402
-from scripts.sermon_pipeline import chat_json  # noqa: E402
+from tongxing_production.source import backend as _source  # noqa: E402
+
+
+def chat_json(api_key, payload, retries=1, *, session_verifier=None):
+    # Provider transport arrives through the Layer 1 port; this name stays a
+    # module attribute so tests keep patching the judge's transport here.
+    return _source.current().provider.chat_json(api_key, payload, retries, session_verifier=session_verifier)
+
+
+def _implementation_sha256():
+    return _source.current().code.module_sha256(sys.modules[__name__])
 
 
 SCHEMA_VERSION = "sermon-english-source-machine-judge-v1"
@@ -392,7 +403,7 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
         if (existing.get("alignedSegmentsSha256") != layer1.file_sha256(aligned_path)
                 or existing.get("anchorManifestJsonSha256") != layer1.json_sha256(manifest)):
             raise ValueError("Existing machine judge receipt belongs to changed inputs")
-        if (existing.get("implementationSha256") != layer1.file_sha256(Path(__file__).resolve())
+        if (existing.get("implementationSha256") != _implementation_sha256()
                 or existing.get("model") != model
                 or existing.get("reasoningEffort") != effort
                 or existing.get("promptVersion") != PROMPT_VERSION):
@@ -488,7 +499,7 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
     invalidation_identity = {
         "alignedSegmentsSha256": layer1.file_sha256(aligned_path),
         "anchorManifestJsonSha256": layer1.json_sha256(manifest),
-        "implementationSha256": layer1.file_sha256(Path(__file__).resolve()),
+        "implementationSha256": _implementation_sha256(),
         "model": model,
         "reasoningEffort": effort,
         "promptVersion": PROMPT_VERSION,
@@ -548,8 +559,7 @@ def main() -> int:
     parser.add_argument("--prewarm", action="store_true", help="Populate the same cache without writing final judge receipt")
     parser.add_argument("--api-key-secret")
     args = parser.parse_args()
-    from scripts.sermon_openai_runtime import reject_secret_override
-    reject_secret_override(args.api_key_secret)
+    _source.current().provider.reject_secret_override(args.api_key_secret)
     if args.api_key_secret:
         from backend.cloud import access_secret
         api_key = access_secret(args.api_key_secret)
