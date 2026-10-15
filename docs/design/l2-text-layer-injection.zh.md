@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [现状地图](repository-current-map.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [L2 controller](../canonical-layer2-controller.zh.md) · [运行模型策略](../production-model-runtime-policy.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md) · [系列术语表](../series-terminology.zh.md)
 
-状态：**设计提案，待评审，未开始迁移**。盘点日期：2026-10-15。基线：`dev@683f866e`（L1 S0 [#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、S1 [#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487) 已合并；L1 S2 生产者批次正在另一会话进行，其工作区里的 `ports.py` 已新增 `Compute`、`Terminology`、`Measure`，本文按这三个记录会随 S2 合入来设计）。本文只定义 L2 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
+状态：**设计提案，待评审，未开始迁移**。盘点日期：2026-10-15。基线：`dev@9d4e89d8`（L1 S0 [#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、S1 [#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487)、S2 [#492](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/492) 已合并；S2 给 `ports.py` 加了 `Compute`、`Terminology`、`Measure`，并把 `build_english_source_package` 等四个生产者迁入 `tongxing_production.source`）。本文只定义 L2 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
 
 ## 1 为什么不能直接搬
 
@@ -12,25 +12,25 @@ L2 在统一 CLI 里有三个阶段入口：`layer2_binding`（`scripts/sermon_u
 
 | 入口 | 直接依赖 | 其中顶层导入 | 传递闭包 |
 |---|---|---|---|
-| `sermon_unified_layer2_binding.py` | 2 | 2 | 161 |
-| `canonical_layer2_controller.py` | 21 | 16 | 161 |
-| `canonical_layer2_budget.py` | 10 | 6 | 161 |
-| `produce_target_language_candidate.py` | 7 | 5 | 161 |
-| `run_target_language_models.py` | 20 | 11 | 161 |
-| 5 个入口 + 19 个插件文件合计 | — | — | 151（另加入口与插件自身，共 175 个节点） |
+| `sermon_unified_layer2_binding.py` | 2 | 2 | 165 |
+| `canonical_layer2_controller.py` | 21 | 16 | 165 |
+| `canonical_layer2_budget.py` | 10 | 6 | 165 |
+| `produce_target_language_candidate.py` | 7 | 5 | 165 |
+| `run_target_language_models.py` | 20 | 11 | 165 |
+| 5 个入口 + 19 个插件文件合计 | — | — | 155（另加入口与插件自身，共 179 个节点） |
 
 五个入口的闭包完全相同，因为 L2 内部是环：controller → run_models → controller（延迟），policy → candidate → rule_preflight → candidate，诊断插件延迟导入 candidate。闭包几乎是整个生产核心，原因有四个：
 
-1. **统一编排门面**：layer2_binding 为取 `contracts`、controller 为取 `resources.validate_policy`，都经 `scripts.sermon_unified`；这个门面绑定整个编排宿主，单它就多拉 23 个模块（不经门面时闭包为 128）。包内 `text/` 不能导入 orchestration（依赖方向是 orchestration → text），这两个面要变成端口或直接用 `contracts`。
-2. **跨到 L1**：candidate 用 `build_english_source_package.validate_ready_package` 和 `sermon_sentence_interpretation`；controller 用 `source_meaning_machine_adjudication.load_meaning_notes`（1410 行，归属是 L1 设计的待决项）。
+1. **统一编排门面**：layer2_binding 为取 `contracts`、controller 为取 `resources.validate_policy`，都经 `scripts.sermon_unified`；这个门面绑定整个编排宿主，单它就多拉 23 个模块（不经门面时闭包为 132）。包内 `text/` 不能导入 orchestration（依赖方向是 orchestration → text），这两个面要变成端口或直接用 `contracts`。
+2. **跨到 L1**：candidate 用 `build_english_source_package.validate_ready_package` 和 `sermon_sentence_interpretation`（两者现在都是指向 `tongxing_production.source` 的门面，闭包经门面进入包内 L1 模块）；controller 用 `source_meaning_machine_adjudication.load_meaning_notes`（1410 行，归属是 L1 设计的待决项）。
 3. **跨到 L3**：candidate 和人工复核工作表 `review_target_language_candidate.py` 都导入 `prepare_target_language_speech_job`（L3 交接），只为了 `SOURCE_PACKAGE_SCHEMA` 和 `_validate_schema`。这是 L2 → L3 的反向边。
 4. **跨层机器复核与传输**：插件与 `target_text_auto_qc` 牵出 `machine_quality_waiver`、`machine_quality_release_basis`、音频 QC、`render_formal_target_language_speech`；三个模型传输（Claude CLI、Codex CLI、OpenAI API）牵出 Spark 准入、Codex 资源和账本。
 
-只看顶层导入、去掉统一门面，闭包是 58 个模块；这是 L2 真正在加载时需要的面，也是第 3 节端口要覆盖的面。
+只看顶层导入、去掉统一门面，闭包是 59 个模块；这是 L2 真正在加载时需要的面，也是第 3 节端口要覆盖的面。
 
 ## 2 模块归属
 
-行数为 `dev@683f866e` 的行数；fan-in 为仓库内以 AST 导入它的 `.py` 文件数（括号内为其中的 `tests/` 数）。
+行数为 `dev@9d4e89d8` 的行数；fan-in 为仓库内以 AST 导入它的 `.py` 文件数（括号内为其中的 `tests/` 数）。
 
 ### 2.1 迁入 `tongxing_production/text/`（L2 所有）
 
@@ -267,4 +267,4 @@ print('all', len(closure(entries + plugins)),
       'without facade', len(closure(entries + plugins, {'scripts/sermon_unified/__init__.py'})))
 ```
 
-`dev@683f866e` 上的输出：五个入口的直接依赖依次为 2、21、10、7、20，传递闭包都是 161；合计 151，不经统一门面 128。
+`dev@9d4e89d8` 上的输出：五个入口的直接依赖依次为 2、21、10、7、20，传递闭包都是 165；合计 155，不经统一门面 132。
