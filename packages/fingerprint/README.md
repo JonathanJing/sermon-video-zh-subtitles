@@ -25,7 +25,7 @@ Python records both files by content hash (`scripts/sermon_pipeline.py` and `scr
 The deployed listening bundle imports `./fingerprint-core.mjs` next to the worker, and the staging scripts copy UI files by name from the web source directory. Until a build step assembles the bundle, the web source directory keeps a byte-identical copy of `src/fingerprint-core.mjs`; `tests/test_fingerprint_package.py` fails if the two differ. Edit the package file and copy it over, never the other way round:
 
 ```bash
-cp packages/fingerprint/src/fingerprint-core.mjs experiments/sermon-dubbing-poc/web/fingerprint-core.mjs
+cp packages/fingerprint/src/fingerprint-core.mjs apps/listening-web/fingerprint-core.mjs
 ```
 
 ## Run the tests

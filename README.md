@@ -36,7 +36,7 @@ The native iOS client reads the same release packages. iPhone 17 Pro simulator c
 | Module | What it does | Where it lives | Read next |
 |---|---|---|---|
 | Four-layer production backend | Freezes the English source, translates and reviews each language, renders and times speech, assembles per-locale release packages | `scripts/`, `schemas/`, `config/` | [Four-layer contract](docs/multilingual-production-interfaces.zh.md) · [Backend design](docs/backend-workflow-system-design.zh-en.md) |
-| Web reader (Firebase Hosting) | Weekly page with captions that follow the audio, full bilingual text, outline, language pickers and sound-based position alignment | `experiments/sermon-dubbing-poc/web/`, `firebase/` | [Layer 4 public delivery](docs/layer4-four-product-public-delivery.zh.md) · [Weekly release](docs/tongxing-weekly-release.zh.md) |
+| Web reader (Firebase Hosting) | Weekly page with captions that follow the audio, full bilingual text, outline, language pickers and sound-based position alignment | `apps/listening-web/`, `firebase/` | [Layer 4 public delivery](docs/layer4-four-product-public-delivery.zh.md) · [Weekly release](docs/tongxing-weekly-release.zh.md) |
 | iOS client | SwiftUI + AVPlayer app with verified caching, background audio, lock-screen controls, Dynamic Island state, microphone alignment and a Beta channel | `apps/tongxing-ios/` | [iOS README](apps/tongxing-ios/README.zh.md) · [Design conventions](apps/tongxing-ios/DESIGN.zh.md) |
 | Sunday live captions | Local microphone to live Chinese captions with recording kept for recovery; a separate `live_session` delivery type | `experiments/local-live-poc/` | [Live POC](experiments/local-live-poc/README.md) · [Operations whitepaper](docs/sunday-live-operations-whitepaper.zh.md) |
 | Dual-PDF reading edition | Bilingual reading PDF and Chinese sermon companion from a confirmed recording | `scripts/` | [Stable post-live workflow](docs/stable-post-live-reading-pdf-workflow.md) |
@@ -135,7 +135,7 @@ A simulator build is not TestFlight, physical-device or venue acceptance; each i
 | `config/` | Frozen policies, run profiles, adapters and agent-trial fixtures |
 | `tests/` | Python test suite |
 | `apps/tongxing-ios/` | iOS app, Swift packages, UI tests and release records |
-| `experiments/sermon-dubbing-poc/web/` | Web reader modules and Node tests |
+| `apps/listening-web/` | Web reader modules and Node tests |
 | `firebase/` | Hosting configuration and Dev page adapters |
 | `experiments/local-live-poc/` | Sunday live caption runtime |
 | `docs/` | Contracts, runbooks, design documents, diagrams and dated reports |

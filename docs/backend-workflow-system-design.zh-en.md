@@ -50,7 +50,7 @@ flowchart TB
 | 控制 / Control | [固定 L2 adapter](canonical-layer2-controller.zh.md)、[durable jobs](../scripts/sermon_workflow_jobs.py)、[cache recovery](canonical-layer2-cache-recovery.zh.md)、[reconciliation](canonical-layer2-reconciliation.zh.md) | 显式 opt-in 可派发 L2，停在文字人审；当前每 run 最多一个 active locale job，组内按 policy 有界并发；业务独立不等于三语已并行调度 |
 | 观察 / Observation | [accounting 实施矩阵](accounting-contract-implementation-matrix.zh.md)、[Tracker](four-layer-production-tracker.zh.md)、[Stage 0 证据](canonical-stage0-evidence.zh.md) | 已有组件验证与待完成项分开；日志或 Tracker 投影不能签发批准，不能以 synthetic 通过宣称生产全链完成 |
 
-Text-only 的现状须分入口看：[catalog builder](../scripts/build_multilingual_catalog.py)默认要求匹配的 `audio_unavailable` L3 包；显式 legacy 兼容选项保留迁移范围，不能据此声称 canonical 四层已完成。[Web 合同测试](../experiments/sermon-dubbing-poc/web/shared-text-only-releases.test.mjs)验证读取边界；schema 可表达、reader 可读取，不等于当前完整视频 producer 已支持通用纯文字发布。旧公开 `/packages/layer3/` 与正式音频私有包的版本链差异见[现有 Backlog 的发布包边界](backlog.zh.md)。
+Text-only 的现状须分入口看：[catalog builder](../scripts/build_multilingual_catalog.py)默认要求匹配的 `audio_unavailable` L3 包；显式 legacy 兼容选项保留迁移范围，不能据此声称 canonical 四层已完成。[Web 合同测试](../apps/listening-web/shared-text-only-releases.test.mjs)验证读取边界；schema 可表达、reader 可读取，不等于当前完整视频 producer 已支持通用纯文字发布。旧公开 `/packages/layer3/` 与正式音频私有包的版本链差异见[现有 Backlog 的发布包边界](backlog.zh.md)。
 
 ## 生成、独立审核、门禁与新修订 / Generation, review, gate and new revisions
 

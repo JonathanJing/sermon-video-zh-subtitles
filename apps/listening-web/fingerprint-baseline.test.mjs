@@ -5,9 +5,9 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {compareGolden, checkGolden} from '../../../apps/tongxing-ios/scripts/generate-published-fingerprint-golden.mjs';
-const generator = fileURLToPath(new URL('../../../apps/tongxing-ios/scripts/generate-published-fingerprint-golden.mjs', import.meta.url));
-const fixture = fileURLToPath(new URL('../../../apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/published-fingerprint.golden.json', import.meta.url));
+import {compareGolden, checkGolden} from '../tongxing-ios/scripts/generate-published-fingerprint-golden.mjs';
+const generator = fileURLToPath(new URL('../tongxing-ios/scripts/generate-published-fingerprint-golden.mjs', import.meta.url));
+const fixture = fileURLToPath(new URL('../tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/published-fingerprint.golden.json', import.meta.url));
 const run = args => spawnSync(process.execPath,[generator,...args],{encoding:'utf8',timeout:20000});
 
 test('frozen production DSP baseline passes without rewriting the fixture', () => {

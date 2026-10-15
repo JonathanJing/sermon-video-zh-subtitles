@@ -171,7 +171,7 @@ def test_endpoint_requires_all_study_resources_and_human_display_evidence(prepar
 
 def test_actual_builder_output_loads_complete_study_in_web(prepared):
     f=prepared;sealed=seal_fixture(f)
-    module=(builder.ROOT/'experiments/sermon-dubbing-poc/web/published-weeks.mjs').as_uri()
+    module=(builder.ROOT/'apps/listening-web/published-weeks.mjs').as_uri()
     script="""
 import {readFile} from 'node:fs/promises';
 const {loadPublishedWeeks}=await import(process.argv[1]);
@@ -189,7 +189,7 @@ console.log(JSON.stringify({status:'passed',studyArtifacts:week.studyArtifacts})
 
 def test_web_rejects_changed_study_bytes_and_cross_page_study(prepared):
     f=prepared;sealed=seal_fixture(f)
-    module=(builder.ROOT/'experiments/sermon-dubbing-poc/web/published-weeks.mjs').as_uri()
+    module=(builder.ROOT/'apps/listening-web/published-weeks.mjs').as_uri()
     script="""
 import {readFile} from 'node:fs/promises';
 const {loadPublishedWeeks}=await import(process.argv[1]);

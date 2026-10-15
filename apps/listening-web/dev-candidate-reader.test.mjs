@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { loadPublishedWeeks, validateDevCandidateRelease, validatePublishedRelease } from './published-weeks.mjs';
 import { buildCatalogNavigation, validateCatalog, downloadFilename } from './catalog.mjs';
 
-const metadata = JSON.parse(await readFile(new URL('../../../apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/dev-candidate-catalog-readback.json', import.meta.url)));
+const metadata = JSON.parse(await readFile(new URL('../tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/dev-candidate-catalog-readback.json', import.meta.url)));
 const clone = value => structuredClone(value);
 const hash = value => createHash('sha256').update(value).digest('hex');
 const pageId = 'if-i-had-more-time-jesus-is-worthy';

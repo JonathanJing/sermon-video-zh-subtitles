@@ -9,7 +9,7 @@ import { alignmentAttempt, createFingerprintController } from './fingerprint-ui.
 import { createLanguageListening } from './language-listening.mjs';
 import { LanguageListeningSession } from './language-listening-client.mjs';
 import { FeedbackClient } from './feedback-client.mjs';
-import { createService } from '../feedback-api/core.mjs';
+import { createService } from '../../experiments/sermon-dubbing-poc/feedback-api/core.mjs';
 
 const at = Date.parse('2026-10-11T17:44:39.400Z');
 const sha = 'a'.repeat(64), trackSha = 'b'.repeat(64);

@@ -50,7 +50,7 @@ From the repository root:
 
 ```sh
 python -m unittest tests.test_shared_video_delivery_fixtures -v
-node --test experiments/sermon-dubbing-poc/web/shared-video-delivery.test.mjs
+node --test apps/listening-web/shared-video-delivery.test.mjs
 # On an available Swift/Xcode toolchain, with the existing package resources:
 swift test --package-path apps/tongxing-ios/Core --filter SharedVideoDeliveryTests
 ```

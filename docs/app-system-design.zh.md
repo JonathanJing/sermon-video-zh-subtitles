@@ -37,8 +37,8 @@ flowchart TB
 | 原生 UI 与状态 | [AppModel.swift](../apps/tongxing-ios/App/AppModel.swift)、[ContentView.swift](../apps/tongxing-ios/App/ContentView.swift) | 选择目录、周次、语言，处理下载状态与过期异步结果；不在客户端翻译或合成 |
 | 内容合同 | [TongxingCore](../apps/tongxing-ios/Core/Sources/TongxingCore/)、[MultilingualCatalogRepository](../apps/tongxing-ios/Infrastructure/MultilingualCatalogRepository.swift) | 区分 legacy `weekly.json`、v2/v3 catalog 与 v1/v2 Release；校验来源、locale、状态和 hash，Dev candidate 不自动升级 Production |
 | 离线与音频 | [Infrastructure](../apps/tongxing-ios/Infrastructure/)、[PlaybackController.swift](../apps/tongxing-ios/App/PlaybackController.swift) | 完整校验后原子保存；单一播放器维护后台音频、历史和中断恢复。系统后台下载及跨进程续传仍见现有 README 限制 |
-| Firebase Web | [Web app](../experiments/sermon-dubbing-poc/web/app.mjs)、[published-weeks](../experiments/sermon-dubbing-poc/web/published-weeks.mjs) | 消费既有已发布内容与音轨；三语完整视频页面和旧中文周次保留不同版本合同 |
-| 声音定位 | [iOS index store](../apps/tongxing-ios/Infrastructure/FingerprintIndexStore.swift)、[Web fingerprint controller](../experiments/sermon-dubbing-poc/web/fingerprint-ui.mjs)、[定位合同](sermon-app-field-alignment.zh.md) | 已有短时采集与同录音匹配路径；离线源音频回放命中不等于真实手机、噪声环境或另一场现场讲道同步 |
+| Firebase Web | [Web app](../apps/listening-web/app.mjs)、[published-weeks](../apps/listening-web/published-weeks.mjs) | 消费既有已发布内容与音轨；三语完整视频页面和旧中文周次保留不同版本合同 |
+| 声音定位 | [iOS index store](../apps/tongxing-ios/Infrastructure/FingerprintIndexStore.swift)、[Web fingerprint controller](../apps/listening-web/fingerprint-ui.mjs)、[定位合同](sermon-app-field-alignment.zh.md) | 已有短时采集与同录音匹配路径；离线源音频回放命中不等于真实手机、噪声环境或另一场现场讲道同步 |
 | 使用统计与反馈 | [匿名统计合同](sermon-app-usage.zh.md)、[语言收听统计](sermon-language-listening-statistics.zh.md)、[反馈合同](sermon-listening-feedback.zh.md) | 自愿统计与内容生产分开；原生反馈接入等后续功能不得从 Web 实现推断已完成 |
 
 ## 发布包与客户端资格

@@ -158,7 +158,7 @@ class CIChangeScopeTests(unittest.TestCase):
             if "apps/tongxing-ios/" in content:
                 with self.subTest(consumer=path.name):
                     self.assertRegex(native_job, rf"\btests\.{re.escape(path.stem)}\b")
-        for path in (ROOT / "experiments/sermon-dubbing-poc/web").glob("*.test.mjs"):
+        for path in (ROOT / "apps/listening-web").glob("*.test.mjs"):
             if "apps/tongxing-ios/" in path.read_text(encoding="utf-8"):
                 with self.subTest(consumer=path.name):
                     self.assertIn(path.relative_to(ROOT).as_posix(), native_job)

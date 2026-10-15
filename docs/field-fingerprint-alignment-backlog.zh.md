@@ -12,9 +12,9 @@
 |---|---|---|
 | [iOS 协调器](../apps/tongxing-ios/App/AudioAlignmentController.swift) | legacy packed 路径采音 8 秒，published 路径 10 秒；本地匹配、单调时钟补偿、来源绑定、取消和恢复播放后的二次校正 | 默认总截止 20 秒，包含准备过程；不是已经支持连续 10→15 秒 |
 | [iOS 采集器](../apps/tongxing-ios/App/MicrophoneCapture.swift) | 内存 PCM、有限采集、停止引擎、移除 tap、恢复播放会话 | `capture` 只接受 7—12 秒；忽略 tap 的音频时间参数，以回调时刻减缓冲长度近似首样本时刻 |
-| [Web 采集](../experiments/sermon-dubbing-poc/web/fingerprint-capture.mjs) | 已使用 AudioWorklet；启动、mute/context 中断、取消、晚到授权清理和有限重试已有实现 | 当前请求 AGC、降噪、回声消除均关闭；重试是重新采集，不是同一窗口延长 |
-| [Web 协调](../experiments/sermon-dubbing-poc/web/fingerprint-ui.mjs) | 绑定校验、过期拒绝、处理耗时补偿、Worker 匹配及播放启动处理 | 要求 `captureSeconds === 10`，录音长度为 9—11 秒；采集/匹配总计时器 35 秒、结果有效期和播放启动预算分别存在 |
-| [Web Worker](../experiments/sermon-dubbing-poc/web/fingerprint-worker.mjs) | 同源索引加载、SHA 与来源绑定、特征和匹配；不持久化现场 PCM | 采完后才进入索引 fetch/校验，HTTP 缓存命中不等于离线资料完整或没有准备成本 |
+| [Web 采集](../apps/listening-web/fingerprint-capture.mjs) | 已使用 AudioWorklet；启动、mute/context 中断、取消、晚到授权清理和有限重试已有实现 | 当前请求 AGC、降噪、回声消除均关闭；重试是重新采集，不是同一窗口延长 |
+| [Web 协调](../apps/listening-web/fingerprint-ui.mjs) | 绑定校验、过期拒绝、处理耗时补偿、Worker 匹配及播放启动处理 | 要求 `captureSeconds === 10`，录音长度为 9—11 秒；采集/匹配总计时器 35 秒、结果有效期和播放启动预算分别存在 |
+| [Web Worker](../apps/listening-web/fingerprint-worker.mjs) | 同源索引加载、SHA 与来源绑定、特征和匹配；不持久化现场 PCM | 采完后才进入索引 fetch/校验，HTTP 缓存命中不等于离线资料完整或没有准备成本 |
 | [Swift published 匹配器](../apps/tongxing-ios/Core/Sources/TongxingCore/PublishedFingerprintMatcher.swift) | 7—20 秒查询；已有 RMS、landmark、votes、独立 anchor、覆盖、runner-up 和三段覆盖门槛 | 已有多条件拒绝，不应当作从零开发；legacy packed 与 published 的量化不同，不能混用索引 |
 
 既有 [iOS 指纹方案](../apps/tongxing-ios/FINGERPRINT-ALIGNMENT.zh.md) 中的 8 秒基线和 ShazamKit 历史设想须按日期与算法路径阅读；本轮不切换 ShazamKit，不把历史文件回放成绩当作后排麦克风成绩。

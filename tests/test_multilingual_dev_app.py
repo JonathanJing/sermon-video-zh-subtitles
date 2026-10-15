@@ -146,7 +146,7 @@ class MultilingualDevAppTest(unittest.TestCase):
         self.assertIn("tongxing-dev-audio-", app)
 
     def test_dev_shell_tracks_production_visual_base(self):
-        production = ROOT / "experiments/sermon-dubbing-poc/web"
+        production = ROOT / "apps/listening-web"
         self.assertTrue(
             (PUBLIC / "styles.css").read_bytes().startswith((production / "style.css").read_bytes()),
             "Dev CSS must start with the production stylesheet before Dev overrides",

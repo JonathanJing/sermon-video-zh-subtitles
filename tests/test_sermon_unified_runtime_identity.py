@@ -9,6 +9,7 @@ class RuntimeClosureTests(unittest.TestCase):
                      'experiments/sermon-dubbing-poc/deploy_firebase.py',
                      'packages/fingerprint/bin/build_fingerprint_index.mjs',
                      'packages/fingerprint/src/fingerprint-core.mjs',
+                     'apps/listening-web/app.mjs',
                      'packages/production/src/tongxing_production/compute/provider_limits.py'):
             self.assertIn(name,modules)
         self.assertFalse(any('/node_modules/' in name for name in modules))

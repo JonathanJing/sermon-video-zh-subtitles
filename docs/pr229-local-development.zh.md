@@ -78,7 +78,7 @@ python -m scripts.sermon_cost_isolation reconcile \
 ```bash
 python -m unittest tests.test_sermon_app_delivery tests.test_sermon_cost_isolation tests.test_import_openai_costs
 python -m unittest tests.test_sermon_end_to_end tests.test_run_codex_local_sermon_production tests.test_stage_formal_multilingual_dev
-node --test experiments/sermon-dubbing-poc/web/*.test.mjs
+node --test apps/listening-web/*.test.mjs
 git diff --check
 ```
 

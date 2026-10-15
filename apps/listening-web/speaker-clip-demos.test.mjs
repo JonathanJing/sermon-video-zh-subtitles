@@ -81,7 +81,7 @@ test('separate original / video / synthesis controllers enforce one active media
   for (let i = 0; i < 3; i++) { await controllers[i].toggle(); assert.deepEqual(media.map(item => item.paused), media.map((_, index) => index !== i)); }
 });
 test('Dev and production renderers and styles are byte identical', async () => {
-  for (const name of ['speaker-clip-demos.mjs', 'voice-demo.css']) assert.equal(await readFile(new URL(`./${name}`, import.meta.url), 'utf8'), await readFile(new URL(`../../../firebase/dev/public/${name}`, import.meta.url), 'utf8'));
+  for (const name of ['speaker-clip-demos.mjs', 'voice-demo.css']) assert.equal(await readFile(new URL(`./${name}`, import.meta.url), 'utf8'), await readFile(new URL(`../../firebase/dev/public/${name}`, import.meta.url), 'utf8'));
 });
 
 test('a cancelled A download is never cached or played as B after language switch', async () => {

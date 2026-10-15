@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { validatePublishedCatalogHeader, validatePublishedPage, validatePublishedTarget } from './published-weeks.mjs';
 
-const matrix = JSON.parse(readFileSync(new URL('../../../apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-video-delivery.json', import.meta.url)));
+const matrix = JSON.parse(readFileSync(new URL('../tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-video-delivery.json', import.meta.url)));
 assert.equal(matrix.schemaVersion, 'sermon-shared-video-delivery-fixtures-v1');
 assert.equal(matrix.scope, 'synthetic_decoder_tests_not_production_approval');
 assert.equal(matrix.cases.length, 61);

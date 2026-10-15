@@ -16,7 +16,7 @@ class CompatibilityGateTests(unittest.TestCase):
         self.git('config', 'user.name', 'Fixture')
         self.git('config', 'user.email', 'fixture@example.invalid')
         for name in ('apps/tongxing-ios/App.swift', 'schemas/catalog.json',
-                     'experiments/sermon-dubbing-poc/web/app.mjs', 'scripts/sermon_accounting.py'):
+                     'apps/listening-web/app.mjs', 'scripts/sermon_accounting.py'):
             self.write(name, 'original')
         self.base = self.save()
 

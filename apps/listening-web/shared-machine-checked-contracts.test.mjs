@@ -4,7 +4,7 @@ import test from 'node:test';
 import { validatePublishedContentV3, validatePublishedTarget, validatePublishedV4Release } from './published-weeks.mjs';
 
 // The identical file is bundled into the native Core tests; no copied fixture.
-const matrix = JSON.parse(readFileSync(new URL('../../../apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-machine-checked-contracts.json', import.meta.url)));
+const matrix = JSON.parse(readFileSync(new URL('../tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-machine-checked-contracts.json', import.meta.url)));
 assert.equal(matrix.schemaVersion, 'sermon-shared-machine-checked-contract-fixtures-v1');
 assert.equal(matrix.scope, 'synthetic_decoder_tests_not_production_approval');
 assert.equal(matrix.releases.length, 23);

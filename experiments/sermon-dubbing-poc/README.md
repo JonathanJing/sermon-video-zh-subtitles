@@ -106,8 +106,8 @@ See [interface languages and speaker samples](./UI_LOCALIZATION.zh.md) for the C
 
 ```bash
 .venv/bin/python -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_*.py'
-node --test experiments/sermon-dubbing-poc/web/timing.test.mjs experiments/sermon-dubbing-poc/web/catalog.test.mjs
-node --check experiments/sermon-dubbing-poc/web/app.mjs
+node --test apps/listening-web/timing.test.mjs apps/listening-web/catalog.test.mjs
+node --check apps/listening-web/app.mjs
 git diff --check
 ```
 

@@ -33,7 +33,7 @@ def baseline(tmp_path, environment='production'):
 
 def committed_ui(tmp_path, monkeypatch):
     repo = tmp_path / 'source-repo'
-    source = repo / 'experiments/sermon-dubbing-poc/web'
+    source = repo / 'apps/listening-web'
     source.mkdir(parents=True)
     for name in ui.ui_files('production'):
         (source / name).write_text('new UI: ' + name)

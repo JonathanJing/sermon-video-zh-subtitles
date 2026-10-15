@@ -56,7 +56,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LOCALES = ("zh-Hans", "ko", "es")
 ACCEPT_NOT_RUN = {"status": "not_run", "evidenceSha256": None}
 PAGE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,159}$")
-RUNTIME_WEB_ROOT = ROOT / 'experiments/sermon-dubbing-poc/web'
+RUNTIME_WEB_ROOT = ROOT / 'apps/listening-web'
 
 
 # The reader's shell is the page plus everything it loads locally: ES modules,

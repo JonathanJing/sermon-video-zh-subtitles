@@ -93,7 +93,7 @@ class Handler(BaseHTTPRequestHandler):
         weekly = (self.pack / "weekly.json").is_file()
         if route in STATIC:
             filename, mime = STATIC[route]
-            static_root = self.pack if weekly else HERE / "web"
+            static_root = self.pack if weekly else HERE.parents[1] / "apps" / "listening-web"
             self.send_data((static_root / filename).read_bytes(), mime, head)
             return
         try:

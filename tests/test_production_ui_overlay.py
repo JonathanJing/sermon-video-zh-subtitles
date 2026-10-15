@@ -29,7 +29,7 @@ class ProductionUIOverlayTest(unittest.TestCase):
         self.source, self.out = self.root / 'source', self.root / 'candidate'
         public = self.base / 'public'
         public.mkdir(parents=True)
-        self.source_ui = self.source / 'experiments/sermon-dubbing-poc/web'
+        self.source_ui = self.source / 'apps/listening-web'
         self.source_ui.mkdir(parents=True)
         for name in ui.UI_FILES:
             if name not in ('icons.svg', 'icons.mjs', 'brand-icon.svg', 'brand-icon-light.svg'):

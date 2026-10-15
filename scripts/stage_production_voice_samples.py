@@ -31,7 +31,7 @@ PROJECT = "ai-for-god-caption-dev"
 SITE = "ai-for-god-sermon-audio"
 PREFIX = dev_demo.PREFIX
 CATALOG_NAME = f"{PREFIX}/production-ko-es.json"
-SOURCE_UI = ROOT / "experiments/sermon-dubbing-poc/web"
+SOURCE_UI = ROOT / "apps/listening-web"
 SCHEMA = "sermon-production-voice-overlay-v1"
 LEGACY_CODE = ROOT / "experiments/sermon-dubbing-poc"
 if str(LEGACY_CODE) not in sys.path:
