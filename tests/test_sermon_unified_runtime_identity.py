@@ -7,6 +7,8 @@ class RuntimeClosureTests(unittest.TestCase):
         modules=c.required_modules()
         for name in ('experiments/sermon-dubbing-poc/weekly_release.py',
                      'experiments/sermon-dubbing-poc/deploy_firebase.py',
-                     'experiments/sermon-dubbing-poc/build_fingerprint_index.mjs'):
+                     'packages/fingerprint/bin/build_fingerprint_index.mjs',
+                     'packages/fingerprint/src/fingerprint-core.mjs',
+                     'packages/production/src/tongxing_production/compute/provider_limits.py'):
             self.assertIn(name,modules)
         self.assertFalse(any('/node_modules/' in name for name in modules))

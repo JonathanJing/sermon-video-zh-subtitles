@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
-import {fingerprint, matchFingerprint, CONFIG} from '../sermon-dubbing-poc/web/fingerprint-core.mjs';
+import {fingerprint, matchFingerprint, CONFIG} from '../../packages/fingerprint/src/fingerprint-core.mjs';
 
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 class CaseError extends Error {}
@@ -82,7 +82,7 @@ async function main() {
   let input = '';
   for await (const chunk of process.stdin) { input += chunk; if (input.length > 16384) fail('worker_input_invalid'); }
   const {root, source, querySource, session, item, algorithmSha256} = JSON.parse(input);
-  const currentAlgorithmSha = sha(fs.readFileSync(new URL('../sermon-dubbing-poc/web/fingerprint-core.mjs', import.meta.url)));
+  const currentAlgorithmSha = sha(fs.readFileSync(new URL('../../packages/fingerprint/src/fingerprint-core.mjs', import.meta.url)));
   if (currentAlgorithmSha !== algorithmSha256) fail('implementation_changed');
   const localRoot = fs.realpathSync(root), started = performance.now();
   asset(localRoot, source.recording, 512 * 1024 * 1024);

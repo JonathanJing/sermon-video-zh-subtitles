@@ -1428,8 +1428,8 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
             identity["mfaTransport"] = file_content_identity(REPO_ROOT / "scripts" / "mfa_spark.py")
     if getattr(args, "fingerprint_precompute", False):
         identity["fingerprintPrecompute"] = {
-            "script": file_content_identity(REPO_ROOT / "experiments/sermon-dubbing-poc/build_fingerprint_index.mjs"),
-            "algorithm": file_content_identity(REPO_ROOT / "experiments/sermon-dubbing-poc/web/fingerprint-core.mjs"),
+            "script": file_content_identity(REPO_ROOT / "packages/fingerprint/bin/build_fingerprint_index.mjs"),
+            "algorithm": file_content_identity(REPO_ROOT / "packages/fingerprint/src/fingerprint-core.mjs"),
         }
     if getattr(args, "source_text_review", None):
         identity["sourceTextReview"] = file_content_identity(args.source_text_review)

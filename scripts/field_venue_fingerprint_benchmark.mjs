@@ -17,7 +17,7 @@ import {readFileSync, writeFileSync, mkdirSync, existsSync, realpathSync, statSy
 import {dirname, resolve, sep} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath, pathToFileURL} from 'node:url';
-import {fingerprint, matchFingerprint, CONFIG} from '../experiments/sermon-dubbing-poc/web/fingerprint-core.mjs';
+import {fingerprint, matchFingerprint, CONFIG} from '../packages/fingerprint/src/fingerprint-core.mjs';
 
 let ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SR = CONFIG.sampleRate, N = CONFIG.fftSize, H = CONFIG.hopSize;
@@ -354,7 +354,7 @@ async function main() {
   const W0 = index.sourceStartSeconds;
 
   const execution = {runnerSha256: sha256(fileURLToPath(import.meta.url)),
-    matcherSha256: sha256(resolve(dirname(fileURLToPath(import.meta.url)), '../experiments/sermon-dubbing-poc/web/fingerprint-core.mjs')),
+    matcherSha256: sha256(resolve(dirname(fileURLToPath(import.meta.url)), '../packages/fingerprint/src/fingerprint-core.mjs')),
     variants: args.variants, negativeWindowStepSeconds: args.negStep, roomWindowStepSeconds: 1,
     windowSeconds: WINDOW_SECONDS, checkpointSeconds: CHECKPOINTS, localizationToleranceSeconds: .5};
   const report = {schemaVersion: 'field-venue-fingerprint-report-v2', manifestSha256: sha256(manifestPath), benchmarkId: manifest.benchmarkId,
