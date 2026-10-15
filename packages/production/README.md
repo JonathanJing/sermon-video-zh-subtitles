@@ -25,9 +25,11 @@ python -m pip install -e packages/production
   so old and new import paths are one object. Behaviour changes go in their
   own pull request, never in a move.
 - The moved file keeps a repository identity key: `sermon_accounting`
-  records it as `packages/production/src/tongxing_production/<path>.py`
-  whether it was loaded from the checkout or from site-packages. The key
-  changes with the move; the content hash does not.
+  records it as `packages/production/src/tongxing_production/<path>.py` when
+  the package is loaded from under the checkout (the editable install every
+  environment uses today). The key changes with the move; the content hash
+  does not. Identity for a wheel installed outside the checkout is a later
+  batch, together with `importlib.resources` loading.
 
 ## Moved so far
 

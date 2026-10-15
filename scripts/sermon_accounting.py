@@ -165,8 +165,8 @@ def _private_open(path, flags):
 
 
 # Repository code roots recorded in the execution identity. Installable
-# packages are keyed by their source path in the repository even when loaded
-# from site-packages, so one identity key names one file across environments.
+# packages count as project code at their source path under the checkout
+# (editable installs); a wheel outside the checkout is not project code here.
 CODE_ROOTS = ("scripts", "backend", "experiments")
 PACKAGE_SOURCE_ROOTS = {"tongxing_production": "packages/production/src"}
 CODE_PATH_PATTERN = re.compile(
@@ -175,29 +175,27 @@ CODE_PATH_PATTERN = re.compile(
     + r")/[A-Za-z0-9_./-]+\.py")
 
 
-def code_path(module):
-    """Return the repository-relative identity key for a loaded module, or None."""
+def code_path(module, root=None):
+    """Return the root-relative identity key for a loaded module, or None.
+
+    The same rule serves the identity producer and the historical witness, so
+    neither can record a module the other omits.
+    """
     name = getattr(module, "__file__", None)
     if not name:
         return None
     path = Path(name).resolve()
     if path.suffix != ".py":
         return None
-    top = getattr(module, "__name__", "").split(".", 1)[0]
-    if top in PACKAGE_SOURCE_ROOTS:
-        package = sys.modules.get(top)
-        base = getattr(package, "__file__", None)
-        if not base:
-            return None
-        try:
-            return str(Path(PACKAGE_SOURCE_ROOTS[top]) / path.relative_to(Path(base).resolve().parent.parent))
-        except ValueError:
-            return None
+    root = Path(__file__).resolve().parents[1] if root is None else Path(root)
     try:
-        relative = path.relative_to(Path(__file__).resolve().parents[1])
+        relative = path.relative_to(root)
     except ValueError:
         return None
-    return str(relative) if relative.parts[0] in CODE_ROOTS else None
+    if relative.parts[0] in CODE_ROOTS or any(
+            relative.is_relative_to(prefix + "/" + top) for top, prefix in PACKAGE_SOURCE_ROOTS.items()):
+        return str(relative)
+    return None
 
 
 def code_module_name(path):
