@@ -86,7 +86,7 @@ class SourceBackend:
 
 | 批 | 内容 | 出口条件 |
 |---|---|---|
-| S0 端口 | `tongxing_production.ports`；从 `sermon_pipeline` 抽出 `chat_json`/`request_json`/`mfa_options` 的调用端口（单体不动）；`code_identity`、`module_sha256` 端口；`scripts/` 私有名加公开委托 | 不搬文件；相关测试全绿；`sermon.py` 行为不变 |
+| S0 端口 | `tongxing_production.ports`；从 `sermon_pipeline` 抽出 `chat_json`/`request_json`/`mfa_options` 的调用端口（单体不动）；`code_identity`、`module_sha256`、`module_path` 端口；`scripts/` 私有名加公开委托。**只改未被哈希固定的调用方**（judge、budget、锚点运行器、阶段入口）；`build_english_source_package`、`mfa_backend`、`mfa_spark` 被 `sermon_source_producer_compatibility` 按字节固定，它们改走端口的那一行要与各自批次的迁移记录（新一代 `*_SOURCE_SHA256` 与 `CHANGED` 清单）同批评审 | 不搬文件；相关测试全绿；`sermon.py` 行为不变；被固定的生产者字节不变 |
 | S1 叶子 | `sermon_sentence_interpretation`、`mfa_alignment`、`sermon_source_producer_compatibility`（含 `PATH_ALIASES`）、`sermon_mfa_identity` | 哈希表与 MFA 身份比较通过新旧两种键；`test_sermon_sentence_interpretation`（22 个测试模块引用）全绿 |
 | S2 生产者 | `build_english_source_package`、`judge_english_source_for_translation`、`english_source_judge_cache`、`run_sentence_interpretation_models` | `implementationSha256` 等值不变；fresh/cached diagnostic source 比较通过 |
 | S3 预算与传输 | `sermon_source_budget`、`sermon_source_text_review`、`mfa_backend`、`mfa_spark` | Spark 打包仍上传同字节 `mfa_alignment.py`；预算围栏测试全绿 |
