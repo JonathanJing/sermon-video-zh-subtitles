@@ -136,6 +136,6 @@ Supervisor 路径以新读取的确定性 `recommendedAction.action == "complete
 下面这些部分已经 working，但当前不应该作为 repo 首页的主入口：
 
 - [../backend/README.md](../backend/README.md)：backend worker 和 Cloud Run orchestration
-- [../web/README.md](../web/README.md)：frontend/admin 与播放原型
+- [../apps/operator-web/README.md](../apps/operator-web/README.md)：frontend/admin 与播放原型
 
 它们应该作为支持路径来写，而不是当前最稳定主流程本身。

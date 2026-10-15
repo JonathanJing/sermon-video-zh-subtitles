@@ -2,7 +2,7 @@
 
 [目录提案 §2.1 / §4](repository-layout-proposal.zh.md) · [仓库现状地图](repository-current-map.zh.md)
 
-状态：**核对报告，等待用户决定，未移动任何文件**。核查日期：2026-10-15，基线 `dev@683f866e`。本文只给证据与选项；代码、测试、Dockerfile 与 `docs/backlog.zh.md` 均未改动。
+状态：**已决定采用选项 A 并执行（2026-10-15），见 §9**。核查日期：2026-10-15，基线 `dev@683f866e`。§1–§8 保留决定前的证据与路径，其中的 `web/` 指迁移前路径。
 
 目录提案把 `apps/operator-web/` 定为条件项：确认 `web/` 的活跃入口后才独立，且不得丢失公开会众字幕功能。以下是该核对的结果。
 
@@ -103,3 +103,20 @@
 - 线上：只对文档中公开的 Cloud Run URL 做只读 GET/HEAD，比对 6 个文件的 SHA-256 与状态码。没有登录、没有写请求、没有读取 admin 响应内容。
 - 没有运行测试、没有构建镜像、没有部署；因此“迁移后测试通过”目前**未验证**。
 - 没有检查 Cloud Run 的 IAM、访问日志或流量，所以“有无真实使用者”无法从这里判断；这也是选项 A 与 B 的分歧点。
+
+## 9 执行记录（选项 A）
+
+用户于 2026-10-15 选定选项 A：整体迁移，保留两个 entry 与全部 URL。
+
+| 项 | 结果 |
+|---|---|
+| 文件 | `git mv web apps/operator-web`，7 个文件内容逐字节不变（含 `app.js`，未 bump `?v=`）；线上哈希基线（§1）因此仍然适用 |
+| 路径一致性 | 容器内与仓库内同为 `apps/operator-web/`：`Dockerfile` 改为 `COPY apps/operator-web/ /app/apps/operator-web/`，`backend/app.py` 的 `WEB_ROOT` 改为 `REPO_ROOT / "apps" / "operator-web"`。没有引入 `OPERATOR_WEB_ROOT` 环境变量；`services/api` 迁移时只需随 `REPO_ROOT` 一并调整 |
+| URL | `/`、`/admin`、`/admin.html`、`/admin/index.html`、深链回退不变；`static_path_for` 逻辑未改 |
+| 脚本默认值 | `build_playback_simulation.py`、`prepare_live_link_playback.py`、`generate_notes_with_openai.py`、`translate_playback_with_openai.py` 的 `playback-simulation.generated.js` 默认输出，`build_scripture_index.py` 的 `--out`，两个校验脚本的 `app.js` 默认路径；`.gitignore` 同步 |
+| 保持不变 | manifest 中的 `localPath: "web/playback-simulation.generated.js"` 是运行目录内的相对标识（`prepare_live_link_playback.relative_artifact_path` 硬编码 `web/`，`backend/manifest.py`、`promote_sunday_manifest.py`、`validate_*` 按它匹配），与仓库目录无关，**未改**；`validate_web_realtime_contract` 报告里的描述文字 `web/app.js is readable.` 同样未改，避免动 evidence 报告文案 |
+| CI 路由 | `.github/workflows/tongxing-ios.yml` 对 `apps/` 下未登记目录一律走 native 范围。已把 `apps/operator-web/` 加入非 native 的 Web 客户端白名单（并给该后缀集合加 `.webmanifest`），移除已不存在的 `web` 根；`tests/test_ios_ci_route.py` 新增 4 个路径用例 |
+| 测试 | `test_public_admin_boundary`、`test_web_app_realtime_contract`、`e2e_public_playback` 只改根路径，断言不变 |
+| 文档 | README（含新增的 entry 与部署目标说明）、`open-source-readiness*`、`review-testing`、`scripture-source*`、`stable-post-live-reading-pdf-workflow*`、`system-design-gap-analysis*`、`development-notes`、`local-live-poc/AGENTS.md`。`docs/reports/`、Cloud Run 部署记录里的 GCS 对象清单、`repository-current-map.zh.md`（基线快照）不改 |
+| 已知遗留 | `app.js:784` 的操作员提示仍写旧路径 `web/playback-simulation.generated.js`；为保持字节一致没有改，下次改动该文件时一并更正 |
+| 线上 | 未部署。线上仍是旧镜像，内容与迁移后文件相同；下次手工 `gcloud run deploy` 时才会用新 Dockerfile |

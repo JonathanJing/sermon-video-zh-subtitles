@@ -165,13 +165,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input",
         type=Path,
-        default=Path("web/playback-simulation.generated.js"),
+        default=Path("apps/operator-web/playback-simulation.generated.js"),
         help="Input JS file defining window.SERMON_PLAYBACK_SIMULATION.",
     )
     parser.add_argument(
         "--out",
         type=Path,
-        default=Path("web/playback-simulation.generated.js"),
+        default=Path("apps/operator-web/playback-simulation.generated.js"),
         help="Output JS file. Defaults to replacing the browser simulation artifact.",
     )
     parser.add_argument(

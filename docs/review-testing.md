@@ -17,9 +17,9 @@ Scope: current POC for live-link input, sermon title display, "正在生成" cap
    - Suggested fix: add tests that monkeypatch `subprocess.run` to assert command order and verify failure behavior.
 
 3. P2 - Frontend playback contract is not covered by automated DOM tests.
-   - File: `web/app.js:119`
+   - File: `apps/operator-web/app.js:119`
    - Evidence: `loadPlaybackSimulation()` and `startPlaybackSimulation()` drive the core user-visible requirements: title display, `正在生成`, and caption segment rendering. Existing tests validate generated JS shape, but not browser behavior.
-   - Suggested fix: add a small Playwright smoke test that loads `web/index.html`, clicks `模拟播放`, and asserts `#sermonTitle`, `#generationStatus`, `#stableCaption`, and `#segmentCount`.
+   - Suggested fix: add a small Playwright smoke test that loads `apps/operator-web/index.html`, clicks `模拟播放`, and asserts `#sermonTitle`, `#generationStatus`, `#stableCaption`, and `#segmentCount`.
 
 4. Resolved - Secret Manager resource names are stripped from public generated artifacts.
    - Files: `scripts/build_playback_simulation.py`, `scripts/prepare_live_link_playback.py`, `scripts/translate_playback_with_openai.py`
@@ -49,7 +49,7 @@ python3 -m py_compile scripts/offline_live_sermon_subtitles.py scripts/build_pla
 Result: passed.
 
 ```bash
-node --check web/app.js
+node --check apps/operator-web/app.js
 ```
 
 Result: passed.

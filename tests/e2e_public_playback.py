@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Repeatable browser validation for the public playback prototype.
 
-By default this serves ./web locally. Pass --base-url to validate a deployed
+By default this serves ./apps/operator-web locally. Pass --base-url to validate a deployed
 Cloud Run URL without starting a local server.
 """
 
@@ -23,7 +23,7 @@ from playwright.sync_api import expect, sync_playwright
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-WEB_ROOT = REPO_ROOT / "web"
+WEB_ROOT = REPO_ROOT / "apps" / "operator-web"
 SECRET_RESOURCE_RE = re.compile(
     r"projects/[^/\"'\s]+/secrets/[^/\"'\s]+(?:/versions/[^/\"'\s]+)?"
 )
