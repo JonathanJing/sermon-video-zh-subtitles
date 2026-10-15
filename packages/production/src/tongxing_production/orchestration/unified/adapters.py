@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 import subprocess
 import time
-from scripts.sermon_unified import contracts as c
+from . import backend as _backend
+from . import contracts as c
 
 STAGE_ADAPTERS = {
     'media.verify': {'media_verify'},
@@ -28,7 +29,7 @@ def inspect_step(m, base, step, *, ready=True):
     if step['stageId'] not in STAGE_ADAPTERS[step['adapter']]:
         raise c.ContractError('adapter_stage_mismatch')
     if step['adapter'] == 'source.prepare':
-        from scripts import sermon_unified_source as source
+        source=_backend.stage('source')
         plan=source.inspect(config_path(m,base,step))
         if (not plan['snapshotBound'] or plan['sourceId']!=m['source']['sourceId']
             or plan['sourceMediaSha256']!=m['source']['mediaSha256']
@@ -46,15 +47,15 @@ def inspect_step(m, base, step, *, ready=True):
         if cap>m['budget']['limitMicroUsd'] or cap>step.get('maxCostMicroUsd',0):
             raise c.ContractError('source_budget_exceeds_manifest')
     elif step['adapter'] == 'canonical.layer2':
-        from scripts.sermon_unified_layer2_binding import inspect_bound
+        inspect_bound=_backend.stage('layer2_binding').inspect_bound
         binding_plan=inspect_bound(m,base,step,config_path(m,base,step))
-        from scripts import canonical_layer2_controller as ctl
+        ctl=_backend.stage('layer2_controller')
         config = ctl.load_configuration(config_path(m, base, step))
-        from scripts.sermon_unified_canonical_binding import validate_selected_source
+        validate_selected_source=_backend.stage('canonical_binding').validate_selected_source
         validate_selected_source(m,base,c.digest(c.read(config.inspection_root/config.inspection['source'])))
         if step.get('locale') not in config.lanes:
             raise c.ContractError('controller_locale_mismatch')
-        from scripts import canonical_layer2_budget as budget
+        budget=_backend.stage('layer2_budget')
         auth_path=c.binding(m,base,step.get('budgetAuthorization',''))
         auth=budget.load_authorization(config,auth_path,ctl.code_identity())
         cap=auth['value']['authority']['globalBounds']['costMicrousd']
@@ -72,12 +73,12 @@ def inspect_step(m, base, step, *, ready=True):
         if c.file_sha(config.lanes[step['locale']]['policy']) != lane['policySha256']:
             raise c.ContractError('controller_policy_mismatch')
     elif step['adapter'] == 'canonical.audio':
-        from scripts import sermon_unified_audio as audio
+        audio=_backend.stage('audio')
         plan=audio.inspect(config_path(m,base,step))
         if not plan['snapshotBound']:
             raise c.ContractError('audio_input_snapshot_required')
         audio.validate_manifest_binding(plan,m,step.get('locale'))
-        from scripts.sermon_unified_canonical_binding import validate_selected_source
+        validate_selected_source=_backend.stage('canonical_binding').validate_selected_source
         validate_selected_source(m,base,plan['sourcePackage']['jsonSha256'])
         if plan['sourceMediaSha256']!=m['source']['mediaSha256'] or plan['targetLocale']!=step.get('locale'):
             raise c.ContractError('audio_source_or_locale_changed')
@@ -85,10 +86,10 @@ def inspect_step(m, base, step, *, ready=True):
         if policy['policySha256']!=plan['policySha256']:
             raise c.ContractError('audio_policy_changed')
     elif step['adapter'] == 'study.produce':
-        from scripts import sermon_unified_study as study
+        study=_backend.stage('study')
         plan=study.inspect(m,base,config_path(m,base,step),step)
         config=c.read(config_path(m,base,step))
-        from scripts.sermon_unified_canonical_binding import validate_selected_source
+        validate_selected_source=_backend.stage('canonical_binding').validate_selected_source
         validate_selected_source(m,base,c.digest(c.read(c.binding(m,base,config['inputs']['source']))))
         if plan.get('schemaVersion')=='sermon-study-generation-inspection-v1':
             config=c.read(config_path(m,base,step))
@@ -99,14 +100,14 @@ def inspect_step(m, base, step, *, ready=True):
             if cap>m['budget']['limitMicroUsd'] or cap>step.get('maxCostMicroUsd',0):
                 raise c.ContractError('study_budget_exceeds_manifest')
     elif step['adapter'] == 'app.delivery':
-        from scripts import sermon_unified_delivery as delivery
+        delivery=_backend.stage('delivery')
         plan=delivery.inspect(config_path(m,base,step))
         if not plan['snapshotBound']:
             raise c.ContractError('delivery_input_snapshot_required')
         if plan.get('machineChecked'):
-            from scripts.sermon_unified_capabilities import require_machine_capabilities
+            require_machine_capabilities=_backend.stage('capabilities').require_machine_capabilities
             require_machine_capabilities(c.binding(m,base,'consumerCapabilities'))
-        from scripts.sermon_unified_canonical_binding import validate_selected_source
+        validate_selected_source=_backend.stage('canonical_binding').validate_selected_source
         validate_selected_source(m,base,plan['sourcePackageSha256'])
         identity=dict(plan['sourceIdentity']);identity['window']=dict(identity['window'],timeBase='source_media')
         if identity!=m['source'] or plan['pageId']!=m['content']['pageId']:
@@ -114,10 +115,10 @@ def inspect_step(m, base, step, *, ready=True):
         if plan['sourceId']!=m['source']['sourceId'] or plan['mediaSha256']!=m['source']['mediaSha256'] or not set(plan['locales'])<=set(m['locales']):
             raise c.ContractError('delivery_source_or_locale_changed')
     elif step['adapter'] == 'canonical.inspect':
-        from scripts.sermon_unified_canonical_binding import inspect_bound
+        inspect_bound=_backend.stage('canonical_binding').inspect_bound
         inspect_bound(m, base, config_path(m, base, step), step)
     elif step['adapter'] == 'app.prepare':
-        from scripts import sermon_app_delivery_workflow as app
+        app=_backend.stage('app_delivery')
         app.snapshot(config_path(m, base, step))
     elif step['adapter']=='review.gate' and step.get('reviewKind')!='window':
         config=c.read(config_path(m,base,step))
@@ -126,7 +127,7 @@ def inspect_step(m, base, step, *, ready=True):
         for name in config['inputs'].values():
             c.binding(m,base,name)
         if step.get('reviewKind')!='english':
-            from scripts.sermon_unified_canonical_binding import validate_selected_source
+            validate_selected_source=_backend.stage('canonical_binding').validate_selected_source
             validate_selected_source(m,base,c.digest(c.read(c.binding(m,base,config['inputs']['source']))))
     elif step['adapter'] == 'fixture.replay':
         obj = c.read(config_path(m, base, step))
@@ -165,7 +166,7 @@ def execute(m, base, step, out):
                 'fixtureSetId':m['fixtureSetId'],'freshApiAttempts':0,'cacheHit':False,
                 'productionEligible':False,'responseSha256':c.digest(data)}
     if adapter == 'review.gate' and step.get('reviewKind')=='window':
-        from scripts.sermon_unified_reviews import validate_window
+        validate_window=_backend.stage('reviews').validate_window
         evidence=validate_window(m,base=base)
         return {'status':'succeeded','artifact':'verified','review':'approved','kind':'window_review','receiptSha256':evidence['receiptSha256']}
     if adapter == 'review.gate':
@@ -173,10 +174,10 @@ def execute(m, base, step, out):
         # creates approval, interprets free text or manufactures a reviewer.
         return {'status':'blocked','reason':'human_review_required','review':'human_pending'}
     if adapter == 'source.prepare':
-        from scripts import sermon_unified_source as source
+        source=_backend.stage('source')
         return source.execute(config_path(m,base,step))
     if adapter == 'canonical.layer2':
-        from scripts import canonical_layer2_controller as ctl
+        ctl=_backend.stage('layer2_controller')
         authority=c.binding(m,base,step['budgetAuthorization'])
         timeout=time.monotonic()+step.get('timeoutSeconds',21600)
         while True:
@@ -188,17 +189,17 @@ def execute(m, base, step, out):
                 raise c.ContractError('durable_job_requires_reconciliation',6)
             time.sleep(1)
     if adapter == 'canonical.audio':
-        from scripts import sermon_unified_audio as audio
+        audio=_backend.stage('audio')
         plan=audio.inspect(config_path(m,base,step))
         result=audio.execute(config_path(m,base,step),out.parent/(step['id']+'-audio-result.json'),
                              expected_plan_hash=plan['planHash'],allow_synthesis=not plan['settings']['assemblyOnly'])
         result['kind']='speech_job'
         return result
     if adapter == 'study.produce':
-        from scripts import sermon_unified_study as study
+        study=_backend.stage('study')
         return study.execute(m,base,config_path(m,base,step),step,out)
     if adapter == 'app.delivery':
-        from scripts import sermon_unified_delivery as delivery
+        delivery=_backend.stage('delivery')
         plan=delivery.inspect(config_path(m,base,step))
         result=delivery.execute(config_path(m,base,step),plan['planHash'])
         names={'dev':'firebase_dev','beta':'ios_beta','production_ios':'ios_prod','production_web':'firebase_prod'}
@@ -210,7 +211,7 @@ def execute(m, base, step, out):
             result['reason']='endpoint_evidence_incomplete' if result['status']=='blocked' else 'endpoint_evidence_verified'
         return result
     if adapter == 'canonical.inspect':
-        from scripts.sermon_unified_canonical_binding import inspect_bound
+        inspect_bound=_backend.stage('canonical_binding').inspect_bound
         data = inspect_bound(m, base, config_path(m, base, step), step)
         unit = ('source' if step['stageId']=='english_source' else
                 ('audio.' if step['stageId'] in ('layer3_screen','listen_review') else 'text.') + step.get('locale',''))
@@ -221,7 +222,7 @@ def execute(m, base, step, out):
                 'artifact':'verified' if node.get('status')=='validated' else 'present_unverified',
                 'reason':'canonical_gate','evidence':data,'productionEligible':False}
     if adapter == 'app.prepare':
-        from scripts import sermon_app_delivery_workflow as app
+        app=_backend.stage('app_delivery')
         result = app.run(config_path(m, base, step),mode='execute')
         return {'status':'blocked','reason':'verify_app_candidate_and_study_reviews',
                 'evidence':result,'productionEligible':False}
@@ -233,10 +234,10 @@ def verify_result(m,base,step,result):
     inspect_step(m,base,step)
     adapter=step['adapter']
     if adapter=='canonical.audio':
-        from scripts import sermon_unified_audio as audio
+        audio=_backend.stage('audio')
         audio.verify_result(config_path(m,base,step),result)
     elif adapter=='canonical.layer2':
-        from scripts import canonical_layer2_controller as ctl
+        ctl=_backend.stage('layer2_controller')
         config=ctl.load_configuration(config_path(m,base,step))
         if ctl.package_view(config)['nodes']['text.'+step['locale']]['status']!='validated':
             raise c.ContractError('retained_candidate_not_validated')
@@ -245,10 +246,10 @@ def verify_result(m,base,step,result):
         if c.digest(package)!=result['candidateSha256'] or package['source']['media']['sha256']!=m['source']['mediaSha256']:
             raise c.ContractError('retained_source_candidate_changed')
     elif adapter=='study.produce':
-        from scripts import sermon_unified_study as study
+        study=_backend.stage('study')
         study.verify_result(m,base,config_path(m,base,step),step,result)
     elif adapter=='app.delivery':
-        from scripts import sermon_unified_delivery as delivery
+        delivery=_backend.stage('delivery')
         plan=delivery.inspect(config_path(m,base,step))
         if plan['planHash']!=result['planHash'] or plan['candidateSha256']!=result['candidateSha256']:
             raise c.ContractError('retained_delivery_changed')

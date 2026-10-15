@@ -69,6 +69,11 @@ def _safe_path(path, *, recursive=False):
     return path.resolve()
 
 
+def safe_path(path, *, recursive=False):
+    """Public name for the orchestration package; delegates at call time."""
+    return _safe_path(path, recursive=recursive)
+
+
 def load_config(path):
     path = _safe_path(path)
     config = read(path)
