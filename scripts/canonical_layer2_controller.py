@@ -203,8 +203,10 @@ def repair_ledger_root(config):
 def code_identity():
     # Pin the runtime source/schema closure, not a branch name or stale commit
     # label. The worker rechecks it before any paid call and candidate admission.
-    files = sorted([*ROOT.joinpath('scripts').rglob('*.py'), *ROOT.joinpath('schemas').rglob('*.json'),
-                    ROOT / 'docs/series-terminology.zh.md'])
+    # Code that moved into the production package runs from there; scripts/
+    # keeps only its import facade, so the package source is part of the closure.
+    files = sorted([*ROOT.joinpath('scripts').rglob('*.py'), *ROOT.joinpath('packages/production/src').rglob('*.py'),
+                    *ROOT.joinpath('schemas').rglob('*.json'), ROOT / 'docs/series-terminology.zh.md'])
     return jobs._digest({str(p.relative_to(ROOT)): hashlib.sha256(_safe_path(p).read_bytes()).hexdigest() for p in files})
 
 
