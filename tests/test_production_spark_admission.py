@@ -8,6 +8,7 @@ from scripts import production_spark_admission as admission
 from scripts import spark_exclusive_session as sessions
 from scripts import mfa_spark, render_formal_target_language_speech as speech
 from scripts import sermon_source_budget as budgets
+from scripts import sermon_provider_http as provider_http
 from scripts import run_codex_layer2_test as layer2
 from tests import test_codex_layer2_diagnostic as fixtures
 
@@ -157,9 +158,9 @@ class ProductionSessionCallTests(unittest.TestCase):
             'requestLimits': dict(budgets.text_limits.DEFAULT_REQUEST_LIMITS)}
         with tempfile.TemporaryDirectory() as directory:
             store = budgets.SourceBudget(Path(directory), authority, verify=lambda: None)
-            with patch.object(budgets.spark_admission, 'require_session', side_effect=AssertionError('Spark consulted')), \
+            with patch.object(admission, 'require_session', side_effect=AssertionError('Spark consulted')), \
                  patch.object(sessions.Client, 'from_environment', side_effect=AssertionError('Spark consulted')), \
-                 patch.object(budgets.http, 'execute', side_effect=OSError('network refused in test')) as network:
+                 patch.object(provider_http, 'execute', side_effect=OSError('network refused in test')) as network:
                 with self.assertRaises(Exception) as caught:
                     store.call(operation='asr.0000', identity={'model':'gpt-transcribe'},
                         bounds={'requests':1,'wallTimeMs':1000,'costMicrousd':1000}, request=b'audio',
@@ -170,7 +171,7 @@ class ProductionSessionCallTests(unittest.TestCase):
     def test_mfa_alignment_denies_before_ssh_and_keeps_preflight_readonly(self):
         options = dict(host='user@spark', python='/env/bin/python', root='/jobs',
             mfa_executable='/env/bin/mfa', dictionary_path='/models/dict', acoustic_model='/models/acoustic')
-        with patch.object(mfa_spark.spark_admission, 'require_session', side_effect=sessions.SessionError('session_not_ready')), \
+        with patch.object(admission, 'require_session', side_effect=sessions.SessionError('session_not_ready')), \
              patch.object(mfa_spark.subprocess, 'run') as ssh:
             with self.assertRaisesRegex(sessions.SessionError, 'session_not_ready'):
                 mfa_spark._call('align', chunks=[{'text':'Source.'}], clip_path=Path('unread-file'), **options)

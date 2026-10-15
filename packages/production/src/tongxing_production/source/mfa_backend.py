@@ -7,7 +7,8 @@ from pathlib import Path
 import shutil
 import subprocess
 
-from scripts import mfa_alignment as local, mfa_spark as spark
+from . import backend as _source
+from . import mfa_alignment as local, mfa_spark as spark
 
 
 class LocalRuntimeUnavailable(RuntimeError):
@@ -30,7 +31,7 @@ def add_arguments(parser):
 
 
 def options(args):
-    from scripts.sermon_pipeline import mfa_options
+    mfa_options = _source.current().mfa.options
     remote = spark.transport_options(args)
     for name, target, default in [('executable', 'mfa_executable', spark.DEFAULT_ROOT + '/bin/mfa-run'),
                                   ('dictionary', 'dictionary_path', spark.DEFAULT_ROOT + '/models/english_mfa.dict'),
@@ -73,7 +74,7 @@ def local_identity(options, *, deadline_monotonic=None):
     conda = Path(checked['mfa_executable']).parent.parent / 'conda-meta'
     env_root = Path(checked['mfa_executable']).parent.parent
     native_files = sorted(env_root.glob('lib/python*/site-packages/_kalpy*.so'))
-    runtime = {'version':version, 'nativeKalpy':{str(p):local._sha(p) for p in native_files}, 'adapterSha256':local._sha(local.__file__),
+    runtime = {'version':version, 'nativeKalpy':{str(p):local._sha(p) for p in native_files}, 'adapterSha256':local._sha(_source.current().code.module_path(local)),
                'executionHost':os.uname().nodename, 'executionPlatform':os.uname().sysname,
                'files':{k:{'path':v, 'sha256':local._sha(v)} if v else None
                         for k,v in checked.items() if k != 'spoken_forms_sha256'},

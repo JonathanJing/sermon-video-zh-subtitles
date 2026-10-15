@@ -20,6 +20,7 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts import sermon_unified_source as source
 from scripts import sermon_source_budget as budget
+from scripts import sermon_transcription_request as transcription
 from scripts import sermon_workflow_jobs as jobs
 from scripts import build_english_source_package as english
 from scripts import sermon_sentence_interpretation as anchors
@@ -80,8 +81,8 @@ def prepare(*, provenance_path, out_dir, profile, resource_policy, mfa, cli_path
     # Fixed provider implementation defines the audio worst-case charge. These
     # are reservations, not invoice values, and audio token counts stay unknown.
     authority = {'approvalSha256': jobs._digest({'diagnosticOnly': True, 'provenance': provenance}),
-        'globalBounds': {'requests': chunks, 'wallTimeMs': chunks * budget.transcription.WALL_TIME_MS,
-            'costMicrousd': sum(math.ceil(min(180, duration - i * 180) / 60) * budget.transcription.MICROUSD_PER_MINUTE
+        'globalBounds': {'requests': chunks, 'wallTimeMs': chunks * transcription.WALL_TIME_MS,
+            'costMicrousd': sum(math.ceil(min(180, duration - i * 180) / 60) * transcription.MICROUSD_PER_MINUTE
                                  for i in range(chunks))},
         'requestLimits': dict(budget.text_limits.DEFAULT_REQUEST_LIMITS)}
     value = {'schemaVersion': SCHEMA, 'simulationOnly': True, 'diagnosticOnly': True,

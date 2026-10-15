@@ -15,18 +15,25 @@ import time
 import urllib.request
 import uuid
 
-from scripts import sermon_workflow_jobs as jobs
-from scripts import production_spark_admission as spark_admission
-from scripts import sermon_provider_http as http
-from scripts import sermon_provider_limits as text_limits
-from scripts import sermon_transcription_request as transcription
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.source import backend as _source
-from scripts import english_source_judge_cache as immutable
+from ..compute import provider_limits as text_limits
+from . import backend as _source
+from . import english_source_judge_cache as immutable
+
+
+class _Jobs:
+    """The host's durable job store, looked up at each call so the package imports without a host."""
+    def __getattr__(self, name):
+        return getattr(_source.current().core.jobs, name)
+
+
+jobs = _Jobs()
 
 JUDGE_LIMITS = ContextVar('source_judge_request_limits', default=None)
 METRICS = ('requests', 'wallTimeMs', 'costMicrousd')
-LOCK = jobs._digest({'purpose': 'source-budget-v1'})
+
+
+def _ledger_lock_id():
+    return jobs._digest({'purpose': 'source-budget-v1'})
 LEDGER_V2 = 'sermon-source-budget-ledger-v2'
 # v3 is v2 plus a measured ``settlement`` on every returned row. v2 stays exactly
 # as its frozen readers expect: new code never writes settlement into a v2 ledger,
@@ -110,7 +117,7 @@ def bound_judge_payload(payload):
 
 def bounded_source_judge_payload(payload, limits):
     """Validate the source judge's pinned schema without widening Layer 2."""
-    from scripts import judge_english_source_for_translation as judge
+    from . import english_source_judge as judge  # the judge reaches this module lazily too
     text_limits.validate_request_limits(limits)
     expected_format = {'type': 'json_schema', 'json_schema': {
         'name': 'english_source_machine_judge', 'strict': True, 'schema': judge._response_schema()}}
@@ -139,8 +146,7 @@ class SourceBudget:
         self.max_concurrent = max_concurrent
         self.resource_policy = None
         if resource_policy is not None:
-            from scripts.sermon_unified import resources
-            self.resource_policy = resources.validate_policy(resource_policy)
+            self.resource_policy = _source.current().resources.validate_policy(resource_policy)
         require(set(authority) == {'approvalSha256', 'globalBounds', 'requestLimits'}, 'invalid_source_budget_authority')
         require(set(authority['globalBounds']) == set(METRICS)
                 and all(type(v) is int and 0 < v <= 10**15 for v in authority['globalBounds'].values()),
@@ -152,7 +158,7 @@ class SourceBudget:
         # Up to 8 concurrent ASR/judge workers contend for this lock; a 1 s wait made a busy
         # worker fail before reserving and orphan its started marker. Wait up to 30 s instead.
         for attempt in range(3000):
-            with jobs._lock(self.root, LOCK) as (_, _, held):
+            with jobs._lock(self.root, _ledger_lock_id()) as (_, _, held):
                 if held:
                     path = self.root / 'source-budget.json'
                     if path.exists():
@@ -237,8 +243,7 @@ class SourceBudget:
     def _resource_identity(self):
         if self.resource_policy is None:
             return None
-        from scripts.sermon_unified import resources
-        return resources._identity(self.resource_policy)
+        return _source.current().resources.identity(self.resource_policy)
 
     def _operation_path(self, operation, *, root=None):
         directory = (self.root if root is None else root) / 'live-owners'
@@ -279,8 +284,7 @@ class SourceBudget:
     def _release_resource(self, row):
         if row.get('resourceBinding') is not None:
             require(self.resource_policy is not None, 'source_resource_policy_missing')
-            from scripts.sermon_unified import resources
-            resources.release(self.resource_policy, **row['resourceBinding'])
+            _source.current().resources.release(self.resource_policy, **row['resourceBinding'])
 
     def _resource_binding(self, operation, fingerprint):
         return {'operation_id': 'source-api:' + jobs._digest({'root': str(self.root.resolve()),
@@ -455,9 +459,8 @@ class SourceBudget:
             row = {'identitySha256': fingerprint, 'bounds': bounds,
                    'status': 'live_started', 'dispatchOwner': owner}
             if self.resource_policy is not None:
-                from scripts.sermon_unified import resources
                 binding = self._resource_binding(operation, fingerprint)
-                require(resources.reserve(self.resource_policy, **binding, resource='online_api'), 'source_resource_capacity_busy')
+                require(_source.current().resources.reserve(self.resource_policy, **binding, resource='online_api'), 'source_resource_capacity_busy')
                 row['resourceBinding'] = binding
             ledger['requests'][operation] = row
             jobs._persist(path, ledger)
@@ -489,9 +492,10 @@ class SourceBudget:
             headers={'Authorization': 'Bearer ' + api_key, 'Content-Type': content_type}, method='POST')
         req.accounting_model = identity['model']
         req.accounting_settings = {'requestPayloadSha256': fingerprint}
-        return _source.current().provider.request_json(req, retries=1, response_observer=returned,
-            request_executor=spark_admission.SessionBoundCaller(
-                lambda r: http.execute(r, bounds['wallTimeMs'] / 1000), purpose='source-audio-api', requires_spark=False, outcome_guarded=True))
+        backend = _source.current()
+        return backend.provider.request_json(req, retries=1, response_observer=returned,
+            request_executor=backend.compute.session_bound_caller(
+                lambda r: backend.provider.http_execute(r, bounds['wallTimeMs'] / 1000), purpose='source-audio-api', requires_spark=False, outcome_guarded=True))
 
     def reconcile_returned(self, operation, expected_identity_sha256):
         """Explicit local reconciliation after raw return persisted but ledger did not.
@@ -596,7 +600,7 @@ class SourceBudget:
         return {'status': 'migrated', 'from': version, 'to': LEDGER_V4, 'settledRows': len(settled), 'modelCalls': 0}
 
     def transcribe(self, operation, audio_bytes, audio_sha256, api_key):
-        prepared = transcription.build_request(audio_bytes, audio_sha256)
+        prepared = _source.current().provider.transcription_request(audio_bytes, audio_sha256)
         return self.call(operation=operation, identity=prepared['identity'], bounds=prepared['budgetBounds'],
                          request=prepared['body'], api_key=api_key, content_type=prepared['contentType'],
                          endpoint='https://api.openai.com/v1/audio/transcriptions')

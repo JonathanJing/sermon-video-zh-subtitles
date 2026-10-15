@@ -147,20 +147,27 @@ class CompletionTests(unittest.TestCase):
         repository=Path(__file__).resolve().parents[1]
         actual=c.bytes_sha256((repository/'scripts/sermon_fresh_diagnostic_source.py').read_bytes())
         self.assertEqual(compatibility.EXTRACTION_SOURCE_SHA256['scripts/sermon_fresh_diagnostic_source.py'],actual)
-        latest=compatibility.PRODUCER_MOVE_SOURCE_SHA256
-        for path in {*compatibility.MOVE_CHANGED,*compatibility.PRODUCER_MOVE_CHANGED}:
+        latest=compatibility.TRANSPORT_MOVE_SOURCE_SHA256
+        for path in {*compatibility.MOVE_CHANGED,*compatibility.PRODUCER_MOVE_CHANGED,*compatibility.TRANSPORT_MOVE_CHANGED}:
             self.assertEqual(latest[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
         moved=compatibility.verify(compatibility.EXTRACTION_SOURCE_SHA256,compatibility.MOVE_SOURCE_SHA256,
             {compatibility.resolve(path):sha for path,sha in compatibility.MOVE_SOURCE_SHA256.items()},binding)
         self.assertEqual(moved['migrationId'],compatibility.MOVE_MIGRATION)
         self.assertEqual(moved['changedModules'],compatibility.MOVE_CHANGED)
         self.assertFalse(moved['productionEligible'])
-        producers=compatibility.verify(compatibility.MOVE_SOURCE_SHA256,latest,
-            {compatibility.resolve(path):sha for path,sha in latest.items()},binding)
-        self.assertEqual(producers['migrationId'],compatibility.PRODUCER_MOVE_MIGRATION)
-        self.assertEqual(producers['changedModules'],compatibility.PRODUCER_MOVE_CHANGED)
-        with self.assertRaises(c.ContractError):
-            compatibility.verify(compatibility.EXTRACTION_SOURCE_SHA256,latest,latest,binding)
+        for before,after,migration,changed in (
+                (compatibility.MOVE_SOURCE_SHA256,compatibility.PRODUCER_MOVE_SOURCE_SHA256,
+                 compatibility.PRODUCER_MOVE_MIGRATION,compatibility.PRODUCER_MOVE_CHANGED),
+                (compatibility.PRODUCER_MOVE_SOURCE_SHA256,latest,
+                 compatibility.TRANSPORT_MOVE_MIGRATION,compatibility.TRANSPORT_MOVE_CHANGED)):
+            step=compatibility.verify(before,after,
+                {compatibility.resolve(path):sha for path,sha in after.items()},binding)
+            self.assertEqual(step['migrationId'],migration)
+            self.assertEqual(step['changedModules'],changed)
+            self.assertEqual(step['newMFACalls'],0)
+        for skipped in (compatibility.EXTRACTION_SOURCE_SHA256,compatibility.MOVE_SOURCE_SHA256):
+            with self.assertRaises(c.ContractError):
+                compatibility.verify(skipped,latest,latest,binding)
         with self.assertRaises(c.ContractError):
             compatibility.verify(compatibility.FOLLOWUP_SOURCE_SHA256,compatibility.MOVE_SOURCE_SHA256,
                 compatibility.MOVE_SOURCE_SHA256,binding)

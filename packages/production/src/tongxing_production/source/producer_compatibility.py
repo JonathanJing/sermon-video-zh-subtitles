@@ -24,6 +24,10 @@ PATH_ALIASES = {
     'scripts/judge_english_source_for_translation.py': PACKAGE_SOURCE + 'english_source_judge.py',
     'scripts/english_source_judge_cache.py': PACKAGE_SOURCE + 'english_source_judge_cache.py',
     'scripts/run_sentence_interpretation_models.py': PACKAGE_SOURCE + 'sentence_interpretation_models.py',
+    'scripts/sermon_source_budget.py': PACKAGE_SOURCE + 'budget.py',
+    'scripts/sermon_source_text_review.py': PACKAGE_SOURCE + 'text_review.py',
+    'scripts/mfa_backend.py': PACKAGE_SOURCE + 'mfa_backend.py',
+    'scripts/mfa_spark.py': PACKAGE_SOURCE + 'mfa_spark.py',
 }
 
 
@@ -72,6 +76,15 @@ PRODUCER_MOVE_SOURCE_SHA256 = {**MOVE_SOURCE_SHA256,
 PRODUCER_MOVE_MIGRATION = 'l1-source-producers-package-move-v5'
 PRODUCER_MOVE_CHANGED = ['scripts/build_english_source_package.py']
 
+# The MFA backend and Spark transport moved into the package. Their imports
+# changed; the backend takes MFA options and the adapter path from the ports.
+# The adapter they ship and hash (mfa_alignment) is byte-identical.
+TRANSPORT_MOVE_SOURCE_SHA256 = {**PRODUCER_MOVE_SOURCE_SHA256,
+    'scripts/mfa_backend.py': 'f535d1a8338a0914ba58148f364421a1b30822c9aa6197cfecbb9b9e9a94d982',
+    'scripts/mfa_spark.py': 'ee5272d62fa81b2576279f9e92ba44fb8f87d539aac3760ed5e4829164ddbee1'}
+TRANSPORT_MOVE_MIGRATION = 'l1-source-mfa-transport-package-move-v6'
+TRANSPORT_MOVE_CHANGED = ['scripts/mfa_backend.py', 'scripts/mfa_spark.py']
+
 
 def verify(historical,current,planned,binding):
     _require(type(historical) is dict and type(current) is dict and type(planned) is dict
@@ -85,21 +98,23 @@ def verify(historical,current,planned,binding):
     extraction = historical==FOLLOWUP_SOURCE_SHA256 and current==EXTRACTION_SOURCE_SHA256
     move = historical==EXTRACTION_SOURCE_SHA256 and current==MOVE_SOURCE_SHA256
     producer_move = historical==MOVE_SOURCE_SHA256 and current==PRODUCER_MOVE_SOURCE_SHA256
+    transport_move = historical==PRODUCER_MOVE_SOURCE_SHA256 and current==TRANSPORT_MOVE_SOURCE_SHA256
+    package_move = move or producer_move or transport_move
     changed = (CHANGED if original else MOVE_CHANGED if move else PRODUCER_MOVE_CHANGED if producer_move
-        else ['scripts/sermon_fresh_diagnostic_source.py'])
-    _require((original or followup or extraction or move or producer_move) and {path for path in current if current[path]!=historical[path]}==set(changed),
+        else TRANSPORT_MOVE_CHANGED if transport_move else ['scripts/sermon_fresh_diagnostic_source.py'])
+    _require((original or followup or extraction or package_move) and {path for path in current if current[path]!=historical[path]}==set(changed),
         'source_producer_compatibility_unknown_revision')
     _require(type(binding) is dict and set(binding)=={'parentPlanSha256','newPlanSha256',
         'sourceCanonicalSha256','anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256'}
         and all(type(value) is str and len(value)==64 and all(ch in '0123456789abcdef' for ch in value)
                 for value in binding.values()),'source_producer_compatibility_binding_required')
     migration = (MIGRATION if original else MOVE_MIGRATION if move else PRODUCER_MOVE_MIGRATION if producer_move
-        else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
+        else TRANSPORT_MOVE_MIGRATION if transport_move else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
     return {'schemaVersion':SCHEMA,'migrationId':migration,'binding':binding,
         'historicalProducerSha256':historical,'currentInspectorProducerSha256':current,
         'changedModules':changed,'migrationCodeSha256':_source.current().code.module_sha256(sys.modules[__name__]),
         'acceptedScope':('original_deadline_and_typed_failures_only_no_source_semantic_change' if original else
-            'read_only_original_source_under_package_move_no_new_inference' if move or producer_move else
+            'read_only_original_source_under_package_move_no_new_inference' if package_move else
             'read_only_original_source_under_fixed_stage_extraction_no_new_inference' if extraction else
             'read_only_original_source_under_typed_completion_and_identity_inspector_no_new_inference'),
         'sourceExecution':'historical_receipts_reused_current_deterministic_inspection',

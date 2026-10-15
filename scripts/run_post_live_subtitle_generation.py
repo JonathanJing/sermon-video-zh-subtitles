@@ -1422,10 +1422,11 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
         identity["readingAligner"] = aligner
         identity["schemaVersion"] = 5  # Bind selected local or Spark runtime before whole-pipeline cache reuse.
         if aligner == "mfa":
-            from scripts.mfa_backend import preflight, options
-            identity["mfa"] = preflight(**options(args))
-            identity["mfaBackend"] = file_content_identity(REPO_ROOT / "scripts" / "mfa_backend.py")
-            identity["mfaTransport"] = file_content_identity(REPO_ROOT / "scripts" / "mfa_spark.py")
+            from scripts import mfa_backend, mfa_spark
+            identity["mfa"] = mfa_backend.preflight(**mfa_backend.options(args))
+            # The implementation files, wherever they live (the package since L1 S3).
+            identity["mfaBackend"] = file_content_identity(Path(mfa_backend.__file__))
+            identity["mfaTransport"] = file_content_identity(Path(mfa_spark.__file__))
     if getattr(args, "fingerprint_precompute", False):
         identity["fingerprintPrecompute"] = {
             "script": file_content_identity(REPO_ROOT / "packages/fingerprint/bin/build_fingerprint_index.mjs"),

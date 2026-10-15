@@ -14,11 +14,9 @@ import subprocess
 import tarfile
 import tempfile
 
-from scripts import mfa_alignment as _adapter_module
-from scripts.mfa_alignment import _sha, _write, _spoken_forms
-from scripts import production_spark_admission as spark_admission
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.source import backend as _source
+from . import backend as _source
+from . import mfa_alignment as _adapter_module
+from .mfa_alignment import _sha, _write, _spoken_forms
 
 DEFAULT_ROOT = '/home/achillesjing/sermon-mfa-runtime'
 
@@ -138,7 +136,7 @@ def _call(action, *, chunks=None, clip_path=None, host, proxy_jump='', relay_hos
                            'acoustic_model': str(acoustic_model), 'g2p_model': str(g2p_model) if g2p_model else None,
                            'spoken_forms_path': None}}
     if action == 'align':
-        spark_admission.require_session(verifier=session_verifier)
+        _source.current().compute.require_session(verifier=session_verifier)
         request.update(chunks=chunks, audioSha256=_sha(clip_path))
     command = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15']
     if proxy_jump:
@@ -162,7 +160,7 @@ def _call(action, *, chunks=None, clip_path=None, host, proxy_jump='', relay_hos
                 bundle.add(Path(clip_path).resolve(strict=True), arcname='audio')
         payload.seek(0)
         try:
-            execute = (spark_admission.SessionBoundCaller(subprocess.run, verifier=session_verifier,
+            execute = (_source.current().compute.session_bound_caller(subprocess.run, verifier=session_verifier,
                        purpose="source-mfa-alignment") if action == "align" else subprocess.run)
             completed = execute(command, stdin=payload, capture_output=True, check=True,
                                        timeout=14460 if action == 'align' else 180)

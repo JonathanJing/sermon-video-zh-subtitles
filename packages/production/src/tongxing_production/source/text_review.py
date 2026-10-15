@@ -18,6 +18,9 @@ from pathlib import Path
 import re
 from typing import Any
 
+from .. import ports
+from . import backend as _source
+
 
 SCHEMA = "sermon-source-text-review-v1"
 MODEL = "gpt-6.1-sol"
@@ -171,13 +174,12 @@ def _machine_receipt(review: dict[str, Any], evidence: list[dict[str, str]],
             and isinstance(package.get("anchor"), dict)):
         raise ValueError("Machine audio adjudication requires the adjudicated source package "
                          "(source.json and anchor.json) as adjudicated_package")
-    from scripts import source_meaning_machine_adjudication as adjudicator_module
     try:
         # The request cache beside the receipt lets each model verdict be derived again from its response.
-        adjudicator_module.validate_receipt(receipt, source=package["source"], anchor=package["anchor"],
-                                            media_sha256=package.get("mediaSha256"),
-                                            cache=receipt_path.parent / adjudicator_module.ADJUDICATOR_CACHE)
-    except adjudicator_module.SourceAdjudicationError as exc:
+        _source.current().adjudication.validate_receipt(receipt, source=package["source"], anchor=package["anchor"],
+                                                        media_sha256=package.get("mediaSha256"),
+                                                        receipt_directory=receipt_path.parent)
+    except ports.AdjudicationRejected as exc:
         raise ValueError(f"Source-meaning receipt is not bound to the adjudicated package and media: {exc}") from exc
     return sha, receipt
 
