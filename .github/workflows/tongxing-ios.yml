@@ -84,6 +84,8 @@ jobs:
                   "backend": {".py", ".md"},
                   "packages": {".py", ".toml", ".md", ".mjs", ".js", ".json"},
                   "services": {".mjs", ".js", ".json", ".md", ".rules"},
+                  "tools": {".mjs", ".js", ".json", ".md"},
+                  "infra": {".json", ".rules", ".md"},
                   "scripts": {".py", ".sh", ".mjs", ".md"},
                   "tests": {".py", ".json", ".md"},
                   "web": {".html", ".css", ".js", ".mjs", ".md"},
@@ -101,11 +103,11 @@ jobs:
                       return item.suffix in non_native_roots[item.parts[0]]
                   if path.startswith(("experiments/sermon-dubbing-poc/", "experiments/local-live-poc/")):
                       return item.suffix in experiment_suffixes
-                  # The listening web client lives beside the iOS app but is not native code.
-                  if path.startswith("apps/listening-web/"):
+                  # Web clients live beside the iOS app but are not native code.
+                  if path.startswith(("apps/listening-web/", "apps/tracker-web/")):
                       return item.suffix in {".mjs", ".js", ".html", ".css", ".svg", ".png", ".json", ".md"}
                   return False
-              if not paths or any((p.startswith(("apps/", ".github/")) and not p.startswith("apps/listening-web/")) or
+              if not paths or any((p.startswith(("apps/", ".github/")) and not p.startswith(("apps/listening-web/", "apps/tracker-web/"))) or
                                   (not shared(p) and not known_non_native(p)) for p in paths):
                   scope = "native"
               elif any(shared(p) for p in paths):

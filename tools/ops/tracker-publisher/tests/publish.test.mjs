@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseArgs, validateSnapshot } from '../publish.mjs';
-import { formatDuration, stepTimingSummary, timingCoverageNote } from '../src/timing.js';
-import { substageProgressLabel } from '../src/substage.js';
+import { formatDuration, stepTimingSummary, timingCoverageNote } from '../../../../apps/tracker-web/src/timing.js';
+import { substageProgressLabel } from '../../../../apps/tracker-web/src/substage.js';
 
 test('publishing requires an explicit project, database and snapshot', () => {
   assert.throws(() => parseArgs(['--project', 'example-project', '--database', 'sermon-tracker']), /snapshot/);

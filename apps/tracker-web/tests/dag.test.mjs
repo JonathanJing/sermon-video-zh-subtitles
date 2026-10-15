@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitizeDag } from '../src/dag-contract.js';
+import { sanitizeDag } from '../../../packages/tracker-contract/src/dag-contract.js';
 import { dagRanks } from '../src/dag.js';
-import { sanitizeSnapshot } from '../sanitize.mjs';
-import { semanticHash } from '../publish.mjs';
+import { sanitizeSnapshot } from '../../../packages/tracker-contract/src/sanitize.mjs';
+import { semanticHash } from '../../../tools/ops/tracker-publisher/publish.mjs';
 const node = (id, dependsOn = []) => ({id,dependsOn,status:'completed',code:'asr',executorType:'production_model',modelCodes:['qwen3-asr'],timing:{status:'measured',elapsedSeconds:10},io:{}});
 const fixture = () => ({schemaVersion:'sermon-public-tracker-dag-v1',scope:'accounting_run',executionAuthority:'none',acceptance:'not_evaluated',evidenceMode:'synthetic',generatedAt:'2026-10-02T14:00:00Z',nodes:[node('n1'),node('n2',['n1']),node('n3',['n1']),node('n4',['n2','n3'])],quality:{status:'projected'},eta:{status:'unknown',reasonCodes:['no_comparable_history']}});
 test('closed public DAG removes raw logs, paths, identifiers, URLs and nonallowlisted models', () => {

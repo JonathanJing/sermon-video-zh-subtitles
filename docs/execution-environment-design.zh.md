@@ -53,7 +53,7 @@ flowchart TB
 | 发现与旧云生产 | [Supervisor 历史边界](sermon-production-supervisor-agent.md)、[Cloud Run 历史设计](system-design.zh.md) | 文档记录 Cloud Scheduler 发现源和 GCS 状态；旧 post-live Cloud Run Job 已退役。现存源码不是正在运行的旧生产服务，调度健康须另查 |
 | 周日现场字幕 | [本地 POC 设计](../experiments/local-live-poc/DESIGN.zh.md)、[Gateway](../experiments/local-live-poc/backend/gateway.py)、[Firebase publisher](../experiments/local-live-poc/backend/firebase_publisher.py) | 浏览器麦克风、PCM/WebSocket、本地 ASR/Ollama 翻译与恢复录音；独立 LAN/SSE 和 Firebase 只读字幕路径。v4.1 是隔离试验，不因同在 MacBook 就取得分享或生产资格 |
 | Firebase 与 GCS | [环境隔离合同](development-branch-and-firebase-environments.zh.md)、[受控 CD](../scripts/run_multilingual_cd.py)、[视频迁移记录](reports/20260928-full-video-bucket-migration.zh.md) | Dev/Production 项目和站点分开。HTML、catalog、音轨、字幕、索引由 Hosting 提供；9 月 28 日记录完整视频在独立 bucket，Hosting 精确 302 指向按 SHA 命名的对象。公开视频对象与私有生产证据是不同访问范围 |
-| 反馈、统计与 Tracker | [feedback API](../services/feedback/README.zh.md)、[Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md)、[远端 review bridge](tracker-remote-review-bridge.zh.md) | API/Firestore 与静态媒体分开；Tracker 是脱敏投影，远端请求须由本地 bridge 校验并形成匹配收据，不能直接改本地生产真相。本文不推断每项功能都已部署 |
+| 反馈、统计与 Tracker | [feedback API](../services/feedback/README.zh.md)、[Tracker](../apps/tracker-web/README.zh.md)、[远端 review bridge](tracker-remote-review-bridge.zh.md) | API/Firestore 与静态媒体分开；Tracker 是脱敏投影，远端请求须由本地 bridge 校验并形成匹配收据，不能直接改本地生产真相。本文不推断每项功能都已部署 |
 | GitHub CI | [Python/docs workflow](../.github/workflows/python-tests.yml)、[iOS workflow](../.github/workflows/tongxing-ios.yml)、[promotion policy](../.github/workflows/branch-promotion.yml) | required `unittest`、`native-client`；进入 main 另有 promotion-policy。文档白名单走 links/格式快路径，native/shared contract 按差异运行。CI 不调用生产模型，不随 main push 自动发布每周内容 |
 
 ## 存储、网络与恢复

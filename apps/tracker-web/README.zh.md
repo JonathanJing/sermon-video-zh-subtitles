@@ -8,17 +8,18 @@
 
 Tracker 内的时间线按首次有记录的事件计算**相对秒数**，只发布已登记步骤、预定义细分代码、状态跨度与同账本身份的执行跨度。原始日志、绝对起点、模型阶段名和本机路径均不发布。图表按层筛选、展开细分步骤，并分别列出最长状态区间和最长实测执行；没有起止计时的细分项明确显示“未计时”。旧快照没有时间线时显示缺数据提示。生成和筛选时间线不会推进任何正式检查点。
 
-1. 在目标 Firebase 项目中新建**专用** Firestore 命名数据库 `sermon-tracker` 和独立 Hosting 站点。不要把本目录的规则部署到现有反馈数据库；规则部署会覆盖目标数据库现有规则。参见 Firebase 的[多站点 Hosting](https://firebase.google.com/docs/hosting/multisites)和[规则部署说明](https://firebase.google.com/docs/rules/manage-deploy)。
+1. 在目标 Firebase 项目中新建**专用** Firestore 命名数据库 `sermon-tracker` 和独立 Hosting 站点。不要把 `infra/firebase/tracker/firestore.rules` 部署到现有反馈数据库；规则部署会覆盖目标数据库现有规则。参见 Firebase 的[多站点 Hosting](https://firebase.google.com/docs/hosting/multisites)和[规则部署说明](https://firebase.google.com/docs/rules/manage-deploy)。
 2. 复制 `public/tracker-config.example.json` 为被忽略的 `public/tracker-config.json`，填写 Firebase Web App 的**公开**配置与数据库 ID。不要放管理员令牌、服务账号密钥或其他凭据。
 3. 安装依赖、运行测试并构建。为新站点绑定 Hosting target `sermonTrackerAdmin`，再把规则及静态页部署到**指定**的数据库和站点。先检查目标项目／target 绑定。
 
 ```bash
-cd experiments/sermon-dubbing-poc/tracker-admin
+cd apps/tracker-web
 npm install
 cp public/tracker-config.example.json public/tracker-config.json
 # 填好公开 Firebase Web App 配置后：
 npm test
 npm run build
+cd ../../infra/firebase/tracker   # firebase.json、规则与索引在这里；.firebaserc 也放在这里（被 Git 忽略）
 firebase target:apply hosting sermonTrackerAdmin YOUR_TRACKER_SITE --project YOUR_PROJECT
 firebase deploy --only firestore:sermon-tracker --project YOUR_PROJECT
 firebase deploy --only hosting:sermonTrackerAdmin --project YOUR_PROJECT
@@ -26,7 +27,7 @@ firebase deploy --only hosting:sermonTrackerAdmin --project YOUR_PROJECT
 
 已在项目 `ai-for-god-sermon-audio-dev` 建立独立站点 `ai-for-god-sermon-tracker-dev`、专用数据库 `sermon-tracker`（`us-west1`、Standard、删除保护、首库免费配额）和公开 Web App；规则与页面于 2026-09-23 部署。[线上 Tracker](https://ai-for-god-sermon-tracker-dev.web.app/) 可直接查看。其他项目复用时仍按上述步骤建立自己的独立资源。`?demo=1` 显示明确标记的合成样例，不读取真实数据。
 
-2026-09-24 已将[远程审核通信演示](https://ai-for-god-sermon-tracker-dev.web.app/?bridgeMock=1)发布到上述 Dev Hosting。`?bridgeMock=1` 额外显示此面板：它沿用公开 Tracker 的实时状态，可展开现有文字状态，显示媒体不可用说明，并试用「同意／不同意」、审核意见和模拟提交。**现有文字只是检查点状态，不是完整候选译文或音频审核证据。** 页面上的裁决、提交、领取和重置只改变当前浏览器画面，**不会写 Firestore、批准内容或启动 Agent**。页面显示的云端到本机测试时间是静态历史收据，不表示本机领取器当前在线。真实传输探针见[测试记录](../../../docs/reports/20260924-tracker-bridge-probe.zh.md)及本目录的 `bridge-mock.mjs`；只支持私有 `mock_ping`，使用本机 ADC 访问 Dev 的命名数据库。正式浏览器提交还需要登录鉴权、私有证据服务和经过门禁验证的后端接口。
+2026-09-24 已将[远程审核通信演示](https://ai-for-god-sermon-tracker-dev.web.app/?bridgeMock=1)发布到上述 Dev Hosting。`?bridgeMock=1` 额外显示此面板：它沿用公开 Tracker 的实时状态，可展开现有文字状态，显示媒体不可用说明，并试用「同意／不同意」、审核意见和模拟提交。**现有文字只是检查点状态，不是完整候选译文或音频审核证据。** 页面上的裁决、提交、领取和重置只改变当前浏览器画面，**不会写 Firestore、批准内容或启动 Agent**。页面显示的云端到本机测试时间是静态历史收据，不表示本机领取器当前在线。真实传输探针见[测试记录](../../docs/reports/20260924-tracker-bridge-probe.zh.md)及`tools/ops/tracker-publisher/bridge-mock.mjs`；只支持私有 `mock_ping`，使用本机 ADC 访问 Dev 的命名数据库。正式浏览器提交还需要登录鉴权、私有证据服务和经过门禁验证的后端接口。
 
 本地 UI 审核可先 `npm run build`，将 `dist/` 复制到忽略 Git 的 `artifacts/tracker-ui-review/`，用快照生成器把当前账本写成该目录的 `local-preview.json`，再从仓库根目录运行 `python -m http.server 4178 --bind 127.0.0.1 --directory artifacts/tracker-ui-review`。打开 `http://127.0.0.1:4178/?local=1` 即可查看**非实时**脱敏快照；此模式不连接 Firestore，也不执行发布。
 
@@ -36,9 +37,9 @@ firebase deploy --only hosting:sermonTrackerAdmin --project YOUR_PROJECT
 
 ## 更新每周状态
 
-本地工作账本由[四层 tracker](../../../scripts/four_layer_progress.py)维护；[快照生成器](../../../scripts/build_four_layer_tracker_snapshot.py)汇总账本、源监控、同语言 Release Package、可选旧中文目录、HTTP 收据和声纹证据。当前公开快照为 `sermon-public-tracker-snapshot-v2`，增加进行中状态与未结束执行的有界秒数；旧版 v1 快照仍可在网页读取，发布器投影会将其迁移为 v2，缺少的计时字段保持未知。正式 producer 尚未全部自动写入账本，所以未有收据的阶段需操作者按真实证据更新。`source-video-state.private.json` 保存在快照旁边的忽略 Git 工作目录，用于比较同一周视频 ID；此文件**不得放进 Hosting public/dist 或 Firestore**。
+本地工作账本由[四层 tracker](../../scripts/four_layer_progress.py)维护；[快照生成器](../../scripts/build_four_layer_tracker_snapshot.py)汇总账本、源监控、同语言 Release Package、可选旧中文目录、HTTP 收据和声纹证据。当前公开快照为 `sermon-public-tracker-snapshot-v2`，增加进行中状态与未结束执行的有界秒数；旧版 v1 快照仍可在网页读取，发布器投影会将其迁移为 v2，缺少的计时字段保持未知。正式 producer 尚未全部自动写入账本，所以未有收据的阶段需操作者按真实证据更新。`source-video-state.private.json` 保存在快照旁边的忽略 Git 工作目录，用于比较同一周视频 ID；此文件**不得放进 Hosting public/dist 或 Firestore**。
 
-本轮之后的片段 POC 用[四层 Tracker 文档](../../../docs/four-layer-production-tracker.zh.md)中的 `init-poc` 建立准确 `pageId`、原视频及候选窗口绑定的新账本；它不授予人工范围批准。耗时审计使用[四层计时入口](../../../scripts/four_layer_measure.py)：首批正式 producer 加 `--progress-ledger` 即自动写执行 span；未接入的命令仍用 `run --step` 包装。`audit` 只读地将私有 `accounting/events.jsonl` 关联到检查点，并列出缺少计时的已完成步骤。公开 Firebase 页面在 Layer 1、各语言 Layer 2–3、联合 Layer 4 和逐项列表显示同一检查点的实测执行累计、重试／失败次数，以及有开始事件时截至快照的进行中状态和未结束执行时长；未记录的耗时明确显示未知。状态持续时间不等于实际执行或人工审阅时间。页面不上传模型请求细节、私有开始时间或日志。人工审核等待需在发出和收到审核时及时更新 Tracker 状态；旧产物的文件时间不能补作实测耗时。
+本轮之后的片段 POC 用[四层 Tracker 文档](../../docs/four-layer-production-tracker.zh.md)中的 `init-poc` 建立准确 `pageId`、原视频及候选窗口绑定的新账本；它不授予人工范围批准。耗时审计使用[四层计时入口](../../scripts/four_layer_measure.py)：首批正式 producer 加 `--progress-ledger` 即自动写执行 span；未接入的命令仍用 `run --step` 包装。`audit` 只读地将私有 `accounting/events.jsonl` 关联到检查点，并列出缺少计时的已完成步骤。公开 Firebase 页面在 Layer 1、各语言 Layer 2–3、联合 Layer 4 和逐项列表显示同一检查点的实测执行累计、重试／失败次数，以及有开始事件时截至快照的进行中状态和未结束执行时长；未记录的耗时明确显示未知。状态持续时间不等于实际执行或人工审阅时间。页面不上传模型请求细节、私有开始时间或日志。人工审核等待需在发出和收到审核时及时更新 Tracker 状态；旧产物的文件时间不能补作实测耗时。
 
 ```bash
 python scripts/four_layer_progress.py artifacts/my-run/four-layer-progress.json init \
@@ -49,15 +50,16 @@ python scripts/build_four_layer_tracker_snapshot.py \
   --source-monitor artifacts/live-source-monitor/report.json \
   --source-page-url https://www.marinerschurch.org/irvine/ \
   --service-date 2026-09-20
-cd experiments/sermon-dubbing-poc/tracker-admin
+cd tools/ops/tracker-publisher
 node publish.mjs --project YOUR_PROJECT --database sermon-tracker \
   --snapshot ../../../artifacts/my-run/public-tracker-snapshot.json
 # 默认只验证；确认目标项目后，加 --execute 才写 Firestore。
 ```
 
-把 `watch-config.example.json` 复制为被忽略的 `watch-config.json`，配置本周账本与证据路径后，可运行：
+发布器及其控制器都在 `tools/ops/tracker-publisher/` 下运行。把该目录的 `watch-config.example.json` 复制为被忽略的 `watch-config.json`，配置本周账本与证据路径（相对仓库根目录）后，可运行：
 
 ```bash
+cd tools/ops/tracker-publisher
 node publish.mjs --project YOUR_PROJECT --database sermon-tracker \
   --watch-config watch-config.json --watch --execute
 ```
@@ -95,7 +97,7 @@ tail -f watch-config.json.publisher.log
 - 当前 POC 的忽略 Git `watch-config.json` 已填好本地路径。运行前先刷新其中的线上目录／HTTP 收据；`--watch` 只观察这些本地文件和账本，不替代定时源监控或自动下载新视频。
 - 另一个已发布的状态记录 `2026-09-20-blocks9-14-178s-dev-progress` 对应正在制作的三语 178 秒片段：Layer 1 为 4/4，三语 Layer 2 各 4/4，Layer 3 各 1/6，Layer 4 各 0/4，总计 19/46。该记录是审核收据的事后捕捉；计时预检显示 19 个已完成步骤没有实测执行 span，不能据此比较阶段速度。后续步骤可用新计时入口留证，本轮结束再审计。
 - 该 POC 的中文、韩语、西语、越南语各有机器文字候选与可访问的短音轨；四条音轨的 SHA 和 Range 通过。越南语机器音频筛查标记需复核。四语的正式文字审核、音色听审、完整 Layer 3 音轨、声纹、设备和现场验收均未由此 POC 获得批准；正式检查点为 0/60。来源页面／视频更新尚无本周 source monitor 收据，保持“未检查”；ETA 仍未知。
-- 正式四层 producer 到工作账本的自动同步仍在[Tracker Backlog](../../../docs/four-layer-production-tracker.zh.md) 的 TRK-002。人工更新必须引用真实包与收据。
+- 正式四层 producer 到工作账本的自动同步仍在[Tracker Backlog](../../docs/four-layer-production-tracker.zh.md) 的 TRK-002。人工更新必须引用真实包与收据。
 - “视频已更新”仅指同周源监控发现的视频 ID 相对上次本地状态变化，不证明下载、解码或人工范围批准。
 
 ## 运行 DAG 投影（可选接入，不改变正式门禁）
@@ -146,10 +148,13 @@ watch 配置可添加 `dagAccountingDir`、`dagRunId`、`dagProgressInputs`，�
 
 ```sh
 python -m unittest tests.test_build_tracker_dag_projection tests.test_build_four_layer_tracker_snapshot tests.test_weekly_pipeline_report tests.test_sermon_run_progress
-cd experiments/sermon-dubbing-poc/tracker-admin
+cd apps/tracker-web
 npm ci --ignore-scripts
 npm test
 npm run build
+cd ../../tools/ops/tracker-publisher
+npm ci --ignore-scripts
+npm test
 ```
 
 DOM 测试覆盖节点／上游跳转、重复切换、中英文、状态降级与键盘焦点；不能冒充真实浏览器视觉、响应式或完整无障碍验收。此改动没有部署、写 Firestore、启动实机制作或运行 GPU/API。当前 full-DAG synthetic sidecar 的逻辑层与旧 tracker 账本尚需单独的已验证绑定适配；不能用阶段名或“最新一次测试”强行套进周页面。合并后的实机 canary 还需：用同一个真实账本启动已有 publisher、核对指定 run 收据，再验证断线恢复、手机布局和实际进度更新。

@@ -1,4 +1,4 @@
-import { sanitizeSnapshot } from '../sanitize.mjs';
+import { sanitizeSnapshot } from '../../../packages/tracker-contract/src/sanitize.mjs';
 
 /** Read-only browser state. Timestamps order snapshots, never prove worker liveness. */
 export const SUPPORTED_SNAPSHOTS = ['sermon-public-tracker-snapshot-v1', 'sermon-public-tracker-snapshot-v2'];
