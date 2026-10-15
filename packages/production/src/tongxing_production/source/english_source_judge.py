@@ -306,7 +306,8 @@ def _payload(batch: list[dict[str, Any]], *, manifest_hash: str,
         ],
     }
 
-    return _source.current().unmoved.bound_judge_payload(payload)
+    from .budget import bound_judge_payload  # the budget imports the judge cache
+    return bound_judge_payload(payload)
 
 
 def _checked_batch(result: dict[str, Any], expected: list[dict[str, Any]]) -> list[dict[str, Any]]:

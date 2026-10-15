@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [现状地图](repository-current-map.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [MFA 生产说明](../mfa-production.zh.md)
 
-状态：§6 已决定，按批实施中：S0 [#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、S1 [#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487) 已合并，S2 进行中。盘点日期：2026-10-15。基线：`dev@81ad8fd5`（阶段 3 [#484](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/484) 已合并，`tongxing_production.orchestration.unified` 已通过 `Backend` 注入宿主）。本文只定义 L1 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
+状态：§6 已决定，按批实施中：S0 [#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、S1 [#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487)、S2 [#492](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/492) 已合并，S3 进行中。盘点日期：2026-10-15。基线：`dev@81ad8fd5`（阶段 3 [#484](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/484) 已合并，`tongxing_production.orchestration.unified` 已通过 `Backend` 注入宿主）。本文只定义 L1 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
 
 ## 1 为什么不能直接搬
 
@@ -89,7 +89,7 @@ class SourceBackend:
 | S0 端口 | `tongxing_production.ports`；从 `sermon_pipeline` 抽出 `chat_json`/`request_json`/`mfa_options` 的调用端口（单体不动）；`code_identity`、`module_sha256`、`module_path` 端口；`scripts/` 私有名加公开委托。**只改未被哈希固定的调用方**（judge、budget、锚点运行器、阶段入口）；`build_english_source_package`、`mfa_backend`、`mfa_spark` 被 `sermon_source_producer_compatibility` 按字节固定，它们改走端口的那一行要与各自批次的迁移记录（新一代 `*_SOURCE_SHA256` 与 `CHANGED` 清单）同批评审 | 不搬文件；相关测试全绿；`sermon.py` 行为不变；被固定的生产者字节不变 |
 | S1 叶子 | `sermon_sentence_interpretation`、`mfa_alignment`、`sermon_source_producer_compatibility`（含 `PATH_ALIASES`）、`sermon_mfa_identity` | 哈希表与 MFA 身份比较通过新旧两种键；`test_sermon_sentence_interpretation`（22 个测试模块引用）全绿 |
 | S2 生产者 | `build_english_source_package`、`judge_english_source_for_translation`、`english_source_judge_cache`、`run_sentence_interpretation_models` | fresh/cached diagnostic source 比较通过；builder 字节变化以新一代 `l1-source-producers-package-move-v5` 评审。**judge 的 `implementationSha256` 会变**：它是 judge 文件自身的哈希，而迁入包必须把 `scripts.*` 导入改成包内导入/端口，字节随之改变；S2 之前的 judge 收据不能再被新 builder 接受，在新代码上需重新 judge（与任何 judge 代码改动相同） |
-| S3 预算与传输 | `sermon_source_budget`、`sermon_source_text_review`、`mfa_backend`、`mfa_spark` | Spark 打包仍上传同字节 `mfa_alignment.py`；预算围栏测试全绿 |
+| S3 预算与传输 | `sermon_source_budget`、`sermon_source_text_review`、`mfa_backend`、`mfa_spark` | Spark 打包仍上传同字节 `mfa_alignment.py`（`adapterSha256` 不变）；预算围栏测试全绿；`mfa_backend`/`mfa_spark` 新字节以 `l1-source-mfa-transport-package-move-v6` 评审；budget 在 waiver 与音频 QC 传输闭包里，两个闭包哈希随之改变（已签发 waiver 仍绑定旧闭包）；post-live 读本模式的 `mfaBackend`/`mfaTransport` 身份改变，旧整管线缓存不再复用；`source_meaning_machine_adjudication` 按 §6 经 `Adjudication` 端口调用、不迁入 |
 | S4 阶段入口 | `sermon_unified_source` → `source/unified_stage.py`；`orchestration` 的 `Backend.stage('source')` 指向包内模块 | 统一 CLI 全套测试全绿；`scripts/sermon_unified_source.py` 只剩门面 |
 
 每批：迁移前后 `tests/` 发现清单一一对应（提案 §5.5）；`python-tests.yml` 的 `py_compile` 清单若列有被搬文件则同批更新；`tongxing-ios.yml`/`ci_change_scope` 不需改（`packages/` 已归类）。
