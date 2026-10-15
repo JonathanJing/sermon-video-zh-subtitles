@@ -22,7 +22,14 @@ if str(ROOT) not in sys.path:
 
 from scripts import sermon_sentence_interpretation as contract  # noqa: E402
 from scripts import series_terminology  # noqa: E402
-from scripts.sermon_pipeline import chat_json  # noqa: E402
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.source import backend as _source  # noqa: E402
+
+
+def chat_json(api_key, payload, retries=1, *, session_verifier=None):
+    # Provider transport through the Layer 1 port; kept as a module attribute
+    # because cached_call compares its caller against this very object.
+    return _source.current().provider.chat_json(api_key, payload, retries, session_verifier=session_verifier)
 
 
 SEMANTIC_SCHEMA = "sermon-sentence-semantic-candidate-v1"
@@ -53,7 +60,10 @@ def _model_result(response: dict[str, Any], requested_model: str) -> dict[str, A
 
 def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
                 requested_model: str, caller: Callable[..., dict[str, Any]] = chat_json) -> tuple[dict[str, Any], dict[str, Any]]:
-    from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract, legacy_text_execution_identity
+    provider = _source.current().provider
+    bounded_legacy_chat_payload = provider.bounded_legacy_chat_payload
+    legacy_text_cache_contract = provider.legacy_text_cache_contract
+    legacy_text_execution_identity = provider.legacy_text_execution_identity
     payload = bounded_legacy_chat_payload(payload)
     execution = legacy_text_execution_identity(api_key, payload, caller=None if caller is chat_json else caller)
     request = {"schemaVersion": "sermon-sentence-model-cache-v3", "cacheContract": legacy_text_cache_contract(),

@@ -19,8 +19,9 @@ from scripts import sermon_workflow_jobs as jobs
 from scripts import production_spark_admission as spark_admission
 from scripts import sermon_provider_http as http
 from scripts import sermon_provider_limits as text_limits
-from scripts import sermon_pipeline as pipeline
 from scripts import sermon_transcription_request as transcription
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import backend as _source
 from scripts import english_source_judge_cache as immutable
 
 JUDGE_LIMITS = ContextVar('source_judge_request_limits', default=None)
@@ -488,7 +489,7 @@ class SourceBudget:
             headers={'Authorization': 'Bearer ' + api_key, 'Content-Type': content_type}, method='POST')
         req.accounting_model = identity['model']
         req.accounting_settings = {'requestPayloadSha256': fingerprint}
-        return pipeline.request_json(req, retries=1, response_observer=returned,
+        return _source.current().provider.request_json(req, retries=1, response_observer=returned,
             request_executor=spark_admission.SessionBoundCaller(
                 lambda r: http.execute(r, bounds['wallTimeMs'] / 1000), purpose='source-audio-api', requires_spark=False, outcome_guarded=True))
 
