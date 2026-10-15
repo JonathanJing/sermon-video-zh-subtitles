@@ -42,3 +42,4 @@ web/playback-simulation.generated.js
 *.publisher-runtime.json
 *.publisher-runtime.json.*.tmp
 *.publisher-start.lock
+*.egg-info/

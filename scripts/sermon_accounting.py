@@ -119,7 +119,8 @@ def error_location(exc):
             relative = Path(frame.f_code.co_filename).resolve().relative_to(root)
         except (OSError, ValueError):
             continue
-        if relative.parts[0] not in {"scripts", "backend", "experiments", "tests"}:
+        if (relative.parts[0] not in {*CODE_ROOTS, "tests"}
+                and not any(relative.is_relative_to(prefix + "/" + name) for name, prefix in PACKAGE_SOURCE_ROOTS.items())):
             continue
         location = {"file": str(relative), "line": lineno, "function": _label(frame.f_code.co_name)}
         # Distinct lambda/generator frames may normalize to the same safe tuple.
@@ -163,6 +164,54 @@ def _private_open(path, flags):
     return os.open(path, flags, 0o600)
 
 
+# Repository code roots recorded in the execution identity. Installable
+# packages count as project code at their source path under the checkout
+# (editable installs); a wheel outside the checkout is not project code here.
+CODE_ROOTS = ("scripts", "backend", "experiments")
+PACKAGE_SOURCE_ROOTS = {"tongxing_production": "packages/production/src"}
+CODE_PATH_PATTERN = re.compile(
+    r"(?:scripts|backend|experiments|" + "|".join(
+        re.escape(prefix + "/" + name) for name, prefix in sorted(PACKAGE_SOURCE_ROOTS.items()))
+    + r")/[A-Za-z0-9_./-]+\.py")
+
+
+def code_path(module, root=None):
+    """Return the root-relative identity key for a loaded module, or None.
+
+    The same rule serves the identity producer and the historical witness, so
+    neither can record a module the other omits.
+    """
+    name = getattr(module, "__file__", None)
+    if not name:
+        return None
+    path = Path(name).resolve()
+    if path.suffix != ".py":
+        return None
+    root = Path(__file__).resolve().parents[1] if root is None else Path(root)
+    try:
+        relative = path.relative_to(root)
+    except ValueError:
+        return None
+    if relative.parts[0] in CODE_ROOTS or any(
+            relative.is_relative_to(prefix + "/" + top) for top, prefix in PACKAGE_SOURCE_ROOTS.items()):
+        return str(relative)
+    return None
+
+
+def code_module_name(path):
+    """Invert code_path: the importable module name for a recorded identity key."""
+    if not isinstance(path, str) or not CODE_PATH_PATTERN.fullmatch(path) or ".." in Path(path).parts:
+        raise ValueError("Unrecognised project code path")
+    for top, prefix in PACKAGE_SOURCE_ROOTS.items():
+        if path.startswith(prefix + "/" + top + "/"):
+            path = path[len(prefix) + 1:]
+            break
+    parts = Path(path).with_suffix("").parts
+    if parts[-1] == "__init__":
+        parts = parts[:-1]
+    return ".".join(parts)
+
+
 def execution_identity():
     root = Path(__file__).resolve().parents[1]
     def git(*args):
@@ -173,13 +222,10 @@ def execution_identity():
     head, dirty = git("rev-parse", "HEAD"), git("status", "--porcelain", "--untracked-files=no")
     modules = {}
     for module in list(sys.modules.values()):
-        name = getattr(module, "__file__", None)
-        if not name: continue
         try:
-            path = Path(name).resolve()
-            relative = path.relative_to(root)
-            if relative.parts[0] not in {"scripts", "backend", "experiments"} or path.suffix != ".py": continue
-            modules[str(relative)] = hashlib.sha256(path.read_bytes()).hexdigest()
+            relative = code_path(module)
+            if relative is None: continue
+            modules[relative] = hashlib.sha256(Path(module.__file__).resolve().read_bytes()).hexdigest()
         except (ValueError, OSError):
             continue
     commit = head.stdout.strip() if head and head.returncode == 0 and isinstance(head.stdout, str) else None
@@ -199,7 +245,7 @@ def safe_execution_identity(data):
     if isinstance(modules, dict):
         for path, digest in list(modules.items())[:1024]:
             if (isinstance(path, str) and len(path) <= 256
-                    and re.fullmatch(r"(?:scripts|backend|experiments)/[A-Za-z0-9_./-]+\.py", path)
+                    and CODE_PATH_PATTERN.fullmatch(path)
                     and ".." not in Path(path).parts and isinstance(digest, str)
                     and re.fullmatch(r"[a-f0-9]{64}", digest)):
                 safe_modules[path] = digest

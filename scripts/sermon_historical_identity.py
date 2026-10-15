@@ -79,14 +79,13 @@ def _file(path, *, absent=False):
 
 
 def _loaded(root):
+    # One mapping with accounting.execution_identity, keyed against the
+    # witness's own root: a module that moved into packages/ is seen by both.
     modules={}
     for module in list(sys.modules.values()):
-        name=getattr(module,'__file__',None)
-        if not name:continue
-        try:relative=Path(name).resolve().relative_to(root)
+        try:relative=accounting.code_path(module,root)
         except (ValueError,OSError):continue
-        if relative.parts[0] in {'scripts','backend','experiments'} and relative.suffix=='.py':
-            modules[str(relative)]=_file(root/relative)['sha256']
+        if relative is not None:modules[relative]=_file(root/relative)['sha256']
     return modules
 
 
