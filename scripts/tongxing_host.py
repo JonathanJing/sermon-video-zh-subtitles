@@ -63,12 +63,21 @@ def _legacy_text_execution_identity(api_key, payload, *, caller=None):
     return sermon_pipeline.legacy_text_execution_identity(api_key, payload, caller=caller)
 
 
+def _access_secret(name):
+    from backend.cloud import access_secret
+    return access_secret(name)
+
+
 def provider() -> ports.Provider:
+    # api_cli_outcomes imports only the standard library at load; its functions
+    # are looked up on the module at call time, so patches still intercept.
+    from scripts import api_cli_outcomes
     return ports.Provider(chat_json=_chat_json, request_json=_request_json,
                           reject_secret_override=_reject_secret_override,
                           bounded_legacy_chat_payload=_bounded_legacy_chat_payload,
                           legacy_text_cache_contract=_legacy_text_cache_contract,
-                          legacy_text_execution_identity=_legacy_text_execution_identity)
+                          legacy_text_execution_identity=_legacy_text_execution_identity,
+                          access_secret=_access_secret, outcomes=api_cli_outcomes)
 
 
 def _code_identity():
@@ -128,5 +137,46 @@ def snapshot() -> ports.Snapshot:
     return ports.Snapshot(read_snapshot=_read_snapshot)
 
 
+def compute() -> ports.Compute:
+    # The class is the one object producers construct and test with isinstance.
+    from scripts.production_spark_admission import SessionBoundCaller
+    return ports.Compute(session_bound_caller=SessionBoundCaller)
+
+
+def _terminology_context():
+    from scripts import series_terminology
+    return series_terminology.context()
+
+
+def terminology() -> ports.Terminology:
+    return ports.Terminology(context=_terminology_context)
+
+
+def _producer_step(ledger_path, step_id, *, locale=None):
+    from scripts import four_layer_measure
+    return four_layer_measure.producer_step(ledger_path, step_id, locale=locale)
+
+
+def measure() -> ports.Measure:
+    return ports.Measure(producer_step=_producer_step)
+
+
+def _bound_judge_payload(payload):
+    from scripts import sermon_source_budget
+    return sermon_source_budget.bound_judge_payload(payload)
+
+
+def _ordered_bounded_map(items, worker, workers):
+    from scripts import sermon_unified_source
+    return sermon_unified_source.ordered_bounded_map(items, worker, workers)
+
+
+def unmoved() -> source_backend.Unmoved:
+    return source_backend.Unmoved(bound_judge_payload=_bound_judge_payload,
+                                  ordered_bounded_map=_ordered_bounded_map)
+
+
 source_backend.configure(source_backend.SourceBackend(core=core(), provider=provider(), code=code(), mfa=mfa(),
-                                                      contracts=contracts(), snapshot=snapshot()))
+                                                      contracts=contracts(), snapshot=snapshot(), compute=compute(),
+                                                      terminology=terminology(), measure=measure(),
+                                                      unmoved=unmoved()))

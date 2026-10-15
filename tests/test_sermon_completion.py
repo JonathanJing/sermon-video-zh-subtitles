@@ -70,7 +70,8 @@ class CompletionTests(unittest.TestCase):
         # Isolate the real Source predecessor gate using in-memory upstream
         # inputs. Stop immediately after it, before alignment or output writes.
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            # Resolve like _safe_path does (macOS /var -> /private/var).
+            root = Path(directory).resolve()
             config = dict(runId='a' * 64, sourceAudioSha256='c' * 64,
                 sourceMediaSha256='d' * 64, sourceClipSha256='e' * 64,
                 sourceWindowSeconds=[0, 1], totalWallSeconds=60)
@@ -146,14 +147,20 @@ class CompletionTests(unittest.TestCase):
         repository=Path(__file__).resolve().parents[1]
         actual=c.bytes_sha256((repository/'scripts/sermon_fresh_diagnostic_source.py').read_bytes())
         self.assertEqual(compatibility.EXTRACTION_SOURCE_SHA256['scripts/sermon_fresh_diagnostic_source.py'],actual)
-        for path in compatibility.MOVE_CHANGED:
-            self.assertEqual(compatibility.MOVE_SOURCE_SHA256[path],
-                c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        latest=compatibility.PRODUCER_MOVE_SOURCE_SHA256
+        for path in {*compatibility.MOVE_CHANGED,*compatibility.PRODUCER_MOVE_CHANGED}:
+            self.assertEqual(latest[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
         moved=compatibility.verify(compatibility.EXTRACTION_SOURCE_SHA256,compatibility.MOVE_SOURCE_SHA256,
             {compatibility.resolve(path):sha for path,sha in compatibility.MOVE_SOURCE_SHA256.items()},binding)
         self.assertEqual(moved['migrationId'],compatibility.MOVE_MIGRATION)
         self.assertEqual(moved['changedModules'],compatibility.MOVE_CHANGED)
         self.assertFalse(moved['productionEligible'])
+        producers=compatibility.verify(compatibility.MOVE_SOURCE_SHA256,latest,
+            {compatibility.resolve(path):sha for path,sha in latest.items()},binding)
+        self.assertEqual(producers['migrationId'],compatibility.PRODUCER_MOVE_MIGRATION)
+        self.assertEqual(producers['changedModules'],compatibility.PRODUCER_MOVE_CHANGED)
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.EXTRACTION_SOURCE_SHA256,latest,latest,binding)
         with self.assertRaises(c.ContractError):
             compatibility.verify(compatibility.FOLLOWUP_SOURCE_SHA256,compatibility.MOVE_SOURCE_SHA256,
                 compatibility.MOVE_SOURCE_SHA256,binding)

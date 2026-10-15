@@ -192,7 +192,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--out",
         type=Path,
-        default=Path("web/playback-simulation.generated.js"),
+        default=Path("apps/operator-web/playback-simulation.generated.js"),
         help="Generated JS file loaded by the web prototype.",
     )
     parser.add_argument(

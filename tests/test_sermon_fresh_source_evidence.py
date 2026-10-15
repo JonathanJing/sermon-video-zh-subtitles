@@ -168,7 +168,7 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
         # current package would create an internally inconsistent old receipt.
         from scripts import build_english_source_package as source_builder
         original_sha = source_builder.file_sha256
-        repository = Path(source_builder.__file__).resolve().parents[1]
+        repository = Path(__file__).resolve().parents[1]
         historical = {repository / compatibility.resolve(path): sha
                       for path, sha in compatibility.HISTORICAL_SOURCE_SHA256.items()}
         def historical_builder_sha(path):

@@ -3,7 +3,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 
-WEB_ROOT = Path(__file__).resolve().parents[1] / "web"
+WEB_ROOT = Path(__file__).resolve().parents[1] / "apps" / "operator-web"
 
 
 class ActionParser(HTMLParser):

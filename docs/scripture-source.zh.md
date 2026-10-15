@@ -24,7 +24,7 @@ Cloud Run 容器。浏览器不直接加载整本圣经，而是通过后端 API
 
 ```bash
 python3 scripts/build_scripture_index.py \
-  --out web/scripture-cmn-cu89s.generated.js \
+  --out apps/operator-web/scripture-cmn-cu89s.generated.js \
   --full-out data/scripture/cmn-cu89s.json \
   --ref "Numbers 16" \
   --ref "Numbers 16:48"

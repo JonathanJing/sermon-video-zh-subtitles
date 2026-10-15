@@ -136,6 +136,6 @@ The stable workflow is implemented mainly by these scripts:
 These parts of the repository already work, but they are not the primary documentation entrypoint today:
 
 - [../backend/README.md](../backend/README.md): backend worker and Cloud Run orchestration
-- [../web/README.md](../web/README.md): frontend/admin and playback prototype
+- [../apps/operator-web/README.md](../apps/operator-web/README.md): frontend/admin and playback prototype
 
 They should be documented as supporting paths, not as the main stable workflow.
