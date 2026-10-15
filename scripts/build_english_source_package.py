@@ -18,8 +18,12 @@ from typing import Any
 
 try:
     from scripts import four_layer_measure as measure
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
 except ImportError:  # Direct execution via ``python scripts/...``.
     import four_layer_measure as measure
+    import tongxing_host  # noqa: F401
+from tongxing_production.source import backend as _source
+from tongxing_production.source import sentence_interpretation as _anchor_module
 
 
 SCHEMA_VERSION = "sermon-english-source-package-v1"
@@ -481,7 +485,7 @@ def build_package(
     )
     implementation = {
         "builderSha256": file_sha256(Path(__file__).resolve()),
-        "anchorGeneratorSha256": file_sha256(Path(__file__).resolve().with_name("sermon_sentence_interpretation.py")),
+        "anchorGeneratorSha256": file_sha256(_source.current().code.module_path(_anchor_module)),
     }
     source_metadata = {
         "sourceId": source_id, "sourceUrlHash": source_url_hash, "serviceDate": service_date,

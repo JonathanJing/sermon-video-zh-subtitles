@@ -3,8 +3,37 @@
 Only these exact old/new bytes are eligible. Inspect immutable historical Source
 with zero new ASR/MFA; this does not claim re-execution under the new producer.
 """
-from pathlib import Path
-from scripts import sermon_review_contracts as c
+import sys
+from . import backend as _source
+
+
+def _require(condition, code):
+    return _source.current().contracts.require(condition, code)
+
+
+# Legacy identity keys stay the keys of every table and closure below; a moved
+# file is reached through its alias. Bytes did not change with the move, so
+# hashes recorded under the legacy key still describe the same file.
+PACKAGE_SOURCE = 'packages/production/src/tongxing_production/source/'
+PATH_ALIASES = {
+    'scripts/sermon_sentence_interpretation.py': PACKAGE_SOURCE + 'sentence_interpretation.py',
+    'scripts/mfa_alignment.py': PACKAGE_SOURCE + 'mfa_alignment.py',
+    'scripts/sermon_source_producer_compatibility.py': PACKAGE_SOURCE + 'producer_compatibility.py',
+    'scripts/sermon_mfa_identity.py': PACKAGE_SOURCE + 'mfa_identity.py',
+}
+
+
+def resolve(key):
+    """Repository-relative path of the file a legacy identity key names today."""
+    return PATH_ALIASES.get(key, key)
+
+
+def recorded(identity, key):
+    """Value a loaded-code identity map holds for a key, whichever path recorded it."""
+    value = identity.get(resolve(key))
+    return identity.get(key) if value is None else value
+
+
 SCHEMA='sermon-source-producer-compatibility-v1'
 MIGRATION='mfa-original-deadline-and-source-failure-classification-v1'
 HISTORICAL_SOURCE_SHA256= {'scripts/build_english_source_package.py': '65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740', 'scripts/four_layer_measure.py': '7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd', 'scripts/mfa_alignment.py': '6183298a18704f32336bd543a157fc7dbdfd83776baa2cf1155cc71ff872ddc3', 'scripts/mfa_backend.py': '4cd8c6606b65f686bfa6bea9af82f3e15e0be02740e82124ef7ea6312788e246', 'scripts/mfa_spark.py': '0d659a2361b67ccfe2892cc80deaca03c9aea7e3771a5033df7b3de743689a8b', 'scripts/sermon_diagnostic_context.py': '212d95511bd0b4536f574fb538f5cd599f80b5a203615a3ba88618a5f72630bb', 'scripts/sermon_fresh_diagnostic_source.py': 'c70ef5edea80ee2d7c7e0639d253fe52e57e6383673563c93c80b677ed99c1db', 'scripts/sermon_public_snapshot.py': '824d43f2ff64e473277e1a26447a8d4c435b5d5b5a93498be29320a6225c6af8', 'scripts/sermon_review_contracts.py': '17cf677ee068cd898b90310c2ff489b9bce01b9333bc59c0a5c23a6d3a115466', 'scripts/sermon_sentence_interpretation.py': '028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45'}
@@ -23,28 +52,40 @@ EXTRACTION_SOURCE_SHA256 = {**FOLLOWUP_SOURCE_SHA256,
     'scripts/sermon_fresh_diagnostic_source.py': 'cfb2677efea593c9d680435de5582f5df1cfda83bd76899dcaae9ba5c706aed0'}
 EXTRACTION_MIGRATION = 'fresh-source-fixed-stage-extraction-v3'
 
+# The Layer 1 leaves moved into tongxing_production.source byte for byte. The two
+# producers that located them as sibling files (anchor generator hash, Spark
+# adapter bundle) now ask the code port; nothing else about Source changed.
+MOVE_SOURCE_SHA256 = {**EXTRACTION_SOURCE_SHA256,
+    'scripts/build_english_source_package.py': '2923477bf106c3eeade71aab3d3116cc853c4a94623cb16c481c9697a3925a0b',
+    'scripts/mfa_spark.py': '76e68f26a781a67d25f4f07049a7ba341b8dfdc8f78ac136cb01c722345d869a'}
+MOVE_MIGRATION = 'l1-source-package-move-v4'
+MOVE_CHANGED = ['scripts/build_english_source_package.py', 'scripts/mfa_spark.py']
+
 
 def verify(historical,current,planned,binding):
-    c.require(type(historical) is dict and type(current) is dict and type(planned) is dict
+    _require(type(historical) is dict and type(current) is dict and type(planned) is dict
         and set(historical)==set(current)==set(HISTORICAL_SOURCE_SHA256)
-        and all(planned.get(path)==sha for path,sha in current.items()),
+        and all(recorded(planned,path)==sha for path,sha in current.items()),
         'source_producer_compatibility_new_identity_changed')
     if historical==current:
         return None
     original = historical==HISTORICAL_SOURCE_SHA256 and current==CURRENT_SOURCE_SHA256
     followup = historical==CURRENT_SOURCE_SHA256 and current==FOLLOWUP_SOURCE_SHA256
     extraction = historical==FOLLOWUP_SOURCE_SHA256 and current==EXTRACTION_SOURCE_SHA256
-    changed = CHANGED if original else ['scripts/sermon_fresh_diagnostic_source.py']
-    c.require((original or followup or extraction) and {path for path in current if current[path]!=historical[path]}==set(changed),
+    move = historical==EXTRACTION_SOURCE_SHA256 and current==MOVE_SOURCE_SHA256
+    changed = CHANGED if original else MOVE_CHANGED if move else ['scripts/sermon_fresh_diagnostic_source.py']
+    _require((original or followup or extraction or move) and {path for path in current if current[path]!=historical[path]}==set(changed),
         'source_producer_compatibility_unknown_revision')
-    c.require(type(binding) is dict and set(binding)=={'parentPlanSha256','newPlanSha256',
+    _require(type(binding) is dict and set(binding)=={'parentPlanSha256','newPlanSha256',
         'sourceCanonicalSha256','anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256'}
         and all(type(value) is str and len(value)==64 and all(ch in '0123456789abcdef' for ch in value)
                 for value in binding.values()),'source_producer_compatibility_binding_required')
-    return {'schemaVersion':SCHEMA,'migrationId':MIGRATION if original else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION,'binding':binding,
+    migration = (MIGRATION if original else MOVE_MIGRATION if move else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
+    return {'schemaVersion':SCHEMA,'migrationId':migration,'binding':binding,
         'historicalProducerSha256':historical,'currentInspectorProducerSha256':current,
-        'changedModules':changed,'migrationCodeSha256':c.bytes_sha256(Path(__file__).read_bytes()),
+        'changedModules':changed,'migrationCodeSha256':_source.current().code.module_sha256(sys.modules[__name__]),
         'acceptedScope':('original_deadline_and_typed_failures_only_no_source_semantic_change' if original else
+            'read_only_original_source_under_package_move_no_new_inference' if move else
             'read_only_original_source_under_fixed_stage_extraction_no_new_inference' if extraction else
             'read_only_original_source_under_typed_completion_and_identity_inspector_no_new_inference'),
         'sourceExecution':'historical_receipts_reused_current_deterministic_inspection',

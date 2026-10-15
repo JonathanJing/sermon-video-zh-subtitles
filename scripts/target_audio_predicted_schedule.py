@@ -64,8 +64,12 @@ def _check_identity(identity: dict, locale: str) -> None:
 
 def rate_implementation_sha256() -> str:
     """Bind the rate's fitting/counting code and complete spoken-rule dependency closure."""
-    root = Path(__file__).resolve().parent
-    files = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in RATE_IMPLEMENTATION_FILES}
+    # Names are the rate identity's keys; a file that moved into the production
+    # package is read at its alias, with the same bytes.
+    from scripts import sermon_source_producer_compatibility as compatibility
+    root = Path(__file__).resolve().parents[1]
+    files = {name: hashlib.sha256((root / compatibility.resolve("scripts/" + name)).read_bytes()).hexdigest()
+             for name in RATE_IMPLEMENTATION_FILES}
     return hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 

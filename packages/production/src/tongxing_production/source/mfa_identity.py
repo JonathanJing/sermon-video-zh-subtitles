@@ -13,12 +13,49 @@ from pathlib import Path
 import re
 import stat
 
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
-from scripts.sermon_release_workflow import _safe_path
+from . import backend as _source
+from . import mfa_alignment as _adapter_module
+
+
+class _Contracts:
+    """Receipt contract helpers through the Layer 1 port, under the names this module used."""
+    @property
+    def ContractError(self):
+        return _source.current().contracts.error
+
+    @staticmethod
+    def require(condition, code):
+        return _source.current().contracts.require(condition, code)
+
+    @staticmethod
+    def bytes_sha256(value):
+        return _source.current().contracts.bytes_sha256(value)
+
+    @staticmethod
+    def canonical_sha256(value):
+        return _source.current().contracts.canonical_sha256(value)
+
+
+class _Public:
+    @staticmethod
+    def read_snapshot(path):
+        return _source.current().snapshot.read_snapshot(path)
+
+
+c = _Contracts()
+public = _Public()
+
+
+def _safe_path(path):
+    return _source.current().core.safe_path(path)
+
 
 SCHEMA = 'sermon-mfa-identity-comparison-v1'
+# Plans record the adapter under the key the identity producer used at the time:
+# the legacy scripts path before the move, the package path after it. Both name
+# the same bytes; the comparison accepts either.
 ADAPTER = 'scripts/mfa_alignment.py'
+ADAPTER_PATH = 'packages/production/src/tongxing_production/source/mfa_alignment.py'
 FILES = frozenset(('mfa_executable', 'dictionary_path', 'acoustic_model', 'g2p_model', 'spoken_forms_path'))
 DEPENDENCIES = ('version', 'executionPlatform', 'files', 'nativeKalpy', 'condaRecords')
 FIELDS = {
@@ -266,8 +303,9 @@ def preflight(plan, runtime_path, *, file_sha256=None, expected_receipt=None, ob
         expected, actual, healthy = _health(seed['runtime'], file_sha)
         rows.append(_row('stable_dependency', 'dependency_file_health', expected, actual, 'dependency_file_changed',
             accepted=healthy, semantics='metadata_and_actual_files', refs=('runtime_seed',)))
-    frozen = plan['executionIdentity'].get('loadedProjectCodeSha256', {}).get(ADAPTER)
-    actual = file_sha(Path(__file__).resolve().parents[1]/ADAPTER)
+    loaded = plan['executionIdentity'].get('loadedProjectCodeSha256', {})
+    frozen = loaded.get(ADAPTER_PATH, loaded.get(ADAPTER))
+    actual = file_sha(_source.current().code.module_path(_adapter_module))
     rows.append(_row('frozen_producer', 'adapterSha256', frozen, actual, 'producer_not_frozen',
         semantics='frozen_plan_adapter', refs=('frozen_plan',)))
     return _finish(plan, 'preflight', rows, refs, observed_at, expected_receipt)
@@ -350,7 +388,8 @@ def validate_alignment(plan, runtime_path, observed_runtime_path, *, aligned_seg
         expected, actual, healthy = _health(new, file_sha)
         rows.append(_row('stable_dependency', 'dependency_file_health', expected, actual, 'dependency_file_changed',
             accepted=healthy, semantics='metadata_and_actual_files', refs=('execution_runtime',)))
-        frozen = plan['executionIdentity'].get('loadedProjectCodeSha256', {}).get(ADAPTER)
+        loaded = plan['executionIdentity'].get('loadedProjectCodeSha256', {})
+        frozen = loaded.get(ADAPTER_PATH, loaded.get(ADAPTER))
         rows.append(_row('frozen_producer', 'adapterSha256', frozen, new['adapterSha256'], 'producer_not_frozen',
             semantics='frozen_plan_adapter', refs=('frozen_plan', 'execution_runtime')))
         rows.append(_row('execution_provenance', 'executionHost', old['executionHost'], new['executionHost'], None,

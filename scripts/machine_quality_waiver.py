@@ -102,9 +102,12 @@ DISCLOSURE = {
 
 
 def implementation_sha256(root: Path = ROOT) -> str:
+    # Names are the closure's stable identity keys; a file that moved into the
+    # production package is read at its alias, with the same bytes.
+    from scripts import sermon_source_producer_compatibility as compatibility
     digest = hashlib.sha256()
     for name in IMPLEMENTATION_FILES:
-        digest.update(name.encode("utf-8") + b"\0" + (root / name).read_bytes() + b"\0")
+        digest.update(name.encode("utf-8") + b"\0" + (root / compatibility.resolve(name)).read_bytes() + b"\0")
     return digest.hexdigest()
 
 

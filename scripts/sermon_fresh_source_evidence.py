@@ -130,11 +130,13 @@ def _current(root, plan, subject, context, evidence, files, state):
     source, anchor = files.json(root/'source.json'), files.json(root/'anchor-manifest.json')
     diagnostic.validate_source(source, anchor, context)
     repository = Path(__file__).resolve().parents[1]
+    from scripts import sermon_source_producer_compatibility as compatibility
     producers = plan['executionIdentity']['loadedProjectCodeSha256']
-    c.require(all(producers.get('scripts/'+name+'.py') == files.file(repository/'scripts'/(name+'.py'))
+    # Keys stay the legacy identity names; a moved file is read at its alias.
+    c.require(all(compatibility.recorded(producers,'scripts/'+name+'.py') == files.file(repository/compatibility.resolve('scripts/'+name+'.py'))
         for name in cache.SOURCE_MODULES), 'fresh_delivery_source_producer_changed')
-    c.require(source['implementation']['builderSha256'] == producers['scripts/build_english_source_package.py']
-        and source['implementation']['anchorGeneratorSha256'] == producers['scripts/sermon_sentence_interpretation.py'],
+    c.require(source['implementation']['builderSha256'] == compatibility.recorded(producers,'scripts/build_english_source_package.py')
+        and source['implementation']['anchorGeneratorSha256'] == compatibility.recorded(producers,'scripts/sermon_sentence_interpretation.py'),
         'fresh_delivery_source_producer_changed')
     aligned = files.artifact(source['transcript']['artifact'])
     c.require(Path(source['transcript']['artifact']['path']) == root/'aligned-segments.json'
