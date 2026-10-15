@@ -9,10 +9,9 @@ from pathlib import Path
 import tempfile
 from typing import Any, Callable
 
-from scripts import sermon_sentence_interpretation as contract
-from scripts import api_cli_outcomes as outcomes
-from scripts.production_spark_admission import SessionBoundCaller
-from scripts.run_sentence_interpretation_models import RUN_SCHEMA, _model_result
+from . import backend as _source
+from . import sentence_interpretation as contract
+from .sentence_interpretation_models import RUN_SCHEMA, _model_result
 
 
 def _atomic(path: Path, value: object) -> None:
@@ -40,6 +39,8 @@ def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
     # Preserve the established request identity and receipt format. Both prewarm
     # and final runs resolve out to the same canonical cache root.
     request = {'schemaVersion': RUN_SCHEMA, 'stage': stage, 'payload': payload}
+    outcomes = _source.current().provider.outcomes
+    SessionBoundCaller = _source.current().compute.session_bound_caller
     outcome_identity = None
     if isinstance(caller,SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
         outcome_identity = outcomes.request_identity(caller.caller,(api_key,payload),{},caller.purpose)

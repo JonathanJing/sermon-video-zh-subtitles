@@ -14,16 +14,15 @@ import json
 import math
 from pathlib import Path
 import re
+import sys
 from typing import Any
 
-try:
-    from scripts import four_layer_measure as measure
-    from scripts import tongxing_host  # noqa: F401  binds the production package ports
-except ImportError:  # Direct execution via ``python scripts/...``.
-    import four_layer_measure as measure
-    import tongxing_host  # noqa: F401
-from tongxing_production.source import backend as _source
-from tongxing_production.source import sentence_interpretation as _anchor_module
+from . import backend as _source
+from . import sentence_interpretation as _anchor_module
+
+
+def _module_file(module) -> Path:
+    return _source.current().code.module_path(module)
 
 
 SCHEMA_VERSION = "sermon-english-source-package-v1"
@@ -302,8 +301,8 @@ def _machine_judge_payload(
         raise ValueError("Unsupported English source machine judge schema")
     if judge.get("reviewType") != "model" or judge.get("humanApproval") is not False:
         raise ValueError("English source machine judge must retain model-only provenance")
-    judge_script = Path(__file__).resolve().with_name("judge_english_source_for_translation.py")
-    if (judge.get("implementationSha256") != file_sha256(judge_script)
+    from . import english_source_judge as _judge_module  # the judge imports this module
+    if (judge.get("implementationSha256") != file_sha256(_module_file(_judge_module))
             or (judge.get("model"), judge.get("reasoningEffort")) not in MACHINE_JUDGE_IDENTITIES
             or judge.get("promptVersion") != MACHINE_JUDGE_SCHEMA_VERSION
             or judge.get("thresholds") != MACHINE_JUDGE_THRESHOLDS):
@@ -484,8 +483,8 @@ def build_package(
         else "blocked"
     )
     implementation = {
-        "builderSha256": file_sha256(Path(__file__).resolve()),
-        "anchorGeneratorSha256": file_sha256(_source.current().code.module_path(_anchor_module)),
+        "builderSha256": file_sha256(_module_file(sys.modules[__name__])),
+        "anchorGeneratorSha256": file_sha256(_module_file(_anchor_module)),
     }
     source_metadata = {
         "sourceId": source_id, "sourceUrlHash": source_url_hash, "serviceDate": service_date,
@@ -576,7 +575,7 @@ def main() -> int:
                         help="Record producer timing in this four-layer run ledger")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    with measure.producer_step(args.progress_ledger, "L1-04") as metrics:
+    with _source.current().measure.producer_step(args.progress_ledger, "L1-04") as metrics:
         package = build_package(
             args.aligned_segments,
             args.anchor_manifest,

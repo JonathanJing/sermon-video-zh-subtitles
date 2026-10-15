@@ -12,18 +12,10 @@ import concurrent.futures
 import json
 import os
 from pathlib import Path
-import sys
 from typing import Any, Callable
 
-
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from scripts import sermon_sentence_interpretation as contract  # noqa: E402
-from scripts import series_terminology  # noqa: E402
-from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
-from tongxing_production.source import backend as _source  # noqa: E402
+from . import backend as _source
+from . import sentence_interpretation as contract
 
 
 def chat_json(api_key, payload, retries=1, *, session_verifier=None):
@@ -246,10 +238,10 @@ def run(*, manifest_path: Path, out: Path, model: str, effort: str,
         raise ValueError("Anchor translation requests are incomplete")
     if workers < 1:
         raise ValueError("workers must be positive")
-    terminology = series_terminology.context()
+    terminology = _source.current().terminology.context()
     out.mkdir(parents=True, exist_ok=True)
     if caller is chat_json:
-        from scripts.production_spark_admission import SessionBoundCaller
+        SessionBoundCaller = _source.current().compute.session_bound_caller
         caller = SessionBoundCaller(caller, purpose="sentence-interpretation",
                                     requires_spark=False, outcome_directory=out / "api-cli-outcomes")
 
@@ -378,8 +370,7 @@ def main() -> int:
     if args.model == "gpt-6.1-sol":
         api_key = ""
     elif args.api_key_secret:
-        from backend.cloud import access_secret
-        api_key = access_secret(args.api_key_secret)
+        api_key = _source.current().provider.access_secret(args.api_key_secret)
     else:
         api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not api_key and args.model != "gpt-6.1-sol":

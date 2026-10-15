@@ -17,16 +17,10 @@ import re
 import sys
 from typing import Any, Callable
 
-
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from scripts import build_english_source_package as layer1  # noqa: E402
-from scripts import sermon_sentence_interpretation as anchors  # noqa: E402
-from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
-from scripts.english_source_judge_cache import cached_call  # noqa: E402
-from tongxing_production.source import backend as _source  # noqa: E402
+from . import backend as _source
+from . import english_source_package as layer1
+from . import sentence_interpretation as anchors
+from .english_source_judge_cache import cached_call
 
 
 def chat_json(api_key, payload, retries=1, *, session_verifier=None):
@@ -86,7 +80,7 @@ def _load(path: Path, label: str) -> Any:
 
 
 def _write_immutable(path: Path, payload: object) -> None:
-    from scripts.english_source_judge_cache import _atomic
+    from .english_source_judge_cache import _atomic
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.with_suffix(path.suffix + ".lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
@@ -312,8 +306,7 @@ def _payload(batch: list[dict[str, Any]], *, manifest_hash: str,
         ],
     }
 
-    from scripts.sermon_source_budget import bound_judge_payload
-    return bound_judge_payload(payload)
+    return _source.current().unmoved.bound_judge_payload(payload)
 
 
 def _checked_batch(result: dict[str, Any], expected: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -411,7 +404,7 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
         return existing
 
     if caller is None:
-        from scripts.production_spark_admission import SessionBoundCaller
+        SessionBoundCaller = _source.current().compute.session_bound_caller
         caller = SessionBoundCaller(chat_json, purpose="english-machine-review", requires_spark=False,
                                     outcome_directory=cache_root / "api-cli-outcomes")
     deterministic = deterministic_review(aligned_path, manifest)
@@ -443,7 +436,7 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
         # Bounded dispatch preserves source order and stops admitting later
         # groups after a failed/unknown sibling. Context-bound request caps are
         # copied into each worker rather than silently lost across threads.
-        from scripts.sermon_unified_source import ordered_bounded_map
+        ordered_bounded_map = _source.current().unmoved.ordered_bounded_map
         batches_reviewed = ordered_bounded_map(enumerate(_batches(sentences, batch_size)), review_batch, workers)
         for rows, receipt in batches_reviewed:
             reviewed.extend(rows)
@@ -561,8 +554,7 @@ def main() -> int:
     args = parser.parse_args()
     _source.current().provider.reject_secret_override(args.api_key_secret)
     if args.api_key_secret:
-        from backend.cloud import access_secret
-        api_key = access_secret(args.api_key_secret)
+        api_key = _source.current().provider.access_secret(args.api_key_secret)
     else:
         import os
         api_key = os.environ.get("OPENAI_API_KEY", "").strip()
