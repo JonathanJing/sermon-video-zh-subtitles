@@ -15,7 +15,7 @@ class RuntimeFilesTests(unittest.TestCase):
             if name in seen:
                 continue
             seen.add(name)
-            pending.extend(IMPORT.findall((deploy.HERE / "feedback-api" / name).read_text(encoding="utf-8")))
+            pending.extend(IMPORT.findall((deploy.SOURCE / name).read_text(encoding="utf-8")))
         self.assertIn("listening-core.mjs", seen)
         self.assertIn("alignment-core.mjs", seen)
         self.assertLessEqual(seen, set(deploy.RUNTIME_FILES))

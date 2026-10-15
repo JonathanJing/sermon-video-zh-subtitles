@@ -34,7 +34,7 @@
 | E05 | [实测时长诊断](../scripts/target_audio_timing_plan.py)：plan 调用同一正式 scheduler，modelCalls=0 |
 | E06 | [大纲／默想生成](../scripts/sermon_study_generation.py)和[人工审核消费](../scripts/study_artifacts.py) |
 | E07 | [provider 分类](../scripts/sermon_provider_error.py)、[确定性推荐](../scripts/sermon_production_supervisor.py)、[CLI Supervisor 与 verify_decision](../scripts/run_sermon_production_supervisor_agent.py) |
-| E08 | [反馈字段和类别](../experiments/sermon-dubbing-poc/feedback-api/core.mjs)、[人工管理](../experiments/sermon-dubbing-poc/feedback-api/admin.mjs) |
+| E08 | [反馈字段和类别](../services/feedback/core.mjs)、[人工管理](../services/feedback/admin.mjs) |
 | 计时 | [accounting](../scripts/sermon_accounting.py)、[bounded decision observation](../scripts/sermon_decision_accounting.py)、[日志合同](bounded-decision-accounting.zh.md) |
 | harness 参考 | [Supervisor A/B](../scripts/experiments/supervisor_ab.py)、[Layer 2 A/B](../scripts/experiments/layer2_ab.py)。复用 hash、独立目录、原始响应、轮换顺序与恢复身份；不直接复用旧 model/backend 或虚构统计实现 |
 

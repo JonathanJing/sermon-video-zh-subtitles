@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { createService } from '../../experiments/sermon-dubbing-poc/feedback-api/core.mjs';
+import { createService } from '../../services/feedback/core.mjs';
 
 // Exercise the real UI scheduler and clients against the in-memory API. Resolve
 // the browser's origin-root imports without changing production module paths.
