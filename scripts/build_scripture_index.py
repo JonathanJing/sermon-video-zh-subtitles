@@ -182,7 +182,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--zip", help="Existing cmn-cu89s_vpl.zip path. If omitted, download from eBible.")
     parser.add_argument("--source-url", default=DEFAULT_SOURCE_URL)
-    parser.add_argument("--out", type=Path, default=Path("web/scripture-cmn-cu89s.generated.js"))
+    parser.add_argument("--out", type=Path, default=Path("apps/operator-web/scripture-cmn-cu89s.generated.js"))
     parser.add_argument("--full-out", type=Path, help="Optional full Bible JSON output for Cloud Run or GCS.")
     parser.add_argument("--ref", action="append", default=[], help="Reference to include, e.g. 'Numbers 16'.")
     args = parser.parse_args()

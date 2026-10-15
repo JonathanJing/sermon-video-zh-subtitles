@@ -8,7 +8,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 class WebAppRealtimeContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.app_js = (REPO_ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        cls.app_js = (REPO_ROOT / "apps" / "operator-web" / "app.js").read_text(encoding="utf-8")
 
     def test_realtime_caption_handler_accepts_public_sse_zh_only_payloads(self):
         app_js = self.app_js
@@ -151,7 +151,7 @@ class WebAppRealtimeContractTest(unittest.TestCase):
     def test_admin_posts_live_playback_actions(self):
         app_js = self.app_js
 
-        self.assertIn('data-action="live-playback-start"', (REPO_ROOT / "web" / "admin.html").read_text(encoding="utf-8"))
+        self.assertIn('data-action="live-playback-start"', (REPO_ROOT / "apps" / "operator-web" / "admin.html").read_text(encoding="utf-8"))
         self.assertIn("function postLivePlaybackAction(action, extra = {})", app_js)
         self.assertIn('fetch(`/api/admin/sundays/${encodeURIComponent(sunday)}/live-playback`', app_js)
         self.assertIn('postLivePlaybackAction("adjustOffset", { deltaMs })', app_js)

@@ -4,7 +4,7 @@ Follow the repository guide, then read only the relevant section of [README.md](
 
 ## Operator and display contract
 
-- Keep the POC independent of the repository's `web/admin.html` and cloud production app. The default operator controls are microphone selection, start and stop; add features only when the requested task needs them.
+- Keep the POC independent of the repository's `apps/operator-web/admin.html` and cloud production app. The default operator controls are microphone selection, start and stop; add features only when the requested task needs them.
 - Prioritize large Simplified Chinese for distance reading, with smaller English source text on MacBook and phone. Keep the prior complete bilingual segment above the current segment, muted but readable. No moving marquee/transcript by default.
 - When a new ASR final arrives, retain the previous complete pair before showing new English. Never pair that English with the previous segment's Chinese while translation is pending. Preserve the comparison baseline and record presentation-policy changes.
 - Use a user-selected mock as the design reference. For substantial visual work, use the applicable currently available design skill and verify the actual preview; do not depend on a removed skill name or add speculative design rules.

@@ -108,7 +108,7 @@ def main() -> int:
         print("Uploaded generated content:")
         for item in gcs_outputs:
             print(f"- {item['gcsUri']}")
-    print("Open web/index.html and click 模拟播放.")
+    print("Open apps/operator-web/index.html and click 模拟播放.")
     return 0
 
 
@@ -153,7 +153,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--web-out",
         type=Path,
-        default=Path("web/playback-simulation.generated.js"),
+        default=Path("apps/operator-web/playback-simulation.generated.js"),
         help="Generated JS file loaded by web/index.html.",
     )
     parser.add_argument("--playlist-end", type=int, default=40)

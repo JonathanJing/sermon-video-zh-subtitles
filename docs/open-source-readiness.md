@@ -43,7 +43,7 @@ git status --short
 git ls-files
 git diff --check
 python3 -m unittest discover -s tests
-node --check web/app.js
+node --check apps/operator-web/app.js
 ```
 
 Quick tracked-file scan:

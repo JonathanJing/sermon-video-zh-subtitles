@@ -13,7 +13,7 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_APP_JS = REPO_ROOT / "web" / "app.js"
+DEFAULT_APP_JS = REPO_ROOT / "apps" / "operator-web" / "app.js"
 
 
 def main() -> int:

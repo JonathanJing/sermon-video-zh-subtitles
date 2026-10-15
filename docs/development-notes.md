@@ -67,7 +67,7 @@ This repository started with feasibility analysis. The current product goal is t
 
 - `scripts/prepare_live_link_playback.py`
   - Operator-facing POC command: accept a YouTube live archive URL and prepare the browser playback file in one step.
-  - Run the offline-live extractor, build merged playback segments, and emit `web/playback-simulation.generated.js`.
+  - Run the offline-live extractor, build merged playback segments, and emit `apps/operator-web/playback-simulation.generated.js`.
   - Optionally publish generated reports, subtitles, playback data, and cloud manifest to a GCS bucket.
   - Accept a Google Secret Manager resource name for API/model keys without writing key material into generated artifacts.
   - Support the current goal that a given live link can produce a visible sermon title plus a generated-caption playback view.
@@ -92,6 +92,6 @@ For Mariners Church, the public YouTube VOD source should be treated as post-eve
 ## Cloud Storage and Secret Handling
 
 - Generated content should be treated as durable output only after it is written to GCS.
-- Local `artifacts/` and `web/playback-simulation.generated.js` are POC working files, not the production source of truth.
+- Local `artifacts/` and `apps/operator-web/playback-simulation.generated.js` are POC working files, not the production source of truth.
 - API keys must live in Google Secret Manager. Generated reports, manifests, playback JS, logs, and subtitle files must not include raw key material or Secret Manager resource names.
 - Cloud Run should use a service account with the narrow permissions needed to read the configured secret and write/read the generated-content bucket.
