@@ -104,10 +104,10 @@ jobs:
                   if path.startswith(("experiments/sermon-dubbing-poc/", "experiments/local-live-poc/")):
                       return item.suffix in experiment_suffixes
                   # Web clients live beside the iOS app but are not native code.
-                  if path.startswith(("apps/listening-web/", "apps/tracker-web/")):
+                  if path.startswith(("apps/listening-web/", "apps/tracker-web/", "apps/support-web/")):
                       return item.suffix in {".mjs", ".js", ".html", ".css", ".svg", ".png", ".json", ".md"}
                   return False
-              if not paths or any((p.startswith(("apps/", ".github/")) and not p.startswith(("apps/listening-web/", "apps/tracker-web/"))) or
+              if not paths or any((p.startswith(("apps/", ".github/")) and not p.startswith(("apps/listening-web/", "apps/tracker-web/", "apps/support-web/"))) or
                                   (not shared(p) and not known_non_native(p)) for p in paths):
                   scope = "native"
               elif any(shared(p) for p in paths):
