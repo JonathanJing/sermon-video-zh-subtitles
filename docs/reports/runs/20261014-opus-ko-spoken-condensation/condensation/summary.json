@@ -1,0 +1,91 @@
+{
+  "backend": "codex",
+  "budgetJsonSha256": "22837fa1a8f67f7c9fc3bbae7e7b8f46c1ffb41c9e71acae0387e57ffc32675d",
+  "candidateJsonSha256": "1149f31752729fe0640eed2294f3a0d87301e80a3ab0ffd472e2c4be7a542f23",
+  "cannotFitGroupIds": [],
+  "condensedGroupIds": [
+    "translation-0-u286",
+    "translation-0-u288",
+    "translation-0-u290",
+    "translation-0-u295",
+    "translation-0-u296",
+    "translation-0-u297",
+    "translation-0-u301",
+    "translation-0-u302",
+    "translation-0-u304",
+    "translation-0-u305",
+    "translation-0-u307",
+    "translation-0-u311",
+    "translation-0-u316",
+    "translation-0-u321",
+    "translation-0-u322",
+    "translation-0-u323",
+    "translation-0-u328",
+    "translation-0-u329",
+    "translation-0-u330"
+  ],
+  "condenserIdentity": {
+    "backend": "codex_cli_chatgpt",
+    "cacheNamespace": "spoken-condensation-v1",
+    "model": "gpt-6.1-sol",
+    "modelRevision": "codex-cli 0.162.0-alpha.17.2",
+    "settings": {
+      "promptFormat": "system-user-json-v1",
+      "reasoningEffort": "high",
+      "serviceTier": "fast",
+      "transport": {
+        "adapterSha256": "730ee8b66af08b5944af27de23f5487d48e2978cc73ba9e308383df0de0a4ee7",
+        "binarySha256": "0d5ac7aae20c4eda6242428d5e218c55ba96d8763fda2a271088ff37104b9d28",
+        "cliSha256": "50ab38ba21d0d9f8346f32f41848382f15b556190f3c7a07e885a4fb73e379c8"
+      }
+    }
+  },
+  "failedGroupIds": [
+    "translation-0-u299",
+    "translation-0-u303",
+    "translation-0-u312",
+    "translation-0-u317",
+    "translation-0-u325"
+  ],
+  "implementationSha256": "7328bdb1a74979836e5be3862cff2594041a6b9856af5636f045864a432a112a",
+  "inputs": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ab-3lang/l2/src/anchor.json",
+    "budget": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ko-spoken-prep/budget-trimmed.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ab-3lang/l2/text/ko/candidate.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ab-3lang/l2/policy/ko-policy-clip.json"
+  },
+  "locale": "ko",
+  "modelCalls": 44,
+  "reason": "failed groups keep the full translation; their dub falls back to subtitles",
+  "record": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ko-spoken-prep/condensation/condensation-record-9d8d5acd559f7e75.json",
+  "recordReused": false,
+  "recordStatus": "condensed_with_failures",
+  "revisionBrief": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ko-spoken-prep/condensation/revision-brief-e6b7b1cec10b12ff.json",
+  "shortenGroupIds": [
+    "translation-0-u286",
+    "translation-0-u288",
+    "translation-0-u290",
+    "translation-0-u295",
+    "translation-0-u296",
+    "translation-0-u297",
+    "translation-0-u299",
+    "translation-0-u301",
+    "translation-0-u302",
+    "translation-0-u303",
+    "translation-0-u304",
+    "translation-0-u305",
+    "translation-0-u307",
+    "translation-0-u311",
+    "translation-0-u312",
+    "translation-0-u316",
+    "translation-0-u317",
+    "translation-0-u321",
+    "translation-0-u322",
+    "translation-0-u323",
+    "translation-0-u325",
+    "translation-0-u328",
+    "translation-0-u329",
+    "translation-0-u330"
+  ],
+  "status": "brief_ready_with_failures"
+}
