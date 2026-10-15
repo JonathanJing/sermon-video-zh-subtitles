@@ -29,6 +29,7 @@ if __package__ in (None, ''):
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import build_english_source_package as source_builder
+from scripts import judge_english_source_for_translation as source_judge
 from scripts import build_full_video_app_release as release
 from scripts import delivery_contract as contract
 from scripts import produce_target_language_candidate as candidate_validator
@@ -364,7 +365,7 @@ def assemble(out, run_id, page_id, *, media, segments, anchor, locales, source_u
     sentence_ids = list(dict.fromkeys(x['sourceSentenceId'] for x in anchor['sourceUnits']))
     judge = save(out / 'simulated-machine-review.json', {
         'schemaVersion': source_builder.MACHINE_JUDGE_SCHEMA_VERSION, 'reviewType': 'model',
-        'humanApproval': False, 'implementationSha256': sha(ROOT / 'scripts/judge_english_source_for_translation.py'),
+        'humanApproval': False, 'implementationSha256': sha(Path(source_judge.__file__)),
         'model': source_builder.MACHINE_JUDGE_MODEL, 'reasoningEffort': source_builder.MACHINE_JUDGE_REASONING_EFFORT,
         'promptVersion': source_builder.MACHINE_JUDGE_SCHEMA_VERSION, 'thresholds': source_builder.MACHINE_JUDGE_THRESHOLDS,
         'alignedSegmentsSha256': sha(aligned), 'anchorManifestJsonSha256': contract.sha(anchor),

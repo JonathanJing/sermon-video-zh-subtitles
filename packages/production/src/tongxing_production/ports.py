@@ -39,6 +39,26 @@ class Provider:
     bounded_legacy_chat_payload: Callable[[dict], dict]
     legacy_text_cache_contract: Callable[[], Any]
     legacy_text_execution_identity: Callable[..., Any]   # (api_key, payload, *, caller=None)
+    access_secret: Callable[[str], str]        # named Secret Manager credential for an explicit CLI flag
+    outcomes: Any                              # request_identity, execution_binding, assert_replay_admitted, recover, before_dispatch
+
+
+@dataclass(frozen=True)
+class Compute:
+    """Spark-session admission for model calls."""
+    session_bound_caller: type                 # bound directly: producers construct it and test isinstance
+
+
+@dataclass(frozen=True)
+class Terminology:
+    """The shared series terminology table as frozen policy input."""
+    context: Callable[[], dict]
+
+
+@dataclass(frozen=True)
+class Measure:
+    """Producer timing in the progress ledger; it never gates review or release."""
+    producer_step: Callable[..., Any]          # (ledger_path, step_id, *, locale=None) -> context manager
 
 
 @dataclass(frozen=True)
