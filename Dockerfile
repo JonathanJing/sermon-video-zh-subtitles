@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY backend/ /app/backend/
 COPY scripts/ /app/scripts/
 COPY data/scripture/ /app/data/scripture/
-COPY web/ /app/web/
+COPY apps/operator-web/ /app/apps/operator-web/
 
 ENV PORT=8080
 

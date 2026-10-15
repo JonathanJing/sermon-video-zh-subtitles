@@ -45,7 +45,9 @@ Today this web prototype is best understood as:
 
 It should be documented as working, but not as the repository's main workflow.
 
-Open `index.html` directly in a browser, or serve the `web/` folder with any static server.
+This directory was `web/` until 2026-10 (layout stage 2; audit: [operator-web-audit.zh.md](../../docs/design/operator-web-audit.zh.md)). Files, URLs and behavior are unchanged. `backend/app.py` serves it as static files from the Cloud Run service `sermon-zh-caption-web`: `/` is the public congregation entry and `/admin` is the operator entry. `index.html` and `admin.html` share one `app.js`, `styles.css` and `manifest.webmanifest`, so keep the public page free of operator controls (`tests/test_public_admin_boundary.py`). This is not the Sunday `live_session` public viewer, which is in `experiments/local-live-poc`.
+
+Open `index.html` directly in a browser, or serve this folder with any static server.
 
 Pages:
 
@@ -76,7 +78,7 @@ Regenerate the scripture sidebar slice:
 
 ```bash
 python3 scripts/build_scripture_index.py \
-  --out web/scripture-cmn-cu89s.generated.js \
+  --out apps/operator-web/scripture-cmn-cu89s.generated.js \
   --full-out data/scripture/cmn-cu89s.json \
   --ref "Numbers 16" \
   --ref "Numbers 16:48"
