@@ -91,12 +91,18 @@ class SpecificationTests(unittest.TestCase):
 
     def test_group_acceptance_is_scoped_to_a_run_locale(self):
         spec = subject.load_spec(spec_files(self.base, qc={
-            "maxRevisions": 0, "humanAcceptanceByLocale": {"ko": "ko-acceptance.json"}}))
+            "maxRevisions": 0, "humanAcceptanceByLocale": {"ko": "ko-acceptance.json"},
+            "priorBudgetPlanByLocale": {"ko": "prior-qc-ko"}}))
         self.assertEqual(spec["qc"]["humanAcceptanceByLocale"]["ko"],
                          str((self.base / "ko-acceptance.json").resolve()))
+        self.assertEqual(spec["qc"]["priorBudgetPlanByLocale"]["ko"],
+                         str((self.base / "prior-qc-ko").resolve()))
         with self.assertRaisesRegex(ValueError, "humanAcceptanceByLocale"):
             subject.load_spec(spec_files(self.base, qc={
                 "maxRevisions": 0, "humanAcceptanceByLocale": {"fr": "fr-acceptance.json"}}))
+        with self.assertRaisesRegex(ValueError, "priorBudgetPlanByLocale"):
+            subject.load_spec(spec_files(self.base, qc={
+                "maxRevisions": 0, "priorBudgetPlanByLocale": {"fr": "prior-qc-fr"}}))
 
     def test_raised_repair_fraction_is_scoped_to_named_dev_locales(self):
         base = json.loads(spec_files(self.base).read_text())
@@ -268,6 +274,8 @@ class RunTests(unittest.TestCase):
     def test_text_qc_passes_the_bound_group_acceptance(self):
         receipt = self.run_dir / "ko-acceptance.json"
         self.run.spec["qc"]["humanAcceptanceByLocale"] = {"ko": str(receipt)}
+        prior_plan = self.run_dir / "prior-qc-ko"
+        self.run.spec["qc"]["priorBudgetPlanByLocale"] = {"ko": str(prior_plan)}
         for rel in ("l2/src/source.json", "l2/src/anchor.json", "l2/policy/ko-policy-clip.json",
                     "l2/text/ko/candidate.json"):
             subject.write(self.run_dir / rel, {})
@@ -281,7 +289,9 @@ class RunTests(unittest.TestCase):
         with mock.patch.object(self.run, "check"), mock.patch.object(self.run, "sh", side_effect=fake_sh):
             result = subject.text_qc(self.run, "ko", self.run_dir / "l2/text/ko/candidate.json", "out")
         self.assertEqual(result["status"], "text_waiver_issued")
-        self.assertEqual(calls[0][-2:], ["--human-acceptance", f"ko={receipt}"])
+        self.assertTrue(str(calls[0][1]).endswith("run_text_qc_budget_continuation.py"))
+        self.assertEqual(calls[0][-4:], ["--human-acceptance", f"ko={receipt}",
+                                          "--prior-budget-plan", str(prior_plan)])
 
     def test_audio_qc_mirror_creates_remote_parent_before_rsync(self):
         calls=[]

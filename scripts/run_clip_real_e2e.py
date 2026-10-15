@@ -173,6 +173,11 @@ def load_spec(path: Path) -> dict:
             and all(isinstance(value, str) and value for value in human_acceptance.values()),
             "qc.humanAcceptanceByLocale must name run locales and receipt paths")
     qc["humanAcceptanceByLocale"] = {locale: resolve(value) for locale, value in human_acceptance.items()}
+    prior_qc_plans = qc.get("priorBudgetPlanByLocale", {})
+    require(isinstance(prior_qc_plans, dict) and set(prior_qc_plans) <= set(locales)
+            and all(isinstance(value, str) and value for value in prior_qc_plans.values()),
+            "qc.priorBudgetPlanByLocale must name run locales and prior plan paths")
+    qc["priorBudgetPlanByLocale"] = {locale: resolve(value) for locale, value in prior_qc_plans.items()}
     page = spec.get("page") or {}
     require(isinstance(page.get("pageId"), str) and page["pageId"].startswith("mockup-"),
             "page.pageId must be an isolated mockup- page")
@@ -646,11 +651,15 @@ def text_qc(run: Run, locale: str, candidate: Path, out_name: str) -> dict:
     shutil.copyfile(run.l2 / "policy" / f"{locale}-policy-clip.json", work / "policies" / f"{locale}-policy-clip.json")
     shutil.copyfile(candidate, work / locale / "candidate.json")
     acceptance = run.spec["qc"]["humanAcceptanceByLocale"].get(locale)
+    prior_plan = run.spec["qc"]["priorBudgetPlanByLocale"].get(locale)
     run.sh(f"text-qc.{locale}.{out_name}",
-           [PY, ROOT / "scripts/run_machine_qc_clip_test.py", "--run-dir", work, "--out", out, "--state-dir", root / "state",
+           [PY, ROOT / ("scripts/run_text_qc_budget_continuation.py" if prior_plan
+                        else "scripts/run_machine_qc_clip_test.py"),
+            "--run-dir", work, "--out", out, "--state-dir", root / "state",
             "--locales", locale, "--text-backend", "api", "--api-budget-authorization", authorization,
             "--workers", 8, "--expected-implementation", run.impl(),
-            *(["--human-acceptance", f"{locale}={acceptance}"] if acceptance else [])], launcher=True, check=False)
+            *(["--human-acceptance", f"{locale}={acceptance}"] if acceptance else []),
+            *(["--prior-budget-plan", prior_plan] if prior_plan else [])], launcher=True, check=False)
     summary = read(out / "summary.json")["locales"][locale]
     waivers = [p for p in (out / locale).glob("text-waiver-*.json") if not p.name.endswith(".inputs.json")]
     return {"status": summary["status"], "failedGroups": summary.get("failedGroups"),
