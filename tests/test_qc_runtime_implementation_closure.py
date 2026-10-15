@@ -13,9 +13,9 @@ class QcRuntimeClosureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             for name in waiver.IMPLEMENTATION_FILES:
-                destination = root / name
+                destination = waiver.implementation_path(name, root)
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(waiver.ROOT / name, destination)
+                shutil.copyfile(waiver.implementation_path(name), destination)
             original = waiver.implementation_sha256(root)
             calibration = seeded.calibrate('ko', fixtures.groups('ko'),
                 policy=fixtures.policy('ko'), call=fixtures.PerfectSemanticJudge('ko'),

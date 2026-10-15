@@ -12,6 +12,8 @@ class SourceBackend:
     provider: ports.Provider
     code: ports.Code
     mfa: ports.Mfa
+    contracts: ports.Contracts
+    snapshot: ports.Snapshot
 
 
 _current: SourceBackend | None = None

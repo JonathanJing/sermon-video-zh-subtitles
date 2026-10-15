@@ -297,10 +297,12 @@ def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
         assert subject.implementation_sha256(tmp_path) != initial
         path.write_bytes(original)
     assert "scripts/ko_spoken_numerals.py" in waiver.IMPLEMENTATION_FILES
+    from scripts import sermon_source_producer_compatibility as compatibility
     for name in waiver.IMPLEMENTATION_FILES:
-        target = tmp_path / name
+        # A closure key names a file at its alias once it moved into the production package.
+        target = tmp_path / compatibility.resolve(name)
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(root / name, target)
+        shutil.copyfile(root / compatibility.resolve(name), target)
     original_waiver = waiver.implementation_sha256(tmp_path)
     helper = tmp_path / "scripts/ko_spoken_numerals.py"
     helper.write_bytes(helper.read_bytes() + b"\n# changed rule\n")
@@ -313,7 +315,7 @@ def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
                  "scripts/machine_qc_audio_transports.py", "scripts/run_machine_qc_audio_test.py",
                  "scripts/sermon_sentence_interpretation.py"):
         assert name in waiver.IMPLEMENTATION_FILES
-        path = tmp_path / name
+        path = tmp_path / compatibility.resolve(name)
         original = path.read_bytes()
         path.write_bytes(original + b"\n# changed calibration call path\n")
         changed = waiver.implementation_sha256(tmp_path)

@@ -150,6 +150,14 @@ class CachedFreshEvidenceTests(unittest.TestCase):
         self.assertEqual(self.f.calls, len(self.f.fixture.f.transport.observations))
 
 
+def pin_producers(identity, compatibility, table):
+    """Record producer hashes the way a plan of that generation did: under the legacy key."""
+    loaded = identity['loadedProjectCodeSha256']
+    for path, sha in table.items():
+        loaded.pop(compatibility.resolve(path), None)
+        loaded[path] = sha
+
+
 class MigratedCachedFreshEvidenceTests(unittest.TestCase):
     def migration_fixture(self, *, approved_identity=False):
         from scripts import sermon_source_producer_compatibility as compatibility
@@ -161,20 +169,21 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
         from scripts import build_english_source_package as source_builder
         original_sha = source_builder.file_sha256
         repository = Path(source_builder.__file__).resolve().parents[1]
-        historical = {repository / path: sha for path, sha in compatibility.HISTORICAL_SOURCE_SHA256.items()}
+        historical = {repository / compatibility.resolve(path): sha
+                      for path, sha in compatibility.HISTORICAL_SOURCE_SHA256.items()}
         def historical_builder_sha(path):
             return historical.get(Path(path).resolve()) or original_sha(path)
         with patch.object(source_builder, 'file_sha256', side_effect=historical_builder_sha):
             prepared = freeze_current(f)
         current_identity = deepcopy(f.plan['executionIdentity'])
         if approved_identity:
-            current_identity['loadedProjectCodeSha256'].update(compatibility.CURRENT_SOURCE_SHA256)
+            pin_producers(current_identity, compatibility, compatibility.CURRENT_SOURCE_SHA256)
         # Build a synthetic historical parent before closing it. The approved
         # identity models only the three reviewed producer changes; the actual
         # current negative case deliberately retains additional code drift.
         # No live/historical receipt is edited.
         parent_plan = deepcopy(f.plan)
-        parent_plan['executionIdentity']['loadedProjectCodeSha256'].update(compatibility.HISTORICAL_SOURCE_SHA256)
+        pin_producers(parent_plan['executionIdentity'], compatibility, compatibility.HISTORICAL_SOURCE_SHA256)
         parent_plan['providerConfig']['codeSha256'] = c.canonical_sha256(parent_plan['executionIdentity'])
         (f.root/'run-plan.json').write_bytes(c.canonical_bytes(parent_plan))
         state_path = f.root/'budget'/budget.STORE_ID/'provider-run/state.json'
@@ -204,7 +213,8 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
         from scripts import sermon_log_profile as profile
         f, root, plan, runtime = self.migration_fixture(approved_identity=True)
         repository = Path(subject.cache.__file__).resolve().parents[1]
-        approved_paths = {repository/path: sha for path, sha in compatibility.CURRENT_SOURCE_SHA256.items()}
+        approved_paths = {repository/compatibility.resolve(path): sha
+                          for path, sha in compatibility.CURRENT_SOURCE_SHA256.items()}
         original_ref = subject.cache._ref
         observed_producers = set()
         def approved_fixture_ref(path):
@@ -239,10 +249,10 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
         from scripts import sermon_source_producer_compatibility as compatibility
         f, root, plan, runtime = self.migration_fixture()
         repository = Path(subject.cache.__file__).resolve().parents[1]
-        actual = {path: subject.cache._ref(repository/path)['bytesSha256']
+        actual = {path: subject.cache._ref(repository/compatibility.resolve(path))['bytesSha256']
                   for path in compatibility.CURRENT_SOURCE_SHA256}
         self.assertNotEqual(actual, compatibility.CURRENT_SOURCE_SHA256)
-        self.assertTrue(all(plan['executionIdentity']['loadedProjectCodeSha256'][path] == sha
+        self.assertTrue(all(compatibility.recorded(plan['executionIdentity']['loadedProjectCodeSha256'], path) == sha
                             for path, sha in actual.items()))
         before = existing_bytes(f.root, root); calls = len(f.f.transport.observations)
         with patch.object(runtime, '_locked', side_effect=AssertionError('lock forbidden')):

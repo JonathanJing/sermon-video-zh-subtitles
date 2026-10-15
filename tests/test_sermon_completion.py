@@ -143,8 +143,20 @@ class CompletionTests(unittest.TestCase):
         binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
             'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
         current=compatibility.FOLLOWUP_SOURCE_SHA256
-        actual=c.bytes_sha256((Path(compatibility.__file__).parent/'sermon_fresh_diagnostic_source.py').read_bytes())
+        repository=Path(__file__).resolve().parents[1]
+        actual=c.bytes_sha256((repository/'scripts/sermon_fresh_diagnostic_source.py').read_bytes())
         self.assertEqual(compatibility.EXTRACTION_SOURCE_SHA256['scripts/sermon_fresh_diagnostic_source.py'],actual)
+        for path in compatibility.MOVE_CHANGED:
+            self.assertEqual(compatibility.MOVE_SOURCE_SHA256[path],
+                c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        moved=compatibility.verify(compatibility.EXTRACTION_SOURCE_SHA256,compatibility.MOVE_SOURCE_SHA256,
+            {compatibility.resolve(path):sha for path,sha in compatibility.MOVE_SOURCE_SHA256.items()},binding)
+        self.assertEqual(moved['migrationId'],compatibility.MOVE_MIGRATION)
+        self.assertEqual(moved['changedModules'],compatibility.MOVE_CHANGED)
+        self.assertFalse(moved['productionEligible'])
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.FOLLOWUP_SOURCE_SHA256,compatibility.MOVE_SOURCE_SHA256,
+                compatibility.MOVE_SOURCE_SHA256,binding)
         extracted=compatibility.verify(current,compatibility.EXTRACTION_SOURCE_SHA256,
             compatibility.EXTRACTION_SOURCE_SHA256,binding)
         self.assertEqual(extracted['migrationId'],compatibility.EXTRACTION_MIGRATION)

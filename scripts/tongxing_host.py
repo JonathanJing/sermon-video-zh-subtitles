@@ -97,4 +97,36 @@ def mfa() -> ports.Mfa:
     return ports.Mfa(options=_mfa_options)
 
 
-source_backend.configure(source_backend.SourceBackend(core=core(), provider=provider(), code=code(), mfa=mfa()))
+def _require(condition, code):
+    from scripts import sermon_review_contracts
+    return sermon_review_contracts.require(condition, code)
+
+
+def _bytes_sha256(value):
+    from scripts import sermon_review_contracts
+    return sermon_review_contracts.bytes_sha256(value)
+
+
+def _canonical_sha256(value):
+    from scripts import sermon_review_contracts
+    return sermon_review_contracts.canonical_sha256(value)
+
+
+def contracts() -> ports.Contracts:
+    # The error class is the one object callers catch, so it is bound directly.
+    from scripts import sermon_review_contracts
+    return ports.Contracts(error=sermon_review_contracts.ContractError, require=_require,
+                           bytes_sha256=_bytes_sha256, canonical_sha256=_canonical_sha256)
+
+
+def _read_snapshot(path):
+    from scripts import sermon_public_snapshot
+    return sermon_public_snapshot.read_snapshot(path)
+
+
+def snapshot() -> ports.Snapshot:
+    return ports.Snapshot(read_snapshot=_read_snapshot)
+
+
+source_backend.configure(source_backend.SourceBackend(core=core(), provider=provider(), code=code(), mfa=mfa(),
+                                                      contracts=contracts(), snapshot=snapshot()))

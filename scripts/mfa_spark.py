@@ -14,8 +14,11 @@ import subprocess
 import tarfile
 import tempfile
 
+from scripts import mfa_alignment as _adapter_module
 from scripts.mfa_alignment import _sha, _write, _spoken_forms
 from scripts import production_spark_admission as spark_admission
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import backend as _source
 
 DEFAULT_ROOT = '/home/achillesjing/sermon-mfa-runtime'
 
@@ -127,7 +130,8 @@ def _call(action, *, chunks=None, clip_path=None, host, proxy_jump='', relay_hos
         raise ValueError('Configure MFA_DICTIONARY and MFA_ACOUSTIC_MODEL as Spark paths')
     if spoken_forms_path:
         _spoken_forms(spoken_forms_path)
-    adapter = Path(__file__).with_name('mfa_alignment.py')
+    # The adapter ships as a file; its location comes from the Layer 1 code port.
+    adapter = _source.current().code.module_path(_adapter_module)
     request = {'action': action, 'adapterSha256': _sha(adapter),
                'spokenSha256': _sha(spoken_forms_path) if spoken_forms_path else None,
                'options': {'mfa_executable': str(mfa_executable), 'dictionary_path': str(dictionary_path),

@@ -185,9 +185,10 @@ def _capture(new_plan, subject, parent_plan_path, authorization):
     from scripts import sermon_source_producer_compatibility as compatibility
     producers = {}; current_producers={}
     for name in SOURCE_MODULES:
-        relative='scripts/'+name+'.py';current_producers[relative]=_ref(repository/relative)['bytesSha256']
-        producers[relative]=parent['executionIdentity']['loadedProjectCodeSha256'].get(relative)
-    c.require(all(new_plan['executionIdentity']['loadedProjectCodeSha256'].get(path)==sha
+        # Keys stay the legacy identity names; a moved file is read at its alias.
+        relative='scripts/'+name+'.py';current_producers[relative]=_ref(repository/compatibility.resolve(relative))['bytesSha256']
+        producers[relative]=compatibility.recorded(parent['executionIdentity']['loadedProjectCodeSha256'],relative)
+    c.require(all(compatibility.recorded(new_plan['executionIdentity']['loadedProjectCodeSha256'],path)==sha
         for path,sha in current_producers.items()), 'fresh_source_cache_producer_code_changed')
     migration=compatibility.verify(producers,current_producers,
         new_plan['executionIdentity']['loadedProjectCodeSha256'],{
