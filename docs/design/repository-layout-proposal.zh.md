@@ -1,6 +1,6 @@
 # 仓库目录与模块边界设计提案
 
-[English](repository-layout-proposal.md) · [当前系统导览](../backend-workflow-system-design.zh-en.md) · [四层生产合同](../multilingual-production-interfaces.zh.md)
+[English](repository-layout-proposal.md) · [仓库现状地图](repository-current-map.zh.md) · [当前系统导览](../backend-workflow-system-design.zh-en.md) · [四层生产合同](../multilingual-production-interfaces.zh.md)
 
 状态：**设计提案，待评审，未批准迁移**。核查日期：2026-10-02。原始盘点基线：[dev@84e9d71d24ae86170efbb4c57755246f369ec9d9][baseline]。本次补充评审基线：[dev@8c64502404f9ae7110ee49aa990bcaeb2f8cd24d][review-baseline]，已于 2026-10-02 fetch 并与远端分支核对。下文原有数量仍对应原始基线，§1.1 单列本次增量。本文设计目标目录、模块职责和迁移验收条件；不修改现有生产合同，不代表这些目录、包或统一调度能力已经实现。
 
