@@ -2,7 +2,7 @@
 
 以原生 iOS 候选的 [图标清单](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/062cbab91270190f5ceaa42ab96b31b547f99686/apps/tongxing-ios/ICON-INVENTORY.zh.md)（PR #192 的固定参考版本，四图标优化）作为动作与形状基准。`icons.svg` 是手工重绘、可编辑的 SVG 路径库；符号名称表示参考的原生图标，不是导出的 SF Symbols 文件。iOS 继续使用系统符号。
 
-两套网页实现（每周播放器与 `firebase/dev/public` 多语言阅读器）使用字节一致的 `icons.svg`、`icons.mjs`、`brand-icon.svg`、`brand-icon-light.svg`。共 44 个图形（38 个原生对应符号与 6 个网页补充符号，包含同片段试听的 `pause.circle` 独立圆环暂停图形）；其中部分预留给对应动作，并非所有页面都有该功能。
+两套网页实现（每周播放器与 `firebase/dev/public` 多语言阅读器）使用字节一致的 `icons.svg`、`icons.mjs`、`brand-icon.svg`、`brand-icon-light.svg`。共 48 个图形（42 个原生对应符号与 6 个网页补充符号，包含同片段试听的 `pause.circle` 独立圆环暂停图形）；其中部分预留给对应动作，并非所有页面都有该功能。
 
 | 动作 | SVG 图形名称（对应原生选择） |
 | --- | --- |
@@ -70,6 +70,10 @@ python3 scripts/check_tongxing_icon_alignment.py
 独立分支本轮重新执行：363 项网页测试、52 项 weekly release/build/deploy guard 测试、17 项 multilingual assembly/Dev app 测试通过。合成预览的本地浏览器验证 SVG 几何、390/320px、中英、浅深、精调弹窗、播放／暂停及全文入口。
 
 [独立 Firebase App 预览](https://ai-for-god-sermon-audio-dev--firebase-app-update-9gf6afl1.web.app/)，有效至 2026-10-08；页面使用每周播放器，顶部明确标识合成内容与静音音频，多语言阅读器源码另在同一 PR 更新。它是短期 Dev channel，不是正式 Dev 或 Production 的发布。
+
+## 补齐 iOS 新增符号（2026-10-15）
+
+iOS 自 `927f73ed`（2026-10-03）起使用 `text.bubble.fill`（跟随字幕开启状态）、`bell.badge`（Beta 通知测试）、`cpu`（机器质检）与 `doc.richtext`（本周海报），维护检查因此失败。现已为四者补手绘 SVG 并登记到运行时注册表，当前为 48 个图形（42 个原生对应符号）。仅补资产，不新增网页功能。该检查尚未接入 CI。
 
 ## 生产 UI-only 发布入口
 
