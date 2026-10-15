@@ -4,7 +4,7 @@ import {
   formalReleaseView, loadOptionalFormalCatalog, loadRequiredFormalCatalog,
   validateFormalCaptions, validateFormalCatalog,
   validateFormalContent, validateFormalRelease
-} from '../firebase/dev/public/formal-dev-adapter.mjs';
+} from '../apps/listening-web/reader/formal-dev-adapter.mjs';
 
 const hash = digit => digit.repeat(64);
 const pageId = 'formal-page-1';
