@@ -82,8 +82,11 @@ def file_sha256(path: Path) -> str:
 
 def implementation_sha256() -> str:
     """This transport module; its hash joins every opinion's ``settings``."""
-    root = Path(__file__).resolve().parent
-    return json_sha256({name: file_sha256(root / name) for name in (
+    # Keys stay the scripts/ file names; a file that moved into the production
+    # package is hashed where it lives now, not as its import facade.
+    from scripts import sermon_source_producer_compatibility as compatibility
+    root = Path(__file__).resolve().parents[1]
+    return json_sha256({name: file_sha256(root / compatibility.resolve("scripts/" + name)) for name in (
         "machine_qc_audio_transports.py", "machine_qc_budget_authorization.py",
         "sermon_source_budget.py", "sermon_transcription_request.py", "sermon_workflow_jobs.py")})
 
