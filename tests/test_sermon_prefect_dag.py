@@ -186,11 +186,12 @@ class PilotTests(unittest.TestCase):
     def test_existing_profile_is_rejected_and_sdk_tracking_disabled_before_import(self):
         home=self.root/'prefect';home.mkdir(parents=True)
         profile=home/'profiles.toml';profile.write_text('[profiles.hostile]\nPREFECT_API_URL="https://synthetic.invalid"\n')
-        with self.assertRaisesRegex(ValueError,'file_prefect_settings'):
+        # A clean cwd, so a checkout's own .env cannot satisfy or break the check.
+        with chdir(self.root),self.assertRaisesRegex(ValueError,'file_prefect_settings'):
             pilot.isolated_prefect_environment(self.root)
         profile.unlink()
         # Only this isolated test environment is changed, never a user profile.
-        with patch.dict(os.environ,{},clear=True):
+        with chdir(self.root),patch.dict(os.environ,{},clear=True):
             actual,database=pilot.isolated_prefect_environment(self.root)
             self.assertEqual(os.environ['DO_NOT_TRACK'],'1')
             self.assertEqual(os.environ['PREFECT_SERVER_MEMO_STORE_PATH'],str(home/'memo_store.toml'))
