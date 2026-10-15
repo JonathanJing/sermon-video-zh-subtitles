@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "apps/listening-web"
-DEV = ROOT / "firebase/dev/public"
+DEV = WEB / "reader"
 # The web candidate can ship before the native UI changes in PR #192.
 # These explicit legacy names retain the same actions with the new icon choices.
 LEGACY_SYMBOLS = {
@@ -33,9 +33,7 @@ def check():
     registry = re.search(r"const names = new Set\(\[(.*?)\]\)", (WEB / "icons.mjs").read_text()).group(1)
     if set(re.findall(r"'([^']+)'", registry)) != set(symbols):
         raise ValueError("SVG sprite and runtime registry differ")
-    for name in ("icons.svg", "icons.mjs", "brand-icon.svg", "brand-icon-light.svg"):
-        if (WEB / name).read_bytes() != (DEV / name).read_bytes():
-            raise ValueError(f"Readers use different icon bytes: {name}")
+    # Both readers ship the one icon sprite from the listening app root.
     for path in (WEB / "index.html", DEV / "index.html"):
         for name in re.findall(r'/icons.svg#([^"<>]+)', path.read_text()):
             if name not in symbols:

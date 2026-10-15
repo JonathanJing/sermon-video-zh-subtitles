@@ -209,7 +209,10 @@ def assemble(base_public: Path, staged: Path, out: Path,
     collisions = incoming_refs & set(base_files)
     if collisions:
         raise ValueError(f"Incoming assets would overwrite prior release: {sorted(collisions)[0]}")
-    reader_root = ROOT / "firebase/dev/public"
+    # The Dev reader entry owns its own files; shared assets come from the
+    # listening app root, their only source.
+    reader_root = ROOT / "apps/listening-web/reader"
+    shared_root = ROOT / "apps/listening-web"
     reader_files = {}
     feedback_enabled = False
     if production_reader:
@@ -253,7 +256,7 @@ def assemble(base_public: Path, staged: Path, out: Path,
                 raise ValueError(f"Incomplete existing Production reader: {name}")
             reader_files[name] = reader_root / name
         for name in SHARED_READER_FILES:
-            source = reader_root / name
+            source = shared_root / name
             if name in base_files:
                 if digest(base_files[name]) != digest(source):
                     raise ValueError(f"Shared reader asset differs from production: {name}")

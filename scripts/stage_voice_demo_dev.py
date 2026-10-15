@@ -26,7 +26,8 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parents[1]
-UI_SOURCE = ROOT / "firebase/dev/public"
+UI_SOURCE = ROOT / "apps/listening-web"
+READER_SOURCE = UI_SOURCE / "reader"
 VERSION = "2026-09-21-v2"
 PREFIX = f"voice-demos/{VERSION}"
 PAGES = ("index.html", "multilingual-reader.html", "dev-poc.html")
@@ -273,7 +274,8 @@ def stage(base: Path, delivery: Path, prior_http: Path, out: Path,
                                            indent=2) + "\n", encoding="utf-8")
         for name in ("voice-demo.mjs", "voice-demo.css", "speaker-clip-demos.mjs"):
             require(not (public / name).exists(), f"Voice demo UI already exists: {name}")
-            shutil.copyfile(UI_SOURCE / name, public / name)
+            source = READER_SOURCE if name == "voice-demo.mjs" else UI_SOURCE
+            shutil.copyfile(source / name, public / name)
         for name in PAGES:
             patch_page(public / name)
         shutil.copyfile(base / "firebase.json", temporary / "firebase.json")

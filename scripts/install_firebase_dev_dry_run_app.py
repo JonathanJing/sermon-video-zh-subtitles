@@ -17,7 +17,7 @@ except ImportError:
     import firebase_dev_four_layer_bucket_dry_run as dry
     from patch_firebase_dev_app_banner import patch_public
 
-SOURCE = Path(__file__).resolve().parents[1] / "firebase/dev/public"
+SOURCE = Path(__file__).resolve().parents[1] / "apps/listening-web/reader"
 
 
 def install(base_dev: Path, baseline_preflight: Path, page_id: str, out: Path) -> dict:

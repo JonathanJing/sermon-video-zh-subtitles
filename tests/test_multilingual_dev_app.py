@@ -4,7 +4,8 @@ import unittest
 
 
 ROOT = Path(__file__).parents[1]
-PUBLIC = ROOT / "firebase/dev/public"
+PUBLIC = ROOT / "firebase/dev/public"            # POC content package
+READER = ROOT / "apps/listening-web/reader"      # Dev reader source
 PAGE_ID = "2026-09-20-lion-of-judah-poc"
 LOCALES = ("en", "zh-Hans", "ko", "es", "vi")
 
@@ -69,8 +70,8 @@ class MultilingualDevAppTest(unittest.TestCase):
         self.assertEqual(len(english["cues"]), 6)
 
     def test_app_router_accepts_english(self):
-        app = (PUBLIC / "app.js").read_text(encoding="utf-8")
-        integrity = (PUBLIC / "dev-integrity.mjs").read_text(encoding="utf-8")
+        app = (READER / "app.js").read_text(encoding="utf-8")
+        integrity = (READER / "dev-integrity.mjs").read_text(encoding="utf-8")
         self.assertIn("(en|zh-Hans|ko|es|vi)", app)
         self.assertIn('sermon-source-language-demo-package-v1', integrity)
         self.assertIn('fetchVerified(variant.audioUrl, variant.audioSha256', app)
@@ -138,8 +139,8 @@ class MultilingualDevAppTest(unittest.TestCase):
         self.assertEqual(acoustic["machineScreeningStatus"], "pending_for_this_audio_variant")
 
     def test_app_supports_audio_variant_selection_and_variant_cues(self):
-        app = (PUBLIC / "app.js").read_text(encoding="utf-8")
-        html = (PUBLIC / "index.html").read_text(encoding="utf-8")
+        app = (READER / "app.js").read_text(encoding="utf-8")
+        html = (READER / "index.html").read_text(encoding="utf-8")
         self.assertIn('id="audioVariantSelect"', html)
         self.assertIn("function activeCues()", app)
         self.assertIn("state.audioVariant?.cues", app)
@@ -148,13 +149,15 @@ class MultilingualDevAppTest(unittest.TestCase):
     def test_dev_shell_tracks_production_visual_base(self):
         production = ROOT / "apps/listening-web"
         self.assertTrue(
-            (PUBLIC / "styles.css").read_bytes().startswith((production / "style.css").read_bytes()),
+            (READER / "styles.css").read_bytes().startswith((production / "style.css").read_bytes()),
             "Dev CSS must start with the production stylesheet before Dev overrides",
         )
-        self.assertEqual(
-            (PUBLIC / "brand-icon.png").read_bytes(),
-            (production / "brand-icon.png").read_bytes(),
-        )
+        # Brand and icon assets have one source, the listening app root; the
+        # reader entry references them by absolute path and ships no copies.
+        html = (READER / "index.html").read_text(encoding="utf-8")
+        self.assertIn('href="/brand-icon.png"', html)
+        self.assertTrue((production / "brand-icon.png").is_file())
+        self.assertFalse((READER / "brand-icon.png").exists())
 
 
 if __name__ == "__main__":

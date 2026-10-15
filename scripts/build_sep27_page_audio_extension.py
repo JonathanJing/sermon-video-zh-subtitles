@@ -27,7 +27,7 @@ PAGE_ID = "2026-09-27-weekend-sermon-drive-530"
 PAGE_DATA_SHA256 = "fa071d1b7678eeaad7c5ae4c1539d2b6f8b908322b2e12283881b0be304362f3"
 LOCALES = ("zh-Hans", "ko", "es")
 SCHEMA = "sermon-full-video-audio-extension-v1.schema.json"
-SCRIPT = ROOT / "firebase/dev/public/sep27-page-audio-extension.mjs"
+SCRIPT = ROOT / "apps/listening-web/reader/sep27-page-audio-extension.mjs"
 
 
 def require(condition: bool, message: str) -> None:

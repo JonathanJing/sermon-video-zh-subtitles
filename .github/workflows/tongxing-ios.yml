@@ -71,7 +71,7 @@ jobs:
                   "scripts/seal_multilingual_dev_catalog.py",
                   "apps/listening-web/catalog.mjs",
                   "apps/listening-web/published-weeks.mjs",
-                  "firebase/dev/public/formal-dev-adapter.mjs",
+                  "apps/listening-web/reader/formal-dev-adapter.mjs",
               }
               # Only named non-native surfaces can skip native checks. Unknown
               # roots, file types and workflow inputs conservatively run the

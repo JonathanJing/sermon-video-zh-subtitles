@@ -154,8 +154,6 @@ class DevSnapshotTests(unittest.TestCase):
         self.assertEqual(pause.findall('svg:use', ns), [])
         registry = re.search(r"const names = new Set\(\[(.*?)\]\)", (public/'icons.mjs').read_text()).group(1)
         self.assertEqual(set(re.findall(r"'([^']+)'", registry)), {node.attrib['id'] for node in symbols})
-        for name in ('icons.svg','icons.mjs'):
-            self.assertEqual((source/name).read_bytes(), (dev.REPO/'firebase/dev/public'/name).read_bytes())
         for name in ('app.mjs','catalog.mjs','fingerprint-ui.mjs','locales-interface.mjs','locales-ko.mjs','locales-es.mjs'):
             self.assertIn(public/name, seen)
 

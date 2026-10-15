@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PREFIX = "voice-demos/speaker-clips-v2"
 SCHEMA = "sermon-speaker-clip-demo-ui-overlay-v2"
 WEB = ROOT / "apps/listening-web"
-DEV = ROOT / "firebase/dev/public"
+DEV = WEB / "reader"
 
 
 def require(condition, message):
@@ -109,8 +109,10 @@ def stage(base, clips, reader, out):
         catalog_target = public / PREFIX / "catalog.json"
         shutil.copyfile(clips / "catalog.json", catalog_target)
         ui = ["speaker-clip-demos.mjs", "voice-demo.css", "voice-demo.mjs" if reader == "dev" else "voice-samples.mjs"]
-        source_ui = DEV if reader == "dev" else WEB
+        # Only the Dev reader's own module lives under reader/; the renderer and
+        # stylesheet are shared and come from the listening app root.
         for name in ui:
+            source_ui = DEV if reader == "dev" and name == "voice-demo.mjs" else WEB
             shutil.copyfile(source_ui / name, public / name)
         require((public / "icons.mjs").is_file() and (public / "icons.svg").is_file(), "Shared SVG icon files are required")
         entries = [public / "index.html"]
