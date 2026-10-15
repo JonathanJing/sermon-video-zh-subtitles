@@ -36,7 +36,7 @@
 | 模块 | 作用 | 位置 | 进一步阅读 |
 |---|---|---|---|
 | 四层生产后端 | 冻结英文来源，逐语言翻译与复核，渲染并对齐配音，组装逐 locale 发布包 | `scripts/`、`schemas/`、`config/` | [四层生产合同](docs/multilingual-production-interfaces.zh.md) · [后端设计](docs/backend-workflow-system-design.zh-en.md) |
-| Web 阅读器（Firebase Hosting） | 每周页面：随声字幕、双语全文、大纲、语言选择和听声定位 | `experiments/sermon-dubbing-poc/web/`、`firebase/` | [Layer 4 公开交付](docs/layer4-four-product-public-delivery.zh.md) · [每周发布](docs/tongxing-weekly-release.zh.md) |
+| Web 阅读器（Firebase Hosting） | 每周页面：随声字幕、双语全文、大纲、语言选择和听声定位 | `apps/listening-web/`、`firebase/` | [Layer 4 公开交付](docs/layer4-four-product-public-delivery.zh.md) · [每周发布](docs/tongxing-weekly-release.zh.md) |
 | iOS 客户端 | SwiftUI + AVPlayer，校验缓存、后台音频、锁屏控制、灵动岛状态、麦克风定位和 Beta 渠道 | `apps/tongxing-ios/` | [iOS README](apps/tongxing-ios/README.zh.md) · [设计约定](apps/tongxing-ios/DESIGN.zh.md) |
 | 主日实时字幕 | 本地麦克风到中文实时字幕，保留恢复录音；独立的 `live_session` 交付类型 | `experiments/local-live-poc/` | [实时字幕 POC](experiments/local-live-poc/README.md) · [周日字幕指南](docs/sunday-live-operations-whitepaper.zh.md) |
 | 双 PDF 阅读版 | 从确认过的录音生成中英阅读 PDF 与中文证道同行稿 | `scripts/` | [稳定 post-live 工作流](docs/stable-post-live-reading-pdf-workflow.zh.md) |
@@ -135,7 +135,7 @@ App 采用 iOS 27 设计语言：系统导航与 Sheet、随 Dynamic Type 增长
 | `config/` | 冻结策略、运行配置、adapter 与 agent-trial 夹具 |
 | `tests/` | Python 测试套件 |
 | `apps/tongxing-ios/` | iOS App、Swift package、UI 测试与发行记录 |
-| `experiments/sermon-dubbing-poc/web/` | Web 阅读器模块与 Node 测试 |
+| `apps/listening-web/` | Web 阅读器模块与 Node 测试 |
 | `firebase/` | Hosting 配置与 Dev 页面 adapter |
 | `experiments/local-live-poc/` | 主日实时字幕运行时 |
 | `docs/` | 合同、runbook、设计文档、流程图与带日期的报告 |

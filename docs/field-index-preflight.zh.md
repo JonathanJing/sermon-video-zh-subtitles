@@ -16,7 +16,7 @@
 复现：
 
 ```sh
-node --test experiments/sermon-dubbing-poc/web/*.test.mjs
+node --test apps/listening-web/*.test.mjs
 python -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_build_weekly_app.py'
 python -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_deploy_firebase_guard.py'
 ```

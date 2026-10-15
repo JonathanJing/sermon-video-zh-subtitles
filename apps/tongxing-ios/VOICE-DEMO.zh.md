@@ -38,7 +38,7 @@ Eric 原公开视频后来剪辑过；当前匹配区间为 1148.40–1161.36 �
 
 ```sh
 python3 -m unittest discover -s tests -p test_speaker_clip_demos.py
-node --test experiments/sermon-dubbing-poc/web/speaker-clip-demos.test.mjs
+node --test apps/listening-web/speaker-clip-demos.test.mjs
 python3 apps/tongxing-ios/scripts/preview.py --files VoiceDemoSection.swift \
   --voice-demo-catalog artifacts/speaker-clips-v2/20261001/public/voice-demos/speaker-clips-v2/catalog.json \
   --variants light,dark,dark-large --simulator "$TONGXING_SIMULATOR_UDID"

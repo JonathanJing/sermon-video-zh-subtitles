@@ -13,7 +13,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 PREFIX = "voice-demos/speaker-clips-v2"
 SCHEMA = "sermon-speaker-clip-demo-ui-overlay-v2"
-WEB = ROOT / "experiments/sermon-dubbing-poc/web"
+WEB = ROOT / "apps/listening-web"
 DEV = ROOT / "firebase/dev/public"
 
 
@@ -46,7 +46,7 @@ def validate_clips(root):
     require(catalog_path.is_file() and not catalog_path.is_symlink(), "Complete v2 catalog is required")
     # Reuse the exact client contract, so the server overlay cannot admit a catalog its reader rejects.
     check = """import {readFile} from 'node:fs/promises';
-import {validateSpeakerClips} from './experiments/sermon-dubbing-poc/web/speaker-clip-demos.mjs';
+import {validateSpeakerClips} from './apps/listening-web/speaker-clip-demos.mjs';
 await validateSpeakerClips(JSON.parse(await readFile(process.argv[1], 'utf8')));"""
     subprocess.run(["node", "--input-type=module", "-e", check, str(catalog_path.resolve())],
                    cwd=ROOT, check=True, capture_output=True, text=True)

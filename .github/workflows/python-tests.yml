@@ -100,14 +100,14 @@ jobs:
       - name: Check Web consumers of shared native fixtures
         run: >-
           node --test
-          experiments/sermon-dubbing-poc/web/shared-catalog-targets.test.mjs
-          experiments/sermon-dubbing-poc/web/shared-catalog-pages.test.mjs
-          experiments/sermon-dubbing-poc/web/shared-release-contracts.test.mjs
-          experiments/sermon-dubbing-poc/web/shared-text-only-releases.test.mjs
-          experiments/sermon-dubbing-poc/web/shared-machine-checked-contracts.test.mjs
-          experiments/sermon-dubbing-poc/web/shared-video-delivery.test.mjs
-          experiments/sermon-dubbing-poc/web/dev-candidate-reader.test.mjs
-          experiments/sermon-dubbing-poc/web/fingerprint-baseline.test.mjs
+          apps/listening-web/shared-catalog-targets.test.mjs
+          apps/listening-web/shared-catalog-pages.test.mjs
+          apps/listening-web/shared-release-contracts.test.mjs
+          apps/listening-web/shared-text-only-releases.test.mjs
+          apps/listening-web/shared-machine-checked-contracts.test.mjs
+          apps/listening-web/shared-video-delivery.test.mjs
+          apps/listening-web/dev-candidate-reader.test.mjs
+          apps/listening-web/fingerprint-baseline.test.mjs
 
   test_group:
     name: test-group (root-${{ matrix.shard_index }})
@@ -227,7 +227,7 @@ jobs:
 
       - name: Check listening app behavior
         if: matrix.shard_index == 1
-        run: node --test packages/fingerprint/test/*.test.mjs experiments/sermon-dubbing-poc/web/*.test.mjs
+        run: node --test packages/fingerprint/test/*.test.mjs apps/listening-web/*.test.mjs
 
       - name: Check feedback API contracts
         if: matrix.shard_index == 1

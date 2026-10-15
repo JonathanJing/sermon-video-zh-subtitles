@@ -10,7 +10,7 @@ import subprocess
 # Freeze complete consumer/contract trees, not just a handpicked schema version.
 # An unclassified production change requires review rather than assuming safety.
 PROTECTED = ('apps/tongxing-ios/', 'schemas/', 'firebase/', 'web/', 'packages/fingerprint/',
-             'experiments/sermon-dubbing-poc/web/', 'experiments/sermon-dubbing-poc/feedback-api/')
+             'apps/listening-web/', 'experiments/sermon-dubbing-poc/feedback-api/')
 PRODUCERS = ('scripts/build_multilingual_catalog.py', 'scripts/stage_formal_multilingual_dev.py',
              'scripts/build_target_language_release_package.py',
              'scripts/build_formal_multilingual_dev.py', '.github/workflows/tongxing-ios.yml')
@@ -53,7 +53,7 @@ def evaluate(repo, base, head):
     client_changes = sorted(p for p in changed if protected(p))
     unknown = sorted(p for p in changed if not protected(p) and p not in BACKEND_ONLY
                      and not p.startswith(('docs/', 'tests/')))
-    missing = [prefix for prefix in ('apps/tongxing-ios/', 'schemas/', 'experiments/sermon-dubbing-poc/web/')
+    missing = [prefix for prefix in ('apps/tongxing-ios/', 'schemas/', 'apps/listening-web/')
                if not any(p.startswith(prefix) for p in before['files']) or not any(p.startswith(prefix) for p in after['files'])]
     unchanged = not client_changes and not unknown and not missing and before['sha256'] == after['sha256']
     return {'schemaVersion': 'sermon-pipeline-compatibility-receipt-v1', 'policyVersion': POLICY,

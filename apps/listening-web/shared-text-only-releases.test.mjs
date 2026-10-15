@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import {validatePublishedRelease} from './published-weeks.mjs';
 
-const matrix=JSON.parse(readFileSync(new URL('../../../apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-text-only-releases.json',import.meta.url)));
+const matrix=JSON.parse(readFileSync(new URL('../tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-text-only-releases.json',import.meta.url)));
 assert.equal(matrix.schemaVersion,'sermon-shared-text-only-release-fixtures-v1');
 assert.equal(matrix.scope,'synthetic_decoder_tests_not_production_approval');
 assert.equal(matrix.cases.length,27);

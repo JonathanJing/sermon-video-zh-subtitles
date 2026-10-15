@@ -54,7 +54,7 @@ class DevSnapshotTests(unittest.TestCase):
             self.assertFalse(row['diagnosticState']['machineCandidateAvailable'])
             self.assertEqual(row['fullTranscript'],[]);self.assertEqual(row['tracks'],[]);self.assertEqual(row['outline'],[])
             self.assertEqual(row['diagnosticInputSha256'],row['diagnosticState']['inputBindingSha256'])
-        for name in dev.UI:self.assertEqual(dev._sha(public/name),dev._sha(dev.REPO/'experiments/sermon-dubbing-poc/web'/name))
+        for name in dev.UI:self.assertEqual(dev._sha(public/name),dev._sha(dev.REPO/'apps/listening-web'/name))
         self.assertEqual((public/'published-weeks-before-diagnostic.mjs').read_text(),'original formal catalog loader')
         self.assertIn('published-weeks-parent-',(public/'published-weeks.mjs').read_text())
         self.assertFalse(result['publicationAuthorized']);self.no_network.assert_not_called()
@@ -65,7 +65,7 @@ class DevSnapshotTests(unittest.TestCase):
             'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg','fingerprint-diagnostics.mjs',
             'voice-samples.mjs','speaker-clip-demos.mjs','voice-demo.css')
         self.assertEqual(dev.UI, expected)
-        source = dev.REPO/'experiments/sermon-dubbing-poc/web'; old_public = self.base/'public'
+        source = dev.REPO/'apps/listening-web'; old_public = self.base/'public'
         new_dependencies = {'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg',
             'fingerprint-diagnostics.mjs','speaker-clip-demos.mjs','voice-demo.css'}
         # Real-shaped old Hosting tree: retain all earlier dependency modules,

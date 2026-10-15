@@ -29,7 +29,7 @@ class DocsChangeGateTests(unittest.TestCase):
         )
         rejected = (
             "apps/tongxing-ios/Assets.xcassets/icon.png",
-            "experiments/sermon-dubbing-poc/web/README.md",
+            "apps/listening-web/README.md",
             "docs/diagrams/render_diagrams.py",
             "docs/schema.json",
             "docs/reports/20261005-receipt.json",

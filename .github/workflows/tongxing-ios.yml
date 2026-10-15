@@ -69,8 +69,8 @@ jobs:
                   "scripts/bind_published_alignment_catalog.py",
                   "scripts/refresh_multilingual_hosting_with_legacy.py",
                   "scripts/seal_multilingual_dev_catalog.py",
-                  "experiments/sermon-dubbing-poc/web/catalog.mjs",
-                  "experiments/sermon-dubbing-poc/web/published-weeks.mjs",
+                  "apps/listening-web/catalog.mjs",
+                  "apps/listening-web/published-weeks.mjs",
                   "firebase/dev/public/formal-dev-adapter.mjs",
               }
               # Only named non-native surfaces can skip native checks. Unknown
@@ -100,8 +100,11 @@ jobs:
                       return item.suffix in non_native_roots[item.parts[0]]
                   if path.startswith(("experiments/sermon-dubbing-poc/", "experiments/local-live-poc/")):
                       return item.suffix in experiment_suffixes
+                  # The listening web client lives beside the iOS app but is not native code.
+                  if path.startswith("apps/listening-web/"):
+                      return item.suffix in {".mjs", ".js", ".html", ".css", ".svg", ".png", ".json", ".md"}
                   return False
-              if not paths or any(p.startswith(("apps/", ".github/")) or
+              if not paths or any((p.startswith(("apps/", ".github/")) and not p.startswith("apps/listening-web/")) or
                                   (not shared(p) and not known_non_native(p)) for p in paths):
                   scope = "native"
               elif any(shared(p) for p in paths):

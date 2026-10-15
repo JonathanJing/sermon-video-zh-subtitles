@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "packages/fingerprint"
 CORE = PACKAGE / "src/fingerprint-core.mjs"
 CLI = PACKAGE / "bin/build_fingerprint_index.mjs"
-BROWSER_COPY = ROOT / "experiments/sermon-dubbing-poc/web/fingerprint-core.mjs"
+BROWSER_COPY = ROOT / "apps/listening-web/fingerprint-core.mjs"
 
 
 def sha256(path):

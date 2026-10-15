@@ -5,7 +5,7 @@ import re
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT / "experiments/sermon-dubbing-poc/web"
+WEB = ROOT / "apps/listening-web"
 DEV = ROOT / "firebase/dev/public"
 # The web candidate can ship before the native UI changes in PR #192.
 # These explicit legacy names retain the same actions with the new icon choices.

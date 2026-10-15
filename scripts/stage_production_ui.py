@@ -79,9 +79,8 @@ def source_commit(root: Path) -> str:
 
 
 def source_directory(root: Path) -> Path:
-    source = root / 'experiments/sermon-dubbing-poc/web'
-    require(all(path.is_dir() and not path.is_symlink() for path in
-                (root, root / 'experiments', root / 'experiments/sermon-dubbing-poc', source)),
+    source = root / 'apps/listening-web'
+    require(all(path.is_dir() and not path.is_symlink() for path in (root, root / 'apps', source)),
             'Linked or missing UI source directory')
     return source
 

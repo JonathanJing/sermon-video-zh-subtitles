@@ -55,7 +55,7 @@ PDF 不进入该身份。静态 HTML 包含 `study-outline` 和 `study-meditatio
 
 ## 封存、发布与端点
 
-准备验证会同时检查私有批准、公开 bytes、候选 hash 与静态 HTML 完整显示。除逐语言七种资源外，准备 manifest 的 `runtimeAssets` 冻结并公开发布 reader 的**完整外壳闭包**（`runtime_web_files()`：`index.html`、它引用的样式、主题脚本、图标与品牌图、离线 service worker、声纹 worker／worklet，以及从 app.mjs、published-weeks.mjs、content-locales.mjs 出发的全部 ES 模块；`/weekly.json` 这类数据文件不算外壳），避免与旧 Web baseline 合并时留下旧的 `index.html` 或不支持 v3 的 reader（2026-10-11 线上故障的原因）。这些文件进入 input snapshot、HTTP 清单和 sealed snapshot；`verify`／`seal` 还会逐个核对它们与当前代码库 `experiments/sermon-dubbing-poc/web` 同哈希，web 改动之后必须重新 prepare。HTTP 准备 receipt 必须恰好覆盖全部逐语言资源与共享 runtime。封存清单与 live HTTP 验证包含学习资源及产品 manifest。原有多语言 overlay、baseline 和未知发布 lease 规则不变。
+准备验证会同时检查私有批准、公开 bytes、候选 hash 与静态 HTML 完整显示。除逐语言七种资源外，准备 manifest 的 `runtimeAssets` 冻结并公开发布 reader 的**完整外壳闭包**（`runtime_web_files()`：`index.html`、它引用的样式、主题脚本、图标与品牌图、离线 service worker、声纹 worker／worklet，以及从 app.mjs、published-weeks.mjs、content-locales.mjs 出发的全部 ES 模块；`/weekly.json` 这类数据文件不算外壳），避免与旧 Web baseline 合并时留下旧的 `index.html` 或不支持 v3 的 reader（2026-10-11 线上故障的原因）。这些文件进入 input snapshot、HTTP 清单和 sealed snapshot；`verify`／`seal` 还会逐个核对它们与当前代码库 `apps/listening-web` 同哈希，web 改动之后必须重新 prepare。HTTP 准备 receipt 必须恰好覆盖全部逐语言资源与共享 runtime。封存清单与 live HTTP 验证包含学习资源及产品 manifest。原有多语言 overlay、baseline 和未知发布 lease 规则不变。
 
 发布入口的另外三道门（2026-10-11 复盘 `DEV-R242-029`）：
 

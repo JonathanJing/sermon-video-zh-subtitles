@@ -63,9 +63,13 @@ def read_plan(feature_public: Path, plan_path: Path | None) -> dict:
     for name in replaced | DERIVED:
         if name not in source_files or dev.digest(feature[name]) != source_files[name]:
             raise ValueError(f"Feature differs from UI plan: {name}")
-        # The producer binds these files under web/ to the recorded Git commit.
-        result = subprocess.run(["git", "show", f"{commit}:experiments/sermon-dubbing-poc/web/{name}"], cwd=ROOT,
-                                capture_output=True)
+        # The producer binds these files to the recorded Git commit. The web
+        # source lived under experiments/sermon-dubbing-poc/web before it moved
+        # to apps/listening-web; read whichever path exists at that commit.
+        for prefix in ("apps/listening-web", "experiments/sermon-dubbing-poc/web"):
+            result = subprocess.run(["git", "show", f"{commit}:{prefix}/{name}"], cwd=ROOT, capture_output=True)
+            if not result.returncode:
+                break
         if result.returncode or result.stdout != feature[name].read_bytes():
             raise ValueError(f"Feature differs from recorded source commit: {name}")
     return plan

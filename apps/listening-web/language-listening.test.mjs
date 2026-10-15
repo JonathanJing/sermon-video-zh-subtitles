@@ -4,7 +4,7 @@ import { LanguageListeningSession } from './language-listening-client.mjs';
 import { createLanguageListening } from './language-listening.mjs';
 import { FeedbackClient } from './feedback-client.mjs';
 import { usageDay } from './usage-client.mjs';
-import { createService } from '../feedback-api/core.mjs';
+import { createService } from '../../experiments/sermon-dubbing-poc/feedback-api/core.mjs';
 
 const source = { week: '2026-09-27', trackId: 'chinese', audioSha256: 'a'.repeat(64), appVersion: 'test' };
 const id = '11111111-1111-4111-8111-111111111111';

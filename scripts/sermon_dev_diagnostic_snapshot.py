@@ -130,7 +130,7 @@ def build_snapshot(session, *, baseline, out, page_id, preview_receipts, stage_r
     with accounting.stage('diagnostic.dev_snapshot',depends_on=depends_on,executor_type='deterministic_program') as span:
         try:
             hosting=temp/'hosting';shutil.copytree(baseline,hosting);public=hosting/'public'
-            for name in UI:shutil.copyfile(REPO/'experiments/sermon-dubbing-poc/web'/name,public/name)
+            for name in UI:shutil.copyfile(REPO/'apps/listening-web'/name,public/name)
             clip=_safe_path(Path(session.plan['sourceClipPath']));video=public/'media'/page_id/'source.mp4'
             video.parent.mkdir(parents=True);shutil.copyfile(clip,video);_decode(video);duration=_probe(video)
             variants={};bindings={};source_by={u['sourceUnitId']:u['english'] for u in anchor['sourceUnits']}
