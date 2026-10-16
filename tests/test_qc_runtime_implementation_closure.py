@@ -22,7 +22,7 @@ class QcRuntimeClosureTests(unittest.TestCase):
                 identity=fixtures.SEMANTIC_IDENTITY)
             self.assertEqual(calibration['implementationSha256'], original)
             self.assertEqual(waiver.calibration_problems(calibration, 'ko', original), [])
-            runtime = root / 'scripts/sermon_openai_runtime.py'
+            runtime = waiver.implementation_path('scripts/sermon_openai_runtime.py', root)
             runtime.write_text(runtime.read_text().replace("'OpenAI-Project': route['projectId']",
                 "'OpenAI-Project': 'proj_other'"))
             changed = waiver.implementation_sha256(root)

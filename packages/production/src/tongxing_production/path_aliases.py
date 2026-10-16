@@ -57,9 +57,13 @@ LAYER3 = {
     'scripts/dev_audio_test_receipts.py': _AUDIO + 'dev_receipts.py',
 }
 
-# Shared compute (tongxing_production.compute), stage 1 and the audio batches.
+# Shared compute (tongxing_production.compute): stage 1, infrastructure I0b and the audio batches.
 COMPUTE = {
     'scripts/sermon_provider_limits.py': PRODUCTION + 'compute/provider_limits.py',
+    # Infrastructure I0b: waiver closure members, moved byte for byte.
+    'scripts/sermon_openai_runtime.py': PRODUCTION + 'compute/openai_runtime.py',
+    'scripts/sermon_transcription_request.py': PRODUCTION + 'compute/transcription_request.py',
+    # Layer 3 A1: the audio CPU limiter, moved byte for byte.
     'scripts/bounded_audio_cpu.py': PRODUCTION + 'compute/bounded_audio_cpu.py',
 }
 
