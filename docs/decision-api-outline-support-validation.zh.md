@@ -8,7 +8,7 @@
 
 验证两个问题：Decisions能否识别“引用合法但意思不受来源支持”的大纲问题；其提示能否在不降低最终审核质量的前提下减少人工核对与修订时间。
 
-此前六篇／36条实际大纲中，Decisions全判支持，与新增Sol分类一致35/36。这些主要是正常草稿，缺真实严重错误及独立人工gold；Sol不是当前人工审核基线。现行[生成器](../scripts/sermon_study_generation.py)只检查结构和引用，内容审核仍由[study review](../scripts/study_artifacts.py)及[人工收据schema](../schemas/sermon-study-review-v1.schema.json)负责。下一轮不拿程序引用校验与Decisions比赛。
+此前六篇／36条实际大纲中，Decisions全判支持，与新增Sol分类一致35/36。这些主要是正常草稿，缺真实严重错误及独立人工gold；Sol不是当前人工审核基线。现行[生成器](../scripts/sermon_study_generation.py)只检查结构和引用，内容审核仍由[study review](../packages/production/src/tongxing_production/delivery/study_artifacts.py)及[人工收据schema](../schemas/sermon-study-review-v1.schema.json)负责。下一轮不拿程序引用校验与Decisions比赛。
 
 ## 判断单位与来源范围
 
