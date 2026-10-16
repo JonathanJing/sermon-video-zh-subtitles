@@ -20,7 +20,6 @@ class Legacy:
 @dataclass(frozen=True)
 class DeliveryBackend:
     core: ports.Core
-    contracts: ports.Contracts
     code: ports.Code
     schemas: ports.Schemas
     workspace: ports.Workspace

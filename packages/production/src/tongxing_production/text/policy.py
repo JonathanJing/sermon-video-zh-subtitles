@@ -12,6 +12,7 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
+from ..review import contracts as _review_contracts
 from . import backend as _text
 
 
@@ -207,7 +208,7 @@ def _strict_legacy_validation_view(policy):
 
 def validate_strict_policy(policy, rubric, *, series_table=None):
     """Explicit v3 parser. Existing validate_policy/runner defaults still reject v3."""
-    contracts = _text.current().unmoved.review_contracts()
+    contracts = _review_contracts
     contracts.require(type(policy) is dict and contracts._strict_json(policy), 'invalid_strict_policy')
     contracts.require(len(contracts.canonical_bytes(policy)) <= contracts.MAX_BYTES, 'strict_policy_size_limit')
     contracts.require(next(contracts.validator(POLICY_V3).iter_errors(policy), None) is None, 'invalid_strict_policy_schema')

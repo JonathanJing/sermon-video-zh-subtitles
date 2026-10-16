@@ -240,8 +240,11 @@ def implementation_sha256():
         'sermon_release_workflow.py', 'sermon_job_liveness.py', 'sermon_clock_evidence.py',
         'sermon_workflow_evidence.py', 'sermon_review_observation.py')
     # Keys stay the legacy scripts/ names; a member moved into the package is read where it lives.
-    return c.canonical_sha256({name: c.bytes_sha256((root/path_aliases.resolve('scripts/'+name)).read_bytes())
-                               for name in names})
+    # A member split across package files also hashes, by repository path, the files that took over the rest.
+    files = {name: c.bytes_sha256((root/path_aliases.resolve('scripts/'+name)).read_bytes()) for name in names}
+    files.update({path: c.bytes_sha256((root/path).read_bytes())
+                  for name in names for path in path_aliases.SPLIT_MEMBERS.get('scripts/'+name, ())})
+    return c.canonical_sha256(files)
 
 
 def validate_input_binding(value, unit):

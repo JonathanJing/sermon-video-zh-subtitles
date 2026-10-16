@@ -29,7 +29,7 @@ class DeliveryPortsTests(unittest.TestCase):
     def test_host_binds_a_complete_backend_sharing_records_with_the_other_layers(self):
         backend = delivery.current()
         self.assertIsInstance(backend, delivery.DeliveryBackend)
-        for name in ('core', 'contracts', 'code', 'workspace', 'review'):
+        for name in ('core', 'code', 'workspace', 'review'):
             self.assertIs(getattr(backend, name), getattr(source.current(), name), name)
         self.assertIs(backend.schemas, text.current().schemas)
         for record, kind in ((backend.runtime_web, ports.RuntimeWeb), (backend.hosting, ports.Hosting),

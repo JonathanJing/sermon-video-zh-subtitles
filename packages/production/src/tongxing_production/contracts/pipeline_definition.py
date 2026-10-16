@@ -7,7 +7,10 @@ under their durable admission locks before any future executable adapter uses it
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from scripts.sermon_workflow_jobs import _digest
+
+# Same canonical JSON bytes as the job store's digest; a non-JSON value raises
+# ContractError (a ValueError) where the job store's raised TypeError.
+from .canonical import canonical_sha256 as _digest
 
 VERSION = 'sermon-canonical-pipeline-v1'
 WAIVER_KIND = 'machine_quality_waiver'

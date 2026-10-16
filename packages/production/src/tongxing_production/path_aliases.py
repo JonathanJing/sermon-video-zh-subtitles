@@ -77,11 +77,27 @@ LAYER4 = {
 }
 
 # Shared infrastructure, batches I1-I4 (docs/design/infrastructure-injection.zh.md).
-CONTRACTS = {}      # tongxing_production.contracts, batch I1
+CONTRACTS = {       # tongxing_production.contracts, batch I1
+    'scripts/canonical_pipeline_definition.py': PRODUCTION + 'contracts/pipeline_definition.py',
+}
 STORAGE = {}        # tongxing_production.storage, batch I2
 OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
 
-PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **LAYER2, **LAYER4}
+# Cross-layer review (tongxing_production.review), batches I1 and R1-R3
+# (docs/design/review-layer-injection.zh.md). I1 split sermon_review_contracts:
+# its key names the review half; the generic half it imports is contracts/canonical.py
+# and contracts/schemas.py, which closures that held the old file list as members.
+REVIEW = {
+    'scripts/sermon_review_contracts.py': PRODUCTION + 'review/contracts.py',
+}
+
+# Package files that took over part of a split legacy file; closures that listed
+# the legacy key list these as well, so they cover the same code as before.
+SPLIT_MEMBERS = {
+    'scripts/sermon_review_contracts.py': (PRODUCTION + 'contracts/canonical.py', PRODUCTION + 'contracts/schemas.py'),
+}
+
+PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **REVIEW, **LAYER1, **LAYER2, **LAYER4}
 
 
 def resolve(key):

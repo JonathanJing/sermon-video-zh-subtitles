@@ -152,15 +152,6 @@ class Mfa:
 
 
 @dataclass(frozen=True)
-class Contracts:
-    """Receipt contract helpers: fixed error codes, canonical and byte hashes."""
-    error: type                                # the ContractError class callers catch
-    require: Callable[[Any, str], None]
-    bytes_sha256: Callable[[bytes], str]
-    canonical_sha256: Callable[[Any], str]
-
-
-@dataclass(frozen=True)
 class Snapshot:
     """Stable read of one caller-selected regular file with its exact bytes."""
     read_snapshot: Callable[[Path], tuple]     # (value, raw_bytes)
