@@ -32,6 +32,8 @@ class Core:
     safe_path: Callable[..., Path]
     atomic_json: Callable[[Path, Any], None]
     utc_now: Callable[[], str]
+    sync_directory_ancestry: Callable[[Path], None]   # persist every containing entry before side effects
+    read_json: Callable[[Path], Any]           # a regular JSON evidence file, never through a symlink
 
 
 @dataclass(frozen=True)
@@ -71,6 +73,7 @@ class Compute:
     request_slot: Callable[[Any], Any]         # (job_root) -> context manager: host-wide L2 API request slot
     max_in_flight_api_calls: int
     max_group_workers_per_locale: int
+    require_bound_model_session: Callable[..., Any]   # (*, verifier=None): a local model call holds the bound Spark session
 
 
 @dataclass(frozen=True)
@@ -104,6 +107,7 @@ class Accounting:
     record_log: Callable[..., Any]             # (code, *, level='INFO', fields=None, exception=None)
     bounded_dependencies: Callable[..., Any]   # (name, dependencies, *, work_unit_id)
     finalize: Callable[[Any, Any], Any]        # (action, original_error)
+    orchestration: Callable[..., Any]          # (name, *, depends_on=None, work_unit_id=None) -> context manager
 
 
 @dataclass(frozen=True)
@@ -127,6 +131,7 @@ class Measure:
     """Producer timing in the progress ledger; it never gates review or release."""
     producer_step: Callable[..., Any]          # (ledger_path, step_id, *, locale=None) -> context manager
     producer_substage: Callable[..., Any]      # (name, *, billing='api') -> context manager
+    record_substage_metrics: Callable[[dict], None]
 
 
 @dataclass(frozen=True)
@@ -135,6 +140,7 @@ class Code:
     code_identity: Callable[[], str]
     module_sha256: Callable[[ModuleType], str]
     module_path: Callable[[ModuleType], Path]
+    implementation_path: Callable[[str], Path]   # (legacy identity key) -> the file it names today, via path_aliases
 
 
 @dataclass(frozen=True)
@@ -215,3 +221,68 @@ class Waivers:
     validate_audio_waiver: Callable[..., None]   # (package, receipt, screening)
     audio_waiver_schema: str
     condensation_binding_schema: str
+    review_kind: str                           # the review kind a machine-waived hand-off records
+
+
+@dataclass(frozen=True)
+class MachineQc:
+    """Audio machine-QC settings a Layer 3 package records; review/ owns target_audio_auto_qc."""
+    screening_asr_settings: Callable[[dict], dict]   # (screening)
+
+
+@dataclass(frozen=True)
+class SpokenRules:
+    """Spoken-number and citation rules Layer 3 scores and renders with.
+
+    They stay in scripts/ (L3 decision 3): ``auto_qc_text_common`` and
+    ``ko_spoken_numerals`` are pinned by the waiver, scoring and rate closures,
+    so they are neither copied nor imported when the host loads. Each function
+    is a late-binding wrapper; each constant is an accessor that returns the
+    rule module's own object at call time.
+    """
+    # language_review_plugins.auto_qc_text_common
+    fold: Callable[[str], str]                 # _fold
+    ko_pattern: Callable[..., str]             # _ko_pattern(form, *, sino=False)
+    book_citations: Callable[[str, str], list]   # (text, locale)
+    english_numbers: Callable[[str], list]
+    korean_sino: Callable[[int], str]
+    korean_native: Callable[[int], tuple]
+    en_book_codes: Callable[[], Any]           # _EN_BOOK_CODES
+    es_book_codes: Callable[[], Any]           # _ES_BOOK_CODES
+    ko_book_codes: Callable[[], Any]           # _KO_BOOK_CODES
+    zh_book_codes: Callable[[], Any]           # _ZH_BOOK_CODES
+    ko_citation: Callable[[], Any]             # _KO_CITATION
+    ko_counters: Callable[[], Any]             # _KO_COUNTERS
+    zh_measure_words: Callable[[], Any]        # _ZH_MEASURE_WORDS
+    # ko_spoken_numerals
+    ko_rule: Callable[[], str]                 # RULE
+    ko_rule_v2: Callable[[], str]              # RULE_V2
+    ko_rule_v3: Callable[[], str]              # RULE_V3
+    spoken_form: Callable[[str], str]
+    spoken_form_v2: Callable[[str], str]
+    spoken_form_v3: Callable[[str], str]
+    equivalent: Callable[..., bool]            # (approved, spoken, *, rule=RULE)
+    bare_context_allowed: Callable[..., bool]  # (text, start, end, *, rule=RULE)
+    bare_citation_matches: Callable[..., Any]  # (text, *, rule=RULE)
+    ko_particles: Callable[[], Any]            # _PARTICLES
+    ko_connector: Callable[[], Any]            # _CONNECTOR
+    ko_range_particle: Callable[[], Any]       # _RANGE_PARTICLE
+    ko_delimiters: Callable[[], Any]           # _DELIMITERS
+    ko_numeric_token: Callable[[], Any]        # _NUMERIC_TOKEN
+    ko_citations: Callable[[], Any]            # _CITATIONS
+
+
+@dataclass(frozen=True)
+class TtsRuntime:
+    """Spark TTS worker adapters (compute/) and the voice checkpoint reader the formal renderer uses."""
+    replica_pool: Callable[[], ModuleType]     # spark_tts_replica_pool: ReplicaPool; its file is hashed into replica identity
+    window_scheduler: Callable[[], ModuleType]   # spark_tts_window_scheduler: ParallelBatchEngine; hashed with the pool
+    bounded_cpu: Callable[[], ModuleType]      # bounded_audio_cpu: BoundedAudioCPU
+    read_checkpoint_map: Callable[[Path, str], dict]   # (path, label)
+    validate_checkpoint: Callable[[dict], Path]  # (task)
+
+
+@dataclass(frozen=True)
+class DevProfile:
+    """Explicit Dev audio test settings; they never change production defaults."""
+    default_profile_path: Callable[[], Path]   # data/benchmarks/.../next-dev-test-profile.json

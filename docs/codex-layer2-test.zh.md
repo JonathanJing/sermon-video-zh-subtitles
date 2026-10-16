@@ -14,7 +14,7 @@
 
 Astra 翻译使用普通速度；Sol 审核可选 `default` 或 `fast`，推理强度来自所选策略（本例为 medium）。同一输出目录可用完全相同参数和实现恢复；改 CLI 版本、适配器、输入、策略、速度档位或测试实现须建立新目录，不覆盖旧证据。把 `NEW-RUN` 替换为独立运行标识。本轮实测回执留在 `artifacts/codex-cli-layer2-180s-20261005/`，代码补强后不能用当前实现恢复那个旧身份；见 [实测复盘](reports/20261005-codex-cli-layer2-180s.zh.md)。
 
-[`run_codex_layer2_test.py`](../scripts/run_codex_layer2_test.py) 验证固定 fixture 的 simulation scope、媒体身份、39 单元、13 组和单 worker。只读取旧候选的 group membership，不读取其译文；真实翻译和审核由 [`codex_layer2_transport.py`](../scripts/codex_layer2_transport.py) 注入 [`run_target_language_models.py`](../scripts/run_target_language_models.py) 的共享循环。正式入口的 Layer 1/策略/plugin 门禁和默认 API 调用没有改动；本测试不能替代 canonical controller 端到端 dispatch 验收。
+[`run_codex_layer2_test.py`](../scripts/run_codex_layer2_test.py) 验证固定 fixture 的 simulation scope、媒体身份、39 单元、13 组和单 worker。只读取旧候选的 group membership，不读取其译文；真实翻译和审核由 [`codex_layer2_transport.py`](../scripts/codex_layer2_transport.py) 注入 [`models.py`](../packages/production/src/tongxing_production/text/models.py) 的共享循环。正式入口的 Layer 1/策略/plugin 门禁和默认 API 调用没有改动；本测试不能替代 canonical controller 端到端 dispatch 验收。
 
 ## 先跑 Mockup
 

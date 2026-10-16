@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [现状地图](repository-current-map.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [L2 注入边界](l2-text-layer-injection.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md) · [计算策略](../local-production-compute-policy.zh.md)
 
-状态：**§6 大部分已决定（2026-10-16，见决定表；第 1 项附带问题与第 4 项豁免降级情形仍待定）；B0 已由 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507) 完成，A0–A4 未开始**。盘点日期：2026-10-15。基线：`dev@0e19adfe`（L1 S0–S3 已合并，S3 [#496](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/496) 给 `ports.py` 加了 `Resources`、`Adjudication`，并改了 `machine_qc_audio_transports.py`；L2 设计 [#493](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/493) 的 §6 六项已决定；[L4 注入边界](l4-delivery-layer-injection.zh.md)待评审）。本文只定义 L3 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
+状态：**§6 大部分已决定（2026-10-16，见决定表；第 1 项附带问题与第 4 项豁免降级情形仍待定）；B0 已由 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507)（clip E2E 启动器）和 [#524](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/524)（诊断音频启动器）完成；A0 端口已由 [#525](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/525) 实施，A1–A4 未开始**。A0 与本文的不同：`ReleaseBasis` 不另建记录，复用 L4 D0 的 `Waivers`（`is_text_waiver`、`validate_text_waiver`，加 `review_kind`，与两个 schema 名一样由宿主记录为常量并有测试钉住）；按 §6 第 6 项不建 `UpstreamText`；`Contracts`、`Snapshot`、`Transports` 不进 `AudioBackend`（§2.1 模块不调用它们，音频传输只被 review/ 的 QC 使用）；检查工具的 `validate_audio_screening_review` 用已有的 `Review.audio_screening`，`Unmoved` 只剩本地模型观测；`jobs._sync_directory_ancestry`、`jobs._read` 由宿主包装为 `Core.sync_directory_ancestry`、`Core.read_json`，预览用的 `accounting.orchestration` 加进 `Accounting`；`TtsRuntime` 的副本池、窗口调度器和 CPU 限流是模块访问器（A3 用 `code.module_sha256` 哈希前两者）；`SpokenRules` 的常量是调用时返回规则模块自身对象的访问器，因为宿主加载时不能导入闭包文件；L3 实际用到的插件规则名是 13 个，`ko_spoken_numerals` 另有 `equivalent`。盘点日期：2026-10-15。基线：`dev@0e19adfe`（L1 S0–S3 已合并，S3 [#496](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/496) 给 `ports.py` 加了 `Resources`、`Adjudication`，并改了 `machine_qc_audio_transports.py`；L2 设计 [#493](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/493) 的 §6 六项已决定；[L4 注入边界](l4-delivery-layer-injection.zh.md)待评审）。本文只定义 L3 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
 
 ## 1 为什么不能直接搬
 
@@ -42,7 +42,7 @@ L3 在统一 CLI 里只有一个阶段入口：`audio`（`scripts/sermon_unified
 盘点中另发现两件迁移前就存在、但会决定迁移做法的事：
 
 - **没有 `audio_unavailable` 的生产者**。四层合同和 schema 允许显式 `audio_unavailable`，L4（`sermon_app_delivery`、`sermon_delivery_intent_binding`、`build_multilingual_catalog`）也会校验它；但 `scripts/` 里没有任何代码写出这种包，`build_target_language_audio_package` 只产出 `candidate`/`machine_screened`。现有的纯文字包只出现在测试 fixture 里。迁移不该顺手补这个功能（§6 第 4 项）。
-- **Spark 容器可能已经导入不了 L1 门面**（只做了静态检查，没有在 Spark 上验证）。`clip_e2e_spark.py` 的渲染、压缩、筛查、音频 QC 容器都只设 `PYTHONPATH=/work/<code>`（另加 voice/ASR 运行时目录），代码目录是 `git archive HEAD` 的解包。L1 S1 之后，renderer 和筛查都在加载时导入 `scripts.sermon_sentence_interpretation`，这个门面需要 `tongxing_production`，但 `packages/production/src` 不在容器的 `PYTHONPATH` 上。在本机用不带编辑安装的解释器、只设 `PYTHONPATH=<checkout>` 复现，门面报 `No module named 'tongxing_production'`。除非 Spark 镜像另外装了这个包，否则正式 TTS 和回转写会在导入时失败。L3 迁入会让每个 L3 CLI 都依赖这个包，所以这是 A0 的前置条件（§5 B0、§6 第 5 项）。
+- **Spark 容器导入不了 L1 门面**（盘点时只做了静态检查；2026-10-15 在 Spark 上只导入、不合成的探测确认两个镜像都没有装这个包，修复见 B0）。`clip_e2e_spark.py` 的渲染、压缩、筛查、音频 QC 容器都只设 `PYTHONPATH=/work/<code>`（另加 voice/ASR 运行时目录），代码目录是 `git archive HEAD` 的解包。L1 S1 之后，renderer 和筛查都在加载时导入 `scripts.sermon_sentence_interpretation`，这个门面需要 `tongxing_production`，但 `packages/production/src` 不在容器的 `PYTHONPATH` 上。在本机用不带编辑安装的解释器、只设 `PYTHONPATH=<checkout>` 复现，门面报 `No module named 'tongxing_production'`。所以 B0 之前正式 TTS 和回转写会在导入时失败。L3 迁入会让每个 L3 CLI 都依赖这个包，所以这是 A0 的前置条件（§5 B0、§6 第 5 项）。
 
 ## 2 模块归属
 
@@ -256,7 +256,7 @@ L3 内部的依赖是一条链：叶子（anomaly、recovery、clip_timeline、d
 | 2 | renderer 缓存连续性 | 沿用现有兼容机制：父哈希加入 `COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256`，预览另设只在准入处生效的集合；声音身份常量不动 | A3 同批评审兼容条目；Spark 上已提交的批次缓存与预览继续可用 |
 | 3 | `ko_spoken_numerals` 位置 | 与插件一样留在 `scripts/`，L3 经 `SpokenRules` 端口取规则与 14 个插件名 | 不进任何 L3 批次；三个闭包里它的键与字节不变 |
 | 4 | `audio_unavailable` 生产者 | 迁移完成后另开功能 PR 新增 `audio/unavailable.py`；**给 schema 升一版**，`targetLanguageSpeechJobJsonSha256` 只在 `status=audio_unavailable` 时允许为 null（附迁移说明，不写假哈希）；release plan 本来就指定纯文字时，**确定性校验即可** | 不在 A0–A4 内。**仍待定**：因豁免判定未配音句超过 5% 而降为纯文字时的确认方式（建议机器复核并如实标注 `review=waived`，不算人工批准） |
-| 5 | Spark 导入路径（B0） | 启动器显式把 `packages/production/src` 加进容器 `PYTHONPATH`，已由 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507) 实施，并在 Spark 上确认修复前失败、修复后导入正常 | B0 完成 |
+| 5 | Spark 导入路径（B0） | 启动器显式把 `packages/production/src` 加进容器 `PYTHONPATH`，已由 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507) 实施，并在 Spark 上确认修复前失败、修复后导入正常；同类启动器 `scripts/experiments/run_spark_diagnostic_audio.py` 的两个 worker 容器与宿主 runner 由 [#524](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/524) 同样修复（另要求代码暂存清单含该包），Spark 探测结果相同；`benchmark_speech_residency.py` 跑自包含的旧 worker，不受影响 | B0 完成 |
 | 6 | A2 与 L2 T1 的先后 | 按建议：A2 排在 L2 T1 之后，直接导入 `tongxing_production.text.policy`，不建临时端口 | A2 依赖 L2 T1 合并 |
 
 以下保留原问题文本，供追溯。
