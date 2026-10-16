@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
 from scripts import run_post_live_subtitle_generation as generation
 from scripts import sermon_production_supervisor as supervisor
 from scripts import sermon_pipeline
@@ -63,9 +64,7 @@ class SourceTextReviewRoutingTests(unittest.TestCase):
         remote = patch('scripts.mfa_backend.preflight', return_value={'backend': 'dgx-spark-ssh', 'runtime': {'version': 'fixture'}})
         remote.start()
         self.addCleanup(remote.stop)
-        duration = patch.object(sermon_pipeline, "ffprobe_duration", return_value=5.0)
-        duration.start()
-        self.addCleanup(duration.stop)
+        self.enterContext(patch_both("ffprobe_duration", return_value=5.0))
         # These routing fixtures use opaque audio bytes. Mock only ffprobe's
         # media facts; retain validate_archive_audio's real completeness checks.
         archive_probe = patch.object(generation, "probe_archive_audio", return_value={

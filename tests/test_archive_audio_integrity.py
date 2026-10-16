@@ -8,6 +8,7 @@ import wave
 from pathlib import Path
 from unittest import mock
 
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
 from scripts import run_post_live_subtitle_generation as generation
 from scripts import run_post_live_timeline_job as timeline
 from scripts import sermon_pipeline
@@ -103,7 +104,7 @@ class ArchiveAudioIntegrityTest(unittest.TestCase):
                 downloader = mock.Mock(side_effect=lambda *_: write_audio())
                 runner = mock.Mock(side_effect=fake_runner)
                 upload = mock.Mock()
-                with mock.patch.object(generation, "probe_archive_audio", return_value=audio_probe(2733.801)), mock.patch.object(sermon_pipeline, "chat_json", side_effect=AssertionError("Source verification must not classify")) as model, mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")) as asr, mock.patch("builtins.print"):
+                with mock.patch.object(generation, "probe_archive_audio", return_value=audio_probe(2733.801)), patch_both("chat_json", side_effect=AssertionError("Source verification must not classify")) as model, mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")) as asr, mock.patch("builtins.print"):
                     report = timeline.run_job(
                         args, metadata_loader=lambda _: {"live_status": "was_live", "duration": 4722},
                         runner=runner, uploader=upload, marker_reader=lambda _: None,
