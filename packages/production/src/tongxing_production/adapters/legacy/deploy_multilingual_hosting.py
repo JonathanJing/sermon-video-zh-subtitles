@@ -10,12 +10,9 @@ import argparse
 from datetime import datetime, timezone
 import json
 from pathlib import Path
-import subprocess
 
-try:
-    from scripts import assemble_multilingual_hosting as hosting
-except ImportError:
-    import assemble_multilingual_hosting as hosting
+from ...delivery import backend as _delivery
+from . import assemble_multilingual_hosting as hosting
 
 
 PROJECT = "ai-for-god-caption-dev"
@@ -91,7 +88,7 @@ def main() -> None:
     if args.execute:
         if args.content_release_admission is None:
             raise ValueError("production_content_release_admission_required")
-        from scripts.production_content_release_admission import load
+        from .production_content_release_admission import load
         decision = load(args.content_release_admission,
                         candidate_dir=args.candidate,
                         candidate_sha256=receipt["buildReportSha256"],
@@ -100,7 +97,7 @@ def main() -> None:
             raise ValueError("production_content_release_blocked")
         receipt["contentReleaseAdmission"] = {
             "decision": decision["decision"], "pageId": decision["pageId"], "deployPerformed": False}
-        subprocess.run(COMMAND, cwd=args.candidate, check=True)
+        _delivery.current().hosting.run(COMMAND, cwd=args.candidate, check=True)
         receipt["contentReleaseAdmission"]["deployPerformed"] = True
         receipt["status"] = "deployed_http_verification_pending"
         receipt["deployedAt"] = datetime.now(timezone.utc).isoformat()

@@ -17,15 +17,18 @@ import tempfile
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-try:
-    from scripts.assemble_multilingual_hosting import digest, load, regular_files, checked_public_path
-    from scripts.release_asset_io import copy_bound_asset
-except ImportError:
-    from assemble_multilingual_hosting import digest, load, regular_files, checked_public_path
-    from release_asset_io import copy_bound_asset
+from ...delivery import backend as _delivery
+from ...delivery.asset_io import copy_bound_asset
+from .assemble_multilingual_hosting import digest, load, regular_files, checked_public_path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+def __getattr__(name):
+    # ROOT stays readable as a module constant; the checkout belongs to the host.
+    if name == "ROOT":
+        return _delivery.current().core.repo_root
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 CATALOG = "multilingual-v3.json"
 SCHEMA = "sermon-multilingual-catalog-v3.schema.json"
 RELEASE_SCHEMA = "sermon-target-language-release-package-v2.schema.json"
@@ -50,7 +53,7 @@ PROFILE_CONTRACTS = {
 
 
 def validate_schema(value: dict, name: str) -> None:
-    schema = load(ROOT / "schemas" / name)
+    schema = load(_delivery.current().schemas.path(name))
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(value))
     if errors:
         raise ValueError(f"{name}: {errors[0].message}")

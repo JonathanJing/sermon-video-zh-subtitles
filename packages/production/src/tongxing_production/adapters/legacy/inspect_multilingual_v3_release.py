@@ -13,13 +13,10 @@ import json
 from pathlib import Path
 import re
 import subprocess
-import sys
 
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import assemble_multilingual_v3_update as producer
-from scripts import deploy_multilingual_hosting as target
-from scripts.sermon_release_workflow import _safe_path
+from ...delivery import backend as _delivery
+from . import assemble_multilingual_v3_update as producer
+from . import deploy_multilingual_hosting as target
 
 SCHEMA = 'sermon-v3-local-release-inspection-v1'
 
@@ -38,9 +35,14 @@ def _digest(value):
                                     ensure_ascii=False, allow_nan=False).encode()).hexdigest()
 
 
+def _safe_path(path):
+    return _delivery.current().core.safe_path(path)
+
+
 def _code_snapshot():
+    root = _delivery.current().core.repo_root
     def git(*args):
-        return subprocess.check_output(['git', '-C', str(producer.ROOT), *args], text=True).strip()
+        return subprocess.check_output(['git', '-C', str(root), *args], text=True).strip()
     return {'commit': git('rev-parse', 'HEAD'),
             'workingTreeClean': not git('status', '--porcelain', '--untracked-files=normal')}
 

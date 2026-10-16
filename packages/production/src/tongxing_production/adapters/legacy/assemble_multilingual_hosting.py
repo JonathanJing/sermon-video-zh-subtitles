@@ -18,8 +18,16 @@ from pathlib import Path, PurePosixPath
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from ...delivery import backend as _delivery
 
-ROOT = Path(__file__).resolve().parents[1]
+
+def __getattr__(name):
+    # ROOT stays readable as a module constant; the checkout belongs to the host.
+    if name == "ROOT":
+        return _delivery.current().core.repo_root
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 CATALOG = "multilingual-v2.json"
 READER_FILES = ("app.js", "styles.css", "formal-dev-adapter.mjs", "dev-integrity.mjs")
 SHARED_READER_FILES = ("playback-memory.mjs", "brand-icon.png", "icons.svg", "icons.mjs",
@@ -51,7 +59,7 @@ def load(path: Path) -> dict:
 
 
 def validate_catalog(value: dict) -> None:
-    schema = load(ROOT / "schemas/sermon-multilingual-catalog-v2.schema.json")
+    schema = load(_delivery.current().schemas.path("sermon-multilingual-catalog-v2.schema.json"))
     problems = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(value))
     if problems:
         raise ValueError(f"Invalid multilingual catalog: {problems[0].message}")
@@ -61,6 +69,10 @@ def validate_catalog(value: dict) -> None:
     for page in value["pages"]:
         if page["defaultTargetLocale"] not in page["targets"]:
             raise ValueError(f"{page['id']}: missing default target")
+
+
+def _firebase_config(name: str) -> Path:
+    return _delivery.current().legacy.firebase_config(name)
 
 
 def regular_files(root: Path) -> dict[str, Path]:
@@ -211,8 +223,8 @@ def assemble(base_public: Path, staged: Path, out: Path,
         raise ValueError(f"Incoming assets would overwrite prior release: {sorted(collisions)[0]}")
     # The Dev reader entry owns its own files; shared assets come from the
     # listening app root, their only source.
-    reader_root = ROOT / "apps/listening-web/reader"
-    shared_root = ROOT / "apps/listening-web"
+    shared_root = _delivery.current().runtime_web.root()
+    reader_root = shared_root / "reader"
     reader_files = {}
     feedback_enabled = False
     if production_reader:
@@ -317,7 +329,7 @@ def assemble(base_public: Path, staged: Path, out: Path,
                 html = html.replace(head, head + '\n  <script src="/legacy-query-router.js"></script>', 1)
                 old_legacy = (public / ("legacy-reader.html" if prior_promoted else "index.html")).read_bytes()
                 (public / "legacy-reader.html").write_bytes(old_legacy)
-                router = (ROOT / "firebase/production-overlay/legacy-query-router.js").read_text(
+                router = _firebase_config("production-overlay/legacy-query-router.js").read_text(
                     encoding="utf-8")
                 if router.count("__LEGACY_WEEK_IDS__") != 1:
                     raise ValueError("Legacy query router template changed")
@@ -384,7 +396,7 @@ def assemble(base_public: Path, staged: Path, out: Path,
         if old:
             shutil.copyfile(base_files[CATALOG], temporary / "rollback-multilingual-v2.json")
         if production_reader:
-            config = load(ROOT / "firebase/production-overlay/firebase.json")
+            config = load(_firebase_config("production-overlay/firebase.json"))
             if promote_home:
                 for rewrite in config["hosting"]["rewrites"]:
                     if rewrite.get("source") == "/pages/**":

@@ -11,20 +11,10 @@ import json
 import os
 from pathlib import Path
 import shutil
-import sys
 import tempfile
 
-try:
-    from scripts import assemble_multilingual_hosting as hosting
-except ImportError:
-    import assemble_multilingual_hosting as hosting
-
-
-ROOT = Path(__file__).resolve().parents[1]
-LEGACY_CODE = ROOT / "experiments/sermon-dubbing-poc"
-if str(LEGACY_CODE) not in sys.path:
-    sys.path.insert(0, str(LEGACY_CODE))
-import weekly_release  # noqa: E402
+from ...delivery import backend as _delivery
+from . import assemble_multilingual_hosting as hosting
 
 
 def snapshot_files(public: Path) -> list[dict]:
@@ -56,7 +46,7 @@ def refresh(base: Path, legacy: Path, prior_http: Path, out: Path) -> dict:
     hosting.validate_catalog(old_catalog)
     hosting.verify_catalog_assets(old_public, old_catalog)
 
-    legacy_report, new_weekly = weekly_release.read_release(legacy)
+    legacy_report, new_weekly = _delivery.current().legacy.weekly_release().read_release(legacy)
     plan = hosting.load(legacy / "release-plan.json")
     previous_weekly = hosting.load(old_public / "weekly.json")
     previous_ids = {page["id"] for page in previous_weekly["weeks"]}

@@ -13,10 +13,7 @@ from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-try:
-    from scripts import assemble_multilingual_hosting as hosting
-except ImportError:
-    import assemble_multilingual_hosting as hosting
+from . import assemble_multilingual_hosting as hosting
 
 
 def checked_origin(value: str) -> str:

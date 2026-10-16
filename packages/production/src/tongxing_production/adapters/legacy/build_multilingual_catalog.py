@@ -18,9 +18,9 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from ...delivery import backend as _delivery
 
-ROOT = Path(__file__).resolve().parents[1]
-SCHEMAS = ROOT / "schemas"
+
 LOCALE_RE = re.compile(r"^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
 
 
@@ -41,7 +41,7 @@ def load_json(path: Path) -> tuple[bytes, dict[str, Any]]:
 
 
 def validate_schema(value: dict[str, Any], schema_name: str, label: str) -> None:
-    schema = json.loads((SCHEMAS / schema_name).read_text())
+    schema = json.loads(_delivery.current().schemas.path(schema_name).read_text())
     errors = sorted(
         Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(value),
         key=lambda error: list(error.absolute_path),

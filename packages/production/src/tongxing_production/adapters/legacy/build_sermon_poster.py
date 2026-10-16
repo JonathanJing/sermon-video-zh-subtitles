@@ -3,13 +3,20 @@
 import argparse
 import datetime
 import hashlib
+from importlib import resources
 import json
 from pathlib import Path
 import shutil
 import subprocess
-import sys
 import tempfile
 from urllib.parse import urlencode
+
+from ...delivery import backend as _delivery
+
+
+def renderer_source():
+    """The Swift renderer, shipped beside this module as package data."""
+    return resources.files(__package__).joinpath('render_sermon_poster.swift')
 
 
 def digest(path):
@@ -71,9 +78,7 @@ def main():
     p.add_argument('--tagline', default='一起听懂，一路同行。')
     p.add_argument('--visual-reviewed', action='store_true', help='Record completed visual inspection; does not grant sermon approval')
     args = p.parse_args()
-    root = Path(__file__).resolve().parents[1]
-    sys.path.insert(0, str(root / 'experiments/sermon-dubbing-poc'))
-    import weekly_release as release_api
+    release_api = _delivery.current().legacy.weekly_release()
     release, out = Path(args.release).resolve(), Path(args.out).resolve()
     if out.is_relative_to(release) or release.is_relative_to(out):
         raise ValueError('poster output must be separate from the release')
@@ -109,7 +114,7 @@ def main():
     release_api.check_verification(release, read(verification), origin)
     art = Path(args.art).resolve()
     provenance = dict(artSha256=digest(art), promptSha256=digest(args.art_prompt),
-                      verificationSha256=digest(verification), rendererSha256=digest(Path(__file__).with_name('render_sermon_poster.swift')))
+                      verificationSha256=digest(verification), rendererSha256=hashlib.sha256(renderer_source().read_bytes()).hexdigest())
     if previous and previous.get('provenance') and previous['provenance'] != provenance:
         raise ValueError('art, prompt, renderer or verification changed; use a new output directory')
     if previous and previous.get('outputs'):
@@ -135,10 +140,11 @@ def main():
             swift = shutil.which('swift')
             if not swift:
                 raise ValueError('macOS Swift, AppKit, CoreImage and Vision are required')
-            with tempfile.TemporaryDirectory(prefix='render-', dir=out) as temporary:
+            with tempfile.TemporaryDirectory(prefix='render-', dir=out) as temporary, \
+                    resources.as_file(renderer_source()) as renderer:
                 render_out = Path(temporary)
                 subprocess.run([swift, '-module-cache-path', str(Path(tempfile.gettempdir()) / 'sermon-poster-swift-cache'),
-                                str(Path(__file__).with_name('render_sermon_poster.swift')),
+                                str(renderer),
                                 str(out / 'poster-brief.json'), str(out / 'artwork.png'), str(render_out)], check=True)
                 hashes = verify_outputs(render_out, brief['qrURL'])
                 for name in hashes:
@@ -148,8 +154,13 @@ def main():
     print(json.dumps({'status': receipt['status'], 'out': str(out)}, ensure_ascii=False))
 
 
-if __name__ == '__main__':
+def run():
+    """Command entry: a rejected input becomes the exit message, as before."""
     try:
         main()
     except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as error:
-        sys.exit(str(error))
+        return str(error)
+
+
+if __name__ == '__main__':
+    raise SystemExit(run())

@@ -10,6 +10,8 @@ from unittest.mock import patch
 from scripts import inspect_multilingual_v3_release as subject
 from tests import test_assemble_multilingual_v3_update as fixtures
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 class LocalV3InspectionTests(unittest.TestCase):
     def setUp(self):
@@ -164,7 +166,7 @@ class LocalV3InspectionTests(unittest.TestCase):
         try:
             code = subject._code_snapshot()
             expected = code['commit']
-            command = [sys.executable, str(Path(subject.__file__).resolve()),
+            command = [sys.executable, str(ROOT / 'scripts/inspect_multilingual_v3_release.py'),
                        '--candidate', str(self.candidate), '--baseline', str(self.f.base),
                        '--expected-commit', expected,
                        '--expected-report-sha256', fixtures.update.digest(self.candidate / 'build-report.json'),

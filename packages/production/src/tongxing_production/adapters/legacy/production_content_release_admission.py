@@ -47,7 +47,7 @@ def _path(value, root):
 
 
 def _page(public, page_id):
-    from scripts import assemble_multilingual_hosting as hosting
+    from . import assemble_multilingual_hosting as hosting
     catalog = hosting.load(public / hosting.CATALOG)
     hosting.validate_catalog(catalog)
     hosting.verify_catalog_assets(public, catalog)
@@ -57,7 +57,7 @@ def _page(public, page_id):
 
 
 def _weekly(receipt, path, report, candidate):
-    from scripts import assemble_multilingual_hosting as hosting
+    from . import assemble_multilingual_hosting as hosting
     _require(receipt.get('schemaVersion') == 'sermon-formal-dev-stage-receipt-v1'
              and receipt.get('deploymentStatus') == 'not_deployed'
              and receipt.get('httpVerification') == 'not_run'
@@ -79,8 +79,8 @@ def _weekly(receipt, path, report, candidate):
 
 
 def _dev_http(receipt, value, root, report, candidate):
-    from scripts import multilingual_dev_preview as preview
-    from scripts import assemble_multilingual_hosting as hosting
+    from . import multilingual_dev_preview as preview
+    from . import assemble_multilingual_hosting as hosting
     dev = _path(value.get('candidatePath'), root)
     dev_report = preview.candidate_report(dev)
     _require(receipt.get('schemaVersion') == 'sermon-multilingual-dev-preview-http-v1'
@@ -111,7 +111,7 @@ def admit(evidence, *, candidate_sha256=None, preflight_sha256=None, evidence_di
         raise ValueError('content_release_evidence_invalid')
     if not _sha256(candidate_sha256) or not _sha256(preflight_sha256) or candidate_dir is None:
         return _blocked(['current_candidate_binding'])
-    from scripts import assemble_multilingual_hosting as hosting
+    from . import assemble_multilingual_hosting as hosting
     candidate = Path(candidate_dir)
     try:
         report = hosting.load(candidate / 'build-report.json')
@@ -137,7 +137,7 @@ def admit(evidence, *, candidate_sha256=None, preflight_sha256=None, evidence_di
             _require(type(receipt) is dict and receipt.get('pageId') == page_id)
             if key == 'preDeployVerification':
                 _require(value.get(digest_key) == candidate_sha256 and digest == preflight_sha256)
-                from scripts import deploy_multilingual_hosting as deploy
+                from . import deploy_multilingual_hosting as deploy
                 deploy.prepare(candidate, path)
                 _require(type(receipt.get('results')) is list and
                          all(type(row) is dict for row in receipt['results']))

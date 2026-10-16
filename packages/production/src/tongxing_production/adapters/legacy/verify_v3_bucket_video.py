@@ -11,10 +11,7 @@ from pathlib import Path
 import urllib.error
 import urllib.request
 
-try:
-    from scripts import assemble_multilingual_v3_update as weekly
-except ImportError:
-    import assemble_multilingual_v3_update as weekly
+from . import assemble_multilingual_v3_update as weekly
 
 
 ORIGINS = {

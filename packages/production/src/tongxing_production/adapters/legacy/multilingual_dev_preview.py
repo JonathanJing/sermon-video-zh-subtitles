@@ -16,22 +16,16 @@ import os
 from pathlib import Path
 import re
 import shutil
-import subprocess
 import tempfile
 
-try:
-    from scripts import assemble_multilingual_hosting as hosting
-    from scripts import verify_multilingual_hosting as verifier
-except ImportError:
-    import assemble_multilingual_hosting as hosting
-    import verify_multilingual_hosting as verifier
+from ...delivery import backend as _delivery
+from . import assemble_multilingual_hosting as hosting
+from . import verify_multilingual_hosting as verifier
 
 
 DEV_PROJECT = "ai-for-god-sermon-audio-dev"
 DEV_SITE = "ai-for-god-sermon-audio-dev"
 DEV_ORIGIN = f"https://{DEV_SITE}.web.app"
-LABEL_SCRIPT = Path(__file__).resolve().parents[1] / "firebase/dev-preview/dev-preview-label.mjs"
-ADAPTER_SCRIPT = Path(__file__).resolve().parents[1] / "apps/listening-web/reader/formal-dev-adapter.mjs"
 DEV_MESSAGE = "DEV 测试站 · 此页用于核验已审核的多语言内容；公开发布请以正式站点为准。"
 REQUIRED_LOCALES = frozenset({"zh-Hans", "ko", "es"})
 ALIAS = {
@@ -55,6 +49,22 @@ CONTENT_TYPES = {
     ".srt": {"application/x-subrip", "text/plain"},
     ".png": {"image/png"},
 }
+
+
+def _label_script() -> Path:
+    return _delivery.current().legacy.firebase_config("dev-preview/dev-preview-label.mjs")
+
+
+def _adapter_script() -> Path:
+    return _delivery.current().runtime_web.root() / "reader/formal-dev-adapter.mjs"
+
+
+def __getattr__(name):
+    # Checked-in files callers read as module constants; they live in the host checkout.
+    paths = {"LABEL_SCRIPT": _label_script, "ADAPTER_SCRIPT": _adapter_script}
+    if name in paths:
+        return paths[name]()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def require(ok: bool, message: str) -> None:
@@ -227,7 +237,7 @@ def prepare(production_candidate: Path, dev_base: Path, out: Path) -> dict:
             text = text.replace(entry, entry + '\n  <script type="module" '
                                 'src="/dev-preview-label.mjs"></script>', 1)
             (public / name).write_text(text)
-        shutil.copyfile(LABEL_SCRIPT, public / "dev-preview-label.mjs")
+        shutil.copyfile(_label_script(), public / "dev-preview-label.mjs")
         legacy_html = (public / "legacy-reader.html").read_text()
         (public / "legacy-reader.html").write_text(
             legacy_html.replace('<details id="feedback-options">',
@@ -320,7 +330,7 @@ def prepare_update(dev_base_candidate: Path, staged: Path, out: Path) -> dict:
                                   lambda match: match[1] + DEV_MESSAGE + match[2], text)
             require(count == 1, f"Dev notice marker changed: {name}")
             path.write_text(text, encoding="utf-8")
-        shutil.copyfile(LABEL_SCRIPT, temporary / "public/dev-preview-label.mjs")
+        shutil.copyfile(_label_script(), temporary / "public/dev-preview-label.mjs")
         shutil.copyfile(dev_base_candidate / "firebase.json", temporary / "firebase.json")
         report = {
             "schemaVersion": "sermon-multilingual-dev-preview-v2",
@@ -354,13 +364,14 @@ def prepare_reader_repair(dev_base_candidate: Path, out: Path) -> dict:
     repair_paths = ("formal-dev-adapter.mjs", ALIAS["formal-dev-adapter.mjs"])
     require(all((dev_base_candidate / "public" / name).is_file() for name in repair_paths),
             "Dev candidate lacks both formal readers")
-    require(ADAPTER_SCRIPT.is_file(), "Checked-in formal reader is missing")
+    adapter = _adapter_script()
+    require(adapter.is_file(), "Checked-in formal reader is missing")
     out.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
     try:
         shutil.copytree(dev_base_candidate / "public", temporary / "public")
         for name in repair_paths:
-            shutil.copyfile(ADAPTER_SCRIPT, temporary / "public" / name)
+            shutil.copyfile(adapter, temporary / "public" / name)
         shutil.copyfile(dev_base_candidate / "firebase.json", temporary / "firebase.json")
         shutil.copyfile(dev_base_candidate / "build-report.json",
                         temporary / "dev-base-build-report.json")
@@ -375,7 +386,7 @@ def prepare_reader_repair(dev_base_candidate: Path, out: Path) -> dict:
             "firebaseConfigSha256": hosting.digest(temporary / "firebase.json"),
             "catalogSha256": hosting.digest(temporary / "public/multilingual-v2.json"),
             "repairPaths": sorted(repair_paths),
-            "adapterSha256": hosting.digest(ADAPTER_SCRIPT),
+            "adapterSha256": hosting.digest(adapter),
         }
         (temporary / "build-report.json").write_text(
             json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
@@ -455,10 +466,7 @@ def candidate_report(candidate: Path) -> dict:
                 and report.get("baseCleanUrls") == config["hosting"].get("cleanUrls"),
                 "Dev reader repair provenance changed")
     elif report.get("schemaVersion") == "sermon-multilingual-dev-preview-v3":
-        try:
-            from scripts import stage_voice_demo_dev
-        except ImportError:
-            import stage_voice_demo_dev
+        stage_voice_demo_dev = _delivery.current().legacy.voice_demo()
         stage_voice_demo_dev.verify_candidate_overlay(candidate, report)
     return report
 
@@ -503,7 +511,7 @@ def deploy(candidate: Path, preflight_path: Path, *, execute: bool) -> dict:
               "buildReportSha256": hosting.digest(candidate / "build-report.json"),
               "preflightSha256": hosting.digest(preflight_path), "command": COMMAND}
     if execute:
-        subprocess.run(COMMAND, cwd=candidate, check=True)
+        _delivery.current().hosting.run(COMMAND, cwd=candidate, check=True)
         result["status"] = "deployed_http_verification_pending"
         result["deployedAt"] = datetime.now(timezone.utc).isoformat()
     return result
@@ -546,10 +554,7 @@ def verify(candidate: Path) -> dict:
         results.append({"path": audio["path"], "range206": True})
         results.append({"path": path, "status": route_status})
     if report.get("schemaVersion") == "sermon-multilingual-dev-preview-v3":
-        try:
-            from scripts import stage_voice_demo_dev
-        except ImportError:
-            import stage_voice_demo_dev
+        stage_voice_demo_dev = _delivery.current().legacy.voice_demo()
         demos = stage_voice_demo_dev.public_catalog(candidate / "public")
         for speaker in demos["speakers"]:
             for asset in [speaker["original"], *speaker["samples"]]:
