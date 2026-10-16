@@ -43,6 +43,7 @@ LAYER2 = {
     'scripts/canonical_layer2_cache_recovery.py': _TEXT + 'cache_recovery.py',
     'scripts/canonical_layer2_reconciliation.py': _TEXT + 'reconciliation.py',
     'scripts/review_target_language_candidate.py': _TEXT + 'human_review.py',
+    'scripts/sermon_unified_layer2_binding.py': _TEXT + 'unified_binding.py',
 }
 
 # Layer 3 Audio (tongxing_production.audio), batches A1-A4.

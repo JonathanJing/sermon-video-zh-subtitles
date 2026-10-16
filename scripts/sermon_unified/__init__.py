@@ -19,7 +19,7 @@ from tongxing_production.orchestration.unified import adapters, backend, contrac
 from scripts import sermon_workflow_jobs as _jobs
 from scripts.sermon_execution_harness import atomic_json as _atomic_json, utc_now as _utc_now
 from scripts.sermon_release_workflow import safe_path as _safe_path
-from scripts import tongxing_host  # noqa: F401  binds tongxing_production.source, whose stage entry the 'source' stage loads
+from scripts import tongxing_host  # noqa: F401  binds the source and text layers, whose stage entries these stages load
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -31,9 +31,9 @@ _STAGE_MODULES = {
     'capabilities': 'scripts.sermon_unified_capabilities',
     'continuation': 'scripts.sermon_unified_continuation',
     'delivery': 'scripts.sermon_unified_delivery',
-    'layer2_binding': 'scripts.sermon_unified_layer2_binding',
-    'layer2_budget': 'scripts.canonical_layer2_budget',
-    'layer2_controller': 'scripts.canonical_layer2_controller',
+    'layer2_binding': 'tongxing_production.text.unified_binding',
+    'layer2_budget': 'tongxing_production.text.budget',
+    'layer2_controller': 'tongxing_production.text.controller',
     'parallel': 'scripts.sermon_unified_parallel',
     'reviews': 'scripts.sermon_unified_reviews',
     'runtime_identity': 'scripts.sermon_unified_runtime_identity',
