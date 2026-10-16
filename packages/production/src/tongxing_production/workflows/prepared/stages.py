@@ -11,7 +11,7 @@ import importlib
 from types import ModuleType
 
 STAGE_MODULES = {
-    'accounting': 'scripts.sermon_unified_accounting',
+    'accounting': 'tongxing_production.orchestration.unified.accounting',
     'app_delivery': 'scripts.sermon_app_delivery_workflow',
     'audio': 'scripts.sermon_unified_audio',
     'canonical_binding': 'tongxing_production.workflows.prepared.canonical_binding',
@@ -21,7 +21,7 @@ STAGE_MODULES = {
     'layer2_binding': 'tongxing_production.text.unified_binding',
     'layer2_budget': 'tongxing_production.text.budget',
     'layer2_controller': 'tongxing_production.text.controller',
-    'parallel': 'scripts.sermon_unified_parallel',
+    'parallel': 'tongxing_production.orchestration.unified.parallel',
     'reviews': 'scripts.sermon_unified_reviews',
     'runtime_identity': 'tongxing_production.compute.runtime_identity',
     'source': 'tongxing_production.source.unified_stage',

@@ -66,7 +66,7 @@ backend.configure(backend.Backend(
     repo_root=ROOT, artifact_root=ROOT / 'artifacts', jobs=_jobs,
     safe_path=_safe_path, atomic_json=_atomic_json, utc_now=_utc_now,
     required_modules=required_modules, worker_command=worker_command, temporal_wake=temporal_wake,
-    stage=stages.load,
+    stage=stages.load, accounting=tongxing_host.accounting(),
 ))
 
 for _name, _module in (('contracts', contracts), ('adapters', adapters), ('resources', resources), ('runtime', runtime)):

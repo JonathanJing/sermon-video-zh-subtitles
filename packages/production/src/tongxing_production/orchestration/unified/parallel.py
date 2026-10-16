@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 import copy
 import time
 
-from scripts.sermon_unified import contracts as c, runtime as r
-from scripts.production_concurrency_profile import load_profile
+from . import contracts as c, runtime as r
+from ...compute.concurrency_profile import load_profile
 
 
 def profile(manifest):
