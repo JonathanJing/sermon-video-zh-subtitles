@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [L2 注入边界](l2-text-layer-injection.zh.md) · [L3 注入边界](l3-audio-layer-injection.zh.md) · [L4 注入边界](l4-delivery-layer-injection.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md)
 
-状态：**设计稿，待决定（§8），未迁移任何文件**。盘点日期：2026-10-15。基线：`dev@27eebdf1`（L1 S0–S4、L2 T0–T1、L4 D0 已合并）。本文只定义 L1–L4 端口今天绑定的共享基础设施如何迁入提案 §2 的 `observability/`、`storage/`、`contracts/`，以及每个身份记录要怎样迁移；不移动文件，不改合同。数字由附录 A 的只读脚本得出。`review/` 的迁移由另一会话的 `docs/design/review-layer-injection.zh.md`（撰写中）负责，两者的先后见 §7。
+状态：**设计稿，待决定（§8），未迁移任何文件**。盘点日期：2026-10-15。基线：`dev@79cdac5d`（L1 S0–S4、L2 T0–T2、L4 D0–D1 已合并）。本文只定义 L1–L4 端口今天绑定的共享基础设施如何迁入提案 §2 的 `observability/`、`storage/`、`contracts/`，以及每个身份记录要怎样迁移；不移动文件，不改合同。数字由附录 A 的只读脚本得出。`review/` 的迁移由另一会话的 `docs/design/review-layer-injection.zh.md`（撰写中）负责，两者的先后见 §7。
 
 ## 1 为什么要单独设计
 
@@ -10,17 +10,17 @@
 
 1. **一个强连通环**：`sermon_accounting`、`sermon_workflow_jobs`、`sermon_release_workflow`、`sermon_log_contract`、`sermon_log_outbox`、`sermon_durable_accounting`、`sermon_log_profile`、`sermon_job_liveness`、`sermon_clock_evidence`、`sermon_model_call_observation`、`sermon_review_observation` 这 11 个模块互相（多为延迟）导入。包内模块不能导入 `scripts/`，所以环内文件要么同批进包，要么在搬之前把边切开（§3）。
 2. **身份被固定**：`sermon_workflow_jobs`、`sermon_openai_runtime`、`sermon_transcription_request` 在 waiver 实现闭包里；`four_layer_measure`、`sermon_public_snapshot`、`sermon_review_contracts`、`sermon_diagnostic_context` 在 L1 `producer_compatibility` 的 `*_SOURCE_SHA256` 表里；`sermon_accounting` 定义代码身份键 `code_path` 和日志合同；Prefect 与 mock TTS 两个闭包按 `scripts/` 路径哈希，不走别名（§4）。
-3. **扇入大**：`sermon_accounting` 被 181 个文件导入（其中 84 个测试），`sermon_review_contracts` 119（63），`sermon_workflow_jobs` 93（40），`sermon_log_profile` 60（33），`sermon_release_workflow` 58（2），`sermon_execution_harness` 54（6），`sermon_public_snapshot` 49（19）。每个都要保留 `scripts/` 门面，让 `scripts.x` 与包内模块是同一个对象。
+3. **扇入大**：`sermon_accounting` 被 180 个文件导入（其中 84 个测试），`sermon_review_contracts` 118（63），`sermon_workflow_jobs` 90（40），`sermon_log_profile` 60（33），`sermon_release_workflow` 57（2），`sermon_execution_harness` 53（6），`sermon_public_snapshot` 49（19）。每个都要保留 `scripts/` 门面，让 `scripts.x` 与包内模块是同一个对象。
 
 ## 2 模块归属
 
-行数、扇入为 `dev@27eebdf1`；扇入是仓库内以 AST 导入它的 `.py` 文件数（括号内为 `tests/`）。"可原样搬"指文件不导入 `scripts.*`、不用 `__file__` 定位，`git mv` 后字节不变。
+行数、扇入为 `dev@79cdac5d`；扇入是仓库内以 AST 导入它的 `.py` 文件数（括号内为 `tests/`）。"可原样搬"指文件不导入 `scripts.*`、不用 `__file__` 定位，`git mv` 后字节不变。
 
 ### 2.1 `contracts/`
 
 | 现有模块 | 行数 | 扇入 | 目标 | 搬动时的改动 |
 |---|---|---|---|---|
-| `sermon_review_contracts` 的通用半部：`ContractError`、`require`、`canonical_bytes`、`canonical_sha256`、`bytes_sha256`、`decode_json`、`_pairs`/`_strict_json`、`read_snapshot`、`validator` | 304（全文件） | 119 (63) | `contracts/canonical.py`、`contracts/schemas.py` | `ROOT=__file__` 读 `schemas/` 改为 `contracts.schemas` 的显式根（宿主注入，日后换 `importlib.resources`，提案 §5.1）。审核专属半部（`HARD_CHECKS`、`VERSIONS`、`validate_*`、修订谱系）归 `review/`，由 review 设计决定 |
+| `sermon_review_contracts` 的通用半部：`ContractError`、`require`、`canonical_bytes`、`canonical_sha256`、`bytes_sha256`、`decode_json`、`_pairs`/`_strict_json`、`read_snapshot`、`validator` | 304（全文件） | 118 (63) | `contracts/canonical.py`、`contracts/schemas.py` | `ROOT=__file__` 读 `schemas/` 改为 `contracts.schemas` 的显式根（宿主注入，日后换 `importlib.resources`，提案 §5.1）。审核专属半部（`HARD_CHECKS`、`VERSIONS`、`validate_*`、修订谱系）归 `review/`，由 review 设计决定 |
 | `canonical_pipeline_definition` | 116 | 6 (1) | `contracts/pipeline_definition.py` | `jobs._digest` 改为 `contracts.canonical_sha256`：输出字节相同，但非 JSON 值抛 `ContractError`（`ValueError` 子类）而不是 `TypeError`，需逐项测试 |
 | `sermon_pipeline.PRE_DISPATCH_REASONS`（常量） | — | 3 个模块导入 | `contracts/` 的固定原因码 | 让 `sermon_accounting` 不再延迟导入 `sermon_pipeline`（§3）；`sermon_pipeline` 改为从包内导入 |
 | 根 `schemas/*.json` | — | — | 原位不动 | 提案 §5.1：唯一可编辑 schema 来源 |
@@ -29,25 +29,24 @@
 
 | 现有模块或面 | 行数 | 扇入 | 目标 | 搬动时的改动 |
 |---|---|---|---|---|
-| `sermon_release_workflow._safe_path`/`safe_path` | 388（全文件） | 58 (2) | `storage/paths.py` | 只提取路径约束；文件其余部分是 POC 周更发布工作流，不在本文 |
-| `sermon_execution_harness` 的 `atomic_json`、`work_lock`、`WorkAlreadyRunning`、`_LOCK_FDS`、`utc_now` | 272（全文件） | 54 (6) | `storage/files.py`、`storage/locks.py` | `_LOCK_FDS` 必须仍是同一个 `ContextVar` 对象（`bounded_process` 用它继承锁）。`bounded_process`、`Execution`、`RemoteOutcomeUnknown` 属 orchestration，暂留（§2.4） |
-| `release_asset_io` | 59 | 5 (1) | `storage/assets.py` | 可原样搬 |
+| `sermon_release_workflow._safe_path`/`safe_path` | 388（全文件） | 57 (2) | `storage/paths.py` | 只提取路径约束；文件其余部分是 POC 周更发布工作流，不在本文 |
+| `sermon_execution_harness` 的 `atomic_json`、`work_lock`、`WorkAlreadyRunning`、`_LOCK_FDS`、`utc_now` | 272（全文件） | 53 (6) | `storage/files.py`、`storage/locks.py` | `_LOCK_FDS` 必须仍是同一个 `ContextVar` 对象（`bounded_process` 用它继承锁）。`bounded_process`、`Execution`、`RemoteOutcomeUnknown` 属 orchestration，暂留（§2.4） |
 | `sermon_public_snapshot` | 84 | 49 (19) | `storage/snapshot.py` | 四个顶层导入（`inspect_canonical_packages.MAX_JSON_BYTES`、`sermon_review_contracts`、`sermon_workflow_jobs` 的 `_sync_directory_ancestry`/`_directory_fd`、`_safe_path`）都要改，字节必变 |
-| `sermon_workflow_jobs` 的文件原语：`_reject_link`、`_directory_fd`、`_sync_directory`、`_sync_directory_ancestry`、`_read`、`_persist`、`_open_lock_file`、`_digest` | 448（全文件） | 93 (40) | `storage/files.py`（W 窗口，§6） | 在 waiver 闭包里，W 之前不改字节；observability 与 `sermon_public_snapshot` 经临时端口取用（§8 第 1 项） |
+| `sermon_workflow_jobs` 的文件原语：`_reject_link`、`_directory_fd`、`_sync_directory`、`_sync_directory_ancestry`、`_read`、`_persist`、`_open_lock_file`、`_digest` | 448（全文件） | 90 (40) | `storage/files.py`（W 窗口，§6） | 在 waiver 闭包里，W 之前不改字节；observability 与 `sermon_public_snapshot` 经临时端口取用（§8 第 1 项） |
 
 ### 2.3 `observability/`
 
 | 现有模块 | 行数 | 扇入 | 目标 | 搬动时的改动 |
 |---|---|---|---|---|
-| `sermon_accounting` | 1287 | 181 (84) | `observability/accounting.py` | 三处 `Path(__file__).parents[1]`（`error_location`、`code_path` 默认根、`execution_identity`）改为宿主注入的 checkout 根（§4.4）；延迟导入 `sermon_pipeline`、`sermon_openai_runtime` 改为包内（§3） |
+| `sermon_accounting` | 1287 | 180 (84) | `observability/accounting.py` | 三处 `Path(__file__).parents[1]`（`error_location`、`code_path` 默认根、`execution_identity`）改为宿主注入的 checkout 根（§4.4）；延迟导入 `sermon_pipeline`、`sermon_openai_runtime` 改为包内（§3） |
 | `sermon_log_contract` | 418 | 28 (19) | `observability/log_contract.py` | `SCHEMA_PATH=__file__` 改为 `contracts.schemas` |
 | `sermon_log_outbox`、`sermon_durable_accounting`、`sermon_log_profile` | 175、360、162 | 5 (3)、8 (3)、60 (33) | `observability/{outbox,durable,profile}.py` | `jobs` 私有文件原语、`_safe_path` 改为 `storage` |
 | `sermon_clock_evidence`、`sermon_model_call_observation`、`sermon_review_observation`、`sermon_model_call_report` | 197、222、89、271 | 6 (2)、16 (6)、9 (1)、3 (2) | `observability/` | 与 accounting 成环，同批 |
 | `sermon_workflow_evidence`、`sermon_dispatch_observation` | 264、44 | 6 (2)、2 (1) | `observability/` | 可原样搬 |
 | `codex_credit_usage` | 93 | — | `observability/` | `RATE_CARD_PATH=__file__` 读 `config/` 改为注入路径 |
 | `sermon_completion` | 258 | 20 (9) | `observability/completion.py` | 提案 §1.1 写"completion 结构归 contracts"，但它导入 accounting 与 log_contract，放 contracts 会反向依赖（§8 第 5 项） |
-| `sermon_cache_observation` | 67 | 5 (1) | `observability/cache_observation.py` | 只依赖 accounting |
-| `four_layer_measure`、`four_layer_progress` | 406、584 | 13 (6)、17 (12) | `observability/measure.py`、`observability/progress.py` | progress 可原样搬；measure 删除 `REPO_ROOT` 的 `sys.path` 处理、改导入，字节必变。`timing_audit` 的只读部分日后归 projections（提案 §3.2） |
+| `sermon_cache_observation` | 67 | 4 (1) | `observability/cache_observation.py` | 只依赖 accounting |
+| `four_layer_measure`、`four_layer_progress` | 406、584 | 12 (6)、17 (12) | `observability/measure.py`、`observability/progress.py` | progress 可原样搬；measure 删除 `REPO_ROOT` 的 `sys.path` 处理、改导入，字节必变。`timing_audit` 的只读部分日后归 projections（提案 §3.2） |
 
 ### 2.4 不在本文迁移的模块
 
@@ -56,6 +55,7 @@
 | `sermon_workflow_jobs` 的作业状态机（`start_job`、`peek_job`、`inspect_job`、worker、`ACTIVE`）、`sermon_job_liveness`、`canonical_durable_jobs` | orchestration | 状态机与文件原语在 W 窗口一起拆分（§6）；`Core.jobs` 端口保留到那时 |
 | `sermon_execution_harness.bounded_process`、`Execution` | orchestration | 子进程程序 `sermon_guarded_command.py` 现由 `Path(__file__).with_name` 定位；进包后须由宿主提供 argv（提案 §3 第 1 条），随 orchestration 设计 |
 | `sermon_openai_runtime`（61）、`sermon_transcription_request`（188） | compute | 都可原样搬；建议在 observability 之前按字节搬入 `compute/`（§6 I0b、§8 第 7 项） |
+| `release_asset_io` | L4 D1 已按字节迁入 `delivery/asset_io.py` | 它是通用的绑定字节复制原语；只有出现第二个层的调用方时才移到 `storage/`，本文不动 |
 | `sermon_diagnostic_context`（115） | 跨层诊断（workflows 或 review） | **本轮不搬**：延迟导入 L1、L3 校验；且被 `text/candidate.py` 作为诊断插件的实现文件哈希（§4.3），搬动会改变诊断插件哈希 |
 | `sermon_review_contracts` 的审核半部、`sermon_unified_reviews`、waiver 系列 | review | review 设计 |
 | `export_sermon_trace`、`export_observability_trace`、`sermon_trace_artifacts`、`build_four_layer_tracker_snapshot`、`weekly_pipeline_report` | observability/projections 与 tools/ops | Tracker 投影另批（提案 §3.2）；CLI 留 `scripts/`，改为调用包内实现 |
@@ -92,9 +92,10 @@
 | `scripts/experiments/benchmark_layer2_bounded.frozen_code()` | `path_aliases.resolve` | accounting、harness | 是 |
 | `sermon_accounting.execution_identity().loadedProjectCodeSha256` | 已加载模块按实际位置记键 | 全部 | 新键是包内路径；读方用 `recorded()` |
 | `canonical_layer2_controller.code_identity()`、统一运行 `required_modules()`/`closureSha256` | `scripts/`、`packages/production/src`、`schemas/` 全部文件 | 全部 | 每批必变（§4.6） |
+| `tongxing_host.EAGER_PRODUCER_IMPORTS` | 宿主加载时导入的 17 个 `scripts` 模块名，让已搬生产者的已加载集合（即 `loadedProjectCodeSha256`）与搬前相同 | accounting、cache_observation、harness、measure、public_snapshot、release_workflow、review_contracts、transcription_request、jobs | 名字经门面加载；文件搬后记录的键是包内路径（§4.4） |
 | `pipeline_compatibility_gate.BACKEND_ONLY` | 路径集合 | `scripts/sermon_accounting.py`、`scripts/export_sermon_trace.py` | 否：搬后包内路径不在集合里，会被当成未知改动；同批加入 |
 
-`dev@27eebdf1` 的基线值（每批的出口条件拿它比对）：
+`dev@79cdac5d` 的基线值（每批的出口条件拿它比对；与 `dev@27eebdf1` 相同）：
 
 | 摘要 | 值 |
 |---|---|
@@ -117,7 +118,7 @@ W 里拆分 jobs 时，文件原语进 `storage/files.py`，状态机进 `orches
 
 `verify(historical, current, planned, binding)` 只接受两种情况：`historical == current`（父运行与当前代码字节相同），或 `(historical, current)` 恰好等于某一代评审过的表对。`current` 是检查方读到的实际字节。
 
-| 键 | 最新一代 `TRANSPORT_MOVE_SOURCE_SHA256` | `dev@27eebdf1` 实际 | 本文计划 |
+| 键 | 最新一代 `TRANSPORT_MOVE_SOURCE_SHA256` | `dev@79cdac5d` 实际 | 本文计划 |
 |---|---|---|---|
 | `scripts/four_layer_measure.py` | `7f628c8c…` | 相同 | I4 搬，字节变 |
 | `scripts/sermon_public_snapshot.py` | `824d43f2…` | 相同 | I2 搬，字节变 |
@@ -134,7 +135,7 @@ W 里拆分 jobs 时，文件原语进 `storage/files.py`，状态机进 `orches
 |---|---|---|---|
 | `code_path(module, root=None)` | 默认根 `Path(__file__).parents[1]`，即 checkout 根；`CODE_ROOTS=('scripts','backend','experiments')`，`PACKAGE_SOURCE_ROOTS={'tongxing_production': 'packages/production/src'}` | 文件进 `observability/` 后 `parents[1]` 变成 `.../tongxing_production`，所有键算错或为 `None`，`loadedProjectCodeSha256` 变空 | checkout 根由宿主注入（`observability` 的一个配置记录，未配置时抛 `ports.Unbound`）；`error_location`、`execution_identity` 同改 |
 | 键规则 | checkout 相对路径；`code_module_name` 反解；`sermon_historical_identity._loaded` 用同一 `code_path` 规则做见证 | 不变 | 出口测试：同一组已加载模块，搬前搬后的键集合只差被搬文件自身（`scripts/x.py` → `packages/production/src/tongxing_production/observability/x.py`） |
-| accounting 自己的键 | `scripts/sermon_accounting.py` | 变为包内路径；门面用 `sys.modules` 替换，不另记一条 | 读方一律 `recorded()`；`benchmark_layer2_bounded.frozen_code` 已走别名 |
+| accounting 自己的键 | `scripts/sermon_accounting.py` | 变为包内路径；门面用 `sys.modules` 替换，不另记一条 | 读方一律 `recorded()`；`benchmark_layer2_bounded.frozen_code` 已走别名。`EAGER_PRODUCER_IMPORTS` 保留旧模块名，加载集合不缺项，只是键换成包内路径 |
 | 日志合同 | 事件 `sermon-workflow-accounting-v3`；`schemas/sermon-accounting-log-contract-v1.schema.json` 的 `error.frames[].file` 与 `loadedProjectCodeSha256` 键模式已允许 `packages/production/src/tongxing_production/...` | 新事件里的文件路径变成包内路径，schema 不变 | 不升版本；`sermon_log_contract` 的 schema 读取改走 `contracts.schemas`，加载结果按字节比对 |
 | `pipeline_compatibility_gate.BACKEND_ONLY` | 列 `scripts/sermon_accounting.py`、`scripts/export_sermon_trace.py` | 包内 accounting 的改动会被当成未知改动 | I3 同批加入包内路径 |
 
@@ -176,7 +177,7 @@ orchestration 包今天经 `scripts/sermon_unified/__init__.py` 绑定；I1–I4
 | I0 闭包准备 | Prefect `code_identity`、mock TTS `implementation_sha256`、Temporal `dependencySha256`、`local_experiment_log/deploy_tools` 的源路径改为 `path_aliases.resolve`；`path_aliases.py` 加 `CONTRACTS`、`STORAGE`、`OBSERVABILITY` 三节（先为空） | 两个摘要的输入表逐项相等，只有两个文件自身的条目变；没有进行中的 Prefect pilot 与 mock DAG；相关测试全绿 |
 | I0b compute 叶子 | `sermon_openai_runtime`、`sermon_transcription_request` → `compute/`，按字节原样 | 两文件字节哈希等于 §4.2；waiver 与 QC 传输摘要等于 §4.1 基线；Spark 容器 import-only 探测通过（`clip_e2e_spark.PACKAGE_SRC`）；非仓库 CWD 导入通过 |
 | I1 contracts | 通用半部 → `contracts/canonical.py`、`schemas.py`；`canonical_pipeline_definition` → `contracts/pipeline_definition.py`；`PRE_DISPATCH_REASONS` → contracts；`sermon_review_contracts` 只留审核半部或成为门面（§8 第 3 项）；删除 `Contracts` 端口 | `scripts.sermon_review_contracts.ContractError is tongxing_production.contracts.canonical.ContractError`；规范 JSON 哈希在 fixture 语料上逐字节相同；schema 从非仓库 CWD 加载；119 个导入方的测试全绿；compat 新一代（若采纳） |
-| I2 storage | `safe_path` → `storage/paths.py`（release_workflow 改为导入）；harness 的锁与原子写 → `storage/locks.py`、`files.py`（harness 重新导出，`_LOCK_FDS` 同一对象）；`release_asset_io` → `storage/assets.py`（原样）；`sermon_public_snapshot` → `storage/snapshot.py`；宿主加 `JobFiles` | 路径约束在 macOS `/var`、`/tmp` 别名与符号链接拒绝上行为不变；`bounded_process` 继承锁的测试全绿；waiver 摘要不变；compat 新一代（若采纳） |
+| I2 storage | `safe_path` → `storage/paths.py`（release_workflow 改为导入）；harness 的锁与原子写 → `storage/locks.py`、`files.py`（harness 重新导出，`_LOCK_FDS` 同一对象）；`sermon_public_snapshot` → `storage/snapshot.py`；宿主加 `JobFiles` | 路径约束在 macOS `/var`、`/tmp` 别名与符号链接拒绝上行为不变；`bounded_process` 继承锁的测试全绿；waiver 摘要不变；compat 新一代（若采纳） |
 | I3 observability 核心 | §2.3 除 measure/progress 外全部（环内 8 个 + `workflow_evidence`、`dispatch_observation`、`codex_credit_usage`、`model_call_report`、`completion`、`cache_observation`），同一 PR；checkout 根注入；`BACKEND_ONLY` 加包内路径；`deploy_tools` 跟随 | §4.4 的键集合测试；同一 fixture 的记账事件、replay、outbox ACK 与崩溃恢复逐字节一致；日志合同 schema 不变；waiver 摘要不变；`tongxing_production/observability` 不导入 `scripts/` |
 | I4 measure | `four_layer_measure`、`four_layer_progress` → `observability/` | 计时审计与进度账本输出不变；compat 新一代（若采纳） |
 | W 闭包变更窗口（与 review 设计共用） | jobs 拆为 `storage/files.py` + `orchestration/jobs.py`；`JobFiles` 删除；worker 自启 argv 改由宿主提供，仍指向 `scripts/sermon_workflow_jobs.py`；`IMPLEMENTATION_FILES` 与 QC 传输文件表加 `storage/files.py`；review 设计的闭包成员同窗合并 | 合并前确认没有依赖现有 waiver 的未发布 locale，或用户已接受重新校准；新 waiver 摘要与 QC 传输摘要记录在 PR；作业恢复、`uncertain` 对账、liveness 测试全绿 |
@@ -221,7 +222,7 @@ import ast, pathlib, subprocess
 
 INFRA = '''sermon_workflow_jobs sermon_openai_runtime sermon_transcription_request four_layer_measure
 sermon_public_snapshot sermon_review_contracts sermon_diagnostic_context sermon_accounting
-sermon_execution_harness sermon_release_workflow release_asset_io sermon_cache_observation
+sermon_execution_harness sermon_release_workflow sermon_cache_observation
 four_layer_progress canonical_pipeline_definition sermon_log_contract sermon_log_outbox
 sermon_durable_accounting sermon_log_profile sermon_completion sermon_job_liveness
 sermon_clock_evidence sermon_workflow_evidence sermon_dispatch_observation
@@ -274,4 +275,4 @@ for v in INFRA:
 print([c for c in sccs if len(c) > 1])
 ```
 
-`dev@27eebdf1` 上：`sermon_accounting` 1287 行、扇入 181（84）；`sermon_review_contracts` 304、119（63）；`sermon_workflow_jobs` 448、93（40）；唯一的多成员强连通分量是 §1 第 1 点的 11 个模块。§4.1 的四个基线摘要用仓库 venv、`PYTHONPATH=packages/production/src:.` 调用各自函数得到。
+`dev@79cdac5d` 上：`sermon_accounting` 1287 行、扇入 180（84）；`sermon_review_contracts` 304、118（63）；`sermon_workflow_jobs` 448、90（40）；唯一的多成员强连通分量是 §1 第 1 点的 11 个模块。§4.1 的四个基线摘要用仓库 venv、`PYTHONPATH=packages/production/src:.` 调用各自函数得到。
