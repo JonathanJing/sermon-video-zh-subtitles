@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import socket
 import os
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -52,6 +53,8 @@ class SparkAudioWrapperTests(unittest.TestCase):
         self.assertEqual(tts[tts.index('--entrypoint') + 1], '/usr/bin/python')
         self.assertIn(subject.IMAGES['tts'], tts)
         self.assertIn(subject.IMAGES['asr'], asr)
+        for command in (tts, asr):
+            self.assertIn(f'PYTHONPATH={subject.ROOT}/packages/production/src', command)
         # Snapshot files are symlinks into ../../blobs: mount the model repo, not the snapshot.
         self.assertIn(subject.ASR_HUB + ':/asr-hub:ro', asr)
         self.assertTrue(asr[asr.index('--model-path') + 1].startswith('/asr-hub/snapshots/'))
@@ -92,8 +95,43 @@ class SparkAudioWrapperTests(unittest.TestCase):
         self.assertEqual(remote.call_count, 1)
         self.assertFalse((self.args.out / 'dispatch.started.json').exists())
 
+    def staged_code(self):
+        names = ('scripts/experiments/run_spark_diagnostic_audio.py',
+                 'packages/production/src/tongxing_production/__init__.py')
+        return {name: subject.inputs.sha(subject.ROOT / name) for name in names}
+
+    def test_staged_code_without_the_production_package_blocks_before_model_dispatch(self):
+        code = self.staged_code()
+        del code['packages/production/src/tongxing_production/__init__.py']
+        response = subprocess.CompletedProcess([], 0, stdout=json.dumps({'files': code}))
+        with patch.object(subject, 'preflight', return_value=self.proof), \
+             patch.object(subject, 'run', return_value=response) as remote:
+            with self.assertRaisesRegex(ValueError, 'remote_code_differs'):
+                subject.execute(self.args)
+        self.assertEqual(remote.call_count, 1)
+        self.assertFalse((self.args.out / 'dispatch.started.json').exists())
+
+    def test_worker_facades_import_outside_the_repo_with_only_the_container_path(self):
+        # Proposal §5.2. -S keeps this interpreter's editable install off sys.path; its site-packages stand in
+        # for the image's. The worker inserts the code root itself and imports the renderer facade lazily.
+        third_party = [p for p in sys.path if Path(p).name in ('site-packages', 'dist-packages')]
+        probe = ('import sys; sys.path.insert(0, sys.argv[1]); '
+                 'import scripts.experiments.replay_fixed_clip_local_models; '
+                 'from scripts.render_formal_target_language_speech import SparkQwenSynthesizer; print("ok")')
+
+        def launch(pythonpath):
+            env = {'PATH': '/usr/bin:/bin', 'PYTHONPATH': ':'.join(pythonpath), 'PYTHONDONTWRITEBYTECODE': '1'}
+            return subprocess.run([sys.executable, '-S', '-c', probe, str(subject.ROOT)], cwd=cwd, env=env,
+                                  capture_output=True, text=True, timeout=120)
+        with tempfile.TemporaryDirectory() as cwd:
+            before = launch(third_party)
+            self.assertNotEqual(before.returncode, 0, 'the package must not be importable without the container path')
+            self.assertIn("No module named 'tongxing_production'", before.stderr)
+            after = launch([*third_party, str(subject.ROOT / subject.PACKAGE_SRC)])
+            self.assertEqual(after.returncode, 0, after.stderr[-2000:])
+
     def test_ssh_uncertainty_preserves_started_and_cannot_retry(self):
-        code = {'scripts/experiments/run_spark_diagnostic_audio.py': subject.inputs.sha(Path(subject.__file__))}
+        code = self.staged_code()
         def run(argv, **kwargs):
             if kwargs.get('capture_output'):
                 return subprocess.CompletedProcess(argv, 0, stdout=json.dumps({'files': code}))
@@ -183,3 +221,4 @@ class SparkAudioWrapperTests(unittest.TestCase):
         self.assertLess(subject.REMOTE_RUNNER.index('gateway=AdmissionGateway'), subject.REMOTE_RUNNER.index('subprocess.run(argv'))
         self.assertIn('finally:gateway.close()', subject.REMOTE_RUNNER)
         self.assertNotIn('session.end_job', subject.REMOTE_RUNNER)
+        self.assertIn("c['codeRoot']+'/" + subject.PACKAGE_SRC + "'", subject.REMOTE_RUNNER)
