@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [现状地图](repository-current-map.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [L2 注入边界](l2-text-layer-injection.zh.md) · [L3 注入边界](l3-audio-layer-injection.zh.md) · [L4 注入边界](l4-delivery-layer-injection.zh.md) · [基础设施注入边界](infrastructure-injection.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md) · [机器试听豁免驱动](../machine-qc-audio-driver.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md)
 
-状态：**待评审，§6 待决定，尚未迁移文件**。盘点日期：2026-10-15。基线：`dev@d12f239d`（L1 S0–S4 已合并；L2 T0–T2 [#510](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/510)、[#511](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/511)、[#514](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/514) 已合并；L4 D0–D1 [#512](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/512)、[#515](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/515) 已合并；[基础设施注入边界](infrastructure-injection.zh.md)设计 [#516](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/516) 已合并、待决定；L3 B0 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507) 已合并，A0 进行中。`ports.py` 现有 `Core`、`Route`、`Provider`、`Compute`、`Resources`、`Adjudication`、`Workspace`、`Accounting`、`Review`、`Terminology`、`Measure`、`Code`、`Mfa`、`Contracts`、`Snapshot`、`Plugins`、`Transports`、`Schemas`、`Diagnostic`、`RuntimeWeb`、`Hosting`、`Waivers`）。本文只定义跨层机器复核（review/）的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。基础设施设计 §7 把闭包变更窗口的时点和校准安排交给本文：它所说的"W 闭包变更窗口"就是本文 §5.1 的 **G1**（本文的 W 指豁免实现闭包本身）。
+状态：**§6 第 1、2 项已决定（2026-10-15，均采纳建议：R3 与 L3 A3 同在闭包变更窗口 G1，音频 QC 传输也进 G1），第 3–9 项待决定；尚未迁移文件**。盘点日期：2026-10-15。基线：`dev@d12f239d`（L1 S0–S4 已合并；L2 T0–T2 [#510](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/510)、[#511](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/511)、[#514](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/514) 已合并；L4 D0–D1 [#512](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/512)、[#515](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/515) 已合并；[基础设施注入边界](infrastructure-injection.zh.md)设计 [#516](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/516) 已合并、待决定；L3 B0 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507) 已合并，A0 进行中。`ports.py` 现有 `Core`、`Route`、`Provider`、`Compute`、`Resources`、`Adjudication`、`Workspace`、`Accounting`、`Review`、`Terminology`、`Measure`、`Code`、`Mfa`、`Contracts`、`Snapshot`、`Plugins`、`Transports`、`Schemas`、`Diagnostic`、`RuntimeWeb`、`Hosting`、`Waivers`）。本文只定义跨层机器复核（review/）的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。基础设施设计 §7 把闭包变更窗口的时点和校准安排交给本文：它所说的"W 闭包变更窗口"就是本文 §5.1 的 **G1**（本文的 W 指豁免实现闭包本身）。
 
 ## 1 为什么不能直接搬
 
@@ -234,7 +234,7 @@ review 需要的新面都在宿主包装，不改这些文件。
 
 | 项 | 内容 |
 |---|---|
-| 成员 | L3 A3（`audio/` 身份代批次）；review R3；基础设施的 jobs 拆分（`storage/files.py` + `orchestration/jobs.py`，§6 第 7 项）；（§6 第 2 项）compute 的 `machine_qc_audio_transports`。顺序不限：review 经 `AudioRules` 取 L3，A3 只改宿主绑定；传输若在 R3 之前搬，暂经端口取 review。前置：基础设施 I0b（两个 compute 叶子按字节搬）和 I1（contracts）已合并 |
+| 成员 | L3 A3（`audio/` 身份代批次）；review R3；基础设施的 jobs 拆分（`storage/files.py` + `orchestration/jobs.py`，§6 第 7 项）；compute 的 `machine_qc_audio_transports`（§6 第 2 项已决定）。顺序不限：review 经 `AudioRules` 取 L3，A3 只改宿主绑定；传输若在 R3 之前搬，暂经端口取 review。前置：基础设施 I0b（两个 compute 叶子按字节搬）和 I1（contracts）已合并 |
 | 开启条件 | 没有进行中的 QC、校准或 Spark 作业，没有未知结果（不变量 5）；没有进行中的 L2 run、统一运行、Prefect pilot 或 mock DAG（jobs 在两者的闭包里）；列出所有"已校准未签发"和"已签发未封存"的 locale，由你决定先在旧 checkout 上完成还是重做；记录四个基线值和 `implementation_freeze.file_hashes()` |
 | 窗口内 | 只合并成员 PR；dev 上不签豁免、不做校准、不批 QC 预算、不绑精简。旧运行可以在其冻结的 checkout 上继续（`implementation_freeze` 允许，因为那个 checkout 的值没变），但它签发的豁免只能在同一 checkout 上封存 |
 | 关闭条件 | 最后一个成员合并后，一份代记录写明旧→新四个值和逐文件哈希，并列出要重新校准、重筛、重拟合语速、重绑精简、重新批 QC 预算的 locale；放在最后一个成员 PR 的说明和对应的 docs PR 里 |
@@ -254,12 +254,21 @@ review 需要的新面都在宿主包装，不改这些文件。
 
 每批：迁移前后 `tests/` 的发现清单一一对应（提案 §5.5）；`python-tests.yml` 的 `py_compile` 清单若列有被搬文件同批更新；`sermon.py`、Spark 与 E2E 的 argv 不变；只在没有进行中的 L2 run 与统一运行时合并；每批只声明代码与测试证据，真实校准与发布另行报告。
 
-## 6 待决定
+## 6 决定与待决定
+
+已决定（2026-10-15 用户决定）：
+
+| # | 问题 | 决定 | 对分批的影响 |
+|---|---|---|---|
+| 1 | review 的 W 成员是否与 L3 A3 进同一个闭包代窗口 G1 | **是** | R3 是 G1 成员，与 A3 同窗合并；这也回答了 L3 §6 第 1 项留下的附带问题：`target_audio_auto_qc` 等豁免闭包文件排进 A3 的窗口 |
+| 2 | `machine_qc_audio_transports` 是否也进 G1 | **是** | 传输迁入 compute/，作为 G1 成员；W、T 在 G1 内一起变一次，传输不再单独开窗口。L2 §6 第 2 项留下的缓存连续性问题对音频 QC 传输不需要迁移表（§4.3）；三个 L2 文本传输不受影响 |
+
+第 3–9 项仍待决定；下表保留第 1、2 项的原问题文本，供追溯。
 
 | # | 问题 | 建议 | 不采纳的代价 |
 |---|---|---|---|
-| 1 | review 的 W 成员是否与 L3 A3 进同一个闭包代窗口 G1（即回答 L3 §6 第 1 项的附带问题：`target_audio_auto_qc` 等是否排进 A3 的窗口） | **是**：R3 与 A3 同在 G1 | W 至少变两次，每个未发布 locale 多一轮 Spark 校准和付费副 ASR |
-| 2 | `machine_qc_audio_transports` 是否也进 G1（compute/） | **是**。R3 搬预算授权必然改变 T；传输本身在 W 里，以后单独搬会再让 W 变一次；同窗口的额外代价只是校准 TTS 在 Spark 重渲染（§4.3） | 传输留 `scripts/` 并冻结字节，直到另开一个闭包代 G2 |
+| 1 | review 的 W 成员是否与 L3 A3 进同一个闭包代窗口 G1（即回答 L3 §6 第 1 项的附带问题：`target_audio_auto_qc` 等是否排进 A3 的窗口） | **是**：R3 与 A3 同在 G1（已决定） | W 至少变两次，每个未发布 locale 多一轮 Spark 校准和付费副 ASR |
+| 2 | `machine_qc_audio_transports` 是否也进 G1（compute/） | **是**（已决定）。R3 搬预算授权必然改变 T；传输本身在 W 里，以后单独搬会再让 W 变一次；同窗口的额外代价只是校准 TTS 在 Spark 重渲染（§4.3） | 传输留 `scripts/` 并冻结字节，直到另开一个闭包代 G2 |
 | 3 | G1 的形状 | 多个 PR（A3、R3、jobs 拆分、传输）在同一受控窗口内连续合并，窗口内不做校准与签发 | 一个合并 PR（约 10,000 行）评审面过大；或不设窗口，中间提交上的校准全部作废 |
 | 4 | `spoken_condensation` 的归属 | review/：它的公开面是精简规则、`bind` 和 `qc-groups`，L4 只认它的绑定；模型调用在驱动里 | 归 audio/：仍要在 G1 搬（它在 W 里），只是目录不同 |
 | 5 | `sermon_unified_reviews` 的归属 | review/，各阶段校验经 `StageGates` 注入（与 `ports.Review` 的说明"review/ owns them"及 L4 §6 第 1 项一致） | 归 orchestration/：可以直接导入各阶段，不需 `StageGates`，但 source、delivery 仍经 `Review` 端口调用它 |
