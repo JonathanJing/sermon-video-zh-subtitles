@@ -19,18 +19,19 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-try:
-    from scripts import four_layer_measure as measure
-    from scripts import machine_quality_release_basis as machine_basis
-    from scripts import sermon_sentence_interpretation as interpretation
-    from scripts import target_language_policy as policy_tools
-    from scripts import clip_timeline_map as timeline_map
-except ImportError:  # Direct execution via ``python scripts/...``.
-    import four_layer_measure as measure
-    import machine_quality_release_basis as machine_basis
-    import sermon_sentence_interpretation as interpretation
-    import target_language_policy as policy_tools
-    import clip_timeline_map as timeline_map
+from ..source import sentence_interpretation as interpretation
+from ..text import policy as policy_tools
+from . import backend as _audio
+from . import clip_timeline as timeline_map
+
+
+def __getattr__(name):
+    # The unit validator and the package builder still read
+    # ``speech.machine_basis.is_text_waiver``; the waiver rules live in the host.
+    # Editing the validator would change adapterCodeSha256, so this stays until A3 moves both.
+    if name == "machine_basis":
+        return _audio.current().waivers
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 CANDIDATE_SCHEMA = "sermon-target-language-candidate-v2"
@@ -40,7 +41,6 @@ MACHINE_SPEECH_JOB_SCHEMA = "sermon-target-language-speech-job-v3"
 SPEECH_JOB_SCHEMAS = (SPEECH_JOB_SCHEMA, MACHINE_SPEECH_JOB_SCHEMA)
 HUMAN_TEXT_POLICY = "exact_human_approved_target_text"
 MACHINE_TEXT_POLICY = "exact_machine_waived_target_text"
-REPO_ROOT = Path(__file__).resolve().parents[1]
 ADAPTER_SCHEMA = "sermon-target-language-speech-adapter-v1"
 HUMAN_REVIEW_RECEIPT_SCHEMA = "sermon-target-language-human-review-receipt-v1"
 SEMANTIC_CHECKS = (
@@ -84,8 +84,7 @@ def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, 
                  "English Source Package is not approved for translation")
     else:
         _require(require_human_approval is False, "Diagnostic context cannot grant production approval")
-        from scripts.sermon_diagnostic_context import validate_source
-        validate_source(source_package, anchor, diagnostic_context)
+        _audio.current().diagnostic.validate_source(source_package, anchor, diagnostic_context)
     _require(interpretation.is_supported_anchor_manifest(anchor), "Unsupported anchor manifest")
     _require(candidate.get("schemaVersion") == CANDIDATE_SCHEMA,
              "Unsupported target-language candidate")
@@ -185,8 +184,7 @@ def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *
         _require(result["productionPolicyReady"],
                  "Target-Language Policy has unresolved scripture, terminology, or language-review gates")
     else:
-        from scripts.sermon_diagnostic_context import require_policy_ready
-        require_policy_ready(result, diagnostic_context)
+        _audio.current().diagnostic.require_policy_ready(result, diagnostic_context)
     for stage in ("translator", "reviewer"):
         expected = policy[stage]
         actual = candidate["generation"][stage]
@@ -216,7 +214,7 @@ def audio_screening_schema_file(screening: Any) -> str:
 
 
 def _validate_schema(value: dict[str, Any], filename: str, label: str) -> None:
-    schema = json.loads((REPO_ROOT / "schemas" / filename).read_text(encoding="utf-8"))
+    schema = json.loads(_audio.current().schemas.path(filename).read_text(encoding="utf-8"))
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(value))
     _require(not errors, f"Invalid {label}: {errors[0].message}" if errors else "")
 
@@ -247,8 +245,9 @@ def validate_human_review_receipt(source_package: dict[str, Any], anchor: dict[s
 def validate_text_release_basis(source_package: dict[str, Any], anchor: dict[str, Any],
                                 candidate: dict[str, Any], receipt: dict[str, Any]) -> str:
     """Validate the receipt that releases this exact candidate; return its text policy."""
-    if machine_basis.is_text_waiver(receipt):
-        machine_basis.validate_text_waiver(
+    waivers = _audio.current().waivers
+    if waivers.is_text_waiver(receipt):
+        waivers.validate_text_waiver(
             receipt, candidate=candidate, source_sha=interpretation.json_sha256(source_package),
             anchor_sha=interpretation.json_sha256(anchor))
         return MACHINE_TEXT_POLICY
@@ -259,7 +258,7 @@ def validate_text_release_basis(source_package: dict[str, Any], anchor: dict[str
 def validate_released_candidate(source_package: dict[str, Any], anchor: dict[str, Any],
                                 candidate: dict[str, Any], receipt: dict[str, Any]) -> dict[str, Any]:
     """Candidate checks plus its release basis: human approval, or a machine waiver."""
-    machine = machine_basis.is_text_waiver(receipt)
+    machine = _audio.current().waivers.is_text_waiver(receipt)
     identity = validate_target_candidate(source_package, anchor, candidate,
                                          require_human_approval=not machine)
     return identity | {"textPolicy": validate_text_release_basis(
@@ -647,7 +646,7 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
                 "jsonSha256": interpretation.json_sha256(candidate),
             },
             ("textReleaseBasis" if machine else "humanReviewReceipt"): {
-                **({"kind": machine_basis.REVIEW_KIND,
+                **({"kind": _audio.current().waivers.review_kind,
                     "schemaVersion": human_review_receipt["schemaVersion"]} if machine else {}),
                 "path": str(human_review_receipt_path.resolve()),
                 "sha256": interpretation.sha256(human_review_receipt_path),
@@ -746,7 +745,7 @@ def main() -> None:
     args = parser.parse_args()
     candidate = _load(args.candidate)
     locale = candidate.get("targetLocale")
-    with measure.producer_step(args.progress_ledger, f"L3-01@{locale}", locale=locale) as metrics:
+    with _audio.current().measure.producer_step(args.progress_ledger, f"L3-01@{locale}", locale=locale) as metrics:
         metrics.update(candidateSha256=interpretation.json_sha256(candidate),
                        translationGroups=len(candidate.get("groups") or []),
                        adapterSha256=interpretation.json_sha256(_load(args.adapter)),

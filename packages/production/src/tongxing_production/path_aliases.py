@@ -55,6 +55,7 @@ LAYER3 = {
     'scripts/review_target_language_audio.py': _AUDIO + 'human_review.py',
     'scripts/dev_audio_test_profile.py': _AUDIO + 'dev_profile.py',
     'scripts/dev_audio_test_receipts.py': _AUDIO + 'dev_receipts.py',
+    'scripts/prepare_target_language_speech_job.py': _AUDIO + 'speech_job.py',
 }
 
 # Shared compute (tongxing_production.compute): stage 1, infrastructure I0b and the audio batches.
