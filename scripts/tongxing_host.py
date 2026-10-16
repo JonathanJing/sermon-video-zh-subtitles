@@ -1,6 +1,6 @@
 """Bind the production package's layer backends to this checkout.
 
-Importing this module configures the source, text, delivery and audio layers.
+Importing this module configures the source, text, delivery, audio and review layers.
 Every port is a late-binding wrapper around the ``scripts/`` implementation it
 stands in for: the implementation is imported inside the wrapper, so a test
 that patches ``scripts.sermon_pipeline.chat_json`` (or any other target) still
@@ -26,6 +26,7 @@ from tongxing_production.source import backend as source_backend  # noqa: E402
 from tongxing_production.text import backend as text_backend  # noqa: E402
 from tongxing_production.delivery import backend as delivery_backend  # noqa: E402
 from tongxing_production.audio import backend as audio_backend  # noqa: E402
+from tongxing_production.review import backend as review_backend  # noqa: E402
 
 
 def core() -> ports.Core:
@@ -83,6 +84,13 @@ def _transcription_request(wav_bytes, expected_audio_sha256):
     return sermon_transcription_request.build_request(wav_bytes, expected_audio_sha256)
 
 
+def _transcription_limits():
+    from types import SimpleNamespace
+    from scripts import sermon_transcription_request as transcription
+    return SimpleNamespace(MAX_RESPONSE_BYTES=transcription.MAX_RESPONSE_BYTES, WALL_TIME_MS=transcription.WALL_TIME_MS,
+                           MICROUSD_PER_MINUTE=transcription.MICROUSD_PER_MINUTE)
+
+
 def _request_metadata(payload):
     from scripts import sermon_accounting
     return sermon_accounting.request_metadata(payload)
@@ -127,7 +135,8 @@ def provider() -> ports.Provider:
                           http_execute=_http_execute, transcription_request=_transcription_request,
                           request_metadata=_request_metadata,
                           route=ports.Route(selected=_selected_route, safe=_safe_route,
-                                            project_headers=_project_headers))
+                                            project_headers=_project_headers),
+                          transcription_limits=_transcription_limits)
 
 
 def _code_identity():
@@ -193,7 +202,8 @@ def compute() -> ports.Compute:
     from scripts.production_spark_admission import SessionBoundCaller
     # The two host-wide limits are constants of a standard-library-only module.
     from scripts import layer2_api_concurrency
-    return ports.Compute(session_bound_caller=SessionBoundCaller, require_session=_require_session,
+    return ports.Compute(session_bound_caller=SessionBoundCaller, session_error=_session_error,
+                         require_session=_require_session,
                          load_profile=_load_profile, validate_profile=_validate_profile, admit=_admit,
                          reject_cli_transport=_reject_cli_transport, request_slot=_request_slot,
                          max_in_flight_api_calls=layer2_api_concurrency.MAX_IN_FLIGHT_API_CALLS,
@@ -229,6 +239,11 @@ def _request_slot(job_root):
 def _require_session(*, verifier=None):
     from scripts import production_spark_admission
     return production_spark_admission.require_session(verifier=verifier)
+
+
+def _session_error():
+    from scripts.spark_exclusive_session import SessionError
+    return SessionError
 
 
 def _resources():
@@ -390,7 +405,8 @@ def _validate_codex_test_configuration(configuration):
 
 def transports() -> ports.Transports:
     return ports.Transports(caller=_transport_caller, claude_chat_envelope=_claude_chat_envelope,
-                            validate_codex_test_configuration=_validate_codex_test_configuration)
+                            validate_codex_test_configuration=_validate_codex_test_configuration,
+                            audio_qc=_module('scripts.machine_qc_audio_transports'))
 
 
 def _validate_handoff_schema(value, filename, label):
@@ -666,6 +682,85 @@ def audio_unmoved() -> audio_backend.Unmoved:
     return audio_backend.Unmoved(local_model_observation=_module('scripts.sermon_local_model_observation'))
 
 
+# Cross-layer review (tongxing_production.review). Most of what review reads from
+# the stages is in the waiver, scoring or rate closure, or is a private name of a
+# pinned file, so nothing here imports it at host load and no pinned file gains a
+# public name: functions are called through their scripts/ module at call time, so
+# patches still intercept, and constants and classes are read when used.
+_PREDICTED = 'scripts.target_audio_predicted_schedule'
+_SCREENING = 'scripts.screen_target_language_audio_units'
+_RENDERER = 'scripts.render_formal_target_language_speech'
+
+
+def audio_rules() -> ports.AudioRules:
+    predicted, predicted_value = partial(_rule_function, _PREDICTED), partial(_rule_constant, _PREDICTED)
+    screening, screening_value = partial(_rule_function, _SCREENING), partial(_rule_constant, _SCREENING)
+    return ports.AudioRules(
+        predicted_schema=predicted_value('SCHEMA'),
+        synthesis_identity_fields=predicted_value('SYNTHESIS_IDENTITY_FIELDS'),
+        synthesis_identity=predicted('synthesis_identity'), check_identity=predicted('_check_identity'),
+        policy_texts=predicted('policy_texts'), speech_units=predicted('speech_units'), budget=predicted('budget'),
+        score=screening('score'), scoring=screening_value('SCORING'), scoring_v3=screening_value('SCORING_V3'),
+        known_scorings=screening_value('KNOWN_SCORINGS'),
+        current_scoring_identity_problems=screening('current_scoring_identity_problems'),
+        negations=screening_value('NEGATIONS'), zh_numerals=screening_value('ZH_NUMERALS'),
+        es_numbers=screening_value('ES_NUMBERS'), korean_number_spans=screening('korean_number_spans'),
+        registered_normalization_policy=_rule_function(_RENDERER, 'registered_normalization_policy'))
+
+
+def text_rules() -> ports.TextRules:
+    policy = partial(_rule_function, 'scripts.target_language_policy')
+    return ports.TextRules(
+        canonical_sha256=policy('canonical_sha256'), validate_policy=policy('validate_policy'),
+        validate_source_scope=policy('validate_source_scope'),
+        validate_source_for_translation=_rule_function('scripts.produce_target_language_candidate',
+                                                       'validate_source_for_translation'),
+        human_ruling_schema=_rule_constant('scripts.layer2_human_ruling', 'SCHEMA'),
+        load_human_ruling=_rule_function('scripts.layer2_human_ruling', 'load'))
+
+
+def source_evidence() -> ports.SourceEvidence:
+    judge, judge_value = (partial(_rule_function, 'scripts.english_source_judge_cache'),
+                          partial(_rule_constant, 'scripts.english_source_judge_cache'))
+    interpretation = partial(_rule_function, 'scripts.sermon_sentence_interpretation')
+    return ports.SourceEvidence(
+        text_review=_module('scripts.sermon_source_text_review'),
+        text_sha256=_rule_function('scripts.sermon_source_text_review', 'text_sha256'),
+        judge_cached_call=judge('cached_call'), reconcile_returned_response=judge('reconcile_returned_response'),
+        judge_run_schema=judge_value('RUN_SCHEMA'), atomic_json=judge('_atomic'),
+        model_result=_rule_function('scripts.run_sentence_interpretation_models', '_model_result'),
+        source_budget=_rule_constant('scripts.sermon_source_budget', 'SourceBudget'),
+        budget_metrics=_rule_constant('scripts.sermon_source_budget', 'METRICS'),
+        sha256=interpretation('sha256'), json_sha256=interpretation('json_sha256'))
+
+
+def stage_gates() -> ports.StageGates:
+    supervisor = partial(_rule_function, 'scripts.sermon_production_supervisor')
+    return ports.StageGates(
+        window_approval=supervisor('validate_window_approval'), parse_timecode=supervisor('parse_timecode'),
+        stable_hash=supervisor('stable_hash'),
+        english_review=_rule_function('scripts.build_english_source_package', '_review_payload'),
+        text_release_basis=_rule_function('scripts.prepare_target_language_speech_job', 'validate_text_release_basis'),
+        study_ingest=_rule_function('scripts.study_artifacts', 'ingest_review'))
+
+
+def scripture() -> ports.Scripture:
+    # The library files stay in scripts/: cuv_scripture is hashed into the zh-Hans
+    # plugin by file name and bytes (L2 section 4.1).
+    return ports.Scripture(cuv=_module('scripts.cuv_scripture'), editions=_module('scripts.scripture_editions'),
+                           coverage=_module('scripts.english_scripture_coverage'),
+                           candidate_queue=_module('scripts.scripture_candidate_queue'),
+                           library_path=_rule_constant('scripts.cuv_scripture', 'DEFAULT_LIBRARY_PATH'),
+                           coverage_data_path=_rule_constant('scripts.english_scripture_coverage', 'DATA_PATH'))
+
+
+def qc_runtime() -> ports.QcRuntime:
+    return ports.QcRuntime(write_report=_rule_function('scripts.export_run_digest', 'write_report'),
+                           codex_text_transport=_module('scripts.sermon_codex_transport'),
+                           validate_target_candidate=_rule_function('scripts.prepare_target_language_speech_job',
+                                                                    'validate_target_candidate'))
+
+
 # The moved producers used to import these modules at load time. A plan freezes
 # accounting.execution_identity() (the loaded project code) before it runs and
 # checks it again at review and cache replay, so a module that now loads only on
@@ -696,6 +791,7 @@ _core, _provider, _code, _contracts, _snapshot = core(), provider(), code(), con
 _compute, _resources_port, _terminology = compute(), resources(), terminology()
 _measure, _workspace, _accounting = measure(), workspace(), accounting()
 _schemas, _review, _diagnostic, _waivers = schemas(), review(), diagnostic(), waivers()
+_plugins, _transports = plugins(), transports()
 
 source_backend.configure(source_backend.SourceBackend(core=_core, provider=_provider, code=_code, mfa=mfa(),
                                                       contracts=_contracts, snapshot=_snapshot, compute=_compute,
@@ -705,7 +801,7 @@ source_backend.configure(source_backend.SourceBackend(core=_core, provider=_prov
 text_backend.configure(text_backend.TextBackend(core=_core, provider=_provider, code=_code, contracts=_contracts,
                                                 snapshot=_snapshot, compute=_compute, resources=_resources_port,
                                                 terminology=_terminology, measure=_measure, accounting=_accounting,
-                                                workspace=_workspace, plugins=plugins(), transports=transports(),
+                                                workspace=_workspace, plugins=_plugins, transports=_transports,
                                                 schemas=_schemas, diagnostic=_diagnostic,
                                                 worker_command=layer2_worker_command, unmoved=text_unmoved()))
 delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, contracts=_contracts, code=_code,
@@ -719,3 +815,9 @@ audio_backend.configure(audio_backend.AudioBackend(core=_core, code=_code, compu
                                                    review=_review, waivers=_waivers, machine_qc=machine_qc(),
                                                    spoken_rules=spoken_rules(), tts_runtime=tts_runtime(),
                                                    dev_profile=dev_profile(), unmoved=audio_unmoved()))
+review_backend.configure(review_backend.ReviewBackend(core=_core, code=_code, contracts=_contracts, snapshot=_snapshot,
+                                                      schemas=_schemas, provider=_provider, compute=_compute,
+                                                      plugins=_plugins, transports=_transports, audio=audio_rules(),
+                                                      text=text_rules(), source=source_evidence(),
+                                                      gates=stage_gates(), scripture=scripture(),
+                                                      qc_runtime=qc_runtime()))

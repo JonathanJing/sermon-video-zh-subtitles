@@ -56,7 +56,7 @@ App Store 官方徽章内的文字和标志保持官方素材原样，不应用�
 
 本次晨光山景的完整实际生成提示词保存在 [tongxing-weekly-poster-sunrise-v1.txt](prompts/tongxing-weekly-poster-sunrise-v1.txt)。使用内置 ImageGen，仅生成无文字背景。每周主题变化时按已核对的证道内容调整场景，并记录实际使用的完整 prompt；不把希望、守护或山景当作所有周次固定的内容解释。
 
-标题、日期、讲员、系列、经文从精确 pageId 的正式 catalog/content/release package 读取。字体、官方徽章和两个二维码由本地排版合成，不靠模型生成；统一入口 `build_multilingual_sermon_posters.py` 调用 `weekly_poster_template.py` 与 `render_weekly_poster.swift`。单语临时制作也用该入口及 `--locales`，不因只做一张就回到旧版 `build_sermon_poster.py`／`render_sermon_poster.swift`。旧脚本仅供复现既有 `weekly.json` 历史产物；它不是未来海报的交付模板。准备与渲染命令见[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
+标题、日期、讲员、系列、经文从精确 pageId 的正式 catalog/content/release package 读取。字体、官方徽章和两个二维码由本地排版合成，不靠模型生成；统一入口 `scripts/build_multilingual_sermon_posters.py`（实现在 `tongxing_production/delivery/posters/build.py`）调用同目录的 `template.py` 与包内资源 `render_weekly_poster.swift`。单语临时制作也用该入口及 `--locales`，不因只做一张就回到旧版 `build_sermon_poster.py`／`render_sermon_poster.swift`。旧脚本仅供复现既有 `weekly.json` 历史产物；它不是未来海报的交付模板。准备与渲染命令见[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
 
 ## 验收与证据
 

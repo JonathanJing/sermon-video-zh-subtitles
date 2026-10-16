@@ -20,6 +20,7 @@ from scripts import sermon_strict_layer2 as immutable
 from scripts import sermon_accounting as accounting
 from scripts import sermon_bounded_business_callbacks as callbacks
 from scripts import sermon_public_snapshot as aggregate
+from tongxing_production import path_aliases
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 
@@ -155,13 +156,14 @@ class FreshPreloadTests(unittest.TestCase):
             from scripts import sermon_fresh_diagnostic as entry
             from scripts import sermon_accounting as accounting
             from scripts import sermon_log_profile as profile
+            from tongxing_production.path_aliases import resolve
             assert 'scripts.sermon_workflow_evidence' not in sys.modules
             with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('network forbidden')) as network:
                 frozen = entry.preload_execution_modules([
                     repository / 'scripts/language_review_plugins/diagnostic_structural.py'])
                 assert 'scripts/sermon_workflow_evidence.py' in frozen['loadedProjectCodeSha256']
                 for module in ('sermon_model_call_report', 'sermon_model_call_observation', 'sermon_openai_runtime'):
-                    assert 'scripts/' + module + '.py' in frozen['loadedProjectCodeSha256'], module + ' not preloaded'
+                    assert resolve('scripts/' + module + '.py') in frozen['loadedProjectCodeSha256'], module + ' not preloaded'
                 with profile.session(directory, 'fresh-preload-regression',
                                      work_kind='engineering', evidence_mode='synthetic'):
                     assert accounting.execution_identity() == frozen, 'identity changed at session start'
@@ -350,7 +352,8 @@ class FreshDeliveryRoutingTests(unittest.TestCase):
 
     def test_new_fresh_validator_dependencies_are_eagerly_frozen(self):
         frozen = entry.preload_execution_modules()
-        for path in ('scripts/sermon_fresh_source_evidence.py', 'scripts/sermon_transcription_request.py'):
+        for key in ('scripts/sermon_fresh_source_evidence.py', 'scripts/sermon_transcription_request.py'):
+            path = path_aliases.resolve(key)
             self.assertEqual(frozen['loadedProjectCodeSha256'][path], c.bytes_sha256((Path(entry.__file__).resolve().parents[1]/path).read_bytes()))
 
 

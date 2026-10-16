@@ -71,12 +71,14 @@ class Provider:
     outcomes: Outcomes
     request_metadata: Callable[[Any], dict]    # accounting settings recorded on a request
     route: Route
+    transcription_limits: Callable[[], Any]    # MAX_RESPONSE_BYTES, WALL_TIME_MS, MICROUSD_PER_MINUTE of one transcription request
 
 
 @dataclass(frozen=True)
 class Compute:
     """Spark-session admission for model calls."""
     session_bound_caller: type                 # bound directly: producers construct it and test isinstance
+    session_error: Callable[[], type]          # the exclusive-session error a model call converts into its own failure
     require_session: Callable[..., Any]        # (*, verifier=None): the exclusive Spark session is held
     load_profile: Callable[[Any], dict]        # (path): production concurrency profile
     validate_profile: Callable[[Any], dict]
@@ -190,6 +192,8 @@ class Transports:
     caller: Callable[..., Any]                 # (backend, **options): 'openai-api' | 'codex-cli' | 'claude-cli'
     claude_chat_envelope: Callable[[Any, str], dict]   # (response, model)
     validate_codex_test_configuration: Callable[[Any], Any]
+    audio_qc: Callable[[], ModuleType]         # machine_qc_audio_transports (compute/): primary/secondary ASR, TTS, fakes,
+                                               # CallCache, asr_router, render_identity, implementation_sha256, qwen_inference_identity
 
 
 @dataclass(frozen=True)
@@ -298,3 +302,93 @@ class TtsRuntime:
 class DevProfile:
     """Explicit Dev audio test settings; they never change production defaults."""
     default_profile_path: Callable[[], Path]   # data/benchmarks/.../next-dev-test-profile.json
+
+
+# The records below are what cross-layer machine review (tongxing_production.review)
+# takes from the stages. Review sits below the stages and never imports them; each
+# function is a late-binding wrapper and each constant or class an accessor that
+# returns the implementation's own object at call time, so binding them imports no
+# waiver-closure file when the host loads.
+
+@dataclass(frozen=True)
+class AudioRules:
+    """Layer 3 rate, predicted-schedule, scoring and normalization rules review/ checks against."""
+    # target_audio_predicted_schedule
+    predicted_schema: Callable[[], str]        # SCHEMA
+    synthesis_identity_fields: Callable[[], tuple]   # SYNTHESIS_IDENTITY_FIELDS
+    synthesis_identity: Callable[[dict], dict]   # (job)
+    check_identity: Callable[[dict, str], None]  # _check_identity(identity, locale)
+    policy_texts: Callable[..., list]          # (texts, locale, normalization_policy_sha256)
+    speech_units: Callable[[str, str], float]  # (text, locale)
+    budget: Callable[..., dict]                # (source_seconds, groups, rate, policy=None, *, synthesis_identity, ...)
+    # screen_target_language_audio_units
+    score: Callable[..., tuple]                # (expected, recognized, locale, min_similarity, scoring=None)
+    scoring: Callable[[], str]                 # SCORING, the current scoring identity
+    scoring_v3: Callable[[], str]              # SCORING_V3
+    known_scorings: Callable[[], tuple]        # KNOWN_SCORINGS
+    current_scoring_identity_problems: Callable[[dict], list]   # (settings)
+    negations: Callable[[], dict]              # NEGATIONS
+    zh_numerals: Callable[[], str]             # ZH_NUMERALS
+    es_numbers: Callable[[], frozenset]        # ES_NUMBERS
+    korean_number_spans: Callable[[str], list]   # (text)
+    # render_formal_target_language_speech
+    registered_normalization_policy: Callable[[dict], Any]   # (job)
+
+
+@dataclass(frozen=True)
+class TextRules:
+    """Layer 2 policy and source checks review/ applies; the canonical hash its receipts record."""
+    canonical_sha256: Callable[[Any], str]     # target_language_policy.canonical_sha256
+    validate_policy: Callable[..., dict]       # (policy, *, series_table=None)
+    validate_source_scope: Callable[..., None]   # (policy, source, anchor)
+    validate_source_for_translation: Callable[[dict, dict], str]   # (source, anchor)
+    human_ruling_schema: Callable[[], str]     # layer2_human_ruling.SCHEMA
+    load_human_ruling: Callable[..., dict]     # (path, *, source, anchor)
+
+
+@dataclass(frozen=True)
+class SourceEvidence:
+    """Layer 1 evidence and the source budget review/ reads and binds to."""
+    text_review: Callable[[], ModuleType]      # source text review: MACHINE_AUTHORITY, MACHINE_RECEIPT_SCHEMA(_V1),
+                                               # MACHINE_ROLE, SCHEMA_V2, STATUS, SUPPORTED_MODELS, UNIT_TIME_TOLERANCE
+    text_sha256: Callable[[str], str]
+    judge_cached_call: Callable[..., tuple]    # (*, out, stage, payload, api_key, requested_model, caller)
+    reconcile_returned_response: Callable[..., Path]   # (*, marker_path, response, expected_request_sha256, requested_model)
+    judge_run_schema: Callable[[], str]        # the judge cache's request schema (RUN_SCHEMA)
+    atomic_json: Callable[[Path, Any], None]   # the judge cache's _atomic(path, value)
+    model_result: Callable[[dict, str], dict]  # _model_result(response, requested_model) of the anchor model runner
+    source_budget: Callable[[], type]          # SourceBudget
+    budget_metrics: Callable[[], tuple]        # METRICS
+    sha256: Callable[[Path], str]              # sentence interpretation file hash
+    json_sha256: Callable[[Any], str]
+
+
+@dataclass(frozen=True)
+class StageGates:
+    """The stage checks unified review ingestion runs for each review kind."""
+    window_approval: Callable[..., tuple]      # supervisor validate_window_approval(approval, *, sunday, live_url, timeline_report=None)
+    parse_timecode: Callable[[str], float]
+    stable_hash: Callable[[str], str]
+    english_review: Callable[..., tuple]       # English source package _review_payload(review_path, *, aligned_sha256,
+                                               # anchor_json_sha256, source_unit_ids)
+    text_release_basis: Callable[..., str]     # (source_package, anchor, candidate, receipt)
+    study_ingest: Callable[[Any, Any], Any]    # study_artifacts.ingest_review(artifact, review)
+
+
+@dataclass(frozen=True)
+class Scripture:
+    """The scripture library review/ adjudicates against; its files stay where plugins hash them."""
+    cuv: Callable[[], ModuleType]              # cuv_scripture: CuvError, CuvLibrary, Reference, parse_reference, normalize_book, ...
+    editions: Callable[[], ModuleType]         # scripture_editions: EditionError, LazyEdition, VERIFIED
+    coverage: Callable[[], ModuleType]         # english_scripture_coverage: CoverageEdition, CoverageError, coverage, ...
+    candidate_queue: Callable[[], ModuleType]  # scripture_candidate_queue: BOOKS, SIGNALS
+    library_path: Callable[[], Path]           # cuv_scripture.DEFAULT_LIBRARY_PATH
+    coverage_data_path: Callable[[], Path]     # english_scripture_coverage.DATA_PATH
+
+
+@dataclass(frozen=True)
+class QcRuntime:
+    """What the two QC drivers use outside review: run reports, the Codex text transport, candidate checks."""
+    write_report: Callable[..., Any]           # export_run_digest.write_report(run_dirs, label)
+    codex_text_transport: Callable[[], ModuleType]   # sermon_codex_transport: TEXT_MODEL; its file hash is adapter identity
+    validate_target_candidate: Callable[..., dict]   # (source_package, anchor, candidate, *, require_human_approval=True, ...)
