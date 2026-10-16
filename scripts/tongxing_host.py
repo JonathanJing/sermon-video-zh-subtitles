@@ -810,4 +810,4 @@ review_backend.configure(review_backend.ReviewBackend(core=_core, code=_code, co
                                                       plugins=_plugins, transports=_transports, audio=audio_rules(),
                                                       text=text_rules(), source=source_evidence(),
                                                       gates=stage_gates(), scripture=scripture(),
-                                                      qc_runtime=qc_runtime()))
+                                                      qc_runtime=qc_runtime(), waivers=_waivers))

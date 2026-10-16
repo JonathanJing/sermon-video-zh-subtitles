@@ -16,7 +16,9 @@ PROTECTED = ('apps/tongxing-ios/', 'schemas/', 'firebase/', 'infra/firebase/', '
              'packages/production/src/tongxing_production/delivery/',
              'packages/production/src/tongxing_production/adapters/legacy/')
 # The v2 catalog builder moved in L4 D7; its scripts/ facade stays listed while it exists.
+# The formal stage's audio screening release gate moved to review/ in L4 D2a.
 PRODUCERS = ('packages/production/src/tongxing_production/adapters/legacy/build_multilingual_catalog.py',
+             'packages/production/src/tongxing_production/review/audio_screening.py',
              'scripts/build_multilingual_catalog.py', 'scripts/stage_formal_multilingual_dev.py',
              'scripts/build_target_language_release_package.py',
              'scripts/build_formal_multilingual_dev.py', '.github/workflows/tongxing-ios.yml')
