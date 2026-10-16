@@ -1480,7 +1480,7 @@ def main() -> None:
     # A bound canonical configuration declares whether this is a non-production shadow candidate.
     candidate_mode = "production"
     if args.budget_config is not None:
-        controller = _text.current().unmoved.controller()
+        from . import controller  # the controller imports this module
         candidate_mode = controller.load_configuration(args.budget_config).candidate_mode
     request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
     if args.budget_config is None:
@@ -1496,7 +1496,7 @@ def main() -> None:
                 and args.partial_repair_brief is None and args.resume_cache_from is None
                 and args.progress_ledger is None,
                 "Bound canonical dispatch does not accept standalone execution overrides")
-        controller = _text.current().unmoved.controller()
+        from . import controller  # the controller imports this module
         config = controller.load_configuration(args.budget_config)
         locale = policy["targetLocale"]
         require(locale in config.lanes, "locale_not_registered")

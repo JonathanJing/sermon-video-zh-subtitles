@@ -51,6 +51,7 @@ class TextPortsTests(unittest.TestCase):
         recorded = controller._worker_command(config, 'ko', 'b' * 64, 'c' * 64)
         self.assertEqual(text.current().worker_command(*recorded[2:]), recorded)
         self.assertEqual(recorded[0], sys.executable)
+        self.assertEqual(Path(recorded[1]), Path(host.ROOT) / 'scripts/canonical_layer2_controller.py')
 
     def test_compute_limits_and_wrappers_reach_the_implementation(self):
         compute = text.current().compute
@@ -116,7 +117,7 @@ class TextPortsTests(unittest.TestCase):
         self.assertIs(producer_compatibility.PATH_ALIASES, path_aliases.PATH_ALIASES)
         self.assertEqual(path_aliases.resolve('scripts/mfa_spark.py'),
                          'packages/production/src/tongxing_production/source/mfa_spark.py')
-        self.assertEqual(path_aliases.resolve('scripts/canonical_layer2_controller.py'), 'scripts/canonical_layer2_controller.py')
+        self.assertEqual(path_aliases.resolve('scripts/sermon_unified_layer2_binding.py'), 'scripts/sermon_unified_layer2_binding.py')
         root = Path(host.ROOT)
         for legacy, current in path_aliases.PATH_ALIASES.items():
             with self.subTest(legacy=legacy):

@@ -449,7 +449,9 @@ def text_unmoved() -> text_backend.Unmoved:
         speech_handoff=_module('scripts.prepare_target_language_speech_job'),
         orchestration_contracts=_module('scripts.sermon_unified.contracts'),
         review_contracts=_module('scripts.sermon_review_contracts'),
-        controller=_module('scripts.canonical_layer2_controller'),
+        accounting_module=_module('scripts.sermon_accounting'),
+        api_concurrency_module=_module('scripts.layer2_api_concurrency'),
+        source_meaning_module=_module('scripts.source_meaning_machine_adjudication'),
         load_meaning_notes=_load_meaning_notes, repair_instruction=_repair_instruction,
         record_cache_observation=_record_cache_observation)
 
@@ -531,11 +533,13 @@ def app_delivery_worker_command(*arguments):
 # first use through a port would change that identity mid-run. Loading them with
 # the host keeps the loaded set what it was before the move.
 EAGER_PRODUCER_IMPORTS = (
-    'api_cli_outcomes', 'four_layer_measure', 'prepare_target_language_speech_job', 'production_spark_admission',
-    'series_terminology', 'sermon_accounting', 'sermon_cache_observation', 'sermon_execution_harness',
-    'sermon_pipeline', 'sermon_provider_http', 'sermon_provider_limits', 'sermon_public_snapshot',
-    'sermon_release_workflow', 'sermon_review_budget', 'sermon_review_contracts', 'sermon_transcription_request',
-    'sermon_workflow_jobs',
+    'api_cli_outcomes', 'canonical_durable_jobs', 'canonical_pipeline_definition', 'four_layer_measure',
+    'inspect_canonical_packages', 'layer2_api_concurrency', 'prepare_target_language_speech_job',
+    'production_spark_admission', 'series_terminology', 'sermon_accounting', 'sermon_cache_observation',
+    'sermon_execution_harness', 'sermon_job_liveness', 'sermon_pipeline', 'sermon_provider_http',
+    'sermon_provider_limits', 'sermon_public_snapshot', 'sermon_release_workflow', 'sermon_review_budget',
+    'sermon_review_contracts', 'sermon_transcription_request', 'sermon_workflow_jobs',
+    'source_meaning_machine_adjudication',
 )
 
 
