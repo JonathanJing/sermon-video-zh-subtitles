@@ -52,7 +52,9 @@ class ProductionPackageTests(unittest.TestCase):
         downstream = {"source": ("tongxing_production.text", "tongxing_production.audio",
                                  "tongxing_production.delivery"),
                       "text": ("tongxing_production.audio", "tongxing_production.delivery"),
-                      "audio": ("tongxing_production.delivery",)}
+                      "audio": ("tongxing_production.delivery",),
+                      # The engine knows stage names only; the prepared workflow composes it.
+                      "orchestration": ("tongxing_production.workflows",)}
         for layer, forbidden in downstream.items():
             for path in sorted((PACKAGE_SRC / layer).rglob("*.py")):
                 with self.subTest(path=str(path.relative_to(ROOT))):
@@ -85,6 +87,13 @@ class ProductionPackageTests(unittest.TestCase):
             result = subprocess.run([sys.executable, "-c", code, str(ROOT / "scripts"), *facades],
                                     cwd=elsewhere, env=environment, capture_output=True, text=True, timeout=120)
         self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+
+    def test_prepared_workflow_names_exactly_the_engine_stages(self):
+        from tongxing_production.orchestration.unified import backend
+        from tongxing_production.workflows.prepared import stages
+        self.assertEqual(set(stages.STAGE_MODULES), backend.STAGE_NAMES)
+        from scripts import sermon_unified  # noqa: F401  the host binds stage loading to the table
+        self.assertIs(backend.current().stage, stages.load)
 
     def test_scripts_facade_is_the_package_module(self):
         from scripts import sermon_provider_limits as facade
