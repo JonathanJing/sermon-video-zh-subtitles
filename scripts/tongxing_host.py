@@ -449,6 +449,7 @@ def text_unmoved() -> text_backend.Unmoved:
         speech_handoff=_module('scripts.prepare_target_language_speech_job'),
         orchestration_contracts=_module('scripts.sermon_unified.contracts'),
         review_contracts=_module('scripts.sermon_review_contracts'),
+        controller=_module('scripts.canonical_layer2_controller'),
         load_meaning_notes=_load_meaning_notes, repair_instruction=_repair_instruction,
         record_cache_observation=_record_cache_observation)
 
@@ -509,8 +510,8 @@ def _validate_audio_waiver(package, receipt, screening):
 
 
 def waivers() -> ports.Waivers:
-    # The two schema names are fixed strings of a waiver-closure file; reading
-    # them would import it at host load, so they are recorded here and pinned by a test.
+    # The two schema names are fixed strings of the waiver release basis, recorded
+    # here so the record does not depend on import order; a test pins them.
     return ports.Waivers(is_text_waiver=_is_text_waiver, validate_text_waiver=_validate_text_waiver,
                          disclosure=_waiver_disclosure, is_audio_waiver=_is_audio_waiver,
                          validate_audio_waiver=_validate_audio_waiver,
@@ -522,6 +523,26 @@ def app_delivery_worker_command(*arguments):
     # Existing durable job requests record this argv; it keeps naming the
     # scripts/ entry point so recovery matches them byte for byte.
     return [sys.executable, str(ROOT / 'scripts/sermon_app_delivery_workflow.py'), *arguments]
+
+
+# The moved producers used to import these modules at load time. A plan freezes
+# accounting.execution_identity() (the loaded project code) before it runs and
+# checks it again at review and cache replay, so a module that now loads only on
+# first use through a port would change that identity mid-run. Loading them with
+# the host keeps the loaded set what it was before the move.
+EAGER_PRODUCER_IMPORTS = (
+    'api_cli_outcomes', 'four_layer_measure', 'prepare_target_language_speech_job', 'production_spark_admission',
+    'series_terminology', 'sermon_accounting', 'sermon_cache_observation', 'sermon_execution_harness',
+    'sermon_pipeline', 'sermon_provider_http', 'sermon_provider_limits', 'sermon_public_snapshot',
+    'sermon_release_workflow', 'sermon_review_budget', 'sermon_review_contracts', 'sermon_transcription_request',
+    'sermon_workflow_jobs',
+)
+
+
+def _load_producer_imports():
+    import importlib
+    for name in EAGER_PRODUCER_IMPORTS:
+        importlib.import_module('scripts.' + name)
 
 
 # Each record is built once and shared by the layers that use it.
@@ -546,3 +567,4 @@ delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, contract
                                                             runtime_web=runtime_web(), hosting=hosting(),
                                                             waivers=waivers(),
                                                             worker_command=app_delivery_worker_command))
+_load_producer_imports()

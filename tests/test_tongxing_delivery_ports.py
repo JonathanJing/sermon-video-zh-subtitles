@@ -88,11 +88,14 @@ class DeliveryPortsTests(unittest.TestCase):
         self.assertEqual(waivers.audio_waiver_schema, machine_basis.AUDIO_WAIVER_SCHEMA)
         self.assertEqual(waivers.condensation_binding_schema, machine_basis.CONDENSATION_BINDING_SCHEMA)
 
-    def test_host_load_does_not_import_layer_4_or_waiver_modules(self):
+    def test_host_load_does_not_import_layer_4_modules(self):
+        # The host does load what the moved producers imported at load time (see
+        # tongxing_host.EAGER_PRODUCER_IMPORTS), which reaches the waiver release
+        # basis as it did before the move; it must not load Layer 4 itself.
         code = ("import sys; from scripts import tongxing_host; "
                 "loaded = [m for m in ('scripts.build_full_video_app_release', 'scripts.guarded_hosting_publish', "
-                "'scripts.machine_quality_release_basis', 'scripts.machine_audio_waiver_acceptance', "
-                "'scripts.sermon_unified_delivery') if m in sys.modules]; print(loaded)")
+                "'scripts.machine_audio_waiver_acceptance', 'scripts.sermon_unified_delivery', "
+                "'scripts.sermon_app_delivery_workflow') if m in sys.modules]; print(loaded)")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), '[]')

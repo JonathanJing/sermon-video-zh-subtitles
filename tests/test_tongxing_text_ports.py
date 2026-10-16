@@ -116,7 +116,7 @@ class TextPortsTests(unittest.TestCase):
         self.assertIs(producer_compatibility.PATH_ALIASES, path_aliases.PATH_ALIASES)
         self.assertEqual(path_aliases.resolve('scripts/mfa_spark.py'),
                          'packages/production/src/tongxing_production/source/mfa_spark.py')
-        self.assertEqual(path_aliases.resolve('scripts/run_target_language_models.py'), 'scripts/run_target_language_models.py')
+        self.assertEqual(path_aliases.resolve('scripts/canonical_layer2_controller.py'), 'scripts/canonical_layer2_controller.py')
         root = Path(host.ROOT)
         for legacy, current in path_aliases.PATH_ALIASES.items():
             with self.subTest(legacy=legacy):
