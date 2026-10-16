@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [现状地图](repository-current-map.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [L2 注入边界](l2-text-layer-injection.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md) · [计算策略](../local-production-compute-policy.zh.md)
 
-状态：**设计提案，待评审，未开始迁移**。盘点日期：2026-10-15。基线：`dev@907a09ab`（L1 S0–S2、L2 设计 [#493](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/493) 已合并）；端口记录另按 L1 S3 [#496](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/496)（未合并）读取，它给 `ports.py` 加了 `Resources`、`Adjudication`，并改了 `machine_qc_audio_transports.py`。本文只定义 L3 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
+状态：**设计提案，待评审，未开始迁移**。盘点日期：2026-10-15。基线：`dev@0e19adfe`（L1 S0–S3 已合并，S3 [#496](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/496) 给 `ports.py` 加了 `Resources`、`Adjudication`，并改了 `machine_qc_audio_transports.py`；L2 设计 [#493](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/493) 的 §6 六项已决定；[L4 注入边界](l4-delivery-layer-injection.zh.md)待评审）。本文只定义 L3 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
 
 ## 1 为什么不能直接搬
 
@@ -17,27 +17,27 @@ L3 在统一 CLI 里只有一个阶段入口：`audio`（`scripts/sermon_unified
 
 | 入口 | 直接依赖 | 其中加载时 | 传递闭包 | 加载时闭包 |
 |---|---|---|---|---|
-| `sermon_unified_audio.py` | 4 | 4 | 165 | 42 |
-| `render_formal_target_language_speech.py` | 15 | 14 | 165 | 40 |
-| `prepare_target_language_speech_job.py` | 6 | 5 | 165 | 25 |
-| `screen_target_language_audio_units.py` | 7 | 4 | 165 | 28 |
-| `target_audio_auto_qc.py` | 5 | 3 | 165 | 43 |
-| `machine_qc_audio_transports.py` | 10 | 2 | 165 | 44 |
-| `compact_formal_target_audio.py` | 3 | 3 | 166 | 41 |
-| `target_audio_predicted_schedule.py` | 3 | 2 | 165 | 42 |
-| `target_audio_timing_plan.py` | 1 | 1 | 165 | 41 |
-| 9 个入口合计 | — | — | 158（不经统一门面 136） | 39 |
+| `sermon_unified_audio.py` | 4 | 4 | 168 | 42 |
+| `render_formal_target_language_speech.py` | 15 | 14 | 168 | 40 |
+| `prepare_target_language_speech_job.py` | 6 | 5 | 168 | 25 |
+| `screen_target_language_audio_units.py` | 7 | 4 | 168 | 28 |
+| `target_audio_auto_qc.py` | 5 | 3 | 168 | 43 |
+| `machine_qc_audio_transports.py` | 11 | 2 | 168 | 44 |
+| `compact_formal_target_audio.py` | 3 | 3 | 169 | 41 |
+| `target_audio_predicted_schedule.py` | 3 | 2 | 168 | 42 |
+| `target_audio_timing_plan.py` | 1 | 1 | 168 | 41 |
+| 9 个入口合计 | — | — | 161（不经统一门面 139） | 39 |
 
-传递闭包和 L2 五个入口的 165 是同一个环：L3 经延迟导入进入 L2（`machine_qc_budget_authorization` → `produce_target_language_candidate`），L2 又经 `prepare_target_language_speech_job` 回到 L3。闭包几乎是整个生产核心，原因有六个：
+传递闭包和 L2 五个入口的闭包是同一个环（L2 在 `dev@9d4e89d8` 上数得 165，S3 后多了 3 个）：L3 经延迟导入进入 L2（`machine_qc_budget_authorization` → `produce_target_language_candidate`），L2 又经 `prepare_target_language_speech_job` 回到 L3。闭包几乎是整个生产核心，原因有六个：
 
-1. **L1 门面带进宿主**：几乎每个 L3 模块都导入 `scripts.sermon_sentence_interpretation`（只为 `sha256`/`json_sha256`），它是 L1 S1 的门面，先导入 `scripts.tongxing_host`，宿主再延迟绑定 L1 预算、L2 controller、`sermon_pipeline` 等。只切掉 `tongxing_host`，闭包就从 136 降到 114。
+1. **L1 门面带进宿主**：几乎每个 L3 模块都导入 `scripts.sermon_sentence_interpretation`（只为 `sha256`/`json_sha256`），它是 L1 S1 的门面，先导入 `scripts.tongxing_host`，宿主再延迟绑定 L1 预算、L2 controller、`sermon_pipeline` 等。只切掉 `tongxing_host`，闭包就从 139 降到 91（S3 之后宿主的 `resources()` 还经统一门面绑定编排）。
 2. **账本与计时**：renderer 和 builder 用 `sermon_accounting`（1287 行，fan-in 180）与 `four_layer_measure`；后者被 L1 `producer_compatibility` 按字节固定。
 3. **上游 L2**：`prepare_target_language_speech_job` 在加载时导入 `target_language_policy`，为了 `validate_policy`/`validate_strict_policy`/`validate_diagnostic_policy`/`POLICY_V`。这是下游读上游合同，方向正确，但 L2 还没进包。
 4. **跨层机器复核**：`prepare` 导入 `machine_quality_release_basis`（文本豁免收据）；`target_audio_auto_qc` 导入 `machine_quality_waiver`、`machine_repair_ledger`；QC 预算授权（`machine_qc_budget_authorization`）又导入 L2 policy 与 candidate。
 5. **传输与 Spark**：`machine_qc_audio_transports` 牵出 L1 预算、转写请求、OpenAI 路由和 jobs；renderer 延迟导入 `production_spark_admission.require_bound_model_session`；副本池、窗口调度和 CPU 限流是 Spark/本机硬件适配。
-6. **语言插件规则**：`ko_spoken_numerals` 在加载时、筛查在函数里导入 `scripts.language_review_plugins.auto_qc_text_common`（14 个名字，多数是私有名）。L2 设计建议插件本轮不搬（L2 §6 第 1 项）。
+6. **语言插件规则**：`ko_spoken_numerals` 在加载时、筛查在函数里导入 `scripts.language_review_plugins.auto_qc_text_common`（14 个名字，多数是私有名）。L2 §6 第 1 项已决定插件本轮不搬。
 
-切掉统一门面和 13 个边界模块（`tongxing_host`、`sermon_accounting`、`four_layer_measure`、`sermon_workflow_jobs`、`production_spark_admission`、`target_language_policy`、`sermon_diagnostic_context`、`machine_quality_waiver`、`machine_quality_release_basis`、`machine_qc_budget_authorization`、`sermon_source_producer_compatibility`、`sermon_openai_runtime`、`sermon_transcription_request`），闭包从 136 降到 20，基本就是 §2.1 的 L3 模块本身加插件规则。这 20 个是 L3 真正的面，也是第 3 节端口要覆盖的边界。
+切掉统一门面和 13 个边界模块（`tongxing_host`、`sermon_accounting`、`four_layer_measure`、`sermon_workflow_jobs`、`production_spark_admission`、`target_language_policy`、`sermon_diagnostic_context`、`machine_quality_waiver`、`machine_quality_release_basis`、`machine_qc_budget_authorization`、`sermon_source_producer_compatibility`、`sermon_openai_runtime`、`sermon_transcription_request`），闭包从 139 降到 20，基本就是 §2.1 的 L3 模块本身加插件规则。这 20 个是 L3 真正的面，也是第 3 节端口要覆盖的边界。
 
 盘点中另发现两件迁移前就存在、但会决定迁移做法的事：
 
@@ -46,7 +46,7 @@ L3 在统一 CLI 里只有一个阶段入口：`audio`（`scripts/sermon_unified
 
 ## 2 模块归属
 
-行数为 `dev@907a09ab` 的行数；fan-in 为仓库内以 AST 导入它的 `.py` 文件数（括号内为其中的 `tests/` 数）。§2.1 的模块共被 47 个测试模块直接导入。
+行数为 `dev@0e19adfe` 的行数；fan-in 为仓库内以 AST 导入它的 `.py` 文件数（括号内为其中的 `tests/` 数）。§2.1 的模块共被 47 个测试模块直接导入。
 
 ### 2.1 迁入 `tongxing_production/audio/`（L3 所有）
 
@@ -79,7 +79,7 @@ L3 在统一 CLI 里只有一个阶段入口：`audio`（`scripts/sermon_unified
 | `sermon_diagnostic_context` | `validate_source`、`require_policy_ready` | L2 设计提出的 `Diagnostic`（L3 加 `require_policy_ready`）；该文件被 L1 固定 |
 | `schemas/` | speech job、clip timeline、audio package、听审收据等 schema | L2 设计提出的 `Schemas` |
 | `tongxing_production.source.sentence_interpretation` | `sha256`、`json_sha256`、`write_json`、`RATE_POLICY`、`is_supported_anchor_manifest` | 包内直接导入（下游读上游，同 L2 §6 第 5 项）；不再经 `scripts.sermon_sentence_interpretation` 门面 |
-| `target_language_policy`（L2） | `validate_policy`、`validate_strict_policy`、`validate_diagnostic_policy`、`POLICY_V` | L2 T1 之前用新端口 `UpstreamText`；之后若 L2 §6 第 5 项允许下游导入，改为直接导入 `tongxing_production.text.policy` |
+| `target_language_policy`（L2） | `validate_policy`、`validate_strict_policy`、`validate_diagnostic_policy`、`POLICY_V` | L2 §6 第 5 项已允许下游导入上游纯校验函数：L2 T1 之后直接导入 `tongxing_production.text.policy`；只有 A2 早于 T1 时才需要临时端口 `UpstreamText`（§6 第 6 项） |
 | `machine_quality_release_basis` | `is_text_waiver`、`validate_text_waiver`、`REVIEW_KIND` | 新端口 `ReleaseBasis` |
 | `scripts/language_review_plugins/auto_qc_text_common.py`、`ko_spoken_numerals.py` | 插件规则 14 个名字；`RULE`/`RULE_V2`/`RULE_V3`、`spoken_form*`、`bare_context_allowed`、`bare_citation_matches` 和 6 个私有常量 | 新端口 `SpokenRules`（§6 第 3 项） |
 | `render_multilingual_voice_demos` | `read_object`、`validate_checkpoint` | 新端口 `TtsRuntime` 的两个字段；demo 渲染器本身是预览工具，不随 L3 搬 |
@@ -88,13 +88,13 @@ L3 在统一 CLI 里只有一个阶段入口：`audio`（`scripts/sermon_unified
 
 | 模块 | 归属 | 理由与 L3 的用法 |
 |---|---|---|
-| `machine_qc_audio_transports.py`（612，6 (4)） | compute/，**L3 不搬也不改** | Qwen 主 ASR、`gpt-transcribe` 副 ASR、TTS 渲染传输；`implementation_sha256` 进每条意见的 settings 和付费缓存键（§4.7）。L3 经 L2 设计的 `Transports` 端口取调用器 |
+| `machine_qc_audio_transports.py`（615，6 (4)） | compute/，**L3 不搬也不改** | Qwen 主 ASR、`gpt-transcribe` 副 ASR、TTS 渲染传输；`implementation_sha256` 进每条意见的 settings 和付费缓存键（§4.7）。L3 经 L2 设计的 `Transports` 端口取调用器 |
 | `spark_tts_replica_pool.py`（301，4 (2)）、`spark_tts_window_scheduler.py`（47，3 (1)）、`bounded_audio_cpu.py`（82，3 (1)） | compute/ | 硬件 worker 适配（提案 §4）；三者都不导入仓库模块，可以按字节原样搬。前两个的哈希进 `replicaImplementationSha256`，所以和 renderer 同批搬（§4.5） |
 | `local_audio_resource_admission.py`（74） | compute/ | 本机音频资源准入；归 `Resources` 一类，不进 `AudioBackend` |
 | `target_audio_auto_qc.py`（664，18 (12)） | review/ | 音频机器 QC，在豁免闭包里；与 L2 把 `target_text_auto_qc` 归 review/ 一致 |
 | `machine_quality_waiver`、`machine_quality_release_basis`、`machine_repair_ledger`、`machine_audio_waiver_acceptance`、`audio_qc_human_acceptance`、`auto_qc_seeded_errors` | review/ | 跨层豁免、校准与人工复核 |
 | `machine_qc_budget_authorization`、`run_machine_qc_audio_test`、`run_machine_qc_clip_test` | review/（CLI 入口将来进 tools/） | 都在豁免闭包里，并导入 L2 |
-| `ko_spoken_numerals.py`（197，5 (3)） | 留在 `scripts/`，随插件的决定走 | 导入插件规则；在豁免、计分、语速三个闭包里 |
+| `ko_spoken_numerals.py`（197，5 (3)） | 留在 `scripts/`（插件本轮不搬，L2 §6 第 1 项） | 导入插件规则；在豁免、计分、语速三个闭包里 |
 | `prepare_clip_voice_authorization.py`、`prepare_clip_voice_capability.py`、`stage_production_voice_samples.py` | tools/ 或 L4 | 授权与试听样本只绑定数据哈希（mp3、`conditioningSha256`），不绑定 L3 代码 |
 | `sermon_mock_tts_*`、`render_sentence_interpretation_tts.py`、`screen_sentence_interpretation_tts.py`、`assemble_adaptive_phrase_audio.py`、`target_audio_capacity_experiment.py` | 不在本设计 | 编排测试替身、L1 锚点 TTS 实验与 POC |
 
@@ -115,13 +115,13 @@ class AudioBackend:
     schemas: ports.Schemas           # L2：path(name), validate(value, name, label)
     diagnostic: ports.Diagnostic     # L2：validate_source；L3 + require_policy_ready
     transports: ports.Transports     # L2：caller(backend, **options)；L3 用 qwen_primary_asr、openai_transcribe、qwen_tts
-    upstream_text: UpstreamText      # 新：validate_policy, validate_strict_policy, validate_diagnostic_policy, POLICY_V
+    upstream_text: UpstreamText      # 新，临时：validate_policy, validate_strict_policy, validate_diagnostic_policy, POLICY_V（仅当 A2 早于 L2 T1）
     release_basis: ReleaseBasis      # 新：is_text_waiver, validate_text_waiver, REVIEW_KIND
     machine_qc: MachineQc            # 新：screening_asr_settings（review/ 的 target_audio_auto_qc，builder 延迟调用）
     spoken_rules: SpokenRules        # 新：插件规则 14 个名字 + ko_spoken_numerals 的规则与 spoken_form*
     tts_runtime: TtsRuntime          # 新：replica_pool, window_engine, bounded_cpu, read_checkpoint_map, validate_checkpoint
     dev_profile: DevProfile          # 新：default_profile_path（`data/benchmarks/` 下的 dev profile；模块本身迁入 audio/）
-    unmoved: Unmoved                 # 预览的本地模型观测（safe_observation, record, SCHEMA）、检查工具的 validate_audio_screening_review
+    unmoved: Unmoved                 # 预览的本地模型观测（safe_observation, record, SCHEMA）；检查工具的 validate_audio_screening_review（L4 §6 第 2 项若把它移到 audio/ 或 review/，此项消失）
 ```
 
 规则：
@@ -134,16 +134,16 @@ class AudioBackend:
 
 ## 4 身份影响与必须的新旧映射
 
-L1/L2 的经验在 L3 全部适用：身份键继续用旧 `scripts/` 路径，经别名表解析到现路径（别名表放在哪里是 L2 §6 第 3 项，L3 跟随同一决定）；字节不变则哈希不变；**一个哈希自己的模块，只要搬家时改了导入，就不能保留原哈希**。L3 的特殊之处在于，几乎每个身份承载模块都既哈希自己，又出现在别人的闭包里，所以下表的"值变"往往不是一处，而是一串。
+L1/L2 的经验在 L3 全部适用：身份键继续用旧 `scripts/` 路径，经别名表解析到现路径（按 L2 §6 第 3 项的决定，别名表放在共享的 `tongxing_production/path_aliases.py`，L3 的条目加在这里）；字节不变则哈希不变；**一个哈希自己的模块，只要搬家时改了导入，就不能保留原哈希**。L3 的特殊之处在于，几乎每个身份承载模块都既哈希自己，又出现在别人的闭包里，所以下表的"值变"往往不是一处，而是一串。
 
-当前值（`dev@907a09ab`；S3 合并后豁免与传输两项会先变一次，以 A3 基线提交的实际值为准）：
+当前值（`dev@0e19adfe`，S3 已让豁免与传输两项各变过一次；映射以 A3 基线提交的实际值为准）：
 
 | 身份 | 计算处 | 当前值 |
 |---|---|---|
-| 豁免实现 `implementationSha256` | `machine_quality_waiver.implementation_sha256()` | `a126e18afcae…` |
+| 豁免实现 `implementationSha256` | `machine_quality_waiver.implementation_sha256()` | `acbe52567982…` |
 | 筛查计分 `implementationSha256` | `screen_target_language_audio_units.implementation_sha256()` | `cb123c807a03…` |
 | 语速 `rateImplementationSha256` | `target_audio_predicted_schedule.rate_implementation_sha256()` | `2e8ad1a69c4c…` |
-| 音频 QC 传输 `implementationSha256` | `machine_qc_audio_transports.implementation_sha256()` | `bc9c475b7118…` |
+| 音频 QC 传输 `implementationSha256` | `machine_qc_audio_transports.implementation_sha256()` | `270252362396…` |
 | renderer 文件 | `sha256(render_formal_target_language_speech.py)` | `55fb124180fa6f19d915b93fb660b39dc4899eddcad9a8a645b599bc56657e55` |
 | 声音身份常量 | `RENDERER_SOUND_IDENTITY_SHA256` | `fef760488247…`（常量） |
 
@@ -208,9 +208,9 @@ L1/L2 的经验在 L3 全部适用：身份键继续用旧 `scripts/` 路径，�
 
 ### 4.7 音频 QC 传输 `implementation_sha256` 与付费缓存
 
-现状：`dev` 上它对同目录 5 个文件按文件名取哈希；S3 改为 `compatibility.resolve("scripts/" + name)` 后取包内文件。值进每条 ASR/TTS 意见的 settings，也进运行状态目录里的缓存身份；`gpt-transcribe` 副 ASR 是付费调用。S3 已经让它变了一次（`sermon_source_budget` 进包，传输文件本身也改了）。
+现状：S3 起它对 5 个文件按 `compatibility.resolve("scripts/" + name)` 解析后取哈希（键仍是文件名，已进包的文件取包内字节）。值进每条 ASR/TTS 意见的 settings，也进运行状态目录里的缓存身份；`gpt-transcribe` 副 ASR 是付费调用。S3 已经让它变了一次（`sermon_source_budget` 进包，传输文件本身也改了）。
 
-L3 的处理：传输归 compute/，**A0–A4 都不改 `machine_qc_audio_transports.py` 的任何字节**。它的 5 个文件里没有 L3 迁移对象，所以 L3 各批不改变这个值，已付费的副 ASR 缓存保持可复用。它在第 53–54 行用 `ROOT/'scripts'/'screen_target_language_audio_units.py'` 做旧版单文件筛查的哈希；A3 后这条路径哈希到门面。不必为此改传输：旧版单文件收据记录的是旧筛查文件的哈希，A3 后无论哈希门面还是包内文件都不相等，结果一样是要求重筛。L2 §6 第 2 项（传输迁移与缓存连续性）对它同样适用。
+L3 的处理：传输归 compute/，**A0–A4 都不改 `machine_qc_audio_transports.py` 的任何字节**。它的 5 个文件里没有 L3 迁移对象，所以 L3 各批不改变这个值，已付费的副 ASR 缓存保持可复用。它在第 53–54 行定义 `SCREENER = ROOT/'scripts'/'screen_target_language_audio_units.py'`，第 267 行用它做旧版单文件筛查的哈希；A3 后这条路径哈希到门面。不必为此改传输：旧版单文件收据记录的是旧筛查文件的哈希，A3 后无论哈希门面还是包内文件都不相等，结果一样是要求重筛。L2 §6 第 2 项把传输缓存连续性留到 compute 批次再决定，对它同样适用。
 
 ### 4.8 被别处固定、L3 不能顺手改的文件
 
@@ -224,7 +224,7 @@ L3 需要的新面都在宿主里包装，不改这些文件。
 
 | 记录处 | 现在的键/值 | 处理 |
 |---|---|---|
-| L2 controller 的 `codeIdentitySha256` | `scripts/**/*.py`、`schemas/**`、术语表 | 每批有文件离开 `scripts/`，值就变（L2 §4.4 第 3 点）：L3 各批也只在没有进行中的 L2 run 时合并。是否把 `packages/` 纳入是 L2 §6 第 4 项 |
+| L2 controller 的 `codeIdentitySha256` | `scripts/**/*.py`、`schemas/**`、术语表 | 每批有文件离开 `scripts/`，值就变（L2 §4.4 第 3 点）：L3 各批也只在没有进行中的 L2 run 时合并。L2 §6 第 4 项已决定在 T0 之前把 `packages/production/src` 纳入，此后 L3 进包的代码也在这个身份里 |
 | 统一运行 `required_modules()`、`loadedProjectCodeSha256` | 已含 `packages/` | 新运行自动用新键 |
 | `config/decision-api-weekly-ab-plan-v1.json` 的 `sources` | `scripts/screen_target_language_audio_units.py`、`review_target_language_audio.py`、`target_audio_timing_plan.py` | 实验计划的源码引用；A3/A4 同批更新，或经别名解析 |
 | `scripts/experiments/benchmark_formal_tts.py`、`benchmark_back_asr.py` | `sha256(formal.__file__)`、自哈希 | 门面是 `sys.modules` 别名，`formal.__file__` 指向包内实现，值如实；冻结中的实验不能跨批续跑（记入批次说明） |
@@ -237,7 +237,7 @@ L3 内部的依赖是一条链：叶子（anomaly、recovery、clip_timeline、d
 | 批 | 内容 | 出口条件 |
 |---|---|---|
 | B0 Spark 包路径（前置，可与 L3 独立） | Spark 容器能导入 `tongxing_production`：`clip_e2e_spark.py`（及仍在使用的同类 Spark 启动器）的容器 `PYTHONPATH` 加 `/work/<code>/packages/production/src`（或 §6 第 5 项选定的办法）；按提案 §5.2 增加从非仓库 CWD、只用该 `PYTHONPATH` 导入 renderer/筛查门面的测试 | 本机测试通过；在 Spark 上做一次只导入、不合成的探测并记录（软件验证与 Spark 验证分开报告） |
-| A0 端口与宿主 | `AudioBackend` 与 §3 新端口；`tongxing_host` 包装私有名；`Code.implementation_path`；L2 T0 未落地时按 L2 形状引入 `Accounting`/`Schemas`/`Diagnostic`/`Transports`。只改未被固定的调用方 | 不搬文件；§4 表中 6 个当前值全部不变；§4.8 文件与传输字节不变；47 个 L3 测试模块全绿 |
+| A0 端口与宿主 | `AudioBackend` 与 §3 新端口；`tongxing_host` 包装私有名；`Code.implementation_path`（读 L2 决定的 `tongxing_production/path_aliases.py`；它若还没建立，按 L2 §6 第 3 项先建）；L2 T0 未落地时按 L2 形状引入 `Accounting`/`Schemas`/`Diagnostic`/`Transports`。只改未被固定的调用方 | 不搬文件；§4 表中 6 个当前值全部不变；§4.8 文件与传输字节不变；47 个 L3 测试模块全绿 |
 | A1 叶子 | `target_audio_anomaly`、`target_audio_recovery`、`clip_timeline_map`、`review_target_language_audio`、`dev_audio_test_profile`/`dev_audio_test_receipts` → `audio/`；`bounded_audio_cpu` → `compute/`；`scripts/` 留门面；别名表加对应条目 | 6 个身份值与 `adapterCodeSha256` 不变（这些文件不在任何闭包里）；听审队列与收据字节一致 |
 | A2 speech job | `prepare_target_language_speech_job` → `audio/speech_job.py`；L2 的 `Schemas` 端口改指包内模块；L2 policy 校验走 `UpstreamText` | 6 个身份值不变；同 fixture 的 speech job 字节一致；L2 候选与人工复核工作表测试全绿（它们经 `Schemas` 取同一 schema 校验） |
 | A3 L3 身份代 | `validate_target_language_audio_unit`、`screen_target_language_audio_units`、`build_target_language_audio_package`、`render_formal_target_language_speech`、`compact_formal_target_audio`、`target_audio_predicted_schedule`、`target_audio_timing_plan` → `audio/`；`spark_tts_replica_pool`、`spark_tts_window_scheduler` 按字节原样 → `compute/`；计分改读 `implementation_path`；renderer 加 §4.5 的两项兼容条目；`replicaImplementationSha256` 改用 `module_sha256` | `RENDERER_SOUND_IDENTITY_SHA256`、`replicaImplementationSha256`、传输哈希与基线相等；同 fixture 的 unit intent 除 `batchImplementationSha256` 外字节一致，且旧 intent 经兼容集合被准入；预览准入测试通过；豁免、计分、语速三个新值写进 PR 说明，并列出要重新校准、重筛、重拟合的 locale；只在没有进行中的 L3 Spark 作业、没有未知结果、没有"已校准未签发"的 locale、也没有进行中的 L2 run 时合并 |
@@ -252,10 +252,10 @@ L3 内部的依赖是一条链：叶子（anomaly、recovery、clip_timeline、d
 
 1. **A3 是否作为一个"身份代"批次**：建议是。renderer、筛查、预测时长在豁免、计分、语速三个闭包里互相包含，分开搬会让每个未发布 locale 重新校准多次（校准要在 Spark 上做 TTS 渲染，并付费调用副 ASR）。代价是 A3 约 4,700 行、评审面大。是否同时把 review/ 的 `target_audio_auto_qc` 等豁免闭包文件排进同一窗口？
 2. **renderer 缓存连续性**：建议用现有兼容机制（父哈希加入 `COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256`，预览另设一个只在准入处生效的集合），让 Spark 上已提交的批次缓存和预览继续可用；声音身份常量不动。另一种做法是接受 Spark 重新合成，不加任何兼容条目。
-3. **`ko_spoken_numerals` 的位置**：建议与插件同命运（L2 §6 第 1 项），本轮留在 `scripts/`，L3 经 `SpokenRules` 取它的规则与插件的 14 个名字。若要搬，它会改导入，三个闭包的值都变，而且注册的 normalization policy 只哈希规则常量，不受影响，所以可以和 A3 同批。
+3. **`ko_spoken_numerals` 的位置**：插件已决定本轮不搬（L2 §6 第 1 项），建议它同样留在 `scripts/`，L3 经 `SpokenRules` 取它的规则与插件的 14 个名字。若要搬，它要改导入，三个闭包的值都变；注册的 normalization policy 只哈希规则常量，不受影响，所以它可以和 A3 同批。
 4. **`audio_unavailable` 生产者缺失**：建议迁移完成后另开一个功能 PR，新增 `audio/unavailable.py`，按 schema 写出 `status=audio_unavailable`、`voice/track/captions/schedule=null`、`units=[]`，绑定 L1 包与 L2 候选，并写明原因（release plan 指定纯文字，或豁免判定未配音句超过 5%）。需要你决定：schema 必填的 `targetLanguageSpeechJobJsonSha256` 对纯文字 locale 绑定什么（没有 speech job），以及这个包是否需要单独的机器或人工确认。
 5. **Spark 导入路径（B0）**：建议在启动器里显式把 `packages/production/src` 加进容器 `PYTHONPATH`，与提案 §5.2"容器打包须检查清单"一致；另一种做法是 `tongxing_host` 自己把它插进 `sys.path`（覆盖面更大，但把定位逻辑放回了宿主）。无论哪种，先在 Spark 上确认现状是否真的失败。
-6. **L3 读 L2 policy 校验的方式**：在 L2 T1 之前用 `UpstreamText` 端口；T1 之后是否按 L2 §6 第 5 项改为直接导入 `tongxing_production.text.policy`？这决定 A2 是否必须排在 L2 T1 之后。
+6. **A2 与 L2 T1 的先后**：L2 §6 第 5 项已允许 audio/ 直接导入 `tongxing_production.text.policy`。建议 A2 排在 L2 T1 之后，直接导入，不建临时端口；若 L3 要先走，A2 就用临时的 `UpstreamText`，等 T1 合并后再删。
 
 ## 7 验收（按提案 §9）
 
@@ -336,4 +336,4 @@ print('all', len(closure(entries)), 'without facade', len(closure(entries, {FACA
       'boundary cut', len(closure(entries, BOUNDARY)), len(closure(entries, BOUNDARY, True)))
 ```
 
-`dev@907a09ab` 上的输出：9 个入口的直接依赖依次为 4、15、6、7、5、10、3、3、1（加载时 4、14、5、4、3、2、3、2、1），传递闭包 165（压缩器 166），加载时闭包 42、40、25、28、43、44、41、42、41；合计 158，不经统一门面 136，加载时 39；切掉 13 个边界后 20（加载时 19）。
+`dev@0e19adfe` 上的输出：9 个入口的直接依赖依次为 4、15、6、7、5、11、3、3、1（加载时 4、14、5、4、3、2、3、2、1），传递闭包 168（压缩器 169），加载时闭包 42、40、25、28、43、44、41、42、41；合计 161，不经统一门面 139，加载时 39；切掉统一门面和 13 个边界模块后 20（加载时 19）。
