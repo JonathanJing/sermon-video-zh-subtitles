@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [现状地图](repository-current-map.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [L2 注入边界](l2-text-layer-injection.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [L4 四产物公开交付](../layer4-four-product-public-delivery.zh.md) · [同行每周发布](../tongxing-weekly-release.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md)
 
-状态：**设计提案，待评审，未开始迁移**。盘点日期：2026-10-15。基线：`dev@907a09ab`（L1 S0–S2 已合并：[#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、[#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487)、[#492](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/492)；S3 [#496](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/496) 未合并；L2 设计 [#493](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/493) 已合并，待决项未定）。本文只定义 L4（每个 `pageId + targetLocale` 一个 Release Package）的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
+状态：**设计提案，待评审，未开始迁移**。盘点日期：2026-10-15。基线：`dev@41018da0`（L1 S0–S3 已合并：[#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、[#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487)、[#492](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/492)、[#496](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/496)；L2 设计 [#493](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/493) 已合并，§6 六项决定见 [#498](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/498)）。本文只定义 L4（每个 `pageId + targetLocale` 一个 Release Package）的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
 
 ## 1 为什么不能直接搬
 
@@ -12,24 +12,24 @@ L4 在统一 CLI 里有两个阶段入口，由 `scripts/sermon_unified/__init__
 
 | 入口 | 直接依赖 | 传递闭包 | 去掉两个宿主门面 | 加载时闭包 |
 |---|---|---|---|---|
-| `sermon_unified_delivery.py` | 7 | 165 | 143 | 11 |
-| `sermon_app_delivery_workflow.py` | 4 | 165 | 121 | 14 |
-| `build_full_video_app_release.py` | 7 | 165 | 124 | 8 |
+| `sermon_unified_delivery.py` | 7 | 168 | 120 | 11 |
+| `sermon_app_delivery_workflow.py` | 4 | 168 | 98 | 14 |
+| `build_full_video_app_release.py` | 7 | 168 | 101 | 8 |
 | `guarded_hosting_publish.py` | 2 | 3 | 3 | 2 |
-| `prepare_dev_simulated_publication.py` | 3 | 166 | 126 | 3 |
+| `prepare_dev_simulated_publication.py` | 3 | 169 | 103 | 3 |
 | `delivery_contract.py` | 1 | 1 | 1 | 0 |
-| `stage_formal_multilingual_dev.py` | 1 | 165 | 119 | 0 |
-| `sermon_app_delivery.py` | 2 | 165 | 120 | 9 |
-| 8 个入口合计 | — | 159 | 137 | 18 |
+| `stage_formal_multilingual_dev.py` | 1 | 168 | 96 | 0 |
+| `sermon_app_delivery.py` | 2 | 168 | 97 | 9 |
+| 8 个入口合计 | — | 162 | 114 | 18 |
 
 "宿主门面"指 `scripts/sermon_unified/__init__.py` 和 `scripts/tongxing_host.py`：后者为绑定 L1 端口，延迟导入了几乎整个生产核心，凡经 L1 门面（例如 `build_english_source_package`）的边都会经它进入全图。
 
-和 L2 不同，L4 自己几乎不在加载时依赖别的层：165 个模块的闭包几乎全部来自五条**函数体内**的跨层边。剪掉这五条边和两个宿主门面，8 个入口的闭包只剩 5 个模块（`build_formal_dev_release_assets`、`release_asset_io`、`study_artifacts`、`sermon_execution_harness`、`sermon_release_workflow`）。五条边是：
+和 L2 不同，L4 自己几乎不在加载时依赖别的层：168 个模块的闭包几乎全部来自五条**函数体内**的跨层边。剪掉这五条边和两个宿主门面，8 个入口的闭包只剩 5 个模块（`build_formal_dev_release_assets`、`release_asset_io`、`study_artifacts`、`sermon_execution_harness`、`sermon_release_workflow`）。五条边是：
 
 1. **跨层复核** `sermon_unified_reviews`（delivery 阶段延迟导入 `validate_review`）：它再导入窗口批准（`sermon_production_supervisor`，1478 行）、L1 `_review_payload`、L3 `validate_text_release_basis`。
 2. **机器质检发布依据** `machine_quality_release_basis`（builder 顶层 `try` 导入；`is_text_waiver`、`validate_text_waiver`、`disclosure`、`CONDENSATION_BINDING_SCHEMA`）：它导入 L3 音频 QC 和 `render_formal_target_language_speech`，并且在 waiver 的 `IMPLEMENTATION_FILES` 里。
 3. **音频豁免接受** `machine_audio_waiver_acceptance`（`stage_formal_multilingual_dev.validate_audio_screening_review` 内延迟导入）。
-4. **durable jobs** `sermon_workflow_jobs`（App 工作流用公开的 `peek_job/start_job/ACTIVE` 和 7 个私有名 `_digest/_read/_persist/_lock/_request_valid/_sync_directory/_sync_directory_ancestry`；`sermon_release_workflow` 也导入它）。经 `sermon_log_profile → sermon_accounting → sermon_pipeline` 进入全图。
+4. **durable jobs** `sermon_workflow_jobs`（App 工作流用公开的 `peek_job/start_job/ACTIVE` 和 7 个私有名 `_digest/_read/_persist/_lock/_request_valid/_sync_directory/_sync_directory_ancestry`；`sermon_release_workflow` 也导入它）。经 `sermon_log_profile → sermon_accounting → sermon_pipeline → sermon_source_text_review`（L1 门面）进入全图。
 5. **L1 来源包** `build_english_source_package`（`sermon_app_delivery` 顶层导入 `validate_ready_package` 和私有 `_review_payload`）。
 
 提案 §3 要求阶段业务只依赖 contracts/review 与注入的 compute/storage/event 接口，所以 L4 迁入的前提是把这五条边和下面三处宿主资源做成端口：
@@ -40,7 +40,7 @@ L4 在统一 CLI 里有两个阶段入口，由 `scripts/sermon_unified/__init__
 
 ## 2 模块归属
 
-行数为 `dev@907a09ab` 的行数；fan-in 为仓库内以 AST 导入它的 `.py` 文件数（括号内为其中的测试文件数）。
+行数为 `dev@41018da0` 的行数（L4 文件自 `dev@907a09ab` 起未变）；fan-in 为仓库内以 AST 导入它的 `.py` 文件数（括号内为其中的测试文件数）。
 
 ### 2.1 迁入 `tongxing_production/delivery/`（L4 所有）
 
@@ -54,7 +54,7 @@ L4 在统一 CLI 里有两个阶段入口，由 `scripts/sermon_unified/__init__
 | `build_full_video_app_release.py` → `delivery/app_release.py` | 853 | 15 (7) | 四产物 release v3/v4 的 prepare/verify/seal，catalog v3/v4 双写，reader 外壳闭包 `runtimeAssets` | `RUNTIME_WEB_ROOT`/`RUNTIME_WEB_FILES` → `RuntimeWeb`；`machine_basis` → `Waivers`；`verify` 的 `urllib` → `Hosting.public_reader` |
 | `guarded_hosting_publish.py` → `delivery/publication.py` | 460 | 9 (3) | 发布 lease、attempt、版本回执、传播等待、对账；unknown 结果保留 lease 不重发 | `authenticated_transport`、`RemoteLease`、默认 `run=subprocess.run` → `Hosting`；`publish()`/`reconcile()` 已经接收 `request`/`reader`/`run` 参数 |
 | `prepare_dev_simulated_publication.py` → `delivery/baseline.py` | 599 | 5 (2) | 当场抓取线上基线（Hosting API 文件清单与 gzip 哈希）、模拟发布 | Hosting API 请求 → `Hosting` |
-| `sermon_app_delivery.py` → `delivery/app_delivery.py` | 513 | 3 (2) | App 交付证据门 `sermon-app-delivery-v1`（只读，不发布、不批准）；`allowTextOnlyLocales` | L1 `validate_ready_package`/`_review_payload`（§6 第 7 项）；系统 `pdfinfo` |
+| `sermon_app_delivery.py` → `delivery/app_delivery.py` | 513 | 3 (2) | App 交付证据门 `sermon-app-delivery-v1`（只读，不发布、不批准）；`allowTextOnlyLocales` | L1 `validate_ready_package`/`_review_payload`（§2.3）；系统 `pdfinfo` |
 | `sermon_app_delivery_workflow.py` → `delivery/app_workflow.py` | 500 | 5 (1) | App 交付 durable job、`implementation_identity`、worker | `jobs` 私有名；`_safe_path`；`work_lock`；worker argv 用 `__file__`（第 293 行） |
 | `sermon_unified_delivery.py` → `delivery/unified_stage.py` | 400 | 6 (4) | 统一 CLI 的 L4 阶段：freeze/inspect/execute、输入快照、端点验收 | `work_lock`/`atomic_json`；`validate_review` → `Reviews`；`_safe_path`；`_reader` → `Hosting.public_reader` |
 
@@ -78,7 +78,7 @@ L4 在统一 CLI 里有两个阶段入口，由 `scripts/sermon_unified/__init__
 | `sermon_unified_reviews`（135 行，fan-in 10） | 统一 CLI 的跨层复核：窗口批准、L1 来源审核、L3 文字发布依据与音频筛查、学习产物审核；source、study、delivery 三个阶段共用 | 新端口 `Reviews.validate_review`；归 review/ 批次 |
 | `machine_quality_release_basis`（697 行）、`machine_audio_waiver_acceptance`（226 行） | 跨层机器复核；前者在 waiver 实现闭包里，改字节就改变 waiver 实现哈希 | 新端口 `Waivers`（text/audio 两组函数与 schema 常量）；L4 各批不改这两个文件 |
 | `stage_formal_multilingual_dev.validate_audio_screening_review` | L3 音频复核门，却写在 L4 文件里；`sermon_unified_reviews` 和 `sermon_app_delivery` 都调用它 | §6 第 2 项 |
-| `build_english_source_package.validate_ready_package`、`_review_payload` | L1 | 下游读取上游合同：按 L2 §6 第 5 项的决定，直接导入 `tongxing_production.source` 的纯校验函数，或走端口 |
+| `build_english_source_package.validate_ready_package`、`_review_payload` | L1 | 按 L2 §6 第 5 项的决定（下游可导入上游纯校验函数，禁止反向），等 `build_english_source_package` 的校验函数位于 `tongxing_production.source` 后直接导入；私有 `_review_payload` 先在宿主包装 |
 | `sermon_unified_study`、`sermon_study_generation` | 学习产物的模型生成（预算、provider 并发），不是组装发布 | 不进 L4 端口；L4 只读已审 artifact（§6 第 1 项） |
 | `sermon_delivery_intent`（412 行，叶子）、`sermon_delivery_intent_binding`（585 行） | 私有交付意图与离线时长预检，文件头写明"never a release gate"；binding 还读 L2/L3 包、预算、严格门禁准入和账本 | 不在 L4 运行路径上；建议 intent 归 delivery/，binding 归 orchestration/（§6 第 6 项） |
 
@@ -172,7 +172,7 @@ prepare manifest 记录外壳文件的公开路径和 sha256；`verify`/`seal` �
 | `scripts/run_multilingual_cd.py` | legacy `deploy_/verify_multilingual_hosting.py` | legacy 首轮不搬，不变 |
 | `schemas/sermon-app-delivery-v1.schema.json`、`private-sermon-delivery-intent-v1.schema.json` 的 `description` | 写着 `sermon_app_delivery.py`、`sermon_delivery_intent.py` | **不改**：前者在 `implementation_identity` 的哈希清单里；旧路径作为门面仍然存在 |
 | `machine_quality_waiver.IMPLEMENTATION_FILES` | `scripts/machine_quality_release_basis.py` | 归 review/，L4 不搬也不改字节 |
-| 别名表 | — | 按 L2 §6 第 3 项的决定：共享 `tongxing_production/path_aliases.py` 加 L4 一节，或继续写进 L1 的 `PATH_ALIASES` |
+| 别名表 | — | 按 L2 §6 第 3 项的决定，在共享的 `tongxing_production/path_aliases.py` 里加 L4 一节；该文件由 L2 T0 之前或同批建立，L4 D1 若先到则由 D1 建立 |
 
 ### 4.7 Tracker 快照合同
 
@@ -213,7 +213,8 @@ prepare manifest 记录外壳文件的公开路径和 sha256；`verify`/`seal` �
 4. **reader 外壳的来源**：首轮 `RuntimeWeb.root()` 仍指向 checkout 的 `apps/listening-web`，冻结配置和 `runtimeAssets` 不变（建议）。提案 §3.1 对 fingerprint 的要求是"显式安装的运行时产物"；如果外壳也要这样，就需要一份外壳构建产物合同，并重新冻结所有交付配置。
 5. **legacy 组（11 个文件）**：迁入 `adapters/legacy/` 单独成批、留在 `scripts/` 直到退役、还是退役后直接删除？无论选哪种，v2/v3 与四产物接口都不合并。
 6. **边界模块**：`sermon_delivery_intent` 建议归 delivery/，`sermon_delivery_intent_binding` 建议归 orchestration/；海报入口 `build_multilingual_sermon_posters` 建议首轮留在 `scripts/`（它定位 Swift 渲染器），以后进 tools/ 或 delivery/posters；`smoke_published_page`、`build_language_listening_catalog` 建议归 tools/ops。
-7. **delivery/ 能否直接导入上游包**：L4 要读 L1 `validate_ready_package` 与 L2/L3 的已审包合同。建议和 L2 §6 第 5 项采用同一规则：下游可以导入上游的纯校验函数，禁止反向。
+
+已按 L2 的决定处理、不再单列的两项：别名表放共享的 `path_aliases.py`（L2 §6 第 3 项）；`delivery/` 可以导入上游的纯校验函数、禁止反向（L2 §6 第 5 项），结构测试相应增加"`source`、`text`、`audio` 不导入 `delivery`"。
 
 ## 7 验收（按提案 §9）
 
@@ -293,4 +294,4 @@ print('all', len(closure(entries)), 'without hosts', len(closure(entries, hosts)
 print('cut edges', sorted(closure(entries, edges)))
 ```
 
-`dev@907a09ab` 上的输出：8 个入口依次为直接依赖 7、4、7、2、3、1、1、2，传递闭包 165、165、165、3、166、1、165、165，去掉宿主门面 143、121、124、3、126、1、119、120，加载时闭包 11、14、8、2、3、0、0、9；合计 159，去掉宿主门面 137，加载时 18；剪掉五条跨层边后剩 5 个模块。
+`dev@41018da0` 上的输出：8 个入口依次为直接依赖 7、4、7、2、3、1、1、2，传递闭包 168、168、168、3、169、1、168、168，去掉宿主门面 120、98、101、3、103、1、96、97，加载时闭包 11、14、8、2、3、0、0、9；合计 162，去掉宿主门面 114，加载时 18；剪掉五条跨层边后剩 5 个模块。
