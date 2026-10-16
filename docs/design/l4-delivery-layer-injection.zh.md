@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [现状地图](repository-current-map.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [L2 注入边界](l2-text-layer-injection.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [L4 四产物公开交付](../layer4-four-product-public-delivery.zh.md) · [同行每周发布](../tongxing-weekly-release.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md)
 
-状态：**设计提案，待评审，未开始迁移**。盘点日期：2026-10-15。基线：`dev@41018da0`（L1 S0–S3 已合并：[#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、[#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487)、[#492](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/492)、[#496](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/496)；L2 设计 [#493](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/493) 已合并，§6 六项决定见 [#498](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/498)）。本文只定义 L4（每个 `pageId + targetLocale` 一个 Release Package）的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
+状态：**§6 已决定（2026-10-15，见 §6 决定表），未开始迁移**。盘点日期：2026-10-15。基线：`dev@41018da0`（L1 S0–S3 已合并：[#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、[#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487)、[#492](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/492)、[#496](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/496)；L2 设计 [#493](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/493) 已合并，§6 六项决定见 [#498](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/498)）。本文只定义 L4（每个 `pageId + targetLocale` 一个 Release Package）的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
 
 ## 1 为什么不能直接搬
 
@@ -47,9 +47,9 @@ L4 在统一 CLI 里有两个阶段入口，由 `scripts/sermon_unified/__init__
 | 现有模块 → 目标 | 行数 | fan-in | 职责 | 迁入时要换成端口的面 |
 |---|---|---|---|---|
 | `delivery_contract.py` → `delivery/contract.py` | 406 | 29 (10) | release/catalog 的 schema 校验、v4→v3 人工投影 `project_human_catalog`、`merge_catalog`（含发布计划汇合条件，§4.1）、attempt/readback/客户端验收校验 | `Path(__file__)` 定位 `schemas/` → `schemas.path`；与 `study_artifacts` 成环，必须同批 |
-| `study_artifacts.py` → `delivery/study_artifacts.py` | 78 | 13 (3) | 大纲/默想 artifact 与审核收据合同；四产物 `join_artifacts` | `ROOT/'schemas'`；归属见 §6 第 1 项 |
+| `study_artifacts.py` → `delivery/study_artifacts.py` | 78 | 13 (3) | 大纲/默想 artifact 与审核收据合同；四产物 `join_artifacts` | `ROOT/'schemas'`；已决定归 delivery/（§6 第 1 项） |
 | `release_asset_io.py` → `delivery/asset_io.py` | 59 | 5 (1) | 按 sha256 绑定复制公开资源 | 无 |
-| `stage_formal_multilingual_dev.py` → `delivery/formal_stage.py` | 571 | 11 (3) | 读取已审包、`canonical_sha`、`decode_audio`（系统 ffprobe/ffmpeg）、`reviewed_candidate`、v2 catalog | `ROOT/'schemas'`；`validate_audio_screening_review` 是 L3 音频复核门，归属见 §6 第 2 项 |
+| `stage_formal_multilingual_dev.py` → `delivery/formal_stage.py` | 571 | 11 (3) | 读取已审包、`canonical_sha`、`decode_audio`（系统 ffprobe/ffmpeg）、`reviewed_candidate`、v2 catalog | `ROOT/'schemas'`；`validate_audio_screening_review` 是 L3 音频复核门，已决定移到 review/（§6 第 2 项，§5 D2a） |
 | `build_formal_dev_release_assets.py` → `delivery/formal_assets.py` | 249 | 5 (4) | 页面元数据批准校验 | `stage.ROOT/'schemas'` |
 | `build_full_video_app_release.py` → `delivery/app_release.py` | 853 | 15 (7) | 四产物 release v3/v4 的 prepare/verify/seal，catalog v3/v4 双写，reader 外壳闭包 `runtimeAssets` | `RUNTIME_WEB_ROOT`/`RUNTIME_WEB_FILES` → `RuntimeWeb`；`machine_basis` → `Waivers`；`verify` 的 `urllib` → `Hosting.public_reader` |
 | `guarded_hosting_publish.py` → `delivery/publication.py` | 460 | 9 (3) | 发布 lease、attempt、版本回执、传播等待、对账；unknown 结果保留 lease 不重发 | `authenticated_transport`、`RemoteLease`、默认 `run=subprocess.run` → `Hosting`；`publish()`/`reconcile()` 已经接收 `request`/`reader`/`run` 参数 |
@@ -65,7 +65,7 @@ L4 在统一 CLI 里有两个阶段入口，由 `scripts/sermon_unified/__init__
 | `sermon_execution_harness` | `work_lock`、`WorkAlreadyRunning`、`atomic_json` | `Core`（`work_lock` 与 L2 T0 新增的是同一个字段） |
 | `sermon_release_workflow` | `_safe_path`（宿主已用其公开名 `safe_path`） | `Core.safe_path` |
 | `sermon_workflow_jobs` | 见 §1 第 4 条 | `Core.jobs`；私有名由 `tongxing_host` 包装。**不在该文件加公开委托名**：它在 waiver `IMPLEMENTATION_FILES` 里（L2 §2.2 同一结论） |
-| `google.auth` ADC、GCS lease、`firebase` CLI、Firebase Hosting REST | `authenticated_transport`、`RemoteLease`、`firebase deploy` argv、`live_version` | 新端口 `Hosting`；适配器先留在 `scripts/`，以后归 storage/ 或 tools/ops（§6 第 3 项） |
+| `google.auth` ADC、GCS lease、`firebase` CLI、Firebase Hosting REST | `authenticated_transport`、`RemoteLease`、`firebase deploy` argv、`live_version` | 新端口 `Hosting`；适配器归 storage/，发布 CLI 入口归 tools/ops（§6 第 3 项） |
 | `urllib` 公共读取 | 带超时的 GET | `Hosting.public_reader`；剩余 deadline 预算（`remaining_read_timeout`）仍在 `publication.py` 内 |
 | `apps/listening-web` 的 reader 外壳 | `runtime_web_files(root)` 的扫描根目录 | 新端口 `RuntimeWeb`（§3 规则 2、§6 第 4 项） |
 | `schemas/` | schema 加载 | `Schemas`（L2 T0 提出的端口；若 L4 先做，在 D0 定义同一记录） |
@@ -77,10 +77,10 @@ L4 在统一 CLI 里有两个阶段入口，由 `scripts/sermon_unified/__init__
 |---|---|---|
 | `sermon_unified_reviews`（135 行，fan-in 10） | 统一 CLI 的跨层复核：窗口批准、L1 来源审核、L3 文字发布依据与音频筛查、学习产物审核；source、study、delivery 三个阶段共用 | 新端口 `Reviews.validate_review`；归 review/ 批次 |
 | `machine_quality_release_basis`（697 行）、`machine_audio_waiver_acceptance`（226 行） | 跨层机器复核；前者在 waiver 实现闭包里，改字节就改变 waiver 实现哈希 | 新端口 `Waivers`（text/audio 两组函数与 schema 常量）；L4 各批不改这两个文件 |
-| `stage_formal_multilingual_dev.validate_audio_screening_review` | L3 音频复核门，却写在 L4 文件里；`sermon_unified_reviews` 和 `sermon_app_delivery` 都调用它 | §6 第 2 项 |
+| `stage_formal_multilingual_dev.validate_audio_screening_review` | L3 音频复核门，却写在 L4 文件里；6 个文件共 7 处调用（builder、`sermon_app_delivery`、`sermon_unified_reviews`、`sermon_delivery_intent_binding`、L3 `inspect_canonical_audio`、`build_sep27_page_audio_extension`） | 已决定移到 review/（§5 D2a）；L4 经 `Reviews` 端口调用 |
 | `build_english_source_package.validate_ready_package`、`_review_payload` | L1 | 按 L2 §6 第 5 项的决定（下游可导入上游纯校验函数，禁止反向），等 `build_english_source_package` 的校验函数位于 `tongxing_production.source` 后直接导入；私有 `_review_payload` 先在宿主包装 |
-| `sermon_unified_study`、`sermon_study_generation` | 学习产物的模型生成（预算、provider 并发），不是组装发布 | 不进 L4 端口；L4 只读已审 artifact（§6 第 1 项） |
-| `sermon_delivery_intent`（412 行，叶子）、`sermon_delivery_intent_binding`（585 行） | 私有交付意图与离线时长预检，文件头写明"never a release gate"；binding 还读 L2/L3 包、预算、严格门禁准入和账本 | 不在 L4 运行路径上；建议 intent 归 delivery/，binding 归 orchestration/（§6 第 6 项） |
+| `sermon_unified_study`、`sermon_study_generation` | 学习产物的模型生成（预算、provider 并发），不是组装发布 | 不进 L4 端口；L4 只读已审 artifact。生成模块的归属仍待定（§6 末尾） |
+| `sermon_delivery_intent`（412 行，叶子）、`sermon_delivery_intent_binding`（585 行） | 私有交付意图与离线时长预检，文件头写明"never a release gate"；binding 还读 L2/L3 包、预算、严格门禁准入和账本 | 不在 L4 运行路径上；已决定 intent 归 delivery/（D1），binding 归 orchestration/（随 orchestration 批次，§6 第 6 项） |
 
 ### 2.4 留作应用、工具或 legacy
 
@@ -93,10 +93,10 @@ L4 在统一 CLI 里有两个阶段入口，由 `scripts/sermon_unified/__init__
 | `build_language_listening_catalog.py` | tools/ops | 生成反馈服务来源目录；部署反馈函数是对外动作，需授权 |
 | `inspect_canonical_release.py`、`inspect_multilingual_v3_release.py`、`verify_v3_bucket_video.py`、`audit_production_release_bindings.py` | tools/ops | 只读检查 CLI |
 | `clip_e2e_release.py` | tools/development | 片段 E2E 测试的发布准备；导入 L4 公开 API |
-| `build_multilingual_sermon_posters.py` | 先留 `scripts/` | 海报是独立交付，与页面发布分开；它用 `Path(__file__).with_name('render_weekly_poster.swift')` 定位渲染器（§6 第 6 项） |
+| `build_multilingual_sermon_posters.py` | 首轮留 `scripts/` | 海报是独立交付，与页面发布分开；它用 `Path(__file__).with_name('render_weekly_poster.swift')` 定位渲染器（§6 第 6 项） |
 | `build_published_english_reference.py`、`bind_published_alignment_catalog.py` | 以后进 delivery/ | 发布后追加资源并重写 v3/v4 目录，是 L4 业务；首轮不搬（§5 D6） |
 | `build_four_layer_tracker_snapshot.py`、`tools/ops/tracker-publisher/` | observability/projections、tools/ops | 只读 release 包合同，不记录 L4 代码身份（§4.7） |
-| legacy 组：`assemble_multilingual_hosting`、`deploy_multilingual_hosting`、`verify_multilingual_hosting`、`assemble_multilingual_v3_update`、`refresh_multilingual_hosting_with_legacy`、`production_content_release_admission`、`multilingual_dev_preview`、`seal_multilingual_dev_catalog`、`build_multilingual_catalog`；连同 tools/ops 行的 `inspect_multilingual_v3_release`、`verify_v3_bucket_video` 共 11 个文件 | 待定 | v2 catalog／v1 release／`weekly.json` 与 v3 组装器；提案 §4 要求不能借迁移把 v2/v3 和 legacy 接口合并（§6 第 5 项） |
+| legacy 组：`assemble_multilingual_hosting`、`deploy_multilingual_hosting`、`verify_multilingual_hosting`、`assemble_multilingual_v3_update`、`refresh_multilingual_hosting_with_legacy`、`production_content_release_admission`、`multilingual_dev_preview`、`seal_multilingual_dev_catalog`、`build_multilingual_catalog`；连同 tools/ops 行的 `inspect_multilingual_v3_release`、`verify_v3_bucket_video` 共 11 个文件 | `adapters/legacy/`，单独成批（D7） | v2 catalog／v1 release／`weekly.json` 与 v3 组装器；提案 §4 要求不能借迁移把 v2/v3 和 legacy 接口合并（§6 第 5 项） |
 
 ## 3 注入端口
 
@@ -111,10 +111,9 @@ class DeliveryBackend:
     schemas: ports.Schemas           # path(name), validate(value, name, label)
     runtime_web: ports.RuntimeWeb    # 新：root() -> Path；文件清单由 delivery 在调用时扫描
     hosting: ports.Hosting           # 新：authorized_request(), public_reader(url, *, timeout), run(argv, **kw), lease(request, bucket, site)
-    reviews: ports.Reviews           # 新：validate_review(kind, path, **binding)
+    reviews: ports.Reviews           # 新：validate_review(kind, path, **binding), audio_screening(audio, receipt, screening)
     waivers: ports.Waivers           # 新：is_text_waiver, validate_text_waiver, disclosure, is_audio_waiver,
                                      #     validate_audio_waiver, AUDIO_WAIVER_SCHEMAS, CONDENSATION_BINDING_SCHEMA
-    audio_screening_review: Callable[..., None]   # 归属定下之前的过渡面，§6 第 2 项
     worker_command: Callable[..., list[str]]      # App 工作流 worker argv，见规则 5
 ```
 
@@ -122,7 +121,7 @@ class DeliveryBackend:
 
 1. 包内不出现 `__file__`。`delivery_contract`、`study_artifacts`、`stage_formal_multilingual_dev`、`build_formal_dev_release_assets`、`sermon_unified_delivery`、`sermon_app_delivery*` 的 `ROOT/'schemas'/…` 改为 `schemas.path(name)`；schema 不搬（提案 §5.1）。
 2. `RUNTIME_WEB_ROOT` 和导入时计算的 `RUNTIME_WEB_FILES` 改成调用时函数：`runtime_web_files()` 读 `runtime_web.root()`，扫描规则（入口 `index.html`、三个模块根、后缀表、五个引用正则）原样留在 `app_release.py`。D0 先在 `scripts/` 内把这两个常量改成函数，调用方（`sermon_unified_delivery`、`prepare_dev_simulated_publication`、`prepare_dev_web_ui_update`、`smoke_published_page` 共 13 处，以及引用它们的测试）同批改；这些文件都不被任何哈希表固定。宿主让 `root()` 返回仍是 `<checkout>/apps/listening-web`，所以外壳闭包、`runtimeAssets` 和冻结配置的输入快照都不变（§4.4）。
-3. `Hosting` 只提供今天 `main()` 和统一阶段在调用点构造的默认值：带 ADC 的会话、公共 GET、`firebase` CLI runner、GCS lease。lease、attempt、版本回执解析、传播等待、unknown 处理和对账这些发布规则留在 `delivery/publication.py`；`google-auth` 依赖不进包。`publish(..., request, reader, run)` 的显式参数不变，测试注入的 runner 仍按 `deployed_version` 的约定写同形 JSON。
+3. `Hosting` 只提供今天 `main()` 和统一阶段在调用点构造的默认值：带 ADC 的会话、公共 GET、`firebase` CLI runner、GCS lease。lease、attempt、版本回执解析、传播等待、unknown 处理和对账这些发布规则留在 `delivery/publication.py`。适配器按 §6 第 3 项进 `storage/hosting.py`：`google-auth` 是可选依赖，只有该适配器导入它，`delivery/` 不导入。`publish(..., request, reader, run)` 的显式参数不变，测试注入的 runner 仍按 `deployed_version` 的约定写同形 JSON。
 4. 只注入 L4 实际调用的面。`jobs` 私有名、`_safe_path`、`_review_payload` 在 `tongxing_host` 包装，**不**通过修改被固定的文件（`sermon_workflow_jobs.py`、`machine_quality_release_basis.py`）来加公开名。
 5. App 工作流的 worker argv 写进 durable job 请求。迁入后由宿主提供 `worker_command`，argv 仍指向 `scripts/sermon_app_delivery_workflow.py`（CLI 门面派发 `main()`），新旧请求字节一致，已有 job 可以继续恢复。
 6. 每个端口在宿主里绑定现有 `scripts/` 实现，行为、参数、超时、退出码不变；`scripts/` 旧路径是 `sys.modules` 门面，测试对 `scripts.x.y` 的 patch 仍能拦截，文档引用的 `guarded_hosting_publish.PROPAGATION_TIMEOUT_SECONDS` 仍可读。
@@ -153,7 +152,7 @@ class DeliveryBackend:
 
 ### 4.4 冻结的统一交付配置 `inputSnapshotSha256`
 
-`sermon_unified_delivery._input_snapshot` 把嵌套输入、发布计划、HTTP 验证、基线文件和 reader 外壳文件逐个取哈希，键是**绝对路径**（第 166 行逐个访问 `RUNTIME_WEB_ROOT / name`）。只要 `RuntimeWeb.root()` 解析到同一个绝对目录，冻结配置的 `inputSnapshotSha256` 就不变，D2/D5 不需要重新冻结。若以后改为"安装好的运行时产物"（§6 第 4 项），所有冻结配置都要重新冻结；那是独立决定，不随搬家进行。
+`sermon_unified_delivery._input_snapshot` 把嵌套输入、发布计划、HTTP 验证、基线文件和 reader 外壳文件逐个取哈希，键是**绝对路径**（第 166 行逐个访问 `RUNTIME_WEB_ROOT / name`）。只要 `RuntimeWeb.root()` 解析到同一个绝对目录，冻结配置的 `inputSnapshotSha256` 就不变，D2/D5 不需要重新冻结。§6 第 4 项已决定首轮保持这个目录；若以后改为"安装好的运行时产物"，所有冻结配置都要重新冻结，那是另一个决定，不随搬家进行。
 
 ### 4.5 reader 外壳闭包 `runtimeAssets`
 
@@ -191,21 +190,37 @@ prepare manifest 记录外壳文件的公开路径和 sha256；`verify`/`seal` �
 
 ## 5 分批顺序（每批独立 PR：纯 `git mv` 提交 + 接线提交）
 
-分批依据：`delivery_contract ↔ study_artifacts` 成环，必须同批；builder 依赖 formal stage 和 formal assets；发布与基线只依赖合同；App 工作流和统一阶段在最上层。L4 核心闭包很小（§1），D0–D2 不依赖 L2/L3 的搬迁进度。
+分批依据：`delivery_contract ↔ study_artifacts` 成环，必须同批；音频筛查复核门先出 L4 文件（D2a），review/ 才不会反向导入 delivery/；builder 依赖 formal stage 和 formal assets；发布与基线只依赖合同；App 工作流和统一阶段在最上层。L4 核心闭包很小（§1），D0–D2 不依赖 L2/L3 的搬迁进度。
 
 | 批 | 内容 | 出口条件 |
 |---|---|---|
-| D0 端口与宿主 | `DeliveryBackend` 与四个新端口；`tongxing_host` 包装 `jobs` 私有名、`_safe_path`、`_review_payload`；`RUNTIME_WEB_ROOT`/`RUNTIME_WEB_FILES` 在 `scripts/` 内改为调用时函数；`tongxing-ios.yml` 和 `pipeline_compatibility_gate` 预先列入 D1–D5 的新路径 | 不搬文件；`sermon_workflow_jobs.py`、`machine_quality_release_basis.py`、`machine_audio_waiver_acceptance.py` 字节不变；引用 L4 模块的测试全绿（27 个测试模块引用 §2.1 模块，14 个引用 legacy 组，合计 40 个；另有 12 个引用 §2.3 的复核模块） |
-| D1 合同叶子 | `delivery_contract`、`study_artifacts`、`release_asset_io` → `delivery/{contract,study_artifacts,asset_io}.py`；别名表加三条 | `merge_catalog` 的 incremental/joined、来源变化拒绝、`project_human_catalog`、readback/client acceptance 测试全绿；同 fixture 的 catalog v3/v4 字节一致；本 PR 的 diff 经 `tongxing-ios.yml` 路由进入合同检查 |
-| D2 正式阶段与 builder | `stage_formal_multilingual_dev`、`build_formal_dev_release_assets`、`build_full_video_app_release` → `delivery/{formal_stage,formal_assets,app_release}.py`；`RuntimeWeb`、`Waivers` 接线；§6 第 2 项先决定 | 同 fixture 的 prepare/verify/seal 输出逐字节一致（release v3/v4、catalog v3/v4、products manifest、seal report、`runtimeAssets`）；`runtime_web_files()` 清单与基线相等；机器质检路径（content v3 + release v4 + 披露）与人工路径都有 fixture |
-| D3 发布与基线 | `guarded_hosting_publish` → `delivery/publication.py`、`prepare_dev_simulated_publication` → `delivery/baseline.py`；`Hosting` 适配器留在 `scripts/` | lease、attempt、版本回执、传播等待、对账与 unknown 路径测试全绿；`firebase deploy` argv 与收据字节不变；只在没有 unknown attempt 或未释放 lease 时合并（不变量 5） |
+| D0 端口与宿主 | `DeliveryBackend` 与四个新端口；`tongxing_host` 包装 `jobs` 私有名、`_safe_path`、`_review_payload`；`RUNTIME_WEB_ROOT`/`RUNTIME_WEB_FILES` 在 `scripts/` 内改为调用时函数；`tongxing-ios.yml` 和 `pipeline_compatibility_gate` 预先列入 D1–D7 的新路径 | 不搬文件；`sermon_workflow_jobs.py`、`machine_quality_release_basis.py`、`machine_audio_waiver_acceptance.py` 字节不变；引用 L4 模块的测试全绿（27 个测试模块引用 §2.1 模块，14 个引用 legacy 组，合计 40 个；另有 12 个引用 §2.3 的复核模块） |
+| D1 合同叶子 | `delivery_contract`、`study_artifacts`、`release_asset_io`、`sermon_delivery_intent` → `delivery/{contract,study_artifacts,asset_io,intent}.py`；别名表加四条 | `merge_catalog` 的 incremental/joined、来源变化拒绝、`project_human_catalog`、readback/client acceptance 测试全绿；同 fixture 的 catalog v3/v4 字节一致；本 PR 的 diff 经 `tongxing-ios.yml` 路由进入合同检查 |
+| D2a 音频筛查复核门 | `validate_audio_screening_review` 迁入 `tongxing_production/review/audio_screening.py`（review/ 的第一个模块）；`machine_audio_waiver_acceptance` 与两份人工收据 schema 经 review 的端口与 `Schemas` 取得；`stage_formal_multilingual_dev` 留同名委托，并把错误转换回 `StageError`，7 处调用方不改 | 人工收据 v3/v4、机器音频豁免、两种发布例外的测试全绿；被拒原因字符串不变；`machine_audio_waiver_acceptance.py` 字节不变；`review/` 不导入 `delivery/` |
+| D2 正式阶段与 builder | `stage_formal_multilingual_dev`、`build_formal_dev_release_assets`、`build_full_video_app_release` → `delivery/{formal_stage,formal_assets,app_release}.py`；`RuntimeWeb`、`Waivers` 接线；D2a 先合并 | 同 fixture 的 prepare/verify/seal 输出逐字节一致（release v3/v4、catalog v3/v4、products manifest、seal report、`runtimeAssets`）；`runtime_web_files()` 清单与基线相等；机器质检路径（content v3 + release v4 + 披露）与人工路径都有 fixture |
+| D3 发布与基线 | `guarded_hosting_publish` → `delivery/publication.py`、`prepare_dev_simulated_publication` → `delivery/baseline.py`；`Hosting` 适配器（ADC 会话、GCS lease、`firebase` CLI runner、Hosting REST 读取）→ `storage/hosting.py`，`google-auth` 在 `packages/production/pyproject.toml` 声明为可选依赖，只有该适配器导入它；CLI 入口暂留 `scripts/` 门面（D8 再迁） | lease、attempt、版本回执、传播等待、对账与 unknown 路径测试全绿；`firebase deploy` argv 与收据字节不变；只在没有 unknown attempt 或未释放 lease 时合并（不变量 5） |
 | D4 App 交付 | `sermon_app_delivery`、`sermon_app_delivery_workflow` → `delivery/{app_delivery,app_workflow}.py`；`implementation_identity` 改为别名解析；`worker_command` 由宿主提供 | worker argv 与 durable job 请求字节不变；`implementationSha256` 只变这一次，并在 PR 里写明；supervisor 的 `snapshot` 测试全绿；只在没有 active/uncertain App 交付 job 时合并（§4.2） |
 | D5 阶段入口 | `sermon_unified_delivery` → `delivery/unified_stage.py`；`_STAGE_MODULES` 的 `delivery`、`app_delivery` 指向包内模块 | 统一 CLI 全套测试全绿；同 checkout 的冻结配置 `inputSnapshotSha256` 不变；`tongxing_production/delivery` 不导入 `scripts/backend/apps/tools/experiments`、不含 `__file__` |
-| （另批）D6 发布后追加与 legacy | `build_published_english_reference`、`bind_published_alignment_catalog`；legacy 组按 §6 第 5 项 | 已发布 release、正文、音频、索引字节不变；v3 仍是 v4 的人工投影 |
+| D6 发布后追加 | `build_published_english_reference`、`bind_published_alignment_catalog` → `delivery/` | 已发布 release、正文、音频、索引字节不变；v3 仍是 v4 的人工投影 |
+| D7 legacy（单独成批） | §2.4 legacy 组 11 个文件 → `tongxing_production/adapters/legacy/` | v2 catalog／v1 release／`weekly.json` 与 v3 组装器的接口和输出字节不变，不与四产物接口合并；`run_multilingual_cd.py`、`tongxing-ios.yml` `shared_contracts` 中的 legacy 路径同批更新；文档里的命令继续经 `scripts/` 门面可用 |
+| D8 工具入口 | 发布 CLI 入口（`guarded_hosting_publish`、`prepare_dev_simulated_publication` 的 `main()`）、`smoke_published_page`、`build_language_listening_catalog`、只读检查 CLI → `tools/ops/`，复用包内实现 | 命令参数、退出码与输出不变；`run_clip_real_e2e.py` 与 runbook 的命令路径同批更新或保留门面 |
 
 每批：迁移前后 `tests/` 的发现清单一一对应（提案 §5.5）；`python-tests.yml` 的 `py_compile` 清单若列有被搬文件，同批更新；每批只在没有进行中的统一运行时合并（§4.3）。
 
-## 6 待你决定
+## 6 决定（2026-10-15 用户决定）
+
+| # | 问题 | 决定 | 对分批的影响 |
+|---|---|---|---|
+| 1 | 学习产物的归属 | `study_artifacts`（合同与四产物 join）归 delivery/ | D1 迁入 `delivery/study_artifacts.py`。复核模块将来迁入 review/ 时，`ingest_review` 经 review 的端口注入，review/ 不直接导入 delivery/ |
+| 2 | `validate_audio_screening_review` 放哪 | 移到 review/ | 新增 D2a，排在 D2 之前；L3 设计里 `Unmoved` 的这一项随之消失 |
+| 3 | 托管适配器的位置 | 适配器归 storage/，发布 CLI 入口归 tools/ops | D3 把适配器迁入 `storage/hosting.py`；CLI 入口在 D8 迁入 tools/ops |
+| 4 | reader 外壳的来源 | 首轮 `RuntimeWeb.root()` 仍指向 checkout 的 `apps/listening-web` | 冻结配置的 `inputSnapshotSha256` 与 `runtimeAssets` 不变，D2/D5 不重新冻结 |
+| 5 | legacy 组 | 迁入 `adapters/legacy/`，单独成批 | 新增 D7；v2/v3 与四产物接口不合并 |
+| 6 | 边界模块 | 采纳建议：intent → delivery/，intent_binding → orchestration/，海报首轮留 `scripts/`，冒烟与反馈来源目录 → tools/ops | intent 在 D1；binding 随 orchestration 批次；冒烟与来源目录在 D8 |
+
+仍待定：学习产物的**生成**模块（`sermon_study_generation`、`sermon_unified_study`）归 text/ 还是 workflows/。它们不在 L4 的分批里，不阻塞 D0–D8。海报以后进 tools/ 还是 delivery/posters 也未定，首轮不动。
+
+以下保留原问题文本，供追溯。
 
 1. **学习产物的归属**：`study_artifacts`（合同与 join）建议归 delivery/，因为四产物 join 是 L4 的身份。但 `sermon_unified_reviews` 用它的 `ingest_review`，等复核模块迁入 review/ 时就成了 review → delivery 的反向边。另一种做法是把它放进 contracts/。学习产物的生成（`sermon_study_generation`、`sermon_unified_study`）建议不归 L4：归 text/（输入是 L2 全文），还是 workflows/？
 2. **`validate_audio_screening_review` 放哪**：它是 L3 音频复核门，现在写在 `stage_formal_multilingual_dev` 里，被复核模块和 App 交付证据门调用。建议 D2 之前把它移到 review/（或 L3 audio/），L4 经端口调用；否则 review/ 将来要导入 delivery/。
@@ -218,7 +233,7 @@ prepare manifest 记录外壳文件的公开路径和 sha256；`verify`/`seal` �
 
 ## 7 验收（按提案 §9）
 
-- 结构：`tongxing_production/delivery` 不导入 `scripts/backend/apps/tools/experiments`，不含 `__file__`，不从 `apps/` 定位资源；依赖方向是 delivery → contracts/review、上游纯校验函数和注入端口；不导入 orchestration、L2/L3 生产者或客户端。
+- 结构：`tongxing_production/delivery` 不导入 `scripts/backend/apps/tools/experiments`，不含 `__file__`，不从 `apps/` 定位资源；依赖方向是 delivery → contracts/review、上游纯校验函数和注入端口；不导入 orchestration、L2/L3 生产者或客户端；`review/` 不导入 `delivery/`。
 - 行为：同 fixture 的 release v3/v4、catalog v3/v4、products manifest、seal report、发布 attempt 与 readback 校验结果字节一致；`candidateSha256`、发布计划汇合判断不变。
 - 恢复：App 交付 worker argv 不变；unknown 发布 attempt 的对账路径不变；冻结的统一交付配置按原 `inputSnapshotSha256` 校验通过。
 - 测试：40 个引用 L4 模块（含 legacy 组）的测试模块全绿，清单映射一一对应；iOS 合同路由覆盖新路径。
