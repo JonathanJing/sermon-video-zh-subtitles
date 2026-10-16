@@ -97,70 +97,17 @@ def reviewed_candidate(candidate: dict) -> bool:
 
 def validate_audio_screening_review(audio: dict, receipt: dict,
                                     screening: dict | None) -> None:
-    from scripts import machine_audio_waiver_acceptance as machine_waivers
-    if machine_waivers.is_audio_waiver(receipt):
-        # A machine listening waiver (v3: with a person's per-unit acceptance), never a human approval of the track.
-        try:
-            machine_waivers.validate_audio_waiver(audio, receipt, screening)
-        except ValueError as error:
-            raise StageError(str(error)) from error
-        return
-    if receipt.get("schemaVersion") == "sermon-target-language-audio-human-review-receipt-v3":
-        schema = json.loads((ROOT / "schemas/sermon-target-language-audio-human-review-receipt-v3.schema.json").read_text())
-        if (list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(receipt))
-                or audio["targetLocale"] != "zh-Hans"
-                or receipt["publicationException"]["trackSha256"] != audio["track"]["sha256"]):
-            raise StageError("Invalid exact-track Chinese publication exception")
-    elif receipt.get("schemaVersion") == "sermon-target-language-audio-human-review-receipt-v4":
-        schema = json.loads((ROOT / "schemas/sermon-target-language-audio-human-review-receipt-v4.schema.json").read_text())
-        exception = receipt.get("publicationException", {})
-        identities = {"targetLocale": audio["targetLocale"],
-                      "englishSourcePackageJsonSha256": audio["englishSourcePackageJsonSha256"],
-                      "targetLanguageCandidateJsonSha256": audio["targetLanguageCandidateJsonSha256"],
-                      "targetLanguageAudioPackageJsonSha256": canonical_sha(audio),
-                      "trackSha256": audio["track"]["sha256"]}
-        if (list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(receipt))
-                or receipt["targetLocale"] != audio["targetLocale"]
-                or audio["targetLocale"] not in LOCALES
-                or any(receipt.get(key) != value for key, value in identities.items())
-                or any(exception.get(key) != value for key, value in identities.items())):
-            raise StageError("Invalid locale-bound publication exception v2")
-    elif receipt.get("schemaVersion") not in {"sermon-target-language-audio-human-review-receipt-v1", "sermon-target-language-audio-human-review-receipt-v2"}:
-        raise StageError("Unsupported audio human review receipt")
-    status = audio["machineScreening"]["status"]
-    if receipt["schemaVersion"] == "sermon-target-language-audio-human-review-receipt-v1":
-        if status != "pass":
-            raise StageError("Unresolved ASR review requires a v2 human adjudication receipt")
-        return
-    if screening is None:
-        raise StageError("v2 audio review requires the bound full ASR screening receipt")
-    group_ids = [row["textGroupId"] for row in audio["units"]]
-    if (status not in {"pass", "requires_review"}
-            or receipt["machineScreeningStatus"] != status
-            or receipt["machineScreeningReceiptJsonSha256"] != canonical_sha(screening)
-            or screening["status"] != status
-            or screening["model"] != audio["machineScreening"]["model"]
-            or screening["targetLocale"] != audio["targetLocale"]
-            or screening["trackSha256"] != audio["track"]["sha256"]
-            or screening["targetLanguageSpeechJobJsonSha256"] != audio["targetLanguageSpeechJobJsonSha256"]
-            or screening["coverage"] != 1.0
-            or screening["reviewedGroupIds"] != group_ids
-            or screening["unitAudioSha256s"] != [row["audio"]["sha256"] for row in audio["units"]]
-            or len(screening["results"]) != len(group_ids)):
-        raise StageError("Audio ASR receipt is not bound to the reviewed package")
-    queue = []
-    for result, unit in zip(screening["results"], audio["units"]):
-        if (result["textGroupId"] != unit["textGroupId"]
-                or result["targetTextSha256"] != unit["targetTextSha256"]
-                or result["audioSha256"] != unit["audio"]["sha256"]):
-            raise StageError("ASR result differs from reviewed audio unit")
-        if result["status"] == "requires_review":
-            queue.append(result["textGroupId"])
-    if ((status == "pass") != (not queue)
-            or [row["textGroupId"] for row in receipt["asrAdjudications"]] != queue
-            or any(row["decision"] != "approved" or not row["evidence"].strip()
-                   for row in receipt["asrAdjudications"])):
-        raise StageError("ASR review queue lacks exact human adjudications")
+    # The gate is cross-layer review (L4 decision 2); its callers here catch StageError.
+    try:
+        from scripts import tongxing_host  # noqa: F401  binds the review backend
+    except ModuleNotFoundError:  # run as a script from scripts/
+        sys.path.insert(0, str(ROOT))
+        from scripts import tongxing_host  # noqa: F401
+    from tongxing_production.review import audio_screening
+    try:
+        audio_screening.validate_audio_screening_review(audio, receipt, screening)
+    except audio_screening.AudioScreeningError as error:
+        raise StageError(str(error)) from error
 
 
 def checked_file(path: Path, expected: str, label: str) -> Path:
