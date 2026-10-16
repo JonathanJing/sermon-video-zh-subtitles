@@ -93,6 +93,9 @@ LAYER4 = {
     'scripts/build_sermon_poster.py': _LEGACY + 'build_sermon_poster.py',
     'scripts/build_multilingual_sermon_posters.py': _DELIVERY + 'posters/build.py',
     'scripts/weekly_poster_template.py': _DELIVERY + 'posters/template.py',
+    # D4: the App workflow's implementationSha256 keys stay these legacy paths.
+    'scripts/sermon_app_delivery.py': _DELIVERY + 'app_delivery.py',
+    'scripts/sermon_app_delivery_workflow.py': _DELIVERY + 'app_workflow.py',
 }
 
 # Cross-layer review (tongxing_production.review), batches R1-R4.
@@ -102,15 +105,37 @@ REVIEW = {
     'scripts/machine_repair_ledger.py': _REVIEW + 'repair_ledger.py',
     'scripts/audio_qc_human_acceptance.py': _REVIEW + 'audio_qc_acceptance.py',
     'scripts/text_qc_human_acceptance.py': _REVIEW + 'text_qc_acceptance.py',
+    # I1 split the legacy review contract module across review and contracts.
+    'scripts/sermon_review_contracts.py': _REVIEW + 'contracts.py',
+}
+
+# Prepared-workflow composition (tongxing_production.workflows.prepared), batch W2.
+_PREPARED = PRODUCTION + 'workflows/prepared/'
+WORKFLOWS = {
+    'scripts/sermon_unified_continuation.py': _PREPARED + 'continuation.py',
+    'scripts/sermon_unified_capabilities.py': _PREPARED + 'capabilities.py',
+    'scripts/sermon_unified_canonical_binding.py': _PREPARED + 'canonical_binding.py',
+    'scripts/sermon_unified_study.py': _PREPARED + 'study.py',
+    'scripts/sermon_study_generation.py': _PREPARED + 'study_generation.py',
 }
 
 # Shared infrastructure, batches I1-I4 (docs/design/infrastructure-injection.zh.md).
-CONTRACTS = {}      # tongxing_production.contracts, batch I1
+CONTRACTS = {       # tongxing_production.contracts, batch I1
+    'scripts/canonical_pipeline_definition.py': PRODUCTION + 'contracts/pipeline_definition.py',
+}
 STORAGE = {}        # tongxing_production.storage, batch I2
 OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
 
+# I1 moved generic portions of the legacy review module to contracts; include them
+# in closures that still identify the combined legacy module.
+# Package files that took over part of a split legacy file; closures that listed
+# the legacy key list these as well, so they cover the same code as before.
+SPLIT_MEMBERS = {
+    'scripts/sermon_review_contracts.py': (PRODUCTION + 'contracts/canonical.py', PRODUCTION + 'contracts/schemas.py'),
+}
+
 PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **LAYER2, **LAYER3, **LAYER4,
-                **REVIEW}
+                **REVIEW, **WORKFLOWS}
 
 
 def resolve(key):

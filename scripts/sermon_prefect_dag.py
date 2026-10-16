@@ -45,8 +45,12 @@ CLOSURE = ('sermon_dag_contract.py', 'sermon_prefect_dag.py', 'run_sermon_prefec
 
 def code_identity():
     # Keys stay the legacy scripts/ names; a member moved into the package is read where it lives.
-    return c.canonical_sha256({name: hashlib.sha256((REPO/path_aliases.resolve('scripts/'+name)).read_bytes()).hexdigest()
-                               for name in CLOSURE})
+    # A member split across package files also hashes, by repository path, the files that took over the rest.
+    files = {name: hashlib.sha256((REPO/path_aliases.resolve('scripts/'+name)).read_bytes()).hexdigest()
+             for name in CLOSURE}
+    files.update({path: hashlib.sha256((REPO/path).read_bytes()).hexdigest()
+                  for name in CLOSURE for path in path_aliases.SPLIT_MEMBERS.get('scripts/'+name, ())})
+    return c.canonical_sha256(files)
 
 
 def read(path):

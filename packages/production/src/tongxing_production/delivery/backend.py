@@ -19,18 +19,19 @@ class Legacy:
 
 @dataclass(frozen=True)
 class Unmoved:
-    """Layer 4 modules not yet in the package that moved modules still reach through the host.
+    """Layer 4 modules not yet in the package that callers reach through the host.
 
     Each accessor returns the host's module at call time; it disappears when that
     module moves into delivery/ and its callers import it directly.
     """
     app_release: Callable[[], ModuleType]       # scripts.build_full_video_app_release (D2): verified_assets, runtime web files
+    formal_stage: Callable[[], ModuleType]        # stage_formal_multilingual_dev (D2): canonical_sha, file_sha, reviewed_candidate, decode_audio
+    execution_harness: Callable[[], ModuleType]   # sermon_execution_harness: WorkAlreadyRunning
 
 
 @dataclass(frozen=True)
 class DeliveryBackend:
     core: ports.Core
-    contracts: ports.Contracts
     code: ports.Code
     schemas: ports.Schemas
     workspace: ports.Workspace

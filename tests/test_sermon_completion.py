@@ -185,5 +185,31 @@ class CompletionTests(unittest.TestCase):
         with self.assertRaises(c.ContractError):compatibility.verify(compatibility.CURRENT_SOURCE_SHA256,changed,changed,binding)
         with self.assertRaises(c.ContractError):compatibility.verify(compatibility.HISTORICAL_SOURCE_SHA256,current,current,binding)
 
+    def test_contracts_split_generation_covers_only_the_split_file(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.CONTRACTS_SPLIT_HISTORICAL_SHA256,compatibility.CONTRACTS_SPLIT_SOURCE_SHA256
+        for path in compatibility.CONTRACTS_SPLIT_CHANGED:
+            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.CONTRACTS_SPLIT_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        planned.update(compatibility.CONTRACTS_SPLIT_MEMBER_SHA256)
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.CONTRACTS_SPLIT_MIGRATION)
+        self.assertEqual(step['changedModules'],compatibility.CONTRACTS_SPLIT_CHANGED)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['productionEligible']),(0,0,False))
+        for member in compatibility.CONTRACTS_SPLIT_MEMBER_SHA256:
+            changed_members=dict(planned);changed_members[member]='f'*64
+            with self.assertRaises(c.ContractError):
+                compatibility.verify(before,after,changed_members,binding)
+        # The pre-I1 drift itself is not a reviewed step: only the exact pair is accepted.
+        for skipped in (compatibility.TRANSPORT_MOVE_SOURCE_SHA256,):
+            with self.assertRaises(c.ContractError):
+                compatibility.verify(skipped,after,after,binding)
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.TRANSPORT_MOVE_SOURCE_SHA256,before,before,binding)
+
 
 if __name__=='__main__':unittest.main()

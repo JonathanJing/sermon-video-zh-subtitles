@@ -18,6 +18,7 @@ import re
 import shutil
 from typing import Any, Callable
 
+from ..contracts import canonical as _contracts
 from . import backend as _text
 from . import candidate as producer
 from . import policy as policy_tools
@@ -388,8 +389,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     decoder = getattr(caller, "completed_content", completed_response_content)
     content = decoder(response, model, role)
     if response_observer is not None:
-        decode_json = _text.current().unmoved.review_contracts().decode_json
-        parsed = decode_json(content.encode("utf-8"))
+        parsed = _contracts.decode_json(content.encode("utf-8"))
     else:
         parsed = json.loads(content)
     require(isinstance(parsed, dict), f"{role} response must be a JSON object")
