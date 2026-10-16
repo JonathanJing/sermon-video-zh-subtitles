@@ -34,6 +34,9 @@ LAYER2 = {
     'scripts/target_language_policy_preview.py': _TEXT + 'policy_preview.py',
     'scripts/produce_target_language_candidate.py': _TEXT + 'candidate.py',
     'scripts/target_language_rule_preflight.py': _TEXT + 'rule_preflight.py',
+    'scripts/run_target_language_models.py': _TEXT + 'models.py',
+    'scripts/migrate_target_language_model_cache.py': _TEXT + 'model_cache_migration.py',
+    'scripts/canonical_layer2_budget.py': _TEXT + 'budget.py',
 }
 
 # Shared compute (tongxing_production.compute), stage 1.

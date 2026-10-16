@@ -15,12 +15,26 @@ import time
 import urllib.error
 import urllib.request
 
-from scripts import sermon_provider_limits as limits
-from scripts import sermon_provider_http as http
-from scripts import sermon_pipeline as pipeline
-from scripts import sermon_review_budget as budget
-from scripts import sermon_workflow_jobs as jobs
-from scripts.sermon_release_workflow import _safe_path
+from ..compute import provider_limits as limits
+from . import backend as _text
+
+
+class _HostCollaborator:
+    """A host collaborator looked up at each call, so the package imports without a host."""
+    def __init__(self, get):
+        self._get = get
+
+    def __getattr__(self, name):
+        return getattr(self._get(), name)
+
+
+jobs = _HostCollaborator(lambda: _text.current().core.jobs)
+budget = _HostCollaborator(lambda: _text.current().unmoved.review_budget())  # review/ owns the D5 ledger
+pipeline = _HostCollaborator(lambda: _text.current().provider)              # request_json, request_metadata
+
+
+def _safe_path(path):
+    return _text.current().core.safe_path(path)
 
 CURRENT_LIMITS = ContextVar('canonical_layer2_request_limits', default=None)
 SCHEMA = 'sermon-canonical-layer2-budget-authorization-v1'
@@ -51,7 +65,7 @@ def execute_with_provider_retry(req, wall_seconds, *, executor=None, sleep=time.
     reply is an error document, not a completion, so it is retried here before the
     transport sees it; the reservation stays live and no second completion can be
     produced for the same attempt."""
-    executor = executor or http.execute
+    executor = executor or _text.current().provider.http_execute
     deadline = time.monotonic() + wall_seconds
     for attempt in range(PROVIDER_RETRY_ATTEMPTS):
         try:
@@ -74,8 +88,7 @@ def require(ok, code):
 
 
 def selected_runtime_identity(key=None):
-    from scripts.sermon_openai_runtime import selected_route
-    route = selected_route()
+    route = _text.current().provider.route.selected()
     require(route is not None, 'layer2_runtime_requires_explicit_launcher')
     actual = os.environ.get('OPENAI_API_KEY')
     require(isinstance(actual, str) and bool(actual) and (key is None or key == actual),
@@ -84,7 +97,7 @@ def selected_runtime_identity(key=None):
 
 
 def validate_runtime_identity(value):
-    from scripts.sermon_openai_runtime import safe_route
+    safe_route = _text.current().provider.route.safe
     require(type(value) is dict and set(value) == {'openaiRoute', 'credentialSha256'}
             and safe_route(value['openaiRoute']) is not None
             and safe_route(value['openaiRoute']) == value['openaiRoute']
@@ -189,7 +202,7 @@ class BudgetedCaller:
         self.transport = transport
         # Subscription-login Claude CLI transports by role. A translator-only transport serves the
         # historical Opus-translator experiment; both roles exist only for a claude_cli_opus policy.
-        from scripts import target_language_policy as policies
+        from . import policy as policies
         self.claude_transports = dict(claude_transports or {})
         if claude_transport is not None:
             require('translator' not in self.claude_transports, 'claude_transport_required')
@@ -204,11 +217,11 @@ class BudgetedCaller:
 
     def __call__(self, key, payload):
         self.verify_execution(key)
-        from scripts.sermon_openai_runtime import project_headers
+        project_headers = _text.current().provider.route.project_headers
         selected_headers = project_headers(key)
         load_authorization(self.config, self.auth['path'],
                            self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
-        from scripts.strict_budget_capability import require_bounded_api_payload
+        require_bounded_api_payload = _text.current().compute.admit
         require_bounded_api_payload(payload, self.auth['limits'], surface='canonical_api')
         capped = limits.bounded_payload(payload, self.auth['limits'])
         require(capped == payload, 'model_payload_must_be_bounded_before_cache_identity')
@@ -255,7 +268,7 @@ class BudgetedCaller:
         # uses the existing isolated, single-attempt, wall-deadline HTTP executor.
         if payload['model'] in limits.CLAUDE_MODELS:
             # Claude is reachable only through its subscription CLI, as the role the policy froze.
-            from scripts.claude_layer2_transport import chat_envelope
+            chat_envelope = _text.current().transports.claude_chat_envelope
             response = chat_envelope(self.claude_transports[role]('', payload, role=role), payload['model'])
         elif self.transport is None:
             request = urllib.request.Request('https://api.openai.com/v1/chat/completions',

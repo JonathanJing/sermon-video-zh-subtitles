@@ -18,30 +18,39 @@ import re
 import shutil
 from typing import Any, Callable
 
-try:
-    from scripts import production_spark_admission as spark_admission
-    from scripts import four_layer_measure as measure
-    from scripts import produce_target_language_candidate as producer
-    from scripts import sermon_accounting as accounting
-    from scripts import sermon_cache_observation as cache_observation
-    from scripts import sermon_pipeline
-    from scripts import target_language_policy as policy_tools
-    from scripts import target_language_policy_preview as policy_preview
-    from scripts import target_language_rule_preflight as rule_preflight
-    from scripts.migrate_target_language_model_cache import migration_cache
-    from scripts import sermon_workflow_jobs as jobs
-except ImportError:
-    import production_spark_admission as spark_admission
-    import four_layer_measure as measure
-    import produce_target_language_candidate as producer
-    import sermon_accounting as accounting
-    import sermon_cache_observation as cache_observation
-    import sermon_pipeline
-    import target_language_policy as policy_tools
-    import target_language_policy_preview as policy_preview
-    import target_language_rule_preflight as rule_preflight
-    from migrate_target_language_model_cache import migration_cache
-    import sermon_workflow_jobs as jobs
+from . import backend as _text
+from . import candidate as producer
+from . import policy as policy_tools
+from . import policy_preview
+from . import rule_preflight
+from .model_cache_migration import migration_cache
+
+
+class _HostCollaborator:
+    """A host collaborator looked up at each call, so the package imports without a host."""
+    def __init__(self, get):
+        self._get = get
+
+    def __getattr__(self, name):
+        return getattr(self._get(), name)
+
+
+jobs = _HostCollaborator(lambda: _text.current().core.jobs)
+measure = _HostCollaborator(lambda: _text.current().measure)
+
+
+class _Accounting:
+    """The run's accounting through the Layer 2 port, under the names this module used."""
+    def __getattr__(self, name):
+        port = _text.current().accounting
+        return {"accounting_session": port.session, "_finalize": port.finalize}.get(name) or getattr(port, name)
+
+
+accounting = _Accounting()
+
+
+def _session_bound_caller():
+    return _text.current().compute.session_bound_caller
 
 
 # Timing-only edits do not change the model request or group admission rules.
@@ -251,7 +260,7 @@ def completed_response_content(response, model, role):
 
 def model_payload(role, prompt, policy, request_limits=None):
     if request_limits is None:
-        from scripts.canonical_layer2_budget import CURRENT_LIMITS
+        from .budget import CURRENT_LIMITS  # the budget imports this module
         request_limits = CURRENT_LIMITS.get()
     model = policy[role]["model"]
     payload = {"model": model, "reasoning_effort": policy[role]["reasoningEffort"],
@@ -263,14 +272,14 @@ def model_payload(role, prompt, policy, request_limits=None):
     if policy.get("simulationModelConfiguration") is not None:
         payload["service_tier"] = policy["simulationModelConfiguration"][role]["serviceTier"]
     if request_limits is not None:
-        from scripts.sermon_provider_limits import bounded_payload
+        from ..compute.provider_limits import bounded_payload
         payload = bounded_payload(payload, request_limits)
     return payload
 
 
 def validate_api_marker(marker,caller,api_key,payload,fingerprint,role):
-    if marker.exists() and isinstance(caller,spark_admission.SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
-        from scripts import api_cli_outcomes as outcomes
+    if marker.exists() and isinstance(caller,_session_bound_caller()) and not caller.requires_spark and not caller.outcome_guarded:
+        outcomes = _text.current().provider.outcomes
         saved=producer._load(marker)
         if 'apiCliRequestSha256' in saved:
             require(saved.get('payloadSha256')==fingerprint and saved.get('role')==role
@@ -296,8 +305,8 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     transport_identity = getattr(caller, "execution_identity", None)
     fingerprint_input = ({"payload": payload, "modelTransportIdentity": transport_identity}
                          if transport_identity is not None else payload)
-    if isinstance(caller,spark_admission.SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
-        from scripts import api_cli_outcomes as outcomes
+    if isinstance(caller,_session_bound_caller()) and not caller.requires_spark and not caller.outcome_guarded:
+        outcomes = _text.current().provider.outcomes
         fingerprint_input = {'request':fingerprint_input, 'apiCliRequestSha256':outcomes.request_identity(
             caller.caller,(api_key,payload),{},caller.purpose)}
     fingerprint = policy_tools.canonical_sha256(fingerprint_input)
@@ -332,7 +341,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 and isinstance(saved.get("requestId"), str) and saved["requestId"]
                 and isinstance(saved.get("result"), dict),
                 f"Cached {role} response belongs to different inputs: {output}")
-        cache_observation.record(role, saved, output, mode="validated_cache", origin=reuse_from)
+        _text.current().unmoved.record_cache_observation(role, saved, output, mode="validated_cache", origin=reuse_from)
         return saved
     marker = output.with_suffix(".started.json")
     raw_path = output.with_suffix(".raw.json")
@@ -356,8 +365,8 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
         if resource_admission is not None:
             resource_admission(payload)
         outcome_binding = {}
-        if isinstance(caller, spark_admission.SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
-            from scripts import api_cli_outcomes as outcomes
+        if isinstance(caller, _session_bound_caller()) and not caller.requires_spark and not caller.outcome_guarded:
+            outcomes = _text.current().provider.outcomes
             outcome_binding = {"apiCliOutcomeRoot":str(outcomes.receipt_root(caller.outcome_directory).resolve()),
                 "apiCliRequestSha256":outcomes.request_identity(caller.caller, (api_key, payload), {}, caller.purpose),
                 "apiCliPurpose":caller.purpose}
@@ -379,7 +388,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     decoder = getattr(caller, "completed_content", completed_response_content)
     content = decoder(response, model, role)
     if response_observer is not None:
-        from scripts.sermon_review_contracts import decode_json
+        decode_json = _text.current().unmoved.review_contracts().decode_json
         parsed = decode_json(content.encode("utf-8"))
     else:
         parsed = json.loads(content)
@@ -391,7 +400,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     # uncertainty marker. A failed sync propagates and leaves it for recovery.
     marker.unlink(missing_ok=True)
     if recovered_raw:
-        cache_observation.record(role, saved, output, mode="raw_response_recovery")
+        _text.current().unmoved.record_cache_observation(role, saved, output, mode="raw_response_recovery")
     return saved
 
 
@@ -734,7 +743,7 @@ def carry_forward_group(prior_run: Path, out: Path, index: int,
                         f"Carried-forward model preview changed: {target_preview}")
             else:
                 shutil.copyfile(preview, target_preview)
-        cache_observation.record(role, cached, target, mode="carried_forward_group", origin=source)
+        _text.current().unmoved.record_cache_observation(role, cached, target, mode="carried_forward_group", origin=source)
     return copy.deepcopy(prior_row)
 
 def ordered_group_results(items: list, worker, workers: int, *, maximum_workers=16) -> list:
@@ -779,9 +788,9 @@ def validate_standalone_worker_budget(policy: dict) -> None:
 
 def recover_api_outcome(marker, raw_path, *, caller, allowed_prior_roots=()):
     """Recover only a bound durable return; this path cannot dispatch anything."""
-    if not isinstance(caller, spark_admission.SessionBoundCaller) or caller.requires_spark or caller.outcome_guarded:
+    if not isinstance(caller, _session_bound_caller()) or caller.requires_spark or caller.outcome_guarded:
         return
-    from scripts import api_cli_outcomes as outcomes
+    outcomes = _text.current().provider.outcomes
     saved = producer._load(marker)
     identity = saved.get("apiCliRequestSha256")
     if identity is None: return  # Older markers remain uncertain, never redispatch.
@@ -908,7 +917,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                           executor_type="deterministic_program",
                           work_unit_id=f"l2.{request['targetLocale']}.run_admission") as admission_span:
         if diagnostic_context is not None:
-            from scripts.sermon_diagnostic_context import validate_context
+            validate_context = _text.current().diagnostic.validate_context
             context = validate_context(diagnostic_context)
             diagnostic_api_repair = (getattr(caller, "execution_identity", {}).get("backend") == "openai_api"
                                      and reuse_from is not None and partial_repair_brief is not None
@@ -938,7 +947,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                            if historical_replay else production_models(policy))
         simulation_configuration = policy.get("simulationModelConfiguration")
         if simulation_configuration is not None:
-            from scripts.codex_layer2_transport import validate_test_configuration
+            validate_test_configuration = _text.current().transports.validate_codex_test_configuration
             require(simulation_only and not api_key,
                     "Simulation model configuration cannot enter formal production")
             validate_test_configuration(simulation_configuration)
@@ -972,7 +981,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         capacity_profile = getattr(caller, 'execution_identity', {}).get('concurrencyProfile')
         maximum_workers = 16
         if capacity_profile is not None:
-            from scripts.production_concurrency_profile import validate_profile
+            validate_profile = _text.current().compute.validate_profile
             capacity_profile = validate_profile(capacity_profile)
             maximum_workers = capacity_profile['layer2GroupWorkers']
             workers = maximum_workers  # explicit runtime capability; frozen legacy policy schema stays intact
@@ -1471,7 +1480,7 @@ def main() -> None:
     # A bound canonical configuration declares whether this is a non-production shadow candidate.
     candidate_mode = "production"
     if args.budget_config is not None:
-        from scripts import canonical_layer2_controller as controller
+        controller = _text.current().unmoved.controller()
         candidate_mode = controller.load_configuration(args.budget_config).candidate_mode
     request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
     if args.budget_config is None:
@@ -1481,14 +1490,13 @@ def main() -> None:
     require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
     rule_preflight.preflight(request, policy, args.plugin, plan)
     # Translation and review call a remote API or the local Codex CLI: no Spark session.
-    from scripts import production_spark_admission as spark_admission
     if args.budget_config is not None:
         require(args.model_backend == "openai-api" and args.group_plan is None
                 and args.revision_brief is None and args.reuse_from is None
                 and args.partial_repair_brief is None and args.resume_cache_from is None
                 and args.progress_ledger is None,
                 "Bound canonical dispatch does not accept standalone execution overrides")
-        from scripts import canonical_layer2_controller as controller
+        controller = _text.current().unmoved.controller()
         config = controller.load_configuration(args.budget_config)
         locale = policy["targetLocale"]
         require(locale in config.lanes, "locale_not_registered")
@@ -1503,14 +1511,12 @@ def main() -> None:
                          budget_authorization=args.budget_authorization), sort_keys=True))
         return
     if args.model_backend == "openai-api":
-        from scripts.openai_layer2_transport import OpenAILayer2Transport
-        transport = OpenAILayer2Transport()
+        transport = _text.current().transports.caller("openai-api")
         api_key = transport.key
     else:
-        from scripts.codex_layer2_transport import CodexLayer2Transport
-        transport = CodexLayer2Transport(receipts_dir=args.out_dir / "_cli_calls")
+        transport = _text.current().transports.caller("codex-cli", receipts_dir=args.out_dir / "_cli_calls")
         api_key = ""
-    caller = spark_admission.SessionBoundCaller(transport, requires_spark=False)
+    caller = _session_bound_caller()(transport, requires_spark=False)
     evidence = run_accounted(
         source, anchor, policy, args.out_dir, api_key,
         caller,

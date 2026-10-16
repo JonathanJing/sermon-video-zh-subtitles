@@ -10,15 +10,23 @@ from contextvars import ContextVar
 import copy
 import json
 from pathlib import Path
-import sys
 
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from . import backend as _text
+from . import candidate as producer
+from . import policy as policy_tools
 
-from scripts import produce_target_language_candidate as producer
-from scripts import target_language_policy as policy_tools
-from scripts import sermon_workflow_jobs as jobs
-from scripts.sermon_execution_harness import work_lock
+
+class _Jobs:
+    """The host's durable job store, looked up at each call so the package imports without a host."""
+    def __getattr__(self, name):
+        return getattr(_text.current().core.jobs, name)
+
+
+jobs = _Jobs()
+
+
+def work_lock(work):
+    return _text.current().workspace.work_lock(work)
 
 CACHE_MIGRATION = ContextVar('explicit_layer2_cache_migration', default=None)
 
@@ -49,8 +57,8 @@ def _source_scope(source):
 
 def migrate(*, old_source, source, anchor, old_policy, policy, old_run: Path,
             old_plugin: Path, plugin: Path, out: Path, request_limits=None):
-    from scripts import run_target_language_models as models
-    from scripts import canonical_layer2_budget as bounded
+    from . import models  # the runner imports this module
+    from . import budget as bounded
     old_run, out = old_run.resolve(), out.resolve()
     require(old_run != out and old_run not in out.parents and out not in old_run.parents,
             'Migration requires separate sibling run directories')
