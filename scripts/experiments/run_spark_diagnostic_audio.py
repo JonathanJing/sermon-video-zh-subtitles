@@ -35,6 +35,8 @@ ASR_HUB = '/home/achillesjing/sermon-speech-runtime/model-cache/hub/models--Qwen
 ASR_SNAPSHOT = '/asr-hub/snapshots/5eb144179a02acc5e5ba31e748d22b0cf3e303b0'
 MEDIA_TOOLS = '/home/achillesjing/sermon-mfa-runtime/env'
 BROKER = '/home/achillesjing/dgx-spark-benchmark/results/next-concurrency-605s-shared-gpu-20261005-r3'
+# The images do not ship tongxing_production; the scripts/ facades import it from the staged code.
+PACKAGE_SRC = 'packages/production/src'
 IMAGES = {'tts': 'sha256:e615da846c45d026d221bda0f168ae35022af18ac7ec4e5245d04fb62c314f14',
           'asr': 'sha256:a0a74493c2b670fc76ba04f30c849da4486e3ca3f9dbb8e9e588eb5abc9d0873'}
 
@@ -181,7 +183,7 @@ def docker_commands(args, session=None, hold=None):
     output = local_out / 'outputs'
     common = ['docker', 'run', '--rm', '--gpus', 'all', '--network', 'none', '--ipc', 'host',
               '--user', '1000:1000',
-              '-e', 'HF_HUB_OFFLINE=1', '-e', 'TRANSFORMERS_OFFLINE=1',
+              '-e', 'HF_HUB_OFFLINE=1', '-e', 'TRANSFORMERS_OFFLINE=1', '-e', f'PYTHONPATH={ROOT / PACKAGE_SRC}',
               '-e', 'PYTHONDONTWRITEBYTECODE=1', '-e', 'PATH=/media-tools/bin:/usr/local/bin:/usr/bin:/bin',
               '-e', 'XDG_CACHE_HOME=/tmp/audio-cache', '-e', 'TRITON_CACHE_DIR=/tmp/audio-triton',
               '-e', 'TORCHINDUCTOR_CACHE_DIR=/tmp/audio-inductor',
@@ -246,7 +248,7 @@ def verify_outputs(root, proof):
 
 
 REMOTE_RUNNER = '''import fcntl,json,pathlib,subprocess,sys,time,os
-c=json.loads(sys.argv[1]);sys.path.insert(0,c['codeRoot'])
+c=json.loads(sys.argv[1]);sys.path[:0]=[c['codeRoot'],c['codeRoot']+'/packages/production/src']
 os.environ.update(c['sessionEnvironment']);os.environ['SPARK_EXCLUSIVE_REMOTE_LOCAL']='1'
 from scripts.spark_exclusive_session import Client
 from scripts.experiments.run_spark_diagnostic_audio import AdmissionGateway
@@ -313,6 +315,7 @@ def execute(args):
         staged = run(remote_command(['cat', stage + '/code-stage-manifest.json']), capture_output=True, text=True)
         code = json.loads(staged.stdout)['files']
         require('scripts/experiments/run_spark_diagnostic_audio.py' in code
+                and PACKAGE_SRC + '/tongxing_production/__init__.py' in code
                 and all((ROOT / name).resolve().is_relative_to(ROOT)
                         and (ROOT / name).is_file() and inputs.sha(ROOT / name) == expected
                         for name, expected in code.items()), 'remote_code_differs_from_final_local_snapshot')

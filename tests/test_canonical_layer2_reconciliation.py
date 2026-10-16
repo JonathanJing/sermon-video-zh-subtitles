@@ -177,7 +177,7 @@ class CanonicalLayer2ReconciliationTests(unittest.TestCase):
 
     def test_two_cli_processes_publish_one_receipt_without_model_credentials(self):
         revision = self.view()['stateRevision']
-        command = [sys.executable, str(Path(subject.__file__).resolve()), '--config', str(self.path),
+        command = [sys.executable, str((Path(__file__).resolve().parents[1] / 'scripts/canonical_layer2_reconciliation.py')), '--config', str(self.path),
                    '--locale', 'zh-Hans', '--expected-state-revision', revision]
         env = {**os.environ, 'OPENAI_API_KEY': '', 'CODEX_HOME': '/nonexistent/tongxing-test-no-auth'}
         children = [subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)

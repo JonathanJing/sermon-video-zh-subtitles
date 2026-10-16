@@ -274,7 +274,7 @@ artifacts/target-language-text/<source-package-id>/<target-locale>/<job-id>/
 - `translation-draft.json`：translator-only 内部产物；
 - `independent-review.json`：reviewer 修订、语义 ledger 和 uncertainty；
 - `candidate.machine.json`：正式 v2 机器候选，永远 `releaseEligible=false`；
-- `human-review-receipt.json`：独立的人审决定，绑定待批准 v2 candidate 的完整 JSON hash、源包、anchor、policy 和每组决定；由[审核 CLI](../scripts/review_target_language_candidate.py) 根据人工填写的 worksheet 生成并校验，结构见[收据 schema](../schemas/sermon-target-language-human-review-receipt-v1.schema.json)；
+- `human-review-receipt.json`：独立的人审决定，绑定待批准 v2 candidate 的完整 JSON hash、源包、anchor、policy 和每组决定；由[审核 CLI](../packages/production/src/tongxing_production/text/human_review.py) 根据人工填写的 worksheet 生成并校验，结构见[收据 schema](../schemas/sermon-target-language-human-review-receipt-v1.schema.json)；
 - `candidate.approved.json`：新的 v2 revision；其完整 JSON hash 必须与人审收据一致才能进入 Layer 3，仍 `releaseEligible=false`；
 - `run-receipt.json`：job identity、实现 hash、模型调用数、重试、耗时、token／成本摘要和全部紧凑产物 hash。
 

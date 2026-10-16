@@ -37,6 +37,12 @@ LAYER2 = {
     'scripts/run_target_language_models.py': _TEXT + 'models.py',
     'scripts/migrate_target_language_model_cache.py': _TEXT + 'model_cache_migration.py',
     'scripts/canonical_layer2_budget.py': _TEXT + 'budget.py',
+    'scripts/canonical_layer2_controller.py': _TEXT + 'controller.py',
+    'scripts/layer2_auto_repair.py': _TEXT + 'auto_repair.py',
+    'scripts/layer2_human_ruling.py': _TEXT + 'human_ruling.py',
+    'scripts/canonical_layer2_cache_recovery.py': _TEXT + 'cache_recovery.py',
+    'scripts/canonical_layer2_reconciliation.py': _TEXT + 'reconciliation.py',
+    'scripts/review_target_language_candidate.py': _TEXT + 'human_review.py',
 }
 
 # Shared compute (tongxing_production.compute), stage 1.

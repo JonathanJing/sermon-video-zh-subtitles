@@ -23,7 +23,9 @@ class Unmoved:
     speech_handoff: Callable[[], ModuleType]     # prepare_target_language_speech_job (Layer 3 hand-off checks)
     orchestration_contracts: Callable[[], ModuleType]  # the unified run's contracts
     review_contracts: Callable[[], ModuleType]   # sermon_review_contracts: strict JSON, validators, size limits
-    controller: Callable[[], ModuleType]         # canonical_layer2_controller until it moves (T3)
+    accounting_module: Callable[[], ModuleType]  # sermon_accounting, for callers reading beyond the Accounting port
+    api_concurrency_module: Callable[[], ModuleType]   # layer2_api_concurrency (compute/)
+    source_meaning_module: Callable[[], ModuleType]    # source_meaning_machine_adjudication (review/)
     load_meaning_notes: Callable[..., Any]       # (path, *, source, anchor, ...) source-meaning notes (review/)
     repair_instruction: Callable[..., str]       # (notes, source_unit_ids)
     record_cache_observation: Callable[..., Any]  # (role, saved, output, *, mode, origin=None)
