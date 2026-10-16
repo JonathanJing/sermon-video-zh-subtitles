@@ -46,9 +46,12 @@ LAYER2 = {
     'scripts/sermon_unified_layer2_binding.py': _TEXT + 'unified_binding.py',
 }
 
-# Shared compute (tongxing_production.compute), stage 1.
+# Shared compute (tongxing_production.compute), stage 1 and infrastructure I0b.
 COMPUTE = {
     'scripts/sermon_provider_limits.py': PRODUCTION + 'compute/provider_limits.py',
+    # Infrastructure I0b: waiver closure members, moved byte for byte.
+    'scripts/sermon_openai_runtime.py': PRODUCTION + 'compute/openai_runtime.py',
+    'scripts/sermon_transcription_request.py': PRODUCTION + 'compute/transcription_request.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.
@@ -72,9 +75,16 @@ LAYER4 = {
     'scripts/inspect_multilingual_v3_release.py': _LEGACY + 'inspect_multilingual_v3_release.py',
     'scripts/verify_v3_bucket_video.py': _LEGACY + 'verify_v3_bucket_video.py',
     'scripts/build_sermon_poster.py': _LEGACY + 'build_sermon_poster.py',
+    'scripts/build_multilingual_sermon_posters.py': _DELIVERY + 'posters/build.py',
+    'scripts/weekly_poster_template.py': _DELIVERY + 'posters/template.py',
 }
 
-PATH_ALIASES = {**COMPUTE, **LAYER1, **LAYER2, **LAYER4}
+# Shared infrastructure, batches I1-I4 (docs/design/infrastructure-injection.zh.md).
+CONTRACTS = {}      # tongxing_production.contracts, batch I1
+STORAGE = {}        # tongxing_production.storage, batch I2
+OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
+
+PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **LAYER2, **LAYER4}
 
 
 def resolve(key):

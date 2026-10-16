@@ -48,13 +48,16 @@ def package_imports_of(path):
 
 class ProductionPackageTests(unittest.TestCase):
     def test_layers_import_only_upstream(self):
-        """Downstream may import upstream pure validators (L2 design decision 5); never the reverse."""
+        """Downstream may import upstream pure validators (L2 design decision 5); never the reverse.
+        Cross-layer review sits below every stage: stages may import it, it imports none of them."""
         downstream = {"source": ("tongxing_production.text", "tongxing_production.audio",
                                  "tongxing_production.delivery"),
                       "text": ("tongxing_production.audio", "tongxing_production.delivery"),
                       "audio": ("tongxing_production.delivery",),
                       # The engine knows stage names only; the prepared workflow composes it.
-                      "orchestration": ("tongxing_production.workflows",)}
+                      "orchestration": ("tongxing_production.workflows",),
+                      "review": ("tongxing_production.source", "tongxing_production.text", "tongxing_production.audio",
+                                 "tongxing_production.delivery", "tongxing_production.orchestration")}
         for layer, forbidden in downstream.items():
             for path in sorted((PACKAGE_SRC / layer).rglob("*.py")):
                 with self.subTest(path=str(path.relative_to(ROOT))):

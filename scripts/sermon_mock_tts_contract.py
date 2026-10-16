@@ -14,6 +14,7 @@ import wave
 from scripts import sermon_review_contracts as c
 from scripts import sermon_public_snapshot as public
 from scripts.sermon_release_workflow import _safe_path
+from tongxing_production import path_aliases
 
 REQUEST = 'sermon-mock-tts-request-v1'
 RECEIPT = 'sermon-mock-tts-worker-receipt-v1'
@@ -238,7 +239,9 @@ def implementation_sha256():
         'sermon_guarded_command.py', 'sermon_review_contracts.py', 'sermon_public_snapshot.py',
         'sermon_release_workflow.py', 'sermon_job_liveness.py', 'sermon_clock_evidence.py',
         'sermon_workflow_evidence.py', 'sermon_review_observation.py')
-    return c.canonical_sha256({name: c.bytes_sha256((root/'scripts'/name).read_bytes()) for name in names})
+    # Keys stay the legacy scripts/ names; a member moved into the package is read where it lives.
+    return c.canonical_sha256({name: c.bytes_sha256((root/path_aliases.resolve('scripts/'+name)).read_bytes())
+                               for name in names})
 
 
 def validate_input_binding(value, unit):
