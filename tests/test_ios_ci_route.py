@@ -99,6 +99,8 @@ class IOSRouteTest(unittest.TestCase):
             ("scripts/assemble_multilingual_v3_update.py", "contract"),
             ("scripts/build_full_video_app_release.py", "contract"),
             ("scripts/build_formal_dev_release_assets.py", "contract"),
+            ("packages/production/src/tongxing_production/delivery/contract.py", "contract"),
+            ("packages/production/src/tongxing_production/adapters/legacy/assemble_multilingual_hosting.py", "contract"),
             ("apps/listening-web/reader/formal-dev-adapter.mjs", "contract"),
             ("apps/listening-web/published-weeks.mjs", "contract"),
             (".github/workflows/tongxing-ios.yml", "native"),
