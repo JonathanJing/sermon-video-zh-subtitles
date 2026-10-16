@@ -16,7 +16,6 @@ from scripts import tongxing_host as host
 from scripts import bounded_audio_cpu, four_layer_measure, ko_spoken_numerals, production_spark_admission
 from scripts import dev_audio_test_profile, machine_quality_release_basis as machine_basis
 from scripts import machine_quality_waiver as waiver
-from scripts import prepare_target_language_speech_job as speech
 from scripts import render_formal_target_language_speech as renderer
 from scripts import render_multilingual_voice_demos as demos
 from scripts import review_target_language_audio as audio_review
@@ -124,7 +123,6 @@ class AudioPortsTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertEqual(backend.schemas.path(name).resolve(), (schemas / name).resolve())
         self.assertEqual(backend.schemas.path('x.json').parent.resolve(), (audio_review.ROOT / 'schemas').resolve())
-        self.assertEqual(backend.schemas.path('x.json').parent.resolve(), (speech.REPO_ROOT / 'schemas').resolve())
         self.assertEqual(backend.dev_profile.default_profile_path().resolve(),
                          dev_audio_test_profile.DEFAULT_PROFILE.resolve())
 
