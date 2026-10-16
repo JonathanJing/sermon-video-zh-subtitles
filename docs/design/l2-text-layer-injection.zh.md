@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [现状地图](repository-current-map.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [L2 controller](../canonical-layer2-controller.zh.md) · [运行模型策略](../production-model-runtime-policy.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md) · [系列术语表](../series-terminology.zh.md)
 
-状态：**设计提案，待评审，未开始迁移**。盘点日期：2026-10-15。基线：`dev@9d4e89d8`（L1 S0 [#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、S1 [#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487)、S2 [#492](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/492) 已合并；S2 给 `ports.py` 加了 `Compute`、`Terminology`、`Measure`，并把 `build_english_source_package` 等四个生产者迁入 `tongxing_production.source`）。本文只定义 L2 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
+状态：**§6 已决定（2026-10-15，六项均采纳本文建议），未开始迁移**。盘点日期：2026-10-15。基线：`dev@9d4e89d8`（L1 S0 [#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、S1 [#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487)、S2 [#492](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/492) 已合并；S2 给 `ports.py` 加了 `Compute`、`Terminology`、`Measure`，并把 `build_english_source_package` 等四个生产者迁入 `tongxing_production.source`）。本文只定义 L2 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
 
 ## 1 为什么不能直接搬
 
@@ -196,7 +196,19 @@ L1 的 `PATH_ALIASES` 放在 `source/producer_compatibility.py`，名字和位�
 
 每批：迁移前后 `tests/` 的发现清单一一对应（提案 §5.5）；`python-tests.yml` 的 `py_compile` 清单若列有被搬文件，同批更新；每批只在没有进行中的 L2 run 时合并（§4.4 第 3 点）。
 
-## 6 待你决定
+## 6 决定（2026-10-15 用户采纳全部建议）
+
+| # | 问题 | 决定 | 对分批的影响 |
+|---|---|---|---|
+| 1 | 语言插件是否搬 | 本轮不搬，经 `Plugins` 端口定位 | 不做"（另批）插件"；`pluginImplementationSha256` 与冻结 policy 不变 |
+| 2 | 模型传输归属 | 归 compute/，L2 不搬也不改 | T0–T4 不碰三个传输；缓存连续性（已付费缓存失效重付，还是评审过的 `adapterSha256` 迁移表）留到 compute 批次设计时再决定，本文没有给出建议 |
+| 3 | 别名表位置 | 新建共享的 `tongxing_production/path_aliases.py` | 从 L1 的 `producer_compatibility.PATH_ALIASES` 抽出，`resolve()`/`recorded()` 随之迁移、旧名保留委托；要改 L1 文件，排在 L1 S4 之后、T0 之前或同批 |
+| 4 | `code_identity` 缺口 | T0 之前单独修复，把 `packages/production/src` 纳入 | 单独 PR；`codeIdentitySha256` 改变一次，只在没有进行中的 L2 run 时合并 |
+| 5 | `text/` 导入 `tongxing_production.source` | 允许下游导入上游纯校验函数，禁止反向 | 结构测试增加"`source` 不导入 `text`"一条 |
+| 6 | 边界模块归属 | `target_text_auto_qc` → review/，`layer2_api_concurrency` → compute/，`review_target_language_candidate` → text/ | 前两个不随 L2 批次搬；`review_target_language_candidate` 在 T3 搬 |
+
+以下保留原问题文本，供追溯。
+
 
 1. **语言插件是否搬**：建议本轮不搬（§4.1）。搬的代价是 17 个文件改字节、所有冻结 policy 重新冻结、所有执行配置改路径；收益只是目录整齐。若要搬，是否接受"插件迁移表 + 旧 policy 只读可验"的方案？
 2. **模型传输归属与缓存连续性**：建议归 compute/，L2 不搬也不改（§4.5）。将来 compute 批次搬传输时，是接受"已付费缓存失效、重新付费"，还是要求一张评审过的 `adapterSha256` 迁移表，让续跑能识别旧缓存？
