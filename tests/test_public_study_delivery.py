@@ -116,9 +116,9 @@ def test_real_prepare_seal_publish_inventory_contains_complete_reviewed_study(pr
     assert catalog['pages'][0]['sourceIdentitySha256']==release['englishSourcePackageJsonSha256']
     report=builder.read(sealed/'seal-report.json')
     assert sum('/study/' in row['path'] for row in report['files'])==3
-    assert {'/' + name for name in builder.RUNTIME_WEB_FILES} <= {row['path'] for row in report['files']}
-    for name in builder.RUNTIME_WEB_FILES:
-        assert (sealed/'public'/name).read_bytes() == (builder.RUNTIME_WEB_ROOT/name).read_bytes()
+    assert {'/' + name for name in builder.runtime_web_files()} <= {row['path'] for row in report['files']}
+    for name in builder.runtime_web_files():
+        assert (sealed/'public'/name).read_bytes() == (builder.runtime_web_root()/name).read_bytes()
     target=sealed/'public/study'/f['page']/f['locale']/'meditation.json';target.write_text('{}')
     with pytest.raises(ValueError):d.validate_catalog_snapshot(sealed)
 
@@ -134,7 +134,7 @@ def endpoint_fixture(f, sealed, catalog='/multilingual-v4.json'):
         'captionText':'current caption','captionLocale':locale,'syncErrorSeconds':0,'studyArtifacts':studies,'studyDisplayed':True}
     evidence=save(f['root'],'playback.json',telemetry)
     rows=[{'role':'catalog','path':catalog},{'role':'release','path':release_path}]+release['assets']
-    rows += [{'role':'reader_runtime','path':'/' + name} for name in builder.RUNTIME_WEB_FILES]
+    rows += [{'role':'reader_runtime','path':'/' + name} for name in builder.runtime_web_files()]
     receipt={'locales':[locale],'readback':{'schemaVersion':'sermon-client-readback-v2','intent':f['config']['intent'],
         'candidateSha256':candidate,'observedAt':'2026-10-04T20:00:00Z','resources':[{'role':r['role'],'url':origin+r['path'],
             'sha256':builder.digest(sealed/'public'/r['path'].lstrip('/'))} for r in rows]},

@@ -37,7 +37,7 @@ def committed_ui(tmp_path, monkeypatch):
     source.mkdir(parents=True)
     for name in ui.ui_files('production'):
         (source / name).write_text('new UI: ' + name)
-    monkeypatch.setattr(ui.builder, 'RUNTIME_WEB_ROOT', source)
+    monkeypatch.setattr(ui.builder, 'runtime_web_root', lambda: source)
     monkeypatch.setattr(ui.builder, 'ROOT', repo)
     monkeypatch.setattr(ui.builder, 'runtime_web_files', lambda *_: ())
     subprocess.run(['git', 'init', '-q', str(repo)], check=True)

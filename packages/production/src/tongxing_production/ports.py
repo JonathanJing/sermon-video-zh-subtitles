@@ -110,6 +110,8 @@ class Accounting:
 class Review:
     """Operator review receipts a stage checks before it runs; review/ owns them."""
     validate_window: Callable[..., Any]        # (manifest, bindings=None, base='.')
+    validate_review: Callable[..., Any]        # (kind, receipt_path, *, inputs, expected_source=None, expected_locale=None)
+    audio_screening: Callable[..., Any]        # (audio, receipt, screening): Layer 3 audio screening review gate
 
 
 @dataclass(frozen=True)
@@ -186,3 +188,30 @@ class Diagnostic:
     validate_source: Callable[..., Any]        # (source, anchor, context)
     validate_context: Callable[[Any], Any]
     require_policy_ready: Callable[..., Any]   # (identity, context=None)
+
+
+@dataclass(frozen=True)
+class RuntimeWeb:
+    """The reader shell a release publishes; delivery scans its files at call time."""
+    root: Callable[[], Path]                   # <checkout>/apps/listening-web
+
+
+@dataclass(frozen=True)
+class Hosting:
+    """Hosting defaults a publication uses; lease, attempt and reconciliation rules stay in delivery."""
+    authorized_request: Callable[[], Callable[..., Any]]   # () -> request(method, url, *, data=None, headers=None, timeout=60)
+    public_reader: Callable[..., tuple]        # (url, *, timeout=120) -> (status, body)
+    run: Callable[..., Any]                    # subprocess.run for the hosting CLI
+    lease: Callable[..., Any]                  # (request, bucket, site) -> remote publication lease
+
+
+@dataclass(frozen=True)
+class Waivers:
+    """Machine-quality waivers a release discloses; review/ owns their rules."""
+    is_text_waiver: Callable[[dict], bool]
+    validate_text_waiver: Callable[..., Any]   # (receipt, *, candidate, source_sha=None, ...)
+    disclosure: Callable[[str], dict]          # (locale)
+    is_audio_waiver: Callable[[dict], bool]
+    validate_audio_waiver: Callable[..., None]   # (package, receipt, screening)
+    audio_waiver_schema: str
+    condensation_binding_schema: str

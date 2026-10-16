@@ -257,13 +257,13 @@ class ReaderClosureTests(unittest.TestCase):
                 release.runtime_web_files(root)
 
     def test_actual_reader_contains_catalog_navigation_dependency(self):
-        self.assertIn('catalog.mjs', release.RUNTIME_WEB_FILES)
-        self.assertIn('fingerprint-capture.mjs', release.RUNTIME_WEB_FILES)
-        self.assertIn('locales-ko.mjs', release.RUNTIME_WEB_FILES)
+        self.assertIn('catalog.mjs', release.runtime_web_files())
+        self.assertIn('fingerprint-capture.mjs', release.runtime_web_files())
+        self.assertIn('locales-ko.mjs', release.runtime_web_files())
         # The shell ships with the modules: the page, its styles, theme, icons,
         # offline worker and the fingerprint worker and worklet.
         for name in ('index.html', 'style.css', 'theme.js', 'icons.svg', 'brand-icon.svg', 'brand-icon-light.svg',
                      'brand-icon.png', 'offline-worker.js', 'fingerprint-worker.mjs', 'fingerprint-worklet.mjs',
                      'voice-samples.mjs', 'voice-demo.css'):
-            self.assertIn(name, release.RUNTIME_WEB_FILES, name)
-        self.assertFalse(any(name.endswith('.json') or '.test.' in name for name in release.RUNTIME_WEB_FILES))
+            self.assertIn(name, release.runtime_web_files(), name)
+        self.assertFalse(any(name.endswith('.json') or '.test.' in name for name in release.runtime_web_files()))

@@ -130,6 +130,8 @@ def _products(value, args):
 
 
 def _input_snapshot(value, base, paths):
+    runtime_root = builder.runtime_web_root()
+    runtime_files = builder.runtime_web_files(runtime_root)
     dependencies = {}
     def visit(path, expected=None, *, recursive=True, canonical=None):
         from scripts.sermon_release_workflow import _safe_path
@@ -162,8 +164,8 @@ def _input_snapshot(value, base, paths):
     for name in ('releasePlan', 'httpVerification'):
         if name in paths:
             visit(paths[name], recursive=False)
-    for name in builder.RUNTIME_WEB_FILES:
-        visit(builder.RUNTIME_WEB_ROOT / name, recursive=False)
+    for name in runtime_files:
+        visit(runtime_root / name, recursive=False)
     if 'baseline' in paths:
         baseline = paths['baseline']
         visit(baseline / 'seal-report.json', recursive=False)
@@ -288,6 +290,8 @@ def _verify_publication(sealed, attempt, reader):
 
 
 def _endpoints(value, base, sealed, state, reader):
+    runtime_root = builder.runtime_web_root()
+    runtime_files = builder.runtime_web_files(runtime_root)
     verified = []
     files = {('/' + row['path'].lstrip('/')): row['sha256'] for row in read(sealed / 'seal-report.json')['files']}
     for endpoint in value.get('acceptance', []):
@@ -307,7 +311,7 @@ def _endpoints(value, base, sealed, state, reader):
         page = next(page for page in catalog['pages'] if page['id'] == value['pageId'])
         required_paths = {'/multilingual-v4.json' if has_v4 else '/multilingual-v3.json'}
         if endpoint['name'] in ('dev', 'production_web'):
-            required_paths.update('/' + name for name in builder.RUNTIME_WEB_FILES)
+            required_paths.update('/' + name for name in runtime_files)
         audio_paths = {}
         study_requirements = {}
         for locale in value['locales']:

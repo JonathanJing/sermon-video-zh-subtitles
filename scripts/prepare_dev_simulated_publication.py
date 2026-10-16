@@ -330,6 +330,8 @@ def release_plan(baseline_path, prepared_path, out):
 
 
 def asset_first(baseline_path, prepared, out, source_video=None):
+    runtime_root = builder.runtime_web_root()
+    runtime_files = builder.runtime_web_files(runtime_root)
     base, prepared, out = map(lambda p: Path(p).resolve(), (baseline_path, prepared, out))
     contract.require(not out.exists() and not out.is_relative_to(base) and not out.is_relative_to(prepared), 'Unsafe asset-first output')
     contract.validate_catalog_snapshot(base)
@@ -354,7 +356,7 @@ def asset_first(baseline_path, prepared, out, source_video=None):
         src, target = prepared / 'public' / relative, out / 'public' / relative
         contract.require(digest(src) == row['sha256'], 'Prepared asset changed')
         if target.exists():
-            contract.require(str(relative) in builder.RUNTIME_WEB_FILES or digest(target) == row['sha256'], 'Existing asset collision')
+            contract.require(str(relative) in runtime_files or digest(target) == row['sha256'], 'Existing asset collision')
         target.parent.mkdir(parents=True, exist_ok=True)
         if not target.exists() or digest(target) != row['sha256']:
             shutil.copyfile(src, target)
@@ -398,6 +400,8 @@ def machine_checked_overlay(baseline_path, overlay_public, catalog_path, out):
 
     Machine-checked targets exist only in v4; the human-only v3 projection must be
     unchanged, so only the v4 catalog and the page's own assets change."""
+    runtime_root = builder.runtime_web_root()
+    runtime_files = builder.runtime_web_files(runtime_root)
     base, incoming, out = map(lambda p: Path(p).resolve(), (baseline_path, overlay_public, out))
     contract.require(not out.exists() and not out.is_relative_to(base) and not out.is_relative_to(incoming), 'Unsafe overlay output')
     from scripts import build_full_video_app_release as builder
@@ -439,7 +443,7 @@ def machine_checked_overlay(baseline_path, overlay_public, catalog_path, out):
         target = out / 'public' / relative
         if target.exists() and digest(target) == digest(src):
             continue
-        contract.require(not target.exists() or str(relative) in builder.RUNTIME_WEB_FILES, 'Existing immutable resource overwrite refused: ' + str(relative))
+        contract.require(not target.exists() or str(relative) in runtime_files, 'Existing immutable resource overwrite refused: ' + str(relative))
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(src, target)
         changed.append('/' + str(relative))
@@ -462,6 +466,8 @@ def machine_checked_overlay(baseline_path, overlay_public, catalog_path, out):
 
 
 def overlay(baseline_path, overlay_public, catalog_path, out):
+    runtime_root = builder.runtime_web_root()
+    runtime_files = builder.runtime_web_files(runtime_root)
     base, incoming, out = map(lambda p: Path(p).resolve(), (baseline_path, overlay_public, out))
     contract.require(not out.exists() and not out.is_relative_to(base) and not out.is_relative_to(incoming), 'Unsafe overlay output')
     from scripts import build_full_video_app_release as builder
@@ -500,7 +506,7 @@ def overlay(baseline_path, overlay_public, catalog_path, out):
         target = out / 'public' / relative
         if target.exists() and digest(target) == digest(src):
             continue
-        contract.require(not target.exists() or str(relative) in builder.RUNTIME_WEB_FILES, 'Existing immutable resource overwrite refused: ' + str(relative))
+        contract.require(not target.exists() or str(relative) in runtime_files, 'Existing immutable resource overwrite refused: ' + str(relative))
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(src, target)
         changed.append('/' + str(relative))
@@ -529,6 +535,8 @@ def overlay(baseline_path, overlay_public, catalog_path, out):
 
 def runtime_repair(baseline_path, out):
     """Refresh only the closed Web module graph, retaining the exact catalog."""
+    runtime_root = builder.runtime_web_root()
+    runtime_files = builder.runtime_web_files(runtime_root)
     from scripts import build_full_video_app_release as builder
     base, out = Path(baseline_path).resolve(), Path(out).resolve()
     contract.require(not out.exists() and not out.is_relative_to(base), 'Unsafe runtime repair output')
@@ -540,8 +548,8 @@ def runtime_repair(baseline_path, out):
     shutil.copyfile(base / 'firebase.json', out / 'firebase.json')
     shutil.copyfile(base / 'baseline-receipt.json', out / 'baseline-receipt.json')
     changed = []
-    for name in builder.RUNTIME_WEB_FILES:
-        src, target = builder.RUNTIME_WEB_ROOT / name, out / 'public' / name
+    for name in runtime_files:
+        src, target = runtime_root / name, out / 'public' / name
         if not target.exists() or digest(src) != digest(target):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(src, target)
@@ -550,7 +558,7 @@ def runtime_repair(baseline_path, out):
     write(out / 'seal-report.json', {**catalog_report(out / 'public'), 'files': files_report(out / 'public')})
     contract.validate_catalog_snapshot(out)
     write(out / 'publish-config.json', publication_config(base, out))
-    write(out / 'runtime-repair-plan.json', {'status': 'prepared_not_deployed', 'runtimeFiles': list(builder.RUNTIME_WEB_FILES), 'changedPaths': changed,
+    write(out / 'runtime-repair-plan.json', {'status': 'prepared_not_deployed', 'runtimeFiles': list(runtime_files), 'changedPaths': changed,
           'catalogUnchanged': True, 'modelCalls': 0, 'productionEligible': False})
     return {'status': 'prepared_not_deployed', 'changedPaths': changed, 'publishConfig': str(out / 'publish-config.json')}
 
