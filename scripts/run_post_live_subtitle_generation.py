@@ -44,6 +44,11 @@ SERMON_INTERPRETATION_SCRIPT = REPO_ROOT / "scripts" / "generate_notes_with_open
 # the scripts/ path above.
 REVIEW_PROMPTS_SCRIPT = REPO_ROOT / path_aliases.resolve("scripts/review_prompts.py")
 SERMON_PIPELINE_IMPLEMENTATION = REPO_ROOT / path_aliases.resolve("scripts/sermon_pipeline.py")
+# The pipeline's Layer 1 English group (transcription, English correction, MFA options,
+# fingerprint precompute) lives in its own file since W3b.
+POST_LIVE_ENGLISH_SCRIPT = (
+    REPO_ROOT / "packages" / "production" / "src" / "tongxing_production" / "source" / "post_live_english.py"
+)
 DEFAULT_WORK_ROOT = Path("/tmp/sermon-post-live-subtitles")
 POST_LIVE_STATES = {"was_live"}
 READING_EDITION_DIRNAME = "reading-edition-v2"
@@ -1421,6 +1426,7 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
         "implementation": {
             "sermonPipeline": file_content_identity(SERMON_PIPELINE_IMPLEMENTATION),
             "legacyOpenAI": file_content_identity(LEGACY_OPENAI_SCRIPT),
+            "postLiveEnglish": file_content_identity(POST_LIVE_ENGLISH_SCRIPT),
             "reviewPrompts": file_content_identity(REVIEW_PROMPTS_SCRIPT),
             "seriesTerminology": file_content_identity(Path(series_terminology.__file__)),
         },

@@ -150,7 +150,8 @@ OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
 # the legacy key list these as well, so they cover the same code as before.
 SPLIT_MEMBERS = {
     # workflows/compute C4: the remote-call group extracted from the legacy monolith.
-    'scripts/sermon_pipeline.py': (PRODUCTION + 'compute/legacy_openai.py',),
+    # W3b: the Layer 1 English group and its file helpers.
+    'scripts/sermon_pipeline.py': (PRODUCTION + 'compute/legacy_openai.py', PRODUCTION + 'source/post_live_english.py'),
     'scripts/sermon_review_contracts.py': (PRODUCTION + 'contracts/canonical.py', PRODUCTION + 'contracts/schemas.py'),
 }
 

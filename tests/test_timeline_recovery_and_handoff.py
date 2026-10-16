@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest import mock
 from agents.tool_context import ToolContext
 
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
 from scripts import run_post_live_timeline_job as timeline
 from scripts import sermon_pipeline
 from scripts import run_post_live_subtitle_generation as generation
@@ -52,7 +53,7 @@ class TimelineHandoffTest(unittest.TestCase):
             return destination
         downloader = mock.Mock(side_effect=download)
         upload = mock.Mock()
-        with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), mock.patch.object(sermon_pipeline, "chat_json", side_effect=AssertionError("Source verification must not classify")) as model, mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")) as asr, mock.patch("builtins.print"):
+        with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), patch_both("chat_json", side_effect=AssertionError("Source verification must not classify")) as model, mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")) as asr, mock.patch("builtins.print"):
             report = timeline.run_job(
                 make_args(root, str(state)), metadata_loader=lambda _: {"live_status": "was_live", "duration": 3600},
                 runner=mock.Mock(side_effect=AssertionError("Must use the handoff")),
@@ -175,7 +176,7 @@ class TimelineResumeTest(unittest.TestCase):
                 put_json(Path(args.out), result)
                 return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
             release = mock.Mock(wraps=supervisor.release_lease)
-            with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), mock.patch.object(sermon_pipeline, "chat_json", side_effect=AssertionError("Source verification must not classify")), mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")), mock.patch("builtins.print"):
+            with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), patch_both("chat_json", side_effect=AssertionError("Source verification must not classify")), mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")), mock.patch("builtins.print"):
                 result = supervisor.run_timeline_probe(config, runner=runner,
                     lease_acquirer=lambda *_a, **kwargs: supervisor.acquire_lease(str(root / "test-timeline-lease.json"), **kwargs), lease_releaser=release)
             self.assertEqual(result["status"], "requires_operator_review")
@@ -255,7 +256,7 @@ class TimelineResumeTest(unittest.TestCase):
             audio.write_bytes(b"repaired complete source")
             def writer(uri, text):
                 remote[uri] = json.loads(text)
-            with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), mock.patch.object(sermon_pipeline, "chat_json", side_effect=AssertionError("Source verification must not classify")), mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")), mock.patch("builtins.print"):
+            with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), patch_both("chat_json", side_effect=AssertionError("Source verification must not classify")), mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")), mock.patch("builtins.print"):
                 report = timeline.run_job(make_args(root, config.state_file,
                         resume_failed_timeline=supervisor.json_digest(failed), persist_run_status=True),
                     metadata_loader=lambda _: {"live_status": "was_live", "duration": 3600},

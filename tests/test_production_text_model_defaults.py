@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
 from scripts import sermon_pipeline, generate_notes_with_openai as notes
 from scripts import run_post_live_subtitle_generation as post_live
 from scripts import sermon_production_supervisor as supervisor
@@ -168,7 +169,7 @@ class LegacyBoundedCacheIdentityTests(unittest.TestCase):
                         module=reading
                     before=old_path.read_bytes()
                     api=Mock(return_value=response)
-                    with (patch.object(module,'chat_json',api) if module else patch.object(sentence,'RUN_SCHEMA',sentence.RUN_SCHEMA)):
+                    with ((patch_both('chat_json',api) if module is sermon_pipeline else patch.object(module,'chat_json',api)) if module else patch.object(sentence,'RUN_SCHEMA',sentence.RUN_SCHEMA)):
                         first=invoke();second=invoke()
                         self.assertEqual(first,second)
                         self.assertEqual(api.call_count,1)
@@ -217,7 +218,7 @@ class LegacyExecutionCacheIdentityTests(unittest.TestCase):
                         if role=='subtitle':return review.review_batch(key,[block],[block],0,root,'gpt-6.1-sol','medium')
                         if role=='sentence':return sentence.cached_call(out=root,stage='test',payload={'model':'gpt-6.1-sol','reasoning_effort':'high','messages':[{'role':'user','content':'synthetic'}],'response_format':{'type':'json_object'}},api_key=key,requested_model='gpt-6.1-sol',caller=fake)
                         return reading.edit_batch(key,[block],[block],0,root,model='gpt-6.1-sol',reasoning_effort='high',qa_pass=role=='reading-qa',provider='openai',codex_cli=Path('unused'),schema_path=Path('unused'))
-                    with patch('scripts.sermon_openai_runtime.selected_route',return_value=route),patch.object(sermon_pipeline,'chat_json',side_effect=fake),patch.object(review,'chat_json',side_effect=fake),patch.object(reading,'chat_json',side_effect=fake):
+                    with patch('scripts.sermon_openai_runtime.selected_route',return_value=route),patch_both("chat_json", side_effect=fake),patch.object(review,'chat_json',side_effect=fake),patch.object(reading,'chat_json',side_effect=fake):
                         run('synthetic-key-a');run('synthetic-key-a');self.assertEqual(len(calls),1)
                         run('synthetic-key-b');self.assertEqual(len(calls),2)
                         with patch('scripts.sermon_openai_runtime.selected_route',return_value={**route,'projectId':'proj_b'}):run('synthetic-key-a')

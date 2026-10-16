@@ -14,6 +14,7 @@ from tongxing_production.compute import legacy_openai  # C4: the remote-call gro
 
 # The implementation moved to tongxing_production.workflows.dual_pdf.pipeline (W3a);
 # the scripts/ path is a facade naming the same module object.
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
 from scripts import sermon_pipeline as mod  # noqa: E402
 
 
@@ -67,9 +68,9 @@ class SermonPipelineTest(unittest.TestCase):
                                   {"word": "world.", "start": 1.0, "end": 2.0}]}]
             with mock.patch("scripts.mfa_backend.preflight", return_value={"backend": "local"}), \
                     mock.patch.object(mod, "load_glossary", return_value={}), \
-                    mock.patch.object(mod, "stage", side_effect=lambda *a, **k: nullcontext()), \
+                    patch_both("stage", side_effect=lambda *a, **k: nullcontext()), \
                     mock.patch.object(mod, "clip_and_normalize"), \
-                    mock.patch.object(mod, "ffprobe_duration", return_value=2.0), \
+                    patch_both("ffprobe_duration", return_value=2.0), \
                     mock.patch.object(mod, "transcribe_with_fingerprint", return_value=([{"text": "Hello world."}], None)), \
                     mock.patch.object(mod, "reading_segments", return_value=english), \
                     mock.patch.object(mod, "translate_chinese") as translate:
@@ -97,9 +98,9 @@ class SermonPipelineTest(unittest.TestCase):
             chunks = [{"start": 0.0, "end": 2.0, "text": "Hello world."}]
             with mock.patch("scripts.mfa_backend.preflight") as preflight, \
                     mock.patch.object(mod, "load_glossary", return_value={}), \
-                    mock.patch.object(mod, "stage", side_effect=lambda *a, **k: nullcontext()), \
+                    patch_both("stage", side_effect=lambda *a, **k: nullcontext()), \
                     mock.patch.object(mod, "clip_and_normalize"), \
-                    mock.patch.object(mod, "ffprobe_duration", return_value=2.0), \
+                    patch_both("ffprobe_duration", return_value=2.0), \
                     mock.patch.object(mod, "transcribe_with_fingerprint", return_value=(chunks, None)), \
                     mock.patch.object(mod, "reading_segments") as align, \
                     mock.patch.object(mod, "translate_chinese") as translate:
@@ -178,7 +179,7 @@ class SermonPipelineTest(unittest.TestCase):
             source = root / "source.m4a"
             source.write_text("audio", encoding="utf-8")
 
-            with mock.patch.object(mod, "run") as fake_run:
+            with patch_both("run") as fake_run:
                 mod.cut_chunk(source, root / "chunk.m4a", 0.0, 30.0)
                 mod.clip_and_normalize(source, root / "clip.m4a", 0.0, 60.0)
 
@@ -200,7 +201,7 @@ class SermonPipelineTest(unittest.TestCase):
             source.write_text("audio", encoding="utf-8")
             clip.write_text("partial", encoding="utf-8")
 
-            with mock.patch.object(mod, "ffprobe_duration", return_value=1494.3), mock.patch.object(
+            with patch_both("ffprobe_duration", return_value=1494.3), mock.patch.object(
                 mod, "run"
             ) as fake_run:
                 mod.clip_and_normalize(source, clip, 1765.0, 3524.0)
@@ -228,7 +229,7 @@ class SermonPipelineTest(unittest.TestCase):
             }
             mod.write_json(mod.media_cache_metadata_path(clip), old_identity)
 
-            with mock.patch.object(mod, "ffprobe_duration", return_value=60.0), mock.patch.object(
+            with patch_both("ffprobe_duration", return_value=60.0), mock.patch.object(
                 mod, "run"
             ) as fake_run:
                 mod.clip_and_normalize(source, clip, 200.0, 260.0)
@@ -256,7 +257,7 @@ class SermonPipelineTest(unittest.TestCase):
             mod.write_json(mod.media_cache_metadata_path(chunk), identity)
             source.write_text("source-v2-is-different", encoding="utf-8")
 
-            with mock.patch.object(mod, "run") as fake_run:
+            with patch_both("run") as fake_run:
                 mod.cut_chunk(source, chunk, 0.0, 30.0)
 
         fake_run.assert_called_once()
@@ -275,7 +276,7 @@ class SermonPipelineTest(unittest.TestCase):
                 "model": "gpt-6.1-sol",
                 "choices": [{"message": {"content": '{"id":0,"zh":"神爱我们。"}'}}],
             }
-            with mock.patch.object(mod, "chat_json", side_effect=[correction_response, translation_response]) as request:
+            with patch_both("chat_json", side_effect=[correction_response, translation_response]) as request:
                 corrected = mod.correct_english(
                     "key",
                     segments,
@@ -325,10 +326,10 @@ class SermonPipelineTest(unittest.TestCase):
                     raise RuntimeError("HTTP 400: Audio file might be corrupted or unsupported")
                 return {"text": "Recovered transcript"}
 
-            with mock.patch.object(mod, "ffprobe_duration", return_value=30.0), \
-                 mock.patch.object(mod, "cut_chunk", side_effect=fake_cut_chunk), \
-                 mock.patch.object(mod, "reencode_transcription_fallback", side_effect=fake_reencode), \
-                 mock.patch.object(mod, "transcribe_openai_audio", side_effect=fake_transcribe):
+            with patch_both("ffprobe_duration", return_value=30.0), \
+                 patch_both("cut_chunk", side_effect=fake_cut_chunk), \
+                 patch_both("reencode_transcription_fallback", side_effect=fake_reencode), \
+                 patch_both("transcribe_openai_audio", side_effect=fake_transcribe):
                 chunks = mod.transcribe_gpt4o_chunks(
                     "key",
                     clip,

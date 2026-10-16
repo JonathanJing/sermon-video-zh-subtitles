@@ -30,8 +30,10 @@ class FingerprintPackageTests(unittest.TestCase):
 
     def test_python_identity_bindings_point_at_the_package(self):
         for script in ("scripts/sermon_pipeline.py", "scripts/run_post_live_subtitle_generation.py"):
-            # The legacy path may be a facade; read the implementation it names today.
-            text = (ROOT / path_aliases.resolve(script)).read_text(encoding="utf-8")
+            # The legacy path may be a facade, and part of it may live in split members;
+            # read the implementation files it names today.
+            text = "".join((ROOT / path).read_text(encoding="utf-8") for path in (
+                path_aliases.resolve(script), *path_aliases.SPLIT_MEMBERS.get(script, ())))
             with self.subTest(script=script):
                 self.assertIn("packages", text)
                 self.assertNotIn("sermon-dubbing-poc/web/fingerprint-core.mjs", text)
