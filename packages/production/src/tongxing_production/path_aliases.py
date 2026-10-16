@@ -52,6 +52,12 @@ COMPUTE = {
     # Infrastructure I0b: waiver closure members, moved byte for byte.
     'scripts/sermon_openai_runtime.py': PRODUCTION + 'compute/openai_runtime.py',
     'scripts/sermon_transcription_request.py': PRODUCTION + 'compute/transcription_request.py',
+    # workflows/compute C1: byte-identical leaves.
+    'scripts/sermon_provider_http.py': PRODUCTION + 'compute/provider_http.py',
+    'scripts/sermon_provider_error.py': PRODUCTION + 'compute/sermon_provider_error.py',
+    'scripts/layer2_api_concurrency.py': PRODUCTION + 'compute/api_concurrency.py',
+    'scripts/production_concurrency_profile.py': PRODUCTION + 'compute/concurrency_profile.py',
+    'scripts/sermon_unified_runtime_identity.py': PRODUCTION + 'compute/runtime_identity.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.
