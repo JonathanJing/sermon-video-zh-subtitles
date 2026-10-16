@@ -128,6 +128,23 @@ def test_release_plan_rejects_reused_page_id_and_wrong_receipt(plan_inputs):
         publication.bound_release_plan(base, prepared)
 
 
+@pytest.mark.parametrize('prepare', [
+    lambda base, out: publication.asset_first(base, base / 'prepared', out),
+    lambda base, out: publication.overlay(base, base / 'public', base / 'catalog.json', out),
+    lambda base, out: publication.machine_checked_overlay(base, base / 'public', base / 'catalog.json', out),
+    lambda base, out: publication.runtime_repair(base, out)])
+def test_snapshot_builders_reach_the_four_product_builder(tmp_path, monkeypatch, prepare):
+    # The builder was read before its import in these four (D0); D3 reaches it through the host.
+    reached = []
+    def runtime_web_root():
+        reached.append(True)
+        raise LookupError('builder reached')
+    monkeypatch.setattr(builder, 'runtime_web_root', runtime_web_root)
+    with pytest.raises(LookupError, match='builder reached'):
+        prepare(tmp_path / 'base', tmp_path / 'out')
+    assert reached == [True]
+
+
 def test_simulated_page_joins_v4_so_v3_stays_its_human_projection(tmp_path):
     human = lambda locale: {'releasePackageUrl': f'/releases-v2/{{}}/{locale}.json', 'releasePackageJsonSha256': 'a' * 64,
                             'contentStatus': 'human_reviewed', 'audioStatus': 'human_reviewed', 'capabilities': ['text', 'captions', 'audio']}

@@ -20,16 +20,14 @@ import zlib
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
-if __package__ in (None, ''):
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from . import backend as _delivery
+from . import contract
+from . import publication as publisher
 
-try:
-    from scripts import delivery_contract as contract
-    from scripts import guarded_hosting_publish as publisher
-except ImportError:
-    import delivery_contract as contract
-    import guarded_hosting_publish as publisher
+
+def _builder():
+    # The four-product builder moves into delivery/ in D2; until then the host supplies it.
+    return _delivery.current().unmoved.app_release()
 
 PROJECT = SITE = 'ai-for-god-sermon-audio-dev'
 ORIGIN = 'https://' + SITE + '.web.app'
@@ -286,7 +284,7 @@ def publication_config(base, out, *, environment='dev'):
 
 def bound_release_plan(baseline_path, prepared_path):
     """Build the seal/merge contract from verified bytes, not raw JSON hashes."""
-    from scripts import build_full_video_app_release as builder
+    builder = _builder()
     base, prepared = Path(baseline_path).resolve(), Path(prepared_path).resolve()
     catalog = contract.validate_catalog_snapshot(base)
     manifest, _ = builder.verified_assets(prepared)
@@ -330,17 +328,12 @@ def release_plan(baseline_path, prepared_path, out):
 
 
 def asset_first(baseline_path, prepared, out, source_video=None):
+    builder = _builder()
     runtime_root = builder.runtime_web_root()
     runtime_files = builder.runtime_web_files(runtime_root)
     base, prepared, out = map(lambda p: Path(p).resolve(), (baseline_path, prepared, out))
     contract.require(not out.exists() and not out.is_relative_to(base) and not out.is_relative_to(prepared), 'Unsafe asset-first output')
     contract.validate_catalog_snapshot(base)
-    try:
-        from scripts import build_full_video_app_release as builder
-    except ModuleNotFoundError:
-        import sys
-        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-        from scripts import build_full_video_app_release as builder
     manifest, assets = builder.verified_assets(prepared)
     contract.require(set(manifest['releases']) == {'zh-Hans', 'ko', 'es'}, 'Three locales required')
     receipt = read(base / 'baseline-receipt.json')
@@ -400,11 +393,11 @@ def machine_checked_overlay(baseline_path, overlay_public, catalog_path, out):
 
     Machine-checked targets exist only in v4; the human-only v3 projection must be
     unchanged, so only the v4 catalog and the page's own assets change."""
+    builder = _builder()
     runtime_root = builder.runtime_web_root()
     runtime_files = builder.runtime_web_files(runtime_root)
     base, incoming, out = map(lambda p: Path(p).resolve(), (baseline_path, overlay_public, out))
     contract.require(not out.exists() and not out.is_relative_to(base) and not out.is_relative_to(incoming), 'Unsafe overlay output')
-    from scripts import build_full_video_app_release as builder
     before_v3 = contract.validate_catalog_snapshot(base)
     receipt = read(base / 'baseline-receipt.json')
     contract.require(receipt['project'] == PROJECT and receipt['site'] == SITE and receipt['origin'] == ORIGIN, 'Dev target only')
@@ -466,11 +459,11 @@ def machine_checked_overlay(baseline_path, overlay_public, catalog_path, out):
 
 
 def overlay(baseline_path, overlay_public, catalog_path, out):
+    builder = _builder()
     runtime_root = builder.runtime_web_root()
     runtime_files = builder.runtime_web_files(runtime_root)
     base, incoming, out = map(lambda p: Path(p).resolve(), (baseline_path, overlay_public, out))
     contract.require(not out.exists() and not out.is_relative_to(base) and not out.is_relative_to(incoming), 'Unsafe overlay output')
-    from scripts import build_full_video_app_release as builder
     before = contract.validate_catalog_snapshot(base)
     receipt = read(base / 'baseline-receipt.json')
     contract.require(receipt['project'] == PROJECT and receipt['site'] == SITE and receipt['origin'] == ORIGIN, 'Dev target only')
@@ -535,9 +528,9 @@ def overlay(baseline_path, overlay_public, catalog_path, out):
 
 def runtime_repair(baseline_path, out):
     """Refresh only the closed Web module graph, retaining the exact catalog."""
+    builder = _builder()
     runtime_root = builder.runtime_web_root()
     runtime_files = builder.runtime_web_files(runtime_root)
-    from scripts import build_full_video_app_release as builder
     base, out = Path(baseline_path).resolve(), Path(out).resolve()
     contract.require(not out.exists() and not out.is_relative_to(base), 'Unsafe runtime repair output')
     contract.validate_catalog_snapshot(base)

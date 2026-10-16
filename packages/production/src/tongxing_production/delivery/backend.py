@@ -18,6 +18,16 @@ class Legacy:
 
 
 @dataclass(frozen=True)
+class Unmoved:
+    """Layer 4 modules not yet in the package that moved modules still reach through the host.
+
+    Each accessor returns the host's module at call time; it disappears when that
+    module moves into delivery/ and its callers import it directly.
+    """
+    app_release: Callable[[], ModuleType]       # scripts.build_full_video_app_release (D2): verified_assets, runtime web files
+
+
+@dataclass(frozen=True)
 class DeliveryBackend:
     core: ports.Core
     contracts: ports.Contracts
@@ -30,6 +40,7 @@ class DeliveryBackend:
     waivers: ports.Waivers
     worker_command: Callable[..., list]          # (*arguments) -> [python, scripts/sermon_app_delivery_workflow.py, *arguments]
     legacy: Legacy
+    unmoved: Unmoved
 
 
 _current: DeliveryBackend | None = None

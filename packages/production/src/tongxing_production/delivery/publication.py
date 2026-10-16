@@ -19,21 +19,16 @@ import time
 from contextlib import contextmanager
 import json
 import re
-import subprocess
 from pathlib import Path
 from urllib.parse import quote
 from datetime import datetime, timezone
-# Nested v3 validators import the scripts package, including direct CLI runs.
-if __package__ in (None, ''):
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-try:
-    from scripts import delivery_contract as contract
-    from scripts.sermon_execution_harness import atomic_json
-except ImportError:
-    import delivery_contract as contract
-    from sermon_execution_harness import atomic_json
+from . import backend as _delivery
+from . import contract
+
+
+def atomic_json(path, value):
+    return _delivery.current().core.atomic_json(path, value)
 
 
 @contextmanager
@@ -89,40 +84,8 @@ class PublisherProgress:
 
 
 def authenticated_transport():
-    import google.auth
-    from google.auth.transport.requests import AuthorizedSession
-    credentials, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/cloud-platform'])
-    session = AuthorizedSession(credentials)
-    def request(method, url, *, data=None, headers=None, timeout=60):
-        response = session.request(method, url, data=data, headers=headers, timeout=timeout)
-        # Never return authentication headers or provider error bodies.
-        if response.status_code not in (200, 201, 204):
-            raise ValueError(f'Remote operation rejected: HTTP {response.status_code}')
-        return response.json() if response.content else {}
-    return request
-
-
-class RemoteLease:
-    def __init__(self, request, bucket, site):
-        self.request = request
-        self.name = 'sermon-publisher-leases/' + site + '.json'
-        self.bucket = bucket
-        self.object_url = 'https://storage.googleapis.com/storage/v1/b/' + quote(bucket, safe='') + '/o/' + quote(self.name, safe='')
-        self.generation = None
-
-    def acquire(self, attempt):
-        url = 'https://storage.googleapis.com/upload/storage/v1/b/' + quote(self.bucket, safe='') + '/o?uploadType=media&ifGenerationMatch=0&name=' + quote(self.name, safe='')
-        result = self.request('POST', url, data=json.dumps(attempt).encode(), headers={'Content-Type': 'application/json'})
-        self.generation = str(result['generation'])
-        return self.generation
-
-    def check(self):
-        result = self.request('GET', self.object_url)
-        contract.require(str(result['generation']) == self.generation, 'Publisher lease ownership changed')
-
-    def release(self):
-        contract.require(self.generation is not None, 'Lease is not held')
-        self.request('DELETE', self.object_url + '?ifGenerationMatch=' + self.generation)
+    """An ADC-authorised request(method, url, ...) from the host's Hosting adapter."""
+    return _delivery.current().hosting.authorized_request()
 
 
 # Hosting serves a new version through its CDN a little after the deploy returns: on
@@ -295,10 +258,12 @@ def _observe_owned_version(request, attempt, path, state):
 
 
 def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
-            lease_bucket, request, reader, run=subprocess.run, heartbeat_interval=5,
+            lease_bucket, request, reader, run=None, heartbeat_interval=5,
             baseline_catalog_v4_sha=None):
-    """``baseline_catalog_v4_sha`` is the live v4 catalog the snapshot was built on (None: none yet)."""
+    """``baseline_catalog_v4_sha`` is the live v4 catalog the snapshot was built on (None: none yet).
+    ``run`` defaults to the host's firebase CLI runner."""
     contract.require(heartbeat_interval > 0, 'Heartbeat interval must be positive')
+    run = _delivery.current().hosting.run if run is None else run
     with publisher_lock(snapshot):
         return _publish(snapshot, intent=intent, routes=routes, baseline_version=baseline_version,
                         baseline_catalog_sha=baseline_catalog_sha, lease_bucket=lease_bucket,
@@ -316,7 +281,7 @@ def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha
     contract.require(not receipt_path.exists(), 'Existing attempt requires reconciliation; never retry an unknown deployment')
     attempt = contract.new_attempt(intent, catalog_sha=report['catalogSha256'],
                                    assets_sha=contract.sha(report['files']), baseline_version=baseline_version)
-    lease = RemoteLease(request, lease_bucket, intent['site'])
+    lease = _delivery.current().hosting.lease(request, lease_bucket, intent['site'])
     attempt['leaseGeneration'] = lease.acquire({'attemptId': attempt['attemptId'], 'intent': intent, 'baselineVersion': baseline_version})
     attempt['leaseBucket'] = lease_bucket
     atomic_json(receipt_path, attempt)
@@ -394,7 +359,7 @@ def _reconcile(snapshot, *, request, reader, confirmed_version):
     path = Path(snapshot) / 'deployment-attempt-v2.json'
     attempt = json.loads(path.read_text())
     contract.require(attempt['status'] in ('outcome_unknown', 'deployed'), 'Only unknown attempts need reconciliation')
-    lease = RemoteLease(request, attempt['leaseBucket'], attempt['intent']['site'])
+    lease = _delivery.current().hosting.lease(request, attempt['leaseBucket'], attempt['intent']['site'])
     lease.generation = attempt['leaseGeneration']
     if attempt['status'] == 'deployed':
         # Deployment is already verified; only a failed lease release is left to retry.

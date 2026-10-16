@@ -75,6 +75,8 @@ LAYER4 = {
     'scripts/study_artifacts.py': _DELIVERY + 'study_artifacts.py',
     'scripts/release_asset_io.py': _DELIVERY + 'asset_io.py',
     'scripts/sermon_delivery_intent.py': _DELIVERY + 'intent.py',
+    'scripts/guarded_hosting_publish.py': _DELIVERY + 'publication.py',
+    'scripts/prepare_dev_simulated_publication.py': _DELIVERY + 'baseline.py',
     # D7: the legacy v2/v3 group keeps its module names (design decision 5).
     'scripts/assemble_multilingual_hosting.py': _LEGACY + 'assemble_multilingual_hosting.py',
     'scripts/deploy_multilingual_hosting.py': _LEGACY + 'deploy_multilingual_hosting.py',

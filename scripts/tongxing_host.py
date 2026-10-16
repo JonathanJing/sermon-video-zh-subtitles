@@ -494,29 +494,14 @@ def runtime_web() -> ports.RuntimeWeb:
     return ports.RuntimeWeb(root=lambda: ROOT / 'apps/listening-web')
 
 
-def _authorized_request():
-    from scripts import guarded_hosting_publish
-    return guarded_hosting_publish.authenticated_transport()
-
-
-def _public_reader(url, *, timeout=120):
-    from scripts import sermon_unified_delivery
-    return sermon_unified_delivery._reader(url, timeout=timeout)
-
-
-def _hosting_run(*arguments, **options):
-    import subprocess
-    return subprocess.run(*arguments, **options)
-
-
-def _hosting_lease(request, bucket, site):
-    from scripts import guarded_hosting_publish
-    return guarded_hosting_publish.RemoteLease(request, bucket, site)
-
-
 def hosting() -> ports.Hosting:
-    return ports.Hosting(authorized_request=_authorized_request, public_reader=_public_reader,
-                         run=_hosting_run, lease=_hosting_lease)
+    # The package's Hosting adapter (L4 D3). Each entry looks the adapter up per call,
+    # so patches on tongxing_production.storage.hosting apply.
+    from tongxing_production.storage import hosting as adapter
+    return ports.Hosting(authorized_request=lambda: adapter.authenticated_transport(),
+                         public_reader=lambda url, *, timeout=120: adapter.public_reader(url, timeout=timeout),
+                         run=lambda *arguments, **options: adapter.run(*arguments, **options),
+                         lease=lambda request, bucket, site: adapter.RemoteLease(request, bucket, site))
 
 
 def _is_text_waiver(receipt):
@@ -568,6 +553,10 @@ def _legacy_weekly_release():
         sys.path.insert(0, folder)
     import weekly_release
     return weekly_release
+
+
+def delivery_unmoved() -> delivery_backend.Unmoved:
+    return delivery_backend.Unmoved(app_release=_module('scripts.build_full_video_app_release'))
 
 
 def delivery_legacy() -> delivery_backend.Legacy:
@@ -809,7 +798,7 @@ delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, contract
                                                             runtime_web=runtime_web(), hosting=hosting(),
                                                             waivers=_waivers,
                                                             worker_command=app_delivery_worker_command,
-                                                            legacy=delivery_legacy()))
+                                                            legacy=delivery_legacy(), unmoved=delivery_unmoved()))
 audio_backend.configure(audio_backend.AudioBackend(core=_core, code=_code, compute=_compute, measure=_measure,
                                                    accounting=_accounting, schemas=_schemas, diagnostic=_diagnostic,
                                                    review=_review, waivers=_waivers, machine_qc=machine_qc(),
