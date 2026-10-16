@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [L2 注入边界](l2-text-layer-injection.zh.md) · [L3 注入边界](l3-audio-layer-injection.zh.md) · [L4 注入边界](l4-delivery-layer-injection.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md)
 
-状态：**设计稿，§8 第 3、7 项已由 review 设计决定（2026-10-15），其余待决定；未迁移任何文件**。盘点日期：2026-10-15。基线：`dev@79cdac5d`（L1 S0–S4、L2 T0–T2、L4 D0–D1 已合并）。本文只定义 L1–L4 端口今天绑定的共享基础设施如何迁入提案 §2 的 `observability/`、`storage/`、`contracts/`，以及每个身份记录要怎样迁移；不移动文件，不改合同。数字由附录 A 的只读脚本得出。`review/` 的迁移由 [review 注入边界](review-layer-injection.zh.md)负责（已合并，§6 九项已决定），两者的先后见 §7。
+状态：**§8 八项均已决定（2026-10-15，全部采纳建议）；未迁移任何文件，下一步是 I0/I0b（进行中）与 I1**。盘点日期：2026-10-15。基线：`dev@79cdac5d`（L1 S0–S4、L2 T0–T2、L4 D0–D1 已合并）。本文只定义 L1–L4 端口今天绑定的共享基础设施如何迁入提案 §2 的 `observability/`、`storage/`、`contracts/`，以及每个身份记录要怎样迁移；不移动文件，不改合同。数字由附录 A 的只读脚本得出。`review/` 的迁移由 [review 注入边界](review-layer-injection.zh.md)负责（已合并，§6 九项已决定），两者的先后见 §7。
 
 ## 1 为什么要单独设计
 
@@ -191,17 +191,30 @@ orchestration 包今天经 `scripts/sermon_unified/__init__.py` 绑定；I1–I4
 3. **W 只开一次**。review 设计迁移 `machine_quality_waiver`、`machine_quality_release_basis`、`machine_repair_ledger`、`target_text_auto_qc`、`target_audio_auto_qc` 等闭包成员时必改字节，本来就需要窗口；jobs 拆分并入同一窗口，重新校准只做一次。窗口的时点和校准安排由 review 设计给出（该文 §5.1 的 G1，就是这里的 W），本文只提供 jobs 那部分的出口条件。
 4. **`sermon_review_observation` 归 observability**。它记录审核观测事件，不做准入，且与 accounting 成环；若 review 设计要它，需要先把它从环里切出来。
 
-## 8 待决定
+## 8 决定（2026-10-15 用户采纳全部建议；第 3、7 项随 review 设计 §6 第 9、7 项决定）
+
+| # | 问题 | 决定 | 对分批的影响 |
+|---|---|---|---|
+| 1 | W 之前怎样取 jobs 的私有文件原语 | 宿主临时端口 `JobFiles`，W 中删除；不复制实现 | I2 的 snapshot 与 I3 不必等 W |
+| 2 | 改了 L1 固定文件字节的批次是否加 compat 新一代 | 每批一代（I1、I2、I4），与 L1 v4–v6 相同 | I1 可以开工；搬动前产生的 Source 父运行仍可只读复用 |
+| 3 | `sermon_review_contracts` 的两半是否同 PR | 同 PR：通用半部进 `contracts/`，审核半部进 `review/contracts.py` | 一代 compat 表、一次闭包变化；I1 与 review 的联合批合一 |
+| 4 | jobs、harness 的归属 | 文件原语与锁 → storage；作业状态机、`bounded_process` → orchestration | jobs 拆分在 W（即 review 设计的 G1）中进行 |
+| 5 | `sermon_completion` 的位置 | observability | 在 I3 迁入 `observability/completion.py`。以本文为准：[目录布局提案](repository-layout-proposal.zh.md) §1.1 "completion 结构归 contracts"一句在下次修订提案时改为 observability |
+| 6 | `sermon_diagnostic_context` | 本轮不搬，留在 `Diagnostic` 端口 | 诊断插件哈希与冻结的诊断 policy 不变 |
+| 7 | compute 叶子是否先搬 | I0b 按字节先搬，再做 I3 | accounting 进包时不需要 route 端口 |
+| 8 | waiver 是否允许迁移映射 | 不允许；W 后重新校准 | 与 review 设计一致；不变量 1 |
+
+以下保留原问题表，供追溯。
 
 | # | 问题 | 建议 | 影响 |
 |---|---|---|---|
 | 1 | W 之前 observability 与 `public_snapshot` 怎样取 jobs 的私有文件原语 | 宿主临时端口 `JobFiles`，W 删除；不复制一份实现（锁文件与持久化布局只能有一个权威） | 否则 I2 的 snapshot 与整个 I3 要等到 W |
 | 2 | 改了 L1 固定文件字节的批次是否加 compat 新一代 | 每批一代（I1、I2、I4），与 L1 v4–v6 相同 | 不加则搬动前产生的 Source 父运行不能只读复用；今天已因漂移不可复用的运行不受影响 |
-| 3 | `sermon_review_contracts` 的两半是否同 PR | 同 PR，与 review 设计约定。**已决定（采纳，review 设计 §6 第 9 项）** | 一代 compat 表、一次闭包变化 |
+| 3 | `sermon_review_contracts` 的两半是否同 PR | 同 PR，与 review 设计约定 | 一代 compat 表、一次闭包变化 |
 | 4 | jobs、harness 的归属 | 文件原语与锁 → storage；作业状态机、`bounded_process` → orchestration（提案 §4 与 §1.1） | 若整文件归 storage，状态机会落在 storage，违反提案 §3 的职责表 |
 | 5 | `sermon_completion` 的位置 | observability（它依赖 accounting 与 log_contract） | 提案 §1.1 写的是 contracts；需在提案或本文中改一处 |
 | 6 | `sermon_diagnostic_context` | 本轮不搬，留在 `Diagnostic` 端口 | 搬动会改变诊断插件哈希与冻结的诊断 policy |
-| 7 | compute 叶子是否先搬 | I0b 按字节先搬，再做 I3。**已决定（采纳，review 设计 §6 第 7 项）** | 否则 accounting 进包时需要再加一个 route 端口 |
+| 7 | compute 叶子是否先搬 | I0b 按字节先搬，再做 I3 | 否则 accounting 进包时需要再加一个 route 端口 |
 | 8 | waiver 是否允许迁移映射 | 不允许；W 后重新校准 | 不变量 1 |
 
 ## 9 验收（按提案 §9）
