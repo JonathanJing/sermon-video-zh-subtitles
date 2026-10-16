@@ -10,7 +10,11 @@ import subprocess
 # Freeze complete consumer/contract trees, not just a handpicked schema version.
 # An unclassified production change requires review rather than assuming safety.
 PROTECTED = ('apps/tongxing-ios/', 'schemas/', 'firebase/', 'infra/firebase/', 'web/', 'packages/fingerprint/',
-             'apps/listening-web/', 'services/feedback/')
+             'apps/listening-web/', 'services/feedback/',
+             # Where the L4 producers move in batches D1-D7: the release and catalog
+             # builders (delivery/) and the v2/v3 catalog assemblers (adapters/legacy/).
+             'packages/production/src/tongxing_production/delivery/',
+             'packages/production/src/tongxing_production/adapters/legacy/')
 PRODUCERS = ('scripts/build_multilingual_catalog.py', 'scripts/stage_formal_multilingual_dev.py',
              'scripts/build_target_language_release_package.py',
              'scripts/build_formal_multilingual_dev.py', '.github/workflows/tongxing-ios.yml')

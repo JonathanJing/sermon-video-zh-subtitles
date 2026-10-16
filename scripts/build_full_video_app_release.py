@@ -56,7 +56,11 @@ ROOT = Path(__file__).resolve().parents[1]
 LOCALES = ("zh-Hans", "ko", "es")
 ACCEPT_NOT_RUN = {"status": "not_run", "evidenceSha256": None}
 PAGE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,159}$")
-RUNTIME_WEB_ROOT = ROOT / 'apps/listening-web'
+
+
+def runtime_web_root():
+    """The reader shell a release publishes: the checkout's listening web (L4 decision 4)."""
+    return ROOT / 'apps/listening-web'
 
 
 # The reader's shell is the page plus everything it loads locally: ES modules,
@@ -84,12 +88,12 @@ def _shell_references(path: Path, text: str) -> list[str]:
     return []
 
 
-def runtime_web_files(root=RUNTIME_WEB_ROOT):
+def runtime_web_files(root=None):
     """Freeze the reader's complete local shell closure: the page (when the root
     has one), every ES module it imports and every local script, style, worker,
     worklet and image those files reference. Data files such as /weekly.json are
     published content, not shell, and are left out."""
-    root = Path(root).resolve()
+    root = Path(runtime_web_root() if root is None else root).resolve()
     pending = list(SHELL_MODULE_ROOTS) + ([SHELL_ENTRY] if (root / SHELL_ENTRY).is_file() else [])
     found = set()
     while pending:
@@ -115,8 +119,6 @@ def runtime_web_files(root=RUNTIME_WEB_ROOT):
             pending.append(dependency.relative_to(root).as_posix())
     return tuple(sorted(found))
 
-
-RUNTIME_WEB_FILES = runtime_web_files()
 
 
 def require(condition: bool, message: str) -> None:
@@ -343,6 +345,8 @@ def catalog_title(content: dict) -> str:
 
 
 def prepare(args: argparse.Namespace) -> dict:
+    runtime_root = runtime_web_root()
+    runtime_files = runtime_web_files(runtime_root)
     require(PAGE_ID.fullmatch(args.page_id) is not None, "Unsafe page ID")
     require(not args.out.exists(), "Output already exists")
     source = stage.read_package(args.source, "sermon-english-source-package-v1.schema.json")
@@ -586,8 +590,8 @@ def prepare(args: argparse.Namespace) -> dict:
         if require_study:
             # An overlay must upgrade the existing reader as well as publish v3
             # data. These modules keep legacy v2 pages readable in the baseline.
-            for name in RUNTIME_WEB_FILES:
-                path = RUNTIME_WEB_ROOT / name
+            for name in runtime_files:
+                path = runtime_root / name
                 copy_bound_asset(path, public, '/' + name, digest(path))
                 runtime_assets.append(asset(public, 'other', '/' + name))
         manifest = {"schemaVersion": "sermon-dual-script-app-preparation-v1",
@@ -610,6 +614,8 @@ def prepare(args: argparse.Namespace) -> dict:
 
 
 def verified_assets(prepared: Path) -> tuple[dict, list[dict]]:
+    runtime_root = runtime_web_root()
+    runtime_files = runtime_web_files(runtime_root)
     manifest = read(prepared / "preparation-manifest.json")
     require(manifest.get("schemaVersion") == "sermon-dual-script-app-preparation-v1"
             and manifest.get("status") == "candidate_not_deployed"
@@ -622,13 +628,13 @@ def verified_assets(prepared: Path) -> tuple[dict, list[dict]]:
             "Expected distinct required public assets per locale")
     if any('studyJoinSha256' in item for item in manifest['releases'].values()):
         runtime = manifest.get('runtimeAssets', [])
-        require(len(runtime) == len(RUNTIME_WEB_FILES)
-                and {row['path'] for row in runtime} == {'/' + name for name in RUNTIME_WEB_FILES},
+        require(len(runtime) == len(runtime_files)
+                and {row['path'] for row in runtime} == {'/' + name for name in runtime_files},
                 'Four-product reader runtime assets required')
         # The shell that ships must be the shell this code was checked in with: a
         # release prepared before a web change cannot be verified or sealed after it.
         for row in runtime:
-            require(digest(RUNTIME_WEB_ROOT / row['path'].lstrip('/')) == row['sha256'],
+            require(digest(runtime_root / row['path'].lstrip('/')) == row['sha256'],
                     'Reader runtime asset differs from the checked-in web shell: ' + row['path'])
         assets = assets + runtime
     for row in assets:

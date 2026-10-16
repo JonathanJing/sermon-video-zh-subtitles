@@ -23,6 +23,7 @@ if str(ROOT) not in sys.path:
 from tongxing_production import ports  # noqa: E402
 from tongxing_production.source import backend as source_backend  # noqa: E402
 from tongxing_production.text import backend as text_backend  # noqa: E402
+from tongxing_production.delivery import backend as delivery_backend  # noqa: E402
 
 
 def core() -> ports.Core:
@@ -324,8 +325,19 @@ def _validate_window(manifest, bindings=None, base='.'):
     return validate_window(manifest, bindings, base)
 
 
+def _validate_review(kind, receipt_path, **binding):
+    from scripts import sermon_unified_reviews
+    return sermon_unified_reviews.validate_review(kind, receipt_path, **binding)
+
+
+def _audio_screening_review(audio, receipt, screening):
+    from scripts import stage_formal_multilingual_dev
+    return stage_formal_multilingual_dev.validate_audio_screening_review(audio, receipt, screening)
+
+
 def review() -> ports.Review:
-    return ports.Review(validate_window=_validate_window)
+    return ports.Review(validate_window=_validate_window, validate_review=_validate_review,
+                        audio_screening=_audio_screening_review)
 
 
 def plugins() -> ports.Plugins:
@@ -441,19 +453,96 @@ def text_unmoved() -> text_backend.Unmoved:
         record_cache_observation=_record_cache_observation)
 
 
+def runtime_web() -> ports.RuntimeWeb:
+    # The checkout's reader shell (L4 decision 4); frozen inputs keep hashing these files.
+    return ports.RuntimeWeb(root=lambda: ROOT / 'apps/listening-web')
+
+
+def _authorized_request():
+    from scripts import guarded_hosting_publish
+    return guarded_hosting_publish.authenticated_transport()
+
+
+def _public_reader(url, *, timeout=120):
+    from scripts import sermon_unified_delivery
+    return sermon_unified_delivery._reader(url, timeout=timeout)
+
+
+def _hosting_run(*arguments, **options):
+    import subprocess
+    return subprocess.run(*arguments, **options)
+
+
+def _hosting_lease(request, bucket, site):
+    from scripts import guarded_hosting_publish
+    return guarded_hosting_publish.RemoteLease(request, bucket, site)
+
+
+def hosting() -> ports.Hosting:
+    return ports.Hosting(authorized_request=_authorized_request, public_reader=_public_reader,
+                         run=_hosting_run, lease=_hosting_lease)
+
+
+def _is_text_waiver(receipt):
+    from scripts import machine_quality_release_basis
+    return machine_quality_release_basis.is_text_waiver(receipt)
+
+
+def _validate_text_waiver(receipt, **binding):
+    from scripts import machine_quality_release_basis
+    return machine_quality_release_basis.validate_text_waiver(receipt, **binding)
+
+
+def _waiver_disclosure(locale):
+    from scripts import machine_quality_release_basis
+    return machine_quality_release_basis.disclosure(locale)
+
+
+def _is_audio_waiver(receipt):
+    from scripts import machine_audio_waiver_acceptance
+    return machine_audio_waiver_acceptance.is_audio_waiver(receipt)
+
+
+def _validate_audio_waiver(package, receipt, screening):
+    from scripts import machine_audio_waiver_acceptance
+    return machine_audio_waiver_acceptance.validate_audio_waiver(package, receipt, screening)
+
+
+def waivers() -> ports.Waivers:
+    # The two schema names are fixed strings of a waiver-closure file; reading
+    # them would import it at host load, so they are recorded here and pinned by a test.
+    return ports.Waivers(is_text_waiver=_is_text_waiver, validate_text_waiver=_validate_text_waiver,
+                         disclosure=_waiver_disclosure, is_audio_waiver=_is_audio_waiver,
+                         validate_audio_waiver=_validate_audio_waiver,
+                         audio_waiver_schema='sermon-target-language-machine-audio-waiver-v2',
+                         condensation_binding_schema='sermon-spoken-condensation-binding-v2')
+
+
+def app_delivery_worker_command(*arguments):
+    # Existing durable job requests record this argv; it keeps naming the
+    # scripts/ entry point so recovery matches them byte for byte.
+    return [sys.executable, str(ROOT / 'scripts/sermon_app_delivery_workflow.py'), *arguments]
+
+
 # Each record is built once and shared by the layers that use it.
 _core, _provider, _code, _contracts, _snapshot = core(), provider(), code(), contracts(), snapshot()
 _compute, _resources_port, _terminology = compute(), resources(), terminology()
 _measure, _workspace, _accounting = measure(), workspace(), accounting()
+_schemas, _review = schemas(), review()
 
 source_backend.configure(source_backend.SourceBackend(core=_core, provider=_provider, code=_code, mfa=mfa(),
                                                       contracts=_contracts, snapshot=_snapshot, compute=_compute,
                                                       resources=_resources_port, adjudication=adjudication(),
                                                       terminology=_terminology, measure=_measure,
-                                                      workspace=_workspace, accounting=_accounting, review=review()))
+                                                      workspace=_workspace, accounting=_accounting, review=_review))
 text_backend.configure(text_backend.TextBackend(core=_core, provider=_provider, code=_code, contracts=_contracts,
                                                 snapshot=_snapshot, compute=_compute, resources=_resources_port,
                                                 terminology=_terminology, measure=_measure, accounting=_accounting,
                                                 workspace=_workspace, plugins=plugins(), transports=transports(),
-                                                schemas=schemas(), diagnostic=diagnostic(),
+                                                schemas=_schemas, diagnostic=diagnostic(),
                                                 worker_command=layer2_worker_command, unmoved=text_unmoved()))
+delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, contracts=_contracts, code=_code,
+                                                            schemas=_schemas, workspace=_workspace, review=_review,
+                                                            runtime_web=runtime_web(), hosting=hosting(),
+                                                            waivers=waivers(),
+                                                            worker_command=app_delivery_worker_command))

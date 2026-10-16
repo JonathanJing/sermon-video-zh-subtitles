@@ -39,11 +39,12 @@ def ui_files(environment):
 
 def bound_source(names):
     """Bind just the copied UI and its read dependency closure to HEAD."""
+    runtime_root = builder.runtime_web_root()
     root = Path(builder.ROOT).resolve()
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()
     files = {}
     for name in sorted(set(names)):
-        source = builder.RUNTIME_WEB_ROOT / name
+        source = runtime_root / name
         contract.require(source.is_file() and not source.is_symlink(), 'Missing or unsafe UI source: ' + name)
         relative = source.resolve().relative_to(root).as_posix()
         result = subprocess.run(['git', 'show', commit + ':' + relative], cwd=root,
@@ -56,6 +57,7 @@ def bound_source(names):
 
 
 def prepare(baseline, out, *, environment='dev'):
+    runtime_root = builder.runtime_web_root()
     base, out = Path(baseline).resolve(), Path(out).resolve()
     contract.require(not out.exists() and not out.is_relative_to(base), 'Unsafe UI update output')
     contract.validate_catalog_snapshot(base)
@@ -78,7 +80,7 @@ def prepare(baseline, out, *, environment='dev'):
     shutil.copyfile(base / 'baseline-receipt.json', out / 'baseline-receipt.json')
     changed = []
     for name in ui_files(environment):
-        source = builder.RUNTIME_WEB_ROOT / name
+        source = runtime_root / name
         target = out / 'public' / name
         contract.require(source.is_file(), 'Missing UI source: ' + name)
         if not target.exists() or staging.digest(source) != staging.digest(target):
