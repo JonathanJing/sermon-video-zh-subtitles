@@ -195,14 +195,14 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 
 ```bash
 # 页面先发布并 HTTP 验证；不传 art 时准备来源绑定的各语言 brief。
-python3 scripts/build_multilingual_sermon_posters.py \
+.venv/bin/python scripts/build_multilingual_sermon_posters.py \
   --release artifacts/weekly-release/new-release \
   --page-id '<本周完整 pageId>' \
   --origin https://ai-for-god-sermon-audio.web.app \
   --out artifacts/sermon-poster/YYYY-MM-DD/multilingual
 
 # ImageGen 主视觉完成后：自动合成三语；加入英语参考 JSON 则合成四语。
-python3 scripts/build_multilingual_sermon_posters.py \
+.venv/bin/python scripts/build_multilingual_sermon_posters.py \
   --release artifacts/weekly-release/new-release \
   --page-id '<本周完整 pageId>' \
   --origin https://ai-for-god-sermon-audio.web.app \
@@ -225,12 +225,12 @@ python3 scripts/build_multilingual_sermon_posters.py \
 临时制作、历史周次重做或仅补某一种语言：复用该周已验证的 v3／v4 发布目录，明确 `--page-id`，用 `--locales zh-Hans`（或实际所需语言）限定范围。下例以中文单语补图为例；三次调用的来源、页面、语言、origin 和输出目录相同，渲染与目视记录共用同一主视觉及 prompt：
 
 ```bash
-python3 scripts/build_multilingual_sermon_posters.py --release /path/to/verified-release \
+.venv/bin/python scripts/build_multilingual_sermon_posters.py --release /path/to/verified-release \
   --page-id '<精确 pageId>' --locales zh-Hans \
   --origin https://ai-for-god-sermon-audio.web.app \
   --out artifacts/sermon-poster/YYYY-MM-DD/ad-hoc-zh-v1
 # 按来源 brief 完成无文字主视觉及实际 prompt 后：
-python3 scripts/build_multilingual_sermon_posters.py --release /path/to/verified-release \
+.venv/bin/python scripts/build_multilingual_sermon_posters.py --release /path/to/verified-release \
   --page-id '<精确 pageId>' --locales zh-Hans \
   --origin https://ai-for-god-sermon-audio.web.app \
   --art /path/to/shared-art.png --art-prompt /path/to/actual-imagegen-prompt.txt \

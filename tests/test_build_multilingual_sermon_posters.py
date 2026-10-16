@@ -171,6 +171,19 @@ class MultilingualPosterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'published, reviewed'):
             self.load()
 
+    def test_receipt_hashes_name_the_files_behind_their_legacy_keys(self):
+        from tongxing_production import path_aliases
+        root = Path(__file__).resolve().parents[1]
+        # The renderer has no facade: it ships as package data beside the builder.
+        renderer = root / path_aliases.resolve('scripts/build_multilingual_sermon_posters.py')
+        renderer = renderer.with_name(poster.RENDERER)
+        self.assertEqual(poster.package_digest(poster.RENDERER), hashlib.sha256(renderer.read_bytes()).hexdigest())
+        for key, name in (('scripts/weekly_poster_template.py', 'template.py'),
+                          ('scripts/build_multilingual_sermon_posters.py', 'build.py')):
+            with self.subTest(key=key):
+                expected = hashlib.sha256((root / path_aliases.resolve(key)).read_bytes()).hexdigest()
+                self.assertEqual(poster.package_digest(name), expected)
+
 
 if __name__ == '__main__':
     unittest.main()

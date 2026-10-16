@@ -72,6 +72,8 @@ LAYER4 = {
     'scripts/inspect_multilingual_v3_release.py': _LEGACY + 'inspect_multilingual_v3_release.py',
     'scripts/verify_v3_bucket_video.py': _LEGACY + 'verify_v3_bucket_video.py',
     'scripts/build_sermon_poster.py': _LEGACY + 'build_sermon_poster.py',
+    'scripts/build_multilingual_sermon_posters.py': _DELIVERY + 'posters/build.py',
+    'scripts/weekly_poster_template.py': _DELIVERY + 'posters/template.py',
 }
 
 PATH_ALIASES = {**COMPUTE, **LAYER1, **LAYER2, **LAYER4}
