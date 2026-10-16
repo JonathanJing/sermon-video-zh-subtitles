@@ -91,6 +91,9 @@ LAYER4 = {
     'scripts/build_sermon_poster.py': _LEGACY + 'build_sermon_poster.py',
     'scripts/build_multilingual_sermon_posters.py': _DELIVERY + 'posters/build.py',
     'scripts/weekly_poster_template.py': _DELIVERY + 'posters/template.py',
+    # D4: the App workflow's implementationSha256 keys stay these legacy paths.
+    'scripts/sermon_app_delivery.py': _DELIVERY + 'app_delivery.py',
+    'scripts/sermon_app_delivery_workflow.py': _DELIVERY + 'app_workflow.py',
 }
 
 # Cross-layer review (tongxing_production.review), batches R1-R4.

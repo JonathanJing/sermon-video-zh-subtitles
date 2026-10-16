@@ -576,6 +576,11 @@ def delivery_legacy() -> delivery_backend.Legacy:
                                    firebase_config=lambda name: ROOT / 'firebase' / name)
 
 
+def delivery_unmoved() -> delivery_backend.Unmoved:
+    return delivery_backend.Unmoved(formal_stage=_module('scripts.stage_formal_multilingual_dev'),
+                                    execution_harness=_module('scripts.sermon_execution_harness'))
+
+
 # Layer 3 (tongxing_production.audio). Every wrapper imports its implementation
 # when called, so the renderer, audio QC and spoken-rule modules stay unloaded
 # at host load.
@@ -810,7 +815,7 @@ delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, contract
                                                             runtime_web=runtime_web(), hosting=hosting(),
                                                             waivers=_waivers,
                                                             worker_command=app_delivery_worker_command,
-                                                            legacy=delivery_legacy()))
+                                                            legacy=delivery_legacy(), unmoved=delivery_unmoved()))
 audio_backend.configure(audio_backend.AudioBackend(core=_core, code=_code, compute=_compute, measure=_measure,
                                                    accounting=_accounting, schemas=_schemas, diagnostic=_diagnostic,
                                                    review=_review, waivers=_waivers, machine_qc=machine_qc(),
