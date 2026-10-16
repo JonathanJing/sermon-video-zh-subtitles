@@ -14,6 +14,7 @@ from scripts import target_language_policy as policies
 from scripts import layer2_api_concurrency as api_concurrency
 from scripts import weekly_pipeline_report as weekly
 from scripts.experiments import layer2_concurrency as experiment
+from scripts import sermon_pipeline as sermon_pipeline_module
 from tests import test_run_target_language_models as fixtures
 
 
@@ -242,7 +243,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
                 "--anchor", str(inputs / "anchor.json"), "--policy", str(inputs / "policy.json"),
                 "--plugin", str(self.f.plugin_path), "--group-plan", str(inputs / "plan.json"),
                 "--out-dir", str(self.out)]
-        with patch("sys.argv", argv), patch.object(runner.sermon_pipeline, "chat_json", side_effect=AssertionError("generator called API")):
+        with patch("sys.argv", argv), patch.object(sermon_pipeline_module, "chat_json", side_effect=AssertionError("generator called API")):
             experiment.main()
         manifest = runner.producer._load(self.out / "experiment.json")
         self.assertEqual(manifest["translationGroups"], 1)
