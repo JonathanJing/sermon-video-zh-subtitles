@@ -20,7 +20,7 @@ class Unmoved:
     pipeline_definition: Callable[[], ModuleType]  # canonical_pipeline_definition: LOCALES, _sha
     liveness: Callable[[], ModuleType]           # sermon_job_liveness
     review_budget: Callable[[], ModuleType]      # sermon_review_budget (review/)
-    speech_handoff: Callable[[], ModuleType]     # prepare_target_language_speech_job (Layer 3 hand-off checks)
+    speech_handoff: Callable[[], ModuleType]     # audio.speech_job (Layer 3 hand-off checks); text never imports audio
     orchestration_contracts: Callable[[], ModuleType]  # the unified run's contracts
     review_contracts: Callable[[], ModuleType]   # sermon_review_contracts: strict JSON, validators, size limits
     accounting_module: Callable[[], ModuleType]  # sermon_accounting, for callers reading beyond the Accounting port
