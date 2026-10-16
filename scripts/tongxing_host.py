@@ -111,16 +111,27 @@ def _project_headers(api_key):
     return sermon_openai_runtime.project_headers(api_key)
 
 
+def _outcomes_function(name):
+    def call(*arguments, **options):
+        from scripts import api_cli_outcomes
+        return getattr(api_cli_outcomes, name)(*arguments, **options)
+    call.__name__ = name
+    return call
+
+
+def outcomes() -> ports.Outcomes:
+    return ports.Outcomes(**{name: _outcomes_function(name) for name in (
+        'request_identity', 'execution_binding', 'assert_replay_admitted', 'recover', 'before_dispatch',
+        'receipt_root')})
+
+
 def provider() -> ports.Provider:
-    # api_cli_outcomes imports only the standard library at load; its functions
-    # are looked up on the module at call time, so patches still intercept.
-    from scripts import api_cli_outcomes
     return ports.Provider(chat_json=_chat_json, request_json=_request_json,
                           reject_secret_override=_reject_secret_override,
                           bounded_legacy_chat_payload=_bounded_legacy_chat_payload,
                           legacy_text_cache_contract=_legacy_text_cache_contract,
                           legacy_text_execution_identity=_legacy_text_execution_identity,
-                          access_secret=_access_secret, outcomes=api_cli_outcomes,
+                          access_secret=_access_secret, outcomes=outcomes(),
                           http_execute=_http_execute, transcription_request=_transcription_request,
                           request_metadata=_request_metadata,
                           route=ports.Route(selected=_selected_route, safe=_safe_route,
@@ -399,13 +410,13 @@ def transports() -> ports.Transports:
 
 
 def _validate_handoff_schema(value, filename, label):
-    from scripts import prepare_target_language_speech_job
-    return prepare_target_language_speech_job._validate_schema(value, filename, label)
+    from tongxing_production.audio import speech_job
+    return speech_job._validate_schema(value, filename, label)
 
 
 def _source_package_schema():
-    from scripts import prepare_target_language_speech_job
-    return prepare_target_language_speech_job.SOURCE_PACKAGE_SCHEMA
+    from tongxing_production.audio import speech_job
+    return speech_job.SOURCE_PACKAGE_SCHEMA
 
 
 def schemas() -> ports.Schemas:
@@ -468,7 +479,7 @@ def text_unmoved() -> text_backend.Unmoved:
         pipeline_definition=_module('scripts.canonical_pipeline_definition'),
         liveness=_module('scripts.sermon_job_liveness'),
         review_budget=_module('scripts.sermon_review_budget'),
-        speech_handoff=_module('scripts.prepare_target_language_speech_job'),
+        speech_handoff=_module('tongxing_production.audio.speech_job'),
         orchestration_contracts=_module('scripts.sermon_unified.contracts'),
         review_contracts=_module('scripts.sermon_review_contracts'),
         accounting_module=_module('scripts.sermon_accounting'),
@@ -729,7 +740,7 @@ def stage_gates() -> ports.StageGates:
         window_approval=supervisor('validate_window_approval'), parse_timecode=supervisor('parse_timecode'),
         stable_hash=supervisor('stable_hash'),
         english_review=_rule_function('scripts.build_english_source_package', '_review_payload'),
-        text_release_basis=_rule_function('scripts.prepare_target_language_speech_job', 'validate_text_release_basis'),
+        text_release_basis=_rule_function('tongxing_production.audio.speech_job', 'validate_text_release_basis'),
         study_ingest=_rule_function('scripts.study_artifacts', 'ingest_review'))
 
 
@@ -746,7 +757,7 @@ def scripture() -> ports.Scripture:
 def qc_runtime() -> ports.QcRuntime:
     return ports.QcRuntime(write_report=_rule_function('scripts.export_run_digest', 'write_report'),
                            codex_text_transport=_module('scripts.sermon_codex_transport'),
-                           validate_target_candidate=_rule_function('scripts.prepare_target_language_speech_job',
+                           validate_target_candidate=_rule_function('tongxing_production.audio.speech_job',
                                                                     'validate_target_candidate'))
 
 
@@ -760,8 +771,9 @@ def qc_runtime() -> ports.QcRuntime:
 # partially initialized modules.
 EAGER_PRODUCER_IMPORTS = (
     'api_cli_outcomes', 'canonical_durable_jobs', 'canonical_pipeline_definition', 'four_layer_measure',
-    'inspect_canonical_packages', 'layer2_api_concurrency', 'prepare_target_language_speech_job',
-    'production_spark_admission', 'series_terminology', 'sermon_accounting', 'sermon_cache_observation',
+    'inspect_canonical_packages', 'layer2_api_concurrency', 'machine_quality_release_basis',
+    'prepare_target_language_speech_job', 'production_spark_admission',
+    'series_terminology', 'sermon_accounting', 'sermon_cache_observation',
     'sermon_execution_harness', 'sermon_job_liveness', 'sermon_pipeline', 'sermon_provider_http',
     'sermon_provider_limits', 'sermon_public_snapshot', 'sermon_release_workflow', 'sermon_review_budget',
     'sermon_review_contracts', 'sermon_transcription_request', 'sermon_workflow_jobs',
