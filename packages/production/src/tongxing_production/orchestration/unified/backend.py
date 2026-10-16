@@ -44,6 +44,10 @@ class Backend:
     temporal_wake: Callable[[Path, str, str], None]
     # Lazy stage lookup by logical name (see ``STAGE_NAMES``).
     stage: Callable[[str], ModuleType]
+    # The run's accounting session (``ports.Accounting``): owner dispatch joins the
+    # v4 provider/job ledger through ``profile_session``, ``profile_context`` and
+    # ``stage_outcome``.
+    accounting: Any
 
 
 _current: Backend | None = None

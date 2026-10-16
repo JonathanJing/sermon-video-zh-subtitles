@@ -123,6 +123,9 @@ class Accounting:
     finalize: Callable[[Any, Any], Any]        # (action, original_error)
     orchestration: Callable[..., Any]          # (name, *, depends_on=None, work_unit_id=None) -> context manager
     subprocess_environment: Callable[[], Any]  # () -> child env, SERMON_ACCOUNTING_DIR included
+    stage_outcome: Callable[..., Any]          # (name, **options) -> context manager whose value has finish(status)
+    profile_session: Callable[..., Any]        # (directory, workflow, metadata=None, *, work_kind, evidence_mode, ...)
+    profile_context: Callable[..., Any]        # (**fields) -> context manager
 
 
 @dataclass(frozen=True)

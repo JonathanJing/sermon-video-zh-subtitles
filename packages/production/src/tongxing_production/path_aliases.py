@@ -128,6 +128,9 @@ WORKFLOWS = {
     'scripts/sermon_unified_canonical_binding.py': _PREPARED + 'canonical_binding.py',
     'scripts/sermon_unified_study.py': _PREPARED + 'study.py',
     'scripts/sermon_study_generation.py': _PREPARED + 'study_generation.py',
+    # Orchestration-internal stages (tongxing_production.orchestration.unified), batch W1.
+    'scripts/sermon_unified_parallel.py': PRODUCTION + 'orchestration/unified/parallel.py',
+    'scripts/sermon_unified_accounting.py': PRODUCTION + 'orchestration/unified/accounting.py',
 }
 
 # Shared infrastructure, batches I1-I4 (docs/design/infrastructure-injection.zh.md).

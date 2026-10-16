@@ -331,11 +331,27 @@ def _subprocess_environment():
     return sermon_accounting.subprocess_environment()
 
 
+def _stage_outcome(name, **options):
+    from scripts import sermon_accounting
+    return sermon_accounting.stage_outcome(name, **options)
+
+
+def _profile_session(directory, workflow, metadata=None, **options):
+    from scripts import sermon_log_profile
+    return sermon_log_profile.session(directory, workflow, metadata, **options)
+
+
+def _profile_context(**fields):
+    from scripts import sermon_log_profile
+    return sermon_log_profile.context(**fields)
+
+
 def accounting() -> ports.Accounting:
     return ports.Accounting(session=_accounting_session, stage=_accounting_stage, record_workload=_record_workload,
                             record_log=_record_log, bounded_dependencies=_bounded_dependencies,
                             finalize=_finalize_accounting, orchestration=_accounting_orchestration,
-                            subprocess_environment=_subprocess_environment)
+                            subprocess_environment=_subprocess_environment, stage_outcome=_stage_outcome,
+                            profile_session=_profile_session, profile_context=_profile_context)
 
 
 def _validate_window(manifest, bindings=None, base='.'):
