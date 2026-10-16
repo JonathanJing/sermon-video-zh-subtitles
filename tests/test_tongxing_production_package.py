@@ -58,6 +58,11 @@ class ProductionPackageTests(unittest.TestCase):
                       "orchestration": ("tongxing_production.workflows",),
                       "review": ("tongxing_production.source", "tongxing_production.text", "tongxing_production.audio",
                                  "tongxing_production.delivery", "tongxing_production.orchestration"),
+                      # Shared infrastructure sits below every stage; stages reach it through ports.
+                      "storage": ("tongxing_production.source", "tongxing_production.text", "tongxing_production.audio",
+                                  "tongxing_production.delivery", "tongxing_production.review",
+                                  "tongxing_production.orchestration", "tongxing_production.workflows",
+                                  "tongxing_production.adapters"),
                       # Shared contracts sit below everything, review included.
                       "contracts": ("tongxing_production.source", "tongxing_production.text", "tongxing_production.audio",
                                     "tongxing_production.delivery", "tongxing_production.orchestration",
@@ -69,6 +74,17 @@ class ProductionPackageTests(unittest.TestCase):
                     for name in package_imports_of(path):
                         self.assertFalse(any(name == f or name.startswith(f + ".") for f in forbidden),
                                          f"{path.name} imports {name}")
+
+    def test_only_the_hosting_adapter_imports_google_auth(self):
+        """L4 decision 3: google-auth is the optional ``hosting`` extra, imported by storage/hosting.py alone."""
+        importers = sorted(str(path.relative_to(PACKAGE_SRC)) for path in PACKAGE_SRC.rglob("*.py")
+                           if any(name == "google.auth" or name.startswith("google.auth.") for name in imports_of(path)))
+        self.assertEqual(importers, ["storage/hosting.py"])
+        import tomllib
+        project = tomllib.loads((PACKAGE_SRC.parents[1] / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+        self.assertFalse(any(dependency.startswith("google-auth") for dependency in project["dependencies"]))
+        self.assertEqual([d for d in project["optional-dependencies"]["hosting"] if d.startswith("google-auth")],
+                         ["google-auth[requests]>=2.35,<3"])
 
     def test_legacy_adapters_stay_apart_from_the_layers(self):
         """L4 decision 5: the v2/v3 adapters may use delivery; no layer imports them."""

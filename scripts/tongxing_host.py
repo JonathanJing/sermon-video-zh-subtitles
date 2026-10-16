@@ -471,29 +471,14 @@ def runtime_web() -> ports.RuntimeWeb:
     return ports.RuntimeWeb(root=lambda: ROOT / 'apps/listening-web')
 
 
-def _authorized_request():
-    from scripts import guarded_hosting_publish
-    return guarded_hosting_publish.authenticated_transport()
-
-
-def _public_reader(url, *, timeout=120):
-    from scripts import sermon_unified_delivery
-    return sermon_unified_delivery._reader(url, timeout=timeout)
-
-
-def _hosting_run(*arguments, **options):
-    import subprocess
-    return subprocess.run(*arguments, **options)
-
-
-def _hosting_lease(request, bucket, site):
-    from scripts import guarded_hosting_publish
-    return guarded_hosting_publish.RemoteLease(request, bucket, site)
-
-
 def hosting() -> ports.Hosting:
-    return ports.Hosting(authorized_request=_authorized_request, public_reader=_public_reader,
-                         run=_hosting_run, lease=_hosting_lease)
+    # The package's Hosting adapter (L4 D3). Each entry looks the adapter up per call,
+    # so patches on tongxing_production.storage.hosting apply.
+    from tongxing_production.storage import hosting as adapter
+    return ports.Hosting(authorized_request=lambda: adapter.authenticated_transport(),
+                         public_reader=lambda url, *, timeout=120: adapter.public_reader(url, timeout=timeout),
+                         run=lambda *arguments, **options: adapter.run(*arguments, **options),
+                         lease=lambda request, bucket, site: adapter.RemoteLease(request, bucket, site))
 
 
 def _is_text_waiver(receipt):
@@ -547,15 +532,16 @@ def _legacy_weekly_release():
     return weekly_release
 
 
+def delivery_unmoved() -> delivery_backend.Unmoved:
+    return delivery_backend.Unmoved(app_release=_module('scripts.build_full_video_app_release'),
+                                    formal_stage=_module('scripts.stage_formal_multilingual_dev'),
+                                    execution_harness=_module('scripts.sermon_execution_harness'))
+
+
 def delivery_legacy() -> delivery_backend.Legacy:
     return delivery_backend.Legacy(weekly_release=_legacy_weekly_release,
                                    voice_demo=_module('scripts.stage_voice_demo_dev'),
                                    firebase_config=lambda name: ROOT / 'firebase' / name)
-
-
-def delivery_unmoved() -> delivery_backend.Unmoved:
-    return delivery_backend.Unmoved(formal_stage=_module('scripts.stage_formal_multilingual_dev'),
-                                    execution_harness=_module('scripts.sermon_execution_harness'))
 
 
 # Layer 3 (tongxing_production.audio). Every wrapper imports its implementation

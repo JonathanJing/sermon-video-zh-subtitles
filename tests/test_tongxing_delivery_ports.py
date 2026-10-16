@@ -21,6 +21,7 @@ from scripts import sermon_unified_reviews as reviews
 from scripts import stage_formal_multilingual_dev as formal_stage
 from tongxing_production import ports
 from tongxing_production.delivery import backend as delivery
+from tongxing_production.storage import hosting as hosting_adapter
 from tongxing_production.source import backend as source
 from tongxing_production.text import backend as text
 
@@ -76,20 +77,70 @@ class DeliveryPortsTests(unittest.TestCase):
         self.assertIs(unmoved.formal_stage(), formal_stage)
         self.assertIs(unmoved.execution_harness(), sermon_execution_harness)
 
-    def test_hosting_wrappers_reach_the_implementation(self):
+    def test_hosting_wrappers_reach_the_package_adapter(self):
+        # D3: the record binds tongxing_production.storage.hosting, looked up per call.
         hosting = delivery.current().hosting
-        with patch.object(publisher, 'authenticated_transport', return_value='request') as transport:
+        with patch.object(hosting_adapter, 'authenticated_transport', return_value='request') as transport:
             self.assertEqual(hosting.authorized_request(), 'request')
-            transport.assert_called_once_with()
-        with patch.object(unified_delivery, '_reader', return_value=(200, b'ok')) as reader:
+            self.assertEqual(publisher.authenticated_transport(), 'request')
+            self.assertEqual(transport.call_count, 2)
+        with patch.object(hosting_adapter, 'urlopen') as urlopen:
+            urlopen.return_value.__enter__.return_value.status = 200
+            urlopen.return_value.__enter__.return_value.read.return_value = b'ok'
             self.assertEqual(hosting.public_reader('https://example.test/x', timeout=5), (200, b'ok'))
-            reader.assert_called_once_with('https://example.test/x', timeout=5)
-        with patch.object(publisher, 'RemoteLease', return_value='lease') as lease:
+            request, = urlopen.call_args.args
+            self.assertEqual((request.full_url, request.headers, urlopen.call_args.kwargs),
+                             ('https://example.test/x', {'Cache-control': 'no-cache'}, {'timeout': 5}))
+            hosting.public_reader('https://example.test/x')
+            self.assertEqual(urlopen.call_args.kwargs, {'timeout': 120})
+        with patch.object(hosting_adapter, 'RemoteLease', return_value='lease') as lease:
             self.assertEqual(hosting.lease('request', 'bucket', 'site'), 'lease')
             lease.assert_called_once_with('request', 'bucket', 'site')
         with patch.object(subprocess, 'run', return_value='done') as run:
             self.assertEqual(hosting.run(['firebase', 'deploy'], check=True), 'done')
             run.assert_called_once_with(['firebase', 'deploy'], check=True)
+
+    def test_public_reader_matches_the_unified_stage_reader(self):
+        # sermon_unified_delivery._reader moves with D5; until then both read the same way.
+        import inspect
+        reader, stage = inspect.getsource(hosting_adapter.public_reader), inspect.getsource(unified_delivery._reader)
+        self.assertEqual(reader.split('\n', 1)[1], stage.split('\n', 1)[1])
+
+    def test_lease_keeps_the_generation_fenced_object_requests(self):
+        calls = []
+        def request(method, url, **kwargs):
+            calls.append((method, url, kwargs))
+            return {'generation': 7}
+        lease = delivery.current().hosting.lease(request, 'bucket name', 'site')
+        self.assertIsInstance(lease, hosting_adapter.RemoteLease)
+        self.assertEqual(lease.acquire({'attemptId': 'a'}), '7')
+        lease.check()
+        lease.release()
+        object_url = 'https://storage.googleapis.com/storage/v1/b/bucket%20name/o/sermon-publisher-leases%2Fsite.json'
+        self.assertEqual(calls, [
+            ('POST', 'https://storage.googleapis.com/upload/storage/v1/b/bucket%20name/o?uploadType=media'
+                     '&ifGenerationMatch=0&name=sermon-publisher-leases%2Fsite.json',
+             {'data': b'{"attemptId": "a"}', 'headers': {'Content-Type': 'application/json'}}),
+            ('GET', object_url, {}), ('DELETE', object_url + '?ifGenerationMatch=7', {})])
+        lease.generation = '8'
+        with self.assertRaisesRegex(ValueError, 'Publisher lease ownership changed'):
+            lease.check()
+        lease.generation = None
+        with self.assertRaisesRegex(ValueError, 'Lease is not held'):
+            lease.release()
+
+    def test_unmoved_record_reaches_the_four_product_builder(self):
+        unmoved = delivery.current().unmoved
+        self.assertIsInstance(unmoved, delivery.Unmoved)
+        self.assertIs(unmoved.app_release(), builder)
+
+    def test_google_auth_is_imported_only_by_the_hosting_adapter_when_a_session_opens(self):
+        code = ("import sys; from scripts import tongxing_host; "
+                "from scripts import guarded_hosting_publish, prepare_dev_simulated_publication; "
+                "print(sorted(m for m in sys.modules if m == 'google.auth' or m.startswith('google.auth.')))")
+        result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), '[]')
 
     def test_review_and_waiver_wrappers_reach_the_implementation(self):
         backend = delivery.current()
@@ -119,7 +170,8 @@ class DeliveryPortsTests(unittest.TestCase):
         # tongxing_host.EAGER_PRODUCER_IMPORTS), which reaches the waiver release
         # basis as it did before the move; it must not load Layer 4 itself.
         code = ("import sys; from scripts import tongxing_host; "
-                "loaded = [m for m in ('scripts.build_full_video_app_release', 'scripts.guarded_hosting_publish', "
+                "loaded = [m for m in ('scripts.build_full_video_app_release', 'tongxing_production.delivery.publication', "
+                "'tongxing_production.delivery.baseline', "
                 "'scripts.machine_audio_waiver_acceptance', 'scripts.sermon_unified_delivery', "
                 "'scripts.sermon_app_delivery_workflow', 'tongxing_production.delivery.app_workflow', "
                 "'tongxing_production.delivery.app_delivery', 'tongxing_production.adapters.legacy.assemble_multilingual_hosting', "
