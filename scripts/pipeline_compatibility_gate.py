@@ -15,7 +15,9 @@ PROTECTED = ('apps/tongxing-ios/', 'schemas/', 'firebase/', 'infra/firebase/', '
              # builders (delivery/) and the v2/v3 catalog assemblers (adapters/legacy/).
              'packages/production/src/tongxing_production/delivery/',
              'packages/production/src/tongxing_production/adapters/legacy/')
-PRODUCERS = ('scripts/build_multilingual_catalog.py', 'scripts/stage_formal_multilingual_dev.py',
+# The v2 catalog builder moved in L4 D7; its scripts/ facade stays listed while it exists.
+PRODUCERS = ('packages/production/src/tongxing_production/adapters/legacy/build_multilingual_catalog.py',
+             'scripts/build_multilingual_catalog.py', 'scripts/stage_formal_multilingual_dev.py',
              'scripts/build_target_language_release_package.py',
              'scripts/build_formal_multilingual_dev.py', '.github/workflows/tongxing-ios.yml')
 # Only these audited observability files are known to leave client content alone.

@@ -43,6 +43,7 @@ LAYER2 = {
     'scripts/canonical_layer2_cache_recovery.py': _TEXT + 'cache_recovery.py',
     'scripts/canonical_layer2_reconciliation.py': _TEXT + 'reconciliation.py',
     'scripts/review_target_language_candidate.py': _TEXT + 'human_review.py',
+    'scripts/sermon_unified_layer2_binding.py': _TEXT + 'unified_binding.py',
 }
 
 # Shared compute (tongxing_production.compute), stage 1.
@@ -52,11 +53,25 @@ COMPUTE = {
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.
 _DELIVERY = PRODUCTION + 'delivery/'
+_LEGACY = PRODUCTION + 'adapters/legacy/'
 LAYER4 = {
     'scripts/delivery_contract.py': _DELIVERY + 'contract.py',
     'scripts/study_artifacts.py': _DELIVERY + 'study_artifacts.py',
     'scripts/release_asset_io.py': _DELIVERY + 'asset_io.py',
     'scripts/sermon_delivery_intent.py': _DELIVERY + 'intent.py',
+    # D7: the legacy v2/v3 group keeps its module names (design decision 5).
+    'scripts/assemble_multilingual_hosting.py': _LEGACY + 'assemble_multilingual_hosting.py',
+    'scripts/deploy_multilingual_hosting.py': _LEGACY + 'deploy_multilingual_hosting.py',
+    'scripts/verify_multilingual_hosting.py': _LEGACY + 'verify_multilingual_hosting.py',
+    'scripts/assemble_multilingual_v3_update.py': _LEGACY + 'assemble_multilingual_v3_update.py',
+    'scripts/refresh_multilingual_hosting_with_legacy.py': _LEGACY + 'refresh_multilingual_hosting_with_legacy.py',
+    'scripts/production_content_release_admission.py': _LEGACY + 'production_content_release_admission.py',
+    'scripts/multilingual_dev_preview.py': _LEGACY + 'multilingual_dev_preview.py',
+    'scripts/seal_multilingual_dev_catalog.py': _LEGACY + 'seal_multilingual_dev_catalog.py',
+    'scripts/build_multilingual_catalog.py': _LEGACY + 'build_multilingual_catalog.py',
+    'scripts/inspect_multilingual_v3_release.py': _LEGACY + 'inspect_multilingual_v3_release.py',
+    'scripts/verify_v3_bucket_video.py': _LEGACY + 'verify_v3_bucket_video.py',
+    'scripts/build_sermon_poster.py': _LEGACY + 'build_sermon_poster.py',
 }
 
 # Shared infrastructure, batches I1-I4 (docs/design/infrastructure-injection.zh.md).

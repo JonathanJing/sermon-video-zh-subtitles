@@ -213,6 +213,14 @@ def code_module_name(path):
 
 
 def execution_identity():
+    # Modules the moved producers now reach through ports load on first use;
+    # load them before reading the loaded set so it is the same at plan freeze,
+    # review and replay (scripts/tongxing_host.py EAGER_PRODUCER_IMPORTS).
+    try:
+        from scripts import tongxing_host
+    except ModuleNotFoundError:  # run as a script from scripts/
+        import tongxing_host
+    tongxing_host.load_producer_imports()
     root = Path(__file__).resolve().parents[1]
     def git(*args):
         try:

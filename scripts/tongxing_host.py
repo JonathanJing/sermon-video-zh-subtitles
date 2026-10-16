@@ -534,6 +534,21 @@ def app_delivery_worker_command(*arguments):
     return [sys.executable, str(ROOT / 'scripts/sermon_app_delivery_workflow.py'), *arguments]
 
 
+def _legacy_weekly_release():
+    # The v1 weekly catalog module; the legacy adapters used to put its folder on sys.path themselves.
+    folder = str(ROOT / 'experiments/sermon-dubbing-poc')
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    import weekly_release
+    return weekly_release
+
+
+def delivery_legacy() -> delivery_backend.Legacy:
+    return delivery_backend.Legacy(weekly_release=_legacy_weekly_release,
+                                   voice_demo=_module('scripts.stage_voice_demo_dev'),
+                                   firebase_config=lambda name: ROOT / 'firebase' / name)
+
+
 # Layer 3 (tongxing_production.audio). Every wrapper imports its implementation
 # when called, so the renderer, audio QC and spoken-rule modules stay unloaded
 # at host load.
@@ -643,8 +658,11 @@ def audio_unmoved() -> audio_backend.Unmoved:
 # The moved producers used to import these modules at load time. A plan freezes
 # accounting.execution_identity() (the loaded project code) before it runs and
 # checks it again at review and cache replay, so a module that now loads only on
-# first use through a port would change that identity mid-run. Loading them with
-# the host keeps the loaded set what it was before the move.
+# first use through a port would change that identity mid-run.
+# execution_identity() calls load_producer_imports() before it reads the loaded
+# set. Never call it while modules are still importing: these modules import
+# facades and each other, so loading them from inside an import chain meets
+# partially initialized modules.
 EAGER_PRODUCER_IMPORTS = (
     'api_cli_outcomes', 'canonical_durable_jobs', 'canonical_pipeline_definition', 'four_layer_measure',
     'inspect_canonical_packages', 'layer2_api_concurrency', 'prepare_target_language_speech_job',
@@ -656,7 +674,7 @@ EAGER_PRODUCER_IMPORTS = (
 )
 
 
-def _load_producer_imports():
+def load_producer_imports():
     import importlib
     for name in EAGER_PRODUCER_IMPORTS:
         importlib.import_module('scripts.' + name)
@@ -683,10 +701,10 @@ delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, contract
                                                             schemas=_schemas, workspace=_workspace, review=_review,
                                                             runtime_web=runtime_web(), hosting=hosting(),
                                                             waivers=_waivers,
-                                                            worker_command=app_delivery_worker_command))
+                                                            worker_command=app_delivery_worker_command,
+                                                            legacy=delivery_legacy()))
 audio_backend.configure(audio_backend.AudioBackend(core=_core, code=_code, compute=_compute, measure=_measure,
                                                    accounting=_accounting, schemas=_schemas, diagnostic=_diagnostic,
                                                    review=_review, waivers=_waivers, machine_qc=machine_qc(),
                                                    spoken_rules=spoken_rules(), tts_runtime=tts_runtime(),
                                                    dev_profile=dev_profile(), unmoved=audio_unmoved()))
-_load_producer_imports()
