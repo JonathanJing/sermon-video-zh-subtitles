@@ -1,17 +1,18 @@
 """Bind the production package's layer backends to this checkout.
 
-Importing this module configures ``tongxing_production.source``. Every port is
-a late-binding wrapper around the ``scripts/`` implementation it stands in
-for: the implementation is imported inside the wrapper, so a test that patches
-``scripts.sermon_pipeline.chat_json`` (or any other target) still intercepts
-calls made through the port, and no import cycle forms with the producers that
-import this module at load time.
+Importing this module configures the source, text, delivery and audio layers.
+Every port is a late-binding wrapper around the ``scripts/`` implementation it
+stands in for: the implementation is imported inside the wrapper, so a test
+that patches ``scripts.sermon_pipeline.chat_json`` (or any other target) still
+intercepts calls made through the port, and no import cycle forms with the
+producers that import this module at load time.
 
 ``scripts/sermon_unified/__init__.py`` binds ``tongxing_production.orchestration``
 the same way; the two hosts will share ``core()`` once that facade is revisited.
 """
 from __future__ import annotations
 
+from functools import partial
 import hashlib
 from pathlib import Path
 import sys
@@ -24,6 +25,7 @@ from tongxing_production import ports  # noqa: E402
 from tongxing_production.source import backend as source_backend  # noqa: E402
 from tongxing_production.text import backend as text_backend  # noqa: E402
 from tongxing_production.delivery import backend as delivery_backend  # noqa: E402
+from tongxing_production.audio import backend as audio_backend  # noqa: E402
 
 
 def core() -> ports.Core:
@@ -31,7 +33,8 @@ def core() -> ports.Core:
     from scripts.sermon_execution_harness import atomic_json, utc_now
     from scripts.sermon_release_workflow import safe_path
     return ports.Core(repo_root=ROOT, artifact_root=ROOT / 'artifacts', jobs=jobs,
-                      safe_path=safe_path, atomic_json=atomic_json, utc_now=utc_now)
+                      safe_path=safe_path, atomic_json=atomic_json, utc_now=utc_now,
+                      sync_directory_ancestry=_sync_directory_ancestry, read_json=_read_json)
 
 
 def _chat_json(api_key, payload, retries=1, *, session_verifier=None):
@@ -130,7 +133,8 @@ def module_sha256(module) -> str:
 
 
 def code() -> ports.Code:
-    return ports.Code(code_identity=_code_identity, module_sha256=module_sha256, module_path=module_path)
+    return ports.Code(code_identity=_code_identity, module_sha256=module_sha256, module_path=module_path,
+                      implementation_path=implementation_path)
 
 
 def _mfa_options(args):
@@ -182,7 +186,8 @@ def compute() -> ports.Compute:
                          load_profile=_load_profile, validate_profile=_validate_profile, admit=_admit,
                          reject_cli_transport=_reject_cli_transport, request_slot=_request_slot,
                          max_in_flight_api_calls=layer2_api_concurrency.MAX_IN_FLIGHT_API_CALLS,
-                         max_group_workers_per_locale=layer2_api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE)
+                         max_group_workers_per_locale=layer2_api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
+                         require_bound_model_session=_require_bound_model_session)
 
 
 def _load_profile(path):
@@ -272,7 +277,8 @@ def _producer_substage(name, *, billing='api'):
 
 
 def measure() -> ports.Measure:
-    return ports.Measure(producer_step=_producer_step, producer_substage=_producer_substage)
+    return ports.Measure(producer_step=_producer_step, producer_substage=_producer_substage,
+                         record_substage_metrics=_record_substage_metrics)
 
 
 def _work_lock(work):
@@ -317,7 +323,7 @@ def _finalize_accounting(action, original_error):
 def accounting() -> ports.Accounting:
     return ports.Accounting(session=_accounting_session, stage=_accounting_stage, record_workload=_record_workload,
                             record_log=_record_log, bounded_dependencies=_bounded_dependencies,
-                            finalize=_finalize_accounting)
+                            finalize=_finalize_accounting, orchestration=_accounting_orchestration)
 
 
 def _validate_window(manifest, bindings=None, base='.'):
@@ -509,13 +515,14 @@ def _validate_audio_waiver(package, receipt, screening):
 
 
 def waivers() -> ports.Waivers:
-    # The two schema names are fixed strings of a waiver-closure file; reading
-    # them would import it at host load, so they are recorded here and pinned by a test.
+    # The schema names and review kind are fixed strings of a waiver-closure file;
+    # reading them would import it at host load, so they are recorded here and pinned by a test.
     return ports.Waivers(is_text_waiver=_is_text_waiver, validate_text_waiver=_validate_text_waiver,
                          disclosure=_waiver_disclosure, is_audio_waiver=_is_audio_waiver,
                          validate_audio_waiver=_validate_audio_waiver,
                          audio_waiver_schema='sermon-target-language-machine-audio-waiver-v2',
-                         condensation_binding_schema='sermon-spoken-condensation-binding-v2')
+                         condensation_binding_schema='sermon-spoken-condensation-binding-v2',
+                         review_kind='machine_quality_waiver')
 
 
 def app_delivery_worker_command(*arguments):
@@ -524,11 +531,117 @@ def app_delivery_worker_command(*arguments):
     return [sys.executable, str(ROOT / 'scripts/sermon_app_delivery_workflow.py'), *arguments]
 
 
+# Layer 3 (tongxing_production.audio). Nothing here imports a Layer 3,
+# waiver-closure or renderer module at host load: every wrapper imports its
+# implementation when called.
+def _sync_directory_ancestry(path):
+    from scripts import sermon_workflow_jobs
+    return sermon_workflow_jobs._sync_directory_ancestry(path)
+
+
+def _read_json(path):
+    from scripts import sermon_workflow_jobs
+    return sermon_workflow_jobs._read(path)
+
+
+def implementation_path(name) -> Path:
+    # Closure keys stay legacy scripts/ paths; a moved file is read at its alias.
+    from tongxing_production import path_aliases
+    return ROOT / path_aliases.resolve(name)
+
+
+def _require_bound_model_session(*, verifier=None):
+    from scripts import production_spark_admission
+    return production_spark_admission.require_bound_model_session(verifier=verifier)
+
+
+def _record_substage_metrics(metrics):
+    from scripts import four_layer_measure
+    return four_layer_measure.record_substage_metrics(metrics)
+
+
+def _accounting_orchestration(name, *, depends_on=None, work_unit_id=None):
+    from scripts import sermon_accounting
+    return sermon_accounting.orchestration(name, depends_on=depends_on, work_unit_id=work_unit_id)
+
+
+def _screening_asr_settings(screening):
+    from scripts import target_audio_auto_qc
+    return target_audio_auto_qc.screening_asr_settings(screening)
+
+
+def machine_qc() -> ports.MachineQc:
+    return ports.MachineQc(screening_asr_settings=_screening_asr_settings)
+
+
+def _rule_function(module, name):
+    def call(*args, **kwargs):
+        return getattr(_module(module)(), name)(*args, **kwargs)
+    call.__name__ = name
+    return call
+
+
+def _rule_constant(module, name):
+    return lambda: getattr(_module(module)(), name)
+
+
+_PLUGIN_RULES = 'scripts.language_review_plugins.auto_qc_text_common'
+_KO_NUMERALS = 'scripts.ko_spoken_numerals'
+
+
+def spoken_rules() -> ports.SpokenRules:
+    # Both files stay in scripts/ (L3 decision 3) and are pinned by the waiver,
+    # scoring and rate closures; constants are the modules' own objects.
+    plugin, plugin_constant = partial(_rule_function, _PLUGIN_RULES), partial(_rule_constant, _PLUGIN_RULES)
+    ko, ko_constant = partial(_rule_function, _KO_NUMERALS), partial(_rule_constant, _KO_NUMERALS)
+    return ports.SpokenRules(
+        fold=plugin('_fold'), ko_pattern=plugin('_ko_pattern'), book_citations=plugin('book_citations'),
+        english_numbers=plugin('english_numbers'), korean_sino=plugin('korean_sino'),
+        korean_native=plugin('korean_native'), en_book_codes=plugin_constant('_EN_BOOK_CODES'),
+        es_book_codes=plugin_constant('_ES_BOOK_CODES'), ko_book_codes=plugin_constant('_KO_BOOK_CODES'),
+        zh_book_codes=plugin_constant('_ZH_BOOK_CODES'), ko_citation=plugin_constant('_KO_CITATION'),
+        ko_counters=plugin_constant('_KO_COUNTERS'), zh_measure_words=plugin_constant('_ZH_MEASURE_WORDS'),
+        ko_rule=ko_constant('RULE'), ko_rule_v2=ko_constant('RULE_V2'), ko_rule_v3=ko_constant('RULE_V3'),
+        spoken_form=ko('spoken_form'), spoken_form_v2=ko('spoken_form_v2'), spoken_form_v3=ko('spoken_form_v3'),
+        equivalent=ko('equivalent'), bare_context_allowed=ko('bare_context_allowed'),
+        bare_citation_matches=ko('bare_citation_matches'), ko_particles=ko_constant('_PARTICLES'),
+        ko_connector=ko_constant('_CONNECTOR'), ko_range_particle=ko_constant('_RANGE_PARTICLE'),
+        ko_delimiters=ko_constant('_DELIMITERS'), ko_numeric_token=ko_constant('_NUMERIC_TOKEN'),
+        ko_citations=ko_constant('_CITATIONS'))
+
+
+def _read_checkpoint_map(path, label):
+    from scripts import render_multilingual_voice_demos
+    return render_multilingual_voice_demos.read_object(path, label)
+
+
+def _validate_checkpoint(task):
+    from scripts import render_multilingual_voice_demos
+    return render_multilingual_voice_demos.validate_checkpoint(task)
+
+
+def tts_runtime() -> ports.TtsRuntime:
+    return ports.TtsRuntime(replica_pool=_module('scripts.spark_tts_replica_pool'),
+                            window_scheduler=_module('scripts.spark_tts_window_scheduler'),
+                            bounded_cpu=_module('scripts.bounded_audio_cpu'),
+                            read_checkpoint_map=_read_checkpoint_map, validate_checkpoint=_validate_checkpoint)
+
+
+def dev_profile() -> ports.DevProfile:
+    # The Dev profile location the scripts/ module derives from its own file today.
+    return ports.DevProfile(default_profile_path=lambda: ROOT / 'data/benchmarks/local-layer-latency/2026-10-01/'
+                                                         'next-dev-test-profile.json')
+
+
+def audio_unmoved() -> audio_backend.Unmoved:
+    return audio_backend.Unmoved(local_model_observation=_module('scripts.sermon_local_model_observation'))
+
+
 # Each record is built once and shared by the layers that use it.
 _core, _provider, _code, _contracts, _snapshot = core(), provider(), code(), contracts(), snapshot()
 _compute, _resources_port, _terminology = compute(), resources(), terminology()
 _measure, _workspace, _accounting = measure(), workspace(), accounting()
-_schemas, _review = schemas(), review()
+_schemas, _review, _diagnostic, _waivers = schemas(), review(), diagnostic(), waivers()
 
 source_backend.configure(source_backend.SourceBackend(core=_core, provider=_provider, code=_code, mfa=mfa(),
                                                       contracts=_contracts, snapshot=_snapshot, compute=_compute,
@@ -539,10 +652,15 @@ text_backend.configure(text_backend.TextBackend(core=_core, provider=_provider, 
                                                 snapshot=_snapshot, compute=_compute, resources=_resources_port,
                                                 terminology=_terminology, measure=_measure, accounting=_accounting,
                                                 workspace=_workspace, plugins=plugins(), transports=transports(),
-                                                schemas=_schemas, diagnostic=diagnostic(),
+                                                schemas=_schemas, diagnostic=_diagnostic,
                                                 worker_command=layer2_worker_command, unmoved=text_unmoved()))
 delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, contracts=_contracts, code=_code,
                                                             schemas=_schemas, workspace=_workspace, review=_review,
                                                             runtime_web=runtime_web(), hosting=hosting(),
-                                                            waivers=waivers(),
+                                                            waivers=_waivers,
                                                             worker_command=app_delivery_worker_command))
+audio_backend.configure(audio_backend.AudioBackend(core=_core, code=_code, compute=_compute, measure=_measure,
+                                                   accounting=_accounting, schemas=_schemas, diagnostic=_diagnostic,
+                                                   review=_review, waivers=_waivers, machine_qc=machine_qc(),
+                                                   spoken_rules=spoken_rules(), tts_runtime=tts_runtime(),
+                                                   dev_profile=dev_profile(), unmoved=audio_unmoved()))
