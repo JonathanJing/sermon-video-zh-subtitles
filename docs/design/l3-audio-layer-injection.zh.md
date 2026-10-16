@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [现状地图](repository-current-map.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [L2 注入边界](l2-text-layer-injection.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md) · [计算策略](../local-production-compute-policy.zh.md)
 
-状态：**设计提案，待评审，未开始迁移**。盘点日期：2026-10-15。基线：`dev@0e19adfe`（L1 S0–S3 已合并，S3 [#496](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/496) 给 `ports.py` 加了 `Resources`、`Adjudication`，并改了 `machine_qc_audio_transports.py`；L2 设计 [#493](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/493) 的 §6 六项已决定；[L4 注入边界](l4-delivery-layer-injection.zh.md)待评审）。本文只定义 L3 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
+状态：**§6 大部分已决定（2026-10-16，见决定表；第 1 项附带问题与第 4 项豁免降级情形仍待定）；B0 已由 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507) 完成，A0–A4 未开始**。盘点日期：2026-10-15。基线：`dev@0e19adfe`（L1 S0–S3 已合并，S3 [#496](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/496) 给 `ports.py` 加了 `Resources`、`Adjudication`，并改了 `machine_qc_audio_transports.py`；L2 设计 [#493](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/493) 的 §6 六项已决定；[L4 注入边界](l4-delivery-layer-injection.zh.md)待评审）。本文只定义 L3 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
 
 ## 1 为什么不能直接搬
 
@@ -248,7 +248,19 @@ L3 内部的依赖是一条链：叶子（anomaly、recovery、clip_timeline、d
 
 每批：迁移前后 `tests/` 的发现清单一一对应（提案 §5.5）；`python-tests.yml` 的 `py_compile` 清单若列有被搬文件，同批更新；`sermon.py` 与 Spark 命令行 argv 不变；每批只声明软件验证，Spark 上的真实渲染/筛查另行报告。
 
-## 6 待你决定
+## 6 决定（2026-10-16 用户决定）
+
+| # | 问题 | 决定 | 对分批的影响 |
+|---|---|---|---|
+| 1 | A3 是否作为一个身份代批次 | **是**，renderer、筛查、预测时长一次搬完 | A3 单批；豁免、计分、语速三个闭包只变一次，每个未发布 locale 只重新校准一轮。**附带问题仍待定**：review/ 的 `target_audio_auto_qc` 等豁免闭包文件是否排进同一窗口（建议是，避免闭包再变一次） |
+| 2 | renderer 缓存连续性 | 沿用现有兼容机制：父哈希加入 `COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256`，预览另设只在准入处生效的集合；声音身份常量不动 | A3 同批评审兼容条目；Spark 上已提交的批次缓存与预览继续可用 |
+| 3 | `ko_spoken_numerals` 位置 | 与插件一样留在 `scripts/`，L3 经 `SpokenRules` 端口取规则与 14 个插件名 | 不进任何 L3 批次；三个闭包里它的键与字节不变 |
+| 4 | `audio_unavailable` 生产者 | 迁移完成后另开功能 PR 新增 `audio/unavailable.py`；**给 schema 升一版**，`targetLanguageSpeechJobJsonSha256` 只在 `status=audio_unavailable` 时允许为 null（附迁移说明，不写假哈希）；release plan 本来就指定纯文字时，**确定性校验即可** | 不在 A0–A4 内。**仍待定**：因豁免判定未配音句超过 5% 而降为纯文字时的确认方式（建议机器复核并如实标注 `review=waived`，不算人工批准） |
+| 5 | Spark 导入路径（B0） | 启动器显式把 `packages/production/src` 加进容器 `PYTHONPATH`，已由 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507) 实施，并在 Spark 上确认修复前失败、修复后导入正常 | B0 完成 |
+| 6 | A2 与 L2 T1 的先后 | 按建议：A2 排在 L2 T1 之后，直接导入 `tongxing_production.text.policy`，不建临时端口 | A2 依赖 L2 T1 合并 |
+
+以下保留原问题文本，供追溯。
+
 
 1. **A3 是否作为一个"身份代"批次**：建议是。renderer、筛查、预测时长在豁免、计分、语速三个闭包里互相包含，分开搬会让每个未发布 locale 重新校准多次（校准要在 Spark 上做 TTS 渲染，并付费调用副 ASR）。代价是 A3 约 4,700 行、评审面大。是否同时把 review/ 的 `target_audio_auto_qc` 等豁免闭包文件排进同一窗口？
 2. **renderer 缓存连续性**：建议用现有兼容机制（父哈希加入 `COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256`，预览另设一个只在准入处生效的集合），让 Spark 上已提交的批次缓存和预览继续可用；声音身份常量不动。另一种做法是接受 Spark 重新合成，不加任何兼容条目。
