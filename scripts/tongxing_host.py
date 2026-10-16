@@ -22,6 +22,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tongxing_production import ports  # noqa: E402
+from tongxing_production.contracts import schemas as contract_schemas  # noqa: E402
 from tongxing_production.source import backend as source_backend  # noqa: E402
 from tongxing_production.text import backend as text_backend  # noqa: E402
 from tongxing_production.delivery import backend as delivery_backend  # noqa: E402
@@ -164,28 +165,6 @@ def _mfa_options(args):
 
 def mfa() -> ports.Mfa:
     return ports.Mfa(options=_mfa_options)
-
-
-def _require(condition, code):
-    from scripts import sermon_review_contracts
-    return sermon_review_contracts.require(condition, code)
-
-
-def _bytes_sha256(value):
-    from scripts import sermon_review_contracts
-    return sermon_review_contracts.bytes_sha256(value)
-
-
-def _canonical_sha256(value):
-    from scripts import sermon_review_contracts
-    return sermon_review_contracts.canonical_sha256(value)
-
-
-def contracts() -> ports.Contracts:
-    # The error class is the one object callers catch, so it is bound directly.
-    from scripts import sermon_review_contracts
-    return ports.Contracts(error=sermon_review_contracts.ContractError, require=_require,
-                           bytes_sha256=_bytes_sha256, canonical_sha256=_canonical_sha256)
 
 
 def _read_snapshot(path):
@@ -410,17 +389,17 @@ def transports() -> ports.Transports:
 
 
 def _validate_handoff_schema(value, filename, label):
-    from scripts import prepare_target_language_speech_job
-    return prepare_target_language_speech_job._validate_schema(value, filename, label)
+    from tongxing_production.audio import speech_job
+    return speech_job._validate_schema(value, filename, label)
 
 
 def _source_package_schema():
-    from scripts import prepare_target_language_speech_job
-    return prepare_target_language_speech_job.SOURCE_PACKAGE_SCHEMA
+    from tongxing_production.audio import speech_job
+    return speech_job.SOURCE_PACKAGE_SCHEMA
 
 
 def schemas() -> ports.Schemas:
-    return ports.Schemas(path=lambda name: ROOT / 'schemas' / name, validate=_validate_handoff_schema,
+    return ports.Schemas(path=contract_schemas.path, validate=_validate_handoff_schema,
                          source_package_schema=_source_package_schema)
 
 
@@ -476,12 +455,10 @@ def text_unmoved() -> text_backend.Unmoved:
     return text_backend.Unmoved(
         durable_jobs=_module('scripts.canonical_durable_jobs'),
         package_inspection=_module('scripts.inspect_canonical_packages'),
-        pipeline_definition=_module('scripts.canonical_pipeline_definition'),
         liveness=_module('scripts.sermon_job_liveness'),
         review_budget=_module('scripts.sermon_review_budget'),
-        speech_handoff=_module('scripts.prepare_target_language_speech_job'),
+        speech_handoff=_module('tongxing_production.audio.speech_job'),
         orchestration_contracts=_module('scripts.sermon_unified.contracts'),
-        review_contracts=_module('scripts.sermon_review_contracts'),
         accounting_module=_module('scripts.sermon_accounting'),
         api_concurrency_module=_module('scripts.layer2_api_concurrency'),
         source_meaning_module=_module('scripts.source_meaning_machine_adjudication'),
@@ -574,6 +551,11 @@ def delivery_legacy() -> delivery_backend.Legacy:
     return delivery_backend.Legacy(weekly_release=_legacy_weekly_release,
                                    voice_demo=_module('scripts.stage_voice_demo_dev'),
                                    firebase_config=lambda name: ROOT / 'firebase' / name)
+
+
+def delivery_unmoved() -> delivery_backend.Unmoved:
+    return delivery_backend.Unmoved(formal_stage=_module('scripts.stage_formal_multilingual_dev'),
+                                    execution_harness=_module('scripts.sermon_execution_harness'))
 
 
 # Layer 3 (tongxing_production.audio). Every wrapper imports its implementation
@@ -740,7 +722,7 @@ def stage_gates() -> ports.StageGates:
         window_approval=supervisor('validate_window_approval'), parse_timecode=supervisor('parse_timecode'),
         stable_hash=supervisor('stable_hash'),
         english_review=_rule_function('scripts.build_english_source_package', '_review_payload'),
-        text_release_basis=_rule_function('scripts.prepare_target_language_speech_job', 'validate_text_release_basis'),
+        text_release_basis=_rule_function('tongxing_production.audio.speech_job', 'validate_text_release_basis'),
         study_ingest=_rule_function('scripts.study_artifacts', 'ingest_review'))
 
 
@@ -757,7 +739,7 @@ def scripture() -> ports.Scripture:
 def qc_runtime() -> ports.QcRuntime:
     return ports.QcRuntime(write_report=_rule_function('scripts.export_run_digest', 'write_report'),
                            codex_text_transport=_module('scripts.sermon_codex_transport'),
-                           validate_target_candidate=_rule_function('scripts.prepare_target_language_speech_job',
+                           validate_target_candidate=_rule_function('tongxing_production.audio.speech_job',
                                                                     'validate_target_candidate'))
 
 
@@ -771,11 +753,12 @@ def qc_runtime() -> ports.QcRuntime:
 # partially initialized modules.
 EAGER_PRODUCER_IMPORTS = (
     'api_cli_outcomes', 'canonical_durable_jobs', 'canonical_pipeline_definition', 'four_layer_measure',
-    'inspect_canonical_packages', 'layer2_api_concurrency', 'prepare_target_language_speech_job',
-    'production_spark_admission', 'series_terminology', 'sermon_accounting', 'sermon_cache_observation',
+    'inspect_canonical_packages', 'layer2_api_concurrency', 'machine_quality_release_basis',
+    'prepare_target_language_speech_job', 'production_spark_admission',
+    'series_terminology', 'sermon_accounting', 'sermon_cache_observation',
     'sermon_execution_harness', 'sermon_job_liveness', 'sermon_pipeline', 'sermon_provider_http',
     'sermon_provider_limits', 'sermon_public_snapshot', 'sermon_release_workflow', 'sermon_review_budget',
-    'sermon_review_contracts', 'sermon_transcription_request', 'sermon_workflow_jobs',
+    'sermon_review_contracts', 'sermon_transcription_request', 'sermon_unified_reviews', 'sermon_workflow_jobs',
     'source_meaning_machine_adjudication',
 )
 
@@ -786,38 +769,41 @@ def load_producer_imports():
         importlib.import_module('scripts.' + name)
 
 
+# The checkout's schemas/ directory is the only editable schema source.
+contract_schemas.configure(ROOT / 'schemas')
+
 # Each record is built once and shared by the layers that use it.
-_core, _provider, _code, _contracts, _snapshot = core(), provider(), code(), contracts(), snapshot()
+_core, _provider, _code, _snapshot = core(), provider(), code(), snapshot()
 _compute, _resources_port, _terminology = compute(), resources(), terminology()
 _measure, _workspace, _accounting = measure(), workspace(), accounting()
 _schemas, _review, _diagnostic, _waivers = schemas(), review(), diagnostic(), waivers()
 _plugins, _transports = plugins(), transports()
 
 source_backend.configure(source_backend.SourceBackend(core=_core, provider=_provider, code=_code, mfa=mfa(),
-                                                      contracts=_contracts, snapshot=_snapshot, compute=_compute,
+                                                      snapshot=_snapshot, compute=_compute,
                                                       resources=_resources_port, adjudication=adjudication(),
                                                       terminology=_terminology, measure=_measure,
                                                       workspace=_workspace, accounting=_accounting, review=_review))
-text_backend.configure(text_backend.TextBackend(core=_core, provider=_provider, code=_code, contracts=_contracts,
-                                                snapshot=_snapshot, compute=_compute, resources=_resources_port,
+text_backend.configure(text_backend.TextBackend(core=_core, provider=_provider, code=_code, snapshot=_snapshot,
+                                                compute=_compute, resources=_resources_port,
                                                 terminology=_terminology, measure=_measure, accounting=_accounting,
                                                 workspace=_workspace, plugins=_plugins, transports=_transports,
                                                 schemas=_schemas, diagnostic=_diagnostic,
                                                 worker_command=layer2_worker_command, unmoved=text_unmoved()))
-delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, contracts=_contracts, code=_code,
+delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, code=_code,
                                                             schemas=_schemas, workspace=_workspace, review=_review,
                                                             runtime_web=runtime_web(), hosting=hosting(),
                                                             waivers=_waivers,
                                                             worker_command=app_delivery_worker_command,
-                                                            legacy=delivery_legacy()))
+                                                            legacy=delivery_legacy(), unmoved=delivery_unmoved()))
 audio_backend.configure(audio_backend.AudioBackend(core=_core, code=_code, compute=_compute, measure=_measure,
                                                    accounting=_accounting, schemas=_schemas, diagnostic=_diagnostic,
                                                    review=_review, waivers=_waivers, machine_qc=machine_qc(),
                                                    spoken_rules=spoken_rules(), tts_runtime=tts_runtime(),
                                                    dev_profile=dev_profile(), unmoved=audio_unmoved()))
-review_backend.configure(review_backend.ReviewBackend(core=_core, code=_code, contracts=_contracts, snapshot=_snapshot,
+review_backend.configure(review_backend.ReviewBackend(core=_core, code=_code, snapshot=_snapshot,
                                                       schemas=_schemas, provider=_provider, compute=_compute,
                                                       plugins=_plugins, transports=_transports, audio=audio_rules(),
                                                       text=text_rules(), source=source_evidence(),
                                                       gates=stage_gates(), scripture=scripture(),
-                                                      qc_runtime=qc_runtime()))
+                                                      qc_runtime=qc_runtime(), waivers=_waivers))

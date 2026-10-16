@@ -17,12 +17,10 @@ class Unmoved:
     """
     durable_jobs: Callable[[], ModuleType]       # canonical_durable_jobs: identity, pipeline, project, reopen
     package_inspection: Callable[[], ModuleType]  # inspect_canonical_packages
-    pipeline_definition: Callable[[], ModuleType]  # canonical_pipeline_definition: LOCALES, _sha
     liveness: Callable[[], ModuleType]           # sermon_job_liveness
     review_budget: Callable[[], ModuleType]      # sermon_review_budget (review/)
-    speech_handoff: Callable[[], ModuleType]     # prepare_target_language_speech_job (Layer 3 hand-off checks)
+    speech_handoff: Callable[[], ModuleType]     # audio.speech_job (Layer 3 hand-off checks); text never imports audio
     orchestration_contracts: Callable[[], ModuleType]  # the unified run's contracts
-    review_contracts: Callable[[], ModuleType]   # sermon_review_contracts: strict JSON, validators, size limits
     accounting_module: Callable[[], ModuleType]  # sermon_accounting, for callers reading beyond the Accounting port
     api_concurrency_module: Callable[[], ModuleType]   # layer2_api_concurrency (compute/)
     source_meaning_module: Callable[[], ModuleType]    # source_meaning_machine_adjudication (review/)
@@ -36,7 +34,6 @@ class TextBackend:
     core: ports.Core
     provider: ports.Provider
     code: ports.Code
-    contracts: ports.Contracts
     snapshot: ports.Snapshot
     compute: ports.Compute
     resources: ports.Resources

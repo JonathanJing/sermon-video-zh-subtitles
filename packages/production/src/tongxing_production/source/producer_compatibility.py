@@ -4,11 +4,8 @@ Only these exact old/new bytes are eligible. Inspect immutable historical Source
 with zero new ASR/MFA; this does not claim re-execution under the new producer.
 """
 import sys
+from ..contracts.canonical import require as _require
 from . import backend as _source
-
-
-def _require(condition, code):
-    return _source.current().contracts.require(condition, code)
 
 
 # Legacy identity keys stay the keys of every table and closure below; a moved
@@ -60,6 +57,29 @@ TRANSPORT_MOVE_SOURCE_SHA256 = {**PRODUCER_MOVE_SOURCE_SHA256,
 TRANSPORT_MOVE_MIGRATION = 'l1-source-mfa-transport-package-move-v6'
 TRANSPORT_MOVE_CHANGED = ['scripts/mfa_backend.py', 'scripts/mfa_spark.py']
 
+# Infrastructure I1 split sermon_review_contracts: its review half moved into
+# review/contracts.py and imports canonical JSON, error codes and schema checks
+# from contracts/, with the same output bytes. The checkout before I1 had already
+# drifted from the v6 table in four files (no reviewed generation covers that
+# drift), so the historical side is the exact dev checkout I1 started from.
+CONTRACTS_SPLIT_HISTORICAL_SHA256 = {**TRANSPORT_MOVE_SOURCE_SHA256,
+    'scripts/mfa_alignment.py': 'e1dd12f3fc5bff6d99bd89d28e9ac764c2662b54222bcef1f911772e5adac8bd',
+    'scripts/sermon_diagnostic_context.py': '6af31378cfa0cf353f3a5e4aff519085bd6252a8f86e73570614709cfb890383',
+    'scripts/sermon_review_contracts.py': '71e7fa802fad3cac9788b1163907da3b908d4410777552333d46034754db89f2',
+    'scripts/sermon_sentence_interpretation.py': '5aa19b0580febb3652f9b694cf2ac9f1cbba1c241320c02396a99f0a63a439c1'}
+CONTRACTS_SPLIT_SOURCE_SHA256 = {**CONTRACTS_SPLIT_HISTORICAL_SHA256,
+    'scripts/sermon_review_contracts.py': '663e7da5d1d2f26fb7191d7146f2693242ae5318d7188b17ab1fafcfef4de17d'}
+# The generic halves of the split module are separate identity entries, so bind
+# their exact reviewed bytes alongside the legacy review-module migration.
+CONTRACTS_SPLIT_MEMBER_SHA256 = {
+    'packages/production/src/tongxing_production/contracts/canonical.py':
+        '6aa3890f13321fdb4ef38943f186d7b63400e349c83b1cd2a25cdd3c37bfedf5',
+    'packages/production/src/tongxing_production/contracts/schemas.py':
+        'd03ad1e063fbd4651508c0268c74172e09111f59f0f646b5b8eb819850f00777',
+}
+CONTRACTS_SPLIT_MIGRATION = 'i1-review-contracts-split-package-move-v7'
+CONTRACTS_SPLIT_CHANGED = ['scripts/sermon_review_contracts.py']
+
 
 def verify(historical,current,planned,binding):
     _require(type(historical) is dict and type(current) is dict and type(planned) is dict
@@ -74,17 +94,23 @@ def verify(historical,current,planned,binding):
     move = historical==EXTRACTION_SOURCE_SHA256 and current==MOVE_SOURCE_SHA256
     producer_move = historical==MOVE_SOURCE_SHA256 and current==PRODUCER_MOVE_SOURCE_SHA256
     transport_move = historical==PRODUCER_MOVE_SOURCE_SHA256 and current==TRANSPORT_MOVE_SOURCE_SHA256
-    package_move = move or producer_move or transport_move
+    contracts_split = historical==CONTRACTS_SPLIT_HISTORICAL_SHA256 and current==CONTRACTS_SPLIT_SOURCE_SHA256
+    package_move = move or producer_move or transport_move or contracts_split
     changed = (CHANGED if original else MOVE_CHANGED if move else PRODUCER_MOVE_CHANGED if producer_move
-        else TRANSPORT_MOVE_CHANGED if transport_move else ['scripts/sermon_fresh_diagnostic_source.py'])
+        else TRANSPORT_MOVE_CHANGED if transport_move else CONTRACTS_SPLIT_CHANGED if contracts_split
+        else ['scripts/sermon_fresh_diagnostic_source.py'])
     _require((original or followup or extraction or package_move) and {path for path in current if current[path]!=historical[path]}==set(changed),
         'source_producer_compatibility_unknown_revision')
+    _require(not contracts_split or all(recorded(planned,path)==sha
+        for path,sha in CONTRACTS_SPLIT_MEMBER_SHA256.items()),
+        'source_producer_compatibility_split_dependency_changed')
     _require(type(binding) is dict and set(binding)=={'parentPlanSha256','newPlanSha256',
         'sourceCanonicalSha256','anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256'}
         and all(type(value) is str and len(value)==64 and all(ch in '0123456789abcdef' for ch in value)
                 for value in binding.values()),'source_producer_compatibility_binding_required')
     migration = (MIGRATION if original else MOVE_MIGRATION if move else PRODUCER_MOVE_MIGRATION if producer_move
-        else TRANSPORT_MOVE_MIGRATION if transport_move else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
+        else TRANSPORT_MOVE_MIGRATION if transport_move else CONTRACTS_SPLIT_MIGRATION if contracts_split
+        else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
     return {'schemaVersion':SCHEMA,'migrationId':migration,'binding':binding,
         'historicalProducerSha256':historical,'currentInspectorProducerSha256':current,
         'changedModules':changed,'migrationCodeSha256':_source.current().code.module_sha256(sys.modules[__name__]),

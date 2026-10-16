@@ -36,7 +36,7 @@ def _launcher_exit_reason(stderr):
     bodies, environment values or arbitrary producer-supplied error codes.
     """
     last = stderr[-4096:].splitlines()[-1:] if isinstance(stderr, str) else []
-    if last == ['scripts.sermon_review_contracts.ContractError: mock_tts_environment_not_scrubbed']:
+    if last == [f'{c.ContractError.__module__}.{c.ContractError.__qualname__}: mock_tts_environment_not_scrubbed']:
         return 'mock_tts_environment_not_scrubbed'
     if last and re.match(r'^(ModuleNotFoundError|ImportError):', last[0]):
         return 'mock_tts_launcher_import_error'

@@ -10,7 +10,6 @@ from .. import ports
 class ReviewBackend:
     core: ports.Core                           # repo_root in place of a module-derived ROOT; jobs private names
     code: ports.Code                           # implementation_path for named closures; module_sha256 for self-hashes
-    contracts: ports.Contracts                 # removed once review imports tongxing_production.contracts
     snapshot: ports.Snapshot
     schemas: ports.Schemas
     provider: ports.Provider                   # route, transcription_request, transcription_limits
@@ -23,6 +22,7 @@ class ReviewBackend:
     gates: ports.StageGates
     scripture: ports.Scripture
     qc_runtime: ports.QcRuntime
+    waivers: ports.Waivers                     # machine audio waiver rules the audio screening gate accepts
 
 
 _current: ReviewBackend | None = None

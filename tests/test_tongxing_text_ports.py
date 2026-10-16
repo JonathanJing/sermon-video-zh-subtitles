@@ -27,7 +27,7 @@ class TextPortsTests(unittest.TestCase):
     def test_host_binds_a_complete_backend_sharing_records_with_layer_1(self):
         backend, layer1 = text.current(), source.current()
         self.assertIsInstance(backend, text.TextBackend)
-        for name in ('core', 'provider', 'code', 'contracts', 'snapshot', 'compute', 'resources',
+        for name in ('core', 'provider', 'code', 'snapshot', 'compute', 'resources',
                      'terminology', 'measure', 'accounting', 'workspace'):
             self.assertIs(getattr(backend, name), getattr(layer1, name), name)
         for record, kind in ((backend.plugins, ports.Plugins), (backend.transports, ports.Transports),

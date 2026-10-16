@@ -90,7 +90,7 @@ class MockTTSLaunchTests(WorkerFixture):
 
     def test_known_environment_rejection_logs_fixed_reason_without_retry_authority(self):
         result = subprocess.CompletedProcess([], 1, 'private-ambient',
-            'private-ambient\nscripts.sermon_review_contracts.ContractError: mock_tts_environment_not_scrubbed\n')
+            'private-ambient\ntongxing_production.contracts.canonical.ContractError: mock_tts_environment_not_scrubbed\n')
         self.check_unconfirmed(result=result, reason='mock_tts_environment_not_scrubbed', exit_code=1)
 
     def test_import_error_never_copies_module_name_or_stderr(self):
@@ -99,7 +99,7 @@ class MockTTSLaunchTests(WorkerFixture):
 
     def test_unrecognized_child_output_is_not_an_error_code(self):
         result = subprocess.CompletedProcess([], 2, 'private-ambient',
-            'scripts.sermon_review_contracts.ContractError: private-ambient\n')
+            'tongxing_production.contracts.canonical.ContractError: private-ambient\n')
         self.check_unconfirmed(result=result, reason='mock_tts_launcher_nonzero_exit', exit_code=2)
 
     def test_timeout_logs_no_command_output_or_exception_body(self):

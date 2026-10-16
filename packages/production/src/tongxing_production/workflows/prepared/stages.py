@@ -14,9 +14,9 @@ STAGE_MODULES = {
     'accounting': 'scripts.sermon_unified_accounting',
     'app_delivery': 'scripts.sermon_app_delivery_workflow',
     'audio': 'scripts.sermon_unified_audio',
-    'canonical_binding': 'scripts.sermon_unified_canonical_binding',
-    'capabilities': 'scripts.sermon_unified_capabilities',
-    'continuation': 'scripts.sermon_unified_continuation',
+    'canonical_binding': 'tongxing_production.workflows.prepared.canonical_binding',
+    'capabilities': 'tongxing_production.workflows.prepared.capabilities',
+    'continuation': 'tongxing_production.workflows.prepared.continuation',
     'delivery': 'scripts.sermon_unified_delivery',
     'layer2_binding': 'tongxing_production.text.unified_binding',
     'layer2_budget': 'tongxing_production.text.budget',
@@ -25,7 +25,7 @@ STAGE_MODULES = {
     'reviews': 'scripts.sermon_unified_reviews',
     'runtime_identity': 'tongxing_production.compute.runtime_identity',
     'source': 'tongxing_production.source.unified_stage',
-    'study': 'scripts.sermon_unified_study',
+    'study': 'tongxing_production.workflows.prepared.study',
 }
 
 

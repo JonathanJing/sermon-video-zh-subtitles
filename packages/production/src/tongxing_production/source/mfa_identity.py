@@ -13,27 +13,9 @@ from pathlib import Path
 import re
 import stat
 
+from ..contracts import canonical as c
 from . import backend as _source
 from . import mfa_alignment as _adapter_module
-
-
-class _Contracts:
-    """Receipt contract helpers through the Layer 1 port, under the names this module used."""
-    @property
-    def ContractError(self):
-        return _source.current().contracts.error
-
-    @staticmethod
-    def require(condition, code):
-        return _source.current().contracts.require(condition, code)
-
-    @staticmethod
-    def bytes_sha256(value):
-        return _source.current().contracts.bytes_sha256(value)
-
-    @staticmethod
-    def canonical_sha256(value):
-        return _source.current().contracts.canonical_sha256(value)
 
 
 class _Public:
@@ -42,7 +24,6 @@ class _Public:
         return _source.current().snapshot.read_snapshot(path)
 
 
-c = _Contracts()
 public = _Public()
 
 

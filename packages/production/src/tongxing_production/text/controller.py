@@ -14,6 +14,7 @@ import json
 import os
 from pathlib import Path
 
+from ..contracts import pipeline_definition as pipeline
 from . import auto_repair
 from . import backend as _text
 from . import budget as budget_tools
@@ -34,7 +35,6 @@ class _HostModule:
 
 durable = _HostModule(lambda: _text.current().unmoved.durable_jobs())
 packages = _HostModule(lambda: _text.current().unmoved.package_inspection())
-pipeline = _HostModule(lambda: _text.current().unmoved.pipeline_definition())
 liveness = _HostModule(lambda: _text.current().unmoved.liveness())
 accounting = _HostModule(lambda: _text.current().unmoved.accounting_module())
 api_concurrency = _HostModule(lambda: _text.current().unmoved.api_concurrency_module())

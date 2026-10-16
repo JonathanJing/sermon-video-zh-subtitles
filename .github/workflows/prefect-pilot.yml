@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/sermon*'
       - 'scripts/canonical_pipeline_definition.py'
+      - 'packages/production/src/tongxing_production/contracts/**'
+      - 'packages/production/src/tongxing_production/review/contracts.py'
       - 'scripts/run_sermon_prefect_dag.py'
       - 'tests/test_sermon_prefect*'
       - 'tests/test_sermon_pilot_evidence.py'

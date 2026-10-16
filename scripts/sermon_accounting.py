@@ -687,7 +687,7 @@ def record_api_attempt(model, response, elapsed_seconds, status="completed", err
     # Reuse contract-v1's bounded extension slots instead of silently extending
     # the schema. No arbitrary exception text or provider error body is accepted.
     if not_dispatched_reason is not None:
-        from scripts.sermon_pipeline import PRE_DISPATCH_REASONS
+        from tongxing_production.contracts.reasons import PRE_DISPATCH_REASONS
         if (type(not_dispatched_reason) is not str or not_dispatched_reason not in PRE_DISPATCH_REASONS
                 or status != "failed" or response is not None or http_status is not None):
             raise ValueError("invalid_not_dispatched_evidence")

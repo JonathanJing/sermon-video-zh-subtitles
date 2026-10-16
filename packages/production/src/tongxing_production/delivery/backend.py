@@ -18,9 +18,19 @@ class Legacy:
 
 
 @dataclass(frozen=True)
+class Unmoved:
+    """Modules Layer 4 still reaches through its host.
+
+    Each accessor returns the host's module at call time; it disappears when
+    that module moves into the package and its callers import it directly.
+    """
+    formal_stage: Callable[[], ModuleType]        # stage_formal_multilingual_dev (D2): canonical_sha, file_sha, reviewed_candidate, decode_audio
+    execution_harness: Callable[[], ModuleType]   # sermon_execution_harness: WorkAlreadyRunning
+
+
+@dataclass(frozen=True)
 class DeliveryBackend:
     core: ports.Core
-    contracts: ports.Contracts
     code: ports.Code
     schemas: ports.Schemas
     workspace: ports.Workspace
@@ -30,6 +40,7 @@ class DeliveryBackend:
     waivers: ports.Waivers
     worker_command: Callable[..., list]          # (*arguments) -> [python, scripts/sermon_app_delivery_workflow.py, *arguments]
     legacy: Legacy
+    unmoved: Unmoved
 
 
 _current: DeliveryBackend | None = None
