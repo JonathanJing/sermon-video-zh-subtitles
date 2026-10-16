@@ -172,6 +172,19 @@ gcloud secrets add-iam-policy-binding openai-api-key \
 | Max scale | `20` |
 | Container concurrency | `80` |
 
+### 8.1 2026-10-15 部署记录：`web/` 迁至 `apps/operator-web/`
+
+由用户手工执行 `gcloud run deploy sermon-zh-caption-web --source .`，部署提交 `7303f58561bda7f81710057144715c31431a41a6`（`dev`），Cloud Build `4cd88d4e-5fea-46e4-a82b-cddc1e3dafaa` 成功。上表仍是 2026-06-23 的历史快照，不代表当前 revision。
+
+| 字段 | 值 |
+|---|---|
+| 新 revision | `sermon-zh-caption-web-00079-rfk`，流量 100% |
+| 回滚点 | `sermon-zh-caption-web-00078-h89`（保留旧 `gpt-transcribe` 标签） |
+| 验收 | `/api/health` 为 `ok`；`/` 返回 200；`index.html`、`admin.html`、`app.js` 的 SHA-256 前 16 位分别为 `e00e43223aff7d71`、`9a8ce5634f61fea5`、`b53bac1c715ac823`，与迁移前一致 |
+| 注意 | 无参数 deploy 继承了固定到旧 revision 的流量配置，需随后手工把 100% 流量切到新 revision；下次可加 `--to-latest` |
+
+此记录只证明静态入口与健康检查；未验证周日实时字幕、`/api/admin/*` 鉴权或其他 API 行为。
+
 当前 service account 是 default Compute Engine service account。真实生产周日前，建议迁移到专用 Cloud Run service account，例如 `sermon-caption-runner@PROJECT_ID.iam.gserviceaccount.com`，只授予本服务需要的 Secret Manager 和 GCS 权限。
 
 ## 9. 当前 Service Env Vars
