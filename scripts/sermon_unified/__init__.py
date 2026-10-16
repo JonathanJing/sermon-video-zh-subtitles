@@ -19,6 +19,7 @@ from tongxing_production.orchestration.unified import adapters, backend, contrac
 from scripts import sermon_workflow_jobs as _jobs
 from scripts.sermon_execution_harness import atomic_json as _atomic_json, utc_now as _utc_now
 from scripts.sermon_release_workflow import safe_path as _safe_path
+from scripts import tongxing_host  # noqa: F401  binds tongxing_production.source, whose stage entry the 'source' stage loads
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -36,7 +37,7 @@ _STAGE_MODULES = {
     'parallel': 'scripts.sermon_unified_parallel',
     'reviews': 'scripts.sermon_unified_reviews',
     'runtime_identity': 'scripts.sermon_unified_runtime_identity',
-    'source': 'scripts.sermon_unified_source',
+    'source': 'tongxing_production.source.unified_stage',
     'study': 'scripts.sermon_unified_study',
 }
 assert set(_STAGE_MODULES) == backend.STAGE_NAMES

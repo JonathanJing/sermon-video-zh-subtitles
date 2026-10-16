@@ -28,6 +28,7 @@ PATH_ALIASES = {
     'scripts/sermon_source_text_review.py': PACKAGE_SOURCE + 'text_review.py',
     'scripts/mfa_backend.py': PACKAGE_SOURCE + 'mfa_backend.py',
     'scripts/mfa_spark.py': PACKAGE_SOURCE + 'mfa_spark.py',
+    'scripts/sermon_unified_source.py': PACKAGE_SOURCE + 'unified_stage.py',
 }
 
 

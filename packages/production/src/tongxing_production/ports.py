@@ -73,6 +73,24 @@ class Adjudication:
 
 
 @dataclass(frozen=True)
+class Workspace:
+    """Exclusive lock on a producer's work directory."""
+    work_lock: Callable[[Path], Any]           # (work) -> context manager
+
+
+@dataclass(frozen=True)
+class Accounting:
+    """The run's accounting session around a producer."""
+    session: Callable[..., Any]                # (directory, workflow, metadata=None, *, evidence_directory=None) -> context manager
+
+
+@dataclass(frozen=True)
+class Review:
+    """Operator review receipts a stage checks before it runs; review/ owns them."""
+    validate_window: Callable[..., Any]        # (manifest, bindings=None, base='.')
+
+
+@dataclass(frozen=True)
 class Terminology:
     """The shared series terminology table as frozen policy input."""
     context: Callable[[], dict]

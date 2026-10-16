@@ -203,17 +203,35 @@ def measure() -> ports.Measure:
     return ports.Measure(producer_step=_producer_step)
 
 
-def _ordered_bounded_map(items, worker, workers):
-    from scripts import sermon_unified_source
-    return sermon_unified_source.ordered_bounded_map(items, worker, workers)
+def _work_lock(work):
+    from scripts.sermon_execution_harness import work_lock
+    return work_lock(work)
 
 
-def unmoved() -> source_backend.Unmoved:
-    return source_backend.Unmoved(ordered_bounded_map=_ordered_bounded_map)
+def workspace() -> ports.Workspace:
+    return ports.Workspace(work_lock=_work_lock)
+
+
+def _accounting_session(directory, workflow, metadata=None, *, evidence_directory=None):
+    from scripts import sermon_accounting
+    return sermon_accounting.accounting_session(directory, workflow, metadata, evidence_directory=evidence_directory)
+
+
+def accounting() -> ports.Accounting:
+    return ports.Accounting(session=_accounting_session)
+
+
+def _validate_window(manifest, bindings=None, base='.'):
+    from scripts.sermon_unified_reviews import validate_window
+    return validate_window(manifest, bindings, base)
+
+
+def review() -> ports.Review:
+    return ports.Review(validate_window=_validate_window)
 
 
 source_backend.configure(source_backend.SourceBackend(core=core(), provider=provider(), code=code(), mfa=mfa(),
                                                       contracts=contracts(), snapshot=snapshot(), compute=compute(),
                                                       resources=resources(), adjudication=adjudication(),
                                                       terminology=terminology(), measure=measure(),
-                                                      unmoved=unmoved()))
+                                                      workspace=workspace(), accounting=accounting(), review=review()))
