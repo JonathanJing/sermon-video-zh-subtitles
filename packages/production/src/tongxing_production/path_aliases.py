@@ -79,12 +79,21 @@ LAYER4 = {
     'scripts/weekly_poster_template.py': _DELIVERY + 'posters/template.py',
 }
 
+# Cross-layer review (tongxing_production.review), batches R1-R4.
+_REVIEW = PRODUCTION + 'review/'
+REVIEW = {
+    # R1: standard-library leaves moved byte for byte; the ledger is a waiver closure member.
+    'scripts/machine_repair_ledger.py': _REVIEW + 'repair_ledger.py',
+    'scripts/audio_qc_human_acceptance.py': _REVIEW + 'audio_qc_acceptance.py',
+    'scripts/text_qc_human_acceptance.py': _REVIEW + 'text_qc_acceptance.py',
+}
+
 # Shared infrastructure, batches I1-I4 (docs/design/infrastructure-injection.zh.md).
 CONTRACTS = {}      # tongxing_production.contracts, batch I1
 STORAGE = {}        # tongxing_production.storage, batch I2
 OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
 
-PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **LAYER2, **LAYER4}
+PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **LAYER2, **LAYER4, **REVIEW}
 
 
 def resolve(key):
