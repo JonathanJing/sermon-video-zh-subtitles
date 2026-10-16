@@ -79,7 +79,7 @@ L4 在统一 CLI 里有两个阶段入口，由 `scripts/sermon_unified/__init__
 | `machine_quality_release_basis`（697 行）、`machine_audio_waiver_acceptance`（226 行） | 跨层机器复核；前者在 waiver 实现闭包里，改字节就改变 waiver 实现哈希 | 新端口 `Waivers`（text/audio 两组函数与 schema 常量）；L4 各批不改这两个文件 |
 | `stage_formal_multilingual_dev.validate_audio_screening_review` | L3 音频复核门，却写在 L4 文件里；6 个文件共 7 处调用（builder、`sermon_app_delivery`、`sermon_unified_reviews`、`sermon_delivery_intent_binding`、L3 `inspect_canonical_audio`、`build_sep27_page_audio_extension`） | 已决定移到 review/（§5 D2a）；L4 经 `Reviews` 端口调用 |
 | `build_english_source_package.validate_ready_package`、`_review_payload` | L1 | 按 L2 §6 第 5 项的决定（下游可导入上游纯校验函数，禁止反向），等 `build_english_source_package` 的校验函数位于 `tongxing_production.source` 后直接导入；私有 `_review_payload` 先在宿主包装 |
-| `sermon_unified_study`、`sermon_study_generation` | 学习产物的模型生成（预算、provider 并发），不是组装发布 | 不进 L4 端口；L4 只读已审 artifact。生成模块的归属仍待定（§6 末尾） |
+| `sermon_unified_study`、`sermon_study_generation` | 学习产物的模型生成（预算、provider 并发），不是组装发布 | 不进 L4 端口；L4 只读已审 artifact。已决定归 workflows/（§6 第 7 项），随 workflows 批次迁移，依赖方向 workflows → delivery/study_artifacts |
 | `sermon_delivery_intent`（412 行，叶子）、`sermon_delivery_intent_binding`（585 行） | 私有交付意图与离线时长预检，文件头写明"never a release gate"；binding 还读 L2/L3 包、预算、严格门禁准入和账本 | 不在 L4 运行路径上；已决定 intent 归 delivery/（D1），binding 归 orchestration/（随 orchestration 批次，§6 第 6 项） |
 
 ### 2.4 留作应用、工具或 legacy
@@ -93,7 +93,7 @@ L4 在统一 CLI 里有两个阶段入口，由 `scripts/sermon_unified/__init__
 | `build_language_listening_catalog.py` | tools/ops | 生成反馈服务来源目录；部署反馈函数是对外动作，需授权 |
 | `inspect_canonical_release.py`、`inspect_multilingual_v3_release.py`、`verify_v3_bucket_video.py`、`audit_production_release_bindings.py` | tools/ops | 只读检查 CLI |
 | `clip_e2e_release.py` | tools/development | 片段 E2E 测试的发布准备；导入 L4 公开 API |
-| `build_multilingual_sermon_posters.py` | 首轮留 `scripts/` | 海报是独立交付，与页面发布分开；它用 `Path(__file__).with_name('render_weekly_poster.swift')` 定位渲染器（§6 第 6 项） |
+| `build_multilingual_sermon_posters.py`、`weekly_poster_template.py`、`render_weekly_poster.swift` | 首轮留 `scripts/`，以后进 `delivery/posters/`（D9） | 海报是独立交付，与页面发布分开，上传仍需用户指示；它用 `Path(__file__).with_name(...)` 定位 Swift 渲染器和模板（§6 第 6、8 项） |
 | `build_published_english_reference.py`、`bind_published_alignment_catalog.py` | 以后进 delivery/ | 发布后追加资源并重写 v3/v4 目录，是 L4 业务；首轮不搬（§5 D6） |
 | `build_four_layer_tracker_snapshot.py`、`tools/ops/tracker-publisher/` | observability/projections、tools/ops | 只读 release 包合同，不记录 L4 代码身份（§4.7） |
 | legacy 组：`assemble_multilingual_hosting`、`deploy_multilingual_hosting`、`verify_multilingual_hosting`、`assemble_multilingual_v3_update`、`refresh_multilingual_hosting_with_legacy`、`production_content_release_admission`、`multilingual_dev_preview`、`seal_multilingual_dev_catalog`、`build_multilingual_catalog`；连同 tools/ops 行的 `inspect_multilingual_v3_release`、`verify_v3_bucket_video` 共 11 个文件 | `adapters/legacy/`，单独成批（D7） | v2 catalog／v1 release／`weekly.json` 与 v3 组装器；提案 §4 要求不能借迁移把 v2/v3 和 legacy 接口合并（§6 第 5 项） |
@@ -204,10 +204,11 @@ prepare manifest 记录外壳文件的公开路径和 sha256；`verify`/`seal` �
 | D6 发布后追加 | `build_published_english_reference`、`bind_published_alignment_catalog` → `delivery/` | 已发布 release、正文、音频、索引字节不变；v3 仍是 v4 的人工投影 |
 | D7 legacy（单独成批） | §2.4 legacy 组 11 个文件 → `tongxing_production/adapters/legacy/` | v2 catalog／v1 release／`weekly.json` 与 v3 组装器的接口和输出字节不变，不与四产物接口合并；`run_multilingual_cd.py`、`tongxing-ios.yml` `shared_contracts` 中的 legacy 路径同批更新；文档里的命令继续经 `scripts/` 门面可用 |
 | D8 工具入口 | 发布 CLI 入口（`guarded_hosting_publish`、`prepare_dev_simulated_publication` 的 `main()`）、`smoke_published_page`、`build_language_listening_catalog`、只读检查 CLI → `tools/ops/`，复用包内实现 | 命令参数、退出码与输出不变；`run_clip_real_e2e.py` 与 runbook 的命令路径同批更新或保留门面 |
+| D9 海报 | `build_multilingual_sermon_posters`、`weekly_poster_template` → `delivery/posters/{build,template}.py`；`render_weekly_poster.swift` 作为包内资源经 `importlib.resources` 取得（同 `mfa_alignment.py` 作为文件打包），系统 `swift` 执行；从 `build_sermon_poster` 取的 `digest/read/write` 改用包内工具函数 | 同输入的 PNG、预览与 `qr-validation.json` 字节一致；`rendererSha256` 不变（Swift 文件字节不变）；`builderSha256`、`templateSha256` 是自身文件哈希，改导入后各变一次，写进 PR；它们只记入新海报的收据，没有校验器回读，旧收据保持历史值。旧格式入口 `build_sermon_poster.py`／`render_sermon_poster.swift` 不随本批迁移，建议执行 D7 时一并确认归 `adapters/legacy/` |
 
 每批：迁移前后 `tests/` 的发现清单一一对应（提案 §5.5）；`python-tests.yml` 的 `py_compile` 清单若列有被搬文件，同批更新；每批只在没有进行中的统一运行时合并（§4.3）。
 
-## 6 决定（2026-10-15 用户决定）
+## 6 决定（2026-10-15 用户决定，第 7、8 项为追加）
 
 | # | 问题 | 决定 | 对分批的影响 |
 |---|---|---|---|
@@ -217,8 +218,8 @@ prepare manifest 记录外壳文件的公开路径和 sha256；`verify`/`seal` �
 | 4 | reader 外壳的来源 | 首轮 `RuntimeWeb.root()` 仍指向 checkout 的 `apps/listening-web` | 冻结配置的 `inputSnapshotSha256` 与 `runtimeAssets` 不变，D2/D5 不重新冻结 |
 | 5 | legacy 组 | 迁入 `adapters/legacy/`，单独成批 | 新增 D7；v2/v3 与四产物接口不合并 |
 | 6 | 边界模块 | 采纳建议：intent → delivery/，intent_binding → orchestration/，海报首轮留 `scripts/`，冒烟与反馈来源目录 → tools/ops | intent 在 D1；binding 随 orchestration 批次；冒烟与来源目录在 D8 |
-
-仍待定：学习产物的**生成**模块（`sermon_study_generation`、`sermon_unified_study`）归 text/ 还是 workflows/。它们不在 L4 的分批里，不阻塞 D0–D8。海报以后进 tools/ 还是 delivery/posters 也未定，首轮不动。
+| 7 | 学习产物生成模块的归属 | `sermon_study_generation`、`sermon_unified_study` 归 workflows/ | 不在 L4 分批里，随 workflows 批次迁移；workflows → delivery 是提案允许的方向 |
+| 8 | 海报以后的位置 | `delivery/posters/` | 新增 D9；首轮仍留 `scripts/` |
 
 以下保留原问题文本，供追溯。
 
