@@ -37,7 +37,7 @@ flowchart TB
 
 </details>
 
-`PLAN` 是发布计划选择的汇合，不是永远等待三语。某语言失败只阻止自己的后继；明确要求同时发布三语时才等待三语。L1 身份变化使所有 locale 下游失效；L2/L3 变化只使相应 locale 下游失效。[Canonical DAG 定义](../scripts/canonical_pipeline_definition.py)与[包检查边界](canonical-package-inspection.zh.md)进一步区分依赖结构、观察和执行。
+`PLAN` 是发布计划选择的汇合，不是永远等待三语。某语言失败只阻止自己的后继；明确要求同时发布三语时才等待三语。L1 身份变化使所有 locale 下游失效；L2/L3 变化只使相应 locale 下游失效。[Canonical DAG 定义](../packages/production/src/tongxing_production/contracts/pipeline_definition.py)与[包检查边界](canonical-package-inspection.zh.md)进一步区分依赖结构、观察和执行。
 
 ## 实际实现地图 / Implementation map
 

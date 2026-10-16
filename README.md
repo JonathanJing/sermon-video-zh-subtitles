@@ -58,7 +58,7 @@ One shared English source feeds independent Chinese, Korean and Spanish branches
 | 3 | Target-Language Audio & Synchronization | Target-Language Audio Package per locale, or explicit `audio_unavailable` | Back-transcription screening, timing plan, human listening or a recorded waiver |
 | 4 | Multilingual Delivery & Playback | Release Package per `pageId + targetLocale` | Deploy, then HTTP, hash and Range verification; device and venue acceptance recorded separately |
 
-The per-layer process, models and gates are drawn in the [four-layer workflow diagram](docs/diagrams/four-layer-production-workflow.svg). The maintained contract is the [four-layer interface document](docs/multilingual-production-interfaces.zh.md); the Python dependency definition is in `scripts/canonical_pipeline_definition.py`.
+The per-layer process, models and gates are drawn in the [four-layer workflow diagram](docs/diagrams/four-layer-production-workflow.svg). The maintained contract is the [four-layer interface document](docs/multilingual-production-interfaces.zh.md); the Python dependency definition is in `packages/production/src/tongxing_production/contracts/pipeline_definition.py`.
 
 ### From content approval to Firebase release
 
