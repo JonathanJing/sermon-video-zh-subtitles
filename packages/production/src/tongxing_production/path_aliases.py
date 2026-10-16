@@ -34,6 +34,9 @@ LAYER2 = {
     'scripts/target_language_policy_preview.py': _TEXT + 'policy_preview.py',
     'scripts/produce_target_language_candidate.py': _TEXT + 'candidate.py',
     'scripts/target_language_rule_preflight.py': _TEXT + 'rule_preflight.py',
+    'scripts/run_target_language_models.py': _TEXT + 'models.py',
+    'scripts/migrate_target_language_model_cache.py': _TEXT + 'model_cache_migration.py',
+    'scripts/canonical_layer2_budget.py': _TEXT + 'budget.py',
 }
 
 # Shared compute (tongxing_production.compute), stage 1.
@@ -41,7 +44,16 @@ COMPUTE = {
     'scripts/sermon_provider_limits.py': PRODUCTION + 'compute/provider_limits.py',
 }
 
-PATH_ALIASES = {**COMPUTE, **LAYER1, **LAYER2}
+# Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.
+_DELIVERY = PRODUCTION + 'delivery/'
+LAYER4 = {
+    'scripts/delivery_contract.py': _DELIVERY + 'contract.py',
+    'scripts/study_artifacts.py': _DELIVERY + 'study_artifacts.py',
+    'scripts/release_asset_io.py': _DELIVERY + 'asset_io.py',
+    'scripts/sermon_delivery_intent.py': _DELIVERY + 'intent.py',
+}
+
+PATH_ALIASES = {**COMPUTE, **LAYER1, **LAYER2, **LAYER4}
 
 
 def resolve(key):

@@ -28,7 +28,7 @@
 - 普通句沿用冻结文本的标点边界；长句的内部拆分须有停顿或分句标点证据，并保持 `requiresOperatorReview=true`。
 - 英文完整性和句／停顿边界是两个人工门槛，不能由结构检查自动批准。
 
-合同：[v1 英文句锚 schema](../schemas/sermon-sentence-anchor-manifest-v1.schema.json)、[clause-stable v2 schema](../schemas/sermon-sentence-anchor-manifest-v2.schema.json)。生成器：[sermon_sentence_interpretation.py](../scripts/sermon_sentence_interpretation.py)。v1 保持兼容；v2 默认以 8 秒为目标，只在标点或至少 0.35 秒的词间停顿处拆分，并为每个边界保存 `splitEvidence`。没有安全边界时，v2 保留完整词序列、标记超时并阻止模型和 TTS 阶段，绝不静默硬切。
+合同：[v1 英文句锚 schema](../schemas/sermon-sentence-anchor-manifest-v1.schema.json)、[clause-stable v2 schema](../schemas/sermon-sentence-anchor-manifest-v2.schema.json)。生成器：[sentence_interpretation.py](../packages/production/src/tongxing_production/source/sentence_interpretation.py)。v1 保持兼容；v2 默认以 8 秒为目标，只在标点或至少 0.35 秒的词间停顿处拆分，并为每个边界保存 `splitEvidence`。没有安全边界时，v2 保留完整词序列、标记超时并阻止模型和 TTS 阶段，绝不静默硬切。
 
 ### Layer 2：目标语言文字（当前为 zh-Hans legacy adapter）
 

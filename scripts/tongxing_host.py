@@ -455,6 +455,7 @@ def text_unmoved() -> text_backend.Unmoved:
         speech_handoff=_module('scripts.prepare_target_language_speech_job'),
         orchestration_contracts=_module('scripts.sermon_unified.contracts'),
         review_contracts=_module('scripts.sermon_review_contracts'),
+        controller=_module('scripts.canonical_layer2_controller'),
         load_meaning_notes=_load_meaning_notes, repair_instruction=_repair_instruction,
         record_cache_observation=_record_cache_observation)
 
@@ -515,8 +516,8 @@ def _validate_audio_waiver(package, receipt, screening):
 
 
 def waivers() -> ports.Waivers:
-    # The schema names and review kind are fixed strings of a waiver-closure file;
-    # reading them would import it at host load, so they are recorded here and pinned by a test.
+    # The schema names and review kind are fixed strings of the waiver release basis,
+    # recorded here so the record does not depend on import order; a test pins them.
     return ports.Waivers(is_text_waiver=_is_text_waiver, validate_text_waiver=_validate_text_waiver,
                          disclosure=_waiver_disclosure, is_audio_waiver=_is_audio_waiver,
                          validate_audio_waiver=_validate_audio_waiver,
@@ -531,9 +532,9 @@ def app_delivery_worker_command(*arguments):
     return [sys.executable, str(ROOT / 'scripts/sermon_app_delivery_workflow.py'), *arguments]
 
 
-# Layer 3 (tongxing_production.audio). Nothing here imports a Layer 3,
-# waiver-closure or renderer module at host load: every wrapper imports its
-# implementation when called.
+# Layer 3 (tongxing_production.audio). Every wrapper imports its implementation
+# when called, so the renderer, audio QC and spoken-rule modules stay unloaded
+# at host load.
 def _sync_directory_ancestry(path):
     from scripts import sermon_workflow_jobs
     return sermon_workflow_jobs._sync_directory_ancestry(path)
@@ -637,6 +638,26 @@ def audio_unmoved() -> audio_backend.Unmoved:
     return audio_backend.Unmoved(local_model_observation=_module('scripts.sermon_local_model_observation'))
 
 
+# The moved producers used to import these modules at load time. A plan freezes
+# accounting.execution_identity() (the loaded project code) before it runs and
+# checks it again at review and cache replay, so a module that now loads only on
+# first use through a port would change that identity mid-run. Loading them with
+# the host keeps the loaded set what it was before the move.
+EAGER_PRODUCER_IMPORTS = (
+    'api_cli_outcomes', 'four_layer_measure', 'prepare_target_language_speech_job', 'production_spark_admission',
+    'series_terminology', 'sermon_accounting', 'sermon_cache_observation', 'sermon_execution_harness',
+    'sermon_pipeline', 'sermon_provider_http', 'sermon_provider_limits', 'sermon_public_snapshot',
+    'sermon_release_workflow', 'sermon_review_budget', 'sermon_review_contracts', 'sermon_transcription_request',
+    'sermon_workflow_jobs',
+)
+
+
+def _load_producer_imports():
+    import importlib
+    for name in EAGER_PRODUCER_IMPORTS:
+        importlib.import_module('scripts.' + name)
+
+
 # Each record is built once and shared by the layers that use it.
 _core, _provider, _code, _contracts, _snapshot = core(), provider(), code(), contracts(), snapshot()
 _compute, _resources_port, _terminology = compute(), resources(), terminology()
@@ -664,3 +685,4 @@ audio_backend.configure(audio_backend.AudioBackend(core=_core, code=_code, compu
                                                    review=_review, waivers=_waivers, machine_qc=machine_qc(),
                                                    spoken_rules=spoken_rules(), tts_runtime=tts_runtime(),
                                                    dev_profile=dev_profile(), unmoved=audio_unmoved()))
+_load_producer_imports()
