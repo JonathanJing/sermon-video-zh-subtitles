@@ -25,6 +25,10 @@ from tongxing_production.source import backend as source
 from tongxing_production.text import backend as text
 
 
+def app_workflow_module():
+    return sys.modules['scripts.sermon_app_delivery_workflow']
+
+
 class DeliveryPortsTests(unittest.TestCase):
     def test_host_binds_a_complete_backend_sharing_records_with_the_other_layers(self):
         backend = delivery.current()
@@ -49,6 +53,28 @@ class DeliveryPortsTests(unittest.TestCase):
         recorded = app_workflow._worker_command(*[config if name == 'config' else 'b' * 64 for name in parameters])
         self.assertEqual(delivery.current().worker_command(*recorded[2:]), recorded)
         self.assertEqual(recorded[0], sys.executable)
+        # D4: the workflow moved into the package; recorded requests still name the scripts/ entry point.
+        self.assertEqual(recorded[1], str(host.ROOT / 'scripts/sermon_app_delivery_workflow.py'))
+
+    def test_app_workflow_identity_hashes_the_moved_files_under_their_legacy_keys(self):
+        from tongxing_production import path_aliases
+        from tongxing_production.delivery import app_delivery, app_workflow
+        self.assertIs(app_workflow_module(), app_workflow)
+        for key, module in (('scripts/sermon_app_delivery_workflow.py', app_workflow),
+                            ('scripts/sermon_app_delivery.py', app_delivery)):
+            self.assertEqual(host.ROOT / path_aliases.resolve(key), Path(module.__file__).resolve(), key)
+        with patch.object(formal_stage, 'file_sha', side_effect=str) as file_sha:
+            app_workflow.implementation_identity()
+        hashed = {Path(call.args[0]) for call in file_sha.call_args_list}
+        self.assertEqual(hashed, {Path(app_workflow.__file__).resolve(), Path(app_delivery.__file__).resolve(),
+                                  host.ROOT / 'schemas/sermon-app-delivery-workflow-v1.schema.json',
+                                  host.ROOT / 'schemas/sermon-app-delivery-v1.schema.json'})
+
+    def test_unmoved_record_reaches_the_modules_the_app_gate_used(self):
+        from scripts import sermon_execution_harness
+        unmoved = delivery.current().unmoved
+        self.assertIs(unmoved.formal_stage(), formal_stage)
+        self.assertIs(unmoved.execution_harness(), sermon_execution_harness)
 
     def test_hosting_wrappers_reach_the_implementation(self):
         hosting = delivery.current().hosting
@@ -95,7 +121,8 @@ class DeliveryPortsTests(unittest.TestCase):
         code = ("import sys; from scripts import tongxing_host; "
                 "loaded = [m for m in ('scripts.build_full_video_app_release', 'scripts.guarded_hosting_publish', "
                 "'scripts.machine_audio_waiver_acceptance', 'scripts.sermon_unified_delivery', "
-                "'scripts.sermon_app_delivery_workflow', 'tongxing_production.adapters.legacy.assemble_multilingual_hosting', "
+                "'scripts.sermon_app_delivery_workflow', 'tongxing_production.delivery.app_workflow', "
+                "'tongxing_production.delivery.app_delivery', 'tongxing_production.adapters.legacy.assemble_multilingual_hosting', "
                 "'weekly_release') if m in sys.modules]; print(loaded)")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)

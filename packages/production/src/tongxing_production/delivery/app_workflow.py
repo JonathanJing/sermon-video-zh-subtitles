@@ -14,21 +14,38 @@ import json
 import os
 from pathlib import Path
 import re
-import sys
 
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from . import app_delivery as app
+from . import backend as _delivery
 
-from scripts import sermon_app_delivery as app
-from scripts import sermon_workflow_jobs as jobs
-from scripts.sermon_execution_harness import work_lock, WorkAlreadyRunning
-from scripts.sermon_release_workflow import _safe_path
-
-ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_PATH = ROOT / 'schemas/sermon-app-delivery-workflow-v1.schema.json'
+SCHEMA_NAME = 'sermon-app-delivery-workflow-v1.schema.json'
 SCOPE = 'app_delivery_readiness'
 ACTION = 'prepare_app_delivery'
 TIMEOUT_SECONDS = 21600
+
+
+jobs = app._HostModule(lambda: _delivery.current().core.jobs)
+
+
+def __getattr__(name):
+    # ROOT and SCHEMA_PATH stay readable as module constants; the checkout belongs to the host.
+    if name == 'ROOT':
+        return _delivery.current().core.repo_root
+    if name == 'SCHEMA_PATH':
+        return _delivery.current().schemas.path(SCHEMA_NAME)
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+
+
+def _safe_path(path):
+    return _delivery.current().core.safe_path(path)
+
+
+def work_lock(work):
+    return _delivery.current().workspace.work_lock(work)
+
+
+def _work_already_running():
+    return _delivery.current().unmoved.execution_harness().WorkAlreadyRunning
 
 
 @dataclass(frozen=True)
@@ -66,7 +83,7 @@ def _check_route(config):
 def load_configuration(path, *, sunday=None):
     path = _safe_path(path)
     value = app.read(path)
-    schema = app.read(SCHEMA_PATH)
+    schema = app.read(_delivery.current().schemas.path(SCHEMA_NAME))
     app.require(app.Draft202012Validator(schema).is_valid(value), 'app_workflow_configuration_invalid')
     parsed = date.fromisoformat(value['sunday'])
     app.require(parsed.isoformat() == value['sunday'] and parsed.weekday() == 6
@@ -90,10 +107,12 @@ def load_configuration(path, *, sunday=None):
 
 
 def implementation_identity():
+    # Keys stay the legacy scripts/ paths; each is read at the file it names today.
     names = ('scripts/sermon_app_delivery_workflow.py', 'scripts/sermon_app_delivery.py',
              'schemas/sermon-app-delivery-workflow-v1.schema.json',
              'schemas/sermon-app-delivery-v1.schema.json')
-    return app.digest({name: app.stage.file_sha(ROOT / name) for name in names})
+    path = _delivery.current().code.implementation_path
+    return app.digest({name: app.stage.file_sha(path(name)) for name in names})
 
 
 def frozen_app_plan(plan):
@@ -290,8 +309,9 @@ def snapshot(config_path, *, sunday=None):
 
 
 def _worker_command(config, identity):
-    return [sys.executable, str(Path(__file__).resolve()), 'worker', '--config', str(config.path),
-            '--expected-job', jobs._digest(identity)]
+    # Durable job requests record this argv; the host keeps it naming the scripts/ entry point.
+    return _delivery.current().worker_command('worker', '--config', str(config.path),
+                                              '--expected-job', jobs._digest(identity))
 
 
 def start(config_path, *, sunday=None, expected_revision=None):
@@ -490,7 +510,7 @@ def main(argv=None):
             result = run(args.config, mode=args.mode)
         else:
             result = snapshot(args.config)
-    except (ValueError, OSError, KeyError, TypeError, WorkAlreadyRunning):
+    except (ValueError, OSError, KeyError, TypeError, _work_already_running()):
         parser.exit(2, 'App workflow failed: invalid_or_changed_evidence\n')
     print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
     return 0

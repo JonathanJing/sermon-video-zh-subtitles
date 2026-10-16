@@ -19,16 +19,31 @@ import subprocess
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-try:
-    from scripts import stage_formal_multilingual_dev as stage
-    from scripts import build_english_source_package as source_builder
-except ImportError:
-    import stage_formal_multilingual_dev as stage
-    import build_english_source_package as source_builder
+from . import backend as _delivery
+from ..source import english_source_package as source_builder
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SCHEMA = ROOT / "schemas/sermon-app-delivery-v1.schema.json"
+class _HostModule:
+    """A host module looked up at each use, so the package imports without a host."""
+    def __init__(self, get):
+        self._get = get
+
+    def __getattr__(self, name):
+        return getattr(self._get(), name)
+
+
+stage = _HostModule(lambda: _delivery.current().unmoved.formal_stage())
+
+
+def __getattr__(name):
+    # ROOT and SCHEMA stay readable as module constants; the checkout belongs to the host.
+    if name == "ROOT":
+        return _delivery.current().core.repo_root
+    if name == "SCHEMA":
+        return _delivery.current().schemas.path("sermon-app-delivery-v1.schema.json")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 _ARTIFACT_REBASE = ContextVar("app_artifact_rebase", default=None)
 FORMATS = FormatChecker()
 
@@ -85,7 +100,7 @@ def read(path):
 
 
 def validate(value, name):
-    schema = read(SCHEMA)
+    schema = read(_delivery.current().schemas.path("sermon-app-delivery-v1.schema.json"))
     schema["$ref"] = "#/$defs/" + name
     schema.pop("oneOf", None)
     errors = list(Draft202012Validator(schema, format_checker=FORMATS).iter_errors(value))
@@ -93,7 +108,7 @@ def validate(value, name):
 
 
 def existing_schema(value, name):
-    definition = read(ROOT / "schemas" / name)
+    definition = read(_delivery.current().schemas.path(name))
     require(Draft202012Validator(definition, format_checker=FORMATS).is_valid(value),
             "existing_package_invalid_schema")
 
@@ -278,7 +293,7 @@ def audio(root, row, source, locale, candidate):
             and [unit["textGroupId"] for unit in package["units"]] == ids
             and all(unit["targetTextSha256"] == hashlib.sha256(group["targetText"].encode()).hexdigest()
                     for unit, group in zip(package["units"], candidate["groups"])), "audio_not_reviewed_for_candidate")
-    stage.validate_audio_screening_review(package, receipt, screening)
+    _delivery.current().review.audio_screening(package, receipt, screening)
     nested_artifacts(root, path.parent, package)
     # Use the existing fixed ffprobe/ffmpeg validator, not an input command.
     durations = []
