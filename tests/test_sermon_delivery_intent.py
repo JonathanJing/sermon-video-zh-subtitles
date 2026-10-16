@@ -14,12 +14,11 @@ from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
+from scripts import sermon_delivery_intent as subject
+
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/sermon_delivery_intent"
-SPEC = importlib.util.spec_from_file_location("sermon_delivery_intent", ROOT / "scripts/sermon_delivery_intent.py")
-subject = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(subject)
 PLAN_SPEC = importlib.util.spec_from_file_location("legacy_weekly_plan", ROOT / "scripts/prepare_multilingual_weekly_plan.py")
 planner = importlib.util.module_from_spec(PLAN_SPEC)
 PLAN_SPEC.loader.exec_module(planner)

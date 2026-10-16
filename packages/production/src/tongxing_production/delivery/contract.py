@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from . import backend as _delivery
+
 
 def sha(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
@@ -46,7 +48,7 @@ MACHINE_CHECKED = 'machine_checked'
 
 def _schema(version):
     from jsonschema import Draft202012Validator, FormatChecker
-    schema = json.loads((Path(__file__).resolve().parents[1] / 'schemas' / (version + '.schema.json')).read_text())
+    schema = json.loads(_delivery.current().schemas.path(version + '.schema.json').read_text())
     return Draft202012Validator(schema, format_checker=FormatChecker())
 
 
@@ -142,7 +144,7 @@ def validate_public_study(release, *, reader):
     require(manifest == {'schemaVersion': 'sermon-public-app-products-v1', 'pageId': release['pageId'],
                          'locale': release['targetLocale'], 'sourceIdentity': release['sourceIdentity'],
                          'fourProducts': products}, 'Public product manifest differs')
-    from scripts import study_artifacts
+    from . import study_artifacts  # study_artifacts imports this module
     for kind in ('outline', 'meditation'):
         artifact = values[kind]
         study_artifacts.validate(artifact, 'sermon-study-artifact-v1.schema.json')
@@ -294,7 +296,7 @@ def validate_readback(receipt, *, expected_intent, candidate_sha, reader):
     from jsonschema import Draft202012Validator, FormatChecker
     version = receipt.get('schemaVersion')
     require(version in ('sermon-client-readback-v1', 'sermon-client-readback-v2'), 'Unsupported client readback version')
-    schema = json.loads((Path(__file__).resolve().parents[1] / 'schemas' / (version + '.schema.json')).read_text())
+    schema = json.loads(_delivery.current().schemas.path(version + '.schema.json').read_text())
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(receipt)
     require(receipt['intent'] == expected_intent and receipt['candidateSha256'] == candidate_sha, 'Readback identity differs')
     observed = []

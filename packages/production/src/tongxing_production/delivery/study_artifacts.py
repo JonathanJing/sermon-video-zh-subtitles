@@ -9,16 +9,21 @@ import json
 import re
 from pathlib import Path
 from jsonschema import Draft202012Validator, FormatChecker
-try:
-    from scripts.delivery_contract import sha, require
-except ImportError:
-    from delivery_contract import sha, require
 
-ROOT = Path(__file__).resolve().parents[1]
+from . import backend as _delivery
+from .contract import sha, require
+
+
+def __getattr__(name):
+    # ROOT stays readable as a module constant; the checkout belongs to the host.
+    if name == 'ROOT':
+        return _delivery.current().core.repo_root
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
 
 def validate(value, schema):
-    Draft202012Validator(json.loads((ROOT / 'schemas' / schema).read_text()), format_checker=FormatChecker()).validate(value)
+    Draft202012Validator(json.loads(_delivery.current().schemas.path(schema).read_text()),
+                         format_checker=FormatChecker()).validate(value)
 
 
 def produce(kind, text, *, page_id, locale, source_sha, text_sha, producer_identity):

@@ -55,12 +55,24 @@ from urllib.parse import urlsplit
 
 from jsonschema import Draft202012Validator
 
+from . import backend as _delivery
+
 
 SCHEMA_VERSION = "private-sermon-delivery-intent-v1"
 REQUEST_VERSION = "private-sermon-delivery-intent-request-v1"
 MEASUREMENTS_VERSION = "private-sermon-delivery-measurements-v1"
 REPORT_VERSION = "private-sermon-delivery-preflight-v1"
-SCHEMA_PATH = Path(__file__).resolve().parents[1] / "schemas" / (SCHEMA_VERSION + ".schema.json")
+
+
+def _schema_path(name: str = SCHEMA_VERSION + ".schema.json") -> Path:
+    return _delivery.current().schemas.path(name)
+
+
+def __getattr__(name):
+    # SCHEMA_PATH stays readable as a module constant; schemas belong to the host checkout.
+    if name == "SCHEMA_PATH":
+        return _schema_path()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class IntentError(ValueError):
@@ -132,7 +144,7 @@ def read_object(path: Path) -> dict:
 
 @lru_cache(maxsize=1)
 def _schema() -> dict:
-    return read_object(SCHEMA_PATH)
+    return read_object(_schema_path())
 
 
 def _validate(value: Any, definition: str | None = None) -> None:
@@ -232,7 +244,7 @@ def _validate_request(request: dict) -> None:
 def _plan_binding(plan: dict, request: dict) -> dict:
     _json_value(plan)
     # Validate the existing output contract without changing it or importing its producer.
-    legacy_schema = read_object(SCHEMA_PATH.parent / "sermon-multilingual-weekly-plan-v1.schema.json")
+    legacy_schema = read_object(_schema_path("sermon-multilingual-weekly-plan-v1.schema.json"))
     require(next(Draft202012Validator(legacy_schema).iter_errors(plan), None) is None,
             "Unsupported or invalid existing weekly plan")
     require(plan["englishSourcePackage"]["jsonSha256"] == request["source"]["englishSourcePackageJsonSha256"]

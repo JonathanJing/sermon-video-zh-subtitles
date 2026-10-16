@@ -41,7 +41,16 @@ COMPUTE = {
     'scripts/sermon_provider_limits.py': PRODUCTION + 'compute/provider_limits.py',
 }
 
-PATH_ALIASES = {**COMPUTE, **LAYER1, **LAYER2}
+# Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.
+_DELIVERY = PRODUCTION + 'delivery/'
+LAYER4 = {
+    'scripts/delivery_contract.py': _DELIVERY + 'contract.py',
+    'scripts/study_artifacts.py': _DELIVERY + 'study_artifacts.py',
+    'scripts/release_asset_io.py': _DELIVERY + 'asset_io.py',
+    'scripts/sermon_delivery_intent.py': _DELIVERY + 'intent.py',
+}
+
+PATH_ALIASES = {**COMPUTE, **LAYER1, **LAYER2, **LAYER4}
 
 
 def resolve(key):
