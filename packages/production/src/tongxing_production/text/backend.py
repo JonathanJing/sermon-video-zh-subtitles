@@ -19,7 +19,7 @@ class Unmoved:
     package_inspection: Callable[[], ModuleType]  # inspect_canonical_packages
     liveness: Callable[[], ModuleType]           # sermon_job_liveness
     review_budget: Callable[[], ModuleType]      # sermon_review_budget (review/)
-    speech_handoff: Callable[[], ModuleType]     # prepare_target_language_speech_job (Layer 3 hand-off checks)
+    speech_handoff: Callable[[], ModuleType]     # audio.speech_job (Layer 3 hand-off checks); text never imports audio
     orchestration_contracts: Callable[[], ModuleType]  # the unified run's contracts
     accounting_module: Callable[[], ModuleType]  # sermon_accounting, for callers reading beyond the Accounting port
     api_concurrency_module: Callable[[], ModuleType]   # layer2_api_concurrency (compute/)
