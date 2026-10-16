@@ -16,14 +16,21 @@ from pathlib import Path
 import re
 from typing import Any
 
-try:
-    from scripts import four_layer_measure as measure
-    from scripts import prepare_target_language_speech_job as handoff
-    from scripts import sermon_sentence_interpretation as interpretation
-except ImportError:  # Direct execution via ``python scripts/...``.
-    import four_layer_measure as measure
-    import prepare_target_language_speech_job as handoff
-    import sermon_sentence_interpretation as interpretation
+from ..source import sentence_interpretation as interpretation
+from . import backend as _text
+
+
+class _HostModule:
+    """A host module looked up at each call, so the package imports without a host."""
+    def __init__(self, get):
+        self._get = get
+
+    def __getattr__(self, name):
+        return getattr(self._get(), name)
+
+
+measure = _HostModule(lambda: _text.current().measure)
+handoff = _HostModule(lambda: _text.current().unmoved.speech_handoff())  # Layer 3 hand-off checks
 
 
 WORKSHEET_SCHEMA = "sermon-target-language-human-review-worksheet-v1"

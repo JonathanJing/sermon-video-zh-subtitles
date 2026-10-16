@@ -13,30 +13,47 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import sys
 
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from scripts import canonical_durable_jobs as durable
-from scripts import production_spark_admission as spark_admission
-from scripts import inspect_canonical_packages as packages
-from scripts import canonical_pipeline_definition as pipeline
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as models
-from scripts import target_language_rule_preflight as rule_preflight
-from scripts import sermon_accounting as accounting
-from scripts import sermon_workflow_jobs as jobs
-from scripts import sermon_job_liveness as liveness
-from scripts import layer2_api_concurrency as api_concurrency
-from scripts import canonical_layer2_budget as budget_tools
-from scripts import layer2_auto_repair as auto_repair
-from scripts import source_meaning_machine_adjudication as source_meaning
+from . import auto_repair
+from . import backend as _text
+from . import budget as budget_tools
+from . import candidate as producer
+from . import models
+from . import rule_preflight
 from contextlib import nullcontext
-from scripts.sermon_execution_harness import work_lock
-from scripts.sermon_release_workflow import _safe_path
 
-ROOT = Path(__file__).resolve().parents[1]
+
+class _HostModule:
+    """A host module looked up at each call, so the package imports without a host."""
+    def __init__(self, get):
+        self._get = get
+
+    def __getattr__(self, name):
+        return getattr(self._get(), name)
+
+
+durable = _HostModule(lambda: _text.current().unmoved.durable_jobs())
+packages = _HostModule(lambda: _text.current().unmoved.package_inspection())
+pipeline = _HostModule(lambda: _text.current().unmoved.pipeline_definition())
+liveness = _HostModule(lambda: _text.current().unmoved.liveness())
+accounting = _HostModule(lambda: _text.current().unmoved.accounting_module())
+api_concurrency = _HostModule(lambda: _text.current().unmoved.api_concurrency_module())
+source_meaning = _HostModule(lambda: _text.current().unmoved.source_meaning_module())  # review/
+jobs = _HostModule(lambda: _text.current().core.jobs)
+
+
+def _safe_path(path):
+    return _text.current().core.safe_path(path)
+
+
+def work_lock(work):
+    return _text.current().workspace.work_lock(work)
+
+
+def __getattr__(name):
+    if name == 'ROOT':  # the host checkout; operator tools and tests read it
+        return _text.current().core.repo_root
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 SCHEMA = 'sermon-canonical-layer2-execution-v1'
 CONCURRENT_SCHEMA = 'sermon-canonical-layer2-execution-v2'
 # v3 = v1 plus the bounded auto-repair loop and its own explicit capacity:
@@ -155,12 +172,11 @@ def load_configuration(path):
         input_paths.extend(qc_paths.values())
     concurrency_profile = resource_policy = None
     if 'concurrencyProfile' in value:
-        from scripts.production_concurrency_profile import load_profile
-        from scripts.sermon_unified import resources
+        load_profile = _text.current().compute.load_profile
         profile_path = _path(path.parent, value['concurrencyProfile'])
         resource_path = _path(path.parent, value['resourcePolicy'])
         concurrency_profile = load_profile(profile_path)
-        resource_policy = resources.validate_policy(_json(resource_path))
+        resource_policy = _text.current().resources.validate_policy(_json(resource_path))
         require(resource_policy['capacities']['codex_cli'] == concurrency_profile['totalCodexSlots'],
                 'concurrency_profile_requires_shared_24_slot_broker')
         input_paths.extend((profile_path, resource_path))
@@ -205,9 +221,10 @@ def code_identity():
     # label. The worker rechecks it before any paid call and candidate admission.
     # Code that moved into the production package runs from there; scripts/
     # keeps only its import facade, so the package source is part of the closure.
-    files = sorted([*ROOT.joinpath('scripts').rglob('*.py'), *ROOT.joinpath('packages/production/src').rglob('*.py'),
-                    *ROOT.joinpath('schemas').rglob('*.json'), ROOT / 'docs/series-terminology.zh.md'])
-    return jobs._digest({str(p.relative_to(ROOT)): hashlib.sha256(_safe_path(p).read_bytes()).hexdigest() for p in files})
+    root = _text.current().core.repo_root
+    files = sorted([*root.joinpath('scripts').rglob('*.py'), *root.joinpath('packages/production/src').rglob('*.py'),
+                    *root.joinpath('schemas').rglob('*.json'), root / 'docs/series-terminology.zh.md'])
+    return jobs._digest({str(p.relative_to(root)): hashlib.sha256(_safe_path(p).read_bytes()).hexdigest() for p in files})
 
 
 def package_view(config):
@@ -365,9 +382,11 @@ def _locale_capacity(config):
 
 
 def _worker_command(config, locale, job_id, code_sha, budget_authorization=None):
-    command = [sys.executable, str(Path(__file__).resolve()), 'worker', '--config', str(config.path),
+    # The host keeps naming scripts/canonical_layer2_controller.py, so new requests
+    # match the argv existing durable jobs recorded.
+    command = _text.current().worker_command('worker', '--config', str(config.path),
             '--locale', locale, '--expected-configuration', config.sha256,
-            '--expected-code', code_sha, '--expected-job', job_id]
+            '--expected-code', code_sha, '--expected-job', job_id)
     if budget_authorization is not None:
         command += ['--budget-authorization', str(budget_authorization['path']),
                     '--expected-budget', budget_authorization['sha256']]
@@ -499,8 +518,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             if caller is None:
                 require(budget_binding is not None, 'bound_budget_authorization_required')
                 # OpenAI API only: no Spark session (2026-10-13; only GPU stages occupy Spark).
-                from scripts.sermon_openai_runtime import selected_route
-                route = selected_route()
+                route = _text.current().provider.route.selected()
                 require(route is not None, 'openai_layer2_requires_explicit_dev_or_prod_launcher')
                 api_key = os.environ['OPENAI_API_KEY']
                 # The policy's frozen Layer 2 backend picks the transport: the OpenAI API (Sol), or
@@ -520,10 +538,9 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                         'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
                         'backend': 'openai_api', 'route': route,
                         'budgetAuthorizationSha256': budget_binding['sha256']}
-                caller = spark_admission.SessionBoundCaller(caller, requires_spark=False, outcome_guarded=True)
+                caller = _text.current().compute.session_bound_caller(caller, requires_spark=False, outcome_guarded=True)
             elif budget_binding is not None:
-                from scripts.strict_budget_capability import reject_codex_cli_transport
-                reject_codex_cli_transport(caller)
+                _text.current().compute.reject_cli_transport(caller)
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy, transport=caller)
             def current_binding():
                 fresh_config = load_configuration(config.path)
@@ -741,9 +758,9 @@ def claude_transports(policy, lane):
     Receipts of every CLI call stay under the lane (``claude-calls/``). The transport refuses an
     API key, strips OpenAI and Anthropic credentials from the child environment and requires a
     subscription login, so these calls use subscription quota, not an API project."""
-    from scripts.claude_layer2_transport import ClaudeLayer2Transport
-    return {role: ClaudeLayer2Transport(model=policy[role]['model'], effort=policy[role]['reasoningEffort'],
-                                        receipts_dir=lane['output'] / 'claude-calls')
+    caller = _text.current().transports.caller
+    return {role: caller('claude-cli', model=policy[role]['model'], effort=policy[role]['reasoningEffort'],
+                         receipts_dir=lane['output'] / 'claude-calls')
             for role in ('translator', 'reviewer')}
 
 

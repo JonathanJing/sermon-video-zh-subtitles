@@ -13,8 +13,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from scripts import sermon_source_text_review as source_review
-from scripts import target_language_policy as policies
+from ..source import text_review as source_review
+from . import policy as policies
 
 SCHEMA = "sermon-layer2-human-ruling-v1"
 DECISION = "human_ruling"

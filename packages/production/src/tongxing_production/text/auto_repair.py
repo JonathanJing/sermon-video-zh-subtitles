@@ -35,12 +35,20 @@ import tempfile
 import threading
 from typing import Any, Callable
 
-try:
-    from scripts import run_target_language_models as runner
-    from scripts import source_meaning_machine_adjudication as source_meaning
-except ImportError:  # pragma: no cover - direct script execution
-    import run_target_language_models as runner
-    import source_meaning_machine_adjudication as source_meaning
+from . import backend as _text
+from . import models as runner
+
+
+class _HostModule:
+    """A host module looked up at each call, so the package imports without a host."""
+    def __init__(self, get):
+        self._get = get
+
+    def __getattr__(self, name):
+        return getattr(self._get(), name)
+
+
+source_meaning = _HostModule(lambda: _text.current().unmoved.source_meaning_module())  # review/
 
 ROUTING_VERSION = "layer2-auto-repair-routing-v1"
 REPORT_SCHEMA = "sermon-layer2-group-failures-v1"
@@ -346,8 +354,8 @@ def _repair_token_bound() -> int | None:
     The canonical transport enforces these same input/output bounds; measured
     usage from an earlier call is not an upper bound for a repaired prompt.
     """
-    from scripts.canonical_layer2_budget import CURRENT_LIMITS
-    from scripts.sermon_provider_limits import validate_request_limits
+    from .budget import CURRENT_LIMITS
+    from ..compute.provider_limits import validate_request_limits
     selected = CURRENT_LIMITS.get()
     if selected is None:
         return None

@@ -7,17 +7,31 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-import sys
 
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from . import backend as _text
+from . import controller as layer2
 
-from scripts import canonical_layer2_controller as layer2
-from scripts import canonical_durable_jobs as durable
-from scripts import sermon_workflow_jobs as jobs
-from scripts import sermon_accounting as accounting
-from scripts.sermon_execution_harness import work_lock
-from scripts.sermon_release_workflow import _safe_path
+
+class _HostModule:
+    """A host module looked up at each call, so the package imports without a host."""
+    def __init__(self, get):
+        self._get = get
+
+    def __getattr__(self, name):
+        return getattr(self._get(), name)
+
+
+durable = _HostModule(lambda: _text.current().unmoved.durable_jobs())
+jobs = _HostModule(lambda: _text.current().core.jobs)
+accounting = _HostModule(lambda: _text.current().unmoved.accounting_module())
+
+
+def _safe_path(path):
+    return _text.current().core.safe_path(path)
+
+
+def work_lock(work):
+    return _text.current().workspace.work_lock(work)
 
 
 def _returned_cache_files(lane, source, anchor, policy, *, candidate_mode="production"):

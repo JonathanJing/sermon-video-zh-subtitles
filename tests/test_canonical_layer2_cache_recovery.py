@@ -214,7 +214,7 @@ class CanonicalLayer2CacheRecoveryTests(unittest.TestCase):
         self.assertEqual(layer2.snapshot(self.config)['nodes']['text.zh-Hans']['status'], 'reconciliation_required')
 
     def test_cli_with_empty_key_restores_candidate_without_dispatch(self):
-        command = [sys.executable, str(Path(subject.__file__).resolve()), '--config', str(self.path),
+        command = [sys.executable, str((Path(__file__).resolve().parents[1] / 'scripts/canonical_layer2_cache_recovery.py')), '--config', str(self.path),
                    '--locale', 'zh-Hans', '--expected-state-revision', self.revision()]
         result = subprocess.run(command, env={**os.environ, 'OPENAI_API_KEY': '', 'CODEX_HOME': '/nonexistent/tongxing-test-no-auth'}, capture_output=True, timeout=25)
         self.assertEqual(result.returncode, 0, result.stderr)
