@@ -12,6 +12,8 @@ PRODUCTION = 'packages/production/src/tongxing_production/'
 # Layer 1 Source (tongxing_production.source), batches S1-S4.
 _SOURCE = PRODUCTION + 'source/'
 LAYER1 = {
+    # workflows/compute W3a: the versioned review prompts, moved byte for byte.
+    'scripts/review_prompts.py': _SOURCE + 'review_prompts.py',
     'scripts/sermon_sentence_interpretation.py': _SOURCE + 'sentence_interpretation.py',
     'scripts/mfa_alignment.py': _SOURCE + 'mfa_alignment.py',
     'scripts/sermon_source_producer_compatibility.py': _SOURCE + 'producer_compatibility.py',
@@ -131,6 +133,8 @@ WORKFLOWS = {
     # Orchestration-internal stages (tongxing_production.orchestration.unified), batch W1.
     'scripts/sermon_unified_parallel.py': PRODUCTION + 'orchestration/unified/parallel.py',
     'scripts/sermon_unified_accounting.py': PRODUCTION + 'orchestration/unified/accounting.py',
+    # dual_pdf (tongxing_production.workflows.dual_pdf), batch W3a.
+    'scripts/sermon_pipeline.py': PRODUCTION + 'workflows/dual_pdf/pipeline.py',
 }
 
 # Shared infrastructure, batches I1-I4 (docs/design/infrastructure-injection.zh.md).

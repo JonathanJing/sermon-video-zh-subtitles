@@ -267,9 +267,15 @@ def _parse_terminology_table(text):
     return series_terminology.parse_table(text)
 
 
+def _terminology_prompt_instruction():
+    from scripts import series_terminology
+    return series_terminology.PROMPT_INSTRUCTION
+
+
 def terminology() -> ports.Terminology:
     return ports.Terminology(context=_terminology_context, table_path=_terminology_table_path,
-                             parse_table=_parse_terminology_table)
+                             parse_table=_parse_terminology_table,
+                             prompt_instruction=_terminology_prompt_instruction)
 
 
 def _producer_step(ledger_path, step_id, *, locale=None):

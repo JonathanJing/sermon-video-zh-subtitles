@@ -146,6 +146,7 @@ class Terminology:
     context: Callable[[], dict]
     table_path: Callable[[], Path]             # docs/series-terminology.zh.md, hashed into frozen policies
     parse_table: Callable[[str], Any]
+    prompt_instruction: Callable[[], str]      # contextual-name rule appended to translation prompts
 
 
 @dataclass(frozen=True)

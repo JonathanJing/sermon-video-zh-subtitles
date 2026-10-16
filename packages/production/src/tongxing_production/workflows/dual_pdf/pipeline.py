@@ -19,20 +19,30 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from scripts import review_prompts  # noqa: E402
+from ...source import backend as _source
+from ...source import review_prompts
 # Fixed pre-dispatch guard codes (see PreDispatchRejection), shared with accounting.
-from tongxing_production.contracts.reasons import PRE_DISPATCH_REASONS  # noqa: E402,F401
-from scripts import production_spark_admission as spark_admission  # noqa: E402
-from scripts.sermon_accounting import AccountingWriteError, _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata, record_workload
+from ...contracts.reasons import PRE_DISPATCH_REASONS  # noqa: F401
+from ...compute import spark_admission  # noqa: F401
+
+
+# The run's accounting session lives in the checkout until observability moves
+# (infrastructure I3); these names resolve through the source layer's port at call time.
+def accounting_session(directory, workflow, metadata=None, **options):
+    return _source.current().accounting.session(directory, workflow, metadata, **options)
+
+
+def stage(name, **options):
+    return _source.current().accounting.stage(name, **options)
+
+
+def record_workload(name, values):
+    return _source.current().accounting.record_workload(name, values)
 
 
 # The remote-call group lives in tongxing_production.compute.legacy_openai (workflows/compute C4);
 # the dual_pdf code below and every existing caller keep using these names.
-from tongxing_production.compute.legacy_openai import (  # noqa: E402,F401
+from ...compute.legacy_openai import (  # noqa: E402,F401
     CHAT_URL, KNOWN_REQUEST_REJECTIONS, LEGACY_TEXT_CACHE_SCHEMA, TRANSCRIBE_URL, PreDispatchRejection,
     TransportRejection, _chat_json, _http_error_diagnostic, bounded_legacy_chat_payload, chat_json,
     json_request, legacy_text_cache_contract, legacy_text_execution_identity, multipart_request, request_json)
@@ -163,9 +173,8 @@ def ffprobe_duration(path):
 
 
 def load_glossary(path):
-    from scripts.series_terminology import context
     payload = {"terms": DEFAULT_GLOSSARY, "zh_term_map": DEFAULT_ZH_TERM_MAP.copy(),
-               "seriesTerminology": context()}
+               "seriesTerminology": _source.current().terminology.context()}
     if not path:
         return payload
     data = read_json(path)
@@ -1039,8 +1048,8 @@ def translate_chinese(
         with stage("translation.cache", cache_hit=True):
             return read_json(output)
     glossary_text = glossary_lines(glossary)
-    from scripts.series_terminology import PROMPT_INSTRUCTION
-    system = review_prompts.CHINESE_TRANSLATION_SYSTEM_PROMPT + "\n" + PROMPT_INSTRUCTION
+    system = (review_prompts.CHINESE_TRANSLATION_SYSTEM_PROMPT + "\n"
+              + _source.current().terminology.prompt_instruction())
     cache_identity = hashlib.sha256(
         json.dumps({"promptVersion": review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION, "model": model,
                     "reasoningEffort": reasoning_effort, "cacheContract": legacy_text_cache_contract(),"executionIdentity":aggregate_execution}, sort_keys=True).encode("utf-8")
@@ -1269,9 +1278,9 @@ def main():
     parser.add_argument("--reading-chunk-seconds", type=float, default=1200.0)
     parser.add_argument("--reading-aligner", choices=("mfa", "legacy"), default="mfa",
                         help="MFA word/phone timing for reading production; legacy is explicit historical recovery only.")
-    from scripts.mfa_spark import add_arguments
+    from ...source.mfa_spark import add_arguments
     add_arguments(parser)
-    from scripts.mfa_backend import add_arguments as add_backend_arguments
+    from ...source.mfa_backend import add_arguments as add_backend_arguments
     add_backend_arguments(parser)
     parser.add_argument("--mfa-executable", default=os.environ.get("MFA_EXECUTABLE", "mfa"))
     parser.add_argument("--mfa-dictionary", type=Path, default=os.environ.get("MFA_DICTIONARY"))
@@ -1341,7 +1350,7 @@ def reading_segments(args, chunks, clip_path, outdir):
 
 
 def align_reading_chunks(args, chunks, clip_path, outdir):
-    from scripts.mfa_backend import align_reference_chunks, options
+    from ...source.mfa_backend import align_reference_chunks, options
     result = align_reference_chunks(chunks, clip_path, outdir, **options(args))
     receipt = outdir / "backend.json"
     if receipt.is_file():
@@ -1351,11 +1360,11 @@ def align_reading_chunks(args, chunks, clip_path, outdir):
 
 def precompute_source_fingerprint(source, start, end, outdir):
     """Only source landmarks: final page/Chinese-track binding is a later stage."""
-    from scripts.sermon_accounting import subprocess_environment
+    subprocess_environment = _source.current().accounting.subprocess_environment
     node = shutil.which("node")
     if not node or not shutil.which("ffmpeg"):
         raise RuntimeError("Fingerprint precompute requires node and ffmpeg")
-    script = REPO_ROOT / "packages" / "fingerprint" / "bin" / "build_fingerprint_index.mjs"
+    script = _source.current().core.repo_root / "packages" / "fingerprint" / "bin" / "build_fingerprint_index.mjs"
     identity = {"sourceSha256": file_sha256(source), "sourceStartSeconds": start,
                 "sourceEndSeconds": end, "scriptSha256": file_sha256(script),
                 "algorithmSha256": file_sha256(script.parents[1] / "src" / "fingerprint-core.mjs")}
@@ -1398,7 +1407,7 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
     glossary = load_glossary(args.glossary)
     if (args.output_mode == "reading" and getattr(args, "reading_aligner", "mfa") == "mfa"
             and not args.english_transcript_only):
-        from scripts.mfa_backend import preflight, options
+        from ...source.mfa_backend import preflight, options
         args._mfa_runtime = preflight(**options(args))
     source_identity = None
     if args.english_source_only or args.english_transcript_only:
@@ -1474,7 +1483,7 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
             )
         source_review = None
         if args.source_text_review:
-            from scripts.sermon_source_text_review import apply_review
+            from ...source.text_review import apply_review
             asr_path = outdir / "asr_reference.json"
             if not asr_path.exists():
                 asr_path = outdir / "asr_reference_chunks.json"
