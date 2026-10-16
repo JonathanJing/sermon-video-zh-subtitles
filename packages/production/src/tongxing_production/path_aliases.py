@@ -46,12 +46,25 @@ LAYER2 = {
     'scripts/sermon_unified_layer2_binding.py': _TEXT + 'unified_binding.py',
 }
 
-# Shared compute (tongxing_production.compute), stage 1 and infrastructure I0b.
+# Layer 3 Audio (tongxing_production.audio), batches A1-A4.
+_AUDIO = PRODUCTION + 'audio/'
+LAYER3 = {
+    'scripts/target_audio_anomaly.py': _AUDIO + 'anomaly.py',
+    'scripts/target_audio_recovery.py': _AUDIO + 'recovery.py',
+    'scripts/clip_timeline_map.py': _AUDIO + 'clip_timeline.py',
+    'scripts/review_target_language_audio.py': _AUDIO + 'human_review.py',
+    'scripts/dev_audio_test_profile.py': _AUDIO + 'dev_profile.py',
+    'scripts/dev_audio_test_receipts.py': _AUDIO + 'dev_receipts.py',
+}
+
+# Shared compute (tongxing_production.compute): stage 1, infrastructure I0b and the audio batches.
 COMPUTE = {
     'scripts/sermon_provider_limits.py': PRODUCTION + 'compute/provider_limits.py',
     # Infrastructure I0b: waiver closure members, moved byte for byte.
     'scripts/sermon_openai_runtime.py': PRODUCTION + 'compute/openai_runtime.py',
     'scripts/sermon_transcription_request.py': PRODUCTION + 'compute/transcription_request.py',
+    # Layer 3 A1: the audio CPU limiter, moved byte for byte.
+    'scripts/bounded_audio_cpu.py': PRODUCTION + 'compute/bounded_audio_cpu.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.
@@ -93,7 +106,8 @@ CONTRACTS = {}      # tongxing_production.contracts, batch I1
 STORAGE = {}        # tongxing_production.storage, batch I2
 OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
 
-PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **LAYER2, **LAYER4, **REVIEW}
+PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **LAYER2, **LAYER3, **LAYER4,
+                **REVIEW}
 
 
 def resolve(key):

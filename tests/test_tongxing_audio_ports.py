@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 from scripts import tongxing_host as host
 from scripts import bounded_audio_cpu, four_layer_measure, ko_spoken_numerals, production_spark_admission
-from scripts import clip_timeline_map, dev_audio_test_profile, machine_quality_release_basis as machine_basis
+from scripts import dev_audio_test_profile, machine_quality_release_basis as machine_basis
 from scripts import machine_quality_waiver as waiver
 from scripts import prepare_target_language_speech_job as speech
 from scripts import render_formal_target_language_speech as renderer
@@ -26,7 +26,7 @@ from scripts import spark_tts_replica_pool, spark_tts_window_scheduler
 from scripts import target_audio_auto_qc
 from scripts import target_audio_predicted_schedule as predicted
 from scripts.language_review_plugins import auto_qc_text_common as plugin_rules
-from tongxing_production import ports
+from tongxing_production import path_aliases, ports
 from tongxing_production.audio import backend as audio
 from tongxing_production.delivery import backend as delivery
 from tongxing_production.source import backend as source
@@ -119,7 +119,7 @@ class AudioPortsTests(unittest.TestCase):
 
     def test_paths_are_the_ones_layer_3_resolves_today(self):
         backend = audio.current()
-        schemas = Path(clip_timeline_map.__file__).parents[1] / 'schemas'
+        schemas = Path(host.ROOT) / 'schemas'  # what the scripts/ modules derived from their own file
         for name in ('sermon-clip-timeline-map-v3.schema.json', 'sermon-target-language-audio-package-v1.schema.json'):
             with self.subTest(name=name):
                 self.assertEqual(backend.schemas.path(name).resolve(), (schemas / name).resolve())
@@ -180,7 +180,11 @@ class AudioPortsTests(unittest.TestCase):
         self.assertEqual(audio.current().waivers.review_kind, machine_basis.REVIEW_KIND)
 
     def test_host_load_does_not_import_the_renderer_audio_qc_or_spoken_rule_modules(self):
+        # A moved module is checked under its package name too (path_aliases maps the legacy file).
         names = [f'scripts.{name}' for name in LAZY_AT_HOST_LOAD]
+        names += [path_aliases.resolve(f'scripts/{name}.py').removeprefix('packages/production/src/')
+                  .removesuffix('.py').replace('/', '.') for name in LAZY_AT_HOST_LOAD
+                  if path_aliases.resolve(f'scripts/{name}.py').startswith('packages/')]
         code = ("import sys; from scripts import tongxing_host; "
                 f"print([m for m in {names!r} if m in sys.modules])")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
