@@ -1,7 +1,7 @@
 """R0 of the review move: cross-layer review's ports are bound late to the scripts implementations.
 
-No review module calls these ports yet; each batch (R1-R4) switches its files over
-when it moves them. These tests pin that every port reaches the implementation the
+Each batch (R1-R4) switches its files over to these ports when it moves them; the
+first caller is the audio screening gate (L4 D2a), which reads ``waivers`` and ``schemas``. These tests pin that every port reaches the implementation the
 callers use today, with the paths and values those callers compute today, and that
 binding them imports no waiver-closure file.
 """
@@ -35,6 +35,7 @@ from scripts import study_artifacts
 from scripts import target_audio_predicted_schedule as predicted
 from scripts import target_language_policy as policy
 from tongxing_production import ports
+from tongxing_production.delivery import backend as delivery
 from tongxing_production.review import backend as review
 from tongxing_production.text import backend as text
 
@@ -53,7 +54,10 @@ class ReviewPortsTests(unittest.TestCase):
         self.assertIsInstance(backend, review.ReviewBackend)
         self.assertEqual([field.name for field in dataclasses.fields(review.ReviewBackend)],
                          ['core', 'code', 'contracts', 'snapshot', 'schemas', 'provider', 'compute', 'plugins',
-                          'transports', 'audio', 'text', 'source', 'gates', 'scripture', 'qc_runtime'])
+                          'transports', 'audio', 'text', 'source', 'gates', 'scripture', 'qc_runtime',
+                          'waivers'])
+        # The audio screening gate (L4 D2a) accepts the machine audio waiver the release discloses.
+        self.assertIs(backend.waivers, delivery.current().waivers)
         for name in ('core', 'code', 'contracts', 'snapshot', 'schemas', 'provider', 'compute', 'plugins',
                      'transports'):
             self.assertIs(getattr(backend, name), getattr(text.current(), name), name)

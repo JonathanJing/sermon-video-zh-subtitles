@@ -23,6 +23,7 @@ class ReviewBackend:
     gates: ports.StageGates
     scripture: ports.Scripture
     qc_runtime: ports.QcRuntime
+    waivers: ports.Waivers                     # machine audio waiver rules the audio screening gate accepts
 
 
 _current: ReviewBackend | None = None
