@@ -76,7 +76,12 @@ LAYER4 = {
     'scripts/weekly_poster_template.py': _DELIVERY + 'posters/template.py',
 }
 
-PATH_ALIASES = {**COMPUTE, **LAYER1, **LAYER2, **LAYER4}
+# Shared infrastructure, batches I1-I4 (docs/design/infrastructure-injection.zh.md).
+CONTRACTS = {}      # tongxing_production.contracts, batch I1
+STORAGE = {}        # tongxing_production.storage, batch I2
+OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
+
+PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **LAYER2, **LAYER4}
 
 
 def resolve(key):
