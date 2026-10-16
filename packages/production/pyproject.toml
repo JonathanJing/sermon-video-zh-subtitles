@@ -17,6 +17,8 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
-# The old-format poster renderer runs from beside its Python caller (L4 D7).
+# Non-Python files a module locates through importlib.resources: the old-format
+# poster renderer beside its Python caller (L4 D7) and the weekly poster renderer (L4 D9).
 [tool.setuptools.package-data]
 "tongxing_production.adapters.legacy" = ["render_sermon_poster.swift"]
+"tongxing_production.delivery.posters" = ["*.swift"]

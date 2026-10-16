@@ -28,6 +28,7 @@ from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_workflow_jobs as jobs
 from scripts.sermon_execution_harness import work_lock, utc_now
+from tongxing_production import path_aliases
 
 REPO = Path(__file__).resolve().parents[1]
 CLOSURE = ('sermon_dag_contract.py', 'sermon_prefect_dag.py', 'run_sermon_prefect_dag.py',
@@ -43,7 +44,8 @@ CLOSURE = ('sermon_dag_contract.py', 'sermon_prefect_dag.py', 'run_sermon_prefec
 
 
 def code_identity():
-    return c.canonical_sha256({name: hashlib.sha256((REPO/'scripts'/name).read_bytes()).hexdigest()
+    # Keys stay the legacy scripts/ names; a member moved into the package is read where it lives.
+    return c.canonical_sha256({name: hashlib.sha256((REPO/path_aliases.resolve('scripts/'+name)).read_bytes()).hexdigest()
                                for name in CLOSURE})
 
 
