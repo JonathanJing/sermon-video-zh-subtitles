@@ -72,6 +72,7 @@ COMPUTE = {
     'scripts/layer2_api_concurrency.py': PRODUCTION + 'compute/api_concurrency.py',
     'scripts/production_concurrency_profile.py': PRODUCTION + 'compute/concurrency_profile.py',
     'scripts/sermon_unified_runtime_identity.py': PRODUCTION + 'compute/runtime_identity.py',
+    'scripts/spark_exclusive_session.py': PRODUCTION + 'compute/spark_exclusive_session.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.

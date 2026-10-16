@@ -21,7 +21,10 @@ FORBIDDEN_IMPORTS = ("scripts", "backend", "apps", "tools", "experiments")
 SELF_CONTAINED_SCRIPTS = {"mfa_alignment.py",
                           # Launches itself as an isolated `python -I` worker and loads its
                           # sibling sermon_provider_error.py; it reads only its own directory.
-                          "provider_http.py"}
+                          "provider_http.py",
+                          # Deploys its own bytes to Spark and binds sessions to their hash
+                          # (controllerSha256); it reads only its own file.
+                          "spark_exclusive_session.py"}
 
 
 def imports_of(path):
