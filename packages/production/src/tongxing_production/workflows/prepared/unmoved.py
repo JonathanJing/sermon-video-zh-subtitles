@@ -30,9 +30,8 @@ class _HostModule:
 # Stage implementations still under scripts/, through the engine's stage lookup.
 reviews = _HostModule(lambda: _orchestration.stage('reviews'))  # sermon_unified_reviews, review/ batch
 audio = _HostModule(lambda: _orchestration.stage('audio'))      # sermon_unified_audio, Layer 3
-# Layer 2's host modules: canonical package inspection and the Layer 3 hand-off checks.
+# Layer 2's host module for canonical package inspection.
 packages = _HostModule(lambda: _text.current().unmoved.package_inspection())  # inspect_canonical_packages
-speech = _HostModule(lambda: _text.current().unmoved.speech_handoff())  # prepare_target_language_speech_job
 
 
 def atomic_json(path, value):

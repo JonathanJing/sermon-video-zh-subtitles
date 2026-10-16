@@ -9,7 +9,8 @@ import subprocess
 from pathlib import Path
 from tongxing_production.delivery import contract as d
 from tongxing_production.text import policy as policies
-from .unmoved import repo_root, reviews, speech
+from tongxing_production.audio import speech_job as speech
+from .unmoved import repo_root, reviews
 
 VERSION = 'sermon-unified-consumer-capabilities-v2'
 LEGACY_VERSION = 'sermon-unified-consumer-capabilities-v1'
