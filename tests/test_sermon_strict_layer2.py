@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from jsonschema import Draft202012Validator, ValidationError
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import sermon_strict_layer2 as s
 from scripts import sermon_review_contracts as c
 from scripts import sermon_accounting as accounting
@@ -411,7 +412,7 @@ class StrictAdapterTests(unittest.TestCase):
         def caller(key,payload,*,response_observer):
             return pipeline.json_request(pipeline.CHAT_URL,key,payload,retries=1,response_observer=response_observer)
         with self.session(),patch.object(pipeline.urllib.request,'urlopen',return_value=HTTP()) as transport:
-            with patch.object(pipeline,'record_api_attempt',side_effect=accounting.AccountingWriteError('fault')):
+            with patch.object(legacy_openai,'record_api_attempt',side_effect=accounting.AccountingWriteError('fault')):
                 with self.assertRaises(accounting.AccountingWriteError):
                     s.generate(self.prepared,self.root/'revision','candidate','r1','fixture',caller)
             raw=json.loads((self.root/'revision/generator.raw.json').read_text())
@@ -511,7 +512,7 @@ class StrictAdapterTests(unittest.TestCase):
                 self.assertEqual(marker['modelCallId'],json.loads((self.root/'revision/reviewer.call.json').read_text())['modelCallId'])
                 raise accounting.AccountingWriteError('injected finish failure')
             with patch.object(pipeline.urllib.request,'urlopen',side_effect=error) as transport:
-                with patch.object(pipeline,'record_api_attempt',side_effect=fail_finish):
+                with patch.object(legacy_openai,'record_api_attempt',side_effect=fail_finish):
                     with self.assertRaises(pipeline.TransportRejection) as raised:
                         s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)
                 self.assertTrue(raised.exception.sermon_logging_failed)
@@ -535,7 +536,7 @@ class StrictAdapterTests(unittest.TestCase):
                     self.generate()
                     error=urllib.error.HTTPError(pipeline.CHAT_URL,400,'private',{},io.BytesIO(b'private'))
                     with patch.object(pipeline.urllib.request,'urlopen',side_effect=error) as transport:
-                        with patch.object(pipeline,'record_api_attempt',side_effect=accounting.AccountingWriteError('injected')):
+                        with patch.object(legacy_openai,'record_api_attempt',side_effect=accounting.AccountingWriteError('injected')):
                             with self.assertRaises(pipeline.TransportRejection):
                                 s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)
                         path=self.root/'revision/reviewer.rejection.json'
@@ -566,7 +567,7 @@ class StrictAdapterTests(unittest.TestCase):
             self.generate()
             error=urllib.error.HTTPError(pipeline.CHAT_URL,401,'private',{},io.BytesIO(b'private'))
             with patch.object(pipeline.urllib.request,'urlopen',side_effect=error) as transport:
-                with patch.object(s,'save_once',side_effect=fail),patch.object(pipeline,'record_api_attempt') as finish:
+                with patch.object(s,'save_once',side_effect=fail),patch.object(legacy_openai,'record_api_attempt') as finish:
                     with self.assertRaises(accounting.AccountingWriteError):
                         s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)
                     finish.assert_called_once()

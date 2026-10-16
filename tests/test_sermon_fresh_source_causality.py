@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import sermon_accounting as accounting
 from scripts import sermon_completion as completion
 from scripts import sermon_fresh_diagnostic as entry
@@ -149,7 +150,7 @@ class FreshCausalityTests(unittest.TestCase):
         with patch.object(accounting,'execution_identity',return_value=self.plan['executionIdentity']):
             session=entry.FreshDiagnosticSession(self.plan,offline_transport=self.f.f.transport)
             with profile.session(self.root/'logs','interrupted-log-fixture',work_kind='engineering',evidence_mode='synthetic'):
-                with patch.object(pipeline,'record_api_attempt',side_effect=accounting.AccountingWriteError('fixture failure')):
+                with patch.object(legacy_openai,'record_api_attempt',side_effect=accounting.AccountingWriteError('fixture failure')):
                     with self.assertRaises(accounting.AccountingWriteError):
                         session.prepare_source(self.recipe,self.f.authorization)
         prior=(self.root/'logs/events.jsonl').read_bytes()

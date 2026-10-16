@@ -33,6 +33,9 @@ from scripts.sermon_accounting import accounting_session, stage as accounting_st
 
 
 SERMON_PIPELINE_SCRIPT = REPO_ROOT / "scripts" / "sermon_pipeline.py"
+LEGACY_OPENAI_SCRIPT = (
+    REPO_ROOT / "packages" / "production" / "src" / "tongxing_production" / "compute" / "legacy_openai.py"
+)
 MOBILE_PDF_SCRIPT = REPO_ROOT / "scripts" / "render_mobile_pdf_from_srt.py"
 READING_EDITION_SCRIPT = REPO_ROOT / "scripts" / "build_sermon_reading_edition_with_openai.py"
 SERMON_INTERPRETATION_SCRIPT = REPO_ROOT / "scripts" / "generate_notes_with_openai.py"
@@ -1413,6 +1416,7 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
         ),
         "implementation": {
             "sermonPipeline": file_content_identity(SERMON_PIPELINE_SCRIPT),
+            "legacyOpenAI": file_content_identity(LEGACY_OPENAI_SCRIPT),
             "reviewPrompts": file_content_identity(REVIEW_PROMPTS_SCRIPT),
             "seriesTerminology": file_content_identity(Path(series_terminology.__file__)),
         },

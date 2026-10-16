@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import production_spark_admission as admission
 from scripts import spark_exclusive_session as sessions
 from scripts import mfa_spark, render_formal_target_language_speech as speech
@@ -121,7 +122,7 @@ class ProductionSessionCallTests(unittest.TestCase):
              patch.object(sessions.Client, "from_environment", spark), \
              patch.object(notes, "_request_openai_notes", return_value={"ok": 1}) as notes_api, \
              patch.object(reading, "_codex_json", return_value={"ok": 2}) as reading_cli, \
-             patch.object(pipeline, "_chat_json", return_value={"ok": 3}) as text, \
+             patch.object(legacy_openai, "_chat_json", return_value={"ok": 3}) as text, \
              patch.object(pipeline, "multipart_request", return_value={"ok": 4}) as audio:
             Path(directory, "input").write_text("{}")
             Path(directory,"codex").write_text("#!/bin/sh\nexit 0\n");Path(directory,"codex").chmod(0o700)

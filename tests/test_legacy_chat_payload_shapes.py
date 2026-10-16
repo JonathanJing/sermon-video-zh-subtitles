@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from PIL import Image
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import sermon_pipeline as pipeline
 from scripts import sermon_provider_limits as limits
 from scripts import api_cli_outcomes as outcomes
@@ -30,7 +31,7 @@ class LegacyChatShapeTests(unittest.TestCase):
         from tests.test_judge_english_source_for_translation import EnglishSourceMachineJudgeTests
         fixture=EnglishSourceMachineJudgeTests();fixture.setUp()
         self.addCleanup(fixture.doCleanups)
-        with patch.dict(os.environ,{},clear=True),patch.object(pipeline,'json_request',side_effect=lambda url,key,body,**kw:fixture.fake_caller(key,body)) as network:
+        with patch.dict(os.environ,{},clear=True),patch.object(legacy_openai,'json_request',side_effect=lambda url,key,body,**kw:fixture.fake_caller(key,body)) as network:
             result=judge.run(aligned_path=fixture.aligned_path,manifest_path=fixture.manifest_path,
                 out=fixture.root/'shape-review.json',cache_root=fixture.root/'cache',api_key='synthetic-key')
         self.assertEqual(result['status'],'approved_for_layer2_shadow')
@@ -40,7 +41,7 @@ class LegacyChatShapeTests(unittest.TestCase):
 
     def test_actual_cuv_image_audit_entry_reaches_fake_transport(self):
         from scripts import sermon_cuv_translation as cuv
-        with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp,'OPENAI_API_KEY':'synthetic-key'}),patch.object(cuv,'audit_user_content',return_value=image_content((1920,1080))),patch.object(pipeline,'json_request',return_value={'model':cuv.MODEL,'choices':[{'finish_reason':'stop','message':{'content':'{"ok":true}'}}]}) as network:
+        with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp,'OPENAI_API_KEY':'synthetic-key'}),patch.object(cuv,'audit_user_content',return_value=image_content((1920,1080))),patch.object(legacy_openai,'json_request',return_value={'model':cuv.MODEL,'choices':[{'finish_reason':'stop','message':{'content':'{"ok":true}'}}]}) as network:
             result,_=cuv.cached_call(Path(tmp)/'cuv','audit-quotes',cuv.AUDIT_QUOTES,{},{} )
         self.assertEqual(result,{'ok':True});self.assertEqual(network.call_count,1)
         self.assertEqual(network.call_args.args[2]['messages'][1]['content'][1]['type'],'image_url')
@@ -56,11 +57,11 @@ class LegacyChatShapeTests(unittest.TestCase):
         text=payload('x'*9000);examples.append(text)
         tools=payload();tools['tools']=[];examples.append(tools)
         for body in examples:
-            with self.subTest(body=str(body)[:50]),patch.object(pipeline,'json_request') as send:
+            with self.subTest(body=str(body)[:50]),patch.object(legacy_openai,'json_request') as send:
                 with self.assertRaises(ValueError):pipeline.chat_json('synthetic-key',body)
                 send.assert_not_called()
         with self.assertRaises(ValueError):limits.bounded_payload(payload(image_content()),limits.DEFAULT_REQUEST_LIMITS)
-        with patch.object(limits,'LEGACY_MAX_IMAGE_BYTES',8),patch.object(pipeline,'json_request') as send:
+        with patch.object(limits,'LEGACY_MAX_IMAGE_BYTES',8),patch.object(legacy_openai,'json_request') as send:
             with self.assertRaises(ValueError):pipeline.chat_json('synthetic-key',payload(image_content()))
             send.assert_not_called()
 
@@ -72,7 +73,7 @@ class LegacyChatShapeTests(unittest.TestCase):
                 def run():
                     if role=='translation':return pipeline.translate_chinese('synthetic-key',segments,root/'out','gpt-6.1-sol',{})
                     return pipeline.correct_english('synthetic-key',segments,[],root/'out','gpt-6.1-sol',{},30)
-                with patch.object(pipeline,'json_request',return_value=response) as network:
+                with patch.object(legacy_openai,'json_request',return_value=response) as network:
                     run();run();self.assertEqual(network.call_count,1)
                     def unknown():raise TimeoutError('unknown sibling')
                     with self.assertRaises(TimeoutError):outcomes.call(unknown,(),{},purpose='sibling')
@@ -89,11 +90,11 @@ class LegacyChatShapeTests(unittest.TestCase):
                     def run(key='synthetic-key'):
                         if role=='translation':return pipeline.translate_chinese(key,segments,root/'out','gpt-6.1-sol',{})
                         return pipeline.correct_english(key,segments,[],root/'out','gpt-6.1-sol',{},30)
-                    with patch.object(pipeline,'json_request',return_value=response) as network:
+                    with patch.object(legacy_openai,'json_request',return_value=response) as network:
                         run();run();self.assertEqual(network.call_count,1)
                         if changed=='project':selected.return_value={**route,'projectId':'proj_changed'}
                         if changed=='caller':
-                            with patch.object(pipeline,'_chat_json',side_effect=AssertionError('new caller dispatched')):
+                            with patch.object(legacy_openai,'_chat_json',side_effect=AssertionError('new caller dispatched')):
                                 with self.assertRaisesRegex(ValueError,'frozen_execution_binding_changed'):run()
                         else:
                             with self.assertRaisesRegex(ValueError,'frozen_execution_binding_changed'):

@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 import urllib.error
 
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import sermon_accounting as a
 from scripts import sermon_pipeline as pipeline
 
@@ -149,7 +150,7 @@ class AccountingTests(unittest.TestCase):
             failure=pipeline.PreDispatchRejection('provider_request_limit')
             observer.request_started.side_effect=failure
             executor=unittest.mock.Mock()
-            with a.accounting_session(t,'test'), patch.object(pipeline,'record_api_attempt',
+            with a.accounting_session(t,'test'), patch.object(legacy_openai,'record_api_attempt',
                     side_effect=a.AccountingWriteError('private-secret')), self.assertRaises(pipeline.PreDispatchRejection):
                 pipeline.request_json(urllib.request.Request('https://example.test'),
                     response_observer=observer,request_executor=executor)

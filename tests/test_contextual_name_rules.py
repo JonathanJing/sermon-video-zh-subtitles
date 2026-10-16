@@ -5,6 +5,7 @@ import json
 import tempfile
 from unittest.mock import patch
 from pathlib import Path
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "review_sermon_subtitles_with_openai.py"
@@ -31,7 +32,7 @@ class ContextualNameRulesTest(unittest.TestCase):
                     {"segments": [{"id": 0, "zh": "不要害怕。"}], "notes": []})}}]}
             with patch.dict("os.environ", {"OPENAI_API_KEY": "fixture"}, clear=True), \
                     patch.object(mod, "parse_args", return_value=args), \
-                    patch.object(sermon_pipeline, "json_request", side_effect=http) as dispatched:
+                    patch.object(legacy_openai, "json_request", side_effect=http) as dispatched:
                 self.assertEqual(mod.main(), 0)
                 paths = list((out / "api-cli-outcomes").glob("*/outcome.json"))
                 self.assertEqual(len(paths), 1)

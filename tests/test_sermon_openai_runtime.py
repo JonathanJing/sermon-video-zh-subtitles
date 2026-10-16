@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 from unittest.mock import Mock
 
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import sermon_openai_runtime as runtime
 
 
@@ -56,7 +57,7 @@ class RuntimeBindingTests(unittest.TestCase):
 
     def test_json_and_audio_transports_bind_project(self):
         from scripts import sermon_pipeline as pipeline
-        with patch.dict(os.environ, selected(), clear=True), patch.object(pipeline, 'request_json', return_value={}) as send:
+        with patch.dict(os.environ, selected(), clear=True), patch.object(legacy_openai, 'request_json', return_value={}) as send:
             pipeline.json_request('https://api.openai.com/v1/responses', 'test-key', {'model': 'model'})
             self.assertEqual(send.call_args.args[0].get_header('Openai-project'), 'proj_dev')
             with tempfile.TemporaryDirectory() as tmp:

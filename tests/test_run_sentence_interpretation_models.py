@@ -3,6 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import run_sentence_interpretation_models as runner
 from scripts import sermon_sentence_interpretation as contract
 
@@ -81,7 +82,7 @@ class SentenceInterpretationModelRunnerTests(unittest.TestCase):
         out = self.root / "durable"
         def http(_url, key, payload, **kwargs):
             return self.fake_call(key, payload)
-        with patch.dict("os.environ", {}, clear=True), patch.object(sermon_pipeline, "json_request", side_effect=http):
+        with patch.dict("os.environ", {}, clear=True), patch.object(legacy_openai, "json_request", side_effect=http):
             options = dict(manifest_path=self.manifest_path, out=out, model="gpt-6-astra",
                            effort="medium", batch_size=1, workers=2, api_key="fixture")
             runner.run(**options)

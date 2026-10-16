@@ -128,7 +128,11 @@ def frozen_code():
     # Keys stay the scripts/ names; moved files are hashed where they live now,
     # not as their import facades.
     from tongxing_production import path_aliases
-    return {name: digest(ROOT / path_aliases.resolve('scripts/' + name)) for name in names}
+    # A legacy file split across package files also hashes, by repository path, the parts it lost.
+    code = {name: digest(ROOT / path_aliases.resolve('scripts/' + name)) for name in names}
+    code.update({path: digest(ROOT / path) for name in names
+                 for path in path_aliases.SPLIT_MEMBERS.get('scripts/' + name, ())})
+    return code
 
 
 def freeze(prepared, proposal, out):
