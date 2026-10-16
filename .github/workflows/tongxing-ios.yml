@@ -65,6 +65,8 @@ jobs:
               shared_contracts = {
                   "scripts/build_multilingual_catalog.py",
                   "scripts/stage_formal_multilingual_dev.py",
+                  # The audio screening release gate, moved out of the formal stage (L4 D2a).
+                  "packages/production/src/tongxing_production/review/audio_screening.py",
                   "scripts/build_formal_dev_release_assets.py",
                   "scripts/build_full_video_app_release.py",
                   "scripts/assemble_multilingual_hosting.py",

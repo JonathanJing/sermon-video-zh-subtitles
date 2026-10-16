@@ -25,7 +25,7 @@ from . import policy as policy_tools
 
 
 class _Handoff:
-    """Layer 3's hand-off checks, reached through the host until Layer 3 moves."""
+    """Layer 3's hand-off checks, reached through the host: text never imports audio."""
     def __getattr__(self, name):
         return getattr(_text.current().unmoved.speech_handoff(), name)
 
