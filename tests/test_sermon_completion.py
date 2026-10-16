@@ -193,11 +193,17 @@ class CompletionTests(unittest.TestCase):
         for path in compatibility.CONTRACTS_SPLIT_CHANGED:
             self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
         self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.CONTRACTS_SPLIT_CHANGED))
-        step=compatibility.verify(before,after,{compatibility.resolve(path):sha for path,sha in after.items()},binding)
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        planned.update(compatibility.CONTRACTS_SPLIT_MEMBER_SHA256)
+        step=compatibility.verify(before,after,planned,binding)
         self.assertEqual(step['migrationId'],compatibility.CONTRACTS_SPLIT_MIGRATION)
         self.assertEqual(step['changedModules'],compatibility.CONTRACTS_SPLIT_CHANGED)
         self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
         self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['productionEligible']),(0,0,False))
+        for member in compatibility.CONTRACTS_SPLIT_MEMBER_SHA256:
+            changed_members=dict(planned);changed_members[member]='f'*64
+            with self.assertRaises(c.ContractError):
+                compatibility.verify(before,after,changed_members,binding)
         # The pre-I1 drift itself is not a reviewed step: only the exact pair is accepted.
         for skipped in (compatibility.TRANSPORT_MOVE_SOURCE_SHA256,):
             with self.assertRaises(c.ContractError):
