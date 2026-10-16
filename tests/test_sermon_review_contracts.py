@@ -1,6 +1,7 @@
 """D1 developer checks only. Synthetic receipts never establish human approval."""
 import copy
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -65,11 +66,11 @@ class ReviewContractTests(unittest.TestCase):
             value,data=c.read_snapshot(path);self.assertEqual(value,json.loads(data))
             link=Path(tmp)/'link.json';link.symlink_to(path)
             with self.assertRaises(OSError):c.read_snapshot(link)
-            original=c.os.stat
+            original=os.stat
             def replaced(*args,**kwargs):
                 path.write_text('{}')
                 return original(*args,**kwargs)
-            with patch.object(c.os,'stat',side_effect=replaced),self.assertRaisesRegex(c.ContractError,'snapshot_changed'):
+            with patch.object(os,'stat',side_effect=replaced),self.assertRaisesRegex(c.ContractError,'snapshot_changed'):
                 c.read_snapshot(path)
 
     def test_pass_requires_all_checks_full_coverage_no_unresolved_issues(self):

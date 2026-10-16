@@ -24,6 +24,8 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts import review_prompts  # noqa: E402
+# Fixed pre-dispatch guard codes (see PreDispatchRejection), shared with accounting.
+from tongxing_production.contracts.reasons import PRE_DISPATCH_REASONS  # noqa: E402,F401
 from scripts import production_spark_admission as spark_admission  # noqa: E402
 from scripts.sermon_accounting import AccountingWriteError, _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata, record_workload
 
@@ -172,17 +174,6 @@ class TransportRejection(RuntimeError):
         if self.diagnostic is not None and self.diagnostic['httpStatus'] != http_status:
             raise ValueError('invalid_transport_rejection_diagnostic')
         super().__init__('http_request_rejected')
-
-
-# Fixed guard codes only. This type is proof supplied by a trusted guard before
-# its transport executor is invoked, never inferred from an exception message.
-PRE_DISPATCH_REASONS = frozenset({
-    'provider_run_deadline_reached', 'provider_attempt_deadline_reached',
-    'provider_request_limit', 'provider_cost_limit', 'provider_source_call_limit',
-    'provider_outcome_reconciliation_required', 'provider_call_already_reserved',
-    'provider_operation_already_reserved', 'provider_configuration_blocked',
-    'provider_run_permanently_closed',
-})
 
 
 class PreDispatchRejection(ValueError):

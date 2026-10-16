@@ -57,7 +57,12 @@ class ProductionPackageTests(unittest.TestCase):
                       # The engine knows stage names only; the prepared workflow composes it.
                       "orchestration": ("tongxing_production.workflows",),
                       "review": ("tongxing_production.source", "tongxing_production.text", "tongxing_production.audio",
-                                 "tongxing_production.delivery", "tongxing_production.orchestration")}
+                                 "tongxing_production.delivery", "tongxing_production.orchestration"),
+                      # Shared contracts sit below everything, review included.
+                      "contracts": ("tongxing_production.source", "tongxing_production.text", "tongxing_production.audio",
+                                    "tongxing_production.delivery", "tongxing_production.orchestration",
+                                    "tongxing_production.review", "tongxing_production.compute",
+                                    "tongxing_production.adapters")}
         for layer, forbidden in downstream.items():
             for path in sorted((PACKAGE_SRC / layer).rglob("*.py")):
                 with self.subTest(path=str(path.relative_to(ROOT))):

@@ -103,6 +103,8 @@ REVIEW = {
     'scripts/machine_repair_ledger.py': _REVIEW + 'repair_ledger.py',
     'scripts/audio_qc_human_acceptance.py': _REVIEW + 'audio_qc_acceptance.py',
     'scripts/text_qc_human_acceptance.py': _REVIEW + 'text_qc_acceptance.py',
+    # I1 split the legacy review contract module across review and contracts.
+    'scripts/sermon_review_contracts.py': _REVIEW + 'contracts.py',
 }
 
 # Prepared-workflow composition (tongxing_production.workflows.prepared), batch W2.
@@ -116,9 +118,19 @@ WORKFLOWS = {
 }
 
 # Shared infrastructure, batches I1-I4 (docs/design/infrastructure-injection.zh.md).
-CONTRACTS = {}      # tongxing_production.contracts, batch I1
+CONTRACTS = {       # tongxing_production.contracts, batch I1
+    'scripts/canonical_pipeline_definition.py': PRODUCTION + 'contracts/pipeline_definition.py',
+}
 STORAGE = {}        # tongxing_production.storage, batch I2
 OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
+
+# I1 moved generic portions of the legacy review module to contracts; include them
+# in closures that still identify the combined legacy module.
+# Package files that took over part of a split legacy file; closures that listed
+# the legacy key list these as well, so they cover the same code as before.
+SPLIT_MEMBERS = {
+    'scripts/sermon_review_contracts.py': (PRODUCTION + 'contracts/canonical.py', PRODUCTION + 'contracts/schemas.py'),
+}
 
 PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **LAYER2, **LAYER3, **LAYER4,
                 **REVIEW, **WORKFLOWS}

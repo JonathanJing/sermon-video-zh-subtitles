@@ -53,12 +53,11 @@ class ReviewPortsTests(unittest.TestCase):
         backend = review.current()
         self.assertIsInstance(backend, review.ReviewBackend)
         self.assertEqual([field.name for field in dataclasses.fields(review.ReviewBackend)],
-                         ['core', 'code', 'contracts', 'snapshot', 'schemas', 'provider', 'compute', 'plugins',
-                          'transports', 'audio', 'text', 'source', 'gates', 'scripture', 'qc_runtime',
-                          'waivers'])
+                         ['core', 'code', 'snapshot', 'schemas', 'provider', 'compute', 'plugins',
+                          'transports', 'audio', 'text', 'source', 'gates', 'scripture', 'qc_runtime', 'waivers'])
         # The audio screening gate (L4 D2a) accepts the machine audio waiver the release discloses.
         self.assertIs(backend.waivers, delivery.current().waivers)
-        for name in ('core', 'code', 'contracts', 'snapshot', 'schemas', 'provider', 'compute', 'plugins',
+        for name in ('core', 'code', 'snapshot', 'schemas', 'provider', 'compute', 'plugins',
                      'transports'):
             self.assertIs(getattr(backend, name), getattr(text.current(), name), name)
         for record, kind in ((backend.audio, ports.AudioRules), (backend.text, ports.TextRules),
