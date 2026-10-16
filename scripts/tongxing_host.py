@@ -643,8 +643,11 @@ def audio_unmoved() -> audio_backend.Unmoved:
 # The moved producers used to import these modules at load time. A plan freezes
 # accounting.execution_identity() (the loaded project code) before it runs and
 # checks it again at review and cache replay, so a module that now loads only on
-# first use through a port would change that identity mid-run. Loading them with
-# the host keeps the loaded set what it was before the move.
+# first use through a port would change that identity mid-run.
+# execution_identity() calls load_producer_imports() before it reads the loaded
+# set. Never call it while modules are still importing: these modules import
+# facades and each other, so loading them from inside an import chain meets
+# partially initialized modules.
 EAGER_PRODUCER_IMPORTS = (
     'api_cli_outcomes', 'canonical_durable_jobs', 'canonical_pipeline_definition', 'four_layer_measure',
     'inspect_canonical_packages', 'layer2_api_concurrency', 'prepare_target_language_speech_job',
@@ -656,7 +659,7 @@ EAGER_PRODUCER_IMPORTS = (
 )
 
 
-def _load_producer_imports():
+def load_producer_imports():
     import importlib
     for name in EAGER_PRODUCER_IMPORTS:
         importlib.import_module('scripts.' + name)
@@ -689,4 +692,3 @@ audio_backend.configure(audio_backend.AudioBackend(core=_core, code=_code, compu
                                                    review=_review, waivers=_waivers, machine_qc=machine_qc(),
                                                    spoken_rules=spoken_rules(), tts_runtime=tts_runtime(),
                                                    dev_profile=dev_profile(), unmoved=audio_unmoved()))
-_load_producer_imports()
