@@ -1,6 +1,11 @@
+import sys
+import tempfile
 import unittest
+from pathlib import Path
 
-from scripts.run_unittest_ci import case_costs, case_shard_assignments, module_name, timing_profile, timing_weights
+from scripts.run_unittest_ci import (
+    case_costs, case_shard_assignments, discover_cases, module_name, test_roots, timing_profile, timing_weights,
+)
 
 
 class ShardAssignmentTests(unittest.TestCase):
@@ -90,6 +95,63 @@ class ShardAssignmentTests(unittest.TestCase):
         for seconds, tests in ((-1, 1), (float("nan"), 1), (float("inf"), 1), (1, 0)):
             with self.subTest(seconds=seconds, tests=tests), self.assertRaises(ValueError):
                 timing_weights({"module": 1}, {"modules": {"module": {"seconds": seconds, "tests": tests}}})
+
+
+class OwnerTestRootDiscoveryTests(unittest.TestCase):
+    def setUp(self):
+        # Discovery imports modules and extends sys.path; restore both afterwards.
+        modules, path = dict(sys.modules), list(sys.path)
+        self.addCleanup(lambda: (sys.modules.clear(), sys.modules.update(modules), sys.path[:] == path or sys.path.__setitem__(slice(None), path)))
+
+    def write(self, root, relative, name="test_case"):
+        path = Path(root) / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            "import unittest\n\n"
+            f"class {name.title().replace('_', '')}(unittest.TestCase):\n"
+            "    def test_runs(self):\n        pass\n",
+            encoding="utf-8",
+        )
+
+    def test_package_and_service_tests_are_discovered_with_the_root_tests(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = str(Path(directory).resolve())
+            self.write(directory, "tests/test_owner_root.py", "test_owner_root")
+            self.write(directory, "packages/production/tests/test_owner_pkg.py", "test_owner_pkg")
+            self.write(directory, "services/feedback/tests/test_owner_svc.py", "test_owner_svc")
+            self.write(directory, "tools/ops/tests/test_owner_ignored.py", "test_owner_ignored")
+
+            roots = [path.relative_to(directory).as_posix() for path in test_roots(Path(directory))]
+            ids = sorted(case.id() for case in discover_cases(Path(directory)))
+
+        self.assertEqual(roots, ["tests", "packages/production/tests", "services/feedback/tests"])
+        self.assertEqual(ids, [
+            "test_owner_pkg.TestOwnerPkg.test_runs", "test_owner_root.TestOwnerRoot.test_runs",
+            "test_owner_svc.TestOwnerSvc.test_runs",
+        ])
+
+    def test_a_module_name_in_two_roots_fails_loudly_instead_of_shadowing_a_suite(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = str(Path(directory).resolve())
+            self.write(directory, "tests/test_owner_same.py", "test_owner_same")
+            self.write(directory, "packages/fingerprint/tests/test_owner_same.py", "test_owner_same")
+
+            with self.assertRaises(ImportError) as raised:
+                discover_cases(Path(directory))
+
+        self.assertIn("test_owner_same", str(raised.exception))
+
+    def test_an_import_error_in_an_owner_root_is_a_failing_case_not_a_missing_one(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = str(Path(directory).resolve())
+            self.write(directory, "tests/test_owner_ok.py", "test_owner_ok")
+            broken = Path(directory) / "packages/production/tests/test_owner_broken.py"
+            broken.parent.mkdir(parents=True)
+            broken.write_text("import module_that_does_not_exist\n", encoding="utf-8")
+
+            ids = [case.id() for case in discover_cases(Path(directory))]
+
+        self.assertIn("unittest.loader._FailedTest.test_owner_broken", ids)
 
 
 if __name__ == "__main__":

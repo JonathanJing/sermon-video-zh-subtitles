@@ -97,6 +97,11 @@ jobs:
           tests.test_shared_video_delivery_fixtures
           tests.test_pipeline_compatibility_gate
 
+      # A PR confined to apps/tongxing-ios/ never reaches the full suite, yet
+      # the SF Symbols it uses must still resolve to the shared web sprite.
+      - name: Check native symbols against the shared icon sprite
+        run: python scripts/check_tongxing_icon_alignment.py
+
       - name: Check Web consumers of shared native fixtures
         run: >-
           node --test
@@ -232,6 +237,14 @@ jobs:
       - name: Check feedback API contracts
         if: matrix.shard_index == 1
         run: node --test services/feedback/test/*.test.mjs services/feedback/usage-report.test.mjs
+
+      - name: Check root Node contract tests
+        if: matrix.shard_index == 1
+        run: node --test tests/*.mjs
+
+      - name: Check native and web icon alignment
+        if: matrix.shard_index == 1
+        run: python scripts/check_tongxing_icon_alignment.py
 
   # Keep this job name stable: branch protection requires the unittest check.
   unittest:
