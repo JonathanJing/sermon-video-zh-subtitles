@@ -15,18 +15,37 @@ from typing import Any, Callable
 from zoneinfo import ZoneInfo
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+from ...source import backend as _source
+from . import host as _host
 
-from backend.config import upcoming_sunday
-from backend.cloud import read_gcs_bytes
-from scripts import (
-    live_source_monitor,
-    run_sermon_production_supervisor_agent,
-    sermon_accounting,
-    sermon_production_supervisor,
-)
+
+def _repo_root():
+    """The checkout this run binds to, from the host (never derived from this file)."""
+    return _source.current().core.repo_root
+
+
+def __getattr__(name):
+    # Callers that read the former module constant.
+    if name == "REPO_ROOT":
+        return _repo_root()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+# Host helpers under backend/ (temporary dual_pdf ports). Module-level names, so the
+# default arguments below and patches on this module keep working.
+def upcoming_sunday(*arguments, **options):
+    return _host.current().unmoved.upcoming_sunday(*arguments, **options)
+
+
+def read_gcs_bytes(uri):
+    return _host.current().cloud.read_gcs_bytes(uri)
+
+
+# scripts/ modules with no batch yet, looked up at every use.
+live_source_monitor = _host.HostModule(lambda: _host.current().unmoved.live_source_monitor())
+run_sermon_production_supervisor_agent = _host.HostModule(lambda: _host.current().unmoved.supervisor_agent())
+sermon_accounting = _host.HostModule(lambda: _host.current().unmoved.accounting())
+sermon_production_supervisor = _host.HostModule(lambda: _host.current().unmoved.supervisor())
 
 
 DEFAULT_STATE_URI = (
@@ -51,7 +70,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--work-root",
         type=Path,
-        default=REPO_ROOT / "artifacts" / "post-live-runs",
+        default=_repo_root() / "artifacts" / "post-live-runs",
     )
     parser.add_argument("--out", type=Path)
     parser.add_argument("--gcs-bucket", default=DEFAULT_BUCKET)
@@ -100,13 +119,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
-    from scripts.sermon_openai_runtime import selected_route
+    from ...compute.openai_runtime import selected_route
     route = selected_route()
     if route is not None and args.api_key_secret not in (None, "", DEFAULT_OPENAI_SECRET):
         raise ValueError("selected_openai_secret_override")
     sunday = args.sunday or upcoming_sunday().isoformat()
     out = args.out or (
-        REPO_ROOT
+        _repo_root()
         / "artifacts"
         / "sermon-production-supervisor"
         / sunday
@@ -159,7 +178,7 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
 def refresh_source_state(args: argparse.Namespace) -> dict[str, Any]:
     sunday = args.sunday
     out = (
-        REPO_ROOT
+        _repo_root()
         / "artifacts"
         / "live-source-monitor"
         / sunday
@@ -527,7 +546,7 @@ def run_local_production(args: argparse.Namespace) -> tuple[int, dict[str, Any]]
         write_report(args.out, completed)
         return 0, completed
     if getattr(args, "agent_backend", "agents-api") == "agents-api":
-        from scripts.sermon_openai_runtime import selected_route
+        from ...compute.openai_runtime import selected_route
         if selected_route() is None:
             raise ValueError("local_supervisor_requires_explicit_dev_or_prod_launcher")
     if args.skip_source_refresh or args.mode == "shadow":

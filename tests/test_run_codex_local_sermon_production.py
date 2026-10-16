@@ -194,9 +194,8 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
                     notify_recipients_secret=None,
                     notify_sender_secret=None,
                 )
-                original_root = mod.REPO_ROOT
-                mod.REPO_ROOT = Path(tempdir)
-                try:
+                # The checkout root resolves at call time since W3c.
+                with mock.patch.object(mod, "_repo_root", return_value=Path(tempdir)):
                     result = mod.refresh_source_state(args)
                     saved = json.loads(
                         (
@@ -207,8 +206,6 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
                             / "local-refresh.json"
                         ).read_text(encoding="utf-8")
                     )
-                finally:
-                    mod.REPO_ROOT = original_root
         finally:
             mod.live_source_monitor.run_monitor = original_run_monitor
             mod.live_source_monitor.read_state = original_read_state

@@ -7,7 +7,6 @@ import argparse
 import concurrent.futures
 from contextvars import copy_context
 import hashlib
-import importlib.util
 import json
 import math
 import os
@@ -21,34 +20,94 @@ from pathlib import Path
 from typing import Any, Callable
 from zoneinfo import ZoneInfo
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from backend.cloud import access_secret, read_gcs_bytes, upload_file_to_gcs  # noqa: E402
-from backend.observability import log_event, stable_hash, url_summary  # noqa: E402
-from scripts import live_source_monitor, post_live_run_status  # noqa: E402
-from scripts import series_terminology
-from scripts.sermon_accounting import accounting_session, stage as accounting_stage
-from tongxing_production import path_aliases  # noqa: E402
+from ... import path_aliases
+from ...source import backend as _source
+from . import host as _host
 
 
-SERMON_PIPELINE_SCRIPT = REPO_ROOT / "scripts" / "sermon_pipeline.py"
-LEGACY_OPENAI_SCRIPT = (
-    REPO_ROOT / "packages" / "production" / "src" / "tongxing_production" / "compute" / "legacy_openai.py"
-)
-MOBILE_PDF_SCRIPT = REPO_ROOT / "scripts" / "render_mobile_pdf_from_srt.py"
-READING_EDITION_SCRIPT = REPO_ROOT / "scripts" / "build_sermon_reading_edition_with_openai.py"
-SERMON_INTERPRETATION_SCRIPT = REPO_ROOT / "scripts" / "generate_notes_with_openai.py"
-# Identities hash the files the legacy paths name today; the post-live command still runs
-# the scripts/ path above.
-REVIEW_PROMPTS_SCRIPT = REPO_ROOT / path_aliases.resolve("scripts/review_prompts.py")
-SERMON_PIPELINE_IMPLEMENTATION = REPO_ROOT / path_aliases.resolve("scripts/sermon_pipeline.py")
-# The pipeline's Layer 1 English group (transcription, English correction, MFA options,
-# fingerprint precompute) lives in its own file since W3b.
-POST_LIVE_ENGLISH_SCRIPT = (
-    REPO_ROOT / "packages" / "production" / "src" / "tongxing_production" / "source" / "post_live_english.py"
-)
+def _repo_root():
+    """The checkout this run binds to, from the host (never derived from this file)."""
+    return _source.current().core.repo_root
+
+
+# Repository-relative paths, resolved against the checkout at use. The post-live command
+# still runs the scripts/ entries; identities hash the files the legacy paths name today.
+_CHECKOUT_PATHS = {
+    "SERMON_PIPELINE_SCRIPT": "scripts/sermon_pipeline.py",
+    "LEGACY_OPENAI_SCRIPT": path_aliases.PRODUCTION + "compute/legacy_openai.py",
+    "MOBILE_PDF_SCRIPT": "scripts/render_mobile_pdf_from_srt.py",
+    "READING_EDITION_SCRIPT": "scripts/build_sermon_reading_edition_with_openai.py",
+    "SERMON_INTERPRETATION_SCRIPT": "scripts/generate_notes_with_openai.py",
+    "REVIEW_PROMPTS_SCRIPT": path_aliases.resolve("scripts/review_prompts.py"),
+    "SERMON_PIPELINE_IMPLEMENTATION": path_aliases.resolve("scripts/sermon_pipeline.py"),
+    # The pipeline's Layer 1 English group (transcription, English correction, MFA options,
+    # fingerprint precompute) lives in its own file since W3b.
+    "POST_LIVE_ENGLISH_SCRIPT": path_aliases.PRODUCTION + "source/post_live_english.py",
+}
+
+
+def _checkout_path(name):
+    return _repo_root() / _CHECKOUT_PATHS[name]
+
+
+def __getattr__(name):
+    # Callers and tests that read the former module constants (REPO_ROOT, *_SCRIPT).
+    if name == "REPO_ROOT":
+        return _repo_root()
+    if name in _CHECKOUT_PATHS:
+        return _checkout_path(name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+# Host helpers under backend/ (temporary Cloud and observability ports). Module-level
+# names, so patches on this module still intercept every call.
+def access_secret(resource_name):
+    return _host.current().cloud.access_secret(resource_name)
+
+
+def read_gcs_bytes(uri):
+    return _host.current().cloud.read_gcs_bytes(uri)
+
+
+def upload_file_to_gcs(local_path, uri):
+    return _host.current().cloud.upload_file_to_gcs(local_path, uri)
+
+
+def log_event(event, **fields):
+    return _host.current().observability.log_event(event, **fields)
+
+
+def stable_hash(value):
+    return _host.current().observability.stable_hash(value)
+
+
+def url_summary(url):
+    return _host.current().observability.url_summary(url)
+
+
+# The run's accounting session lives in the checkout until observability moves.
+def accounting_session(directory, workflow, metadata=None, **options):
+    return _source.current().accounting.session(directory, workflow, metadata, **options)
+
+
+def accounting_stage(name, **options):
+    return _source.current().accounting.stage(name, **options)
+
+
+def _subprocess_environment():
+    return _source.current().accounting.subprocess_environment()
+
+
+# scripts/ modules with no batch yet, looked up at every use.
+live_source_monitor = _host.HostModule(lambda: _host.current().unmoved.live_source_monitor())
+post_live_run_status = _host.HostModule(lambda: _host.current().unmoved.post_live_run_status())
+series_terminology = _host.HostModule(lambda: _host.current().unmoved.series_terminology())
+
+
+def _series_terminology_path():
+    return _source.current().code.module_path(_host.current().unmoved.series_terminology())
+
+
 DEFAULT_WORK_ROOT = Path("/tmp/sermon-post-live-subtitles")
 POST_LIVE_STATES = {"was_live"}
 READING_EDITION_DIRNAME = "reading-edition-v2"
@@ -168,9 +227,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="high")
     parser.add_argument("--reading-review-manifest", type=Path, help="Standard reviewed corrections for the reading builder; existing edit caches are preserved.")
     parser.add_argument("--reading-aligner", choices=("mfa", "legacy"), default="mfa")
-    from scripts.mfa_spark import add_arguments
+    from ...source.mfa_spark import add_arguments
     add_arguments(parser)
-    from scripts.mfa_backend import add_arguments as add_backend_arguments
+    from ...source.mfa_backend import add_arguments as add_backend_arguments
     add_backend_arguments(parser)
     parser.add_argument("--mfa-executable", default=os.environ.get("MFA_EXECUTABLE", "mfa"))
     parser.add_argument("--mfa-dictionary", type=Path, default=os.environ.get("MFA_DICTIONARY"))
@@ -731,7 +790,7 @@ def slug_for(args: argparse.Namespace, live_url: str) -> str:
 def export_sunday_context(
     args: argparse.Namespace, run_root: Path, metadata: dict[str, Any], live_url: str,
 ) -> dict[str, Any]:
-    from scripts.export_saturday_live_context import export_context
+    export_context = _host.current().unmoved.export_saturday_live_context().export_context
 
     source_date = getattr(args, "source_service_date", None)
     if source_date:
@@ -763,7 +822,7 @@ def build_pipeline_command(
     input_path = audio_path or download_dir / "source_audio.m4a"
     command = [
         sys.executable,
-        str(SERMON_PIPELINE_SCRIPT),
+        str(_checkout_path("SERMON_PIPELINE_SCRIPT")),
         "--input",
         str(input_path),
         "--start-time",
@@ -799,7 +858,7 @@ def build_pipeline_command(
     if args.output_mode == "reading":
         command.extend(["--reading-aligner", getattr(args, "reading_aligner", "mfa")])
         if getattr(args, "reading_aligner", "mfa") == "mfa":
-            from scripts.mfa_backend import options
+            from ...source.mfa_backend import options
             backend = options(args)
             command.extend(["--mfa-backend", backend["backend"]])
             command.append("--mfa-spark-fallback" if backend["allow_spark_fallback"] else "--no-mfa-spark-fallback")
@@ -836,7 +895,7 @@ def build_mobile_pdf_command(
     sermon_title, speaker = reading_pdf_metadata(args, metadata=metadata, source=source)
     return [
         sys.executable,
-        str(MOBILE_PDF_SCRIPT),
+        str(_checkout_path("MOBILE_PDF_SCRIPT")),
         "--input",
         str(pipeline_outdir / "sermon_zh_relative.srt"),
         "--secondary-input",
@@ -865,7 +924,7 @@ def build_reading_edition_command(
 ) -> list[str]:
     command = [
         sys.executable,
-        str(READING_EDITION_SCRIPT),
+        str(_checkout_path("READING_EDITION_SCRIPT")),
         "--source-pipeline",
         str(pipeline_outdir),
         "--outdir",
@@ -903,7 +962,7 @@ def build_reading_pdf_command(
     sermon_title, speaker = reading_pdf_metadata(args, metadata=metadata, source=source)
     return [
         sys.executable,
-        str(MOBILE_PDF_SCRIPT),
+        str(_checkout_path("MOBILE_PDF_SCRIPT")),
         "--layout",
         "reading",
         "--input",
@@ -939,7 +998,7 @@ def build_sermon_interpretation_command(
     interpretation_dir = pipeline_outdir / SERMON_INTERPRETATION_DIRNAME
     command = [
         sys.executable,
-        str(SERMON_INTERPRETATION_SCRIPT),
+        str(_checkout_path("SERMON_INTERPRETATION_SCRIPT")),
         "--srt-input",
         str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_zh_reading_revised.srt"),
         "--secondary-srt-input",
@@ -1323,7 +1382,7 @@ def source_review_cache_ready(args: argparse.Namespace, pipeline_outdir: Path) -
         asr_path = pipeline_outdir / "asr_reference_chunks.json"
     if not all(path.is_file() for path in (raw_path, audio_path, asr_path)):
         return False
-    from scripts.sermon_source_text_review import apply_review
+    from ...source.text_review import apply_review
 
     raw_segments = json.loads(raw_path.read_text(encoding="utf-8"))
     package_dir = getattr(args, "source_text_review_package", None)
@@ -1332,7 +1391,7 @@ def source_review_cache_ready(args: argparse.Namespace, pipeline_outdir: Path) -
         adjudicated_package = {name: json.loads((Path(package_dir) / f"{name}.json").read_text(encoding="utf-8"))
                                for name in ("source", "anchor")}
     corrected, _ = apply_review(raw_segments, review, audio_path, asr_path, adjudicated_package=adjudicated_package)
-    from scripts.sermon_pipeline import clean_text, ffprobe_duration, reference_chunks_to_reading_segments
+    from .pipeline import clean_text, ffprobe_duration, reference_chunks_to_reading_segments
 
     asr = json.loads(asr_path.read_text(encoding="utf-8"))
     if asr_path.name == "asr_reference.json":
@@ -1424,11 +1483,11 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
             else None
         ),
         "implementation": {
-            "sermonPipeline": file_content_identity(SERMON_PIPELINE_IMPLEMENTATION),
-            "legacyOpenAI": file_content_identity(LEGACY_OPENAI_SCRIPT),
-            "postLiveEnglish": file_content_identity(POST_LIVE_ENGLISH_SCRIPT),
-            "reviewPrompts": file_content_identity(REVIEW_PROMPTS_SCRIPT),
-            "seriesTerminology": file_content_identity(Path(series_terminology.__file__)),
+            "sermonPipeline": file_content_identity(_checkout_path("SERMON_PIPELINE_IMPLEMENTATION")),
+            "legacyOpenAI": file_content_identity(_checkout_path("LEGACY_OPENAI_SCRIPT")),
+            "postLiveEnglish": file_content_identity(_checkout_path("POST_LIVE_ENGLISH_SCRIPT")),
+            "reviewPrompts": file_content_identity(_checkout_path("REVIEW_PROMPTS_SCRIPT")),
+            "seriesTerminology": file_content_identity(_series_terminology_path()),
         },
     }
     if args.output_mode == "reading":
@@ -1436,15 +1495,15 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
         identity["readingAligner"] = aligner
         identity["schemaVersion"] = 5  # Bind selected local or Spark runtime before whole-pipeline cache reuse.
         if aligner == "mfa":
-            from scripts import mfa_backend, mfa_spark
+            from ...source import mfa_backend, mfa_spark
             identity["mfa"] = mfa_backend.preflight(**mfa_backend.options(args))
             # The implementation files, wherever they live (the package since L1 S3).
-            identity["mfaBackend"] = file_content_identity(Path(mfa_backend.__file__))
-            identity["mfaTransport"] = file_content_identity(Path(mfa_spark.__file__))
+            identity["mfaBackend"] = file_content_identity(_source.current().code.module_path(mfa_backend))
+            identity["mfaTransport"] = file_content_identity(_source.current().code.module_path(mfa_spark))
     if getattr(args, "fingerprint_precompute", False):
         identity["fingerprintPrecompute"] = {
-            "script": file_content_identity(REPO_ROOT / "packages/fingerprint/bin/build_fingerprint_index.mjs"),
-            "algorithm": file_content_identity(REPO_ROOT / "packages/fingerprint/src/fingerprint-core.mjs"),
+            "script": file_content_identity(_repo_root() / "packages/fingerprint/bin/build_fingerprint_index.mjs"),
+            "algorithm": file_content_identity(_repo_root() / "packages/fingerprint/src/fingerprint-core.mjs"),
         }
     if getattr(args, "source_text_review", None):
         identity["sourceTextReview"] = file_content_identity(args.source_text_review)
@@ -1477,8 +1536,8 @@ def build_reading_input_identity(
         },
         "layoutTargets": reading_layout_targets(args),
         "implementation": {
-            "readingEdition": file_content_identity(READING_EDITION_SCRIPT),
-            "seriesTerminology": file_content_identity(Path(series_terminology.__file__)),
+            "readingEdition": file_content_identity(_checkout_path("READING_EDITION_SCRIPT")),
+            "seriesTerminology": file_content_identity(_series_terminology_path()),
         },
     }
     manifest = reading_review_manifest_identity(args)
@@ -1524,7 +1583,7 @@ def reading_review_cache_ready(args: argparse.Namespace, reading_outdir: Path) -
     final_path = reading_outdir / "reading_blocks.final.json"
     if not final_path.is_file():
         return False
-    from scripts.build_sermon_reading_edition_with_openai import apply_review_manifest
+    apply_review_manifest = _host.current().unmoved.reading_edition().apply_review_manifest
 
     final = json.loads(final_path.read_text(encoding="utf-8"))
     reviewed, _ = apply_review_manifest(final, manifest)
@@ -1559,7 +1618,7 @@ def prepare_weekly_sentence_interpretation_shadow(
     approval_evidence_path: Path | None = None,
     review_path: Path | None = None,
 ) -> dict[str, Any]:
-    from scripts.prepare_sentence_interpretation_shadow import prepare_shadow
+    prepare_shadow = _host.current().unmoved.sentence_shadow().prepare_shadow
     return prepare_shadow(
         pipeline_outdir / "segments_timed_en_corrected.json",
         pipeline_outdir / "sentence-interpretation-v2",
@@ -1591,13 +1650,8 @@ def record_input_identity(
 
 
 def load_dubbing_producer_hook():
-    directory = REPO_ROOT / "experiments" / "sermon-dubbing-poc"
-    if str(directory) not in sys.path:
-        sys.path.insert(0, str(directory))
-    spec = importlib.util.spec_from_file_location("sermon_dubbing_producer_bridge", directory / "continue_saturday_dubbing.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.start_producer_candidate, module.CandidateNotReady
+    # experiments/sermon-dubbing-poc is not part of the package; the host loads its bridge.
+    return _host.current().unmoved.dubbing_producer_hook()
 
 
 def run_frozen_interpretation_notes(command, runner):
@@ -1614,9 +1668,9 @@ def run_frozen_interpretation_notes(command, runner):
         raise RuntimeError("Frozen interpretation requires both reviewed SRT inputs")
     identity = {"schemaVersion": 1, "command": command, "sources": sources,
                 "seriesTerminology": series_terminology.context(),
-                "implementation": {"generator": file_content_identity(SERMON_INTERPRETATION_SCRIPT),
-                                   "prompts": file_content_identity(REVIEW_PROMPTS_SCRIPT),
-                                   "terminology": file_content_identity(Path(series_terminology.__file__))}}
+                "implementation": {"generator": file_content_identity(_checkout_path("SERMON_INTERPRETATION_SCRIPT")),
+                                   "prompts": file_content_identity(_checkout_path("REVIEW_PROMPTS_SCRIPT")),
+                                   "terminology": file_content_identity(_series_terminology_path())}}
     if receipt_path.exists():
         receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
         if receipt.get("identity") != identity or receipt.get("outputs") != {
@@ -1626,7 +1680,7 @@ def run_frozen_interpretation_notes(command, runner):
             return
     if notes.exists() or raw.exists():
         raise RuntimeError("Existing interpretation has no producer cache receipt; inspect it before creating a new dubbing job")
-    from scripts.sermon_accounting import subprocess_environment
+    subprocess_environment = _subprocess_environment
     with accounting_stage("interpretation", billing="orchestrator"):
         runner(command, check=True, env=subprocess_environment())
     outputs = {"notes": file_content_identity(notes), "raw": file_content_identity(raw)}
@@ -1654,9 +1708,9 @@ def run_pdf_and_dubbing_branches(reading_command, interpretation_command, runner
         outputs[flag] = notes_command[index + 1]
         del notes_command[index:index + 2]
     insights = Path(notes_command[notes_command.index("--out-dir") + 1]) / "openai-notes.json"
-    render_command = [sys.executable, str(REPO_ROOT / "scripts" / "render_sermon_interpretation_pdf.py"),
+    render_command = [sys.executable, str(_repo_root() / "scripts" / "render_sermon_interpretation_pdf.py"),
                       "--input", str(insights), "--out", outputs["--pdf-out"], "--qa-out", outputs["--pdf-qa-out"]]
-    from scripts.sermon_accounting import subprocess_environment
+    subprocess_environment = _subprocess_environment
 
     def reading_branch():
         started = time.monotonic()
@@ -1705,7 +1759,7 @@ def run_pdf_branches(reading_command, interpretation_command, runner, *, workers
     def run_branch(command, stage_name, billing):
         started = time.monotonic()
         with accounting_stage(stage_name, billing=billing):
-            from scripts.sermon_accounting import subprocess_environment
+            subprocess_environment = _subprocess_environment
             runner(command, check=True, env=subprocess_environment())
         return time.monotonic() - started
 
@@ -1853,7 +1907,7 @@ def log_post_live_event(report: dict[str, Any]) -> None:
 
 def resolve_path(path: Path | str) -> Path:
     value = Path(path)
-    return value if value.is_absolute() else REPO_ROOT / value
+    return value if value.is_absolute() else _repo_root() / value
 
 
 if __name__ == "__main__":
