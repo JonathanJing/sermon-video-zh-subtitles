@@ -13,6 +13,7 @@ from scripts import sermon_diagnostic_context as diagnostic
 from scripts import target_language_policy as policies
 from scripts import run_target_language_models as runner
 from scripts.codex_layer2_transport import CodexLayer2Transport, TEST_CONFIGURATION
+from scripts import sermon_pipeline as sermon_pipeline_module
 from tests import test_run_target_language_models as fixtures
 
 
@@ -97,7 +98,7 @@ class DiagnosticChainTests(unittest.TestCase):
             return real_run(argv, **kwargs)
         with patch.object(command, 'CodexLayer2Transport', return_value=transport or self.transport()), \
              patch('scripts.codex_layer2_transport.subprocess.run', side_effect=dispatch), \
-             patch.object(runner.sermon_pipeline, 'chat_json', side_effect=AssertionError('API forbidden')), patch('builtins.print'):
+             patch.object(sermon_pipeline_module, 'chat_json', side_effect=AssertionError('API forbidden')), patch('builtins.print'):
             return command.run_test(self.fixture, None, self.out, cli_path=self.root / 'unused', diagnostic_fixture=True, resource_policy_path=resource_policy_path, session_verifier=lambda: {"status":"offline_test"})
 
     def test_fake_cli_plugin_candidate_share_rules_and_same_run_resume_without_calls(self):
