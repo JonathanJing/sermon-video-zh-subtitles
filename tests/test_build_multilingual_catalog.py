@@ -1,5 +1,4 @@
 import hashlib
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -7,14 +6,10 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from scripts import build_multilingual_catalog as MODULE
+
 
 ROOT = Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location(
-    "build_multilingual_catalog", ROOT / "scripts" / "build_multilingual_catalog.py"
-)
-MODULE = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader
-SPEC.loader.exec_module(MODULE)
 
 
 def digest(data: bytes) -> str:

@@ -1,12 +1,9 @@
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
 import unittest
 
-SPEC = importlib.util.spec_from_file_location('poster', Path(__file__).resolve().parents[1] / 'scripts/build_sermon_poster.py')
-poster = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(poster)
+from scripts import build_sermon_poster as poster
 
 
 class PosterTests(unittest.TestCase):

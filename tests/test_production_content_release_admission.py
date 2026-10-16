@@ -136,7 +136,7 @@ class ProductionContentReleaseAdmissionTests(unittest.TestCase):
         out = self.root / 'deployment.json'
         argv = ['deploy', '--candidate', str(self.candidate), '--preflight', str(self.preflight_path),
                 '--out', str(out), '--execute', '--content-release-admission', str(admission)]
-        with patch.object(deploy.subprocess, 'run') as command, patch('sys.argv', argv):
+        with patch('subprocess.run') as command, patch('sys.argv', argv):
             with self.assertRaisesRegex(ValueError, 'production_content_release_blocked'):
                 deploy.main()
             command.assert_not_called()
