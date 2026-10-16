@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [现状地图](repository-current-map.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [MFA 生产说明](../mfa-production.zh.md)
 
-状态：§6 已决定，按批实施中：S0 [#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、S1 [#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487)、S2 [#492](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/492) 已合并，S3 进行中。盘点日期：2026-10-15。基线：`dev@81ad8fd5`（阶段 3 [#484](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/484) 已合并，`tongxing_production.orchestration.unified` 已通过 `Backend` 注入宿主）。本文只定义 L1 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
+状态：§6 已决定，按批实施中：S0 [#486](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/486)、S1 [#487](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/487)、S2 [#492](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/492)、S3 [#496](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/496) 已合并，S4（阶段入口）为最后一批。盘点日期：2026-10-15。基线：`dev@81ad8fd5`（阶段 3 [#484](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/484) 已合并，`tongxing_production.orchestration.unified` 已通过 `Backend` 注入宿主）。本文只定义 L1 的模块归属、注入端口、身份影响和分批顺序；不移动文件，不改合同。
 
 ## 1 为什么不能直接搬
 
