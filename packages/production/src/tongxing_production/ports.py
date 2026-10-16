@@ -37,6 +37,18 @@ class Core:
 
 
 @dataclass(frozen=True)
+class Outcomes:
+    """Durable API/CLI call outcomes: identify a request, admit a replay, recover a returned
+    response, mark dispatch, and locate the receipts. An unknown outcome is never retried."""
+    request_identity: Callable[..., Any]       # (caller, args, kwargs, purpose)
+    execution_binding: Callable[..., Any]      # (caller, arguments)
+    assert_replay_admitted: Callable[..., Any]   # (directory, *, purpose, binding)
+    recover: Callable[..., Any]                # (directory, identity, purpose)
+    before_dispatch: Callable[..., Any]        # (callback) -> context manager
+    receipt_root: Callable[..., Any]           # (explicit=None) -> Path
+
+
+@dataclass(frozen=True)
 class Route:
     """The configured OpenAI project route; never a credential value."""
     selected: Callable[[], Any]
@@ -56,7 +68,7 @@ class Provider:
     access_secret: Callable[[str], str]        # named Secret Manager credential for an explicit CLI flag
     http_execute: Callable[..., dict]          # (req, timeout_seconds, *, deadline=None): at most one request
     transcription_request: Callable[[bytes, str], Any]   # (wav_bytes, expected_audio_sha256)
-    outcomes: Any                              # request_identity, execution_binding, assert_replay_admitted, recover, before_dispatch, receipt_root
+    outcomes: Outcomes
     request_metadata: Callable[[Any], dict]    # accounting settings recorded on a request
     route: Route
 

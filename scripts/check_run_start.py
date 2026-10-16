@@ -14,6 +14,10 @@ Checks (each runs only when its inputs are given):
   environment is ready (API-only stages need none); ``--spark-code-dir`` holds the same
   implementation files as this checkout;
 - outputs: each ``--fresh-dir`` does not exist yet or is empty;
+- drain: no unknown call outcome under each ``--drain-root`` (a Layer 2 ``*.started.json``
+  without its ``.raw.json``, an api-cli-outcomes receipt still ``started``/``unknown``, a Codex
+  call with ``identity.json`` but no settled ``outcome.json``) — the first common exit condition
+  of a code-moving batch (docs/design/workflows-compute-injection.zh.md §5);
 - page: ``--page-id`` is not yet in the live Dev v3 or v4 catalog.
 """
 from __future__ import annotations
@@ -413,6 +417,45 @@ def check_fresh(paths):
                   problems=[f"{path} is not new or empty" for path in used])
 
 
+DRAIN_NOT_CHECKED = ('spark dispatcher receipts (reconcile_spark_dispatcher_receipt.py)',
+                     'unsettled budget reservations', 'in-progress runs (common exit condition 2)')
+
+
+def check_drain(roots):
+    """Read-only scan for call outcomes nobody has reconciled; never repairs or dispatches."""
+    unknown = []
+    for root in roots:
+        root = Path(root)
+        if not root.is_dir():
+            unknown.append({'root': str(root), 'kind': 'missing_root'})
+            continue
+        for marker in sorted(root.rglob('*.started.json')):
+            if not marker.with_name(marker.name[:-len('.started.json')] + '.raw.json').is_file():
+                unknown.append({'kind': 'layer2_started_without_raw', 'path': str(marker)})
+        for receipt in sorted(root.rglob('api-cli-outcomes/*/outcome.json')):
+            try:
+                status = json.loads(receipt.read_text(encoding='utf-8')).get('status')
+            except (OSError, ValueError):
+                status = 'unreadable'
+            if status in {'started', 'unknown', 'unreadable'}:
+                unknown.append({'kind': 'api_cli_outcome_' + status, 'path': str(receipt)})
+        for identity in sorted(root.rglob('identity.json')):
+            outcome = identity.with_name('outcome.json')
+            if not outcome.is_file():
+                if identity.parent.parent.name != 'api-cli-outcomes':
+                    unknown.append({'kind': 'codex_call_without_outcome', 'path': str(identity.parent)})
+                continue
+            try:
+                status = json.loads(outcome.read_text(encoding='utf-8')).get('status')
+            except (OSError, ValueError):
+                status = 'unreadable'
+            if status in {'unknown_outcome', 'unreadable'}:
+                unknown.append({'kind': 'codex_call_' + status, 'path': str(identity.parent)})
+    return result('drain', 'fail' if unknown else 'pass', roots=[str(Path(r)) for r in roots],
+                  unknownOutcomes=unknown, notChecked=list(DRAIN_NOT_CHECKED),
+                  problems=[f"{row['kind']}: {row.get('path', row.get('root'))}" for row in unknown])
+
+
 def check_page(page_id, origin):
     seen = []
     try:
@@ -447,6 +490,8 @@ def main(argv=None) -> int:
     parser.add_argument("--spark-stages", action="store_true", help="The run is entering GPU stages now")
     parser.add_argument("--spark-code-dir", help="Staged code directory on Spark, e.g. <stage>/repo-<commit>")
     parser.add_argument("--fresh-dir", type=Path, action="append", default=[])
+    parser.add_argument("--drain-root", type=Path, action="append", default=[],
+                        help="Run or job root to scan for unreconciled call outcomes before a code-moving batch")
     parser.add_argument("--page-id")
     parser.add_argument("--origin", help="Explicit Hosting origin required with --page-id (dev or prod).")
     parser.add_argument("--out", type=Path, help="Also write the report here")
@@ -477,6 +522,7 @@ def main(argv=None) -> int:
     checks.append(checked('spark',lambda:check_spark(args.spark_host, args.spark_stages, args.spark_code_dir))
                   if args.spark or args.spark_stages or args.spark_code_dir else result("spark", "skip"))
     checks.append(checked('outputs',lambda:check_fresh(args.fresh_dir)) if args.fresh_dir else result("outputs", "skip"))
+    checks.append(checked('drain',lambda:check_drain(args.drain_root)) if args.drain_root else result("drain", "skip"))
     if args.page_id and not args.origin:
         checks.append(result('page', 'fail', pageId=args.page_id,
                              problems=['--page-id requires an explicit --origin for the target Hosting environment']))

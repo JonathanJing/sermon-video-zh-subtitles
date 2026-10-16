@@ -103,16 +103,27 @@ def _project_headers(api_key):
     return sermon_openai_runtime.project_headers(api_key)
 
 
+def _outcomes_function(name):
+    def call(*arguments, **options):
+        from scripts import api_cli_outcomes
+        return getattr(api_cli_outcomes, name)(*arguments, **options)
+    call.__name__ = name
+    return call
+
+
+def outcomes() -> ports.Outcomes:
+    return ports.Outcomes(**{name: _outcomes_function(name) for name in (
+        'request_identity', 'execution_binding', 'assert_replay_admitted', 'recover', 'before_dispatch',
+        'receipt_root')})
+
+
 def provider() -> ports.Provider:
-    # api_cli_outcomes imports only the standard library at load; its functions
-    # are looked up on the module at call time, so patches still intercept.
-    from scripts import api_cli_outcomes
     return ports.Provider(chat_json=_chat_json, request_json=_request_json,
                           reject_secret_override=_reject_secret_override,
                           bounded_legacy_chat_payload=_bounded_legacy_chat_payload,
                           legacy_text_cache_contract=_legacy_text_cache_contract,
                           legacy_text_execution_identity=_legacy_text_execution_identity,
-                          access_secret=_access_secret, outcomes=api_cli_outcomes,
+                          access_secret=_access_secret, outcomes=outcomes(),
                           http_execute=_http_execute, transcription_request=_transcription_request,
                           request_metadata=_request_metadata,
                           route=ports.Route(selected=_selected_route, safe=_safe_route,
