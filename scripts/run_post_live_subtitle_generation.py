@@ -30,6 +30,7 @@ from backend.observability import log_event, stable_hash, url_summary  # noqa: E
 from scripts import live_source_monitor, post_live_run_status  # noqa: E402
 from scripts import series_terminology
 from scripts.sermon_accounting import accounting_session, stage as accounting_stage
+from tongxing_production import path_aliases  # noqa: E402
 
 
 SERMON_PIPELINE_SCRIPT = REPO_ROOT / "scripts" / "sermon_pipeline.py"
@@ -39,7 +40,10 @@ LEGACY_OPENAI_SCRIPT = (
 MOBILE_PDF_SCRIPT = REPO_ROOT / "scripts" / "render_mobile_pdf_from_srt.py"
 READING_EDITION_SCRIPT = REPO_ROOT / "scripts" / "build_sermon_reading_edition_with_openai.py"
 SERMON_INTERPRETATION_SCRIPT = REPO_ROOT / "scripts" / "generate_notes_with_openai.py"
-REVIEW_PROMPTS_SCRIPT = REPO_ROOT / "scripts" / "review_prompts.py"
+# Identities hash the files the legacy paths name today; the post-live command still runs
+# the scripts/ path above.
+REVIEW_PROMPTS_SCRIPT = REPO_ROOT / path_aliases.resolve("scripts/review_prompts.py")
+SERMON_PIPELINE_IMPLEMENTATION = REPO_ROOT / path_aliases.resolve("scripts/sermon_pipeline.py")
 DEFAULT_WORK_ROOT = Path("/tmp/sermon-post-live-subtitles")
 POST_LIVE_STATES = {"was_live"}
 READING_EDITION_DIRNAME = "reading-edition-v2"
@@ -1415,7 +1419,7 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
             else None
         ),
         "implementation": {
-            "sermonPipeline": file_content_identity(SERMON_PIPELINE_SCRIPT),
+            "sermonPipeline": file_content_identity(SERMON_PIPELINE_IMPLEMENTATION),
             "legacyOpenAI": file_content_identity(LEGACY_OPENAI_SCRIPT),
             "reviewPrompts": file_content_identity(REVIEW_PROMPTS_SCRIPT),
             "seriesTerminology": file_content_identity(Path(series_terminology.__file__)),
