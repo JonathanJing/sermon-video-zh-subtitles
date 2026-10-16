@@ -35,8 +35,16 @@ class Core:
 
 
 @dataclass(frozen=True)
+class Route:
+    """The configured OpenAI project route; never a credential value."""
+    selected: Callable[[], Any]
+    safe: Callable[[Any], Any]
+    project_headers: Callable[[str], dict]     # (api_key)
+
+
+@dataclass(frozen=True)
 class Provider:
-    """Model-provider transport as the L1 producers use it today."""
+    """Model-provider transport as the producers use it today."""
     chat_json: Callable[..., dict]             # (api_key, payload, retries=1, *, session_verifier=None)
     request_json: Callable[..., dict]          # (req, retries=3, *, response_observer=None, request_executor=None)
     reject_secret_override: Callable[[Any], None]
@@ -46,7 +54,9 @@ class Provider:
     access_secret: Callable[[str], str]        # named Secret Manager credential for an explicit CLI flag
     http_execute: Callable[..., dict]          # (req, timeout_seconds, *, deadline=None): at most one request
     transcription_request: Callable[[bytes, str], Any]   # (wav_bytes, expected_audio_sha256)
-    outcomes: Any                              # request_identity, execution_binding, assert_replay_admitted, recover, before_dispatch
+    outcomes: Any                              # request_identity, execution_binding, assert_replay_admitted, recover, before_dispatch, receipt_root
+    request_metadata: Callable[[Any], dict]    # accounting settings recorded on a request
+    route: Route
 
 
 @dataclass(frozen=True)
@@ -54,6 +64,13 @@ class Compute:
     """Spark-session admission for model calls."""
     session_bound_caller: type                 # bound directly: producers construct it and test isinstance
     require_session: Callable[..., Any]        # (*, verifier=None): the exclusive Spark session is held
+    load_profile: Callable[[Any], dict]        # (path): production concurrency profile
+    validate_profile: Callable[[Any], dict]
+    admit: Callable[..., Any]                  # (payload, request_limits, *, surface='canonical_api'): strict budget admission
+    reject_cli_transport: Callable[[Any], None]   # (caller): CLI transports are not budget-admitted
+    request_slot: Callable[[Any], Any]         # (job_root) -> context manager: host-wide L2 API request slot
+    max_in_flight_api_calls: int
+    max_group_workers_per_locale: int
 
 
 @dataclass(frozen=True)
@@ -82,6 +99,11 @@ class Workspace:
 class Accounting:
     """The run's accounting session around a producer."""
     session: Callable[..., Any]                # (directory, workflow, metadata=None, *, evidence_directory=None) -> context manager
+    stage: Callable[..., Any]                  # (name, *, cache_hit=False, billing='local', ...) -> context manager
+    record_workload: Callable[[str, dict], Any]
+    record_log: Callable[..., Any]             # (code, *, level='INFO', fields=None, exception=None)
+    bounded_dependencies: Callable[..., Any]   # (name, dependencies, *, work_unit_id)
+    finalize: Callable[[Any, Any], Any]        # (action, original_error)
 
 
 @dataclass(frozen=True)
@@ -94,12 +116,15 @@ class Review:
 class Terminology:
     """The shared series terminology table as frozen policy input."""
     context: Callable[[], dict]
+    table_path: Callable[[], Path]             # docs/series-terminology.zh.md, hashed into frozen policies
+    parse_table: Callable[[str], Any]
 
 
 @dataclass(frozen=True)
 class Measure:
     """Producer timing in the progress ledger; it never gates review or release."""
     producer_step: Callable[..., Any]          # (ledger_path, step_id, *, locale=None) -> context manager
+    producer_substage: Callable[..., Any]      # (name, *, billing='api') -> context manager
 
 
 @dataclass(frozen=True)
@@ -129,3 +154,34 @@ class Contracts:
 class Snapshot:
     """Stable read of one caller-selected regular file with its exact bytes."""
     read_snapshot: Callable[[Path], tuple]     # (value, raw_bytes)
+
+
+@dataclass(frozen=True)
+class Plugins:
+    """Policy-pinned language review plugins, executed and hashed as files where they are."""
+    root: Callable[[], Path]
+    implementation_file: Callable[[str], Path]   # a non-plugin file a plugin's hash includes, by name
+
+
+@dataclass(frozen=True)
+class Transports:
+    """Layer 2 model transports, owned by compute/. Each hashes its own file as adapterSha256."""
+    caller: Callable[..., Any]                 # (backend, **options): 'openai-api' | 'codex-cli' | 'claude-cli'
+    claude_chat_envelope: Callable[[Any, str], dict]   # (response, model)
+    validate_codex_test_configuration: Callable[[Any], Any]
+
+
+@dataclass(frozen=True)
+class Schemas:
+    """Checked-in JSON schemas and the Layer 2/3 hand-off schema check."""
+    path: Callable[[str], Path]                # schemas/<name>
+    validate: Callable[[Any, str, str], None]  # (value, filename, label)
+    source_package_schema: Callable[[], str]   # the English Source Package schema the hand-off accepts
+
+
+@dataclass(frozen=True)
+class Diagnostic:
+    """Diagnostic-run context checks shared by Layer 1, Layer 2 and plugins."""
+    validate_source: Callable[..., Any]        # (source, anchor, context)
+    validate_context: Callable[[Any], Any]
+    require_policy_ready: Callable[..., Any]   # (identity, context=None)

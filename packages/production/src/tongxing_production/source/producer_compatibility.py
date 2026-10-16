@@ -12,35 +12,9 @@ def _require(condition, code):
 
 
 # Legacy identity keys stay the keys of every table and closure below; a moved
-# file is reached through its alias. Bytes did not change with the move, so
-# hashes recorded under the legacy key still describe the same file.
-PACKAGE_SOURCE = 'packages/production/src/tongxing_production/source/'
-PATH_ALIASES = {
-    'scripts/sermon_sentence_interpretation.py': PACKAGE_SOURCE + 'sentence_interpretation.py',
-    'scripts/mfa_alignment.py': PACKAGE_SOURCE + 'mfa_alignment.py',
-    'scripts/sermon_source_producer_compatibility.py': PACKAGE_SOURCE + 'producer_compatibility.py',
-    'scripts/sermon_mfa_identity.py': PACKAGE_SOURCE + 'mfa_identity.py',
-    'scripts/build_english_source_package.py': PACKAGE_SOURCE + 'english_source_package.py',
-    'scripts/judge_english_source_for_translation.py': PACKAGE_SOURCE + 'english_source_judge.py',
-    'scripts/english_source_judge_cache.py': PACKAGE_SOURCE + 'english_source_judge_cache.py',
-    'scripts/run_sentence_interpretation_models.py': PACKAGE_SOURCE + 'sentence_interpretation_models.py',
-    'scripts/sermon_source_budget.py': PACKAGE_SOURCE + 'budget.py',
-    'scripts/sermon_source_text_review.py': PACKAGE_SOURCE + 'text_review.py',
-    'scripts/mfa_backend.py': PACKAGE_SOURCE + 'mfa_backend.py',
-    'scripts/mfa_spark.py': PACKAGE_SOURCE + 'mfa_spark.py',
-    'scripts/sermon_unified_source.py': PACKAGE_SOURCE + 'unified_stage.py',
-}
-
-
-def resolve(key):
-    """Repository-relative path of the file a legacy identity key names today."""
-    return PATH_ALIASES.get(key, key)
-
-
-def recorded(identity, key):
-    """Value a loaded-code identity map holds for a key, whichever path recorded it."""
-    value = identity.get(resolve(key))
-    return identity.get(key) if value is None else value
+# file is reached through its alias in the shared table. These names stay here
+# for the callers that already resolve through this module.
+from ..path_aliases import PATH_ALIASES, recorded, resolve  # noqa: E402,F401
 
 
 SCHEMA='sermon-source-producer-compatibility-v1'

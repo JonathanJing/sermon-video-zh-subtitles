@@ -31,7 +31,32 @@ def imports_of(path):
             yield node.module
 
 
+def package_imports_of(path):
+    """Absolute module names a file imports from tongxing_production, relative imports resolved."""
+    package = path.relative_to(PACKAGE_SRC.parent).with_suffix("").parts[:-1]
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                yield alias.name
+        elif isinstance(node, ast.ImportFrom):
+            base = list(package[:len(package) - node.level + 1]) if node.level else []
+            module = ".".join(base + ([node.module] if node.module else []))
+            for alias in node.names:
+                yield module + "." + alias.name if not node.module or node.level else module
+
+
 class ProductionPackageTests(unittest.TestCase):
+    def test_layers_import_only_upstream(self):
+        """Downstream may import upstream pure validators (L2 design decision 5); never the reverse."""
+        downstream = {"source": ("tongxing_production.text",)}
+        for layer, forbidden in downstream.items():
+            for path in sorted((PACKAGE_SRC / layer).rglob("*.py")):
+                with self.subTest(path=str(path.relative_to(ROOT))):
+                    for name in package_imports_of(path):
+                        self.assertFalse(any(name == f or name.startswith(f + ".") for f in forbidden),
+                                         f"{path.name} imports {name}")
+
     def test_package_never_imports_transition_trees_or_locates_the_checkout(self):
         sources = sorted(PACKAGE_SRC.rglob("*.py"))
         self.assertTrue(sources)
