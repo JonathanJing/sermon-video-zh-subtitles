@@ -14,9 +14,9 @@ Checks (each runs only when its inputs are given):
   environment is ready (API-only stages need none); ``--spark-code-dir`` holds the same
   implementation files as this checkout;
 - outputs: each ``--fresh-dir`` does not exist yet or is empty;
-- drain: no unknown call outcome under each ``--drain-root`` (a Layer 2 ``*.started.json``
-  without its ``.raw.json``, an api-cli-outcomes receipt still ``started``/``unknown``, a Codex
-  call with ``identity.json`` but no settled ``outcome.json``) — the first common exit condition
+- drain: no unknown call outcome under each ``--drain-root`` (a Layer 2 group marker without its
+  ``.raw.json``, an api-cli-outcomes receipt not ``returned``/``terminal_failure``, a dispatched
+  Codex call whose ``outcome.json`` is missing, stale or ``unknown_outcome``) — the first common exit condition
   of a code-moving batch (docs/design/workflows-compute-injection.zh.md §5);
 - page: ``--page-id`` is not yet in the live Dev v3 or v4 catalog.
 """
@@ -421,6 +421,21 @@ DRAIN_NOT_CHECKED = ('spark dispatcher receipts (reconcile_spark_dispatcher_rece
                      'unsettled budget reservations', 'in-progress runs (common exit condition 2)')
 
 
+def _json_object(path):
+    try:
+        value = json.loads(path.read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+# Settled statuses come from the writers; anything else (including statuses added
+# later) counts as unreconciled, so a new intermediate state can never pass.
+API_CLI_SETTLED = frozenset(('returned', 'terminal_failure'))       # api_cli_outcomes._assert_scope_admitted
+CODEX_DISPATCHED_SETTLED = frozenset(('completed', 'rejected_response'))  # sermon_codex_transport after started.json
+CODEX_CALL_SCHEMA = 'sermon-codex-call-v1'
+
+
 def check_drain(roots):
     """Read-only scan for call outcomes nobody has reconciled; never repairs or dispatches."""
     unknown = []
@@ -429,28 +444,28 @@ def check_drain(roots):
         if not root.is_dir():
             unknown.append({'root': str(root), 'kind': 'missing_root'})
             continue
+        # Layer 2 group markers (run_target_language_models): {"role", "payloadSha256", ...}.
+        # Spark dispatcher markers share the suffix but carry their own terminal receipts.
         for marker in sorted(root.rglob('*.started.json')):
+            value = _json_object(marker)
+            if value is None or not {'role', 'payloadSha256'} <= set(value):
+                continue
             if not marker.with_name(marker.name[:-len('.started.json')] + '.raw.json').is_file():
                 unknown.append({'kind': 'layer2_started_without_raw', 'path': str(marker)})
         for receipt in sorted(root.rglob('api-cli-outcomes/*/outcome.json')):
-            try:
-                status = json.loads(receipt.read_text(encoding='utf-8')).get('status')
-            except (OSError, ValueError):
-                status = 'unreadable'
-            if status in {'started', 'unknown', 'unreadable'}:
-                unknown.append({'kind': 'api_cli_outcome_' + status, 'path': str(receipt)})
+            status = (_json_object(receipt) or {}).get('status', 'unreadable')
+            if status not in API_CLI_SETTLED:
+                unknown.append({'kind': 'api_cli_outcome_' + str(status), 'path': str(receipt)})
+        # Codex calls: only identity.json files of the Codex call schema; a call is
+        # dispatched once started.json exists and is settled only by a terminal outcome
+        # written after it (a stale no-capacity outcome does not settle a later dispatch).
         for identity in sorted(root.rglob('identity.json')):
-            outcome = identity.with_name('outcome.json')
-            if not outcome.is_file():
-                if identity.parent.parent.name != 'api-cli-outcomes':
-                    unknown.append({'kind': 'codex_call_without_outcome', 'path': str(identity.parent)})
+            if (_json_object(identity) or {}).get('schemaVersion') != CODEX_CALL_SCHEMA:
                 continue
-            try:
-                status = json.loads(outcome.read_text(encoding='utf-8')).get('status')
-            except (OSError, ValueError):
-                status = 'unreadable'
-            if status in {'unknown_outcome', 'unreadable'}:
-                unknown.append({'kind': 'codex_call_' + status, 'path': str(identity.parent)})
+            call = identity.parent
+            outcome = (_json_object(call / 'outcome.json') or {}).get('status') if (call / 'outcome.json').exists() else None
+            if outcome == 'unknown_outcome' or ((call / 'started.json').exists() and outcome not in CODEX_DISPATCHED_SETTLED):
+                unknown.append({'kind': 'codex_call_' + (outcome or 'started_without_outcome'), 'path': str(call)})
     return result('drain', 'fail' if unknown else 'pass', roots=[str(Path(r)) for r in roots],
                   unknownOutcomes=unknown, notChecked=list(DRAIN_NOT_CHECKED),
                   problems=[f"{row['kind']}: {row.get('path', row.get('root'))}" for row in unknown])
