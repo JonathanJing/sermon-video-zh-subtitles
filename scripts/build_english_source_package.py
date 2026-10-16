@@ -7,10 +7,11 @@ imports or runs the old path.
 from pathlib import Path
 import sys
 
-if __name__ == "__main__":  # direct execution: the checkout root is not on sys.path yet
+try:
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+except ModuleNotFoundError:  # run directly, or imported by bare name, from scripts/
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+    from scripts import tongxing_host  # noqa: F401
 from tongxing_production.source import english_source_package as _implementation  # noqa: E402
 
 if __name__ == "__main__":
