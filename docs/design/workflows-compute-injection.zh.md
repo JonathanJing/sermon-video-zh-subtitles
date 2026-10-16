@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [L2 注入边界](l2-text-layer-injection.zh.md) · [L3 注入边界](l3-audio-layer-injection.zh.md) · [L4 注入边界](l4-delivery-layer-injection.zh.md) · [L2 controller](../canonical-layer2-controller.zh.md) · [运行模型策略](../production-model-runtime-policy.zh.md) · [周更运行配置](../weekly-run-profile.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md) · [计算策略](../local-production-compute-policy.zh.md) · [Spark 独占会话](../spark-exclusive-development-session.zh.md)
 
-状态：**设计待评审，§6 待决定，未迁移任何文件**。盘点日期：2026-10-15。基线：`dev@9c876c92`（L1 S0–S4 已合并；L2 T0 [#510](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/510)、T1 [#511](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/511)、T2 [#514](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/514) 已合并，`run_target_language_models`、`canonical_layer2_budget` 已在 `tongxing_production.text`；L3 B0 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507) 与 L4 D0 [#512](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/512) 已合并）。数字取自 `dev@9c876c92`；之后合并的 L4 D1 和两份设计（[基础设施注入边界](infrastructure-injection.zh.md)、[复核层注入边界](review-layer-injection.zh.md)）不改本文范围内的文件，本文与它们的分工见 §2.1、§6。本文只定义 `tongxing_production/{compute,workflows}/` 的模块归属、端口、身份影响和分批顺序，并回答 L2 §6 第 2 项留下的传输缓存连续性问题；不移动文件，不改合同，不授权任何付费运行。
+状态：**§6 已决定（2026-10-16，七项均采纳建议），未开始迁移**。盘点日期：2026-10-15。基线：`dev@9c876c92`（L1 S0–S4 已合并；L2 T0 [#510](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/510)、T1 [#511](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/511)、T2 [#514](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/514) 已合并，`run_target_language_models`、`canonical_layer2_budget` 已在 `tongxing_production.text`；L3 B0 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507) 与 L4 D0 [#512](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/512) 已合并）。数字取自 `dev@9c876c92`；之后合并的 L4 D1 和两份设计（[基础设施注入边界](infrastructure-injection.zh.md)、[复核层注入边界](review-layer-injection.zh.md)）不改本文范围内的文件，本文与它们的分工见 §2.1、§6。本文只定义 `tongxing_production/{compute,workflows}/` 的模块归属、端口、身份影响和分批顺序，并回答 L2 §6 第 2 项留下的传输缓存连续性问题；不移动文件，不改合同，不授权任何付费运行。
 
 ## 1 为什么不能直接搬
 
@@ -242,7 +242,20 @@ L1 锚点缓存 `sermon-sentence-model-cache-v3`、读本和字幕复核的缓�
 
 不在本文：`live_session`（`live/` 与 services 的单独设计）；`reviews` → review/；`observability` → observability/；`preflight` → tools/ops；Spark 调度与 SparkHub 接线等 Spark 实验线的结论（提案 §7）。
 
-## 6 待决定
+## 6 决定（2026-10-16 用户采纳全部建议）
+
+| # | 问题 | 决定 | 对分批的影响 |
+|---|---|---|---|
+| 1 | 传输缓存连续性（L2 §6 第 2 项） | 方案 A：在排空窗口里接受失效，六个传输同批（§4.8） | 传输批次合并前确认无未知结果、无进行中 run；PR 附每个文件只改导入行的 diff，并写明合并前的提交 SHA 供冻结 run 续跑；不建 `adapterSha256` 迁移表 |
+| 2 | `sermon_pipeline` 的 L1 组归属 | 转写、英文纠错、`mfa_options`、指纹预计算归 `source/` | 其余留 `workflows/dual_pdf`；L1 现有的 `Provider`/`Mfa` 端口随之改为包内导入 |
+| 3 | 包内能否直接导入 compute 纯函数 | 允许导入无副作用的计算（`provider_limits` 界限、`budget_capability` 谓词）；传输、HTTP、会话、结果收据只经端口 | 结构测试按此划线 |
+| 4 | Codex 容量预留与资源账本 | `codex_resources` 经已有 `Resources` 端口，宿主补账本事务函数；资源账本留在 `orchestration/unified/resources.py` | 不搬资源账本 |
+| 5 | `machine_qc_audio_transports` 的时机 | 排进 L3 A3 的身份代窗口（复核层设计的窗口 G1） | 豁免闭包只变一次；同窗口不需要迁移表 |
+| 6 | 阶段模块归属 | 按 §2.2：编排机制 → orchestration，跨层组合 → `workflows/prepared`，设备身份 → compute，`reviews` → review/ | 各自随对应批次迁移 |
+| 7 | `workflows/live_session` 是否现在建 | 不建 | 等 live/ 设计有组合需要时再建 |
+
+以下保留原问题文本，供追溯。
+
 
 1. **传输缓存连续性（L2 §6 第 2 项）**：建议方案 A，在排空窗口里接受失效，六个传输同批（§4.8）。另一选项是方案 B 迁移表。
 2. **`sermon_pipeline` 的 L1 组归属**：建议转写、英文纠错、`mfa_options`、指纹预计算归 `source/`，因为它们产出 L1 shadow 的输入；另一做法是全部留在 `workflows/dual_pdf`，由 L1 经端口调用。
