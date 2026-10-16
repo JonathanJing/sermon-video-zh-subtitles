@@ -68,6 +68,16 @@ def _access_secret(name):
     return access_secret(name)
 
 
+def _http_execute(req, timeout_seconds, *, deadline=None):
+    from scripts import sermon_provider_http
+    return sermon_provider_http.execute(req, timeout_seconds, deadline=deadline)
+
+
+def _transcription_request(wav_bytes, expected_audio_sha256):
+    from scripts import sermon_transcription_request
+    return sermon_transcription_request.build_request(wav_bytes, expected_audio_sha256)
+
+
 def provider() -> ports.Provider:
     # api_cli_outcomes imports only the standard library at load; its functions
     # are looked up on the module at call time, so patches still intercept.
@@ -77,7 +87,8 @@ def provider() -> ports.Provider:
                           bounded_legacy_chat_payload=_bounded_legacy_chat_payload,
                           legacy_text_cache_contract=_legacy_text_cache_contract,
                           legacy_text_execution_identity=_legacy_text_execution_identity,
-                          access_secret=_access_secret, outcomes=api_cli_outcomes)
+                          access_secret=_access_secret, outcomes=api_cli_outcomes,
+                          http_execute=_http_execute, transcription_request=_transcription_request)
 
 
 def _code_identity():
@@ -140,7 +151,38 @@ def snapshot() -> ports.Snapshot:
 def compute() -> ports.Compute:
     # The class is the one object producers construct and test with isinstance.
     from scripts.production_spark_admission import SessionBoundCaller
-    return ports.Compute(session_bound_caller=SessionBoundCaller)
+    return ports.Compute(session_bound_caller=SessionBoundCaller, require_session=_require_session)
+
+
+def _require_session(*, verifier=None):
+    from scripts import production_spark_admission
+    return production_spark_admission.require_session(verifier=verifier)
+
+
+def _resources():
+    # Importing the scripts facade binds tongxing_production.orchestration first.
+    from scripts.sermon_unified import resources
+    return resources
+
+
+def resources() -> ports.Resources:
+    return ports.Resources(validate_policy=lambda policy: _resources().validate_policy(policy),
+                           identity=lambda policy: _resources()._identity(policy),
+                           reserve=lambda policy, **kw: _resources().reserve(policy, **kw),
+                           release=lambda policy, **kw: _resources().release(policy, **kw))
+
+
+def _validate_source_meaning_receipt(receipt, *, source, anchor, media_sha256, receipt_directory):
+    from scripts import source_meaning_machine_adjudication as adjudicator
+    try:
+        adjudicator.validate_receipt(receipt, source=source, anchor=anchor, media_sha256=media_sha256,
+                                     cache=receipt_directory / adjudicator.ADJUDICATOR_CACHE)
+    except adjudicator.SourceAdjudicationError as exc:
+        raise ports.AdjudicationRejected(str(exc)) from exc
+
+
+def adjudication() -> ports.Adjudication:
+    return ports.Adjudication(validate_receipt=_validate_source_meaning_receipt)
 
 
 def _terminology_context():
@@ -161,22 +203,17 @@ def measure() -> ports.Measure:
     return ports.Measure(producer_step=_producer_step)
 
 
-def _bound_judge_payload(payload):
-    from scripts import sermon_source_budget
-    return sermon_source_budget.bound_judge_payload(payload)
-
-
 def _ordered_bounded_map(items, worker, workers):
     from scripts import sermon_unified_source
     return sermon_unified_source.ordered_bounded_map(items, worker, workers)
 
 
 def unmoved() -> source_backend.Unmoved:
-    return source_backend.Unmoved(bound_judge_payload=_bound_judge_payload,
-                                  ordered_bounded_map=_ordered_bounded_map)
+    return source_backend.Unmoved(ordered_bounded_map=_ordered_bounded_map)
 
 
 source_backend.configure(source_backend.SourceBackend(core=core(), provider=provider(), code=code(), mfa=mfa(),
                                                       contracts=contracts(), snapshot=snapshot(), compute=compute(),
+                                                      resources=resources(), adjudication=adjudication(),
                                                       terminology=terminology(), measure=measure(),
                                                       unmoved=unmoved()))

@@ -19,6 +19,10 @@ class Unbound(RuntimeError):
     """Raised when a layer is used before its host configured a backend."""
 
 
+class AdjudicationRejected(ValueError):
+    """A source-meaning adjudication receipt is not bound to its package and media."""
+
+
 @dataclass(frozen=True)
 class Core:
     """Checkout roots, the durable job store and the filesystem/clock helpers."""
@@ -40,6 +44,8 @@ class Provider:
     legacy_text_cache_contract: Callable[[], Any]
     legacy_text_execution_identity: Callable[..., Any]   # (api_key, payload, *, caller=None)
     access_secret: Callable[[str], str]        # named Secret Manager credential for an explicit CLI flag
+    http_execute: Callable[..., dict]          # (req, timeout_seconds, *, deadline=None): at most one request
+    transcription_request: Callable[[bytes, str], Any]   # (wav_bytes, expected_audio_sha256)
     outcomes: Any                              # request_identity, execution_binding, assert_replay_admitted, recover, before_dispatch
 
 
@@ -47,6 +53,23 @@ class Provider:
 class Compute:
     """Spark-session admission for model calls."""
     session_bound_caller: type                 # bound directly: producers construct it and test isinstance
+    require_session: Callable[..., Any]        # (*, verifier=None): the exclusive Spark session is held
+
+
+@dataclass(frozen=True)
+class Resources:
+    """The unified run's shared resource ledger (online API, Spark) as a reservation interface."""
+    validate_policy: Callable[[Any], Any]
+    identity: Callable[[Any], Any]
+    reserve: Callable[..., bool]               # (policy, *, operation_id, owner, resource, units=1)
+    release: Callable[..., Any]                # (policy, *, operation_id, owner)
+
+
+@dataclass(frozen=True)
+class Adjudication:
+    """Cross-layer machine review of source meaning; Layer 1 only validates its receipts."""
+    validate_receipt: Callable[..., None]      # (receipt, *, source, anchor, media_sha256, receipt_directory)
+                                               # raises AdjudicationRejected
 
 
 @dataclass(frozen=True)

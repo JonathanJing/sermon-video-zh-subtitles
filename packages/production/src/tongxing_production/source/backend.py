@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Callable
 
 from .. import ports
 
@@ -11,10 +11,9 @@ from .. import ports
 class Unmoved:
     """Layer 1 functions whose modules have not moved into the package yet.
 
-    Each entry disappears when its module moves (``sermon_source_budget`` in S3,
-    ``sermon_unified_source`` in S4) and its callers import it directly.
+    Each entry disappears when its module moves (``sermon_unified_source`` in S4)
+    and its callers import it directly.
     """
-    bound_judge_payload: Callable[[dict], dict]
     ordered_bounded_map: Callable[..., list]   # (items, worker, workers)
 
 
@@ -27,6 +26,8 @@ class SourceBackend:
     contracts: ports.Contracts
     snapshot: ports.Snapshot
     compute: ports.Compute
+    resources: ports.Resources
+    adjudication: ports.Adjudication
     terminology: ports.Terminology
     measure: ports.Measure
     unmoved: Unmoved
