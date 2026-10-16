@@ -476,5 +476,19 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         self.assertTrue(all(done['nodes']['audio.' + locale]['status'] == 'human_gate' for locale in counts))
 
 
+class CodeIdentityClosureTests(unittest.TestCase):
+    def test_moved_package_code_changes_the_code_identity(self):
+        moved = (subject.ROOT / 'packages/production/src/tongxing_production/source/sentence_interpretation.py').resolve()
+        facade = (subject.ROOT / 'scripts/sermon_sentence_interpretation.py').resolve()
+        self.assertTrue(moved.is_file() and facade.is_file())
+        baseline = subject.code_identity()
+        original = Path.read_bytes
+        for edited in (moved, facade):
+            with self.subTest(path=edited.relative_to(subject.ROOT)), \
+                    patch.object(Path, 'read_bytes', lambda path: original(path) + (b'#' if path == edited else b'')):
+                self.assertNotEqual(subject.code_identity(), baseline)
+        self.assertEqual(subject.code_identity(), baseline)
+
+
 if __name__ == '__main__':
     unittest.main()
