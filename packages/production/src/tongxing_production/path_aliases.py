@@ -45,9 +45,12 @@ LAYER2 = {
     'scripts/review_target_language_candidate.py': _TEXT + 'human_review.py',
 }
 
-# Shared compute (tongxing_production.compute), stage 1.
+# Shared compute (tongxing_production.compute), stage 1 and infrastructure I0b.
 COMPUTE = {
     'scripts/sermon_provider_limits.py': PRODUCTION + 'compute/provider_limits.py',
+    # Infrastructure I0b: waiver closure members, moved byte for byte.
+    'scripts/sermon_openai_runtime.py': PRODUCTION + 'compute/openai_runtime.py',
+    'scripts/sermon_transcription_request.py': PRODUCTION + 'compute/transcription_request.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.

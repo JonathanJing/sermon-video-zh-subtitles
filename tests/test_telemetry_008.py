@@ -25,7 +25,7 @@ class DispatchObservationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             tracked = subprocess.check_output(['git', '-C', str(repository), 'ls-files',
-                'scripts', 'schemas'], text=True).splitlines()
+                'scripts', 'schemas', 'packages/production/src'], text=True).splitlines()
             for name in tracked:
                 source = repository/name
                 if source.is_file():
@@ -45,6 +45,8 @@ class DispatchObservationTests(unittest.TestCase):
 import sys,json,socket
 from pathlib import Path
 sys.path.insert(0,sys.argv[1])
+# The copied package, so moved modules are recorded under this root.
+sys.path.insert(0,str(Path(sys.argv[1])/'packages/production/src'))
 def denied(*a,**k):raise AssertionError('network forbidden')
 socket.socket.connect=denied
 socket.create_connection=denied
@@ -52,8 +54,9 @@ from scripts import sermon_fresh_diagnostic as entry,sermon_accounting as accoun
 entry.preload_execution_modules()
 before=accounting.execution_identity()
 assert 'scripts/sermon_dispatch_observation.py' in before['loadedProjectCodeSha256']
+from tongxing_production.path_aliases import resolve
 for module in ('sermon_model_call_report', 'sermon_model_call_observation', 'sermon_openai_runtime'):
-    assert 'scripts/'+module+'.py' in before['loadedProjectCodeSha256'], module+' not preloaded'
+    assert resolve('scripts/'+module+'.py') in before['loadedProjectCodeSha256'], module+' not preloaded'
 with profile.session(Path(sys.argv[1])/'actual-profile','cold.zero.call',work_kind='production',evidence_mode='synthetic'):
     with accounting.stage('cold.actual.leaf',depends_on=[]):sum(range(100))
 after=accounting.execution_identity()
