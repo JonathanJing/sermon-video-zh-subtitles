@@ -491,6 +491,26 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
 
         self.assertEqual(len({base, changed_window, changed_model, changed_audio, changed_glossary}), 5)
 
+    def test_pipeline_resume_fingerprint_covers_extracted_legacy_openai_transport(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            audio = Path(tempdir) / "source_audio.m4a"
+            audio.write_bytes(b"audio")
+            args = make_args(output_mode="subtitles")
+            original_identity = mod.file_content_identity
+            transport_digest = "a" * 64
+
+            def identity_with_transport_revision(path):
+                if path is not None and Path(path) == mod.LEGACY_OPENAI_SCRIPT:
+                    return {"exists": True, "sizeBytes": 1, "sha256": transport_digest}
+                return original_identity(path)
+
+            with mock.patch.object(mod, "file_content_identity", side_effect=identity_with_transport_revision):
+                first = mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio))
+                transport_digest = "b" * 64
+                second = mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio))
+
+        self.assertNotEqual(first, second)
+
     def test_pipeline_summary_requires_expected_input_fingerprint(self):
         with tempfile.TemporaryDirectory() as tempdir:
             summary_path = Path(tempdir) / "summary.json"
