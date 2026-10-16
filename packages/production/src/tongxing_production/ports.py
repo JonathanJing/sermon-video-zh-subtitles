@@ -122,6 +122,7 @@ class Accounting:
     bounded_dependencies: Callable[..., Any]   # (name, dependencies, *, work_unit_id)
     finalize: Callable[[Any, Any], Any]        # (action, original_error)
     orchestration: Callable[..., Any]          # (name, *, depends_on=None, work_unit_id=None) -> context manager
+    subprocess_environment: Callable[[], Any]  # () -> child env, SERMON_ACCOUNTING_DIR included
 
 
 @dataclass(frozen=True)
