@@ -202,13 +202,13 @@ prepare manifest 记录外壳文件的公开路径和 sha256；`verify`/`seal` �
 | D4 App 交付 | `sermon_app_delivery`、`sermon_app_delivery_workflow` → `delivery/{app_delivery,app_workflow}.py`；`implementation_identity` 改为别名解析；`worker_command` 由宿主提供 | worker argv 与 durable job 请求字节不变；`implementationSha256` 只变这一次，并在 PR 里写明；supervisor 的 `snapshot` 测试全绿；只在没有 active/uncertain App 交付 job 时合并（§4.2） |
 | D5 阶段入口 | `sermon_unified_delivery` → `delivery/unified_stage.py`；`_STAGE_MODULES` 的 `delivery`、`app_delivery` 指向包内模块 | 统一 CLI 全套测试全绿；同 checkout 的冻结配置 `inputSnapshotSha256` 不变；`tongxing_production/delivery` 不导入 `scripts/backend/apps/tools/experiments`、不含 `__file__` |
 | D6 发布后追加 | `build_published_english_reference`、`bind_published_alignment_catalog` → `delivery/` | 已发布 release、正文、音频、索引字节不变；v3 仍是 v4 的人工投影 |
-| D7 legacy（单独成批） | §2.4 legacy 组 11 个文件 → `tongxing_production/adapters/legacy/` | v2 catalog／v1 release／`weekly.json` 与 v3 组装器的接口和输出字节不变，不与四产物接口合并；`run_multilingual_cd.py`、`tongxing-ios.yml` `shared_contracts` 中的 legacy 路径同批更新；文档里的命令继续经 `scripts/` 门面可用 |
+| D7 legacy（单独成批） | §2.4 legacy 组 11 个文件，加旧格式海报入口 `build_sermon_poster.py`、`render_sermon_poster.swift`（§6 第 9 项）→ `tongxing_production/adapters/legacy/`；旧 Swift 渲染器作为包内资源取得 | v2 catalog／v1 release／`weekly.json` 与 v3 组装器的接口和输出字节不变，不与四产物接口合并；`run_multilingual_cd.py`、`tongxing-ios.yml` `shared_contracts` 中的 legacy 路径同批更新；文档里的命令继续经 `scripts/` 门面可用 |
 | D8 工具入口 | 发布 CLI 入口（`guarded_hosting_publish`、`prepare_dev_simulated_publication` 的 `main()`）、`smoke_published_page`、`build_language_listening_catalog`、只读检查 CLI → `tools/ops/`，复用包内实现 | 命令参数、退出码与输出不变；`run_clip_real_e2e.py` 与 runbook 的命令路径同批更新或保留门面 |
-| D9 海报 | `build_multilingual_sermon_posters`、`weekly_poster_template` → `delivery/posters/{build,template}.py`；`render_weekly_poster.swift` 作为包内资源经 `importlib.resources` 取得（同 `mfa_alignment.py` 作为文件打包），系统 `swift` 执行；从 `build_sermon_poster` 取的 `digest/read/write` 改用包内工具函数 | 同输入的 PNG、预览与 `qr-validation.json` 字节一致；`rendererSha256` 不变（Swift 文件字节不变）；`builderSha256`、`templateSha256` 是自身文件哈希，改导入后各变一次，写进 PR；它们只记入新海报的收据，没有校验器回读，旧收据保持历史值。旧格式入口 `build_sermon_poster.py`／`render_sermon_poster.swift` 不随本批迁移，建议执行 D7 时一并确认归 `adapters/legacy/` |
+| D9 海报 | `build_multilingual_sermon_posters`、`weekly_poster_template` → `delivery/posters/{build,template}.py`；`render_weekly_poster.swift` 作为包内资源经 `importlib.resources` 取得（同 `mfa_alignment.py` 作为文件打包），系统 `swift` 执行；从 `build_sermon_poster` 取的 `digest/read/write` 改用包内工具函数 | 同输入的 PNG、预览与 `qr-validation.json` 字节一致；`rendererSha256` 不变（Swift 文件字节不变）；`builderSha256`、`templateSha256` 是自身文件哈希，改导入后各变一次，写进 PR；它们只记入新海报的收据，没有校验器回读，旧收据保持历史值。旧格式入口 `build_sermon_poster.py`／`render_sermon_poster.swift` 不随本批迁移，归 D7；D7 若先于 D9 合并，新海报入口在 D9 之前仍经 `scripts/` 门面取 `digest/read/write` |
 
 每批：迁移前后 `tests/` 的发现清单一一对应（提案 §5.5）；`python-tests.yml` 的 `py_compile` 清单若列有被搬文件，同批更新；每批只在没有进行中的统一运行时合并（§4.3）。
 
-## 6 决定（2026-10-15 用户决定，第 7、8 项为追加）
+## 6 决定（2026-10-15 用户决定，第 7–9 项为追加）
 
 | # | 问题 | 决定 | 对分批的影响 |
 |---|---|---|---|
@@ -220,6 +220,7 @@ prepare manifest 记录外壳文件的公开路径和 sha256；`verify`/`seal` �
 | 6 | 边界模块 | 采纳建议：intent → delivery/，intent_binding → orchestration/，海报首轮留 `scripts/`，冒烟与反馈来源目录 → tools/ops | intent 在 D1；binding 随 orchestration 批次；冒烟与来源目录在 D8 |
 | 7 | 学习产物生成模块的归属 | `sermon_study_generation`、`sermon_unified_study` 归 workflows/ | 不在 L4 分批里，随 workflows 批次迁移；workflows → delivery 是提案允许的方向 |
 | 8 | 海报以后的位置 | `delivery/posters/` | 新增 D9；首轮仍留 `scripts/` |
+| 9 | 旧格式海报入口 | `build_sermon_poster.py`、`render_sermon_poster.swift` 随 D7 归 `adapters/legacy/` | D7 范围加这两个文件；只用于复现旧 `weekly.json` 格式海报，不作新交付入口 |
 
 以下保留原问题文本，供追溯。
 
