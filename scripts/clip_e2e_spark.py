@@ -43,9 +43,10 @@ RUNTIME_SCHEMA = "sermon-clip-e2e-spark-runtime-v1"
 CLI_INPUTS = ("source", "anchor", "candidate", "policy", "human-review-receipt", "speaker-registry", "adapter",
               "clip-voice-authorization", "clip-timeline-map", "audio-operation-policies")
 TERMINAL_EXIT_CODES = (0, 1, 2)
+PACKAGE_SRC = "packages/production/src"
 
 RUNNER = r'''import json,os,pathlib,subprocess,sys
-c=json.loads(sys.argv[1]);sys.path.insert(0,c["codeRoot"])
+c=json.loads(sys.argv[1]);sys.path[:0]=[c["codeRoot"],c["codeRoot"]+"/packages/production/src"]
 os.environ.update(c["sessionEnvironment"]);os.environ["SPARK_EXCLUSIVE_REMOTE_LOCAL"]="1"
 from scripts.spark_exclusive_session import Client
 from scripts.experiments.run_spark_diagnostic_audio import AdmissionGateway
@@ -103,6 +104,14 @@ class Spark:
 
     def run_held(self, config: dict) -> int:
         return self._ssh("/usr/bin/python3 -c " + shlex.quote(RUNNER) + " " + shlex.quote(json.dumps(config))).returncode
+
+
+def container_pythonpath(code: str, *runtime_dirs: str) -> str:
+    """PYTHONPATH for a container that runs the staged checkout at ``code`` (its absolute path in the container).
+
+    The images do not ship ``tongxing_production``; the ``scripts/`` facades import it from the staged checkout.
+    """
+    return ":".join([*runtime_dirs, f"{code}/{PACKAGE_SRC}", code])
 
 
 def session_labels(session, hold) -> list[str]:
@@ -187,7 +196,8 @@ def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, 
     command = ["--tmpfs", "/tmp:rw,exec,nosuid,size=2g,mode=1777", "--tmpfs", "/Users:rw,nosuid,size=64m,mode=1777",
                "--tmpfs", "/private:rw,nosuid,size=64m,mode=1777", "--tmpfs", "/home:rw,nosuid,size=64m,mode=1777",
                "-v", stage + ":/work:rw", "-v", runtime["speaker"]["checkpoint"] + ":/checkpoint:ro",
-               "-e", f"PYTHONPATH=/work/{code}", "-e", "HF_HUB_OFFLINE=1", "-e", "TRANSFORMERS_OFFLINE=1",
+               "-e", "PYTHONPATH=" + container_pythonpath(f"/work/{code}"),
+               "-e", "HF_HUB_OFFLINE=1", "-e", "TRANSFORMERS_OFFLINE=1",
                "-e", "PYTHONDONTWRITEBYTECODE=1", "-e", "XDG_CACHE_HOME=/tmp/cache", "-e", "TRITON_CACHE_DIR=/tmp/triton",
                "-e", "NUMBA_CACHE_DIR=/tmp/numba", "-e", "HF_HOME=/tmp/hf",
                "-w", f"/work/{code}", "--entrypoint", "/usr/bin/python", runtime["images"]["tts"],
@@ -295,7 +305,8 @@ def compact(args, runtime, spark, session) -> int:
                    "--tmpfs", "/private:rw,nosuid,size=64m,mode=1777", "--tmpfs", "/home:rw,nosuid,size=64m,mode=1777",
                    "-v", stage + ":/work:rw", "-v", runtime["speaker"]["checkpoint"] + ":/checkpoint:ro",
                    "-v", runtime["voicePackages"] + ":/voice-packages:ro",
-                   "-e", f"PYTHONPATH=/voice-packages:{code}", "-e", "HF_HUB_OFFLINE=1", "-e", "TRANSFORMERS_OFFLINE=1",
+                   "-e", "PYTHONPATH=" + container_pythonpath(code, "/voice-packages"),
+                   "-e", "HF_HUB_OFFLINE=1", "-e", "TRANSFORMERS_OFFLINE=1",
                    "-e", "PYTHONDONTWRITEBYTECODE=1", "-e", "XDG_CACHE_HOME=/tmp/cache", "-e", "NUMBA_CACHE_DIR=/tmp/numba",
                    "-w", code, "--entrypoint", "python", runtime["images"]["pytorchFfmpeg"],
                    f"{code}/scripts/compact_formal_target_audio.py",
@@ -364,7 +375,7 @@ def screen(args, runtime, spark, session) -> int:
         "--tmpfs", "/tmp:rw,exec,nosuid,nodev,size=2g,mode=1777",
         "-v", stage + ":/work:rw", "-v", runtime["asrRuntime"] + ":/runtime-asr-v1/site-packages:ro",
         "-v", runtime["voicePackages"] + ":/voice-packages:ro", "-v", runtime["modelRoot"] + ":/model-cache:ro",
-        "-e", f"PYTHONPATH=/runtime-asr-v1/site-packages:/voice-packages:{code}",
+        "-e", "PYTHONPATH=" + container_pythonpath(code, "/runtime-asr-v1/site-packages", "/voice-packages"),
         "-e", "PYTHONDONTWRITEBYTECODE=1", "-e", "HF_HOME=/tmp/hf", "-e", "HF_HUB_OFFLINE=1",
         "-e", "TRANSFORMERS_OFFLINE=1", "-e", "TOKENIZERS_PARALLELISM=false",
         "-e", "OMP_NUM_THREADS=4", "-e", "MKL_NUM_THREADS=4", "-e", "NUMBA_CACHE_DIR=/tmp/numba",
@@ -431,7 +442,7 @@ def audio_qc(args, runtime, spark, session) -> int:
             "-v", runtime["asrRuntime"] + ":/runtime-asr-v1/site-packages:ro", "-v", runtime["voicePackages"] + ":/voice-packages:ro",
             "-v", runtime["modelRoot"] + ":/model-cache:ro", "-v", runtime["speaker"]["checkpoint"] + ":/checkpoint:ro",
             "-v", runtime["openaiEnvFile"] + ":/secrets/openai.env:ro",
-            "-e", f"PYTHONPATH=/runtime-asr-v1/site-packages:/voice-packages:{code}",
+            "-e", "PYTHONPATH=" + container_pythonpath(code, "/runtime-asr-v1/site-packages", "/voice-packages"),
             "-e", "PYTHONDONTWRITEBYTECODE=1", "-e", "HF_HOME=/tmp/hf", "-e", "HF_HUB_OFFLINE=1",
             "-e", "TRANSFORMERS_OFFLINE=1", "-e", "TOKENIZERS_PARALLELISM=false",
             "-e", "NUMBA_CACHE_DIR=/tmp/numba", "-e", "TRITON_CACHE_DIR=/tmp/triton",
