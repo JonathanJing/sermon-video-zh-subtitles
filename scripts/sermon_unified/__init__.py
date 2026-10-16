@@ -9,13 +9,13 @@ naming one object. Remove once no caller imports the old path.
 """
 from __future__ import annotations
 
-import importlib
 import os
 from pathlib import Path
 import subprocess
 import sys
 
 from tongxing_production.orchestration.unified import adapters, backend, contracts, resources, runtime
+from tongxing_production.workflows.prepared import stages
 from scripts import sermon_workflow_jobs as _jobs
 from scripts.sermon_execution_harness import atomic_json as _atomic_json, utc_now as _utc_now
 from scripts.sermon_release_workflow import safe_path as _safe_path
@@ -23,24 +23,8 @@ from scripts import tongxing_host  # noqa: F401  binds the source and text layer
 
 ROOT = Path(__file__).resolve().parents[2]
 
-_STAGE_MODULES = {
-    'accounting': 'scripts.sermon_unified_accounting',
-    'app_delivery': 'scripts.sermon_app_delivery_workflow',
-    'audio': 'scripts.sermon_unified_audio',
-    'canonical_binding': 'scripts.sermon_unified_canonical_binding',
-    'capabilities': 'scripts.sermon_unified_capabilities',
-    'continuation': 'scripts.sermon_unified_continuation',
-    'delivery': 'scripts.sermon_unified_delivery',
-    'layer2_binding': 'tongxing_production.text.unified_binding',
-    'layer2_budget': 'tongxing_production.text.budget',
-    'layer2_controller': 'tongxing_production.text.controller',
-    'parallel': 'scripts.sermon_unified_parallel',
-    'reviews': 'scripts.sermon_unified_reviews',
-    'runtime_identity': 'scripts.sermon_unified_runtime_identity',
-    'source': 'tongxing_production.source.unified_stage',
-    'study': 'scripts.sermon_unified_study',
-}
-assert set(_STAGE_MODULES) == backend.STAGE_NAMES
+# The stage table belongs to the prepared workflow; this host only binds the checkout.
+assert set(stages.STAGE_MODULES) == backend.STAGE_NAMES
 
 
 def required_modules():
@@ -82,7 +66,7 @@ backend.configure(backend.Backend(
     repo_root=ROOT, artifact_root=ROOT / 'artifacts', jobs=_jobs,
     safe_path=_safe_path, atomic_json=_atomic_json, utc_now=_utc_now,
     required_modules=required_modules, worker_command=worker_command, temporal_wake=temporal_wake,
-    stage=lambda name: importlib.import_module(_STAGE_MODULES[name]),
+    stage=stages.load,
 ))
 
 for _name, _module in (('contracts', contracts), ('adapters', adapters), ('resources', resources), ('runtime', runtime)):
