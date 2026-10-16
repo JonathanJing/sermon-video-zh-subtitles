@@ -58,6 +58,9 @@ jobs:
                   "schemas/sermon-multilingual-catalog-",
                   "schemas/sermon-target-language-release-package-",
                   "schemas/sermon-weekly-catalog-",
+                  # Where the L4 release and catalog producers move (batches D1-D7).
+                  "packages/production/src/tongxing_production/delivery/",
+                  "packages/production/src/tongxing_production/adapters/legacy/",
               )
               shared_contracts = {
                   "scripts/build_multilingual_catalog.py",
