@@ -5,7 +5,7 @@ from urllib.request import urlopen
 import copy
 import struct
 
-from build_sermon_poster import digest, read
+from .files import digest, read
 
 STORE_URL = 'https://apps.apple.com/app/id6809255441'
 BADGE_CODES = {'zh-Hans': 'zh-cn', 'ko': 'ko-kr', 'es': 'es-es', 'en': 'en-us'}

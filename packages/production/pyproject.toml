@@ -16,3 +16,7 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+# Non-Python files a module locates through importlib.resources.
+[tool.setuptools.package-data]
+"tongxing_production.delivery.posters" = ["*.swift"]

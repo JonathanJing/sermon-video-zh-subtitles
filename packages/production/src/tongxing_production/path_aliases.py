@@ -58,6 +58,8 @@ LAYER4 = {
     'scripts/study_artifacts.py': _DELIVERY + 'study_artifacts.py',
     'scripts/release_asset_io.py': _DELIVERY + 'asset_io.py',
     'scripts/sermon_delivery_intent.py': _DELIVERY + 'intent.py',
+    'scripts/build_multilingual_sermon_posters.py': _DELIVERY + 'posters/build.py',
+    'scripts/weekly_poster_template.py': _DELIVERY + 'posters/template.py',
 }
 
 PATH_ALIASES = {**COMPUTE, **LAYER1, **LAYER2, **LAYER4}

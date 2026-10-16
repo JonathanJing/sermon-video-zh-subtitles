@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import hashlib
+from importlib import resources
 import json
 from pathlib import Path
 import shutil
@@ -12,8 +13,8 @@ import tempfile
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
-from build_sermon_poster import digest, read, write
-from weekly_poster_template import apply_template, verify_outputs, prepare_badges, add_english_reference
+from .files import digest, read, write
+from .template import apply_template, verify_outputs, prepare_badges, add_english_reference
 
 COPY = {
     'zh-Hans': dict(lang='zh', brand='同行', eyebrow='本周证道 · 中文',
@@ -64,6 +65,16 @@ def review_label(locale, package):
 
 PRODUCTION_ORIGIN = 'https://ai-for-god-sermon-audio.web.app'
 TEMPLATE_VERSION = 'tongxing-dual-qr-v2'
+RENDERER = 'render_weekly_poster.swift'
+
+
+def package_file(name):
+    """A file shipped in this package: the Swift renderer or a module whose bytes the receipt records."""
+    return resources.files(__package__) / name
+
+
+def package_digest(name):
+    return hashlib.sha256(package_file(name).read_bytes()).hexdigest()
 
 
 def poster_origin(value, non_production=False):
@@ -176,7 +187,7 @@ def verify_public(origin, checks):
                 origin=origin, status='pass', checks=verified)
 
 
-def main():
+def run():
     parser = argparse.ArgumentParser(description=__doc__)
     for key in ('release', 'page-id', 'origin', 'out'):
         parser.add_argument('--' + key, required=True)
@@ -222,11 +233,10 @@ def main():
         return
     public_receipt = verify_public(origin, checks)
     write(out / 'public-input-verification.json', public_receipt)
-    renderer = Path(__file__).with_name('render_weekly_poster.swift')
     art, prompt = Path(args.art).resolve(), Path(args.art_prompt).resolve()
     badges = prepare_badges(out, bundles)
-    provenance = dict(templateVersion=TEMPLATE_VERSION, templateSha256=digest(Path(__file__).with_name('weekly_poster_template.py')), badgeHashes={loc:digest(path) for loc,path in badges.items()}, artSha256=digest(art), promptSha256=digest(prompt),
-                      rendererSha256=digest(renderer), builderSha256=digest(__file__))
+    provenance = dict(templateVersion=TEMPLATE_VERSION, templateSha256=package_digest('template.py'), badgeHashes={loc:digest(path) for loc,path in badges.items()}, artSha256=digest(art), promptSha256=digest(prompt),
+                      rendererSha256=package_digest(RENDERER), builderSha256=package_digest('build.py'))
     swift = shutil.which('swift')
     if not swift:
         raise ValueError('macOS Swift, AppKit, CoreImage and Vision are required')
@@ -245,7 +255,8 @@ def main():
                 raise ValueError('visual review requires previously rendered unchanged outputs')
             shutil.copyfile(art, folder / 'artwork.png')
             shutil.copyfile(prompt, folder / 'art-prompt-used.txt')
-            with tempfile.TemporaryDirectory(prefix='render-', dir=folder) as temporary:
+            with (tempfile.TemporaryDirectory(prefix='render-', dir=folder) as temporary,
+                  resources.as_file(package_file(RENDERER)) as renderer):
                 subprocess.run([swift, '-module-cache-path', str(Path(tempfile.gettempdir()) / 'sermon-poster-swift-cache'),
                                 str(renderer), str(folder / 'poster-brief.json'), str(art), str(badges[locale]), temporary], check=True)
                 hashes = verify_outputs(Path(temporary), bundle['brief'])
@@ -264,8 +275,12 @@ def main():
                           out=str(out), locales=list(bundles))))
 
 
-if __name__ == '__main__':
+def main():
     try:
-        main()
+        run()
     except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as error:
         sys.exit(str(error))
+
+
+if __name__ == '__main__':
+    main()
