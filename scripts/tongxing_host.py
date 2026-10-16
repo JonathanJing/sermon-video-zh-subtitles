@@ -534,6 +534,21 @@ def app_delivery_worker_command(*arguments):
     return [sys.executable, str(ROOT / 'scripts/sermon_app_delivery_workflow.py'), *arguments]
 
 
+def _legacy_weekly_release():
+    # The v1 weekly catalog module; the legacy adapters used to put its folder on sys.path themselves.
+    folder = str(ROOT / 'experiments/sermon-dubbing-poc')
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    import weekly_release
+    return weekly_release
+
+
+def delivery_legacy() -> delivery_backend.Legacy:
+    return delivery_backend.Legacy(weekly_release=_legacy_weekly_release,
+                                   voice_demo=_module('scripts.stage_voice_demo_dev'),
+                                   firebase_config=lambda name: ROOT / 'firebase' / name)
+
+
 # Layer 3 (tongxing_production.audio). Every wrapper imports its implementation
 # when called, so the renderer, audio QC and spoken-rule modules stay unloaded
 # at host load.
@@ -686,7 +701,8 @@ delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, contract
                                                             schemas=_schemas, workspace=_workspace, review=_review,
                                                             runtime_web=runtime_web(), hosting=hosting(),
                                                             waivers=_waivers,
-                                                            worker_command=app_delivery_worker_command))
+                                                            worker_command=app_delivery_worker_command,
+                                                            legacy=delivery_legacy()))
 audio_backend.configure(audio_backend.AudioBackend(core=_core, code=_code, compute=_compute, measure=_measure,
                                                    accounting=_accounting, schemas=_schemas, diagnostic=_diagnostic,
                                                    review=_review, waivers=_waivers, machine_qc=machine_qc(),

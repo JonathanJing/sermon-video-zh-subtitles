@@ -60,6 +60,15 @@ class ProductionPackageTests(unittest.TestCase):
                         self.assertFalse(any(name == f or name.startswith(f + ".") for f in forbidden),
                                          f"{path.name} imports {name}")
 
+    def test_legacy_adapters_stay_apart_from_the_layers(self):
+        """L4 decision 5: the v2/v3 adapters may use delivery; no layer imports them."""
+        for path in sorted(PACKAGE_SRC.rglob("*.py")):
+            if path.is_relative_to(PACKAGE_SRC / "adapters"):
+                continue
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                for name in package_imports_of(path):
+                    self.assertFalse(name.startswith("tongxing_production.adapters"), f"{path.name} imports {name}")
+
     def test_package_never_imports_transition_trees_or_locates_the_checkout(self):
         sources = sorted(PACKAGE_SRC.rglob("*.py"))
         self.assertTrue(sources)
