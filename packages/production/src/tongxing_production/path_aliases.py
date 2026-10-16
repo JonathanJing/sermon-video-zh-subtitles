@@ -45,9 +45,21 @@ LAYER2 = {
     'scripts/review_target_language_candidate.py': _TEXT + 'human_review.py',
 }
 
-# Shared compute (tongxing_production.compute), stage 1.
+# Layer 3 Audio (tongxing_production.audio), batches A1-A4.
+_AUDIO = PRODUCTION + 'audio/'
+LAYER3 = {
+    'scripts/target_audio_anomaly.py': _AUDIO + 'anomaly.py',
+    'scripts/target_audio_recovery.py': _AUDIO + 'recovery.py',
+    'scripts/clip_timeline_map.py': _AUDIO + 'clip_timeline.py',
+    'scripts/review_target_language_audio.py': _AUDIO + 'human_review.py',
+    'scripts/dev_audio_test_profile.py': _AUDIO + 'dev_profile.py',
+    'scripts/dev_audio_test_receipts.py': _AUDIO + 'dev_receipts.py',
+}
+
+# Shared compute (tongxing_production.compute), stage 1 and the audio batches.
 COMPUTE = {
     'scripts/sermon_provider_limits.py': PRODUCTION + 'compute/provider_limits.py',
+    'scripts/bounded_audio_cpu.py': PRODUCTION + 'compute/bounded_audio_cpu.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.
@@ -59,7 +71,7 @@ LAYER4 = {
     'scripts/sermon_delivery_intent.py': _DELIVERY + 'intent.py',
 }
 
-PATH_ALIASES = {**COMPUTE, **LAYER1, **LAYER2, **LAYER4}
+PATH_ALIASES = {**COMPUTE, **LAYER1, **LAYER2, **LAYER3, **LAYER4}
 
 
 def resolve(key):

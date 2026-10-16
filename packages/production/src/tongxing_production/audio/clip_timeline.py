@@ -12,10 +12,8 @@ import wave
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-try:
-    from scripts import sermon_sentence_interpretation as interpretation
-except ImportError:
-    import sermon_sentence_interpretation as interpretation
+from ..source import sentence_interpretation as interpretation
+from . import backend as _audio
 
 
 CLIP_SCHEMA = "sermon-clip-timeline-map-v1"
@@ -120,7 +118,7 @@ def _complete_media_window(start: float, end: float, duration: float) -> bool:
 
 
 def validate_derived_window(value: dict[str, Any], source: dict[str, Any], anchor: dict[str, Any]) -> float:
-    schema = read_object(Path(__file__).parents[1] / "schemas/sermon-clip-timeline-map-v3.schema.json")
+    schema = read_object(_audio.current().schemas.path("sermon-clip-timeline-map-v3.schema.json"))
     errors = list(Draft202012Validator(schema).iter_errors(value))
     require(not errors, f"Derived timeline schema error: {errors[0].message if errors else ''}")
     require(value["englishSourcePackageJsonSha256"] == interpretation.json_sha256(source)
@@ -209,7 +207,7 @@ def validate_unified_source_clip(value: dict[str, Any], source: dict[str, Any], 
     The operator approves a window inside a full recording. Its media identity is
     bound through the approval's timeline report, not copied into the approval.
     """
-    schema = read_object(Path(__file__).parents[1] / f"schemas/{UNIFIED_SOURCE_SCHEMA}.schema.json")
+    schema = read_object(_audio.current().schemas.path(f"{UNIFIED_SOURCE_SCHEMA}.schema.json"))
     errors = list(Draft202012Validator(schema).iter_errors(value))
     require(not errors, f"Unified timeline schema error: {errors[0].message if errors else ''}")
     require(value["englishSourcePackageJsonSha256"] == interpretation.json_sha256(source)
@@ -311,8 +309,7 @@ def validate(value: dict[str, Any], source: dict[str, Any], anchor: dict[str, An
         return validate_unified_source_clip(value, source, anchor)
     require(version in {CLIP_SCHEMA, COMPLETE_MEDIA_SCHEMA},
             "Unsupported clip timeline map schema")
-    schema = read_object(Path(__file__).parents[1] / "schemas" /
-                         f"{version}.schema.json")
+    schema = read_object(_audio.current().schemas.path(f"{version}.schema.json"))
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(value))
     require(not errors, f"Clip timeline map schema error: {errors[0].message if errors else ''}")
     require(value["englishSourcePackageJsonSha256"] == interpretation.json_sha256(source)

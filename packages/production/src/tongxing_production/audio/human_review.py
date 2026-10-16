@@ -14,15 +14,18 @@ from datetime import datetime
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-try:
-    from scripts import sermon_sentence_interpretation as identity
-    from scripts import target_audio_recovery as recovery
-except ImportError:
-    import sermon_sentence_interpretation as identity
-    import target_audio_recovery as recovery
+from ..source import sentence_interpretation as identity
+from . import backend as _audio
+from . import recovery
 
 
-ROOT = Path(__file__).resolve().parents[1]
+def __getattr__(name):
+    # The checkout root callers read as a module constant; it lives in the host.
+    if name == "ROOT":
+        return _audio.current().core.repo_root
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 SCREENING_VERSIONS = {"sermon-target-language-audio-screening-v1", "sermon-target-language-audio-screening-v2"}
 CHECKS = ("pronunciation", "naturalness", "completeness", "scripture",
           "voiceIdentity", "synchronization")
@@ -40,7 +43,7 @@ def load(path: Path) -> dict:
 
 
 def validate(value: dict, schema: str) -> None:
-    document = load(ROOT / "schemas" / schema)
+    document = load(_audio.current().schemas.path(schema))
     errors = list(Draft202012Validator(document, format_checker=FormatChecker()).iter_errors(value))
     require(not errors, f"{schema}: {errors[0].message if errors else ''}")
 

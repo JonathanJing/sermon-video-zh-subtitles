@@ -5,12 +5,8 @@ import json
 import os
 import shutil
 from pathlib import Path
-try:
-    from scripts import sermon_sentence_interpretation as identity
-    from scripts import target_audio_anomaly as anomaly
-except ImportError:
-    import sermon_sentence_interpretation as identity
-    import target_audio_anomaly as anomaly
+from ..source import sentence_interpretation as identity
+from . import anomaly
 
 
 def diagnose(context, rows, plan):

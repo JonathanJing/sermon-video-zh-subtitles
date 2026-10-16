@@ -6,9 +6,21 @@ import hashlib
 import json
 from pathlib import Path
 
+from . import backend as _audio
 
-DEFAULT_PROFILE = (Path(__file__).resolve().parents[1] / "data/benchmarks/"
-                   "local-layer-latency/2026-10-01/next-dev-test-profile.json")
+
+def __getattr__(name):
+    # The checked-in default profile callers read as a module constant; it lives in the host.
+    if name == "DEFAULT_PROFILE":
+        return _audio.current().dev_profile.default_profile_path()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def _default_profile() -> Path:
+    # A test that patches DEFAULT_PROFILE on the module sets it as a real attribute.
+    return globals().get("DEFAULT_PROFILE") or _audio.current().dev_profile.default_profile_path()
+
+
 SCHEMA = "local-production-next-dev-test-profile-v2"
 _STAGES = {"tts": ("formalTts", 2, {1, 2}),
            "back-asr": ("formalBackAsr", 4, {1, 4, 8})}
@@ -55,7 +67,7 @@ def resolve(stage: str, *, enabled: bool = False, profile_path: Path | None = No
         _require(profile_path is None, "--dev-test-profile requires --dev-test")
         return {"batchSize": 1 if batch_size is None else batch_size, "profile": None}
 
-    path = (DEFAULT_PROFILE if profile_path is None else Path(profile_path)).resolve()
+    path = (_default_profile() if profile_path is None else Path(profile_path)).resolve()
     try:
         raw = path.read_bytes()
         profile = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_pairs,
