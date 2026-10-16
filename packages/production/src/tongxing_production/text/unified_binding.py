@@ -1,7 +1,21 @@
 """Freeze the actual canonical Layer 2 input closure before dispatch."""
 from pathlib import Path
-from scripts.sermon_unified import contracts as c
-from scripts import canonical_layer2_controller as ctl
+
+from . import backend as _text
+from . import controller as ctl
+
+
+class _HostModule:
+    """A host module looked up at each call, so the package imports without a host."""
+    def __init__(self, get):
+        self._get = get
+
+    def __getattr__(self, name):
+        return getattr(self._get(), name)
+
+
+# The unified run's contracts belong to orchestration, which text never imports.
+c = _HostModule(lambda: _text.current().unmoved.orchestration_contracts())
 
 
 def inspect_bound(manifest, base, step, config_path):
