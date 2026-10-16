@@ -73,6 +73,10 @@ COMPUTE = {
     'scripts/production_concurrency_profile.py': PRODUCTION + 'compute/concurrency_profile.py',
     'scripts/sermon_unified_runtime_identity.py': PRODUCTION + 'compute/runtime_identity.py',
     'scripts/spark_exclusive_session.py': PRODUCTION + 'compute/spark_exclusive_session.py',
+    # workflows/compute C2: admission and reconciliation.
+    'scripts/api_cli_outcomes.py': PRODUCTION + 'compute/outcomes.py',
+    'scripts/production_spark_admission.py': PRODUCTION + 'compute/spark_admission.py',
+    'scripts/strict_budget_capability.py': PRODUCTION + 'compute/budget_capability.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.

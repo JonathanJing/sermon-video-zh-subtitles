@@ -28,6 +28,7 @@ from tongxing_production.text import backend as text_backend  # noqa: E402
 from tongxing_production.delivery import backend as delivery_backend  # noqa: E402
 from tongxing_production.audio import backend as audio_backend  # noqa: E402
 from tongxing_production.review import backend as review_backend  # noqa: E402
+from tongxing_production.compute import backend as compute_backend  # noqa: E402
 
 
 def core() -> ports.Core:
@@ -114,7 +115,7 @@ def _project_headers(api_key):
 
 def _outcomes_function(name):
     def call(*arguments, **options):
-        from scripts import api_cli_outcomes
+        from tongxing_production.compute import outcomes as api_cli_outcomes
         return getattr(api_cli_outcomes, name)(*arguments, **options)
     call.__name__ = name
     return call
@@ -178,7 +179,7 @@ def snapshot() -> ports.Snapshot:
 
 def compute() -> ports.Compute:
     # The class is the one object producers construct and test with isinstance.
-    from scripts.production_spark_admission import SessionBoundCaller
+    from tongxing_production.compute.spark_admission import SessionBoundCaller
     # The two host-wide limits are constants of a standard-library-only module.
     from scripts import layer2_api_concurrency
     return ports.Compute(session_bound_caller=SessionBoundCaller, session_error=_session_error,
@@ -201,12 +202,12 @@ def _validate_profile(value):
 
 
 def _admit(payload, request_limits, *, surface='canonical_api'):
-    from scripts import strict_budget_capability
+    from tongxing_production.compute import budget_capability as strict_budget_capability
     return strict_budget_capability.require_bounded_api_payload(payload, request_limits, surface=surface)
 
 
 def _reject_cli_transport(caller):
-    from scripts import strict_budget_capability
+    from tongxing_production.compute import budget_capability as strict_budget_capability
     return strict_budget_capability.reject_codex_cli_transport(caller)
 
 
@@ -216,7 +217,7 @@ def _request_slot(job_root):
 
 
 def _require_session(*, verifier=None):
-    from scripts import production_spark_admission
+    from tongxing_production.compute import spark_admission as production_spark_admission
     return production_spark_admission.require_session(verifier=verifier)
 
 
@@ -325,10 +326,16 @@ def _finalize_accounting(action, original_error):
     return sermon_accounting._finalize(action, original_error)
 
 
+def _subprocess_environment():
+    from scripts import sermon_accounting
+    return sermon_accounting.subprocess_environment()
+
+
 def accounting() -> ports.Accounting:
     return ports.Accounting(session=_accounting_session, stage=_accounting_stage, record_workload=_record_workload,
                             record_log=_record_log, bounded_dependencies=_bounded_dependencies,
-                            finalize=_finalize_accounting, orchestration=_accounting_orchestration)
+                            finalize=_finalize_accounting, orchestration=_accounting_orchestration,
+                            subprocess_environment=_subprocess_environment)
 
 
 def _validate_window(manifest, bindings=None, base='.'):
@@ -578,7 +585,7 @@ def implementation_path(name) -> Path:
 
 
 def _require_bound_model_session(*, verifier=None):
-    from scripts import production_spark_admission
+    from tongxing_production.compute import spark_admission as production_spark_admission
     return production_spark_admission.require_bound_model_session(verifier=verifier)
 
 
@@ -779,6 +786,7 @@ _measure, _workspace, _accounting = measure(), workspace(), accounting()
 _schemas, _review, _diagnostic, _waivers = schemas(), review(), diagnostic(), waivers()
 _plugins, _transports = plugins(), transports()
 
+compute_backend.configure(compute_backend.ComputeBackend(accounting=_accounting))
 source_backend.configure(source_backend.SourceBackend(core=_core, provider=_provider, code=_code, mfa=mfa(),
                                                       snapshot=_snapshot, compute=_compute,
                                                       resources=_resources_port, adjudication=adjudication(),

@@ -8,7 +8,7 @@ Unknown observations keep the reservation and do not retry.
 """
 from __future__ import annotations
 
-from scripts import sermon_provider_limits as limits
+from . import provider_limits as limits
 
 SCHEMA = 'strict-budget-capability-v1'
 RESERVING = ('canonical_api', 'study_api', 'source_judge_api', 'legacy_text_api')

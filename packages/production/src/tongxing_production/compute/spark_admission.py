@@ -15,7 +15,7 @@ import sys
 def require_session(*, verifier=None):
     if verifier is not None:
         return verifier()
-    from scripts.spark_exclusive_session import Client
+    from .spark_exclusive_session import Client
     return _checked_receipt(Client.from_environment().require_ready())
 
 
@@ -23,14 +23,14 @@ def _checked_receipt(receipt):
     if os.environ.get("SPARK_EXCLUSIVE_SOCKET") and (
             not isinstance(receipt, dict) or not isinstance(receipt.get("jobId"), str)
             or not receipt["jobId"]):
-        from scripts.spark_exclusive_session import SessionError
+        from .spark_exclusive_session import SessionError
         raise SessionError("container_parent_job_binding_required")
     return receipt
 
 
 def _native_process_identity():
     if not sys.platform.startswith("linux"):
-        from scripts.spark_exclusive_session import SessionError
+        from .spark_exclusive_session import SessionError
         raise SessionError("model_session_requires_bound_live_parent")
     # /proc fields after the parenthesized comm begin with field 3; starttime
     # is field 22. The exact start tick rejects a recycled Linux PID.
@@ -43,7 +43,7 @@ def require_bound_model_session(*, verifier=None):
     """A live parent hold must own this process before any CUDA/model load."""
     if verifier is not None:
         return verifier()
-    from scripts.spark_exclusive_session import Client, Engine, SessionError
+    from .spark_exclusive_session import Client, Engine, SessionError
     client = Client.from_environment()
     receipt = _checked_receipt(client.require_ready())
     if os.environ.get("SPARK_EXCLUSIVE_SOCKET"):
@@ -100,16 +100,16 @@ class SessionBoundCaller:
         try:
             inspect.signature(self.caller).bind(*args, **kwargs)
         except (TypeError, ValueError) as exc:
-            from scripts.spark_exclusive_session import SessionError
+            from .spark_exclusive_session import SessionError
             raise SessionError("model_caller_arguments_invalid_before_dispatch") from exc
         if not self.requires_spark:
-            from scripts import api_cli_outcomes
+            from . import outcomes as api_cli_outcomes
             return api_cli_outcomes.call(self.caller, args, kwargs, purpose=self.purpose,
                 directory=self.outcome_directory, guarded=self.outcome_guarded)
         if self.verifier is not None:
             require_session(verifier=self.verifier)
             return self.caller(*args, **kwargs)
-        from scripts.spark_exclusive_session import Client
+        from .spark_exclusive_session import Client
         client = Client.from_environment()
         if os.environ.get("SPARK_EXCLUSIVE_SOCKET"):
             # The read-only container gateway authenticates its active parent

@@ -142,7 +142,7 @@ def _code_identity(code):
 
 
 def execution_binding(caller, arguments):
-    from scripts.sermon_openai_runtime import selected_route
+    from .openai_runtime import selected_route
     function = inspect.unwrap(caller)
     if not inspect.isfunction(function) and not inspect.ismethod(function):
         function = type(caller).__call__
@@ -268,8 +268,8 @@ def observing():
 
 def receipt_root(explicit=None):
     if explicit is not None: return Path(explicit)
-    from scripts import sermon_accounting as accounting
-    directory = accounting.subprocess_environment().get('SERMON_ACCOUNTING_DIR')
+    from .backend import current
+    directory = current().accounting.subprocess_environment().get('SERMON_ACCOUNTING_DIR')
     if not directory: raise ValueError('api_cli_outcome_directory_required_before_dispatch')
     return Path(directory) / 'api-cli-outcomes'
 
@@ -445,7 +445,7 @@ def reconcile(directory, request_sha256, response, evidence, *, terminal_failure
                      'reconciliationEvidenceSha256':_digest(evidence), **binding})
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--directory', type=Path, required=True)
     parser.add_argument('--request-sha256', required=True)
@@ -456,3 +456,7 @@ if __name__ == '__main__':
     reconcile(options.directory, options.request_sha256,
               json.loads(options.response.read_text()), json.loads(options.evidence.read_text()),
               terminal_failure=options.terminal_failure)
+
+
+if __name__ == '__main__':
+    main()
