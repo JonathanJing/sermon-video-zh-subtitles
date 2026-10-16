@@ -18,18 +18,19 @@ from pathlib import Path
 import runpy
 from typing import Any
 
-try:
-    from scripts import four_layer_measure as measure
-    from scripts import prepare_target_language_speech_job as handoff
-    from scripts import sermon_sentence_interpretation as interpretation
-    from scripts import target_language_policy as policy_tools
-    from scripts import build_english_source_package as english_source
-except ImportError:  # Direct execution via ``python scripts/...``.
-    import four_layer_measure as measure
-    import prepare_target_language_speech_job as handoff
-    import sermon_sentence_interpretation as interpretation
-    import target_language_policy as policy_tools
-    import build_english_source_package as english_source
+from ..source import english_source_package as english_source
+from ..source import sentence_interpretation as interpretation
+from . import backend as _text
+from . import policy as policy_tools
+
+
+class _Handoff:
+    """Layer 3's hand-off checks, reached through the host until Layer 3 moves."""
+    def __getattr__(self, name):
+        return getattr(_text.current().unmoved.speech_handoff(), name)
+
+
+handoff = _Handoff()
 
 
 REQUEST_SCHEMA = "sermon-target-language-evidence-request-v1"
@@ -55,7 +56,7 @@ def _load(path: Path) -> dict[str, Any]:
 def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
     """Hash the reviewed built-in plugin and its executable shared rules."""
     path = plugin_path.resolve()
-    builtins = (Path(__file__).resolve().parent / "language_review_plugins").resolve()
+    builtins = _text.current().plugins.root().resolve()
     import ast
     facts = ast.parse(path.read_text(encoding='utf-8'))
     if any(isinstance(node, ast.Assign) and len(node.targets) == 1
@@ -135,8 +136,7 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
     if diagnostic_context is None:
         anchor_hash = validate_source_for_translation(source, anchor)
     else:
-        from scripts.sermon_diagnostic_context import validate_source
-        anchor_hash = validate_source(source, anchor, diagnostic_context)
+        anchor_hash = _text.current().diagnostic.validate_source(source, anchor, diagnostic_context)
     units = anchor["sourceUnits"]
     if strict_rubric is None:
         identity = (policy_tools.validate_policy(policy) if diagnostic_context is None else
@@ -155,8 +155,7 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
             _require(identity["productionPolicyReady"],
                      "Production policy has unresolved scripture, terminology, or language-review gates")
     else:
-        from scripts.sermon_diagnostic_context import require_policy_ready
-        require_policy_ready(identity, diagnostic_context)
+        _text.current().diagnostic.require_policy_ready(identity, diagnostic_context)
     request = {
         "schemaVersion": REQUEST_SCHEMA,
         "sourceLocale": "en",
@@ -187,10 +186,7 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
                                candidate_mode=request.get("candidateMode", "production"))
     _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
     if rule_preflight_receipt is not None:
-        try:
-            from scripts.target_language_rule_preflight import verify_consumer_receipt
-        except ImportError:
-            from target_language_rule_preflight import verify_consumer_receipt
+        from .rule_preflight import verify_consumer_receipt  # the preflight imports this module
         verify_consumer_receipt(request, policy, plugin_path, evidence, rule_preflight_receipt)
     for key in ("schemaVersion", "sourceLocale", "targetLocale",
                 "englishSourcePackageJsonSha256", "anchorManifestSha256",
@@ -357,10 +353,7 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
                                candidate_mode=request.get("candidateMode", "production"))
     _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
     if rule_preflight_receipt is not None:
-        try:
-            from scripts.target_language_rule_preflight import verify_consumer_receipt
-        except ImportError:
-            from target_language_rule_preflight import verify_consumer_receipt
+        from .rule_preflight import verify_consumer_receipt  # the preflight imports this module
         verify_consumer_receipt(request, policy, plugin_path, evidence, rule_preflight_receipt)
     for key in ("schemaVersion", "sourceLocale", "targetLocale",
                 "englishSourcePackageJsonSha256", "anchorManifestSha256",
@@ -410,7 +403,7 @@ def main() -> None:
     policy = _load(args.policy)
     locale = policy.get("targetLocale")
     step = "L2-01" if args.command == "prepare" else "L2-03"
-    with measure.producer_step(args.progress_ledger, f"{step}@{locale}", locale=locale) as metrics:
+    with _text.current().measure.producer_step(args.progress_ledger, f"{step}@{locale}", locale=locale) as metrics:
         _require(not args.out.exists(), "Use a new output path; Layer 2 artifacts are immutable")
         source, anchor = (_load(path) for path in
                           (args.english_source_package, args.anchor))

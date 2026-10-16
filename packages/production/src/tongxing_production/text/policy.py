@@ -12,20 +12,32 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
-try:
-    from scripts import series_terminology
-except ImportError:  # Direct execution via ``python scripts/...``.
-    import series_terminology
+from . import backend as _text
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_PATH = ROOT / "schemas/sermon-target-language-policy-v1.schema.json"
-SERIES_TABLE = ROOT / "docs/series-terminology.zh.md"
+def _series_table() -> Path:
+    """The shared terminology table every frozen policy hashes."""
+    return _text.current().terminology.table_path()
+
+
+def _plugin_dir() -> Path:
+    return _text.current().plugins.root()
+
+
+def __getattr__(name):
+    # Paths callers read as module constants; they live in the host checkout.
+    paths = {"ROOT": lambda: _text.current().core.repo_root,
+             "SCHEMA_PATH": lambda: _text.current().schemas.path("sermon-target-language-policy-v1.schema.json"),
+             "SERIES_TABLE": _series_table, "PLUGIN_DIR": _plugin_dir}
+    if name in paths:
+        return paths[name]()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 COMPONENTS = ("translator", "reviewer", "terminology", "scripture", "languageReview", "formatting", "batching")
 POLICY_V2 = "sermon-target-language-policy-v2"
 POLICY_V3 = "sermon-target-language-policy-v3"
 POLICY_V4 = "sermon-target-language-policy-v4"
-PLUGIN_DIR = ROOT / "scripts/language_review_plugins"
 # Week-independent machine-QC plugins a NEW ko/es policy binds by default. The
 # frozen policy carries pluginId/implementation hash/requiredChecks as before,
 # so the policy format is unchanged and existing frozen policies keep their bytes.
@@ -51,14 +63,16 @@ def _schema_errors(policy: dict[str, Any]) -> list[str]:
     version = policy.get("schemaVersion")
     if version not in {"sermon-target-language-policy-v1", POLICY_V2, POLICY_V4}:
         raise ValueError("Unsupported Target-Language Policy version")
-    schema_path = (ROOT / "schemas/sermon-target-language-policy-v4.schema.json"
-                   if version == POLICY_V4 else ROOT / "schemas/sermon-target-language-policy-v2.schema.json"
-                   if version == POLICY_V2 else SCHEMA_PATH)
+    schema_path = _text.current().schemas.path(
+        "sermon-target-language-policy-v4.schema.json" if version == POLICY_V4
+        else "sermon-target-language-policy-v2.schema.json" if version == POLICY_V2
+        else "sermon-target-language-policy-v1.schema.json")
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     return [error.message for error in Draft202012Validator(schema).iter_errors(policy)]
 
 
-def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE) -> dict[str, Any]:
+def validate_policy(policy: dict[str, Any], *, series_table: Path | None = None) -> dict[str, Any]:
+    series_table = _series_table() if series_table is None else series_table
     if not isinstance(policy, dict):
         raise ValueError("Target-Language Policy must be a JSON object")
     errors = _schema_errors(policy)
@@ -71,7 +85,7 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
             raise ValueError(f"Target-Language Policy component hash changed: {component}")
     if policy["terminology"]["seriesTableSha256"] != file_sha256(series_table):
         raise ValueError("Series terminology source changed; freeze a new policy")
-    catalog = series_terminology.parse_table(series_table.read_text(encoding="utf-8"))
+    catalog = _text.current().terminology.parse_table(series_table.read_text(encoding="utf-8"))
     expected_series = {row["english"]: row["chinese"] for row in catalog}
     series_names = policy["terminology"]["seriesNames"]
     if {entry["source"] for entry in series_names} != set(expected_series):
@@ -157,16 +171,14 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
     }
 
 
-def validate_diagnostic_policy(policy, context, *, series_table=SERIES_TABLE):
+def validate_diagnostic_policy(policy, context, *, series_table=None):
     """Explicit isolated model configuration; ordinary policy validation rejects it."""
-    from scripts.sermon_diagnostic_context import validate_context
-    validate_context(context)
+    _text.current().diagnostic.validate_context(context)
     configuration = policy.get('simulationModelConfiguration')
     if configuration is None:
         result = validate_policy(policy, series_table=series_table)
     else:
-        from scripts.codex_layer2_transport import validate_test_configuration
-        validate_test_configuration(configuration)
+        _text.current().transports.validate_codex_test_configuration(configuration)
         view = copy.deepcopy(policy)
         view.pop('simulationModelConfiguration')
         for role in ('translator', 'reviewer'):
@@ -175,8 +187,7 @@ def validate_diagnostic_policy(policy, context, *, series_table=SERIES_TABLE):
                     or view[role]['reasoningEffort'] != settings['reasoningEffort']):
                 raise ValueError('Diagnostic role configuration changed')
         result = validate_policy(view, series_table=series_table)
-    from scripts.language_review_plugins.diagnostic_pinned_quotes import is_policy
-    if is_policy(policy):
+    if _text.current().plugins.module("language_review_plugins.diagnostic_pinned_quotes").is_policy(policy):
         # Only explicit diagnostic context accepts pending citation permission;
         # production validation continues to report scripture_policy_pending.
         result = {**result, 'diagnosticPinnedQuotePolicy': True}
@@ -194,12 +205,9 @@ def _strict_legacy_validation_view(policy):
     return view
 
 
-def validate_strict_policy(policy, rubric, *, series_table=SERIES_TABLE):
+def validate_strict_policy(policy, rubric, *, series_table=None):
     """Explicit v3 parser. Existing validate_policy/runner defaults still reject v3."""
-    try:
-        from scripts import sermon_review_contracts as contracts
-    except ImportError:
-        import sermon_review_contracts as contracts
+    contracts = _text.current().unmoved.review_contracts()
     contracts.require(type(policy) is dict and contracts._strict_json(policy), 'invalid_strict_policy')
     contracts.require(len(contracts.canonical_bytes(policy)) <= contracts.MAX_BYTES, 'strict_policy_size_limit')
     contracts.require(next(contracts.validator(POLICY_V3).iter_errors(policy), None) is None, 'invalid_strict_policy_schema')
@@ -220,14 +228,10 @@ def machine_qc_language_review(locale: str) -> dict[str, Any]:
     if locale not in MACHINE_QC_PLUGINS:
         raise ValueError("Machine-QC language plugins cover ko and es only; "
                          "zh-Hans keeps its own plugin binding")
-    try:
-        from scripts import produce_target_language_candidate as producer
-        from scripts.language_review_plugins import auto_qc_text_common
-    except ImportError:  # Direct execution via ``python scripts/...``.
-        import produce_target_language_candidate as producer
-        from language_review_plugins import auto_qc_text_common
+    from . import candidate as producer  # the candidate imports this module
+    auto_qc_text_common = _text.current().plugins.module("language_review_plugins.auto_qc_text_common")
     import ast
-    plugin = PLUGIN_DIR / MACHINE_QC_PLUGINS[locale]
+    plugin = _plugin_dir() / MACHINE_QC_PLUGINS[locale]
     if plugin.name not in producer.AUTO_QC_PLUGIN_NAMES:
         raise ValueError("Machine-QC plugin is not hashed with its shared rules")
     literals = {node.targets[0].id: node.value.value
@@ -268,7 +272,7 @@ def bind_language_review(draft: dict[str, Any], mode: str | None = None) -> dict
     return bound
 
 
-def freeze_strict_policy(draft, rubric, *, series_table=SERIES_TABLE,
+def freeze_strict_policy(draft, rubric, *, series_table=None,
                          shadow_candidate=None, content_approval=None, language_review=None):
     """Freeze a NEW strict policy; no mode migration or old-artifact mutation."""
     if not isinstance(draft, dict) or draft.get('schemaVersion') != POLICY_V3 or 'componentSha256' in draft:
@@ -360,7 +364,7 @@ def apply_translator_backend(draft: dict[str, Any], backend: str) -> dict[str, A
     return {**draft, "translator": {**draft["translator"], "model": model, "reasoningEffort": effort}}
 
 
-def freeze_policy(draft: dict[str, Any], *, series_table: Path = SERIES_TABLE,
+def freeze_policy(draft: dict[str, Any], *, series_table: Path | None = None,
                   shadow_candidate: dict[str, Any] | None = None,
                   content_approval: dict[str, Any] | None = None,
                   language_review: str | None = None) -> dict[str, Any]:
@@ -449,7 +453,7 @@ def main() -> None:
     parser.add_argument("command", choices=("freeze", "inspect"))
     parser.add_argument("--policy", type=Path, required=True)
     parser.add_argument("--out", type=Path)
-    parser.add_argument("--series-terminology", type=Path, default=SERIES_TABLE)
+    parser.add_argument("--series-terminology", type=Path, default=_series_table())
     parser.add_argument("--shadow-candidate", type=Path)
     parser.add_argument("--content-approval", type=Path)
     parser.add_argument("--language-review", choices=LANGUAGE_REVIEW_MODES, default="draft",

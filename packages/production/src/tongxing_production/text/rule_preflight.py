@@ -12,12 +12,14 @@ import hashlib
 import json
 from pathlib import Path
 
-try:
-    from scripts import produce_target_language_candidate as producer
-    from scripts import target_language_policy as policy_tools
-except ImportError:
-    import produce_target_language_candidate as producer
-    import target_language_policy as policy_tools
+from . import backend as _text
+from . import candidate as producer
+from . import policy as policy_tools
+
+
+def _plugin_module(name):
+    """A plugin's shared rules, imported where the policy pins them (scripts/)."""
+    return _text.current().plugins.module(name)
 
 SCHEMA = "sermon-target-language-rule-preflight-v1"
 BUNDLE_SCHEMA = "sermon-target-language-model-rules-v1"
@@ -93,7 +95,7 @@ def _quoted_rules(facts, request, policy, plan):
     rows = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
     quotes = []
     if 'DIAGNOSTIC_QUOTE_BINDINGS' in facts:
-        from scripts.language_review_plugins.diagnostic_pinned_quotes import validate_bindings
+        validate_bindings = _plugin_module("language_review_plugins.diagnostic_pinned_quotes").validate_bindings
         require(facts.get('DIAGNOSTIC_ONLY') is True and facts.get('DIAGNOSTIC_PINNED_QUOTES') is True,
                 'pinned diagnostic quote plugin must remain diagnostic-only')
         bindings = facts['DIAGNOSTIC_QUOTE_BINDINGS']
@@ -114,7 +116,8 @@ def _quoted_rules(facts, request, policy, plan):
                 and policy["scripture"]["citationUseStatus"] == "project_source_reviewed"
                 and all(row["editionId"] == policy["scripture"]["editionId"] for row in facts["ADMITTED_QUOTES"]),
                 "admitted quote plugin differs from scripture policy")
-        from scripts.language_review_plugins.diagnostic_admitted_quotes import validate_admitted, validate_speaker_words
+        admitted = _plugin_module("language_review_plugins.diagnostic_admitted_quotes")
+        validate_admitted, validate_speaker_words = admitted.validate_admitted, admitted.validate_speaker_words
         for unit_id in validate_speaker_words(list(facts.get('SPEAKER_WORDS_UNITS', [])),
                                               {u for row in facts['ADMITTED_QUOTES'] for u in row['sourceUnitIds']}):
             require(unit_id in rows, "speaker-words unit is not in the source")
@@ -155,11 +158,7 @@ def _quoted_rules(facts, request, policy, plan):
                 and policy["scripture"]["editionId"] == facts.get("CUV_EDITION_ID"),
                 "quote edition or policy differs from plugin")
         # Reuse the checked-in scripture library, without importing the plugin.
-        try:
-            from scripts.cuv_scripture import CuvLibrary
-        except ImportError:
-            from cuv_scripture import CuvLibrary
-        library = CuvLibrary.from_path()
+        library = _plugin_module("cuv_scripture").CuvLibrary.from_path()
         decisions = approval.get("decisions", [])
         candidates = facts["CANDIDATE_VERSES"]
         require(len(decisions) == len(candidates)

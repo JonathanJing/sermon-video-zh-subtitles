@@ -6,10 +6,7 @@ import json
 import os
 from pathlib import Path
 
-try:
-    from scripts.target_language_policy import canonical_sha256
-except ImportError:
-    from target_language_policy import canonical_sha256
+from .policy import canonical_sha256
 
 SCHEMA = 'sermon-target-language-consumed-policy-v1'
 
