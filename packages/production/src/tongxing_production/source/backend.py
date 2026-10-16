@@ -2,19 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
 
 from .. import ports
-
-
-@dataclass(frozen=True)
-class Unmoved:
-    """Layer 1 functions whose modules have not moved into the package yet.
-
-    Each entry disappears when its module moves (``sermon_unified_source`` in S4)
-    and its callers import it directly.
-    """
-    ordered_bounded_map: Callable[..., list]   # (items, worker, workers)
 
 
 @dataclass(frozen=True)
@@ -30,7 +19,9 @@ class SourceBackend:
     adjudication: ports.Adjudication
     terminology: ports.Terminology
     measure: ports.Measure
-    unmoved: Unmoved
+    workspace: ports.Workspace
+    accounting: ports.Accounting
+    review: ports.Review
 
 
 _current: SourceBackend | None = None

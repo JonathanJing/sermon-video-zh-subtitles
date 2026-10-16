@@ -437,7 +437,7 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
         # Bounded dispatch preserves source order and stops admitting later
         # groups after a failed/unknown sibling. Context-bound request caps are
         # copied into each worker rather than silently lost across threads.
-        ordered_bounded_map = _source.current().unmoved.ordered_bounded_map
+        from .unified_stage import ordered_bounded_map  # the stage entry imports this module
         batches_reviewed = ordered_bounded_map(enumerate(_batches(sentences, batch_size)), review_batch, workers)
         for rows, receipt in batches_reviewed:
             reviewed.extend(rows)

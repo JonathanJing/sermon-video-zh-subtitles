@@ -13,19 +13,14 @@ import math
 import os
 from pathlib import Path
 import subprocess
-import sys
 import tempfile
 import wave
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from contextvars import copy_context
 
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from scripts import build_english_source_package as english
-from scripts import english_source_judge_cache as immutable
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.source import backend as _source
+from . import backend as _source
+from . import english_source_package as english
+from . import english_source_judge_cache as immutable
 
 
 class _CodeIdentity:
@@ -36,14 +31,27 @@ class _CodeIdentity:
 
 
 code = _CodeIdentity()
-from scripts import judge_english_source_for_translation as judge
-from scripts import mfa_backend
-from scripts import sermon_accounting as accounting
-from scripts import sermon_sentence_interpretation as anchors
-from scripts import sermon_source_budget as budget
-from scripts import sermon_workflow_jobs as jobs
-from scripts.sermon_execution_harness import work_lock
-from scripts.sermon_release_workflow import _safe_path
+from . import english_source_judge as judge  # noqa: E402
+from . import mfa_backend  # noqa: E402
+from . import sentence_interpretation as anchors  # noqa: E402
+from . import budget  # noqa: E402
+
+
+class _Jobs:
+    """The host's durable job store, looked up at each call so the package imports without a host."""
+    def __getattr__(self, name):
+        return getattr(_source.current().core.jobs, name)
+
+
+jobs = _Jobs()
+
+
+def _safe_path(path):
+    return _source.current().core.safe_path(path)
+
+
+def work_lock(work):
+    return _source.current().workspace.work_lock(work)
 
 SCHEMA = 'sermon-unified-source-preparation-v1'
 SCHEMA_V2 = 'sermon-unified-source-preparation-v2'
@@ -53,7 +61,7 @@ FIELDS = {'schemaVersion', 'productionRunId', 'sourceId', 'sourceUrlHash', 'serv
           'jobRoot', 'outputDirectory', 'budgetAuthorization', 'mfa', 'anchorPolicy', 'judge'}
 LOCAL_MFA_FIELDS = {'mfa_executable', 'dictionary_path', 'acoustic_model', 'g2p_model', 'spoken_forms_path'}
 SPARK_MFA_FIELDS = LOCAL_MFA_FIELDS | {'host', 'proxy_jump', 'relay_host', 'relay_host_key_alias', 'python', 'root'}
-# Optional v2 field: the path of a source text review (scripts/sermon_source_text_review.py) applied to the
+# Optional v2 field: the path of a source text review (`source/text_review.py`) applied to the
 # ASR reference text before MFA. The review binds this run's own ASR and clip hashes, so it can only be
 # written after ASR; its hash is therefore frozen in the run's provenance, not in the configuration.
 TEXT_REVIEW_FIELDS = {'sourceTextReview'}
@@ -167,7 +175,7 @@ def load_configuration(path):
     require(media.is_file() and _sha(media) == value['mediaSha256'], 'source_media_identity_changed')
     require(not any(output == p or output in p.parents for p in (media, path, receipt_path, job_root))
             and not (job_root == output or job_root in output.parents), 'source_paths_overlap')
-    from scripts.sermon_unified_reviews import validate_window
+    validate_window = _source.current().review.validate_window
     require(_positive(value['sourceDurationSeconds']) and value['sourceDurationSeconds'] > 0,
             'invalid_source_duration')
     bindings = {name: {'path': str(resolve(name)), 'sha256': value[name + 'Sha256']}
@@ -349,7 +357,7 @@ def execute(config_path, *, api_key=None, transport=None, aligner=None, mfa_pref
                 'source_execution_binding_changed')
     with work_lock(config.output):
         config.output.mkdir(parents=True, exist_ok=True)
-        with accounting.accounting_session(config.output / 'accounting', 'unified_source_preparation',
+        with _source.current().accounting.session(config.output / 'accounting', 'unified_source_preparation',
                 {'productionRunId': config.value['productionRunId']}, evidence_directory=config.output):
             return _execute(config, fresh, api_key=api_key, transport=transport,
                             aligner=aligner or mfa_backend.align_reference_chunks,
@@ -404,7 +412,7 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
         'turns': [{k: row[k] for k in ('id', 'start', 'end', 'speakerId', 'speakerIdentityStatus')} for row in references]})
     if 'sourceTextReview' in value:
         # Apply the bound review to the reference text only; asr_reference*.json keep the raw ASR.
-        from scripts.sermon_source_text_review import apply_review
+        from .text_review import apply_review
         review_path = _safe_path(config.path.parent / value['sourceTextReview'])
         # Stop before MFA until the operator's review of this run's ASR exists; ASR replays on resume.
         require(review_path.is_file(), 'source_text_review_required')
