@@ -3,6 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import Mock, patch
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import api_cli_outcomes as outcomes
 from scripts.production_spark_admission import SessionBoundCaller
 
@@ -404,7 +405,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, \
              patch.dict('os.environ', {'SERMON_ACCOUNTING_DIR':tmp}), \
              patch('scripts.strict_budget_capability.require_bounded_api_payload'), \
-             patch.object(pipeline, 'json_request', side_effect=TimeoutError('unknown')) as request, \
+             patch.object(legacy_openai, 'json_request', side_effect=TimeoutError('unknown')) as request, \
              patch.object(pipeline.time, 'sleep'):
             with self.assertRaises(TimeoutError):
                 pipeline.chat_json('secret', {'model':'gpt-6-astra','reasoning_effort':'medium', 'messages':[{'role':'user','content':'synthetic'}], 'response_format':{'type':'json_object'}}, retries=3)

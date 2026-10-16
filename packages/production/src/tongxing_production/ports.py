@@ -126,6 +126,10 @@ class Accounting:
     stage_outcome: Callable[..., Any]          # (name, **options) -> context manager whose value has finish(status)
     profile_session: Callable[..., Any]        # (directory, workflow, metadata=None, *, work_kind, evidence_mode, ...)
     profile_context: Callable[..., Any]        # (**fields) -> context manager
+    record_api_started: Callable[..., Any]     # (model, settings=None) -> attempt id
+    record_api_attempt: Callable[..., Any]     # (model, response, elapsed_seconds, status='completed', ...)
+    request_metadata: Callable[[Any], Any]     # (payload) -> selected settings and a digest, never prompt text
+    write_error: Callable[[], type]            # () -> AccountingWriteError; a ledger failure never retries a paid request
 
 
 @dataclass(frozen=True)

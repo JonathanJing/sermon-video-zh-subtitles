@@ -12,9 +12,35 @@ import urllib.error
 import urllib.request
 import uuid
 
-from tongxing_production.contracts.reasons import PRE_DISPATCH_REASONS
-from scripts import production_spark_admission as spark_admission
-from scripts.sermon_accounting import AccountingWriteError, _finalize, stage, record_api_attempt, record_api_started, request_metadata
+from ..contracts.reasons import PRE_DISPATCH_REASONS
+from . import spark_admission
+from .backend import current as _backend
+
+
+# The run's accounting session lives in the checkout until observability moves
+# (infrastructure I3); these names resolve through the port at call time.
+def _accounting():
+    return _backend().accounting
+
+
+def _finalize(action, original_error):
+    return _accounting().finalize(action, original_error)
+
+
+def stage(name, **options):
+    return _accounting().stage(name, **options)
+
+
+def record_api_started(model, settings=None):
+    return _accounting().record_api_started(model, settings)
+
+
+def record_api_attempt(*arguments, **options):
+    return _accounting().record_api_attempt(*arguments, **options)
+
+
+def request_metadata(payload):
+    return _accounting().request_metadata(payload)
 
 
 TRANSCRIBE_URL = "https://api.openai.com/v1/audio/transcriptions"
@@ -32,7 +58,7 @@ class TransportRejection(RuntimeError):
         if type(http_status) is not int or http_status not in KNOWN_REQUEST_REJECTIONS:
             raise ValueError('invalid_transport_rejection_status')
         self.http_status = http_status
-        from scripts import sermon_provider_error
+        from . import sermon_provider_error
         self.diagnostic = sermon_provider_error.validate(diagnostic) if diagnostic is not None else None
         if self.diagnostic is not None and self.diagnostic['httpStatus'] != http_status:
             raise ValueError('invalid_transport_rejection_diagnostic')
@@ -66,7 +92,7 @@ class PreDispatchRejection(ValueError):
 
 
 def _http_error_diagnostic(error):
-    from scripts import sermon_provider_error as errors
+    from . import sermon_provider_error as errors
     safe=getattr(error,'safe_diagnostic',None)
     if safe is not None:
         safe=errors.validate(safe)
@@ -84,10 +110,10 @@ def _http_error_diagnostic(error):
 
 
 def request_json(req, retries=3, *, response_observer=None, request_executor=None):
-    from scripts import api_cli_outcomes
+    from . import outcomes as api_cli_outcomes
     if api_cli_outcomes.admitted():
         retries = 1  # An uncertain legacy request must never retry inside its hold.
-    from scripts.sermon_openai_runtime import bind_request
+    from .openai_runtime import bind_request
     bind_request(req)
     # Strict recovery is explicitly authorized by D5, never an HTTP retry loop.
     if response_observer is not None or request_executor is not None:
@@ -129,7 +155,7 @@ def request_json(req, retries=3, *, response_observer=None, request_executor=Non
             if api_cli_outcomes.observing():
                 raw_error = exc.read()
                 api_cli_outcomes.observed_response(raw_error, http_status=exc.code)
-                from scripts import sermon_provider_error as provider_errors
+                from . import sermon_provider_error as provider_errors
                 exc.safe_diagnostic = provider_errors.diagnostic(exc.code, raw_error)
             if response_observer is not None and exc.code in KNOWN_REQUEST_REJECTIONS:
                 rejection = TransportRejection(exc.code, _http_error_diagnostic(exc))
@@ -181,7 +207,7 @@ def request_json(req, retries=3, *, response_observer=None, request_executor=Non
 
 
 def multipart_request(url, api_key, fields, file_field, file_path, retries=3):
-    from scripts.sermon_openai_runtime import project_headers
+    from .openai_runtime import project_headers
     boundary = "----codex-" + uuid.uuid4().hex
     body = bytearray()
 
@@ -227,7 +253,7 @@ def multipart_request(url, api_key, fields, file_field, file_path, retries=3):
 
 
 def json_request(url, api_key, payload, retries=3, *, response_observer=None):
-    from scripts.sermon_openai_runtime import project_headers
+    from .openai_runtime import project_headers
     req = urllib.request.Request(
         url,
         data=json.dumps(payload).encode(),
@@ -248,7 +274,7 @@ LEGACY_TEXT_CACHE_SCHEMA = "sermon-legacy-bounded-text-cache-v3"
 
 
 def legacy_text_cache_contract():
-    from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS, validate_request_limits, LEGACY_VISION_SCHEMA, LEGACY_MAX_IMAGE_BYTES, LEGACY_MAX_IMAGES
+    from .provider_limits import DEFAULT_REQUEST_LIMITS, validate_request_limits, LEGACY_VISION_SCHEMA, LEGACY_MAX_IMAGE_BYTES, LEGACY_MAX_IMAGES
     return {"schemaVersion": LEGACY_TEXT_CACHE_SCHEMA,
             "requestLimits": validate_request_limits(DEFAULT_REQUEST_LIMITS),
             "visionBounds":{"schemaVersion":LEGACY_VISION_SCHEMA,"maxImageBytes":LEGACY_MAX_IMAGE_BYTES,
@@ -257,14 +283,14 @@ def legacy_text_cache_contract():
 
 
 def bounded_legacy_chat_payload(payload):
-    from scripts.sermon_provider_limits import bounded_legacy_payload
+    from .provider_limits import bounded_legacy_payload
     limits = legacy_text_cache_contract()["requestLimits"]
     return bounded_legacy_payload(payload,limits)
 
 
 def legacy_text_execution_identity(api_key,payload,*,caller=None,purpose=None):
     """Bind derived caches to the exact bounded caller and its outcome scope."""
-    from scripts import api_cli_outcomes as outcomes
+    from . import outcomes
     payload=bounded_legacy_chat_payload(payload)
     directory=None
     if isinstance(caller,spark_admission.SessionBoundCaller):
@@ -295,12 +321,12 @@ def chat_json(api_key, payload, retries=1, *, session_verifier=None):
 
 
 def _chat_json(api_key, payload, retries=1):
-    from scripts import api_cli_outcomes
+    from . import outcomes as api_cli_outcomes
     if api_cli_outcomes.admitted():
         retries = 1
-    from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
-    from scripts.strict_budget_capability import require_bounded_api_payload
-    from scripts.sermon_provider_limits import bounded_legacy_payload
+    from .provider_limits import DEFAULT_REQUEST_LIMITS
+    from .budget_capability import require_bounded_api_payload
+    from .provider_limits import bounded_legacy_payload
     try:validated=bounded_legacy_payload(payload,DEFAULT_REQUEST_LIMITS)
     except (ValueError,TypeError) as error:raise ValueError('unsupported_budget_capability') from error
     if validated!=payload:raise ValueError('unsupported_budget_capability')
@@ -312,7 +338,7 @@ def _chat_json(api_key, payload, retries=1):
         try:
             return json_request(CHAT_URL, api_key, payload, retries=1)
         except Exception as exc:
-            if isinstance(exc, AccountingWriteError) or getattr(exc, "sermon_logging_failed", False):
+            if isinstance(exc, _accounting().write_error()) or getattr(exc, "sermon_logging_failed", False):
                 raise
             last_error = exc
             if "temperature" in str(exc) and "temperature" in payload:

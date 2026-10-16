@@ -14,6 +14,7 @@ import unittest
 from unittest.mock import Mock, patch
 import urllib.error
 
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import sermon_accounting as accounting
 from scripts import sermon_pipeline as pipeline
 from scripts import sermon_review_budget as budget
@@ -282,7 +283,7 @@ class StrictBudgetTests(unittest.TestCase):
         attempts = []; executor = Mock(side_effect=AssertionError('must not dispatch'))
         caller = refused_before_observer(attempts, executor)
         with self.f.session():
-            with patch.object(pipeline, 'record_api_attempt', side_effect=accounting.AccountingWriteError('fault')):
+            with patch.object(legacy_openai, 'record_api_attempt', side_effect=accounting.AccountingWriteError('fault')):
                 with self.assertRaises(pipeline.PreDispatchRejection) as raised:
                     self.generate(caller=caller)
             self.assertTrue(raised.exception.sermon_logging_failed)
@@ -398,7 +399,7 @@ class StrictBudgetTests(unittest.TestCase):
             self.generate()
             error = urllib.error.HTTPError(pipeline.CHAT_URL, 400, 'private', {}, io.BytesIO(b'private'))
             with patch.object(pipeline.urllib.request, 'urlopen', side_effect=error) as calls:
-                with patch.object(pipeline, 'record_api_attempt', side_effect=accounting.AccountingWriteError('fault')):
+                with patch.object(legacy_openai, 'record_api_attempt', side_effect=accounting.AccountingWriteError('fault')):
                     with self.assertRaises(pipeline.TransportRejection): self.review(caller=self.f.http_caller)
                 self.restart()
                 self.assertEqual(self.review(caller=self.f.http_caller)['executionStatus'], 'failed')

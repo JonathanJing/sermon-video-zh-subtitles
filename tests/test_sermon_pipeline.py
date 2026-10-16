@@ -9,6 +9,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
+
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "sermon_pipeline.py"
 SPEC = importlib.util.spec_from_file_location("sermon_pipeline", SCRIPT_PATH)
@@ -31,13 +33,13 @@ class SermonPipelineTest(unittest.TestCase):
                     payload.pop("max_completion_tokens")
                     payload.pop("service_tier")
                 with self.subTest(model=model, capped=capped), \
-                        mock.patch.object(mod, "json_request") as send, \
+                        mock.patch.object(legacy_openai, "json_request") as send, \
                         mock.patch.object(mod.time, "sleep") as sleep:
                     with self.assertRaisesRegex(ValueError, "unsupported_budget_capability"):
                         mod._chat_json("fixture", payload, retries=3)
                     send.assert_not_called()
                     sleep.assert_not_called()
-        with mock.patch.object(mod, "json_request", return_value={"synthetic": True}) as send:
+        with mock.patch.object(legacy_openai, "json_request", return_value={"synthetic": True}) as send:
             self.assertEqual(mod._chat_json("fixture", valid), {"synthetic": True})
             send.assert_called_once_with(mod.CHAT_URL, "fixture", valid, retries=1)
 

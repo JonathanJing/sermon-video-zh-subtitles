@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts.experiments import layer2_ab as subject
 from scripts import target_language_policy as policy_tools
 from tests import test_produce_target_language_candidate as fixture_module
@@ -65,7 +66,7 @@ class Layer2ABTests(unittest.TestCase):
                 interrupted.append(1)
                 raise RuntimeError("crash before raw response")
             return original(path, value, **kwargs)
-        with patch.dict("os.environ", {}, clear=True), patch.object(sermon_pipeline, "json_request", side_effect=http):
+        with patch.dict("os.environ", {}, clear=True), patch.object(legacy_openai, "json_request", side_effect=http):
             with patch.object(subject.production, "save_new", side_effect=save):
                 with self.assertRaisesRegex(RuntimeError, "crash before raw"):
                     self.run_subject(caller=sermon_pipeline.chat_json)
@@ -83,8 +84,7 @@ class Layer2ABTests(unittest.TestCase):
     def test_real_run_unknown_started_marker_never_redispatches(self):
         from unittest.mock import patch
         from scripts import sermon_pipeline
-        with patch.dict("os.environ", {}, clear=True), patch.object(
-                sermon_pipeline, "json_request", side_effect=TimeoutError("unknown")) as dispatched:
+        with patch.dict("os.environ", {}, clear=True), patch.object(legacy_openai, "json_request", side_effect=TimeoutError("unknown")) as dispatched:
             with self.assertRaises(TimeoutError):
                 self.run_subject(caller=sermon_pipeline.chat_json)
             with self.assertRaisesRegex(ValueError, "reconciliation_required"):

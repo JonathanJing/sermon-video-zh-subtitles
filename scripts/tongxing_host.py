@@ -346,12 +346,35 @@ def _profile_context(**fields):
     return sermon_log_profile.context(**fields)
 
 
+def _record_api_started(model, settings=None):
+    from scripts import sermon_accounting
+    return sermon_accounting.record_api_started(model, settings)
+
+
+def _record_api_attempt(*arguments, **options):
+    from scripts import sermon_accounting
+    return sermon_accounting.record_api_attempt(*arguments, **options)
+
+
+def _request_metadata(payload):
+    from scripts import sermon_accounting
+    return sermon_accounting.request_metadata(payload)
+
+
+def _accounting_write_error():
+    # The class itself, so isinstance checks match what the ledger raises.
+    from scripts.sermon_accounting import AccountingWriteError
+    return AccountingWriteError
+
+
 def accounting() -> ports.Accounting:
     return ports.Accounting(session=_accounting_session, stage=_accounting_stage, record_workload=_record_workload,
                             record_log=_record_log, bounded_dependencies=_bounded_dependencies,
                             finalize=_finalize_accounting, orchestration=_accounting_orchestration,
                             subprocess_environment=_subprocess_environment, stage_outcome=_stage_outcome,
-                            profile_session=_profile_session, profile_context=_profile_context)
+                            profile_session=_profile_session, profile_context=_profile_context,
+                            record_api_started=_record_api_started, record_api_attempt=_record_api_attempt,
+                            request_metadata=_request_metadata, write_error=_accounting_write_error)
 
 
 def _validate_window(manifest, bindings=None, base='.'):
