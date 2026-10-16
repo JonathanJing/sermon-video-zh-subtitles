@@ -22,7 +22,7 @@
 
 | 方向 | 要回答的问题 | 本仓库已有证据／复用点 | 此次试点的范围 |
 |---|---|---|---|
-| Prefect | 在不改变业务效果的条件下，是否能让依赖执行、等待与崩溃恢复更容易操作和核对？ | [canonical DAG](../scripts/canonical_pipeline_definition.py)、[durable jobs](../scripts/sermon_workflow_jobs.py)、[本地执行环境](execution-environment-design.zh.md) | 本地优先，薄包装现有 node/job；保留生产脚本、锁、receipt、budget、gate；不重写 producer，不迁移生产云环境 |
+| Prefect | 在不改变业务效果的条件下，是否能让依赖执行、等待与崩溃恢复更容易操作和核对？ | [canonical DAG](../packages/production/src/tongxing_production/contracts/pipeline_definition.py)、[durable jobs](../scripts/sermon_workflow_jobs.py)、[本地执行环境](execution-environment-design.zh.md) | 本地优先，薄包装现有 node/job；保留生产脚本、锁、receipt、budget、gate；不重写 producer，不迁移生产云环境 |
 | 进度与 ETA | 能否从同一运行证据得到不混淆完成／审核的工作量和剩余排程？ | [进度合同与夹具](backlog.zh.md#progress-eta-followup)、[日志合同](workflow-accounting-log-contract.zh.md)、[RQC profile](rqc-accounting-profile.zh.md) | 只读投影，冻结计划／权重／分母；Prefect 状态只作观测补充，不另造工作量事实 |
 | Agents API 诊断 | 对固定的脱敏失败包，诊断是否提供可追溯且有用的原因／假设和修复建议？ | [已有 Supervisor](sermon-production-supervisor-agent.md)、[API client](../scripts/sermon_agents_api.py)、[现有远端快照边界](../scripts/sermon_agents_supervisor.py)、[三层设计](codex-orchestration-pipeline-design.zh.md) | 新的窄只读角色；不继承 Supervisor execute 工具，不把旧 dual-PDF 集成证据当作本试点已通过 |
 

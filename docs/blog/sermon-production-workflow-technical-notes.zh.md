@@ -65,7 +65,7 @@ Layer 1 身份变化影响全部语言；Layer 2/3 修订只使对应语言的�
 | 职责 | 当前代码和约束 | 已有验证与边界 |
 |---|---|---|
 | 固定流程推进 | [legacy controller](../../scripts/sermon_deterministic_controller.py) 的 `recommend`/`Controller`；固定 action registry，派发或等待后 tick 返回，绑定定义、状态与授权 | `legacy_page_release` adapter，不能冒充 canonical 四层；无 LLM 的夹具行为不能换算真实整周 token 收益 |
-| Canonical 业务依赖 | [DAG 定义](../../scripts/canonical_pipeline_definition.py) 按语言建立 Source→Text→Audio→Page，身份变化使对应后继失效 | 一般 planner `dispatchEnabled=false`，依赖可投影不等于全链可执行 |
+| Canonical 业务依赖 | [DAG 定义](../../packages/production/src/tongxing_production/contracts/pipeline_definition.py) 按语言建立 Source→Text→Audio→Page，身份变化使对应后继失效 | 一般 planner `dispatchEnabled=false`，依赖可投影不等于全链可执行 |
 | 固定 Layer 2 dispatch | [Layer 2 controller](../../packages/production/src/tongxing_production/text/controller.py) 接入实际 producer、锁、durable jobs 和缓存 | 默认只读，显式 execute 才可派发；同 run 最多一个 active locale job，组内按冻结 policy 1–3 workers；验证仍以固定模型响应为主，停在人审 |
 | 有界歧义判断 | [bounded decision](../../scripts/sermon_bounded_decision.py) 的 `build_packet`/`propose`/`validate_decision` | 32 KiB、16 个 evidence refs、一次 propose 最多一轮，允许预算为 1–2 attempts；先预约再调用注入 responder，不创建 live SDK，不自动执行建议 |
 | 工程升级 | Codex 分析未知程序故障，修代码、验证后回归固定规则 | 独立于每组生产；不是常规翻译或调度前置条件 |

@@ -58,7 +58,7 @@
 | 3 | 目标语言音频与同步 | 每 locale 一个 Target-Language Audio Package，或显式 `audio_unavailable` | 回转写筛查、时间计划、人工听审或记录在案的豁免 |
 | 4 | 多语言发布与播放 | 每个 `pageId + targetLocale` 一个 Release Package | 部署后核验 HTTP、哈希与 Range；设备与现场验收分别记录 |
 
-每层的流程、模型与门禁见[四层工作流图](docs/diagrams/four-layer-production-workflow.svg)。维护中的合同是[四层接口文档](docs/multilingual-production-interfaces.zh.md)；Python 依赖定义在 `scripts/canonical_pipeline_definition.py`。
+每层的流程、模型与门禁见[四层工作流图](docs/diagrams/four-layer-production-workflow.svg)。维护中的合同是[四层接口文档](docs/multilingual-production-interfaces.zh.md)；Python 依赖定义在 `packages/production/src/tongxing_production/contracts/pipeline_definition.py`。
 
 ### 从内容批准到 Firebase 发布
 
