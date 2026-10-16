@@ -28,7 +28,7 @@
 | 任务 | A 或已有接口 |
 |---|---|
 | E01 | [英文硬检查和模型裁判](../packages/production/src/tongxing_production/source/english_source_judge.py)：deterministic_review、run，默认 Sol 6.1 high |
-| E02 | [独立审核器](../scripts/run_target_language_models.py)：review_prompt 明确先纠正 targetUtterances 再返回 semanticReview；保留冻结术语／经文规则与插件 |
+| E02 | [独立审核器](../packages/production/src/tongxing_production/text/models.py)：review_prompt 明确先纠正 targetUtterances 再返回 semanticReview；保留冻结术语／经文规则与插件 |
 | E03 | [修复规划](../scripts/sermon_repair_planning.py)：plan_repair、build_ambiguous_packet、validate_ambiguous_proposal；[受限 proposal](../scripts/sermon_bounded_decision.py)：propose 的 injected responder，无执行权 |
 | E04 | [音频单元文本筛查](../scripts/screen_target_language_audio_units.py)：相似度及短句精确规则；[人工音频审核](../scripts/review_target_language_audio.py)负责疑点裁决 |
 | E05 | [实测时长诊断](../scripts/target_audio_timing_plan.py)：plan 调用同一正式 scheduler，modelCalls=0 |

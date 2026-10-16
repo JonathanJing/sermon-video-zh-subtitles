@@ -16,7 +16,7 @@
 
 | 核查入口 | 可复用能力 | 本轮新增范围 |
 |---|---|---|
-| [Layer 2 runner](../scripts/run_target_language_models.py) | Astra 初译、draft validation、Sol 审校、review validation；独立请求 ID；逐组缓存和 span；有界 group workers | strict-verifier 的只读输出合同、角色级恢复、精确 reviewed hash、完整失败 verdict |
+| [Layer 2 runner](../packages/production/src/tongxing_production/text/models.py) | Astra 初译、draft validation、Sol 审校、review validation；独立请求 ID；逐组缓存和 span；有界 group workers | strict-verifier 的只读输出合同、角色级恢复、精确 reviewed hash、完整失败 verdict |
 | [Layer 2 runbook](target-language-astra-sol-production.zh.md) | 四项语义硬检查、语言插件、候选准入、独立人工批准 | 新模式迁移与兼容 adapter；不覆盖当前运行方式 |
 | `validate_partial_repair_brief` / `validate_revision_brief` | 绑定旧失败响应、原来源与规则，在新目录修订；复用未变化组 | 从可信问题代码产生修复计划，接入 controller；不是另造缓存系统 |
 | [durable jobs](../scripts/sermon_workflow_jobs.py)、[end-to-end adapter](../scripts/sermon_end_to_end.py) | intent、锁、任务身份、等待、未知结果核对 | 生成/审核活动的独立准入与去重；legacy adapter 不等于 canonical 全链已闭合 |
