@@ -1,5 +1,7 @@
-"""Run the root unittest suite with per-module timing and optional CI sharding.
+"""Run the unittest suite with per-module timing and optional CI sharding.
 
+Discovery covers the root ``tests/`` directory plus ``packages/*/tests`` and
+``services/*/tests``, so tests can move next to their owner and stay in CI.
 Shards split individual test cases, not whole modules, so one slow module can
 spread across runners. Each shard keeps discovery order for the cases it runs.
 """
@@ -25,6 +27,30 @@ def cases_in(suite: unittest.TestSuite):
             yield from cases_in(item)
         else:
             yield item
+
+
+# Owner-local test roots, discovered in addition to the root tests/ directory.
+OWNER_TEST_ROOT_GLOBS = ("packages/*/tests", "services/*/tests")
+
+
+def test_roots(root: Path = ROOT) -> list[Path]:
+    """Root tests first (historical order), then owner-local roots sorted by path."""
+    owned = sorted(path for pattern in OWNER_TEST_ROOT_GLOBS for path in root.glob(pattern) if path.is_dir())
+    return [root / "tests", *owned]
+
+
+def discover_cases(root: Path = ROOT) -> list[unittest.TestCase]:
+    """Discover every test case under every test root.
+
+    Owner roots are their own import roots. A module name repeated in two roots
+    makes unittest raise ImportError, so a suite cannot be silently shadowed.
+    """
+    loader, cases = unittest.TestLoader(), []
+    for directory in test_roots(root):
+        # The root tests/ keeps the repository root as its import root.
+        top_level = None if directory == root / "tests" else str(directory)
+        cases.extend(cases_in(loader.discover(str(directory), pattern="test_*.py", top_level_dir=top_level)))
+    return cases
 
 
 def module_name(case: unittest.TestCase) -> str:
@@ -141,11 +167,14 @@ class TimedResult(unittest.TextTestResult):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--report", type=Path, required=True, help="Write module timings as JSON")
+    parser.add_argument("--report", type=Path, help="Write module timings as JSON (required unless --list-ids)")
+    parser.add_argument("--list-ids", action="store_true", help="Print every discovered test id, sorted, and exit")
     parser.add_argument("--weights", type=Path, help="Prior module timing report for sharding")
     parser.add_argument("--shard-index", type=int)
     parser.add_argument("--shard-count", type=int)
     args = parser.parse_args()
+    if not args.list_ids and args.report is None:
+        parser.error("--report is required unless --list-ids is given")
     if (args.shard_index is None) != (args.shard_count is None):
         parser.error("--shard-index and --shard-count must be supplied together")
     if args.shard_count is not None and (
@@ -153,12 +182,14 @@ def main() -> int:
     ):
         parser.error("shard index must be between 0 and shard count - 1")
 
-    loader = unittest.TestLoader()
-    discovered = list(cases_in(loader.discover(str(ROOT / "tests"), pattern="test_*.py")))
+    discovered = discover_cases()
+    if args.list_ids:
+        print("\n".join(sorted(case.id() for case in discovered)))
+        return 0
     test_counts = Counter(module_name(case) for case in discovered)
     modules = sorted(test_counts)
     if not discovered:
-        raise SystemExit("No root tests discovered")
+        raise SystemExit("No tests discovered")
 
     if args.weights:
         previous = timing_profile(json.loads(args.weights.read_text(encoding="utf-8")))
@@ -185,7 +216,7 @@ def main() -> int:
         )
     else:
         selected = discovered
-        print(f"Full root suite: {len(selected)} tests from {len(modules)} modules", flush=True)
+        print(f"Full suite: {len(selected)} tests from {len(modules)} modules", flush=True)
 
     started = time.monotonic()
     result = unittest.TextTestRunner(resultclass=TimedResult).run(unittest.TestSuite(selected))
