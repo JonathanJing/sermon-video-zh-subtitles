@@ -16,3 +16,7 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+# The old-format poster renderer runs from beside its Python caller (L4 D7).
+[tool.setuptools.package-data]
+"tongxing_production.adapters.legacy" = ["render_sermon_poster.swift"]

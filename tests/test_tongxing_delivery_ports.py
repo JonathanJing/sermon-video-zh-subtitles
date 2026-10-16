@@ -95,10 +95,34 @@ class DeliveryPortsTests(unittest.TestCase):
         code = ("import sys; from scripts import tongxing_host; "
                 "loaded = [m for m in ('scripts.build_full_video_app_release', 'scripts.guarded_hosting_publish', "
                 "'scripts.machine_audio_waiver_acceptance', 'scripts.sermon_unified_delivery', "
-                "'scripts.sermon_app_delivery_workflow') if m in sys.modules]; print(loaded)")
+                "'scripts.sermon_app_delivery_workflow', 'tongxing_production.adapters.legacy.assemble_multilingual_hosting', "
+                "'weekly_release') if m in sys.modules]; print(loaded)")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), '[]')
+
+    def test_legacy_record_reaches_the_files_the_legacy_group_located_itself(self):
+        # D7: the v2/v3 adapters used checkout paths derived from scripts/; the
+        # record gives the same files and modules, so their outputs do not change.
+        legacy = delivery.current().legacy
+        self.assertIsInstance(legacy, delivery.Legacy)
+        self.assertEqual(legacy.firebase_config('production-overlay/firebase.json'),
+                         host.ROOT / 'firebase/production-overlay/firebase.json')
+        self.assertTrue(legacy.firebase_config('dev-preview/dev-preview-label.mjs').is_file())
+        weekly = legacy.weekly_release()
+        self.assertEqual(Path(weekly.__file__).resolve(), host.ROOT / 'experiments/sermon-dubbing-poc/weekly_release.py')
+        from scripts import stage_voice_demo_dev
+        self.assertIs(legacy.voice_demo(), stage_voice_demo_dev)
+
+    def test_legacy_poster_renderer_ships_with_the_package(self):
+        from scripts import build_sermon_poster as poster
+        import tomllib
+        renderer = poster.renderer_source()
+        self.assertEqual(renderer.name, 'render_sermon_poster.swift')
+        self.assertTrue(renderer.read_bytes().startswith(b'#!/usr/bin/env swift'))
+        project = tomllib.loads((host.ROOT / 'packages/production/pyproject.toml').read_text())
+        self.assertIn('render_sermon_poster.swift',
+                      project['tool']['setuptools']['package-data']['tongxing_production.adapters.legacy'])
 
     def test_unbound_layer_fails_clearly(self):
         previous = delivery._current
