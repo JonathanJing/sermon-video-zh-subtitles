@@ -22,6 +22,7 @@ class Unmoved:
     review_budget: Callable[[], ModuleType]      # sermon_review_budget (review/)
     speech_handoff: Callable[[], ModuleType]     # prepare_target_language_speech_job (Layer 3 hand-off checks)
     orchestration_contracts: Callable[[], ModuleType]  # the unified run's contracts
+    review_contracts: Callable[[], ModuleType]   # sermon_review_contracts: strict JSON, validators, size limits
     load_meaning_notes: Callable[..., Any]       # (path, *, source, anchor, ...) source-meaning notes (review/)
     repair_instruction: Callable[..., str]       # (notes, source_unit_ids)
     record_cache_observation: Callable[..., Any]  # (role, saved, output, *, mode, origin=None)

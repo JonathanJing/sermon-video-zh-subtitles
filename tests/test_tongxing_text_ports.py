@@ -37,7 +37,7 @@ class TextPortsTests(unittest.TestCase):
 
     def test_paths_are_the_ones_layer_2_resolves_today(self):
         backend = text.current()
-        builtins = (Path(candidate.__file__).resolve().parent / 'language_review_plugins').resolve()
+        builtins = (Path(host.ROOT) / 'scripts/language_review_plugins').resolve()  # plugins stay in scripts/ (decision 1)
         self.assertEqual(backend.plugins.root().resolve(), builtins)
         self.assertEqual(backend.plugins.implementation_file('cuv_scripture.py').resolve(),
                          builtins.parent / 'cuv_scripture.py')
@@ -116,7 +116,7 @@ class TextPortsTests(unittest.TestCase):
         self.assertIs(producer_compatibility.PATH_ALIASES, path_aliases.PATH_ALIASES)
         self.assertEqual(path_aliases.resolve('scripts/mfa_spark.py'),
                          'packages/production/src/tongxing_production/source/mfa_spark.py')
-        self.assertEqual(path_aliases.resolve('scripts/target_language_policy.py'), 'scripts/target_language_policy.py')
+        self.assertEqual(path_aliases.resolve('scripts/run_target_language_models.py'), 'scripts/run_target_language_models.py')
         root = Path(host.ROOT)
         for legacy, current in path_aliases.PATH_ALIASES.items():
             with self.subTest(legacy=legacy):

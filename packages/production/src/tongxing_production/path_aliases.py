@@ -27,10 +27,21 @@ LAYER1 = {
     'scripts/sermon_unified_source.py': _SOURCE + 'unified_stage.py',
 }
 
-# Layer 2 Text (tongxing_production.text), batches T1-T4: none moved yet.
-LAYER2 = {}
+# Layer 2 Text (tongxing_production.text), batches T1-T4.
+_TEXT = PRODUCTION + 'text/'
+LAYER2 = {
+    'scripts/target_language_policy.py': _TEXT + 'policy.py',
+    'scripts/target_language_policy_preview.py': _TEXT + 'policy_preview.py',
+    'scripts/produce_target_language_candidate.py': _TEXT + 'candidate.py',
+    'scripts/target_language_rule_preflight.py': _TEXT + 'rule_preflight.py',
+}
 
-PATH_ALIASES = {**LAYER1, **LAYER2}
+# Shared compute (tongxing_production.compute), stage 1.
+COMPUTE = {
+    'scripts/sermon_provider_limits.py': PRODUCTION + 'compute/provider_limits.py',
+}
+
+PATH_ALIASES = {**COMPUTE, **LAYER1, **LAYER2}
 
 
 def resolve(key):

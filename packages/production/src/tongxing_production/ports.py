@@ -161,6 +161,7 @@ class Plugins:
     """Policy-pinned language review plugins, executed and hashed as files where they are."""
     root: Callable[[], Path]
     implementation_file: Callable[[str], Path]   # a non-plugin file a plugin's hash includes, by name
+    module: Callable[[str], Any]               # import a plugin or plugin dependency by its dotted name under scripts/
 
 
 @dataclass(frozen=True)

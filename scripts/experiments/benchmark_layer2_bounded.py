@@ -125,7 +125,10 @@ def frozen_code():
     names = ('run_target_language_models.py', 'produce_target_language_candidate.py', 'target_language_policy.py',
              'sermon_pipeline.py', 'sermon_accounting.py', 'sermon_provider_http.py', 'sermon_provider_limits.py',
              'sermon_execution_harness.py', 'experiments/layer2_ab.py', 'experiments/benchmark_layer2_bounded.py')
-    return {name: digest(ROOT / 'scripts' / name) for name in names}
+    # Keys stay the scripts/ names; moved files are hashed where they live now,
+    # not as their import facades.
+    from tongxing_production import path_aliases
+    return {name: digest(ROOT / path_aliases.resolve('scripts/' + name)) for name in names}
 
 
 def freeze(prepared, proposal, out):

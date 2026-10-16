@@ -67,6 +67,22 @@ class ProductionPackageTests(unittest.TestCase):
                 if path.name not in SELF_CONTAINED_SCRIPTS:
                     self.assertNotIn("__file__", path.read_text(encoding="utf-8"))
 
+    def test_every_facade_imports_by_bare_name_from_a_script_run_in_scripts(self):
+        """`python scripts/x.py` puts only scripts/ on sys.path; scripts that fall back to
+        bare imports (`import sermon_sentence_interpretation`) must still reach the package."""
+        facades = sorted(path.stem for path in (ROOT / "scripts").glob("*.py")
+                         if "sys.modules[__name__] = _implementation" in path.read_text(encoding="utf-8"))
+        self.assertTrue(facades)
+        code = ("import sys; sys.path[0] = sys.argv[1]\n"
+                "for name in sys.argv[2:]:\n"
+                "    module = __import__(name)\n"
+                "    assert module.__name__.startswith('tongxing_production.'), (name, module.__name__)\n")
+        environment = {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
+        with tempfile.TemporaryDirectory() as elsewhere:
+            result = subprocess.run([sys.executable, "-c", code, str(ROOT / "scripts"), *facades],
+                                    cwd=elsewhere, env=environment, capture_output=True, text=True, timeout=120)
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+
     def test_scripts_facade_is_the_package_module(self):
         from scripts import sermon_provider_limits as facade
         from tongxing_production.compute import provider_limits as implementation

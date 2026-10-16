@@ -1,0 +1,456 @@
+#!/usr/bin/env python3
+"""Compile independently reviewed Layer 2 evidence into a single-locale candidate.
+
+``prepare`` writes a source-bound request with English units and no translations.
+``admit`` consumes that request after an external translator, independent model
+reviewer, and verified locale-review plugin have filled its ``generation`` and
+``groups`` fields. This command performs no model calls and never grants human
+approval. The separate review_target_language_candidate.py worksheet remains
+the only path from this candidate to an approved Layer 2 artifact.
+"""
+from __future__ import annotations
+
+import argparse
+import copy
+import hashlib
+import json
+from pathlib import Path
+import runpy
+from typing import Any
+
+from ..source import english_source_package as english_source
+from ..source import sentence_interpretation as interpretation
+from . import backend as _text
+from . import policy as policy_tools
+
+
+class _Handoff:
+    """Layer 3's hand-off checks, reached through the host until Layer 3 moves."""
+    def __getattr__(self, name):
+        return getattr(_text.current().unmoved.speech_handoff(), name)
+
+
+handoff = _Handoff()
+
+
+REQUEST_SCHEMA = "sermon-target-language-evidence-request-v1"
+LANGUAGE_RECEIPT_SCHEMA = "sermon-target-language-plugin-receipt-v1"
+BUILTIN_PLUGIN_NAMES = {"zh_hans_sermon.py", "ko_sermon.py", "es_sermon.py"}
+LAODICEA_PLUGIN_NAMES = {"zh_hans_laodicea.py", "ko_laodicea.py", "es_laodicea.py"}
+WEEKLY_REFERENCE_PLUGIN_NAMES = {"ko_weekly_reference.py", "es_weekly_reference.py"}
+ZH_WEEKLY_CUV_PLUGIN_NAMES = {"zh_hans_weekly_cuv.py"}
+AUTO_QC_PLUGIN_NAMES = {"ko_weekly_auto.py", "es_weekly_auto.py"}
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ValueError(message)
+
+
+def _load(path: Path) -> dict[str, Any]:
+    result = json.loads(path.read_text(encoding="utf-8"))
+    _require(isinstance(result, dict), f"Expected JSON object: {path}")
+    return result
+
+
+def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
+    """Hash the reviewed built-in plugin and its executable shared rules."""
+    path = plugin_path.resolve()
+    builtins = _text.current().plugins.root().resolve()
+    import ast
+    facts = ast.parse(path.read_text(encoding='utf-8'))
+    if any(isinstance(node, ast.Assign) and len(node.targets) == 1
+           and isinstance(node.targets[0], ast.Name) and node.targets[0].id == 'DIAGNOSTIC_PINNED_QUOTES'
+           and isinstance(node.value, ast.Constant) and node.value.value is True for node in facts.body):
+        return [path, builtins / 'diagnostic_pinned_quotes.py', builtins / 'diagnostic_structural.py',
+                builtins / 'common.py', builtins.parent / 'sermon_diagnostic_context.py']
+    if path.parent == builtins and path.name in BUILTIN_PLUGIN_NAMES:
+        return [path, builtins / "common.py"]
+    if path.parent == builtins and path.name in LAODICEA_PLUGIN_NAMES:
+        return [path, builtins / "common.py", builtins / "laodicea_common.py"]
+    if path.parent == builtins and path.name in WEEKLY_REFERENCE_PLUGIN_NAMES:
+        return [path, builtins / "common.py", builtins / "weekly_reference_common.py"]
+    if path.parent == builtins and path.name in AUTO_QC_PLUGIN_NAMES:
+        return [path, builtins / "common.py", builtins / "auto_qc_text_common.py"]
+    if path.parent == builtins and path.name in ZH_WEEKLY_CUV_PLUGIN_NAMES:
+        return [path, builtins / "common.py", builtins.parent / "cuv_scripture.py",
+                builtins.parent / "build_scripture_index.py"]
+    if path.parent == builtins and path.name == "diagnostic_structural.py":
+        return [path, builtins / "common.py", builtins.parent / "sermon_diagnostic_context.py"]
+    return [path]
+
+
+def plugin_implementation_sha256(plugin_path: Path) -> str:
+    digest = hashlib.sha256()
+    for source in plugin_implementation_sources(plugin_path):
+        _require(source.is_file(), f"Language plugin dependency is missing: {source.name}")
+        digest.update(source.name.encode("utf-8") + b"\0")
+        digest.update(source.read_bytes() + b"\0")
+    return digest.hexdigest()
+
+
+def validate_source_for_translation(source: dict[str, Any], anchor: dict[str, Any]) -> str:
+    """Reuse the production source/anchor gate without a locale policy or writes."""
+    _require(source.get("schemaVersion") == handoff.SOURCE_PACKAGE_SCHEMA
+             and source.get("status") == "ready_for_translation"
+             and source.get("translationEligible") is True,
+             "Approved English Source Package required")
+    _require(interpretation.is_supported_anchor_manifest(anchor),
+             "Unsupported anchor manifest")
+    units = anchor.get("sourceUnits", [])
+    unit_ids = [unit.get("sourceUnitId") for unit in units if isinstance(unit, dict)]
+    _require(bool(unit_ids) and len(unit_ids) == len(units)
+             and len(unit_ids) == len(set(unit_ids))
+             and all(isinstance(unit.get("english"), str) and unit["english"].strip()
+                     for unit in units), "Anchor units lack unique IDs or English text")
+    review = source.get("review", {})
+    _require(review.get("humanApproval") is True
+             and review.get("reviewedSourceUnitIds") == unit_ids
+             and all(review.get("checks", {}).get(check) == "approved" for check in
+                     ("sourceIdentity", "transcriptCompleteness", "wordAlignment",
+                      "sentenceAndPauseBoundaries"))
+             and source.get("source", {}).get("approvedWindow", {}).get("humanApproval") is True,
+             "English source lacks complete human review or approved window")
+    anchor_hash = interpretation.json_sha256(anchor)
+    _require(source.get("anchors", {}).get("artifact", {}).get("jsonSha256") == anchor_hash,
+             "Source package and anchor manifest differ")
+    # Status flags and human-review fields cannot make an incoherent package
+    # ready. Reuse construction/read-side invariants before any paid request.
+    handoff._validate_schema(source, "sermon-english-source-package-v1.schema.json", "source package")
+    english_source.validate_ready_package(source)
+    return anchor_hash
+
+
+def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
+                    policy: dict[str, Any], *, strict_rubric=None, diagnostic_context=None,
+                    candidate_mode: str = "production") -> dict[str, Any]:
+    """Freeze exactly one source and locale; leave all generated fields blank.
+
+    ``candidate_mode="shadow"`` relaxes only the production-readiness gate, for a
+    non-production candidate that a human reviews for terminology. The request is
+    marked, so the shadow identity cannot be confused with a production request.
+    """
+    _require(candidate_mode in {"production", "shadow"}, "Unknown candidate mode")
+    _require(candidate_mode == "production" or diagnostic_context is None,
+             "Shadow candidate mode is not available for diagnostic contexts")
+    if diagnostic_context is None:
+        anchor_hash = validate_source_for_translation(source, anchor)
+    else:
+        anchor_hash = _text.current().diagnostic.validate_source(source, anchor, diagnostic_context)
+    units = anchor["sourceUnits"]
+    if strict_rubric is None:
+        identity = (policy_tools.validate_policy(policy) if diagnostic_context is None else
+                    policy_tools.validate_diagnostic_policy(policy, diagnostic_context))
+        policy_tools.validate_source_scope(policy, source, anchor)
+    else:
+        identity = policy_tools.validate_strict_policy(policy, strict_rubric)
+        policy_tools.validate_strict_source_scope(policy, strict_rubric, source, anchor)
+    if diagnostic_context is None:
+        if candidate_mode == "shadow":
+            _require(isinstance(identity.get("unresolved"), list)
+                     and set(identity["unresolved"]) <= {"terminology_review_pending",
+                                                        "proper_name_approval_evidence_pending"},
+                     "Shadow mode permits only unresolved terminology gates")
+        if candidate_mode == "production":
+            _require(identity["productionPolicyReady"],
+                     "Production policy has unresolved scripture, terminology, or language-review gates")
+    else:
+        _text.current().diagnostic.require_policy_ready(identity, diagnostic_context)
+    request = {
+        "schemaVersion": REQUEST_SCHEMA,
+        "sourceLocale": "en",
+        "targetLocale": policy["targetLocale"],
+        "englishSourcePackageJsonSha256": interpretation.json_sha256(source),
+        "anchorManifestSha256": anchor_hash,
+        "translationPolicySha256": identity["translationPolicySha256"],
+        "sourceUnits": [{"sourceUnitId": unit["sourceUnitId"], "english": unit["english"]}
+                        for unit in units],
+        "generation": None,
+        "groups": None,
+    }
+    if candidate_mode == "shadow":
+        request["schemaVersion"] = "sermon-target-language-evidence-request-v2"
+        request["candidateMode"] = "shadow"
+    return request
+
+
+def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
+                   policy: dict[str, Any], request: dict[str, Any],
+                   evidence: dict[str, Any], language_receipt: dict[str, Any],
+                   plugin_path: Path, expected_plugin_sha256: str, *, rule_preflight_receipt=None,
+                   diagnostic_context=None) -> dict[str, Any]:
+    """Validate externally produced evidence; preserve human review as pending."""
+    _require(request.get("candidateMode", "production") == "production",
+             "Shadow candidate admission is not implemented; no formal candidate may be emitted")
+    expected = prepare_request(source, anchor, policy, diagnostic_context=diagnostic_context,
+                               candidate_mode=request.get("candidateMode", "production"))
+    _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
+    if rule_preflight_receipt is not None:
+        from .rule_preflight import verify_consumer_receipt  # the preflight imports this module
+        verify_consumer_receipt(request, policy, plugin_path, evidence, rule_preflight_receipt)
+    for key in ("schemaVersion", "sourceLocale", "targetLocale",
+                "englishSourcePackageJsonSha256", "anchorManifestSha256",
+                "translationPolicySha256", "sourceUnits"):
+        _require(evidence.get(key) == expected[key], f"Layer 2 evidence identity changed: {key}")
+    _require(set(evidence) == set(expected), "Layer 2 evidence has missing or unexpected fields")
+    generation = evidence.get("generation")
+    groups = evidence.get("groups")
+    _require(isinstance(generation, dict) and set(generation) == {"translator", "reviewer"},
+             "Separate translator and reviewer receipts required")
+    _require(isinstance(groups, list) and groups, "Reviewed translation groups required")
+    translator_ids: list[str] = []
+    reviewer_ids: list[str] = []
+    candidate_groups: list[dict[str, Any]] = []
+    group_keys = {
+        "translationGroupId", "sourceUnitIds", "targetUtterances", "coverage",
+        "semanticReview", "translatorRequestId", "reviewerRequestId",
+    }
+    for group in groups:
+        _require(isinstance(group, dict) and set(group) == group_keys,
+                 "Every group needs exact translation and independent review evidence")
+        t_id, r_id = group["translatorRequestId"], group["reviewerRequestId"]
+        _require(isinstance(t_id, str) and t_id.strip()
+                 and isinstance(r_id, str) and r_id.strip() and t_id != r_id,
+                 "Each group needs distinct nonempty translator and reviewer request IDs")
+        translator_ids.append(t_id)
+        reviewer_ids.append(r_id)
+        utterances = group["targetUtterances"]
+        _require(isinstance(utterances, list) and utterances
+                 and all(isinstance(text, str) and text.strip() for text in utterances),
+                 "Target utterances are missing")
+        candidate_group = {key: copy.deepcopy(value) for key, value in group.items()
+                           if key not in {"translatorRequestId", "reviewerRequestId"}}
+        candidate_group["targetText"] = "".join(utterances)
+        candidate_groups.append(candidate_group)
+    t_receipt, r_receipt = generation["translator"], generation["reviewer"]
+    _require(isinstance(t_receipt, dict) and isinstance(r_receipt, dict),
+             "Model receipts must be objects")
+    _require(t_receipt.get("requestIds") == list(dict.fromkeys(translator_ids))
+             and r_receipt.get("requestIds") == list(dict.fromkeys(reviewer_ids))
+             and not set(translator_ids).intersection(reviewer_ids),
+             "Model request IDs do not bind separate translator and reviewer calls")
+    actual_receipt = run_language_plugin(source, anchor, policy, request,
+                                         evidence, plugin_path, expected_plugin_sha256,
+                                         rule_preflight_receipt=rule_preflight_receipt,
+                                         diagnostic_context=diagnostic_context)
+    _require(language_receipt == actual_receipt,
+             "Language plugin receipt is missing, stale, or differs from a fresh plugin run")
+    for group, result in zip(candidate_groups, actual_receipt["groupReviews"]):
+        _require(result["status"] == "pass", "Language plugin rejected a group")
+        group["languageReview"] = {
+            "status": result["status"], "pluginId": actual_receipt["pluginId"],
+            "policySha256": actual_receipt["languageReviewPolicySha256"],
+            "checks": result["checks"],
+        }
+    candidate = {
+        "schemaVersion": handoff.CANDIDATE_SCHEMA,
+        "sourceLocale": "en",
+        "targetLocale": policy["targetLocale"],
+        "englishSourcePackageJsonSha256": expected["englishSourcePackageJsonSha256"],
+        "anchorManifestSha256": expected["anchorManifestSha256"],
+        "translationPolicySha256": expected["translationPolicySha256"],
+        "status": "machine_review_pass_human_review_pending",
+        "releaseEligible": False,
+        "generation": copy.deepcopy(generation),
+        "groups": candidate_groups,
+        "modelReview": {"status": "pass", "reviewedGroupIds":
+                        [group["translationGroupId"] for group in candidate_groups]},
+        "humanReview": {"translation": "pending", "reviewer": None,
+                        "reviewedAt": None, "reviewedGroupIds": []},
+    }
+    handoff._validate_schema(candidate, "sermon-target-language-candidate-v2.schema.json",
+                             "target candidate")
+    handoff.validate_target_candidate(source, anchor, candidate, require_human_approval=False,
+                                     diagnostic_context=diagnostic_context)
+    handoff.validate_policy_binding(candidate, policy, diagnostic_context=diagnostic_context)
+    return candidate
+
+
+def evaluate_plugin_groups(policy: dict[str, Any], request: dict[str, Any],
+                           plugin_path: Path, expected_plugin_sha256: str,
+                           groups: list[dict[str, Any]], *, diagnostic_context=None) -> dict[str, Any]:
+    """Run the pinned plugin on already reviewed groups. This sends no model request."""
+    _require(plugin_path.is_file(), "Language plugin implementation is missing")
+    implementation_sha = plugin_implementation_sha256(plugin_path)
+    _require(policy["languageReview"]["pluginImplementationSha256"] == expected_plugin_sha256
+             and expected_plugin_sha256 == implementation_sha,
+             "Language plugin implementation hash differs from frozen policy or file")
+    module = runpy.run_path(str(plugin_path))
+    plugin_id = policy["languageReview"]["pluginId"]
+    _require(module.get("PLUGIN_ID") == plugin_id
+             and isinstance(module.get("PLUGIN_VERSION"), str)
+             and module["PLUGIN_VERSION"].strip()
+             and callable(module.get("review_group")),
+             "Language plugin ID, version, or entry point is invalid")
+    diagnostic_only = module.get("DIAGNOSTIC_ONLY") is True
+    _require(not diagnostic_only or diagnostic_context is not None,
+             "Diagnostic plugin requires explicit diagnostic context")
+    _require(isinstance(groups, list) and groups, "Language plugin needs translation groups")
+    source_by_id = {row["sourceUnitId"]: row for row in request["sourceUnits"]}
+    required_checks = policy["languageReview"]["requiredChecks"]
+    group_reviews = []
+    for group in groups:
+        _require(isinstance(group, dict), "Invalid language plugin group")
+        group_id, unit_ids, utterances = (group.get(key) for key in
+                                          ("translationGroupId", "sourceUnitIds", "targetUtterances"))
+        _require(isinstance(group_id, str) and group_id
+                 and isinstance(unit_ids, list) and unit_ids
+                 and all(isinstance(unit_id, str) and unit_id in source_by_id for unit_id in unit_ids)
+                 and isinstance(utterances, list) and utterances
+                 and all(isinstance(text, str) and text.strip() for text in utterances),
+                 "Language plugin group lacks bound source or target text")
+        target_text = "".join(utterances)
+        plugin_group = {
+            "translationGroupId": group_id,
+            "sourceUnitIds": unit_ids,
+            "targetUtterances": utterances,
+            "targetText": target_text,
+            "englishSourcePackageJsonSha256": request["englishSourcePackageJsonSha256"],
+        }
+        checks = module["review_group"](
+            copy.deepcopy(policy),
+            copy.deepcopy([source_by_id[unit_id] for unit_id in unit_ids]),
+            copy.deepcopy(plugin_group),
+            **({"diagnostic_context": copy.deepcopy(diagnostic_context)} if diagnostic_only else {}),
+        )
+        _require(isinstance(checks, list) and len(checks) == len(required_checks)
+                 and all(isinstance(check, dict) and set(check)
+                         == {"checkId", "status", "evidence"}
+                         and check["checkId"] in required_checks
+                         and check["status"] in {"pass", "fail"}
+                         and isinstance(check["evidence"], str) and check["evidence"].strip()
+                         for check in checks)
+                 and [check["checkId"] for check in checks] == required_checks,
+                 f"Language plugin omitted or changed required checks: {group_id}")
+        group_reviews.append({
+            "translationGroupId": group_id,
+            "sourceUnitIds": unit_ids,
+            "targetTextSha256": hashlib.sha256(target_text.encode("utf-8")).hexdigest(),
+            "status": "pass" if all(check["status"] == "pass" for check in checks) else "fail",
+            "checks": checks,
+        })
+    _require([row["translationGroupId"] for row in group_reviews]
+             == [group["translationGroupId"] for group in groups],
+             "Language plugin receipt group order changed")
+    return {"pluginId": plugin_id, "pluginVersion": module["PLUGIN_VERSION"],
+            "pluginImplementationSha256": implementation_sha, "groupReviews": group_reviews}
+
+
+def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
+                        policy: dict[str, Any], request: dict[str, Any],
+                        evidence: dict[str, Any], plugin_path: Path,
+                        expected_plugin_sha256: str, *, strict_rubric=None, diagnostic_context=None,
+                        rule_preflight_receipt=None) -> dict[str, Any]:
+    """Run a pinned locale plugin and return a source/text-bound receipt.
+
+    The plugin is a reviewed Python module exposing PLUGIN_ID, PLUGIN_VERSION,
+    and ``review_group(policy, english_units, group) -> list[check]``. Its checks
+    are recalculated at admission; a pass string in translation evidence is
+    never accepted as language-review evidence.
+    """
+    expected = prepare_request(source, anchor, policy, strict_rubric=strict_rubric,
+                               diagnostic_context=diagnostic_context,
+                               candidate_mode=request.get("candidateMode", "production"))
+    _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
+    if rule_preflight_receipt is not None:
+        from .rule_preflight import verify_consumer_receipt  # the preflight imports this module
+        verify_consumer_receipt(request, policy, plugin_path, evidence, rule_preflight_receipt)
+    for key in ("schemaVersion", "sourceLocale", "targetLocale",
+                "englishSourcePackageJsonSha256", "anchorManifestSha256",
+                "translationPolicySha256", "sourceUnits"):
+        _require(evidence.get(key) == expected[key], f"Layer 2 evidence identity changed: {key}")
+    # v4 is v2 plus reviewed ordinary-phrase exclusions and a term-approval receipt.
+    allowed = {policy_tools.POLICY_V3} if strict_rubric is not None else {policy_tools.POLICY_V2, policy_tools.POLICY_V4}
+    _require(policy["schemaVersion"] in allowed, "Language plugin policy schema differs")
+    evaluated = evaluate_plugin_groups(policy, expected, plugin_path, expected_plugin_sha256,
+                                       evidence.get("groups"), diagnostic_context=diagnostic_context)
+    group_reviews = evaluated["groupReviews"]
+    identity = ((policy_tools.validate_policy(policy) if diagnostic_context is None else
+                 policy_tools.validate_diagnostic_policy(policy, diagnostic_context)) if strict_rubric is None else
+                policy_tools.validate_strict_policy(policy, strict_rubric))
+    return {
+        "schemaVersion": LANGUAGE_RECEIPT_SCHEMA,
+        "englishSourcePackageJsonSha256": expected["englishSourcePackageJsonSha256"],
+        "anchorManifestSha256": expected["anchorManifestSha256"],
+        "targetLocale": expected["targetLocale"],
+        "translationPolicySha256": expected["translationPolicySha256"],
+        "languageReviewPolicySha256": identity["languageReviewPolicySha256"],
+        "pluginId": evaluated["pluginId"],
+        "pluginVersion": evaluated["pluginVersion"],
+        "pluginImplementationSha256": evaluated["pluginImplementationSha256"],
+        "groupIds": [row["translationGroupId"] for row in group_reviews],
+        "groupReviews": group_reviews,
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=("prepare", "review-language", "admit"))
+    parser.add_argument("--english-source-package", required=True, type=Path)
+    parser.add_argument("--anchor", required=True, type=Path)
+    parser.add_argument("--policy", required=True, type=Path)
+    parser.add_argument("--request", type=Path)
+    parser.add_argument("--evidence", type=Path)
+    parser.add_argument("--language-receipt", type=Path)
+    parser.add_argument("--plugin", type=Path)
+    parser.add_argument("--plugin-sha256")
+    parser.add_argument("--rule-preflight", type=Path,
+                        help="Validate frozen model/plugin/candidate rules before language review or admission")
+    parser.add_argument("--progress-ledger", type=Path,
+                        help="Record producer timing in this four-layer run ledger")
+    parser.add_argument("--out", required=True, type=Path)
+    args = parser.parse_args()
+    policy = _load(args.policy)
+    locale = policy.get("targetLocale")
+    step = "L2-01" if args.command == "prepare" else "L2-03"
+    with _text.current().measure.producer_step(args.progress_ledger, f"{step}@{locale}", locale=locale) as metrics:
+        _require(not args.out.exists(), "Use a new output path; Layer 2 artifacts are immutable")
+        source, anchor = (_load(path) for path in
+                          (args.english_source_package, args.anchor))
+        metrics.update(sourceUnits=len(anchor.get("sourceUnits", [])),
+                       sourcePackageSha256=interpretation.json_sha256(source),
+                       policySha256=interpretation.json_sha256(policy))
+        for role in ("translator", "reviewer"):
+            model = policy.get(role, {}).get("model")
+            if isinstance(model, str):
+                metrics[role + "ModelSha256"] = hashlib.sha256(model.encode()).hexdigest()
+            prompt_version = policy.get(role, {}).get("promptVersion")
+            if isinstance(prompt_version, str):
+                metrics[role + "PromptVersionSha256"] = hashlib.sha256(prompt_version.encode()).hexdigest()
+        if args.command == "prepare":
+            _require(args.request is None and args.evidence is None and args.language_receipt is None,
+                     "prepare does not consume prior evidence")
+            result = prepare_request(source, anchor, policy)
+        else:
+            _require(args.request is not None and args.evidence is not None,
+                     "review-language and admit require the original request and completed evidence")
+            _require(args.plugin is not None and args.plugin_sha256 is not None,
+                     "A pinned language plugin is required")
+            evidence = _load(args.evidence)
+            metrics["translationGroups"] = len(evidence.get("groups") or [])
+            if args.command == "review-language":
+                _require(args.language_receipt is None,
+                         "review-language creates, not consumes, a plugin receipt")
+                result = run_language_plugin(source, anchor, policy,
+                                             _load(args.request), evidence,
+                                             args.plugin, args.plugin_sha256,
+                                             rule_preflight_receipt=_load(args.rule_preflight)
+                                             if args.rule_preflight else None)
+            else:
+                _require(args.language_receipt is not None,
+                         "admit requires a separate language plugin receipt")
+                result = admit_evidence(source, anchor, policy,
+                                        _load(args.request), evidence,
+                                        _load(args.language_receipt), args.plugin,
+                                        args.plugin_sha256,
+                                        rule_preflight_receipt=_load(args.rule_preflight)
+                                        if args.rule_preflight else None)
+        interpretation.write_json(args.out, result)
+    status = {"prepare": "source_bound_request", "review-language": "language_plugin_reviewed",
+              "admit": "machine_review_pass_human_review_pending"}[args.command]
+    print(json.dumps({"status": status,
+                      "out": str(args.out.resolve())}))
+
+
+if __name__ == "__main__":
+    main()

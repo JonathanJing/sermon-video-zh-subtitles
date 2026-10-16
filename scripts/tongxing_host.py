@@ -332,7 +332,8 @@ def plugins() -> ports.Plugins:
     # Plugins run and hash as files in place (L2 design decision 1); the hash
     # covers file names and bytes, never this path.
     return ports.Plugins(root=lambda: ROOT / 'scripts/language_review_plugins',
-                         implementation_file=lambda name: ROOT / 'scripts' / name)
+                         implementation_file=lambda name: ROOT / 'scripts' / name,
+                         module=lambda name: _module('scripts.' + name)())
 
 
 def _transport_caller(backend, **options):
@@ -435,6 +436,7 @@ def text_unmoved() -> text_backend.Unmoved:
         review_budget=_module('scripts.sermon_review_budget'),
         speech_handoff=_module('scripts.prepare_target_language_speech_job'),
         orchestration_contracts=_module('scripts.sermon_unified.contracts'),
+        review_contracts=_module('scripts.sermon_review_contracts'),
         load_meaning_notes=_load_meaning_notes, repair_instruction=_repair_instruction,
         record_cache_observation=_record_cache_observation)
 
