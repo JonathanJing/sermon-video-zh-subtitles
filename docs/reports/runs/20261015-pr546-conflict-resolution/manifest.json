@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261015-pr546-conflict-resolution",
+  "runs": [
+    {
+      "label": "20261015-pr546-conflict-resolution-input",
+      "source": "/private/tmp/sermon-pr546/artifacts/run-reports/20261015-pr546-conflict-resolution-input",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261015-pr546-conflict-resolution-input",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 276,
+      "truncated": false,
+      "sha256": "223b534a3ef6596775768989ced6b318f516c6ca057b5ed643ef35972ffb39d8",
+      "redactions": {}
+    },
+    {
+      "run": "20261015-pr546-conflict-resolution-input",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 47,
+      "truncated": false,
+      "sha256": "0420ac4a57ac00ebcfe58ae2e9b7582c49c13a8d0ae82cfc52e7c71a40694f6f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
