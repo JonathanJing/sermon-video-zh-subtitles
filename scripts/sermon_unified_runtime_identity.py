@@ -1,33 +1,16 @@
-"""Read-only local interpreter, distribution and media-tool admission identity."""
-import hashlib
-import importlib.metadata
+"""Transition facade: the implementation lives in tongxing_production.compute.runtime_identity.
+
+Both import paths name one module object, so attribute patches apply to both.
+Remove once no caller imports the old path.
+"""
 from pathlib import Path
-import shutil
-import subprocess
 import sys
 
+try:
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+except ModuleNotFoundError:  # imported by bare name from a script run directly in scripts/
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts import tongxing_host  # noqa: F401
+from tongxing_production.compute import runtime_identity as _implementation
 
-def _hash(path):
-    h=hashlib.sha256()
-    with Path(path).open('rb') as stream:
-        for chunk in iter(lambda:stream.read(1024*1024),b''):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def snapshot():
-    tools={}
-    for name in ('ffmpeg','ffprobe'):
-        path=shutil.which(name)
-        if not path:
-            raise ValueError('runtime_media_tool_missing')
-        output=subprocess.run([path,'-version'],capture_output=True,check=True,timeout=15).stdout
-        tools[name]={'binarySha256':_hash(Path(path).resolve()),'versionSha256':hashlib.sha256(output).hexdigest()}
-        if name=='ffmpeg':
-            for capability in ('decoders','encoders'):
-                result=subprocess.run([path,'-hide_banner','-'+capability],capture_output=True,check=True,timeout=15)
-                tools[name][capability+'Sha256']=hashlib.sha256(result.stdout).hexdigest()
-    return {'schemaVersion':'sermon-local-runtime-identity-v1',
-            'python':{'binarySha256':_hash(Path(sys.executable).resolve()),'version':sys.version},
-            'distributions':sorted((dist.metadata['Name'],dist.version) for dist in importlib.metadata.distributions()
-                                   if dist.metadata.get('Name')),'tools':tools}
+sys.modules[__name__] = _implementation

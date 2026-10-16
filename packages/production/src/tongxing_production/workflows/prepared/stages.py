@@ -23,7 +23,7 @@ STAGE_MODULES = {
     'layer2_controller': 'tongxing_production.text.controller',
     'parallel': 'scripts.sermon_unified_parallel',
     'reviews': 'scripts.sermon_unified_reviews',
-    'runtime_identity': 'scripts.sermon_unified_runtime_identity',
+    'runtime_identity': 'tongxing_production.compute.runtime_identity',
     'source': 'tongxing_production.source.unified_stage',
     'study': 'tongxing_production.workflows.prepared.study',
 }

@@ -194,7 +194,8 @@ class ReviewPortsTests(unittest.TestCase):
                 'scripture_editions', 'english_scripture_coverage', 'scripture_candidate_queue', 'export_run_digest',
                 'sermon_codex_transport', 'spark_exclusive_session')
         code = ("import sys; from scripts import tongxing_host; "
-                f"print([m for m in {lazy!r} if 'scripts.' + m in sys.modules])")
+                f"print([m for m in {lazy!r} if 'scripts.' + m in sys.modules]"
+                " + [m for m in ('tongxing_production.compute.spark_exclusive_session',) if m in sys.modules])")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), '[]')

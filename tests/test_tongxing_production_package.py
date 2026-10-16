@@ -18,7 +18,13 @@ PACKAGE_SRC = ROOT / "packages/production/src/tongxing_production"
 FORBIDDEN_IMPORTS = ("scripts", "backend", "apps", "tools", "experiments")
 # Shipped to another machine as one file and run there standalone; hashing its
 # own bytes for the receipt is self-identity, not checkout inference.
-SELF_CONTAINED_SCRIPTS = {"mfa_alignment.py"}
+SELF_CONTAINED_SCRIPTS = {"mfa_alignment.py",
+                          # Launches itself as an isolated `python -I` worker and loads its
+                          # sibling sermon_provider_error.py; it reads only its own directory.
+                          "provider_http.py",
+                          # Deploys its own bytes to Spark and binds sessions to their hash
+                          # (controllerSha256); it reads only its own file.
+                          "spark_exclusive_session.py"}
 
 
 def imports_of(path):

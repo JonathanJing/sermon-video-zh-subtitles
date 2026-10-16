@@ -66,6 +66,13 @@ COMPUTE = {
     'scripts/sermon_transcription_request.py': PRODUCTION + 'compute/transcription_request.py',
     # Layer 3 A1: the audio CPU limiter, moved byte for byte.
     'scripts/bounded_audio_cpu.py': PRODUCTION + 'compute/bounded_audio_cpu.py',
+    # workflows/compute C1: byte-identical leaves.
+    'scripts/sermon_provider_http.py': PRODUCTION + 'compute/provider_http.py',
+    'scripts/sermon_provider_error.py': PRODUCTION + 'compute/sermon_provider_error.py',
+    'scripts/layer2_api_concurrency.py': PRODUCTION + 'compute/api_concurrency.py',
+    'scripts/production_concurrency_profile.py': PRODUCTION + 'compute/concurrency_profile.py',
+    'scripts/sermon_unified_runtime_identity.py': PRODUCTION + 'compute/runtime_identity.py',
+    'scripts/spark_exclusive_session.py': PRODUCTION + 'compute/spark_exclusive_session.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.
