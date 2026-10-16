@@ -2,7 +2,7 @@
 
 [目录布局提案](repository-layout-proposal.zh.md) · [L1 注入边界](l1-source-layer-injection.zh.md) · [L2 注入边界](l2-text-layer-injection.zh.md) · [L3 注入边界](l3-audio-layer-injection.zh.md) · [L4 注入边界](l4-delivery-layer-injection.zh.md) · [L2 controller](../canonical-layer2-controller.zh.md) · [运行模型策略](../production-model-runtime-policy.zh.md) · [周更运行配置](../weekly-run-profile.zh.md) · [机器质检豁免](../machine-quality-waiver.zh.md) · [计算策略](../local-production-compute-policy.zh.md) · [Spark 独占会话](../spark-exclusive-development-session.zh.md)
 
-状态：**设计待评审，§6 待决定，未迁移任何文件**。盘点日期：2026-10-15。基线：`dev@9c876c92`（L1 S0–S4 已合并；L2 T0 [#510](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/510)、T1 [#511](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/511)、T2 [#514](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/514) 已合并，`run_target_language_models`、`canonical_layer2_budget` 已在 `tongxing_production.text`；L3 B0 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507) 与 L4 D0 [#512](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/512) 已合并）。本文只定义 `tongxing_production/{compute,workflows}/` 的模块归属、端口、身份影响和分批顺序，并回答 L2 §6 第 2 项留下的传输缓存连续性问题；不移动文件，不改合同，不授权任何付费运行。
+状态：**设计待评审，§6 待决定，未迁移任何文件**。盘点日期：2026-10-15。基线：`dev@9c876c92`（L1 S0–S4 已合并；L2 T0 [#510](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/510)、T1 [#511](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/511)、T2 [#514](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/514) 已合并，`run_target_language_models`、`canonical_layer2_budget` 已在 `tongxing_production.text`；L3 B0 [#507](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/507) 与 L4 D0 [#512](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/512) 已合并）。数字取自 `dev@9c876c92`；之后合并的 L4 D1 和两份设计（[基础设施注入边界](infrastructure-injection.zh.md)、[复核层注入边界](review-layer-injection.zh.md)）不改本文范围内的文件，本文与它们的分工见 §2.1、§6。本文只定义 `tongxing_production/{compute,workflows}/` 的模块归属、端口、身份影响和分批顺序，并回答 L2 §6 第 2 项留下的传输缓存连续性问题；不移动文件，不改合同，不授权任何付费运行。
 
 ## 1 为什么不能直接搬
 
@@ -45,7 +45,7 @@ workflows 一侧相反：去宿主后仍有 142 个模块，因为 `continuation
 |---|---|---|---|---|
 | `spark_exclusive_session` → `compute/spark_exclusive_session.py` | Spark 独占会话、durable job hold、SSH 按内容哈希部署自身 | 是（只用标准库） | `controllerSha256`（§4.4） | 无；命令行路径 `scripts/spark_exclusive_session.py` 留 CLI 门面 |
 | `sermon_provider_http` → `compute/provider_http.py`；`sermon_provider_error` → `compute/sermon_provider_error.py` | 单请求、限墙钟的隔离 HTTP worker（`python -I -B <自身路径> --worker`） | 是，**两个必须同批**：前者用 `Path(__file__).with_name('sermon_provider_error.py')` 加载后者，所以后者的文件名不能改 | 无 | 无 |
-| `sermon_openai_runtime` → `compute/openai_runtime.py` | 显式 launcher 路由、项目头、拒绝密钥覆盖 | 是 | 豁免闭包键 `scripts/sermon_openai_runtime.py`（§4.5） | 无 |
+| `sermon_openai_runtime` → `compute/openai_runtime.py` | 显式 launcher 路由、项目头、拒绝密钥覆盖 | 是 | 豁免闭包键 `scripts/sermon_openai_runtime.py`（§4.5） | 无。基础设施设计 I0b 已计划连同 `sermon_transcription_request` → `compute/transcription_request.py` 按字节先搬；I0b 先合并则 C1 不再含它 |
 | `layer2_api_concurrency` → `compute/api_concurrency.py` | 本机 L2 API 请求槽位（L2 §6 第 6 项） | 是 | 无 | 无 |
 | `production_concurrency_profile` → `compute/concurrency_profile.py` | 并发 profile 校验 | 是 | 无 | 无 |
 | `sermon_unified_runtime_identity` → `compute/runtime_identity.py` | 解释器、发行包、ffmpeg/ffprobe 的准入身份 | 是 | 结果进统一运行准入，不哈希自身 | 无（阶段名 `runtime_identity` 改指包内模块） |
@@ -55,7 +55,7 @@ workflows 一侧相反：去宿主后仍有 142 个模块，因为 `continuation
 | `claude_layer2_transport`、`codex_layer2_transport`、`openai_layer2_transport` → `compute/transports/{claude_layer2,codex_layer2,openai_layer2}.py` | L2 的三个模型传输 | 否 | `adapterSha256`（§4.1） | openai 传输去掉 `completed_content` 及对 `run_target_language_models` 的导入（`text/models.py` 的默认解码器就是同一个函数，结果不变）；其余只改导入行 |
 | `codex_layer2_resources` → `compute/transports/codex_resources.py` | Codex CLI 容量预留 | 否 | `resourceAdapterSha256`（§4.1） | 编排资源账本的私有名改经 `Resources` 端口（§6 第 4 项） |
 | `sermon_codex_transport` → `compute/transports/codex_cli.py` | Supervisor、QC 片段测试、读本的 Codex CLI 调用 | 否 | `adapterSha256` 写进每个调用目录的 `identity.json`（§4.1） | `ROOT = parents[1]` 推出的默认调用目录改由 `Core.artifact_root` 给出 |
-| `sermon_model_call_observation`、`codex_credit_usage` → `compute/transports/{observation,codex_credit_usage}.py` | CLI 调用观测与 Codex 额度估算；三个 CLI 传输加载时导入前者 | 后者是（只用标准库），前者否（导入 `sermon_accounting`） | 无 | `sermon_accounting` 经 `Accounting` 端口 |
+| `sermon_model_call_observation`、`codex_credit_usage` | CLI 调用观测与 Codex 额度估算；三个 CLI 传输加载时导入前者 | — | 无 | **不归 compute**：基础设施设计 I3 把两者连同 accounting 环迁入 observability/。C3 以 I3 为前置，传输改为导入包内 observability（模块级无环：observability 只导入 compute 的 `openai_runtime` 叶子） |
 | `sermon_pipeline` 的 provider 部分 → `compute/legacy_openai.py` | `request_json`、`json_request`、`multipart_request`、`chat_json`/`_chat_json`、`bounded_legacy_chat_payload`、`legacy_text_*`、拒绝分类常量 | 否（函数级抽出） | `_chat_json`、`multipart_request` 的源文件哈希进结果收据（§4.2、§4.3） | 见 §2.3 |
 
 已在包内：`compute/provider_limits.py`（阶段 1）。
@@ -89,7 +89,7 @@ L1 S0 只给 `chat_json`、`request_json`、`mfa_options` 建了端口，单体�
 
 | 组 | 函数 | 目标 | 消费者 |
 |---|---|---|---|
-| 远端调用 | `request_json`、`json_request`、`multipart_request`、`_http_error_diagnostic`、`TransportRejection`、`PreDispatchRejection`、`PRE_DISPATCH_REASONS`、`KNOWN_REQUEST_REJECTIONS`、`CHAT_URL`、`TRANSCRIBE_URL`、`chat_json`、`_chat_json`、`bounded_legacy_chat_payload`、`legacy_text_cache_contract`、`legacy_text_execution_identity` | `compute/legacy_openai.py`（小文件，§4.3 说明为什么要小） | `Provider` 端口、`text/budget.py`、`sermon_diagnostic_provider`、`sermon_strict_*`、读本、字幕复核、openai 传输 |
+| 远端调用 | `request_json`、`json_request`、`multipart_request`、`_http_error_diagnostic`、`TransportRejection`、`PreDispatchRejection`、`KNOWN_REQUEST_REJECTIONS`（`PRE_DISPATCH_REASONS` 按基础设施 I1 进 contracts/）、`CHAT_URL`、`TRANSCRIBE_URL`、`chat_json`、`_chat_json`、`bounded_legacy_chat_payload`、`legacy_text_cache_contract`、`legacy_text_execution_identity` | `compute/legacy_openai.py`（小文件，§4.3 说明为什么要小） | `Provider` 端口、`text/budget.py`、`sermon_diagnostic_provider`、`sermon_strict_*`、读本、字幕复核、openai 传输 |
 | L1 英文事实 | `transcribe_openai_audio`、`transcription_request_fields`、`transcription_cache_identity` 及读写、`reference_transcription_*`、`correct_english`、`mfa_options`、`precompute_source_fingerprint` | `source/`（§6 第 2 项） | post-live 产出的 `segments_timed_en_corrected.json` 是 L1 shadow 的输入（[工作流地图](../workflows/README.zh.md)），backlog 也把转写和英文纠错标为 L1 |
 | dual_pdf 中文 | `translate_chinese`、`qa_report`、`write_srt`/`write_vtt`、`reading_segments`、`reference_chunks_to_reading_segments`、术语表函数、`main`/`produce_pipeline` | `workflows/dual_pdf/pipeline.py` | 只有 dual_pdf；不进 L2，legacy 中文字幕不冒充 Target-Language Candidate |
 | 通用小工具 | `read_json`、`write_json`、`clean_text`、`parse_timecode`、`ffprobe_duration`、`source_file_identity` 等 | 随第一个需要它的组，不建 `utils/` | 提案 §3 第 7 条 |
@@ -165,7 +165,7 @@ L1 锚点缓存 `sermon-sentence-model-cache-v3`、读本和字幕复核的缓�
 
 `machine_quality_waiver.IMPLEMENTATION_FILES` 里属于 compute 的有 `scripts/sermon_openai_runtime.py`、`scripts/machine_qc_audio_transports.py`（以及已在包内的 `sermon_source_budget`）。闭包经 `implementation_path()` 按别名解析，键名不变。基线 `implementation_sha256()` = `acbe52567982`。
 
-- `sermon_openai_runtime` 可以字节不变地搬（C1）：别名表加一条，豁免哈希不变，已签发的豁免继续有效。出口条件之一就是这个值与基线相等。
+- `sermon_openai_runtime` 可以字节不变地搬（基础设施 I0b，或 C1）：别名表加一条，豁免哈希不变，已签发的豁免继续有效。出口条件之一就是这个值与基线相等。
 - `machine_qc_audio_transports` 要改导入，字节必变，豁免哈希必变，所有未发布 locale 都要重新校准（片段每语约 0.35–0.45 美元，全篇约 2.5–3 美元，见[周更运行配置](../weekly-run-profile.zh.md)）。它应当排进 L3 A3 的身份代窗口（§6 第 5 项），让豁免闭包只变一次。
 
 ### 4.6 每批都会变的代码身份
@@ -224,12 +224,12 @@ L1 锚点缓存 `sermon-sentence-model-cache-v3`、读本和字幕复核的缓�
 | 批 | 内容 | 出口条件 |
 |---|---|---|
 | C0 端口与检查 | `ports.Outcomes` 替换 `Provider.outcomes: Any`；`compute/binding.py` 骨架（先仍绑定 `scripts/`）；一个只读检查器，把共同出口条件第 1、2 条输出成 JSON，供每批 PR 附上（可以扩展 `check_run_start.py`，不另造权威）。不搬文件 | §4 所有基线值不变；L1/L2 端口测试全绿；检查器只读、不建文件、不派发 |
-| C1 字节不变的叶子 | `spark_exclusive_session`、`sermon_provider_http` + `sermon_provider_error`、`sermon_openai_runtime`、`layer2_api_concurrency`、`production_concurrency_profile`、`sermon_unified_runtime_identity` → §2.1 目标；`scripts/` 留门面（CLI 门面派发 `main()`）；别名表加 7 条 | 7 个文件 sha256 与附录 A 的基线逐个相等；豁免 `implementation_sha256()` = `acbe52567982`；`controllerSha256` 不变，若有进行中的会话，合并后 `require` 通过；provider worker 从包路径、非仓库 CWD、`python -I` 启动的测试通过；`runtime_identity.snapshot()` 输出不变 |
+| C1 字节不变的叶子 | `spark_exclusive_session`、`sermon_provider_http` + `sermon_provider_error`、`sermon_openai_runtime`（I0b 未先合并时）、`layer2_api_concurrency`、`production_concurrency_profile`、`sermon_unified_runtime_identity` → §2.1 目标；`scripts/` 留门面（CLI 门面派发 `main()`）；别名表每个文件加一条 | 每个文件 sha256 与附录 A 的基线逐个相等；豁免 `implementation_sha256()` = `acbe52567982`；`controllerSha256` 不变，若有进行中的会话，合并后 `require` 通过；provider worker 从包路径、非仓库 CWD、`python -I` 启动的测试通过；`runtime_identity.snapshot()` 输出不变 |
 | C2 准入与对账 | `api_cli_outcomes`、`production_spark_admission`、`strict_budget_capability` → `compute/{outcomes,spark_admission,budget_capability}.py`；宿主改绑包内模块 | 同 fixture 的结果收据字节一致（调用方未变，`executionBinding` 相同）；`SessionBoundCaller` 经新旧两个名字是同一类；`recover` 与对账 CLI 从旧路径可用 |
-| C3 传输（一个身份代） | `claude_layer2_transport`、`codex_layer2_transport`、`openai_layer2_transport`、`codex_layer2_resources`、`sermon_codex_transport` 和它们共用的 `sermon_model_call_observation`、`codex_credit_usage` → `compute/transports/`；`codex_resources` 改经 `Resources` 端口 | 每个文件相对原文件只有导入行（及 §2.1 写明的一处）变化；新 `adapterSha256`/`resourceAdapterSha256` 列入 PR；canonical OpenAI lane 同 fixture 的 `payloadSha256` 不变；Claude/Codex lane 同 fixture 除 `adapterSha256` 外指纹输入一致；排空窗口满足；`claude_cli_opus` 冻结 run 在旧 SHA 上完成 |
-| C4 legacy provider 抽出 | §2.3 远端调用组 → `compute/legacy_openai.py`；`sermon_pipeline` 旧名指向新位置；对旧名的测试 patch 同批迁移 | `production-text-call`、`source-audio-api` 的新绑定写进 PR；加一条测试：改动 `sermon_pipeline.py` 其他函数不改变这两个绑定；读本/复核/锚点缓存的新键如实变化，旧作用域按 `api_cli_frozen_execution_binding_changed` 停止而不是重付 |
+| C3 传输（一个身份代） | `claude_layer2_transport`、`codex_layer2_transport`、`openai_layer2_transport`、`codex_layer2_resources`、`sermon_codex_transport` → `compute/transports/`；`codex_resources` 改经 `Resources` 端口。前置：基础设施 I3（观测模块已在 observability/） | 每个文件相对原文件只有导入行（及 §2.1 写明的一处）变化；新 `adapterSha256`/`resourceAdapterSha256` 列入 PR；canonical OpenAI lane 同 fixture 的 `payloadSha256` 不变；Claude/Codex lane 同 fixture 除 `adapterSha256` 外指纹输入一致；排空窗口满足；`claude_cli_opus` 冻结 run 在旧 SHA 上完成 |
+| C4 legacy provider 抽出 | §2.3 远端调用组 → `compute/legacy_openai.py`；`sermon_pipeline` 旧名指向新位置；对旧名的测试 patch 同批迁移。建议排在基础设施 I1 之后：I1 把 `PRE_DISPATCH_REASONS` 移进 contracts 时要改被绑定函数所在文件的一行，排在 C4 之后就会让 §4.2 的绑定再变一次 | `production-text-call`、`source-audio-api` 的新绑定写进 PR；加一条测试：改动 `sermon_pipeline.py` 其他函数不改变这两个绑定；读本/复核/锚点缓存的新键如实变化，旧作用域按 `api_cli_frozen_execution_binding_changed` 停止而不是重付 |
 
-`machine_qc_audio_transports` 不进 C 批，随 L3 A3（§6 第 5 项）。
+`machine_qc_audio_transports` 不进 C 批，随 L3 A3 / 复核层 G1（§6 第 5 项）。
 
 ### workflows
 
@@ -248,7 +248,7 @@ L1 锚点缓存 `sermon-sentence-model-cache-v3`、读本和字幕复核的缓�
 2. **`sermon_pipeline` 的 L1 组归属**：建议转写、英文纠错、`mfa_options`、指纹预计算归 `source/`，因为它们产出 L1 shadow 的输入；另一做法是全部留在 `workflows/dual_pdf`，由 L1 经端口调用。
 3. **包内代码能否直接导入 compute 纯函数**：建议允许导入无副作用的计算（`provider_limits` 的界限、`budget_capability` 的谓词），与 L2 §6 第 5 项一致；有副作用的（传输、HTTP、会话、结果收据）只经端口。另一做法是一律走端口。
 4. **Codex 容量预留与编排资源账本的边**：建议 `codex_resources` 经已有的 `Resources` 端口（L1 S3），宿主给它补一个账本事务函数，资源账本留在 `orchestration/unified/resources.py`；另一做法是把资源账本整体移到 compute/。
-5. **`machine_qc_audio_transports` 的时机**：建议排进 L3 A3 的身份代窗口，与 L3 §6 第 1 项的附带问题一起定，让豁免闭包只变一次。
+5. **`machine_qc_audio_transports` 的时机**：建议排进 L3 A3 的身份代窗口，即复核层设计 §6 第 2 项提议的同一窗口 G1，让豁免闭包只变一次。按复核层设计 §4.3，同窗口时它不需要迁移表，额外代价只是校准 TTS 在 Spark 上重渲染。
 6. **阶段模块归属**：按 §2.2，编排机制 → orchestration，跨层组合 → `workflows/prepared`，设备身份 → compute，`reviews` → review/。
 7. **`workflows/live_session` 是否现在建**：建议不建。它目前没有组合代码，`run_realtime_live_session` 自成一体；等 live/ 设计有了组合需要再建。
 
