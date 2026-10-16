@@ -101,13 +101,23 @@ REVIEW = {
     'scripts/text_qc_human_acceptance.py': _REVIEW + 'text_qc_acceptance.py',
 }
 
+# Prepared-workflow composition (tongxing_production.workflows.prepared), batch W2.
+_PREPARED = PRODUCTION + 'workflows/prepared/'
+WORKFLOWS = {
+    'scripts/sermon_unified_continuation.py': _PREPARED + 'continuation.py',
+    'scripts/sermon_unified_capabilities.py': _PREPARED + 'capabilities.py',
+    'scripts/sermon_unified_canonical_binding.py': _PREPARED + 'canonical_binding.py',
+    'scripts/sermon_unified_study.py': _PREPARED + 'study.py',
+    'scripts/sermon_study_generation.py': _PREPARED + 'study_generation.py',
+}
+
 # Shared infrastructure, batches I1-I4 (docs/design/infrastructure-injection.zh.md).
 CONTRACTS = {}      # tongxing_production.contracts, batch I1
 STORAGE = {}        # tongxing_production.storage, batch I2
 OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
 
 PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **LAYER2, **LAYER3, **LAYER4,
-                **REVIEW}
+                **REVIEW, **WORKFLOWS}
 
 
 def resolve(key):

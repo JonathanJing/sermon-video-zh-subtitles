@@ -7,12 +7,10 @@ import shutil
 import struct
 import subprocess
 from pathlib import Path
-from scripts import delivery_contract as d
-from scripts import sermon_unified_reviews as reviews
-from scripts import target_language_policy as policies
-from scripts import prepare_target_language_speech_job as speech
+from tongxing_production.delivery import contract as d
+from tongxing_production.text import policy as policies
+from .unmoved import repo_root, reviews, speech
 
-ROOT = Path(__file__).resolve().parents[1]
 VERSION = 'sermon-unified-consumer-capabilities-v2'
 LEGACY_VERSION = 'sermon-unified-consumer-capabilities-v1'
 SCHEMAS = {
@@ -130,7 +128,7 @@ def inspect(config_path):
     d.require(value['releaseIntents']['dev']['site'] != value['releaseIntents']['production']['site'], 'consumer_environments_share_site')
     d.require(value['targetSchemaVersions'] == schemas, 'consumer_target_schema_versions_unsupported')
     for key, version in schemas.items():
-        capture('schema:' + key, str(ROOT / 'schemas' / (version + '.schema.json')))
+        capture('schema:' + key, str(repo_root() / 'schemas' / (version + '.schema.json')))
     codec = pcm_roundtrip()
     inputs['encoderDecoder'] = {'path': codec['executable'], 'sha256': codec['executableSha256']}
     # Include semantic configuration, with only the self-referential snapshot omitted.
@@ -169,9 +167,13 @@ def freeze(config_path, output_path):
     return inspect(output)
 
 
-if __name__ == '__main__':
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('config', type=Path)
     parser.add_argument('--freeze-out', type=Path)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     print(json.dumps(freeze(args.config, args.freeze_out) if args.freeze_out else inspect(args.config), ensure_ascii=False, indent=2))
+
+
+if __name__ == '__main__':
+    main()

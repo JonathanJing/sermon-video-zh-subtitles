@@ -1,7 +1,7 @@
 """Tie existing canonical inspection to the active unified run's frozen source."""
 from pathlib import Path
-from scripts.sermon_unified import contracts as c
-from scripts import inspect_canonical_packages as packages
+from tongxing_production.orchestration.unified import contracts as c
+from .unmoved import packages
 
 
 def inspect_bound(manifest, base, configuration_path, step):

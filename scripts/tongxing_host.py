@@ -775,7 +775,7 @@ EAGER_PRODUCER_IMPORTS = (
     'production_spark_admission', 'series_terminology', 'sermon_accounting', 'sermon_cache_observation',
     'sermon_execution_harness', 'sermon_job_liveness', 'sermon_pipeline', 'sermon_provider_http',
     'sermon_provider_limits', 'sermon_public_snapshot', 'sermon_release_workflow', 'sermon_review_budget',
-    'sermon_review_contracts', 'sermon_transcription_request', 'sermon_workflow_jobs',
+    'sermon_review_contracts', 'sermon_transcription_request', 'sermon_unified_reviews', 'sermon_workflow_jobs',
     'source_meaning_machine_adjudication',
 )
 

@@ -11,10 +11,10 @@ from pathlib import Path
 import re
 import tempfile
 
-from scripts.sermon_unified import contracts as c
-from scripts.sermon_unified import runtime
-from scripts.sermon_unified import adapters
-from scripts import sermon_unified_reviews as reviews
+from tongxing_production.orchestration.unified import contracts as c
+from tongxing_production.orchestration.unified import runtime
+from tongxing_production.orchestration.unified import adapters
+from .unmoved import audio, reviews
 
 SCHEMA = 'sermon-unified-continuation-recipe-v1'
 RECIPE_BINDING = 'continuationRecipe'
@@ -95,9 +95,8 @@ def _artifact(path, *, sha=None, json_sha=None):
 
 
 def _source(package, manifest):
-    from scripts.sermon_unified_audio import source_identity
     reviews.schema(package, 'sermon-english-source-package-v1.schema.json')
-    actual, expected = source_identity(package), manifest['source']
+    actual, expected = audio.source_identity(package), manifest['source']
     require(all(actual.get(k) == expected.get(k) for k in ('sourceId', 'sourceUrlHash', 'mediaSha256', 'durationSeconds'))
             and all(actual['window'].get(k) == expected['window'].get(k) for k in
                     ('startSeconds', 'endSeconds', 'timeBase', 'approvalReceiptSha256')), 'source_identity_changed')
@@ -140,7 +139,7 @@ def _port(state, port, root):
         ref = package['anchors' if role == 'source_anchor' else 'transcript']['artifact']
         return _artifact(source_path.parent / ref['path'], sha=ref['sha256'], json_sha=ref['jsonSha256'])
     if role == 'target_candidate':
-        from scripts import canonical_layer2_controller as ctl
+        from tongxing_production.text import controller as ctl
         config = ctl.load_configuration(adapters.config_path(manifest, '/', step))
         path = config.lanes[step['locale']]['candidate']
         value = c.read(path)
@@ -235,7 +234,7 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
         require(receipt is not None, 'independent_review_required')
         _unchanged_content(before, value, kind)
         if kind == 'approved_source':
-            from scripts import build_english_source_package as source
+            from tongxing_production.source import english_source_package as source
             _source(value, manifest)
             source.validate_ready_package(value)
             require(value['review']['evidence']['sha256'] == receipt['sha256'], 'source_review_receipt_changed')
@@ -256,8 +255,8 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
         approval = _artifact(Path(actual['path']).parent / value['approvalReceipt'], sha=value['authority']['approvalSha256'])
         approved = c.read(approval['path'])
         if version == 'sermon-source-budget-authorization-v1':
-            from scripts import sermon_source_budget as source_budget
-            from scripts import sermon_unified_source as source_producer
+            from tongxing_production.source import budget as source_budget
+            from tongxing_production.source import unified_stage as source_producer
             require(set(value) == {'schemaVersion','binding','authority','approvalReceipt'}
                     and set(binding) == {'productionRunId','configurationSha256','codeIdentitySha256','budgetRoot'}, 'budget_schema_invalid')
             source_budget.SourceBudget(Path(binding['budgetRoot']), value['authority'], verify=lambda: None)
@@ -265,7 +264,7 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
                                 'requestLimits':value['authority']['requestLimits']}
             expected_code = source_producer.code.code_identity()
         elif version == 'sermon-study-budget-authorization-v1':
-            from scripts import sermon_study_generation as generation
+            from . import study_generation as generation
             c.validate(value, 'sermon-study-budget-authorization-v1')
             generation.budget.SourceBudget(Path(binding['budgetRoot']), value['authority'], verify=lambda: None)
             require(value['approvalReceiptSha256'] == value['authority']['approvalSha256']
@@ -275,8 +274,8 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
             expected_binding = binding
             expected_code = generation.code_identity()
         else:
-            from scripts import canonical_layer2_budget as layer2_budget
-            from scripts import canonical_layer2_controller as controller
+            from tongxing_production.text import budget as layer2_budget
+            from tongxing_production.text import controller
             runtime_bound = version == layer2_budget.RUNTIME_SCHEMA
             scoped = version == layer2_budget.LOCALE_SCHEMA or (runtime_bound and value.get('ledgerScope') == 'locale')
             optional = {'ledgerScope', 'runtimeIdentity'} if runtime_bound else {'ledgerScope'} if scoped else set()

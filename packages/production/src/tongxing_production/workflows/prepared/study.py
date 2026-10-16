@@ -1,14 +1,17 @@
 """Freeze supplied study text in the owner, independently of audio and PDFs."""
-from scripts.sermon_unified import contracts as c
-from scripts import study_artifacts as study
-from scripts.sermon_unified_reviews import validate_review
-from scripts.sermon_execution_harness import atomic_json
+from tongxing_production.orchestration.unified import contracts as c
+from tongxing_production.delivery import study_artifacts as study
+from .unmoved import atomic_json, reviews
+
+
+def validate_review(kind, receipt_path, **binding):
+    return reviews.validate_review(kind, receipt_path, **binding)
 
 
 def inspect(manifest,base,configuration_path,step):
     config=c.read(configuration_path)
     if config.get('schemaVersion')=='sermon-unified-study-inputs-v2':
-        from scripts import sermon_study_generation as generation
+        from . import study_generation as generation
         return generation.inspect(manifest,base,configuration_path,step)
     if (set(config)!={'schemaVersion','kind','producerIdentity','inputs'}
         or config['schemaVersion']!='sermon-unified-study-inputs-v1'
@@ -31,7 +34,7 @@ def inspect(manifest,base,configuration_path,step):
 
 def execute(manifest,base,configuration_path,step,output,*,api_key=None,transport=None):
     if c.read(configuration_path).get('schemaVersion')=='sermon-unified-study-inputs-v2':
-        from scripts import sermon_study_generation as generation
+        from . import study_generation as generation
         return generation.execute(manifest,base,configuration_path,step,output,api_key=api_key,transport=transport)
     artifact=inspect(manifest,base,configuration_path,step)
     target=output.parent/(step['id']+'-study.json')
@@ -47,7 +50,7 @@ def execute(manifest,base,configuration_path,step,output,*,api_key=None,transpor
 
 def verify_result(manifest,base,configuration_path,step,result):
     if c.read(configuration_path).get('schemaVersion')=='sermon-unified-study-inputs-v2':
-        from scripts import sermon_study_generation as generation
+        from . import study_generation as generation
         return generation.verify_result(manifest,base,configuration_path,step,result)
     artifact=inspect(manifest,base,configuration_path,step)
     if c.digest(artifact)!=result['jsonSha256'] or c.file_sha(result['path'])!=result['sha256'] or c.read(result['path'])!=artifact:
