@@ -1,6 +1,6 @@
 {
   "schemaVersion": "sermon-workflow-accounting-v3",
-  "contractVersion": "sermon-accounting-log-contract-v1",
+  "contractVersion": "sermon-accounting-log-contract-v2",
   "event": null,
   "eventId": null,
   "producerId": null,

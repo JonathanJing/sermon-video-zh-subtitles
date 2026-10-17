@@ -24,6 +24,7 @@ import tempfile
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import sermon_accounting as accounting
+from scripts import sermon_identity_sidecars as sidecars
 from scripts import sermon_run_progress as progress
 from scripts import weekly_pipeline_report as weekly
 
@@ -98,7 +99,8 @@ def _reasons(values):
 def _mode(events):
     # A legacy loose envelope cannot establish real/synthetic provenance merely
     # by adding an arbitrary evidenceMode field.
-    modes = {e.get("evidenceMode") if e.get("contractVersion") == "sermon-accounting-log-contract-v1"
+    modes = {e.get("evidenceMode") if e.get("contractVersion") in
+             {"sermon-accounting-log-contract-v1", "sermon-accounting-log-contract-v2"}
              else None for e in events}
     if "synthetic" in modes:
         return "synthetic" if modes == {"synthetic"} else "mixed"
@@ -170,8 +172,12 @@ def _snapshot(directory):
         data = stream.read(MAX_INPUT_BYTES + 1)
     if len(data) > MAX_INPUT_BYTES:
         raise ValueError("accounting_too_large")
+    identities = sidecars.collect(directory, sidecars.rows_in_snapshot(data))
     with tempfile.TemporaryDirectory(prefix="tracker-dag-") as tmp:
-        (Path(tmp) / "events.jsonl").write_bytes(data)
+        snapshot = Path(tmp) / "events.jsonl"
+        snapshot.touch(mode=0o600)
+        snapshot.write_bytes(data)
+        sidecars.write(tmp, identities)
         events, damaged = accounting.read_events(tmp)
         report = weekly.project(tmp)
     return events, damaged, report
@@ -492,9 +498,8 @@ def build_projection(accounting_dir, *, run_id, at=None, progress_inputs=None, s
             result["quality"]["reasonCodes"] = ["run_not_found"]
         else:
             _observed(result, run, selected, report, clock, stale_after_seconds, all_events=events)
-            profile_count = sum("contractVersion" in event for event in selected)
             result["logs"] = {"schemaVersions": sorted({e["schemaVersion"] for e in selected}),
-                "contractVersions": ["sermon-accounting-log-contract-v1"] if profile_count else [],
+                "contractVersions": sorted({e["contractVersion"] for e in selected if "contractVersion" in e}),
                 "eventCount": len({e["eventId"] for e in selected}),
                 "profileEventCount": len({e["eventId"] for e in selected if "contractVersion" in e}),
                 "legacyEventCount": len({e["eventId"] for e in selected if "contractVersion" not in e}),

@@ -47,7 +47,8 @@ class InfrastructureAliasTests(unittest.TestCase):
         source = Path(self.tmp.name).resolve()/'source'
         for name, data in {'experiments/local_experiment_log/tool.py': b'print("one")\n',
                            'scripts/sermon_log_contract.py': b'# facade\n',
-                           'schemas/sermon-accounting-log-contract-v1.schema.json': b'{}\n'}.items():
+                           'schemas/sermon-accounting-log-contract-v1.schema.json': b'{}\n',
+                           'schemas/sermon-accounting-log-contract-v2.schema.json': b'{}\n'}.items():
             (source/name).parent.mkdir(parents=True, exist_ok=True)
             (source/name).write_bytes(data)
         bundle = Path(self.tmp.name)/'bundle.tgz'
