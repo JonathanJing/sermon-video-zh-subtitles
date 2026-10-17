@@ -1,0 +1,12 @@
+stage	status	elapsed_seconds
+changes	success	11
+test-group (root-6)	success	803
+test-group (root-1)	success	428
+test-group (root-3)	success	549
+test-group (root-2)	success	534
+test-group (root-7)	success	537
+test-group (root-4)	success	604
+test-group (root-0)	success	705
+test-group (root-5)	success	810
+Native and shared client contracts	skipped	0
+unittest	success	4
