@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-weekly-compatibility-gate-audit",
+  "runs": [
+    {
+      "label": "weekly-compatibility-gate-audit",
+      "source": "~/.codex/worktrees/weekly-report-projection/sermon-video-zh-subtitles/artifacts/weekly-compatibility-gate-audit",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-compatibility-gate-audit",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 134,
+      "truncated": false,
+      "sha256": "9ab91d3691f644887a3e82fb3ec607201a4a8de11f9aed98d2d7e3338e129d2b",
+      "redactions": {}
+    },
+    {
+      "run": "weekly-compatibility-gate-audit",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 490,
+      "truncated": false,
+      "sha256": "bd44d8ba754dbc5c8fa9f6963a2340c7ad7e4a99506954119f3096bae7fdfa3b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
