@@ -193,6 +193,7 @@ wait enter/exit 引用同一 gate 与 revision；重复 approval、旧 candidate
 - 业务事件不采样：state transition、model attempt/usage、decision、approval reference、retry、failure、deploy intent/result 必须记录。CPU/RAM/GPU 可低频采样，单列覆盖率；外部 OTel 可采样副本，但不能把业务账本也采样。
 - 新账本仍用 0700 目录／0600 文件、进程安全 append lock、flush/fsync；并发事件不可交织。原始 JSONL 是事实来源，派生 JSON/CSV/Markdown 原子替换并绑定输入 ledger hash，不能让 Weekly JSON 反过来成为原始证据。
 - 写前 schema/白名单/长度校验。新 profile 单事件最多 64 KiB UTF-8、每 label ≤100、每依赖集合 ≤64、State Packet 摘要 refs ≤16；禁止为了达标截断身份/gate/usage。大集合用 bounded join 或私有内容寻址 sidecar，日志只记 hash。
+- `workflow_started` 的已加载项目代码清单超过事件预算时，完整清单先写入账本目录下私有的 `.execution-identities/<sha256>.json`，事件中的 `loadedProjectCodeSha256` 留空并记录 `loadedProjectCodeManifestSha256`；该引用须按内容哈希核验，不能把空映射解释为没有加载代码。
 - 坏 JSON、截断尾行、未知版本、缺字段和冲突均保留原字节/位置/hash及诊断；不整文件清空，不因为其余记录可读就认定完整。重放／导出验证同样 fail closed。
 - 不记录 prompt、转写全文、模型回复、secret、cookies、完整 env/命令、绝对私有路径或原始异常消息。异常保留固定 type 和有限项目栈帧；字段有限长度不代表自动脱敏，必须白名单。
 - 只从固定、受控来源取证；不跟随日志中的任意路径、符号链接或 URL。公开导出移除 PID、thread ID、主机信息与直接 provider ID；脱敏映射稳定且保留原/导出 ledger hash 和等价性验证范围。

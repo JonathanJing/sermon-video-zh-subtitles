@@ -5,10 +5,41 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from tongxing_production import path_aliases
+from tongxing_production.observability import accounting as accounting_impl
 from scripts import sermon_accounting as accounting
+from scripts import sermon_log_profile as log_profile
+from scripts import export_observability_trace as safe_export
 
 
 class ObservabilityTests(unittest.TestCase):
+    def test_large_loaded_code_identity_uses_verified_private_sidecar(self):
+        identity = accounting.execution_identity()
+        modules = {f'scripts/synthetic_{i:04d}.py': f'{i:064x}' for i in range(800)}
+        identity['loadedProjectCodeSha256'] = modules
+        with tempfile.TemporaryDirectory() as temporary, patch.object(accounting_impl, 'execution_identity', return_value=identity):
+            with log_profile.session(temporary, 'synthetic', work_kind='control', evidence_mode='synthetic'):
+                pass
+            rows, damaged = accounting.read_events(temporary)
+            self.assertFalse(damaged)
+            started = next(row for row in rows if row['event'] == 'workflow_started')
+            recorded = started['executionIdentity']
+            self.assertEqual(recorded['loadedProjectCodeSha256'], {})
+            digest = recorded['loadedProjectCodeManifestSha256']
+            self.assertEqual(accounting_impl.load_execution_identity_sidecar(temporary, digest), modules)
+            self.assertLessEqual(len(json.dumps(started, sort_keys=True, separators=(',', ':')).encode()) + 1, 64 * 1024)
+            exported = Path(temporary) / 'safe-export'
+            safe_export.export(Path(temporary), exported)
+            self.assertEqual(accounting_impl.load_execution_identity_sidecar(exported, digest), modules)
+            path = Path(temporary) / '.execution-identities' / (digest + '.json')
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            path.write_text('{}')
+            with self.assertRaises(ValueError):
+                accounting_impl.load_execution_identity_sidecar(temporary, digest)
+            _, damaged = accounting.read_events(temporary)
+            self.assertEqual(len(damaged), 1)
+            with self.assertRaisesRegex(ValueError, 'damaged_source_ledger_requires_inspection'):
+                safe_export.export(Path(temporary), Path(temporary) / 'rejected-export')
+
     def test_request_identity_does_not_include_prompt_or_secret(self):
         data = accounting.request_metadata({'model': 'gpt-6-astra', 'reasoning': {'effort': 'medium'}, 'messages': [{'content': 'private sermon text'}], 'api_key': 'private-key'})
         self.assertEqual(data['reasoning_effort'], 'medium')
