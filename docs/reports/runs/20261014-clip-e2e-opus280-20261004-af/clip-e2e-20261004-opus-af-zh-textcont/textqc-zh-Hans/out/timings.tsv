@@ -1,0 +1,7 @@
+stage	status	seconds
+discover	pass	0.0
+zh-Hans.text-qc.prefetch	pass	3.3
+zh-Hans.text-qc	pass	3.3
+zh-Hans.calibration.prefetch	pass	45.4
+zh-Hans.calibration	pass	17.9
+zh-Hans.text-waiver	pass	0.0

@@ -1,0 +1,23 @@
+
+== 2026-10-15T00:57:01+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_with_openai_environment.py --environment dev --env-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.env.openai -- ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_text_qc_budget_continuation.py --run-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/textqc-zh-Hans/run-out --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/textqc-zh-Hans/out --state-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/textqc-zh-Hans/state --locales zh-Hans --text-backend api --api-budget-authorization ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/plans/qc-zh-Hans/qc-zh-Hans/api-budget-authorization.json --workers 8 --expected-implementation 95ea20d504691c4415627e04b803a059eaec7b51f0d1f50b4c911e1b23d5771c --human-acceptance zh-Hans=~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/human-acceptance/zh-Hans.json --prior-budget-plan ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal/plans/qc-zh-Hans
+discover	pass	0.0
+zh-Hans.text-qc.prefetch	pass	3.3
+zh-Hans.text-qc	pass	3.3
+zh-Hans.calibration.prefetch	pass	45.4
+zh-Hans.calibration	pass	17.9
+zh-Hans.text-waiver	pass	0.0
+Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/20261015-005812-machine-qc-text-budget-continuation
+{
+  "zh-Hans": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 0.995434,
+      "cleanFalsePositiveRate": 0.04,
+      "trials": 219,
+      "detected": 218
+    }
+  }
+}
+Digest: ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/run-reports/20261015-005812-machine-qc-text-budget-continuation (3 files, 11 redactions)
