@@ -13,9 +13,9 @@
       "run": "pr808-ready-ios-39071256176",
       "path": "outcome.json",
       "kind": "whole",
-      "bytes": 325,
+      "bytes": 322,
       "truncated": false,
-      "sha256": "cfbb6ccd367266ce78015985656732bb00120715c9be5720704e4b27b2bb147b",
+      "sha256": "2a1c53b33eb2b6a672fe04e4691b7b766f7cf2ecbbdcedec3bbc5d62624f1a61",
       "redactions": {}
     },
     {
