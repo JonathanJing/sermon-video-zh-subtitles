@@ -4,6 +4,19 @@ from scripts.cuv_preflight import POLICY, EvidenceBlocked, preflight, require_re
 
 
 class PreflightTests(unittest.TestCase):
+    def test_legacy_import_uses_package_implementation(self):
+        from pathlib import Path
+        from scripts import cuv_preflight as legacy
+        from tongxing_production import path_aliases
+        from tongxing_production.text import cuv_preflight as package
+
+        self.assertIs(legacy, package)
+        self.assertEqual(
+            Path(package.__file__).resolve(),
+            (Path(__file__).resolve().parents[1] /
+             path_aliases.resolve('scripts/cuv_preflight.py')).resolve(),
+        )
+
     def make(self):
         blocks = [{'id': 'a', 'en': 'Word plus'}, {'id': 'b', 'en': 'Word'}]
         quote = {'quoteId': 'q', 'reference': 'REV 3:21', 'start': 0, 'end': 4, 'uncertainty': []}
