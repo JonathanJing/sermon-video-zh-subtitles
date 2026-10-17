@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "testsPassed": 60,
+  "subtestsPassed": 116,
+  "suite": [
+    "tests/test_tongxing_review_ports.py",
+    "tests/test_sermon_unified_reviews.py",
+    "tests/test_sermon_unified_audio.py",
+    "tests/test_sermon_trace_export.py",
+    "tests/test_accounting_observability.py"
+  ],
+  "branchHead": "af8cd632",
+  "scope": "local focused combination only"
+}
