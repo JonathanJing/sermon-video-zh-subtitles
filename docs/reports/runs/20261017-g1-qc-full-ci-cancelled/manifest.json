@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-qc-full-ci-cancelled",
+  "runs": [
+    {
+      "label": "g1-qc-full-ci-cancelled",
+      "source": "~/.codex/worktrees/g1-qc-sidecar-integration/sermon-video-zh-subtitles/artifacts/g1-qc-full-ci-cancelled",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-qc-full-ci-cancelled",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 163,
+      "truncated": false,
+      "sha256": "355293fd2595a33b7c429022d4fbe584138e2541d6cd6904943ac540ccd5efec",
+      "redactions": {}
+    },
+    {
+      "run": "g1-qc-full-ci-cancelled",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 332,
+      "truncated": false,
+      "sha256": "39212cb89ae9b2483ff8f60556a872dd5b106f4303eae5e8d16b6bfde479423b",
+      "redactions": {}
+    },
+    {
+      "run": "g1-qc-full-ci-cancelled",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 79,
+      "truncated": false,
+      "sha256": "8bcafa27a527414bd281635c2912c306e402a8d381bacc89c3fa38603ae7e7ca",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

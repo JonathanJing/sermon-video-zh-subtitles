@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "focused_pass_broad_incomplete",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T15:29:42.777446Z",
+  "endedAt": "2026-10-17T15:29:42.777446Z",
+  "deliveryType": "test",
+  "testScope": "6 focused tests passed; broad synthetic suite not established"
+}

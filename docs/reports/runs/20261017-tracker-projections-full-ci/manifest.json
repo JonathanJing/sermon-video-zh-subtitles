@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-tracker-projections-full-ci",
+  "runs": [
+    {
+      "label": "tracker-projections-full-ci",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/tracker-projections-full-ci",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tracker-projections-full-ci",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 141,
+      "truncated": false,
+      "sha256": "94d4e3669aa6c897dedadfd4b4803f5643b84496e320a8af59a5aacd0d04e490",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-projections-full-ci",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 284,
+      "truncated": false,
+      "sha256": "e812276d82400eb7f103b1252ed2132331255a40842a9b97aabf0fa5ec697d91",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-projections-full-ci",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 83,
+      "truncated": false,
+      "sha256": "b48cc2ba6d7a94a0c7f3a997eefb2c6bc75aee31e709ca984f49605ebf14105c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

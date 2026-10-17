@@ -1,0 +1,96 @@
+{
+  "source": "GitHub Actions job metadata only; no raw logs or test outputs",
+  "workflow": "Python tests",
+  "event": "pull_request",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:49:25Z",
+      "completedAt": "2026-10-17T16:49:34Z",
+      "databaseId": 117449613978
+    },
+    {
+      "name": "test-group (root-1)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:53:37Z",
+      "completedAt": "2026-10-17T17:03:16Z",
+      "databaseId": 117449653939
+    },
+    {
+      "name": "test-group (root-7)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:52:01Z",
+      "completedAt": "2026-10-17T17:09:30Z",
+      "databaseId": 117449653961
+    },
+    {
+      "name": "test-group (root-2)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:53:39Z",
+      "completedAt": "2026-10-17T17:05:55Z",
+      "databaseId": 117449653965
+    },
+    {
+      "name": "test-group (root-4)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:53:42Z",
+      "completedAt": "2026-10-17T17:10:59Z",
+      "databaseId": 117449653975
+    },
+    {
+      "name": "test-group (root-0)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:53:44Z",
+      "completedAt": "2026-10-17T17:01:54Z",
+      "databaseId": 117449654004
+    },
+    {
+      "name": "test-group (root-3)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:56:54Z",
+      "completedAt": "2026-10-17T17:11:27Z",
+      "databaseId": 117449654010
+    },
+    {
+      "name": "test-group (root-5)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:55:07Z",
+      "completedAt": "2026-10-17T17:08:19Z",
+      "databaseId": 117449654017
+    },
+    {
+      "name": "test-group (root-6)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:57:40Z",
+      "completedAt": "2026-10-17T17:07:30Z",
+      "databaseId": 117449654033
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T16:49:35Z",
+      "completedAt": "2026-10-17T16:49:35Z",
+      "databaseId": 117449654835
+    },
+    {
+      "name": "unittest",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T17:11:29Z",
+      "completedAt": "2026-10-17T17:11:32Z",
+      "databaseId": 117454211043
+    }
+  ],
+  "limits": "Applies only to eebf2174; current PR head aeb3659b is separate. Native job skipped; no real L2 run or human approval."
+}

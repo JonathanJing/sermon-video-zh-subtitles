@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr661-old-base-ci",
+  "runs": [
+    {
+      "label": "ci-661-old-base-39049502001",
+      "source": "~/.codex/worktrees/l2-review-diagnostics/sermon-video-zh-subtitles/artifacts/ci-661-old-base-39049502001",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ci-661-old-base-39049502001",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 403,
+      "truncated": false,
+      "sha256": "936c9fc26d0c0fabfdbf5fc48afc08f0bd2369bf28fc1159db05248288fdb35b",
+      "redactions": {}
+    },
+    {
+      "run": "ci-661-old-base-39049502001",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1476,
+      "truncated": false,
+      "sha256": "5949470c4c983971f352c0e3d0fb2cc6f277190109f3ee38402c49c89b87e075",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

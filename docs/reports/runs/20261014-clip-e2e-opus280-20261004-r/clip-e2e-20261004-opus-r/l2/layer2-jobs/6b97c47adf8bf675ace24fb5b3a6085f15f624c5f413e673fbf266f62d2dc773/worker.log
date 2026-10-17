@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 813, in <module>
+    main()
+    ~~~~^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 807, in main
+    result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
+                     budget_authorization=<redacted>, expected_budget=args.expected_budget)
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 545, in execute
+    evidence, model_output = _run_auto_repair(
+                             ~~~~~~~~~~~~~~~~^
+        config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        admission_span, model_completion,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        qc_digest=current['packageIdentities'].get('backTranslationQc.' + locale))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 624, in _run_auto_repair
+    require(receipt['status'] == 'all_groups_passed', 'layer2_auto_repair_stopped')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 85, in require
+    raise ValueError(reason)
+ValueError: layer2_auto_repair_stopped

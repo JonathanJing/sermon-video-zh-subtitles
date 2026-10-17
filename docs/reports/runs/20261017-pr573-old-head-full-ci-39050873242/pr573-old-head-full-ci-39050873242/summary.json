@@ -1,0 +1,96 @@
+{
+  "source": "GitHub Actions job metadata only; no raw logs or test outputs",
+  "workflow": "Python tests",
+  "event": "workflow_dispatch",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:46:33Z",
+      "completedAt": "2026-10-17T16:46:41Z",
+      "databaseId": 117449014992
+    },
+    {
+      "name": "test-group (root-4)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:46:43Z",
+      "completedAt": "2026-10-17T17:03:03Z",
+      "databaseId": 117449051428
+    },
+    {
+      "name": "test-group (root-5)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:46:43Z",
+      "completedAt": "2026-10-17T17:00:24Z",
+      "databaseId": 117449051434
+    },
+    {
+      "name": "test-group (root-0)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:46:43Z",
+      "completedAt": "2026-10-17T16:53:35Z",
+      "databaseId": 117449051440
+    },
+    {
+      "name": "test-group (root-3)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:46:43Z",
+      "completedAt": "2026-10-17T16:57:19Z",
+      "databaseId": 117449051447
+    },
+    {
+      "name": "test-group (root-2)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:46:44Z",
+      "completedAt": "2026-10-17T16:55:11Z",
+      "databaseId": 117449051480
+    },
+    {
+      "name": "test-group (root-7)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:46:43Z",
+      "completedAt": "2026-10-17T17:01:58Z",
+      "databaseId": 117449051505
+    },
+    {
+      "name": "test-group (root-1)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:46:44Z",
+      "completedAt": "2026-10-17T16:57:38Z",
+      "databaseId": 117449051511
+    },
+    {
+      "name": "test-group (root-6)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:46:43Z",
+      "completedAt": "2026-10-17T17:02:44Z",
+      "databaseId": 117449051549
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T16:46:42Z",
+      "completedAt": "2026-10-17T16:46:41Z",
+      "databaseId": 117449052208
+    },
+    {
+      "name": "unittest",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T17:03:04Z",
+      "completedAt": "2026-10-17T17:03:07Z",
+      "databaseId": 117452452727
+    }
+  ],
+  "limits": "Result applies only to recorded head SHA; code-branch/parent heads may have moved. Native job was intentionally skipped; no production workflow or venue acceptance."
+}

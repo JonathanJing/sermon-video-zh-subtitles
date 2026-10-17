@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "local-code-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "scope": "local focused code tests only",
+  "checks": [
+    {
+      "name": "accounting and log contract",
+      "passed": 25,
+      "failed": 0
+    },
+    {
+      "name": "log profile and observability",
+      "passed": 37,
+      "failed": 0
+    },
+    {
+      "name": "sidecar permission and conflict regression",
+      "passed": 1,
+      "failed": 0
+    }
+  ],
+  "preflightFailure": "Initial system Python lacked the worktree package path and jsonschema; no code result was inferred from that invocation.",
+  "productionRun": false
+}

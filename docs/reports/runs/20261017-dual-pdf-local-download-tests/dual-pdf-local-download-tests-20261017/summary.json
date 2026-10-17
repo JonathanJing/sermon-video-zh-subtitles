@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "baseCommit": "a4d42f81",
+  "codeCommit": "e67dccc0",
+  "commands": [
+    {
+      "name": "local handoff mock unittest",
+      "tests": 6,
+      "exitCode": 0,
+      "seconds": 0.453
+    },
+    {
+      "name": "post-live adjacent unittest",
+      "tests": 40,
+      "exitCode": 0,
+      "seconds": 2.302
+    },
+    {
+      "name": "diff check",
+      "exitCode": 0
+    }
+  ],
+  "coverage": [
+    "legacy import alias and patch targets",
+    "external CWD CLI help and mocked missing_source",
+    "media SHA-256 and manifest handoff",
+    "already_complete idempotency",
+    "post-live timeline and subtitle adjacent fixtures",
+    "path alias and loaded-code dependency closure"
+  ],
+  "externalCalls": 0,
+  "oldImplementationSha256": "561a042d9e0ba93510a730425e926ebc979f161af04414b4127da7ee0ed57d33",
+  "newImplementationSha256": "e5a8185fd59983a6d937185b918fbf30257f24cf27635a9ebd154e665c0298ef"
+}

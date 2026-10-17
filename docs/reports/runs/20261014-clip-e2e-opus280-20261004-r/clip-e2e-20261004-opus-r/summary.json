@@ -1,0 +1,96 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-14T21:30:09+00:00",
+      "units": 50,
+      "inputs": "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/clip-e2e-opus280-20261004-r/inputs",
+      "layer1Backend": "claude_cli_opus"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-14T21:30:09+00:00"
+    },
+    "layer2": {
+      "status": "done",
+      "at": "2026-10-14T21:30:33+00:00"
+    },
+    "qc.ko": {
+      "status": "running",
+      "at": "2026-10-14T21:31:46+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/ko/candidate.json",
+          "out": "out",
+          "status": "requires_repair",
+          "failedGroups": [
+            "translation-0-u282",
+            "translation-0-u284",
+            "translation-0-u285",
+            "translation-0-u288",
+            "translation-0-u307"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-ko/state/qc-receipts/text/ko/e69e84a8d2d0c628ab3aa7f073303994b0725bd69824cad4b27a7e8157250b71/entry-000001.json",
+          "waiverDir": null
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/ko/candidate.json"
+    },
+    "qc.es": {
+      "status": "failed",
+      "at": "2026-10-14T21:37:49+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/es/candidate.json",
+          "out": "out",
+          "status": "requires_repair",
+          "failedGroups": [
+            "translation-0-u293",
+            "translation-0-u313"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/state/qc-receipts/text/es/730076e55f3f64fa4edff03f09fdf0cdd9865a05498c8aaacc7c06a1177ac92a/entry-000001.json",
+          "waiverDir": null
+        },
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2-es-r1/text/es/candidate.json",
+          "out": "out-r1",
+          "status": "waiver_refused",
+          "failedGroups": [],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/state/qc-receipts/text/es/730076e55f3f64fa4edff03f09fdf0cdd9865a05498c8aaacc7c06a1177ac92a/entry-000002.json",
+          "waiverDir": null
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2-es-r1/text/es/candidate.json"
+    },
+    "qc.zh-Hans": {
+      "status": "running",
+      "at": "2026-10-14T21:38:49+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/zh-Hans/candidate.json",
+          "out": "out",
+          "status": "requires_repair",
+          "failedGroups": [
+            "translation-0-u282",
+            "translation-0-u288",
+            "translation-0-u301",
+            "translation-0-u302",
+            "translation-0-u327"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-zh-Hans/state/qc-receipts/text/zh-Hans/23477e73384424889ea5a2cdaa61e144289440e0dfd0c318be12c291a8a5ce72/entry-000001.json",
+          "waiverDir": null
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/zh-Hans/candidate.json"
+    }
+  },
+  "stopped": [
+    "layer2-ko-r1: Layer 2 blocked {\"ko\": {\"status\": \"blocked\", \"reason\": \"failed_durable_job\", \"dispatched\": false}}",
+    "qc.es: failed earlier ({'status': 'failed', 'at': '2026-10-14T21:37:49+00:00', 'candidate': '~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2-es-r1/text/es/candidate.json'})",
+    "layer2-zh-Hans-r1: Layer 2 blocked {\"zh-Hans\": {\"status\": \"blocked\", \"reason\": \"failed_durable_job\", \"dispatched\": false}}",
+    "layer4 needs every locale; not finished: ['ko', 'es', 'zh-Hans']"
+  ],
+  "settledUsd": 11.958098,
+  "claudeListPriceEquivalentUsd": 0.605264
+}

@@ -1,0 +1,10 @@
+{
+  "deliveryType": "test",
+  "pullRequest": 596,
+  "headCommit": "34ffd1ca70fe7da88ce1f435a146f18761b8421d",
+  "ciRun": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39044491505",
+  "result": "rerun success",
+  "scope": "Docker build and production schema loader inside container",
+  "previousAttempt": "cancelled during Docker build",
+  "productionDeploy": "not_run"
+}

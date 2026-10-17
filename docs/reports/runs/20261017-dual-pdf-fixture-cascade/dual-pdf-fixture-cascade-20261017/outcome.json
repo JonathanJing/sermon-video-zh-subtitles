@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "scope": "propagate PR 571 report snapshot test fixture to dual PDF PR stack",
+  "upstreamHead": "483eb42c6295ebeee1292727446f00dd874d956c",
+  "stages": [
+    {
+      "pr": 584,
+      "head": "0c440517b34343dd246d8efaf217405ae688e474",
+      "passed": 22,
+      "subtestsPassed": 15
+    },
+    {
+      "pr": 594,
+      "head": "56a6c7cc96d7c4147574950f9300f2839a11427e",
+      "passed": 27
+    },
+    {
+      "pr": 598,
+      "head": "1524144763b0ffd1450817c9059fbdecc3d82b9f",
+      "passed": 21
+    },
+    {
+      "pr": 602,
+      "head": "8739067f61596a6691343ca5f93e5b5a81b41920",
+      "passed": 13
+    },
+    {
+      "pr": 607,
+      "head": "a16bc1f216bad6e9e888e76564147ab37959cec6",
+      "passed": 32,
+      "subtestsPassed": 22
+    }
+  ],
+  "diffCheck": "passed_per_merge",
+  "remoteCommitReadback": "passed_per_branch",
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

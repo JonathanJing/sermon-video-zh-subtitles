@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "local-code-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "endedAt": "2026-10-17T16:08:18.315680+00:00",
+  "scope": "#569 follow-up merge of #568 transitional v1 write guard",
+  "productionRun": "not_run",
+  "paidModelCalls": 0
+}

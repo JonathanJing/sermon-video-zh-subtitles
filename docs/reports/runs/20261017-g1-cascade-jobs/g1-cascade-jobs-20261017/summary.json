@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "head": "4376c9a7892aa4abf3737e487c69ae0d21283553",
+  "targetPr": 569,
+  "upstreamPr": 568,
+  "testGroups": [
+    {
+      "scope": "workflow jobs, durable jobs, liveness, accounting profile, completion, report snapshot",
+      "executed": 80,
+      "passed": 80,
+      "exitCode": 0,
+      "durationSeconds": 21.115
+    }
+  ],
+  "diffCheck": "passed",
+  "externalCalls": 0
+}

@@ -1,0 +1,9 @@
+{
+  "status": "completed",
+  "deliveryType": "test",
+  "result": "Tracker workflow YAML parsed and both trigger path filters matched moved projection/backend files while excluding unrelated accounting.py; git diff --check passed",
+  "exitCode": 0,
+  "headBeforeChange": "c972c1cbac97b7e85bba20a7777e483779128256",
+  "commitCreated": false,
+  "productionRun": false
+}

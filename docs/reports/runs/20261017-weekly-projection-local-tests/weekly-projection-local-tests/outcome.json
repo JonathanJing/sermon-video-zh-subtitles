@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "scope": "weekly projection move, dependent readers, CLI and output parity",
+  "checks": [
+    {
+      "name": "weekly projection and dependent read-only observability tests",
+      "status": "passed",
+      "passed": 133,
+      "subtestsPassed": 41
+    },
+    {
+      "name": "standalone package import boundary",
+      "status": "passed",
+      "passed": 1
+    },
+    {
+      "name": "legacy and moved CLI output comparison on existing synthetic ledger fixture",
+      "status": "passed",
+      "reportJsonSha256": "0cd99f25875f636e938003a03941f5e4c76bb39ff08f9b7b3c633c01035f67c1",
+      "reportMarkdownSha256": "569052a99678f6985ec2b93f3dbd5719677cd934fbe1cb68a5b95e21550f876b"
+    },
+    {
+      "name": "non-repository working directory CLI help",
+      "status": "passed"
+    }
+  ],
+  "remoteCalls": 0,
+  "paidCalls": 0,
+  "publication": "not_run"
+}

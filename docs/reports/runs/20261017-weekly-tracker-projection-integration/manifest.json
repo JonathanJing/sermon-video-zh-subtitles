@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-weekly-tracker-projection-integration",
+  "runs": [
+    {
+      "label": "weekly-tracker-projection-integration-20261017",
+      "source": "~/.codex/worktrees/weekly-report-projection/sermon-video-zh-subtitles/artifacts/weekly-tracker-projection-integration-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-tracker-projection-integration-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 798,
+      "truncated": false,
+      "sha256": "ae037a80d260399f5fae6d55ef93b2b403733df95c6b352066b4a92064dd2fcf",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

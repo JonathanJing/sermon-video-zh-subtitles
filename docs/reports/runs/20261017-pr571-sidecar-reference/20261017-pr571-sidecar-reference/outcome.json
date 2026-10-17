@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "purpose": "Focused PR 571 sidecar reference regression tests",
+  "command": ".venv/bin/python -m unittest tests.test_build_tracker_dag_projection tests.test_verify_sermon_observability_sidecars"
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-browser-capture-baseline",
+  "runs": [
+    {
+      "label": "browser-capture-baseline-report-20261017",
+      "source": "~/.codex/worktrees/dev-browser-cache-smoke/sermon-video-zh-subtitles/artifacts/browser-capture-baseline-report-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "browser-capture-baseline-report-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 785,
+      "truncated": false,
+      "sha256": "f782a59bc9d0d604ee19ab3d8d322809af94a6c491d9d4e88f434f840745144c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

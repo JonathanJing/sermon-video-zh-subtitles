@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-source-failure",
+  "runs": [
+    {
+      "label": "source-failure",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/cascade-pr571/source-failure",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "source-failure",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 102,
+      "truncated": false,
+      "sha256": "6c56f2f100954297311d258e64c6c8c7b8dfca6eb3c7507d981b25fc69a7b80d",
+      "redactions": {}
+    },
+    {
+      "run": "source-failure",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 54,
+      "truncated": false,
+      "sha256": "44210d4862cd71227aa650beda485583192c617300983bd656c32e4536ff5e88",
+      "redactions": {}
+    },
+    {
+      "run": "source-failure",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 102,
+      "truncated": false,
+      "sha256": "1f4eadbfd7ac0be6f6626e4976e4817654770722a3ba646c481332378428ed75",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -844,7 +844,8 @@ def _cloud_function(name):
 
 def cloud() -> ports.Cloud:
     return ports.Cloud(**{name: _cloud_function(name) for name in (
-        'access_secret', 'read_gcs_bytes', 'upload_file_to_gcs')})
+        'access_secret', 'read_gcs_bytes', 'read_gcs_text', 'download_file_from_gcs',
+        'upload_file_to_gcs', 'write_gcs_text')})
 
 
 def _observability_function(name):
@@ -899,7 +900,7 @@ def compute_unmoved():
 def dual_pdf_unmoved():
     return dual_pdf_host.Unmoved(
         live_source_monitor=_scripts_module('live_source_monitor'),
-        post_live_run_status=_scripts_module('post_live_run_status'),
+        youtube_data_api=_scripts_module('youtube_data_api'),
         series_terminology=_scripts_module('series_terminology'),
         export_saturday_live_context=_scripts_module('export_saturday_live_context'),
         reading_edition=_scripts_module('build_sermon_reading_edition_with_openai'),
@@ -914,9 +915,19 @@ def dual_pdf_unmoved():
 # load on first use. Loaded at identity capture only when that entry is loaded, as
 # importing the entry did before W3c, so the identity still covers the code it runs.
 ENTRY_LOAD_TIME_IMPORTS = {
+    'tongxing_production.workflows.dual_pdf.timeline': (
+        'backend.cloud', 'backend.config', 'backend.observability',
+        'scripts.sermon_accounting', 'scripts.live_source_monitor',
+        'scripts.youtube_data_api'),
+    'tongxing_production.workflows.dual_pdf.local_post_live_download': (
+        'backend.cloud', 'backend.config', 'scripts.live_source_monitor', 'scripts.youtube_data_api'),
+    'tongxing_production.observability.weekly_projection': (
+        'scripts.sermon_accounting', 'scripts.sermon_clock_evidence',
+        'scripts.sermon_cache_observation', 'scripts.sermon_local_model_observation',
+        'scripts.sermon_workflow_evidence', 'scripts.sermon_decision_accounting'),
     'tongxing_production.workflows.dual_pdf.post_live': (
         'backend.cloud', 'backend.observability', 'scripts.live_source_monitor',
-        'scripts.post_live_run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
+        'tongxing_production.workflows.dual_pdf.run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
     # L3 A3: the renderer and the package builder imported these at load time.
     'tongxing_production.audio.renderer': (
         'scripts.render_multilingual_voice_demos', 'scripts.sermon_accounting', 'scripts.four_layer_measure',
@@ -981,8 +992,20 @@ _measure, _workspace, _accounting = measure(), workspace(), accounting()
 _schemas, _review, _diagnostic, _waivers = schemas(), review(), diagnostic(), waivers()
 _plugins, _transports = plugins(), transports()
 
+def _observation_code(module):
+    return _module(module)().CODE
+
+
+def _safe_observation(module, fields):
+    return _module(module)().safe_observation(fields)
+
+
 observability_backend.configure(observability_backend.ObservabilityBackend(
-    checkout_root=ROOT, load_producer_imports=load_producer_imports))
+    checkout_root=ROOT, load_producer_imports=load_producer_imports,
+    local_model_code=lambda: _observation_code('scripts.sermon_local_model_observation'),
+    safe_local_model_observation=lambda fields: _safe_observation('scripts.sermon_local_model_observation', fields),
+    decision_code=lambda: _observation_code('scripts.sermon_decision_accounting'),
+    safe_decision_observation=lambda fields: _safe_observation('scripts.sermon_decision_accounting', fields)))
 jobs_host_module.configure(jobs_host())
 compute_backend.configure(compute_backend.ComputeBackend(accounting=_accounting, resources=_resources_port,
                                                          artifact_root=lambda: _core.artifact_root,

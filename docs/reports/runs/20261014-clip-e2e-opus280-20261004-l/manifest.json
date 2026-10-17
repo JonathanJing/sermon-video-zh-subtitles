@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-clip-e2e-opus280-20261004-l",
+  "runs": [
+    {
+      "label": "clip-e2e-20261004-opus-l",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-l",
+      "skipped": {
+        ".json": 19
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-e2e-20261004-opus-l",
+      "path": "logs/check-layer2.log",
+      "kind": "log",
+      "bytes": 2504,
+      "truncated": false,
+      "sha256": "bdd3bcbccc2441b9975b392bd5734ac6cc631dd25ef45df425861b8a7c3bc292",
+      "redactions": {
+        "email": 1,
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-l",
+      "path": "logs/layer2.log",
+      "kind": "log",
+      "bytes": 1058,
+      "truncated": false,
+      "sha256": "b548f82dcb6e3deac19e51313eaafb0304759ec67114fcd1794554abe5064c3f",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-l",
+      "path": "logs/plan-layer2.log",
+      "kind": "log",
+      "bytes": 2222,
+      "truncated": false,
+      "sha256": "11257eae9b3f3cc47879a0468d51b472e725eab0ab0b2c83a5893a53d41bb590",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-l",
+      "path": "logs/route-probe.log",
+      "kind": "log",
+      "bytes": 716,
+      "truncated": false,
+      "sha256": "bf0de8a423f68664787b90f188b2e1b31bb848180f156eb7a135665bcb07611d",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-l",
+      "path": "logs/timeline-map.log",
+      "kind": "log",
+      "bytes": 1055,
+      "truncated": false,
+      "sha256": "6c1567d3a03f2c221a34c9b7d69e4b60659eb7ff8da0e16cea64c243e18a837e",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-l",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 962,
+      "truncated": false,
+      "sha256": "00ef599250a8fdd7f8b2a6983ec31dc0b81d792e643e0c74ee47a2ffaa7c0cfd",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-l",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 92,
+      "truncated": false,
+      "sha256": "550644d7b55d882123428f30ff99fa147309c4bd79b1eaf5ab4ad93e99701db9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

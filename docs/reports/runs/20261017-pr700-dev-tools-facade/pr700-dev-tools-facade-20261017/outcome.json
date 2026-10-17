@@ -1,0 +1,10 @@
+{
+  "kind": "local_test",
+  "status": "success",
+  "exitCode": 0,
+  "branchHead": "87ed8ce17fa1ed540b4371d8a444c7f67adb60cf",
+  "baseHead": "00233589a2c6592e4124d49f5ea593135c7739ea",
+  "testsRun": 6,
+  "durationSeconds": 1.793,
+  "scope": "compatibility gate focused tests and package facade contract"
+}
