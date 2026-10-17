@@ -26,7 +26,7 @@ class ImplementationFreezeTests(unittest.TestCase):
             frozen_hash = waiver.implementation_sha256(root)
             frozen_files = freeze.file_hashes(root)
             self.assertEqual(frozen_hash, waiver.implementation_sha256())
-            edited = root / "scripts/target_audio_auto_qc.py"
+            edited = waiver.implementation_path("scripts/target_audio_auto_qc.py", root)
             edited.write_text(edited.read_text(encoding="utf-8") + "\n# edited after the run plan froze\n", encoding="utf-8")
             report = freeze.mismatch(frozen_hash, recorded_files=frozen_files, root=root)
             self.assertEqual(report["status"], "implementation_mismatch")
