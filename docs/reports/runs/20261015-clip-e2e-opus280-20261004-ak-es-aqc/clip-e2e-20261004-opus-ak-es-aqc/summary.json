@@ -1,0 +1,15 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ak-es-aqc",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-15T01:40:47+00:00",
+      "units": 50,
+      "inputs": "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/clip-e2e-opus280-20261004-ak-es-aqc/inputs",
+      "layer1Backend": "claude_cli_opus"
+    }
+  },
+  "stopped": [],
+  "settledUsd": 21.247861,
+  "claudeListPriceEquivalentUsd": 0.0
+}
