@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-a3-sidecar-root2",
+  "runs": [
+    {
+      "label": "g1-a3-sidecar-shard2-20261017",
+      "source": "/private/tmp/sermon-a3-sidecar-verify-20261017/artifacts/g1-a3-sidecar-shard2-20261017",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-a3-sidecar-shard2-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 192,
+      "truncated": false,
+      "sha256": "5463e2771bf7ec441c13f1b015318ccdfa4f1a712df5f3dd4c4270fd1b81e2ea",
+      "redactions": {}
+    },
+    {
+      "run": "g1-a3-sidecar-shard2-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 330,
+      "truncated": false,
+      "sha256": "993f8d479d6556921c1d9de56778d33c333ac8340dcc18965e70c10dee79252e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
