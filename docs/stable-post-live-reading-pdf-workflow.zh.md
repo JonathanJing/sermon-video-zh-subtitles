@@ -135,7 +135,7 @@ Supervisor 路径以新读取的确定性 `recommendedAction.action == "complete
 
 下面这些部分已经 working，但当前不应该作为 repo 首页的主入口：
 
-- [../scripts/render_content_json_pdf.py](../scripts/render_content_json_pdf.py)：从已发布的 `/content/<pageId>/<locale>.json` 全文本地导出中英对照阅读 PDF（`--page-id <pageId>` 读正式站中文全文，英文按 `textGroupId` 取自同页 `/english-reference/<pageId>.json` 并校验内容哈希；`--no-english` 只出中文）；不重新翻译、不上传，机器质检文稿的披露文字保留在页脚
+- [../scripts/render_content_json_pdf.py](../scripts/render_content_json_pdf.py)：从已发布的 `/content/<pageId>/zh-Hans.json` 全文（content v2／v3）本地导出中英对照阅读 PDF（`--page-id <pageId>` 读正式站中文全文，英文按 `textGroupId` 取自同页 `/english-reference/<pageId>.json` 并校验内容哈希；`--no-english` 只出中文）；不重新翻译、不上传，机器质检文稿的披露文字保留在页脚
 - [../backend/README.md](../backend/README.md)：backend worker 和 Cloud Run orchestration
 - [../apps/operator-web/README.md](../apps/operator-web/README.md)：frontend/admin 与播放原型
 

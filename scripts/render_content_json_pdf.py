@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import re
 import sys
 import urllib.request
 from pathlib import Path
@@ -19,6 +20,9 @@ from pathlib import Path
 DEFAULT_BASE_URL = "https://ai-for-god-sermon-audio.web.app"
 LOCALE = "zh-Hans"
 REFERENCE_SCHEMA = "sermon-published-english-reference-v1"
+# Published full-text schemas; v2 is human_reviewed only, v3 adds machine_checked with a disclosure.
+CONTENT_SCHEMAS = {"sermon-full-video-text-content-v2", "sermon-full-video-text-content-v3"}
+SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 _RENDERER_PATH = Path(__file__).resolve().parent / "render_mobile_pdf_from_srt.py"
 _SPEC = importlib.util.spec_from_file_location("render_mobile_pdf_from_srt", _RENDERER_PATH)
 renderer = importlib.util.module_from_spec(_SPEC)
@@ -36,9 +40,7 @@ def main() -> int:
         origin = f"{base}/content/{args.page_id}/{LOCALE}.json"
         raw = fetch(origin)
     content = json.loads(raw)
-    locale = content.get("targetLocale") or content.get("locale")
-    if locale != LOCALE:
-        raise SystemExit(f"Only {LOCALE} content is supported (the renderer's fonts and metadata are Chinese); got {locale!r}.")
+    check_content(content, args.page_id)
     content_sha = hashlib.sha256(raw).hexdigest()
     reference = reference_raw = reference_origin = None
     if args.english_reference:
@@ -48,8 +50,7 @@ def main() -> int:
         reference_raw = fetch(reference_origin)
     if reference_raw is not None:
         reference = json.loads(reference_raw)
-    page_id = content.get("pageId") or args.page_id or "sermon"
-    out = args.out or Path(f"{page_id}-{LOCALE}.pdf")
+    out = args.out or Path(f"{content['pageId']}-{LOCALE}.pdf")
     out.parent.mkdir(parents=True, exist_ok=True)
     qa = render_content_pdf(
         content,
@@ -113,6 +114,16 @@ def render_content_pdf(
     return qa
 
 
+def check_content(content: dict, page_id: str | None = None) -> None:
+    if content.get("schemaVersion") not in CONTENT_SCHEMAS:
+        raise SystemExit(f"Unsupported content schema {content.get('schemaVersion')!r}; expected one of {sorted(CONTENT_SCHEMAS)}.")
+    if content.get("targetLocale") != LOCALE:
+        raise SystemExit(f"Only {LOCALE} content is supported (the renderer's fonts and metadata are Chinese); "
+                         f"got {content.get('targetLocale')!r}.")
+    if not SAFE_ID.fullmatch(str(content.get("pageId") or "")) or (page_id and content["pageId"] != page_id):
+        raise SystemExit("Content pageId is missing, unsafe or differs from the requested page.")
+
+
 def fetch(url: str) -> bytes:
     with urllib.request.urlopen(url, timeout=60) as response:
         return response.read()
@@ -168,11 +179,17 @@ def srt_time(seconds: float) -> str:
     return f"{hours:02d}:{minutes:02d}:{secs:02d},{millis:03d}"
 
 
+def page_id_arg(value: str) -> str:
+    if not SAFE_ID.fullmatch(value):
+        raise argparse.ArgumentTypeError(f"unsafe pageId {value!r}")
+    return value
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--content", type=Path, help="Local content JSON file.")
-    source.add_argument("--page-id", help="Published pageId to download from --base-url.")
+    source.add_argument("--page-id", type=page_id_arg, help="Published pageId to download from --base-url.")
     parser.add_argument("--english-reference", type=Path,
                         help="Local english-reference JSON; with --page-id it is downloaded when cues lack English.")
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL)

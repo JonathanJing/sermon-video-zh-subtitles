@@ -77,6 +77,14 @@ class RenderContentJsonPdfTest(unittest.TestCase):
             mod.render_content_pdf(content, out=out, include_english=False)
             self.assertTrue(out.read_bytes().startswith(b"%PDF"))
 
+    def test_check_content_rejects_legacy_foreign_and_unsafe_pages(self):
+        mod.check_content(CONTENT, "page-1")
+        for bad in ({"schemaVersion": "sermon-demo-content-v1"}, {"targetLocale": "ko"}, {"pageId": "../x"}):
+            with self.assertRaises(SystemExit):
+                mod.check_content(dict(CONTENT, **bad))
+        with self.assertRaises(SystemExit):
+            mod.check_content(CONTENT, "other-page")
+
     def test_renders_pdf_from_content(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "page.pdf"
