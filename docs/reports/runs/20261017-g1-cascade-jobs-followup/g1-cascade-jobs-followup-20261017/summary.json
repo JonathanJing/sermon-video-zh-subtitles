@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "head": "d9e0abfa85594ab8c2b49032712bc0c5c758ec5b",
+  "targetPr": 569,
+  "upstreamPr": 568,
+  "executed": 46,
+  "passed": 46,
+  "testScope": "accounting observability, profile, workflow jobs",
+  "diffCheck": "passed",
+  "externalCalls": 0
+}
