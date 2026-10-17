@@ -164,6 +164,7 @@ STORAGE = {         # tongxing_production.storage, batch I2
     'scripts/sermon_public_snapshot.py': PRODUCTION + 'storage/snapshot.py',
 }
 OBSERVABILITY = {   # tongxing_production.observability, batches I3-I4
+    'scripts/weekly_pipeline_report.py': PRODUCTION + 'observability/projections.py',
     # I3: the accounting ring and its leaves.
     'scripts/sermon_accounting.py': PRODUCTION + 'observability/accounting.py',
     'scripts/sermon_log_contract.py': PRODUCTION + 'observability/log_contract.py',

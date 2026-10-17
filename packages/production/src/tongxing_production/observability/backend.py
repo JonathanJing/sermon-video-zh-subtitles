@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from .. import ports
 
@@ -18,6 +18,10 @@ from .. import ports
 class ObservabilityBackend:
     checkout_root: Path
     load_producer_imports: Callable[[], None]
+    local_model_code: Callable[[], str]
+    safe_local_model_observation: Callable[[Any], dict]
+    decision_code: Callable[[], str]
+    safe_decision_observation: Callable[[Any], dict]
 
 
 _current: ObservabilityBackend | None = None

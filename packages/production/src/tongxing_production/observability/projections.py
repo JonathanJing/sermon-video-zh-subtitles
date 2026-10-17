@@ -1,25 +1,19 @@
 """Read-only dependency DAG and weekly accounting projection; no model or network calls."""
 from __future__ import annotations
 
-import argparse
 from collections import defaultdict
 from datetime import datetime
 import hashlib
 import json
-from pathlib import Path
-import sys
+from .accounting import EXECUTOR_TYPES, INTERNAL_TIMING_WORKLOADS, READABLE_SCHEMAS, _label, _number, _safe_metadata, safe_execution_identity, read_events, read_event_snapshot, receipt_integrity, profile_integrity
+from .clock_evidence import monotonic_interval, handshake_windows, _hash as clock_hash
+from .cache_observation import CODE as CACHE_CODE, safe_observation as safe_cache_observation
+from .workflow_evidence import _summary, PATHS
+from . import backend as _observability
 
-if __package__ in {None, ""}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.sermon_accounting import EXECUTOR_TYPES, INTERNAL_TIMING_WORKLOADS, READABLE_SCHEMAS, _label, _number, _safe_metadata, safe_execution_identity, read_events, read_event_snapshot, receipt_integrity, profile_integrity
 
-from scripts.sermon_clock_evidence import monotonic_interval, handshake_windows, _hash as clock_hash
-
-from scripts import sermon_cache_observation as cache_observation
-from scripts import sermon_local_model_observation as local_model
-from scripts.sermon_workflow_evidence import _summary, PATHS
-
-from scripts.sermon_decision_accounting import CODE as DECISION_CODE, safe_observation
+def safe_observation(fields):
+    return _observability.current().safe_decision_observation(fields)
 
 TOKENS = ('inputTokens', 'cachedInputTokens', 'outputTokens', 'reasoningTokens')
 ACTIVE = {'deterministic_program', 'production_model', 'decision_agent'}
@@ -405,7 +399,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
         issue('run_utc_wall_untrusted')
     decision_observations, decision_facts = [], defaultdict(dict)
     for event in events:
-        if event.get('event') == 'log' and event.get('code') == DECISION_CODE:
+        if event.get('event') == 'log' and event.get('code') == _observability.current().decision_code():
             try:
                 fact = safe_observation(event.get('fields'))
                 identity = (fact['observationId'], fact['phase'])
@@ -420,17 +414,17 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             decision_observations.append(next(iter(facts.values())))
     local_observations = []
     for event in events:
-        if event.get('event') == 'log' and event.get('code') == local_model.CODE:
+        if event.get('event') == 'log' and event.get('code') == _observability.current().local_model_code():
             try:
-                fact = local_model.safe_observation(event.get('fields'))
+                fact = _observability.current().safe_local_model_observation(event.get('fields'))
                 local_observations.append({**fact, 'spanSha256': digest(event['spanId']) if event.get('spanId') else None})
             except (TypeError, ValueError):
                 issue('invalid_local_model_observation')
     cached = []
     for event in events:
-        if event.get('event') == 'log' and event.get('code') == cache_observation.CODE:
+        if event.get('event') == 'log' and event.get('code') == CACHE_CODE:
             try:
-                fact = cache_observation.safe_observation(event.get('fields'))
+                fact = safe_cache_observation(event.get('fields'))
                 cached.append({**fact, 'spanSha256': digest(event['spanId']) if event.get('spanId') else None,
                     'workflowSha256': digest(event['workflowId']) if event.get('workflowId') else None,
                     'recordedAt': event['recordedAt']})
@@ -499,7 +493,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
                                  and all(c in '0123456789abcdef' for c in v))
                              or _number(v) is not None or isinstance(v, bool)}}
                 for e in events if e['event'] == 'workload' and e.get('stage') not in INTERNAL_TIMING_WORKLOADS]
-    from scripts.sermon_review_observation import observations
+    from .review_observation import observations
     rqc = observations(events)
     return {**({'reviewObservations': rqc} if rqc else {}), 'runSha256': digest(run_id), 'status': 'partial' if diagnostics else 'projected',
             'endToEndWallSeconds': wall, 'criticalPath': critical, 'diagnostics': diagnostics,
@@ -653,23 +647,3 @@ def markdown(report):
                     ','.join(value['reasonCodes']),value['receiptCanonicalJsonSha256']])) + ' |')
         lines += ['', 'Diagnostics: ' + ', '.join(run['diagnostics']), '']
     return '\n'.join(line.rstrip() for line in lines).rstrip() + '\n'
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--accounting-dir', required=True, type=Path)
-    parser.add_argument('--out-dir', required=True, type=Path)
-    args = parser.parse_args()
-    # Keep projections away from the append-only source and existing outputs.
-    from scripts import sermon_trace_artifacts as artifacts
-    artifacts.new_directory(args.out_dir)
-    report = project(args.accounting_dir)
-    for name, content in [('report.json', json.dumps(report, indent=2, allow_nan=False) + '\n'),
-                          ('report.md', markdown(report))]:
-        path = args.out_dir / name
-        artifacts.write(path,content)
-    return 0 if report['status'] == 'projected' else 1
-
-
-if __name__ == '__main__':
-    sys.exit(main())
