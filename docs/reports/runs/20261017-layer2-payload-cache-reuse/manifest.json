@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-layer2-payload-cache-reuse",
+  "runs": [
+    {
+      "label": "20261017-layer2-payload-cache-reuse",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/test-runs/20261017-layer2-payload-cache-reuse",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-layer2-payload-cache-reuse",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 465,
+      "truncated": false,
+      "sha256": "500ede8d44050d9c7cc727fb066d95f66196bab3d29037032fa36c220eb0ee0d",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-layer2-payload-cache-reuse",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 678,
+      "truncated": false,
+      "sha256": "32f569f2044883e48031bd8dcba2ffd1587df43c1fdd792de0ee379a2c315f6e",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-layer2-payload-cache-reuse",
+      "path": "targeted.log",
+      "kind": "log",
+      "bytes": 296,
+      "truncated": false,
+      "sha256": "7e4f122347ac4cf6910a79ce079728403da07eaaa795c24d9440f03a2bfc2479",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
