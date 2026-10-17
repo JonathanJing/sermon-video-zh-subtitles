@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "passed": 134,
+  "subtestsPassed": 41,
+  "limitations": "Synthetic ledger fixtures and read-only checks; no real production projection, publication, or external acceptance."
+}
