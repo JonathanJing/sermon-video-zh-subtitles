@@ -27,7 +27,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 PACKAGE_SRC = Path('packages/production/src')
 MARKER = 'worktree-venv.txt'
 PTH_NAME = '_worktree_paths.pth'
