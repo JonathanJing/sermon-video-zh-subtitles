@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+import re
 
 from scripts import sermon_accounting as accounting
 from scripts import sermon_trace_artifacts as artifacts
@@ -34,12 +35,20 @@ def collect(source, events):
             continue
         digest = identity.get('loadedProjectCodeManifestSha256')
         if digest is not None:
-            if identity.get('loadedProjectCodeSha256') != {}:
-                raise ValueError('conflicting_execution_identity')
+            # Leave invalid references and conflicts in the byte snapshot so
+            # the canonical reader can count the damaged row.
+            if (not isinstance(digest, str) or not re.fullmatch(r'[a-f0-9]{64}', digest)
+                    or identity.get('loadedProjectCodeSha256') != {}):
+                continue
             references.add(digest)
     manifests = {}
     for digest in sorted(references):
-        modules = accounting.load_execution_identity_sidecar(source, digest)
+        try:
+            modules = accounting.load_execution_identity_sidecar(source, digest)
+        except (ValueError, UnicodeError, OSError, TypeError):
+            # Missing or damaged source sidecars remain absent in the copy;
+            # read_event_snapshot diagnoses their referencing rows there.
+            continue
         manifests[digest] = json.dumps({
             'schemaVersion': 'sermon-loaded-project-code-v1',
             'loadedProjectCodeSha256': modules,
