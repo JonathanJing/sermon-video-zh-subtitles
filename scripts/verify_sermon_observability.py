@@ -119,7 +119,8 @@ def run(runtime, source_directory, expected_span_count):
                "humanGoldClaimed": False, "modelCalls": 0, "steps": [],
                "implementationSha256": {str(path.relative_to(ROOT)): observer.sha(path)
                     for path in (Path(__file__), Path(observer.__file__),
-                                 ROOT / "scripts/export_sermon_trace.py", Path(accounting.__file__))}}
+                                 ROOT / "scripts/export_sermon_trace.py", Path(accounting.__file__),
+                                 Path(sidecars.__file__))}}
     atomic_json(receipt_path, receipt)
     test_runtime = verification / "observer-control"
     observer_identity = None
