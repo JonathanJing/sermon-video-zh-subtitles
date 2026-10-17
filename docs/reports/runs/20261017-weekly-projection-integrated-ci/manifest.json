@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-weekly-projection-integrated-ci",
+  "runs": [
+    {
+      "label": "weekly-projection-integrated-ci-20261017",
+      "source": "~/.codex/worktrees/weekly-report-projection/sermon-video-zh-subtitles/artifacts/weekly-projection-integrated-ci-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-projection-integrated-ci-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 497,
+      "truncated": false,
+      "sha256": "83273464e8f2a945f6444e3de34c931dbe11963ef9130014dc231583dcc29259",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
