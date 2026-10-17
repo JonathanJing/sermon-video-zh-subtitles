@@ -14,6 +14,10 @@ from pathlib import Path
 import shutil
 import tempfile
 
+if __package__ in (None, ""):
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 try:
     from scripts import assemble_multilingual_v3_update as weekly
     from scripts.assemble_multilingual_hosting import digest, load, regular_files
