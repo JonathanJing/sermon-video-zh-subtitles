@@ -1,4 +1,5 @@
 import json
+import hashlib
 import os
 from pathlib import Path
 import tempfile
@@ -22,6 +23,7 @@ class ObservabilityTests(unittest.TestCase):
             rows, damaged = accounting.read_events(temporary)
             self.assertFalse(damaged)
             started = next(row for row in rows if row['event'] == 'workflow_started')
+            self.assertEqual(started['contractVersion'], 'sermon-accounting-log-contract-v2')
             recorded = started['executionIdentity']
             self.assertEqual(recorded['loadedProjectCodeSha256'], {})
             digest = recorded['loadedProjectCodeManifestSha256']
@@ -32,6 +34,37 @@ class ObservabilityTests(unittest.TestCase):
             self.assertEqual(accounting_impl.load_execution_identity_sidecar(exported, digest), modules)
             path = Path(temporary) / '.execution-identities' / (digest + '.json')
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            # A branch briefly emitted this sidecar shape with the v1 marker.
+            # Its reader may validate it, but must never change ledger bytes.
+            transitional = Path(temporary) / 'transitional'
+            transitional.mkdir()
+            import shutil
+            shutil.copytree(Path(temporary) / '.execution-identities',
+                            transitional / '.execution-identities')
+            legacy_rows = [{**row, 'contractVersion': 'sermon-accounting-log-contract-v1'}
+                           for row in rows]
+            from scripts import sermon_log_contract as log_contract
+            from tongxing_production.observability import outbox
+            legacy_started = next(row for row in legacy_rows if row['event'] == 'workflow_started')
+            self.assertFalse(log_contract.validator().is_valid(legacy_started))
+            self.assertIs(log_contract.validate_event(legacy_started), legacy_started)
+            with self.assertRaisesRegex(ValueError, 'transitional_version_new_write_rejected'):
+                outbox.deliver(transitional / 'new-run', legacy_started)
+            bound = transitional / 'bound-run'
+            markers = bound / '.run-profiles'
+            markers.mkdir(parents=True)
+            marker = markers / (hashlib.sha256(legacy_started['runId'].encode()).hexdigest() + '.json')
+            outbox.jobs._persist(marker, {'runId': legacy_started['runId'],
+                                          'contractVersion': log_contract.LEGACY_VERSION})
+            with self.assertRaisesRegex(ValueError, 'transitional_version_new_write_rejected'):
+                outbox.deliver(bound, legacy_started)
+            legacy_bytes = ''.join(json.dumps(row) + '\n' for row in legacy_rows).encode()
+            (transitional / 'events.jsonl').write_bytes(legacy_bytes)
+            recovered, damaged = accounting.read_events(transitional)
+            self.assertFalse(damaged)
+            self.assertEqual(recovered, legacy_rows)
+            self.assertEqual((transitional / 'events.jsonl').read_bytes(), legacy_bytes)
+            self.assertEqual(accounting.summarize(transitional)['eventIntegrity']['status'], 'consistent')
             path.chmod(0o644)
             _, damaged = accounting.read_events(temporary)
             self.assertEqual(len(damaged), 1)
