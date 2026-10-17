@@ -213,6 +213,12 @@ class ReceiptExportTests(unittest.TestCase):
                 with accounting.stage('render'):
                     pass
         self.events,_=accounting.read_events(logdir)
+        # This fixture replays the ledger in a second directory. A large loaded
+        # code map is stored beside events.jsonl, so carry its bound sidecar too.
+        sidecars = logdir / '.execution-identities'
+        if sidecars.exists():
+            import shutil
+            shutil.copytree(sidecars, self.work / sidecars.name)
         end=next(row for row in self.events if row['event']=='stage_finished' and row['stage']=='render')
         self.events.append(copy.deepcopy(end))
         _,diag,_=self.result()
