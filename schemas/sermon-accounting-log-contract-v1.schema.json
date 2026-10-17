@@ -3762,10 +3762,6 @@
           },
           "additionalProperties": false
         },
-        "loadedProjectCodeManifestSha256": {
-          "type": "string",
-          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
-        },
         "pythonVersion": {
           "anyOf": [
             {
@@ -3787,18 +3783,6 @@
         "pythonVersion",
         "scope"
       ],
-      "if": {
-        "required": [
-          "loadedProjectCodeManifestSha256"
-        ]
-      },
-      "then": {
-        "properties": {
-          "loadedProjectCodeSha256": {
-            "maxProperties": 0
-          }
-        }
-      },
       "additionalProperties": false
     },
     "evidence": {
