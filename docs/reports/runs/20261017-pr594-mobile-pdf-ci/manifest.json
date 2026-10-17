@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr594-mobile-pdf-ci",
+  "runs": [
+    {
+      "label": "pr594-full-ci-39066284132",
+      "source": "~/.codex/worktrees/dual-pdf-mobile-pdf/sermon-video-zh-subtitles/artifacts/pr594-full-ci-39066284132",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr594-full-ci-39066284132",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 367,
+      "truncated": false,
+      "sha256": "8bbf57717dd36ee6212de366a649ec3c543872183d01d4c256114b20afd3f9ce",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
