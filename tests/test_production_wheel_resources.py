@@ -53,6 +53,11 @@ class ProductionWheelResourceTests(unittest.TestCase):
                 import sys
 
                 site, checkout, *source_paths = map(Path, sys.argv[1:])
+                # The CI interpreter may have an editable install registered in
+                # site-packages even when PYTHONPATH is clear. Remove its source
+                # path before asserting which wheel this process imports.
+                sys.path[:] = [p for p in sys.path if not p or not (
+                    checkout == Path(p) or checkout in Path(p).parents)]
                 assert not any(checkout == Path(p) or checkout in Path(p).parents
                                for p in sys.path if p), sys.path
                 sys.path.insert(0, str(site))
