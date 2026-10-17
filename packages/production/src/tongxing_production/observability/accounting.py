@@ -811,15 +811,18 @@ def _with_report_snapshot(directory, project):
     """
     events, damaged, digest = read_event_snapshot(directory)
     contract = log_profile.contract
-    has_profile = any('contractVersion' in row for row in events)
+    versions = {contract._schema_version(row) for row in events
+                if row.get('contractVersion') in contract.READ_VERSIONS}
     with contract._schema_snapshot_lock:
-        schema = (contract.VERSION, contract._schema_snapshot()[0]) if has_profile else None
+        schema = (contract.VERSION,
+                  {version: contract._schema_snapshot(version)[0] for version in versions})
         replay = profile_integrity(events)
         frozen = marshal.dumps((events, damaged), 2)
         result = project(events, damaged, digest, replay)
         if marshal.dumps((events, damaged), 2) != frozen:
             raise ValueError('report_snapshot_mutated')
-        if has_profile and (contract.VERSION, contract._schema_snapshot()[0]) != schema:
+        if (contract.VERSION,
+            {version: contract._schema_snapshot(version)[0] for version in versions}) != schema:
             raise ValueError('report_schema_changed')
     return result
 

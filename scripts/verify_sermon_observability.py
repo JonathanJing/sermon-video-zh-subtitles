@@ -25,6 +25,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts import sermon_accounting as accounting
+from scripts import sermon_identity_sidecars as sidecars
 from scripts import sermon_observability as observer
 from scripts.sermon_execution_harness import atomic_json, utc_now, work_lock
 
@@ -134,12 +135,14 @@ def run(runtime, source_directory, expected_span_count):
         with source.open("rb") as stream:
             fcntl.flock(stream.fileno(), fcntl.LOCK_SH)
             source_bytes = stream.read()
+        manifests = sidecars.collect(source_directory, sidecars.rows_in_snapshot(source_bytes))
         source_hash = hashlib.sha256(source_bytes).hexdigest()
         ledger = output / "real-ledger" / "accounting"
         ledger.mkdir(parents=True, mode=0o700)
         copied = ledger / "events.jsonl"
         copied.write_bytes(source_bytes)
         copied.chmod(0o600)
+        sidecars.write(ledger, manifests)
         payload, diagnostics = observer.export(ledger)
         expected = identities(payload)
         require(diagnostics["status"] == "exported", "real_ledger_export_not_complete")
