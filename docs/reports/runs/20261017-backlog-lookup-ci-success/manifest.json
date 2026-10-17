@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-backlog-lookup-ci-success",
+  "runs": [
+    {
+      "label": "backlog-lookup-ci-success-20261017",
+      "source": "~/.codex/worktrees/backlog-lookup-tool/sermon-video-zh-subtitles/artifacts/backlog-lookup-ci-success-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "backlog-lookup-ci-success-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 497,
+      "truncated": false,
+      "sha256": "2b147242723599dfe2916c7f5d223efe1486a0935740fe14211c38b58874a777",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
