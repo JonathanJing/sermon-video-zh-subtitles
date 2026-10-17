@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-l1-s5-shadow-tests",
+  "runs": [
+    {
+      "label": "attempt-1",
+      "source": "~/.codex/worktrees/l1-s5-shadow/sermon-video-zh-subtitles/artifacts/l1-s5-shadow/attempt-1",
+      "skipped": {}
+    },
+    {
+      "label": "targeted-tests",
+      "source": "~/.codex/worktrees/l1-s5-shadow/sermon-video-zh-subtitles/artifacts/l1-s5-shadow/targeted-tests",
+      "skipped": {}
+    },
+    {
+      "label": "identity-compare",
+      "source": "~/.codex/worktrees/l1-s5-shadow/sermon-video-zh-subtitles/artifacts/l1-s5-shadow/identity-compare",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "attempt-1",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 397,
+      "truncated": false,
+      "sha256": "ac4718e274084ef93d22f66c4f80ed911ddb39dc761c44a006224933016c307e",
+      "redactions": {}
+    },
+    {
+      "run": "targeted-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 225,
+      "truncated": false,
+      "sha256": "f3f0d0f97cbf923769780a3814db97228fe98cc7de7f345fe66eacb09ee22adf",
+      "redactions": {}
+    },
+    {
+      "run": "targeted-tests",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 1656,
+      "truncated": false,
+      "sha256": "9d41effd1a365bd7c9126193c8286d3224859c2b472b429326d0e57c9185d75d",
+      "redactions": {}
+    },
+    {
+      "run": "identity-compare",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 582,
+      "truncated": false,
+      "sha256": "b27d198239f8a9f5e47eba4ac874d3d601eaf52b7649a9bdebd5040276379af6",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
