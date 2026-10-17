@@ -1,0 +1,8 @@
+{
+  "deliveryType": "test",
+  "pullRequest": 629,
+  "commit": "6fc0a126ce945010ea2b902c13d5c82ec4eb2914",
+  "result": "16 focused tests, 15 passed and 1 skipped",
+  "scope": "CUV preflight and infrastructure path aliases",
+  "productionRun": "not_run"
+}

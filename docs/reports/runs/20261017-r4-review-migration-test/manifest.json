@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-r4-review-migration-test",
+  "runs": [
+    {
+      "label": "r4-review-migration-test-20261017",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/r4-review-migration-test-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "r4-review-migration-test-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 217,
+      "truncated": false,
+      "sha256": "cf65751be2e6d9ebd3cee593f363c62b731e32c5a67dd963822ee6920a2965ef",
+      "redactions": {}
+    },
+    {
+      "run": "r4-review-migration-test-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 801,
+      "truncated": false,
+      "sha256": "7ff74229e2d148bedbaef1d503809fd85cc5971ff074362819c990722a5df4df",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

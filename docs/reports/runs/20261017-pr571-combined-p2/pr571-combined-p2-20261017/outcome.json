@@ -1,0 +1,10 @@
+{
+  "kind": "local_focused_unittest",
+  "command": ".venv/bin/python -m unittest tests.test_build_tracker_dag_projection tests.test_verify_sermon_observability_sidecars tests.test_accounting_log_contract tests.test_sermon_durable_accounting tests.test_sermon_log_profile",
+  "branch": "codex/dev-event-identity-sidecar-20261017",
+  "head": "eb1ccc15",
+  "exitCode": 0,
+  "testsRun": 94,
+  "result": "passed",
+  "scope": "combined three P2 fixes; not full CI"
+}

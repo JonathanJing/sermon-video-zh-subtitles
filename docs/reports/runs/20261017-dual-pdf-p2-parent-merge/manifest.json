@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-p2-parent-merge",
+  "runs": [
+    {
+      "label": "dual-pdf-p2-parent-merge",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/dual-pdf-p2-parent-merge",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-p2-parent-merge",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 188,
+      "truncated": false,
+      "sha256": "657849a5cad8b2df5519d7f0396d3521dac2596a390757294a2cd1554705cb44",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-p2-parent-merge",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 175,
+      "truncated": false,
+      "sha256": "33ef7fcef1751ff8266bf6a3c308641154d99199716fc4eff7294d5768a09ec7",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

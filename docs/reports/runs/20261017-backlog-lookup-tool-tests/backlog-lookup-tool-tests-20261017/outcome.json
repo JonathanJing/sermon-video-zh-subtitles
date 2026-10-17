@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "scope": "backlog ID lookup relocation to tools/development with legacy CLI and module alias",
+  "baseCommit": "188807ef39ecedfbfd60c8c66f432ca91c93a32b",
+  "headCommit": "786b7c12",
+  "unitTests": {
+    "ran": 5,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "cliParity": {
+    "query": "passed",
+    "prefixes": "passed",
+    "oldExitCode": 0,
+    "newExitCode": 0,
+    "identicalOutput": true
+  },
+  "diffCheck": "passed",
+  "production": "not_run",
+  "publication": "not_run"
+}

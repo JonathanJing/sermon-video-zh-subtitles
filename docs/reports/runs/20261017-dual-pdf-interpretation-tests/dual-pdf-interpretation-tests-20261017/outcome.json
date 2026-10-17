@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "dual_pdf interpretation PDF migration",
+  "codeCommit": "a4d42f81",
+  "testCount": 81
+}

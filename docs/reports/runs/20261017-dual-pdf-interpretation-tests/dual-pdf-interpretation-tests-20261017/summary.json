@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "baseCommit": "78e96150",
+  "codeCommit": "a4d42f81",
+  "commands": [
+    {
+      "name": "targeted unittest",
+      "tests": 81,
+      "exitCode": 0,
+      "seconds": 4.04
+    },
+    {
+      "name": "legacy CLI help",
+      "exitCode": 0
+    },
+    {
+      "name": "diff check",
+      "exitCode": 0
+    },
+    {
+      "name": "implementation path assertion",
+      "exitCode": 0
+    }
+  ],
+  "coverage": [
+    "legacy import alias",
+    "fixed JSON PDF rendering and QA from nonrepository working directory",
+    "generate_notes deferred PDF consumer",
+    "post-live legacy PDF command",
+    "path alias and loaded code identity",
+    "frozen notes cache tests"
+  ],
+  "externalCalls": 0,
+  "oldImplementationSha256": "95ab692f1672e141ce7a14316d3b2dcba998769c279e1b84c6aa4a0d0ba1f5a4",
+  "newImplementationSha256": "2cbad4719a48b815fdee71e2cf54eba173fc1b173087d68888f6e66f7f4aa72d"
+}

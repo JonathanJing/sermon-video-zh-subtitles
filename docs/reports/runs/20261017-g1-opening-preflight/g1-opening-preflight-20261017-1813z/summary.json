@@ -1,0 +1,72 @@
+{
+  "status": "failed",
+  "scope": "G1 opening sampled Mac, Mac mini and Spark; full local artifacts check_drain",
+  "localCheckDrain": {
+    "status": "fail",
+    "unknownOutcomes": 85,
+    "layer2StartedWithoutRaw": 78,
+    "codexStartedWithoutOutcome": 7,
+    "earliestMarker": "2026-09-27T04:15:52Z",
+    "latestMarker": "2026-10-14T21:14:27Z",
+    "roots": {
+      "next-concurrency-605s-20261005-r13-gemini": 31,
+      "weekend-live": 19,
+      "post-live-runs": 18,
+      "clip-e2e-20261004-opus-n": 8,
+      "clip-test-20261012": 3,
+      "drive-source-20260926-1730": 3,
+      "layer2-api-test-20261010-clip": 2,
+      "clip-e2e-dev216-20261014-c": 1
+    }
+  },
+  "localLayer2Budgets": {
+    "stateFiles": 43,
+    "reservations": 11303,
+    "unresolvedRequestPhase": 4,
+    "root": "weekend-live/layer2-54475d42",
+    "locales": [
+      "zh-Hans"
+    ],
+    "attempts": [
+      "r7",
+      "r8",
+      "r9",
+      "r10"
+    ]
+  },
+  "localJobs": {
+    "workflowJobStates": 136,
+    "succeeded": 73,
+    "failed": 63,
+    "nonterminal": 0
+  },
+  "localSparkDispatcher": {
+    "started": 52,
+    "knownTerminalResults": 52,
+    "missingResults": 0
+  },
+  "sparkExclusive": {
+    "status": "closed",
+    "jobsTerminal": 1,
+    "activeOrUnknownJobs": 0,
+    "unknownOperations": 0,
+    "updatedAt": "2026-10-15T01:45:36Z"
+  },
+  "processSnapshots": {
+    "mac": "no matching production QC/calibration/L2/unified/Prefect/mock process",
+    "macMini": "no matching process; checkout artifacts no recent state or started markers",
+    "spark": "no matching production worker; one persistent llama-server GPU process"
+  },
+  "affectedLocales": [
+    "es",
+    "ko",
+    "zh-Hans"
+  ],
+  "decision": "do not assert G1 opening condition satisfied",
+  "limits": [
+    "sampled process state cannot guarantee future inactivity",
+    "historical API/CLI outcomes lack same-attempt local terminal receipts",
+    "Spark dispatcher and exclusive state do not settle API/CLI calls",
+    "old run checkout isolation is partly evidenced, not proven for all roots"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-tracker-projections-ci-39048452533",
+  "runs": [
+    {
+      "label": "tracker-projections-ci-39048452533",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/tracker-projections-ci-39048452533",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tracker-projections-ci-39048452533",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 516,
+      "truncated": false,
+      "sha256": "aa8544e3a511588e97d9737c365a968136d93c474c0939f8fe35cbe2f1c67eca",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-projections-ci-39048452533",
+      "path": "root1.log",
+      "kind": "log",
+      "bytes": 1049,
+      "truncated": false,
+      "sha256": "c75630db30de1744ddfea5f1afceed0a9a7efa08fcba76453f68c9a4c7580c81",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-projections-ci-39048452533",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1200,
+      "truncated": false,
+      "sha256": "7e1b5986f663fc4938d253ccc1d26095f8e2671ea97845ac21245527436f81b1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

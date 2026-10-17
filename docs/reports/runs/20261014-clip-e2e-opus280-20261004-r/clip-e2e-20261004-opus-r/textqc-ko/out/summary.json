@@ -1,0 +1,51 @@
+{
+  "implementationSha256": "5815242564f4a4ab7c972d04cf94780b7d1084d78687bde7fb3e9c8f4ad2304b",
+  "locales": {
+    "ko": {
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 50,
+          "added_number": 48,
+          "added_reference": 49,
+          "dropped_half": 37,
+          "dropped_name": 5,
+          "english_leak": 38,
+          "placeholder": 50,
+          "semantic_negation": 0,
+          "swapped_name": 0,
+          "swapped_quantity": 1,
+          "wrong_book": 1,
+          "wrong_number": 1,
+          "wrong_ordinal": 49
+        },
+        "notApplicableKinds": [
+          "semantic_negation",
+          "swapped_name"
+        ],
+        "untestableKinds": []
+      },
+      "candidateJsonSha256": "52e545f334ef35ddb531d6046e2ad15ae18f311806271bea1d9987c6a768a347",
+      "failedGroups": [
+        "translation-0-u282",
+        "translation-0-u284",
+        "translation-0-u285",
+        "translation-0-u288",
+        "translation-0-u307"
+      ],
+      "locale": "ko",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-ko/run-out/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-ko/run-out/ko/candidate.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-ko/run-out/policies/ko-policy-clip.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-ko/run-out/source.json"
+      },
+      "problems": [],
+      "reason": "text QC failed; repair the failed groups in a new candidate revision",
+      "status": "requires_repair",
+      "textQc": "requires_repair",
+      "textQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-ko/state/qc-receipts/text/ko/e69e84a8d2d0c628ab3aa7f073303994b0725bd69824cad4b27a7e8157250b71/entry-000001.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-ko/run-out",
+  "textBackend": "api"
+}

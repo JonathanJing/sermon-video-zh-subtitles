@@ -1,0 +1,12 @@
+{
+  "status": "failed",
+  "deliveryType": "test",
+  "source": "GitHub Actions Python tests root-1",
+  "runId": "39048017127",
+  "head": "745dea66",
+  "testCount": 701,
+  "failed": 1,
+  "skipped": 3,
+  "failureClass": "global_time_sleep_patch_intercepted_background_thread",
+  "exitCode": 1
+}

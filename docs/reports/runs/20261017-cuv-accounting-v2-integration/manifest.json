@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-cuv-accounting-v2-integration",
+  "runs": [
+    {
+      "label": "20261017-cuv-accounting-v2-integration-local",
+      "source": "~/.codex/worktrees/cuv-preflight-move/sermon-video-zh-subtitles/artifacts/20261017-cuv-accounting-v2-integration-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-cuv-accounting-v2-integration-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 163,
+      "truncated": false,
+      "sha256": "f626ffbd1a465f53177a6a4d91ef0124f2b33fbd85df645f130dacc49ed7cf71",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-cuv-accounting-v2-integration-local",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 37,
+      "truncated": false,
+      "sha256": "f2d997415fc25ef3fafce94c1f9cfeb100831e96521857ea7ce62012109026e4",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

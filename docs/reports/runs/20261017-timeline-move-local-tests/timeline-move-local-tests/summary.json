@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "passed": 103,
+  "skipped": 1,
+  "subtestsPassed": 50,
+  "source": "pytest output and local CLI checks",
+  "limitations": "Fixtures and mocks only; no Secret Manager, GCS, YouTube, Discord, yt-dlp, or production run."
+}

@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-clip-e2e-opus280-20261004-ae",
+  "runs": [
+    {
+      "label": "clip-e2e-20261004-opus-ae-zh-recal",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal",
+      "skipped": {
+        ".json": 537,
+        ".lock": 515
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-e2e-20261004-opus-ae-zh-recal",
+      "path": "logs/check-ae-qc-preflight.log",
+      "kind": "log",
+      "bytes": 2251,
+      "truncated": false,
+      "sha256": "51f5d9d5d169b1f5652ee48f02deebace5cb4c3f3345a4c911b6d262fabb313d",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ae-zh-recal",
+      "path": "logs/check-qc-zh-Hans-out.log",
+      "kind": "log",
+      "bytes": 2250,
+      "truncated": false,
+      "sha256": "133353e79466985c9ef39f67ed6821047a33b9214dabae029e3c04d86ef319f7",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ae-zh-recal",
+      "path": "logs/plan-qc-zh-Hans.log",
+      "kind": "log",
+      "bytes": 4216,
+      "truncated": false,
+      "sha256": "4fac1cbd551e957b72943eabb26109e72eb21ab118c821fe1bd7835a380ed3ad",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ae-zh-recal",
+      "path": "logs/text-qc.zh-Hans.out.log",
+      "kind": "log",
+      "bytes": 2102,
+      "truncated": false,
+      "sha256": "40472db30922f415bdcdca6e96fc73ef4570ac069eaccbe2b5dc886223ad51ed",
+      "redactions": {
+        "home_dir": 11
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ae-zh-recal",
+      "path": "plans/qc-zh-Hans/qc-zh-Hans/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 487480,
+      "truncated": false,
+      "source": "plans/qc-zh-Hans/qc-zh-Hans/.api-budget/source-budget.json",
+      "sha256": "245bf6caa6f1631d23cd34cffcd65c9729e7c0f34ed77ea363c2418be6bac658",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ae-zh-recal",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1986,
+      "truncated": false,
+      "sha256": "86c0000858adf3eb0591507926c4ceb1bfa49cabe1949f37c08266ee2551f32e",
+      "redactions": {
+        "home_dir": 9
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ae-zh-recal",
+      "path": "textqc-zh-Hans/out/summary.json",
+      "kind": "whole",
+      "bytes": 1885,
+      "truncated": false,
+      "sha256": "6e58388aae52071f72f401e113ffad81ce7f81e5297e84e87ea8b96a2227ca81",
+      "redactions": {
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ae-zh-recal",
+      "path": "textqc-zh-Hans/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 139,
+      "truncated": false,
+      "sha256": "89789beefeb3fdb51a4e4cb53bc029637a7423ec2e0cbe06cefd05f24b14dd4f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ae-zh-recal",
+      "path": "textqc-zh-Hans/out/zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 1367,
+      "truncated": false,
+      "sha256": "19213073957be9e0e6954270596f6e6c17152cdfbeb613dc968194c417e43c38",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ae-zh-recal",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 112,
+      "truncated": false,
+      "sha256": "b122a279bcf0a55b6b34a7acdb028f57e58f748e7eb0eb58e346a6ac110b7855",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

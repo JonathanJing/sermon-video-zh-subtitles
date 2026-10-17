@@ -132,8 +132,8 @@ class ProductionPackageTests(unittest.TestCase):
         code = ("import sys; sys.path[0] = sys.argv[1]\n"
                 "for name in sys.argv[2:]:\n"
                 "    module = __import__(name)\n"
-                # Operator tools moved to tools/ops (L4 D8) rather than the package.
-                "    assert module.__name__.startswith(('tongxing_production.', 'tools.ops.')), (name, module.__name__)\n")
+                # Operator and development tools live outside the production package.
+                "    assert module.__name__.startswith(('tongxing_production.', 'tools.ops.', 'tools.development.')), (name, module.__name__)\n")
         environment = {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
         with tempfile.TemporaryDirectory() as elsewhere:
             result = subprocess.run([sys.executable, "-c", code, str(ROOT / "scripts"), *facades],

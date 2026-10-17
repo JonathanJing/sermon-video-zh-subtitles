@@ -1,0 +1,5 @@
+{
+  "command": "PYTHONPATH=packages/production/src uv run --python 3.13 --with-requirements requirements-test.txt python -m pytest -q tests/test_tongxing_production_package.py tests/test_tongxing_delivery_ports.py",
+  "result": "25 passed, 268 subtests passed in 4.27s",
+  "exitCode": 0
+}

@@ -1,0 +1,18 @@
+{
+  "status": "focused_pass_broad_incomplete",
+  "baseCommit": "7d892c92f359541f5b335e7412628964c14114f5",
+  "codeCommits": [
+    "eac80caeba5f2cfaf786a262723d2ebdd8c5ff2d",
+    "0fd5a0d330bfbf64cd178e9e8abeda995be1367d"
+  ],
+  "checks": {
+    "typedFailureAndLegacyIdentity": "4 passed",
+    "isolatedPreloadIdentity": "1 passed",
+    "prefectPreflightBlock": "1 passed",
+    "directPackageImportWithoutHost": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "broaderAttempt": "initial 106-case run failed with four failures and one error while editable package resolved to another checkout; subsequent local-package run was interrupted after slow identity checks, so no broad pass claimed",
+  "productionExecution": "not_run",
+  "providerCalls": "none_intended"
+}

@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "base": "origin/dev@7d892c92",
+  "tests": [
+    {
+      "command": "python -m unittest tests.test_cuv_preflight tests.test_cuv_incremental_reuse -q",
+      "count": 12,
+      "result": "passed"
+    },
+    {
+      "command": "python -m unittest tests.test_sermon_cuv_translation -q",
+      "count": 48,
+      "result": "passed"
+    },
+    {
+      "command": "python -m unittest tests.test_infrastructure_path_aliases -q",
+      "count": 6,
+      "result": "passed",
+      "skipped": 1
+    }
+  ],
+  "byteIdentity": "old and moved implementation SHA-256 match",
+  "importIdentity": "legacy and package paths are one module object",
+  "environmentNote": "Initial Homebrew python3 attempt could not import jsonschema; tests passed with repository virtualenv and worktree PYTHONPATH.",
+  "productionRun": "not_run",
+  "paidModelCalls": 0
+}

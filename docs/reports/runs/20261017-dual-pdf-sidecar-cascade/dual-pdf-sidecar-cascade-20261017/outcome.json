@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "scope": "dependency cascade from sidecar PR 571 through dual PDF PRs 584, 594, 598, 602, 607",
+  "upstreamHead": "99e158dace6f07e5e9922db1586e91424c4e2a2b",
+  "stages": [
+    {
+      "pr": 584,
+      "head": "9d990b18653b687015efab790932344688f4501b",
+      "passed": 54,
+      "skipped": 1,
+      "subtestsPassed": 19,
+      "pytestSeconds": 6.39
+    },
+    {
+      "pr": 594,
+      "head": "fc1d4fb7a03da276b70118b9a090ba10722b43b6",
+      "passed": 40,
+      "skipped": 1,
+      "subtestsPassed": 15,
+      "pytestSeconds": 1.78
+    },
+    {
+      "pr": 598,
+      "head": "3f725e83addce6bce195aa727d3f151c301b533c",
+      "passed": 54,
+      "skipped": 1,
+      "subtestsPassed": 15,
+      "pytestSeconds": 3.37
+    },
+    {
+      "pr": 602,
+      "head": "b077d82857c8ddd04fccc59237821332e64791bd",
+      "passed": 60,
+      "skipped": 1,
+      "subtestsPassed": 15,
+      "pytestSeconds": 3.9
+    },
+    {
+      "pr": 607,
+      "head": "fde16c46aeaf12ffdc68be54202ff5728af433e0",
+      "passed": 90,
+      "skipped": 1,
+      "subtestsPassed": 65,
+      "pytestSeconds": 7.09
+    }
+  ],
+  "diffCheck": "passed_per_merge",
+  "remoteCommitReadback": "passed_per_branch",
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

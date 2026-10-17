@@ -1,0 +1,7 @@
+{
+  "status": "completed",
+  "deliveryType": "test",
+  "result": "65 focused unit tests passed; earlier 36-test attempt failed at checkout import resolution and was rerun with worktree-specific package path",
+  "commit": "7a485a4104767528545269ae03307049a93d7018",
+  "productionRun": false
+}

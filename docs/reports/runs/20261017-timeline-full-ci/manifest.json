@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-timeline-full-ci",
+  "runs": [
+    {
+      "label": "timeline-full-ci",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/timeline-full-ci",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "timeline-full-ci",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 96,
+      "truncated": false,
+      "sha256": "f7551e3ea3a802626b1c1e7cf0d738777612fb0e480da77f6b5d7f4db53b8857",
+      "redactions": {}
+    },
+    {
+      "run": "timeline-full-ci",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 295,
+      "truncated": false,
+      "sha256": "80391a742892f178396806134e678d10090e192608a8373d88f3d6f7a6651eee",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

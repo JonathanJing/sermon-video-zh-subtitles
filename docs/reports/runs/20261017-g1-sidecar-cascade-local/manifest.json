@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-sidecar-cascade-local",
+  "runs": [
+    {
+      "label": "g1-sidecar-cascade-test-20261017",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/g1-sidecar-cascade-test-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-sidecar-cascade-test-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 561,
+      "truncated": false,
+      "sha256": "a3e59c0effd86ddddf09197ca495aef98597bfe5658cee827980f9d47ef7f567",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

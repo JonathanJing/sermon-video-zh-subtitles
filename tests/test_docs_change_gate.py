@@ -12,6 +12,12 @@ SPEC.loader.exec_module(gate)
 
 
 class DocsChangeGateTests(unittest.TestCase):
+    def test_legacy_import_and_file_spec_share_package_implementation(self):
+        from scripts import docs_change_gate as legacy
+        from tools.development import docs_change_gate as implementation
+        self.assertIs(legacy, implementation)
+        self.assertIs(gate.documentation_only, implementation.documentation_only)
+
     def test_committed_diagrams_match_real_renderer(self):
         gate.check_generated_diagrams(ROOT, ["docs/diagrams/diagram-specs.json"])
 

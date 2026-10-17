@@ -1,0 +1,25 @@
+{
+  "status": "success",
+  "deliveryType": "test",
+  "phase": "after_move",
+  "codeCommit": "12032370",
+  "browserVersion": "Google Chrome 155.0.8059.80",
+  "scope": "chrome_synthetic_device_audio_worklet_not_hardware_or_safari",
+  "moduleSha256": {
+    "fingerprint-capture.mjs": "bc5c9cb3f464fd37eaf6c2cd086924a1f13256676ae0bd7cc792c0e7d3fc7c7b",
+    "fingerprint-worklet.mjs": "f31ccd00f57441778a1a4f549e49fb6a0c0b1a97660b95eec0bfdda9f13984ec"
+  },
+  "checkpointSeconds": [
+    7,
+    10,
+    12
+  ],
+  "newEntrypoint": "pass",
+  "legacyEntrypoint": "pass",
+  "baselineParity": "pass",
+  "physicalMicrophoneRequested": false,
+  "pcmExported": false,
+  "production": "not_run",
+  "publication": "not_run",
+  "device": "not_run"
+}

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-poster-pr405-review-fix",
+  "runs": [
+    {
+      "label": "pr405-review-fix-v2",
+      "source": "~/.codex/worktrees/poster-template-approved/sermon-video-zh-subtitles/artifacts/sermon-poster/pr405-review-fix-v2",
+      "skipped": {
+        ".json": 26,
+        ".png": 26
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "pr405-review-fix-v2",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 109,
+      "truncated": false,
+      "sha256": "a6a190675d4775a966a9899f7efbd7fab9633939b1b9cac23f2a6673e59431f3",
+      "redactions": {}
+    },
+    {
+      "run": "pr405-review-fix-v2",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 539,
+      "truncated": false,
+      "sha256": "adbe918d90027a79a13a2db93ab65245faea85ec34ee661bf180cec947f4e764",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "status": "success",
+  "deliveryType": "test",
+  "codePullRequest": 615,
+  "headCommit": "6e4caebc131f6cdb464498bdb3bb750ffeabaacf",
+  "githubActionsRun": 39062683415,
+  "startedAt": "2026-10-17T19:29:30Z",
+  "finishedAt": "2026-10-17T19:54:05Z",
+  "checks": {
+    "pythonRootShardsPassed": 8,
+    "pythonRootShardsTotal": 8,
+    "unittestAggregator": "success",
+    "changes": "success",
+    "nativeContractJob": "skipped_by_route"
+  },
+  "production": "not_run",
+  "publication": "not_run",
+  "device": "not_run"
+}

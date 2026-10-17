@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "scope": "clip review timeline checker relocation to tools/ops with legacy CLI and module alias",
+  "baseCommit": "188807ef39ecedfbfd60c8c66f432ca91c93a32b",
+  "headCommit": "7da18149",
+  "unitTests": {
+    "ran": 4,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "cliParity": {
+    "oldExitCode": 0,
+    "newExitCode": 0,
+    "identicalOutput": true,
+    "checkedSourceUnits": 1
+  },
+  "diffCheck": "passed",
+  "production": "not_run",
+  "publication": "not_run"
+}

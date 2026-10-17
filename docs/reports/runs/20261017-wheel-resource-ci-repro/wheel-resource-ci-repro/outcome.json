@@ -1,0 +1,6 @@
+{
+  "status": "failed",
+  "exitCode": 1,
+  "deliveryType": "test",
+  "result": "CI root-2 had 1 wheel-resource test failure; corrected isolated local test passed 1/1"
+}

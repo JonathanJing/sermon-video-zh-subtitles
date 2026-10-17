@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "commitSha256": "be9c558d3883063a99343e1da8e18b3e0c5adcba",
+  "purpose": "G1 stacked PR 582 exact-head focused verification",
+  "limits": [
+    "Code tests only; no calibration, paid provider, Spark, publication, or device acceptance"
+  ],
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-17T17:08:21Z",
+  "endedAt": "2026-10-17T17:08:28Z",
+  "environment": {
+    "hostId": "mac-mini-relay",
+    "python": "3.14.6",
+    "isolation": "independent worktree and editable venv"
+  },
+  "tests": {
+    "scope": "60 tests; 13 environment errors in unified audio, 47 other cases passed",
+    "reason": "ffprobe unavailable on Mac mini; fallback rejected synthetic MP4 fixture"
+  }
+}

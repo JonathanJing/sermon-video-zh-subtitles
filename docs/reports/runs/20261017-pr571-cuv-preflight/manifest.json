@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-cuv-preflight",
+  "runs": [
+    {
+      "label": "cuv-preflight",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/cascade-pr571/cuv-preflight",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "cuv-preflight",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 102,
+      "truncated": false,
+      "sha256": "6c56f2f100954297311d258e64c6c8c7b8dfca6eb3c7507d981b25fc69a7b80d",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-preflight",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 32,
+      "truncated": false,
+      "sha256": "c4ab1b0c5189db277d02fb0667f78d7502a6eda0a6d29532e406a2e132082efe",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-preflight",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 80,
+      "truncated": false,
+      "sha256": "83fd342418072f5ac1a5594bb238c960b4a5663d0cef6803720a79b52f7509ee",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

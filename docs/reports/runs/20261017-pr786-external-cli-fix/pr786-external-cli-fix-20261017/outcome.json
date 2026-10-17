@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "Dev audio external-directory CLI regression",
+  "codeCommit": "84fd2edd315f94dca9315f92c33e98e31ee1b572",
+  "testCount": 14
+}

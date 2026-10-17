@@ -991,7 +991,7 @@ Spark 容器与 E2E 驱动按路径启动的命令（`clip_e2e_spark.py`、`run_
 | orchestration 本体（durable jobs、supervisor、子进程守卫等） | 13 / 4,337 | 需要一份 orchestration 设计；`sermon_workflow_jobs` 的状态机拆分已在 G1，其余没有设计 |
 | live/（实时会话与离线备援运行时） | 16 / 9,475 | 需要 live/ 设计；skill 引用的命令路径必须保持 |
 | 严格 L2 门禁链（`sermon_strict_*`、`sermon_review_gate` 等） | 12 / 4,207 | 复核设计 §6 第 9 项明确“另行设计”；它们依赖 contracts/review 的 I1 拆分 |
-| tools/ops、tools/development、experiments 的搬迁清单 | 161 / 45,246 | 需要一份“工具与实验搬迁”短设计：入口命名、门面策略、测试发现根、`frozen_code()`/CI 清单；无身份绑定，可并行于 G1 |
+| tools/ops、tools/development、experiments 的搬迁清单 | 161 / 45,246 | [工具与实验迁移执行清单](tools-and-experiments-migration.zh.md)列出入口、门面、身份和 CI 核对；无身份绑定的叶子可并行于 G1 |
 | `OEX`：Prefect/Temporal/诊断 DAG/Agents API | 63 / 14,420 | 等两条实验线结论（提案 §7） |
 | dual_pdf 读本/复核/PDF 链 | 12 / 6,402 | W3 只覆盖两个入口与 `sermon_pipeline`；其余 dual_pdf 文件需补进 W3 或另批 |
 | 其余零散（L1 shadow、CUV、`segment_target_language_utterances`、compute 零散、OBS 零散、CLI） | 17 / 4,583 | 逐个并入相邻批次；见 §4 各节“未排期” |

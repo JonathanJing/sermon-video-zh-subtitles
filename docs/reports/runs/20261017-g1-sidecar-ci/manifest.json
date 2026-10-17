@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-sidecar-ci",
+  "runs": [
+    {
+      "label": "g1-sidecar-ci-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/g1-sidecar-ci-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-sidecar-ci-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 257,
+      "truncated": false,
+      "sha256": "82a2647fccbb62c70e5f1b1b1996b86b03c7e142459fa900c992f06a0037c331",
+      "redactions": {}
+    },
+    {
+      "run": "g1-sidecar-ci-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 464,
+      "truncated": false,
+      "sha256": "42584f7a063f7b6cbf8f54e5a9d4d833470dca91553837ab394900985888a9b3",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-backlog-lookup-tool-tests",
+  "runs": [
+    {
+      "label": "backlog-lookup-tool-tests-20261017",
+      "source": "~/.codex/worktrees/backlog-lookup-tool/sermon-video-zh-subtitles/artifacts/backlog-lookup-tool-tests-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "backlog-lookup-tool-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 530,
+      "truncated": false,
+      "sha256": "6981ddd87a26f338523275372bc9cb15791af0fd571278cd3f335f07fcdeb92b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

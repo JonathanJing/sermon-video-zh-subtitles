@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-weekly-report",
+  "runs": [
+    {
+      "label": "weekly-report",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/cascade-pr571/weekly-report",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-report",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 102,
+      "truncated": false,
+      "sha256": "6c56f2f100954297311d258e64c6c8c7b8dfca6eb3c7507d981b25fc69a7b80d",
+      "redactions": {}
+    },
+    {
+      "run": "weekly-report",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 67,
+      "truncated": false,
+      "sha256": "30e68c92b250699db312e2421df62e61c131b11ee9687eb502c23527f9b0dee9",
+      "redactions": {}
+    },
+    {
+      "run": "weekly-report",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 115,
+      "truncated": false,
+      "sha256": "aacfd5424696b835392252645b6470ab372c90f776efa8650f4fab6983c07e93",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

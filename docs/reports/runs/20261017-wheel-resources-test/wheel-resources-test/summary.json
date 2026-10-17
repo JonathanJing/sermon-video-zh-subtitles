@@ -1,0 +1,16 @@
+{
+  "status": "pass",
+  "testsRun": 36,
+  "failures": 0,
+  "errors": 0,
+  "wheelBuild": "non-editable",
+  "wheelInstall": "pip --target outside checkout",
+  "resourceChecks": [
+    "render_sermon_poster.swift bytes equal source",
+    "render_weekly_poster.swift bytes equal source"
+  ],
+  "cliChecks": [
+    "scripts/build_sermon_poster.py --help",
+    "scripts/build_multilingual_sermon_posters.py --help"
+  ]
+}

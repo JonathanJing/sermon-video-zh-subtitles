@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr786-superseded-ci",
+  "runs": [
+    {
+      "label": "pr786-superseded-ci-20261017",
+      "source": "~/.codex/worktrees/ops-review-timeline-leaf/sermon-video-zh-subtitles/artifacts/pr786-superseded-ci-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr786-superseded-ci-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 158,
+      "truncated": false,
+      "sha256": "92afca2cc2b4627d815c6a0fda006f255873f8ed751ed35a8146b522d11f9f0e",
+      "redactions": {}
+    },
+    {
+      "run": "pr786-superseded-ci-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 419,
+      "truncated": false,
+      "sha256": "1fe0921246540cd2827e4c70ec0e22d888742dc9f2413cadbf98c2723a1a8969",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

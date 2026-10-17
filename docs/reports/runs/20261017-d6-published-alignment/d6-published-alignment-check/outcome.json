@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "L4 D6 published English reference and alignment binder migration",
+  "pythonTests": {
+    "passed": 26,
+    "failed": 0
+  },
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

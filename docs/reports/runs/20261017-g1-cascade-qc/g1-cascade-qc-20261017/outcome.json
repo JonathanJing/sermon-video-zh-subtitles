@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "local-code-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "endedAt": "2026-10-17T16:05:12.655185+00:00",
+  "scope": "#568 QC branch merged #571 accounting schema v2 head",
+  "productionRun": "not_run",
+  "paidModelCalls": 0
+}

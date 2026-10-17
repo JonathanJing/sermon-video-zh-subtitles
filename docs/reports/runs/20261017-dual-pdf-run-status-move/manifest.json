@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-run-status-move",
+  "runs": [
+    {
+      "label": "dual-pdf-run-status-tests-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-run-status/sermon-video-zh-subtitles/artifacts/dual-pdf-run-status-tests-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-run-status-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 292,
+      "truncated": false,
+      "sha256": "5457de436e25e6e9b961857dd05e6db34d3191baac60658128a7c11aa0f047a5",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-run-status-tests-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 539,
+      "truncated": false,
+      "sha256": "0df3ade5b41b6047d03338f2684bcb8fe854da9693a968ef039a771a26b949cc",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

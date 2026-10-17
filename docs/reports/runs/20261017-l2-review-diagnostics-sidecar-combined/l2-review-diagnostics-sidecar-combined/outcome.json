@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "head": "eebf2174a8dbee8670515b0efbbac5fa3c9f3507",
+  "parent": "496df474af348703e621b30697aedebf8f9721a7",
+  "testsRun": 97,
+  "testsPassed": 96,
+  "testsSkipped": 1,
+  "testsFailed": 0,
+  "exitCode": 0,
+  "diffCheck": "passed"
+}

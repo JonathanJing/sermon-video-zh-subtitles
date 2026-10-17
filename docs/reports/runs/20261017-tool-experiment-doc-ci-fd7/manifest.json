@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-tool-experiment-doc-ci-fd7",
+  "runs": [
+    {
+      "label": "tool-experiment-doc-ci-fd7-20261017",
+      "source": "~/.codex/worktrees/tool-experiment-migration-design/sermon-video-zh-subtitles/artifacts/tool-experiment-doc-ci-fd7-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tool-experiment-doc-ci-fd7-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 519,
+      "truncated": false,
+      "sha256": "7f3f3a7d4af913014ff4b16279f940decf6f5c5e60c2207cb33d96e542ea321f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
