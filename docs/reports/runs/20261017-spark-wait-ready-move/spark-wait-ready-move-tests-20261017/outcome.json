@@ -1,0 +1,13 @@
+{
+  "status": "success_after_environment_correction",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "headCommitSha": "dc0500ce5e10607f9bb46e5a283e4e4bd115d267",
+  "baselineMoveByteIdentical": true,
+  "unitTestsPassed": 4,
+  "baselineMovedAndLegacyHelpEqual": true,
+  "moduleObjectIdentity": true,
+  "syntheticOnly": true,
+  "liveSparkCalls": 0,
+  "producerDispatches": 0
+}
