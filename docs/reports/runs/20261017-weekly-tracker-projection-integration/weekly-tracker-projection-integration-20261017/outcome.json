@@ -1,0 +1,27 @@
+{
+  "status": "passed_after_repair",
+  "deliveryType": "test",
+  "baseCommit": "a57ee51300f754397ea9ef1d798de8526e0bc956",
+  "headCommit": "6e4caebc",
+  "initialRun": {
+    "status": "failed",
+    "testsRun": 24,
+    "importErrors": 1,
+    "cause": "observability.projections package from Tracker shadowed weekly projections.py module"
+  },
+  "repair": "move weekly projection to observability.weekly_projection; update facade, loaded-code identity and path alias; assert both weekly and tracker package imports coexist",
+  "focusedRerun": {
+    "status": "passed",
+    "testsRun": 40,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "newRegressionTest": {
+    "status": "passed",
+    "testsRun": 1,
+    "exitCode": 0
+  },
+  "diffCheck": "passed",
+  "production": "not_run",
+  "publication": "not_run"
+}
