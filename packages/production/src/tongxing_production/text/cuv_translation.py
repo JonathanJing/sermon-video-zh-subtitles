@@ -58,8 +58,14 @@ def cuv_library():
 
 
 def implementation_identity():
-    return {"schemaVersion": "sermon-cuv-implementation-v1",
-            "sha256": backend.current().code.module_sha256(sys.modules[__name__])}
+    code = backend.current().code
+    # The translation delegates scripture parsing, preflight and provider work
+    # through the host. A self-file hash alone cannot authorize cache reuse
+    # after any of those implementations change. The existing Layer 2 closure
+    # covers scripts/, the production package, schemas and terminology.
+    return {"schemaVersion": "sermon-cuv-implementation-v2",
+            "sha256": code.module_sha256(sys.modules[__name__]),
+            "projectCodeClosureSha256": code.code_identity()}
 
 VERSION = "sermon-cuv-translation-v1"
 MANIFEST_VERSION = "sermon-cuv-translation-v2"

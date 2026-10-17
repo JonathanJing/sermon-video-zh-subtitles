@@ -2,6 +2,7 @@
 import copy
 import json
 import unittest
+from dataclasses import replace
 from unittest import mock
 from tests import test_sermon_cuv_translation as fixtures
 from scripts import sermon_cuv_translation as mod
@@ -53,6 +54,22 @@ class IncrementalQuotationReuseTests(unittest.TestCase):
                 mod.run(self.fx.parent, fresh, reference_map_path=self.fx.map,
                         batch_size=1, reuse_from=old)
         self.assertFalse(fresh.exists())
+
+    def test_delegated_code_change_blocks_validation_and_reuse(self):
+        old = self.fx.out
+        self.assertEqual(6, self.run_fake(old))
+        manifest = mod.read(old / 'cuv-manifest.json')
+        self.assertEqual(mod.backend.current().code.code_identity(),
+                         manifest['implementationIdentity']['projectCodeClosureSha256'])
+        original_backend = mod.backend.current()
+        changed_code = replace(original_backend.code, code_identity=lambda: 'changed-delegated-code')
+        with mock.patch.object(mod.backend, '_current', replace(original_backend, code=changed_code)), \
+             mock.patch.object(mod, 'chat_json', side_effect=AssertionError('paid call')):
+            with self.assertRaisesRegex(ValueError, 'implementation identity changed'):
+                mod.validate(old)
+            current = {**manifest, 'implementationIdentity': mod.implementation_identity()}
+            with self.assertRaisesRegex(ValueError, 'implementationIdentity'):
+                mod.compatible_reuse(current, manifest)
 
     def test_metadata_only_change_reuses_identical_audit_and_translation(self):
         old = self.fx.out

@@ -25,7 +25,7 @@
 
 密钥仅从已有 `OPENAI_API_KEY` 环境变量读取；程序不读取 `.env`，不创建密钥或配置文件。缺少密钥且没有所需模型缓存时明确失败。`validate` 不需要密钥、网络或模型。
 
-包化后的新运行写入 `sermon-cuv-translation-v2` manifest，并把实现源码哈希记入 `implementationIdentity`；模型请求、报告和审校扩展仍使用原有 v1 格式。v1 manifest 与收据保持原样，只能在对应的冻结旧 checkout 离线 `validate`。新代码不从 v1 输出目录续跑，也不以 `--reuse-from` 或 `repair-timing` 跨版本使用其缓存；后续制作须开新输出目录，按新身份取得所需证据。
+包化后的新运行写入 `sermon-cuv-translation-v2` manifest。`implementationIdentity` 同时绑定 CUV 实现文件和 Layer 2 的项目代码闭包（`scripts/`、production package、schemas 与共享术语）；后者保守地覆盖经文解析、预检和 host 委派，任一闭包代码变化都阻断旧缓存复用及当前代码下的离线验证。模型请求、报告和审校扩展仍使用原有 v1 格式。v1 manifest 与收据保持原样，只能在对应的冻结旧 checkout 离线 `validate`。新代码不从 v1 输出目录续跑，也不以 `--reuse-from` 或 `repair-timing` 跨版本使用其缓存；后续制作须开新输出目录，按新身份取得所需证据。
 
 ```bash
 .venv/bin/python scripts/sermon_cuv_translation.py run \
