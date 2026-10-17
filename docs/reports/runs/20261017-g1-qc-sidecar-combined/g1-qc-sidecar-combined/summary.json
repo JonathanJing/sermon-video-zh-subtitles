@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "testsPassed": 45,
+  "subtestsPassed": 107,
+  "suite": [
+    "tests/test_infrastructure_compute_leaves.py",
+    "tests/test_tongxing_review_ports.py",
+    "tests/test_accounting_observability.py",
+    "tests/test_sermon_trace_export.py"
+  ],
+  "branchHead": "db022d24",
+  "scope": "local focused combination only"
+}
