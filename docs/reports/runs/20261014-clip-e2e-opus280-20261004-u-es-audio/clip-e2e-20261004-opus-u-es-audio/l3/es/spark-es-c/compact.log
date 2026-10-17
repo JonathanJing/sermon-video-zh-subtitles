@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/work/repo-2d65ff6a/scripts/compact_formal_target_audio.py", line 317, in <module>
+    main()
+  File "/work/repo-2d65ff6a/scripts/compact_formal_target_audio.py", line 302, in main
+    manifest = compact(paths, args.source_job, args.destination_root, args.checkpoint_map,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-2d65ff6a/scripts/compact_formal_target_audio.py", line 207, in compact
+    context = renderer.checked_context(adapted_paths, checkpoint_map, operation_policies)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-2d65ff6a/scripts/render_formal_target_language_speech.py", line 263, in checked_context
+    validate_operation_policies(policies, adapter, job)
+  File "/work/repo-2d65ff6a/scripts/render_formal_target_language_speech.py", line 158, in validate_operation_policies
+    require(all(isinstance(policies.get(name), dict)
+  File "/work/repo-2d65ff6a/scripts/render_formal_target_language_speech.py", line 127, in require
+    raise ValueError(message)
+ValueError: Audio operation policy content differs from speech adapter/job hashes

@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/work/repo-2d65ff6a/scripts/render_formal_target_language_speech.py", line 1684, in <module>
+    main()
+  File "/work/repo-2d65ff6a/scripts/render_formal_target_language_speech.py", line 1661, in main
+    result = render_accounted(
+             ^^^^^^^^^^^^^^^^^
+  File "/work/repo-2d65ff6a/scripts/render_formal_target_language_speech.py", line 1567, in render_accounted
+    result = render(paths, checkpoint_map_path, operation_policies_path, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-2d65ff6a/scripts/render_formal_target_language_speech.py", line 1554, in render
+    return _render(paths, checkpoint_map_path, operation_policies_path,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-2d65ff6a/scripts/render_formal_target_language_speech.py", line 1514, in _render
+    context = checked_context(paths, checkpoint_map_path, operation_policies_path,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-2d65ff6a/scripts/render_formal_target_language_speech.py", line 263, in checked_context
+    validate_operation_policies(policies, adapter, job)
+  File "/work/repo-2d65ff6a/scripts/render_formal_target_language_speech.py", line 158, in validate_operation_policies
+    require(all(isinstance(policies.get(name), dict)
+  File "/work/repo-2d65ff6a/scripts/render_formal_target_language_speech.py", line 127, in require
+    raise ValueError(message)
+ValueError: Audio operation policy content differs from speech adapter/job hashes
