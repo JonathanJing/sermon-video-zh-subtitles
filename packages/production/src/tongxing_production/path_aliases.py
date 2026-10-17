@@ -92,6 +92,8 @@ _DELIVERY = PRODUCTION + 'delivery/'
 _LEGACY = PRODUCTION + 'adapters/legacy/'
 LAYER4 = {
     'scripts/delivery_contract.py': _DELIVERY + 'contract.py',
+    'scripts/build_published_english_reference.py': _DELIVERY + 'published_english_reference.py',
+    'scripts/bind_published_alignment_catalog.py': _DELIVERY + 'published_alignment_catalog.py',
     'scripts/study_artifacts.py': _DELIVERY + 'study_artifacts.py',
     'scripts/release_asset_io.py': _DELIVERY + 'asset_io.py',
     'scripts/sermon_delivery_intent.py': _DELIVERY + 'intent.py',

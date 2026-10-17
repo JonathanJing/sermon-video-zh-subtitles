@@ -15,8 +15,8 @@ import json
 import os
 from pathlib import Path
 
-from build_published_english_reference import public_path, read_json, require
-import delivery_contract
+from .published_english_reference import public_path, read_json, require
+from . import contract as delivery_contract
 
 V3, V4 = 'multilingual-v3.json', 'multilingual-v4.json'
 PUBLISHED = {'human_reviewed', 'machine_checked'}

@@ -16,10 +16,7 @@ import json
 from pathlib import Path, PurePosixPath
 import re
 
-try:
-    from scripts import delivery_contract
-except ImportError:
-    import delivery_contract
+from . import contract as delivery_contract
 
 # Statuses a published reading text may carry; v4 releases add machine-checked text.
 PUBLISHED_CONTENT = {"sermon-multilingual-catalog-v3": {"human_reviewed"},
