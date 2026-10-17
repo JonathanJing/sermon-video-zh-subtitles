@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-tracker-projections-host-boundary",
+  "runs": [
+    {
+      "label": "tracker-projections-host-boundary-check",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/tracker-projections-host-boundary-check",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tracker-projections-host-boundary-check",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 236,
+      "truncated": false,
+      "sha256": "83f7073eb3275a3cda0529afd865b8e52afdb8f0df1be1cd637b28ab874f44cb",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-projections-host-boundary-check",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 466,
+      "truncated": false,
+      "sha256": "1e836a8608890bebac687baca8fb3f6e9d6aeebcad1560f9f34683452f782975",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
