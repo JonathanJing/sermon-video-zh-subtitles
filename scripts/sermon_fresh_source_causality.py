@@ -49,7 +49,7 @@ def _validate(value, events, *, plan, recipe, asr_ref, review_ref, aligned_sha25
             'dependencies': [] if prior is None else [prior['spanId']]})
         prior = handle
     completion.validate_many(checks, events, production_run_id=value['runId'])
-    unique = {r['eventId']: r for r in events if r.get('contractVersion') == completion.log.VERSION}
+    unique = {r['eventId']: r for r in events if r.get('contractVersion') in completion.log.READ_VERSIONS}
     rows = list(unique.values())
     prior, log_run, spans = None, None, set()
     for key, artifact in zip(order, artifacts):
