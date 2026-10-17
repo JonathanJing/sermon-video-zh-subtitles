@@ -1,0 +1,218 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-clip-e2e-opus280-20261004-q",
+  "runs": [
+    {
+      "label": "clip-e2e-20261004-opus-q",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-q",
+      "skipped": {
+        ".json": 1276,
+        ".lock": 12,
+        ".py": 2,
+        ".jsonl": 3,
+        ".csv": 9,
+        ".txt": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/layer2-jobs/59dfebf3e93dd7150681c85c98cad2aefe62b2c7eff4c031ea1928e93e4fbb0e/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "a490fcec950981b60370a79ad816957d4608a67fdbbc05cdcbb639f30c4d5c60",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/layer2-jobs/808f5e0ce3746b33c95a61190d83733b10bee6c4751443c10ffa8e3edfdce2c8/worker.log",
+      "kind": "log",
+      "bytes": 1827,
+      "truncated": false,
+      "sha256": "7c579a69c32fc8654b2ab1ff648e3730adbef587c929129939121297318a0631",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/layer2-jobs/d827a52f754d2a0c4829d0ecd5f4d6abcf66c0b5b4802668b9d909cec421d4fb/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "21cd90a24fb83908e1b9dedb808ad4a36cda213fe07e85f3483d3575954f2f67",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/text/es/accounting/operations.log",
+      "kind": "log",
+      "bytes": 258797,
+      "truncated": true,
+      "sha256": "a0586e1a7e7c076e2f60f72cdc22b3fb32b55e81406c17eb58c04f87ed500b2b",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/text/es/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 583893,
+      "truncated": false,
+      "sha256": "e3482a35e806ecd1326a0f15c56ec51d67f014305b95627be49d7f239fae2753",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/text/es/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1350,
+      "truncated": false,
+      "sha256": "283a0bae60b2e7d81ad2bccf779ec695cb2f734dfed00c2b23c8fd15bfb20832",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/text/ko/accounting/operations.log",
+      "kind": "log",
+      "bytes": 509136,
+      "truncated": true,
+      "sha256": "16f5acf2de3c81ec12ee978b32234b6a96875eb8d0312ffeead72ed15dd4cf10",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/text/ko/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 752251,
+      "truncated": false,
+      "sha256": "e37cefb68693bc5ce2cce3c9acc88c801ae28e141460f4bfd0c4ce98249df0f1",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/text/ko/repair-rounds/auto-repair-receipt-002.json",
+      "kind": "whole",
+      "bytes": 1653,
+      "truncated": false,
+      "sha256": "c7b2b49019a3ee75ac71e04e3125dd97b058038f4416725d40a669052197df1c",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/text/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 262360,
+      "truncated": true,
+      "sha256": "72726ef529414ee38977eb18fc00e9493344a4f6f5869acc87e4af7f11c28a67",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/text/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 587030,
+      "truncated": false,
+      "sha256": "cf165dc16ad94aceb481db43437dc1f744394728725ce6bfadd40568c80dd157",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "l2/text/zh-Hans/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1360,
+      "truncated": false,
+      "sha256": "3caed9230bdb20721a5e8cc6a74921ad364c80648927283577a695356c113477",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "logs/check-layer2.log",
+      "kind": "log",
+      "bytes": 7413,
+      "truncated": false,
+      "sha256": "9bbda7dae90472dae7da23cd9f04d2ee27dd4f2b447565b5fecf3f914908865d",
+      "redactions": {
+        "email": 3,
+        "home_dir": 24
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "logs/layer2.log",
+      "kind": "log",
+      "bytes": 2116,
+      "truncated": false,
+      "sha256": "8e9e0db09f6fe7d267882a78d89b379072728d4ba0603f985f91fae16e9e0b44",
+      "redactions": {
+        "home_dir": 16
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "logs/plan-layer2.log",
+      "kind": "log",
+      "bytes": 6788,
+      "truncated": false,
+      "sha256": "b0ebdefa790b460cc7ffef9acb26bde9db618c92582ec8e8edbe3205f8385668",
+      "redactions": {
+        "home_dir": 14
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "logs/route-probe.log",
+      "kind": "log",
+      "bytes": 716,
+      "truncated": false,
+      "sha256": "a6194ca7f84c1e0b36553ad96b47c4a1fabbb232e05302de4c57da59d1300e84",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "logs/timeline-map.log",
+      "kind": "log",
+      "bytes": 1055,
+      "truncated": false,
+      "sha256": "08cb1516b304a56172c05342e671ca7b14ec0c5dcb16d5e7fb60d8f605854828",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 742,
+      "truncated": false,
+      "sha256": "512a4ef350226f0166c163de65850dbd25b9803f21ded6aa9b095fd24438eebc",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-q",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 168,
+      "truncated": false,
+      "sha256": "bd2c016e84573ca5492361e7ccd6ee9919ac03938e19597d3ed0b4eaa20e558e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
