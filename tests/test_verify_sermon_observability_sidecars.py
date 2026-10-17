@@ -66,6 +66,8 @@ class VerificationSidecarTests(unittest.TestCase):
             with patch.object(verification.observer, 'export', side_effect=inspect_replay) as export:
                 receipt, _ = verification.run(runtime, source, expected_span_count=1)
             export.assert_called_once()
+            self.assertEqual(receipt['implementationSha256']['scripts/sermon_identity_sidecars.py'],
+                             verification.observer.sha(Path(verification.sidecars.__file__)))
             self.assertEqual(receipt['status'], 'failed')  # Deliberate stop before Jaeger work.
             self.assertEqual(receipt['failureCode'], 'unexpected_real_span_count')
             self.assertEqual((source / 'events.jsonl').read_bytes(), original)
