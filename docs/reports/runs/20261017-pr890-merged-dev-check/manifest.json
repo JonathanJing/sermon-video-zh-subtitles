@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr890-merged-dev-check",
+  "runs": [
+    {
+      "label": "20261017-pr890-merged-dev-check",
+      "source": "/private/tmp/backend-cloud-run-jobs-20261017/artifacts/20261017-pr890-merged-dev-check",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-pr890-merged-dev-check",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 384,
+      "truncated": false,
+      "sha256": "9bba3b6711c09df45e977272080cb9e480ca3a662e8b41e6816715751ed190d3",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-pr890-merged-dev-check",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 610,
+      "truncated": false,
+      "sha256": "5e4f45412f32d17acd7397e2856fff35afbaca50071a7d04aa750dd794cc79b7",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

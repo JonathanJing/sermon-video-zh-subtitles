@@ -1,0 +1,12 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "scope": "PR #890 focused integration against dev after #884",
+  "codeHead": "e6a9c9a92e8230cc44f80dfe2dcf6cd5072748f2",
+  "devHead": "ed27b7a8362b312d91d290cecfaf880ab0053a06",
+  "temporaryMergeCommit": "7a3a2ad1a94842b608072443dd656f6b5b4a39c6",
+  "testsRun": 44,
+  "testsPassed": 44,
+  "modelCalls": 0,
+  "cloudRunRequests": 0
+}
