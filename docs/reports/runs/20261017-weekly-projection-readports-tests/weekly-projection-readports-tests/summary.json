@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "passed": 48,
+  "subtestsPassed": 23,
+  "limitations": "Synthetic local evidence only; no production run or external acceptance."
+}
