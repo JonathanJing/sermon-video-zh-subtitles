@@ -135,6 +135,7 @@ The stable workflow is implemented mainly by these scripts:
 
 These parts of the repository already work, but they are not the primary documentation entrypoint today:
 
+- [../scripts/render_content_json_pdf.py](../scripts/render_content_json_pdf.py): export a local Chinese-English reading PDF from published `/content/<pageId>/zh-Hans.json` full text (content v2/v3) (`--page-id <pageId>` reads the production Chinese text and pairs English by `textGroupId` from the hash-bound `/english-reference/<pageId>.json`; `--no-english` drops the English); no retranslation or upload, and a machine-checked disclosure stays in the footer
 - [../backend/README.md](../backend/README.md): backend worker and Cloud Run orchestration
 - [../apps/operator-web/README.md](../apps/operator-web/README.md): frontend/admin and playback prototype
 
