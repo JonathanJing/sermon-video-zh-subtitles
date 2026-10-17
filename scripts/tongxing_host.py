@@ -889,7 +889,7 @@ def dual_pdf_unmoved():
         series_terminology=_scripts_module('series_terminology'),
         export_saturday_live_context=_scripts_module('export_saturday_live_context'),
         reading_edition=_scripts_module('build_sermon_reading_edition_with_openai'),
-        sentence_shadow=_scripts_module('prepare_sentence_interpretation_shadow'),
+        sentence_shadow=_module('tongxing_production.source.sentence_interpretation_shadow'),
         supervisor=_scripts_module('sermon_production_supervisor'),
         supervisor_agent=_scripts_module('run_sermon_production_supervisor_agent'),
         accounting=_scripts_module('sermon_accounting'),
