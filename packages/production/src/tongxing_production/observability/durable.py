@@ -47,11 +47,16 @@ def _sha(value):
     return value
 
 
-def _binding(scope_id, plan_sha256, production_run_id, purpose, workflow_id):
+def _binding(scope_id, plan_sha256, production_run_id, purpose, workflow_id,
+             contract_version=None):
+    if contract_version is None:
+        contract_version = contract.VERSION
+    if not contract._readable_version(contract_version):
+        raise ValueError('invalid_durable_stream_contract_version')
     data = {'schemaVersion': BINDING_SCHEMA, 'scopeId': _label(scope_id),
         'planSha256': _sha(plan_sha256), 'productionRunId': _sha(production_run_id),
         'purpose': _label(purpose), 'workflowId': _label(workflow_id),
-        'contractVersion': contract.VERSION, 'evidenceMode': 'synthetic', 'workKind': 'control'}
+        'contractVersion': contract_version, 'evidenceMode': 'synthetic', 'workKind': 'control'}
     digest = _hash(data)
     return {**data, 'runId': _hash(['controller-run-v1', digest])[:32],
         'producerId': _hash(['controller-producer-v1', digest])[:32]}
@@ -80,7 +85,7 @@ def _read_binding(root):
         raise ValueError('invalid_durable_stream_binding')
     try:
         expected = _binding(value['scopeId'], value['planSha256'], value['productionRunId'],
-            value['purpose'], value['workflowId'])
+            value['purpose'], value['workflowId'], value['contractVersion'])
     except (KeyError, TypeError) as exc:
         raise ValueError('invalid_durable_stream_binding') from exc
     if value != expected:
@@ -252,6 +257,8 @@ class DurableStream:
                 if previous['deliveryKeySha256'] != key_hash or previous['intentSha256'] != intent_hash:
                     raise ValueError('durable_delivery_intent_conflict')
                 return deepcopy(previous['event'])
+            if self.binding['contractVersion'] != contract.VERSION:
+                raise ValueError('legacy_version_new_write_rejected')
             if len(records) >= MAX_RECORDS:
                 raise ValueError('durable_delivery_count_limit')
             sequence = max((r['sequence'] for r in rows if r.get('producerId') == self.producer_id), default=0) + 1
@@ -358,5 +365,13 @@ def open_stream(directory, *, scope_id, plan_sha256, production_run_id, purpose,
             jobs._persist(path, expected)
             folder.mkdir(mode=0o700)
             jobs._sync_directory(root)
+        else:
+            # Read the persisted version before deriving its run and producer IDs.
+            # A legacy binding remains immutable and can only replay frozen facts.
+            persisted = _read_binding(root)
+            if any(persisted[key] != expected[key] for key in
+                   ('scopeId', 'planSha256', 'productionRunId', 'purpose', 'workflowId')):
+                raise ValueError('durable_stream_scope_conflict')
+            expected = persisted
         validate_locked(root, pending, fd, expected=expected)
     return DurableStream(root, expected)
