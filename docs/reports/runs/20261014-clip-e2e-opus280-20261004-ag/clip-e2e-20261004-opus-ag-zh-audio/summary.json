@@ -1,0 +1,57 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ag-zh-audio",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-15T00:59:26+00:00",
+      "units": 50,
+      "inputs": "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/clip-e2e-opus280-20261004-ag-zh-audio/inputs",
+      "layer1Backend": "claude_cli_opus"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-15T00:59:40+00:00",
+      "reusedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont",
+      "manifest": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ag-zh-audio/reuse-manifest.json"
+    },
+    "layer2": {
+      "status": "done",
+      "at": "2026-10-15T00:59:40+00:00",
+      "reusedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont",
+      "manifest": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ag-zh-audio/reuse-manifest.json"
+    },
+    "qc.zh-Hans": {
+      "status": "done",
+      "at": "2026-10-15T00:59:40+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ag-zh-audio/l2/text/zh-Hans/candidate.json",
+          "out": "out",
+          "status": "text_waiver_issued",
+          "failedGroups": [
+            "translation-0-u288",
+            "translation-0-u302"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ag-zh-audio/textqc-zh-Hans/state/qc-receipts/text/zh-Hans/23477e73384424889ea5a2cdaa61e144289440e0dfd0c318be12c291a8a5ce72/entry-000001.json",
+          "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ag-zh-audio/textqc-zh-Hans/out/zh-Hans"
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ag-zh-audio/l2/text/zh-Hans/candidate.json",
+      "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ag-zh-audio/textqc-zh-Hans/out/zh-Hans",
+      "reusedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont",
+      "waiverSha256": "eb630c1aba0e1b08eef3a9b1c7443e4a72792e6f00b305136a17c3ddd28f22af"
+    },
+    "audio.zh-Hans": {
+      "status": "failed",
+      "at": "2026-10-15T01:11:30+00:00",
+      "qcStatus": "error",
+      "failedGroups": null,
+      "nextActions": null
+    }
+  },
+  "stopped": [
+    "audio.zh-Hans: error None ValueError: source_budget_exhausted"
+  ],
+  "settledUsd": 19.369156,
+  "claudeListPriceEquivalentUsd": 0.0
+}
