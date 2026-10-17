@@ -1,4 +1,5 @@
 import json
+import hashlib
 import os
 from pathlib import Path
 import tempfile
@@ -49,6 +50,14 @@ class ObservabilityTests(unittest.TestCase):
             self.assertIs(log_contract.validate_event(legacy_started), legacy_started)
             with self.assertRaisesRegex(ValueError, 'transitional_version_new_write_rejected'):
                 outbox.deliver(transitional / 'new-run', legacy_started)
+            bound = transitional / 'bound-run'
+            markers = bound / '.run-profiles'
+            markers.mkdir(parents=True)
+            marker = markers / (hashlib.sha256(legacy_started['runId'].encode()).hexdigest() + '.json')
+            outbox.jobs._persist(marker, {'runId': legacy_started['runId'],
+                                          'contractVersion': log_contract.LEGACY_VERSION})
+            with self.assertRaisesRegex(ValueError, 'transitional_version_new_write_rejected'):
+                outbox.deliver(bound, legacy_started)
             legacy_bytes = ''.join(json.dumps(row) + '\n' for row in legacy_rows).encode()
             (transitional / 'events.jsonl').write_bytes(legacy_bytes)
             recovered, damaged = accounting.read_events(transitional)
