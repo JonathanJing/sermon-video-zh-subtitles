@@ -75,6 +75,7 @@ Layer 2 政策冻结为 `claude_cli_opus` 时（[运行时模型政策](producti
 - **只有 GPU 环节占用 Spark 会话**（PR #380 合并后）：Layer 2、文本质检等只调 API 的环节不检查会话、不建 job hold，Spark 服务照常运行；渲染、初筛、音频质检前才 `spark_exclusive_session.py begin`，用完 `finish`。合并前的代码里 Layer 2 仍要求会话（`spark_exclusive_session_required`）。
 - **GPU 环节的会话出状况时**（job 异常退出后变成 `reconcile_required`）：先确认派发进程已退出、账本里没有 intent 状态的请求，再 `reconcile --job-id … --confirm-dispatcher-terminal`，最后 `resume-begin`。
 - **QC 换预算根时复用已付回复**（PR #381 合并后）：新授权明确批准 `reuseBudgetRoots`，只复用完整身份匹配、已返回的直接付费响应；复用未命中时拒绝新增付费。
+- **Layer 2 跨顶层运行复用**：execution v6 的 `priorSuccessRoots` 与 budget authorization v4 的逐语言 `reuseBudgetRoots` 必须同时批准。需要零成本重放时设置 `cacheRequired=true`；任何 payload、runtime、实现、成功收据或直接付费账本证明不匹配都会在新请求前停止。规划器仍按完整首轮最坏情况签发上限，不把预计命中当作降低预算依据。
 - **开跑前冻结代码。** 质检、校准、读法规则、截短校准都在机器质检实现哈希里。运行中途改代码，已签发的文本和音频放行证明就作废，所有语言都要重签。片段测试第二轮因此多花约 2.5 美元。
 - **质检规则改变后，用新的 state 目录。** 修复账本会拒绝原样重筛已失败的候选（`blocked_prior_failure`），旧 state 留作证据。
 - **同一候选不要反复重跑质检直到通过。** 质检失败的组，开新修订（Layer 2 重新翻译）后再质检。

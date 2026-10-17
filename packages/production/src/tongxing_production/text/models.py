@@ -70,11 +70,11 @@ TRANSLATOR_BACKENDS = policy_tools.TRANSLATOR_BACKENDS
 HISTORICAL_MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
 SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
-PAYLOAD_CACHE_SUCCESS_SCHEMA = "sermon-target-language-payload-cache-success-v1"
+PAYLOAD_CACHE_SUCCESS_SCHEMA = "sermon-target-language-payload-cache-success-v2"
 # Prototype implementation identity.  This is intentionally independent of the
 # legacy runner compatibility constant: any change to the cross-top-level-round
 # admission, receipt, or copying rules must mint a new value before reuse.
-PAYLOAD_CACHE_IMPLEMENTATION_SHA256 = "92bdd84f64c180b28f06ff4c366f4d6ac9065ccef411ad9259393f44388ad2cb"
+PAYLOAD_CACHE_IMPLEMENTATION_SHA256 = "19b26224cf9c006aa208b1658b3c642f11d0e278f3f6dec5af6a50c1a423eed9"
 MAX_STANDALONE_GROUP_WORKERS = 3
 
 
@@ -336,7 +336,7 @@ def _require_payload_cache_response_not_refused(response: dict[str, Any], role: 
 
 def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
                               payload_sha256: str, request: dict[str, Any],
-                              group: dict[str, Any]) -> Path | None:
+                              group: dict[str, Any]) -> dict[str, Any] | None:
     """Return a new-format, group-success-bound exact-payload cache.
 
     Merely having a parsed or raw response is not success evidence.  Older roots
@@ -389,7 +389,7 @@ def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
         preview = cache.with_suffix(".policy-preview.json")
         require(isinstance(row, dict) and set(row) == {
                     "payloadSha256", "cacheKeySha256", "model", "requestId",
-                    "cacheSha256", "rawSha256", "previewSha256"}
+                    "cacheSha256", "rawSha256", "previewSha256", "paidProvenance"}
                 and cache.is_file() and raw.is_file() and preview.is_file()
                 and not cache.is_symlink() and not raw.is_symlink() and not preview.is_symlink()
                 and row.get("cacheSha256") == _file_sha256(cache)
@@ -413,7 +413,9 @@ def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
                 and frozen.get("payload", {}).get("model") == row.get("model")
                 and frozen.get("payloadSha256") == policy_tools.canonical_sha256(frozen.get("payload"))
                 and row.get("cacheKeySha256") == _payload_cache_key(
-                    expected_role, row.get("payloadSha256")),
+                    expected_role, row.get("payloadSha256"))
+                and (row.get("paidProvenance") is None
+                     or isinstance(row.get("paidProvenance"), dict)),
                 f"Prior payload cache evidence changed: {cache}")
         try:
             _require_payload_cache_response_not_refused(raw_record["response"], expected_role)
@@ -437,12 +439,49 @@ def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
     selected = roles[role]
     if selected["cacheKeySha256"] != _payload_cache_key(role, payload_sha256):
         return None
-    return prior_root / f"{stem}-{'astra' if role == 'translator' else 'sol'}.json"
+    suffix = 'astra' if role == 'translator' else 'sol'
+    raw_record = producer._load((prior_root / f"{stem}-{suffix}.json").with_suffix('.raw.json'))
+    return {"path": prior_root / f"{stem}-{suffix}.json",
+            "paidProvenance": copy.deepcopy(selected["paidProvenance"]),
+            "response": copy.deepcopy(raw_record["response"]),
+            "binding": copy.deepcopy(selected)}
+
+
+def _require_replayed_payload_cache(output: Path, selected: dict[str, Any], role: str,
+                                    saved: dict[str, Any]) -> None:
+    """Recheck destination bytes after copying verified prior evidence.
+
+    The prior root is intentionally read-only but not locked by this runner. A
+    writer racing between admission and copy must therefore be detected before
+    the parsed result can enter draft/review/evidence assembly.
+    """
+    raw = output.with_suffix('.raw.json')
+    preview = output.with_suffix('.policy-preview.json')
+    binding = selected['binding']
+    require(_file_sha256(output) == binding['cacheSha256']
+            and _file_sha256(raw) == binding['rawSha256']
+            and _file_sha256(preview) == binding['previewSha256'],
+            f"Replayed payload cache bytes changed: {output}")
+    cached = producer._load(output)
+    raw_record = producer._load(raw)
+    require(cached == saved and raw_record.get('response') == selected['response'],
+            f"Replayed payload cache evidence changed: {output}")
+    _require_payload_cache_response_not_refused(raw_record['response'], role)
+    try:
+        returned = json.loads(completed_response_content(
+            raw_record['response'], cached['model'], role))
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Replayed payload cache response is invalid: {raw}") from exc
+    require(returned == cached['result'],
+            f"Replayed payload cache parsed result differs from raw response: {output}")
 
 
 def _save_payload_cache_success(out: Path, stem: str, request: dict[str, Any],
-                                group: dict[str, Any], semantic: dict[str, Any]) -> None:
+                                group: dict[str, Any], semantic: dict[str, Any], *,
+                                caller=None, api_key: str = "",
+                                reused_provenance: dict[str, dict | None] | None = None) -> None:
     roles = {}
+    reused_provenance = reused_provenance or {}
     for role, suffix in (("translator", "astra"), ("reviewer", "sol")):
         cache = out / f"{stem}-{suffix}.json"
         raw = cache.with_suffix(".raw.json")
@@ -451,13 +490,19 @@ def _save_payload_cache_success(out: Path, stem: str, request: dict[str, Any],
                 f"Successful group lacks complete {role} cache evidence: {cache}")
         cached = producer._load(cache)
         raw_record = producer._load(raw)
+        preview_record = producer._load(preview)
         _require_payload_cache_response_not_refused(raw_record.get("response"), role)
+        provenance = copy.deepcopy(reused_provenance.get(role))
+        provenance_reader = getattr(caller, "paid_response_provenance", None)
+        if provenance is None and provenance_reader is not None:
+            provenance = provenance_reader(api_key, preview_record["payload"], raw_record["response"])
         roles[role] = {
             "payloadSha256": cached["payloadSha256"],
             "cacheKeySha256": _payload_cache_key(role, cached["payloadSha256"]),
             "model": cached["model"], "requestId": cached["requestId"],
             "cacheSha256": _file_sha256(cache), "rawSha256": _file_sha256(raw),
             "previewSha256": _file_sha256(preview),
+            "paidProvenance": provenance,
         }
     receipt = {
         "schemaVersion": PAYLOAD_CACHE_SUCCESS_SCHEMA,
@@ -1055,6 +1100,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         resume_cache_from: Path | None = None,
         payload_cache_from: Path | None = None,
         emit_payload_cache_success: bool = False,
+        payload_cache_required: bool = False,
+        backfill_payload_cache_success: bool = False,
         *, failure_collector=None) -> dict[str, Any]:
     require(plugin_path is not None,
             "Formal Layer 2 requires the frozen language plugin before dispatch")
@@ -1065,7 +1112,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
     return _run_prepared_groups(
         request, anchor, policy, out, api_key, caller, custom_plan, plugin_path,
         revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
-        payload_cache_from, emit_payload_cache_success,
+        payload_cache_from, emit_payload_cache_success, payload_cache_required,
+        backfill_payload_cache_success,
         source_admission_span=source_span, failure_collector=failure_collector)
 
 
@@ -1080,6 +1128,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          resume_cache_from: Path | None = None,
                          payload_cache_from: Path | None = None,
                          emit_payload_cache_success: bool = False,
+                         payload_cache_required: bool = False,
+                         backfill_payload_cache_success: bool = False,
                          *, simulation_only: bool = False, cache_only: bool = False,
                          progress_callback=None,
                          source_admission_span: str | None = None,
@@ -1197,6 +1247,15 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 "Cross-round payload cache reuse is formal production only")
         require(type(emit_payload_cache_success) is bool,
                 "Payload cache success emission flag must be boolean")
+        require(type(payload_cache_required) is bool
+                and (not payload_cache_required or payload_cache_from is not None),
+                "Required payload cache needs an explicit prior root")
+        require(type(backfill_payload_cache_success) is bool
+                and (not backfill_payload_cache_success or
+                     (emit_payload_cache_success and reuse_from is not None
+                      and payload_cache_from is None and revision_brief is None
+                      and partial_repair_brief is None and resume_cache_from is None)),
+                "Payload cache backfill requires one complete prior run and explicit emission")
         require(payload_cache_from is None or all(item is None for item in (
                     reuse_from, resume_cache_from, revision_brief, partial_repair_brief)),
                 "Cross-round payload cache source cannot be combined with revision resume inputs")
@@ -1254,7 +1313,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             # prior-input check above rejects any cache made under another one.
             require(resume_cache_from is None
                     and (reuse_from is None or (partial_repair_brief is not None
-                                                and transport_identity.get("backend") == "openai_api")),
+                                                and transport_identity.get("backend") == "openai_api")
+                        or backfill_payload_cache_success),
                     "CLI transport supports same-run resume only; cross-run cache reuse is not enabled")
         if revision_brief is not None:
             identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
@@ -1271,6 +1331,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 "implementationSha256": PAYLOAD_CACHE_IMPLEMENTATION_SHA256,
                 "emit": True,
                 "priorRoot": str(payload_cache_from.resolve()) if payload_cache_from is not None else None,
+                "backfillFrom": str(reuse_from.resolve()) if backfill_payload_cache_success else None,
             }
         if failure_collector is not None:
             require(not simulation_only and diagnostic_context is None and plugin_path is not None,
@@ -1315,6 +1376,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             else:
                 save_new(effective_path, effective)
         requested_workers = workers
+        if payload_cache_required:
+            # A required all-hit replay must stop at the first miss before any
+            # other group can race ahead and dispatch a paid request.
+            workers = 1
         if failure_collector is not None:
             # Collection never writes a plugin stop receipt: a plugin rejection is
             # recorded and the round goes on, so groups may run concurrently. A
@@ -1344,7 +1409,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             # A group repaired in an earlier revision keeps that revision's
             # instruction in its prompt, so its verified cache reuses exactly.
             prior_repair = carried.get(group["translationGroupId"]) if repair is None else None
-            if prior_evidence is not None and brief is None and repair is None:
+            if (prior_evidence is not None and brief is None and repair is None
+                    and not backfill_payload_cache_success and not payload_cache_enabled):
                 return carry_forward_group(reuse_from, out, index, group,
                                            prior_evidence["groups"][index - 1], policy), prepare_span
             source_rows = [{"sourceUnitId": unit_id, "english": units[unit_id]}
@@ -1429,6 +1495,20 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             payload_translator_cache = _successful_payload_cache(
                 payload_cache_from, stem, "translator",
                 _model_fingerprint(translator_payload, caller, api_key), request, group)
+            if (payload_translator_cache is None and payload_cache_enabled
+                    and prior_cache_root is not None):
+                # A later auto-repair round carries the original direct-paid
+                # provenance from the preceding round's success receipt. The
+                # destination ledger's reused row is never promoted to a source.
+                payload_translator_cache = _successful_payload_cache(
+                    prior_cache_root, stem, "translator",
+                    _model_fingerprint(translator_payload, caller, api_key), request, group)
+            if payload_cache_required:
+                require(payload_translator_cache is not None,
+                        f"Required payload cache missed translator: {stem}")
+            if payload_translator_cache is not None and hasattr(caller, "record_reuse"):
+                caller.record_reuse(api_key, translator_payload,
+                    payload_translator_cache["response"], payload_translator_cache["paidProvenance"])
             translator_cached = (astra_path.exists() or astra_path.with_suffix(".raw.json").exists()
                                  or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file())
                                  or payload_translator_cache is not None)
@@ -1448,8 +1528,13 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                          if resume_cache_from is not None else
                                          reusable_cache(reuse_from, stem, "astra")
                                          if reuse_from is not None and brief is None and repair is None else
-                                         payload_translator_cache, cache_only=cache_only,
+                                         payload_translator_cache["path"]
+                                         if payload_translator_cache is not None else None,
+                                         cache_only=cache_only or backfill_payload_cache_success,
                                          rule_receipt=rule_receipt)
+                if payload_translator_cache is not None:
+                    _require_replayed_payload_cache(
+                        astra_path, payload_translator_cache, "translator", translated)
                 if progress_callback is not None:
                     progress_callback('translator_response_saved')
         with accounting.stage(f"layer2.draft_validation.{request['targetLocale']}.{stem}",
@@ -1509,6 +1594,17 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             payload_reviewer_cache = _successful_payload_cache(
                 payload_cache_from, stem, "reviewer",
                 _model_fingerprint(reviewer_payload, caller, api_key), request, group)
+            if (payload_reviewer_cache is None and payload_cache_enabled
+                    and prior_cache_root is not None):
+                payload_reviewer_cache = _successful_payload_cache(
+                    prior_cache_root, stem, "reviewer",
+                    _model_fingerprint(reviewer_payload, caller, api_key), request, group)
+            if payload_cache_required:
+                require(payload_reviewer_cache is not None,
+                        f"Required payload cache missed reviewer: {stem}")
+            if payload_reviewer_cache is not None and hasattr(caller, "record_reuse"):
+                caller.record_reuse(api_key, reviewer_payload,
+                    payload_reviewer_cache["response"], payload_reviewer_cache["paidProvenance"])
             reviewer_cached = (sol_path.exists() or sol_path.with_suffix(".raw.json").exists()
                                or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file())
                                or payload_reviewer_cache is not None)
@@ -1528,8 +1624,13 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                                 if resume_cache_from is not None else
                                                 reusable_cache(reuse_from, stem, "sol")
                                                 if reuse_from is not None and brief is None and repair is None else
-                                                payload_reviewer_cache, cache_only=cache_only,
+                                                payload_reviewer_cache["path"]
+                                                if payload_reviewer_cache is not None else None,
+                                                cache_only=cache_only or backfill_payload_cache_success,
                                                 rule_receipt=rule_receipt)
+                if payload_reviewer_cache is not None:
+                    _require_replayed_payload_cache(
+                        sol_path, payload_reviewer_cache, "reviewer", reviewed_response)
                 if progress_callback is not None:
                     progress_callback('reviewer_response_saved')
         with accounting.stage(f"layer2.review_validation.{request['targetLocale']}.{stem}",
@@ -1583,7 +1684,13 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out,
                                                      diagnostic_context=diagnostic_context)
                 if payload_cache_enabled:
-                    _save_payload_cache_success(out, stem, request, group, semantic)
+                    _save_payload_cache_success(out, stem, request, group, semantic,
+                        caller=caller, api_key=api_key,
+                        reused_provenance={
+                            "translator": payload_translator_cache["paidProvenance"]
+                                if payload_translator_cache is not None else None,
+                            "reviewer": payload_reviewer_cache["paidProvenance"]
+                                if payload_reviewer_cache is not None else None})
             return reviewed_row, validation_span
     def process_group(item):
         index, _ = item
@@ -1634,6 +1741,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   resume_cache_from: Path | None = None,
                   payload_cache_from: Path | None = None,
                   emit_payload_cache_success: bool = False,
+                  payload_cache_required: bool = False,
+                  backfill_payload_cache_success: bool = False,
                   progress_ledger: Path | None = None,
                   cache_only: bool = False, progress_callback=None,
                   predecessor_spans=(), completion_spans: list[str] | None = None,
@@ -1662,7 +1771,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
             evidence = _run_prepared_groups(
                 request, anchor, policy, out_dir, api_key, call, plan, plugin,
                 revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
-                payload_cache_from, emit_payload_cache_success,
+                payload_cache_from, emit_payload_cache_success, payload_cache_required,
+                backfill_payload_cache_success,
                 source_admission_span=source_span, cache_only=cache_only,
                 progress_callback=progress_callback, completion_spans=completion_spans,
                 failure_collector=failure_collector)
@@ -1772,6 +1882,8 @@ def main() -> None:
         resume_cache_from=args.resume_cache_from,
         payload_cache_from=args.payload_cache_from,
         emit_payload_cache_success=args.emit_payload_cache_success,
+        payload_cache_required=False,
+        backfill_payload_cache_success=False,
         progress_ledger=args.progress_ledger)
     print(json.dumps({"status": "independent_model_review_pass",
                       "groups": len(evidence["groups"]),

@@ -68,6 +68,26 @@ class _Caller:
         }
 
 
+class _BudgetAwareCaller(_Caller):
+    def __init__(self, owner, **options):
+        super().__init__(owner, **options)
+        self.reused = []
+
+    def paid_response_provenance(self, _api_key, payload, response):
+        return {"fixturePayload": subject.policy_tools.canonical_sha256(payload),
+                "fixtureResponseId": response["id"]}
+
+    def record_reuse(self, _api_key, payload, response, provenance):
+        self.assert_provenance(payload, response, provenance)
+        self.reused.append(copy.deepcopy(provenance))
+
+    @staticmethod
+    def assert_provenance(payload, response, provenance):
+        if provenance != {"fixturePayload": subject.policy_tools.canonical_sha256(payload),
+                          "fixtureResponseId": response["id"]}:
+            raise AssertionError("paid provenance changed")
+
+
 class Layer2PayloadCacheReuseTests(unittest.TestCase):
     def setUp(self):
         self.fixture = fixture_module.ProduceTargetLanguageCandidateTests(
@@ -82,12 +102,18 @@ class Layer2PayloadCacheReuseTests(unittest.TestCase):
         self.groups = {tuple(row["sourceUnitIds"]): row for row in self.fixture.evidence["groups"]}
 
     def execute(self, out, caller, *, payload_cache_from=None,
-                emit_payload_cache_success=False, source=None, policy=None):
+                emit_payload_cache_success=False, payload_cache_required=False,
+                reuse_from=None, backfill_payload_cache_success=False,
+                partial_repair_brief=None,
+                source=None, policy=None):
         return subject.run_accounted(
             source or self.fixture.source, self.fixture.anchor, policy or self.fixture.policy,
-            out, "fixture-key", caller, None, self.fixture.plugin_path, None, None,
+            out, "fixture-key", caller, None, self.fixture.plugin_path, None, reuse_from,
+            partial_repair_brief=partial_repair_brief,
             payload_cache_from=payload_cache_from,
-            emit_payload_cache_success=emit_payload_cache_success)
+            emit_payload_cache_success=emit_payload_cache_success,
+            payload_cache_required=payload_cache_required,
+            backfill_payload_cache_success=backfill_payload_cache_success)
 
     def make_prior(self):
         caller = _Caller(self)
@@ -128,6 +154,107 @@ class Layer2PayloadCacheReuseTests(unittest.TestCase):
         self.assertEqual(len(model_starts), 4)
         self.assertTrue(all(row.get("cacheHit") is True for row in model_starts))
         self.assertTrue(all(row.get("executorType") == "deterministic_program" for row in model_starts))
+
+    def test_budget_provenance_is_recorded_before_each_exact_reuse(self):
+        paid = _BudgetAwareCaller(self)
+        prior = self.execute(self.prior, paid, emit_payload_cache_success=True)
+        replay = _BudgetAwareCaller(self, forbidden=True)
+        current = self.execute(self.current, replay, payload_cache_from=self.prior,
+                               payload_cache_required=True)
+        self.assertEqual(current, prior)
+        self.assertEqual(replay.calls, [])
+        self.assertEqual(len(replay.reused), 4)
+        self.assertTrue(all(row is not None for row in replay.reused))
+
+    def test_complete_current_runtime_run_can_backfill_success_receipts_without_dispatch(self):
+        paid = _BudgetAwareCaller(self)
+        original = self.execute(self.prior, paid)
+        self.assertEqual(list(self.prior.glob("*-payload-cache-success.json")), [])
+        backfill = self.root / "backfill"
+        replay = _BudgetAwareCaller(self, forbidden=True)
+        migrated = self.execute(backfill, replay, reuse_from=self.prior,
+                                emit_payload_cache_success=True,
+                                backfill_payload_cache_success=True)
+        self.assertEqual(migrated, original)
+        self.assertEqual(replay.calls, [])
+        receipts = list(backfill.glob("*-payload-cache-success.json"))
+        self.assertEqual(len(receipts), 2)
+        self.assertTrue(all(all(role["paidProvenance"] is not None
+                                for role in json.loads(path.read_text())["roles"].values())
+                            for path in receipts))
+
+    def test_later_repair_round_carries_original_direct_paid_provenance(self):
+        paid = _BudgetAwareCaller(self)
+        original = self.execute(self.prior, paid, emit_payload_cache_success=True)
+        first = self.root / "first-reuse"
+        first_caller = _BudgetAwareCaller(self, forbidden=True)
+        first_result = self.execute(first, first_caller, payload_cache_from=self.prior)
+        self.assertEqual(first_result, original)
+        second = self.root / "second-round"
+        second_group = original["groups"][1]
+        failed = first / "group-0002-sol.json"
+        request = producer.prepare_request(
+            self.fixture.source, self.fixture.anchor, self.fixture.policy)
+        repair = {
+            "schemaVersion": subject.PARTIAL_REPAIR_SCHEMA,
+            "targetLocale": self.fixture.policy["targetLocale"],
+            "englishSourcePackageJsonSha256": request["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": request["anchorManifestSha256"],
+            "translationPolicySha256": request["translationPolicySha256"],
+            "groups": [{"translationGroupId": second_group["translationGroupId"],
+                        "sourceUnitIds": second_group["sourceUnitIds"],
+                        "failedRole": "reviewer",
+                        "failedCacheSha256": subject.hashlib.sha256(failed.read_bytes()).hexdigest(),
+                        "failureReason": "synthetic repair",
+                        "instruction": "Recheck the exact English source."}],
+        }
+        second_caller = _BudgetAwareCaller(self)
+        second_result = self.execute(second, second_caller, reuse_from=first,
+                                     emit_payload_cache_success=True,
+                                     partial_repair_brief=repair)
+        self.assertEqual([row["targetUtterances"] for row in second_result["groups"]],
+                         [row["targetUtterances"] for row in original["groups"]])
+        self.assertEqual(second_result["groups"][0]["translatorRequestId"],
+                         original["groups"][0]["translatorRequestId"])
+        self.assertEqual(second_result["groups"][0]["reviewerRequestId"],
+                         original["groups"][0]["reviewerRequestId"])
+        self.assertEqual(len(second_caller.calls), 2)
+        self.assertEqual(len(second_caller.reused), 2)
+        for path in second.glob("*-payload-cache-success.json"):
+            value = json.loads(path.read_text())
+            self.assertTrue(all(role["paidProvenance"] is not None
+                                for role in value["roles"].values()))
+
+    def test_required_cache_miss_stops_before_any_provider_call(self):
+        self.make_prior()
+        (self.prior / "group-0002-payload-cache-success.json").unlink()
+        caller = _Caller(self, forbidden=True)
+        with self.assertRaisesRegex(ValueError, "Required payload cache missed translator"):
+            self.execute(self.current, caller, payload_cache_from=self.prior,
+                         payload_cache_required=True)
+        self.assertEqual(caller.calls, [])
+
+    def test_prior_mutation_between_selection_and_copy_is_rejected(self):
+        self.make_prior()
+        caller = _Caller(self, forbidden=True)
+        original_verify = caller.verify_execution
+        changed = False
+
+        def mutate_then_verify(key):
+            nonlocal changed
+            if not changed:
+                changed = True
+                path = self.prior / "group-0001-astra.json"
+                value = json.loads(path.read_text())
+                value["result"]["targetUtterances"][0] += " tampered"
+                path.write_text(json.dumps(value))
+            return original_verify(key)
+
+        caller.verify_execution = mutate_then_verify
+        with self.assertRaisesRegex(ValueError, "Replayed payload cache bytes changed"):
+            self.execute(self.current, caller, payload_cache_from=self.prior,
+                         payload_cache_required=True)
+        self.assertEqual(caller.calls, [])
 
     def test_old_format_is_a_miss_not_a_cross_round_hit(self):
         self.make_prior()
@@ -295,10 +422,10 @@ class Layer2PayloadCacheReuseTests(unittest.TestCase):
         translator_preview = producer._load(self.prior / f"{stem}-astra.policy-preview.json")
         translator_fingerprint = subject._model_fingerprint(
             translator_preview["payload"], caller, "fixture-key")
-        self.assertEqual(
-            subject._successful_payload_cache(
-                self.prior, stem, "translator", translator_fingerprint, request, group),
-            self.prior / f"{stem}-astra.json")
+        selected = subject._successful_payload_cache(
+            self.prior, stem, "translator", translator_fingerprint, request, group)
+        self.assertEqual(selected["path"], self.prior / f"{stem}-astra.json")
+        self.assertIsNone(selected["paidProvenance"])
 
         reviewer_preview = producer._load(self.prior / f"{stem}-sol.policy-preview.json")
         changed = copy.deepcopy(reviewer_preview["payload"])
