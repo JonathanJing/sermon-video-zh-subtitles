@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-docker-schema-final-image-smoke",
+  "runs": [
+    {
+      "label": "docker-schema-final-image-smoke",
+      "source": "~/.codex/worktrees/docker-schemas/sermon-video-zh-subtitles/artifacts/docker-schema-final-image-smoke",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "docker-schema-final-image-smoke",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 122,
+      "truncated": false,
+      "sha256": "56ac71c28511495e2fa74d82b4d6af1c984efb028dd6ed14fa2b9acec5779c4d",
+      "redactions": {}
+    },
+    {
+      "run": "docker-schema-final-image-smoke",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 379,
+      "truncated": false,
+      "sha256": "eddc69cfd38e4273151d1aa2675895d640d0eafdbb73aab86ef4ae361d1ae415",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
