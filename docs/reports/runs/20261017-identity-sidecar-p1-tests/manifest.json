@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-identity-sidecar-p1-tests",
+  "runs": [
+    {
+      "label": "identity-sidecar-p1-tests",
+      "source": "~/.codex/worktrees/identity-sidecar-p1/sermon-video-zh-subtitles/artifacts/identity-sidecar-p1-tests",
+      "skipped": {
+        ".md": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "identity-sidecar-p1-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 117,
+      "truncated": false,
+      "sha256": "0fba9efb460ca4b58452d07ff42a105871ed94870601a5fff8ccc85b149be8e3",
+      "redactions": {}
+    },
+    {
+      "run": "identity-sidecar-p1-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 504,
+      "truncated": false,
+      "sha256": "aae2e7bf83adf2f9d4d69d15350df00fc72bd4460644482e2f220df7a45932ae",
+      "redactions": {}
+    },
+    {
+      "run": "identity-sidecar-p1-tests",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 86,
+      "truncated": false,
+      "sha256": "c5ffac3e5c5c3659c08dc7d261aba9bc6c6a946f30923a0c25f28a2e6e1ca10e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
