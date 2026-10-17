@@ -62,6 +62,7 @@ def implementation_identity():
             "sha256": backend.current().code.module_sha256(sys.modules[__name__])}
 
 VERSION = "sermon-cuv-translation-v1"
+MANIFEST_VERSION = "sermon-cuv-translation-v2"
 MAP_SCHEMA = "sermon-cuv-reference-map-v1"
 MODEL = "gpt-6.1-sol"
 MODEL_IDENTITIES = {("gpt-6-astra", "medium"), (MODEL, "high")}
@@ -1452,7 +1453,7 @@ def repair_timing(prior_translation, parent_job, timing_report, out, *, batch_si
     require(old.get("implementationIdentity") == implementation_identity(),
             "Prior CUV implementation identity changed; validate historical v1 in its frozen checkout")
     timing, evidence = measured_timing(parent, Path(timing_report).resolve())
-    manifest = {"schemaVersion": VERSION, "implementationIdentity": implementation_identity(),
+    manifest = {"schemaVersion": MANIFEST_VERSION, "implementationIdentity": implementation_identity(),
                 "operation": TIMING_REVISION, "parentJob": bind(parent),
                 "library": old["library"], "provenance": old["provenance"], "model": MODEL,
                 "reasoningEffort": "high", "batchSize": batch_size,
@@ -1510,7 +1511,8 @@ def validate(out):
     """Offline: replay caches, all guards and exact output construction; no writes."""
     out = Path(out).resolve()
     manifest = read(out / "cuv-manifest.json")
-    require(manifest.get("schemaVersion") == VERSION and (manifest.get("model"), manifest.get("reasoningEffort")) in MODEL_IDENTITIES, "Translation manifest identity changed")
+    require(manifest.get("schemaVersion") == MANIFEST_VERSION and (manifest.get("model"), manifest.get("reasoningEffort")) in MODEL_IDENTITIES,
+            "Translation manifest identity changed; validate v1 in its frozen checkout")
     require(manifest.get("implementationIdentity") == implementation_identity(),
             "CUV implementation identity changed; validate historical v1 in its frozen checkout")
     result = compute(out, manifest, offline=True)
@@ -1556,7 +1558,7 @@ def run(parent_job, out, *, library=None, provenance=None,
     provenance = provenance or backend.current().scripture.provenance_path()
     cuv_library().from_path(library, provenance_path=provenance)  # Fail before any model request.
     source_blocks(read(parent_job))
-    manifest = {"schemaVersion": VERSION, "implementationIdentity": implementation_identity(),
+    manifest = {"schemaVersion": MANIFEST_VERSION, "implementationIdentity": implementation_identity(),
         "parentJob": bind(parent_job), "library": bind(library),
         "provenance": bind(provenance), "referenceMap": bind(reference_map_path) if reference_map_path else None,
         "timingReport": bind(parent_job.parent / "synchronization/report.json")
@@ -1565,6 +1567,8 @@ def run(parent_job, out, *, library=None, provenance=None,
     existing_manifest = out / "cuv-manifest.json"
     if existing_manifest.exists():
         prior_identity = read(existing_manifest)
+        require(prior_identity.get("schemaVersion") == MANIFEST_VERSION,
+                "Existing CUV v1 manifest requires its frozen checkout for offline validation")
         require(prior_identity.get("implementationIdentity") == manifest["implementationIdentity"],
                 "Existing CUV implementation identity changed; validate historical v1 in its frozen checkout")
         require((prior_identity.get("model"), prior_identity.get("reasoningEffort")) in MODEL_IDENTITIES,

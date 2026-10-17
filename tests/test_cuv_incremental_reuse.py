@@ -35,16 +35,21 @@ class IncrementalQuotationReuseTests(unittest.TestCase):
         self.assertEqual(6, self.run_fake(old))
         manifest_path = old / 'cuv-manifest.json'
         manifest = mod.read(manifest_path)
+        self.assertEqual('sermon-cuv-translation-v2', manifest['schemaVersion'])
+        self.assertEqual('sermon-cuv-translation-v1', mod.VERSION)
         self.assertEqual(mod.implementation_identity(), manifest['implementationIdentity'])
+        self.assertEqual(mod.VERSION, mod.read(old / 'report.json')['schemaVersion'])
+        self.assertEqual(mod.VERSION, mod.read(old / 'spoken-review.json')['cuvTranslation']['schemaVersion'])
         del manifest['implementationIdentity']
+        manifest['schemaVersion'] = mod.VERSION
         self.fx.write(manifest_path, manifest)
         fresh = self.fx.root / 'fresh'
         with mock.patch.object(mod, 'chat_json', side_effect=AssertionError('paid call')):
             with self.assertRaisesRegex(ValueError, 'frozen checkout'):
                 mod.validate(old)
-            with self.assertRaisesRegex(ValueError, 'implementation identity'):
+            with self.assertRaisesRegex(ValueError, 'v1 manifest'):
                 mod.run(self.fx.parent, old, reference_map_path=self.fx.map, batch_size=1)
-            with self.assertRaisesRegex(ValueError, 'implementationIdentity'):
+            with self.assertRaisesRegex(ValueError, 'schemaVersion'):
                 mod.run(self.fx.parent, fresh, reference_map_path=self.fx.map,
                         batch_size=1, reuse_from=old)
         self.assertFalse(fresh.exists())
