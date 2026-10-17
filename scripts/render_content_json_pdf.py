@@ -68,6 +68,7 @@ def main() -> int:
     )
     qa["contentSource"] = origin
     qa["contentSha256"] = content_sha
+    qa["pdfSha256"] = hashlib.sha256(out.read_bytes()).hexdigest()
     if reference_raw is not None:
         qa["englishReferenceSource"] = reference_origin
         qa["englishReferenceSha256"] = hashlib.sha256(reference_raw).hexdigest()
@@ -177,6 +178,7 @@ def content_cues(content: dict, english: dict[str, str] | None = None) -> tuple[
     """Pair each cue with its English: from the approved reference when one is given, else the cue's own source."""
     primary, secondary = [], []
     limit = content.get("durationSeconds")
+    previous_start = 0.0
     for index, cue in enumerate(content.get("cues", [])):
         text = renderer.clean_caption_text(str(cue.get("text") or ""))
         if not text:
@@ -185,6 +187,9 @@ def content_cues(content: dict, english: dict[str, str] | None = None) -> tuple[
         if not (is_number(start_s) and is_number(end_s) and 0 <= start_s < end_s
                 and (not is_number(limit) or end_s <= limit + DURATION_TOLERANCE_SECONDS)):
             raise SystemExit(f"Cue {index} has missing or invalid timing: start={start_s!r} end={end_s!r}.")
+        if start_s < previous_start:
+            raise SystemExit(f"Cue {index} starts before the previous cue; cues must be in time order.")
+        previous_start = start_s
         start, end = srt_time(start_s), srt_time(end_s)
         primary.append(renderer.Cue(start=start, end=end, text=text))
         raw = english.get(cue.get("textGroupId"), "") if english else cue.get("source")

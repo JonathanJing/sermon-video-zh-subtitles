@@ -112,6 +112,11 @@ class RenderContentJsonPdfTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 mod.content_cues({"durationSeconds": 10, "cues": [cue]})
 
+    def test_out_of_order_cues_are_rejected(self):
+        cues = [{"start": 10, "end": 11, "text": "一。"}, {"start": 0, "end": 1, "text": "二。"}]
+        with self.assertRaises(SystemExit):
+            mod.content_cues({"cues": cues})
+
     def test_renders_pdf_from_content(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "page.pdf"
