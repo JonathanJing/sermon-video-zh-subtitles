@@ -11,6 +11,7 @@ import textwrap
 import unittest
 
 from scripts.ci_change_scope import change_scope
+from tools.development import ci_change_scope as tool_scope
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -49,15 +50,18 @@ class CIChangeScopeTests(unittest.TestCase):
         self.git("commit", "-qm", "fixture")
         return self.git("rev-parse", "HEAD")
 
-    def scope(self, *, event="pull_request", base=None, head=None):
+    def scope(self, *, event="pull_request", base=None, head=None, entry="legacy"):
         output = self.repo / ".git/action-output"
         output.unlink(missing_ok=True)
-        result = subprocess.run([
-            sys.executable, str(ROOT / "scripts/ci_change_scope.py"),
+        command = ([sys.executable, "-m", "scripts.ci_change_scope"] if entry == "module"
+                   else [sys.executable, str(ROOT / ("scripts/ci_change_scope.py" if entry == "legacy"
+                                                   else "tools/development/ci_change_scope.py"))])
+        result = subprocess.run([*command,
             "--base", self.base if base is None else base,
             "--head", self.git("rev-parse", "HEAD") if head is None else head,
             "--event", event, "--output", str(output),
-        ], cwd=self.repo, capture_output=True, text=True)
+        ], cwd=self.repo, env={**os.environ, "PYTHONPATH": str(ROOT)} if entry == "module" else None,
+            capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         return output.read_text(encoding="utf-8").strip()
 
@@ -85,9 +89,15 @@ class CIChangeScopeTests(unittest.TestCase):
                 self.commit()
                 self.assertEqual(self.scope(), f"scope={pr_scope}")
                 self.assertEqual(self.scope(event="push"), f"scope={push_scope}")
+                if paths in (("docs/guide.md",), ("apps/tongxing-ios/App/AppModel.swift",),
+                             ("new-runtime/unknown.py",)):
+                    self.assertEqual(self.scope(entry="tool"), f"scope={pr_scope}")
+                    self.assertEqual(self.scope(entry="module"), f"scope={pr_scope}")
 
     def test_empty_invalid_and_new_branch_base_fail_closed(self):
+        self.assertIs(sys.modules["scripts.ci_change_scope"], tool_scope)
         self.assertEqual(self.scope(), "scope=full")
+        self.assertEqual(self.scope(entry="tool"), "scope=full")
         self.write("apps/tongxing-ios/App/AppModel.swift")
         self.commit()
         for event, base in (("push", "0" * 40), ("pull_request", ""),
@@ -95,6 +105,7 @@ class CIChangeScopeTests(unittest.TestCase):
             with self.subTest(event=event, base=base):
                 self.assertEqual(self.scope(event=event, base=base), "scope=full")
         self.assertEqual(self.scope(head="invalid"), "scope=full")
+        self.assertEqual(self.scope(head="invalid", entry="tool"), "scope=full")
         self.assertEqual(change_scope(["apps/tongxing-ios/App.swift"], "workflow_dispatch"), "full")
         self.assertEqual(change_scope(["apps/tongxing-ios/../../scripts/producer.py"], "pull_request"), "full")
 
