@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr786-external-cli-fix",
+  "runs": [
+    {
+      "label": "pr786-external-cli-fix-20261017",
+      "source": "~/.codex/worktrees/ops-review-timeline-leaf/sermon-video-zh-subtitles/artifacts/pr786-external-cli-fix-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr786-external-cli-fix-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 180,
+      "truncated": false,
+      "sha256": "a0c9e44758cc23abf64dacbfdc1c9f08c6a18aa6086197cf303ad43ee58f1407",
+      "redactions": {}
+    },
+    {
+      "run": "pr786-external-cli-fix-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 722,
+      "truncated": false,
+      "sha256": "c485e6b6b6de97250d181ca6f503e5f8429c5e789e340d402e14d0fdb455ea5d",
+      "redactions": {}
+    },
+    {
+      "run": "pr786-external-cli-fix-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 134,
+      "truncated": false,
+      "sha256": "38c78a3865ad8c26c684469ec078cf5d0e1dcf12609aacfa84fc52ba6e5e71e7",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
