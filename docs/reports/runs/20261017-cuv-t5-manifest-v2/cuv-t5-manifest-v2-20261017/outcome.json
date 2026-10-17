@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "cuv-t5-test-outcome-v1",
+  "deliveryType": "test",
+  "status": "passed",
+  "purpose": "Version new CUV manifest without changing v1 request and report bytes",
+  "modelCalls": 0
+}
