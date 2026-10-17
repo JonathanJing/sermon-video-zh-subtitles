@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "fiveStageTestInvocations": 5,
+  "passedAssertionsByInvocation": 298,
+  "skippedByInvocation": 5,
+  "subtestsPassedByInvocation": 129,
+  "notes": "Counts include repeated dependency checks across five distinct branch heads. No production or external provider calls."
+}
