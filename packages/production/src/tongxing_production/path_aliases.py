@@ -17,6 +17,7 @@ LAYER1 = {
     'scripts/sermon_sentence_interpretation.py': _SOURCE + 'sentence_interpretation.py',
     'scripts/mfa_alignment.py': _SOURCE + 'mfa_alignment.py',
     'scripts/sermon_source_producer_compatibility.py': _SOURCE + 'producer_compatibility.py',
+    'scripts/sermon_source_failure.py': _SOURCE + 'failure.py',
     'scripts/sermon_mfa_identity.py': _SOURCE + 'mfa_identity.py',
     'scripts/build_english_source_package.py': _SOURCE + 'english_source_package.py',
     'scripts/judge_english_source_for_translation.py': _SOURCE + 'english_source_judge.py',
