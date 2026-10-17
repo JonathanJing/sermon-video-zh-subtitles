@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "sermon-test-run-summary-v1",
+  "status": "production_path_tests_passed_live_canary_pending",
+  "testsPassed": 261,
+  "subtestsPassed": 529,
+  "testsFailed": 0,
+  "realProviderCalls": 0,
+  "canonicalBudgetControllerTested": true,
+  "productionReadback": "pending_after_merge",
+  "notes": [
+    "Execution v6 binds prior cache snapshots into configuration, package and durable job identity.",
+    "Budget authorization v4 records exact hits as reused with zero charge and preserves direct-paid provenance.",
+    "cacheRequired, unknown outcomes, refusal, corruption, symlink, path overlap, runtime drift, TOCTOU and auto-repair provenance carry fail closed.",
+    "The scripts facade and path alias resolve to the package implementation in this checkout."
+  ]
+}

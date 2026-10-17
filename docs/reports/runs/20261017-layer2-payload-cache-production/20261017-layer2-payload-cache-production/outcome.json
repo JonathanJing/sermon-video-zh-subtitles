@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "production_path_tests_passed_live_canary_pending",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T22:50:16Z",
+  "endedAt": "2026-10-17T22:51:53Z",
+  "deliveryType": "test",
+  "testScope": "261 focused production-path tests and 529 subtests passed; canonical execution v6, budget authorization v4, BudgetStore v2 zero-charge reuse, cacheRequired, backfill, package paths and safety fences covered; real provider dispatch, merged-dev canary, publication, device and venue validation not run"
+}
