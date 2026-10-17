@@ -1,0 +1,10 @@
+{
+  "status": "completed",
+  "deliveryType": "test",
+  "result": "121 related Python tests passed on Tracker head 0bf890e1 after #571 483eb42c integration",
+  "exitCode": 0,
+  "elapsedSeconds": 10.51,
+  "commit": "0bf890e106d56bea9484f4aa2d621c051869b292",
+  "baseCommit": "483eb42c6295ebeee1292727446f00dd874d956c",
+  "productionRun": false
+}
