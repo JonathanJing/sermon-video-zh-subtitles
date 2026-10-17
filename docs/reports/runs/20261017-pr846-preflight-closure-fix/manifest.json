@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr846-preflight-closure-fix",
+  "runs": [
+    {
+      "label": "sermon-unified-preflight-closure-fix",
+      "source": "/private/tmp/sermon-ops-unified-preflight-20261017/artifacts/sermon-unified-preflight-closure-fix",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "sermon-unified-preflight-closure-fix",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 100,
+      "truncated": false,
+      "sha256": "3d9dfbf82e9006e0b1e9dcf9b602cad6a0d552b679b0f901c7ab7336ea9b1d49",
+      "redactions": {}
+    },
+    {
+      "run": "sermon-unified-preflight-closure-fix",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 591,
+      "truncated": false,
+      "sha256": "16c34daa148b49456a25c78702aae963d84e91f6ab138b30fa3e8823682d86d8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
