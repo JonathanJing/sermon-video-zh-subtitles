@@ -1,4 +1,5 @@
-import importlib.util
+import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -6,14 +7,38 @@ from pathlib import Path
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "render_mobile_pdf_from_srt.py"
-SPEC = importlib.util.spec_from_file_location("render_mobile_pdf_from_srt", SCRIPT_PATH)
-mod = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-sys.modules[SPEC.name] = mod
-SPEC.loader.exec_module(mod)
+from scripts import render_mobile_pdf_from_srt as mod
+from tongxing_production.workflows.dual_pdf import mobile_pdf as implementation
 
 
 class RenderMobilePdfFromSrtTest(unittest.TestCase):
+    def test_legacy_import_and_interpretation_font_symbols(self):
+        from scripts import render_sermon_interpretation_pdf as interpretation
+        from scripts import sermon_accounting
+        from tongxing_production import path_aliases
+
+        self.assertIs(mod, implementation)
+        self.assertIs(sys.modules["scripts.render_mobile_pdf_from_srt"], implementation)
+        self.assertEqual(interpretation.MOBILE_PAGE_SIZE, mod.MOBILE_PAGE_SIZE)
+        self.assertEqual(path_aliases.resolve("scripts/render_mobile_pdf_from_srt.py"),
+                         "packages/production/src/tongxing_production/workflows/dual_pdf/mobile_pdf.py")
+        self.assertIn(path_aliases.resolve("scripts/render_mobile_pdf_from_srt.py"),
+                      sermon_accounting.execution_identity()["loadedProjectCodeSha256"])
+
+    def test_legacy_cli_renders_from_other_directory(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            folder = Path(tempdir)
+            source = folder / "source.srt"
+            output = folder / "reading.pdf"
+            source.write_text("1\n00:00:01,000 --> 00:00:02,500\n神爱世人。\n", encoding="utf-8")
+            result = subprocess.run([sys.executable, str(SCRIPT_PATH), "--input", str(source),
+                                     "--out", str(output), "--title", "Test Sermon"],
+                                    cwd=folder, capture_output=True, text=True, timeout=60)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(output.read_bytes().startswith(b"%PDF"))
+            qa = json.loads(output.with_suffix(".qa.json").read_text(encoding="utf-8"))
+            self.assertEqual(qa["status"], "pass")
+
     def test_parses_and_cleans_srt_cues(self):
         cues = mod.parse_srt(
             """1

@@ -154,6 +154,7 @@ WORKFLOWS = {
     'scripts/sermon_pipeline.py': PRODUCTION + 'workflows/dual_pdf/pipeline.py',
     'scripts/run_post_live_subtitle_generation.py': PRODUCTION + 'workflows/dual_pdf/post_live.py',  # W3c
     'scripts/post_live_run_status.py': PRODUCTION + 'workflows/dual_pdf/run_status.py',
+    'scripts/render_mobile_pdf_from_srt.py': PRODUCTION + 'workflows/dual_pdf/mobile_pdf.py',
     'scripts/run_codex_local_sermon_production.py': PRODUCTION + 'workflows/dual_pdf/codex_local.py',  # W3c
 }
 
