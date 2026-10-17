@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr714-dev-tools-facade",
+  "runs": [
+    {
+      "label": "pr714-dev-tools-facade-20261017",
+      "source": "~/.codex/worktrees/dev-worktree-venv/sermon-video-zh-subtitles/artifacts/pr714-dev-tools-facade-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr714-dev-tools-facade-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 267,
+      "truncated": false,
+      "sha256": "dbedad2f861f1e3c2d8b75e537040b0c07237cba1ed077452230976a556ca4f8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
