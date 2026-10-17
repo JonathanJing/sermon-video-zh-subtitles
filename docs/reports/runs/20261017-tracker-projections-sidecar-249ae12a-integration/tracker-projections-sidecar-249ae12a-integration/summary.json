@@ -1,0 +1,25 @@
+{
+  "checks": [
+    {
+      "name": "worktree-bound package import",
+      "status": "passed"
+    },
+    {
+      "name": "Tracker and observability Python tests",
+      "status": "passed",
+      "count": 72
+    },
+    {
+      "name": "DAG, snapshot and publisher Node tests",
+      "status": "passed",
+      "count": 33
+    },
+    {
+      "name": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "setupFailure": "System Python lacked jsonschema; rerun used existing virtual environment with PYTHONPATH resolving to this worktree.",
+  "mergeConflicts": 0,
+  "limits": "No full npm suite, Docker, production tracker publication or live workflow run."
+}
