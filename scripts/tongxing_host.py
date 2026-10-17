@@ -910,6 +910,9 @@ def dual_pdf_unmoved():
 # load on first use. Loaded at identity capture only when that entry is loaded, as
 # importing the entry did before W3c, so the identity still covers the code it runs.
 ENTRY_LOAD_TIME_IMPORTS = {
+    # T5: these were imported at the old CUV entry's load time; ports now defer them.
+    'tongxing_production.text.cuv_translation': (
+        'scripts.sermon_accounting', 'scripts.sermon_pipeline', 'scripts.cuv_scripture'),
     'tongxing_production.workflows.dual_pdf.timeline': (
         'backend.cloud', 'backend.config', 'backend.observability',
         'scripts.sermon_accounting', 'scripts.live_source_monitor',
