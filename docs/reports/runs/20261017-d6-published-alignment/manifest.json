@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-d6-published-alignment",
+  "runs": [
+    {
+      "label": "d6-published-alignment-check",
+      "source": "~/.codex/worktrees/d6-published-alignment/sermon-video-zh-subtitles/artifacts/d6-published-alignment-check",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "d6-published-alignment-check",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 263,
+      "truncated": false,
+      "sha256": "dcfc35cccace0e0f6a00fe0ad78f72464819f686d4ece18e50058ff42ee3a79a",
+      "redactions": {}
+    },
+    {
+      "run": "d6-published-alignment-check",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 716,
+      "truncated": false,
+      "sha256": "e4050f40cc79e1a2d4f43ee11c7a5710b121dfd035170f960c156e8b8fa34b18",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
