@@ -8,19 +8,45 @@ import hashlib
 import json
 import shutil
 import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+from ...source import backend as _source
+from . import host as _host
+from . import pipeline as sermon_pipeline
+from . import post_live as run_post_live_subtitle_generation
 
-from backend.cloud import access_secret, upload_file_to_gcs, write_gcs_text  # noqa: E402
-from backend.config import upcoming_sunday  # noqa: E402
-from scripts import live_source_monitor, run_post_live_subtitle_generation, sermon_pipeline, youtube_data_api  # noqa: E402
+
+live_source_monitor = _host.HostModule(lambda: _host.current().unmoved.live_source_monitor())
+youtube_data_api = _host.HostModule(lambda: _host.current().unmoved.youtube_data_api())
+
+
+def _repo_root() -> Path:
+    return _source.current().core.repo_root
+
+
+def access_secret(resource_name: str) -> str:
+    return _host.current().cloud.access_secret(resource_name)
+
+
+def upload_file_to_gcs(local_path: Path, uri: str) -> None:
+    return _host.current().cloud.upload_file_to_gcs(local_path, uri)
+
+
+def write_gcs_text(uri: str, value: str) -> None:
+    return _host.current().cloud.write_gcs_text(uri, value)
+
+
+def upcoming_sunday():
+    return _host.current().unmoved.upcoming_sunday()
+
+
+def __getattr__(name: str):
+    if name == "REPO_ROOT":
+        return _repo_root()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 DEFAULT_STATE_URI = "gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json"
@@ -143,9 +169,13 @@ def discover_sunday_video(
     streams_url: str,
     timezone_name: str,
     api_key: str,
-    urls_loader=live_source_monitor.youtube_stream_watch_urls_from_tab,
-    metadata_loader=youtube_data_api.video_metadata,
+    urls_loader=None,
+    metadata_loader=None,
 ) -> str | None:
+    if urls_loader is None:
+        urls_loader = live_source_monitor.youtube_stream_watch_urls_from_tab
+    if metadata_loader is None:
+        metadata_loader = youtube_data_api.video_metadata
     candidates = []
     for url in urls_loader(streams_url)[:8]:
         video_id = live_source_monitor.youtube_video_id_from_url(url)
@@ -245,12 +275,12 @@ def sha256_file(path: Path) -> str:
 
 
 def resolve_path(path: Path) -> Path:
-    return path if path.is_absolute() else REPO_ROOT / path
+    return path if path.is_absolute() else _repo_root() / path
 
 
 def display_path(path: Path) -> str:
     try:
-        return str(path.relative_to(REPO_ROOT))
+        return str(path.relative_to(_repo_root()))
     except ValueError:
         return str(path)
 
