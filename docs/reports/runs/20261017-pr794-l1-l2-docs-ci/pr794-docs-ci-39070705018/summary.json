@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "runId": 39070705018,
+  "workflow": "Python tests",
+  "trigger": "pull_request",
+  "headSha": "0ff8581c097699389fb0888c4da7b5d71bdaed92",
+  "branch": "codex/l1-l2-remaining-design-20261017",
+  "base": "dev",
+  "docsUnittest": "success",
+  "nativeSharedContracts": "skipped",
+  "scope": "PR #794 docs-only design corrections and links",
+  "limitations": [
+    "documentation CI only",
+    "no production, model, HTTP, device or venue run"
+  ]
+}
