@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-download-env-tests",
+  "runs": [
+    {
+      "label": "dual-pdf-local-download-env-main-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-local-download/sermon-video-zh-subtitles/artifacts/dual-pdf-local-download-env-main-20261017",
+      "skipped": {}
+    },
+    {
+      "label": "dual-pdf-local-download-env-wheel-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-local-download/sermon-video-zh-subtitles/artifacts/dual-pdf-local-download-env-wheel-20261017",
+      "skipped": {}
+    },
+    {
+      "label": "dual-pdf-local-download-env-editable-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-local-download/sermon-video-zh-subtitles/artifacts/dual-pdf-local-download-env-editable-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-local-download-env-main-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 201,
+      "truncated": false,
+      "sha256": "56f8cbe69af39b5d6b556ddccd390621476b34aae0ea6e39b9f6f810ac10987e",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-local-download-env-wheel-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 216,
+      "truncated": false,
+      "sha256": "0ef9ef63d3d6579b7fc00ee6b248bed5294c9d0f194757ccccd6982584d67a21",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-local-download-env-editable-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 157,
+      "truncated": false,
+      "sha256": "38ef60a10a40625d29eeec9ca659f594982864c6b2211b4cb93c31110badf11c",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-local-download-env-editable-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 276,
+      "truncated": false,
+      "sha256": "d178b0a42e2f3d6dddca181fc81c8511c7787a91d08ac52ff8b954c8acc57f4b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

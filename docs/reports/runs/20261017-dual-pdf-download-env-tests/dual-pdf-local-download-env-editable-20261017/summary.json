@@ -1,0 +1,6 @@
+{
+  "scope": "tests.test_tongxing_production_package + tests.test_run_local_post_live_download",
+  "result": "15 passed in 3.472 seconds",
+  "environment": "uv run --no-project --python 3.13 --with-editable ./packages/production plus runtime libraries; PYTHONPATH=.",
+  "productionCalls": 0
+}
