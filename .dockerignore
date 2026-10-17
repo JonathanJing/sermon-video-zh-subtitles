@@ -26,7 +26,8 @@ output/
 tmp/
 data/raw/
 tests/
-docs/
+docs/*
+!docs/series-terminology.zh.md
 data/*
 !data/scripture/
 !data/scripture/**
