@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "head": "731df7caab2651bacf7cfcc76d32ab1d35e692e2",
+  "targetPr": 582,
+  "upstreamHead": "3f891ef3",
+  "executed": 120,
+  "passed": 119,
+  "skipped": 1,
+  "testScope": "accounting contract/observability, strict Layer2 retry, review ports/unified/freeze, G1 audio/jobs/path aliases/QC closure",
+  "diffCheck": "passed",
+  "externalCalls": 0,
+  "note": "An initial test selector used a nonexistent class; corrected selector passed."
+}
