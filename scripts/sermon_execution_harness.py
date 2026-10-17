@@ -26,13 +26,28 @@ import uuid
 # The work lock, its ContextVar and atomic writes live in tongxing_production.storage
 # (infrastructure I2); bounded_process below reads the same _LOCK_FDS object.
 try:
-    import tongxing_production.storage  # noqa: F401
-except ModuleNotFoundError:
-    # The isolated Temporal venv installs only temporalio; these storage modules use the
-    # standard library alone, so load them from the checkout's package source.
-    sys.path.append(str(Path(__file__).resolve().parents[1] / "packages" / "production" / "src"))
-from tongxing_production.storage.files import atomic_json, utc_now  # noqa: E402,F401
-from tongxing_production.storage.locks import _LOCK_FDS, WorkAlreadyRunning, work_lock  # noqa: E402,F401
+    from tongxing_production.storage.files import atomic_json, utc_now  # noqa: F401
+    from tongxing_production.storage.locks import _LOCK_FDS, WorkAlreadyRunning, work_lock  # noqa: F401
+except ModuleNotFoundError as exc:
+    if exc.name != "tongxing_production":
+        raise
+    # The isolated Temporal venv installs only temporalio. Load these two standard-library
+    # files from the checkout under private names, without making the package importable:
+    # a Spark image whose container path omits the package must still fail loudly. The
+    # package cannot load in such a process, so _LOCK_FDS is still the one object.
+    import importlib.util
+
+    def _checkout_storage_module(name):
+        path = Path(__file__).resolve().parents[1] / "packages/production/src/tongxing_production/storage" / f"{name}.py"
+        spec = importlib.util.spec_from_file_location(f"sermon_harness_storage_{name}", path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        return module
+
+    _files, _locks = _checkout_storage_module("files"), _checkout_storage_module("locks")
+    atomic_json, utc_now = _files.atomic_json, _files.utc_now
+    _LOCK_FDS, WorkAlreadyRunning, work_lock = _locks._LOCK_FDS, _locks.WorkAlreadyRunning, _locks.work_lock
 
 
 class RemoteOutcomeUnknown(RuntimeError):
