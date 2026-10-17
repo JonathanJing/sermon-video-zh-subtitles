@@ -1011,7 +1011,11 @@ def greedy_render_pages(
     return pages
 
 
+SELECTED_FONT: dict = {}
+
+
 def register_cjk_font(font_path: Path | None = None) -> str:
+    """Register the first usable CJK font; SELECTED_FONT records which one was used."""
     for candidate in candidate_fonts(font_path):
         if not candidate.path.is_file():
             continue
@@ -1023,10 +1027,14 @@ def register_cjk_font(font_path: Path | None = None) -> str:
                     subfontIndex=candidate.subfont_index,
                 )
             )
+            SELECTED_FONT.clear()
+            SELECTED_FONT.update(path=str(candidate.path), subfontIndex=candidate.subfont_index)
             return FONT_EMBEDDED
         except Exception:
             continue
     pdfmetrics.registerFont(UnicodeCIDFont(FONT_FALLBACK_CID))
+    SELECTED_FONT.clear()
+    SELECTED_FONT.update(cid=FONT_FALLBACK_CID)
     return FONT_FALLBACK_CID
 
 

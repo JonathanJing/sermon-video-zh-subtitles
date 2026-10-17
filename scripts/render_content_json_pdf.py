@@ -16,11 +16,14 @@ import sys
 import urllib.request
 from pathlib import Path
 
+import jsonschema
+
 
 DEFAULT_BASE_URL = "https://ai-for-god-sermon-audio.web.app"
 LOCALE = "zh-Hans"
 REFERENCE_SCHEMA = "sermon-published-english-reference-v1"
 # Published full-text schemas; v2 is human_reviewed only, v3 adds machine_checked with a disclosure.
+SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 CONTENT_SCHEMAS = {"sermon-full-video-text-content-v2", "sermon-full-video-text-content-v3"}
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 _RENDERER_PATH = Path(__file__).resolve().parent / "render_mobile_pdf_from_srt.py"
@@ -110,18 +113,33 @@ def render_content_pdf(
         disclaimer=disclaimer,
         subject="Mobile Chinese-English sermon reading edition" if include_english else "Mobile Chinese sermon reading edition",
     )
-    qa["contentStatus"] = content.get("status") or content.get("translationStatus")
+    qa["contentStatus"] = content.get("status")
+    qa["font"] = font_identity()
     return qa
 
 
 def check_content(content: dict, page_id: str | None = None) -> None:
-    if content.get("schemaVersion") not in CONTENT_SCHEMAS:
-        raise SystemExit(f"Unsupported content schema {content.get('schemaVersion')!r}; expected one of {sorted(CONTENT_SCHEMAS)}.")
+    schema = content.get("schemaVersion")
+    if schema not in CONTENT_SCHEMAS:
+        raise SystemExit(f"Unsupported content schema {schema!r}; expected one of {sorted(CONTENT_SCHEMAS)}.")
+    errors = sorted(jsonschema.Draft202012Validator(json.loads((SCHEMA_DIR / f"{schema}.schema.json").read_text(
+        encoding="utf-8"))).iter_errors(content), key=lambda error: list(error.path))
+    if errors:
+        raise SystemExit(f"Content does not match {schema}: {errors[0].message}")
+    if content["reviewMode"] != "formal":
+        raise SystemExit("Simulated-review content cannot be exported as a reading edition.")
     if content.get("targetLocale") != LOCALE:
         raise SystemExit(f"Only {LOCALE} content is supported (the renderer's fonts and metadata are Chinese); "
                          f"got {content.get('targetLocale')!r}.")
     if not SAFE_ID.fullmatch(str(content.get("pageId") or "")) or (page_id and content["pageId"] != page_id):
         raise SystemExit("Content pageId is missing, unsafe or differs from the requested page.")
+
+
+def font_identity() -> dict:
+    selected = dict(renderer.SELECTED_FONT)
+    if "path" in selected:
+        selected["sha256"] = hashlib.sha256(Path(selected["path"]).read_bytes()).hexdigest()
+    return selected
 
 
 def fetch(url: str) -> bytes:

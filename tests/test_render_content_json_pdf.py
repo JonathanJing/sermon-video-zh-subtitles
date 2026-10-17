@@ -18,7 +18,11 @@ CONTENT = {
     "schemaVersion": "sermon-full-video-text-content-v3",
     "pageId": "page-1",
     "targetLocale": "zh-Hans",
+    "sourceLocale": "en",
     "status": "machine_checked",
+    "durationSeconds": 3726,
+    "audioDurationSeconds": 3700,
+    "reviewMode": "formal",
     "series": "启示录",
     "title": "耶稣配得",
     "date": "2026年10月11日",
@@ -79,7 +83,8 @@ class RenderContentJsonPdfTest(unittest.TestCase):
 
     def test_check_content_rejects_legacy_foreign_and_unsafe_pages(self):
         mod.check_content(CONTENT, "page-1")
-        for bad in ({"schemaVersion": "sermon-demo-content-v1"}, {"targetLocale": "ko"}, {"pageId": "../x"}):
+        for bad in ({"schemaVersion": "sermon-demo-content-v1"}, {"targetLocale": "ko"}, {"pageId": "../x"},
+                    {"status": "draft"}, {"schemaVersion": "sermon-full-video-text-content-v2"}):
             with self.assertRaises(SystemExit):
                 mod.check_content(dict(CONTENT, **bad))
         with self.assertRaises(SystemExit):
@@ -91,6 +96,7 @@ class RenderContentJsonPdfTest(unittest.TestCase):
             qa = mod.render_content_pdf(json.loads(json.dumps(CONTENT)), out=out)
             self.assertTrue(out.read_bytes().startswith(b"%PDF"))
             self.assertEqual(qa["contentStatus"], "machine_checked")
+            self.assertTrue(qa["font"])
 
 
 if __name__ == "__main__":
