@@ -1,0 +1,25 @@
+{
+  "status": "superseded_after_failure",
+  "deliveryType": "test",
+  "failedRunId": 39058551331,
+  "failedHead": "275148525ce8fb00bd3161b412adf9be12c3e732",
+  "failedJob": "test-group (root-3)",
+  "failedJobResult": {
+    "testsRun": 725,
+    "skipped": 5,
+    "failures": 1,
+    "failure": "test_ci_change_scope.CIChangeScopeTests.test_native_suite_covers_every_current_shared_native_dependency: missing tests.test_check_tongxing_icon_alignment from native_contracts job"
+  },
+  "runFinalStatus": "cancelled after newer head was pushed",
+  "correctionHead": "63cf34b9696fc1d55a9c8bba97adf93cac15c854",
+  "localCorrectionVerification": {
+    "unitTests": 4,
+    "failed": 0,
+    "exitCode": 0,
+    "diffCheck": "passed"
+  },
+  "newHeadCiRunId": 39061524228,
+  "newHeadCiStatusAtReport": "queued",
+  "production": "not_run",
+  "publication": "not_run"
+}
