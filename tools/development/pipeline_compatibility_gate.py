@@ -25,6 +25,7 @@ PRODUCERS = ('packages/production/src/tongxing_production/adapters/legacy/build_
 # Only these audited observability files are known to leave client content alone.
 BACKEND_ONLY = frozenset(('scripts/sermon_accounting.py', 'scripts/export_sermon_trace.py',
                          'scripts/weekly_pipeline_report.py', 'scripts/pipeline_compatibility_gate.py',
+                         'tools/development/pipeline_compatibility_gate.py',
                          # I3: the accounting implementation behind the scripts/ facade.
                          'packages/production/src/tongxing_production/observability/accounting.py'))
 POLICY = 'sermon-backend-compatibility-policy-v1'
