@@ -560,23 +560,23 @@ def hosting() -> ports.Hosting:
 
 
 def _is_text_waiver(receipt):
-    from scripts import machine_quality_release_basis
-    return machine_quality_release_basis.is_text_waiver(receipt)
+    from tongxing_production.review import release_basis
+    return release_basis.is_text_waiver(receipt)
 
 
 def _validate_text_waiver(receipt, **binding):
-    from scripts import machine_quality_release_basis
-    return machine_quality_release_basis.validate_text_waiver(receipt, **binding)
+    from tongxing_production.review import release_basis
+    return release_basis.validate_text_waiver(receipt, **binding)
 
 
 def _waiver_disclosure(locale):
-    from scripts import machine_quality_release_basis
-    return machine_quality_release_basis.disclosure(locale)
+    from tongxing_production.review import release_basis
+    return release_basis.disclosure(locale)
 
 
 def _is_basis_audio_waiver(receipt):
-    from scripts import machine_quality_release_basis
-    return machine_quality_release_basis.is_audio_waiver(receipt)
+    from tongxing_production.review import release_basis
+    return release_basis.is_audio_waiver(receipt)
 
 
 def _is_audio_waiver(receipt):
@@ -809,7 +809,9 @@ def qc_runtime() -> ports.QcRuntime:
     return ports.QcRuntime(write_report=_rule_function('scripts.export_run_digest', 'write_report'),
                            codex_text_transport=_module('scripts.sermon_codex_transport'),
                            validate_target_candidate=_rule_function('tongxing_production.audio.speech_job',
-                                                                    'validate_target_candidate'))
+                                                                    'validate_target_candidate'),
+                           implementation_freeze=_module('scripts.implementation_freeze'),
+                           audio_waiver_acceptance=_module('scripts.machine_audio_waiver_acceptance'))
 
 
 # The moved producers used to import these modules at load time. A plan freezes

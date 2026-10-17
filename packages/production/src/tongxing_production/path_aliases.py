@@ -154,6 +154,16 @@ REVIEW = {
     'scripts/scripture_adjudication.py': _REVIEW + 'scripture.py',
     'scripts/scripture_machine_adjudication.py': _REVIEW + 'scripture_machine.py',
     'scripts/sermon_review_budget.py': _REVIEW + 'review_budget.py',
+    # R3: waiver and machine QC implementation closure.
+    'scripts/machine_quality_waiver.py': _REVIEW + 'waiver.py',
+    'scripts/machine_quality_release_basis.py': _REVIEW + 'release_basis.py',
+    'scripts/target_text_auto_qc.py': _REVIEW + 'text_qc.py',
+    'scripts/target_audio_auto_qc.py': _REVIEW + 'audio_qc.py',
+    'scripts/auto_qc_seeded_errors.py': _REVIEW + 'seeded_errors.py',
+    'scripts/machine_qc_budget_authorization.py': _REVIEW + 'qc_budget_authorization.py',
+    'scripts/spoken_condensation.py': _REVIEW + 'condensation.py',
+    'scripts/run_machine_qc_clip_test.py': _REVIEW + 'qc_text_run.py',
+    'scripts/run_machine_qc_audio_test.py': _REVIEW + 'qc_audio_run.py',
 }
 
 # Prepared-workflow composition (tongxing_production.workflows.prepared), batch W2.
