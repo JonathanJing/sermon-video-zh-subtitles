@@ -2,7 +2,7 @@
 
 更新：2026-09-30。归属 `DEV-SPD-006` 的 E1.0，以及既有 `SPD6-LOG-01`—`SPD6-LOG-05`；本文不另设顶层优先级。**本文冻结待实现的合同与测试要求，不代表实现、运行时验收或 sign-off 已完成。**
 
-2026-10-17 实现版本说明：历史 `sermon-accounting-log-contract-v1` schema 保持原字节；带私有 `loadedProjectCodeManifestSha256` 引用的新事件使用 `sermon-accounting-log-contract-v2`，`schemaVersion` 仍为 `sermon-workflow-accounting-v3`。`sermon_log_profile` 的新写入使用 v2；底层 outbox 仍可恢复旧 v1 事实，同一个 run 不得混用版本。新 reader 按每行版本选择 schema，保留旧 v1 事件原字节与哈希。#571 分支曾短暂写出带 sidecar 引用却标为 v1 的行：新 reader 仅在读侧按 v2 的完整形状校验该已知过渡形式，并核实 sidecar，原始行不改写；底层 outbox 只允许在已有 v1 run 绑定下恢复该形式。旧的 v1-only reader 无法读取 v2；恢复新账本须先部署带两份 schema 的新 reader，不能把 v2 事件降级改标 v1。进行中的 v1 run 留在原冻结运行环境完成，新运行以 v2 run identity 开始。
+2026-10-17 实现版本说明：历史 `sermon-accounting-log-contract-v1` schema 保持原字节；带私有 `loadedProjectCodeManifestSha256` 引用的新事件使用 `sermon-accounting-log-contract-v2`，`schemaVersion` 仍为 `sermon-workflow-accounting-v3`。`sermon_log_profile` 的新写入使用 v2；底层 outbox 仅在已有 v1 run 绑定下恢复旧 v1 事实，拒绝创建新的 v1 run，同一个 run 不得混用版本。新 reader 按每行版本选择 schema，保留旧 v1 事件原字节与哈希。#571 分支曾短暂写出带 sidecar 引用却标为 v1 的行：新 reader 仅在读侧按 v2 的完整形状校验该已知过渡形式，并核实 sidecar，原始行不改写；底层 outbox 只允许在已有 v1 run 绑定下恢复该形式。旧的 v1-only reader 无法读取 v2；恢复新账本须先部署带两份 schema 的新 reader，不能把 v2 事件降级改标 v1。进行中的 v1 run 留在原冻结运行环境完成，新运行以 v2 run identity 开始。
 
 ## 0. 核查基线、已有能力和兼容边界
 

@@ -119,6 +119,8 @@ def _run_profile(root,fd,event):
         return
     if contract._schema_version(event)!=version:
         raise ValueError('transitional_version_new_write_rejected')
+    if version != contract.VERSION:
+        raise ValueError('legacy_version_new_write_rejected')
     os.lseek(fd,0,os.SEEK_SET)
     with os.fdopen(os.dup(fd),'rb') as stream:
         for line in stream:

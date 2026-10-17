@@ -76,13 +76,13 @@ def _stable_schema(operation):
         # operation as well as observing a fresh schema on the next call.
         with log._schema_snapshot_lock:
             schema_key = (log.VERSION,
-                          {version: log._schema_snapshot(version)[0] for version in log.READ_VERSIONS})
+                          {version: log._schema_snapshot(version)[0] for version in sorted(log.READ_VERSIONS)})
         # Never hold the schema lock across ledger IO (writers acquire their
         # file lock before validating schema, so doing so would invert locks).
         result = operation(*args, **kwargs)
         with log._schema_snapshot_lock:
             c.require((log.VERSION,
-                       {version: log._schema_snapshot(version)[0] for version in log.READ_VERSIONS})
+                       {version: log._schema_snapshot(version)[0] for version in sorted(log.READ_VERSIONS)})
                       == schema_key, 'completion_schema_changed')
         return result
     return checked
