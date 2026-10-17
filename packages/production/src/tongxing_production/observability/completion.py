@@ -50,7 +50,7 @@ def _batch_rows(events, run_ids):
     # veto on a new receipt-only recovery. Global conflicts remain failures.
     c.require(not [d for d in checked['diagnostics'] if d['code'] not in incomplete],
         'completion_log_integrity_failed')
-    unique = {row['eventId']: row for row in events if row.get('contractVersion') in log.READ_VERSIONS}
+    unique = {row['eventId']: row for row in events if log._readable_version(row.get('contractVersion'))}
     all_rows = list(unique.values())
     by_run = {}
     for run_id in run_ids:
