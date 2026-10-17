@@ -52,21 +52,16 @@ import subprocess
 import sys
 import threading
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import auto_qc_seeded_errors as seeded
-from scripts import machine_qc_audio_transports as transports
-from scripts import implementation_freeze as freeze
-from scripts import machine_quality_release_basis as basis
-from scripts import machine_audio_waiver_acceptance as acceptance_waiver
-from scripts import machine_repair_ledger as ledger
-from scripts import run_machine_qc_clip_test as text_driver
-from scripts import target_audio_auto_qc as audio_qc
+from . import backend as _review
+from . import seeded_errors as seeded, release_basis as basis, repair_ledger as ledger
+from . import qc_text_run as text_driver, audio_qc, qc_budget_authorization as qc_authorization
+from . import audio_qc_acceptance as acceptance_rules
+from .unmoved import freeze, audio_waiver_acceptance as acceptance_waiver
+from .unmoved import audio_qc_transports as transports
 
 # Output directories of this invocation, for the exit-time run report.
 REPORT_DIRS: list[Path] = []
 
-ROOT = Path(__file__).resolve().parents[1]
 LOCALES = text_driver.LOCALES
 MAX_WORKERS = 8
 AUDIO_PACKAGE_SCHEMA = "sermon-target-language-audio-package-v1"
@@ -252,7 +247,6 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
 
 def audio_api_judge_for_resolved(authorization: Path, resolved: dict, *, requested_locales=None):
     """New audio/secondary-ASR work requires scoped v4 before ledger creation."""
-    from scripts import machine_qc_budget_authorization as qc_authorization
     qc_authorization.validate(authorization, require_scope=True)
     return text_driver.api_judge_for_resolved(authorization, resolved, requested_locales=requested_locales)
 
@@ -347,7 +341,6 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, asr: tup
         # A person's acceptance of the exact failed audio of this head counts as the repair.
         person_accepted = set()
         if human_acceptance is not None:
-            from scripts import audio_qc_human_acceptance as acceptance_rules
             try:
                 person_accepted = acceptance_rules.check(human_acceptance, package=package, audio_qc=head)
             except ValueError:
@@ -405,7 +398,6 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, asr: tup
         # waiver then becomes v3 and names them. Anything not accepted still needs a repair.
         accepted = set()
         if human_acceptance is not None:
-            from scripts import audio_qc_human_acceptance as acceptance_rules
             try:
                 accepted = acceptance_rules.check(human_acceptance, package=package, audio_qc=qc)
             except ValueError as error:
@@ -496,7 +488,7 @@ def still_valid(row: dict) -> bool:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--run-dir", type=Path, default=ROOT / "artifacts/dev-full-rerun-20261001")
+    parser.add_argument("--run-dir", type=Path, default=_review.current().core.repo_root / "artifacts/dev-full-rerun-20261001")
     parser.add_argument("--out", type=Path, required=True, help="New or resumed output directory (ignored artifacts/)")
     parser.add_argument("--state-dir", type=Path,
                         help="The run's persistent state dir (the text driver's): repair ledgers and call caches")
@@ -546,9 +538,8 @@ def main(argv=None) -> int:
             parser.error("real runs need --state-dir: the run's persistent state dir holding its repair ledgers")
         if not args.asr_model_path or not args.tts_checkpoint_map:
             parser.error("real runs need --asr-model-path and --tts-checkpoint-map")
-        from scripts import sermon_openai_runtime
         try:
-            route = sermon_openai_runtime.selected_route()
+            route = _review.current().provider.route.selected()
         except ValueError as error:
             parser.error(f"the selected OpenAI runtime is invalid: {error}")
         if route is None:
@@ -559,7 +550,6 @@ def main(argv=None) -> int:
     if real and not args.preflight_only:
         # Validate the new audio authorization before creating any output/state
         # or constructing a text judge. Legacy authority remains text-only.
-        from scripts import machine_qc_budget_authorization as qc_authorization
         try:
             qc_authorization.validate(args.api_budget_authorization.resolve(), require_scope=True)
         except (OSError, ValueError, KeyError, TypeError) as error:
@@ -579,7 +569,7 @@ def main(argv=None) -> int:
     out = args.out.resolve() / ("" if real else "fake-plumbing")
     state = (args.state_dir or out / "state").resolve() if real else out / "state"
     for path in (out, state):
-        if path.is_relative_to(ROOT) and subprocess.run(["git", "-C", str(ROOT), "check-ignore", "-q", str(path)]).returncode:
+        if path.is_relative_to(_review.current().core.repo_root) and subprocess.run(["git", "-C", str(_review.current().core.repo_root), "check-ignore", "-q", str(path)]).returncode:
             parser.error(f"{path} is not ignored by Git; use a directory under artifacts/")
     out.mkdir(parents=True, exist_ok=True)
     state.mkdir(parents=True, exist_ok=True)
@@ -657,11 +647,13 @@ def main(argv=None) -> int:
     return 0 if all(summary["locales"][locale].get("status") == done for locale in locales) else 1
 
 
-if __name__ == "__main__":
-    from scripts.export_run_digest import write_report
+def cli_main(argv=None) -> int:
     try:
-        code = main()
+        return main(argv)
     finally:
         if REPORT_DIRS:  # Pass or fail, leave a redacted run report for cloud review.
-            write_report(REPORT_DIRS, "machine-qc-audio")
-    sys.exit(code)
+            _review.current().qc_runtime.write_report(REPORT_DIRS, "machine-qc-audio")
+
+
+if __name__ == "__main__":
+    sys.exit(cli_main())

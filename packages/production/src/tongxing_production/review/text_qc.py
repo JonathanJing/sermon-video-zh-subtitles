@@ -28,9 +28,9 @@ import json
 import statistics
 import unicodedata
 
-from scripts import machine_quality_waiver as waiver
-from scripts import machine_repair_ledger as ledger
-from scripts.language_review_plugins import auto_qc_text_common as rules
+from . import backend as _review
+from . import waiver, repair_ledger as ledger
+from .unmoved import plugin_rules as rules
 
 SCHEMA = "sermon-target-text-auto-qc-v1"
 TEXT_REPAIR_LADDER = ("revise_translation",) * 4

@@ -32,11 +32,15 @@ import subprocess
 import sys
 import wave
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import machine_quality_waiver as waiver
-from scripts import machine_repair_ledger as ledger
-from scripts.target_audio_predicted_schedule import policy_texts, speech_units
+from . import backend as _review
+from . import waiver, repair_ledger as ledger
+from .unmoved import audio_rules as _audio_rules
+
+def policy_texts(*args, **kwargs):
+    return _review.current().audio.policy_texts(*args, **kwargs)
+
+def speech_units(*args, **kwargs):
+    return _review.current().audio.speech_units(*args, **kwargs)
 
 SCHEMA = "sermon-target-audio-auto-qc-v1"
 REPAIR_LADDER = ("resynthesize_new_seed", "resynthesize_new_seed",
@@ -133,7 +137,7 @@ def duration_normalization_binding(speech_job: dict | None) -> dict:
 
 
 def duration_binding_problems(receipt: dict, speech_job: dict) -> list[str]:
-    from scripts import render_formal_target_language_speech as formal
+    formal = _audio_rules
     binding = receipt.get("durationNormalization")
     current = formal.registered_normalization_policy(speech_job) is not None
     # Historical v1 receipts without a duration-policy field retain raw semantics.
@@ -211,7 +215,7 @@ def _sha256(value: bytes) -> str:
 def transcript_similarity(text: str, recognized: str, locale: str) -> float:
     """The calibrated screener's score of what an ASR heard against the expected text."""
     # Lazy: the screener imports the speech-job module, which reaches this one.
-    from scripts.screen_target_language_audio_units import score
+    score = _review.current().audio.score
     return score(text, recognized, locale, 1.0)[0]
 
 
@@ -219,7 +223,7 @@ def transcript_agrees(text: str, recognized: str, locale: str,
                       threshold: float = THRESHOLDS["asrMinSimilarity"]) -> bool:
     """Whether the screener passes this transcript: the score clears the threshold,
     a short unit matches exactly and no negation or number differs."""
-    from scripts.screen_target_language_audio_units import score
+    score = _review.current().audio.score
     return score(text, recognized, locale, threshold)[2]
 
 
@@ -254,7 +258,7 @@ def _finite_json(value) -> bool:
 def validate_asr_settings(settings, *, model: str, model_revision: str | None, locale: str) -> None:
     """Refuse runtime settings that do not say what ran: all :data:`ASR_SETTINGS_FIELDS`, finite
     values, the opinion's own model, revision and language, the standard threshold and scoring."""
-    from scripts.screen_target_language_audio_units import SCORING
+    SCORING = _review.current().audio.scoring()
     problems = []
     if not isinstance(settings, dict):
         raise ValueError("ASR runtime settings must be an object")
@@ -325,7 +329,7 @@ def screening_asr_settings(screening: dict) -> dict:
         raise ValueError("ASR screening runtime settings disagree with the receipt")
     if asr_runtime_problems(settings.get("runtime")):
         raise ValueError("ASR screening does not record its runtime backend; rescreen with an inference identity")
-    from scripts.screen_target_language_audio_units import current_scoring_identity_problems
+    current_scoring_identity_problems = _review.current().audio.current_scoring_identity_problems
     problems = current_scoring_identity_problems(settings)
     if problems:
         raise ValueError("; ".join(problems))

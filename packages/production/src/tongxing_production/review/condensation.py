@@ -32,12 +32,9 @@ from pathlib import Path
 import re
 import sys
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import machine_quality_waiver as waiver
-from scripts import target_audio_predicted_schedule as predicted
-from scripts import target_text_auto_qc as text_qc
-from scripts.language_review_plugins import auto_qc_text_common as rules
+from . import backend as _review
+from . import waiver, text_qc
+from .unmoved import predicted_rules as predicted, plugin_rules as rules
 
 LEGACY_SCHEMA = "sermon-spoken-condensation-record-v1"
 SCHEMA = "sermon-spoken-condensation-record-v2"
@@ -84,7 +81,7 @@ def _text_sha(text: str) -> str:
 
 
 def implementation_sha256() -> str:
-    return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    return _review.current().code.module_sha256(sys.modules[__name__])
 
 
 def condenser_identity(identity: dict) -> dict:

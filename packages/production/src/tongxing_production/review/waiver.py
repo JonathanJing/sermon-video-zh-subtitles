@@ -37,10 +37,9 @@ import math
 from pathlib import Path
 import sys
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from . import backend as _review
+from .. import path_aliases
 
-ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "sermon-machine-quality-waiver-v1"
 CALIBRATION_SCHEMA = "sermon-auto-qc-calibration-v3"
 LEGACY_CALIBRATION_SCHEMA = "sermon-auto-qc-calibration-v2"
@@ -103,15 +102,14 @@ DISCLOSURE = {
 }
 
 
-def implementation_path(name: str, root: Path = ROOT) -> Path:
+def implementation_path(name: str, root: Path | None = None) -> Path:
     """Where a closure file lives today. Names stay the closure's stable identity
     keys; a file that moved into the production package is read at its alias,
     with the same bytes."""
-    from scripts import sermon_source_producer_compatibility as compatibility
-    return root / compatibility.resolve(name)
+    return (root or _review.current().core.repo_root) / path_aliases.resolve(name)
 
 
-def implementation_sha256(root: Path = ROOT) -> str:
+def implementation_sha256(root: Path | None = None) -> str:
     digest = hashlib.sha256()
     for name in IMPLEMENTATION_FILES:
         digest.update(name.encode("utf-8") + b"\0" + implementation_path(name, root).read_bytes() + b"\0")
@@ -319,7 +317,7 @@ def input_problems(calibration: dict | None, *, text_qc: dict | None = None,
 
 def render_identity_problems(identity) -> list[str]:
     """Reasons a calibration's TTS renderer identity does not say what rendered its omitted-word audio."""
-    from scripts.target_audio_predicted_schedule import SYNTHESIS_IDENTITY_FIELDS
+    SYNTHESIS_IDENTITY_FIELDS = _review.current().audio.synthesis_identity_fields()
     if not isinstance(identity, dict) or set(identity) != set(RENDER_IDENTITY_FIELDS):
         return ["calibration does not record the TTS renderer behind its dropped-key-word audio"]
     problems = []
@@ -339,7 +337,7 @@ def render_identity_problems(identity) -> list[str]:
 def render_binding_problems(calibration: dict | None, package: dict, speech_job: dict) -> list[str]:
     """The dropped-key-word audio must come from the renderer and synthesis settings of the
     speech job the package was rendered from."""
-    from scripts.target_audio_predicted_schedule import synthesis_identity
+    synthesis_identity = _review.current().audio.synthesis_identity
     problems = render_identity_problems((calibration or {}).get("renderIdentity"))
     if problems:
         return problems

@@ -27,12 +27,8 @@ import sys
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import machine_quality_waiver as waiver
-from scripts import machine_repair_ledger as ledger
-
-ROOT = Path(__file__).resolve().parents[1]
+from . import backend as _review
+from . import waiver, repair_ledger as ledger
 TEXT_WAIVER_SCHEMA = "sermon-target-language-machine-text-waiver-v1"
 # v2 records a person's per-group acceptance of text QC findings (text_qc_human_acceptance).
 TEXT_WAIVER_SCHEMA_V2 = "sermon-target-language-machine-text-waiver-v2"
@@ -58,7 +54,7 @@ def _require(condition: bool, message: str) -> None:
 
 
 def _schema(value: dict, version: str) -> None:
-    definition = json.loads((ROOT / "schemas" / f"{version}.schema.json").read_text(encoding="utf-8"))
+    definition = json.loads(_review.current().schemas.path(f"{version}.schema.json").read_text(encoding="utf-8"))
     errors = list(Draft202012Validator(definition, format_checker=FormatChecker()).iter_errors(value))
     _require(not errors, f"Invalid {version}: {errors[0].message}" if errors else "")
 
@@ -66,7 +62,7 @@ def _schema(value: dict, version: str) -> None:
 def _asr_threshold() -> float:
     # Imported lazily: the audio QC module pulls in the Layer 3 renderer, which
     # itself imports the speech-job module that imports this one.
-    from scripts.target_audio_auto_qc import THRESHOLDS
+    from .audio_qc import THRESHOLDS
     return THRESHOLDS["asrMinSimilarity"]
 
 
@@ -223,7 +219,7 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
              "Text QC must cover every candidate group in order")
     accepted = set()
     if human_acceptance is not None:
-        from scripts import text_qc_human_acceptance as acceptance_rules
+        from . import text_qc_acceptance as acceptance_rules
         accepted = acceptance_rules.check(human_acceptance, candidate=candidate, text_qc=text_qc)
     _require((text_qc.get("status") == "pass" or accepted)
              and all(row.get("backTranslation") is not None
@@ -373,7 +369,10 @@ def screening_queue(package: dict, screening: dict) -> list[str]:
 def screening_score_problems(screening: dict, candidate: dict) -> list[str]:
     """Rescore each ASR result against the candidate text, as the screener does."""
     # Lazy, as in _asr_threshold: the screener imports the speech-job module.
-    from scripts.screen_target_language_audio_units import KNOWN_SCORINGS, SCORING_V3, score, current_scoring_identity_problems
+    KNOWN_SCORINGS = _review.current().audio.known_scorings()
+    SCORING_V3 = _review.current().audio.scoring_v3()
+    score = _review.current().audio.score
+    current_scoring_identity_problems = _review.current().audio.current_scoring_identity_problems
     locale = screening["targetLocale"]
     # A receipt is rescored by the scoring identity it recorded, so reading evidence from an
     # earlier run never applies newer folding; one without a recorded identity predates v4.
@@ -427,7 +426,7 @@ def track_check_problems(package: dict, track_check: dict | None, implementation
                 "implementationSha256": implementation}
     problems = [f"track check {key} differs" for key, value in expected.items() if track_check.get(key) != value]
     # The comparison must run under the release settings, by the method the track needs.
-    from scripts.target_audio_auto_qc import TRACK_ENVELOPE
+    from .audio_qc import TRACK_ENVELOPE
     if track_check.get("settings") != TRACK_ENVELOPE:
         problems.append("track check settings differ from the release settings")
     compressed = Path(package["track"]["path"]).suffix.lower() != ".wav"
@@ -497,7 +496,7 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     _require(audio_qc.get("status") == "pass" and not audio_qc.get("subtitleOnlyGroupIds")
              and all(row.get("status") == "pass" and row.get("nextAction") == "keep" for row in results),
              "Every unit must pass audio QC; subtitle-only units are not wired yet")
-    from scripts.target_audio_auto_qc import THRESHOLDS, duration_binding_problems
+    from .audio_qc import THRESHOLDS, duration_binding_problems
     binding_problems = duration_binding_problems(audio_qc, speech_job)
     _require(not binding_problems, "; ".join(binding_problems))
     _require(audio_qc.get("thresholds") == THRESHOLDS,
@@ -526,7 +525,7 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     _require(not track, "Assembled track is not verified: " + "; ".join(track))
     threshold = _asr_threshold()
     # Lazy, as in _asr_threshold.
-    from scripts.target_audio_auto_qc import screening_asr_settings, transcript_agrees, transcript_similarity
+    from .audio_qc import screening_asr_settings, transcript_agrees, transcript_similarity
     primary_settings = json_sha256(screening_asr_settings(screening))
     texts = {group["translationGroupId"]: group["targetText"] for group in candidate["groups"]}
     secondary_identity = None

@@ -54,20 +54,16 @@ import tempfile
 import threading
 import time
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import auto_qc_seeded_errors as seeded
-from scripts import implementation_freeze as freeze
-from scripts import machine_quality_release_basis as basis
-from scripts import machine_repair_ledger as ledger
-from scripts import prepare_target_language_speech_job as speech
-from scripts import spoken_condensation as condensation
-from scripts import target_text_auto_qc as text_qc
+from . import backend as _review
+from . import seeded_errors as seeded, release_basis as basis, repair_ledger as ledger
+from . import condensation, text_qc, qc_budget_authorization as qc_authorization
+from . import text_qc_acceptance as acceptance_rules
+from .unmoved import freeze, codex_text_transport as codex, transcription_limits as transcription
+from ..compute import provider_limits as limits
 
 # Output directories of this invocation, for the exit-time run report.
 REPORT_DIRS: list[Path] = []
 
-ROOT = Path(__file__).resolve().parents[1]
 LOCALES = ("zh-Hans", "ko", "es")
 MAX_WORKERS = 16  # parallel judge calls (Codex CLI or API) this driver may run at once
 CANDIDATE_SCHEMA_PREFIX = "sermon-target-language-candidate"
@@ -210,7 +206,7 @@ def qc_groups(candidate: dict, anchor: dict) -> list[dict]:
 
 def candidate_validator():
     from jsonschema import Draft202012Validator, FormatChecker
-    schema = read(ROOT / "schemas" / f"{CANDIDATE_SCHEMA}.schema.json")
+    schema = read(_review.current().schemas.path(f"{CANDIDATE_SCHEMA}.schema.json"))
     return Draft202012Validator(schema, format_checker=FormatChecker())
 
 
@@ -308,7 +304,7 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
     if "source" in paths and "anchor" in paths:
         # The same source and anchor checks Layer 3 applies, before any paid call.
         try:
-            speech.validate_target_candidate(read(Path(paths["source"])), read(Path(paths["anchor"])),
+            _review.current().qc_runtime.validate_target_candidate(read(Path(paths["source"])), read(Path(paths["anchor"])),
                                              candidate, require_human_approval=False)
         except (ValueError, KeyError, TypeError) as error:
             problems.append(f"Layer 3 would refuse this candidate: {error}")
@@ -382,7 +378,6 @@ class CodexJudge:
                  cache_namespace: str = CACHE_NAMESPACE):
         # Back-translation uses Sol medium; another role (the spoken condenser uses
         # Sol high) names its own effort and namespace, so its identity and cache differ.
-        from scripts import sermon_codex_transport as codex
         self.codex, self.cache, self.timeout, self.reasoning = codex, cache, timeout_seconds, reasoning
         cli = Path(os.environ.get("SERMON_CODEX_CLI", str(Path.home() / ".local/bin/codex"))).resolve()
         version = subprocess.check_output([str(cli), "--version"], text=True, timeout=15).strip()
@@ -390,7 +385,7 @@ class CodexJudge:
         # The same implementation hashes the transport records, so a changed CLI
         # binary or adapter is a new identity and never reuses cached responses.
         transport = {"cliSha256": file_sha256(cli), "binarySha256": file_sha256(binary if binary.is_file() else cli),
-                     "adapterSha256": file_sha256(Path(codex.__file__))}
+                     "adapterSha256": _review.current().code.module_sha256(_review.current().qc_runtime.codex_text_transport())}
         self.identity = {"backend": "codex_cli_chatgpt", "model": codex.TEXT_MODEL, "modelRevision": version,
                          "cacheNamespace": cache_namespace,
                          "settings": {"reasoningEffort": reasoning, "serviceTier": "fast",
@@ -435,15 +430,12 @@ class ApiJudge:
 
     def __init__(self, authorization: Path, *, reasoning: str = "medium", cache_namespace: str = CACHE_NAMESPACE,
                  qc_paths: dict | None = None, locale: str | None = None):
-        from scripts import sermon_source_budget as budget
-        from scripts import sermon_provider_limits as limits
-        from scripts.sermon_openai_runtime import selected_route
+        selected_route = _review.current().provider.route.selected
         authorization_sha = file_sha256(authorization)
         value = read(authorization)
         receipt = authorization.parent / value["approvalReceipt"]
         approval = read(receipt)
         route = selected_route()
-        from scripts import machine_qc_budget_authorization as qc_authorization
         scoped = value.get("schemaVersion") == qc_authorization.AUTH_V4
         context = None
         if scoped:
@@ -506,12 +498,11 @@ class ApiJudge:
             import urllib.request
             call = urllib.request.Request(endpoint, data=request, method="POST",
                                           headers={"Authorization": "Bearer " + api_key, "Content-Type": content_type})
-            from scripts.sermon_openai_runtime import project_headers
+            project_headers = _review.current().provider.route.project_headers
             for name, header in project_headers(api_key).items():
                 call.add_header(name, header)
             # One durable reservation authorizes one provider attempt, including
             # secondary audio. Unknown errors are reconciled, never auto-retried.
-            from scripts import sermon_transcription_request as transcription
             is_audio = endpoint.endswith('/audio/transcriptions')
             timeout = transcription.WALL_TIME_MS / 1000 if is_audio else wall
             with urllib.request.urlopen(call, timeout=timeout) as response:
@@ -519,7 +510,7 @@ class ApiJudge:
                 if is_audio and len(raw) > transcription.MAX_RESPONSE_BYTES:
                     raise ValueError("secondary_asr_response_size_exceeded")
                 return json.loads(raw)
-        self.ledger = budget.SourceBudget(value["budgetRoot"], {
+        self.ledger = _review.current().source.source_budget()(value["budgetRoot"], {
             "approvalSha256": value["authority"]["approvalSha256"],
             "globalBounds": value["authority"]["bounds"]["globalBounds"], "requestLimits": self.request_limits},
             verify=verify, transport=transport, max_concurrent=16, reuse_roots=reuse_roots)
@@ -533,12 +524,12 @@ class ApiJudge:
                                       "maxCompletionTokens": self.request_limits["maxCompletionTokens"],
                                       "route": {k: route.get(k) for k in ("environment", "credentialAlias", "projectId")},
                                       "credentialSha256":credential_sha,
-                                      "transport": {"adapterSha256": file_sha256(Path(__file__)),
+                                      "transport": {"adapterSha256": _review.current().code.module_sha256(sys.modules[__name__]),
                                                     "sessionCheck": "none_api_only"}}}
 
         if scoped:
             self.identity["settings"]["qcContext"] = context
-            self.identity["settings"]["authorizationHelperSha256"] = file_sha256(Path(qc_authorization.__file__))
+            self.identity["settings"]["authorizationHelperSha256"] = _review.current().code.module_sha256(qc_authorization)
 
     def key(self, role, system, user, schema) -> str:
         return json_sha256({"role": role, "system": system, "user": user, "schema": schema,
@@ -707,8 +698,7 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
                       and still_failing(row, current[key])]
         accepted = set()
         if unrepaired and human_acceptance is not None:
-            from scripts import text_qc_human_acceptance as acceptance_rules
-            accepted = acceptance_rules.check(human_acceptance, candidate=candidate, text_qc=head)
+                        accepted = acceptance_rules.check(human_acceptance, candidate=candidate, text_qc=head)
         if unrepaired and not set(unrepaired) <= accepted:
             return {"status": "blocked_prior_failure", "failedGroups": unrepaired,
                     "reason": "failed groups are unchanged; repair them in a new candidate revision"}
@@ -753,7 +743,6 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         return result
     accepted_groups = set()
     if qc["status"] != "pass" and human_acceptance is not None:
-        from scripts import text_qc_human_acceptance as acceptance_rules
         accepted_groups = acceptance_rules.check(human_acceptance, candidate=candidate, text_qc=qc)
     if qc["status"] != "pass" and not set(result["failedGroups"]) <= accepted_groups:
         # Calibration binds this candidate, which a repair replaces anyway.
@@ -830,7 +819,6 @@ def still_valid(row: dict) -> bool:
 
 def api_judge_for_resolved(authorization: Path, resolved: dict, *, requested_locales=None):
     """A scoped approval names one locale; never silently apply it to a three-locale default."""
-    from scripts import machine_qc_budget_authorization as qc_authorization
     value = read(authorization)
     if value.get("schemaVersion") == qc_authorization.AUTH_V4:
         if len(resolved) != 1 or set(requested_locales or resolved) != {value["qcContext"]["targetLocale"]}:
@@ -842,7 +830,7 @@ def api_judge_for_resolved(authorization: Path, resolved: dict, *, requested_loc
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--run-dir", type=Path, default=ROOT / "artifacts/dev-full-rerun-20261001")
+    parser.add_argument("--run-dir", type=Path, default=_review.current().core.repo_root / "artifacts/dev-full-rerun-20261001")
     parser.add_argument("--out", type=Path, required=True, help="New or resumed output directory (ignored artifacts/)")
     parser.add_argument("--state-dir", type=Path, help="The run's persistent state dir holding its repair ledger (required for real runs)")
     parser.add_argument("--locales", default=",".join(LOCALES))
@@ -894,7 +882,7 @@ def main(argv=None) -> int:
     out = args.out.resolve() / ("fake-plumbing" if args.text_backend == "fake" else "")
     state = out / "state" if args.text_backend == "fake" else (args.state_dir or out / "state").resolve()
     for path in (out, state):
-        if path.is_relative_to(ROOT) and subprocess.run(["git", "-C", str(ROOT), "check-ignore", "-q", str(path)]).returncode:
+        if path.is_relative_to(_review.current().core.repo_root) and subprocess.run(["git", "-C", str(_review.current().core.repo_root), "check-ignore", "-q", str(path)]).returncode:
             parser.error(f"{path} is not ignored by Git; use a directory under artifacts/")
     out.mkdir(parents=True, exist_ok=True)
     state.mkdir(parents=True, exist_ok=True)
@@ -969,11 +957,13 @@ def main(argv=None) -> int:
     return 0 if all(summary["locales"][locale].get("status") == done for locale in locales) else 1
 
 
-if __name__ == "__main__":
-    from scripts.export_run_digest import write_report
+def cli_main(argv=None) -> int:
     try:
-        code = main()
+        return main(argv)
     finally:
         if REPORT_DIRS:  # Pass or fail, leave a redacted run report for cloud review.
-            write_report(REPORT_DIRS, "machine-qc-text")
-    sys.exit(code)
+            _review.current().qc_runtime.write_report(REPORT_DIRS, "machine-qc-text")
+
+
+if __name__ == "__main__":
+    sys.exit(cli_main())

@@ -38,12 +38,9 @@ import re
 import unicodedata
 import sys
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import machine_quality_waiver as waiver
-from scripts import target_audio_auto_qc as audio_qc
-from scripts import target_text_auto_qc as text_qc
-from scripts.language_review_plugins import auto_qc_text_common as rules
+from . import backend as _review
+from . import waiver, audio_qc, text_qc
+from .unmoved import plugin_rules as rules
 
 TEXT_KINDS = waiver.TEXT_KINDS
 AUDIO_KINDS = waiver.AUDIO_KINDS
@@ -425,7 +422,9 @@ def _asr_row(unit: dict, wav: bytes, locale: str, asr, threshold: float) -> dict
 
 def drop_key_word(text: str, locale: str) -> str | None:
     """``text`` without its first negation or number, as a dub that dropped it would be heard."""
-    from scripts.screen_target_language_audio_units import ES_NUMBERS, NEGATIONS, ZH_NUMERALS
+    ES_NUMBERS = _review.current().audio.es_numbers()
+    NEGATIONS = _review.current().audio.negations()
+    ZH_NUMERALS = _review.current().audio.zh_numerals()
     if locale == "es":
         words = "|".join(sorted({*NEGATIONS["es"], *ES_NUMBERS}, key=len, reverse=True))
         pattern = r"\d+(?:[.,:]\d+)*|(?<![^\W\d_])(?:" + words + r")(?![^\W\d_])"
@@ -439,7 +438,7 @@ def drop_key_word(text: str, locale: str) -> str | None:
     spans = [] if match is None else [(match.start(), match.end())]
     if locale == "ko":
         # Spelled quantities (두 사람, 스무 살, 이십 년) are what Korean dubs mostly say.
-        from scripts.screen_target_language_audio_units import korean_number_spans
+        korean_number_spans = _review.current().audio.korean_number_spans
         spans += korean_number_spans(unicodedata.normalize("NFC", text))[:1]
     if not spans:
         return None
@@ -449,7 +448,7 @@ def drop_key_word(text: str, locale: str) -> str | None:
 
 def truncation_eligible(text: str, locale: str) -> bool:
     """Whether a seeded truncation can be audible under the locale's frozen rule."""
-    from scripts.target_audio_predicted_schedule import speech_units
+    speech_units = _review.current().audio.speech_units
     minimum = TRUNCATION_MIN_SPEECH_UNITS.get(locale)
     return minimum is None or speech_units(text, locale) >= minimum
 

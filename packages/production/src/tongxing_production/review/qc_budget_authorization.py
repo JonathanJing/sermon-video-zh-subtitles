@@ -10,6 +10,10 @@ import hashlib
 import json
 from pathlib import Path
 
+from . import backend as _review
+from . import waiver
+from ..compute import provider_limits
+
 AUTH_V1 = "sermon-machine-qc-api-budget-authorization-v1"
 AUTH_V2 = "sermon-machine-qc-api-budget-authorization-v2"
 AUTH_V3 = "sermon-machine-qc-api-budget-authorization-v3"
@@ -39,17 +43,15 @@ def credential_fingerprint(api_key):
 def context_from_paths(paths, locale, environment, *, route, credential_sha256):
     if locale not in {"zh-Hans", "ko", "es"} or environment not in {"dev", "prod"}:
         raise ValueError("invalid_qc_budget_context")
-    from scripts.sermon_openai_runtime import safe_route
+    safe_route = _review.current().provider.route.safe
     if not isinstance(route,dict) or safe_route(route) != route or route['environment'] != environment:
         raise ValueError('invalid_qc_budget_runtime_route')
     if not isinstance(credential_sha256,str) or len(credential_sha256)!=64 or any(c not in '0123456789abcdef' for c in credential_sha256):
         raise ValueError('invalid_qc_budget_credential_fingerprint')
     source, anchor, policy = (read(paths[name]) for name in ("source", "anchor", "policy"))
-    from scripts import produce_target_language_candidate as producer, target_language_policy as policies
-    producer.validate_source_for_translation(source, anchor)
-    policies.validate_policy(policy)
-    policies.validate_source_scope(policy, source, anchor)
-    from scripts import machine_quality_waiver as waiver
+    _review.current().text.validate_source_for_translation(source, anchor)
+    _review.current().text.validate_policy(policy)
+    _review.current().text.validate_source_scope(policy, source, anchor)
     source_sha = canonical_sha(source)
     if policy.get("targetLocale") != locale:
         raise ValueError("qc_budget_policy_locale_changed")
@@ -75,7 +77,7 @@ def contexts_from_manifest(path, locales):
 
 
 def validate(path, *, context=None, require_scope=False):
-    from scripts.sermon_provider_limits import validate_request_limits
+    validate_request_limits = provider_limits.validate_request_limits
     path = Path(path).resolve()
     value = read(path)
     scoped = value.get("schemaVersion") == AUTH_V4
@@ -111,7 +113,7 @@ def validate(path, *, context=None, require_scope=False):
             binding["reuseBudgetRoots"] = roots
     if scoped:
         observed = value["qcContext"]
-        from scripts.sermon_openai_runtime import safe_route
+        safe_route = _review.current().provider.route.safe
         required = {"schemaVersion", "runId", "environment", "targetLocale", "openaiRoute", "credentialSha256", "englishSourcePackageJsonSha256",
                     "anchorManifestJsonSha256", "targetLanguagePolicyJsonSha256", "qcImplementationSha256"}
         if (not isinstance(observed, dict) or set(observed) != required
