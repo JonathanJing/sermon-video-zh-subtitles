@@ -100,7 +100,7 @@ def _build(event,base,context,event_id,producer_id,sequence):
         row['evidence']={k:evidence[k] for k in ('schemaVersion','evidenceScope','currentRunExecutionProven','missingCategories')}
         row['evidence']['artifacts']=[{k:a[k] for k in ('category','sha256','bytes')} for a in evidence['artifacts']]
     reasons={}
-    reason_keys=contract.validator().schema['$defs']['missingReasons']['properties']
+    reason_keys=contract.validator(contract.VERSION).schema['$defs']['missingReasons']['properties']
     for key in reason_keys:
         if key in row and row[key] is None:
             reasons[key]='not_applicable' if (key in {'parentSpanId','decisionId'} or
