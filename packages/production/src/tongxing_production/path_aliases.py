@@ -162,6 +162,9 @@ OBSERVABILITY = {   # tongxing_production.observability, batches I3-I4
     'scripts/codex_credit_usage.py': PRODUCTION + 'observability/codex_credit_usage.py',
     'scripts/sermon_completion.py': PRODUCTION + 'observability/completion.py',
     'scripts/sermon_cache_observation.py': PRODUCTION + 'observability/cache_observation.py',
+    # I4: the four-layer timing audit and progress ledger.
+    'scripts/four_layer_measure.py': PRODUCTION + 'observability/measure.py',
+    'scripts/four_layer_progress.py': PRODUCTION + 'observability/progress.py',
 }
 
 # I1 moved generic portions of the legacy review module to contracts; include them

@@ -19,12 +19,8 @@ from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from scripts import four_layer_progress as progress
-from scripts import sermon_accounting as accounting
+from . import accounting
+from . import progress
 
 AUDIT_SCHEMA = "sermon-four-layer-timing-audit-v1"
 STEP_PATTERN = re.compile(r"L[1-4]-\d{2}(?:@[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*)?")
