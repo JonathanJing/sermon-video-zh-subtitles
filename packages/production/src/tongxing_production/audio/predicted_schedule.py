@@ -22,10 +22,10 @@ import re
 import statistics
 import sys
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import render_formal_target_language_speech as formal
-from scripts import target_audio_timing_plan as timing
+from .. import path_aliases
+from . import backend as _audio
+from . import renderer as formal
+from . import timing_plan as timing
 
 SCHEMA = "sermon-target-audio-predicted-schedule-v1"
 RATE_SCHEMA_V1 = "sermon-target-speech-rate-v1"
@@ -66,9 +66,8 @@ def rate_implementation_sha256() -> str:
     """Bind the rate's fitting/counting code and complete spoken-rule dependency closure."""
     # Names are the rate identity's keys; a file that moved into the production
     # package is read at its alias, with the same bytes.
-    from scripts import sermon_source_producer_compatibility as compatibility
-    root = Path(__file__).resolve().parents[1]
-    files = {name: hashlib.sha256((root / compatibility.resolve("scripts/" + name)).read_bytes()).hexdigest()
+    root = _audio.current().core.repo_root
+    files = {name: hashlib.sha256((root / path_aliases.resolve("scripts/" + name)).read_bytes()).hexdigest()
              for name in RATE_IMPLEMENTATION_FILES}
     return hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 

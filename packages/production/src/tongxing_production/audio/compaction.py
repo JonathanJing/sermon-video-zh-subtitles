@@ -18,14 +18,9 @@ import shutil
 import sys
 import wave
 
-try:
-    from scripts import render_formal_target_language_speech as renderer
-    from scripts import validate_target_language_audio_unit as integrity
-    from scripts import sermon_sentence_interpretation as identity
-except ImportError:
-    import render_formal_target_language_speech as renderer
-    import validate_target_language_audio_unit as integrity
-    import sermon_sentence_interpretation as identity
+from ..source import sentence_interpretation as identity
+from . import renderer
+from . import unit_integrity as integrity
 
 
 SCHEMA = "sermon-formal-leading-silence-trim-v1"

@@ -99,9 +99,9 @@ class AudioPortsTests(unittest.TestCase):
             with self.subTest(closure='rate', name=name):
                 self.assertEqual(code.implementation_path('scripts/' + name),
                                  host.ROOT / producer_compatibility.resolve('scripts/' + name))
-        for name in screening.SCORING_IMPLEMENTATION_FILES:  # read at root/name today; none has moved
+        for name in screening.SCORING_IMPLEMENTATION_FILES:  # legacy keys, read where each file lives now
             with self.subTest(closure='scoring', name=name):
-                self.assertEqual(code.implementation_path(name), host.ROOT / name)
+                self.assertEqual(code.implementation_path(name), host.ROOT / path_aliases.resolve(name))
         self.assertEqual(code.implementation_path('scripts/sermon_sentence_interpretation.py'),
                          host.ROOT / 'packages/production/src/tongxing_production/source/sentence_interpretation.py')
 
@@ -111,10 +111,10 @@ class AudioPortsTests(unittest.TestCase):
         self.assertIs(runtime.replica_pool(), spark_tts_replica_pool)
         self.assertIs(runtime.window_scheduler(), spark_tts_window_scheduler)
         self.assertIs(runtime.bounded_cpu(), bounded_audio_cpu)
-        # replicaImplementationSha256 inputs (design §4.5): pool file and the scheduler beside the renderer.
+        # replicaImplementationSha256 inputs (design §4.5): the pool and scheduler files, now in compute/.
         self.assertEqual(code.module_sha256(runtime.replica_pool()), _sha256(spark_tts_replica_pool.__file__))
         self.assertEqual(code.module_sha256(runtime.window_scheduler()),
-                         _sha256(Path(renderer.__file__).with_name('spark_tts_window_scheduler.py')))
+                         _sha256(host.ROOT / path_aliases.resolve('scripts/spark_tts_window_scheduler.py')))
 
     def test_paths_are_the_ones_layer_3_resolves_today(self):
         backend = audio.current()
@@ -128,8 +128,8 @@ class AudioPortsTests(unittest.TestCase):
 
     def test_spoken_rules_cover_every_name_layer_3_uses(self):
         used = {('plugin', name) for name in _attributes(screening.__file__, 'rules')}
-        used |= {('ko', name) for name in _imported_from(screening.__file__, 'scripts.ko_spoken_numerals')}
-        used |= {('ko', name) for name in _attributes(renderer.__file__, 'ko_spoken_numerals') - {'__file__'}}
+        used |= {('ko', name) for name in _attributes(screening.__file__, '_ko')}
+        used |= {('ko', name) for name in _attributes(renderer.__file__, 'ko_spoken_numerals')}
         bound = {('plugin', name) for name in PLUGIN_RULES.values()} | {('ko', name) for name in KO_NUMERALS.values()}
         self.assertEqual(used, bound)
         self.assertEqual(set(PLUGIN_RULES) | set(KO_NUMERALS),

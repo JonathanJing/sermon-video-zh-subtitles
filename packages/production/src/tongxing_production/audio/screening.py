@@ -20,16 +20,10 @@ import unicodedata
 import tempfile
 from typing import Callable
 
-try:
-    from scripts import prepare_target_language_speech_job as speech
-    from scripts import sermon_sentence_interpretation as identity
-    from scripts import dev_audio_test_profile as dev_profile
-    from scripts import dev_audio_test_receipts as dev_receipts
-except ImportError:
-    import prepare_target_language_speech_job as speech
-    import sermon_sentence_interpretation as identity
-    import dev_audio_test_profile as dev_profile
-    import dev_audio_test_receipts as dev_receipts
+from ..source import sentence_interpretation as identity
+from . import backend as _audio
+from . import dev_profile, dev_receipts
+from . import speech_job as speech
 
 
 # v2 records the ASR runtime settings behind every score (v1 receipts stay readable).
@@ -99,10 +93,13 @@ SCORING_IMPLEMENTATION_FILES = (
 
 def implementation_sha256(root: Path | None = None) -> str:
     """Current scoring closure; v5 single-file receipts require explicit rescreening."""
-    root = root or Path(__file__).resolve().parents[1]
+    # The keys stay the legacy path strings (they are hash input); each file is read where
+    # its key resolves today (L3 design section 4.2), or under an explicit root.
+    code = _audio.current().code
     digest = hashlib.sha256()
     for name in SCORING_IMPLEMENTATION_FILES:
-        digest.update(name.encode() + b"\0" + (root / name).read_bytes() + b"\0")
+        path = root / name if root is not None else code.implementation_path(name)
+        digest.update(name.encode() + b"\0" + path.read_bytes() + b"\0")
     return digest.hexdigest()
 
 
@@ -149,7 +146,7 @@ def key_word(tokens: list[str], locale: str) -> bool:
 
 
 def _korean_spans(text: str, forms, *, sino: bool = False) -> list[tuple[int, int]]:
-    from scripts.language_review_plugins import auto_qc_text_common as rules
+    from .hosted import rules
     found = sorted((match.start(), -len(form)) for form in forms
                    for match in re.finditer(rules._ko_pattern(form, sino=sino), text))
     spans, end = [], -1
@@ -161,7 +158,7 @@ def _korean_spans(text: str, forms, *, sino: bool = False) -> list[tuple[int, in
 
 
 def _korean_native_forms() -> list[str]:
-    from scripts.language_review_plugins import auto_qc_text_common as rules
+    from .hosted import rules
     return [form for number in range(1, 100) for form in rules.korean_native(number)]
 
 
@@ -174,7 +171,7 @@ def korean_number_spans(text: str) -> list[tuple[int, int]]:
     """Spoken Korean quantities in ``text``, in reading order, read as text QC reads them:
     native forms (두 사람, 스무 살) and Sino forms up to 999 (이십 년, 삼장). A bare
     one-syllable Sino form counts only attached to its counter, so 이 사람 is not a number."""
-    from scripts.language_review_plugins import auto_qc_text_common as rules
+    from .hosted import rules
     native = _korean_spans(text, _korean_native_forms())
     sino = _korean_spans(text, {rules.korean_sino(number) for number in range(1, 1000)}, sino=True)
     return sorted({*native, *(span for span in sino
@@ -183,7 +180,7 @@ def korean_number_spans(text: str) -> list[tuple[int, int]]:
 
 def protected_text_agrees(expected: str, recognized: str, locale: str, *, strip_punctuation: bool = False) -> bool:
     """Check whole numeral forms and names that cannot be identified from a partial diff."""
-    from scripts.language_review_plugins import auto_qc_text_common as rules
+    from .hosted import rules
     # Scoring v4 turns punctuation into a space (apostrophes stay for can't / won't): ASR drops
     # commas, and a Sino numeral check that sees "일 그" on one side and "일, 그" on the other
     # would otherwise disagree. v3 receipts are rescored without it.
@@ -363,7 +360,7 @@ def _positional_value(run: str, digit_values: dict, small_units: dict, big_units
 
 
 def _fold_chinese(text: str) -> str:
-    from scripts.language_review_plugins import auto_qc_text_common as rules
+    from .hosted import rules
     text = _ZH_DIGITS_WITH_UNIT.sub(lambda m: str(int(m.group(1)) * _ZH_BIG_UNITS[m.group(2)]), text)
 
     def numeral(match: re.Match) -> str:
@@ -409,8 +406,10 @@ def _fold_korean(text: str, *, citation_ranges: bool = True) -> str:
         # Fold only a complete, book-anchored citation chain. In a single-counter
         # range 삼-사장 the first one-syllable endpoint has no counter of its own.
         # Do not grant that interpretation to bare words or ordinary counters.
-        from scripts.language_review_plugins import auto_qc_text_common as rules
-        from scripts.ko_spoken_numerals import _PARTICLES, _CONNECTOR, _RANGE_PARTICLE, _DELIMITERS, bare_context_allowed, _NUMERIC_TOKEN
+        from .hosted import rules
+        from .hosted import ko_spoken_numerals as _ko
+        _PARTICLES, _CONNECTOR, _RANGE_PARTICLE, _DELIMITERS, bare_context_allowed, _NUMERIC_TOKEN = (
+            _ko._PARTICLES, _ko._CONNECTOR, _ko._RANGE_PARTICLE, _ko._DELIMITERS, _ko.bare_context_allowed, _ko._NUMERIC_TOKEN)
         # ASR may space an already registered compound connector internally.
         asr_connector = re.sub(r"(?<=[가-힣])(?=[가-힣])", lambda _: r"\s*", _CONNECTOR)
         asr_terminal = re.sub(r"(?<=[가-힣])(?=[가-힣])", lambda _: r"\s*", _RANGE_PARTICLE)
@@ -616,7 +615,9 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float,
     # Character tokens cannot distinguish 12-3 from 1-23. New Korean scoring
     # preserves complete digit runs and range structure only inside anchored citations.
     def number_structure(text):
-        from scripts.ko_spoken_numerals import _CITATIONS, _CONNECTOR, _RANGE_PARTICLE, bare_citation_matches
+        from .hosted import ko_spoken_numerals as _ko
+        _CITATIONS, _CONNECTOR, _RANGE_PARTICLE, bare_citation_matches = (
+            _ko._CITATIONS, _ko._CONNECTOR, _ko._RANGE_PARTICLE, _ko.bare_citation_matches)
         def with_terminal_marker(match):
             marker = re.match(r"\s*(" + _RANGE_PARTICLE + r")", text[match.end():])
             return match.group() + (re.sub(r"\s+", "", marker.group(1)) if marker else "")

@@ -915,6 +915,11 @@ ENTRY_LOAD_TIME_IMPORTS = {
     'tongxing_production.workflows.dual_pdf.post_live': (
         'backend.cloud', 'backend.observability', 'scripts.live_source_monitor',
         'scripts.post_live_run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
+    # L3 A3: the renderer and the package builder imported these at load time.
+    'tongxing_production.audio.renderer': (
+        'scripts.render_multilingual_voice_demos', 'scripts.sermon_accounting', 'scripts.four_layer_measure',
+        'scripts.ko_spoken_numerals'),
+    'tongxing_production.audio.package': ('scripts.sermon_accounting',),
     # G1: the audio QC transport imported the waiver and the audio QC checks at load time.
     'tongxing_production.compute.qc_audio_transports': ('scripts.machine_quality_waiver', 'scripts.target_audio_auto_qc'),
     # L4 D2: the app release builder imported the waiver release basis at load time.

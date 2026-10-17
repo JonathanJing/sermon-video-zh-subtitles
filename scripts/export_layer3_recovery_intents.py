@@ -85,7 +85,7 @@ def export_snapshot(paths, checkpoint_map_path, operation_policies_path, setting
     strict_rubric = producer.package.read_object(strict_rubric_path) if strict_rubric_path else None
     implementation_paths = [Path(producer.__file__).resolve(), Path(__file__).resolve(),
         Path(producer.replica_pool.__file__).resolve(),
-        Path(producer.__file__).resolve().with_name("spark_tts_window_scheduler.py")]
+        Path(producer._window_scheduler.__file__).resolve()]
     with read_lock(paths["job"]) as (root, check_lock):
         frozen = producer.integrity.ValidatedJobContext(paths["job"], strict_rubric=strict_rubric,
             extra_paths=[*paths.values(), checkpoint_map_path, operation_policies_path, settings_path,

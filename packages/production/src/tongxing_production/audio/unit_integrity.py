@@ -16,14 +16,9 @@ import subprocess
 from typing import Any, Callable
 import wave
 
-try:
-    from scripts import prepare_target_language_speech_job as speech
-    from scripts import sermon_sentence_interpretation as identity
-    from scripts import clip_timeline_map as timeline_map
-except ImportError:  # Direct execution via ``python scripts/...``.
-    import prepare_target_language_speech_job as speech
-    import sermon_sentence_interpretation as identity
-    import clip_timeline_map as timeline_map
+from ..source import sentence_interpretation as identity
+from . import clip_timeline as timeline_map
+from . import speech_job as speech
 
 
 RECEIPT_SCHEMA = "sermon-target-language-audio-unit-receipt-v1"

@@ -27,36 +27,28 @@ import tempfile
 from typing import Any, Callable
 import wave as wave_module
 
-try:
-    from scripts import build_target_language_audio_package as package
-    from scripts import four_layer_measure as measure
-    from scripts import render_multilingual_voice_demos as demos
-    from scripts import sermon_accounting as accounting
-    from scripts import sermon_sentence_interpretation as identity
-    from scripts import ko_spoken_numerals
-    from scripts import validate_target_language_audio_unit as integrity
-    from scripts import dev_audio_test_profile as dev_profile
-    from scripts import target_audio_recovery as recovery
-    from scripts import target_audio_anomaly as anomaly
-    from scripts import dev_audio_test_receipts as dev_receipts
-    from scripts import spark_tts_replica_pool as replica_pool
-    from scripts.spark_tts_window_scheduler import ParallelBatchEngine
-    from scripts.bounded_audio_cpu import BoundedAudioCPU
-except ImportError:
-    import build_target_language_audio_package as package
-    import four_layer_measure as measure
-    import render_multilingual_voice_demos as demos
-    import sermon_accounting as accounting
-    import sermon_sentence_interpretation as identity
-    import ko_spoken_numerals
-    import validate_target_language_audio_unit as integrity
-    import dev_audio_test_profile as dev_profile
-    import target_audio_recovery as recovery
-    import target_audio_anomaly as anomaly
-    import dev_audio_test_receipts as dev_receipts
-    import spark_tts_replica_pool as replica_pool
-    from spark_tts_window_scheduler import ParallelBatchEngine
-    from bounded_audio_cpu import BoundedAudioCPU
+from ..compute import spark_tts_replica_pool as replica_pool
+from ..compute import spark_tts_window_scheduler as _window_scheduler
+from ..compute.bounded_audio_cpu import BoundedAudioCPU
+from ..compute.spark_tts_window_scheduler import ParallelBatchEngine
+from ..source import sentence_interpretation as identity
+from . import anomaly, dev_profile, dev_receipts, recovery
+from . import backend as _audio
+from . import package
+from . import unit_integrity as integrity
+# Accounting, producer timing, the voice checkpoint reader and the Korean spoken-number
+# rules come through AudioBackend records; the tables below read the rules at import,
+# so this module imports after the host binds the audio backend (its facade does).
+from .hosted import accounting, demos, ko_spoken_numerals, measure
+
+
+def _renderer_sha256() -> str:
+    """This renderer's file hash, the identity batch caches and preview receipts bind."""
+    return identity.sha256(_audio.current().code.module_path(sys.modules[__name__]))
+
+
+def _module_file_sha256(module) -> str:
+    return identity.sha256(_audio.current().code.module_path(module))
 
 
 VERSION = "sermon-formal-target-speech-render-v1"
@@ -105,6 +97,9 @@ BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
 LEGACY_BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_missing_units_v1"
 LEGACY_BATCH_CACHED_UNIT_POLICY = "exclude_committed_or_admitted_reuse"
 COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256 = {
+    # Direct parent (L3 A3, closure window G1): the package move changed only imports
+    # and resource lookup; synthesis inputs, sampling, window replay and PCM are unchanged.
+    "55fb124180fa6f19d915b93fb660b39dc4899eddcad9a8a645b599bc56657e55",
     # Direct parent: CPU-only PCM/decode/hash scheduling retains exact model
     # requests, full-window replay, sampling, ordered commits and PCM bytes.
     "4232cfeee91c4cac5142ec7f1035aed04f79ca4c5da77f79bad9149680090076",
@@ -297,7 +292,7 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
 class QwenSynthesizer:
     def __init__(self, checkpoint: Path, *, device: str, dtype: str,
                  attention: str | None, instruct: str | None = None, session_verifier=None):
-        from scripts.production_spark_admission import require_bound_model_session
+        require_bound_model_session = _audio.current().compute.require_bound_model_session
         require_bound_model_session(verifier=session_verifier)
         import torch
         from qwen_tts import Qwen3TTSModel
@@ -340,7 +335,7 @@ class QwenSynthesizer:
 class SparkQwenSynthesizer(QwenSynthesizer):
     """Match the measured Spark worker's CPU settings and completed GPU timing."""
     def __init__(self, *args, **kwargs):
-        from scripts.production_spark_admission import require_bound_model_session
+        require_bound_model_session = _audio.current().compute.require_bound_model_session
         require_bound_model_session(verifier=kwargs.get("session_verifier"))
         os.environ["OMP_NUM_THREADS"] = "4"
         os.environ["MKL_NUM_THREADS"] = "4"
@@ -396,7 +391,7 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
         start = index // batch_size * batch_size
         result.update(batchSize=batch_size, batchSeedPolicy=BATCH_SEED_POLICY,
                       batchExecutionDevice=device,
-                      batchImplementationSha256=identity.sha256(Path(__file__)),
+                      batchImplementationSha256=_renderer_sha256(),
                       batchWindowInputsSha256=batch_window_sha256,
                       batchWindowStart=start,
                       batchWindowUnitIndices=list(range(start, min(start + batch_size, len(job["units"])))),
@@ -406,8 +401,8 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
                       replicaCount=replicas,
                       replicaPolicy="spark_single_speaker_fixed_windows_v1",
                       replicaImplementationSha256=identity.json_sha256({
-                          "pool": identity.sha256(Path(replica_pool.__file__)),
-                          "scheduler": identity.sha256(Path(__file__).with_name("spark_tts_window_scheduler.py"))}))
+                          "pool": _module_file_sha256(replica_pool),
+                          "scheduler": _module_file_sha256(_window_scheduler)}))
     return result
 
 
@@ -527,6 +522,11 @@ COMPATIBLE_NO_SPOKEN_FORM_RENDERER_SHA256 = {
 # checked during admission. It does not change the synthesis inputs or sound.
 COMPATIBLE_PREVIEW_ADMISSION_RENDERER_SHA256 = {
     "462f63dfd3cc215ce923c187d9904ab89145a587a732a7ed1b5f6a9d41fb7985"
+}
+# L3 A3 moved this renderer into the package (closure window G1); only imports and resource
+# lookup changed. A preview rendered by the parent file is admitted here and nowhere else.
+COMPATIBLE_PACKAGE_MOVE_RENDERER_SHA256 = {
+    "55fb124180fa6f19d915b93fb660b39dc4899eddcad9a8a645b599bc56657e55"
 }
 # The direct dev parent used its complete file hash before sound identity was
 # stabilized. Its synthesis inputs are unchanged by the merge's accounting edits.
@@ -745,7 +745,8 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
         # keep the stable sound identity across observability-only edits.
         if (previous_renderer not in COMPATIBLE_PREVIEW_ADMISSION_RENDERER_SHA256
                 and previous_renderer not in COMPATIBLE_INTEGRATED_PARENT_RENDERER_SHA256
-                and previous_renderer != identity.sha256(Path(__file__))):
+                and previous_renderer not in COMPATIBLE_PACKAGE_MOVE_RENDERER_SHA256
+                and previous_renderer != _renderer_sha256()):
             return None
         expected_sound["rendererSha256"] = previous_renderer
         if sound != expected_sound:
@@ -1055,8 +1056,8 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 runtime = {"schemaVersion": "sermon-spark-tts-replica-runtime-v1",
                     "status": "running", "replicas": replicas, "batchSize": batch_size,
                     "jobSha256": frozen, "reserveGiB": 24,
-                    "rendererSha256": identity.sha256(Path(__file__)),
-                    "poolSha256": identity.sha256(Path(replica_pool.__file__)), "events": []}
+                    "rendererSha256": _renderer_sha256(),
+                    "poolSha256": _module_file_sha256(replica_pool), "events": []}
                 def event(row):
                     runtime["events"].append(row)
                     write_json_atomic(runtime_path, runtime)

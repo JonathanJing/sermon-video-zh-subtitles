@@ -12,9 +12,8 @@ from pathlib import Path
 import re
 import sys
 
-if __package__ in (None, ''):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import render_formal_target_language_speech as formal
+from . import backend as _audio
+from . import renderer as formal
 
 EPSILON = 1e-6
 
@@ -114,8 +113,8 @@ def plan(source_seconds, rows, policy=None, *, identities=None, locale='und'):
         'diagnosticOnly': True, 'humanApproval': False, 'publicationEligible': False, 'grantsApproval': False,
         'modelCalls': 0, 'mutatesAudio': False, 'mutatesText': False, 'measurementsIndependentlyVerified': False,
         'sourceSeconds': source_seconds, 'locale': locale, 'policy': policy, 'inputIdentities': identities,
-        'inputSha256': _hash(material), 'schedulerImplementationSha256': hashlib.sha256(Path(formal.__file__).read_bytes()).hexdigest(),
-        'planImplementationSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        'inputSha256': _hash(material), 'schedulerImplementationSha256': _audio.current().code.module_sha256(formal),
+        'planImplementationSha256': _audio.current().code.module_sha256(sys.modules[__name__]),
         'audioSeconds': round(audio_sum, 6), 'interGroupGapSeconds': round(gap_sum, 6),
         'naturalConcatenatedPlusGapLowerBoundSeconds': round(natural_lower_bound, 6),
         'earliestSerialLowerBoundSeconds': round(earliest_lower_bound, 6),

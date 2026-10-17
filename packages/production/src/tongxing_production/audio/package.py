@@ -20,20 +20,13 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-try:
-    from scripts import sermon_accounting as accounting
-    from scripts import prepare_target_language_speech_job as speech
-    from scripts import sermon_sentence_interpretation as interpretation
-    from scripts import clip_timeline_map as timeline_map
-    from scripts import validate_target_language_audio_unit as unit_integrity
-    from scripts import screen_target_language_audio_units as audio_screen
-except ImportError:
-    import sermon_accounting as accounting
-    import prepare_target_language_speech_job as speech
-    import sermon_sentence_interpretation as interpretation
-    import clip_timeline_map as timeline_map
-    import validate_target_language_audio_unit as unit_integrity
-    import screen_target_language_audio_units as audio_screen
+from ..source import sentence_interpretation as interpretation
+from . import backend as _audio
+from . import clip_timeline as timeline_map
+from . import screening as audio_screen
+from . import speech_job as speech
+from . import unit_integrity
+from .hosted import accounting
 
 
 SCHEMA = "sermon-target-language-audio-package-v1"
@@ -128,7 +121,7 @@ def validate_anchor_exception(source: dict[str, Any], anchor: dict[str, Any],
     schema_name = {"sermon-human-anchor-exception-receipt-v1": "sermon-human-anchor-exception-receipt-v1.schema.json",
                    "sermon-human-anchor-exception-receipt-v2": "sermon-human-anchor-exception-receipt-v2.schema.json"}.get(version)
     require(schema_name is not None, "Unsupported anchor exception receipt")
-    schema = read_object(Path(__file__).parents[1] / "schemas" / schema_name)
+    schema = read_object(_audio.current().schemas.path(schema_name))
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(receipt))
     require(not errors, f"Anchor exception receipt schema error: {errors[0].message if errors else ''}")
     locale = candidate.get("targetLocale")
@@ -584,7 +577,7 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         # Legacy v1 has its own historical ratio rule, predating v2's protected checks.
         scoring = None
         if screening["schemaVersion"] == "sermon-target-language-audio-screening-v2":
-            from scripts.target_audio_auto_qc import screening_asr_settings
+            screening_asr_settings = _audio.current().machine_qc.screening_asr_settings
             scoring = screening_asr_settings(screening)["scoring"]
         for index, (result, unit, job_unit) in enumerate(zip(
                 screening["results"], units, job["units"])):
@@ -624,7 +617,7 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         "issues": [],
     }
     package["downstreamInvalidationKey"] = json_sha256(package)
-    schema_path = Path(__file__).parents[1] / "schemas" / "sermon-target-language-audio-package-v1.schema.json"
+    schema_path = _audio.current().schemas.path("sermon-target-language-audio-package-v1.schema.json")
     errors = list(Draft202012Validator(read_object(schema_path), format_checker=FormatChecker()).iter_errors(package))
     require(not errors, f"Audio Package schema error: {errors[0].message if errors else ''}")
     # Recheck the bound inputs once after the batch so a mid-run change still
