@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "testCount": 7,
+  "failed": 0,
+  "skipped": 0,
+  "scope": "report-snapshot-v2-schema-mutation",
+  "exitCode": 0
+}
