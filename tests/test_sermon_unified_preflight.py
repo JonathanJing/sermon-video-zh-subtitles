@@ -4,9 +4,13 @@ from unittest.mock import patch
 
 from scripts import sermon_unified_preflight as subject
 from tests import test_canonical_layer2_controller as fixtures
+from tools.ops import sermon_unified_preflight as implementation
 
 
 class UnifiedPreflightTests(unittest.TestCase):
+    def test_legacy_import_uses_moved_implementation(self):
+        self.assertIs(subject, implementation)
+
     def setUp(self):
         self.fixture = fixtures.CanonicalLayer2ControllerTests()
         self.fixture.setUp()
