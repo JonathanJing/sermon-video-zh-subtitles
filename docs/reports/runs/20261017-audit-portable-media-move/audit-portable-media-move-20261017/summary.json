@@ -1,0 +1,37 @@
+{
+  "scope": "synthetic offline portable media audit move",
+  "headSha": "6508b66e2740e4b059d095bb070d1feb40eb59ad",
+  "phases": [
+    {
+      "phase": "pre_move_vs_current_prepare",
+      "status": "passed",
+      "entrypoints": 3,
+      "sidecarSha256": "402434dc22638eae50f969bf476f04098bfb36e1d926b6c2dc9e05a1ec265b9f",
+      "byteIdentical": true
+    },
+    {
+      "phase": "pre_move_vs_current_audit",
+      "status": "passed",
+      "entrypoints": 3,
+      "stdoutIdentical": true
+    },
+    {
+      "phase": "pre_move_vs_current_blocked_audit",
+      "status": "passed",
+      "entrypoints": 3,
+      "stdoutIdentical": true
+    },
+    {
+      "phase": "source_evidence_unchanged",
+      "status": "passed"
+    },
+    {
+      "phase": "targeted_unittest",
+      "status": "passed",
+      "testCount": 30,
+      "exitCode": 0
+    }
+  ],
+  "newModelCalls": 0,
+  "remoteCalls": 0
+}
