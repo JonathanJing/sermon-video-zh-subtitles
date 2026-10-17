@@ -87,7 +87,7 @@ class ReportSnapshotTests(unittest.TestCase):
         self.assertEqual(before, self.outputs())
 
     def test_schema_change_inside_operation_cannot_escape_as_verified(self):
-        schema = contract.validator().schema
+        schema = contract.validator(contract.VERSION).schema
         old = deepcopy(schema)
         def mutate(events, damaged, digest, replay):
             schema['description'] = 'changed during report operation'
