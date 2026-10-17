@@ -1,0 +1,35 @@
+{
+  "createdAt": "2026-10-17T22:50:59Z",
+  "updatedAt": "2026-10-17T22:51:22Z",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:51:08Z",
+      "completedAt": "2026-10-17T22:51:16Z"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:51:18Z",
+      "completedAt": "2026-10-17T22:51:22Z"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T22:51:17Z",
+      "completedAt": "2026-10-17T22:51:16Z"
+    },
+    {
+      "name": "ios-validation",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T22:51:17Z",
+      "completedAt": "2026-10-17T22:51:16Z"
+    }
+  ],
+  "limits": "GitHub Actions CI, not production or device acceptance"
+}
