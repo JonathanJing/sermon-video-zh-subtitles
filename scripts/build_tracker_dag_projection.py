@@ -24,6 +24,7 @@ import tempfile
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import sermon_accounting as accounting
+from scripts import sermon_identity_sidecars as sidecars
 from scripts import sermon_run_progress as progress
 from scripts import weekly_pipeline_report as weekly
 
@@ -171,8 +172,12 @@ def _snapshot(directory):
         data = stream.read(MAX_INPUT_BYTES + 1)
     if len(data) > MAX_INPUT_BYTES:
         raise ValueError("accounting_too_large")
+    identities = sidecars.collect(directory, sidecars.rows_in_snapshot(data))
     with tempfile.TemporaryDirectory(prefix="tracker-dag-") as tmp:
-        (Path(tmp) / "events.jsonl").write_bytes(data)
+        snapshot = Path(tmp) / "events.jsonl"
+        snapshot.touch(mode=0o600)
+        snapshot.write_bytes(data)
+        sidecars.write(tmp, identities)
         events, damaged = accounting.read_events(tmp)
         report = weekly.project(tmp)
     return events, damaged, report
