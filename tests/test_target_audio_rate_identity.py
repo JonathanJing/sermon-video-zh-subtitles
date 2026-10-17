@@ -26,7 +26,7 @@ def test_each_real_dependency_mutation_invalidates_stored_coefficients(monkeypat
     fitted = rate()
     original = Path.read_bytes
     from scripts import sermon_source_producer_compatibility as compatibility
-    target = Path(predicted.__file__).resolve().parents[1] / compatibility.resolve("scripts/" + dependency)
+    target = Path(__file__).resolve().parents[1] / compatibility.resolve("scripts/" + dependency)
     baseline = fitted["rateImplementationSha256"]
     with monkeypatch.context() as changed:
         changed.setattr(Path, "read_bytes", lambda path: original(path) + b"\n# mutation\n" if path == target else original(path))
