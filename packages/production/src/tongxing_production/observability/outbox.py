@@ -135,6 +135,8 @@ def deliver(directory,event):
     if not isinstance(event, dict) or event.get('contractVersion') not in contract.READ_VERSIONS:
         raise ValueError('unsupported_contract_version_for_write')
     contract.validate_event(event)
+    if contract._schema_version(event) != event['contractVersion']:
+        raise ValueError('transitional_version_new_write_rejected')
     event=json.loads(contract.canonical_bytes(event))
     # All durable intent and folder metadata precede the append and return.
     with _ledger(directory) as (root,pending,fd):
