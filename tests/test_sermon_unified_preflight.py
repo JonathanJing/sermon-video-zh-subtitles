@@ -1,5 +1,6 @@
 import json
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from scripts import sermon_unified_preflight as subject
@@ -10,6 +11,24 @@ from tools.ops import sermon_unified_preflight as implementation
 class UnifiedPreflightTests(unittest.TestCase):
     def test_legacy_import_uses_moved_implementation(self):
         self.assertIs(subject, implementation)
+
+    def test_moved_implementation_bytes_are_in_loaded_code_identity(self):
+        original_read_bytes = Path.read_bytes
+        target = Path(implementation.__file__).resolve()
+        touched = []
+
+        def changed_bytes(path):
+            data = original_read_bytes(path)
+            if path.resolve() == target:
+                touched.append(True)
+                return data + b'\n# synthetic identity change\n'
+            return data
+
+        baseline = subject.layer2.code_identity()
+        with patch.object(Path, 'read_bytes', changed_bytes):
+            changed = subject.layer2.code_identity()
+        self.assertTrue(touched)
+        self.assertNotEqual(baseline, changed)
 
     def setUp(self):
         self.fixture = fixtures.CanonicalLayer2ControllerTests()
