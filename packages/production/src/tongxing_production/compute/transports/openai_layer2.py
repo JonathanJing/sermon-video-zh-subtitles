@@ -5,9 +5,8 @@ import hashlib
 import os
 from pathlib import Path
 
-from scripts import run_target_language_models as models
-from scripts import sermon_pipeline
-from scripts.sermon_openai_runtime import selected_route
+from .. import legacy_openai
+from ..openai_runtime import selected_route
 
 
 class OpenAILayer2Transport:
@@ -29,7 +28,7 @@ class OpenAILayer2Transport:
 
     def admit_resource(self, payload):
         """Reject unsupported calls before the runner records an unknown dispatch."""
-        from scripts.strict_budget_capability import admit
+        from ..budget_capability import admit
         decision = admit("standalone_api", payload=payload)
         if decision["decision"] != "reserved":
             raise ValueError(decision["reason"])
@@ -39,8 +38,4 @@ class OpenAILayer2Transport:
         if api_key != self.key:
             raise ValueError("selected_openai_credential_override")
         self.admit_resource(payload)
-        return sermon_pipeline.json_request(sermon_pipeline.CHAT_URL, api_key, payload, retries=1)
-
-    @staticmethod
-    def completed_content(response, model, role):
-        return models.completed_response_content(response, model, role)
+        return legacy_openai.json_request(legacy_openai.CHAT_URL, api_key, payload, retries=1)

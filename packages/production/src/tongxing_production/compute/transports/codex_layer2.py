@@ -15,9 +15,9 @@ import time
 import threading
 import uuid
 import jsonschema
-from scripts import sermon_model_call_observation as observation
-from scripts import codex_layer2_resources as resource_admission
-from scripts import sermon_workflow_jobs as jobs
+from ...observability import model_call_observation as observation
+from .. import backend as _compute
+from . import codex_resources as resource_admission
 
 SCHEMA = 'codex-cli-layer2-response-v2'
 LEGACY_SCHEMA = 'codex-cli-layer2-response-v1'
@@ -87,7 +87,7 @@ def _write_bytes(path, data):
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, path)
-        jobs._sync_directory(path.parent)
+        _compute.current().job_files().sync_directory(path.parent)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
@@ -121,14 +121,14 @@ class CodexLayer2Transport:
         self.resource_policy = None
         self.concurrency_profile = None
         if concurrency_profile is not None:
-            from scripts.production_concurrency_profile import validate_profile
+            from ..concurrency_profile import validate_profile
             self.concurrency_profile = validate_profile(concurrency_profile)
             if resource_policy is None:
                 raise ValueError('concurrency_profile_requires_shared_resource_policy')
         if resource_policy is not None:
             if self.receipts_dir is None:
                 raise ValueError('codex_resource_policy_requires_receipts_directory')
-            self.resource_policy = resource_admission.resources.validate_policy(resource_policy)
+            self.resource_policy = _compute.current().resources.validate_policy(resource_policy)
         auth_path = Path(os.environ.get('CODEX_HOME', str(Path.home() / '.codex'))) / 'auth.json'
         auth = json.loads(auth_path.read_text())
         if auth.get('auth_mode') != 'chatgpt' or auth.get('OPENAI_API_KEY'):
@@ -291,7 +291,7 @@ class CodexLayer2Transport:
                     content = result_path.read_text()
                     if not final_messages or final_messages[-1] != content.strip():
                         raise RuntimeError('codex_language_final_message_file_mismatch')
-                    from scripts.codex_credit_usage import estimate_credit_usage
+                    from ...observability.codex_credit_usage import estimate_credit_usage
                     credits = estimate_credit_usage(payload['model'], observation.normalize_usage(receipt['usage']),
                                                     requested_service_tier=tier)
                     response = {'schemaVersion': SCHEMA, 'id': 'codex:' + started_threads[0],
@@ -321,7 +321,7 @@ class CodexLayer2Transport:
         if model == 'gpt-6.1-sol' and response.get('requestedReasoningEffort') != EFFORTS.get(role):
             raise ValueError('invalid_codex_language_response_role_effort')
         if response['schemaVersion'] == SCHEMA:
-            from scripts.codex_credit_usage import safe_credit_usage
+            from ...observability.codex_credit_usage import safe_credit_usage
             safe_credit_usage(response.get('creditUsage'), model, observation.normalize_usage(response.get('usage')),
                               status='completed')
         jsonschema.validate(json.loads(response['content']), output_schema(role))

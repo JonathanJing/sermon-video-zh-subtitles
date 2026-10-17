@@ -15,8 +15,8 @@ import tempfile
 import time
 import uuid
 import jsonschema
-from scripts import sermon_model_call_observation as observation
-from scripts.codex_layer2_transport import _hash, _write, _write_bytes, output_schema
+from ...observability import model_call_observation as observation
+from .codex_layer2 import _hash, _write, _write_bytes, output_schema
 
 SCHEMA = 'claude-cli-layer2-response-v1'
 MODELS = {'claude-opus-5-5', 'claude-haiku-5-5'}

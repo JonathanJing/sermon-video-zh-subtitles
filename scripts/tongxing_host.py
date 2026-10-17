@@ -13,6 +13,7 @@ the same way; the two hosts will share ``core()`` once that facade is revisited.
 from __future__ import annotations
 
 from functools import partial
+import contextlib
 import hashlib
 from pathlib import Path
 import sys
@@ -235,11 +236,31 @@ def _resources():
     return resources
 
 
+@contextlib.contextmanager
+def _ledger_transaction(policy):
+    from scripts import sermon_workflow_jobs as jobs
+    ledger_module = _resources()
+    with jobs._lock(ledger_module._safe_path(policy['brokerRoot']), ledger_module.BROKER_LOCK_ID) as (folder, _, held):
+        if not held:
+            yield None
+            return
+        ledger = ledger_module._load(folder, policy)
+        yield ledger, (lambda: ledger_module._save(folder, ledger))
+
+
+def _resource_contract_error():
+    from tongxing_production.orchestration.unified import contracts as unified_contracts
+    return unified_contracts.ContractError
+
+
 def resources() -> ports.Resources:
     return ports.Resources(validate_policy=lambda policy: _resources().validate_policy(policy),
                            identity=lambda policy: _resources()._identity(policy),
                            reserve=lambda policy, **kw: _resources().reserve(policy, **kw),
-                           release=lambda policy, **kw: _resources().release(policy, **kw))
+                           release=lambda policy, **kw: _resources().release(policy, **kw),
+                           ledger_transaction=_ledger_transaction,
+                           operation_key=lambda operation_id: _resources()._operation(operation_id),
+                           contract_error=_resource_contract_error)
 
 
 def _validate_source_meaning_receipt(receipt, *, source, anchor, media_sha256, receipt_directory):
@@ -937,7 +958,9 @@ _plugins, _transports = plugins(), transports()
 observability_backend.configure(observability_backend.ObservabilityBackend(
     checkout_root=ROOT, load_producer_imports=load_producer_imports))
 storage_backend.configure(storage_backend.StorageBackend(job_files=job_files()))
-compute_backend.configure(compute_backend.ComputeBackend(accounting=_accounting))
+compute_backend.configure(compute_backend.ComputeBackend(accounting=_accounting, resources=_resources_port,
+                                                         artifact_root=lambda: _core.artifact_root,
+                                                         job_files=lambda: storage_backend.current().job_files))
 source_backend.configure(source_backend.SourceBackend(core=_core, provider=_provider, code=_code, mfa=mfa(),
                                                       snapshot=_snapshot, compute=_compute,
                                                       resources=_resources_port, adjudication=adjudication(),

@@ -19,10 +19,10 @@ import time
 import uuid
 
 import jsonschema
-from scripts import sermon_model_call_observation as observation
-from scripts.codex_layer2_transport import _write, _write_bytes
+from ...observability import model_call_observation as observation
+from .. import backend as _compute
+from .codex_layer2 import _write, _write_bytes
 
-ROOT = Path(__file__).resolve().parents[1]
 TEXT_MODEL = 'gpt-6.1-sol'
 SUPERVISOR_MODEL = 'gpt-6-luna'
 SCHEMA = 'sermon-codex-call-v1'
@@ -48,7 +48,7 @@ def _environment():
 
 
 def _call(prompt, **options):
-    directory = Path(options.get('output_dir') or ROOT / 'artifacts/codex-model-calls' / uuid.uuid4().hex)
+    directory = Path(options.get('output_dir') or _compute.current().artifact_root() / 'codex-model-calls' / uuid.uuid4().hex)
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     options['output_dir'] = directory
     with (directory / 'call.lock').open('a') as lock:
@@ -74,10 +74,9 @@ def _call_unlocked(prompt, *, model, reasoning='medium', service_tier='fast', ou
     if (resource_policy is None) != (concurrency_profile is None):
         raise ValueError('codex_profile_and_resource_policy_required_together')
     if concurrency_profile is not None:
-        from scripts.production_concurrency_profile import validate_profile
-        from scripts.sermon_unified import resources
+        from ..concurrency_profile import validate_profile
         concurrency_profile=validate_profile(concurrency_profile)
-        resource_policy=resources.validate_policy(resource_policy)
+        resource_policy=_compute.current().resources.validate_policy(resource_policy)
         expected_class='supervisor' if model==SUPERVISOR_MODEL else 'business'
         if resource_class not in (None,expected_class):
             raise ValueError('codex_resource_role_mismatch')
@@ -102,10 +101,10 @@ def _call_unlocked(prompt, *, model, reasoning='medium', service_tier='fast', ou
                 'adapterSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                 'imageSha256': [hashlib.sha256(raw).hexdigest() for _, raw in images]}
     if concurrency_profile is not None:
-        from scripts.codex_layer2_resources import policy_identity
+        from .codex_resources import policy_identity
         identity.update(concurrencyProfileSha256=_hash(concurrency_profile),
                         resourcePolicySha256=policy_identity(resource_policy),resourceClass=resource_class)
-    directory = Path(output_dir) if output_dir is not None else ROOT / 'artifacts/codex-model-calls' / uuid.uuid4().hex
+    directory = Path(output_dir) if output_dir is not None else _compute.current().artifact_root() / 'codex-model-calls' / uuid.uuid4().hex
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     identity_path = directory / 'identity.json'
     if identity_path.exists():
@@ -151,8 +150,8 @@ def _call_unlocked(prompt, *, model, reasoning='medium', service_tier='fast', ou
         admission=None
         dispatch_deadline = time.monotonic() + timeout_seconds
         if concurrency_profile is not None:
-            from scripts.codex_layer2_resources import Admission
-            from scripts.sermon_unified.contracts import ContractError
+            from .codex_resources import Admission
+            ContractError = _compute.current().resources.contract_error()
             admission=Admission(resource_policy,call_id=call_id,identity=identity,
                 receipt_directory=directory,concurrency_profile=concurrency_profile,
                 resource_class=resource_class)
@@ -190,7 +189,7 @@ def _call_unlocked(prompt, *, model, reasoning='medium', service_tier='fast', ou
                         _write_bytes(directory / name, value.encode() if isinstance(value, str) else value or b'')
                     _write(directory / 'outcome.json', {'status': 'unknown_outcome', 'errorType': 'TimeoutExpired'})
                     raise
-                from scripts import api_cli_outcomes
+                from .. import outcomes as api_cli_outcomes
                 try:
                     output_bytes = (work / 'result.txt').read_bytes()
                 except OSError:
@@ -235,7 +234,7 @@ def _call_unlocked(prompt, *, model, reasoning='medium', service_tier='fast', ou
                     raise RuntimeError('production_codex_final_message_file_mismatch')
                 if output_schema is not None:
                     jsonschema.validate(json.loads(content), output_schema)
-                from scripts.codex_credit_usage import estimate_credit_usage
+                from ...observability.codex_credit_usage import estimate_credit_usage
                 response = {'schemaVersion': SCHEMA, 'id': 'codex:' + threads[0],
                             'threadId': threads[0], 'identitySha256': _hash(identity),
                             'requestedModel': model, 'serverModel': None,
