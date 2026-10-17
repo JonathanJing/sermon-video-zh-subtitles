@@ -398,8 +398,8 @@ class ValidationCacheTests(unittest.TestCase):
             with self.assertRaises(contract.ContractError): contract.validate_event(row)
         finally:
             properties['sequence'] = previous
-        with patch.object(contract, 'VERSION', 'future'):
-            with self.assertRaises(contract.ContractError): contract.validate_event(row)
+        with self.assertRaises(contract.ContractError):
+            contract.validate_event({**row, 'contractVersion': 'future'})
         self.assertIs(contract.validate_event(row), row)
 
     def test_large_events_are_validated_without_retained_payload_keys(self):

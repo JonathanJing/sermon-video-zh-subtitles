@@ -23,6 +23,7 @@ import sys
 import tempfile
 
 from .. import accounting
+from .. import log_contract as contract
 from .. import progress as ledger_progress
 from .backend import run_progress as progress, weekly_report as weekly
 
@@ -97,7 +98,7 @@ def _reasons(values):
 def _mode(events):
     # A legacy loose envelope cannot establish real/synthetic provenance merely
     # by adding an arbitrary evidenceMode field.
-    modes = {e.get("evidenceMode") if e.get("contractVersion") == "sermon-accounting-log-contract-v1"
+    modes = {e.get("evidenceMode") if e.get("contractVersion") in contract.READ_VERSIONS
              else None for e in events}
     if "synthetic" in modes:
         return "synthetic" if modes == {"synthetic"} else "mixed"
@@ -197,9 +198,13 @@ def _snapshot(directory):
                     fd = os.open(reference + ".json", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=folder)
                     with os.fdopen(fd, "rb") as stream:
                         details = os.fstat(fd)
-                        if not stat.S_ISREG(details.st_mode) or details.st_mode & 0o077 or details.st_size > 512 * 1024:
-                            raise ValueError("invalid_execution_identity_sidecar")
+                        if not stat.S_ISREG(details.st_mode) or details.st_mode & 0o077:
+                            raise ValueError("execution_identity_sidecar_permissions")
+                        if details.st_size > 512 * 1024:
+                            raise ValueError("execution_identity_sidecar_size_limit")
                         content = stream.read(512 * 1024 + 1)
+                        if len(content) > 512 * 1024:
+                            raise ValueError("execution_identity_sidecar_size_limit")
                     total += len(content)
                     if total > MAX_INPUT_BYTES:
                         raise ValueError("accounting_sidecars_too_large")
@@ -530,9 +535,9 @@ def build_projection(accounting_dir, *, run_id, at=None, progress_inputs=None, s
             result["quality"]["reasonCodes"] = ["run_not_found"]
         else:
             _observed(result, run, selected, report, clock, stale_after_seconds, all_events=events)
-            profile_count = sum("contractVersion" in event for event in selected)
             result["logs"] = {"schemaVersions": sorted({e["schemaVersion"] for e in selected}),
-                "contractVersions": ["sermon-accounting-log-contract-v1"] if profile_count else [],
+                "contractVersions": sorted({e["contractVersion"] for e in selected
+                                            if e.get("contractVersion") in contract.READ_VERSIONS}),
                 "eventCount": len({e["eventId"] for e in selected}),
                 "profileEventCount": len({e["eventId"] for e in selected if "contractVersion" in e}),
                 "legacyEventCount": len({e["eventId"] for e in selected if "contractVersion" not in e}),

@@ -24,6 +24,26 @@ def ledger(directory, rows):
 
 
 class ContractTests(unittest.TestCase):
+    def test_v1_ledger_and_v2_ledger_replay_without_rewriting_old_facts(self):
+        old = [fixture('stage-start'), fixture('stage-finish')]
+        current = [dict(row, contractVersion=contract.VERSION,
+                        runId='new-run', workflowId='new-workflow',
+                        spanId='new-span', attemptId='new-attempt',
+                        eventId=f'{index + 10:032x}', producerId='b' * 32)
+                   for index, row in enumerate(old)]
+        self.assertEqual(contract.LEGACY_VERSION, old[0]['contractVersion'])
+        self.assertFalse(contract.validator().is_valid(current[0]))
+        self.assertFalse(contract.validator(contract.VERSION).is_valid(old[0]))
+        with tempfile.TemporaryDirectory() as directory:
+            ledger(directory, [*old, *current])
+            before = (Path(directory) / 'events.jsonl').read_bytes()
+            events, damaged = accounting.read_events(directory)
+            self.assertFalse(damaged)
+            self.assertEqual([row['contractVersion'] for row in events],
+                             [contract.LEGACY_VERSION] * 2 + [contract.VERSION] * 2)
+            self.assertEqual(contract.replay_integrity(events)['status'], 'consistent')
+            self.assertEqual((Path(directory) / 'events.jsonl').read_bytes(), before)
+
     def test_positive_fixtures_share_jsonschema_and_python_contract(self):
         validator = Draft202012Validator(json.loads(contract.SCHEMA_PATH.read_text()), format_checker=contract.format_checker())
         for name in ('stage-start', 'stage-finish', 'api-receipt'):
