@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "scope": "icon alignment development tool move, synthetic gate behavior and fixed-tree CLI parity",
+  "baseCommit": "2a2ee9a4eb0fc7881d66da83ef143b4a32216050",
+  "committedAs": "275148525ce8fb00bd3161b412adf9be12c3e732",
+  "unitTests": {
+    "passed": 5,
+    "failed": 0,
+    "exitCode": 0,
+    "seconds": 0.009
+  },
+  "cliParity": {
+    "baselineExitCode": 0,
+    "legacyExitCode": 0,
+    "newExitCode": 0,
+    "moduleExitCode": 0,
+    "outputIdentical": true,
+    "nativeSymbols": 42,
+    "svgDrawings": 48
+  },
+  "production": "not_run",
+  "publication": "not_run"
+}
