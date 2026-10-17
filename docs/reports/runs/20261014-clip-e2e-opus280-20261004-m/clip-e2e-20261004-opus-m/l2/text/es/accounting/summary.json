@@ -1,0 +1,3077 @@
+{
+  "schemaVersion": "sermon-workflow-accounting-v3",
+  "generatedAt": "2026-10-14T21:07:52.507720+00:00",
+  "runs": [
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "status": "failed",
+      "workflow": "canonical_layer2_worker",
+      "startedAt": "2026-10-14T21:07:51.471612+00:00",
+      "metadata": {
+        "targetLocale": "es",
+        "jobSha256": "6098e169a86f70ab2f45671dba9622e0796d175d267707f206f2766513a70093",
+        "productionRunId": "d13f7054b987a190d1d10a075add6285c9830e654fe0b7081c79d59043c53aff"
+      },
+      "workloads": [
+        {
+          "stage": "layer2.source_identity",
+          "metrics": {
+            "englishSourcePackageJsonSha256": "95f3f48f6a2ce27aba563e7e7d9777764c1dc446a4cac23bb5c4ac696f55ae41",
+            "anchorManifestSha256": "ad3a80ae16c4fac27648d79645301f9b4029b6a87a7b01b89218db63343fda22",
+            "translationPolicySha256": "260953b67416e3650f17547b10d116152a026160be298ffe590be92fcf03d171",
+            "sourceDurationSeconds": 194.661133,
+            "sourceMediaSha256": "4902384d2b226efcc7f672aaed267a9a7039975779e4eb761ae38408b427c086",
+            "translationGroups": 50,
+            "sourceUnits": 50
+          }
+        },
+        {
+          "stage": "layer2.rule_preflight",
+          "metrics": {
+            "ruleBundleSha256": "648cc1decbd0baa50bf76e0b2e0f6ba047a61bf9ede455de5218af92276a4f40",
+            "humanApproval": false
+          }
+        },
+        {
+          "stage": "layer2.concurrency",
+          "metrics": {
+            "requestedWorkers": 16,
+            "workers": 8,
+            "maxInFlightGroups": 8,
+            "translationGroups": 50
+          }
+        }
+      ],
+      "diagnostics": [
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.translator.es.group-0001",
+          "spanId": "4a951161b2274e5ebbe1bb19d883d164",
+          "attemptId": "5d15b6683b4c47818f8d2dcab1566d76",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.458671+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.011812,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.translator.es.group-0002",
+          "spanId": "6481483c260e46bdb9bee7364a6fcb9d",
+          "attemptId": "0d0fbe15c8d043638114aa5b272bb367",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.468657+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.019424,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.translator.es.group-0005",
+          "spanId": "51db9d933e834a62986691502ba1584f",
+          "attemptId": "63434101d91d46abbdebf14fdb81a501",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.468934+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.018279,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.group.es.0001",
+          "spanId": "c39ee1622df14b97bdb8a89ba7f7aec1",
+          "attemptId": "837654fc0377423d9bf709f3e3f0ec05",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.469457+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.03198,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1355,
+              "function": "process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.translator.es.group-0003",
+          "spanId": "562f04b309b143588c0e96359e07a81c",
+          "attemptId": "6b6c0c89a7b64ec6819c9d18645744a3",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.469939+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.020335,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.translator.es.group-0004",
+          "spanId": "f54abc6d31654e7e87c5deb7033f959b",
+          "attemptId": "a18a07e38144422d87bd299201182b8f",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.474784+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.025445,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.group.es.0005",
+          "spanId": "297b456b69274fb0a05b19b409e9541f",
+          "attemptId": "8cac2d4626dc44d7a31a220d42cbfa89",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.475268+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.041606,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1355,
+              "function": "process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.translator.es.group-0006",
+          "spanId": "44b39d612e79437fbc91f04412ac8f44",
+          "attemptId": "f3019fdc09cc47c38ca35b796f22d09b",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.476458+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.024174,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.translator.es.group-0007",
+          "spanId": "de5f2aba18c64e02a0d0cbf1b3e64916",
+          "attemptId": "895592e1d6b7473ea86f82867c0e43f3",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.476823+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.027054,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.group.es.0002",
+          "spanId": "35f880f308374ffabcbdd96f612c9759",
+          "attemptId": "41e79de60e3b4501a1142eda2dc7d9c3",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.478239+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.040521,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1355,
+              "function": "process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.translator.es.group-0008",
+          "spanId": "d0d810ffaca54968a6814daa9712f7d6",
+          "attemptId": "bbcc769a3f9e47e6b1ef7967fbb60f08",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.480335+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.031366,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.group.es.0003",
+          "spanId": "b5b46354d51e4d58ae388d7a56873a5e",
+          "attemptId": "b8b9534f809f496cada04a51599cfc2a",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.480707+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.043526,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1355,
+              "function": "process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.group.es.0004",
+          "spanId": "db57c14f69a54ca4b473ff3fbd4cdf99",
+          "attemptId": "508bb1c88ebc46e2a6885004080dc060",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.482064+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.0473,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1355,
+              "function": "process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.group.es.0007",
+          "spanId": "760adc1176e84b8289f567fadfff5368",
+          "attemptId": "d1f5df9f0f004df48cea05a3a365c018",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.484282+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.049456,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1355,
+              "function": "process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.group.es.0006",
+          "spanId": "5ee6354462ac43c6ae6c659b46a34f34",
+          "attemptId": "4f7345b3e6ce470c93a5dde79803cd1a",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.484361+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.049119,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1355,
+              "function": "process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2.group.es.0008",
+          "spanId": "784d6c6bf5784a4fb8d0342a7c9b111c",
+          "attemptId": "52448d9aa4b240b5af0e6ead2693dd9e",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.485002+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.050914,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1355,
+              "function": "process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "layer2_models",
+          "spanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+          "attemptId": "57ab02f47185430eaf5962bd80e775c4",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.486099+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.081056,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 486,
+              "function": "_stage_context"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 385,
+              "function": "stage"
+            },
+            {
+              "file": "scripts/sermon_accounting.py",
+              "line": 591,
+              "function": "accounting_session"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1423,
+              "function": "run_accounted"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1358,
+              "function": "_run_prepared_groups"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 759,
+              "function": "ordered_group_results"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1355,
+              "function": "process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "stage": "canonical_layer2_worker",
+          "spanId": "e05df85f63c44a0984b7a307d0622f8f",
+          "attemptId": null,
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.487920+00:00",
+          "event": "workflow_finished",
+          "code": "workflow_finished",
+          "level": "ERROR"
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "c94605bd69774ca3b70c778b88109188",
+          "stage": "canonical_layer2_worker",
+          "spanId": "e05df85f63c44a0984b7a307d0622f8f",
+          "attemptId": "28d8a8ade9f24866b87875bc5632c4a7",
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.489147+00:00",
+          "event": "stage_finished",
+          "code": "stage_finished",
+          "level": "ERROR",
+          "elapsedSeconds": 0.963581,
+          "errorType": "ValueError",
+          "frames": [
+            {
+              "file": "scripts/canonical_layer2_controller.py",
+              "line": 621,
+              "function": "_run_auto_repair"
+            },
+            {
+              "file": "scripts/layer2_auto_repair.py",
+              "line": 881,
+              "function": "drive"
+            },
+            {
+              "file": "scripts/canonical_layer2_controller.py",
+              "line": 600,
+              "function": "run_round"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1423,
+              "function": "run_accounted"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1358,
+              "function": "_run_prepared_groups"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 759,
+              "function": "ordered_group_results"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1355,
+              "function": "process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 1217,
+              "function": "_process_group"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 293,
+              "function": "_model_call"
+            },
+            {
+              "file": "scripts/run_target_language_models.py",
+              "line": 267,
+              "function": "model_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 140,
+              "function": "bounded_payload"
+            },
+            {
+              "file": "scripts/sermon_provider_limits.py",
+              "line": 82,
+              "function": "_require"
+            }
+          ]
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "c94605bd69774ca3b70c778b88109188",
+          "stage": null,
+          "spanId": null,
+          "attemptId": null,
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.494424+00:00",
+          "event": "workflow_finished",
+          "code": "workflow_finished",
+          "level": "ERROR"
+        },
+        {
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflowId": "c94605bd69774ca3b70c778b88109188",
+          "stage": null,
+          "spanId": null,
+          "attemptId": null,
+          "invocationId": null,
+          "status": "failed",
+          "recordedAt": "2026-10-14T21:07:52.501241+00:00",
+          "event": "run_finished",
+          "code": "run_finished",
+          "level": "ERROR"
+        }
+      ],
+      "completedAt": "2026-10-14T21:07:52.501241+00:00",
+      "wallSeconds": 1.029629,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "apiAttempts": 0,
+      "usageReceipts": 0,
+      "usageReceiptCoverage": null,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "workflows": [
+        {
+          "workflowId": "c94605bd69774ca3b70c778b88109188",
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflow": "canonical_layer2_worker",
+          "parentWorkflowId": null,
+          "status": "failed",
+          "startedAt": "2026-10-14T21:07:51.521737+00:00",
+          "completedAt": "2026-10-14T21:07:52.494424+00:00",
+          "metadata": {
+            "targetLocale": "es",
+            "jobSha256": "6098e169a86f70ab2f45671dba9622e0796d175d267707f206f2766513a70093",
+            "productionRunId": "d13f7054b987a190d1d10a075add6285c9830e654fe0b7081c79d59043c53aff"
+          },
+          "executionIdentity": {
+            "gitCommit": "b13bb5549c6ef2206fd4049bb8b54830c6e9c244",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/canonical_layer2_controller.py": "de141ea3c9051126ce4718059a195d5ea39ca840b4b8e742ed8749ab6fc6c9de",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_workflow_jobs.py": "60c12804264b445b67a5f9ffdd20d5fcef4e7f677d1ca0e8c7662d73628b24aa",
+              "scripts/canonical_pipeline_definition.py": "f1519c67205ddf0149b4f43bdaa3d61239e49fd9d2825d22a701f95374176c14",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/sermon_clock_evidence.py": "72228a1b1babd9196aee394d696a17cdbffbc9a05dc339b28ffe51c0a5d6e465",
+              "scripts/sermon_dispatch_observation.py": "95c57dd365394bb7e7fa668f67fc0445ec3d31d8a8197dc07586497aa7e204b2",
+              "scripts/sermon_log_contract.py": "fd3829cc86c38d3a576a2b1ec415a4546943f8f8dc540e6b46c666f239bd7a05",
+              "scripts/sermon_release_workflow.py": "bdcdf7d9d2237304b114757f060681eb5ee48fc879618238bc305d60e0f705b6",
+              "scripts/sermon_log_outbox.py": "45e037f7e2541197d9423f9d37a05a7e89bdeb8d6c5fecbd99da6fccfe23be95",
+              "scripts/sermon_log_profile.py": "f3fda90bd257a628bca8554601800d01b3b62a81ba2196a2b93384e1725af9ed",
+              "scripts/sermon_accounting.py": "b6b626eb2c6c810d1377168d86b6d7186226b720251c1e426c9146810c00fadb",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/build_english_source_package.py": "7f43f331a94da9a0b025cdcb77101691d8502504097ab4ae3ff6aafda33f4fcf",
+              "scripts/machine_quality_waiver.py": "f86441dab16f64043ca14c9439977fb0b273d6c0f6613e2b8d05fc0040a2446e",
+              "scripts/machine_repair_ledger.py": "bb4bd1691196b93c007e391cf6f0b205a20ad2376a464bc3ca71060abdf0a8c0",
+              "scripts/machine_quality_release_basis.py": "410988d188c495c69f8648f9467135d8038c25643137d61d01ad0c4ef7af8fc9",
+              "scripts/sermon_sentence_interpretation.py": "5aa19b0580febb3652f9b694cf2ac9f1cbba1c241320c02396a99f0a63a439c1",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/target_language_policy.py": "516be3e999431a8acbc1892f1a2d653fc8c1facfaa93cb809ab3cfea4a018e78",
+              "scripts/clip_timeline_map.py": "8153583efe866e651e0403f20b24fda9bedd740e9be2219f3d5f46a3b3015a26",
+              "scripts/prepare_target_language_speech_job.py": "6a80e433baf6a5bad78ff93038aca973dec7c460d31fb4fa8c4e41eb5f9ff759",
+              "scripts/produce_target_language_candidate.py": "0b1586ea81906739ea9fe96ca9b6306836d7ecd73a39ba855bde1235a622e12d",
+              "scripts/validate_target_language_audio_unit.py": "5a4dcedff69c0435f423647bbcc9b277ab62f79fe99af0095e9489fe6f68b02c",
+              "scripts/dev_audio_test_profile.py": "d102bcde95b5432e798c48b77b37beffa4da53f49e7ae44c59fb85d3bf015d3c",
+              "scripts/dev_audio_test_receipts.py": "efbe15e86f9d007e17675c987ac2bc5b2bcd9a24d852850b95d7d86822ed5dbe",
+              "scripts/screen_target_language_audio_units.py": "8005f9e3ee5b20c81ca0636fd24c38c29300cb128e25a84576703d887423f154",
+              "scripts/build_target_language_audio_package.py": "1c27786312b59cbdbc3d9abcd972c784733f0c750c68925000e6cbd355ae400e",
+              "scripts/stage_formal_multilingual_dev.py": "6bf1626482d8f7c412f99ae80412220c0359a8436fc64d4193b41b8d8c1c0743",
+              "scripts/inspect_canonical_audio.py": "1cadaea2721c419c7966fb0b3903ecc3cc3d010ff7200752840340cf5e370907",
+              "scripts/inspect_canonical_release.py": "845278a8446c678620f84111e4028e3e83bca471ece84c1a0bb5c8cdbb7c6f39",
+              "scripts/inspect_canonical_packages.py": "49b65e7aa7f3862c997744b14d050b7ce9cac2f6a8a93b48b53da3421eaa90f0",
+              "scripts/canonical_durable_jobs.py": "e16ee7be3a7bd80bb1b6df9541f007ddf029e2635b65759496066d6a5003ec31",
+              "scripts/production_spark_admission.py": "df0c2b0eb4cde55eff2c7c088524d4fecdafb80ce9bfd34fdffff8e29cddb703",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/sermon_pipeline.py": "178674fcd8ef449c113c3810a1154cf7496212625a48179b63164f88688451b9",
+              "scripts/target_language_policy_preview.py": "2878e45d80b0896507184d7632fe56ab10a298ad39a6d2f54e6e11436ea2773b",
+              "scripts/target_language_rule_preflight.py": "60310945267ca5deccb64e0d9943b70c91fd5c1ade8c5f05424f356c5969721c",
+              "scripts/migrate_target_language_model_cache.py": "2fd38dd78433a564cdc72b9d3b9cf7379cc04558dd3670aaec92775849fb16b2",
+              "scripts/run_target_language_models.py": "442adfde3bff0c2fd0a99e9a171b0cfec8c2d61886e512a584462b653151aad7",
+              "scripts/layer2_api_concurrency.py": "9ee3994b9a258631431cf86fe605abd5a00fb7b7e693eb044522e7c4dd2c6ba9",
+              "scripts/sermon_provider_limits.py": "6ac1b4bc65e960ffae0a0433a2c58f66ea4da4fb37892b5388d371e60939ba6f",
+              "scripts/sermon_provider_http.py": "45c17bab77632e9e0957ef81e792a1da9aaddbdb8f09bb908f1204261821346e",
+              "scripts/sermon_review_contracts.py": "71e7fa802fad3cac9788b1163907da3b908d4410777552333d46034754db89f2",
+              "scripts/sermon_review_budget.py": "5e73db16994ae401b7fea44c5440d2c4a539f83a616e437875027b30f9c312b2",
+              "scripts/canonical_layer2_budget.py": "ae3b1669c1d73d76d48cad5549670892e93e20e3fda3df71e07049e2ad8795aa",
+              "scripts/sermon_source_text_review.py": "67c4757238ff0d61c1a579213825dee0ce3d5d50043f10ba183f6b1c50a0ce5e",
+              "scripts/source_meaning_machine_adjudication.py": "2d7369021e502370a774b2faef9fecbb11f546410d23fab3f79271718a991536",
+              "scripts/layer2_auto_repair.py": "17c1870e9e898aa943dec35cfa59b48ee15c90e423ff6823aa505853c909e1bc",
+              "scripts/sermon_openai_runtime.py": "9b77113543b721e24e9f532bf9cfb23f9fe75f0582411155aab0c7a1b4620a0a"
+            },
+            "pythonVersion": "3.13.15",
+            "platform": "darwin",
+            "architecture": "arm64",
+            "scope": "Loaded project Python modules at workflow start; unimported modules and remote code require their own receipts."
+          },
+          "resourcesBefore": {
+            "processPeakRssBytes": 43876352,
+            "processUserCpuSeconds": 0.17623,
+            "processSystemCpuSeconds": 0.070445,
+            "finishedChildUserCpuSeconds": 0.011127,
+            "finishedChildSystemCpuSeconds": 0.04819,
+            "diskFreeBytes": 149480484864,
+            "gpuPeakBytes": null,
+            "scope": "Process-lifetime RSS high-water mark and CPU counters; child CPU includes finished children only. GPU allocation not exposed by this local collector."
+          },
+          "resourcesAfter": {
+            "processPeakRssBytes": 272302080,
+            "processUserCpuSeconds": 0.49335599999999996,
+            "processSystemCpuSeconds": 0.25380199999999997,
+            "finishedChildUserCpuSeconds": 0.264608,
+            "finishedChildSystemCpuSeconds": 0.194314,
+            "diskFreeBytes": 149480370176,
+            "gpuPeakBytes": null,
+            "scope": "Process-lifetime RSS high-water mark and CPU counters; child CPU includes finished children only. GPU allocation not exposed by this local collector."
+          },
+          "evidenceBefore": {
+            "schemaVersion": "sermon-workflow-evidence-v1",
+            "workflow": "canonical_layer2_worker",
+            "observedAt": "2026-10-14T21:07:51.523025+00:00",
+            "evidenceScope": "existing_files_snapshot",
+            "currentRunExecutionProven": false,
+            "artifacts": [],
+            "errors": [],
+            "missingCategories": [
+              "layer2_evidence",
+              "layer2_request",
+              "layer2_run_identity"
+            ],
+            "limits": {
+              "maxJsonBytes": 1048576,
+              "maxWeekEntries": 128,
+              "lookup": "fixed_relative_paths_and_sermon_prefix_direct_children_only"
+            },
+            "optionalDownstreamCategories": [
+              "layer2_candidate",
+              "layer2_language_review"
+            ],
+            "cacheProvenanceScope": "per_cache_observation_events_not_unbounded_file_scan",
+            "sourceIdentityClaims": [],
+            "sourceFingerprint": null,
+            "sourceFingerprintMeaning": "digest_of_reported_identity_claims_not_media_verification",
+            "evidenceFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "reportedBlockers": [],
+            "missingCategoryMeaning": "not_found_in_bounded_lookup_not_proof_of_failed_or_required_stage",
+            "status": "evidence_gaps"
+          },
+          "evidenceAfter": {
+            "schemaVersion": "sermon-workflow-evidence-v1",
+            "workflow": "canonical_layer2_worker",
+            "observedAt": "2026-10-14T21:07:52.492878+00:00",
+            "evidenceScope": "existing_files_snapshot",
+            "currentRunExecutionProven": false,
+            "artifacts": [],
+            "errors": [],
+            "missingCategories": [
+              "layer2_evidence",
+              "layer2_request",
+              "layer2_run_identity"
+            ],
+            "limits": {
+              "maxJsonBytes": 1048576,
+              "maxWeekEntries": 128,
+              "lookup": "fixed_relative_paths_and_sermon_prefix_direct_children_only"
+            },
+            "optionalDownstreamCategories": [
+              "layer2_candidate",
+              "layer2_language_review"
+            ],
+            "cacheProvenanceScope": "per_cache_observation_events_not_unbounded_file_scan",
+            "sourceIdentityClaims": [],
+            "sourceFingerprint": null,
+            "sourceFingerprintMeaning": "digest_of_reported_identity_claims_not_media_verification",
+            "evidenceFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "reportedBlockers": [],
+            "missingCategoryMeaning": "not_found_in_bounded_lookup_not_proof_of_failed_or_required_stage",
+            "status": "evidence_gaps"
+          }
+        },
+        {
+          "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+          "runId": "cf954076acaa447fb85de9ecf1202a88",
+          "workflow": "layer2_models",
+          "parentWorkflowId": "c94605bd69774ca3b70c778b88109188",
+          "status": "failed",
+          "startedAt": "2026-10-14T21:07:52.403529+00:00",
+          "completedAt": "2026-10-14T21:07:52.487920+00:00",
+          "metadata": {
+            "targetLocale": "es"
+          },
+          "executionIdentity": {
+            "gitCommit": "b13bb5549c6ef2206fd4049bb8b54830c6e9c244",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/canonical_layer2_controller.py": "de141ea3c9051126ce4718059a195d5ea39ca840b4b8e742ed8749ab6fc6c9de",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_workflow_jobs.py": "60c12804264b445b67a5f9ffdd20d5fcef4e7f677d1ca0e8c7662d73628b24aa",
+              "scripts/canonical_pipeline_definition.py": "f1519c67205ddf0149b4f43bdaa3d61239e49fd9d2825d22a701f95374176c14",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/sermon_clock_evidence.py": "72228a1b1babd9196aee394d696a17cdbffbc9a05dc339b28ffe51c0a5d6e465",
+              "scripts/sermon_dispatch_observation.py": "95c57dd365394bb7e7fa668f67fc0445ec3d31d8a8197dc07586497aa7e204b2",
+              "scripts/sermon_log_contract.py": "fd3829cc86c38d3a576a2b1ec415a4546943f8f8dc540e6b46c666f239bd7a05",
+              "scripts/sermon_release_workflow.py": "bdcdf7d9d2237304b114757f060681eb5ee48fc879618238bc305d60e0f705b6",
+              "scripts/sermon_log_outbox.py": "45e037f7e2541197d9423f9d37a05a7e89bdeb8d6c5fecbd99da6fccfe23be95",
+              "scripts/sermon_log_profile.py": "f3fda90bd257a628bca8554601800d01b3b62a81ba2196a2b93384e1725af9ed",
+              "scripts/sermon_accounting.py": "b6b626eb2c6c810d1377168d86b6d7186226b720251c1e426c9146810c00fadb",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/build_english_source_package.py": "7f43f331a94da9a0b025cdcb77101691d8502504097ab4ae3ff6aafda33f4fcf",
+              "scripts/machine_quality_waiver.py": "f86441dab16f64043ca14c9439977fb0b273d6c0f6613e2b8d05fc0040a2446e",
+              "scripts/machine_repair_ledger.py": "bb4bd1691196b93c007e391cf6f0b205a20ad2376a464bc3ca71060abdf0a8c0",
+              "scripts/machine_quality_release_basis.py": "410988d188c495c69f8648f9467135d8038c25643137d61d01ad0c4ef7af8fc9",
+              "scripts/sermon_sentence_interpretation.py": "5aa19b0580febb3652f9b694cf2ac9f1cbba1c241320c02396a99f0a63a439c1",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/target_language_policy.py": "516be3e999431a8acbc1892f1a2d653fc8c1facfaa93cb809ab3cfea4a018e78",
+              "scripts/clip_timeline_map.py": "8153583efe866e651e0403f20b24fda9bedd740e9be2219f3d5f46a3b3015a26",
+              "scripts/prepare_target_language_speech_job.py": "6a80e433baf6a5bad78ff93038aca973dec7c460d31fb4fa8c4e41eb5f9ff759",
+              "scripts/produce_target_language_candidate.py": "0b1586ea81906739ea9fe96ca9b6306836d7ecd73a39ba855bde1235a622e12d",
+              "scripts/validate_target_language_audio_unit.py": "5a4dcedff69c0435f423647bbcc9b277ab62f79fe99af0095e9489fe6f68b02c",
+              "scripts/dev_audio_test_profile.py": "d102bcde95b5432e798c48b77b37beffa4da53f49e7ae44c59fb85d3bf015d3c",
+              "scripts/dev_audio_test_receipts.py": "efbe15e86f9d007e17675c987ac2bc5b2bcd9a24d852850b95d7d86822ed5dbe",
+              "scripts/screen_target_language_audio_units.py": "8005f9e3ee5b20c81ca0636fd24c38c29300cb128e25a84576703d887423f154",
+              "scripts/build_target_language_audio_package.py": "1c27786312b59cbdbc3d9abcd972c784733f0c750c68925000e6cbd355ae400e",
+              "scripts/stage_formal_multilingual_dev.py": "6bf1626482d8f7c412f99ae80412220c0359a8436fc64d4193b41b8d8c1c0743",
+              "scripts/inspect_canonical_audio.py": "1cadaea2721c419c7966fb0b3903ecc3cc3d010ff7200752840340cf5e370907",
+              "scripts/inspect_canonical_release.py": "845278a8446c678620f84111e4028e3e83bca471ece84c1a0bb5c8cdbb7c6f39",
+              "scripts/inspect_canonical_packages.py": "49b65e7aa7f3862c997744b14d050b7ce9cac2f6a8a93b48b53da3421eaa90f0",
+              "scripts/canonical_durable_jobs.py": "e16ee7be3a7bd80bb1b6df9541f007ddf029e2635b65759496066d6a5003ec31",
+              "scripts/production_spark_admission.py": "df0c2b0eb4cde55eff2c7c088524d4fecdafb80ce9bfd34fdffff8e29cddb703",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/sermon_pipeline.py": "178674fcd8ef449c113c3810a1154cf7496212625a48179b63164f88688451b9",
+              "scripts/target_language_policy_preview.py": "2878e45d80b0896507184d7632fe56ab10a298ad39a6d2f54e6e11436ea2773b",
+              "scripts/target_language_rule_preflight.py": "60310945267ca5deccb64e0d9943b70c91fd5c1ade8c5f05424f356c5969721c",
+              "scripts/migrate_target_language_model_cache.py": "2fd38dd78433a564cdc72b9d3b9cf7379cc04558dd3670aaec92775849fb16b2",
+              "scripts/run_target_language_models.py": "442adfde3bff0c2fd0a99e9a171b0cfec8c2d61886e512a584462b653151aad7",
+              "scripts/layer2_api_concurrency.py": "9ee3994b9a258631431cf86fe605abd5a00fb7b7e693eb044522e7c4dd2c6ba9",
+              "scripts/sermon_provider_limits.py": "6ac1b4bc65e960ffae0a0433a2c58f66ea4da4fb37892b5388d371e60939ba6f",
+              "scripts/sermon_provider_http.py": "45c17bab77632e9e0957ef81e792a1da9aaddbdb8f09bb908f1204261821346e",
+              "scripts/sermon_review_contracts.py": "71e7fa802fad3cac9788b1163907da3b908d4410777552333d46034754db89f2",
+              "scripts/sermon_review_budget.py": "5e73db16994ae401b7fea44c5440d2c4a539f83a616e437875027b30f9c312b2",
+              "scripts/canonical_layer2_budget.py": "ae3b1669c1d73d76d48cad5549670892e93e20e3fda3df71e07049e2ad8795aa",
+              "scripts/sermon_source_text_review.py": "67c4757238ff0d61c1a579213825dee0ce3d5d50043f10ba183f6b1c50a0ce5e",
+              "scripts/source_meaning_machine_adjudication.py": "2d7369021e502370a774b2faef9fecbb11f546410d23fab3f79271718a991536",
+              "scripts/layer2_auto_repair.py": "17c1870e9e898aa943dec35cfa59b48ee15c90e423ff6823aa505853c909e1bc",
+              "scripts/sermon_openai_runtime.py": "9b77113543b721e24e9f532bf9cfb23f9fe75f0582411155aab0c7a1b4620a0a",
+              "scripts/sermon_workflow_evidence.py": "b148b6b425b3a56be111730b2bd9822b2014f0f903e8c7aaa3c59f70bccff0ec",
+              "scripts/sermon_model_call_observation.py": "355a2aba0d5d76c21c44c97696e01141ed4d8fb7876f285e7eb535f91f899b84",
+              "scripts/sermon_unified/__init__.py": "8613cd2b08729770fa90b406a3e2acdd4ea2d3c106592e101e60ac06b7537e7b",
+              "scripts/sermon_unified/contracts.py": "236faaa5062c1c1c67d04cc3da76cb04f8e573f70fbafb52c25e81a77ff216f8",
+              "scripts/sermon_unified/resources.py": "6e230fd185b180df772905624357021ebcf92a14d6efc35bad688986a6db6d46",
+              "scripts/production_concurrency_profile.py": "ccf8083253a83168a5170b0c39e8d214930e6ad195347f854c2fc6c10e2014d3",
+              "scripts/codex_layer2_resources.py": "b4aa9692b8016f6fc7c0ddee9533a746ded39519bab940e58adb10836f7cca51",
+              "scripts/codex_layer2_transport.py": "03269d022c42e1a36d5b03ff69420a392802581e6dc4f65977dee3f62fac0390",
+              "scripts/claude_layer2_transport.py": "9eca0346df16cfae0686e5a671e8b1f1de97d7a90e20686447815720d877ab06"
+            },
+            "pythonVersion": "3.13.15",
+            "platform": "darwin",
+            "architecture": "arm64",
+            "scope": "Loaded project Python modules at workflow start; unimported modules and remote code require their own receipts."
+          },
+          "resourcesBefore": {
+            "processPeakRssBytes": 271384576,
+            "processUserCpuSeconds": 0.440446,
+            "processSystemCpuSeconds": 0.182668,
+            "finishedChildUserCpuSeconds": 0.264608,
+            "finishedChildSystemCpuSeconds": 0.194314,
+            "diskFreeBytes": 149480030208,
+            "gpuPeakBytes": null,
+            "scope": "Process-lifetime RSS high-water mark and CPU counters; child CPU includes finished children only. GPU allocation not exposed by this local collector."
+          },
+          "resourcesAfter": {
+            "processPeakRssBytes": 272302080,
+            "processUserCpuSeconds": 0.49151799999999995,
+            "processSystemCpuSeconds": 0.25271899999999997,
+            "finishedChildUserCpuSeconds": 0.264608,
+            "finishedChildSystemCpuSeconds": 0.194314,
+            "diskFreeBytes": 149479870464,
+            "gpuPeakBytes": null,
+            "scope": "Process-lifetime RSS high-water mark and CPU counters; child CPU includes finished children only. GPU allocation not exposed by this local collector."
+          },
+          "evidenceBefore": {
+            "schemaVersion": "sermon-workflow-evidence-v1",
+            "workflow": "layer2_models",
+            "observedAt": "2026-10-14T21:07:52.403918+00:00",
+            "evidenceScope": "existing_files_snapshot",
+            "currentRunExecutionProven": false,
+            "artifacts": [],
+            "errors": [
+              {
+                "path": ".",
+                "code": "directory_missing"
+              }
+            ],
+            "missingCategories": [
+              "layer2_evidence",
+              "layer2_request",
+              "layer2_run_identity"
+            ],
+            "limits": {
+              "maxJsonBytes": 1048576,
+              "maxWeekEntries": 128,
+              "lookup": "fixed_relative_paths_and_sermon_prefix_direct_children_only"
+            },
+            "status": "evidence_gaps"
+          },
+          "evidenceAfter": {
+            "schemaVersion": "sermon-workflow-evidence-v1",
+            "workflow": "layer2_models",
+            "observedAt": "2026-10-14T21:07:52.486352+00:00",
+            "evidenceScope": "existing_files_snapshot",
+            "currentRunExecutionProven": false,
+            "artifacts": [
+              {
+                "path": "request.json",
+                "sha256": "ef5b1647743742eccfc6777d6dac387971aa8a17b3d223b36b1acf83ece7ed60",
+                "bytes": 6763,
+                "category": "layer2_request",
+                "executionAssociation": "not_established",
+                "summary": {
+                  "schemaVersion": "sermon-target-language-evidence-request-v1",
+                  "sourceLocale": "en",
+                  "targetLocale": "es",
+                  "englishSourcePackageJsonSha256": "95f3f48f6a2ce27aba563e7e7d9777764c1dc446a4cac23bb5c4ac696f55ae41",
+                  "anchorManifestSha256": "ad3a80ae16c4fac27648d79645301f9b4029b6a87a7b01b89218db63343fda22",
+                  "translationPolicySha256": "260953b67416e3650f17547b10d116152a026160be298ffe590be92fcf03d171",
+                  "sourceUnits": {
+                    "count": 50
+                  }
+                }
+              },
+              {
+                "path": "run-identity.json",
+                "sha256": "8b78c2bdbcc98d6234a507ca97eaccc5cec6524ca002395cead2fabfb313bc4f",
+                "bytes": 83,
+                "category": "layer2_run_identity",
+                "executionAssociation": "not_established",
+                "summary": {
+                  "sha256": "a4b2c7fe3e57283a54b4e9ab7d71f50b6b3e295130824094dc8654436b26fac7"
+                }
+              }
+            ],
+            "errors": [],
+            "missingCategories": [
+              "layer2_evidence"
+            ],
+            "limits": {
+              "maxJsonBytes": 1048576,
+              "maxWeekEntries": 128,
+              "lookup": "fixed_relative_paths_and_sermon_prefix_direct_children_only"
+            },
+            "optionalDownstreamCategories": [
+              "layer2_candidate",
+              "layer2_language_review"
+            ],
+            "cacheProvenanceScope": "per_cache_observation_events_not_unbounded_file_scan",
+            "sourceIdentityClaims": [],
+            "sourceFingerprint": null,
+            "sourceFingerprintMeaning": "digest_of_reported_identity_claims_not_media_verification",
+            "evidenceFingerprint": "bf7d0b9edabeb9a7547e6506222ccc9a2a95628a9cfd09a7ad016c56162bec42",
+            "reportedBlockers": [],
+            "missingCategoryMeaning": "not_found_in_bounded_lookup_not_proof_of_failed_or_required_stage",
+            "status": "evidence_gaps"
+          }
+        }
+      ],
+      "sdkCalls": [],
+      "duplicateSdkInvocations": 0,
+      "unpricedSdkInvocations": 0,
+      "overallCostStatus": "recorded_api_only",
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0
+    }
+  ],
+  "stages": [
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.worker_admission.es",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.04763,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.source_admission.es",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.006303,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.run_admission.es",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.016997,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.prepare.es.group-0001",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.004484,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.prepare.es.group-0002",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.004688,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.prepare.es.group-0005",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.004737,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.prepare.es.group-0006",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.004566,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.prepare.es.group-0003",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.004796,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.prepare.es.group-0004",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.004781,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.prepare.es.group-0008",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.004815,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.prepare.es.group-0007",
+      "stageAttempts": 1,
+      "failedStages": 0,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.005061,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "local",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_applicable",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.translator.es.group-0001",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.011812,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "api",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.translator.es.group-0002",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.019424,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "api",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.translator.es.group-0005",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.018279,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "api",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.group.es.0001",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.03198,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.translator.es.group-0003",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.020335,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "api",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.translator.es.group-0004",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.025445,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "api",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.group.es.0005",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.041606,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.translator.es.group-0006",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.024174,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "api",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.translator.es.group-0007",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.027054,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "api",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.group.es.0002",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.040521,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.translator.es.group-0008",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.031366,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "api",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.group.es.0003",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.043526,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.group.es.0004",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.0473,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.group.es.0007",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.049456,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.group.es.0006",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.049119,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2.group.es.0008",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.050914,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "layer2_models",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.081056,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "stage": "canonical_layer2_worker",
+      "stageAttempts": 1,
+      "failedStages": 1,
+      "cacheHits": 0,
+      "elapsedSeconds": 0.963581,
+      "apiAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "cacheWriteTokens": null,
+      "reasoningTokens": null,
+      "usageMissingAttempts": 0,
+      "knownEstimatedUsd": 0.0,
+      "unknownCostAttempts": 0,
+      "billing": "orchestrator",
+      "apiLatencySeconds": null,
+      "missingLatencyAttempts": 0,
+      "unfinishedStageAttempts": 0,
+      "usageReceipts": 0,
+      "completedApiAttempts": 0,
+      "failedApiAttempts": 0,
+      "missingTokenFields": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      },
+      "elapsedStatus": "measured",
+      "tokenStatus": "not_recorded",
+      "costStatus": "no_api_receipts",
+      "apiLatencySampleCount": 0,
+      "apiLatencyP50Seconds": null,
+      "apiLatencyP95Seconds": null,
+      "usageReceiptCoverage": null,
+      "receiptConflictSha256": [],
+      "knownNonconflictingEstimatedUsd": 0.0,
+      "knownNonconflictingApiAttempts": 0
+    }
+  ],
+  "ledgerIntegrity": {
+    "status": "readable",
+    "damagedEvents": [],
+    "unattributedCostUnknown": false,
+    "originalBytesPreserved": true
+  },
+  "receiptIntegrity": {
+    "status": "consistent",
+    "conflicts": [],
+    "equivalentDuplicatesIgnored": 0
+  },
+  "unfinishedApiAttempts": [],
+  "unfinishedStages": [],
+  "notes": [
+    "Parent and child elapsed times overlap: do not sum all stages as wall time.",
+    "Known USD is an API list-price estimate, not an invoice or complete project cost.",
+    "Local compute, storage, network and in-conversation Codex costs are not allocated.",
+    "Missing usage/cost remains unknown; caches do not re-bill old responses."
+  ],
+  "modelCallReport": {
+    "schemaVersion": "sermon-model-call-report-v2",
+    "calls": [],
+    "totals": [],
+    "groups": [],
+    "creditUsage": null,
+    "equivalentDuplicatesIgnored": 0,
+    "coverage": {
+      "callCount": 0,
+      "conflictCallCount": 0,
+      "missingOutputTokenCalls": 0
+    }
+  },
+  "stageAttempts": [
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "c94605bd69774ca3b70c778b88109188",
+      "stage": "canonical_layer2_worker",
+      "spanId": "e05df85f63c44a0984b7a307d0622f8f",
+      "parentSpanId": null,
+      "startedAt": "2026-10-14T21:07:51.524628+00:00",
+      "finishedAt": "2026-10-14T21:07:52.489147+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.963581,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "c94605bd69774ca3b70c778b88109188",
+      "stage": "layer2.worker_admission.es",
+      "spanId": "8075535815be494088e14360796223ec",
+      "parentSpanId": "e05df85f63c44a0984b7a307d0622f8f",
+      "startedAt": "2026-10-14T21:07:51.525447+00:00",
+      "finishedAt": "2026-10-14T21:07:51.573174+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.04763,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2_models",
+      "spanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+      "parentSpanId": "e05df85f63c44a0984b7a307d0622f8f",
+      "startedAt": "2026-10-14T21:07:52.404258+00:00",
+      "finishedAt": "2026-10-14T21:07:52.486099+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.081056,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.source_admission.es",
+      "spanId": "464b0c39eb4a449db82054a994d5ccd8",
+      "parentSpanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+      "startedAt": "2026-10-14T21:07:52.404723+00:00",
+      "finishedAt": "2026-10-14T21:07:52.411079+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.006303,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.run_admission.es",
+      "spanId": "0ee7469922744e3f9ef2d42d693534eb",
+      "parentSpanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+      "startedAt": "2026-10-14T21:07:52.411292+00:00",
+      "finishedAt": "2026-10-14T21:07:52.428393+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.016997,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.group.es.0001",
+      "spanId": "c39ee1622df14b97bdb8a89ba7f7aec1",
+      "parentSpanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+      "startedAt": "2026-10-14T21:07:52.428912+00:00",
+      "finishedAt": "2026-10-14T21:07:52.469457+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.03198,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.group.es.0002",
+      "spanId": "35f880f308374ffabcbdd96f612c9759",
+      "parentSpanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+      "startedAt": "2026-10-14T21:07:52.429120+00:00",
+      "finishedAt": "2026-10-14T21:07:52.478239+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.040521,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.group.es.0005",
+      "spanId": "297b456b69274fb0a05b19b409e9541f",
+      "parentSpanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+      "startedAt": "2026-10-14T21:07:52.429866+00:00",
+      "finishedAt": "2026-10-14T21:07:52.475268+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.041606,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.group.es.0006",
+      "spanId": "5ee6354462ac43c6ae6c659b46a34f34",
+      "parentSpanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+      "startedAt": "2026-10-14T21:07:52.430122+00:00",
+      "finishedAt": "2026-10-14T21:07:52.484361+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.049119,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.group.es.0003",
+      "spanId": "b5b46354d51e4d58ae388d7a56873a5e",
+      "parentSpanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+      "startedAt": "2026-10-14T21:07:52.429433+00:00",
+      "finishedAt": "2026-10-14T21:07:52.480707+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.043526,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.group.es.0004",
+      "spanId": "db57c14f69a54ca4b473ff3fbd4cdf99",
+      "parentSpanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+      "startedAt": "2026-10-14T21:07:52.429685+00:00",
+      "finishedAt": "2026-10-14T21:07:52.482064+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.0473,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.group.es.0008",
+      "spanId": "784d6c6bf5784a4fb8d0342a7c9b111c",
+      "parentSpanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+      "startedAt": "2026-10-14T21:07:52.430754+00:00",
+      "finishedAt": "2026-10-14T21:07:52.485002+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.050914,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.group.es.0007",
+      "spanId": "760adc1176e84b8289f567fadfff5368",
+      "parentSpanId": "21bce0a73f3c48f0aa3c4ea29d9a6d5c",
+      "startedAt": "2026-10-14T21:07:52.430623+00:00",
+      "finishedAt": "2026-10-14T21:07:52.484282+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.049456,
+      "cacheHit": false,
+      "billing": "orchestrator"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.prepare.es.group-0001",
+      "spanId": "0d576e5cb7724502910374c8e9526d0a",
+      "parentSpanId": "c39ee1622df14b97bdb8a89ba7f7aec1",
+      "startedAt": "2026-10-14T21:07:52.432933+00:00",
+      "finishedAt": "2026-10-14T21:07:52.437571+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.004484,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.prepare.es.group-0002",
+      "spanId": "8d82e7ea862644ae8f2a855c532bf094",
+      "parentSpanId": "35f880f308374ffabcbdd96f612c9759",
+      "startedAt": "2026-10-14T21:07:52.433503+00:00",
+      "finishedAt": "2026-10-14T21:07:52.438306+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.004688,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.prepare.es.group-0005",
+      "spanId": "2fc68b7e36f84a5d8029aa0c94682e47",
+      "parentSpanId": "297b456b69274fb0a05b19b409e9541f",
+      "startedAt": "2026-10-14T21:07:52.433809+00:00",
+      "finishedAt": "2026-10-14T21:07:52.438841+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.004737,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.prepare.es.group-0006",
+      "spanId": "931bc309077a4dbfbd7dc0e1784458a6",
+      "parentSpanId": "5ee6354462ac43c6ae6c659b46a34f34",
+      "startedAt": "2026-10-14T21:07:52.434191+00:00",
+      "finishedAt": "2026-10-14T21:07:52.438810+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.004566,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.prepare.es.group-0003",
+      "spanId": "c2db91211e6147629c65e8ef1356b105",
+      "parentSpanId": "b5b46354d51e4d58ae388d7a56873a5e",
+      "startedAt": "2026-10-14T21:07:52.434465+00:00",
+      "finishedAt": "2026-10-14T21:07:52.439308+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.004796,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.prepare.es.group-0004",
+      "spanId": "9e29de9be16445b9b80142bb694edbfd",
+      "parentSpanId": "db57c14f69a54ca4b473ff3fbd4cdf99",
+      "startedAt": "2026-10-14T21:07:52.434680+00:00",
+      "finishedAt": "2026-10-14T21:07:52.439545+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.004781,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.prepare.es.group-0008",
+      "spanId": "62d97da7802b4756a23aaf23908a9cf6",
+      "parentSpanId": "784d6c6bf5784a4fb8d0342a7c9b111c",
+      "startedAt": "2026-10-14T21:07:52.435003+00:00",
+      "finishedAt": "2026-10-14T21:07:52.439882+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.004815,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.prepare.es.group-0007",
+      "spanId": "5c6426a80b8846068707c5672ae9d6e8",
+      "parentSpanId": "760adc1176e84b8289f567fadfff5368",
+      "startedAt": "2026-10-14T21:07:52.435498+00:00",
+      "finishedAt": "2026-10-14T21:07:52.440640+00:00",
+      "status": "completed",
+      "elapsedSeconds": 0.005061,
+      "cacheHit": false,
+      "billing": "local"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.translator.es.group-0001",
+      "spanId": "4a951161b2274e5ebbe1bb19d883d164",
+      "parentSpanId": "c39ee1622df14b97bdb8a89ba7f7aec1",
+      "startedAt": "2026-10-14T21:07:52.440108+00:00",
+      "finishedAt": "2026-10-14T21:07:52.458671+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.011812,
+      "cacheHit": false,
+      "billing": "api"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.translator.es.group-0002",
+      "spanId": "6481483c260e46bdb9bee7364a6fcb9d",
+      "parentSpanId": "35f880f308374ffabcbdd96f612c9759",
+      "startedAt": "2026-10-14T21:07:52.440816+00:00",
+      "finishedAt": "2026-10-14T21:07:52.468657+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.019424,
+      "cacheHit": false,
+      "billing": "api"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.translator.es.group-0005",
+      "spanId": "51db9d933e834a62986691502ba1584f",
+      "parentSpanId": "297b456b69274fb0a05b19b409e9541f",
+      "startedAt": "2026-10-14T21:07:52.441239+00:00",
+      "finishedAt": "2026-10-14T21:07:52.468934+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.018279,
+      "cacheHit": false,
+      "billing": "api"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.translator.es.group-0006",
+      "spanId": "44b39d612e79437fbc91f04412ac8f44",
+      "parentSpanId": "5ee6354462ac43c6ae6c659b46a34f34",
+      "startedAt": "2026-10-14T21:07:52.441615+00:00",
+      "finishedAt": "2026-10-14T21:07:52.476458+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.024174,
+      "cacheHit": false,
+      "billing": "api"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.translator.es.group-0003",
+      "spanId": "562f04b309b143588c0e96359e07a81c",
+      "parentSpanId": "b5b46354d51e4d58ae388d7a56873a5e",
+      "startedAt": "2026-10-14T21:07:52.442034+00:00",
+      "finishedAt": "2026-10-14T21:07:52.469939+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.020335,
+      "cacheHit": false,
+      "billing": "api"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.translator.es.group-0004",
+      "spanId": "f54abc6d31654e7e87c5deb7033f959b",
+      "parentSpanId": "db57c14f69a54ca4b473ff3fbd4cdf99",
+      "startedAt": "2026-10-14T21:07:52.442282+00:00",
+      "finishedAt": "2026-10-14T21:07:52.474784+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.025445,
+      "cacheHit": false,
+      "billing": "api"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.translator.es.group-0008",
+      "spanId": "d0d810ffaca54968a6814daa9712f7d6",
+      "parentSpanId": "784d6c6bf5784a4fb8d0342a7c9b111c",
+      "startedAt": "2026-10-14T21:07:52.442649+00:00",
+      "finishedAt": "2026-10-14T21:07:52.480335+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.031366,
+      "cacheHit": false,
+      "billing": "api"
+    },
+    {
+      "runId": "cf954076acaa447fb85de9ecf1202a88",
+      "workflowId": "cd4661ba3e4e4935ba5d74cecd169302",
+      "stage": "layer2.translator.es.group-0007",
+      "spanId": "de5f2aba18c64e02a0d0cbf1b3e64916",
+      "parentSpanId": "760adc1176e84b8289f567fadfff5368",
+      "startedAt": "2026-10-14T21:07:52.443680+00:00",
+      "finishedAt": "2026-10-14T21:07:52.476823+00:00",
+      "status": "failed",
+      "elapsedSeconds": 0.027054,
+      "cacheHit": false,
+      "billing": "api"
+    }
+  ]
+}
