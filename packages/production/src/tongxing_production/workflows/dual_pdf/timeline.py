@@ -9,7 +9,6 @@ import json
 import os
 import re
 import subprocess
-import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,26 +16,60 @@ from typing import Any, Callable
 
 import requests
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+from ...source import backend as _source
+from . import host as _host
+from . import post_live as run_post_live_subtitle_generation
+from . import run_status as post_live_run_status
 
-from backend.cloud import (  # noqa: E402
-    access_secret,
-    download_file_from_gcs,
-    read_gcs_text,
-    upload_file_to_gcs,
-    write_gcs_text,
-)
-from backend.config import upcoming_sunday  # noqa: E402
-from scripts.sermon_accounting import accounting_session, stage  # noqa: E402
-from backend.observability import log_event, url_summary  # noqa: E402
-from scripts import (  # noqa: E402
-    live_source_monitor,
-    run_post_live_subtitle_generation,
-    post_live_run_status,
-    youtube_data_api,
-)
+
+live_source_monitor = _host.HostModule(lambda: _host.current().unmoved.live_source_monitor())
+youtube_data_api = _host.HostModule(lambda: _host.current().unmoved.youtube_data_api())
+
+
+def __getattr__(name: str):
+    if name == "REPO_ROOT":
+        return _source.current().core.repo_root
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def access_secret(resource_name: str) -> str:
+    return _host.current().cloud.access_secret(resource_name)
+
+
+def download_file_from_gcs(uri: str, destination: str | Path) -> Path:
+    return _host.current().cloud.download_file_from_gcs(uri, destination)
+
+
+def read_gcs_text(uri: str) -> str:
+    return _host.current().cloud.read_gcs_text(uri)
+
+
+def upload_file_to_gcs(local_path: str | Path, uri: str) -> None:
+    return _host.current().cloud.upload_file_to_gcs(local_path, uri)
+
+
+def write_gcs_text(uri: str, value: str) -> None:
+    return _host.current().cloud.write_gcs_text(uri, value)
+
+
+def upcoming_sunday():
+    return _host.current().unmoved.upcoming_sunday()
+
+
+def accounting_session(*args, **kwargs):
+    return _host.current().unmoved.accounting().accounting_session(*args, **kwargs)
+
+
+def stage(*args, **kwargs):
+    return _host.current().unmoved.accounting().stage(*args, **kwargs)
+
+
+def log_event(event: str, **fields):
+    return _host.current().observability.log_event(event, **fields)
+
+
+def url_summary(url: str):
+    return _host.current().observability.url_summary(url)
 
 
 DEFAULT_STATE_URI = "gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json"

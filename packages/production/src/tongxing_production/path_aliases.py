@@ -153,6 +153,7 @@ WORKFLOWS = {
     # dual_pdf (tongxing_production.workflows.dual_pdf), batch W3a.
     'scripts/sermon_pipeline.py': PRODUCTION + 'workflows/dual_pdf/pipeline.py',
     'scripts/run_post_live_subtitle_generation.py': PRODUCTION + 'workflows/dual_pdf/post_live.py',  # W3c
+    'scripts/run_post_live_timeline_job.py': PRODUCTION + 'workflows/dual_pdf/timeline.py',
     'scripts/post_live_run_status.py': PRODUCTION + 'workflows/dual_pdf/run_status.py',
     'scripts/render_mobile_pdf_from_srt.py': PRODUCTION + 'workflows/dual_pdf/mobile_pdf.py',
     'scripts/render_sermon_interpretation_pdf.py': PRODUCTION + 'workflows/dual_pdf/interpretation_pdf.py',
