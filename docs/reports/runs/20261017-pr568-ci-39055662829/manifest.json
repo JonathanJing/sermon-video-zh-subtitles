@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr568-ci-39055662829",
+  "runs": [
+    {
+      "label": "pr568-full-ci-39055662829",
+      "source": "~/.codex/worktrees/g1-qc-cascade/sermon-video-zh-subtitles/artifacts/pr568-full-ci-39055662829",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr568-full-ci-39055662829",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 406,
+      "truncated": false,
+      "sha256": "e7b85396d3b1a3621fc6b26a3ea54d7be29eb7a7728eb9d80fc63b32abed1166",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
