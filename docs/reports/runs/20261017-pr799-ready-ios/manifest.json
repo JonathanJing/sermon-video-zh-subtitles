@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr799-ready-ios",
+  "runs": [
+    {
+      "label": "pr799-ready-ios-39070733845",
+      "source": "~/.codex/worktrees/ops-dev-bucket-readback/sermon-video-zh-subtitles/artifacts/pr799-ready-ios-39070733845",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr799-ready-ios-39070733845",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 322,
+      "truncated": false,
+      "sha256": "f2caeae9d377a87f02f156cd3866273be9c0c6b3a6616934b40c6b13332bd768",
+      "redactions": {}
+    },
+    {
+      "run": "pr799-ready-ios-39070733845",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 808,
+      "truncated": false,
+      "sha256": "73ad1e263a0460f2e025cd552fa53fd5cc2d3fe53f2c5dd362eee5dc445a9ecb",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
