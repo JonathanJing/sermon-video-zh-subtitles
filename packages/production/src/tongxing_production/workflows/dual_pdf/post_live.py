@@ -23,6 +23,7 @@ from zoneinfo import ZoneInfo
 from ... import path_aliases
 from ...source import backend as _source
 from . import host as _host
+from . import run_status as post_live_run_status
 
 
 def _repo_root():
@@ -100,7 +101,6 @@ def _subprocess_environment():
 
 # scripts/ modules with no batch yet, looked up at every use.
 live_source_monitor = _host.HostModule(lambda: _host.current().unmoved.live_source_monitor())
-post_live_run_status = _host.HostModule(lambda: _host.current().unmoved.post_live_run_status())
 series_terminology = _host.HostModule(lambda: _host.current().unmoved.series_terminology())
 
 

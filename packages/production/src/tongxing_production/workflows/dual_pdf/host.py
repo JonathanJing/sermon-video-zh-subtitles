@@ -17,7 +17,6 @@ from ... import ports
 @dataclass(frozen=True)
 class Unmoved:
     live_source_monitor: Callable[[], ModuleType]
-    post_live_run_status: Callable[[], ModuleType]
     series_terminology: Callable[[], ModuleType]
     export_saturday_live_context: Callable[[], ModuleType]
     reading_edition: Callable[[], ModuleType]       # build_sermon_reading_edition_with_openai
