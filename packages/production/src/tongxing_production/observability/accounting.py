@@ -285,8 +285,8 @@ def _bounded_event_identity(directory, identity):
     path = folder / (digest + ".json")
     outbox.jobs._reject_link(path, directory=False)
     if path.exists():
-        existing = outbox.jobs._read(path)
-        if existing != manifest:
+        existing_modules = load_execution_identity_sidecar(directory, digest)
+        if existing_modules != modules:
             raise ValueError("execution_identity_sidecar_conflict")
     else:
         outbox.jobs._sync_directory_ancestry(folder)
