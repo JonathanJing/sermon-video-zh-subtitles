@@ -2,11 +2,13 @@
 import copy
 import json
 import io
+import time
 import urllib.error
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from jsonschema import Draft202012Validator, ValidationError
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import sermon_strict_layer2 as s
@@ -493,7 +495,10 @@ class StrictAdapterTests(unittest.TestCase):
                 self.root=base/str(index)
                 with self.session():
                     self.generate()
-                    with patch.object(pipeline.urllib.request,'urlopen',side_effect=error) as transport, patch.object(pipeline.time,'sleep') as sleep:
+                    sleep=Mock()
+                    # Keep the retry probe local to the transport module; other tests may have live threads.
+                    clock=SimpleNamespace(monotonic=time.monotonic,sleep=sleep)
+                    with patch.object(pipeline.urllib.request,'urlopen',side_effect=error) as transport, patch.object(legacy_openai,'time',clock):
                         receipt=s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)
                         self.assertEqual(receipt['executionStatus'],'outcome_unknown')
                         self.assertEqual(receipt['reviewVerdict'],'not_assessed')
