@@ -44,14 +44,32 @@ import threading
 import urllib.request
 import uuid
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import machine_quality_waiver as waiver
-from scripts import target_audio_auto_qc as audio_qc
+from .. import path_aliases
+from . import backend as _compute
+from .unmoved import audio_qc, waiver
 
-json_sha256 = waiver.json_sha256
-ROOT = Path(__file__).resolve().parents[1]
-SCREENER = ROOT / "scripts" / "screen_target_language_audio_units.py"
+
+def json_sha256(value) -> str:
+    """The waiver's canonical JSON hash, looked up at call time."""
+    return waiver.json_sha256(value)
+
+
+def _checkout_root() -> Path:
+    return _compute.current().checkout_root()
+
+
+def _screener_path() -> Path:
+    """The screener's file where its legacy key resolves today (it moves with L3 A3)."""
+    return _checkout_root() / path_aliases.resolve("scripts/screen_target_language_audio_units.py")
+
+
+def __getattr__(name):
+    # Callers that read the former module constants.
+    if name == "ROOT":
+        return _checkout_root()
+    if name == "SCREENER":
+        return _screener_path()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 CACHE_NAMESPACE = "machine-qc-audio-v1"
 QWEN_LANGUAGES = {"zh-Hans": "Chinese", "ko": "Korean", "es": "Spanish"}
 
@@ -84,9 +102,8 @@ def implementation_sha256() -> str:
     """This transport module; its hash joins every opinion's ``settings``."""
     # Keys stay the scripts/ file names; a file that moved into the production
     # package is hashed where it lives now, not as its import facade.
-    from scripts import sermon_source_producer_compatibility as compatibility
-    root = Path(__file__).resolve().parents[1]
-    return json_sha256({name: file_sha256(root / compatibility.resolve("scripts/" + name)) for name in (
+    root = _checkout_root()
+    return json_sha256({name: file_sha256(root / path_aliases.resolve("scripts/" + name)) for name in (
         "machine_qc_audio_transports.py", "machine_qc_budget_authorization.py",
         "sermon_source_budget.py", "sermon_transcription_request.py", "sermon_workflow_jobs.py")})
 
@@ -262,9 +279,10 @@ class QwenPrimaryAsr(_Asr):
         weights = self.model_path / "model.safetensors"
         if not weights.is_file() or self.model_revision != f"model.safetensors:sha256:{file_sha256(weights)}":
             problems.append("live Qwen3-ASR weights differ from the screening's modelRevision")
-        from scripts.screen_target_language_audio_units import SCORING, implementation_sha256
+        from .unmoved import screener
+        SCORING, implementation_sha256 = screener.SCORING, screener.implementation_sha256
         expected_implementation = (implementation_sha256() if self.settings.get("scoring") == SCORING
-                                   else file_sha256(SCREENER))
+                                   else file_sha256(_screener_path()))
         if self.settings.get("implementationSha256") != expected_implementation:
             problems.append("the screener changed since this screening; rescreen with the current code")
         if (self.settings.get("executionDevice"), self.settings.get("dtype")) != ("cuda:0", "bfloat16"):
@@ -368,7 +386,7 @@ class OpenAiTranscribeSecondary(_Asr):
     role = "secondary"
 
     def __init__(self, locale: str, *, cache: Path, max_calls: int, budget=None):
-        from scripts import sermon_openai_runtime as runtime
+        from . import openai_runtime as runtime
         route = runtime.selected_route()
         if route is None:
             raise ValueError("The secondary ASR calls the OpenAI API: start this driver under "
@@ -378,7 +396,8 @@ class OpenAiTranscribeSecondary(_Asr):
         if type(max_calls) is not int or max_calls < 0:
             raise ValueError("Invalid secondary ASR call cap")
         context = getattr(budget, "qc_context", None)
-        from scripts.machine_qc_budget_authorization import credential_fingerprint, CONTEXT_SCHEMA
+        from .unmoved import budget_authorization
+        credential_fingerprint, CONTEXT_SCHEMA = budget_authorization.credential_fingerprint, budget_authorization.CONTEXT_SCHEMA
         if not isinstance(context, dict) or context.get("schemaVersion") != CONTEXT_SCHEMA:
             raise ValueError("Secondary ASR requires scoped v4 audio budget authorization context")
         if (context.get("targetLocale") != locale or context.get("environment") != route["environment"] or context.get("openaiRoute") != route or context.get("credentialSha256") != credential_fingerprint(os.environ.get("OPENAI_API_KEY"))):
@@ -410,8 +429,8 @@ class OpenAiTranscribeSecondary(_Asr):
         return super().opinion(wav, text, locale)
 
     def transcribe(self, wav: bytes) -> str:
-        from scripts import sermon_transcription_request as transcription
-        from scripts.sermon_openai_runtime import selected_route
+        from . import transcription_request as transcription
+        from .openai_runtime import selected_route
         if selected_route() != self.route:
             raise ValueError("Secondary ASR selected runtime changed")
         self.budget.verify()
@@ -432,7 +451,7 @@ class OpenAiTranscribeSecondary(_Asr):
         operation = "judge." + json_sha256(identity)
         with _secondary_flight(self.budget.root, operation):
             cached = self.budget.returned(operation, identity)
-            from scripts import sermon_workflow_jobs as jobs
+            from .unmoved import jobs
             reusable = self.budget._reusable(operation, jobs._digest(identity)) if not cached and self.budget.reuse_roots else None
             charged = not cached and reusable is None
             with self._calls_lock:
@@ -463,7 +482,8 @@ class OpenAiTranscribeSecondary(_Asr):
 
 
 def _scoring() -> str:
-    from scripts.screen_target_language_audio_units import SCORING
+    from .unmoved import screener
+    SCORING = screener.SCORING
     return SCORING
 
 
@@ -471,7 +491,8 @@ def _scoring() -> str:
 
 def render_identity(job: dict) -> dict:
     """The production TTS behind a speech job: its voice and synthesis identity."""
-    from scripts.target_audio_predicted_schedule import synthesis_identity
+    from .unmoved import predicted_schedule
+    synthesis_identity = predicted_schedule.synthesis_identity
     adapter = job.get("adapter") or {}
     return {"provider": adapter.get("provider"), "model": adapter.get("model"),
             "checkpointSha256": adapter.get("conditioningSha256"), "synthesis": synthesis_identity(job)}
@@ -510,8 +531,8 @@ class QwenTtsRender:
 
     def _synthesizer(self):
         if self._synth is None:
-            from scripts import render_formal_target_language_speech as formal
-            from scripts import render_multilingual_voice_demos as demos
+            from .unmoved import formal
+            from .unmoved import demos
             demos.validate_checkpoint({"checkpointPath": str(self.checkpoint),
                                        "checkpointSha256": self.adapter["conditioningSha256"],
                                        "speakerKey": self.adapter["speakerKey"],
@@ -524,7 +545,7 @@ class QwenTtsRender:
     def __call__(self, text: str, locale: str) -> bytes:
         if locale != self.job["targetLocale"]:
             raise ValueError("TTS render requested for another locale")
-        from scripts import render_formal_target_language_speech as formal
+        from .unmoved import formal
         # Calibration mutations are not job units, but must use the same frozen
         # normalization policy before dispatch and before deriving the cache key.
         forms = formal.policy_spoken_forms({**self.job, "units": [
@@ -545,7 +566,7 @@ class QwenTtsRender:
             if record.get("audioSha256") != _sha(data):
                 raise ValueError(f"Cached TTS render {key} changed after it was written")
             return data
-        from scripts import render_formal_target_language_speech as formal
+        from .unmoved import formal
         samples, rate = self._synthesizer()(spoken, self.adapter["languageParameter"], self.adapter["speakerKey"],
                                             seed=self.settings["seed"])
         folder.mkdir(parents=True, exist_ok=True)
@@ -567,7 +588,8 @@ class FakeTts:
     """Plumbing-only TTS: distinct synthetic audio per text, remembering what it 'said'."""
 
     def __init__(self, job: dict):
-        from scripts.target_audio_predicted_schedule import speech_units
+        from .unmoved import predicted_schedule
+        speech_units = predicted_schedule.speech_units
         self.speech_units = speech_units
         self.identity = render_identity(job)
         self.said: dict[str, str] = {}

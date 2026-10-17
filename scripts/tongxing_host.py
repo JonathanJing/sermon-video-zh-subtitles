@@ -881,6 +881,17 @@ def _upcoming_sunday(*arguments, **options):
     return upcoming_sunday(*arguments, **options)
 
 
+def compute_unmoved():
+    return compute_backend.Unmoved(
+        waiver=_scripts_module('machine_quality_waiver'), audio_qc=_scripts_module('target_audio_auto_qc'),
+        budget_authorization=_scripts_module('machine_qc_budget_authorization'),
+        screener=_scripts_module('screen_target_language_audio_units'),
+        predicted_schedule=_scripts_module('target_audio_predicted_schedule'),
+        formal_renderer=_scripts_module('render_formal_target_language_speech'),
+        voice_demos=_scripts_module('render_multilingual_voice_demos'),
+        jobs=_scripts_module('sermon_workflow_jobs'))
+
+
 def dual_pdf_unmoved():
     return dual_pdf_host.Unmoved(
         live_source_monitor=_scripts_module('live_source_monitor'),
@@ -902,6 +913,8 @@ ENTRY_LOAD_TIME_IMPORTS = {
     'tongxing_production.workflows.dual_pdf.post_live': (
         'backend.cloud', 'backend.observability', 'scripts.live_source_monitor',
         'scripts.post_live_run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
+    # G1: the audio QC transport imported the waiver and the audio QC checks at load time.
+    'tongxing_production.compute.qc_audio_transports': ('scripts.machine_quality_waiver', 'scripts.target_audio_auto_qc'),
     # L4 D2: the app release builder imported the waiver release basis at load time.
     'tongxing_production.delivery.app_release': ('scripts.machine_quality_release_basis',),
     'tongxing_production.workflows.dual_pdf.codex_local': (
@@ -967,7 +980,8 @@ observability_backend.configure(observability_backend.ObservabilityBackend(
 storage_backend.configure(storage_backend.StorageBackend(job_files=job_files()))
 compute_backend.configure(compute_backend.ComputeBackend(accounting=_accounting, resources=_resources_port,
                                                          artifact_root=lambda: _core.artifact_root,
-                                                         job_files=lambda: storage_backend.current().job_files))
+                                                         job_files=lambda: storage_backend.current().job_files,
+                                                         checkout_root=lambda: ROOT, unmoved=compute_unmoved()))
 source_backend.configure(source_backend.SourceBackend(core=_core, provider=_provider, code=_code, mfa=mfa(),
                                                       snapshot=_snapshot, compute=_compute,
                                                       resources=_resources_port, adjudication=adjudication(),

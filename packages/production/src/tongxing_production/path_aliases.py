@@ -85,6 +85,8 @@ COMPUTE = {
     'scripts/openai_layer2_transport.py': PRODUCTION + 'compute/transports/openai_layer2.py',
     'scripts/codex_layer2_resources.py': PRODUCTION + 'compute/transports/codex_resources.py',
     'scripts/sermon_codex_transport.py': PRODUCTION + 'compute/transports/codex_cli.py',
+    # Closure window G1: the audio QC transport (in W; computes T).
+    'scripts/machine_qc_audio_transports.py': PRODUCTION + 'compute/qc_audio_transports.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.
