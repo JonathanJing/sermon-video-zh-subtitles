@@ -1,0 +1,21 @@
+
+== 2026-10-14T23:33:56+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/clip_e2e_spark.py --runtime ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/spark-runtime-eric.json audio-qc --locale es --stage ~/dgx-spark-benchmark/results/clip-e2e-opus280-20261004-w-es-aqc --code repo-4fe292be --audio-package ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/l3/es/audio-package.json --state-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-w-es-aqc/textqc-es/state --api-budget-authorization ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-w-es-aqc/plans/qc-es/qc-es/api-budget-authorization.json --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-w-es-aqc/aqc/es --run-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/aqc/run-es --prior-budget-plan ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/plans/qc-es --openai-environment dev --max-api-calls 150
+rsync: [Receiver] mkdir "~/dgx-spark-benchmark/results/clip-e2e-opus280-20261004-w-es-aqc/mac-artifacts/clip-e2e-20261004-opus-w-es-aqc/aqc/es" failed: No such file or directory (2)
+rsync error: error in file IO (code 11) at main.c(800) [Receiver=3.2.7]
+rsync(55555): error: unexpected end of file
+Traceback (most recent call last):
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/clip_e2e_spark.py", line 549, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/clip_e2e_spark.py", line 545, in main
+    return handler(args, runtime, Spark(runtime["host"]), session)
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/clip_e2e_spark.py", line 435, in audio_qc
+    spark.put(str(cmap), f"{mirror}/{relative(out)}/")
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/clip_e2e_spark.py", line 98, in put
+    subprocess.run(["rsync", "-a", "-e", "ssh", local, f"{self.host}:{remote}"], check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['rsync', '-a', '-e', 'ssh', '~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-w-es-aqc/aqc/es/tts-checkpoint-map.container.json', '<email>:~/dgx-spark-benchmark/results/clip-e2e-opus280-20261004-w-es-aqc/mac-artifacts/clip-e2e-20261004-opus-w-es-aqc/aqc/es/']' returned non-zero exit status 11.
