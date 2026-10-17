@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-weekly-projection-sidecar-combined",
+  "runs": [
+    {
+      "label": "weekly-projection-sidecar-combined",
+      "source": "~/.codex/worktrees/weekly-report-projection/sermon-video-zh-subtitles/artifacts/weekly-projection-sidecar-combined",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-projection-sidecar-combined",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 124,
+      "truncated": false,
+      "sha256": "c91e46efe4b68c1e49e84ab54aadcbd514bbc621233b1384f246c635ce016a94",
+      "redactions": {}
+    },
+    {
+      "run": "weekly-projection-sidecar-combined",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 248,
+      "truncated": false,
+      "sha256": "84fc47a6fdc6df788c8aa6b57e9d1df8958d6dda15b232f3e6a801692baa06bd",
+      "redactions": {}
+    },
+    {
+      "run": "weekly-projection-sidecar-combined",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 85,
+      "truncated": false,
+      "sha256": "bb32e13c32d34b983d61d118e80b660769b8d8ae7ee19127bf7327758ddf90d6",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
