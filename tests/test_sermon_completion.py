@@ -237,4 +237,22 @@ class CompletionTests(unittest.TestCase):
         with self.assertRaises(c.ContractError):
             compatibility.verify(compatibility.CONTRACTS_SPLIT_HISTORICAL_SHA256,after,planned,binding)
 
+    def test_measure_move_generation_covers_only_the_moved_measure(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.MEASURE_MOVE_HISTORICAL_SHA256,compatibility.MEASURE_MOVE_SOURCE_SHA256
+        for path in compatibility.MEASURE_MOVE_CHANGED:
+            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.MEASURE_MOVE_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.MEASURE_MOVE_MIGRATION)
+        self.assertEqual(step['changedModules'],compatibility.MEASURE_MOVE_CHANGED)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['productionEligible']),(0,0,False))
+        # Generations do not compose: a v7-era parent cannot jump straight to the I4 checkout.
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.STORAGE_MOVE_HISTORICAL_SHA256,after,planned,binding)
+
 if __name__=='__main__':unittest.main()
