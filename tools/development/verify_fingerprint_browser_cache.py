@@ -13,7 +13,7 @@ def main():
     parser.add_argument('--browser',required=True,type=pathlib.Path)
     parser.add_argument('--out',required=True,type=pathlib.Path)
     args=parser.parse_args()
-    root=pathlib.Path(__file__).resolve().parents[1]/'apps/listening-web'
+    root=pathlib.Path(__file__).resolve().parents[2]/'apps/listening-web'
     args.out.parent.mkdir(parents=True,exist_ok=True)
     index={'schemaVersion':'sermon-landmark-index-v1','algorithmVersion':'spectral-landmarks-v1','pageId':'synthetic-browser-cache','sourceSha256':'a'*64,'trackSha256':'b'*64,'sourceStartSeconds':20,'sourceEndSeconds':220,'durationSeconds':200,'sampleRate':8000,'hopSize':256,'postings':{'123':[1,20]}}
     body=json.dumps(index).encode();sha=hashlib.sha256(body).hexdigest()
