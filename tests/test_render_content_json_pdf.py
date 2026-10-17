@@ -45,17 +45,28 @@ class RenderContentJsonPdfTest(unittest.TestCase):
     def test_machine_checked_disclosure_stays_in_footer(self):
         self.assertTrue(mod.footer_disclaimer(CONTENT).startswith("本页文稿经机器质检"))
         self.assertEqual(mod.footer_disclaimer({}), mod.renderer.COMPACT_DISCLAIMER)
+        with self.assertRaises(SystemExit):
+            mod.footer_disclaimer({"status": "machine_checked"})
 
     def test_english_reference_fills_missing_source_by_group(self):
         content = {"pageId": "page-1", "targetLocale": "zh-Hans",
                    "cues": [{"start": 0, "end": 2, "text": "神爱世人。", "textGroupId": "g1"}]}
-        reference = {"pageId": "page-1", "targets": {"zh-Hans": {
+        reference = {"schemaVersion": "sermon-published-english-reference-v1", "reviewState": "human_approved",
+                     "pageId": "page-1", "targets": {"zh-Hans": {
             "contentSha256": "abc", "blocks": [{"textGroupId": "g1", "english": "God so loved the world."}]}}}
         english = mod.reference_english(reference, content, "abc")
         _, secondary = mod.content_cues(content, english)
         self.assertEqual(secondary[0].text, "God so loved the world.")
         with self.assertRaises(SystemExit):
             mod.reference_english(reference, content, "other")
+        with self.assertRaises(SystemExit):
+            mod.reference_english(dict(reference, reviewState="draft"), content, "abc")
+
+    def test_partial_english_is_rejected(self):
+        content = {"cues": [{"start": 0, "end": 1, "text": "一。", "source": "One."},
+                            {"start": 1, "end": 2, "text": "二。"}]}
+        with tempfile.TemporaryDirectory() as tmp, self.assertRaises(SystemExit):
+            mod.render_content_pdf(content, out=Path(tmp) / "p.pdf")
 
     def test_missing_english_is_rejected_unless_target_only(self):
         content = {"pageId": "page-1", "cues": [{"start": 0, "end": 2, "text": "神爱世人。"}]}

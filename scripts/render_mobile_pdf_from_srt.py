@@ -54,6 +54,7 @@ SECONDARY_INDENT = 8
 MARGIN_X = 24
 MARGIN_TOP = 30
 MARGIN_BOTTOM_WITH_DISCLAIMER = 76
+FOOTER_MAX_LINES = 3
 MARGIN_BOTTOM_WITHOUT_DISCLAIMER = 32
 KINSOKU_NO_LINE_START = frozenset("，。！？；：、）》】〉』”’…—％‰℃")
 KINSOKU_NO_LINE_END = frozenset("（《【〈『“‘")
@@ -1223,7 +1224,7 @@ def draw_footer(
     canvas_obj.setFillColor(colors.HexColor("#526172"))
     canvas_obj.setFont(font_name, FOOTER_FONT_SIZE)
     footer_width = page_width - margin_x * 2
-    max_lines = 3 if disclaimer == DEFAULT_DISCLAIMER else 2
+    max_lines = FOOTER_MAX_LINES
     footer_lines = wrap_text(disclaimer, font_name, FOOTER_FONT_SIZE, footer_width)[:max_lines]
     y = 48 if len(footer_lines) == 3 else 40 if len(footer_lines) == 2 else 31
     for line in footer_lines:
