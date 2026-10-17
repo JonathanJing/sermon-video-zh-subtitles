@@ -7,7 +7,11 @@ model dispatch on merge, approval, deployment or locale orchestration is added.
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import sys
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 
 def main(argv=None):
