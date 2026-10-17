@@ -13,9 +13,9 @@
       "run": "pr661-full-ci-39055682432",
       "path": "outcome.json",
       "kind": "whole",
-      "bytes": 403,
+      "bytes": 406,
       "truncated": false,
-      "sha256": "bdf0f597f220e7636ae17be64ad61e7a118bd7a05eaaab36944e401ece3230d2",
+      "sha256": "2ffccbe6e6d3890a8f50a77355d52380cf4c0937963f789aac3e4e22408a9346",
       "redactions": {}
     }
   ],
