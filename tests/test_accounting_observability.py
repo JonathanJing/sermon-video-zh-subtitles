@@ -82,7 +82,11 @@ class ObservabilityTests(unittest.TestCase):
             path.chmod(0o644)
             _, damaged = accounting.read_events(temporary)
             self.assertEqual(len(damaged), 1)
+            with self.assertRaisesRegex(ValueError, 'sidecar_permissions'):
+                accounting_impl._bounded_event_identity(temporary, identity)
             path.chmod(0o600)
+            self.assertEqual(accounting_impl._bounded_event_identity(temporary, identity)[
+                'loadedProjectCodeManifestSha256'], digest)
             sidecar_bytes = path.read_bytes()
             path.write_text('[' * 10000 + '0' + ']' * 10000)
             _, damaged = accounting.read_events(temporary)
