@@ -29,6 +29,7 @@ from tongxing_production.delivery import backend as delivery_backend  # noqa: E4
 from tongxing_production.audio import backend as audio_backend  # noqa: E402
 from tongxing_production.review import backend as review_backend  # noqa: E402
 from tongxing_production.compute import backend as compute_backend  # noqa: E402
+from tongxing_production.storage import backend as storage_backend  # noqa: E402
 from tongxing_production.workflows.dual_pdf import host as dual_pdf_host  # noqa: E402
 
 
@@ -881,6 +882,21 @@ ENTRY_LOAD_TIME_IMPORTS = {
 }
 
 
+def _job_directory_fd(path):
+    from scripts import sermon_workflow_jobs as jobs
+    return jobs._directory_fd(path)
+
+
+def _job_sync_directory_ancestry(path):
+    from scripts import sermon_workflow_jobs as jobs
+    return jobs._sync_directory_ancestry(path)
+
+
+def job_files() -> ports.JobFiles:
+    # Temporary until the closure window W moves these primitives into storage/files.py.
+    return ports.JobFiles(directory_fd=_job_directory_fd, sync_directory_ancestry=_job_sync_directory_ancestry)
+
+
 def load_producer_imports():
     import importlib
     for name in EAGER_PRODUCER_IMPORTS:
@@ -907,6 +923,7 @@ _measure, _workspace, _accounting = measure(), workspace(), accounting()
 _schemas, _review, _diagnostic, _waivers = schemas(), review(), diagnostic(), waivers()
 _plugins, _transports = plugins(), transports()
 
+storage_backend.configure(storage_backend.StorageBackend(job_files=job_files()))
 compute_backend.configure(compute_backend.ComputeBackend(accounting=_accounting))
 source_backend.configure(source_backend.SourceBackend(core=_core, provider=_provider, code=_code, mfa=mfa(),
                                                       snapshot=_snapshot, compute=_compute,

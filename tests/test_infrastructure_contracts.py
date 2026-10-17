@@ -135,7 +135,10 @@ class SplitClosureTests(unittest.TestCase):
         def sha(path):
             return hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
         legacy_inputs = {name: sha(path_aliases.resolve('scripts/' + name)) for name in prefect.CLOSURE}
-        members = path_aliases.SPLIT_MEMBERS['scripts/sermon_review_contracts.py']
+        # Every closure member split across package files (I1 review contracts, I2 harness
+        # and release workflow) adds exactly the files that took over the rest.
+        members = [path for name in prefect.CLOSURE for path in path_aliases.SPLIT_MEMBERS.get('scripts/' + name, ())]
+        self.assertIn(path_aliases.PRODUCTION + 'storage/locks.py', members)
         self.assertEqual(prefect.code_identity(),
                          canonical.canonical_sha256({**legacy_inputs, **{path: sha(path) for path in members}}))
 

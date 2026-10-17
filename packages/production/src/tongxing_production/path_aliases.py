@@ -143,7 +143,9 @@ WORKFLOWS = {
 CONTRACTS = {       # tongxing_production.contracts, batch I1
     'scripts/canonical_pipeline_definition.py': PRODUCTION + 'contracts/pipeline_definition.py',
 }
-STORAGE = {}        # tongxing_production.storage, batch I2
+STORAGE = {         # tongxing_production.storage, batch I2
+    'scripts/sermon_public_snapshot.py': PRODUCTION + 'storage/snapshot.py',
+}
 OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
 
 # I1 moved generic portions of the legacy review module to contracts; include them
@@ -151,6 +153,9 @@ OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
 # Package files that took over part of a split legacy file; closures that listed
 # the legacy key list these as well, so they cover the same code as before.
 SPLIT_MEMBERS = {
+    # Infrastructure I2: the path constraint, atomic writes and work locks.
+    'scripts/sermon_release_workflow.py': (PRODUCTION + 'storage/paths.py',),
+    'scripts/sermon_execution_harness.py': (PRODUCTION + 'storage/files.py', PRODUCTION + 'storage/locks.py'),
     # workflows/compute C4: the remote-call group extracted from the legacy monolith.
     # W3b: the Layer 1 English group and its file helpers.
     'scripts/sermon_pipeline.py': (PRODUCTION + 'compute/legacy_openai.py', PRODUCTION + 'source/post_live_english.py'),

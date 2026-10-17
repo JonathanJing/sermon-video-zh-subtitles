@@ -212,4 +212,29 @@ class CompletionTests(unittest.TestCase):
             compatibility.verify(compatibility.TRANSPORT_MOVE_SOURCE_SHA256,before,before,binding)
 
 
+    def test_storage_move_generation_covers_only_the_moved_snapshot(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.STORAGE_MOVE_HISTORICAL_SHA256,compatibility.STORAGE_MOVE_SOURCE_SHA256
+        for path in compatibility.STORAGE_MOVE_CHANGED:
+            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        for member,sha in compatibility.STORAGE_MOVE_MEMBER_SHA256.items():
+            self.assertEqual(sha,c.bytes_sha256((repository/member).read_bytes()))
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.STORAGE_MOVE_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        planned.update(compatibility.STORAGE_MOVE_MEMBER_SHA256)
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.STORAGE_MOVE_MIGRATION)
+        self.assertEqual(step['changedModules'],compatibility.STORAGE_MOVE_CHANGED)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['productionEligible']),(0,0,False))
+        for member in compatibility.STORAGE_MOVE_MEMBER_SHA256:
+            changed_members=dict(planned);changed_members[member]='f'*64
+            with self.assertRaises(c.ContractError):
+                compatibility.verify(before,after,changed_members,binding)
+        # Generations do not compose: a pre-I1 parent cannot jump straight to the I2 checkout.
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.CONTRACTS_SPLIT_HISTORICAL_SHA256,after,planned,binding)
+
 if __name__=='__main__':unittest.main()
