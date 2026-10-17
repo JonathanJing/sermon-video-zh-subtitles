@@ -7,6 +7,8 @@ where the code calls it. Renamed record fields are mapped to the old attribute n
 """
 from __future__ import annotations
 
+from importlib import import_module
+
 from . import backend as _audio
 
 
@@ -37,10 +39,22 @@ def _current():
     return _audio.current()
 
 
+# A3's renderer freezes a host-provided Korean rule at module load. A4 entries
+# may be imported before the host is bound, so resolve the package module only
+# when the entry actually uses it. Attribute patches on this proxy still land.
+renderer = _HostModule(lambda: import_module('tongxing_production.audio.renderer'))
+
+
 # sermon_accounting: the four functions Layer 3 calls, as Accounting port fields.
 accounting = _Renamed(lambda: _current().accounting,
                       {'accounting_session': 'session', 'stage': 'stage', 'record_workload': 'record_workload',
-                       'bounded_dependencies': 'bounded_dependencies'})
+                       'bounded_dependencies': 'bounded_dependencies', '_finalize': 'finalize',
+                       'orchestration': 'orchestration'},
+                      {'AccountingWriteError': 'write_error'})
+diagnostic = _HostModule(lambda: _current().diagnostic)
+local_observation = _HostModule(lambda: _current().unmoved.local_model_observation())
+stage = _Renamed(lambda: _current().review,
+                 {'validate_audio_screening_review': 'audio_screening'})
 # four_layer_measure: producer timing, same names on the Measure port.
 measure = _HostModule(lambda: _current().measure)
 # render_multilingual_voice_demos: the checkpoint map reader and checkpoint check.

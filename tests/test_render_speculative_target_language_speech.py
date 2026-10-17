@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from scripts import render_formal_target_language_speech as formal
 from scripts import render_speculative_target_language_speech as subject
+from scripts import sermon_accounting as ledger_accounting
 from tests import test_prepare_target_language_speech_job as speech_fixture
 from tests import test_render_formal_target_language_speech as formal_fixture
 
@@ -133,7 +134,7 @@ class SpeculativeRenderTests(unittest.TestCase):
             self.render(group_ids=['g1'])
         with profile.session(logs,'root-render',work_kind='engineering',evidence_mode='synthetic') as root:
             self.render(group_ids=['g1'],predecessor_spans=[])
-        rows, errors = subject.accounting.read_events(logs)
+        rows, errors = ledger_accounting.read_events(logs)
         self.assertFalse(errors)
         entries = {row['runId']:row for row in rows if row['event']=='stage_started' and row['stage']=='preview.validate_inputs'}
         self.assertIsNone(entries[legacy['runId']]['dependsOn'])
@@ -324,6 +325,9 @@ class DiagnosticPreviewTests(unittest.TestCase):
         self.assertFalse(manifest['productionEligible'])
         self.assertEqual(manifest['humanAcceptance'], 'pending')
         self.assertEqual(manifest['diagnosticContextSha256'], subject.identity.json_sha256(self.context))
+        code = subject.audio_backend.current().code
+        self.assertEqual(manifest['previewRendererSha256'], subject.identity.sha256(
+            code.implementation_path('scripts/render_speculative_target_language_speech.py')))
         saved_source = formal.package.read_object(self.preview.out / 'source.json')
         self.assertEqual(saved_source, self.diag.source)
         self.assertFalse(saved_source['review']['humanApproval'])
@@ -447,7 +451,7 @@ class DiagnosticPreviewTests(unittest.TestCase):
             self.render()
         with profile.session(log_root, 'preview-test', work_kind='production', evidence_mode='synthetic') as warm:
             self.render()
-        rows, errors = subject.accounting.read_events(log_root)
+        rows, errors = ledger_accounting.read_events(log_root)
         self.assertFalse(errors)
         cold_rows = [row for row in rows if row['runId'] == cold['runId']]
         warm_rows = [row for row in rows if row['runId'] == warm['runId']]
