@@ -132,7 +132,7 @@ def _run_profile(root,fd,event):
 
 
 def deliver(directory,event):
-    if not isinstance(event, dict) or event.get('contractVersion') not in contract.READ_VERSIONS:
+    if not isinstance(event, dict) or not contract._readable_version(event.get('contractVersion')):
         raise ValueError('unsupported_contract_version_for_write')
     contract.validate_event(event)
     if contract._schema_version(event) != event['contractVersion']:
