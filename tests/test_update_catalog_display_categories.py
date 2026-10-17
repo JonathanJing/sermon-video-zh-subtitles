@@ -1,5 +1,6 @@
 import copy
 import importlib.util
+import importlib
 import json
 import subprocess
 import sys
@@ -15,6 +16,7 @@ SCRIPT = ROOT / "scripts/update_catalog_display_categories.py"
 SPEC = importlib.util.spec_from_file_location("category_updates", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
+IMPLEMENTATION = importlib.import_module("tools.ops.update_catalog_display_categories")
 
 
 def category(label="正式播放版"):
@@ -32,6 +34,10 @@ def catalog(version=3):
 
 
 class CategoryUpdateTests(unittest.TestCase):
+    def test_legacy_import_and_moved_tool_share_module(self):
+        self.assertIs(importlib.import_module("scripts.update_catalog_display_categories"),
+                      importlib.import_module("tools.ops.update_catalog_display_categories"))
+
     def test_shared_contract_matches_all_inline_definitions(self):
         shared = json.loads((ROOT / "schemas/sermon-page-display-category-v1.schema.json").read_text())
         body = {k: v for k, v in shared.items() if k not in {"$schema", "$id", "title"}}
@@ -137,7 +143,7 @@ class CategoryUpdateTests(unittest.TestCase):
                 result["unexpected"] = value
                 args = [str(SCRIPT), "--catalog", str(source), "--updates", str(updates), "--output", str(output)]
                 with self.subTest(value=value), mock.patch.object(sys, "argv", args), mock.patch.object(
-                        MODULE, "update_categories", return_value=result), mock.patch("sys.stderr"):
+                        IMPLEMENTATION, "update_categories", return_value=result), mock.patch("sys.stderr"):
                     with self.assertRaises(SystemExit) as error:
                         MODULE.main()
                     self.assertEqual(error.exception.code, 1)

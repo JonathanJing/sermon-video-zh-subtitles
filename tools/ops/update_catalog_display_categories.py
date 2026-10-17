@@ -12,7 +12,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 VERSIONS = {f"sermon-multilingual-catalog-v{v}": v for v in (2, 3, 4)}
 
 
