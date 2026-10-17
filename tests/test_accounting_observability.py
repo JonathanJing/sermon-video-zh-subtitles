@@ -13,6 +13,20 @@ from scripts import export_observability_trace as safe_export
 
 
 class ObservabilityTests(unittest.TestCase):
+    def test_snapshot_keeps_legacy_non_object_execution_identity(self):
+        row = {'schemaVersion': accounting.SCHEMA,
+               'event': 'workflow_started', 'eventId': 'a', 'runId': 'r',
+               'recordedAt': '2026-10-17T00:00:00Z', 'workflow': 'w',
+               'executionIdentity': ['legacy']}
+        with tempfile.TemporaryDirectory() as temporary:
+            (Path(temporary) / 'events.jsonl').write_text(json.dumps(row) + '\n')
+            events, damaged = accounting.read_events(temporary)
+            from scripts import sermon_identity_sidecars as sidecars
+            self.assertEqual(sidecars.collect(temporary, events), {})
+            safe_export.export(Path(temporary), Path(temporary) / 'export')
+        self.assertEqual(events, [row])
+        self.assertEqual(damaged, [])
+
     def test_large_loaded_code_identity_uses_verified_private_sidecar(self):
         identity = accounting.execution_identity()
         modules = {f'scripts/synthetic_{i:04d}.py': f'{i:064x}' for i in range(800)}
@@ -69,6 +83,11 @@ class ObservabilityTests(unittest.TestCase):
             _, damaged = accounting.read_events(temporary)
             self.assertEqual(len(damaged), 1)
             path.chmod(0o600)
+            sidecar_bytes = path.read_bytes()
+            path.write_text('[' * 10000 + '0' + ']' * 10000)
+            _, damaged = accounting.read_events(temporary)
+            self.assertEqual(len(damaged), 1)
+            path.write_bytes(sidecar_bytes)
             ledger = Path(temporary) / 'events.jsonl'
             original = ledger.read_text()
             lines = [json.loads(line) for line in original.splitlines()]
