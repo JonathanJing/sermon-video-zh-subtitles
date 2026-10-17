@@ -101,6 +101,17 @@ class RenderContentJsonPdfTest(unittest.TestCase):
         mixed = {"cues": [{"text": "一。", "source": "One."}, {"text": "二。"}]}
         self.assertFalse(mod.has_inline_english(mixed))
 
+    def test_reference_overrides_inline_source_and_timing_is_checked(self):
+        content = {"cues": [{"start": 0, "end": 1, "text": "一。", "source": "Stale.", "textGroupId": "g1"}]}
+        _, secondary = mod.content_cues(content, {"g1": "Approved."})
+        self.assertEqual(secondary[0].text, "Approved.")
+        for bad in ({"start": 2, "end": 1}, {"end": 1}, {"start": 0, "end": 99}):
+            cue = dict({"start": 0, "end": 1, "text": "一。"}, **bad)
+            if "start" not in bad and bad.get("end") == 1:
+                cue.pop("start")
+            with self.assertRaises(SystemExit):
+                mod.content_cues({"durationSeconds": 10, "cues": [cue]})
+
     def test_renders_pdf_from_content(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "page.pdf"

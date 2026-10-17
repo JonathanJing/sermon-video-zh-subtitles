@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import math
 import re
 import sys
 import urllib.request
@@ -25,6 +26,7 @@ REFERENCE_SCHEMA = "sermon-published-english-reference-v1"
 # Published full-text schemas; v2 is human_reviewed only, v3 adds machine_checked with a disclosure.
 SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 CONTENT_SCHEMAS = {"sermon-full-video-text-content-v2", "sermon-full-video-text-content-v3"}
+DURATION_TOLERANCE_SECONDS = 1.0
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 _RENDERER_PATH = Path(__file__).resolve().parent / "render_mobile_pdf_from_srt.py"
 _SPEC = importlib.util.spec_from_file_location("render_mobile_pdf_from_srt", _RENDERER_PATH)
@@ -172,17 +174,28 @@ def reference_english(reference: dict, content: dict, content_sha256: str | None
 
 
 def content_cues(content: dict, english: dict[str, str] | None = None) -> tuple[list, list]:
+    """Pair each cue with its English: from the approved reference when one is given, else the cue's own source."""
     primary, secondary = [], []
-    for cue in content.get("cues", []):
+    limit = content.get("durationSeconds")
+    for index, cue in enumerate(content.get("cues", [])):
         text = renderer.clean_caption_text(str(cue.get("text") or ""))
         if not text:
             continue
-        start, end = srt_time(cue.get("start", 0)), srt_time(cue.get("end", cue.get("start", 0)))
+        start_s, end_s = cue.get("start"), cue.get("end")
+        if not (is_number(start_s) and is_number(end_s) and 0 <= start_s < end_s
+                and (not is_number(limit) or end_s <= limit + DURATION_TOLERANCE_SECONDS)):
+            raise SystemExit(f"Cue {index} has missing or invalid timing: start={start_s!r} end={end_s!r}.")
+        start, end = srt_time(start_s), srt_time(end_s)
         primary.append(renderer.Cue(start=start, end=end, text=text))
-        source = renderer.clean_caption_text(str(cue.get("source") or (english or {}).get(cue.get("textGroupId"), "")))
+        raw = english.get(cue.get("textGroupId"), "") if english else cue.get("source")
+        source = renderer.clean_caption_text(str(raw or ""))
         if source:  # a cue without English is counted, never borrowed from a neighbour
             secondary.append(renderer.Cue(start=start, end=end, text=source))
     return primary, secondary
+
+
+def is_number(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
 def footer_disclaimer(content: dict) -> str:
