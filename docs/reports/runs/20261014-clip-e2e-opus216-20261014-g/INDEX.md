@@ -247,4 +247,6 @@ Error-like log lines (first 5 per log):
 - `logs/layer4-smoke.log`: warning: optional resource failed: /english-reference/mockup-dev-clip-real-20261013.json: Failed to load resource: the server responded with a status of 404 ()
 - `logs/layer4-smoke.log`: warning: optional resource failed: /alignment/mockup-dev-clip-v4-20261013.json: Failed to load resource: the server responded with a status of 404 ()
 
-Not copied: 2 .cache, 22 .css, 21 .csv, 401 .html, 5 .jpg, 44 .js, 5619 .json, 7 .jsonl, 991 .lock, 247 .mjs, 863 .mp3, 100 .mp4, 20 .pdf, 97 .png, 154 .sha256, 10 .srt, 18 .svg, 97 .txt, 336 .wav
+Not copied: 2 .cache, 22 .css, 21 .csv, 401 .html, 5 .jpg, 44 .js, 5627 .json, 7 .jsonl, 991 .lock, 247 .mjs, 863 .mp3, 100 .mp4, 20 .pdf, 97 .png, 154 .sha256, 10 .srt, 18 .svg, 97 .txt, 336 .wav
+
+Publication review additionally omitted 8 `asr-screening-receipt-v1.json` files because they contained per-segment model output; their aggregate status remains represented by the surrounding summary and log evidence.

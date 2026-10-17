@@ -7,7 +7,7 @@
       "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g",
       "skipped": {
         ".lock": 991,
-        ".json": 5619,
+        ".json": 5627,
         ".jsonl": 7,
         ".csv": 21,
         ".txt": 97,
@@ -147,42 +147,6 @@
       "bytes": 170,
       "truncated": false,
       "sha256": "d8ab6758ebb5dfa92b342e05d4ce7b0d9d7422e6deaaba86f38d3d8f05b04398",
-      "redactions": {}
-    },
-    {
-      "run": "opus-e2e-dev216-20261014-g",
-      "path": "aqc/run-es/l3/asr-screening-receipt-v1.json",
-      "kind": "whole",
-      "bytes": 11094,
-      "truncated": false,
-      "sha256": "05b1a90f1d7cea9a0b7a80b79de355ad2549009568ccd313d03a792a12937c25",
-      "redactions": {}
-    },
-    {
-      "run": "opus-e2e-dev216-20261014-g",
-      "path": "aqc/run-ko/l3/asr-screening-receipt-v1.json",
-      "kind": "whole",
-      "bytes": 11623,
-      "truncated": false,
-      "sha256": "a8b88813fd9e3cf884e3d9ea7a17ff389344e590777f78912f48a44b99127488",
-      "redactions": {}
-    },
-    {
-      "run": "opus-e2e-dev216-20261014-g",
-      "path": "aqc/run-ko-seed-44/l3/asr-screening-receipt-v1.json",
-      "kind": "whole",
-      "bytes": 11333,
-      "truncated": false,
-      "sha256": "19949e5215769c89df60402a09c75617bd3ca54d87af352024f06a9610a8885c",
-      "redactions": {}
-    },
-    {
-      "run": "opus-e2e-dev216-20261014-g",
-      "path": "aqc/run-zh-Hans/l3/asr-screening-receipt-v1.json",
-      "kind": "whole",
-      "bytes": 11023,
-      "truncated": false,
-      "sha256": "d781772ec4cae1d8e6ba6d3466f9a7e8ae24a0c4278d2bfc6f27db951db32c93",
       "redactions": {}
     },
     {
@@ -368,15 +332,6 @@
     },
     {
       "run": "opus-e2e-dev216-20261014-g",
-      "path": "l3/es/spark-es-c/spark-output/speech-job/asr-screening-receipt-v1.json",
-      "kind": "whole",
-      "bytes": 11094,
-      "truncated": false,
-      "sha256": "05b1a90f1d7cea9a0b7a80b79de355ad2549009568ccd313d03a792a12937c25",
-      "redactions": {}
-    },
-    {
-      "run": "opus-e2e-dev216-20261014-g",
       "path": "l3/es/spark-output/render.log",
       "kind": "log",
       "bytes": 5939,
@@ -431,15 +386,6 @@
     },
     {
       "run": "opus-e2e-dev216-20261014-g",
-      "path": "l3/ko/spark-ko-c/spark-output/speech-job/asr-screening-receipt-v1.json",
-      "kind": "whole",
-      "bytes": 11623,
-      "truncated": false,
-      "sha256": "a8b88813fd9e3cf884e3d9ea7a17ff389344e590777f78912f48a44b99127488",
-      "redactions": {}
-    },
-    {
-      "run": "opus-e2e-dev216-20261014-g",
       "path": "l3/ko/spark-output/render.log",
       "kind": "log",
       "bytes": 5939,
@@ -490,15 +436,6 @@
       "bytes": 1904,
       "truncated": false,
       "sha256": "280960f63358eb3b56ecb1fc25b03f3c1f9d751c1a5e64f774ba5fa5dbc02729",
-      "redactions": {}
-    },
-    {
-      "run": "opus-e2e-dev216-20261014-g",
-      "path": "l3/ko-repair-seed-44/spark-ko-seed-44-c/spark-output/speech-job/asr-screening-receipt-v1.json",
-      "kind": "whole",
-      "bytes": 11333,
-      "truncated": false,
-      "sha256": "19949e5215769c89df60402a09c75617bd3ca54d87af352024f06a9610a8885c",
       "redactions": {}
     },
     {
@@ -580,15 +517,6 @@
       "bytes": 1944,
       "truncated": false,
       "sha256": "b726a0a2464b07b3357d38937383369aa74ebc2c2c106e5d15e4e71981345da5",
-      "redactions": {}
-    },
-    {
-      "run": "opus-e2e-dev216-20261014-g",
-      "path": "l3/zh-Hans/spark-zh-Hans-c/spark-output/speech-job/asr-screening-receipt-v1.json",
-      "kind": "whole",
-      "bytes": 11023,
-      "truncated": false,
-      "sha256": "d781772ec4cae1d8e6ba6d3466f9a7e8ae24a0c4278d2bfc6f27db951db32c93",
       "redactions": {}
     },
     {
