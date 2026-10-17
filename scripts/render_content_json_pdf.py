@@ -115,6 +115,8 @@ def render_content_pdf(
         subject="Mobile Chinese-English sermon reading edition" if include_english else "Mobile Chinese sermon reading edition",
     )
     qa["contentStatus"] = content.get("status")
+    qa["includeEnglish"] = include_english
+    qa["includeTimecodes"] = include_timecodes
     qa["font"] = font_identity()
     return qa
 
@@ -149,7 +151,9 @@ def fetch(url: str) -> bytes:
 
 
 def has_inline_english(content: dict) -> bool:
-    return any(str(cue.get("source") or "").strip() for cue in content.get("cues", []))
+    """True only when every cue with text carries its own English."""
+    cues = [cue for cue in content.get("cues", []) if str(cue.get("text") or "").strip()]
+    return bool(cues) and all(str(cue.get("source") or "").strip() for cue in cues)
 
 
 def reference_english(reference: dict, content: dict, content_sha256: str | None) -> dict[str, str]:

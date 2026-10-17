@@ -96,6 +96,11 @@ class RenderContentJsonPdfTest(unittest.TestCase):
         blocks = mod.renderer.build_reading_blocks(primary, paired_secondary=["One.", "Two."])
         self.assertEqual(" ".join(block.secondary for block in blocks), "One. Two.")
 
+    def test_partial_inline_english_still_needs_reference(self):
+        self.assertTrue(mod.has_inline_english(CONTENT))
+        mixed = {"cues": [{"text": "一。", "source": "One."}, {"text": "二。"}]}
+        self.assertFalse(mod.has_inline_english(mixed))
+
     def test_renders_pdf_from_content(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "page.pdf"
@@ -103,6 +108,7 @@ class RenderContentJsonPdfTest(unittest.TestCase):
             self.assertTrue(out.read_bytes().startswith(b"%PDF"))
             self.assertEqual(qa["contentStatus"], "machine_checked")
             self.assertTrue(qa["font"])
+            self.assertEqual((qa["includeEnglish"], qa["includeTimecodes"]), (True, True))
 
 
 if __name__ == "__main__":
