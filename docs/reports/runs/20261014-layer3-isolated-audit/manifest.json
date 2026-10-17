@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-layer3-isolated-audit",
+  "runs": [
+    {
+      "label": "layer3-isolated-audit-20261014",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/layer3-isolated-audit-20261014",
+      "skipped": {
+        ".json": 5
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "layer3-isolated-audit-20261014",
+      "path": "build-package-es.log",
+      "kind": "log",
+      "bytes": 3131,
+      "truncated": false,
+      "sha256": "dcaeecc918d60ca279d89f83cfc441bfb12c666a6a689c618c323554bdf82cad",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "layer3-isolated-audit-20261014",
+      "path": "build-package-ko.log",
+      "kind": "log",
+      "bytes": 3131,
+      "truncated": false,
+      "sha256": "dcaeecc918d60ca279d89f83cfc441bfb12c666a6a689c618c323554bdf82cad",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "layer3-isolated-audit-20261014",
+      "path": "build-package-zh-Hans.log",
+      "kind": "log",
+      "bytes": 3131,
+      "truncated": false,
+      "sha256": "dcaeecc918d60ca279d89f83cfc441bfb12c666a6a689c618c323554bdf82cad",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "layer3-isolated-audit-20261014",
+      "path": "current-build-es.log",
+      "kind": "log",
+      "bytes": 133,
+      "truncated": false,
+      "sha256": "1298c0371e2e53ed82d63a94337bdc15773bbffecd64ec382002c092ffd7d08c",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-isolated-audit-20261014",
+      "path": "current-build-zh-Hans.log",
+      "kind": "log",
+      "bytes": 143,
+      "truncated": false,
+      "sha256": "166f64abee7708972b3717acbc926552ece8d7023bd1390903985ea9ea9acfdb",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-isolated-audit-20261014",
+      "path": "layer3-unittest.log",
+      "kind": "log",
+      "bytes": 425,
+      "truncated": false,
+      "sha256": "44d829ed2c61ee70b5231f9faaad964131191969bfa5cafbdae640daedd20878",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-isolated-audit-20261014",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1261,
+      "truncated": false,
+      "sha256": "1bdb49548e2a00e856e8d871dae06c8740f9ba1952d2a2d90daa294ad82e40cf",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-isolated-audit-20261014",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1248,
+      "truncated": false,
+      "sha256": "a1159dd2dd0eb32b628b8eec9ca6c2061126e6774b5d8549dfcc8160ac4c47c5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

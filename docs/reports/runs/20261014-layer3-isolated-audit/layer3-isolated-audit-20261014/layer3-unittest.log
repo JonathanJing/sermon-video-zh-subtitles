@@ -1,0 +1,7 @@
+SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+----------------------------------------------------------------------
+Ran 211 tests in 128.221s
+
+OK
+{"status": "prepared_adapter_validation_required", "targetLocale": "ko", "synthesisEligible": false, "job": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp3i7wm1i_/timed-speech-job/job.json"}
