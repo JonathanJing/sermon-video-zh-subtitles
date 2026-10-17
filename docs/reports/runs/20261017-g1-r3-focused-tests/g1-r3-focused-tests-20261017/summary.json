@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "sermon-local-test-summary-v1",
+  "kind": "software_tests",
+  "checkout": "codex/g1-r3-review-20261017@fcd623b3",
+  "status": "passed",
+  "tests": [
+    {
+      "command": ".venv/bin/python -m unittest tests.test_tongxing_production_package",
+      "status": "passed",
+      "count": 9
+    },
+    {
+      "command": ".venv/bin/python -m unittest tests.test_tongxing_review_ports",
+      "status": "passed",
+      "count": 12
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/test_machine_qc_runtime_budget.py",
+      "status": "passed",
+      "count": 24
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/test_qc_runtime_implementation_closure.py",
+      "status": "passed",
+      "count": 1
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/test_machine_quality_release_basis.py",
+      "status": "passed",
+      "count": 39,
+      "subtests": 27
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/test_spoken_condensation.py tests/test_spoken_condensation_normalization.py",
+      "status": "passed",
+      "count": 23,
+      "subtests": 26
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/test_tongxing_audio_ports.py",
+      "status": "passed",
+      "count": 10,
+      "subtests": 71
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/test_run_machine_qc_clip_test.py tests/test_run_machine_qc_audio_test.py tests/test_run_spoken_condensation.py",
+      "status": "passed",
+      "count": 57,
+      "subtests": 4,
+      "durationSeconds": 288.12
+    }
+  ],
+  "preliminary": {
+    "status": "interrupted",
+    "reason": "shared main checkout venv was unsuitable for subprocess package resolution; reran with worktree venv",
+    "exitCode": 130
+  },
+  "scope": "local software fixtures and CLI help; no model calls, production publication, or device verification"
+}
