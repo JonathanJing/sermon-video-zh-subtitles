@@ -9,12 +9,9 @@ from pathlib import Path
 from unittest import mock
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_post_live_subtitle_generation.py"
-SPEC = importlib.util.spec_from_file_location("run_post_live_subtitle_generation", SCRIPT_PATH)
-mod = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-sys.modules[SPEC.name] = mod
-SPEC.loader.exec_module(mod)
+# The implementation moved to tongxing_production.workflows.dual_pdf.post_live (W3c);
+# the scripts/ path is a facade naming the same module object.
+from scripts import run_post_live_subtitle_generation as mod  # noqa: E402
 
 
 def make_args(**overrides):
@@ -736,6 +733,33 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(report["status"], "planned")
         self.assertEqual(report["liveSource"]["urlHash"], mod.stable_hash(locked_url))
 
+
+
+class LoadedCodeIdentityTests(unittest.TestCase):
+    """W3c: the entry reaches its host modules through proxies; execution_identity must
+    still record the modules importing the entry used to load (review finding on #556)."""
+
+    def run_identity(self, imports):
+        code = (imports + "; from scripts import sermon_accounting; import json; "
+                "print(json.dumps(sorted(sermon_accounting.execution_identity()['loadedProjectCodeSha256'])))")
+        result = subprocess.run([sys.executable, "-c", code], cwd=Path(__file__).resolve().parents[1],
+                                capture_output=True, text=True, timeout=120)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return set(json.loads(result.stdout.strip().splitlines()[-1]))
+
+    def test_entry_load_time_imports_are_in_the_identity(self):
+        loaded = self.run_identity("from scripts import run_post_live_subtitle_generation")
+        for path in ("backend/cloud.py", "backend/observability.py", "scripts/live_source_monitor.py",
+                     "scripts/post_live_run_status.py", "scripts/series_terminology.py",
+                     "packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py"):
+            self.assertIn(path, loaded)
+
+    def test_codex_local_load_time_imports_and_the_post_live_entry_are_in_the_identity(self):
+        loaded = self.run_identity("from scripts import run_codex_local_sermon_production")
+        for path in ("backend/config.py", "backend/cloud.py", "scripts/sermon_production_supervisor.py",
+                     "scripts/run_sermon_production_supervisor_agent.py", "backend/observability.py",
+                     "scripts/post_live_run_status.py"):
+            self.assertIn(path, loaded)
 
 if __name__ == "__main__":
     unittest.main()

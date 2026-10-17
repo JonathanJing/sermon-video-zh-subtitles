@@ -392,3 +392,21 @@ class QcRuntime:
     write_report: Callable[..., Any]           # export_run_digest.write_report(run_dirs, label)
     codex_text_transport: Callable[[], ModuleType]   # sermon_codex_transport: TEXT_MODEL; its file hash is adapter identity
     validate_target_candidate: Callable[..., dict]   # (source_package, anchor, candidate, *, require_human_approval=True, ...)
+
+
+@dataclass(frozen=True)
+class Cloud:
+    """Temporary dual_pdf port for Secret Manager and GCS (workflows design section 3 item 5).
+
+    Replaced by the storage/ adapters once that design moves them; never a credential value."""
+    access_secret: Callable[[str], str]        # (resource_name) -> secret text, for the run's own use only
+    read_gcs_bytes: Callable[[str], bytes]     # (gs:// uri)
+    upload_file_to_gcs: Callable[..., None]    # (local_path, uri)
+
+
+@dataclass(frozen=True)
+class Observability:
+    """Temporary dual_pdf port for the Cloud Run structured log helpers, until observability moves."""
+    log_event: Callable[..., None]             # (event, **fields)
+    stable_hash: Callable[[str], str]
+    url_summary: Callable[[Any], Any]          # (url) -> redacted summary or None

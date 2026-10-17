@@ -29,6 +29,7 @@ from tongxing_production.delivery import backend as delivery_backend  # noqa: E4
 from tongxing_production.audio import backend as audio_backend  # noqa: E402
 from tongxing_production.review import backend as review_backend  # noqa: E402
 from tongxing_production.compute import backend as compute_backend  # noqa: E402
+from tongxing_production.workflows.dual_pdf import host as dual_pdf_host  # noqa: E402
 
 
 def core() -> ports.Core:
@@ -801,10 +802,99 @@ EAGER_PRODUCER_IMPORTS = (
 )
 
 
+def _cloud_function(name):
+    def call(*arguments, **options):
+        from backend import cloud as implementation
+        return getattr(implementation, name)(*arguments, **options)
+    call.__name__ = name
+    return call
+
+
+def cloud() -> ports.Cloud:
+    return ports.Cloud(**{name: _cloud_function(name) for name in (
+        'access_secret', 'read_gcs_bytes', 'upload_file_to_gcs')})
+
+
+def _observability_function(name):
+    def call(*arguments, **options):
+        from backend import observability as implementation
+        return getattr(implementation, name)(*arguments, **options)
+    call.__name__ = name
+    return call
+
+
+def observability() -> ports.Observability:
+    return ports.Observability(**{name: _observability_function(name) for name in (
+        'log_event', 'stable_hash', 'url_summary')})
+
+
+def _scripts_module(name):
+    def get():
+        import importlib
+        return importlib.import_module('scripts.' + name)
+    return get
+
+
+def _dubbing_producer_hook():
+    # The dubbing POC bridge lives under experiments/, outside the package.
+    import importlib.util
+    directory = ROOT / 'experiments' / 'sermon-dubbing-poc'
+    if str(directory) not in sys.path:
+        sys.path.insert(0, str(directory))
+    spec = importlib.util.spec_from_file_location('sermon_dubbing_producer_bridge',
+                                                  directory / 'continue_saturday_dubbing.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.start_producer_candidate, module.CandidateNotReady
+
+
+def _upcoming_sunday(*arguments, **options):
+    from backend.config import upcoming_sunday
+    return upcoming_sunday(*arguments, **options)
+
+
+def dual_pdf_unmoved():
+    return dual_pdf_host.Unmoved(
+        live_source_monitor=_scripts_module('live_source_monitor'),
+        post_live_run_status=_scripts_module('post_live_run_status'),
+        series_terminology=_scripts_module('series_terminology'),
+        export_saturday_live_context=_scripts_module('export_saturday_live_context'),
+        reading_edition=_scripts_module('build_sermon_reading_edition_with_openai'),
+        sentence_shadow=_scripts_module('prepare_sentence_interpretation_shadow'),
+        supervisor=_scripts_module('sermon_production_supervisor'),
+        supervisor_agent=_scripts_module('run_sermon_production_supervisor_agent'),
+        accounting=_scripts_module('sermon_accounting'),
+        dubbing_producer_hook=_dubbing_producer_hook, upcoming_sunday=_upcoming_sunday)
+
+
+# What a moved entry imported at its own load time, now reached through proxies that
+# load on first use. Loaded at identity capture only when that entry is loaded, as
+# importing the entry did before W3c, so the identity still covers the code it runs.
+ENTRY_LOAD_TIME_IMPORTS = {
+    'tongxing_production.workflows.dual_pdf.post_live': (
+        'backend.cloud', 'backend.observability', 'scripts.live_source_monitor',
+        'scripts.post_live_run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
+    'tongxing_production.workflows.dual_pdf.codex_local': (
+        'backend.config', 'backend.cloud', 'scripts.live_source_monitor',
+        'scripts.run_sermon_production_supervisor_agent', 'scripts.sermon_accounting',
+        'scripts.sermon_production_supervisor'),
+}
+
+
 def load_producer_imports():
     import importlib
     for name in EAGER_PRODUCER_IMPORTS:
         importlib.import_module('scripts.' + name)
+    # An entry's imports can load another entry (the codex-local supervisor imports post-live).
+    pending = True
+    while pending:
+        pending = False
+        for entry, names in ENTRY_LOAD_TIME_IMPORTS.items():
+            if entry in sys.modules:
+                for name in names:
+                    if name not in sys.modules:
+                        importlib.import_module(name)
+                        pending = True
 
 
 # The checkout's schemas/ directory is the only editable schema source.
@@ -846,3 +936,5 @@ review_backend.configure(review_backend.ReviewBackend(core=_core, code=_code, sn
                                                       text=text_rules(), source=source_evidence(),
                                                       gates=stage_gates(), scripture=scripture(),
                                                       qc_runtime=qc_runtime(), waivers=_waivers))
+dual_pdf_host.configure(dual_pdf_host.DualPdfHost(cloud=cloud(), observability=observability(),
+                                                  unmoved=dual_pdf_unmoved()))

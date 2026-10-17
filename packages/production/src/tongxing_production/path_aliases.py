@@ -135,6 +135,8 @@ WORKFLOWS = {
     'scripts/sermon_unified_accounting.py': PRODUCTION + 'orchestration/unified/accounting.py',
     # dual_pdf (tongxing_production.workflows.dual_pdf), batch W3a.
     'scripts/sermon_pipeline.py': PRODUCTION + 'workflows/dual_pdf/pipeline.py',
+    'scripts/run_post_live_subtitle_generation.py': PRODUCTION + 'workflows/dual_pdf/post_live.py',  # W3c
+    'scripts/run_codex_local_sermon_production.py': PRODUCTION + 'workflows/dual_pdf/codex_local.py',  # W3c
 }
 
 # Shared infrastructure, batches I1-I4 (docs/design/infrastructure-injection.zh.md).
