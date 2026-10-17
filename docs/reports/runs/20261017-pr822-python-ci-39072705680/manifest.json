@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr822-python-ci-39072705680",
+  "runs": [
+    {
+      "label": "pr822-python-ci-39072705680",
+      "source": "~/.codex/worktrees/ops-import-openai-costs/sermon-video-zh-subtitles/artifacts/pr822-python-ci-39072705680",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr822-python-ci-39072705680",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 276,
+      "truncated": false,
+      "sha256": "c02addcbf8e7ff168ba284c51590e365d00faefc4dc471b75e4b8d1251b6cd0b",
+      "redactions": {}
+    },
+    {
+      "run": "pr822-python-ci-39072705680",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2703,
+      "truncated": false,
+      "sha256": "5da1478b5b5c7430a978d3f398e67eb827d4e9dc28d228e9750ed1cbdd90575a",
+      "redactions": {}
+    },
+    {
+      "run": "pr822-python-ci-39072705680",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 368,
+      "truncated": false,
+      "sha256": "6dee44de7a7672df8f6a83a733a14a2d6b2caa65121756b91b8fccc19ee7ed33",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
