@@ -899,7 +899,7 @@ def dual_pdf_unmoved():
 # load on first use. Loaded at identity capture only when that entry is loaded, as
 # importing the entry did before W3c, so the identity still covers the code it runs.
 ENTRY_LOAD_TIME_IMPORTS = {
-    'tongxing_production.observability.projections': (
+    'tongxing_production.observability.weekly_projection': (
         'scripts.sermon_accounting', 'scripts.sermon_clock_evidence',
         'scripts.sermon_cache_observation', 'scripts.sermon_local_model_observation',
         'scripts.sermon_workflow_evidence', 'scripts.sermon_decision_accounting'),

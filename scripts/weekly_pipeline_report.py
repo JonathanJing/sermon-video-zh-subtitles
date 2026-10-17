@@ -12,8 +12,8 @@ except ModuleNotFoundError:  # direct script execution outside the checkout
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from scripts import tongxing_host  # noqa: F401
 
-from tongxing_production.observability import projections as _projection
-from tongxing_production.observability.projections import *  # noqa: F401,F403
+from tongxing_production.observability import weekly_projection as _projection
+from tongxing_production.observability.weekly_projection import *  # noqa: F401,F403
 
 
 def __getattr__(name):
