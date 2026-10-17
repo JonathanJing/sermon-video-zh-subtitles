@@ -29,7 +29,7 @@
       "spark_tts_worker": "L3"
     },
     "mapping_status": "bound_to_canonical_logical_layers_tts_is_layer3",
-    "shared_event_schema": "sermon-accounting-log-contract-v1",
+    "shared_event_schema": "sermon-accounting-log-contract-v2",
     "trace_scope": "canonical runId trace; trial/session are hash-bound measurement sidecars",
     "experiment_scope": "all trial traces in the parameter comparison",
     "storage": "per-component append-only logs plus experiment-level aggregation",

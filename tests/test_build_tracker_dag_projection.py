@@ -150,6 +150,10 @@ class PublicDagTests(unittest.TestCase):
             self.assertEqual(result["evidenceMode"], public_mode)
             self.assertEqual(result["quality"]["status"], "projected")
             self.assertEqual(result["logs"]["profileEventCount"], len(self.rows))
+            self.assertEqual(result["logs"]["contractVersions"], [contract.VERSION])
+        self.rows = [{**row, "contractVersion": contract.LEGACY_VERSION}
+                     for row in profiled(events())]
+        self.assertEqual(self.project()["logs"]["contractVersions"], [contract.LEGACY_VERSION])
         self.rows = events()
         for row in self.rows:
             row["evidenceMode"] = "current_execution"
@@ -166,6 +170,20 @@ class PublicDagTests(unittest.TestCase):
             self.assertEqual(result["criticalPath"]["status"], "unknown")
         self.rows[0]["schemaVersion"] = "future-schema"
         self.assertIn("unsupported_schema", self.project()["quality"]["reasonCodes"])
+
+    def test_invalid_sidecar_references_leave_partial_observed_projection(self):
+        for reference in ([], {}, "b" * 64):
+            with self.subTest(reference=reference):
+                self.rows = events()
+                self.rows.append(dict(self.rows[0], event="workflow_started", eventId="bad-reference",
+                    workflow="fixture", executionIdentity={"loadedProjectCodeSha256": {},
+                        "loadedProjectCodeManifestSha256": reference}))
+                result = self.project()
+                self.assertEqual(result["quality"]["status"], "partial")
+                self.assertIn("damaged_events", result["quality"]["reasonCodes"])
+                self.assertEqual(result["quality"]["damagedRowCount"], 1)
+                self.assertEqual(result["summary"]["observedNodeCount"], 4)
+                self.assertNotIn("accounting_invalid", result["quality"]["reasonCodes"])
 
     def test_stale_and_future_evidence_never_freshened_by_render(self):
         self.write()
