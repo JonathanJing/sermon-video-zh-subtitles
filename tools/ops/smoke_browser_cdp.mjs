@@ -2,7 +2,7 @@
 // Observe one page in a real headless Chrome over the DevTools protocol and print
 // what a visitor's browser actually did, as one JSON object on stdout:
 //
-//   node scripts/smoke_browser_cdp.mjs --browser <chrome> --url <page> [--settle-ms 4000] [--deadline-ms 60000]
+//   node tools/ops/smoke_browser_cdp.mjs --browser <chrome> --url <page> [--settle-ms 4000] [--deadline-ms 60000]
 //
 // It records every console.error/console.assert call, uncaught exception and
 // browser log entry at error level (resource and CSP failures), the page's own
