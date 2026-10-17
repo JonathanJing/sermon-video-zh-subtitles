@@ -10,6 +10,7 @@ try:
 except ModuleNotFoundError:  # direct execution from scripts/
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from scripts import tongxing_host  # noqa: F401
+from scripts import tracker_projection_host  # noqa: F401  binds legacy read-only report ports
 from tongxing_production.observability.projections import four_layer_tracker_snapshot as _implementation
 
 if __name__ == "__main__":

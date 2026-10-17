@@ -21,11 +21,9 @@ import re
 import sys
 import tempfile
 
-if __package__ in {None, ""}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[6]))
-from scripts import sermon_accounting as accounting
-from scripts import sermon_run_progress as progress
-from scripts import weekly_pipeline_report as weekly
+from .. import accounting
+from .. import progress as ledger_progress
+from .backend import run_progress as progress, weekly_report as weekly
 
 SCHEMA = "sermon-public-tracker-dag-v1"
 MAX_INPUT_BYTES = 32 * 1024 * 1024
@@ -182,7 +180,7 @@ def verify_ledger_run_binding(ledger, events, run_id):
     tracker workflow. A match in one unrelated sibling is insufficient. Read-only
     adapter helper; caller must supply events from the canonical accounting reader.
     """
-    from scripts.four_layer_progress import ledger_identity
+    ledger_identity = ledger_progress.ledger_identity
     supported = [e for e in events if e.get("schemaVersion") in accounting.READABLE_SCHEMAS
                  and accounting._valid_event(e)]
     selected = [e for e in supported if e.get("runId") == run_id]

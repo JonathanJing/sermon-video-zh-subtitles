@@ -10,18 +10,12 @@ import argparse
 import hashlib
 import json
 import re
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-REPO_ROOT = Path(__file__).resolve().parents[6]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-from scripts import four_layer_progress as progress
-from scripts import four_layer_measure as measure
-from scripts import build_four_layer_timeline as timeline
-from scripts import sermon_accounting as accounting
+from .. import progress, measure, accounting
+from .backend import timeline
 
 
 SCHEMA = "sermon-public-tracker-snapshot-v2"

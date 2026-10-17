@@ -432,7 +432,8 @@ class PublicDagTests(unittest.TestCase):
 
     def test_bounded_cli_and_separate_output_cannot_overwrite_ledger(self):
         self.write()
-        command = [sys.executable, str(Path(public.__file__)), "--accounting-dir", str(self.root), "--run-id", RUN, "--at", AT]
+        cli = Path(__file__).resolve().parents[1] / "scripts/build_tracker_dag_projection.py"
+        command = [sys.executable, str(cli), "--accounting-dir", str(self.root), "--run-id", RUN, "--at", AT]
         result = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)["schemaVersion"], public.SCHEMA)
