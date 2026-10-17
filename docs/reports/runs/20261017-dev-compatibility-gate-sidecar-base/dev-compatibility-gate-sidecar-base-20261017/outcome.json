@@ -1,0 +1,8 @@
+{
+  "kind": "local_focused_unittest",
+  "branch": "codex/dev-compatibility-gate-20261017",
+  "base": "PR #571 eb1ccc15",
+  "initialAttempt": "exit 127: worktree lacks .venv/bin/python",
+  "configuredVenvAttempt": "13 tests passed, exit 0",
+  "scope": "compatibility gate after parent merge; no full CI"
+}
