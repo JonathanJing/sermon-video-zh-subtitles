@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr607-dual-pdf-full-ci",
+  "runs": [
+    {
+      "label": "pr607-full-ci-39067757422",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/pr607-full-ci-39067757422",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr607-full-ci-39067757422",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 173,
+      "truncated": false,
+      "sha256": "4233490cf5546729e2c77610bdc3c20c59b334fcaf93959e0b77df8a477e3cd6",
+      "redactions": {}
+    },
+    {
+      "run": "pr607-full-ci-39067757422",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 647,
+      "truncated": false,
+      "sha256": "ed290e5d3c3feaa9fc45256de63e44d7f59d8dd3d545201a83a8b3cd19d241d2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
