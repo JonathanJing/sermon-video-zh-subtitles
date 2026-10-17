@@ -23,7 +23,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-BACKLOG = Path(__file__).resolve().parents[1] / "docs/backlog.zh.md"
+BACKLOG = Path(__file__).resolve().parents[2] / "docs/backlog.zh.md"
 ROW = re.compile(r"^\|\s*(?P<first>[^|]*?)\s*\|(?P<rest>.*)\|\s*$")
 ID = re.compile(r"DEV-[A-Z0-9]+-\d{3}(?:/\d{3})*")
 HEADING = re.compile(r"^(#{2,4})\s+(.*\S)\s*$")
