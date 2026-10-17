@@ -119,6 +119,8 @@ LAYER4 = {
     'scripts/stage_formal_multilingual_dev.py': _DELIVERY + 'formal_stage.py',
     'scripts/build_formal_dev_release_assets.py': _DELIVERY + 'formal_assets.py',
     'scripts/build_full_video_app_release.py': _DELIVERY + 'app_release.py',
+    # L4 D5: the unified delivery stage entry.
+    'scripts/sermon_unified_delivery.py': _DELIVERY + 'unified_stage.py',
 }
 
 # Cross-layer review (tongxing_production.review), batches R1-R4.

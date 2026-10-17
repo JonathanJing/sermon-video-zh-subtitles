@@ -13,13 +13,27 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
 from jsonschema import Draft202012Validator, FormatChecker
-from scripts import build_full_video_app_release as builder
-from scripts import delivery_contract as d
-from scripts import guarded_hosting_publish as publisher
-from scripts import study_artifacts
-from scripts.sermon_execution_harness import work_lock, atomic_json
+from ..storage.files import atomic_json
+from ..storage.locks import work_lock
+from ..storage.paths import safe_path as _safe_path
+from . import app_release as builder
+from . import backend as _delivery
+from . import contract as d
+from . import publication as publisher
+from . import study_artifacts
 
-ROOT = Path(__file__).resolve().parents[1]
+
+
+def __getattr__(name):
+    # Callers that read the former module constant ROOT (the checkout the host binds).
+    if name == 'ROOT':
+        return _delivery.current().core.repo_root
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def _audio_waived(review):
+    """A machine listening waiver of the release-basis schemas (v1/v2), exactly as before."""
+    return _delivery.current().waivers.is_basis_audio_waiver(review)
 MAPS = ('full_candidate', 'full_review_receipt', 'spoken_candidate', 'spoken_review_receipt',
         'audio_package', 'audio_review_receipt', 'audio_screening_receipt', 'full_content',
         'outline', 'outline_review', 'meditation', 'meditation_review')
@@ -40,7 +54,7 @@ def file_sha(path):
 def load(config_path):
     path = Path(config_path).resolve()
     value = read(path)
-    schema = read(ROOT / 'schemas/sermon-unified-delivery-v1.schema.json')
+    schema = read(_delivery.current().schemas.path('sermon-unified-delivery-v1.schema.json'))
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(value)
     d.validate_intent(value['intent'], value['routes'])
     base = path.parent
@@ -114,9 +128,8 @@ def _products(value, args):
         # A listening waiver binds a machine-screened package; validate_review checks it exactly.
         d.require(audio['targetLocale'] == locale and audio['englishSourcePackageJsonSha256'] == source_sha
                   and audio['targetLanguageCandidateJsonSha256'] == spoken_sha
-                  and (audio['status'] == 'human_reviewed' or builder.machine_basis.is_audio_waiver(review)), 'Audio product identity differs')
-        from scripts.sermon_unified_reviews import validate_review
-        validate_review('audio', maps['audio_review_receipt'][locale], inputs={'source': args.source,
+                  and (audio['status'] == 'human_reviewed' or _audio_waived(review)), 'Audio product identity differs')
+        _delivery.current().review.validate_review('audio', maps['audio_review_receipt'][locale], inputs={'source': args.source,
                         'package': maps['audio_package'][locale], 'screening': maps['audio_screening_receipt'][locale]},
                         expected_source={'sourceId': source['source']['sourceId'], 'mediaSha256': source['source']['media']['sha256'], 'sourceUrlHash': source['source']['sourceUrlHash'], 'window': source['source']['approvedWindow']}, expected_locale=locale)
         studies = {name: read(maps[name][locale]) for name in ('outline', 'outline_review', 'meditation', 'meditation_review')}
@@ -134,7 +147,6 @@ def _input_snapshot(value, base, paths):
     runtime_files = builder.runtime_web_files(runtime_root)
     dependencies = {}
     def visit(path, expected=None, *, recursive=True, canonical=None):
-        from scripts.sermon_release_workflow import _safe_path
         path = _safe_path(path)
         current = file_sha(path)
         d.require(expected is None or current == expected, 'Nested delivery input changed: ' + path.name)

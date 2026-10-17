@@ -12,12 +12,12 @@ from types import ModuleType
 
 STAGE_MODULES = {
     'accounting': 'tongxing_production.orchestration.unified.accounting',
-    'app_delivery': 'scripts.sermon_app_delivery_workflow',
+    'app_delivery': 'tongxing_production.delivery.app_workflow',
     'audio': 'scripts.sermon_unified_audio',
     'canonical_binding': 'tongxing_production.workflows.prepared.canonical_binding',
     'capabilities': 'tongxing_production.workflows.prepared.capabilities',
     'continuation': 'tongxing_production.workflows.prepared.continuation',
-    'delivery': 'scripts.sermon_unified_delivery',
+    'delivery': 'tongxing_production.delivery.unified_stage',
     'layer2_binding': 'tongxing_production.text.unified_binding',
     'layer2_budget': 'tongxing_production.text.budget',
     'layer2_controller': 'tongxing_production.text.controller',
