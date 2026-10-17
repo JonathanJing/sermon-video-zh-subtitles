@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-wheel-resource-ci-repro",
+  "runs": [
+    {
+      "label": "wheel-resource-ci-repro",
+      "source": "~/.codex/worktrees/wheel-resources/sermon-video-zh-subtitles/artifacts/wheel-resource-ci-repro",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "wheel-resource-ci-repro",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 152,
+      "truncated": false,
+      "sha256": "e2331d982a7e25c9aa3b21b8c1d2d51736020a758c2d16bdde74d15099434b65",
+      "redactions": {}
+    },
+    {
+      "run": "wheel-resource-ci-repro",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 448,
+      "truncated": false,
+      "sha256": "ea875233bbf4987a06c8412dc0ba70661a0df485e1f84db4900306a4cc94448a",
+      "redactions": {}
+    },
+    {
+      "run": "wheel-resource-ci-repro",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "68546d95c66ebd53520a1c2212228ab21b3d4b6c2e309858941745a065821a2c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
