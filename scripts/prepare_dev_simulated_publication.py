@@ -1,8 +1,9 @@
 """Transition facade: the implementation lives in tongxing_production.delivery.baseline.
 
-Both import paths name one module object, so attribute patches apply to both.
-``python scripts/prepare_dev_simulated_publication.py`` still runs the command (tools/ops in D8). Remove once
-no caller imports or runs the old path.
+Importing this path names that module object, so attribute patches apply to both; running it
+dispatches the command entry in tools/ops/prepare_dev_simulated_publication.py (L4 D8).
+``python scripts/prepare_dev_simulated_publication.py`` and ``python -m scripts.prepare_dev_simulated_publication`` still run the command.
+Remove once no caller imports or runs the old path.
 """
 from pathlib import Path
 import sys
@@ -15,5 +16,7 @@ except ModuleNotFoundError:  # run directly, or imported by bare name, from scri
 from tongxing_production.delivery import baseline as _implementation  # noqa: E402
 
 if __name__ == "__main__":
-    raise SystemExit(_implementation.main())
+    # Only the command entry lives in tools/ops; importing this path never needs tools/.
+    from tools.ops import prepare_dev_simulated_publication as _command  # noqa: E402
+    raise SystemExit(_command.main())
 sys.modules[__name__] = _implementation

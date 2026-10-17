@@ -400,26 +400,3 @@ def _reconcile(snapshot, *, request, reader, confirmed_version):
     _persist_attempt(path, attempt)
     lease.release()
     return attempt
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--config', type=Path, required=True)
-    parser.add_argument('--execute', action='store_true')
-    args = parser.parse_args()
-    config = json.loads(args.config.read_text())
-    contract.validate_intent(config['intent'], config['routes'])
-    contract.validate_catalog_snapshot(config['snapshot'])
-    if not args.execute:
-        print(json.dumps({'status': 'validated_not_deployed'}))
-        return
-    import urllib.request
-    def reader(url, *, timeout=60):
-        with urllib.request.urlopen(urllib.request.Request(url, headers={'Cache-Control': 'no-cache'}), timeout=timeout) as response:
-            return response.status, response.read()
-    result = publish(**config, request=authenticated_transport(), reader=reader)
-    print(json.dumps(result))
-
-
-if __name__ == '__main__':
-    main()

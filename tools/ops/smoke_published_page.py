@@ -4,7 +4,7 @@ headless Chrome, watch what the page actually did, and bind it to the requested
 release.
 
 For every locale the page is loaded as ``<origin>/?week=<pageId>&contentLang=<locale>``
-by ``scripts/smoke_browser_cdp.mjs``, which observes the browser over the DevTools
+by ``tools/ops/smoke_browser_cdp.mjs``, which observes the browser over the DevTools
 protocol and sends no request of its own. The smoke requires, for that locale:
 
 - the page is the requested one: the URL keeps ``week`` and ``contentLang``, the
@@ -36,12 +36,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 SCHEMA = "sermon-published-page-browser-smoke-v2"
 DEFAULT_BROWSER = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-CDP_OBSERVER = ROOT / "scripts" / "smoke_browser_cdp.mjs"
+CDP_OBSERVER = Path(__file__).with_name("smoke_browser_cdp.mjs")
 LOCALES = ("zh-Hans", "ko", "es")
 # What the reader shows before any cue is loaded.
 CAPTION_PLACEHOLDERS = ("配音就绪后，字幕会显示在这里。", "")
