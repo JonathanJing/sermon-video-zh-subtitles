@@ -53,6 +53,17 @@ class ContractTests(unittest.TestCase):
             self.assertEqual(contract.replay_integrity(events)['status'], 'consistent')
             self.assertEqual((Path(directory) / 'events.jsonl').read_bytes(), before)
 
+    def test_same_run_cannot_mix_readable_contract_versions(self):
+        old = fixture('stage-start')
+        current = dict(fixture('stage-finish'), contractVersion=contract.VERSION)
+        for rows in ([old, current], [current, old]):
+            with self.subTest(order=rows[0]['contractVersion']):
+                result = contract.replay_integrity(rows)
+                self.assertEqual(result['status'], 'partial')
+                self.assertIn('run_contract_version_conflict',
+                              [d['code'] for d in result['diagnostics']])
+                self.assertTrue({id(old), id(current)} <= result['_excluded'])
+
     def test_positive_fixtures_share_jsonschema_and_python_contract(self):
         validator = Draft202012Validator(json.loads(contract.SCHEMA_PATH.read_text()), format_checker=contract.format_checker())
         for name in ('stage-start', 'stage-finish', 'api-receipt'):
