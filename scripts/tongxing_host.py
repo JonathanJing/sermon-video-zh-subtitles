@@ -813,6 +813,24 @@ def cuv_poc_module(name):
     return __import__(name)
 
 
+def cuv_poc_code_closure_sha256(root=None):
+    """Bind CUV timing to every Python helper in the delegated POC tree."""
+    root = ROOT if root is None else Path(root)
+    directory = root / 'experiments' / 'sermon-dubbing-poc'
+    files = sorted(directory.rglob('*.py'))
+    if not files:
+        raise ValueError('CUV timing helper code closure is empty')
+    digest = hashlib.sha256()
+    for path in files:
+        relative = path.relative_to(root).as_posix().encode('utf-8')
+        content = path.read_bytes()
+        digest.update(len(relative).to_bytes(8, 'big'))
+        digest.update(relative)
+        digest.update(len(content).to_bytes(8, 'big'))
+        digest.update(content)
+    return digest.hexdigest()
+
+
 def qc_runtime() -> ports.QcRuntime:
     return ports.QcRuntime(write_report=_rule_function('scripts.export_run_digest', 'write_report'),
                            codex_text_transport=_module('scripts.sermon_codex_transport'),
@@ -1013,6 +1031,7 @@ text_backend.configure(text_backend.TextBackend(core=_core, provider=_provider, 
                                                 compute=_compute, resources=_resources_port,
                                                 terminology=_terminology, measure=_measure, accounting=_accounting,
                                                 scripture=scripture(), cuv_poc_module=cuv_poc_module,
+                                                cuv_poc_code_closure_sha256=cuv_poc_code_closure_sha256,
                                                 workspace=_workspace, plugins=_plugins, transports=_transports,
                                                 schemas=_schemas, diagnostic=_diagnostic,
                                                 worker_command=layer2_worker_command, unmoved=text_unmoved()))

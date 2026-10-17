@@ -63,12 +63,13 @@ def implementation_identity():
     # through the host. A self-file hash alone cannot authorize cache reuse
     # after any of those implementations change. The existing Layer 2 closure
     # covers scripts/, the production package, schemas and terminology.
-    return {"schemaVersion": "sermon-cuv-implementation-v2",
+    return {"schemaVersion": "sermon-cuv-implementation-v3",
             "sha256": code.module_sha256(sys.modules[__name__]),
-            "projectCodeClosureSha256": code.code_identity()}
+            "projectCodeClosureSha256": code.code_identity(),
+            "cuvPocCodeClosureSha256": backend.current().cuv_poc_code_closure_sha256()}
 
 VERSION = "sermon-cuv-translation-v1"
-MANIFEST_VERSION = "sermon-cuv-translation-v2"
+MANIFEST_VERSION = "sermon-cuv-translation-v3"
 MAP_SCHEMA = "sermon-cuv-reference-map-v1"
 MODEL = "gpt-6.1-sol"
 MODEL_IDENTITIES = {("gpt-6-astra", "medium"), (MODEL, "high")}

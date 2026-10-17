@@ -1,11 +1,14 @@
 """Exercise real cache lineage across a local quotation-map correction."""
 import copy
 import json
+from pathlib import Path
+import tempfile
 import unittest
 from dataclasses import replace
 from unittest import mock
 from tests import test_sermon_cuv_translation as fixtures
 from scripts import sermon_cuv_translation as mod
+from scripts.tongxing_host import cuv_poc_code_closure_sha256
 
 
 class IncrementalQuotationReuseTests(unittest.TestCase):
@@ -36,11 +39,17 @@ class IncrementalQuotationReuseTests(unittest.TestCase):
         self.assertEqual(6, self.run_fake(old))
         manifest_path = old / 'cuv-manifest.json'
         manifest = mod.read(manifest_path)
-        self.assertEqual('sermon-cuv-translation-v2', manifest['schemaVersion'])
+        self.assertEqual('sermon-cuv-translation-v3', manifest['schemaVersion'])
         self.assertEqual('sermon-cuv-translation-v1', mod.VERSION)
         self.assertEqual(mod.implementation_identity(), manifest['implementationIdentity'])
+        self.assertEqual('sermon-cuv-implementation-v3', manifest['implementationIdentity']['schemaVersion'])
         self.assertEqual(mod.VERSION, mod.read(old / 'report.json')['schemaVersion'])
         self.assertEqual(mod.VERSION, mod.read(old / 'spoken-review.json')['cuvTranslation']['schemaVersion'])
+        manifest['schemaVersion'] = 'sermon-cuv-translation-v2'
+        self.fx.write(manifest_path, manifest)
+        with mock.patch.object(mod, 'chat_json', side_effect=AssertionError('paid call')):
+            with self.assertRaisesRegex(ValueError, 'frozen checkout'):
+                mod.validate(old)
         del manifest['implementationIdentity']
         manifest['schemaVersion'] = mod.VERSION
         self.fx.write(manifest_path, manifest)
@@ -70,6 +79,41 @@ class IncrementalQuotationReuseTests(unittest.TestCase):
             current = {**manifest, 'implementationIdentity': mod.implementation_identity()}
             with self.assertRaisesRegex(ValueError, 'implementationIdentity'):
                 mod.compatible_reuse(current, manifest)
+
+    def test_poc_code_change_blocks_validation_resume_and_reuse_before_provider(self):
+        old = self.fx.out
+        self.assertEqual(6, self.run_fake(old))
+        manifest = mod.read(old / 'cuv-manifest.json')
+        original_backend = mod.backend.current()
+        self.assertEqual(original_backend.cuv_poc_code_closure_sha256(),
+                         manifest['implementationIdentity']['cuvPocCodeClosureSha256'])
+        changed_backend = replace(original_backend, cuv_poc_code_closure_sha256=lambda: 'changed-poc-code')
+        fresh = self.fx.root / 'poc-changed'
+        with mock.patch.object(mod.backend, '_current', changed_backend), \
+             mock.patch.object(mod, 'chat_json', side_effect=AssertionError('paid call')):
+            with self.assertRaisesRegex(ValueError, 'implementation identity changed'):
+                mod.validate(old)
+            with self.assertRaisesRegex(ValueError, 'implementation identity changed'):
+                mod.run(self.fx.parent, old, reference_map_path=self.fx.map, batch_size=1)
+            with self.assertRaisesRegex(ValueError, 'implementationIdentity'):
+                mod.run(self.fx.parent, fresh, reference_map_path=self.fx.map,
+                        batch_size=1, reuse_from=old)
+        self.assertFalse(fresh.exists())
+
+    def test_poc_closure_hash_includes_relative_paths_and_nested_python_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            poc = root / 'experiments' / 'sermon-dubbing-poc'
+            nested = poc / 'nested' / 'helper.py'
+            nested.parent.mkdir(parents=True)
+            nested.write_bytes(b'original')
+            first = cuv_poc_code_closure_sha256(root)
+            nested.write_bytes(b'changed')
+            self.assertNotEqual(first, cuv_poc_code_closure_sha256(root))
+            nested.write_bytes(b'original')
+            self.assertEqual(first, cuv_poc_code_closure_sha256(root))
+            nested.rename(poc / 'renamed.py')
+            self.assertNotEqual(first, cuv_poc_code_closure_sha256(root))
 
     def test_metadata_only_change_reuses_identical_audit_and_translation(self):
         old = self.fx.out
