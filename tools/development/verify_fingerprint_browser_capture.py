@@ -84,7 +84,7 @@ def main():
     parser.add_argument('--browser', required=True, type=Path)
     parser.add_argument('--out', required=True, type=Path)
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1] / 'apps/listening-web'
+    root = Path(__file__).resolve().parents[2] / 'apps/listening-web'
     allowed = {'/fingerprint-capture.mjs', '/fingerprint-worklet.mjs'}
     args.out.parent.mkdir(parents=True, exist_ok=True)
 
