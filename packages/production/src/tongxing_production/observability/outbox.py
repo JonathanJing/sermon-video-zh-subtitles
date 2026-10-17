@@ -11,10 +11,9 @@ import threading
 import uuid
 
 from . import log_contract as contract
-from .backend import JobFiles
+from ..storage import files as jobs  # the job store's file primitives (closure window G1)
 from ..storage.paths import safe_path as _safe_path
 
-jobs = JobFiles()
 
 _lock = threading.Lock()
 _producers = {}

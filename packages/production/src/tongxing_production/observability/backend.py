@@ -38,12 +38,3 @@ def current() -> ObservabilityBackend:
 
 def checkout_root() -> Path:
     return current().checkout_root
-
-
-class JobFiles:
-    """The job store's private file primitives under their old names (``jobs._persist``),
-    lent by the host through ``ports.JobFiles`` until the closure window W moves them."""
-
-    def __getattr__(self, name):
-        from ..storage import backend as _storage
-        return getattr(_storage.current().job_files, name.lstrip('_'))

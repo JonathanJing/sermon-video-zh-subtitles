@@ -152,6 +152,8 @@ WORKFLOWS = {
     # Orchestration-internal stages (tongxing_production.orchestration.unified), batch W1.
     'scripts/sermon_unified_parallel.py': PRODUCTION + 'orchestration/unified/parallel.py',
     'scripts/sermon_unified_accounting.py': PRODUCTION + 'orchestration/unified/accounting.py',
+    # Closure window G1: the durable job store (its file primitives went to storage/files.py).
+    'scripts/sermon_workflow_jobs.py': PRODUCTION + 'orchestration/jobs.py',
     # dual_pdf (tongxing_production.workflows.dual_pdf), batch W3a.
     'scripts/sermon_pipeline.py': PRODUCTION + 'workflows/dual_pdf/pipeline.py',
     'scripts/run_post_live_subtitle_generation.py': PRODUCTION + 'workflows/dual_pdf/post_live.py',  # W3c
@@ -194,6 +196,8 @@ SPLIT_MEMBERS = {
     # Infrastructure I2: the path constraint, atomic writes and work locks.
     'scripts/sermon_release_workflow.py': (PRODUCTION + 'storage/paths.py',),
     'scripts/sermon_execution_harness.py': (PRODUCTION + 'storage/files.py', PRODUCTION + 'storage/locks.py'),
+    # Closure window G1: the job store's file primitives.
+    'scripts/sermon_workflow_jobs.py': (PRODUCTION + 'storage/files.py',),
     # workflows/compute C4: the remote-call group extracted from the legacy monolith.
     # W3b: the Layer 1 English group and its file helpers.
     'scripts/sermon_pipeline.py': (PRODUCTION + 'compute/legacy_openai.py', PRODUCTION + 'source/post_live_english.py'),

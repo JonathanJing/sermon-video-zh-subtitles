@@ -23,41 +23,41 @@ import threading
 import time
 import uuid
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+from ..storage.files import (  # noqa: F401  the job store's file primitives, under their old names
+    _digest, _directory_fd, _open_lock_file, _persist, _read, _reject_link, _sync_directory,
+    _sync_directory_ancestry, utc_now)
+from ..storage.locks import _LOCK_FDS
+from . import jobs_host as _host
 
-from scripts.sermon_execution_harness import (  # noqa: E402
-    ExecutionTerminated, _LOCK_FDS, bounded_process, utc_now,
-)
 
-from scripts import sermon_job_liveness as liveness
+def __getattr__(name):
+    # Callers that read the former module constant REPO_ROOT (the checkout the host binds).
+    if name == "REPO_ROOT":
+        return _host.current().repo_root
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+class _HostModule:
+    def __init__(self, get):
+        object.__setattr__(self, "_get", get)
+
+    def __getattr__(self, name):
+        return getattr(self._get(), name)
+
+    def __setattr__(self, name, value):
+        setattr(self._get(), name, value)
+
+
+# Job liveness stays in the checkout (orchestration batch); looked up at every use.
+liveness = _HostModule(lambda: _host.current().liveness())
+
+
+def bounded_process(*arguments, **options):
+    return _host.current().bounded_process(*arguments, **options)
 
 SCHEMA = "sermon-workflow-job-v1"
 STATUSES = {"queued", "running", "succeeded", "failed", "uncertain"}
 ACTIVE = {"queued", "running"}
-
-
-def _digest(value):
-    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
-    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
-
-
-def _reject_link(path, *, directory):
-    try:
-        mode = path.lstat().st_mode
-    except FileNotFoundError:
-        return
-    if stat.S_ISLNK(mode) or not (stat.S_ISDIR(mode) if directory else stat.S_ISREG(mode)):
-        raise ValueError("Workflow job descendants must be ordinary directories/files, never symlinks")
-
-
-def _directory_fd(path):
-    fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-    if not stat.S_ISDIR(os.fstat(fd).st_mode):
-        os.close(fd)
-        raise ValueError("Workflow directory is not a regular directory")
-    return fd
 
 
 def _paths(root, job_id):
@@ -74,96 +74,8 @@ def _paths(root, job_id):
     return root, folder, lock_path
 
 
-def _sync_directory(path):
-    fd = _directory_fd(path)
-    try:
-        os.fsync(fd)
-    finally:
-        os.close(fd)
-
-
-def _sync_directory_ancestry(path):
-    """Persist every containing entry on this filesystem before side effects.
-
-    An existing parent may have just been created by a concurrent admission,
-    so stopping at the first directory that exists is insufficient. A mount
-    boundary is pre-existing infrastructure, not a directory created here.
-    """
-    current = Path(path).resolve()
-    while True:
-        _sync_directory(current)
-        parent = current.parent
-        if parent == current or parent.stat().st_dev != current.stat().st_dev:
-            break
-        current = parent
-
-
-def _persist(path, value):
-    # Anchor every operation to an already-open, non-symlink directory. A
-    # descendant path cannot redirect the durable state write outside the job.
-    directory_fd = _directory_fd(path.parent)
-    temporary = "." + path.name + "." + uuid.uuid4().hex
-    try:
-        try:
-            mode = os.stat(path.name, dir_fd=directory_fd, follow_symlinks=False).st_mode
-        except FileNotFoundError:
-            mode = None
-        if mode is not None and not stat.S_ISREG(mode):
-            raise ValueError("Workflow evidence must be a regular file, never a symlink")
-        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-                     0o600, dir_fd=directory_fd)
-        with os.fdopen(fd, "w", encoding="utf-8") as stream:
-            json.dump(value, stream, ensure_ascii=False, indent=2, allow_nan=False)
-            stream.write("\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, path.name, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
-        os.fsync(directory_fd)
-    finally:
-        try:
-            os.unlink(temporary, dir_fd=directory_fd)
-        except FileNotFoundError:
-            pass
-        os.close(directory_fd)
-
-
-def _read(path):
-    directory_fd = _directory_fd(path.parent)
-    try:
-        fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory_fd)
-    finally:
-        os.close(directory_fd)
-    with os.fdopen(fd, encoding="utf-8") as stream:
-        if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
-            raise ValueError("Workflow evidence must be a regular file")
-        return json.load(stream)
-
-
 def _public(job_id, status):
     return {"jobId": job_id, "status": status}
-
-
-def _open_lock_file(path, directory_fd):
-    """Tolerate Darwin's transient ENOENT on concurrent O_CREAT/O_NOFOLLOW.
-
-    This retries only admission-file creation, never command execution. Recheck
-    the directory inode and link/type constraints on every retry; a removed or
-    replaced directory is not a transient creation race and must fail closed.
-    """
-    opened = os.fstat(directory_fd)
-    for attempt in range(10):
-        try:
-            return os.open(path.name, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK,
-                           0o600, dir_fd=directory_fd)
-        except FileNotFoundError:
-            current = path.parent.lstat()
-            if (not stat.S_ISDIR(current.st_mode)
-                    or (current.st_dev, current.st_ino) != (opened.st_dev, opened.st_ino)):
-                raise ValueError("Workflow lock directory changed during admission")
-            _reject_link(path, directory=False)
-            if attempt == 9:
-                raise
-            time.sleep(.005 * (attempt + 1))
 
 
 @contextmanager
@@ -320,7 +232,7 @@ def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: f
         _sync_directory(root / ".locks")
         _sync_directory_ancestry(root)
         _persist(folder / "request.json", request)
-        from scripts import sermon_log_profile as accounting_profile
+        from ..observability import profile as accounting_profile
         accounting_context = accounting_profile.job_context(job_id)
         context_binding = {}
         if accounting_context is not None:
@@ -341,9 +253,8 @@ def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: f
                 raise ValueError("Workflow log must be a regular file")
             with os.fdopen(log_fd, "ab", buffering=0) as log:
                 process = subprocess.Popen(
-                    [sys.executable, str(Path(__file__).resolve()), "worker", "--root", str(root),
-                     "--job-id", job_id, "--lock-fd", str(fd)],
-                    cwd=REPO_ROOT, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                    _host.current().worker_command(root, job_id, fd),
+                    cwd=_host.current().repo_root, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                     start_new_session=True, pass_fds=(fd,),
                 )
         except OSError as exc:
@@ -373,7 +284,7 @@ def _worker(root, job_id, lock_fd):
         return 2
     environment = None
     if 'accountingContextSha256' in state:
-        from scripts import sermon_log_profile as accounting_profile
+        from ..observability import profile as accounting_profile
         accounting_context = _read(folder / 'accounting-context.json')
         if _digest(accounting_context) != state['accountingContextSha256']:
             raise ValueError('job_accounting_context_changed')
@@ -385,7 +296,7 @@ def _worker(root, job_id, lock_fd):
     try:
         options = {'cancel_event': monitor.cancel} if monitor else {}
         if environment is not None: options['env'] = environment
-        result = bounded_process(request["command"], timeout=request["timeoutSeconds"], cwd=REPO_ROOT,
+        result = bounded_process(request["command"], timeout=request["timeoutSeconds"], cwd=_host.current().repo_root,
                                  stdin=subprocess.DEVNULL, check=False, **options)
         if monitor and (monitor.reason or (result.returncode == 0 and not monitor.completed())):
             _write_state(folder, job_id, "uncertain", reason=monitor.reason,
@@ -393,7 +304,7 @@ def _worker(root, job_id, lock_fd):
             return 0
         _write_state(folder, job_id, "succeeded" if result.returncode == 0 else "failed",
                      returnCode=result.returncode, reason="command_completed", completedAt=utc_now())
-    except (subprocess.TimeoutExpired, ExecutionTerminated) as exc:
+    except (subprocess.TimeoutExpired, _host.current().execution_terminated()) as exc:
         cleanup_uncertain = any("cleanup failed" in note.lower() for note in getattr(exc, "__notes__", []))
         liveness_reason = monitor.reason if monitor else None
         reason = "cleanup_uncertain" if cleanup_uncertain else liveness_reason or "timeout_or_termination"

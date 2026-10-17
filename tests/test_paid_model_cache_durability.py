@@ -10,6 +10,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
+from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
 from scripts import run_target_language_models as runner
 from scripts import sermon_workflow_jobs as jobs
 
@@ -61,7 +62,7 @@ class PaidModelCacheDurabilityTests(unittest.TestCase):
             events.append(('caller', None))
             return self.response(key, payload)
 
-        with patch.object(os, 'fsync', side_effect=sync), patch.object(jobs, '_sync_directory', side_effect=directory), patch.object(Path, 'unlink', remove):
+        with patch.object(os, 'fsync', side_effect=sync), patch_job_store("_sync_directory", side_effect=directory), patch.object(Path, 'unlink', remove):
             self.call(respond)
         called = events.index(('caller', None))
         self.assertIn(('file', self.marker.name), events[:called])
