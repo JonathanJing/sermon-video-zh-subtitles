@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "testCount": 39,
+  "failed": 0,
+  "skipped": 0,
+  "scope": "bound-v1-transitional-sidecar-reject-and-replay",
+  "exitCode": 0
+}
