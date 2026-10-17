@@ -1,0 +1,16 @@
+{
+  "kind": "github_actions_ci_readback",
+  "pullRequest": 582,
+  "headSha": "1f4017b9c9b38de4b85e3b254f2034b341b4e8cf",
+  "pythonRunId": 39055370137,
+  "status": "completed",
+  "conclusion": "success",
+  "rootShards": "8/8 success",
+  "unittestAggregator": "success",
+  "nativeContracts": "skipped by scope",
+  "createdAt": "2026-10-17T17:48:40Z",
+  "completedAt": "2026-10-17T18:08:04Z",
+  "longestJob": "root-4 14m53s",
+  "production": "not_run",
+  "deviceAcceptance": "not_run"
+}
