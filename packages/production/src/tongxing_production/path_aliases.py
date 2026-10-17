@@ -66,6 +66,10 @@ LAYER3 = {
     'scripts/compact_formal_target_audio.py': _AUDIO + 'compaction.py',
     'scripts/target_audio_predicted_schedule.py': _AUDIO + 'predicted_schedule.py',
     'scripts/target_audio_timing_plan.py': _AUDIO + 'timing_plan.py',
+    # L3 A4, stage entry and operator tools.
+    'scripts/sermon_unified_audio.py': _AUDIO + 'unified_stage.py',
+    'scripts/render_speculative_target_language_speech.py': _AUDIO + 'speculative.py',
+    'scripts/inspect_canonical_audio.py': _AUDIO + 'inspect.py',
 }
 
 # Shared compute (tongxing_production.compute): stage 1, infrastructure I0b and the audio batches.
