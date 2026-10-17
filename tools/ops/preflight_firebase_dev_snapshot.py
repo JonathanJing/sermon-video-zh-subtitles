@@ -9,7 +9,11 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+import sys
 from urllib.request import Request, urlopen
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 try:
     from scripts import firebase_dev_four_layer_bucket_dry_run as dry
