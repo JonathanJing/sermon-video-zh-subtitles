@@ -14,6 +14,7 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts import sermon_accounting as accounting
+from scripts import sermon_identity_sidecars as sidecars
 from scripts import sermon_model_call_observation as observation
 from scripts.codex_credit_usage import estimate_credit_usage
 
@@ -31,6 +32,7 @@ def project(accounting_dir, receipts_dir, out_dir):
     events, damaged = accounting.read_events(source)
     if damaged:
         raise ValueError('credit_projection_damaged_source_ledger')
+    identities = sidecars.collect(source, events)
     bound, source_hashes = {}, {'events.jsonl': original_sha}
     for path in sorted(receipts.glob('*/response.json')):
         prefix, _, call_id = path.parent.name.partition('-')
@@ -87,6 +89,7 @@ def project(accounting_dir, receipts_dir, out_dir):
     if _sha(ledger) != original_sha or any(_sha(receipts/path) != digest for path,digest in source_hashes.items() if path != 'events.jsonl'):
         raise ValueError('credit_source_changed_during_projection')
     out.mkdir(parents=True, mode=0o700)
+    sidecars.write(out, identities)
     derived_ledger = out/'events.jsonl'
     derived_ledger.touch(mode=0o600)
     derived_ledger.write_text(''.join(json.dumps(e, ensure_ascii=False, sort_keys=True)+'\n' for e in projected))
