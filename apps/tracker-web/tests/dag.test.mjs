@@ -56,6 +56,12 @@ test('timestamps cannot carry comments or arbitrary payloads and malformed optio
   const input=fixture();input.generatedAt='(secret) 2 Oct 2026 14:00:00Z';input.freshness={sourceObservedAt:input.generatedAt};input.logs={contractVersions:{}};
   const safe=sanitizeDag(input);assert.equal(safe.generatedAt,null);assert.equal(safe.freshness.sourceObservedAt,null);assert.deepEqual(safe.logs.contractVersions,[]);assert.equal(JSON.stringify(safe).includes('secret'),false);
 });
+test('current and legacy accounting contract versions survive the public allowlist', () => {
+  const input=fixture();
+  input.logs={contractVersions:['private', 'sermon-accounting-log-contract-v2', 'sermon-accounting-log-contract-v1', 'sermon-accounting-log-contract-v2']};
+  assert.deepEqual(sanitizeDag(input).logs.contractVersions,
+    ['sermon-accounting-log-contract-v2', 'sermon-accounting-log-contract-v1']);
+});
 test('numeric and complete ETA require a coherent nonempty bound plan, including every node mode', () => {
   for (const progress of [null,{nodes:[],status:'partial',complete:false}]) {
     const input=fixture();input.evidenceMode='real';input.progress=progress;input.eta={status:'complete',lowerSeconds:0,upperSeconds:0};assert.equal(sanitizeDag(input).eta.status,'unknown');
