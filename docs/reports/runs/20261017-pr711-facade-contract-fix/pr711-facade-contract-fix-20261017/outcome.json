@@ -1,0 +1,20 @@
+{
+  "kind": "local_regression_repair",
+  "status": "success_after_fix",
+  "headSha": "00233589a2c6592e4124d49f5ea593135c7739ea",
+  "initialCorrectEnvironment": {
+    "testsRun": 1,
+    "failures": 1,
+    "errors": 0,
+    "reason": "package facade contract rejected tools.development namespace"
+  },
+  "afterFix": {
+    "testsRun": 1,
+    "failures": 0,
+    "errors": 0,
+    "durationSeconds": 0.527,
+    "exitCode": 0
+  },
+  "scope": "test_tongxing_production_package.ProductionPackageTests.test_every_facade_imports_by_bare_name_from_a_script_run_in_scripts",
+  "fullCI": "pending"
+}
