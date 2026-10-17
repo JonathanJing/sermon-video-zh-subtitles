@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr629-merge-dev-188807ef-focused",
+  "runs": [
+    {
+      "label": "20261017-pr629-merge-dev-188807ef-focused",
+      "source": "~/.codex/worktrees/cuv-preflight-move/sermon-video-zh-subtitles/artifacts/20261017-pr629-merge-dev-188807ef-focused",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-pr629-merge-dev-188807ef-focused",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 593,
+      "truncated": false,
+      "sha256": "c9bd7f28b148a728d96d38a40755fbf53d28b6e6097a9e99ddb871edeb83240d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
