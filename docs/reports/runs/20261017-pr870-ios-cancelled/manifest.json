@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr870-ios-cancelled",
+  "runs": [
+    {
+      "label": "pr870-ios-cancelled-39076854429",
+      "source": "/private/tmp/sermon-project-credit-usage-move-20261017/artifacts/pr870-ios-cancelled-39076854429",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr870-ios-cancelled-39076854429",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 363,
+      "truncated": false,
+      "sha256": "9337c53606db9d6d859040c723214bbe7d07241d6ef99db140337b92c1e8a6aa",
+      "redactions": {}
+    },
+    {
+      "run": "pr870-ios-cancelled-39076854429",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 880,
+      "truncated": false,
+      "sha256": "728b1af85225f5dfa3ac31d8b08117873784cf2405a47e3871751e807d32449c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
