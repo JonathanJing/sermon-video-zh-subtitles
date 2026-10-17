@@ -14,6 +14,16 @@ virtualenv:
 python -m pip install -e packages/production
 ```
 
+To import the mobile PDF renderer from a standalone package installation,
+install its optional PDF dependency:
+
+```bash
+python -m pip install -e 'packages/production[pdf]'
+```
+
+The repository's `requirements.txt` already includes ReportLab for its PDF
+commands; text-only and orchestration installs can keep the base package.
+
 ## Rules
 
 - Nothing under `src/tongxing_production/` imports `scripts`, `backend`,
