@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "Tracker projection integration with sidecar 249ae12a",
+  "codeHead": "ec859a57",
+  "parentHead": "249ae12a34",
+  "pythonTests": {
+    "passed": 72,
+    "failed": 0
+  },
+  "nodeTests": {
+    "passed": 33,
+    "failed": 0
+  },
+  "productionRun": "not_run",
+  "publication": "not_run"
+}
