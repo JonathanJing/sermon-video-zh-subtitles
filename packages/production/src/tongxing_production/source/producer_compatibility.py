@@ -98,6 +98,15 @@ STORAGE_MOVE_MEMBER_SHA256 = {
 STORAGE_MOVE_MIGRATION = 'i2-public-snapshot-storage-package-move-v8'
 STORAGE_MOVE_CHANGED = ['scripts/sermon_public_snapshot.py']
 
+# Infrastructure I4 moved four_layer_measure into observability/measure.py: it drops its
+# checkout sys.path setup and imports progress and accounting from the package, with the
+# same timing-audit output. The checkout before I4 was exactly the v8 current table.
+MEASURE_MOVE_HISTORICAL_SHA256 = STORAGE_MOVE_SOURCE_SHA256
+MEASURE_MOVE_SOURCE_SHA256 = {**STORAGE_MOVE_SOURCE_SHA256,
+    'scripts/four_layer_measure.py': 'ba38ac8c68dad9cdd7f1198d2022e0bea478b0a0a977d1076efeb42c9e31141e'}
+MEASURE_MOVE_MIGRATION = 'i4-four-layer-measure-observability-package-move-v9'
+MEASURE_MOVE_CHANGED = ['scripts/four_layer_measure.py']
+
 
 def verify(historical,current,planned,binding):
     _require(type(historical) is dict and type(current) is dict and type(planned) is dict
@@ -114,10 +123,12 @@ def verify(historical,current,planned,binding):
     transport_move = historical==PRODUCER_MOVE_SOURCE_SHA256 and current==TRANSPORT_MOVE_SOURCE_SHA256
     contracts_split = historical==CONTRACTS_SPLIT_HISTORICAL_SHA256 and current==CONTRACTS_SPLIT_SOURCE_SHA256
     storage_move = historical==STORAGE_MOVE_HISTORICAL_SHA256 and current==STORAGE_MOVE_SOURCE_SHA256
-    package_move = move or producer_move or transport_move or contracts_split or storage_move
+    measure_move = historical==MEASURE_MOVE_HISTORICAL_SHA256 and current==MEASURE_MOVE_SOURCE_SHA256
+    package_move = move or producer_move or transport_move or contracts_split or storage_move or measure_move
     changed = (CHANGED if original else MOVE_CHANGED if move else PRODUCER_MOVE_CHANGED if producer_move
         else TRANSPORT_MOVE_CHANGED if transport_move else CONTRACTS_SPLIT_CHANGED if contracts_split
-        else STORAGE_MOVE_CHANGED if storage_move else ['scripts/sermon_fresh_diagnostic_source.py'])
+        else STORAGE_MOVE_CHANGED if storage_move else MEASURE_MOVE_CHANGED if measure_move
+        else ['scripts/sermon_fresh_diagnostic_source.py'])
     _require((original or followup or extraction or package_move) and {path for path in current if current[path]!=historical[path]}==set(changed),
         'source_producer_compatibility_unknown_revision')
     _require(not contracts_split or all(recorded(planned,path)==sha
@@ -132,7 +143,8 @@ def verify(historical,current,planned,binding):
                 for value in binding.values()),'source_producer_compatibility_binding_required')
     migration = (MIGRATION if original else MOVE_MIGRATION if move else PRODUCER_MOVE_MIGRATION if producer_move
         else TRANSPORT_MOVE_MIGRATION if transport_move else CONTRACTS_SPLIT_MIGRATION if contracts_split
-        else STORAGE_MOVE_MIGRATION if storage_move else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
+        else STORAGE_MOVE_MIGRATION if storage_move else MEASURE_MOVE_MIGRATION if measure_move
+        else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
     return {'schemaVersion':SCHEMA,'migrationId':migration,'binding':binding,
         'historicalProducerSha256':historical,'currentInspectorProducerSha256':current,
         'changedModules':changed,'migrationCodeSha256':_source.current().code.module_sha256(sys.modules[__name__]),
