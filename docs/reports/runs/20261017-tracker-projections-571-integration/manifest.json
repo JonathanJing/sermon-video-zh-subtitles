@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-tracker-projections-571-integration",
+  "runs": [
+    {
+      "label": "tracker-projections-571-integration-20261017",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/tracker-projections-571-integration-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tracker-projections-571-integration-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 344,
+      "truncated": false,
+      "sha256": "589f9f10f99c9c96546d5f7ca69c128f582e83fb3dda5952b855ee4c5e607c1b",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-projections-571-integration-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 457,
+      "truncated": false,
+      "sha256": "f98c5dcf666206c61f7135b57c20a4fb72dff1f508e4d4dd9bb47a3efb07e893",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
