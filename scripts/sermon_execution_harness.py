@@ -23,11 +23,16 @@ import threading
 import time
 import uuid
 
-_LOCK_FDS = ContextVar("sermon_work_lock_fds", default=())
-
-
-class WorkAlreadyRunning(RuntimeError):
-    pass
+# The work lock, its ContextVar and atomic writes live in tongxing_production.storage
+# (infrastructure I2); bounded_process below reads the same _LOCK_FDS object.
+try:
+    import tongxing_production.storage  # noqa: F401
+except ModuleNotFoundError:
+    # The isolated Temporal venv installs only temporalio; these storage modules use the
+    # standard library alone, so load them from the checkout's package source.
+    sys.path.append(str(Path(__file__).resolve().parents[1] / "packages" / "production" / "src"))
+from tongxing_production.storage.files import atomic_json, utc_now  # noqa: E402,F401
+from tongxing_production.storage.locks import _LOCK_FDS, WorkAlreadyRunning, work_lock  # noqa: E402,F401
 
 
 class RemoteOutcomeUnknown(RuntimeError):
@@ -36,47 +41,6 @@ class RemoteOutcomeUnknown(RuntimeError):
 
 class ExecutionTerminated(InterruptedError):
     pass
-
-
-def utc_now():
-    return datetime.now(timezone.utc).isoformat()
-
-
-def atomic_json(path, value):
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    fd, name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as stream:
-            json.dump(value, stream, ensure_ascii=False, indent=2, allow_nan=False)
-            stream.write("\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(name, path)
-    finally:
-        Path(name).unlink(missing_ok=True)
-
-
-@contextmanager
-def work_lock(work):
-    work = Path(work).resolve()
-    folder = work.parent / ".harness-locks"
-    folder.mkdir(parents=True, exist_ok=True, mode=0o700)
-    key = hashlib.sha256(str(work).encode()).hexdigest()
-    fd = os.open(folder / f"{key}.lock", os.O_CREAT | os.O_RDWR, 0o600)
-    token = None
-    try:
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as exc:
-            raise WorkAlreadyRunning("This canonical work directory already has an active writer") from exc
-        token = _LOCK_FDS.set((*_LOCK_FDS.get(), fd))
-        yield
-    finally:
-        if token is not None:
-            _LOCK_FDS.reset(token)
-        # Do not LOCK_UN: inherited child descriptors must keep this lock alive.
-        os.close(fd)
 
 
 def _terminate_group(process):

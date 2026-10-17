@@ -9,12 +9,14 @@ import os
 import stat
 import uuid
 
-from scripts import inspect_canonical_packages as packages
-from scripts import sermon_review_contracts as c
-from scripts import sermon_workflow_jobs as jobs
-from scripts.sermon_release_workflow import _safe_path
+from ..contracts import canonical as c
+from . import backend as _storage
+from .paths import safe_path as _safe_path
 
-MAX_BYTES = packages.MAX_JSON_BYTES
+
+# The canonical package inspector's JSON bound (inspect_canonical_packages.MAX_JSON_BYTES,
+# which has not moved); a test pins the two equal.
+MAX_BYTES = 16 * 1024 * 1024
 
 
 def decode_json(data):
@@ -61,7 +63,7 @@ def save_once(path, value):
         saved, raw = read_snapshot(path)
         c.require(c.canonical_bytes(saved) == c.canonical_bytes(value), 'immutable_public_artifact_changed')
         return raw
-    directory = jobs._directory_fd(path.parent)
+    directory = _storage.current().job_files.directory_fd(path.parent)
     temporary = '.' + path.name + '.' + uuid.uuid4().hex
     try:
         fd = os.open(temporary, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW,
@@ -78,7 +80,7 @@ def save_once(path, value):
         try: os.unlink(temporary, dir_fd=directory)
         except FileNotFoundError: pass
         os.close(directory)
-    jobs._sync_directory_ancestry(path.parent)
+    _storage.current().job_files.sync_directory_ancestry(path.parent)
     saved, raw = read_snapshot(path)
     c.require(c.canonical_bytes(saved) == c.canonical_bytes(value), 'immutable_public_artifact_changed')
     return raw

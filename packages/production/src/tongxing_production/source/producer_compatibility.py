@@ -80,6 +80,24 @@ CONTRACTS_SPLIT_MEMBER_SHA256 = {
 CONTRACTS_SPLIT_MIGRATION = 'i1-review-contracts-split-package-move-v7'
 CONTRACTS_SPLIT_CHANGED = ['scripts/sermon_review_contracts.py']
 
+# Infrastructure I2 moved sermon_public_snapshot into storage/snapshot.py: it imports the
+# canonical JSON checks from contracts/ and the path constraint from storage/paths.py,
+# and reaches the job store's directory primitives through the host, with the same
+# output bytes. The checkout before I2 was exactly the v7 current table.
+STORAGE_MOVE_HISTORICAL_SHA256 = CONTRACTS_SPLIT_SOURCE_SHA256
+STORAGE_MOVE_SOURCE_SHA256 = {**CONTRACTS_SPLIT_SOURCE_SHA256,
+    'scripts/sermon_public_snapshot.py': 'e45d32b62825410cb9ad886fa0d07aac2957f3c37d9a1ad84e522dcb5a287fa0'}
+# Package files the moved module now imports are separate identity entries; bind their
+# exact reviewed bytes alongside this migration.
+STORAGE_MOVE_MEMBER_SHA256 = {
+    'packages/production/src/tongxing_production/storage/paths.py':
+        '3e37a06bb90967aca96bcfaf08ed2bba8d1cb05bfff8b3180fd1d7bb6140b9fd',
+    'packages/production/src/tongxing_production/contracts/canonical.py':
+        '6aa3890f13321fdb4ef38943f186d7b63400e349c83b1cd2a25cdd3c37bfedf5',
+}
+STORAGE_MOVE_MIGRATION = 'i2-public-snapshot-storage-package-move-v8'
+STORAGE_MOVE_CHANGED = ['scripts/sermon_public_snapshot.py']
+
 
 def verify(historical,current,planned,binding):
     _require(type(historical) is dict and type(current) is dict and type(planned) is dict
@@ -95,14 +113,18 @@ def verify(historical,current,planned,binding):
     producer_move = historical==MOVE_SOURCE_SHA256 and current==PRODUCER_MOVE_SOURCE_SHA256
     transport_move = historical==PRODUCER_MOVE_SOURCE_SHA256 and current==TRANSPORT_MOVE_SOURCE_SHA256
     contracts_split = historical==CONTRACTS_SPLIT_HISTORICAL_SHA256 and current==CONTRACTS_SPLIT_SOURCE_SHA256
-    package_move = move or producer_move or transport_move or contracts_split
+    storage_move = historical==STORAGE_MOVE_HISTORICAL_SHA256 and current==STORAGE_MOVE_SOURCE_SHA256
+    package_move = move or producer_move or transport_move or contracts_split or storage_move
     changed = (CHANGED if original else MOVE_CHANGED if move else PRODUCER_MOVE_CHANGED if producer_move
         else TRANSPORT_MOVE_CHANGED if transport_move else CONTRACTS_SPLIT_CHANGED if contracts_split
-        else ['scripts/sermon_fresh_diagnostic_source.py'])
+        else STORAGE_MOVE_CHANGED if storage_move else ['scripts/sermon_fresh_diagnostic_source.py'])
     _require((original or followup or extraction or package_move) and {path for path in current if current[path]!=historical[path]}==set(changed),
         'source_producer_compatibility_unknown_revision')
     _require(not contracts_split or all(recorded(planned,path)==sha
         for path,sha in CONTRACTS_SPLIT_MEMBER_SHA256.items()),
+        'source_producer_compatibility_split_dependency_changed')
+    _require(not storage_move or all(recorded(planned,path)==sha
+        for path,sha in STORAGE_MOVE_MEMBER_SHA256.items()),
         'source_producer_compatibility_split_dependency_changed')
     _require(type(binding) is dict and set(binding)=={'parentPlanSha256','newPlanSha256',
         'sourceCanonicalSha256','anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256'}
@@ -110,7 +132,7 @@ def verify(historical,current,planned,binding):
                 for value in binding.values()),'source_producer_compatibility_binding_required')
     migration = (MIGRATION if original else MOVE_MIGRATION if move else PRODUCER_MOVE_MIGRATION if producer_move
         else TRANSPORT_MOVE_MIGRATION if transport_move else CONTRACTS_SPLIT_MIGRATION if contracts_split
-        else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
+        else STORAGE_MOVE_MIGRATION if storage_move else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
     return {'schemaVersion':SCHEMA,'migrationId':migration,'binding':binding,
         'historicalProducerSha256':historical,'currentInspectorProducerSha256':current,
         'changedModules':changed,'migrationCodeSha256':_source.current().code.module_sha256(sys.modules[__name__]),
