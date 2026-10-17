@@ -876,6 +876,8 @@ ENTRY_LOAD_TIME_IMPORTS = {
     'tongxing_production.workflows.dual_pdf.post_live': (
         'backend.cloud', 'backend.observability', 'scripts.live_source_monitor',
         'scripts.post_live_run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
+    # L4 D2: the app release builder imported the waiver release basis at load time.
+    'tongxing_production.delivery.app_release': ('scripts.machine_quality_release_basis',),
     'tongxing_production.workflows.dual_pdf.codex_local': (
         'backend.config', 'backend.cloud', 'scripts.live_source_monitor',
         'scripts.run_sermon_production_supervisor_agent', 'scripts.sermon_accounting',

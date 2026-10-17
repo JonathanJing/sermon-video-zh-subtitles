@@ -22,7 +22,21 @@ from pathlib import Path, PurePosixPath
 from jsonschema import Draft202012Validator, FormatChecker
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from . import backend as _delivery
+
+
+def schema_path(name: str) -> Path:
+    """A checked-in schema, read from the checkout the host binds."""
+    return _delivery.current().schemas.path(name)
+
+
+def __getattr__(name):
+    # Callers that read the former module constant ROOT (the checkout the host binds).
+    if name == "ROOT":
+        return _delivery.current().core.repo_root
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 LOCALES = ("zh-Hans", "ko", "es")
 PAGE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
@@ -46,7 +60,7 @@ def file_sha(path: Path) -> str:
 
 def read_package(path: Path, schema_name: str) -> dict:
     value = json.loads(path.read_text(encoding="utf-8"))
-    schema = json.loads((ROOT / "schemas" / schema_name).read_text(encoding="utf-8"))
+    schema = json.loads(schema_path(schema_name).read_text(encoding="utf-8"))
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(value))
     if errors:
         raise StageError(f"{path}: {errors[0].message}")
@@ -98,12 +112,7 @@ def reviewed_candidate(candidate: dict) -> bool:
 def validate_audio_screening_review(audio: dict, receipt: dict,
                                     screening: dict | None) -> None:
     # The gate is cross-layer review (L4 decision 2); its callers here catch StageError.
-    try:
-        from scripts import tongxing_host  # noqa: F401  binds the review backend
-    except ModuleNotFoundError:  # run as a script from scripts/
-        sys.path.insert(0, str(ROOT))
-        from scripts import tongxing_host  # noqa: F401
-    from tongxing_production.review import audio_screening
+    from ..review import audio_screening
     try:
         audio_screening.validate_audio_screening_review(audio, receipt, screening)
     except audio_screening.AudioScreeningError as error:
@@ -447,7 +456,7 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
         "defaultPageId": args.page_id,
         "pages": [page],
     }
-    schema = json.loads((ROOT / "schemas/sermon-multilingual-catalog-v2.schema.json").read_text())
+    schema = json.loads(schema_path("sermon-multilingual-catalog-v2.schema.json").read_text())
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(catalog))
     if errors:
         raise StageError(f"catalog: {errors[0].message}")

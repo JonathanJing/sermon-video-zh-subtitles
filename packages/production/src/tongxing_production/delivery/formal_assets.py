@@ -17,12 +17,8 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-try:
-    from scripts import stage_formal_multilingual_dev as stage
-    from scripts.release_asset_io import copy_bound_asset
-except ImportError:
-    import stage_formal_multilingual_dev as stage
-    from release_asset_io import copy_bound_asset
+from . import formal_stage as stage
+from .asset_io import copy_bound_asset
 
 
 FIELDS = ("series", "title", "speaker", "scripture", "summary", "outline")
@@ -50,7 +46,7 @@ def checked_metadata(path: Path, proposal: Path, page_id: str, date: str,
             and metadata.get("reviewer") == ("simulation-test-only" if simulated else "user")
             and metadata.get("proposalFileSha256") == stage.file_sha(proposal))
     if simulated:
-        schema = json.loads((stage.ROOT / "schemas/sermon-dev-simulated-metadata-v1.schema.json").read_text())
+        schema = json.loads((stage.schema_path("sermon-dev-simulated-metadata-v1.schema.json")).read_text())
         Draft202012Validator(schema, format_checker=FormatChecker()).validate(metadata)
         require(common and release_intent == metadata["releaseIntent"],
                 "Simulated metadata requires the exact isolated Dev release intent")
@@ -79,7 +75,7 @@ def checked_metadata(path: Path, proposal: Path, page_id: str, date: str,
                 and metadata.get("approvalText") == "所列语言页面信息已批准"
                 and set(metadata.get("locales", {})) == expected_locales,
                 "Metadata v2 approval locales do not exactly match this release")
-        schema = json.loads((stage.ROOT / "schemas/sermon-formal-dev-metadata-approval-v2.schema.json").read_text())
+        schema = json.loads((stage.schema_path("sermon-formal-dev-metadata-approval-v2.schema.json")).read_text())
         errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(metadata))
         require(not errors, f"Metadata v2 schema error: {errors[0].message if errors else ''}")
     else:

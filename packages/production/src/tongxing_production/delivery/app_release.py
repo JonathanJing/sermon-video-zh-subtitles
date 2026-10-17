@@ -33,26 +33,20 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-# Nested v3 validators import the scripts package, including direct CLI runs.
-if __package__ in (None, ''):
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-try:
-    from scripts import stage_formal_multilingual_dev as stage
-    from scripts import build_formal_dev_release_assets as formal_assets
-    from scripts.release_asset_io import copy_bound_asset
-    from scripts import delivery_contract, study_artifacts
-    from scripts import machine_quality_release_basis as machine_basis
-except ImportError:
-    import stage_formal_multilingual_dev as stage
-    import build_formal_dev_release_assets as formal_assets
-    from release_asset_io import copy_bound_asset
-    import delivery_contract, study_artifacts
-    import machine_quality_release_basis as machine_basis
+from . import backend as _delivery
+from . import contract as delivery_contract
+from . import formal_assets
+from . import formal_stage as stage
+from . import study_artifacts
+from .asset_io import copy_bound_asset
 
 
-ROOT = Path(__file__).resolve().parents[1]
+def __getattr__(name):
+    # Callers that read the former module constant ROOT (the checkout the host binds).
+    if name == "ROOT":
+        return _delivery.current().core.repo_root
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 LOCALES = ("zh-Hans", "ko", "es")
 ACCEPT_NOT_RUN = {"status": "not_run", "evidenceSha256": None}
 PAGE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,159}$")
@@ -60,7 +54,7 @@ PAGE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,159}$")
 
 def runtime_web_root():
     """The reader shell a release publishes: the checkout's listening web (L4 decision 4)."""
-    return ROOT / 'apps/listening-web'
+    return _delivery.current().runtime_web.root()
 
 
 # The reader's shell is the page plus everything it loads locally: ES modules,
@@ -143,7 +137,7 @@ def write(path: Path, value: dict) -> None:
 
 
 def validate(value: dict, schema: str) -> None:
-    definition = read(ROOT / "schemas" / schema)
+    definition = read(stage.schema_path(schema))
     problems = list(Draft202012Validator(definition, format_checker=FormatChecker()).iter_errors(value))
     require(not problems, f"{schema}: {problems[0].message if problems else ''}")
 
@@ -166,14 +160,14 @@ def admitted_text(candidate_path: Path, receipt_path: Path, source_sha: str, loc
     A waiver for a script condensed for dubbing admits only the ``spoken`` role.
     """
     receipt = read(receipt_path)
-    if not machine_basis.is_text_waiver(receipt):
+    if not _delivery.current().waivers.is_text_waiver(receipt):
         candidate, candidate_sha = reviewed_candidate(candidate_path, source_sha, locale)
         checked_review(receipt_path, candidate, candidate_sha, locale)
         return candidate, candidate_sha, {"kind": "human_review", "receiptSha256": stage.canonical_sha(receipt)}
     candidate = stage.read_package(candidate_path, "sermon-target-language-candidate-v2.schema.json")
     require(candidate["targetLocale"] == locale and candidate["englishSourcePackageJsonSha256"] == source_sha,
             f"{locale}: candidate is not for this source")
-    machine_basis.validate_text_waiver(receipt, candidate=candidate, source_sha=source_sha)
+    _delivery.current().waivers.validate_text_waiver(receipt, candidate=candidate, source_sha=source_sha)
     require(spoken or not receipt["condensedGroupIds"],
             f"{locale}: a script condensed for dubbing cannot be the full text")
     return (candidate, stage.canonical_sha(candidate),
@@ -197,7 +191,7 @@ def caption_text(full: dict, full_sha: str, spoken: dict, spoken_sha: str, spoke
                  for full_group, spoken_group in zip(full["groups"], spoken["groups"])
                  if full_group["targetText"] != spoken_group["targetText"]]
     condensed = (list(spoken_receipt.get("condensedGroupIds") or [])
-                 if machine_basis.is_text_waiver(spoken_receipt) else [])
+                 if _delivery.current().waivers.is_text_waiver(spoken_receipt) else [])
     if not condensed:
         require(binding_path is None, f"{locale}: condensation binding given for a spoken script without condensed groups")
         return ("full_text" if not differing else "spoken_text"), None
@@ -205,7 +199,7 @@ def caption_text(full: dict, full_sha: str, spoken: dict, spoken_sha: str, spoke
     binding = read(binding_path)
     binding_sha = stage.canonical_sha(binding)
     require(binding_sha == spoken_receipt.get("condensationBindingJsonSha256")
-            and binding.get("schemaVersion") == machine_basis.CONDENSATION_BINDING_SCHEMA
+            and binding.get("schemaVersion") == _delivery.current().waivers.condensation_binding_schema
             and binding.get("status") == "pass" and not binding.get("issues")
             and binding.get("humanApproval") is False and binding.get("targetLocale") == locale
             and binding.get("implementationSha256") == spoken_receipt.get("implementationSha256")
@@ -398,8 +392,7 @@ def prepare(args: argparse.Namespace) -> dict:
             audio_receipt_path = maps["audio_review_receipt"][locale]
             receipt_schema = read(audio_receipt_path)["schemaVersion"] + ".schema.json"
             audio_receipt = stage.read_package(audio_receipt_path, receipt_schema)
-            from scripts import machine_audio_waiver_acceptance as machine_waivers
-            audio_waived = machine_waivers.is_audio_waiver(audio_receipt)
+            audio_waived = _delivery.current().waivers.is_audio_waiver(audio_receipt)
             require(audio["targetLocale"] == locale
                     and audio["englishSourcePackageJsonSha256"] == source_sha
                     and audio["targetLanguageCandidateJsonSha256"] == spoken_sha
@@ -422,7 +415,7 @@ def prepare(args: argparse.Namespace) -> dict:
             captions_show, condensation = caption_text(full, full_sha, spoken, spoken_sha,
                                                        read(maps["spoken_review_receipt"][locale]),
                                                        condensation_maps.get(locale), locale)
-            disclosure = machine_basis.disclosure(locale) if machine else None
+            disclosure = _delivery.current().waivers.disclosure(locale) if machine else None
             require(not machine or require_study, f"{locale}: machine-checked delivery requires the four-product release")
             require(audio_receipt["targetLanguageAudioPackageJsonSha256"] == audio_sha
                     and audio_receipt["targetLanguageCandidateJsonSha256"] == spoken_sha

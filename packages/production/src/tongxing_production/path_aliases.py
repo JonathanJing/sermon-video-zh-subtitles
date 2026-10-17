@@ -109,6 +109,10 @@ LAYER4 = {
     # D4: the App workflow's implementationSha256 keys stay these legacy paths.
     'scripts/sermon_app_delivery.py': _DELIVERY + 'app_delivery.py',
     'scripts/sermon_app_delivery_workflow.py': _DELIVERY + 'app_workflow.py',
+    # L4 D2: the formal stage and the release builders.
+    'scripts/stage_formal_multilingual_dev.py': _DELIVERY + 'formal_stage.py',
+    'scripts/build_formal_dev_release_assets.py': _DELIVERY + 'formal_assets.py',
+    'scripts/build_full_video_app_release.py': _DELIVERY + 'app_release.py',
 }
 
 # Cross-layer review (tongxing_production.review), batches R1-R4.

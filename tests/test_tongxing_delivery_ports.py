@@ -171,7 +171,8 @@ class DeliveryPortsTests(unittest.TestCase):
         # basis as it did before the move; it must not load Layer 4 itself.
         code = ("import sys; from scripts import tongxing_host; "
                 "loaded = [m for m in ('scripts.build_full_video_app_release', 'tongxing_production.delivery.publication', "
-                "'tongxing_production.delivery.baseline', "
+                "'tongxing_production.delivery.baseline', 'tongxing_production.delivery.app_release', "
+                "'tongxing_production.delivery.formal_stage', 'tongxing_production.delivery.formal_assets', "
                 "'scripts.machine_audio_waiver_acceptance', 'scripts.sermon_unified_delivery', "
                 "'scripts.sermon_app_delivery_workflow', 'tongxing_production.delivery.app_workflow', "
                 "'tongxing_production.delivery.app_delivery', 'tongxing_production.adapters.legacy.assemble_multilingual_hosting', "
