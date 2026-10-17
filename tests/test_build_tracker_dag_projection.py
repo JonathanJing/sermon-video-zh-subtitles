@@ -150,6 +150,10 @@ class PublicDagTests(unittest.TestCase):
             self.assertEqual(result["evidenceMode"], public_mode)
             self.assertEqual(result["quality"]["status"], "projected")
             self.assertEqual(result["logs"]["profileEventCount"], len(self.rows))
+            self.assertEqual(result["logs"]["contractVersions"], [contract.VERSION])
+        self.rows = [{**row, "contractVersion": contract.LEGACY_VERSION}
+                     for row in profiled(events())]
+        self.assertEqual(self.project()["logs"]["contractVersions"], [contract.LEGACY_VERSION])
         self.rows = events()
         for row in self.rows:
             row["evidenceMode"] = "current_execution"
