@@ -98,7 +98,8 @@ def _reasons(values):
 def _mode(events):
     # A legacy loose envelope cannot establish real/synthetic provenance merely
     # by adding an arbitrary evidenceMode field.
-    modes = {e.get("evidenceMode") if e.get("contractVersion") == "sermon-accounting-log-contract-v1"
+    modes = {e.get("evidenceMode") if e.get("contractVersion") in
+             {"sermon-accounting-log-contract-v1", "sermon-accounting-log-contract-v2"}
              else None for e in events}
     if "synthetic" in modes:
         return "synthetic" if modes == {"synthetic"} else "mixed"
@@ -492,9 +493,8 @@ def build_projection(accounting_dir, *, run_id, at=None, progress_inputs=None, s
             result["quality"]["reasonCodes"] = ["run_not_found"]
         else:
             _observed(result, run, selected, report, clock, stale_after_seconds, all_events=events)
-            profile_count = sum("contractVersion" in event for event in selected)
             result["logs"] = {"schemaVersions": sorted({e["schemaVersion"] for e in selected}),
-                "contractVersions": ["sermon-accounting-log-contract-v1"] if profile_count else [],
+                "contractVersions": sorted({e["contractVersion"] for e in selected if "contractVersion" in e}),
                 "eventCount": len({e["eventId"] for e in selected}),
                 "profileEventCount": len({e["eventId"] for e in selected if "contractVersion" in e}),
                 "legacyEventCount": len({e["eventId"] for e in selected if "contractVersion" not in e}),
