@@ -1,0 +1,17 @@
+{
+  "kind": "github_actions_ci_readback",
+  "pullRequest": 571,
+  "headSha": "eb1ccc150ded48be8e6ebb225d605b958d1bd7c3",
+  "pythonRunId": 39053697280,
+  "pythonRunStatus": "completed",
+  "pythonRunConclusion": "success",
+  "rootShards": "8/8 success",
+  "unittestAggregator": "success",
+  "longestJob": "root-3 17m26s",
+  "companion": "Tracker contracts and Prefect pilot success; latest Tongxing iOS run 39053832119 success",
+  "earlierSameHeadIosRun": "39053697359 cancelled when draft was marked ready; latest same-head run succeeded",
+  "codeReview": "completed without findings at exact head",
+  "securityReview": "completed without findings at exact head",
+  "production": "not_run",
+  "deviceAcceptance": "not_run"
+}
