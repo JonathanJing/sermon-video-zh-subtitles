@@ -97,6 +97,16 @@ def export(directory, output):
         raise ValueError('export_changes_receipt_reconciliation')
     from scripts import sermon_trace_artifacts as artifacts
     artifacts.new_directory(output)
+    references = {e.get('executionIdentity', {}).get('loadedProjectCodeManifestSha256')
+                  for e in events if e.get('event') == 'workflow_started'} - {None}
+    if references:
+        sidecars = output / '.execution-identities'
+        sidecars.mkdir(mode=0o700)
+        for digest in sorted(references):
+            modules = accounting.load_execution_identity_sidecar(directory, digest)
+            manifest = {'schemaVersion': 'sermon-loaded-project-code-v1',
+                        'loadedProjectCodeSha256': modules}
+            artifacts.write(sidecars / (digest + '.json'), json.dumps(manifest, sort_keys=True, separators=(',', ':')) + '\n')
     serialized = ''.join(json.dumps(e, sort_keys=True, separators=(',', ':'), allow_nan=False)+'\n' for e in safe)
     artifacts.write(output/'events.jsonl',serialized)
     report = weekly.project(output)
