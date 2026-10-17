@@ -97,8 +97,10 @@ def export(directory, output):
         raise ValueError('export_changes_receipt_reconciliation')
     from scripts import sermon_trace_artifacts as artifacts
     artifacts.new_directory(output)
-    references = {e.get('executionIdentity', {}).get('loadedProjectCodeManifestSha256')
-                  for e in events if e.get('event') == 'workflow_started'} - {None}
+    references = {identity.get('loadedProjectCodeManifestSha256')
+                  for e in events if e.get('event') == 'workflow_started'
+                  for identity in [e.get('executionIdentity')]
+                  if isinstance(identity, dict)} - {None}
     if references:
         sidecars = output / '.execution-identities'
         sidecars.mkdir(mode=0o700)
