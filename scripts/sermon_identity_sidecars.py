@@ -27,9 +27,11 @@ def collect(source, events):
     for event in events:
         if not isinstance(event, dict) or event.get('event') != 'workflow_started':
             continue
-        identity = event.get('executionIdentity') or {}
+        identity = event.get('executionIdentity')
         if not isinstance(identity, dict):
-            raise ValueError('invalid_execution_identity')
+            # Legacy rows can carry non-object identities. They have no
+            # content-addressed reference to preserve.
+            continue
         digest = identity.get('loadedProjectCodeManifestSha256')
         if digest is not None:
             if identity.get('loadedProjectCodeSha256') != {}:

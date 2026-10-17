@@ -44,8 +44,12 @@ _CacheInfo = namedtuple('CacheInfo', 'hits misses maxsize currsize')
 SCHEMA_NAME = 'sermon-accounting-log-contract-v1.schema.json'  # legacy public path
 
 
+def _readable_version(version):
+    return isinstance(version, str) and version in READ_VERSIONS
+
+
 def _schema_path(version=LEGACY_VERSION):
-    if version not in READ_VERSIONS:
+    if not _readable_version(version):
         raise ContractError('unsupported_contract_version')
     name = f'{version}.schema.json'
     try:
@@ -166,7 +170,7 @@ def _schema_snapshot(version=LEGACY_VERSION):
 
 
 def _event_bytes(row):
-    if not isinstance(row, dict) or row.get('contractVersion') not in READ_VERSIONS:
+    if not isinstance(row, dict) or not _readable_version(row.get('contractVersion')):
         raise ContractError('unsupported_contract_version')
     data = canonical_bytes(row)
     if len(data) + 1 > MAX_EVENT_BYTES:
@@ -362,7 +366,7 @@ def replay_integrity(events):
     ``_excluded`` uses in-memory row IDs only. Hash diagnostics are public-safe.
     Sequence gaps are intervals, never expanded to attacker-sized integer lists.
     """
-    rows = [r for r in events if r.get('contractVersion') in READ_VERSIONS]
+    rows = [r for r in events if isinstance(r, dict) and _readable_version(r.get('contractVersion'))]
     by_event, by_sequence, producers = defaultdict(list), defaultdict(list), defaultdict(set)
     diagnostics, excluded, representatives = [], set(), []
 
