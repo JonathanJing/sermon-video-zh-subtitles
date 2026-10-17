@@ -9,6 +9,10 @@ import json
 from pathlib import Path
 import re
 import shutil
+import sys
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 try:
     from scripts import firebase_dev_four_layer_bucket_dry_run as dry
@@ -17,7 +21,7 @@ except ImportError:
     import firebase_dev_four_layer_bucket_dry_run as dry
     from patch_firebase_dev_app_banner import patch_public
 
-SOURCE = Path(__file__).resolve().parents[1] / "apps/listening-web/reader"
+SOURCE = Path(__file__).resolve().parents[2] / "apps/listening-web/reader"
 
 
 def install(base_dev: Path, baseline_preflight: Path, page_id: str, out: Path) -> dict:
