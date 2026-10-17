@@ -187,6 +187,20 @@ class PublicDagTests(unittest.TestCase):
         self.rows[0]["schemaVersion"] = "future-schema"
         self.assertIn("unsupported_schema", self.project()["quality"]["reasonCodes"])
 
+    def test_invalid_sidecar_references_leave_partial_observed_projection(self):
+        for reference in ([], {}, "b" * 64):
+            with self.subTest(reference=reference):
+                self.rows = events()
+                self.rows.append(dict(self.rows[0], event="workflow_started", eventId="bad-reference",
+                    workflow="fixture", executionIdentity={"loadedProjectCodeSha256": {},
+                        "loadedProjectCodeManifestSha256": reference}))
+                result = self.project()
+                self.assertEqual(result["quality"]["status"], "partial")
+                self.assertIn("damaged_events", result["quality"]["reasonCodes"])
+                self.assertEqual(result["quality"]["damagedRowCount"], 1)
+                self.assertEqual(result["summary"]["observedNodeCount"], 4)
+                self.assertNotIn("accounting_invalid", result["quality"]["reasonCodes"])
+
     def test_stale_and_future_evidence_never_freshened_by_render(self):
         self.write()
         stale = public.build_projection(self.root, run_id=RUN, at=timestamp(600))

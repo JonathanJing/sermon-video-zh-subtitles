@@ -367,7 +367,7 @@ def replay_integrity(events):
     Sequence gaps are intervals, never expanded to attacker-sized integer lists.
     """
     rows = [r for r in events if isinstance(r, dict) and _readable_version(r.get('contractVersion'))]
-    by_event, by_sequence, producers = defaultdict(list), defaultdict(list), defaultdict(set)
+    by_event, by_sequence, by_run, producers = defaultdict(list), defaultdict(list), defaultdict(list), defaultdict(set)
     diagnostics, excluded, representatives = [], set(), []
 
     def problem(code, affected=(), **details):
@@ -386,7 +386,11 @@ def replay_integrity(events):
             _validate_with_snapshot(r, _event_bytes(r), snapshots[version])
             by_event[r['eventId']].append(r)
             by_sequence[(r['producerId'], r['sequence'])].append(r)
+            by_run[r['runId']].append(r)
             producers[r['producerId']].add(r['sequence'])
+    for _, group in sorted(by_run.items()):
+        if len({r['contractVersion'] for r in group}) > 1:
+            problem('run_contract_version_conflict', group)
     duplicates = 0
     for _, group in sorted(by_event.items()):
         if len({fact_hash(r) for r in group}) > 1:
