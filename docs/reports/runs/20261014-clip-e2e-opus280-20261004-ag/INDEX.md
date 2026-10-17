@@ -73,4 +73,6 @@ Error-like log lines (first 5 per log):
 - `logs/check-gpu-zh-Hans.log`: "failed": [],
 - `logs/plan-qc-zh-Hans.log`: == 2026-10-15T00:59:40+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_with_openai_envir
 
-Not copied: 3 .csv, 1619 .json, 1 .jsonl, 522 .lock, 2 .mp3, 152 .sha256, 222 .wav
+Not copied: 3 .csv, 1621 .json, 1 .jsonl, 522 .lock, 2 .mp3, 152 .sha256, 222 .wav
+
+Publication review additionally omitted 2 `asr-screening-receipt-v1.json` files because they contained per-segment model output; their aggregate status remains represented by the surrounding summary and log evidence.
