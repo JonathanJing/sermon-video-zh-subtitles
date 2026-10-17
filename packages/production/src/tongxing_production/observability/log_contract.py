@@ -39,7 +39,24 @@ _event_success_payload_bytes = 0
 _event_success_hits = _event_success_misses = 0
 _batch_state = threading.local()
 _CacheInfo = namedtuple('CacheInfo', 'hits misses maxsize currsize')
-SCHEMA_PATH = Path(__file__).resolve().parents[1] / 'schemas/sermon-accounting-log-contract-v1.schema.json'
+SCHEMA_NAME = 'sermon-accounting-log-contract-v1.schema.json'
+
+
+def _schema_path():
+    try:
+        from ..contracts import schemas
+    except ImportError:
+        # Shipped standalone as scripts/sermon_log_contract.py in the experiment-log release
+        # bundle (experiments/local_experiment_log/deploy_tools.py), next to its schemas/.
+        return Path(__file__).resolve().parents[1] / 'schemas' / SCHEMA_NAME
+    return schemas.path(SCHEMA_NAME)
+
+
+def __getattr__(name):
+    # Callers that read the former module constant.
+    if name == 'SCHEMA_PATH':
+        return _schema_path()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def _reset_snapshot_lock_after_fork():
@@ -89,7 +106,7 @@ def format_checker():
 
 @lru_cache(maxsize=1)
 def validator():
-    schema = json.loads(SCHEMA_PATH.read_text())
+    schema = json.loads(_schema_path().read_text())
     return _compile_validator(schema)
 
 
@@ -260,7 +277,7 @@ def _validate_event_uncached(row, checker):
         raise ContractError('invalid_contract_event')
     kind = row['event']
     if kind == 'rqc_observation':
-        from scripts.sermon_review_observation import validate_observation
+        from .review_observation import validate_observation
         try: validate_observation(row)
         except ValueError as exc: raise ContractError('invalid_review_observation') from exc
     if kind.startswith('api_attempt'):
@@ -272,7 +289,7 @@ def _validate_event_uncached(row, checker):
         if (row['coveredResponseIds'] is None) != (row['coverageStatus'] == 'unknown'):
             raise ContractError('sdk_coverage_conflict')
     if row.get('code') == 'model_call_observation':
-        from scripts.sermon_model_call_observation import safe_observation
+        from .model_call_observation import safe_observation
         try:
             safe_observation(row['fields'])
         except (ValueError, KeyError, TypeError) as exc:

@@ -8,8 +8,8 @@ from pathlib import Path
 import os
 import re
 
-from scripts import sermon_log_contract as contract
-from scripts import sermon_log_outbox as outbox
+from . import log_contract as contract
+from . import outbox
 
 _context = ContextVar('sermon_log_profile',default=None)
 PROFILE_ENV = 'SERMON_ACCOUNTING_CONTRACT_VERSION'
@@ -67,7 +67,7 @@ def _utc(value):
 
 
 def _build(event,base,context,event_id,producer_id,sequence):
-    from scripts import sermon_accounting as accounting
+    from . import accounting
     row={**base,**event}
     row.pop('pid',None);row.pop('threadId',None)
     row.update(traceId=hashlib.sha256(('sermon-trace-v1:'+row['runId']).encode()).hexdigest()[:32],contractVersion=contract.VERSION,eventId=event_id,producerId=producer_id,sequence=sequence)
@@ -123,7 +123,7 @@ def write(directory,event,base):
 
 @contextmanager
 def session(directory,workflow,metadata=None,*,work_kind,evidence_mode,production_run_id=None,**kwargs):
-    from scripts import sermon_accounting as accounting
+    from . import accounting
     if current() is not None:raise ValueError('use_existing_profile_session_for_nested_work')
     with context(workKind=work_kind,evidenceMode=evidence_mode,productionRunId=production_run_id):
         with accounting.accounting_session(directory,workflow,metadata,**kwargs) as run:yield run
@@ -136,7 +136,7 @@ def reject_downgrade(directory,run_id):
 
 def job_context(job_id):
     """Persist only the explicit accounting environment, never the whole env."""
-    from scripts import sermon_accounting as accounting
+    from . import accounting
     if current() is None:return None
     with context(jobId=job_id,dispatchSpanId=accounting._span.get() or os.environ.get(accounting.ENV_KEYS[3]),parentSpanId=None,attemptId=None):
         env=accounting.subprocess_environment()
@@ -149,7 +149,7 @@ def job_context(job_id):
 
 
 def restore_job_environment(value,job_id):
-    from scripts import sermon_accounting as accounting
+    from . import accounting
     if not isinstance(value,dict) or set(value)!={'schemaVersion','jobId','environment'} or value['schemaVersion']!='sermon-job-accounting-context-v1' or value['jobId']!=job_id:
         raise ValueError('invalid_job_accounting_context')
     env=value['environment'];allowed={*accounting.ENV_KEYS,accounting.WORKFLOW_ENV,PROFILE_ENV,CONTEXT_ENV}

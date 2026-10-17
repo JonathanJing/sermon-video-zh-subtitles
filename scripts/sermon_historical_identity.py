@@ -122,7 +122,7 @@ class ExecutionIdentityWitness:
     """Only a trusted fixed resolver uses this object; no caller callbacks."""
     @classmethod
     def capture(cls,expected):
-        root=Path(accounting.__file__).resolve().parents[1]
+        root=accounting.checkout_root()
         try:
             actual=accounting.execution_identity()
             c.require(actual==expected and actual['trackedWorkingTreeDirty'] is False,
@@ -175,7 +175,7 @@ class ExecutionIdentityWitness:
 
     def validate(self,expected):
         c.require(type(self) is ExecutionIdentityWitness and
-            self.root==Path(accounting.__file__).resolve().parents[1],
+            self.root==accounting.checkout_root(),
             'historical_identity_fixed_repository_required')
         return self._validate(expected)
 

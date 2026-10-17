@@ -50,7 +50,7 @@ def _codex_call(row):
 
 def _credit_usage(data, row):
     """Keep the logged estimate; never reprice an existing billing snapshot."""
-    from scripts.codex_credit_usage import estimate_credit_usage, safe_credit_usage
+    from .codex_credit_usage import estimate_credit_usage, safe_credit_usage
     recorded = data.get('creditUsage')
     if row['status'] != 'conflict' and isinstance(recorded, dict):
         try:
@@ -82,7 +82,7 @@ def _credit_totals(rows):
 
 def _row(start, finish, *, call_id, backend, role, provider='not_recorded',
          scope='request_including_transport', conflict=False):
-    from scripts.sermon_openai_runtime import safe_route
+    from ..compute.openai_runtime import safe_route
     evidence = finish or start or {}
     fields = evidence.get('fields', {})
     data = fields if evidence.get('code') == 'model_call_observation' else evidence

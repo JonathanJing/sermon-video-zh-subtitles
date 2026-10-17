@@ -15,10 +15,12 @@ from pathlib import Path
 import re
 import stat
 
-from scripts import sermon_log_contract as contract
-from scripts import sermon_log_outbox as outbox
-from scripts import sermon_log_profile as profile
-from scripts import sermon_workflow_jobs as jobs
+from . import log_contract as contract
+from . import outbox
+from . import profile
+from .backend import JobFiles
+
+jobs = JobFiles()
 
 BINDING_SCHEMA = 'sermon-durable-controller-stream-v1'
 DELIVERY_SCHEMA = 'sermon-durable-controller-delivery-v1'
@@ -87,7 +89,7 @@ def _read_binding(root):
 
 
 def _ledger_rows(fd):
-    from scripts import sermon_accounting as accounting
+    from . import accounting
     if os.fstat(fd).st_size > MAX_LEDGER_BYTES:
         raise ValueError('durable_ledger_size_limit')
     os.lseek(fd, 0, os.SEEK_SET)
@@ -294,7 +296,7 @@ class DurableStream:
 
     def write(self, event, base=None, context=None, *, delivery_key, intent=None):
         """Build a canonical profile envelope without inheriting a producer."""
-        from scripts import sermon_accounting as accounting
+        from . import accounting
         event, base, context = deepcopy(event), deepcopy(base or {}), deepcopy(context or {})
         if intent is None:
             intent = {'event': event, 'base': base, 'context': context}
@@ -315,7 +317,7 @@ class DurableStream:
         Job contexts retain run attribution but ordinary process-local worker
         producers. A pre-existing profile/identity is never silently adopted.
         """
-        from scripts import sermon_accounting as accounting
+        from . import accounting
         if (accounting._identity.get() is not None or profile.current() is not None
                 or accounting._workflow.get() is not None or accounting._span.get() is not None
                 or accounting._stage.get() is not None or any(os.environ.get(key)

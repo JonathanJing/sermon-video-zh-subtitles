@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from tongxing_production import path_aliases
 from scripts import sermon_accounting as accounting
 
 
@@ -16,7 +17,8 @@ class ObservabilityTests(unittest.TestCase):
 
     def test_snapshot_has_explicit_resource_scope_and_current_code_hash(self):
         identity = accounting.execution_identity()
-        self.assertIn('scripts/sermon_accounting.py', identity['loadedProjectCodeSha256'])
+        # Keys name where each loaded module lives; the accounting module moved in I3.
+        self.assertIn(path_aliases.resolve('scripts/sermon_accounting.py'), identity['loadedProjectCodeSha256'])
         with tempfile.TemporaryDirectory() as t:
             snap = accounting.resource_snapshot(t)
             self.assertGreater(snap['processPeakRssBytes'], 0)

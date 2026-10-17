@@ -4,15 +4,42 @@ No network, account sampling or API price conversion. Cached input is a subset
 of input and reasoning is a subset of output. Missing counters remain unknown.
 """
 from decimal import Decimal
+from functools import lru_cache
 import hashlib
 import json
 from pathlib import Path
 import re
 
-RATE_CARD_PATH = Path(__file__).resolve().parents[1] / 'config/codex-credit-rates-2026-10-05.json'
-RATE_CARD_BYTES = RATE_CARD_PATH.read_bytes()
-RATE_CARD = json.loads(RATE_CARD_BYTES)
-RATE_CARD_SHA256 = hashlib.sha256(RATE_CARD_BYTES).hexdigest()
+from . import backend as _observability
+
+RATE_CARD_NAME = 'config/codex-credit-rates-2026-10-05.json'
+
+
+def _rate_card_path():
+    """The checked-in rate card, read from the checkout the host binds."""
+    return _observability.checkout_root() / RATE_CARD_NAME
+
+
+@lru_cache(maxsize=1)
+def _rate_card_bytes():
+    return _rate_card_path().read_bytes()
+
+
+def _rate_card():
+    return json.loads(_rate_card_bytes())
+
+
+def _rate_card_sha256():
+    return hashlib.sha256(_rate_card_bytes()).hexdigest()
+
+
+def __getattr__(name):
+    # Callers that read the former module constants.
+    values = {'RATE_CARD_PATH': _rate_card_path, 'RATE_CARD_BYTES': _rate_card_bytes,
+              'RATE_CARD': _rate_card, 'RATE_CARD_SHA256': _rate_card_sha256}
+    if name in values:
+        return values[name]()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 SCHEMA = 'codex-credit-usage-v1'
 LABEL = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.:/-]{0,159}')
 
@@ -37,14 +64,14 @@ def estimate_credit_usage(model, usage, *, requested_service_tier=None, server_m
     requested_tier = _tier(requested_service_tier)
     selected_tier = _tier(server_service_tier) if server_service_tier is not None else requested_tier
     tier_source = 'server' if server_service_tier is not None else 'requested' if requested_tier else 'unavailable'
-    rates = RATE_CARD['ratesPerMillionTokens'].get(selected_model)
-    multiplier = RATE_CARD['purchasedCreditMultipliers'].get(selected_tier)
+    rates = _rate_card()['ratesPerMillionTokens'].get(selected_model)
+    multiplier = _rate_card()['purchasedCreditMultipliers'].get(selected_tier)
     result = dict(schemaVersion=SCHEMA, status='unknown', estimatedCredits=None,
-        actualCredits=None, actualQuotaUsage=None, basis=RATE_CARD['basis'],
+        actualCredits=None, actualQuotaUsage=None, basis=_rate_card()['basis'],
         model=selected_model, modelSource=model_source, requestedServiceTier=requested_tier,
         appliedServiceTier=selected_tier, tierSource=tier_source,
-        rateCardVersion=RATE_CARD['version'], rateCardSha256=RATE_CARD_SHA256,
-        verifiedAt=RATE_CARD['verifiedAt'], sources=list(RATE_CARD['sources']),
+        rateCardVersion=_rate_card()['version'], rateCardSha256=_rate_card_sha256(),
+        verifiedAt=_rate_card()['verifiedAt'], sources=list(_rate_card()['sources']),
         ratesPerMillionTokens=dict(rates) if rates else None, speedMultiplier=multiplier,
         reason='usage_not_reported')
     if status not in {'completed', 'failed'}:
@@ -59,7 +86,7 @@ def estimate_credit_usage(model, usage, *, requested_service_tier=None, server_m
     if multiplier is None:
         result['reason'] = 'service_tier_not_available'
         return result
-    if selected_tier == 'ultrafast' and selected_model not in RATE_CARD['ultrafastModels']:
+    if selected_tier == 'ultrafast' and selected_model not in _rate_card()['ultrafastModels']:
         result.update(reason='unsupported_speed_model', speedMultiplier=None)
         return result
     usage = usage if isinstance(usage, dict) else {}

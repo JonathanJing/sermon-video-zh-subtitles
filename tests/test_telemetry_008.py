@@ -53,7 +53,8 @@ socket.create_connection=denied
 from scripts import sermon_fresh_diagnostic as entry,sermon_accounting as accounting,sermon_log_profile as profile
 entry.preload_execution_modules()
 before=accounting.execution_identity()
-assert 'scripts/sermon_dispatch_observation.py' in before['loadedProjectCodeSha256']
+from tongxing_production.path_aliases import resolve
+assert resolve('scripts/sermon_dispatch_observation.py') in before['loadedProjectCodeSha256']
 from tongxing_production.path_aliases import resolve
 for module in ('sermon_model_call_report', 'sermon_model_call_observation', 'sermon_openai_runtime'):
     assert resolve('scripts/'+module+'.py') in before['loadedProjectCodeSha256'], module+' not preloaded'
@@ -103,7 +104,7 @@ print(json.dumps({'codeIdentityUnchanged':True,'providerCalls':0,'models':0,'dis
             expected = []
             for file, line, function in captured[0]:
                 try:
-                    relative = file.relative_to(Path(accounting.__file__).resolve().parents[1])
+                    relative = file.relative_to(accounting.checkout_root())
                 except ValueError:
                     continue
                 item = {'file': str(relative), 'line': line, 'function': function}

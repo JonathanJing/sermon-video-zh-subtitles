@@ -3,7 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 try:
-    from scripts import sermon_accounting as accounting
+    from . import accounting
 except ImportError:
     import sermon_accounting as accounting
 

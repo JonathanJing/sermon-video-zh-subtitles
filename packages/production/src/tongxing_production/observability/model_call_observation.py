@@ -11,7 +11,7 @@ import re
 import time
 import uuid
 
-from scripts import sermon_accounting as accounting
+from . import accounting
 
 SCHEMA = 'sermon-model-call-observation-v1'
 CREDIT_SCHEMA = 'sermon-model-call-observation-v2'
@@ -162,7 +162,7 @@ def safe_observation(fields):
     if rates != expected_rates:
         raise ValueError('invalid_model_observation_rates')
     if credit_version:
-        from scripts.codex_credit_usage import safe_credit_usage
+        from .codex_credit_usage import safe_credit_usage
         if fields['backend'] != 'agent_session' or fields['provider'] != 'codex':
             raise ValueError('codex_credit_requires_codex_session')
         credit = safe_credit_usage(fields['creditUsage'], fields['model'], usage,
@@ -184,7 +184,7 @@ def invocation(model, *, backend, provider, role, call_id=None, timing_scope='re
         usage={k: None for k in TOKEN_FIELDS}, rates={k: None for k in RATE_FIELDS}, errorType=None)
     codex_credit = backend == 'agent_session' and provider == 'codex'
     if codex_credit:
-        from scripts.codex_credit_usage import estimate_credit_usage
+        from .codex_credit_usage import estimate_credit_usage
         fields.update(schemaVersion=CREDIT_SCHEMA, creditUsage=estimate_credit_usage(
             model, fields['usage'], requested_service_tier=service_tier, status='started'))
     _emit(fields)

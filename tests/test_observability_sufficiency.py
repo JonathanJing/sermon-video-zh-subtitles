@@ -6,6 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest import mock
+from tongxing_production import path_aliases
 from scripts import sermon_accounting as accounting
 from scripts import sermon_cache_observation as cache
 from scripts import sermon_workflow_evidence as evidence
@@ -302,7 +303,7 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
             self.assertEqual(saved['parentWorkflowId'], child['parentWorkflowId'])
             self.assertEqual(saved['executionIdentity']['gitCommit'], child['executionIdentity']['gitCommit'])
             self.assertEqual(saved['executionIdentity']['trackedWorkingTreeDirty'], child['executionIdentity']['trackedWorkingTreeDirty'])
-            self.assertIn('scripts/sermon_accounting.py', saved['executionIdentity']['loadedProjectCodeSha256'])
+            self.assertIn(path_aliases.resolve('scripts/sermon_accounting.py'), saved['executionIdentity']['loadedProjectCodeSha256'])
             self.assertNotIn('/private/machine.py', saved['executionIdentity']['loadedProjectCodeSha256'])
             self.assertNotIn('scripts/../private.py', saved['executionIdentity']['loadedProjectCodeSha256'])
             attempt = next(e for e in exported if e['event'] == 'api_attempt_started')

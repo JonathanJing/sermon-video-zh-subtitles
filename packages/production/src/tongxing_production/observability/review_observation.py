@@ -1,5 +1,5 @@
 """Bounded safe projections of private RQC evidence, never execution authority."""
-from scripts import sermon_review_contracts as contracts
+from ..review import contracts
 
 CODE = 'rqc_observation'
 ROLES = {'sermon-candidate-revision-v1':'generation','sermon-review-receipt-v1':'quality_review',
@@ -70,8 +70,8 @@ def validate_observation(row):
 
 
 def record(receipt):
-    from scripts import sermon_accounting as accounting
-    from scripts import sermon_log_profile as profile
+    from . import accounting
+    from . import profile
     if profile.current() is None:raise ValueError('review_observation_requires_log_profile')
     evidence=project_receipt(receipt)
     # This first rollout freezes one group per revision; no accidental locale summary.

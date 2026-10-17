@@ -10,9 +10,11 @@ import stat
 import threading
 import uuid
 
-from scripts import sermon_log_contract as contract
-from scripts import sermon_workflow_jobs as jobs
-from scripts.sermon_release_workflow import _safe_path
+from . import log_contract as contract
+from .backend import JobFiles
+from ..storage.paths import safe_path as _safe_path
+
+jobs = JobFiles()
 
 _lock = threading.Lock()
 _producers = {}
@@ -152,7 +154,7 @@ def _check_durable(root,pending,fd,event=None):
     # ordinary caller's already-frozen execution identity.
     if not _durable_enabled(root):
         return None
-    from scripts import sermon_durable_accounting as durable
+    from . import durable
     return durable.validate_locked(root,pending,fd,additional_events=[event] if event is not None else ())
 
 

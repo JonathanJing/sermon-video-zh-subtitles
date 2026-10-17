@@ -27,17 +27,10 @@ from contextlib import contextmanager, nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
 
-if __package__ in {None, ""}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-try:
-    from scripts.sermon_clock_evidence import clock_domain
-    from scripts import sermon_dispatch_observation as dispatch_observation
-    from scripts import sermon_log_profile as log_profile
-except ImportError:  # Preserve direct script invocation.
-    from sermon_clock_evidence import clock_domain
-    import sermon_dispatch_observation as dispatch_observation
-    import sermon_log_profile as log_profile
+from . import backend as _observability
+from . import dispatch_observation
+from . import profile as log_profile
+from .clock_evidence import clock_domain
 
 SCHEMA = "sermon-workflow-accounting-v3"
 READABLE_SCHEMAS = frozenset({"sermon-workflow-accounting-v1", "sermon-workflow-accounting-v2", SCHEMA})
@@ -110,9 +103,16 @@ def _safe_settings(data):
     return safe
 
 
+def checkout_root():
+    """The checkout code identity keys, error locations and git status are relative to.
+
+    The host binds it (never this file's location); tests patch this one name."""
+    return _observability.checkout_root()
+
+
 def error_location(exc):
     """Code location only: never exception messages, source lines or locals."""
-    root = Path(__file__).resolve().parents[1]
+    root = checkout_root()
     frames = []
     for frame, lineno in traceback.walk_tb(exc.__traceback__):
         try:
@@ -187,7 +187,7 @@ def code_path(module, root=None):
     path = Path(name).resolve()
     if path.suffix != ".py":
         return None
-    root = Path(__file__).resolve().parents[1] if root is None else Path(root)
+    root = checkout_root() if root is None else Path(root)
     try:
         relative = path.relative_to(root)
     except ValueError:
@@ -216,12 +216,8 @@ def execution_identity():
     # Modules the moved producers now reach through ports load on first use;
     # load them before reading the loaded set so it is the same at plan freeze,
     # review and replay (scripts/tongxing_host.py EAGER_PRODUCER_IMPORTS).
-    try:
-        from scripts import tongxing_host
-    except ModuleNotFoundError:  # run as a script from scripts/
-        import tongxing_host
-    tongxing_host.load_producer_imports()
-    root = Path(__file__).resolve().parents[1]
+    _observability.current().load_producer_imports()
+    root = checkout_root()
     def git(*args):
         try:
             return subprocess.run(["git", "--no-optional-locks", "-C", str(root), *args], capture_output=True, text=True, timeout=5, check=False)
@@ -376,7 +372,7 @@ def _write_event(event):
     if not directory or not run_id:
         return
     if event.get('event') in {'api_attempt_started', 'api_attempt', 'sdk_call_started', 'sdk_call_finished'}:
-        from scripts.sermon_openai_runtime import selected_route
+        from ..compute.openai_runtime import selected_route
         route = selected_route()
         if route is not None:
             event = {**event, 'openaiRoute': route}
@@ -669,7 +665,7 @@ def accounting_session(directory, workflow, metadata=None, *, evidence_directory
 
 def _workflow_evidence(directory, workflow):
     try:
-        from scripts.sermon_workflow_evidence import collect_workflow_evidence
+        from .workflow_evidence import collect_workflow_evidence
         return collect_workflow_evidence(directory, workflow)
     except Exception as exc:
         return {"status": "unavailable", "errorType": type(exc).__name__, "currentRunExecutionProven": False}
@@ -687,7 +683,7 @@ def record_api_attempt(model, response, elapsed_seconds, status="completed", err
     # Reuse contract-v1's bounded extension slots instead of silently extending
     # the schema. No arbitrary exception text or provider error body is accepted.
     if not_dispatched_reason is not None:
-        from tongxing_production.contracts.reasons import PRE_DISPATCH_REASONS
+        from ..contracts.reasons import PRE_DISPATCH_REASONS
         if (type(not_dispatched_reason) is not str or not_dispatched_reason not in PRE_DISPATCH_REASONS
                 or status != "failed" or response is not None or http_status is not None):
             raise ValueError("invalid_not_dispatched_evidence")
@@ -793,7 +789,7 @@ def _percentile(values, fraction):
 def _valid_event(value):
     if isinstance(value, dict) and 'contractVersion' in value:
         try:
-            from scripts.sermon_log_contract import valid_event
+            from .log_contract import valid_event
         except ImportError:
             from sermon_log_contract import valid_event
         return valid_event(value)
@@ -818,7 +814,7 @@ def _valid_event(value):
     if required is None or any(not isinstance(value.get(k), kind) for k, kind in required.items()):
         return False
     if value.get('code') == 'model_call_observation':
-        from scripts.sermon_model_call_observation import safe_observation
+        from .model_call_observation import safe_observation
         try:
             safe_observation(value['fields'])
         except (ValueError, KeyError, TypeError):
@@ -872,7 +868,7 @@ def read_events(directory):
 def _profile_schema_batch():
     """One schema snapshot for a whole read; legacy-only readers need no profile."""
     try:
-        from scripts.sermon_log_contract import schema_batch
+        from .log_contract import schema_batch
     except ImportError:
         try:
             from sermon_log_contract import schema_batch
@@ -955,7 +951,7 @@ def profile_integrity(events):
                 'equivalentDuplicatesIgnored': 0, 'executionAuthority': 'none',
                 '_excluded': set(), '_selected': set()}
     try:
-        from scripts.sermon_log_contract import replay_integrity
+        from .log_contract import replay_integrity
     except ImportError:
         from sermon_log_contract import replay_integrity
     return replay_integrity(events)
@@ -1212,7 +1208,7 @@ def _summarize_events(events, damaged, ledger_hash, replay):
         row['knownNonconflictingApiAttempts'] = row['apiAttempts']
         if row['receiptConflictSha256']:
             row.update(apiAttempts=None, completedApiAttempts=None, failedApiAttempts=None)
-    from scripts.sermon_review_observation import observations as review_observations
+    from .review_observation import observations as review_observations
     result = {"schemaVersion": SCHEMA, **({"sourceLedgerSha256": ledger_hash} if replay["profileEventCount"] else {}), "generatedAt": now(), "runs": list(runs.values()), "stages": list(groups.values()),
               "ledgerIntegrity": {"status": "incomplete_corrupt_events" if damaged else "conflicting_receipts" if integrity["conflicts"] else "readable",
                                   "damagedEvents": damaged, "unattributedCostUnknown": bool(damaged or integrity["conflicts"]),
@@ -1229,7 +1225,7 @@ def _summarize_events(events, damaged, ledger_hash, replay):
                         "Known USD is an API list-price estimate, not an invoice or complete project cost.",
                         "Local compute, storage, network and in-conversation Codex costs are not allocated.",
                         "Missing usage/cost remains unknown; caches do not re-bill old responses."]}
-    from scripts.sermon_model_call_report import report as model_call_report
+    from .model_call_report import report as model_call_report
     result['modelCallReport'] = model_call_report(events)
     # One row per attempt, including a killed process with no finish event. The
     # grouped stages.csv intentionally remains an aggregate for old consumers.
@@ -1287,9 +1283,13 @@ def _write_summary(directory, result, events):
     return result
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", type=Path)
     args = parser.parse_args()
     result = summarize(args.directory)
     print(json.dumps({"runs": len(result["runs"]), "stages": len(result["stages"]), "summary": str(args.directory / "summary.json")}))
+
+
+if __name__ == "__main__":
+    main()

@@ -7,9 +7,9 @@ current provider execution. Equivalent outbox replay is accepted; conflicts fail
 from copy import deepcopy
 from functools import wraps
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_contract as log
-from scripts import sermon_review_contracts as c
+from . import accounting
+from . import log_contract as log
+from ..contracts import canonical as c
 
 SCHEMA = 'sermon-execution-completion-v1'
 KEYS = {'schemaVersion', 'runId', 'productionRunId', 'traceId', 'spanId', 'stage',

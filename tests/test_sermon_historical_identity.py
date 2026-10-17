@@ -70,7 +70,7 @@ class IdentityGuardTests(unittest.TestCase):
     def test_production_capture_under_temporary_git_root_and_real_guard_without_clean_worktree_dependency(self):
         # Clone only this executable module's identical bytes into an isolated
         # committed Git fixture. The caller's real worktree need not be clean.
-        with patch.object(accounting,'__file__',str(self.accounting_file)):
+        with patch.object(accounting,'checkout_root',lambda:self.accounting_file.parents[1]):
             expected=accounting.execution_identity()
             self.assertFalse(expected['trackedWorkingTreeDirty'])
             witness=identity.ExecutionIdentityWitness.capture(expected)
@@ -80,7 +80,7 @@ class IdentityGuardTests(unittest.TestCase):
                     accounting.execution_identity()
 
     def test_capture_has_precise_pre_provider_type_only_for_catalogued_failures(self):
-        with patch.object(accounting,'__file__',str(self.accounting_file)):
+        with patch.object(accounting,'checkout_root',lambda:self.accounting_file.parents[1]):
             expected=accounting.execution_identity();expected['gitCommit']='0'*40
             with self.assertRaises(identity.HistoricalIdentityPreDispatchRejected) as caught:
                 identity.ExecutionIdentityWitness.capture(expected)

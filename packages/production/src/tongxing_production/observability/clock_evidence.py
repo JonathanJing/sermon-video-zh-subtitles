@@ -108,14 +108,14 @@ def _proof(value, phase):
 
 
 def _record(phase, value):
-    from scripts import sermon_accounting as accounting
+    from . import accounting
     accounting.record_workload('clock.worker_' + phase + '_v1', value)
     return dict(value)
 
 
 def worker_launch(parent_span_id=None):
     """Call inside the synchronous launcher span; persist in its bound request."""
-    from scripts import sermon_accounting as accounting
+    from . import accounting
     identity = accounting._identity.get() or tuple(os.environ.get(k) for k in accounting.ENV_KEYS[:2])
     parent = parent_span_id or accounting._span.get() or os.environ.get(accounting.ENV_KEYS[3])
     if not identity[1] or accounting._label(parent, None) is None:
@@ -128,7 +128,7 @@ def worker_launch(parent_span_id=None):
 
 def worker_started(launch):
     """Call inside child's accounting session before any measured child work."""
-    from scripts import sermon_accounting as accounting
+    from . import accounting
     launch = _proof(launch, 'launch')
     identity = accounting._identity.get() or tuple(os.environ.get(k) for k in accounting.ENV_KEYS[:2])
     if launch['clockIdentitySha256'] != host_clock_identity() or launch['clockRunSha256'] != _hash(identity[1]):
