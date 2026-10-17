@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-event-identity-sidecar-tests",
+  "runs": [
+    {
+      "label": "event-identity-sidecar-tests-20261017",
+      "source": "~/.codex/worktrees/event-identity-sidecar/sermon-video-zh-subtitles/artifacts/event-identity-sidecar-tests-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "event-identity-sidecar-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 557,
+      "truncated": false,
+      "sha256": "2ce68cfe186697b7eb59f0c82f9ec266033ff4f2f5fc04a647a0972403284a47",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
