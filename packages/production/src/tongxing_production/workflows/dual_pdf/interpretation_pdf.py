@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import html
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -22,16 +21,12 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from scripts.render_mobile_pdf_from_srt import (  # noqa: E402
+from .mobile_pdf import (
     COMPACT_DISCLAIMER,
     MOBILE_PAGE_SIZE,
     register_cjk_font,
 )
-from scripts import review_prompts  # noqa: E402
+from ...source import review_prompts
 
 
 PAGE_WIDTH, PAGE_HEIGHT = MOBILE_PAGE_SIZE
