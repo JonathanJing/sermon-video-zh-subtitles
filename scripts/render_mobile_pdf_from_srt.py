@@ -26,6 +26,7 @@ SRT_TIMESTAMP_RE = re.compile(
 MOBILE_PAGE_SIZE = (390, 844)
 FONT_FALLBACK_CID = "STSong-Light"
 FONT_EMBEDDED = "MobileCJK"
+DEFAULT_SUBJECT = "Mobile Chinese-English sermon reading edition"
 DEFAULT_DISCLAIMER = (
     "免责声明：本 PDF 为独立个人项目，基于公开或经授权的讲道内容进行 AI 辅助英文听写和中文翻译；"
     "与 Mariners Church 无隶属、授权或背书关系，不代表教会官方立场。"
@@ -561,6 +562,7 @@ def render_reading_pdf(
     preferred_block_seconds: float = 32.0,
     preferred_primary_chars: int = 180,
     preferred_secondary_chars: int = 850,
+    subject: str = DEFAULT_SUBJECT,
 ) -> dict:
     blocks = build_reading_blocks(
         cues,
@@ -604,6 +606,7 @@ def render_reading_pdf(
         disclaimer=disclaimer,
         source_url=source_url,
         source_offset_seconds=source_offset_seconds,
+        subject=subject,
     )
 
 
@@ -654,6 +657,7 @@ def render_paginated_pdf(
     disclaimer: str | None,
     source_url: str | None,
     source_offset_seconds: float,
+    subject: str = DEFAULT_SUBJECT,
 ) -> dict:
     page_width, page_height = MOBILE_PAGE_SIZE
     margin_bottom = MARGIN_BOTTOM_WITH_DISCLAIMER if disclaimer else MARGIN_BOTTOM_WITHOUT_DISCLAIMER
@@ -696,7 +700,7 @@ def render_paginated_pdf(
     doc.setTitle(title)
     doc.setAuthor(speaker or "sermon-video-zh-subtitles")
     doc.setCreator("sermon-video-zh-subtitles")
-    doc.setSubject("Mobile Chinese-English sermon reading edition")
+    doc.setSubject(subject)
     doc._doc.Catalog.Lang = PDFString("zh-CN")
 
     last_outline_bucket = -1

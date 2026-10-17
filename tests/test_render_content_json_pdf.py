@@ -46,6 +46,26 @@ class RenderContentJsonPdfTest(unittest.TestCase):
         self.assertTrue(mod.footer_disclaimer(CONTENT).startswith("本页文稿经机器质检"))
         self.assertEqual(mod.footer_disclaimer({}), mod.renderer.COMPACT_DISCLAIMER)
 
+    def test_english_reference_fills_missing_source_by_group(self):
+        content = {"pageId": "page-1", "targetLocale": "zh-Hans",
+                   "cues": [{"start": 0, "end": 2, "text": "神爱世人。", "textGroupId": "g1"}]}
+        reference = {"pageId": "page-1", "targets": {"zh-Hans": {
+            "contentSha256": "abc", "blocks": [{"textGroupId": "g1", "english": "God so loved the world."}]}}}
+        english = mod.reference_english(reference, content, "abc")
+        _, secondary = mod.content_cues(content, english)
+        self.assertEqual(secondary[0].text, "God so loved the world.")
+        with self.assertRaises(SystemExit):
+            mod.reference_english(reference, content, "other")
+
+    def test_missing_english_is_rejected_unless_target_only(self):
+        content = {"pageId": "page-1", "cues": [{"start": 0, "end": 2, "text": "神爱世人。"}]}
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "page.pdf"
+            with self.assertRaises(SystemExit):
+                mod.render_content_pdf(content, out=out)
+            mod.render_content_pdf(content, out=out, include_english=False)
+            self.assertTrue(out.read_bytes().startswith(b"%PDF"))
+
     def test_renders_pdf_from_content(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "page.pdf"
