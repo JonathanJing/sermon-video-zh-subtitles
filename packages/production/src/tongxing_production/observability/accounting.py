@@ -256,8 +256,66 @@ def safe_execution_identity(data):
     return {"gitCommit": commit if isinstance(commit, str) and re.fullmatch(r"[a-f0-9]{40,64}", commit) else None,
             "trackedWorkingTreeDirty": data.get("trackedWorkingTreeDirty") if type(data.get("trackedWorkingTreeDirty")) is bool else None,
             "loadedProjectCodeSha256": safe_modules,
+            **({"loadedProjectCodeManifestSha256": data["loadedProjectCodeManifestSha256"]}
+               if isinstance(data.get("loadedProjectCodeManifestSha256"), str)
+               and re.fullmatch(r"[a-f0-9]{64}", data["loadedProjectCodeManifestSha256"]) else {}),
             "pythonVersion": _label(data.get("pythonVersion"), None),
             "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"}
+
+
+def _bounded_event_identity(directory, identity):
+    """Keep a large, complete loaded-code identity in a private durable sidecar."""
+    from . import outbox
+
+    if len(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()) <= 48 * 1024:
+        return identity
+    # The exact allowlisted map is retained; only its location in the ledger
+    # changes. Write and sync it before publishing a reference in the event.
+    modules = identity["loadedProjectCodeSha256"]
+    if safe_execution_identity(identity)["loadedProjectCodeSha256"] != modules:
+        raise ValueError("invalid_execution_identity_sidecar_modules")
+    manifest = {"schemaVersion": "sermon-loaded-project-code-v1",
+                "loadedProjectCodeSha256": modules}
+    canonical = json.dumps(manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    digest = hashlib.sha256(canonical).hexdigest()
+    folder = Path(directory) / ".execution-identities"
+    outbox.jobs._reject_link(folder, directory=True)
+    folder.mkdir(mode=0o700, exist_ok=True)
+    path = folder / (digest + ".json")
+    outbox.jobs._reject_link(path, directory=False)
+    if path.exists():
+        existing = outbox.jobs._read(path)
+        if existing != manifest:
+            raise ValueError("execution_identity_sidecar_conflict")
+    else:
+        outbox.jobs._sync_directory_ancestry(folder)
+        outbox.jobs._persist(path, manifest)
+    return {**identity, "loadedProjectCodeSha256": {},
+            "loadedProjectCodeManifestSha256": digest}
+
+
+def load_execution_identity_sidecar(directory, digest):
+    """Read and verify a referenced private loaded-code manifest for an audit."""
+    from . import outbox
+
+    if not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest):
+        raise ValueError("invalid_execution_identity_sidecar_hash")
+    path = Path(directory) / ".execution-identities" / (digest + ".json")
+    outbox.jobs._reject_link(path, directory=False)
+    if path.stat().st_mode & 0o077:
+        raise ValueError("execution_identity_sidecar_permissions")
+    if path.stat().st_size > 512 * 1024:
+        raise ValueError("execution_identity_sidecar_size_limit")
+    manifest = outbox.jobs._read(path)
+    if (not isinstance(manifest, dict) or set(manifest) != {"schemaVersion", "loadedProjectCodeSha256"}
+            or manifest["schemaVersion"] != "sermon-loaded-project-code-v1"
+            or safe_execution_identity({"loadedProjectCodeSha256": manifest["loadedProjectCodeSha256"]})["loadedProjectCodeSha256"]
+            != manifest["loadedProjectCodeSha256"]):
+        raise ValueError("invalid_execution_identity_sidecar")
+    canonical = json.dumps(manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    if hashlib.sha256(canonical).hexdigest() != digest:
+        raise ValueError("execution_identity_sidecar_hash_mismatch")
+    return manifest["loadedProjectCodeSha256"]
 
 
 def resource_snapshot(directory):
@@ -633,8 +691,11 @@ def accounting_session(directory, workflow, metadata=None, *, evidence_directory
         if not inherited:
             _emit({"event": "run_started", "workflow": workflow, "metadata": metadata})
         began = True
+        code_identity = execution_identity()
+        if log_profile.current() is not None:
+            code_identity = _bounded_event_identity(directory, code_identity)
         _emit({"event": "workflow_started", "workflow": workflow, "parentWorkflowId": parent_workflow,
-               "metadata": metadata, "executionIdentity": execution_identity(), "resources": resource_snapshot(directory)})
+               "metadata": metadata, "executionIdentity": code_identity, "resources": resource_snapshot(directory)})
         _emit({"event": "workflow_evidence", "workflow": workflow, "phase": "before",
                "evidence": _workflow_evidence(evidence_directory, workflow)})
         with stage(workflow, billing="orchestrator"):
@@ -894,7 +955,14 @@ def read_event_snapshot(directory):
                     # consumers can diagnose rather than silently erase them.
                     if not _valid_event(value):
                         raise ValueError("invalid_event_identity")
-                except (ValueError, UnicodeError):
+                    if value.get("event") == "workflow_started":
+                        identity = value.get("executionIdentity") or {}
+                        reference = identity.get("loadedProjectCodeManifestSha256")
+                        if reference is not None:
+                            if identity.get("loadedProjectCodeSha256") != {}:
+                                raise ValueError("conflicting_execution_identity")
+                            load_execution_identity_sidecar(directory, reference)
+                except (ValueError, UnicodeError, OSError, TypeError):
                     damaged.append({"line": index, "bytes": len(line), "sha256": hashlib.sha256(line).hexdigest(),
                                     "reason": "invalid_or_incomplete_event", "runAttribution": "unknown"})
                     continue
