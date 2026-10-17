@@ -1,9 +1,13 @@
 import hashlib
 import json
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 import unittest
 from unittest.mock import patch
+
+from tools.ops import project_codex_credit_usage as implementation
 
 from scripts import sermon_accounting as accounting
 from scripts import sermon_log_profile as profile
@@ -59,6 +63,33 @@ class CreditProjectionTests(unittest.TestCase):
         self.assertEqual(accounting_impl.load_execution_identity_sidecar(out, reference), self.modules)
         self.assertEqual((out/'.execution-identities').stat().st_mode & 0o777, 0o700)
         self.assertEqual((out/'.execution-identities'/(reference+'.json')).stat().st_mode & 0o777, 0o600)
+
+    def test_legacy_and_new_cli_write_identical_bound_projection(self):
+        self.assertIs(projection, implementation)
+        root = Path(__file__).resolve().parents[1]
+        results = []
+        for index, command in enumerate((
+            [sys.executable, 'scripts/project_codex_credit_usage.py'],
+            [sys.executable, '-m', 'scripts.project_codex_credit_usage'],
+            [sys.executable, '-m', 'tools.ops.project_codex_credit_usage'],
+            [sys.executable, 'tools/ops/project_codex_credit_usage.py'],
+        )):
+            output = self.root / f'derived-{index}'
+            completed = subprocess.run(command + [
+                '--accounting-dir', str(self.source),
+                '--cli-receipts-dir', str(self.receipts),
+                '--out-dir', str(output),
+            ], cwd=root, check=True, capture_output=True, text=True)
+            results.append((completed.stdout, (output/'events.jsonl').read_bytes(),
+                            (output/'projection.json').read_bytes()))
+            manifest = json.loads((output/'projection.json').read_text())
+            self.assertEqual(manifest['sourceLedgerSha256'], hashlib.sha256(self.original).hexdigest())
+            self.assertEqual(manifest['derivedLedgerSha256'], hashlib.sha256((output/'events.jsonl').read_bytes()).hexdigest())
+            self.assertTrue(manifest['originalLedgerUnchanged'])
+        self.assertEqual(results[0], results[1])
+        self.assertEqual(results[0], results[2])
+        self.assertEqual(results[0], results[3])
+        self.assertEqual((self.source/'events.jsonl').read_bytes(), self.original)
 
     def test_refuses_overwrite_and_identity_or_usage_mismatch(self):
         for field, value in (('requestedModel','gpt-6-sol'), ('usage',dict(input_tokens=999,cached_input_tokens=50,output_tokens=20))):
