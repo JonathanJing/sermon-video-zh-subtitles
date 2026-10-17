@@ -13,5 +13,4 @@ from tools.development.docs_change_gate import *  # noqa: F403,F401 - file-spec 
 
 if __name__ == "__main__":
     raise SystemExit(_implementation.main())
-if __name__ == "scripts.docs_change_gate":
-    sys.modules[__name__] = _implementation
+sys.modules[__name__] = _implementation
