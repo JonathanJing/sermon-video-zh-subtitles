@@ -1,0 +1,23 @@
+{
+  "suite": "sidecar trace replay regression",
+  "ciFailure": {
+    "rootShard": 4,
+    "test": "test_outbox_postappend_preack_replay_is_exported_once",
+    "actualStatus": "partial",
+    "expectedStatus": "exported"
+  },
+  "localBeforeFix": {
+    "tests": 1,
+    "failures": 1
+  },
+  "localAfterFix": {
+    "tests": 1,
+    "failures": 0
+  },
+  "moduleAfterFix": {
+    "tests": 17,
+    "failures": 0
+  },
+  "rootCause": "fixture relocated events.jsonl but omitted content-addressed execution identity sidecar",
+  "realWorkflow": "not_run"
+}

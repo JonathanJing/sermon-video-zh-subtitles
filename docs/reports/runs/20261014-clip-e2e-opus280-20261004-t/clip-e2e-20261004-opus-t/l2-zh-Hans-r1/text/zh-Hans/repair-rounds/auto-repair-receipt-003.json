@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "sermon-layer2-auto-repair-receipt-v1",
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "lineage": {
+    "targetLocale": "zh-Hans",
+    "englishSourcePackageJsonSha256": "95f3f48f6a2ce27aba563e7e7d9777764c1dc446a4cac23bb5c4ac696f55ae41",
+    "anchorManifestSha256": "ad3a80ae16c4fac27648d79645301f9b4029b6a87a7b01b89218db63343fda22",
+    "translationPolicySha256": "ad0e654478cd0d1e5deb148df2ea1151ab504d46210a13804a3b4020434cd7c6"
+  },
+  "status": "repair_stopped",
+  "rounds": 3,
+  "finalRunDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l2-zh-Hans-r1/text/zh-Hans/repair-rounds/round-003",
+  "evidenceSha256": "082f3e12db22f222d1d0c8e41053f18b69069ec8edc5258744b3552e5b7a6180",
+  "initialSpend": {
+    "calls": 100,
+    "callsWithoutUsage": 0,
+    "tokens": 494179
+  },
+  "repairSpend": {
+    "calls": 8,
+    "tokens": 46037
+  },
+  "repairSpendFraction": 0.3,
+  "stoppedGroups": [
+    {
+      "translationGroupId": "translation-0-u311",
+      "sourceUnitIds": [
+        "0-u311"
+      ],
+      "failureCodes": [
+        "meaning_shift"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l2/text/zh-Hans/repair-rounds/round-001"
+    }
+  ],
+  "gatesPassed": [],
+  "releaseAuthority": "none",
+  "ledgerRoot": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l2/.layer2-jobs.layer2-repair",
+  "ledgerHeadSha256": "8cc532f2fb1ba0ade856899f8178b339efce0715ddb51432c72cd0619e5eb18c",
+  "humanApproval": false,
+  "reviewKind": "machine_review"
+}

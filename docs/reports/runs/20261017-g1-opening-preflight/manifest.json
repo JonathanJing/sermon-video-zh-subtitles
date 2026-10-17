@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-opening-preflight",
+  "runs": [
+    {
+      "label": "g1-opening-preflight-20261017-1813z",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/g1-opening-preflight-20261017-1813z",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-opening-preflight-20261017-1813z",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 275,
+      "truncated": false,
+      "sha256": "d648f6c516010b428456fbc9dbda0d4382f0a6f1b109ad2566a6a6ee4b6fd467",
+      "redactions": {}
+    },
+    {
+      "run": "g1-opening-preflight-20261017-1813z",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2060,
+      "truncated": false,
+      "sha256": "842b9472c06089049a37c8df0efc5f40d507eaf0e9077323608e7ad5e645cf69",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

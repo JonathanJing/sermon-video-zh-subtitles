@@ -1,0 +1,8 @@
+{
+  "deliveryType": "test",
+  "status": "failed",
+  "exitCode": 1,
+  "testsRun": 15,
+  "failures": 1,
+  "reason": "Subprocess cleared PYTHONPATH and resolved production package from main checkout's shared editable install."
+}

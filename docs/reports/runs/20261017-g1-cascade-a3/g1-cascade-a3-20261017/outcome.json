@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "local-code-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "endedAt": "2026-10-17T16:09:05.824259+00:00",
+  "scope": "#570 A3 audio branch merged #569 latest including #571 v1 transitional guard",
+  "productionRun": "not_run",
+  "paidModelCalls": 0
+}

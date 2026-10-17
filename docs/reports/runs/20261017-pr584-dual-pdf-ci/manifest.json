@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr584-dual-pdf-ci",
+  "runs": [
+    {
+      "label": "pr584-full-ci-39064539058",
+      "source": "~/.codex/worktrees/dual-pdf-run-status/sermon-video-zh-subtitles/artifacts/pr584-full-ci-39064539058",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr584-full-ci-39064539058",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 367,
+      "truncated": false,
+      "sha256": "5778b541c69d45b02edd0b025a3544c8d3bf0692644ebe7a64dc9b46e36650e7",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

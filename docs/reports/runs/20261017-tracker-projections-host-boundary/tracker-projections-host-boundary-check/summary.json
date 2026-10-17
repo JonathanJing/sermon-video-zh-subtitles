@@ -1,0 +1,23 @@
+{
+  "checks": [
+    {
+      "name": "Tracker projection Python unit and CLI tests",
+      "status": "passed",
+      "count": 56
+    },
+    {
+      "name": "Tracker Node sanitizer freshness publisher tests",
+      "status": "passed",
+      "count": 32
+    },
+    {
+      "name": "package import without scripts modules",
+      "status": "passed"
+    },
+    {
+      "name": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "intermediateFailure": "Two CLI tests initially targeted implementation __file__; after package boundary change they now target the public scripts facades and pass."
+}

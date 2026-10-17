@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-compatibility-gate-direct-ci",
+  "runs": [
+    {
+      "label": "compatibility-gate-direct-ci-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/compatibility-gate-direct-ci-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "compatibility-gate-direct-ci-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 497,
+      "truncated": false,
+      "sha256": "aec93ecf07a18153c8b782ea5096c77a5622cef4d3f06f2b179cab76e76ab31c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

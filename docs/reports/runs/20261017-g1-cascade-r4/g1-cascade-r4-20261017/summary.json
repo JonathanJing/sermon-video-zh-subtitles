@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "head": "fecb17b1c621d15ddc6b48978b5a69ef67adcc6b",
+  "targetPr": 582,
+  "upstreamPr": 588,
+  "testGroups": [
+    {
+      "scope": "unified reviews, implementation freeze, review ports, accounting observability/profile",
+      "executed": 47,
+      "passed": 47,
+      "exitCode": 0
+    },
+    {
+      "scope": "machine quality release basis, human waiver duration, audio screening",
+      "executed": 44,
+      "passed": 44,
+      "exitCode": 0
+    }
+  ],
+  "diffCheck": "passed",
+  "externalCalls": 0
+}

@@ -1,0 +1,202 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-clip-e2e-opus280-20261004-w",
+  "runs": [
+    {
+      "label": "clip-e2e-20261004-opus-w-es-aqc",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-w-es-aqc",
+      "skipped": {
+        ".json": 48,
+        ".lock": 5
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "logs/audio-qc.es.log",
+      "kind": "log",
+      "bytes": 3509,
+      "truncated": false,
+      "sha256": "0f4894fe47aa1b2ebc93d56974f9932e984d6ec4c1079de7af199859ece6b1e0",
+      "redactions": {
+        "email": 2,
+        "home_dir": 17
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "logs/check-gpu-es.log",
+      "kind": "log",
+      "bytes": 2206,
+      "truncated": false,
+      "sha256": "387083722925099b3c59bd5c1adba3a0e3c97dbec0fa0567e11a0995981f8f7d",
+      "redactions": {
+        "email": 1,
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "logs/check-w-preflight-with-origin.log",
+      "kind": "log",
+      "bytes": 2145,
+      "truncated": false,
+      "sha256": "19986fa29a52bc10be7d5eee3cb805aa3e3b1f5470c1a45f6e3f0490146cc741",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "logs/check-w-preflight.log",
+      "kind": "log",
+      "bytes": 2116,
+      "truncated": false,
+      "sha256": "b791bb2ee9c783f88d4b1e35e4c21346d1dc3d3c1ad5c87034b224dfd7570666",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "logs/plan-qc-es.log",
+      "kind": "log",
+      "bytes": 3984,
+      "truncated": false,
+      "sha256": "4db33fb5b0bf513dfdc5bc739bb6e9b252bbdbf7af392871445761c7938fd850",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "logs/spark-begin-1.log",
+      "kind": "log",
+      "bytes": 22626,
+      "truncated": false,
+      "sha256": "f17a77e679de8617b88cb2d6ba964672e4f0079f690e311fe19743682315f0bf",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "logs/spark-finish.log",
+      "kind": "log",
+      "bytes": 24827,
+      "truncated": false,
+      "sha256": "5257d024207c9189aa2d2b90d0d012c0ae8910e713b37bfd3f9c3875a933daa1",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "textqc-es/out/es/preflight.json",
+      "kind": "whole",
+      "bytes": 1292,
+      "truncated": false,
+      "sha256": "e5a5adc9f237d373d676bd5289ef33c889b13c18cf1ac61adbf40e27ca15cbea",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "textqc-es/out/summary.json",
+      "kind": "whole",
+      "bytes": 2185,
+      "truncated": false,
+      "sha256": "bfef53837e3f629d99a20fd92fb356293956f45300176ae4f602d38ead7555c7",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "textqc-es/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 89,
+      "truncated": false,
+      "sha256": "03febcee216527cad8bf4597c63de02bddb295452c79158f326eed239b848182",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "textqc-es/out-r1/es/preflight.json",
+      "kind": "whole",
+      "bytes": 1304,
+      "truncated": false,
+      "sha256": "86d35893f75e7ed178eafb4b160af2ff61680e6a2e4a20664b413673002b517b",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "textqc-es/out-r1/summary.json",
+      "kind": "whole",
+      "bytes": 2200,
+      "truncated": false,
+      "sha256": "65e88fa823088bf023756b586d440bde21357e44db2eee5dcba25399a44cc56f",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "textqc-es/out-r1/timings.tsv",
+      "kind": "whole",
+      "bytes": 89,
+      "truncated": false,
+      "sha256": "663037ec713d0bca1401e91d8df1e90853b9322361d1e9726bf5f23679558015",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "textqc-es/out-r2/es/preflight.json",
+      "kind": "whole",
+      "bytes": 1304,
+      "truncated": false,
+      "sha256": "54a6831f13a082c18974875af97807632e1d8c8cc50e1fb554a19d35b99c9f20",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "textqc-es/out-r2/summary.json",
+      "kind": "whole",
+      "bytes": 2896,
+      "truncated": false,
+      "sha256": "7f7268d47472db77d6b88b9241f40f2b22176973b78a73011a2784c4efc78860",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "textqc-es/out-r2/timings.tsv",
+      "kind": "whole",
+      "bytes": 173,
+      "truncated": false,
+      "sha256": "b2206a48eda97caf2c28507abc43d07ca810669631cee9a3e57ace0458257023",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-w-es-aqc",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 166,
+      "truncated": false,
+      "sha256": "a9f68ddc649089a627f94ff95e0894f0409d2859234dba76c689f1a967adf810",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

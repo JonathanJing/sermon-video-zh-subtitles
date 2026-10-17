@@ -1,0 +1,8 @@
+plan-qc-ko	pass	0
+check-ad-preflight	fail(1)	1
+check-ad-preflight-no-session	pass	0
+spark-begin-1	pass	3
+check-gpu-ko	pass	2
+render.ko	fail(1)	146
+compact.ko	fail(1)	23
+spark-finish	pass	7

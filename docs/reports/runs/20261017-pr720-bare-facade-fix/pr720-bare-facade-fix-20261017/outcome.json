@@ -1,0 +1,19 @@
+{
+  "kind": "local_regression_repair",
+  "status": "success_after_fix",
+  "headSha": "d6c996bac9e9792503295c8539ed0bc1ddb3a3f0",
+  "initial": {
+    "testsRun": 1,
+    "failures": 1,
+    "reason": "bare docs_change_gate import stayed on facade rather than implementation"
+  },
+  "afterFix": {
+    "testsRun": 18,
+    "failures": 0,
+    "errors": 0,
+    "durationSeconds": 5.845,
+    "exitCode": 0
+  },
+  "scope": "docs change gate, CI scope classifier, package bare-facade contract",
+  "fullCI": "pending"
+}

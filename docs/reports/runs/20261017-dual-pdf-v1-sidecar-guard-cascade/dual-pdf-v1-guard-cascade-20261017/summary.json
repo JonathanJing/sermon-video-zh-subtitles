@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "fiveStageTestInvocations": 5,
+  "passedAssertionsByInvocation": 127,
+  "subtestsPassedByInvocation": 22,
+  "limitations": "Local fixture tests only; counts repeat the accounting test on each branch. No production or external calls."
+}

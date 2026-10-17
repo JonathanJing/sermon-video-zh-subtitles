@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "head": "a1d2981cf6016bbb63fa03335f3381df19e545f0",
+  "targetPr": 569,
+  "upstreamHead": "ef01ce77",
+  "executed": 41,
+  "passed": 41,
+  "testScope": "accounting contract/observability and workflow jobs",
+  "diffCheck": "passed",
+  "externalCalls": 0
+}

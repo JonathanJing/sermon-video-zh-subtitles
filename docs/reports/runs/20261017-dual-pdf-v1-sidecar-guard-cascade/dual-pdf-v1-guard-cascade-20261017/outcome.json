@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "scope": "propagate upstream legacy v1 sidecar write guard across dual PDF PR stack",
+  "upstreamHead": "745dea66757dc2248117a84af4ab4fab76685dac",
+  "stages": [
+    {
+      "pr": 584,
+      "head": "bc096c6cbaeff471d51268fa342e84d2dfe210ae",
+      "passed": 14,
+      "pytestSeconds": 1.54
+    },
+    {
+      "pr": 594,
+      "head": "a517258d3138524ac19e767782daa7817f8b80d6",
+      "passed": 32,
+      "pytestSeconds": 2.31
+    },
+    {
+      "pr": 598,
+      "head": "319610c533ab032971628218c10ed9647b64dea4",
+      "passed": 26,
+      "pytestSeconds": 3.13
+    },
+    {
+      "pr": 602,
+      "head": "6adc1fb370dd75f638ff4b7f023b645f715673de",
+      "passed": 18,
+      "pytestSeconds": 2.01
+    },
+    {
+      "pr": 607,
+      "head": "6883f894472664d9d1879769b2002813904e3a3c",
+      "passed": 37,
+      "subtestsPassed": 22,
+      "pytestSeconds": 6.09
+    }
+  ],
+  "diffCheck": "passed_per_merge",
+  "remoteCommitReadback": "passed_per_branch",
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

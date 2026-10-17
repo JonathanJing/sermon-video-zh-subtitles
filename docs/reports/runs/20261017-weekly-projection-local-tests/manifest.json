@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-weekly-projection-local-tests",
+  "runs": [
+    {
+      "label": "weekly-projection-local-tests",
+      "source": "~/.codex/worktrees/weekly-report-projection/sermon-video-zh-subtitles/artifacts/weekly-projection-local-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-projection-local-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 807,
+      "truncated": false,
+      "sha256": "75380cef87a37ae49ba654e132d923885ef527a405122102472b6cb66929aec4",
+      "redactions": {}
+    },
+    {
+      "run": "weekly-projection-local-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 185,
+      "truncated": false,
+      "sha256": "c943368c155c35d01f0b88cbbd08fa5b0f50b2c9449ec07dcd84cc2283f2cb52",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

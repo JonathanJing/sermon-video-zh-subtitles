@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr629-ci-39055680750",
+  "runs": [
+    {
+      "label": "pr629-full-ci-39055680750",
+      "source": "~/.codex/worktrees/cuv-preflight-move/sermon-video-zh-subtitles/artifacts/pr629-full-ci-39055680750",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr629-full-ci-39055680750",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 367,
+      "truncated": false,
+      "sha256": "2a93e7a2d5d96c1b821dab5821bbd735ad17bb6a02a0a65a15efa0b5d4e21b9e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

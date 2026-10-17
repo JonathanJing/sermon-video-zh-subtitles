@@ -1,0 +1,25 @@
+{
+  "status": "pass",
+  "testsRun": 87,
+  "failures": 0,
+  "errors": 0,
+  "scope": [
+    "accounting sidecar integrity",
+    "observability export and reports",
+    "Tracker locked snapshot",
+    "Credit derived ledger",
+    "Jaeger replay snapshot",
+    "runtime identity",
+    "logging reliability"
+  ],
+  "priorDevelopmentRuns": [
+    {
+      "status": "failed",
+      "reason": "test fixture lacked profile context for sidecar generation; corrected fixture"
+    },
+    {
+      "status": "failed",
+      "reason": "malformed-row handling changed Tracker partial status; preserved canonical reader behavior"
+    }
+  ]
+}

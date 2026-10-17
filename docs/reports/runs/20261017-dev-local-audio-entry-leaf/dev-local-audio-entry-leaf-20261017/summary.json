@@ -1,0 +1,27 @@
+{
+  "deliveryType": "test",
+  "scope": "DEV local audio entry migration; synthetic tests only",
+  "initialAttempt": {
+    "command": "python3 -m unittest tests.test_dev_local_audio_entry",
+    "exitCode": 1,
+    "reason": "system Python did not resolve local production package"
+  },
+  "recovery": {
+    "command": "python3 scripts/worktree_venv.py",
+    "exitCode": 0,
+    "editablePackage": "this worktree"
+  },
+  "finalAttempt": {
+    "command": ".venv/bin/python -m unittest tests.test_dev_local_audio_entry",
+    "exitCode": 0,
+    "tests": 13
+  },
+  "compatibility": {
+    "legacyImportIdentity": "pass",
+    "moduleHelp": "pass",
+    "directHelp": "pass",
+    "movedBytesIdentical": true,
+    "diffCheck": "pass"
+  },
+  "remoteOrPaidWork": "not_run"
+}

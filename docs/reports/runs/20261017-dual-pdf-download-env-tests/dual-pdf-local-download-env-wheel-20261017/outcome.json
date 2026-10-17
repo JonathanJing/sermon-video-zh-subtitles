@@ -1,0 +1,8 @@
+{
+  "deliveryType": "test",
+  "status": "failed",
+  "exitCode": 1,
+  "testsRun": 15,
+  "failures": 2,
+  "reason": "Non-editable wheel intentionally has no checkout-relative code_path; two identity tests require worktree editable install."
+}

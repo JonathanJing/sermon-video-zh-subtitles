@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-fixture-cascade",
+  "runs": [
+    {
+      "label": "dual-pdf-fixture-cascade-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/dual-pdf-fixture-cascade-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-fixture-cascade-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 717,
+      "truncated": false,
+      "sha256": "15cc948bdbacba08329dc60c9c11081f82bbbe424768cac946fd83911b095cb3",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-fixture-cascade-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 247,
+      "truncated": false,
+      "sha256": "b10d0e3fc0f194470e022072e01444d0b1390a4191c32004c2723aaa2aa9a761",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

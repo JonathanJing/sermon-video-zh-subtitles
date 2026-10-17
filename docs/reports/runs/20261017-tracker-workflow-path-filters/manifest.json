@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-tracker-workflow-path-filters",
+  "runs": [
+    {
+      "label": "tracker-workflow-path-filters-20261017",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/tracker-workflow-path-filters-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tracker-workflow-path-filters-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 367,
+      "truncated": false,
+      "sha256": "cad420d51badc07dedc4c68ca6a29c5e44caaf443c2f92326c45f39bb1be08a7",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-workflow-path-filters-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 532,
+      "truncated": false,
+      "sha256": "1fc7ff824b9fcaf974ea04e333cfa030a97b41d0499b1728a3b34f02b5446f47",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

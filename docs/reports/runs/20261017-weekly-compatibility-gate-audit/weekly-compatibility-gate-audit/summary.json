@@ -1,0 +1,13 @@
+{
+  "deliveryType": "test",
+  "pullRequest": 615,
+  "headCommit": "cd850ab680073a2245cd03fd9d20c09ab48b88fe",
+  "result": "final head focused 21 tests passed; gate review_required between #571 and weekly head",
+  "unclassifiedPaths": [
+    "packages/production/src/tongxing_production/observability/backend.py",
+    "packages/production/src/tongxing_production/path_aliases.py",
+    "scripts/tongxing_host.py"
+  ],
+  "exploratoryPatch": "22 tests passed then patch reverted without commit",
+  "productionRun": "not_run"
+}

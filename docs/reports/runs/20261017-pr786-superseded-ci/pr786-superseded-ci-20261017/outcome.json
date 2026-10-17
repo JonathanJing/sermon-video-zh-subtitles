@@ -1,0 +1,7 @@
+{
+  "status": "cancelled",
+  "exitCode": null,
+  "deliveryType": "test",
+  "scope": "superseded PR #786 old-head CI",
+  "codeCommit": "bf4a4fed079b4bb9715d78f7ed06a1116db01903"
+}

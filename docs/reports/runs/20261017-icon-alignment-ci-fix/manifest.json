@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-icon-alignment-ci-fix",
+  "runs": [
+    {
+      "label": "icon-alignment-ci-fix-20261017",
+      "source": "~/.codex/worktrees/dev-icon-alignment-tool/sermon-video-zh-subtitles/artifacts/icon-alignment-ci-fix-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "icon-alignment-ci-fix-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 854,
+      "truncated": false,
+      "sha256": "4926da7055d2cd10d9153bad2202e23c4280a0977c55b351270421c458d3ae82",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

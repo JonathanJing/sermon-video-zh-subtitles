@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-cascade-r3",
+  "runs": [
+    {
+      "label": "g1-cascade-r3-20261017",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-cascade-r3-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-cascade-r3-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 248,
+      "truncated": false,
+      "sha256": "2cdb38ff861407f8790708f252a8e571f0614203abcd140beb38b67a5a3564a2",
+      "redactions": {}
+    },
+    {
+      "run": "g1-cascade-r3-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 292,
+      "truncated": false,
+      "sha256": "71239e298737ab77a2e4f13ba12023f50fda838d4b0188ecd0c18eba93982b97",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

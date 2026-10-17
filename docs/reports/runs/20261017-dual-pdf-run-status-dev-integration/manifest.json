@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-run-status-dev-integration",
+  "runs": [
+    {
+      "label": "dual-pdf-run-status-dev-integration-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-run-status/sermon-video-zh-subtitles/artifacts/dual-pdf-run-status-dev-integration-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-run-status-dev-integration-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 584,
+      "truncated": false,
+      "sha256": "339beafcb314775dcc6220d61a0c058d36e1aabbe5992cb936a6213ad221c1c8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "run": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39042346824",
+  "head": "76ca09479ba1e5769a892baeaae2f95d05adb45c",
+  "rootShardsSucceeded": 8,
+  "aggregator": "success",
+  "nativeClient": "skipped",
+  "limit": "prior to Docker image smoke workflow at 34ffd1ca"
+}

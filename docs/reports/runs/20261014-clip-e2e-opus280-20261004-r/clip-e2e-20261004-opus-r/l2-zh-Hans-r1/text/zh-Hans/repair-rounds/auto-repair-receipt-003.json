@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "sermon-layer2-auto-repair-receipt-v1",
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "lineage": {
+    "targetLocale": "zh-Hans",
+    "englishSourcePackageJsonSha256": "95f3f48f6a2ce27aba563e7e7d9777764c1dc446a4cac23bb5c4ac696f55ae41",
+    "anchorManifestSha256": "ad3a80ae16c4fac27648d79645301f9b4029b6a87a7b01b89218db63343fda22",
+    "translationPolicySha256": "ad0e654478cd0d1e5deb148df2ea1151ab504d46210a13804a3b4020434cd7c6"
+  },
+  "status": "repair_stopped",
+  "rounds": 3,
+  "finalRunDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2-zh-Hans-r1/text/zh-Hans/repair-rounds/round-003",
+  "evidenceSha256": "f22112252549175778bfd3ffd0953cc071668fd6efd2aa5c2b8c485c6b8a44ec",
+  "initialSpend": {
+    "calls": 100,
+    "callsWithoutUsage": 0,
+    "tokens": 494179
+  },
+  "repairSpend": {
+    "calls": 4,
+    "tokens": 23213
+  },
+  "stoppedGroups": [
+    {
+      "translationGroupId": "translation-0-u301",
+      "sourceUnitIds": [
+        "0-u301"
+      ],
+      "failureCodes": [
+        "meaning_shift"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/zh-Hans/repair-rounds/round-001"
+    },
+    {
+      "translationGroupId": "translation-0-u302",
+      "sourceUnitIds": [
+        "0-u302"
+      ],
+      "failureCodes": [
+        "meaning_shift"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/zh-Hans/repair-rounds/round-001"
+    },
+    {
+      "translationGroupId": "translation-0-u327",
+      "sourceUnitIds": [
+        "0-u327"
+      ],
+      "failureCodes": [
+        "meaning_addition"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/zh-Hans/repair-rounds/round-001"
+    }
+  ],
+  "gatesPassed": [],
+  "releaseAuthority": "none",
+  "ledgerRoot": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/.layer2-jobs.layer2-repair",
+  "ledgerHeadSha256": "dbfdeb24769fb2397cb0d027886c5a11b9b76c463da9d3c1f6dbb94906f0d4af",
+  "humanApproval": false,
+  "reviewKind": "machine_review"
+}

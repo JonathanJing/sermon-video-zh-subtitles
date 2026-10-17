@@ -1,0 +1,11 @@
+{
+  "status": "success",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "source": "local unittest after PR #584 merge and #594 retarget to dev",
+  "headCommitSha": "d229eafb151bbbd1913663b5adb2a3e805c64015",
+  "testsPassed": 20,
+  "testModule": "tests.test_render_mobile_pdf_from_srt",
+  "durationSeconds": 0.718,
+  "producerApiCalls": 0
+}

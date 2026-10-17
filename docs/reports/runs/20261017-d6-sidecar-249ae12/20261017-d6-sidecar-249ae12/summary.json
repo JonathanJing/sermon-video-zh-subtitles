@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "kind": "test",
+  "scope": "D6 #576 after merging sidecar #571 at 249ae12a34d19baaaaf899e2e1e1ad0106cf1c9c",
+  "headSha": "f757d62ba89d65a218a847d357a26344ef880b0b",
+  "command": "PYTHONPATH=$PWD/packages/production/src:$PWD .venv/bin/python -m pytest -q tests/test_bind_published_alignment_catalog.py tests/test_build_published_english_reference.py",
+  "exitCode": 0,
+  "result": "17 passed in 0.26s",
+  "diffCheck": "git diff --check origin/codex/dev-event-identity-sidecar-20261017...HEAD: passed",
+  "environment": "worktree local Python; editable tongxing_production resolves inside D6 worktree",
+  "limitations": "No real published reference generation, provider call, deployment, or production readback."
+}

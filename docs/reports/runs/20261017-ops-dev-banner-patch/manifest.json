@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-ops-dev-banner-patch",
+  "runs": [
+    {
+      "label": "ops-dev-banner-patch-20261017",
+      "source": "~/.codex/worktrees/ops-dev-banner-patch/sermon-video-zh-subtitles/artifacts/ops-dev-banner-patch-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ops-dev-banner-patch-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 285,
+      "truncated": false,
+      "sha256": "0b7bafefbebccfce83e818097e1d769db4c5d26156577369fac0e0c2b953f1f7",
+      "redactions": {}
+    },
+    {
+      "run": "ops-dev-banner-patch-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 618,
+      "truncated": false,
+      "sha256": "c399bcd9e126082c6b75bccea9f3c2d6b90789be0a9a8b5e9e8947a0c204d0a0",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

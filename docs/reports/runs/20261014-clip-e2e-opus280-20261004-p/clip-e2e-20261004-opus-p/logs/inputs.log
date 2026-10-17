@@ -1,0 +1,2 @@
+
+== 2026-10-14T21:24:01+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_clip_layer1_opus.py --clip-spec ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-p/clip-spec-u280-330.json --out ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/clip-e2e-opus280-20261004-p/inputs --list-price-cap-usd 3.0

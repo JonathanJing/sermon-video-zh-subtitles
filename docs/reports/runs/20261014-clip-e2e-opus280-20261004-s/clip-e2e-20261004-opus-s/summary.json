@@ -1,0 +1,90 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-14T21:59:21+00:00",
+      "units": 50,
+      "inputs": "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/clip-e2e-opus280-20261004-s/inputs",
+      "layer1Backend": "claude_cli_opus"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-14T21:59:31+00:00"
+    },
+    "layer2": {
+      "status": "done",
+      "at": "2026-10-14T21:59:46+00:00",
+      "importManifest": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/layer2-complete-import.json"
+    },
+    "qc.ko": {
+      "status": "blocked",
+      "at": "2026-10-14T22:00:42+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/l2/text/ko/candidate.json",
+          "out": "out",
+          "status": "requires_repair",
+          "failedGroups": [
+            "translation-0-u282",
+            "translation-0-u285",
+            "translation-0-u288",
+            "translation-0-u307"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/textqc-ko/state/qc-receipts/text/ko/e69e84a8d2d0c628ab3aa7f073303994b0725bd69824cad4b27a7e8157250b71/entry-000001.json",
+          "waiverDir": null
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/l2/text/ko/candidate.json",
+      "reason": "plan-layer2-ko-r1 exited 1; see ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/logs/plan-layer2-ko-r1.log"
+    },
+    "qc.es": {
+      "status": "blocked",
+      "at": "2026-10-14T22:01:27+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/l2/text/es/candidate.json",
+          "out": "out",
+          "status": "requires_repair",
+          "failedGroups": [
+            "translation-0-u313"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/textqc-es/state/qc-receipts/text/es/730076e55f3f64fa4edff03f09fdf0cdd9865a05498c8aaacc7c06a1177ac92a/entry-000001.json",
+          "waiverDir": null
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/l2/text/es/candidate.json",
+      "reason": "plan-layer2-es-r1 exited 1; see ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/logs/plan-layer2-es-r1.log"
+    },
+    "qc.zh-Hans": {
+      "status": "blocked",
+      "at": "2026-10-14T22:02:11+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/l2/text/zh-Hans/candidate.json",
+          "out": "out",
+          "status": "requires_repair",
+          "failedGroups": [
+            "translation-0-u282",
+            "translation-0-u288",
+            "translation-0-u298",
+            "translation-0-u302",
+            "translation-0-u311"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/textqc-zh-Hans/state/qc-receipts/text/zh-Hans/23477e73384424889ea5a2cdaa61e144289440e0dfd0c318be12c291a8a5ce72/entry-000001.json",
+          "waiverDir": null
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/l2/text/zh-Hans/candidate.json",
+      "reason": "plan-layer2-zh-Hans-r1 exited 1; see ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/logs/plan-layer2-zh-Hans-r1.log"
+    }
+  },
+  "stopped": [
+    "plan-layer2-ko-r1 exited 1; see ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/logs/plan-layer2-ko-r1.log",
+    "plan-layer2-es-r1 exited 1; see ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/logs/plan-layer2-es-r1.log",
+    "plan-layer2-zh-Hans-r1 exited 1; see ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-s/logs/plan-layer2-zh-Hans-r1.log",
+    "layer4 needs every locale; not finished: ['ko', 'es', 'zh-Hans']"
+  ],
+  "settledUsd": 12.384848,
+  "claudeListPriceEquivalentUsd": 0.0
+}
