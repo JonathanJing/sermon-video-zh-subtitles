@@ -18,6 +18,7 @@ import math
 import os
 from pathlib import Path
 import re
+import stat
 import sys
 import tempfile
 
@@ -169,7 +170,46 @@ def _snapshot(directory):
     if len(data) > MAX_INPUT_BYTES:
         raise ValueError("accounting_too_large")
     with tempfile.TemporaryDirectory(prefix="tracker-dag-") as tmp:
-        (Path(tmp) / "events.jsonl").write_bytes(data)
+        snapshot = Path(tmp)
+        (snapshot / "events.jsonl").write_bytes(data)
+        # Large loaded-code identities are stored beside the ledger. Copy only
+        # the immutable manifests referenced by these exact event bytes, so
+        # both canonical readers validate the same complete snapshot.
+        references = set()
+        for line in data.splitlines():
+            try:
+                row = json.loads(line)
+            except (ValueError, UnicodeError):
+                continue  # The canonical reader reports damaged event rows.
+            if not isinstance(row, dict) or row.get("event") != "workflow_started":
+                continue
+            identity = row.get("executionIdentity")
+            reference = identity.get("loadedProjectCodeManifestSha256") if isinstance(identity, dict) else None
+            if isinstance(reference, str) and re.fullmatch(r"[a-f0-9]{64}", reference):
+                references.add(reference)
+        if references:
+            destination = snapshot / ".execution-identities"
+            destination.mkdir(mode=0o700)
+            folder = os.open(Path(directory) / destination.name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            try:
+                total = 0
+                for reference in sorted(references):
+                    fd = os.open(reference + ".json", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=folder)
+                    with os.fdopen(fd, "rb") as stream:
+                        details = os.fstat(fd)
+                        if not stat.S_ISREG(details.st_mode) or details.st_mode & 0o077 or details.st_size > 512 * 1024:
+                            raise ValueError("invalid_execution_identity_sidecar")
+                        content = stream.read(512 * 1024 + 1)
+                    total += len(content)
+                    if total > MAX_INPUT_BYTES:
+                        raise ValueError("accounting_sidecars_too_large")
+                    target = destination / (reference + ".json")
+                    copy_fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+                    with os.fdopen(copy_fd, "wb") as stream:
+                        stream.write(content)
+                    accounting.load_execution_identity_sidecar(snapshot, reference)
+            finally:
+                os.close(folder)
         events, damaged = accounting.read_events(tmp)
         report = weekly.project(tmp)
     return events, damaged, report

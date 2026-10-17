@@ -118,6 +118,22 @@ class PublicDagTests(unittest.TestCase):
         self.assertEqual({p.name for p in self.root.iterdir()}, {"events.jsonl"})
         return value
 
+    def test_snapshot_carries_referenced_loaded_code_sidecar(self):
+        loaded = {f"scripts/fixture_{index}.py": SHA for index in range(600)}
+        identity = accounting._bounded_event_identity(
+            self.root, {"loadedProjectCodeSha256": loaded})
+        self.assertEqual(identity["loadedProjectCodeSha256"], {})
+        self.rows.insert(1, dict(schemaVersion=accounting.SCHEMA,
+            eventId="workflow-sidecar", runId=RUN, event="workflow_started",
+            recordedAt=timestamp(1), workflowId="private-workflow",
+            workflow="fixture", executionIdentity=identity))
+        self.write()
+        observed, damaged, _ = public._snapshot(self.root)
+        self.assertFalse(damaged)
+        self.assertEqual(len(observed), len(self.rows))
+        self.assertEqual({path.name for path in self.root.iterdir()},
+                         {"events.jsonl", ".execution-identities"})
+
     def test_parallel_observed_path_is_canonical_not_serial_eta(self):
         result = self.project()
         self.assertEqual(result["schemaVersion"], public.SCHEMA)
