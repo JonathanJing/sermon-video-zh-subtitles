@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "focused_pass_production_not_run",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T22:15:31Z",
+  "endedAt": "2026-10-17T22:16:30Z",
+  "deliveryType": "test",
+  "testScope": "168 focused regression tests and 57 subtests passed; standalone exact-payload cross-round cache prototype only; canonical budget/controller, provider billing, production workflow, publication, device and venue validation not run"
+}

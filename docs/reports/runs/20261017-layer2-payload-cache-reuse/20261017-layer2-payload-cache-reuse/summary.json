@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "sermon-test-run-summary-v1",
+  "status": "focused_pass_production_not_run",
+  "testsPassed": 168,
+  "subtestsPassed": 57,
+  "testsFailed": 0,
+  "realProviderCalls": 0,
+  "canonicalBudgetControllerTested": false,
+  "productionReadback": "not_run",
+  "notes": [
+    "Exact-payload replay across two standalone top-level output directories made zero synthetic provider calls.",
+    "Changed translator or reviewer payloads invalidated only the required cache roles.",
+    "Unknown, corrupt, failed, refused and symlinked prior evidence failed closed.",
+    "The canonical weekly budget/controller path explicitly does not accept this prototype option."
+  ]
+}
