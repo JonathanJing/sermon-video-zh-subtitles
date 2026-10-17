@@ -884,7 +884,6 @@ def _upcoming_sunday(*arguments, **options):
 def dual_pdf_unmoved():
     return dual_pdf_host.Unmoved(
         live_source_monitor=_scripts_module('live_source_monitor'),
-        post_live_run_status=_scripts_module('post_live_run_status'),
         series_terminology=_scripts_module('series_terminology'),
         export_saturday_live_context=_scripts_module('export_saturday_live_context'),
         reading_edition=_scripts_module('build_sermon_reading_edition_with_openai'),
@@ -905,7 +904,7 @@ ENTRY_LOAD_TIME_IMPORTS = {
         'scripts.sermon_workflow_evidence', 'scripts.sermon_decision_accounting'),
     'tongxing_production.workflows.dual_pdf.post_live': (
         'backend.cloud', 'backend.observability', 'scripts.live_source_monitor',
-        'scripts.post_live_run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
+        'tongxing_production.workflows.dual_pdf.run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
     # L4 D2: the app release builder imported the waiver release basis at load time.
     'tongxing_production.delivery.app_release': ('scripts.machine_quality_release_basis',),
     'tongxing_production.workflows.dual_pdf.codex_local': (
