@@ -17,6 +17,7 @@ LAYER1 = {
     'scripts/sermon_sentence_interpretation.py': _SOURCE + 'sentence_interpretation.py',
     'scripts/mfa_alignment.py': _SOURCE + 'mfa_alignment.py',
     'scripts/sermon_source_producer_compatibility.py': _SOURCE + 'producer_compatibility.py',
+    'scripts/sermon_source_failure.py': _SOURCE + 'failure.py',
     'scripts/sermon_mfa_identity.py': _SOURCE + 'mfa_identity.py',
     'scripts/build_english_source_package.py': _SOURCE + 'english_source_package.py',
     'scripts/judge_english_source_for_translation.py': _SOURCE + 'english_source_judge.py',
@@ -32,6 +33,7 @@ LAYER1 = {
 # Layer 2 Text (tongxing_production.text), batches T1-T4.
 _TEXT = PRODUCTION + 'text/'
 LAYER2 = {
+    'scripts/sermon_review_diagnostics.py': _TEXT + 'review_diagnostics.py',
     'scripts/target_language_policy.py': _TEXT + 'policy.py',
     'scripts/target_language_policy_preview.py': _TEXT + 'policy_preview.py',
     'scripts/produce_target_language_candidate.py': _TEXT + 'candidate.py',

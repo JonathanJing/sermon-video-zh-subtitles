@@ -118,6 +118,29 @@ class PublicDagTests(unittest.TestCase):
         self.assertEqual({p.name for p in self.root.iterdir()}, {"events.jsonl"})
         return value
 
+    def test_snapshot_carries_referenced_loaded_code_sidecar(self):
+        loaded = {f"scripts/fixture_{index}.py": SHA for index in range(600)}
+        identity = accounting._bounded_event_identity(
+            self.root, {"loadedProjectCodeSha256": loaded})
+        self.assertEqual(identity["loadedProjectCodeSha256"], {})
+        self.rows.insert(1, dict(schemaVersion=accounting.SCHEMA,
+            eventId="workflow-sidecar", runId=RUN, event="workflow_started",
+            recordedAt=timestamp(1), workflowId="private-workflow",
+            workflow="fixture", executionIdentity=identity))
+        self.write()
+        observed, damaged, _ = public._snapshot(self.root)
+        self.assertFalse(damaged)
+        self.assertEqual(len(observed), len(self.rows))
+        self.assertEqual({path.name for path in self.root.iterdir()},
+                         {"events.jsonl", ".execution-identities"})
+        sidecar = next((self.root / ".execution-identities").glob("*.json"))
+        sidecar.chmod(0o644)
+        result = public.build_projection(self.root, run_id=RUN, at=AT)
+        self.assertEqual(result["quality"]["status"], "partial")
+        self.assertEqual(result["quality"]["damagedRowCount"], 1)
+        self.assertIn("damaged_events", result["quality"]["reasonCodes"])
+        self.assertEqual(result["summary"]["observedNodeCount"], 4)
+
     def test_parallel_observed_path_is_canonical_not_serial_eta(self):
         result = self.project()
         self.assertEqual(result["schemaVersion"], public.SCHEMA)
@@ -450,7 +473,8 @@ class PublicDagTests(unittest.TestCase):
 
     def test_bounded_cli_and_separate_output_cannot_overwrite_ledger(self):
         self.write()
-        command = [sys.executable, str(Path(public.__file__)), "--accounting-dir", str(self.root), "--run-id", RUN, "--at", AT]
+        cli = Path(__file__).resolve().parents[1] / "scripts/build_tracker_dag_projection.py"
+        command = [sys.executable, str(cli), "--accounting-dir", str(self.root), "--run-id", RUN, "--at", AT]
         result = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)["schemaVersion"], public.SCHEMA)
