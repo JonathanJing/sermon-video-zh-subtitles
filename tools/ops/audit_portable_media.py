@@ -22,7 +22,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 SCHEMA = "sermon-private-media-recovery-manifest-v1"
 SCOPE = "layer3_package_artifacts_only"
-SCHEMA_ROOT = Path(__file__).resolve().parents[1] / "schemas"
+SCHEMA_ROOT = Path(__file__).resolve().parents[2] / "schemas"
 JSON_LIMIT = 32 * 1024 * 1024
 IDENTITY_KEYS = (
     "packageId", "targetLocale", "englishSourcePackageJsonSha256",
