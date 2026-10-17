@@ -72,6 +72,26 @@ class DurableStreamTests(unittest.TestCase):
             self.assertEqual({r['producerId'] for r in rows}, {first['producerId']})
             self.assertEqual(contract.replay_integrity(rows)['status'], 'consistent')
 
+    def test_v1_binding_reopens_for_replay_but_cannot_create_new_facts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(contract, 'VERSION', contract.LEGACY_VERSION):
+                old = durable.open_stream(directory, **BINDING, create=True)
+                frozen = old.prepare('pending', {'state': 'pending'}, build(old))
+            binding_path = Path(directory, durable.BINDING_NAME)
+            original_binding = binding_path.read_bytes()
+            restored = durable.open_stream(directory, **BINDING)
+            self.assertEqual(restored.binding, old.binding)
+            self.assertEqual(restored.prepare('pending', {'state': 'pending'},
+                                              lambda *args: self.fail('rebuilt')), frozen)
+            self.assertEqual(outbox.replay_pending(directory)['replayedEvents'], 1)
+            self.assertEqual(restored.deliver(frozen), frozen)
+            with self.assertRaisesRegex(ValueError, 'legacy_version_new_write_rejected'):
+                restored.prepare('ready', {}, build(restored, 'pending', 'ready'))
+            self.assertEqual(accounting.read_events(directory)[0], [frozen])
+            self.assertEqual(binding_path.read_bytes(), original_binding)
+            with self.assertRaisesRegex(ValueError, 'scope_conflict'):
+                durable.open_stream(directory, **{**BINDING, 'purpose': 'other'})
+
     def test_preappend_process_exit_recovers_exact_pending_and_next_sequence(self):
         with tempfile.TemporaryDirectory() as directory:
             durable.open_stream(directory, **BINDING, create=True)
