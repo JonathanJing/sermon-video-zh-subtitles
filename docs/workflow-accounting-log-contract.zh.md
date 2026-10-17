@@ -2,6 +2,8 @@
 
 更新：2026-09-30。归属 `DEV-SPD-006` 的 E1.0，以及既有 `SPD6-LOG-01`—`SPD6-LOG-05`；本文不另设顶层优先级。**本文冻结待实现的合同与测试要求，不代表实现、运行时验收或 sign-off 已完成。**
 
+2026-10-17 实现版本说明：历史 `sermon-accounting-log-contract-v1` schema 保持原字节；带私有 `loadedProjectCodeManifestSha256` 引用的新事件使用 `sermon-accounting-log-contract-v2`，`schemaVersion` 仍为 `sermon-workflow-accounting-v3`。`sermon_log_profile` 的新写入使用 v2；底层 outbox 仅在已有 v1 run 绑定下恢复旧 v1 事实，拒绝创建新的 v1 run，同一个 run 不得混用版本。新 reader 按每行版本选择 schema，保留旧 v1 事件原字节与哈希。#571 分支曾短暂写出带 sidecar 引用却标为 v1 的行：新 reader 仅在读侧按 v2 的完整形状校验该已知过渡形式，并核实 sidecar，原始行不改写；底层 outbox 只允许在已有 v1 run 绑定下恢复该形式。旧的 v1-only reader 无法读取 v2；恢复新账本须先部署带两份 schema 的新 reader，不能把 v2 事件降级改标 v1。进行中的 v1 run 留在原冻结运行环境完成，新运行以 v2 run identity 开始。
+
 ## 0. 核查基线、已有能力和兼容边界
 
 PR #120 已合入 `dev@f95346ab3f7068f7f9dff3db57edd37d79f14d29`。另只读核对尚未合并的 [PR #161](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/161) 累积实现，冻结 head `7250a72a6d88261ae23b74b037e9f0b64a43348f`；本次文档不合入或修改它及其前置实现分支。
@@ -193,6 +195,7 @@ wait enter/exit 引用同一 gate 与 revision；重复 approval、旧 candidate
 - 业务事件不采样：state transition、model attempt/usage、decision、approval reference、retry、failure、deploy intent/result 必须记录。CPU/RAM/GPU 可低频采样，单列覆盖率；外部 OTel 可采样副本，但不能把业务账本也采样。
 - 新账本仍用 0700 目录／0600 文件、进程安全 append lock、flush/fsync；并发事件不可交织。原始 JSONL 是事实来源，派生 JSON/CSV/Markdown 原子替换并绑定输入 ledger hash，不能让 Weekly JSON 反过来成为原始证据。
 - 写前 schema/白名单/长度校验。新 profile 单事件最多 64 KiB UTF-8、每 label ≤100、每依赖集合 ≤64、State Packet 摘要 refs ≤16；禁止为了达标截断身份/gate/usage。大集合用 bounded join 或私有内容寻址 sidecar，日志只记 hash。
+- `workflow_started` 的已加载项目代码清单超过事件预算时，完整清单先写入账本目录下私有的 `.execution-identities/<sha256>.json`，事件中的 `loadedProjectCodeSha256` 留空并记录 `loadedProjectCodeManifestSha256`；该引用须按内容哈希核验，不能把空映射解释为没有加载代码。
 - 坏 JSON、截断尾行、未知版本、缺字段和冲突均保留原字节/位置/hash及诊断；不整文件清空，不因为其余记录可读就认定完整。重放／导出验证同样 fail closed。
 - 不记录 prompt、转写全文、模型回复、secret、cookies、完整 env/命令、绝对私有路径或原始异常消息。异常保留固定 type 和有限项目栈帧；字段有限长度不代表自动脱敏，必须白名单。
 - 只从固定、受控来源取证；不跟随日志中的任意路径、符号链接或 URL。公开导出移除 PID、thread ID、主机信息与直接 provider ID；脱敏映射稳定且保留原/导出 ledger hash 和等价性验证范围。

@@ -18,7 +18,9 @@ import threading
 from jsonschema import Draft202012Validator, FormatChecker, validators
 from jsonschema.exceptions import SchemaError
 
-VERSION = 'sermon-accounting-log-contract-v1'
+LEGACY_VERSION = 'sermon-accounting-log-contract-v1'
+VERSION = 'sermon-accounting-log-contract-v2'
+READ_VERSIONS = frozenset({LEGACY_VERSION, VERSION})
 MAX_EVENT_BYTES = 64 * 1024
 # At most 16 MiB of canonical payload keys, plus explicitly bounded entry and
 # schema-key overhead. A count-only 2048-entry LRU thrashed on the measured
@@ -39,17 +41,24 @@ _event_success_payload_bytes = 0
 _event_success_hits = _event_success_misses = 0
 _batch_state = threading.local()
 _CacheInfo = namedtuple('CacheInfo', 'hits misses maxsize currsize')
-SCHEMA_NAME = 'sermon-accounting-log-contract-v1.schema.json'
+SCHEMA_NAME = 'sermon-accounting-log-contract-v1.schema.json'  # legacy public path
 
 
-def _schema_path():
+def _readable_version(version):
+    return isinstance(version, str) and version in READ_VERSIONS
+
+
+def _schema_path(version=LEGACY_VERSION):
+    if not _readable_version(version):
+        raise ContractError('unsupported_contract_version')
+    name = f'{version}.schema.json'
     try:
         from ..contracts import schemas
     except ImportError:
         # Shipped standalone as scripts/sermon_log_contract.py in the experiment-log release
         # bundle (experiments/local_experiment_log/deploy_tools.py), next to its schemas/.
-        return Path(__file__).resolve().parents[1] / 'schemas' / SCHEMA_NAME
-    return schemas.path(SCHEMA_NAME)
+        return Path(__file__).resolve().parents[1] / 'schemas' / name
+    return schemas.path(name)
 
 
 def __getattr__(name):
@@ -104,9 +113,9 @@ def format_checker():
     return checker
 
 
-@lru_cache(maxsize=1)
-def validator():
-    schema = json.loads(_schema_path().read_text())
+@lru_cache(maxsize=2)
+def validator(version=LEGACY_VERSION):
+    schema = json.loads(_schema_path(version).read_text())
     return _compile_validator(schema)
 
 
@@ -117,7 +126,7 @@ def _compile_validator(schema):
     return cls(schema, format_checker=format_checker())
 
 
-def _schema_snapshot():
+def _schema_snapshot(version=LEGACY_VERSION):
     """Intern exact typed content while the snapshot/cache lock is held.
 
     marshal is a cheap, exact typed snapshot. Only bounded bytes generated here
@@ -128,7 +137,9 @@ def _schema_snapshot():
     a privately compiled canonical copy can be used. No mutable public checker
     participates in cached success validation.
     """
-    schema = validator().schema
+    # Keep the historical no-argument validator object stable for callers that
+    # hold or instrument it while adding a distinct v2 validator.
+    schema = (validator() if version == LEGACY_VERSION else validator(version)).schema
     try:
         key = marshal.dumps(schema, 2)
     except (ValueError, TypeError, OverflowError, RecursionError) as exc:
@@ -159,7 +170,7 @@ def _schema_snapshot():
 
 
 def _event_bytes(row):
-    if not isinstance(row, dict) or row.get('contractVersion') != VERSION:
+    if not isinstance(row, dict) or not _readable_version(row.get('contractVersion')):
         raise ContractError('unsupported_contract_version')
     data = canonical_bytes(row)
     if len(data) + 1 > MAX_EVENT_BYTES:
@@ -169,12 +180,25 @@ def _event_bytes(row):
     return data
 
 
+def _schema_version(row):
+    """Decode the short-lived v1 sidecar extension against the v2 shape.
+
+    Its original event remains v1 in the ledger and retains its original hash.
+    No new writer may emit this transitional form.
+    """
+    identity = row.get('executionIdentity')
+    if (row.get('contractVersion') == LEGACY_VERSION and row.get('event') == 'workflow_started'
+            and isinstance(identity, dict) and 'loadedProjectCodeManifestSha256' in identity):
+        return VERSION
+    return row['contractVersion']
+
+
 def _validate_with_snapshot(row, data, snapshot):
     schema_key, checker = snapshot
     if len(data) <= MAX_CACHED_EVENT_BYTES and row.get('event') != 'rqc_observation':
         # Exact payload/schema bytes and the version bind every success entry.
         # RQC semantics consult another versioned policy; keep those uncached.
-        _validate_frozen_event(data, schema_key, VERSION)
+        _validate_frozen_event(data, schema_key, row['contractVersion'])
     else:
         _validate_event_uncached(row, checker)
 
@@ -184,16 +208,16 @@ def validate_event(row):
     with _schema_snapshot_lock:
         # Public single-event checks observe the current schema content, or the
         # one snapshot captured for the enclosing schema_batch().
-        _validate_with_snapshot(row, data, _current_snapshot())
+        _validate_with_snapshot(row, data, _current_snapshot(_schema_version(row)))
     return row
 
 
-def _current_snapshot():
+def _current_snapshot(version=LEGACY_VERSION):
     if not getattr(_batch_state, 'active', False):
-        return _schema_snapshot()
-    if _batch_state.snapshot is None:
-        _batch_state.snapshot = _schema_snapshot()
-    return _batch_state.snapshot
+        return _schema_snapshot(version)
+    if version not in _batch_state.snapshots:
+        _batch_state.snapshots[version] = _schema_snapshot(version)
+    return _batch_state.snapshots[version]
 
 
 @contextmanager
@@ -209,11 +233,11 @@ def schema_batch():
         if getattr(_batch_state, 'active', False):
             yield
             return
-        _batch_state.active, _batch_state.snapshot = True, None
+        _batch_state.active, _batch_state.snapshots = True, {}
         try:
             yield
         finally:
-            _batch_state.active, _batch_state.snapshot = False, None
+            _batch_state.active, _batch_state.snapshots = False, {}
 
 
 def _validate_frozen_event(data, schema_key, version):
@@ -273,7 +297,11 @@ _validate_frozen_event.cache_usage = _validation_cache_usage
 
 
 def _validate_event_uncached(row, checker):
-    if next(checker.iter_errors(row), None) is not None:
+    # A branch briefly wrote sidecar references under v1. Validate that exact
+    # shape as v2 without changing the durable row or its fact hash.
+    schema_row = ({**row, 'contractVersion': VERSION}
+                  if _schema_version(row) != row['contractVersion'] else row)
+    if next(checker.iter_errors(schema_row), None) is not None:
         raise ContractError('invalid_contract_event')
     kind = row['event']
     if kind == 'rqc_observation':
@@ -338,7 +366,7 @@ def replay_integrity(events):
     ``_excluded`` uses in-memory row IDs only. Hash diagnostics are public-safe.
     Sequence gaps are intervals, never expanded to attacker-sized integer lists.
     """
-    rows = [r for r in events if r.get('contractVersion') == VERSION]
+    rows = [r for r in events if isinstance(r, dict) and _readable_version(r.get('contractVersion'))]
     by_event, by_sequence, producers = defaultdict(list), defaultdict(list), defaultdict(set)
     diagnostics, excluded, representatives = [], set(), []
 
@@ -350,9 +378,12 @@ def replay_integrity(events):
     with _schema_snapshot_lock:
         # One explicit immutable schema snapshot per replay batch. The lock
         # prevents another batch evicting it while event-cache entries are used.
-        snapshot = _current_snapshot() if rows else None
+        snapshots = {}
         for r in rows:
-            _validate_with_snapshot(r, _event_bytes(r), snapshot)
+            version = _schema_version(r)
+            if version not in snapshots:
+                snapshots[version] = _current_snapshot(version)
+            _validate_with_snapshot(r, _event_bytes(r), snapshots[version])
             by_event[r['eventId']].append(r)
             by_sequence[(r['producerId'], r['sequence'])].append(r)
             producers[r['producerId']].add(r['sequence'])
