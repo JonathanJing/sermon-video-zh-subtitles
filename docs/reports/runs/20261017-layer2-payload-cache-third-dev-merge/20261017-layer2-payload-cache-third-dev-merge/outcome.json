@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "focused_post_merge_pass",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T23:53:16Z",
+  "endedAt": "2026-10-17T23:53:26Z",
+  "deliveryType": "test",
+  "testScope": "44 focused tests and 439 subtests passed after merging portable-media dev migration"
+}
