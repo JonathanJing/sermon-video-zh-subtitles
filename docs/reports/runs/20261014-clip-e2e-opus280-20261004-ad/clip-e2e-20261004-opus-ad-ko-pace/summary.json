@@ -1,0 +1,50 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ad-ko-pace",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-15T00:03:44.130512+00:00",
+      "importedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ab-3lang",
+      "evidence": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ad-ko-pace/reuse-manifest.json"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-15T00:03:44.130847+00:00",
+      "importedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ab-3lang",
+      "evidence": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ad-ko-pace/reuse-manifest.json"
+    },
+    "layer2": {
+      "status": "done",
+      "at": "2026-10-15T00:03:44.130856+00:00",
+      "importedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ab-3lang",
+      "evidence": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ad-ko-pace/reuse-manifest.json"
+    },
+    "qc.ko": {
+      "status": "done",
+      "at": "2026-10-15T00:05:03+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ad-ko-pace/l2/text/ko/candidate.json",
+          "out": "out",
+          "status": "text_waiver_issued",
+          "failedGroups": [
+            "translation-0-u284",
+            "translation-0-u285",
+            "translation-0-u288"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ad-ko-pace/textqc-ko/state/qc-receipts/text/ko/e69e84a8d2d0c628ab3aa7f073303994b0725bd69824cad4b27a7e8157250b71/entry-000002.json",
+          "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ad-ko-pace/textqc-ko/out/ko"
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ad-ko-pace/l2/text/ko/candidate.json",
+      "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ad-ko-pace/textqc-ko/out/ko",
+      "importedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ab-3lang",
+      "evidence": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ad-ko-pace/reuse-manifest.json"
+    }
+  },
+  "stopped": [
+    "compact.ko exited 1; see ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ad-ko-pace/logs/compact.ko.log"
+  ],
+  "settledUsd": 17.197895,
+  "claudeListPriceEquivalentUsd": 0.0
+}
