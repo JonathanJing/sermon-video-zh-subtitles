@@ -40,6 +40,8 @@ class TextBackend:
     terminology: ports.Terminology
     measure: ports.Measure
     accounting: ports.Accounting
+    scripture: ports.Scripture
+    cuv_poc_module: Callable[[str], ModuleType]
     workspace: ports.Workspace
     plugins: ports.Plugins
     transports: ports.Transports

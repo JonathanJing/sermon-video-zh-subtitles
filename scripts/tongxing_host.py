@@ -800,7 +800,17 @@ def scripture() -> ports.Scripture:
                            coverage=_module('scripts.english_scripture_coverage'),
                            candidate_queue=_module('scripts.scripture_candidate_queue'),
                            library_path=_rule_constant('scripts.cuv_scripture', 'DEFAULT_LIBRARY_PATH'),
+                           provenance_path=_rule_constant('scripts.cuv_scripture', 'DEFAULT_PROVENANCE_PATH'),
                            coverage_data_path=_rule_constant('scripts.english_scripture_coverage', 'DATA_PATH'))
+
+
+def cuv_poc_module(name):
+    if name not in ('check_weekly_timing', 'run_weekly_dubbing', 'weekly_dubbing'):
+        raise ValueError('Unknown CUV timing helper')
+    directory = ROOT / 'experiments' / 'sermon-dubbing-poc'
+    if str(directory) not in sys.path:
+        sys.path.insert(0, str(directory))
+    return __import__(name)
 
 
 def qc_runtime() -> ports.QcRuntime:
@@ -999,6 +1009,7 @@ source_backend.configure(source_backend.SourceBackend(core=_core, provider=_prov
 text_backend.configure(text_backend.TextBackend(core=_core, provider=_provider, code=_code, snapshot=_snapshot,
                                                 compute=_compute, resources=_resources_port,
                                                 terminology=_terminology, measure=_measure, accounting=_accounting,
+                                                scripture=scripture(), cuv_poc_module=cuv_poc_module,
                                                 workspace=_workspace, plugins=_plugins, transports=_transports,
                                                 schemas=_schemas, diagnostic=_diagnostic,
                                                 worker_command=layer2_worker_command, unmoved=text_unmoved()))

@@ -23,12 +23,43 @@ import sys
 import tempfile
 import wave
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-from scripts.sermon_accounting import accounting_session, stage
-from scripts.sermon_pipeline import chat_json
-from scripts.cuv_scripture import CuvLibrary, parse_reference, DEFAULT_LIBRARY_PATH, DEFAULT_PROVENANCE_PATH
+from . import backend
+
+
+def __getattr__(name):
+    # Legacy callers used these module constants. Resolve them only after host binding.
+    if name == 'ROOT':
+        return backend.current().core.repo_root
+    if name == 'DEFAULT_LIBRARY_PATH':
+        return backend.current().scripture.library_path()
+    if name == 'DEFAULT_PROVENANCE_PATH':
+        return backend.current().scripture.provenance_path()
+    raise AttributeError(name)
+
+
+def chat_json(*args, **kwargs):
+    return backend.current().provider.chat_json(*args, **kwargs)
+
+
+def accounting_session(*args, **kwargs):
+    return backend.current().accounting.session(*args, **kwargs)
+
+
+def stage(*args, **kwargs):
+    return backend.current().accounting.stage(*args, **kwargs)
+
+
+def parse_reference(*args, **kwargs):
+    return backend.current().scripture.cuv().parse_reference(*args, **kwargs)
+
+
+def cuv_library():
+    return backend.current().scripture.cuv().CuvLibrary
+
+
+def implementation_identity():
+    return {"schemaVersion": "sermon-cuv-implementation-v1",
+            "sha256": backend.current().code.module_sha256(sys.modules[__name__])}
 
 VERSION = "sermon-cuv-translation-v1"
 MAP_SCHEMA = "sermon-cuv-reference-map-v1"
@@ -319,7 +350,7 @@ audio and a fresh timing report can establish actual fit.
 
 
 def compatible_reuse(current, previous, *, exact_request=False):
-    keys = ("schemaVersion", "model", "reasoningEffort")
+    keys = ("schemaVersion", "implementationIdentity", "model", "reasoningEffort")
     if not exact_request:
         keys += ("batchSize",)
     for key in keys:
@@ -555,7 +586,7 @@ def audit_user_content(name, data, manifest):
         check_binding(manifest[key])
     mapping = reference_map(read(manifest["referenceMap"]["path"]),
                             source_blocks(read(manifest["parentJob"]["path"])), manifest["parentJob"]["sha256"])
-    library = CuvLibrary.from_path(manifest["library"]["path"], provenance_path=manifest["provenance"]["path"])
+    library = cuv_library().from_path(manifest["library"]["path"], provenance_path=manifest["provenance"]["path"])
     frames, contexts, shared = {}, [], []
     evidence_seen = set()
     for row in mapping["blocks"]:
@@ -825,7 +856,7 @@ def selection_review_contexts(manifest, *, seen=None):
     return result
 
 
-from scripts.cuv_preflight import POLICY as PREFLIGHT_POLICY, EvidenceBlocked, preflight, require_ready
+from .cuv_preflight import POLICY as PREFLIGHT_POLICY, EvidenceBlocked, preflight, require_ready
 
 
 def require_evidence(condition, message, manifest, stage, **finding):
@@ -1090,7 +1121,7 @@ def compute(out, manifest, *, offline=False, workers=1):
         timing = {b["blockId"]: b["availableSeconds"] for b in previous_timing["blocks"]}
     parent = read(manifest["parentJob"]["path"])
     blocks = source_blocks(parent)
-    library = CuvLibrary.from_path(manifest["library"]["path"], provenance_path=manifest["provenance"]["path"])
+    library = cuv_library().from_path(manifest["library"]["path"], provenance_path=manifest["provenance"]["path"])
     identity = digest(manifest)
     model_evidence = []
     context = [{"id": b["id"], "en": b["en"]} for b in blocks]
@@ -1179,15 +1210,14 @@ def measured_timing(parent_job, timing_path):
     """Validate actual completed audio, acoustic anchors and recomputed timing; no writes."""
     work = Path(parent_job).parent
     require(Path(timing_path) == work / "synchronization/report.json", "Timing report must belong to the current job")
-    poc_dir = str(ROOT / "experiments/sermon-dubbing-poc")
-    if poc_dir not in sys.path:
-        sys.path.insert(0, poc_dir)
-    from check_weekly_timing import load_anchors, load_placements, budgets, anchor_review_type
+    timing_helper = backend.current().cuv_poc_module('check_weekly_timing')
+    load_anchors, load_placements = timing_helper.load_anchors, timing_helper.load_placements
+    budgets, anchor_review_type = timing_helper.budgets, timing_helper.anchor_review_type
     job, render = read(parent_job), read(work / "render/report.json")
     job_hash = file_hash(parent_job)
     if job.get("voice", {}).get("backend") == "mlx_reference":
-        from run_weekly_dubbing import validate_render
-        from weekly_dubbing import validate_frozen
+        validate_render = backend.current().cuv_poc_module('run_weekly_dubbing').validate_render
+        validate_frozen = backend.current().cuv_poc_module('weekly_dubbing').validate_frozen
         validate_frozen(job)
         validate_render(work, job)
     require(render.get("status") == "complete_candidate_render" and render.get("jobSha256") == job_hash
@@ -1419,8 +1449,11 @@ def repair_timing(prior_translation, parent_job, timing_report, out, *, batch_si
             "Timing revision needs a new directory outside parent job and prior translation")
     validate(prior)
     old = read(prior / "cuv-manifest.json")
+    require(old.get("implementationIdentity") == implementation_identity(),
+            "Prior CUV implementation identity changed; validate historical v1 in its frozen checkout")
     timing, evidence = measured_timing(parent, Path(timing_report).resolve())
-    manifest = {"schemaVersion": VERSION, "operation": TIMING_REVISION, "parentJob": bind(parent),
+    manifest = {"schemaVersion": VERSION, "implementationIdentity": implementation_identity(),
+                "operation": TIMING_REVISION, "parentJob": bind(parent),
                 "library": old["library"], "provenance": old["provenance"], "model": MODEL,
                 "reasoningEffort": "high", "batchSize": batch_size,
                 "priorTranslation": {"manifest": bind(prior / "cuv-manifest.json"),
@@ -1478,6 +1511,8 @@ def validate(out):
     out = Path(out).resolve()
     manifest = read(out / "cuv-manifest.json")
     require(manifest.get("schemaVersion") == VERSION and (manifest.get("model"), manifest.get("reasoningEffort")) in MODEL_IDENTITIES, "Translation manifest identity changed")
+    require(manifest.get("implementationIdentity") == implementation_identity(),
+            "CUV implementation identity changed; validate historical v1 in its frozen checkout")
     result = compute(out, manifest, offline=True)
     report = read(out / "report.json")
     require(report.get("status") == "passed" and report.get("humanApproval") is False
@@ -1511,15 +1546,18 @@ def validate_spoken_review(parent, review_path):
     return validate(out)
 
 
-def run(parent_job, out, *, library=DEFAULT_LIBRARY_PATH, provenance=DEFAULT_PROVENANCE_PATH,
+def run(parent_job, out, *, library=None, provenance=None,
         reference_map_path=None, batch_size=6, workers=1, reuse_from=None, repair_from=None, selection_offset_repair=None, reference_map_revision=None, selection_review_from=None, selection_review_block_indexes=None, inherit_selection_review_from=None, audit_source_media=False):
     parent_job, out = Path(parent_job).resolve(), Path(out).resolve()
     require(not out.is_relative_to(parent_job.parent), "Use a new directory outside the parent job")
     require(type(batch_size) is int and 1 <= batch_size <= 20, "Batch size must be between 1 and 20")
     require(type(workers) is int and 1 <= workers <= 3, "Workers must be between 1 and 3")
-    CuvLibrary.from_path(library, provenance_path=provenance)  # Fail before any model request.
+    library = library or backend.current().scripture.library_path()
+    provenance = provenance or backend.current().scripture.provenance_path()
+    cuv_library().from_path(library, provenance_path=provenance)  # Fail before any model request.
     source_blocks(read(parent_job))
-    manifest = {"schemaVersion": VERSION, "parentJob": bind(parent_job), "library": bind(library),
+    manifest = {"schemaVersion": VERSION, "implementationIdentity": implementation_identity(),
+        "parentJob": bind(parent_job), "library": bind(library),
         "provenance": bind(provenance), "referenceMap": bind(reference_map_path) if reference_map_path else None,
         "timingReport": bind(parent_job.parent / "synchronization/report.json")
                         if (parent_job.parent / "synchronization/report.json").exists() else None,
@@ -1527,6 +1565,8 @@ def run(parent_job, out, *, library=DEFAULT_LIBRARY_PATH, provenance=DEFAULT_PRO
     existing_manifest = out / "cuv-manifest.json"
     if existing_manifest.exists():
         prior_identity = read(existing_manifest)
+        require(prior_identity.get("implementationIdentity") == manifest["implementationIdentity"],
+                "Existing CUV implementation identity changed; validate historical v1 in its frozen checkout")
         require((prior_identity.get("model"), prior_identity.get("reasoningEffort")) in MODEL_IDENTITIES,
                 "Existing translation model identity is unsupported")
         manifest["model"] = prior_identity["model"]
@@ -1637,8 +1677,8 @@ def main(argv=None):
     create = sub.add_parser("run")
     create.add_argument("--parent-job", required=True, type=Path)
     create.add_argument("--out", required=True, type=Path)
-    create.add_argument("--library", type=Path, default=DEFAULT_LIBRARY_PATH)
-    create.add_argument("--provenance", type=Path, default=DEFAULT_PROVENANCE_PATH)
+    create.add_argument("--library", type=Path)
+    create.add_argument("--provenance", type=Path)
     create.add_argument("--reference-map", type=Path)
     create.add_argument("--reference-map-revision", type=Path, help="Explicit source-map revision bound to previous discovery/map and changed block IDs")
     create.add_argument("--batch-size", type=int, default=6)

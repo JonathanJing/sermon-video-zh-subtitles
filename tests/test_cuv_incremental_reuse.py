@@ -30,6 +30,25 @@ class IncrementalQuotationReuseTests(unittest.TestCase):
         self.assertEqual('passed', result['status'])
         return api.call_count
 
+    def test_implementation_identity_blocks_legacy_resume_reuse_and_validation(self):
+        old = self.fx.out
+        self.assertEqual(6, self.run_fake(old))
+        manifest_path = old / 'cuv-manifest.json'
+        manifest = mod.read(manifest_path)
+        self.assertEqual(mod.implementation_identity(), manifest['implementationIdentity'])
+        del manifest['implementationIdentity']
+        self.fx.write(manifest_path, manifest)
+        fresh = self.fx.root / 'fresh'
+        with mock.patch.object(mod, 'chat_json', side_effect=AssertionError('paid call')):
+            with self.assertRaisesRegex(ValueError, 'frozen checkout'):
+                mod.validate(old)
+            with self.assertRaisesRegex(ValueError, 'implementation identity'):
+                mod.run(self.fx.parent, old, reference_map_path=self.fx.map, batch_size=1)
+            with self.assertRaisesRegex(ValueError, 'implementationIdentity'):
+                mod.run(self.fx.parent, fresh, reference_map_path=self.fx.map,
+                        batch_size=1, reuse_from=old)
+        self.assertFalse(fresh.exists())
+
     def test_metadata_only_change_reuses_identical_audit_and_translation(self):
         old = self.fx.out
         self.assertEqual(6, self.run_fake(old))
