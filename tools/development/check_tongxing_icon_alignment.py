@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 WEB = ROOT / "apps/listening-web"
 DEV = WEB / "reader"
 # The web candidate can ship before the native UI changes in PR #192.
