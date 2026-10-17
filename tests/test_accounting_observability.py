@@ -32,6 +32,19 @@ class ObservabilityTests(unittest.TestCase):
             self.assertEqual(accounting_impl.load_execution_identity_sidecar(exported, digest), modules)
             path = Path(temporary) / '.execution-identities' / (digest + '.json')
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            path.chmod(0o644)
+            _, damaged = accounting.read_events(temporary)
+            self.assertEqual(len(damaged), 1)
+            path.chmod(0o600)
+            ledger = Path(temporary) / 'events.jsonl'
+            original = ledger.read_text()
+            lines = [json.loads(line) for line in original.splitlines()]
+            next(row for row in lines if row['event'] == 'workflow_started')['executionIdentity'][
+                'loadedProjectCodeSha256'] = {'scripts/conflict.py': 'a' * 64}
+            ledger.write_text(''.join(json.dumps(row, sort_keys=True, separators=(',', ':')) + '\n' for row in lines))
+            _, damaged = accounting.read_events(temporary)
+            self.assertEqual(len(damaged), 1)
+            ledger.write_text(original)
             path.write_text('{}')
             with self.assertRaises(ValueError):
                 accounting_impl.load_execution_identity_sidecar(temporary, digest)

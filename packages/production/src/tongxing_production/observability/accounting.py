@@ -302,6 +302,8 @@ def load_execution_identity_sidecar(directory, digest):
         raise ValueError("invalid_execution_identity_sidecar_hash")
     path = Path(directory) / ".execution-identities" / (digest + ".json")
     outbox.jobs._reject_link(path, directory=False)
+    if path.stat().st_mode & 0o077:
+        raise ValueError("execution_identity_sidecar_permissions")
     if path.stat().st_size > 512 * 1024:
         raise ValueError("execution_identity_sidecar_size_limit")
     manifest = outbox.jobs._read(path)
@@ -957,6 +959,8 @@ def read_event_snapshot(directory):
                         identity = value.get("executionIdentity") or {}
                         reference = identity.get("loadedProjectCodeManifestSha256")
                         if reference is not None:
+                            if identity.get("loadedProjectCodeSha256") != {}:
+                                raise ValueError("conflicting_execution_identity")
                             load_execution_identity_sidecar(directory, reference)
                 except (ValueError, UnicodeError, OSError, TypeError):
                     damaged.append({"line": index, "bytes": len(line), "sha256": hashlib.sha256(line).hexdigest(),
