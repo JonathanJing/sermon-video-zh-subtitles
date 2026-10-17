@@ -133,6 +133,13 @@ class PublicDagTests(unittest.TestCase):
         self.assertEqual(len(observed), len(self.rows))
         self.assertEqual({path.name for path in self.root.iterdir()},
                          {"events.jsonl", ".execution-identities"})
+        sidecar = next((self.root / ".execution-identities").glob("*.json"))
+        sidecar.chmod(0o644)
+        result = public.build_projection(self.root, run_id=RUN, at=AT)
+        self.assertEqual(result["quality"]["status"], "partial")
+        self.assertEqual(result["quality"]["damagedRowCount"], 1)
+        self.assertIn("damaged_events", result["quality"]["reasonCodes"])
+        self.assertEqual(result["summary"]["observedNodeCount"], 4)
 
     def test_parallel_observed_path_is_canonical_not_serial_eta(self):
         result = self.project()

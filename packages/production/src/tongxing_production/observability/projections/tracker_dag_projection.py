@@ -186,35 +186,45 @@ def _snapshot(directory):
                 continue
             identity = row.get("executionIdentity")
             reference = identity.get("loadedProjectCodeManifestSha256") if isinstance(identity, dict) else None
-            if isinstance(reference, str) and re.fullmatch(r"[a-f0-9]{64}", reference):
+            if (isinstance(reference, str) and re.fullmatch(r"[a-f0-9]{64}", reference)
+                    and identity.get("loadedProjectCodeSha256") == {}):
                 references.add(reference)
         if references:
             destination = snapshot / ".execution-identities"
             destination.mkdir(mode=0o700)
-            folder = os.open(Path(directory) / destination.name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-            try:
-                total = 0
-                for reference in sorted(references):
-                    fd = os.open(reference + ".json", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=folder)
-                    with os.fdopen(fd, "rb") as stream:
-                        details = os.fstat(fd)
-                        if not stat.S_ISREG(details.st_mode) or details.st_mode & 0o077:
-                            raise ValueError("execution_identity_sidecar_permissions")
-                        if details.st_size > 512 * 1024:
-                            raise ValueError("execution_identity_sidecar_size_limit")
-                        content = stream.read(512 * 1024 + 1)
-                        if len(content) > 512 * 1024:
-                            raise ValueError("execution_identity_sidecar_size_limit")
-                    total += len(content)
-                    if total > MAX_INPUT_BYTES:
-                        raise ValueError("accounting_sidecars_too_large")
-                    target = destination / (reference + ".json")
-                    copy_fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
-                    with os.fdopen(copy_fd, "wb") as stream:
-                        stream.write(content)
-                    accounting.load_execution_identity_sidecar(snapshot, reference)
-            finally:
-                os.close(folder)
+            total = 0
+            for reference in sorted(references):
+                try:
+                    # The canonical reader owns the validity decision. An
+                    # absent or invalid source must stay absent in the frozen
+                    # copy so its referencing row is counted as damaged.
+                    accounting.load_execution_identity_sidecar(directory, reference)
+                    folder = os.open(Path(directory) / destination.name,
+                                     os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+                    try:
+                        fd = os.open(reference + ".json", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=folder)
+                        with os.fdopen(fd, "rb") as stream:
+                            details = os.fstat(fd)
+                            if not stat.S_ISREG(details.st_mode) or details.st_mode & 0o077:
+                                raise ValueError("execution_identity_sidecar_permissions")
+                            if details.st_size > 512 * 1024:
+                                raise ValueError("execution_identity_sidecar_size_limit")
+                            content = stream.read(512 * 1024 + 1)
+                            if len(content) > 512 * 1024:
+                                raise ValueError("execution_identity_sidecar_size_limit")
+                    finally:
+                        os.close(folder)
+                except (ValueError, UnicodeError, OSError, TypeError):
+                    continue
+                total += len(content)
+                if total > MAX_INPUT_BYTES:
+                    raise ValueError("accounting_sidecars_too_large")
+                target = destination / (reference + ".json")
+                copy_fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+                with os.fdopen(copy_fd, "wb") as stream:
+                    stream.write(content)
+                # The canonical readers validate the copied bytes and count
+                # any source race as a damaged event rather than a repaired one.
         events, damaged = accounting.read_events(tmp)
         report = weekly.project(tmp)
     return events, damaged, report
