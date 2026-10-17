@@ -1,0 +1,53 @@
+{
+  "calibrationCoverage": {
+    "audio": {
+      "droppedKeyWordTrials": 3,
+      "truncationEligibleTrials": 30,
+      "untestableKinds": [],
+      "wrongSentenceUnits": 30
+    },
+    "text": {
+      "applicableGroups": {
+        "added_content": 50,
+        "added_number": 48,
+        "added_reference": 49,
+        "dropped_half": 37,
+        "dropped_name": 5,
+        "english_leak": 38,
+        "placeholder": 50,
+        "semantic_negation": 1,
+        "swapped_name": 0,
+        "swapped_quantity": 1,
+        "wrong_book": 1,
+        "wrong_number": 1,
+        "wrong_ordinal": 49
+      },
+      "notApplicableKinds": [
+        "swapped_name"
+      ],
+      "untestableKinds": []
+    }
+  },
+  "flaggedGroups": [
+    "translation-0-u295",
+    "translation-0-u299",
+    "translation-0-u304",
+    "translation-0-u310",
+    "translation-0-u311",
+    "translation-0-u313",
+    "translation-0-u318"
+  ],
+  "locale": "es",
+  "packageJsonSha256": "2061a7aff590ac7f9377df061ce48408617b3c45a45f8c2c8bb20e62ebb3a83f",
+  "paths": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/l2/src/anchor.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/l2/text/es/candidate.json",
+    "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/aqc/run-es/l3/speech-job.json",
+    "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/l3/es/audio-package.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/l2/policy/es-policy-clip.json",
+    "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/aqc/run-es/l3/asr-screening-receipt-v1.json",
+    "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/l2/src/source.json",
+    "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/textqc-es/out-r2/es/text-waiver-5e017d4c4e63b1e6.json"
+  },
+  "problems": []
+}
