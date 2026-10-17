@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "cuv-t5-test-summary-v1",
+  "command": "pytest CUV, package, aliases and loaded-code identity modules",
+  "result": "110 passed, 5 skipped, 492 subtests passed",
+  "identityCheck": "Former CUV load-time accounting, pipeline and scripture modules appear with current byte hashes in execution_identity loadedProjectCodeSha256 when the moved entry is loaded",
+  "oldNewComparison": {
+    "status": "passed",
+    "modelPayloadsEqual": true,
+    "cacheResponsesEqual": true,
+    "blocksEqual": true,
+    "oldManifestVersion": "sermon-cuv-translation-v1",
+    "newManifestVersion": "sermon-cuv-translation-v2",
+    "unchangedRequestVersion": "sermon-cuv-translation-v1",
+    "cacheCount": 4
+  },
+  "sourceCommit": "dad7cd9e",
+  "paidRequests": 0
+}

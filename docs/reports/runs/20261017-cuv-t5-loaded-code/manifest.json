@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-cuv-t5-loaded-code",
+  "runs": [
+    {
+      "label": "cuv-t5-loaded-code-20261017",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/cuv-t5-loaded-code-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "cuv-t5-loaded-code-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 178,
+      "truncated": false,
+      "sha256": "8c0b5880e9bf0dc9220cb94375f98a2606804fa0ca10655ff3a9cb7122d9f1c8",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-t5-loaded-code-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 683,
+      "truncated": false,
+      "sha256": "8beab72ec262a9be46f249c19749a254a2006e7b477145ee162cc8f3e51ded02",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
