@@ -1,0 +1,29 @@
+name: Backend image resources
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - requirements.txt
+      - schemas/**
+      - docs/series-terminology.zh.md
+      - .github/workflows/backend-image-resources.yml
+  workflow_dispatch:
+
+jobs:
+  resource-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build --tag sermon-backend-resource-smoke .
+      - name: Read installed schema through production loader
+        run: |
+          docker run --rm --entrypoint python sermon-backend-resource-smoke -c '
+          from scripts import tongxing_host
+          from tongxing_production.contracts import schemas
+          schemas.validator("sermon-app-delivery-v1")
+          '
