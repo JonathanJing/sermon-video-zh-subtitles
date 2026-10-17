@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-sidecar-cascade",
+  "runs": [
+    {
+      "label": "dual-pdf-sidecar-cascade-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/dual-pdf-sidecar-cascade-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-sidecar-cascade-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1079,
+      "truncated": false,
+      "sha256": "7bf8d886c120f6b924635d7f94b40a7a4228f35733cd8606d0603995d89413bc",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-sidecar-cascade-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 270,
+      "truncated": false,
+      "sha256": "dfb9d1aa93a15550a53807a754bec6c36e321af75de703ba16858ff57ae8d013",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
