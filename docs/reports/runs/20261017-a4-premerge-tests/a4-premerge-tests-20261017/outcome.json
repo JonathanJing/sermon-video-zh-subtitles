@@ -1,0 +1,8 @@
+{
+  "status": "completed",
+  "deliveryType": "test",
+  "context": "A4 before merging R3",
+  "codeCommit": "3ce4eb49",
+  "observations": "51 direct A4 tests passed; unified CLI 228 passed, 2 skipped and 32 subtests; 64 audio and port unittest cases passed",
+  "productionRun": false
+}

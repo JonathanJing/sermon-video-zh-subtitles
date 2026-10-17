@@ -1,0 +1,7 @@
+{
+  "scope": "D6 published alignment migration at PR 576",
+  "sourceUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39041344459",
+  "result": "8 root shards and unittest aggregate passed; native client companion run 39041344473 passed",
+  "base": "sidecar PR 571 branch",
+  "liveProduction": "not_run"
+}

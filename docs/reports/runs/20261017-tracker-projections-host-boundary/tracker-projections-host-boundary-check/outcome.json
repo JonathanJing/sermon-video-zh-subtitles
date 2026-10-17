@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "Tracker projection package and host boundary",
+  "pythonTests": {
+    "passed": 56,
+    "failed": 0
+  },
+  "nodeTests": {
+    "passed": 32,
+    "failed": 0
+  },
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

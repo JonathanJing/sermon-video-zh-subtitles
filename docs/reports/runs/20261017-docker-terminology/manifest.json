@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-docker-terminology",
+  "runs": [
+    {
+      "label": "docker-terminology-20261017",
+      "source": "~/.codex/worktrees/docker-terminology/sermon-video-zh-subtitles/artifacts/docker-terminology-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "docker-terminology-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 369,
+      "truncated": false,
+      "sha256": "a86453d3d32b680e81671ce2144273091bf03200bbcc4ffc730d7ece4bd4f536",
+      "redactions": {}
+    },
+    {
+      "run": "docker-terminology-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 362,
+      "truncated": false,
+      "sha256": "65f5c356991a37874fac51c014e5093f52708582db04905c444a5ad7082456ed",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

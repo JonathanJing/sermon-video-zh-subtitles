@@ -1,0 +1,72 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+    ~~~~^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/main.py", line 104, in __init__
+    self.runTests()
+    ~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/main.py", line 270, in runTests
+    self.result = testRunner.run(self.test)
+                  ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/runner.py", line 240, in run
+    test(result)
+    ~~~~^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ~~~~~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/suite.py", line 122, in run
+    test(result)
+    ~~~~^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ~~~~~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/suite.py", line 122, in run
+    test(result)
+    ~~~~^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ~~~~~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/suite.py", line 122, in run
+    test(result)
+    ~~~~^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/case.py", line 707, in __call__
+    return self.run(*args, **kwds)
+           ~~~~~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/case.py", line 647, in run
+    self._callSetUp()
+    ~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/case.py", line 603, in _callSetUp
+    self.setUp()
+    ~~~~~~~~~~^^
+  File "~/.codex/worktrees/source-failure-move/sermon-video-zh-subtitles/tests/test_sermon_fresh_diagnostic.py", line 212, in setUp
+    with profile.session(self.root/'source-logs','fresh-source-inputs',work_kind='engineering',evidence_mode='synthetic'):
+         ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "~/.codex/worktrees/source-failure-move/sermon-video-zh-subtitles/packages/production/src/tongxing_production/observability/profile.py", line 129, in session
+    with accounting.accounting_session(directory,workflow,metadata,**kwargs) as run:yield run
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "~/.codex/worktrees/source-failure-move/sermon-video-zh-subtitles/packages/production/src/tongxing_production/observability/accounting.py", line 637, in accounting_session
+    "metadata": metadata, "executionIdentity": execution_identity(), "resources": resource_snapshot(directory)})
+                                               ~~~~~~~~~~~~~~~~~~^^
+  File "~/.codex/worktrees/source-failure-move/sermon-video-zh-subtitles/packages/production/src/tongxing_production/observability/accounting.py", line 226, in execution_identity
+    head, dirty = git("rev-parse", "HEAD"), git("status", "--porcelain", "--untracked-files=no")
+                                            ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/source-failure-move/sermon-video-zh-subtitles/packages/production/src/tongxing_production/observability/accounting.py", line 223, in git
+    return subprocess.run(["git", "--no-optional-locks", "-C", str(root), *args], capture_output=True, text=True, timeout=5, check=False)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 1222, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 2154, in _communicate
+    ready = selector.select(timeout)
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/selectors.py", line 398, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt

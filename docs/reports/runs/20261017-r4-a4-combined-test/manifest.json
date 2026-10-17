@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-r4-a4-combined-test",
+  "runs": [
+    {
+      "label": "r4-a4-combined-test-20261017",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/r4-a4-combined-test-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "r4-a4-combined-test-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 186,
+      "truncated": false,
+      "sha256": "03cd553deca9b8a983dd9e635374dd3ac331dde8cb7b535762a5a998ec911e1a",
+      "redactions": {}
+    },
+    {
+      "run": "r4-a4-combined-test-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 327,
+      "truncated": false,
+      "sha256": "b8fcebc1b5a513d7c4fe5c650324920c9277b49d2daf26ecf773a4faa559610f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

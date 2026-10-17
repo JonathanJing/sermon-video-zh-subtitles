@@ -1,0 +1,21 @@
+{
+  "checks": [
+    {
+      "command": "PYTHONPATH=packages/production/src uv run --no-project --with jsonschema python -m unittest tests.test_build_tracker_dag_projection tests.test_build_four_layer_tracker_snapshot",
+      "status": "passed",
+      "count": 56
+    },
+    {
+      "command": "node --test apps/tracker-web/tests/dag.test.mjs apps/tracker-web/tests/snapshot-state.test.mjs tools/ops/tracker-publisher/tests/publish.test.mjs",
+      "status": "passed",
+      "count": 32
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "preflightFailures": [
+    "System Python lacked the repository package path and jsonschema; reran tests in isolated uv environment with this worktree's package path."
+  ]
+}

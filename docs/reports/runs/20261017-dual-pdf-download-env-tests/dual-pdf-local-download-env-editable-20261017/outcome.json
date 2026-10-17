@@ -1,0 +1,8 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "testsRun": 15,
+  "failures": 0,
+  "reason": "Worktree-local editable install; package and facade tests pass."
+}

@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-clip-e2e-opus280-20261004-j",
+  "runs": [
+    {
+      "label": "clip-e2e-20261004-opus-j",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-j",
+      "skipped": {
+        ".json": 13
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-e2e-20261004-opus-j",
+      "path": "logs/inputs.log",
+      "kind": "log",
+      "bytes": 868,
+      "truncated": false,
+      "sha256": "ae81dda7e6ef57af46bd9a3593f17232e059d04616b64eaf50b2f5795eee6257",
+      "redactions": {
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-j",
+      "path": "logs/plan-layer2.log",
+      "kind": "log",
+      "bytes": 2704,
+      "truncated": false,
+      "sha256": "7c2d80195e9f48699da8f1f8ab947d35bd4897247b535eeb4bf93495fe1ac1dd",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-j",
+      "path": "logs/route-probe.log",
+      "kind": "log",
+      "bytes": 716,
+      "truncated": false,
+      "sha256": "a2b89cc4c18566897c54c9015e946b4a5b9abf6475c1b698039fdaa3ced3c165",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-j",
+      "path": "logs/timeline-map.log",
+      "kind": "log",
+      "bytes": 1055,
+      "truncated": false,
+      "sha256": "b4c5e244de78ffdb578dbc9944036e02e3656f002ae2af89d3a6127202319de5",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-j",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1082,
+      "truncated": false,
+      "sha256": "933f49f2d7231b1e81ab36bebecac2494bd4a5127ad1869bded9c7451667bc84",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-j",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 77,
+      "truncated": false,
+      "sha256": "05e2952a3feaf5b77d240056ed68e6a38a3dff451569e991c5a52e9497659f8f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

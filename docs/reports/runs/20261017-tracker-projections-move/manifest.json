@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-tracker-projections-move",
+  "runs": [
+    {
+      "label": "tracker-projections-move-check",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/tracker-projections-move-check",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tracker-projections-move-check",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 227,
+      "truncated": false,
+      "sha256": "c4bc601bdea76760f05a25a7fc916da4e166de1c89193d4b64e7d226a8dd128f",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-projections-move-check",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 634,
+      "truncated": false,
+      "sha256": "356f609a1f52bc3e8286678eaebac36fc59104a3b208d6544e5c22780eed610b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

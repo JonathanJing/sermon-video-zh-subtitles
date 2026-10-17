@@ -1,0 +1,10 @@
+{
+  "status": "passed_with_environment_limit",
+  "checks": {
+    "targetedUnittest": "passed",
+    "hostSchemaValidatorSmoke": "passed",
+    "gitDiffCheck": "passed",
+    "dockerBuild": "not_run_docker_unavailable",
+    "containerSmoke": "not_run_docker_unavailable"
+  }
+}

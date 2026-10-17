@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-clip-e2e-opus280-20261004-ai",
+  "runs": [
+    {
+      "label": "clip-e2e-20261004-opus-ai-es-recal",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ai-es-recal",
+      "skipped": {
+        ".json": 560,
+        ".lock": 537
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-e2e-20261004-opus-ai-es-recal",
+      "path": "logs/check-ai-qc-preflight.log",
+      "kind": "log",
+      "bytes": 2226,
+      "truncated": false,
+      "sha256": "c4046c2dbcb843ef7c74291dff62ac728178eb3a872185134ac94976e7c5b9bd",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ai-es-recal",
+      "path": "logs/check-qc-es-out.log",
+      "kind": "log",
+      "bytes": 2220,
+      "truncated": false,
+      "sha256": "403f1875f4ecb4d63b9bfe0708fe34d84f4983308d7e8f08686bfc4b205a8dc0",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ai-es-recal",
+      "path": "logs/plan-qc-es.log",
+      "kind": "log",
+      "bytes": 4521,
+      "truncated": false,
+      "sha256": "4b42c4d52f8e47649bc6b27d29a17afd10e34da89d178a9e2cc7d24262d65bb0",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ai-es-recal",
+      "path": "logs/text-qc.es.out.log",
+      "kind": "log",
+      "bytes": 2023,
+      "truncated": false,
+      "sha256": "a954e0224fdad380827258e8eb4b36649e0f464f0b5e78a91fd9386fdd6ba5b5",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ai-es-recal",
+      "path": "logs/timeline-map.log",
+      "kind": "log",
+      "bytes": 1105,
+      "truncated": false,
+      "sha256": "36bcc4574c0579f800fc3c9e73fd53dc1a1313b703427624683dcba399c3ef70",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ai-es-recal",
+      "path": "plans/qc-es/qc-es/.api-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 509206,
+      "truncated": false,
+      "source": "plans/qc-es/qc-es/.api-budget/source-budget.json",
+      "sha256": "b98e69f2757813211236e1e1e3e07b5f7171b2ec0c9c305707e9211ab424b10f",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ai-es-recal",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2393,
+      "truncated": false,
+      "sha256": "c08a080d56fa3d7600a3d3ad0bcce047a1b113ce465e3db68f2a7780f917b729",
+      "redactions": {
+        "home_dir": 11
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ai-es-recal",
+      "path": "textqc-es/out/es/preflight.json",
+      "kind": "whole",
+      "bytes": 1332,
+      "truncated": false,
+      "sha256": "3d43498fe869e4e874f92db21e2975f84a13ba8495f97a110fa30bb71a02a4f1",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ai-es-recal",
+      "path": "textqc-es/out/summary.json",
+      "kind": "whole",
+      "bytes": 2948,
+      "truncated": false,
+      "sha256": "3ce416fc7495e7c00eef1585fefe249fac1031bd668e8be14095bb3fda6c5aaf",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ai-es-recal",
+      "path": "textqc-es/out/timings.tsv",
+      "kind": "whole",
+      "bytes": 173,
+      "truncated": false,
+      "sha256": "59ceb3b9b75b90ff09da7d9cb90e0b7cadcc1e0608a13c459a28ef8ef132f613",
+      "redactions": {}
+    },
+    {
+      "run": "clip-e2e-20261004-opus-ai-es-recal",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 114,
+      "truncated": false,
+      "sha256": "82befe6800fd1ddab7c700c240649fe4e349dc44b6bf94857735127b19f682e8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

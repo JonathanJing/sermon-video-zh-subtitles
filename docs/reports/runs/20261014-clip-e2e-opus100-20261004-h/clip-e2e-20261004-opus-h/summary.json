@@ -1,0 +1,22 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-h",
+  "status": "failed_preflight",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-14T20:53:04+00:00",
+      "units": 39,
+      "inputs": "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/clip-e2e-opus100-20261004-h/inputs",
+      "layer1Backend": "claude_cli_opus"
+    }
+  },
+  "stopped": [
+    "layer2-setup: source-scoped Target-Language Policy v4 term receipt requires approvedTerms non-empty; this 39-unit clip has no scanned multiword proper name"
+  ],
+  "settledUsd": 10.422771,
+  "newOpenaiUsd": 0.0,
+  "layer1ClaudeSubscriptionListPriceEquivalentUsd": 0.670429,
+  "layer2Dispatched": false,
+  "audioDispatched": false,
+  "published": false
+}
