@@ -2,7 +2,7 @@
 
 ## 结论先行
 
-交付类型：测试。A3 基线叠加 sidecar 修复的 CI 样式 root-2 分片退出码 0，711 项通过（含 5 项 skip），`unittest-root-2.json` 记录 `successful=true`。这是本地代码验证，不是 G1 合并、真实 QC 或生产验收。
+交付类型：测试。A3 基线叠加 sidecar 修复的 CI 样式 root-2 分片退出码 0，运行 711 项，其中 5 项跳过，其余通过，`unittest-root-2.json` 记录 `successful=true`。这是本地代码验证，不是 G1 合并、真实 QC 或生产验收。
 
 ## 总时间
 
