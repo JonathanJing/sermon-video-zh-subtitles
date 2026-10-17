@@ -1,0 +1,68 @@
+{
+  "workflow": "Python tests",
+  "event": "workflow_dispatch",
+  "scope": "full",
+  "rootShards": [
+    {
+      "name": "root-0",
+      "status": "success",
+      "tests": 693,
+      "skipped": 6
+    },
+    {
+      "name": "root-1",
+      "status": "failure",
+      "tests": 701,
+      "failures": 3,
+      "skipped": 1
+    },
+    {
+      "name": "root-2",
+      "status": "success",
+      "tests": 712,
+      "skipped": 4
+    },
+    {
+      "name": "root-3",
+      "status": "success",
+      "tests": 725,
+      "skipped": 8
+    },
+    {
+      "name": "root-4",
+      "status": "success",
+      "tests": 725,
+      "skipped": 3
+    },
+    {
+      "name": "root-5",
+      "status": "success",
+      "tests": 728,
+      "skipped": 7
+    },
+    {
+      "name": "root-6",
+      "status": "success",
+      "tests": 728,
+      "skipped": 4
+    },
+    {
+      "name": "root-7",
+      "status": "success",
+      "tests": 730,
+      "skipped": 5
+    }
+  ],
+  "totalShardExecutions": 5742,
+  "failedAssertions": 3,
+  "unittestAggregate": "failure",
+  "nativeClient": "skipped",
+  "failureTest": "test_sermon_strict_layer2.StrictAdapterTests.test_ambiguous_http_and_transport_failures_stay_unknown_without_retry",
+  "failureSubtests": [
+    "HTTPError index=0",
+    "HTTPError index=1",
+    "HTTPError index=2"
+  ],
+  "failureAssertion": "sleep.assert_not_called() observed unrelated global sleep(0.05) calls",
+  "followupBaseFix": "dba3fe06 scopes strict Layer 2 clock probe to transport module; not present in tested bed0d841"
+}
