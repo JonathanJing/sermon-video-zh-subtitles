@@ -867,10 +867,34 @@ def dual_pdf_unmoved():
         dubbing_producer_hook=_dubbing_producer_hook, upcoming_sunday=_upcoming_sunday)
 
 
+# What a moved entry imported at its own load time, now reached through proxies that
+# load on first use. Loaded at identity capture only when that entry is loaded, as
+# importing the entry did before W3c, so the identity still covers the code it runs.
+ENTRY_LOAD_TIME_IMPORTS = {
+    'tongxing_production.workflows.dual_pdf.post_live': (
+        'backend.cloud', 'backend.observability', 'scripts.live_source_monitor',
+        'scripts.post_live_run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
+    'tongxing_production.workflows.dual_pdf.codex_local': (
+        'backend.config', 'backend.cloud', 'scripts.live_source_monitor',
+        'scripts.run_sermon_production_supervisor_agent', 'scripts.sermon_accounting',
+        'scripts.sermon_production_supervisor'),
+}
+
+
 def load_producer_imports():
     import importlib
     for name in EAGER_PRODUCER_IMPORTS:
         importlib.import_module('scripts.' + name)
+    # An entry's imports can load another entry (the codex-local supervisor imports post-live).
+    pending = True
+    while pending:
+        pending = False
+        for entry, names in ENTRY_LOAD_TIME_IMPORTS.items():
+            if entry in sys.modules:
+                for name in names:
+                    if name not in sys.modules:
+                        importlib.import_module(name)
+                        pending = True
 
 
 # The checkout's schemas/ directory is the only editable schema source.
