@@ -24,6 +24,15 @@ def ledger(directory, rows):
 
 
 class ContractTests(unittest.TestCase):
+    def test_non_string_version_is_invalid_without_raising_type_error(self):
+        for version in ([], {}):
+            row = fixture('stage-start')
+            row['contractVersion'] = version
+            with self.subTest(version=version):
+                self.assertFalse(contract.valid_event(row))
+                self.assertEqual(contract.replay_integrity([row])['status'], 'consistent')
+                self.assertEqual(accounting.profile_integrity([row])['status'], 'consistent')
+
     def test_v1_ledger_and_v2_ledger_replay_without_rewriting_old_facts(self):
         old = [fixture('stage-start'), fixture('stage-finish')]
         current = [dict(row, contractVersion=contract.VERSION,
