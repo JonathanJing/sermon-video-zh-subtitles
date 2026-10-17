@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dev-local-audio-entry-leaf",
+  "runs": [
+    {
+      "label": "dev-local-audio-entry-leaf-20261017",
+      "source": "~/.codex/worktrees/ops-review-timeline-leaf/sermon-video-zh-subtitles/artifacts/dev-local-audio-entry-leaf-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dev-local-audio-entry-leaf-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 687,
+      "truncated": false,
+      "sha256": "40f720bdef0ea1962fa52fbc87dc1b548547fc9f617535fd1e8b33fccf29dc98",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
