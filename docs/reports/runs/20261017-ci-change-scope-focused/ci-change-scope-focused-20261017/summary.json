@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "testsRun": 16,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "testIdComparison": {
+    "before": 7,
+    "after": 7,
+    "removed": 0,
+    "added": 0
+  },
+  "cliChecks": "legacy, tool, and module entry points exercised from temporary non-repository Git working directories"
+}

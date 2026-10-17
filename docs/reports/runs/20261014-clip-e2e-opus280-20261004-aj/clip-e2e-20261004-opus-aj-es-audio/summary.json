@@ -1,0 +1,55 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aj-es-audio",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-15T01:27:16+00:00",
+      "units": 50,
+      "inputs": "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/clip-e2e-opus280-20261004-aj-es-audio/inputs",
+      "layer1Backend": "claude_cli_opus"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-15T01:27:23+00:00",
+      "reusedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ai-es-recal",
+      "manifest": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aj-es-audio/reuse-manifest.json"
+    },
+    "layer2": {
+      "status": "done",
+      "at": "2026-10-15T01:27:23+00:00",
+      "reusedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ai-es-recal",
+      "manifest": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aj-es-audio/reuse-manifest.json"
+    },
+    "qc.es": {
+      "status": "done",
+      "at": "2026-10-15T01:27:23+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aj-es-audio/l2/text/es/candidate.json",
+          "out": "out",
+          "status": "text_waiver_issued",
+          "failedGroups": [],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aj-es-audio/textqc-es/state/qc-receipts/text/es/730076e55f3f64fa4edff03f09fdf0cdd9865a05498c8aaacc7c06a1177ac92a/entry-000001.json",
+          "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aj-es-audio/textqc-es/out/es"
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aj-es-audio/l2/text/es/candidate.json",
+      "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aj-es-audio/textqc-es/out/es",
+      "reusedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ai-es-recal",
+      "waiverSha256": "ad5f6f89cd3eda381c4984c8445f3f454557542b71bcf4ca698862aad5870d1a"
+    },
+    "audio.es": {
+      "status": "failed",
+      "at": "2026-10-15T01:40:00+00:00",
+      "qcStatus": "error",
+      "failedGroups": null,
+      "nextActions": null
+    }
+  },
+  "stopped": [
+    "audio.es: error None ValueError: source_budget_exhausted",
+    "layer4 needs every locale; not finished: ['es']"
+  ],
+  "settledUsd": 21.247861,
+  "claudeListPriceEquivalentUsd": 0.0
+}

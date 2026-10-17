@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-source-failure-move",
+  "runs": [
+    {
+      "label": "source-failure-tests-20261017",
+      "source": "~/.codex/worktrees/source-failure-move/sermon-video-zh-subtitles/artifacts/source-failure-tests-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "source-failure-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 310,
+      "truncated": false,
+      "sha256": "70d78057ed67b79b0d3693310600d57073acaf02ba5a81d36000d78966829fdd",
+      "redactions": {}
+    },
+    {
+      "run": "source-failure-tests-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 763,
+      "truncated": false,
+      "sha256": "f0a2ec5cb25b7865e968bdf674db4f69f85a9e2d76460b35d04404202b45da4f",
+      "redactions": {}
+    },
+    {
+      "run": "source-failure-tests-20261017",
+      "path": "targeted.log",
+      "kind": "log",
+      "bytes": 5964,
+      "truncated": false,
+      "sha256": "53d43e4fa3907ac349dee467e3e8b2116bdf7a1d4d793bb1d444e5af9ed9cd9d",
+      "redactions": {
+        "email": 19,
+        "home_dir": 5
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-tracker-legacy-sidecar-integration",
+  "runs": [
+    {
+      "label": "tracker-legacy-sidecar-integration-20261017",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/tracker-legacy-sidecar-integration-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tracker-legacy-sidecar-integration-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 320,
+      "truncated": false,
+      "sha256": "065ccf24a42da922e9ee4509d48cce99cc3510cfb71236e18ad3eb128cd47af2",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-legacy-sidecar-integration-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 505,
+      "truncated": false,
+      "sha256": "b891d72e3af732b8673644b5075f2c45ef6840faf99cccfa8f9302870a12cb5d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

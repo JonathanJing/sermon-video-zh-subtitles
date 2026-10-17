@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "head": "c87ab25bd569034000e2051b69365f8088690a2e",
+  "targetPr": 570,
+  "upstreamPr": 569,
+  "testGroups": [
+    {
+      "scope": "A3 audio ports, unified audio, renderer, accounting and snapshot before latest v1 guard",
+      "executed": 93,
+      "passed": 93,
+      "exitCode": 0
+    },
+    {
+      "scope": "latest v1 guard with accounting and A3 audio ports",
+      "executed": 54,
+      "passed": 54,
+      "exitCode": 0
+    }
+  ],
+  "diffCheck": "passed",
+  "externalCalls": 0
+}

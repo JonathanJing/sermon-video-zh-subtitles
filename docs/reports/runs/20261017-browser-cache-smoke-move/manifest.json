@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-browser-cache-smoke-move",
+  "runs": [
+    {
+      "label": "20261017-browser-cache-smoke-move",
+      "source": "~/.codex/worktrees/dev-browser-cache-smoke/sermon-video-zh-subtitles/artifacts/20261017-browser-cache-smoke-move",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-browser-cache-smoke-move",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1257,
+      "truncated": false,
+      "sha256": "8042a35e47326ae334f1bfbadbc5b72ef4acbd8aa6ac78c9a50e8dff7de76931",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

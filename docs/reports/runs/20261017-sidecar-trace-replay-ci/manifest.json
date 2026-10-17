@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-sidecar-trace-replay-ci",
+  "runs": [
+    {
+      "label": "sidecar-trace-replay-ci-20261017",
+      "source": "~/.codex/worktrees/event-identity-sidecar/sermon-video-zh-subtitles/artifacts/sidecar-trace-replay-ci-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "sidecar-trace-replay-ci-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 510,
+      "truncated": false,
+      "sha256": "142f23a60e1dff211852da3c596286f7f29ec4549a48e3538b4d30e73ce5f09e",
+      "redactions": {}
+    },
+    {
+      "run": "sidecar-trace-replay-ci-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 486,
+      "truncated": false,
+      "sha256": "5d418f40eed42a3b753dedec9a7f6df5c473fced0023b5c71cabd81979d54ea1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

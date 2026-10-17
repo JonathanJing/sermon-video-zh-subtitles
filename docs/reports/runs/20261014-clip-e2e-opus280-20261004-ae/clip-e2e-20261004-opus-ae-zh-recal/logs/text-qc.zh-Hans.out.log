@@ -1,0 +1,16 @@
+
+== 2026-10-15T00:51:36+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_with_openai_environment.py --environment dev --env-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.env.openai -- ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_machine_qc_clip_test.py --run-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal/textqc-zh-Hans/run-out --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal/textqc-zh-Hans/out --state-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal/textqc-zh-Hans/state --locales zh-Hans --text-backend api --api-budget-authorization ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal/plans/qc-zh-Hans/qc-zh-Hans/api-budget-authorization.json --workers 8 --expected-implementation 95ea20d504691c4415627e04b803a059eaec7b51f0d1f50b4c911e1b23d5771c --human-acceptance zh-Hans=~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal/human-acceptance/zh-Hans.json
+discover	pass	0.0
+zh-Hans.text-qc.prefetch	pass	43.5
+zh-Hans.text-qc	pass	2.5
+zh-Hans.calibration.prefetch	fail	208.8
+Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/20261015-005551-machine-qc-text
+{
+  "zh-Hans": {
+    "status": "error",
+    "reason": "ValueError: source_budget_exhausted",
+    "problems": [],
+    "calibration": null
+  }
+}
+Digest: ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/run-reports/20261015-005551-machine-qc-text (3 files, 9 redactions)

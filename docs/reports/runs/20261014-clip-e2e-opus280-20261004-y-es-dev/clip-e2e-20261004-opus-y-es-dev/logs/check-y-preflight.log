@@ -1,0 +1,41 @@
+
+== 2026-10-14T23:45:54+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/check_run_start.py --expected-commit 79138954a5550b5097fda7c69e498a5f9fa4d4bd --expected-implementation 29a3fe552d16b1c58e167431c528eb38cc0540c6c998e81f7743f446af5c8ebb --openai-environment dev --env-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.env.openai --origin https://ai-for-god-sermon-audio-dev.web.app --page-id mockup-dev-clip-20261004-u280-329-opus-y-es --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-y-es-dev/start-check-y-preflight.json
+{
+ "schemaVersion": "sermon-run-start-check-v1",
+ "status": "pass",
+ "failed": [],
+ "checks": [
+  {
+   "check": "code",
+   "status": "pass",
+   "head": "79138954a5550b5097fda7c69e498a5f9fa4d4bd",
+   "qcImplementationSha256": "29a3fe552d16b1c58e167431c528eb38cc0540c6c998e81f7743f446af5c8ebb",
+   "problems": []
+  },
+  {
+   "check": "openai",
+   "status": "pass",
+   "environment": "dev",
+   "exitCode": 0
+  },
+  {
+   "check": "budget",
+   "status": "skip"
+  },
+  {
+   "check": "spark",
+   "status": "skip"
+  },
+  {
+   "check": "outputs",
+   "status": "skip"
+  },
+  {
+   "check": "page",
+   "status": "pass",
+   "pageId": "mockup-dev-clip-20261004-u280-329-opus-y-es",
+   "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+   "problems": []
+  }
+ ]
+}

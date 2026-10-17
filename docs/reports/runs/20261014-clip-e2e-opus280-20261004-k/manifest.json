@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-clip-e2e-opus280-20261004-k",
+  "runs": [
+    {
+      "label": "clip-e2e-20261004-opus-k",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-k",
+      "skipped": {
+        ".json": 18
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-e2e-20261004-opus-k",
+      "path": "logs/check-layer2.log",
+      "kind": "log",
+      "bytes": 2517,
+      "truncated": false,
+      "sha256": "652a36cb6eb8fae009a409e67c1a011b38df60047fbbd86a8e6fb3e84ac9008f",
+      "redactions": {
+        "email": 1,
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-k",
+      "path": "logs/plan-layer2.log",
+      "kind": "log",
+      "bytes": 2083,
+      "truncated": false,
+      "sha256": "b2f7391d500e8ba87d5748eec75a775a83a7992dada6355d26eb967d3e2e2c07",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-k",
+      "path": "logs/route-probe.log",
+      "kind": "log",
+      "bytes": 716,
+      "truncated": false,
+      "sha256": "2641d4ba80a247d7f70a4405ab827f90b74008a1855e6479d1b2002f89045ee5",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-k",
+      "path": "logs/timeline-map.log",
+      "kind": "log",
+      "bytes": 1055,
+      "truncated": false,
+      "sha256": "01bb2b3f7994fe1e836974020a1a627aaa0061cf376152d8e532798be0faf053",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-k",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 829,
+      "truncated": false,
+      "sha256": "4df58f984e4ec0dd167cabdb50aa22048b3edbc009c205e1da486ba1fb7a4788",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-k",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 81,
+      "truncated": false,
+      "sha256": "c7967ad93a37c73767b3f81615df62904587df964fdd6199e8192e6e037f9d73",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

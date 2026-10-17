@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-weekly-projection-readports-tests",
+  "runs": [
+    {
+      "label": "weekly-projection-readports-tests",
+      "source": "~/.codex/worktrees/weekly-report-projection/sermon-video-zh-subtitles/artifacts/weekly-projection-readports-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-projection-readports-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 548,
+      "truncated": false,
+      "sha256": "7154d271cf38441ba342317b0e9942242a3829532556bc0e22d479e38a76aa3d",
+      "redactions": {}
+    },
+    {
+      "run": "weekly-projection-readports-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 141,
+      "truncated": false,
+      "sha256": "403c3b0f7992030ebb07653bd4e5fef0ece9a1a1b8b87c53f680c181a10711de",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

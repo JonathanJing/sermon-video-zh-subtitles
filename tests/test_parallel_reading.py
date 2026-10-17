@@ -174,6 +174,8 @@ class ParallelReadingTest(unittest.TestCase):
         self.assertEqual(candidate["status"], "waiting_voice_config")
         self.assertFalse(candidate["published"])
         self.assertEqual(len(calls), 2)
+        self.assertTrue(any(len(command) > 1 and Path(command[1]).name == "render_sermon_interpretation_pdf.py"
+                            for command in calls))
 
     def test_dubbing_failure_blocks_join(self):
         def hook(config, week, run, executor):

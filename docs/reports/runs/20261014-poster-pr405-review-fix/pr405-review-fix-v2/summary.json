@@ -1,0 +1,15 @@
+{
+  "status": "passed_local_renderer_review",
+  "scope": "PR 405 review repair; no publication",
+  "renderer": "scripts/render_weekly_poster.swift",
+  "cases": 13,
+  "pngs": 26,
+  "dualQrValidatedPngs": 26,
+  "machineDisclosureCases": 10,
+  "longMetadataCases": 3,
+  "unitTestsPassed": 17,
+  "visualReview": "Representative final previews inspected; all 26 PNGs passed two-QR decode",
+  "englishReference": "Synthetic layout proof used a Chinese badge, not a distributable English poster",
+  "published": false,
+  "humanApproval": false
+}

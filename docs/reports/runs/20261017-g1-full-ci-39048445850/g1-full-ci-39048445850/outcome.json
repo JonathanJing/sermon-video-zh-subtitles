@@ -1,0 +1,42 @@
+{
+  "status": "failed",
+  "deliveryType": "test",
+  "source": "GitHub Actions workflow_dispatch",
+  "runId": 39048445850,
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39048445850",
+  "headCommit": "fecb17b1c621d15ddc6b48978b5a69ef67adcc6b",
+  "pullRequest": 582,
+  "startedAt": "2026-10-17T16:13:08Z",
+  "finishedAt": "2026-10-17T16:26:07Z",
+  "testGroup": {
+    "shards": 8,
+    "successfulShards": 7,
+    "failedShards": 1
+  },
+  "failedJob": {
+    "name": "test-group (root-1)",
+    "jobId": 117441872076,
+    "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39048445850/job/117441872076",
+    "testsRun": 701,
+    "failures": 2,
+    "skipped": 5,
+    "testSeconds": 609.063,
+    "failingTest": "test_sermon_strict_layer2.StrictAdapterTests.test_ambiguous_http_and_transport_failures_stay_unknown_without_retry",
+    "subtestMockCallCounts": [
+      561612,
+      428162
+    ]
+  },
+  "dependentGate": {
+    "name": "unittest",
+    "jobId": 117444657149,
+    "status": "failed",
+    "reason": "selected full validation required test-group result success, but it was failure"
+  },
+  "laterFix": {
+    "commit": "dba3fe06ce6caff0bf229d655a188583340037e1",
+    "relation": "on PR 571 after this tested head; not evidence of a passing rerun"
+  },
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

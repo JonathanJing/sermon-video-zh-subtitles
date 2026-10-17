@@ -1,0 +1,8 @@
+{
+  "deliveryType": "test",
+  "pullRequest": 625,
+  "commit": "7ba483ac3c5ffa8b867ef5a3d79e7f3168082758",
+  "result": "4 TypedFailureTests passed in 0.509 seconds",
+  "packagePath": "packages/production/src/tongxing_production/__init__.py",
+  "productionRun": "not_run"
+}

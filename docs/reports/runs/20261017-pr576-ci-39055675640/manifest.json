@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr576-ci-39055675640",
+  "runs": [
+    {
+      "label": "pr576-full-ci-39055675640",
+      "source": "~/.codex/worktrees/d6-published-alignment/sermon-video-zh-subtitles/artifacts/pr576-full-ci-39055675640",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr576-full-ci-39055675640",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 403,
+      "truncated": false,
+      "sha256": "d9cd39191d1a726b45620061ea400dc9c353a25e022ec318a6264ab054fd0241",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

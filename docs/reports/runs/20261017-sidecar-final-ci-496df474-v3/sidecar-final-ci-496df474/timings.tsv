@@ -1,0 +1,10 @@
+stage	status	seconds
+test-group (root-3)	pass	810.000
+test-group (root-5)	pass	781.000
+test-group (root-0)	pass	438.000
+test-group (root-2)	pass	494.000
+test-group (root-6)	pass	769.000
+test-group (root-1)	pass	732.000
+test-group (root-4)	pass	1038.000
+test-group (root-7)	pass	1027.000
+unittest	pass	2.000

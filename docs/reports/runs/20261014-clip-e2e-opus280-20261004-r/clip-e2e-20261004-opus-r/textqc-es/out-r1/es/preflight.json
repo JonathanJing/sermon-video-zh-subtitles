@@ -1,0 +1,32 @@
+{
+  "calibrationCoverage": {
+    "applicableGroups": {
+      "added_content": 50,
+      "added_number": 48,
+      "added_reference": 49,
+      "dropped_half": 37,
+      "dropped_name": 5,
+      "english_leak": 38,
+      "placeholder": 50,
+      "semantic_negation": 1,
+      "swapped_name": 0,
+      "swapped_quantity": 1,
+      "wrong_book": 1,
+      "wrong_number": 1,
+      "wrong_ordinal": 49
+    },
+    "notApplicableKinds": [
+      "swapped_name"
+    ],
+    "untestableKinds": []
+  },
+  "candidateJsonSha256": "0ae61235e6a8604c9efa8b9ecd1d9d3c7a6c782d6d03eaa2d96d5bcd15742c14",
+  "locale": "es",
+  "paths": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/run-out-r1/anchor.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/run-out-r1/es/candidate.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/run-out-r1/policies/es-policy-clip.json",
+    "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/run-out-r1/source.json"
+  },
+  "problems": []
+}

@@ -1,0 +1,12 @@
+{
+  "status": "passed_with_environment_limit",
+  "checks": {
+    "sourcePrivacyScan": "passed_zero_pattern_hits",
+    "staticContextRules": "passed",
+    "defaultTerminologyHash": "passed",
+    "pinnedCatalogReuse": "passed",
+    "gitDiffCheck": "passed",
+    "dockerBuild": "not_run_docker_unavailable",
+    "containerSmoke": "not_run_docker_unavailable"
+  }
+}

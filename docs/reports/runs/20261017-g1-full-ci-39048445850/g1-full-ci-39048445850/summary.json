@@ -1,0 +1,8 @@
+{
+  "status": "failed",
+  "evidence": "GitHub Actions run and failed-job logs inspected without copying raw logs",
+  "diagnosis": "The strict Layer 2 test patched the shared time module's sleep globally while other test threads remained active. The assertion that no sleep occurred observed their calls; the two failing subtests report 561612 and 428162 calls. This does not establish a production retry or transport regression.",
+  "sevenOtherShards": "success",
+  "separateDependentFailure": "The final unittest gate failed because the full suite group result was failure.",
+  "limitations": "No full-suite rerun on fecb17b1 and no test outcome for the later dba3fe06 fix is claimed here."
+}

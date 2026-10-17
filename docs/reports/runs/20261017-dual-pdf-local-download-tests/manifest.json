@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-local-download-tests",
+  "runs": [
+    {
+      "label": "dual-pdf-local-download-tests-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-local-download/sermon-video-zh-subtitles/artifacts/dual-pdf-local-download-tests-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-local-download-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 173,
+      "truncated": false,
+      "sha256": "520d5621fd74d9f9c7dcd1e941e28e1a1a16c28209f8c31c70254e09212e4b3c",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-local-download-tests-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 927,
+      "truncated": false,
+      "sha256": "b720d7d3d16fb64602451f4173d6b45d4b2e37b843adecefa4cf2c3c4c0ea06c",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-local-download-tests-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 94,
+      "truncated": false,
+      "sha256": "d1bb0dabd6abc9ed841c7f10224f108943569a37d49674ef5358efb5d273e862",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

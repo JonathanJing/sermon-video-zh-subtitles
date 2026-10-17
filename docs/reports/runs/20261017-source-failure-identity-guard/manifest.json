@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-source-failure-identity-guard",
+  "runs": [
+    {
+      "label": "source-failure-identity-guard-20261017",
+      "source": "~/.codex/worktrees/source-failure-move/sermon-video-zh-subtitles/artifacts/source-failure-identity-guard-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "source-failure-identity-guard-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 447,
+      "truncated": false,
+      "sha256": "a47273948eee8df372c2236999f3f3da68eae098ed1f3c240ede0ab301903785",
+      "redactions": {}
+    },
+    {
+      "run": "source-failure-identity-guard-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 354,
+      "truncated": false,
+      "sha256": "c7205bccbbfe8a5fa8f7f58ce7dcc779a4fbe67f0bb316ddc2f665665c72ef73",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

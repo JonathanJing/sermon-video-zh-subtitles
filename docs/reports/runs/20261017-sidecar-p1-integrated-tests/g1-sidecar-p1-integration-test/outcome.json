@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "testCount": 107,
+  "failed": 0,
+  "skipped": 0,
+  "scope": "schema-v1-v2-and-derived-sidecars",
+  "exitCode": 0
+}

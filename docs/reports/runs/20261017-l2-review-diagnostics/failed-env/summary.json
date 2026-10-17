@@ -1,0 +1,8 @@
+{
+  "status": "failed",
+  "executed": 70,
+  "failed": 3,
+  "skipped": 1,
+  "cause": "Isolated child processes resolved the editable production package from the root checkout while scripts came from this worktree; this was a test environment mismatch.",
+  "externalCalls": 0
+}

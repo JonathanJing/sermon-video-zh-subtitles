@@ -1,0 +1,8 @@
+{
+  "status": "cancelled",
+  "run": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39043844408",
+  "head": "db022d24",
+  "testGroupsStarted": 0,
+  "reason": "redundant full run after dispatching full G1 stack head af8cd632",
+  "replacementRun": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39044075878"
+}

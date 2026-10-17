@@ -1,0 +1,15 @@
+{
+  "testModules": [
+    "test_accounting_observability",
+    "test_build_tracker_dag_projection",
+    "test_project_codex_credit_usage",
+    "test_verify_sermon_observability_sidecars",
+    "test_report_snapshot",
+    "test_accounting_log_contract"
+  ],
+  "testsRun": 73,
+  "failures": 0,
+  "errors": 0,
+  "wallSeconds": 4.561,
+  "diffCheck": "passed"
+}

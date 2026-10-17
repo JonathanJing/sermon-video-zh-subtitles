@@ -1,0 +1,4 @@
+stage	status	seconds
+discover	pass	0.0
+es.text-qc.prefetch	pass	41.5
+es.text-qc	pass	3.6

@@ -1,0 +1,18 @@
+
+== 2026-10-15T00:58:34+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py --english-source-package ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/l2/src/source.json --anchor ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/l2/src/anchor.json --candidate ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/l2/text/zh-Hans/candidate.json --policy ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/l2/policy/zh-Hans-policy-clip.json --text-release-basis ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/textqc-zh-Hans/out/zh-Hans/text-waiver-f4b15a07db262062.json --adapter ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/post-live-runs/2026-10-04/resi-69ba7a66/tts-preflight-v1/spark-stage-v2/inputs/adapter-zh-Hans.json --speaker-registry ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/post-live-runs/2026-10-04/resi-69ba7a66/tts-preflight-v1/spark-stage-v2/inputs/registry.json --clip-voice-authorization ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/l3/zh-Hans/clip-voice-authorization.json --clip-timeline-map ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/l3/clip-timeline-map.json --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/l3/zh-Ha ...[line truncated]
+Traceback (most recent call last):
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 774, in <module>
+    main()
+    ~~~~^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 754, in main
+    job = prepare_job(
+        args.english_source_package, args.anchor, args.candidate, args.policy,
+    ...<6 lines>...
+        strict_rubric=_load(args.strict_rubric) if args.strict_rubric else None,
+    )
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 598, in prepare_job
+    _require(path.is_file(), f"Missing input: {path}")
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 57, in _require
+    raise ValueError(message)
+ValueError: Missing input: ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-af-zh-textcont/l3/clip-timeline-map.json

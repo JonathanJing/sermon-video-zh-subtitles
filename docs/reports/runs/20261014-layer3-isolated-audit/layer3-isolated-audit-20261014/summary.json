@@ -1,0 +1,54 @@
+{
+  "status": "passed",
+  "unitTests": {
+    "count": 211,
+    "status": "passed",
+    "durationSeconds": 128.664
+  },
+  "historicalThirtyMinuteAudio": {
+    "locales": {
+      "zh-Hans": {
+        "status": "passed",
+        "unitCount": 461,
+        "clipSeconds": 2131.0,
+        "trackSeconds": 2131.52,
+        "maxStartLagSeconds": 11.88
+      },
+      "ko": {
+        "status": "passed",
+        "unitCount": 461,
+        "clipSeconds": 2131.0,
+        "trackSeconds": 2131.0,
+        "maxStartLagSeconds": 56.51
+      },
+      "es": {
+        "status": "passed",
+        "unitCount": 461,
+        "clipSeconds": 2131.0,
+        "trackSeconds": 2131.47,
+        "maxStartLagSeconds": 19.63
+      }
+    },
+    "repackage": "refused_expected_stale_qc_implementation"
+  },
+  "currentImplementationAudio": {
+    "locales": {
+      "zh-Hans": {
+        "status": "passed",
+        "unitCount": 50,
+        "packageMatchesPrevious": true
+      },
+      "es": {
+        "status": "passed",
+        "unitCount": 50,
+        "packageMatchesPrevious": true
+      }
+    }
+  },
+  "freshTts": "not_run",
+  "remoteSpark": "not_run",
+  "openAiCalls": 0,
+  "releaseOrPublish": "not_run",
+  "devicePlayback": "not_run",
+  "videoSyncHumanReview": "not_run"
+}

@@ -1,0 +1,13 @@
+timeline-map	pass	0
+plan-qc-zh-Hans	pass	0
+check-ag-preflight	pass	0
+spark-begin-1	pass	4
+voice-auth.zh-Hans	pass	0
+speech-job.zh-Hans	pass	0
+check-gpu-zh-Hans	pass	2
+render.zh-Hans	fail(1)	128
+compact.zh-Hans	pass	24
+screen.zh-Hans	pass	45
+package.zh-Hans	pass	9
+audio-qc.zh-Hans	fail(1)	491
+spark-finish	pass	7

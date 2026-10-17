@@ -1,0 +1,12 @@
+{
+  "kind": "local_test",
+  "branchHead": "b02ddf4452e139dfdcd332041f2c191490ede970",
+  "baseMerge": "08e31cf8263daa40cb493ad9120b4ed3a637ff79",
+  "command": "PYTHONPATH=. repo-venv/bin/python -m unittest tests.test_ci_change_scope -v",
+  "testsRun": 7,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "durationSeconds": 5.233,
+  "exitCode": 0
+}

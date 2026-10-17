@@ -1,0 +1,19 @@
+{
+  "testModules": [
+    "test_accounting_observability",
+    "test_observability_sufficiency",
+    "test_report_snapshot",
+    "test_build_tracker_dag_projection",
+    "test_project_codex_credit_usage",
+    "test_verify_sermon_observability_sidecars",
+    "test_sermon_unified_runtime_identity",
+    "test_logging_reliability",
+    "test_accounting_log_contract",
+    "test_sermon_log_profile"
+  ],
+  "testsRun": 121,
+  "failures": 0,
+  "errors": 0,
+  "wallSeconds": 10.51,
+  "diffCheck": "passed"
+}

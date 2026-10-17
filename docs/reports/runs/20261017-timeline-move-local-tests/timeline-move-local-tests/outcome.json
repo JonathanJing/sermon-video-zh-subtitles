@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "scope": "local timeline move and supervisor regression checks",
+  "checks": [
+    {
+      "name": "timeline, accounting, recovery, integrity, path aliases",
+      "status": "passed",
+      "passed": 40,
+      "skipped": 1,
+      "subtestsPassed": 40
+    },
+    {
+      "name": "supervisor, post-live generation, runtime identity, local download",
+      "status": "passed",
+      "passed": 63,
+      "subtestsPassed": 10
+    },
+    {
+      "name": "non-repository CLI help and empty-state waiting",
+      "status": "passed"
+    }
+  ],
+  "initialFailures": [
+    "Legacy spec_from_file_location test loader held the facade module instead of its implementation; migrated to the public import path.",
+    "Test module still needed sys after loader cleanup; restored import."
+  ],
+  "remoteCalls": 0,
+  "paidCalls": 0,
+  "publication": "not_run"
+}

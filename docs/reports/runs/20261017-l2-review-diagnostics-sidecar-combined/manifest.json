@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-l2-review-diagnostics-sidecar-combined",
+  "runs": [
+    {
+      "label": "l2-review-diagnostics-sidecar-combined",
+      "source": "~/.codex/worktrees/l2-review-diagnostics/sermon-video-zh-subtitles/artifacts/l2-review-diagnostics-sidecar-combined",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "l2-review-diagnostics-sidecar-combined",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 242,
+      "truncated": false,
+      "sha256": "9d2881dd9947615472a13002d2d6689e684c1368a22fde1f10c9ec4f7e4153df",
+      "redactions": {}
+    },
+    {
+      "run": "l2-review-diagnostics-sidecar-combined",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 59,
+      "truncated": false,
+      "sha256": "86d975ea704b189b99368e89d32ed4c9711f452cb855ed8af02321a24c8c3656",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

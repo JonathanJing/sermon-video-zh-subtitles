@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-macmini-sidecar",
+  "runs": [
+    {
+      "label": "macmini-pr571-sidecar-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/macmini-pr571-sidecar-20261017",
+      "skipped": {
+        ".txt": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "macmini-pr571-sidecar-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 889,
+      "truncated": false,
+      "sha256": "62f8b94b79e066f3dcc777bf12b54501894c286c9b97840e0abc182564f9b9ad",
+      "redactions": {}
+    },
+    {
+      "run": "macmini-pr571-sidecar-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 15109,
+      "truncated": false,
+      "sha256": "c02b3281a51165600adf833a1183ef261a2141a77c85050eda8a432f714d7593",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

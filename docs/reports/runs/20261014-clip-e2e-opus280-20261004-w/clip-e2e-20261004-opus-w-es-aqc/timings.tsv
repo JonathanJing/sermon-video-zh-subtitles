@@ -1,0 +1,7 @@
+plan-qc-es	pass	0
+check-w-preflight	fail(1)	0
+check-w-preflight-with-origin	pass	1
+spark-begin-1	pass	4
+check-gpu-es	pass	2
+audio-qc.es	fail(1)	2
+spark-finish	pass	7

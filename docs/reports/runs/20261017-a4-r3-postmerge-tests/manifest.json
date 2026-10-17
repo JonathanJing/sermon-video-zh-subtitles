@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-a4-r3-postmerge-tests",
+  "runs": [
+    {
+      "label": "a4-r3-postmerge-tests",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/a4-r3-postmerge-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "a4-r3-postmerge-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 306,
+      "truncated": false,
+      "sha256": "1cfc74938d59cb6c53cf9618bbc3424edd0925643010acb49da903e6305394e1",
+      "redactions": {}
+    },
+    {
+      "run": "a4-r3-postmerge-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 237,
+      "truncated": false,
+      "sha256": "d0afd0f1f8b0d38cd081c378f2500dee54781d36203a565006ee16d8fb58f958",
+      "redactions": {}
+    },
+    {
+      "run": "a4-r3-postmerge-tests",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 80,
+      "truncated": false,
+      "sha256": "1608bf2120825325e65d9996a19ff4e076b0eec663967edd14a96085b30a761b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

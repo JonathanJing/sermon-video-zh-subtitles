@@ -1,0 +1,18 @@
+{
+  "status": "succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T17:36:27.832413+00:00",
+  "endedAt": "2026-10-17T17:36:35.752913+00:00",
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_build_four_layer_tracker_snapshot.py",
+    "tests/test_build_tracker_dag_projection.py",
+    "tests/test_accounting_log_contract.py",
+    "tests/test_sermon_durable_accounting.py",
+    "tests/test_verify_sermon_observability_sidecars.py"
+  ],
+  "commit": "c972c1cbac97b7e85bba20a7777e483779128256"
+}

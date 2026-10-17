@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-cuv-preflight-move",
+  "runs": [
+    {
+      "label": "cuv-preflight-move-20261017",
+      "source": "~/.codex/worktrees/cuv-preflight-move/sermon-video-zh-subtitles/artifacts/cuv-preflight-move-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "cuv-preflight-move-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 214,
+      "truncated": false,
+      "sha256": "b07a7ddbe78538cec8f66246f521b6142558c5fec6e5fc9d1eb6e7d4cd2269da",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-preflight-move-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 860,
+      "truncated": false,
+      "sha256": "6647f31c0e802c537cb469debf9a8d9fb6c0e0095974f601180bbc122e83fbf9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

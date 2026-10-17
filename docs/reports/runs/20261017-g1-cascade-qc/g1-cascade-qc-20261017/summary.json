@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "head": "21bdbaa11145790f7ae3c949eddd812fa3b4f653",
+  "basePr": 571,
+  "targetPr": 568,
+  "testGroups": [
+    {
+      "scope": "accounting reader, outbox, completion, sidecars, report snapshot",
+      "executed": 84,
+      "passed": 84,
+      "exitCode": 0
+    },
+    {
+      "scope": "QC ports, runtime budget, singleflight, compute leaves",
+      "executed": 18,
+      "passed": 18,
+      "exitCode": 0
+    }
+  ],
+  "interruptedAttempt": "An initial broad QC test invocation was interrupted after upstream #571 added a new fixture commit; it has no pass claim. Final focused checks ran on the latest merged head.",
+  "diffCheck": "passed",
+  "externalCalls": 0
+}

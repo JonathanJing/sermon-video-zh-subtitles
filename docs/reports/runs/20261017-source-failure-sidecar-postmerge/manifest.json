@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-source-failure-sidecar-postmerge",
+  "runs": [
+    {
+      "label": "source-failure-sidecar-postmerge",
+      "source": "~/.codex/worktrees/source-failure-move/sermon-video-zh-subtitles/artifacts/source-failure-sidecar-postmerge",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "source-failure-sidecar-postmerge",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 104,
+      "truncated": false,
+      "sha256": "1cb5b4ec9d5535a748f0477d2f42fc6920849dcbcdffe5f2727a45b1834d7d6b",
+      "redactions": {}
+    },
+    {
+      "run": "source-failure-sidecar-postmerge",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 258,
+      "truncated": false,
+      "sha256": "4b89682875595a2dbaad0197295eb5953081a19c32b3f9f04b69ad35fced2dfb",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

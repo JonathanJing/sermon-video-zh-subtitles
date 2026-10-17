@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-weekly-report-full-ci",
+  "runs": [
+    {
+      "label": "weekly-report-full-ci",
+      "source": "~/.codex/worktrees/weekly-report-projection/sermon-video-zh-subtitles/artifacts/weekly-report-full-ci",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-report-full-ci",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 96,
+      "truncated": false,
+      "sha256": "f7551e3ea3a802626b1c1e7cf0d738777612fb0e480da77f6b5d7f4db53b8857",
+      "redactions": {}
+    },
+    {
+      "run": "weekly-report-full-ci",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 327,
+      "truncated": false,
+      "sha256": "fbdf14ddeee947a78aaff80ecef6d408878a654476b3789c0711ef69f66dfb0a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

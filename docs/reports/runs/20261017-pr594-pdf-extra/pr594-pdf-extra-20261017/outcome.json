@@ -1,0 +1,13 @@
+{
+  "status": "success_after_build_environment_correction",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "headCommitSha": "4af1a51cc8aa3ee26ac363d5b1d9deaa995af1a5",
+  "check": "PDF optional dependency wheel metadata",
+  "tomlParsed": true,
+  "wheelBuiltWithIsolatedBuildDependencies": true,
+  "wheelProvidesExtra": "pdf",
+  "wheelRequiresDist": "reportlab<5,>=4.2; extra == pdf",
+  "producerApiCalls": 0,
+  "initialNoBuildIsolationFailure": "setuptools.build_meta unavailable in test venv"
+}

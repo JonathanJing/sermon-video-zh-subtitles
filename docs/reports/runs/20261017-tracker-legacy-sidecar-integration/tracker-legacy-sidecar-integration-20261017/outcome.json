@@ -1,0 +1,10 @@
+{
+  "status": "completed",
+  "deliveryType": "test",
+  "result": "86 affected Python tests passed after #571 guarded sidecar merge",
+  "exitCode": 0,
+  "elapsedSeconds": 5.802,
+  "commit": "3eeb5b6bc8dce149fd1a5c077d2d0d2b11e5362c",
+  "baseCommit": "496df474af348703e621b30697aedebf8f9721a7",
+  "productionRun": false
+}

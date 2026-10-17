@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr720-bare-facade-fix",
+  "runs": [
+    {
+      "label": "pr720-bare-facade-fix-20261017",
+      "source": "~/.codex/worktrees/dev-docs-change-gate/sermon-video-zh-subtitles/artifacts/pr720-bare-facade-fix-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr720-bare-facade-fix-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 424,
+      "truncated": false,
+      "sha256": "355064e74775417a2b10fe4b9eab8417c0462f9dca05dace105f3cd24c52ff1d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
