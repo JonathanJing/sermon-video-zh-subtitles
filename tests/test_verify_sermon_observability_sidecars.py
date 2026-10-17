@@ -31,12 +31,15 @@ class VerificationSidecarTests(unittest.TestCase):
             self.assertEqual((source / 'events.jsonl').read_bytes(), original)
             sidecar = next((source / '.execution-identities').glob('*.json'))
             sidecar.chmod(0o644)
-            with self.assertRaisesRegex(ValueError, 'sidecar_permissions'):
-                tracker._snapshot(source)
+            events, damaged, report = tracker._snapshot(source)
+            self.assertEqual(len(damaged), 1)
+            self.assertEqual(damaged[0]['reason'], 'invalid_or_incomplete_event')
+            self.assertIn('damaged_events', report['diagnostics'])
             sidecar.chmod(0o600)
             sidecar.write_bytes(b' ' * (512 * 1024 + 1))
-            with self.assertRaisesRegex(ValueError, 'sidecar_size_limit'):
-                tracker._snapshot(source)
+            events, damaged, report = tracker._snapshot(source)
+            self.assertEqual(len(damaged), 1)
+            self.assertIn('damaged_events', report['diagnostics'])
 
     def test_real_ledger_snapshot_keeps_private_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
