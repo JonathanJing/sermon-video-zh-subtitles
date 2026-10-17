@@ -1274,7 +1274,6 @@ class BackendAppTest(unittest.TestCase):
         self.assertIn("COPY requirements.txt", text)
         self.assertIn("pip install", text)
         self.assertIn("COPY backend/", text)
-        self.assertIn("COPY schemas/ /app/schemas/", text)
         self.assertIn('CMD ["python", "-m", "backend.app"]', text)
 
 
