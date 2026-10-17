@@ -17,6 +17,7 @@ import platform
 import re
 import resource
 import shutil
+import stat
 import subprocess
 import sys
 import threading
@@ -301,18 +302,33 @@ def load_execution_identity_sidecar(directory, digest):
     if not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest):
         raise ValueError("invalid_execution_identity_sidecar_hash")
     path = Path(directory) / ".execution-identities" / (digest + ".json")
-    outbox.jobs._reject_link(path, directory=False)
-    if path.stat().st_mode & 0o077:
-        raise ValueError("execution_identity_sidecar_permissions")
-    if path.stat().st_size > 512 * 1024:
-        raise ValueError("execution_identity_sidecar_size_limit")
-    manifest = outbox.jobs._read(path)
-    if (not isinstance(manifest, dict) or set(manifest) != {"schemaVersion", "loadedProjectCodeSha256"}
-            or manifest["schemaVersion"] != "sermon-loaded-project-code-v1"
-            or safe_execution_identity({"loadedProjectCodeSha256": manifest["loadedProjectCodeSha256"]})["loadedProjectCodeSha256"]
-            != manifest["loadedProjectCodeSha256"]):
-        raise ValueError("invalid_execution_identity_sidecar")
-    canonical = json.dumps(manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    directory_fd = outbox.jobs._directory_fd(path.parent)
+    try:
+        try:
+            fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+                         dir_fd=directory_fd)
+        finally:
+            os.close(directory_fd)
+        with os.fdopen(fd, "rb") as stream:
+            file_stat = os.fstat(stream.fileno())
+            if not stat.S_ISREG(file_stat.st_mode):
+                raise ValueError("invalid_execution_identity_sidecar")
+            if file_stat.st_mode & 0o077:
+                raise ValueError("execution_identity_sidecar_permissions")
+            if file_stat.st_size > 512 * 1024:
+                raise ValueError("execution_identity_sidecar_size_limit")
+            data = stream.read(512 * 1024 + 1)
+            if len(data) > 512 * 1024:
+                raise ValueError("execution_identity_sidecar_size_limit")
+        manifest = json.loads(data)
+        if (not isinstance(manifest, dict) or set(manifest) != {"schemaVersion", "loadedProjectCodeSha256"}
+                or manifest["schemaVersion"] != "sermon-loaded-project-code-v1"
+                or safe_execution_identity({"loadedProjectCodeSha256": manifest["loadedProjectCodeSha256"]})["loadedProjectCodeSha256"]
+                != manifest["loadedProjectCodeSha256"]):
+            raise ValueError("invalid_execution_identity_sidecar")
+        canonical = json.dumps(manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    except RecursionError as exc:
+        raise ValueError("invalid_execution_identity_sidecar") from exc
     if hashlib.sha256(canonical).hexdigest() != digest:
         raise ValueError("execution_identity_sidecar_hash_mismatch")
     return manifest["loadedProjectCodeSha256"]
@@ -812,7 +828,7 @@ def _with_report_snapshot(directory, project):
     events, damaged, digest = read_event_snapshot(directory)
     contract = log_profile.contract
     versions = {contract._schema_version(row) for row in events
-                if row.get('contractVersion') in contract.READ_VERSIONS}
+                if contract._readable_version(row.get('contractVersion'))}
     with contract._schema_snapshot_lock:
         schema = (contract.VERSION,
                   {version: contract._schema_snapshot(version)[0] for version in versions})
@@ -959,12 +975,15 @@ def read_event_snapshot(directory):
                     if not _valid_event(value):
                         raise ValueError("invalid_event_identity")
                     if value.get("event") == "workflow_started":
-                        identity = value.get("executionIdentity") or {}
-                        reference = identity.get("loadedProjectCodeManifestSha256")
-                        if reference is not None:
-                            if identity.get("loadedProjectCodeSha256") != {}:
-                                raise ValueError("conflicting_execution_identity")
-                            load_execution_identity_sidecar(directory, reference)
+                        identity = value.get("executionIdentity")
+                        # Older ledger rows may have a non-object identity; only
+                        # object identities can carry the sidecar reference.
+                        if isinstance(identity, dict):
+                            reference = identity.get("loadedProjectCodeManifestSha256")
+                            if reference is not None:
+                                if identity.get("loadedProjectCodeSha256") != {}:
+                                    raise ValueError("conflicting_execution_identity")
+                                load_execution_identity_sidecar(directory, reference)
                 except (ValueError, UnicodeError, OSError, TypeError):
                     damaged.append({"line": index, "bytes": len(line), "sha256": hashlib.sha256(line).hexdigest(),
                                     "reason": "invalid_or_incomplete_event", "runAttribution": "unknown"})
