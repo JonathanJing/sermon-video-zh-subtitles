@@ -24,7 +24,13 @@ SELF_CONTAINED_SCRIPTS = {"mfa_alignment.py",
                           "provider_http.py",
                           # Deploys its own bytes to Spark and binds sessions to their hash
                           # (controllerSha256); it reads only its own file.
-                          "spark_exclusive_session.py"}
+                          "spark_exclusive_session.py",
+                          # Bundled standalone as scripts/sermon_log_contract.py by the experiment
+                          # log release tool; only then does it read schemas/ beside itself.
+                          "log_contract.py"}
+# Reads other modules' file attributes, never its own location: the execution identity
+# hashes the modules loaded in this process; its checkout root comes from the host.
+READS_LOADED_MODULE_FILES = {"observability/accounting.py"}
 
 
 def imports_of(path):
@@ -108,7 +114,8 @@ class ProductionPackageTests(unittest.TestCase):
             with self.subTest(path=str(path.relative_to(ROOT))):
                 for name in imports_of(path):
                     self.assertFalse(name.split(".", 1)[0] in FORBIDDEN_IMPORTS, f"{path.name} imports {name}")
-                if path.name not in SELF_CONTAINED_SCRIPTS:
+                if (path.name not in SELF_CONTAINED_SCRIPTS
+                        and path.relative_to(PACKAGE_SRC).as_posix() not in READS_LOADED_MODULE_FILES):
                     self.assertNotIn("__file__", path.read_text(encoding="utf-8"))
 
     def test_every_facade_imports_by_bare_name_from_a_script_run_in_scripts(self):

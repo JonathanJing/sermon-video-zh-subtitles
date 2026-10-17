@@ -27,7 +27,7 @@ class HistoricalLayer2Tests(unittest.TestCase):
         clone.write_bytes(Path(accounting.__file__).read_bytes())
         for args in (('init','-q'),('add','.'),('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','-qm','fixture')):
             subprocess.run(['git','--no-optional-locks','-C',str(git_root),*args],capture_output=True,check=True,timeout=5)
-        self.enterContext(patch.object(accounting,'__file__',str(clone)))
+        self.enterContext(patch.object(accounting,'checkout_root',lambda:git_root))
         self.identity=accounting.execution_identity()
         self.assertIs(self.identity['trackedWorkingTreeDirty'],False)
         self.f.provider=self.f.provider_for(codeSha256=c.canonical_sha256(self.identity))

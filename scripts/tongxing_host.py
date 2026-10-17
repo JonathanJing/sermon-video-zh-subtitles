@@ -30,6 +30,7 @@ from tongxing_production.audio import backend as audio_backend  # noqa: E402
 from tongxing_production.review import backend as review_backend  # noqa: E402
 from tongxing_production.compute import backend as compute_backend  # noqa: E402
 from tongxing_production.storage import backend as storage_backend  # noqa: E402
+from tongxing_production.observability import backend as observability_backend  # noqa: E402
 from tongxing_production.workflows.dual_pdf import host as dual_pdf_host  # noqa: E402
 
 
@@ -892,9 +893,19 @@ def _job_sync_directory_ancestry(path):
     return jobs._sync_directory_ancestry(path)
 
 
+def _job_file_function(name):
+    def call(*arguments, **options):
+        from scripts import sermon_workflow_jobs as jobs
+        return getattr(jobs, name)(*arguments, **options)
+    call.__name__ = name
+    return call
+
+
 def job_files() -> ports.JobFiles:
     # Temporary until the closure window W moves these primitives into storage/files.py.
-    return ports.JobFiles(directory_fd=_job_directory_fd, sync_directory_ancestry=_job_sync_directory_ancestry)
+    return ports.JobFiles(directory_fd=_job_directory_fd, sync_directory_ancestry=_job_sync_directory_ancestry,
+                          **{name.lstrip('_'): _job_file_function(name) for name in (
+                              '_reject_link', '_persist', '_sync_directory', '_read', '_open_lock_file')})
 
 
 def load_producer_imports():
@@ -923,6 +934,8 @@ _measure, _workspace, _accounting = measure(), workspace(), accounting()
 _schemas, _review, _diagnostic, _waivers = schemas(), review(), diagnostic(), waivers()
 _plugins, _transports = plugins(), transports()
 
+observability_backend.configure(observability_backend.ObservabilityBackend(
+    checkout_root=ROOT, load_producer_imports=load_producer_imports))
 storage_backend.configure(storage_backend.StorageBackend(job_files=job_files()))
 compute_backend.configure(compute_backend.ComputeBackend(accounting=_accounting))
 source_backend.configure(source_backend.SourceBackend(core=_core, provider=_provider, code=_code, mfa=mfa(),

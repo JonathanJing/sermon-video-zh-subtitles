@@ -161,7 +161,7 @@ class FreshPreloadTests(unittest.TestCase):
             with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('network forbidden')) as network:
                 frozen = entry.preload_execution_modules([
                     repository / 'scripts/language_review_plugins/diagnostic_structural.py'])
-                assert 'scripts/sermon_workflow_evidence.py' in frozen['loadedProjectCodeSha256']
+                assert resolve('scripts/sermon_workflow_evidence.py') in frozen['loadedProjectCodeSha256']
                 for module in ('sermon_model_call_report', 'sermon_model_call_observation', 'sermon_openai_runtime'):
                     assert resolve('scripts/' + module + '.py') in frozen['loadedProjectCodeSha256'], module + ' not preloaded'
                 with profile.session(directory, 'fresh-preload-regression',

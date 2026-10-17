@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 from experiments.local_experiment_log import deploy_tools as deploy
+from tongxing_production.path_aliases import resolve
 
 
 class DeploymentTests(unittest.TestCase):
@@ -17,7 +18,8 @@ class DeploymentTests(unittest.TestCase):
         for name, data in {
             'experiments/local_experiment_log/deploy_tools.py': Path(deploy.__file__).read_bytes(),
             'experiments/local_experiment_log/tool.py': b'print("one")\n',
-            'scripts/sermon_log_contract.py': b'# validator\n',
+            # The validator is read where the legacy path names it today (infrastructure I3).
+            resolve('scripts/sermon_log_contract.py'): b'# validator\n',
             'schemas/sermon-accounting-log-contract-v1.schema.json': b'{}\n',
         }.items():
             path = self.source/name

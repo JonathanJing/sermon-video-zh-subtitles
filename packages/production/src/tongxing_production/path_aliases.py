@@ -146,7 +146,23 @@ CONTRACTS = {       # tongxing_production.contracts, batch I1
 STORAGE = {         # tongxing_production.storage, batch I2
     'scripts/sermon_public_snapshot.py': PRODUCTION + 'storage/snapshot.py',
 }
-OBSERVABILITY = {}  # tongxing_production.observability, batches I3-I4
+OBSERVABILITY = {   # tongxing_production.observability, batches I3-I4
+    # I3: the accounting ring and its leaves.
+    'scripts/sermon_accounting.py': PRODUCTION + 'observability/accounting.py',
+    'scripts/sermon_log_contract.py': PRODUCTION + 'observability/log_contract.py',
+    'scripts/sermon_log_outbox.py': PRODUCTION + 'observability/outbox.py',
+    'scripts/sermon_durable_accounting.py': PRODUCTION + 'observability/durable.py',
+    'scripts/sermon_log_profile.py': PRODUCTION + 'observability/profile.py',
+    'scripts/sermon_clock_evidence.py': PRODUCTION + 'observability/clock_evidence.py',
+    'scripts/sermon_model_call_observation.py': PRODUCTION + 'observability/model_call_observation.py',
+    'scripts/sermon_review_observation.py': PRODUCTION + 'observability/review_observation.py',
+    'scripts/sermon_model_call_report.py': PRODUCTION + 'observability/model_call_report.py',
+    'scripts/sermon_workflow_evidence.py': PRODUCTION + 'observability/workflow_evidence.py',
+    'scripts/sermon_dispatch_observation.py': PRODUCTION + 'observability/dispatch_observation.py',
+    'scripts/codex_credit_usage.py': PRODUCTION + 'observability/codex_credit_usage.py',
+    'scripts/sermon_completion.py': PRODUCTION + 'observability/completion.py',
+    'scripts/sermon_cache_observation.py': PRODUCTION + 'observability/cache_observation.py',
+}
 
 # I1 moved generic portions of the legacy review module to contracts; include them
 # in closures that still identify the combined legacy module.
