@@ -1451,10 +1451,15 @@ def repair_timing(prior_translation, parent_job, timing_report, out, *, batch_si
 
 def review_document(manifest, report_path, blocks, reviewed_at):
     parent = read(manifest["parentJob"]["path"])
+    # Historical Astra reviews froze this label before the model identity became
+    # configurable. Reconstruct their original bytes during offline replay.
+    reviewed_by = ("Astra CUV quotation and independent narrative review"
+                   if (manifest["model"], manifest["reasoningEffort"]) == ("gpt-6-astra", "medium")
+                   else manifest["model"] + " CUV quotation and independent narrative review")
     return {"schemaVersion": "sermon-spoken-script-review-v1",
         "parentJobSha256": manifest["parentJob"]["sha256"], "reviewType": "model", "model": manifest["model"],
         "humanApproval": False, "status": "approved_for_synthesis", "reviewedAt": reviewed_at,
-        "reviewedBy": manifest["model"] + " CUV quotation and independent narrative review",
+        "reviewedBy": reviewed_by,
         "authority": "user_directed_conversation_review", "reviewedBlockIds": [b["id"] for b in blocks],
         "checks": {k: "pass" for k in CHECKS}, "unresolvedTextIssues": [],
         "cuvTranslation": {"schemaVersion": VERSION, "report": bind(report_path)},
