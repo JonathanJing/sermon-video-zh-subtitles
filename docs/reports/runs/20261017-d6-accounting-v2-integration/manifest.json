@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-d6-accounting-v2-integration",
+  "runs": [
+    {
+      "label": "20261017-d6-accounting-v2-integration-local",
+      "source": "~/.codex/worktrees/d6-published-alignment/sermon-video-zh-subtitles/artifacts/20261017-d6-accounting-v2-integration-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-d6-accounting-v2-integration-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 177,
+      "truncated": false,
+      "sha256": "688c186d10662e373d44687a94323d5a05cec91c49a4968e8b7e5bf571dfc31c",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-d6-accounting-v2-integration-local",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 37,
+      "truncated": false,
+      "sha256": "9acbe47a4fe7d343947d6208e625c95a5c892d449d14a34835e635c241663aae",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

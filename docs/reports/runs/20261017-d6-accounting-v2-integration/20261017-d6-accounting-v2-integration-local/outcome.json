@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "testCount": 32,
+  "skipped": 1,
+  "failed": 0,
+  "scope": "D6 published alignment and English reference",
+  "exitCode": 0
+}
