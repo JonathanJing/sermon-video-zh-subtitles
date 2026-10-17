@@ -57,15 +57,18 @@ def git(*args) -> str:
 
 def check_code(expected_commit, expected_implementation):
     from scripts import machine_quality_waiver as waiver
+    from tongxing_production.review import implementation_freeze
     head = git("rev-parse", "HEAD")
     dirty = [line for line in git("status", "--porcelain", "--untracked-files=no").splitlines() if line]
+    frozen = (implementation_freeze.mismatch(expected_implementation)
+              if expected_implementation and re.fullmatch(r"[a-f0-9]{64}", expected_implementation) else None)
     implementation = waiver.implementation_sha256()
     problems = []
     if dirty:
         problems.append(f"{len(dirty)} tracked file(s) modified")
     if not expected_commit or not re.fullmatch(r"[a-f0-9]{40}", expected_commit) or head != expected_commit:
         problems.append(f"HEAD {head[:12]} is not {expected_commit}")
-    if not expected_implementation or implementation != expected_implementation:
+    if not expected_implementation or not re.fullmatch(r"[a-f0-9]{64}", expected_implementation) or frozen is not None:
         problems.append("QC implementation hash differs: existing waivers would not apply")
     return result("code", "fail" if problems else "pass", head=head, qcImplementationSha256=implementation,
                   problems=problems)
@@ -399,8 +402,8 @@ def check_spark(host, spark_stages, code_dir):
     else:
         evidence["session"] = "not_required_api_only"
     if code_dir:
-        from scripts import machine_quality_waiver as waiver
-        files = [str(waiver.implementation_path(path, Path())) for path in waiver.IMPLEMENTATION_FILES]
+        from tongxing_production.review import implementation_freeze
+        files = [str(path) for path in implementation_freeze.closure_files(Path())]
         remote = ssh("cd " + shlex.quote(code_dir) + " && sha256sum " + " ".join(shlex.quote(path) for path in files), host)
         local = {path: sha256(ROOT / path) for path in files}
         observed = dict(reversed(line.split(None, 1)) for line in remote.stdout.splitlines() if line.strip())

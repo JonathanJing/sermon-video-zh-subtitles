@@ -158,6 +158,10 @@ REVIEW = {
     'scripts/auto_qc_seeded_errors.py': _REVIEW + 'seeded_errors.py',
     'scripts/machine_qc_budget_authorization.py': _REVIEW + 'qc_budget_authorization.py',
     'scripts/spoken_condensation.py': _REVIEW + 'condensation.py',
+    # R4: review intake and post-QC consumers outside the waiver closure.
+    'scripts/machine_audio_waiver_acceptance.py': _REVIEW + 'audio_waiver_acceptance.py',
+    'scripts/implementation_freeze.py': _REVIEW + 'implementation_freeze.py',
+    'scripts/sermon_unified_reviews.py': _REVIEW + 'unified_reviews.py',
     'scripts/run_machine_qc_clip_test.py': _REVIEW + 'qc_text_run.py',
     'scripts/run_machine_qc_audio_test.py': _REVIEW + 'qc_audio_run.py',
 }

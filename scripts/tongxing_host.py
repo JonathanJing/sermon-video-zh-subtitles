@@ -410,12 +410,12 @@ def accounting() -> ports.Accounting:
 
 
 def _validate_window(manifest, bindings=None, base='.'):
-    from scripts.sermon_unified_reviews import validate_window
+    from tongxing_production.review.unified_reviews import validate_window
     return validate_window(manifest, bindings, base)
 
 
 def _validate_review(kind, receipt_path, **binding):
-    from scripts import sermon_unified_reviews
+    from tongxing_production.review import unified_reviews as sermon_unified_reviews
     return sermon_unified_reviews.validate_review(kind, receipt_path, **binding)
 
 
@@ -580,12 +580,12 @@ def _is_basis_audio_waiver(receipt):
 
 
 def _is_audio_waiver(receipt):
-    from scripts import machine_audio_waiver_acceptance
+    from tongxing_production.review import audio_waiver_acceptance as machine_audio_waiver_acceptance
     return machine_audio_waiver_acceptance.is_audio_waiver(receipt)
 
 
 def _validate_audio_waiver(package, receipt, screening):
-    from scripts import machine_audio_waiver_acceptance
+    from tongxing_production.review import audio_waiver_acceptance as machine_audio_waiver_acceptance
     return machine_audio_waiver_acceptance.validate_audio_waiver(package, receipt, screening)
 
 
@@ -810,8 +810,8 @@ def qc_runtime() -> ports.QcRuntime:
                            codex_text_transport=_module('scripts.sermon_codex_transport'),
                            validate_target_candidate=_rule_function('tongxing_production.audio.speech_job',
                                                                     'validate_target_candidate'),
-                           implementation_freeze=_module('scripts.implementation_freeze'),
-                           audio_waiver_acceptance=_module('scripts.machine_audio_waiver_acceptance'))
+                           implementation_freeze=_module('tongxing_production.review.implementation_freeze'),
+                           audio_waiver_acceptance=_module('tongxing_production.review.audio_waiver_acceptance'))
 
 
 # The moved producers used to import these modules at load time. A plan freezes
