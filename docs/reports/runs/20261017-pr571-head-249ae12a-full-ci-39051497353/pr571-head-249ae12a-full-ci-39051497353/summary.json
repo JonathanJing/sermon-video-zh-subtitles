@@ -1,0 +1,182 @@
+{
+  "source": "GitHub Actions job/check metadata only; no raw logs or test outputs",
+  "workflow": "Python tests",
+  "event": "pull_request",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:57:01Z",
+      "completedAt": "2026-10-17T16:57:09Z",
+      "databaseId": 117450844092
+    },
+    {
+      "name": "test-group (root-3)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T17:00:59Z",
+      "completedAt": "2026-10-17T17:15:02Z",
+      "databaseId": 117451229033
+    },
+    {
+      "name": "test-group (root-2)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T17:00:36Z",
+      "completedAt": "2026-10-17T17:11:58Z",
+      "databaseId": 117451229052
+    },
+    {
+      "name": "test-group (root-4)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T17:01:11Z",
+      "completedAt": "2026-10-17T17:15:41Z",
+      "databaseId": 117451229055
+    },
+    {
+      "name": "test-group (root-7)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T16:59:01Z",
+      "completedAt": "2026-10-17T17:09:46Z",
+      "databaseId": 117451229061
+    },
+    {
+      "name": "test-group (root-1)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T17:01:13Z",
+      "completedAt": "2026-10-17T17:13:00Z",
+      "databaseId": 117451229067
+    },
+    {
+      "name": "test-group (root-6)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T17:01:14Z",
+      "completedAt": "2026-10-17T17:08:26Z",
+      "databaseId": 117451229101
+    },
+    {
+      "name": "test-group (root-5)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T17:01:44Z",
+      "completedAt": "2026-10-17T17:13:06Z",
+      "databaseId": 117451229113
+    },
+    {
+      "name": "test-group (root-0)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T17:02:00Z",
+      "completedAt": "2026-10-17T17:11:24Z",
+      "databaseId": 117451229124
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T16:57:10Z",
+      "completedAt": "2026-10-17T16:57:09Z",
+      "databaseId": 117451230323
+    },
+    {
+      "name": "unittest",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T17:15:44Z",
+      "completedAt": "2026-10-17T17:15:48Z",
+      "databaseId": 117455126564
+    }
+  ],
+  "companionCurrentHeadChecks": [
+    {
+      "workflow": "Local Prefect pilot",
+      "name": "local-mock",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "workflow": "Tongxing iOS",
+      "name": "changes",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "workflow": "Tongxing iOS",
+      "name": "changes",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "workflow": "Tracker contracts",
+      "name": "tracker",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "workflow": "Tongxing iOS",
+      "name": "contract-validation",
+      "status": "COMPLETED",
+      "conclusion": "SKIPPED"
+    },
+    {
+      "workflow": "Local Prefect pilot",
+      "name": "fresh-source-mock",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "workflow": "Tongxing iOS",
+      "name": "contract-validation",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "workflow": "Tongxing iOS",
+      "name": "ios-validation",
+      "status": "COMPLETED",
+      "conclusion": "SKIPPED"
+    },
+    {
+      "workflow": "Tongxing iOS",
+      "name": "ios-validation",
+      "status": "COMPLETED",
+      "conclusion": "SKIPPED"
+    },
+    {
+      "workflow": "Local Prefect pilot",
+      "name": "fresh-full-mock (test_actual_full_graph_then_clean_process_receipt_only_repeat)",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "workflow": "Local Prefect pilot",
+      "name": "fresh-full-mock (test_actual_confirmed_failure_explicit_retry_keeps_successful_neighbor)",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "workflow": "Local Prefect pilot",
+      "name": "fresh-full-mock (test_actual_ordinary_timeout_then_original_receipt_reconciliation)",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "workflow": "Tongxing iOS",
+      "name": "native-client",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "workflow": "Tongxing iOS",
+      "name": "native-client",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    }
+  ],
+  "limits": "Current-head CI metadata only. Fresh code review remains running; CI success is not review clearance or production acceptance."
+}
