@@ -345,7 +345,8 @@ def code_identity():
     # keeps only its import facade, so the package source is part of the closure.
     root = _text.current().core.repo_root
     files = sorted([*root.joinpath('scripts').rglob('*.py'), *root.joinpath('packages/production/src').rglob('*.py'),
-                    *root.joinpath('schemas').rglob('*.json'), root / 'docs/series-terminology.zh.md'])
+                    *root.joinpath('schemas').rglob('*.json'), root / 'docs/series-terminology.zh.md',
+                    root / 'tools/ops/sermon_unified_preflight.py'])
     return jobs._digest({str(p.relative_to(root)): hashlib.sha256(_safe_path(p).read_bytes()).hexdigest() for p in files})
 
 
