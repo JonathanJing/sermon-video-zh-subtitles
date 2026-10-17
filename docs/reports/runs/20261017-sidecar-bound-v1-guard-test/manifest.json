@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-sidecar-bound-v1-guard-test",
+  "runs": [
+    {
+      "label": "sidecar-bound-v1-guard-test",
+      "source": "~/.codex/worktrees/sidecar-p1-integration/sermon-video-zh-subtitles/artifacts/sidecar-bound-v1-guard-test",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "sidecar-bound-v1-guard-test",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 180,
+      "truncated": false,
+      "sha256": "b598cf8f124e2d7ff0c9556750c1b4cc358c5eadbf717f9f57cc4229efec50cf",
+      "redactions": {}
+    },
+    {
+      "run": "sidecar-bound-v1-guard-test",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 37,
+      "truncated": false,
+      "sha256": "71d7e5af14cbdda88dda8ea7a6bec19f0f100b17e19b41cc14d09619ecc6c464",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
