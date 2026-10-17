@@ -25,6 +25,11 @@ hosting = [
 pdf = [
     "reportlab>=4.2,<5",
 ]
+# The post-live timeline fetches source metadata through requests at import
+# time; text-only and PDF-only installs do not need the HTTP client.
+timeline = [
+    "requests>=2.32,<3",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

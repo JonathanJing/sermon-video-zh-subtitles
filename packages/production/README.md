@@ -24,6 +24,16 @@ python -m pip install -e 'packages/production[pdf]'
 The repository's `requirements.txt` already includes ReportLab for its PDF
 commands; text-only and orchestration installs can keep the base package.
 
+The post-live timeline uses the optional HTTP client. Install its extra for a
+standalone package, or combine it with PDF rendering when both are needed:
+
+```bash
+python -m pip install -e 'packages/production[timeline]'
+python -m pip install -e 'packages/production[pdf,timeline]'
+```
+
+The repository's `requirements.txt` already includes `requests` for this path.
+
 ## Rules
 
 - Nothing under `src/tongxing_production/` imports `scripts`, `backend`,

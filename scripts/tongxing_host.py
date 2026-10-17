@@ -840,7 +840,8 @@ def _cloud_function(name):
 
 def cloud() -> ports.Cloud:
     return ports.Cloud(**{name: _cloud_function(name) for name in (
-        'access_secret', 'read_gcs_bytes', 'upload_file_to_gcs', 'write_gcs_text')})
+        'access_secret', 'read_gcs_bytes', 'read_gcs_text', 'download_file_from_gcs',
+        'upload_file_to_gcs', 'write_gcs_text')})
 
 
 def _observability_function(name):
@@ -899,6 +900,10 @@ def dual_pdf_unmoved():
 # load on first use. Loaded at identity capture only when that entry is loaded, as
 # importing the entry did before W3c, so the identity still covers the code it runs.
 ENTRY_LOAD_TIME_IMPORTS = {
+    'tongxing_production.workflows.dual_pdf.timeline': (
+        'backend.cloud', 'backend.config', 'backend.observability',
+        'scripts.sermon_accounting', 'scripts.live_source_monitor',
+        'scripts.youtube_data_api'),
     'tongxing_production.workflows.dual_pdf.local_post_live_download': (
         'backend.cloud', 'backend.config', 'scripts.live_source_monitor', 'scripts.youtube_data_api'),
     'tongxing_production.observability.weekly_projection': (
