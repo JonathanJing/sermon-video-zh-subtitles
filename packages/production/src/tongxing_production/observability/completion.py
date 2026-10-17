@@ -50,7 +50,7 @@ def _batch_rows(events, run_ids):
     # veto on a new receipt-only recovery. Global conflicts remain failures.
     c.require(not [d for d in checked['diagnostics'] if d['code'] not in incomplete],
         'completion_log_integrity_failed')
-    unique = {row['eventId']: row for row in events if row.get('contractVersion') == log.VERSION}
+    unique = {row['eventId']: row for row in events if log._readable_version(row.get('contractVersion'))}
     all_rows = list(unique.values())
     by_run = {}
     for run_id in run_ids:
@@ -75,12 +75,15 @@ def _stable_schema(operation):
         # No snapshot is returned or reusable. Reject mutation during this
         # operation as well as observing a fresh schema on the next call.
         with log._schema_snapshot_lock:
-            schema_key = (log.VERSION, log._schema_snapshot()[0])
+            schema_key = (log.VERSION,
+                          {version: log._schema_snapshot(version)[0] for version in sorted(log.READ_VERSIONS)})
         # Never hold the schema lock across ledger IO (writers acquire their
         # file lock before validating schema, so doing so would invert locks).
         result = operation(*args, **kwargs)
         with log._schema_snapshot_lock:
-            c.require((log.VERSION, log._schema_snapshot()[0]) == schema_key, 'completion_schema_changed')
+            c.require((log.VERSION,
+                       {version: log._schema_snapshot(version)[0] for version in sorted(log.READ_VERSIONS)})
+                      == schema_key, 'completion_schema_changed')
         return result
     return checked
 

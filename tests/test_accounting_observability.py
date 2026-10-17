@@ -1,14 +1,114 @@
 import json
+import hashlib
 import os
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 from tongxing_production import path_aliases
+from tongxing_production.observability import accounting as accounting_impl
 from scripts import sermon_accounting as accounting
+from scripts import sermon_log_profile as log_profile
+from scripts import export_observability_trace as safe_export
 
 
 class ObservabilityTests(unittest.TestCase):
+    def test_snapshot_keeps_legacy_non_object_execution_identity(self):
+        row = {'schemaVersion': accounting.SCHEMA,
+               'event': 'workflow_started', 'eventId': 'a', 'runId': 'r',
+               'recordedAt': '2026-10-17T00:00:00Z', 'workflow': 'w',
+               'executionIdentity': ['legacy']}
+        with tempfile.TemporaryDirectory() as temporary:
+            (Path(temporary) / 'events.jsonl').write_text(json.dumps(row) + '\n')
+            events, damaged = accounting.read_events(temporary)
+            from scripts import sermon_identity_sidecars as sidecars
+            self.assertEqual(sidecars.collect(temporary, events), {})
+            safe_export.export(Path(temporary), Path(temporary) / 'export')
+        self.assertEqual(events, [row])
+        self.assertEqual(damaged, [])
+
+    def test_large_loaded_code_identity_uses_verified_private_sidecar(self):
+        identity = accounting.execution_identity()
+        modules = {f'scripts/synthetic_{i:04d}.py': f'{i:064x}' for i in range(800)}
+        identity['loadedProjectCodeSha256'] = modules
+        with tempfile.TemporaryDirectory() as temporary, patch.object(accounting_impl, 'execution_identity', return_value=identity):
+            with log_profile.session(temporary, 'synthetic', work_kind='control', evidence_mode='synthetic'):
+                pass
+            rows, damaged = accounting.read_events(temporary)
+            self.assertFalse(damaged)
+            started = next(row for row in rows if row['event'] == 'workflow_started')
+            self.assertEqual(started['contractVersion'], 'sermon-accounting-log-contract-v2')
+            recorded = started['executionIdentity']
+            self.assertEqual(recorded['loadedProjectCodeSha256'], {})
+            digest = recorded['loadedProjectCodeManifestSha256']
+            self.assertEqual(accounting_impl.load_execution_identity_sidecar(temporary, digest), modules)
+            self.assertLessEqual(len(json.dumps(started, sort_keys=True, separators=(',', ':')).encode()) + 1, 64 * 1024)
+            exported = Path(temporary) / 'safe-export'
+            safe_export.export(Path(temporary), exported)
+            self.assertEqual(accounting_impl.load_execution_identity_sidecar(exported, digest), modules)
+            path = Path(temporary) / '.execution-identities' / (digest + '.json')
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            # A branch briefly emitted this sidecar shape with the v1 marker.
+            # Its reader may validate it, but must never change ledger bytes.
+            transitional = Path(temporary) / 'transitional'
+            transitional.mkdir()
+            import shutil
+            shutil.copytree(Path(temporary) / '.execution-identities',
+                            transitional / '.execution-identities')
+            legacy_rows = [{**row, 'contractVersion': 'sermon-accounting-log-contract-v1'}
+                           for row in rows]
+            from scripts import sermon_log_contract as log_contract
+            from tongxing_production.observability import outbox
+            legacy_started = next(row for row in legacy_rows if row['event'] == 'workflow_started')
+            self.assertFalse(log_contract.validator().is_valid(legacy_started))
+            self.assertIs(log_contract.validate_event(legacy_started), legacy_started)
+            with self.assertRaisesRegex(ValueError, 'transitional_version_new_write_rejected'):
+                outbox.deliver(transitional / 'new-run', legacy_started)
+            bound = transitional / 'bound-run'
+            markers = bound / '.run-profiles'
+            markers.mkdir(parents=True)
+            marker = markers / (hashlib.sha256(legacy_started['runId'].encode()).hexdigest() + '.json')
+            outbox.jobs._persist(marker, {'runId': legacy_started['runId'],
+                                          'contractVersion': log_contract.LEGACY_VERSION})
+            with self.assertRaisesRegex(ValueError, 'transitional_version_new_write_rejected'):
+                outbox.deliver(bound, legacy_started)
+            legacy_bytes = ''.join(json.dumps(row) + '\n' for row in legacy_rows).encode()
+            (transitional / 'events.jsonl').write_bytes(legacy_bytes)
+            recovered, damaged = accounting.read_events(transitional)
+            self.assertFalse(damaged)
+            self.assertEqual(recovered, legacy_rows)
+            self.assertEqual((transitional / 'events.jsonl').read_bytes(), legacy_bytes)
+            self.assertEqual(accounting.summarize(transitional)['eventIntegrity']['status'], 'consistent')
+            path.chmod(0o644)
+            _, damaged = accounting.read_events(temporary)
+            self.assertEqual(len(damaged), 1)
+            with self.assertRaisesRegex(ValueError, 'sidecar_permissions'):
+                accounting_impl._bounded_event_identity(temporary, identity)
+            path.chmod(0o600)
+            self.assertEqual(accounting_impl._bounded_event_identity(temporary, identity)[
+                'loadedProjectCodeManifestSha256'], digest)
+            sidecar_bytes = path.read_bytes()
+            path.write_text('[' * 10000 + '0' + ']' * 10000)
+            _, damaged = accounting.read_events(temporary)
+            self.assertEqual(len(damaged), 1)
+            path.write_bytes(sidecar_bytes)
+            ledger = Path(temporary) / 'events.jsonl'
+            original = ledger.read_text()
+            lines = [json.loads(line) for line in original.splitlines()]
+            next(row for row in lines if row['event'] == 'workflow_started')['executionIdentity'][
+                'loadedProjectCodeSha256'] = {'scripts/conflict.py': 'a' * 64}
+            ledger.write_text(''.join(json.dumps(row, sort_keys=True, separators=(',', ':')) + '\n' for row in lines))
+            _, damaged = accounting.read_events(temporary)
+            self.assertEqual(len(damaged), 1)
+            ledger.write_text(original)
+            path.write_text('{}')
+            with self.assertRaises(ValueError):
+                accounting_impl.load_execution_identity_sidecar(temporary, digest)
+            _, damaged = accounting.read_events(temporary)
+            self.assertEqual(len(damaged), 1)
+            with self.assertRaisesRegex(ValueError, 'damaged_source_ledger_requires_inspection'):
+                safe_export.export(Path(temporary), Path(temporary) / 'rejected-export')
+
     def test_request_identity_does_not_include_prompt_or_secret(self):
         data = accounting.request_metadata({'model': 'gpt-6-astra', 'reasoning': {'effort': 'medium'}, 'messages': [{'content': 'private sermon text'}], 'api_key': 'private-key'})
         self.assertEqual(data['reasoning_effort'], 'medium')
