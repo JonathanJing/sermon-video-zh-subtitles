@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-worktree-venv-ci",
+  "runs": [
+    {
+      "label": "worktree-venv-ci-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktree-venv-ci-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "worktree-venv-ci-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 521,
+      "truncated": false,
+      "sha256": "e148788aa56269bb89e0cd88539b2aff9b69680dc65be24eeb7eef460f0d9410",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
