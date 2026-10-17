@@ -15,6 +15,7 @@ LAYER1 = {
     # workflows/compute W3a: the versioned review prompts, moved byte for byte.
     'scripts/review_prompts.py': _SOURCE + 'review_prompts.py',
     'scripts/sermon_sentence_interpretation.py': _SOURCE + 'sentence_interpretation.py',
+    'scripts/prepare_sentence_interpretation_shadow.py': _SOURCE + 'sentence_interpretation_shadow.py',
     'scripts/mfa_alignment.py': _SOURCE + 'mfa_alignment.py',
     'scripts/sermon_source_producer_compatibility.py': _SOURCE + 'producer_compatibility.py',
     'scripts/sermon_source_failure.py': _SOURCE + 'failure.py',
