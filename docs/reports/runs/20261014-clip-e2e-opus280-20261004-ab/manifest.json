@@ -6,7 +6,7 @@
       "label": "clip-e2e-20261004-opus-ab-3lang",
       "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ab-3lang",
       "skipped": {
-        ".json": 2628,
+        ".json": 2630,
         ".lock": 531,
         ".sha256": 299,
         ".jsonl": 2,
@@ -17,15 +17,6 @@
     }
   ],
   "files": [
-    {
-      "run": "clip-e2e-20261004-opus-ab-3lang",
-      "path": "aqc/run-zh-Hans/l3/asr-screening-receipt-v1.json",
-      "kind": "whole",
-      "bytes": 30109,
-      "truncated": false,
-      "sha256": "41c7b5bdc0c12178a9fb1bb2dba085bb3a2e7c2fb0e2dfd3135deba53764b14b",
-      "redactions": {}
-    },
     {
       "run": "clip-e2e-20261004-opus-ab-3lang",
       "path": "aqc/zh-Hans/spark-driver.log",
@@ -154,15 +145,6 @@
       "bytes": 4505,
       "truncated": false,
       "sha256": "a8e03b92013b37d9b2980a30519ac1e54602c72e6c6be8b233cd59aef1da423a",
-      "redactions": {}
-    },
-    {
-      "run": "clip-e2e-20261004-opus-ab-3lang",
-      "path": "l3/zh-Hans/spark-zh-Hans-c/spark-output/speech-job/asr-screening-receipt-v1.json",
-      "kind": "whole",
-      "bytes": 30109,
-      "truncated": false,
-      "sha256": "41c7b5bdc0c12178a9fb1bb2dba085bb3a2e7c2fb0e2dfd3135deba53764b14b",
       "redactions": {}
     },
     {

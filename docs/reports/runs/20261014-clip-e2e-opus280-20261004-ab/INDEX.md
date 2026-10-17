@@ -129,4 +129,6 @@ Error-like log lines (first 5 per log):
 - `logs/plan-qc-ko.log`: == 2026-10-15T00:08:47+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_with_openai_envir
 - `logs/plan-qc-zh-Hans.log`: == 2026-10-15T00:08:48+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_with_openai_envir
 
-Not copied: 6 .csv, 2628 .json, 2 .jsonl, 531 .lock, 2 .mp3, 299 .sha256, 372 .wav
+Not copied: 6 .csv, 2630 .json, 2 .jsonl, 531 .lock, 2 .mp3, 299 .sha256, 372 .wav
+
+Publication review additionally omitted 2 `asr-screening-receipt-v1.json` files because they contained per-segment model output; their aggregate status remains represented by the surrounding summary and log evidence.
