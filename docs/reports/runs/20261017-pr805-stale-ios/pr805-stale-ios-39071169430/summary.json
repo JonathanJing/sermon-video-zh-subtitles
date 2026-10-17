@@ -1,0 +1,20 @@
+{
+  "status": "cancelled",
+  "runId": 39071169430,
+  "workflow": "Tongxing iOS",
+  "trigger": "pull_request draft to ready transition",
+  "headSha": "71dee24ed1be77d57df6a6734b44eaf6eebc1452",
+  "branch": "codex/l1-s5-shadow-20261017",
+  "base": "dev",
+  "jobs": {
+    "changes": "cancelled",
+    "contract-validation": "cancelled",
+    "ios-validation": "cancelled",
+    "native-client": "failure"
+  },
+  "reason": "earlier draft run was canceled by newer ready-state run; native aggregate failed because its change job was canceled",
+  "limitations": [
+    "no completed contract or iOS validation in this run",
+    "await separate current ready-state run before merge"
+  ]
+}
