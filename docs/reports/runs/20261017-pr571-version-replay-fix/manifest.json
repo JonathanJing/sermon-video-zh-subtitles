@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-version-replay-fix",
+  "runs": [
+    {
+      "label": "pr571-version-replay-fix-tests",
+      "source": "~/.codex/worktrees/pr571-version-replay-fix/sermon-video-zh-subtitles/artifacts/pr571-version-replay-fix-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr571-version-replay-fix-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 416,
+      "truncated": false,
+      "sha256": "df32fda7769097046bb60b967e5bccd1d03b41a3d8c1bafcdd5ca6ae37cf2d3d",
+      "redactions": {}
+    },
+    {
+      "run": "pr571-version-replay-fix-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 619,
+      "truncated": false,
+      "sha256": "745059a1a7c05264138cb8bb2daa00f6bdaac17df36a601a9d308345029d5243",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
