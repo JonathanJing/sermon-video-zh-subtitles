@@ -107,7 +107,7 @@ tail -f watch-config.json.publisher.log
 
 数据流只有一条：
 
-1. producer 追加私有 `sermon-workflow-accounting-v3` / `sermon-accounting-log-contract-v1` 事件；冻结计划与完整 validator 状态收据仍按原合同保存
+1. producer 追加私有 `sermon-workflow-accounting-v3` / `sermon-accounting-log-contract-v2` 事件（旧收据可为 v1）；冻结计划与完整 validator 状态收据仍按原合同保存
 2. `scripts/build_tracker_dag_projection.py` 在同一有界、加读锁的日志字节快照上复用现有 weekly report / `sermon_run_progress`，投影已观测 DAG 与可选计划进度
 3. `build_four_layer_tracker_snapshot.py` 合入嵌套版本 `sermon-public-tracker-dag-v1`；现有公开快照 v2 仍兼容，旧快照不补造 DAG
 4. `publish.mjs` 的显式字段 sanitizer 再次过滤，沿用同一 Firestore 文档；前端只渲染这一份快照

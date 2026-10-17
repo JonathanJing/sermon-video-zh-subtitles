@@ -132,7 +132,7 @@ export function renderDag(snapshot) {
     refreshDagEstimate(snapshot);
   }
   const log=el('details','dag-log-contract');log.append(el('summary','',tr('统一日志格式与安全边界','Unified log format and safety boundary')),
-    el('p','',tr('规范格式：sermon-workflow-accounting-v3 / sermon-accounting-log-contract-v1。事件按 run、workflow、span、attempt、sequence 关联；重试追加新尝试，容器不重复计入叶节点耗时。', 'Canonical format: sermon-workflow-accounting-v3 / sermon-accounting-log-contract-v1. Events correlate run, workflow, span, attempt and sequence; retries append attempts, and containers do not double-count leaf duration.')),
+    el('p','',tr('规范格式：sermon-workflow-accounting-v3 / sermon-accounting-log-contract-v2（旧收据可为 v1）。事件按 run、workflow、span、attempt、sequence 关联；重试追加新尝试，容器不重复计入叶节点耗时。', 'Canonical format: sermon-workflow-accounting-v3 / sermon-accounting-log-contract-v2 (older receipts may use v1). Events correlate run, workflow, span, attempt and sequence; retries append attempts, and containers do not double-count leaf duration.')),
     el('p','',tr('此视图是允许字段的投影，不是原始日志；连接成功、执行结束、机器复核、人工批准与发布验收各自独立。', 'This view is an allowlisted projection, not raw logs. Connection, execution, machine review, human approval and release acceptance remain independent.')),el('p','',`${tr('事件 / 规范格式 / 旧格式', 'Events / canonical profile / legacy')}: ${dag.logs.eventCount ?? '?'} / ${dag.logs.profileEventCount ?? '?'} / ${dag.logs.legacyEventCount ?? '?'}`));host.append(log);
   for (const detail of host.querySelectorAll('details')) detail.open = openDetails.has(detail.className);
   if (focusInside) {
