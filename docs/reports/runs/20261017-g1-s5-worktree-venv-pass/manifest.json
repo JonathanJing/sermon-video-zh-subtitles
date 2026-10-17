@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-s5-worktree-venv-pass",
+  "runs": [
+    {
+      "label": "g1-s5-worktree-venv-20261017",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-s5-worktree-venv-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-s5-worktree-venv-20261017",
+      "path": "focused-pytest.log",
+      "kind": "log",
+      "bytes": 98,
+      "truncated": false,
+      "sha256": "6262dd4ae1e1610248aa7a1d90c86e6b7861110a1a434aeede186690d3652770",
+      "redactions": {}
+    },
+    {
+      "run": "g1-s5-worktree-venv-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 502,
+      "truncated": false,
+      "sha256": "12bd8d0fd16f769a7ac6a76c9afa5c2ba3f9072bdde1982764a7682ef0be5f49",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
