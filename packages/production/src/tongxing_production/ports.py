@@ -239,6 +239,7 @@ class Waivers:
     validate_text_waiver: Callable[..., Any]   # (receipt, *, candidate, source_sha=None, ...)
     disclosure: Callable[[str], dict]          # (locale)
     is_audio_waiver: Callable[[dict], bool]
+    is_basis_audio_waiver: Callable[[dict], bool]   # release-basis schemas only (v1/v2); the delivery stage's check
     validate_audio_waiver: Callable[..., None]   # (package, receipt, screening)
     audio_waiver_schema: str
     condensation_binding_schema: str

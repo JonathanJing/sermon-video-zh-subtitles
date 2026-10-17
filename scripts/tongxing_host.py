@@ -572,6 +572,11 @@ def _waiver_disclosure(locale):
     return machine_quality_release_basis.disclosure(locale)
 
 
+def _is_basis_audio_waiver(receipt):
+    from scripts import machine_quality_release_basis
+    return machine_quality_release_basis.is_audio_waiver(receipt)
+
+
 def _is_audio_waiver(receipt):
     from scripts import machine_audio_waiver_acceptance
     return machine_audio_waiver_acceptance.is_audio_waiver(receipt)
@@ -586,7 +591,7 @@ def waivers() -> ports.Waivers:
     # The schema names and review kind are fixed strings of the waiver release basis,
     # recorded here so the record does not depend on import order; a test pins them.
     return ports.Waivers(is_text_waiver=_is_text_waiver, validate_text_waiver=_validate_text_waiver,
-                         disclosure=_waiver_disclosure, is_audio_waiver=_is_audio_waiver,
+                         disclosure=_waiver_disclosure, is_audio_waiver=_is_audio_waiver, is_basis_audio_waiver=_is_basis_audio_waiver,
                          validate_audio_waiver=_validate_audio_waiver,
                          audio_waiver_schema='sermon-target-language-machine-audio-waiver-v2',
                          condensation_binding_schema='sermon-spoken-condensation-binding-v2',
