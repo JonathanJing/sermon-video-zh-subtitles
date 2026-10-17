@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "local-code-test-outcome-v1",
+  "status": "succeeded",
+  "purpose": "PR 571 version replay fix focused tests",
+  "testCommand": "python -m pytest -q tests/test_accounting_log_contract.py tests/test_sermon_durable_accounting.py",
+  "testsPassed": 38,
+  "subtestsPassed": 53,
+  "durationSeconds": 4.56,
+  "environment": "local worktree with shared repository virtualenv and worktree PYTHONPATH"
+}

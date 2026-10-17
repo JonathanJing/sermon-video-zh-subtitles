@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-sidecar-reference",
+  "runs": [
+    {
+      "label": "20261017-pr571-sidecar-reference",
+      "source": "~/.codex/worktrees/event-identity-sidecar/sermon-video-zh-subtitles/artifacts/test-runs/20261017-pr571-sidecar-reference",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-pr571-sidecar-reference",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 241,
+      "truncated": false,
+      "sha256": "a9304a91c68fbf18803e8323f47bb76dda313a9fbfff40ebd27d7d6c800a6bdf",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-pr571-sidecar-reference",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 224,
+      "truncated": false,
+      "sha256": "f771c45aa315946a81fd15da2d36e8745f4790f0637ece9c40bb641f81765ac5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

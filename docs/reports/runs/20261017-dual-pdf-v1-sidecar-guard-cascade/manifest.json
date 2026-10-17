@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-v1-sidecar-guard-cascade",
+  "runs": [
+    {
+      "label": "dual-pdf-v1-guard-cascade-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/dual-pdf-v1-guard-cascade-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-v1-guard-cascade-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 809,
+      "truncated": false,
+      "sha256": "8ed202d72ebd9e9aff6a985d415fcdf958673694311ef32662664a888262c30a",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-v1-guard-cascade-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 241,
+      "truncated": false,
+      "sha256": "564f4b7ac746aff21a93ed718be29fc0c002aed7c3356351513dd833e4fb7e39",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

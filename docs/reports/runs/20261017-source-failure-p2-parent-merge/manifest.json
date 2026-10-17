@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-source-failure-p2-parent-merge",
+  "runs": [
+    {
+      "label": "source-failure-p2-parent-merge",
+      "source": "~/.codex/worktrees/source-failure-move/sermon-video-zh-subtitles/artifacts/source-failure-p2-parent-merge",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "source-failure-p2-parent-merge",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 188,
+      "truncated": false,
+      "sha256": "29dc40dd4324f8f8167fb12c5c813e5683e7f19b86f1e47f89a1366cee6e1501",
+      "redactions": {}
+    },
+    {
+      "run": "source-failure-p2-parent-merge",
+      "path": "python.log",
+      "kind": "log",
+      "bytes": 110,
+      "truncated": false,
+      "sha256": "45dc2ac6aa2388f334ff520defc6053984127709e5d8508a304a10450fe51610",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

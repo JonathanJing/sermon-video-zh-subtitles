@@ -1,0 +1,6 @@
+{
+  "status": "success",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "result": "container schema resource smoke passed on rerun"
+}

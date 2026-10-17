@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-cascade-jobs",
+  "runs": [
+    {
+      "label": "g1-cascade-jobs-20261017",
+      "source": "~/.codex/worktrees/g1-jobs-cascade/sermon-video-zh-subtitles/artifacts/g1-cascade-jobs-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-cascade-jobs-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 252,
+      "truncated": false,
+      "sha256": "a1580b9053ad1510cd5ded3ba537c250bface6e986dc29bf06b04c298c3f5836",
+      "redactions": {}
+    },
+    {
+      "run": "g1-cascade-jobs-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 401,
+      "truncated": false,
+      "sha256": "00c8fd736ff0739dd312465af3e9595dd84af0cd157502950eb52c0666d60632",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

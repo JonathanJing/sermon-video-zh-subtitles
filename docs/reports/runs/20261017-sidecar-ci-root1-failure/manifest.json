@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-sidecar-ci-root1-failure",
+  "runs": [
+    {
+      "label": "sidecar-ci-root1-20261017",
+      "source": "~/.codex/worktrees/sidecar-p1-integration/sermon-video-zh-subtitles/artifacts/sidecar-ci-root1-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "sidecar-ci-root1-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 292,
+      "truncated": false,
+      "sha256": "0c625458d11f61ba77278ddb0bcf49af21eba2cfd017207adae059c914c9be71",
+      "redactions": {}
+    },
+    {
+      "run": "sidecar-ci-root1-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 38,
+      "truncated": false,
+      "sha256": "f72441b95ecc319be80ab4f1dfffa39f36ab05c2880f5369ea47647e9fc7b7b9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

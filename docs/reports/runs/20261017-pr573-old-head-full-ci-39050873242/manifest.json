@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr573-old-head-full-ci-39050873242",
+  "runs": [
+    {
+      "label": "pr573-old-head-full-ci-39050873242",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/pr573-old-head-full-ci-39050873242",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr573-old-head-full-ci-39050873242",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 581,
+      "truncated": false,
+      "sha256": "290ef667a143afa84a81ecf89c06957f48fc0dede9e1bbaca530afeb48166e90",
+      "redactions": {}
+    },
+    {
+      "run": "pr573-old-head-full-ci-39050873242",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2871,
+      "truncated": false,
+      "sha256": "38912e9fc1f8fccef7a3468e313d96979ea6b0dd0efe22d2f80c530432a80602",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

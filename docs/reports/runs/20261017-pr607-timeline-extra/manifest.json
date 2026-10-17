@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr607-timeline-extra",
+  "runs": [
+    {
+      "label": "pr607-timeline-extra-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/pr607-timeline-extra-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr607-timeline-extra-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 387,
+      "truncated": false,
+      "sha256": "79bc9950a673fab30104f9ef42f417d7fbcc333ac31575f61e8a04b3599ebfe7",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

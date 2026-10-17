@@ -1,0 +1,14 @@
+{
+  "status": "cancelled",
+  "exitCode": null,
+  "deliveryType": "test",
+  "source": "GitHub Actions Python tests manual dispatch",
+  "runId": 39066526994,
+  "headCommitSha": "7603ecd5216127c18e71ddbea68921e503e9fcc1",
+  "createdAt": "2026-10-17T20:23:47Z",
+  "updatedAt": "2026-10-17T20:41:26Z",
+  "rootShardsPassedBeforeCancellation": 7,
+  "aggregator": "not_run",
+  "reason": "superseded_by_timeline_optional_dependency_correction",
+  "acceptedAsPassingEvidence": false
+}

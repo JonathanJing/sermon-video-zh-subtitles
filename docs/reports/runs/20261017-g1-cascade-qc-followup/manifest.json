@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-cascade-qc-followup",
+  "runs": [
+    {
+      "label": "g1-cascade-qc-followup-20261017",
+      "source": "~/.codex/worktrees/g1-qc-cascade/sermon-video-zh-subtitles/artifacts/g1-cascade-qc-followup-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-cascade-qc-followup-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 273,
+      "truncated": false,
+      "sha256": "f49c4c83032e85ff30d6cca6c44545449e1612a4dd0731bf0e2d4d4692afd192",
+      "redactions": {}
+    },
+    {
+      "run": "g1-cascade-qc-followup-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 264,
+      "truncated": false,
+      "sha256": "e0a1972047cfad23265aae5cbab40f19165af34773235a874a92ae02831ad3e6",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

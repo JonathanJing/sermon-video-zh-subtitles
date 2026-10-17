@@ -1,0 +1,7 @@
+stage	status	seconds
+discover	pass	0.0
+es.text-qc.prefetch	pass	16.0
+es.text-qc	pass	2.9
+es.calibration.prefetch	pass	210.6
+es.calibration	pass	19.3
+es.text-waiver	fail	0.0

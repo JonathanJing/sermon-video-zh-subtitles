@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-dev-cascade",
+  "runs": [
+    {
+      "label": "dual-pdf-dev-cascade-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/dual-pdf-dev-cascade-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-dev-cascade-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1291,
+      "truncated": false,
+      "sha256": "c83a56bc4bc061cea5e23015ba0f67c63c14354ed4dcb3f5dd65ab8e37a77dfb",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

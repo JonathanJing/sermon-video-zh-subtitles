@@ -1,0 +1,34 @@
+Traceback (most recent call last):
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/build_target_language_audio_package.py", line 690, in <module>
+    main()
+    ~~~~^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/build_target_language_audio_package.py", line 671, in main
+    package = build_package(paths, args.render_manifest, args.artifact_root,
+                            strict_rubric=read_object(args.strict_rubric) if args.strict_rubric else None)
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/build_target_language_audio_package.py", line 369, in build_package
+    validate_job(source, anchor, candidate, job, adapter, policy, human_receipt, registry,
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 clip_auth, clip_cap, clip_timeline, paths,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 source_voice_authorization=<redacted>, strict_rubric=strict_rubric)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/build_target_language_audio_package.py", line 191, in validate_job
+    text_policy = speech.validate_text_release_basis(source, anchor, candidate, human_receipt)
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 251, in validate_text_release_basis
+    machine_basis.validate_text_waiver(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        receipt, candidate=candidate, source_sha=interpretation.json_sha256(source_package),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        anchor_sha=interpretation.json_sha256(anchor))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/machine_quality_release_basis.py", line 337, in validate_text_waiver
+    _validate_summary(receipt)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/machine_quality_release_basis.py", line 123, in _validate_summary
+    _require(receipt["implementationSha256"] == waiver.implementation_sha256(),
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             "Waiver was issued under a QC implementation other than the current one; recalibrate and reissue")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/machine_quality_release_basis.py", line 57, in _require
+    raise ValueError(message)
+ValueError: Waiver was issued under a QC implementation other than the current one; recalibrate and reissue

@@ -1,0 +1,7 @@
+stage	status	seconds
+discover	pass	0.0
+es.track-check	pass	0.7
+es.secondary-asr	pass	2.5
+es.audio-qc	pass	0.7
+es.calibration.prefetch	pass	432.7
+es.calibration	fail	126.2

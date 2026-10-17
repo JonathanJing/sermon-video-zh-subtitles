@@ -1,0 +1,3 @@
+stage	status	seconds	result
+ci_root_2	failed	678.144	711 run, 1 failed, 5 skipped
+local_fixed_test	pass	2.823	1 test OK

@@ -1,0 +1,14 @@
+{
+  "condensedGroups": 19,
+  "devPublished": false,
+  "exitCode": 1,
+  "failedGroups": 5,
+  "fullSubtitlesChanged": false,
+  "humanApproval": false,
+  "modelCalls": 44,
+  "reason": "five of twenty-four over-window groups failed the deterministic checks; others remain semantically unreviewed",
+  "schemaVersion": "sermon-spoken-condensation-trial-outcome-v1",
+  "scope": "Dev clip Korean spoken-script preparation only",
+  "sparkDispatched": false,
+  "status": "failed_partial"
+}

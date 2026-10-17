@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "testsPassed": 46,
+  "subtestsPassed": 54,
+  "suite": [
+    "tests/test_weekly_pipeline_report.py",
+    "tests/test_accounting_observability.py",
+    "tests/test_sermon_trace_export.py"
+  ],
+  "branchHead": "cd850ab6",
+  "scope": "local focused combination only"
+}

@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "A3 + event identity sidecar, CI root shard 2",
+  "testsRun": 711,
+  "skipped": 5,
+  "productionRun": "not_run"
+}

@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "head": "9de96d1b566d6d9fe0263c1ba1b1658a5443c78c",
+  "targetPr": 570,
+  "upstreamHead": "a1d2981c",
+  "executed": 37,
+  "passed": 37,
+  "testScope": "accounting contract/observability and audio ports",
+  "diffCheck": "passed",
+  "externalCalls": 0
+}

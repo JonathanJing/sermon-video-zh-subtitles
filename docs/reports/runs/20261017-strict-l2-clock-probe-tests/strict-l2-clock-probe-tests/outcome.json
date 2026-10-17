@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "cases": [
+    {
+      "name": "isolated",
+      "testsRun": 1,
+      "failed": 0,
+      "elapsedSeconds": 2.101
+    },
+    {
+      "name": "unrelated_background_thread",
+      "testsRun": 1,
+      "failed": 0,
+      "elapsedSeconds": 2.114
+    }
+  ],
+  "exitCode": 0
+}

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-local-test-outcome-v1",
+  "status": "stopped",
+  "exitCode": 2,
+  "observedPassedTests": 48,
+  "observedPassedSubtests": 25,
+  "durationSeconds": 256.19,
+  "reason": "KeyboardInterrupt"
+}

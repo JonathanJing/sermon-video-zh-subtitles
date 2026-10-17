@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-l2-diagnostics",
+  "runs": [
+    {
+      "label": "l2-diagnostics",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/cascade-pr571/l2-diagnostics",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "l2-diagnostics",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 102,
+      "truncated": false,
+      "sha256": "6c56f2f100954297311d258e64c6c8c7b8dfca6eb3c7507d981b25fc69a7b80d",
+      "redactions": {}
+    },
+    {
+      "run": "l2-diagnostics",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 56,
+      "truncated": false,
+      "sha256": "e48ca94a3534d2d958e4dc77cbe5bacef74a6787ab58334edebbbc9e3961553d",
+      "redactions": {}
+    },
+    {
+      "run": "l2-diagnostics",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 104,
+      "truncated": false,
+      "sha256": "000c57076bb64ba914226f4b34f0d6563cc3adf6c03d47913e06d9afd30a422c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

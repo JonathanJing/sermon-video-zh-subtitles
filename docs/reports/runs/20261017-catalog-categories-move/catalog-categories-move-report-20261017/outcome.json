@@ -1,0 +1,25 @@
+{
+  "status": "success_after_test_patch_correction",
+  "deliveryType": "test",
+  "branchHead": "be71fea3a6757a3f191bd691888df4438ac07f04",
+  "baseDev": "31c55af18a5646be387837376c59678303351df1",
+  "pureMoveCommit": "dcfc8758102a0e1ccda58164285382a4a3204766",
+  "originalMoveByteIdentity": "verified",
+  "baselineTestsPassed": 11,
+  "firstPostMoveRun": {
+    "testsPassed": 9,
+    "failedSubtests": 3,
+    "reason": "dynamic file-spec test patched the old module rather than moved implementation"
+  },
+  "correctedPostMoveRun": {
+    "testsPassed": 12,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "oldNewCliFromOutsideRepository": "same output bytes, normalized receipt, exit 0",
+  "moduleIdentity": "preserved",
+  "diffCheck": "passed",
+  "production": "not_run",
+  "publication": "not_run",
+  "device": "not_run"
+}

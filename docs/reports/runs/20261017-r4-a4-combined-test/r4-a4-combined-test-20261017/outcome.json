@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "r4-a4-combined-test-v1",
+  "status": "pass",
+  "deliveryType": "test",
+  "commit": "be472e0b",
+  "testsPassed": 74,
+  "modelCalls": 0,
+  "publication": "not_run"
+}

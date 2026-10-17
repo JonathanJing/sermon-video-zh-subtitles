@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "interrupted",
+  "exitCode": 130,
+  "startedAt": "2026-10-17T17:01:11Z",
+  "endedAt": "2026-10-17T17:02:38Z",
+  "purpose": "PR 582 G1 final-stack focused unittest on local Mac, stopped to release CPU",
+  "commitSha256": "be9c558d3883063a99343e1da8e18b3e0c5adcba",
+  "environment": {
+    "hostId": "local-mac",
+    "python": "3.12",
+    "isolation": "editable venv in PR 582 worktree"
+  },
+  "tests": {
+    "result": "unknown",
+    "reason": "KeyboardInterrupt; no completed suite count"
+  },
+  "limits": [
+    "Interrupted run is not a pass",
+    "No provider, Spark, publication, or device work"
+  ]
+}

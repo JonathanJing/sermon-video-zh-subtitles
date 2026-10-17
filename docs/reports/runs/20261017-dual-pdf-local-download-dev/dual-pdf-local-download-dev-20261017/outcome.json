@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "dual_pdf local post-live download retarget to dev",
+  "codeCommit": "88755d17d3096d056c0d84d618418a677e8deb7b",
+  "testCount": 40
+}

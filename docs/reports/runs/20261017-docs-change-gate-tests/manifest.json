@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-docs-change-gate-tests",
+  "runs": [
+    {
+      "label": "docs-change-gate-tests-20261017",
+      "source": "~/.codex/worktrees/dev-docs-change-gate/sermon-video-zh-subtitles/artifacts/docs-change-gate-tests-20261017",
+      "skipped": {
+        ".env": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "docs-change-gate-tests-20261017",
+      "path": "cli-parity.log",
+      "kind": "log",
+      "bytes": 66,
+      "truncated": false,
+      "sha256": "9b6ffdb6dfd52ca198c88f22b79f676772e9cdbf8681f7c53f1b05c860ffd1c3",
+      "redactions": {}
+    },
+    {
+      "run": "docs-change-gate-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 634,
+      "truncated": false,
+      "sha256": "db14bc1bedd5a6a5e536e1183375d1829edb5500550ab82a567ec9edc5f3027f",
+      "redactions": {}
+    },
+    {
+      "run": "docs-change-gate-tests-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "d73f1cff37c19e88a4d9644d02b2615f389692c234afe8d1930f473d59548c82",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

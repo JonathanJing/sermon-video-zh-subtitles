@@ -1,0 +1,68 @@
+{
+  "implementationSha256": "5815242564f4a4ab7c972d04cf94780b7d1084d78687bde7fb3e9c8f4ad2304b",
+  "locales": {
+    "es": {
+      "calibration": {
+        "cleanFalsePositiveRate": 0.0,
+        "detected": 218,
+        "overallDetectionRate": 1.0,
+        "trials": 218
+      },
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 50,
+          "added_number": 48,
+          "added_reference": 49,
+          "dropped_half": 37,
+          "dropped_name": 5,
+          "english_leak": 38,
+          "placeholder": 50,
+          "semantic_negation": 1,
+          "swapped_name": 0,
+          "swapped_quantity": 1,
+          "wrong_book": 1,
+          "wrong_number": 1,
+          "wrong_ordinal": 49
+        },
+        "notApplicableKinds": [
+          "swapped_name"
+        ],
+        "untestableKinds": []
+      },
+      "calibrationMisses": {
+        "text.swapped_name": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        },
+        "text.swapped_quantity": {
+          "applicableGroupIds": [
+            "translation-0-u317"
+          ],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        }
+      },
+      "candidateJsonSha256": "0ae61235e6a8604c9efa8b9ecd1d9d3c7a6c782d6d03eaa2d96d5bcd15742c14",
+      "failedGroups": [],
+      "locale": "es",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/run-out-r1/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/run-out-r1/es/candidate.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/run-out-r1/policies/es-policy-clip.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/run-out-r1/source.json"
+      },
+      "problems": [],
+      "reason": "Calibration does not allow a waiver: calibration has no trials for ['text.swapped_quantity']",
+      "status": "waiver_refused",
+      "textQc": "pass",
+      "textQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/state/qc-receipts/text/es/730076e55f3f64fa4edff03f09fdf0cdd9865a05498c8aaacc7c06a1177ac92a/entry-000002.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/textqc-es/run-out-r1",
+  "textBackend": "api"
+}

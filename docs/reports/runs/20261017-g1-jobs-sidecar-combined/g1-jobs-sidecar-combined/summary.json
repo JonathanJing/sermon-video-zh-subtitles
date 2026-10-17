@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "testsPassed": 30,
+  "subtestsPassed": 93,
+  "suite": [
+    "tests/test_infrastructure_contracts.py",
+    "tests/test_sermon_job_liveness.py",
+    "tests/test_controller_crash_windows.py"
+  ],
+  "branchHead": "ff1d3331",
+  "scope": "local focused combination only"
+}

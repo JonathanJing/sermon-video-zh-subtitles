@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "local-code-test-summary-v1",
+  "attempts": [
+    {
+      "phase": "initial test launch",
+      "status": "not_run",
+      "reason": "worktree has no local .venv; used shared repository virtualenv"
+    },
+    {
+      "phase": "new regression tests",
+      "status": "failed_then_fixed",
+      "reason": "default argument captured v2 before patched legacy fixture; changed binding default resolution to runtime"
+    },
+    {
+      "phase": "focused files",
+      "status": "passed",
+      "tests": 38,
+      "subtests": 53
+    }
+  ],
+  "scope": "code tests only; no production run or publication"
+}

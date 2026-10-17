@@ -1,0 +1,16 @@
+{
+  "status": "success",
+  "deliveryType": "test",
+  "codePullRequest": 584,
+  "headCommit": "dd49c7fe4bf9c9fcf76286f1dcb6d177e2890392",
+  "mergedDevCommit": "0d764771d99e533d9a819af254b03a0d17fc469f",
+  "testCommand": "python -m unittest tests.test_post_live_run_status tests.test_run_post_live_subtitle_generation tests.test_tongxing_production_package tests.test_weekly_pipeline_report",
+  "testsRun": 55,
+  "failures": 0,
+  "exitCode": 0,
+  "packageResolvesToWorktree": true,
+  "diffCheck": "passed",
+  "production": "not_run",
+  "publication": "not_run",
+  "device": "not_run"
+}

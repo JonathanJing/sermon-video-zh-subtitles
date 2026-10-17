@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "baseCommit": "3f0fe72c4feb623441a72e03a06dccc7919f222b",
+  "codeCommit": "88755d17d3096d056c0d84d618418a677e8deb7b",
+  "scope": "retarget #602 to dev after #598 merge",
+  "commands": [
+    {
+      "name": "local handoff, interpretation PDF, parallel reading unittest",
+      "tests": 29,
+      "exitCode": 0,
+      "seconds": 2.419964959
+    },
+    {
+      "name": "generate notes adjacent unittest",
+      "tests": 11,
+      "exitCode": 0,
+      "seconds": 0.154600958
+    },
+    {
+      "name": "git diff --check origin/dev...HEAD",
+      "exitCode": 0
+    }
+  ],
+  "externalCalls": 0,
+  "limitations": [
+    "mock fixtures only; no real source download or PDF publication",
+    "combined top #607 full CI is separate and pending"
+  ]
+}
