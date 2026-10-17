@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "testCount": 16,
+  "skipped": 1,
+  "failed": 0,
+  "scope": "CUV preflight and path aliases",
+  "exitCode": 0
+}
