@@ -901,6 +901,10 @@ def dual_pdf_unmoved():
 ENTRY_LOAD_TIME_IMPORTS = {
     'tongxing_production.workflows.dual_pdf.local_post_live_download': (
         'backend.cloud', 'backend.config', 'scripts.live_source_monitor', 'scripts.youtube_data_api'),
+    'tongxing_production.observability.weekly_projection': (
+        'scripts.sermon_accounting', 'scripts.sermon_clock_evidence',
+        'scripts.sermon_cache_observation', 'scripts.sermon_local_model_observation',
+        'scripts.sermon_workflow_evidence', 'scripts.sermon_decision_accounting'),
     'tongxing_production.workflows.dual_pdf.post_live': (
         'backend.cloud', 'backend.observability', 'scripts.live_source_monitor',
         'tongxing_production.workflows.dual_pdf.run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
@@ -964,8 +968,20 @@ _measure, _workspace, _accounting = measure(), workspace(), accounting()
 _schemas, _review, _diagnostic, _waivers = schemas(), review(), diagnostic(), waivers()
 _plugins, _transports = plugins(), transports()
 
+def _observation_code(module):
+    return _module(module)().CODE
+
+
+def _safe_observation(module, fields):
+    return _module(module)().safe_observation(fields)
+
+
 observability_backend.configure(observability_backend.ObservabilityBackend(
-    checkout_root=ROOT, load_producer_imports=load_producer_imports))
+    checkout_root=ROOT, load_producer_imports=load_producer_imports,
+    local_model_code=lambda: _observation_code('scripts.sermon_local_model_observation'),
+    safe_local_model_observation=lambda fields: _safe_observation('scripts.sermon_local_model_observation', fields),
+    decision_code=lambda: _observation_code('scripts.sermon_decision_accounting'),
+    safe_decision_observation=lambda fields: _safe_observation('scripts.sermon_decision_accounting', fields)))
 storage_backend.configure(storage_backend.StorageBackend(job_files=job_files()))
 compute_backend.configure(compute_backend.ComputeBackend(accounting=_accounting, resources=_resources_port,
                                                          artifact_root=lambda: _core.artifact_root,

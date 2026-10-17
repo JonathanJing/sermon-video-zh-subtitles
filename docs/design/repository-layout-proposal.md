@@ -4,6 +4,8 @@
 
 Status: **proposal for review, not approval to migrate**. Evidence date: 2026-10-02. Original inventory baseline: [dev@84e9d71d24ae86170efbb4c57755246f369ec9d9][baseline]. Amendment review baseline: [dev@8c64502404f9ae7110ee49aa990bcaeb2f8cd24d][review-baseline], fetched and checked against the remote branch on 2026-10-02. The original counts below remain tied to the original baseline; the delta inventory in §1.1 covers the amendment review. This document designs directory ownership, dependency boundaries and migration gates. It does not change production contracts or claim that the proposed packages, directories or unified execution capabilities already exist.
 
+**Implementation status update (2026-10-17):** The “not approval to migrate” label and the global wait in §§7–8 describe the October 2 decision. The user has since instructed us to continue the directory migration and to advance independent batches in parallel. For batches proven file by file to be outside the two experiment lines' active entry points and dependency closures, that later instruction supersedes the requirement to wait for both lines to finish. Active experiment closures remain frozen; defer any file whose independence cannot be established. Formal ownership of orchestration and diagnostic experiments still depends on the two lines' results. The [tools and experiments checklist](tools-and-experiments-migration.zh.md) records batch checks; production-package moves continue under their layer contracts. The October 2 baseline and recommendations below remain historical design evidence.
+
 Keep one multilingual monorepo. Separate clients, services, reusable production code, deployment configuration and experiments at the top level; express L1–L4 within the production package. Establish dependency direction before moving modules. Confirm implementation scope and sequencing only after the cloud Source/DAG diagnostic line and the local Spark performance line finish and their results are reconciled.
 
 ## 1 Evidence and scope
@@ -305,7 +307,7 @@ Experiment completion does not automatically approve migration. Refresh dev, ins
 
 ## 8 Migration sequence and rollback
 
-All phases occur only after both experiment lines finish and the relevant implementation scope is confirmed. Use separate PRs for responsibility-equivalent moves/extractions. Behavioral changes belong in separate PRs.
+This section records the original October 2 gate. The implementation status update above applies to batches proven outside the active experiment closures; other batches still wait until both experiment lines finish and the relevant implementation scope is confirmed. Use separate PRs for responsibility-equivalent moves/extractions. Behavioral changes belong in separate PRs.
 
 | Phase | Work | Exit criterion |
 |---|---|---|

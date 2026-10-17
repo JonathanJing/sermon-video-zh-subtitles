@@ -412,7 +412,8 @@ class TrackerDagSnapshotIntegrationTest(unittest.TestCase):
         previous = output.read_bytes()
         before = self.events_path.read_bytes()
         bundle = self.root / "private-progress.json"
-        command = [sys.executable, str(Path(tracker.__file__)), "--ledger", str(self.ledger_path),
+        cli = Path(__file__).resolve().parents[1] / "scripts/build_four_layer_tracker_snapshot.py"
+        command = [sys.executable, str(cli), "--ledger", str(self.ledger_path),
                    "--out", str(output), "--dag-accounting-dir", str(self.accounting),
                    "--dag-run-id", self.run_id, "--dag-progress-inputs", str(bundle)]
         for payload in (None, '{"plan":', '["wrong-shape"]'):
@@ -431,7 +432,8 @@ class TrackerDagSnapshotIntegrationTest(unittest.TestCase):
         bundle = self.root / "private-progress.json"
         bundle.write_text(json.dumps(inputs(frozen, [receipt(frozen, "private-unit")])))
         output = self.root / "public-snapshot.json"
-        command = [sys.executable, str(Path(tracker.__file__)), "--ledger", str(self.ledger_path),
+        cli = Path(__file__).resolve().parents[1] / "scripts/build_four_layer_tracker_snapshot.py"
+        command = [sys.executable, str(cli), "--ledger", str(self.ledger_path),
                    "--out", str(output), "--dag-accounting-dir", str(self.accounting),
                    "--dag-run-id", self.run_id, "--dag-progress-inputs", str(bundle)]
         result = subprocess.run(command, capture_output=True, text=True)
