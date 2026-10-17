@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr870-ios-success",
+  "runs": [
+    {
+      "label": "pr870-ios-success-39076892055",
+      "source": "/private/tmp/sermon-project-credit-usage-move-20261017/artifacts/pr870-ios-success-39076892055",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr870-ios-success-39076892055",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 361,
+      "truncated": false,
+      "sha256": "b95317b215e40106bca694d2bbde15baa08db580a57b2c5a95cb40666907af55",
+      "redactions": {}
+    },
+    {
+      "run": "pr870-ios-success-39076892055",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 909,
+      "truncated": false,
+      "sha256": "4b0a78added5d05414cf55b231a314c9bbfc648e5f644f2d00a2e42a2d31c7c5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
