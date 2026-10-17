@@ -29,16 +29,11 @@ import re
 import sys
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from scripts import cuv_scripture  # noqa: E402
-from scripts import english_scripture_coverage as coverage_module  # noqa: E402
-from scripts import scripture_adjudication as adjudication  # noqa: E402
-from scripts import scripture_candidate_queue as queue_module  # noqa: E402
-from scripts import scripture_editions  # noqa: E402
-from scripts import target_language_policy as policies  # noqa: E402
+from . import backend as _review
+from . import scripture as adjudication
+# The scripture library and Layer 2 policy reach review through its ports; the patterns below
+# compile from them at import, so this module imports after the host binds the review backend.
+from .unmoved import coverage_module, cuv_scripture, policies, queue_module, scripture_editions
 
 VERSION = '2026-10-08-v3'
 ROLE = 'machine_adjudicator'
@@ -93,16 +88,22 @@ GENERATOR_MODULES = ('scripture_machine_adjudication.py', 'english_scripture_cov
 _DIGESTS: dict[tuple[str, int, int], str] = {}
 
 
-def _generator_paths() -> list[Path]:
-    here = Path(__file__).resolve().parent
-    return [here / name for name in GENERATOR_MODULES] + [Path(coverage_module.DATA_PATH),
-                                                          Path(cuv_scripture.DEFAULT_LIBRARY_PATH)]
+def _generator_paths() -> list[tuple[str, Path]]:
+    """(label, file) pairs. Modules keep their legacy scripts/ key as the label and are read
+    where that key resolves today (review design section 3, rule 1); data files are labelled
+    relative to the checkout as before."""
+    backend = _review.current()
+    root = backend.core.repo_root
+    modules = [('scripts/' + name, backend.code.implementation_path('scripts/' + name)) for name in GENERATOR_MODULES]
+    data = [Path(coverage_module.DATA_PATH), Path(cuv_scripture.DEFAULT_LIBRARY_PATH)]
+    return modules + [(str(path.relative_to(root)) if path.is_relative_to(root) else path.name, path)
+                      for path in data]
 
 
 def implementation_inputs() -> list[dict[str, Any]]:
     """The generator's code and data files with their hashes; a missing file hashes as None."""
     rows = []
-    for path in _generator_paths():
+    for label, path in _generator_paths():
         try:
             stat = path.stat()
             key = (str(path), stat.st_size, stat.st_mtime_ns)
@@ -111,7 +112,6 @@ def implementation_inputs() -> list[dict[str, Any]]:
             digest: str | None = _DIGESTS[key]
         except OSError:
             digest = None
-        label = str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else path.name
         rows.append({'path': label, 'sha256': digest})
     return rows
 

@@ -132,6 +132,11 @@ REVIEW = {
     'scripts/text_qc_human_acceptance.py': _REVIEW + 'text_qc_acceptance.py',
     # I1 split the legacy review contract module across review and contracts.
     'scripts/sermon_review_contracts.py': _REVIEW + 'contracts.py',
+    # Review R2: the adjudicators outside the waiver closure and the review budget ledger.
+    'scripts/source_meaning_machine_adjudication.py': _REVIEW + 'source_meaning.py',
+    'scripts/scripture_adjudication.py': _REVIEW + 'scripture.py',
+    'scripts/scripture_machine_adjudication.py': _REVIEW + 'scripture_machine.py',
+    'scripts/sermon_review_budget.py': _REVIEW + 'review_budget.py',
 }
 
 # Prepared-workflow composition (tongxing_production.workflows.prepared), batch W2.

@@ -16,8 +16,8 @@ import os
 from pathlib import Path
 import re
 
-from scripts import sermon_workflow_jobs as jobs
-from scripts.sermon_review_contracts import canonical_sha256, read_snapshot, require
+from .contracts import canonical_sha256, read_snapshot, require
+from .unmoved import jobs
 
 SCHEMA = 'sermon-review-budget-v1'
 SNAPSHOT_SCHEMA = 'sermon-review-budget-snapshot-v1'
@@ -121,7 +121,7 @@ class BudgetStore:
         """``max_ledger_bytes`` widens the single-file ledger for a caller whose
         store holds many reservations (the per-locale canonical Layer 2 shard);
         every other store keeps the shared snapshot limit."""
-        from scripts.sermon_review_contracts import MAX_BYTES
+        from .contracts import MAX_BYTES
         require(max_ledger_bytes is None or (type(max_ledger_bytes) is int and MAX_BYTES <= max_ledger_bytes
                                              <= 64 * 1024 * 1024), 'invalid_budget_ledger_limit')
         # None follows the shared limit at use time, as before.
@@ -177,7 +177,7 @@ class BudgetStore:
 
     @staticmethod
     def _check_serialized_size(ledger, max_bytes=None):
-        from scripts.sermon_review_contracts import MAX_BYTES
+        from .contracts import MAX_BYTES
         # Match the bytes jobs._persist writes, not the smaller canonical JSON.
         require(len((json.dumps(ledger, ensure_ascii=False, indent=2, allow_nan=False) + '\n').encode())
                 <= (MAX_BYTES if max_bytes is None else max_bytes), 'budget_ledger_size_limit')

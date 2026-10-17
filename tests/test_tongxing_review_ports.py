@@ -149,7 +149,8 @@ class ReviewPortsTests(unittest.TestCase):
                              (library.coverage, english_scripture_coverage),
                              (library.candidate_queue, scripture_candidate_queue)):
             self.assertIs(port(), module)
-        generator_data = scripture_machine._generator_paths()[-2:]
+        # (label, path) pairs since R2; the data files are the last two.
+        generator_data = [path for _, path in scripture_machine._generator_paths()[-2:]]
         self.assertEqual([library.coverage_data_path(), library.library_path()], generator_data)
 
     def test_qc_runtime_and_transports_reach_compute_and_observability(self):

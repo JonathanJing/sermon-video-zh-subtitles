@@ -15,9 +15,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from scripts import cuv_scripture
-from scripts import scripture_editions
-from scripts import target_language_policy as policies
+from .unmoved import cuv_scripture, policies, scripture_editions
 
 SCHEMA = 'sermon-scripture-adjudication-v1'
 # Only locales with a pinned, hash-verified edition may admit a direct quotation.
@@ -89,7 +87,7 @@ def _reproduce_machine_receipt(receipt: dict[str, Any], *, target_locale: str, f
     that it reproduced the receipt then). A frozen run keeps its identity: when
     the current generator is a later one, the receipt it wrote is admitted on
     that frozen evidence instead of being re-run against new behaviour."""
-    from scripts import scripture_machine_adjudication as machine  # noqa: E402  (it imports this module)
+    from . import scripture_machine as machine  # noqa: E402  (it imports this module)
     current = {'version': machine.VERSION, 'implementationSha256': machine.implementation_sha256()}
     if isinstance(frozen, dict) and frozen.get('reproduced') is True and frozen.get('signatureCurrent') is True:
         _require(isinstance(frozen.get('version'), str) and isinstance(frozen.get('implementationSha256'), str)

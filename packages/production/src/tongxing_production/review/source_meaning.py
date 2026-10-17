@@ -42,13 +42,11 @@ import tempfile
 from typing import Any, Callable
 import wave
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from scripts import sermon_provider_limits as limits  # noqa: E402
-from scripts import sermon_source_text_review as source_review  # noqa: E402
-from scripts import target_language_policy as policies  # noqa: E402
+from ..compute import provider_limits as limits
+from . import backend as _review
+# Layer 1 and 2 modules reach review through its ports; the constants below read them at
+# import, so this module imports after the host binds the review backend (its facade does).
+from .unmoved import policies, source_review
 
 SCHEMA = source_review.MACHINE_RECEIPT_SCHEMA
 # Receipts written before verdicts were reproduced from the request cache; read under their own rules.
@@ -128,7 +126,7 @@ def _require(condition: bool, code: str) -> None:
 
 
 def implementation_sha256() -> str:
-    return hashlib.sha256(Path(__file__).resolve().read_bytes()).hexdigest()
+    return _review.current().code.module_sha256(sys.modules[__name__])
 
 
 def _sha(data: bytes) -> str:
@@ -282,8 +280,8 @@ class OpenAiTranscribeListener:
     name = model = 'gpt-transcribe'
 
     def __init__(self, *, cache: Path, max_calls: int, budget: dict[str, Any] | None = None):
-        from scripts import machine_qc_audio_transports as transports
-        from scripts import sermon_openai_runtime as runtime
+        from .unmoved import transports
+        from ..compute import openai_runtime as runtime
         self.route = _route_identity(runtime.selected_route())
         _require(self.route is not None, 'openai_environment_launcher_required')
         self.cache = transports.CallCache(cache, paid=True)
@@ -308,7 +306,7 @@ class OpenAiTranscribeListener:
 
     def _operation(self, audio_sha: str) -> str:
         """The ledger operation of one clip, ``asr.NNNN`` in first-heard order, kept across a resumed run."""
-        from scripts import english_source_judge_cache as judge_cache
+        from .unmoved import judge_cache
         table = self._operations_table()
         if audio_sha not in table:
             _require(len(table) < 9999, 'listener_operation_cap')
@@ -318,7 +316,7 @@ class OpenAiTranscribeListener:
 
     def _request(self, wav: bytes) -> tuple[bytes, str, dict[str, Any]]:
         """The multipart body, its content type and the ledger identity of one clip's request."""
-        from scripts import machine_qc_audio_transports as transports
+        from .unmoved import transports
         body, content_type = transports._multipart(self.fields, wav)
         identity = {'schemaVersion': LISTEN_REQUEST_SCHEMA, 'model': self.model,
                     'endpoint': transports.TRANSCRIBE_URL, 'audioSha256': _sha(wav),
@@ -332,8 +330,8 @@ class OpenAiTranscribeListener:
         return known is not None and self.budget['store'].returned(known, self._request(wav)[2])
 
     def _send(self, wav: bytes) -> dict[str, Any]:
-        from scripts import machine_qc_audio_transports as transports
-        from scripts import sermon_transcription_request as transcription
+        from .unmoved import transports
+        from ..compute import transcription_request as transcription
         _require(self.budget is not None, 'budget_authorization_required')
         body, content_type, identity = self._request(wav)
         audio_sha, seconds = _sha(wav), _wav_seconds(wav)
@@ -393,7 +391,7 @@ class QwenListener:
 
     def __init__(self, model_path: Path, *, cache: Path, identity_probe: Callable[[Path], dict[str, Any]] | None = None,
                  session_verifier: Callable[[], dict[str, Any]] | None = None):
-        from scripts import machine_qc_audio_transports as transports
+        from .unmoved import transports
         self.model_path = Path(model_path).resolve()
         weights = self.model_path / 'model.safetensors'
         _require(weights.is_file(), 'qwen_weights_missing')
@@ -418,8 +416,8 @@ class QwenListener:
 
     def _admit(self) -> None:
         """A live Spark exclusive session must own this process before any CUDA or model load."""
-        from scripts.production_spark_admission import require_bound_model_session
-        from scripts.spark_exclusive_session import SessionError
+        from ..compute.spark_admission import require_bound_model_session
+        from ..compute.spark_exclusive_session import SessionError
         try:
             receipt = require_bound_model_session(verifier=self.session_verifier)
         except SessionError as exc:
@@ -494,7 +492,7 @@ class SolAdjudicator:
             caller = self._budgeted_call if budget is not None else _unbound_call
         self.api_key, self.cache, self.model, self.effort, self.caller = api_key, Path(cache), model, effort, caller
         self.max_calls, self.calls = max_calls, 0
-        from scripts import sermon_openai_runtime as runtime
+        from ..compute import openai_runtime as runtime
         self.route = _route_identity(runtime.selected_route())
 
     def _ledger_identity(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -505,7 +503,7 @@ class SolAdjudicator:
 
     @staticmethod
     def _ledger_operation(payload: dict[str, Any]) -> str:
-        from scripts import sermon_workflow_jobs as jobs
+        from .unmoved import jobs
         return 'judge.' + jobs._digest(payload)
 
     def _budgeted_call(self, key: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -539,8 +537,8 @@ class SolAdjudicator:
         return payload
 
     def decide(self, unit_id: str, question: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
-        from scripts import english_source_judge_cache as judge_cache
-        from scripts import sermon_sentence_interpretation as contract
+        from .unmoved import judge_cache
+        from .unmoved import contract
         payload, stage = self.payload(question), f'source-meaning-{self.route_key}-{unit_id}'
         request_hash = contract.json_sha256({'schemaVersion': judge_cache.RUN_SCHEMA, 'stage': stage,
                                              'payload': payload})
@@ -591,8 +589,8 @@ def budget_binding(source: dict[str, Any], anchor: dict[str, Any], unit_ids: lis
     the output directory. Any other run is a different authorization: in particular one approved for dev
     cannot be loaded, replayed or spent under prod, one approved for Sol at medium effort cannot pay for
     another model or effort, and the binding exists only under the environment launcher."""
-    from scripts import canonical_layer2_controller as controller
-    from scripts import sermon_openai_runtime as runtime
+    from .unmoved import controller
+    from ..compute import openai_runtime as runtime
     _require(model in ADJUDICATOR_MODELS and effort in limits.MODEL_REASONING_EFFORTS[model],
              'unsupported_adjudicator_model')
     route = _route_identity(runtime.selected_route())
@@ -639,8 +637,8 @@ def load_budget_authorization(path: Path, *, binding: dict[str, Any], transport:
     replaced or code changed after this load refuses (``budget_authorization_changed`` /
     ``budget_authorization_binding_changed``) before the ledger moves. ``transport`` is a
     test seam only."""
-    from scripts import canonical_layer2_controller as controller
-    from scripts import sermon_source_budget as source_budget
+    from .unmoved import controller
+    from .unmoved import source_budget
     path = Path(path).resolve()
     identity = _authorization_identity(path, binding=binding)
 
@@ -665,7 +663,7 @@ def budget_identity(budget: dict[str, Any] | None) -> dict[str, Any] | None:
 def _is_budget_identity(value: Any) -> bool:
     """Whether ``value`` could have come from ``load_budget_authorization``: two file hashes, an absolute
     ledger root named ``budget``, ledger-valid global bounds and a supported request-limit tier."""
-    from scripts import sermon_source_budget as source_budget
+    from .unmoved import source_budget
     if not (isinstance(value, dict) and set(value) == set(BUDGET_IDENTITY_KEYS) and value['schemaVersion'] == BUDGET_SCHEMA
             and all(isinstance(value[key], str) and re.fullmatch('[a-f0-9]{64}', value[key])
                     for key in ('authorizationSha256', 'approvalSha256'))
@@ -1050,7 +1048,7 @@ def _adjudicator_runtime(adjudicator: Any, budget: dict[str, Any] | None) -> Non
     whole tier is held to the value the run had to use; each cached request is then held to both
     (``_verify_model_verdict``), so a receipt cannot claim another Project or tier than its cache was
     asked under."""
-    from scripts import sermon_openai_runtime as runtime
+    from ..compute import openai_runtime as runtime
     _require(isinstance(adjudicator, dict), 'receipt_adjudicator_runtime')
     route = adjudicator.get('route')
     _require(route is None or (isinstance(route, dict) and set(route) == {'environment', 'projectId', 'credentialAlias'}
@@ -1073,8 +1071,8 @@ def _verify_model_verdict(row: dict[str, Any], adjudicator: dict[str, Any], cach
 
     Returns the question the cached request asked, which the caller compares in
     full with the one the receipt and anchor ask when the anchor is supplied."""
-    from scripts import sermon_sentence_interpretation as contract
-    from scripts.run_sentence_interpretation_models import _model_result
+    from .unmoved import contract
+    from .unmoved import _model_result
     request = row['request']
     _require(all(isinstance(request.get(key), str) for key in ('path', 'sha256', 'requestSha256')),
              'receipt_decision_evidence')
@@ -1203,7 +1201,7 @@ def load_meaning_notes(path: Path, *, source: dict[str, Any], anchor: dict[str, 
     decision or note off as machine audio adjudication."""
     path = Path(path)
     notes = _load(path)
-    from scripts import layer2_human_ruling as human_ruling
+    from .unmoved import human_ruling
     if isinstance(notes, dict) and notes.get('schemaVersion') == human_ruling.SCHEMA:
         # A person's ruling on a request_human_review stop, never machine audio evidence.
         return human_ruling.load(path, source=source, anchor=anchor)
@@ -1358,7 +1356,7 @@ def main(argv: list[str] | None = None) -> int:
     review_inputs = (args.aligned_segments, args.source_audio, args.asr_reference)
     if any(review_inputs) and not all(review_inputs):
         raise SystemExit('--aligned-segments, --source-audio and --asr-reference go together')
-    from scripts import sermon_openai_runtime as runtime
+    from ..compute import openai_runtime as runtime
     if runtime.selected_route() is None:
         raise SystemExit('start under scripts/run_with_openai_environment.py --environment dev (prod for formal content)')
     api_key = os.environ.get('OPENAI_API_KEY', '').strip()
