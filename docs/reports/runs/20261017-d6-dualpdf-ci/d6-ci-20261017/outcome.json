@@ -1,0 +1,11 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "pr": 576,
+  "commit": "e7f4359fa166d07d654b578c8b800e8caac4fa46",
+  "workflowRun": 39041344459,
+  "rootShardsPassed": 8,
+  "aggregate": "success",
+  "publication": "not_run"
+}
