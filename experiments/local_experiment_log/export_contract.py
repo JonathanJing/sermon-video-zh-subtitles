@@ -24,7 +24,7 @@ def main():
     root = args.out_dir
     if root.exists() or root.is_symlink():
         parser.error("output directory must be new")
-    canonical_schema = json.loads(accounting.SCHEMA_PATH.read_text())
+    canonical_schema = json.loads(accounting._schema_path(accounting.VERSION).read_text())
     canonical_template = {key: None for key in canonical_schema["required"]}
     canonical_template.update(schemaVersion="sermon-workflow-accounting-v3", contractVersion=accounting.VERSION, missingReasons={})
     manifest, events, contexts = compatible_fixture()

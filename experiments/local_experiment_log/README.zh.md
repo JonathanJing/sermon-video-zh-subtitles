@@ -1,6 +1,6 @@
 # 统一日志：本地参数实验扩展
 
-本扩展将预加载、batch、时钟和产物测量绑定到已有 accounting 事件。正式合同仍为 `sermon-workflow-accounting-v3` / `sermon-accounting-log-contract-v1`，直接复用仓库 `scripts/sermon_log_contract.py` 和对应 schema，不维护第二份生产 validator、writer、profile 或 outbox。
+本扩展将预加载、batch、时钟和产物测量绑定到已有 accounting 事件。新写入使用 `sermon-workflow-accounting-v3` / `sermon-accounting-log-contract-v2`；读取器继续按原始版本验证 v1 事件。部署包同时携带 v1、v2 schema 和同一份 `scripts/sermon_log_contract.py`，不维护第二份生产 validator、writer、profile 或 outbox。
 
 L1 是英文事实与锚点，L2 是目标语言文字，L3 是音频与同步，L4 是发布与播放。执行主机使用独立 host/component 字段。局部 TTS 参数实验属于 L3，复用冻结的 L1/L2 输入，不伪造 L4 发布。定义见[四层合同](../../docs/multilingual-production-interfaces.zh.md)。
 
