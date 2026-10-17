@@ -90,6 +90,12 @@ class RenderContentJsonPdfTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             mod.check_content(CONTENT, "other-page")
 
+    def test_overlapping_cues_keep_their_own_english(self):
+        primary = [mod.renderer.Cue("00:00:00,000", "00:00:02,000", "一。"),
+                   mod.renderer.Cue("00:00:01,500", "00:00:03,000", "二。")]
+        blocks = mod.renderer.build_reading_blocks(primary, paired_secondary=["One.", "Two."])
+        self.assertEqual(" ".join(block.secondary for block in blocks), "One. Two.")
+
     def test_renders_pdf_from_content(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "page.pdf"

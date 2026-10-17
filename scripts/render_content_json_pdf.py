@@ -103,6 +103,7 @@ def render_content_pdf(
     qa = renderer.render_reading_pdf(
         primary,
         secondary_cues=secondary if include_english else None,
+        paired_secondary=[cue.text for cue in secondary] if include_english else None,
         out=out,
         title=heading,
         subtitle=content.get("scripture"),

@@ -378,8 +378,15 @@ def build_reading_blocks(
     preferred_block_seconds: float = 32.0,
     preferred_primary_chars: int = 180,
     preferred_secondary_chars: int = 850,
+    paired_secondary: Sequence[str] | None = None,
 ) -> list[ReadingBlock]:
-    secondary_by_index = align_secondary_cues(primary_cues, secondary_cues or [])
+    # Callers that already know each cue's secondary text pass it in order and skip timestamp alignment.
+    if paired_secondary is not None:
+        if len(paired_secondary) != len(primary_cues):
+            raise ValueError("paired_secondary must have one entry per primary cue")
+        secondary_by_index = list(paired_secondary)
+    else:
+        secondary_by_index = align_secondary_cues(primary_cues, secondary_cues or [])
     blocks: list[ReadingBlock] = []
     current_primary: list[str] = []
     current_secondary: list[str] = []
@@ -564,6 +571,7 @@ def render_reading_pdf(
     preferred_primary_chars: int = 180,
     preferred_secondary_chars: int = 850,
     subject: str = DEFAULT_SUBJECT,
+    paired_secondary: Sequence[str] | None = None,
 ) -> dict:
     blocks = build_reading_blocks(
         cues,
@@ -575,6 +583,7 @@ def render_reading_pdf(
         preferred_block_seconds=preferred_block_seconds,
         preferred_primary_chars=preferred_primary_chars,
         preferred_secondary_chars=preferred_secondary_chars,
+        paired_secondary=paired_secondary,
     )
     font_name = register_cjk_font(font_path)
     body_width = MOBILE_PAGE_SIZE[0] - MARGIN_X * 2
