@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-tracker-repair",
+  "runs": [
+    {
+      "label": "tracker-repair",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/cascade-pr571/tracker-repair",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tracker-repair",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 102,
+      "truncated": false,
+      "sha256": "6c56f2f100954297311d258e64c6c8c7b8dfca6eb3c7507d981b25fc69a7b80d",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-repair",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 76,
+      "truncated": false,
+      "sha256": "d5b5c76d0d64d40ec0cc787f98c2578a3dec57273ede781403bdd1df422efea4",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-repair",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 124,
+      "truncated": false,
+      "sha256": "484cb5ff033dcdb520dca98204605b06e26c45e0338ee8de8dc36c95bbae6558",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
