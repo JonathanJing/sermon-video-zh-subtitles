@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-jobs-sidecar-combined",
+  "runs": [
+    {
+      "label": "g1-jobs-sidecar-combined",
+      "source": "~/.codex/worktrees/g1-qc-sidecar-integration/sermon-video-zh-subtitles/artifacts/g1-jobs-sidecar-combined",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-jobs-sidecar-combined",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 139,
+      "truncated": false,
+      "sha256": "cda8f588ad4af3ec004d901568092203143131c066cb9270e322c1bcb2a852b0",
+      "redactions": {}
+    },
+    {
+      "run": "g1-jobs-sidecar-combined",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 250,
+      "truncated": false,
+      "sha256": "5b77dfcb34feb0b2692828e2591ccc13eb524e6e6db79400b40c08f26359c8a9",
+      "redactions": {}
+    },
+    {
+      "run": "g1-jobs-sidecar-combined",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 86,
+      "truncated": false,
+      "sha256": "da187f9de324abfca788315024947ae6a7e694a01a75516633d068748bbd93df",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
