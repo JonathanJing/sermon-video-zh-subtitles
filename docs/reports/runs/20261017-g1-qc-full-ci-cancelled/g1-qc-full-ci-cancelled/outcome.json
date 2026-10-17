@@ -1,0 +1,6 @@
+{
+  "status": "cancelled",
+  "exitCode": null,
+  "deliveryType": "test",
+  "result": "Queued root shards cancelled before execution; superseded by full G1 stack run 39044075878"
+}
