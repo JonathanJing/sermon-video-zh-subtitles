@@ -840,7 +840,7 @@ def _cloud_function(name):
 
 def cloud() -> ports.Cloud:
     return ports.Cloud(**{name: _cloud_function(name) for name in (
-        'access_secret', 'read_gcs_bytes', 'upload_file_to_gcs')})
+        'access_secret', 'read_gcs_bytes', 'upload_file_to_gcs', 'write_gcs_text')})
 
 
 def _observability_function(name):
@@ -884,6 +884,7 @@ def _upcoming_sunday(*arguments, **options):
 def dual_pdf_unmoved():
     return dual_pdf_host.Unmoved(
         live_source_monitor=_scripts_module('live_source_monitor'),
+        youtube_data_api=_scripts_module('youtube_data_api'),
         series_terminology=_scripts_module('series_terminology'),
         export_saturday_live_context=_scripts_module('export_saturday_live_context'),
         reading_edition=_scripts_module('build_sermon_reading_edition_with_openai'),
@@ -898,6 +899,8 @@ def dual_pdf_unmoved():
 # load on first use. Loaded at identity capture only when that entry is loaded, as
 # importing the entry did before W3c, so the identity still covers the code it runs.
 ENTRY_LOAD_TIME_IMPORTS = {
+    'tongxing_production.workflows.dual_pdf.local_post_live_download': (
+        'backend.cloud', 'backend.config', 'scripts.live_source_monitor', 'scripts.youtube_data_api'),
     'tongxing_production.observability.weekly_projection': (
         'scripts.sermon_accounting', 'scripts.sermon_clock_evidence',
         'scripts.sermon_cache_observation', 'scripts.sermon_local_model_observation',

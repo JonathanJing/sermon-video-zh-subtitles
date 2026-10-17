@@ -408,6 +408,7 @@ class Cloud:
     access_secret: Callable[[str], str]        # (resource_name) -> secret text, for the run's own use only
     read_gcs_bytes: Callable[[str], bytes]     # (gs:// uri)
     upload_file_to_gcs: Callable[..., None]    # (local_path, uri)
+    write_gcs_text: Callable[..., None]         # (uri, text)
 
 
 @dataclass(frozen=True)
