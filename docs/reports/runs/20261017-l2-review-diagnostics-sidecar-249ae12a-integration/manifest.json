@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-l2-review-diagnostics-sidecar-249ae12a-integration",
+  "runs": [
+    {
+      "label": "l2-review-diagnostics-sidecar-249ae12a-integration",
+      "source": "~/.codex/worktrees/l2-review-diagnostics/sermon-video-zh-subtitles/artifacts/l2-review-diagnostics-sidecar-249ae12a-integration",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "l2-review-diagnostics-sidecar-249ae12a-integration",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 335,
+      "truncated": false,
+      "sha256": "7f8ca8ab600b433b7010f90360f4307e8cbd4bcf01fc860860d38a316ac136d7",
+      "redactions": {}
+    },
+    {
+      "run": "l2-review-diagnostics-sidecar-249ae12a-integration",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 546,
+      "truncated": false,
+      "sha256": "0c144ddbb1265413cdafa509843743d325ddae6f625467f3af6968fe55432ad5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
