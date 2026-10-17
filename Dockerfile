@@ -8,6 +8,7 @@ RUN apt-get update \
 
 COPY requirements.txt /app/requirements.txt
 COPY packages/ /app/packages/
+COPY services/api/ /app/services/api/
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY backend/ /app/backend/
