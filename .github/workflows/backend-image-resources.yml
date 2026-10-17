@@ -27,3 +27,10 @@ jobs:
           from tongxing_production.contracts import schemas
           schemas.validator("sermon-app-delivery-v1")
           '
+      - name: Read installed terminology catalog through production loader
+        run: |
+          docker run --rm --entrypoint python sermon-backend-resource-smoke -c '
+          from scripts import series_terminology
+          catalog = series_terminology.context()
+          assert catalog["entries"]
+          '
