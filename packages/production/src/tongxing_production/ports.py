@@ -418,4 +418,3 @@ class Observability:
     log_event: Callable[..., None]             # (event, **fields)
     stable_hash: Callable[[str], str]
     url_summary: Callable[[Any], Any]          # (url) -> redacted summary or None
-
