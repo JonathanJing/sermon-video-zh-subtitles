@@ -30,7 +30,12 @@ SELF_CONTAINED_SCRIPTS = {"mfa_alignment.py",
                           "log_contract.py"}
 # Reads other modules' file attributes, never its own location: the execution identity
 # hashes the modules loaded in this process; its checkout root comes from the host.
-READS_LOADED_MODULE_FILES = {"observability/accounting.py"}
+READS_LOADED_MODULE_FILES = {"observability/accounting.py",
+                             # Transports hash their own bytes into their cache identity
+                             # (adapterSha256; codex_layer2 also its resource helper's),
+                             # never to locate the checkout (workflows design section 4.1).
+                             "compute/transports/claude_layer2.py", "compute/transports/codex_layer2.py",
+                             "compute/transports/openai_layer2.py", "compute/transports/codex_cli.py"}
 
 
 def imports_of(path):

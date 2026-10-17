@@ -97,6 +97,11 @@ class Resources:
     identity: Callable[[Any], Any]
     reserve: Callable[..., bool]               # (policy, *, operation_id, owner, resource, units=1)
     release: Callable[..., Any]                # (policy, *, operation_id, owner)
+    # The ledger transaction the Codex CLI capacity admission runs under the broker lock:
+    # a context manager yielding (ledger, save) or None when the lock is busy.
+    ledger_transaction: Callable[..., Any]     # (policy)
+    operation_key: Callable[[str], str]        # (operation_id) -> the ledger's reservation key
+    contract_error: Callable[[], type]         # orchestration's ContractError(code, exit_code=4)
 
 
 @dataclass(frozen=True)

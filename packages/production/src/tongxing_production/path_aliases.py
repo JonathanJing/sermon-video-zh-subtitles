@@ -79,6 +79,12 @@ COMPUTE = {
     'scripts/api_cli_outcomes.py': PRODUCTION + 'compute/outcomes.py',
     'scripts/production_spark_admission.py': PRODUCTION + 'compute/spark_admission.py',
     'scripts/strict_budget_capability.py': PRODUCTION + 'compute/budget_capability.py',
+    # workflows/compute C3: the transports, one identity generation.
+    'scripts/claude_layer2_transport.py': PRODUCTION + 'compute/transports/claude_layer2.py',
+    'scripts/codex_layer2_transport.py': PRODUCTION + 'compute/transports/codex_layer2.py',
+    'scripts/openai_layer2_transport.py': PRODUCTION + 'compute/transports/openai_layer2.py',
+    'scripts/codex_layer2_resources.py': PRODUCTION + 'compute/transports/codex_resources.py',
+    'scripts/sermon_codex_transport.py': PRODUCTION + 'compute/transports/codex_cli.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.

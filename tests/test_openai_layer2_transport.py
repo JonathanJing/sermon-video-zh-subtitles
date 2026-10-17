@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from scripts import openai_layer2_transport as transport
 from scripts import sermon_pipeline
+from tongxing_production.compute import legacy_openai  # C3: the transport calls the moved request functions
 from scripts import run_target_language_models as models
 
 
@@ -20,7 +21,7 @@ class OpenAILayer2TransportTests(unittest.TestCase):
             'OPENAI_API_KEY': 'synthetic-test-key',
         }
         with patch.dict(os.environ, environment, clear=True), \
-                patch.object(sermon_pipeline, 'json_request', return_value={'id': 'response'}) as request:
+                patch.object(legacy_openai, 'json_request', return_value={'id': 'response'}) as request:
             caller = transport.OpenAILayer2Transport()
             self.assertEqual(caller.execution_identity['backend'], 'openai_api')
             self.assertEqual(caller.execution_identity['route']['projectId'], 'proj_testdev')
@@ -32,7 +33,7 @@ class OpenAILayer2TransportTests(unittest.TestCase):
 
     def test_unbound_environment_blocks_before_request(self):
         with patch.dict(os.environ, {}, clear=True), \
-                patch.object(sermon_pipeline, 'json_request', side_effect=AssertionError('no dispatch')) as request:
+                patch.object(legacy_openai, 'json_request', side_effect=AssertionError('no dispatch')) as request:
             with self.assertRaisesRegex(ValueError, 'openai_layer2_requires_explicit_dev_or_prod_launcher'):
                 transport.OpenAILayer2Transport()
             request.assert_not_called()
@@ -45,7 +46,7 @@ class OpenAILayer2TransportTests(unittest.TestCase):
             'OPENAI_API_KEY': 'synthetic-test-key',
         }
         with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, environment, clear=True), \
-                patch.object(sermon_pipeline, 'json_request', side_effect=AssertionError('no dispatch')) as request:
+                patch.object(legacy_openai, 'json_request', side_effect=AssertionError('no dispatch')) as request:
             caller = transport.OpenAILayer2Transport()
             output = Path(directory) / 'translation.json'
             for _ in range(2):
@@ -58,7 +59,7 @@ class OpenAILayer2TransportTests(unittest.TestCase):
 
     def test_shared_text_call_refuses_uncapped_sol_before_request(self):
         payload = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high', 'service_tier': 'fast'}
-        with patch.object(sermon_pipeline, 'json_request', side_effect=AssertionError('dispatched')) as request:
+        with patch.object(legacy_openai, 'json_request', side_effect=AssertionError('dispatched')) as request:
             with self.assertRaisesRegex(ValueError, 'unsupported_budget_capability'):
                 sermon_pipeline._chat_json('synthetic-test-key', payload)
             request.assert_not_called()

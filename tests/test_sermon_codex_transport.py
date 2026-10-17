@@ -71,7 +71,9 @@ class ProductionCodexTransportTests(unittest.TestCase):
         self.assertIn('--ephemeral', command)
         self.assertIn('--ignore-user-config', command)
         self.assertFalse(any(name.upper().startswith('OPENAI_') or name.upper() == 'CODEX_API_KEY' for name in kwargs['env']))
-        self.assertNotEqual(Path(kwargs['cwd']), mod.ROOT)
+        # The private work directory is never the checkout (the root the host binds).
+        from scripts import tongxing_host
+        self.assertNotEqual(Path(kwargs['cwd']), tongxing_host.ROOT)
         self.assertFalse(Path(kwargs['cwd']).exists())
         self.assertIsNone(result['serverModel'])
         self.assertEqual(result['requestedReasoningEffort'], 'high')
