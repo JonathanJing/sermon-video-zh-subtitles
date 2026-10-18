@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-r4-merge-42",
+  "runs": [
+    {
+      "label": "20261018-r4-merge-42",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/local-runs/20261018-r4-merge-42",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-r4-merge-42",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 176,
+      "truncated": false,
+      "sha256": "917ff07340e9fb176b393065bcdbc52fb5c0c937af415c5b446dda3afeb02377",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-r4-merge-42",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 169,
+      "truncated": false,
+      "sha256": "90c63c2a05f761ea1c1874fd9c1b069b5a47fa68646e965fe681f03ca9c39dd5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
