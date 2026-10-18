@@ -109,6 +109,31 @@ def test_v5_merge_rejects_partial_or_cross_hash_single_source_promotion():
         contract.merge_catalog(baseline, crossed, plan)
 
 
+def test_v5_promotion_can_fill_missing_legacy_video_only_from_identical_old_locale_targets():
+    legacy = contract.project_legacy_catalog_v4(catalog(('es', 'ko')))
+    del legacy['pages'][0]['videoDelivery']
+    baseline = contract.upgrade_catalog_v5(legacy)
+    candidate = catalog()
+    plan = {'schemaVersion': 'sermon-locale-release-plan-v1',
+            'baselineCatalogV5Sha256': contract.sha(baseline), 'baselineVersion': 'v1',
+            'pageId': 'family-page', 'locales': ['zh-Hans', 'es', 'ko'],
+            'requiredLocales': ['zh-Hans', 'es', 'ko'], 'mode': 'joined'}
+    merged = contract.merge_catalog(baseline, candidate, plan)
+    page = merged['pages'][0]
+    assert page['targets']['es']['videoDelivery'] == page['targets']['ko']['videoDelivery']
+    assert page['targets']['es']['videoDelivery'] == video('family-page', MEDIA_B)
+
+    inconsistent = copy.deepcopy(candidate)
+    inconsistent['pages'][0]['targets']['ko']['videoDelivery']['bytes'] += 1
+    with pytest.raises(ValueError, match='disagree on promotion video'):
+        contract.merge_catalog(baseline, inconsistent, plan)
+
+    wrong = copy.deepcopy(candidate)
+    wrong['pages'][0]['targets']['es']['videoDelivery'] = video('broadcast-edition', MEDIA_B)
+    with pytest.raises(ValueError, match='cannot supply the legacy page video'):
+        contract.merge_catalog(baseline, wrong, plan)
+
+
 def test_v5_promotion_absorbs_existing_edition_page_but_legacy_projection_keeps_it():
     legacy = contract.project_legacy_catalog_v4(catalog())
     baseline = contract.upgrade_catalog_v5(legacy)

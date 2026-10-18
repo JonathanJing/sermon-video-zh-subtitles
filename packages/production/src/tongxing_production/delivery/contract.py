@@ -59,6 +59,16 @@ def machine_checked(entry):
     return MACHINE_CHECKED in (entry.get('contentStatus'), entry.get('audioStatus'))
 
 
+def video_matches_source(delivery, edition, media_sha):
+    return (isinstance(delivery, dict)
+            and delivery.get('canonicalUrl') == f"/pages/{edition}/full-video-browser.mp4"
+            and delivery.get('sha256') == media_sha
+            and re.fullmatch(
+                r'https://storage\.googleapis\.com/ai-for-god-sermon-media-(?:dev|prod)/weekly/'
+                + re.escape(edition) + '/' + media_sha + r'\.mp4',
+                delivery.get('storageUrl', '')) is not None)
+
+
 def release_path(release):
     """Machine-checked releases live under /releases-v4/ so v3-only clients never reach them."""
     directory = 'releases-v4' if release['schemaVersion'] == RELEASE_V4 else 'releases-v2'
@@ -85,12 +95,7 @@ def validate_catalog_schema(catalog):
             require(target['releasePackageUrl'] == f"/{directory}/{edition}/{locale}.json",
                     'Catalog release path differs from edition/locale')
             if per_target:
-                require(target['videoDelivery']['canonicalUrl'] == f"/pages/{edition}/full-video-browser.mp4"
-                        and target['videoDelivery']['sha256'] == target['sourceMediaSha256']
-                        and re.fullmatch(
-                            r'https://storage\.googleapis\.com/ai-for-god-sermon-media-(?:dev|prod)/weekly/'
-                            + re.escape(edition) + '/' + target['sourceMediaSha256'] + r'\.mp4',
-                            target['videoDelivery']['storageUrl']) is not None,
+                require(video_matches_source(target['videoDelivery'], edition, target['sourceMediaSha256']),
                         'Target video delivery differs from its source edition')
                 binding = target.get('audioFingerprint')
                 require(binding is None or (binding['pageId'] == edition
@@ -218,17 +223,36 @@ def project_legacy_catalog_v4(catalog):
     return validate_catalog_schema(result)
 
 
-def promote_page_to_per_target(page):
+def promote_page_to_per_target(page, incoming_targets=None):
     """Move a legacy page source onto each target before adding another source edition."""
     require(page.get('sourceMode') == 'single_source'
-            and page.get('sourceIdentitySha256') and page.get('sourceMediaSha256')
-            and isinstance(page.get('videoDelivery'), dict),
+            and page.get('sourceIdentitySha256') and page.get('sourceMediaSha256'),
+            'Single-source page lacks source identity for mixed-source promotion')
+    video = page.get('videoDelivery')
+    if incoming_targets is not None:
+        require(all(locale in incoming_targets
+                    and incoming_targets[locale].get('editionId') == page['id']
+                    and incoming_targets[locale].get('sourceIdentitySha256') == page['sourceIdentitySha256']
+                    and incoming_targets[locale].get('sourceMediaSha256') == page['sourceMediaSha256']
+                    and video_matches_source(incoming_targets[locale].get('videoDelivery'),
+                                             page['id'], page['sourceMediaSha256'])
+                    for locale in page['targets']),
+                'Incoming target cannot supply the legacy page video binding')
+        incoming_videos = [incoming_targets[locale]['videoDelivery'] for locale in page['targets']]
+        require(all(value == incoming_videos[0] for value in incoming_videos),
+                'Existing locales disagree on promotion video delivery')
+        if video is None:
+            video = incoming_videos[0]
+        else:
+            require(all(value == video for value in incoming_videos),
+                    'Existing page video delivery changed during promotion')
+    require(video_matches_source(video, page['id'], page['sourceMediaSha256']),
             'Single-source page lacks source/video identity for mixed-source promotion')
     result = copy.deepcopy(page)
     for target in result['targets'].values():
         target.update(editionId=page['id'], sourceIdentitySha256=page['sourceIdentitySha256'],
                       sourceMediaSha256=page['sourceMediaSha256'],
-                      videoDelivery=copy.deepcopy(page['videoDelivery']))
+                      videoDelivery=copy.deepcopy(video))
     result['sourceMode'] = 'per_target'
     for key in ('sourceIdentitySha256', 'sourceMediaSha256', 'videoDelivery'):
         result.pop(key, None)
@@ -376,11 +400,16 @@ def merge_catalog(baseline, candidate, plan, *, anchor=None):
             if previous['sourceMode'] != incoming['sourceMode']:
                 require(previous['sourceMode'] == 'single_source' and incoming['sourceMode'] == 'per_target',
                         'Page source mode changed')
-                promoted = promote_page_to_per_target(previous)
                 require(set(previous['targets']) <= locales,
                         'Mixed-source promotion must replace every existing target')
                 require(all(locale in incoming['targets']
-                            and all(incoming['targets'][locale].get(key) == promoted['targets'][locale][key]
+                            and incoming['targets'][locale].get('editionId') == previous['id']
+                            and incoming['targets'][locale].get('sourceIdentitySha256') == previous['sourceIdentitySha256']
+                            and incoming['targets'][locale].get('sourceMediaSha256') == previous['sourceMediaSha256']
+                            for locale in previous['targets']),
+                        'Mixed-source promotion changed an existing target source')
+                promoted = promote_page_to_per_target(previous, incoming['targets'])
+                require(all(all(incoming['targets'][locale].get(key) == promoted['targets'][locale][key]
                                     for key in ('editionId', 'sourceIdentitySha256', 'sourceMediaSha256'))
                             for locale in previous['targets']),
                         'Mixed-source promotion changed an existing target source')
@@ -398,7 +427,7 @@ def merge_catalog(baseline, candidate, plan, *, anchor=None):
             for sibling in result['pages']:
                 if sibling['id'] == page_id or sibling['id'] not in editions:
                     continue
-                promoted_sibling = promote_page_to_per_target(sibling)
+                promoted_sibling = promote_page_to_per_target(sibling, incoming['targets'])
                 require(set(sibling['targets']) <= locales
                         and all(locale in incoming['targets']
                                 and incoming['targets'][locale] == promoted_sibling['targets'][locale]
