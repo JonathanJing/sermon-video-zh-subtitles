@@ -1,0 +1,10 @@
+{
+  "scope": "Direct package import from non-repo CWD under isolated interpreter, plus review gate and package smoke",
+  "results": {
+    "precheck": "Direct package validator without schema root raised expected Unbound",
+    "directPackage": "1 regression test passed in 0.139 seconds with explicit schema root binding",
+    "focusedSuite": "39 review gate and package smoke tests passed in 3.766 seconds",
+    "diffCheck": "git diff --cached --check passed"
+  },
+  "limits": "No active production, model, Spark, remote API, or public delivery run."
+}
