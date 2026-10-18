@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-dev-r4-merge-preview-93",
+  "runs": [
+    {
+      "label": "g1-dev-r4-merge-preview-93",
+      "source": "/private/tmp/g1-baseline-20261017/artifacts/local-runs/g1-dev-r4-merge-preview-93",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-dev-r4-merge-preview-93",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 256,
+      "truncated": false,
+      "sha256": "2fb8083cf45fd366edda7f5efe69d677791eb40f49cfe07fea8493ff020bac51",
+      "redactions": {}
+    },
+    {
+      "run": "g1-dev-r4-merge-preview-93",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 606,
+      "truncated": false,
+      "sha256": "ad1f2246023500b9af47db5c1cbbd46ada67f19cf2b56648fe00f5ee0bc741fc",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
