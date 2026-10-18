@@ -5,7 +5,7 @@
 ## 结论先行
 
 <!-- 交付类型（dual_pdf／live_session／four_layer_release／测试）、最终状态和结束信号（outcome.json；独占 Spark 以 round: 行为准）、证据边界。模拟审核和诊断级结果原样写出。 -->
-待填写。
+本次为本地合成测试，状态见 outcome.json；没有真实媒体、模型调用、Spark 或发布。目录迁移保持实现源文件原 SHA-256，但旧 scripts/ 文件变为门面。Layer 2 控制器的 code_identity() 会哈希所有 scripts/**/*.py，因此本改动会改变新运行的 L2 代码身份；旧代收据不能移用于新 checkout。正在运行的真实 L2 须完成或核实使用其冻结 checkout 后才能合并代码 PR #1023。
 
 ## 总时间
 
@@ -56,7 +56,7 @@
 ## 遗留状态
 
 <!-- Dev 上无引用的文件、未结束的 job hold、已用构建号、待删除的本地产物。 -->
-待填写。
+代码 PR #1023 尚未合并；本报告不证明活跃 L2 运行的终态或冻结 checkout。
 
 ## 外部可见的变化
 
