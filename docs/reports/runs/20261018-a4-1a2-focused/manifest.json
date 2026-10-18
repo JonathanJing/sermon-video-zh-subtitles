@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-a4-1a2-focused",
+  "runs": [
+    {
+      "label": "20261018-a4-1a2-focused",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/local-runs/20261018-a4-1a2-focused",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-a4-1a2-focused",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 169,
+      "truncated": false,
+      "sha256": "2041117041201880a8b6dfb4369ebd314494867be76592bd131883d83ab26066",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-a4-1a2-focused",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 153,
+      "truncated": false,
+      "sha256": "9fea5dae10a1ba72a534f7885b47f1a67534d950df3c72c564a07cd6b43c93ba",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

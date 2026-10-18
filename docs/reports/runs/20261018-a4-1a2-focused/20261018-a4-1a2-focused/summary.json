@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "testCount": 46,
+  "wallSeconds": 41.71,
+  "scope": "diagnostic worker, delivery preflight, audio ports",
+  "modelCalls": 0
+}
