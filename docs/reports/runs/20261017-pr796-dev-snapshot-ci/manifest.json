@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr796-dev-snapshot-ci",
+  "runs": [
+    {
+      "label": "pr796-full-ci-39070467631",
+      "source": "~/.codex/worktrees/ops-dev-snapshot-preflight/sermon-video-zh-subtitles/artifacts/pr796-full-ci-39070467631",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr796-full-ci-39070467631",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 175,
+      "truncated": false,
+      "sha256": "b1703c24e48ad29e507fd3d573ac085e63a153188bccc7cd07338dcdbcedab74",
+      "redactions": {}
+    },
+    {
+      "run": "pr796-full-ci-39070467631",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 633,
+      "truncated": false,
+      "sha256": "b9a80192334cc3f3e03f581013d2c6926e6499d27a8754595c191bd024622810",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
