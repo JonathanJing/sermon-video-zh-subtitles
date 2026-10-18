@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "sermon-layer2-production-terminal-summary-v1",
+  "targetLocale": "zh-Hans",
+  "configurationSha256": "f69f3bb85025449087ae4ffadcd364d98de86e0a1409467659139fbee37902b6",
+  "codeIdentitySha256": "a80297045d86473ebc514fe1083c801610f39c6bbb54e441ed18b4256291c660",
+  "budgetAuthorizationSha256": "574d60acf695d51b50e60457931c27f9423249d842e8847b11f8956620732d34",
+  "rounds": [
+    {
+      "round": 1,
+      "translatorResults": 402,
+      "reviewerResults": 402,
+      "successSidecars": 391,
+      "failures": 11
+    },
+    {
+      "round": 2,
+      "translatorResults": 402,
+      "reviewerResults": 402,
+      "successSidecars": 395,
+      "failures": 7
+    },
+    {
+      "round": 3,
+      "translatorResults": 9,
+      "reviewerResults": 9,
+      "successSidecars": 9,
+      "failures": null
+    }
+  ],
+  "round2FailedGroupIndexes": [
+    24,
+    166,
+    210,
+    319,
+    340,
+    345,
+    378
+  ],
+  "budget": {
+    "rows": 814,
+    "succeeded": 814,
+    "reused": 804,
+    "freshSucceeded": 10,
+    "active": 0,
+    "outcomeUnknown": 0,
+    "freshReservedMicrousd": 465166,
+    "freshActualEstimatedMicrousd": 108642
+  },
+  "p1": {
+    "code": "same_job_fresh_paid_provenance_not_reusable_in_later_round",
+    "symptom": "Round 3 rejected a success sidecar whose direct-paid provenance is the current destination budget root.",
+    "error": "layer2_reuse_operation_missing",
+    "providerDispatchAtFailure": false
+  },
+  "evidenceBoundary": "Code, durable job, local budget and round artifacts only. No candidate, human review receipt, Layer 3, release, device or venue acceptance."
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "sermon-production-run-outcome-v1",
+  "status": "failed",
+  "startedAt": "2026-10-18T05:24:18.169455Z",
+  "finishedAt": "2026-10-18T06:38:45.430109Z",
+  "exitCode": 1,
+  "deliveryType": "four_layer_release",
+  "stage": "layer2.zh-Hans.partial-recovery",
+  "jobId": "c79eff1719b2ccf53a01f44bb885562ac2a9937a8ac22891fdd5a2e78bad8fb3",
+  "reasonCode": "layer2_reuse_operation_missing",
+  "productionCandidateCreated": false,
+  "humanApprovalClaimed": false
+}
