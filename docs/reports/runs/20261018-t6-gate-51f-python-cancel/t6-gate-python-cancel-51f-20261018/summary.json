@@ -1,0 +1,6 @@
+{
+  "scope": "PR 1036 Python tests at 51f5dfc0",
+  "sourceUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39095455886",
+  "result": "Changes succeeded; all 8 test-group shards were cancelled after supersession; unittest aggregate failed only because the shards were cancelled.",
+  "limits": "No Python test pass claim."
+}

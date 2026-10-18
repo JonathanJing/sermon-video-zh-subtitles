@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "51f5dfc0",
+  "workflow": "direct package schema binding regression",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

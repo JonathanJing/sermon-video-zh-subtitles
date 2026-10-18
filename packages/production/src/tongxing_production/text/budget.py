@@ -191,6 +191,9 @@ def budget_root(config):
     base = config.job_root.parent / f'.{config.job_root.name}.layer2-budget'
     if (getattr(config, 'auto_repair', None) or {}).get('backTranslationQc'):
         return base.with_name(base.name + '-qc-' + config.sha256)
+    if getattr(config, 'group_revision', None):
+        # A group revision has its own authorization, like a Gate 4 revision.
+        return base.with_name(base.name + '-revision-' + config.sha256)
     return base
 
 
@@ -248,6 +251,14 @@ class BudgetedCaller:
         require('reviewer' not in self.claude_transports or policies.layer2_backend(policy) == 'claude_cli_opus',
                 'claude_reviewer_requires_claude_cli_opus_policy')
         self.claude_transport = self.claude_transports.get('translator')
+
+    def remaining_cost_microusd(self):
+        """The authorization's USD cap (micro-USD) not yet reserved or spent in this ledger.
+
+        Unknown outcomes keep their full reservation, as at every admission."""
+        with self.store._locked() as (_, ledger):
+            used = budget._sum(ledger['reservations'].values())
+        return max(0, self.store.authority['globalBounds']['costMicrousd'] - used['costMicrousd'])
 
     def verify_execution(self, key):
         load_authorization(self.config, self.auth['path'], self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
@@ -344,16 +355,77 @@ class BudgetedCaller:
         """Return immutable direct-paid evidence for a just-settled exact payload."""
         self.verify_execution(key)
         fingerprint, _, _, _, request = self._call_binding(payload)
-        return self._direct_paid_provenance(self.root, request, fingerprint, response,
-            max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
+        max_bytes = LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None
 
-    def record_reuse(self, key, payload, response, provenance):
-        """Validate an approved direct-paid root, then atomically record a free exact hit."""
+        def read_current_result():
+            # Other group workers settle into this same mutable locale ledger. Hold
+            # its writer lock while collecting the exact result, marker and response
+            # closure so a legitimate atomic state.json replacement cannot look like
+            # tampering. Prior reuse roots remain lock-free and immutable by contract.
+            with self.store._locked():
+                return self._direct_paid_provenance(
+                    self.root, request, fingerprint, response, max_bytes=max_bytes)
+
+        return self._ledger(read_current_result)
+
+    def validate_recovery_source(self, key, source_root):
+        """Require a terminal immutable direct-paid shard before any recovery call."""
         self.verify_execution(key)
         require(self.auth.get('reuseBudgetRoots') is not None,
                 'layer2_reuse_authorization_required')
+        root = Path(source_root).resolve()
+        approved = self.auth['reuseBudgetRoots'][self.policy['targetLocale']]
+        require(root in approved, 'layer2_recovery_budget_root_not_approved')
+        max_bytes = LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None
+        _, _, ledger = self._store_snapshot(root, max_bytes)
+        require(ledger['schemaVersion'] == budget.SCHEMA
+                and bool(ledger['reservations'])
+                and all(row.get('phase') == 'result'
+                        and (row.get('result') or {}).get('executionStatus') == 'succeeded'
+                        and 'settlement' not in row
+                        for row in ledger['reservations'].values()),
+                'layer2_recovery_source_not_terminal_direct_paid')
+
+    def recover_returned_response(self, key, payload, response, source_root):
+        """Bind one returned failed-round response to its direct-paid closure."""
+        self.verify_execution(key)
+        require(self.auth.get('reuseBudgetRoots') is not None,
+                'layer2_reuse_authorization_required')
+        root = Path(source_root).resolve()
+        require(root in self.auth['reuseBudgetRoots'][self.policy['targetLocale']],
+                'layer2_recovery_budget_root_not_approved')
+        fingerprint, _, _, _, request = self._call_binding(payload)
+        return self._direct_paid_provenance(
+            root, request, fingerprint, response,
+            max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
+
+    def record_reuse(self, key, payload, response, provenance):
+        """Validate an exact direct-paid hit, recording only cross-root reuse.
+
+        A later repair round can read a success sidecar produced by an earlier
+        round of this same durable job.  Its exact operation is already settled
+        as direct-paid in this store, so validate that immutable closure and
+        return the existing result without rewriting it as a reused row.
+        """
+        self.verify_execution(key)
         require(isinstance(provenance, dict), 'layer2_reuse_provenance_changed')
         fingerprint, _, identity, bounds, request = self._call_binding(payload)
+        if provenance.get('budgetRoot') == str(Path(self.root).resolve()):
+            # Unlike approved predecessor roots, this store remains active for
+            # the durable job.  Hold its ordinary budget lock so another group
+            # cannot change the ledger between the state and result reads.
+            def read_current_result():
+                with self.store._locked():
+                    return self._direct_paid_provenance(
+                        self.root, request, fingerprint, response,
+                        max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
+
+            selected = self._ledger(read_current_result)
+            require(selected == provenance, 'layer2_reuse_provenance_changed')
+            return {'reservationId': selected['reservationId'], 'created': False,
+                    'executionAllowed': False, 'status': 'succeeded', 'phase': 'result'}
+        require(self.auth.get('reuseBudgetRoots') is not None,
+                'layer2_reuse_authorization_required')
         selected = None
         for root in self.auth['reuseBudgetRoots'][self.policy['targetLocale']]:
             try:

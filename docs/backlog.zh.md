@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-14。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-18。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -21,6 +21,23 @@ English index: [backlog.md](./backlog.md)
 7. 查某个 ID 或前缀当前在哪几行、状态是什么：`python3 scripts/backlog_ids.py DEV-R242-011`（或 `DEV-R242`）；文件越靠前的小节越新。
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
+
+<a id="backlog-per-group-20261018"></a>
+
+## 2026-10-18：逐组独立任务（Layer 2 至 Layer 3）
+
+2026-10-18 周产（来源 `15030286`，402 组）每语言批准 7–14 组修订，却因整仓代码身份、串行部分恢复、按首轮计算的返修额度和只收整篇的门禁而整篇重跑。[逐组独立任务设计](design/per-group-independent-pipeline.zh.md)把每个 Layer 1 组从翻译到单句音频 QC 作为独立任务，只在 Layer 4 之前每语言合并一次；操作者只给组 ID。本节只登记工程事项，未实现、未运行。
+
+| ID | 优先级／状态 | 内容与完成条件 |
+|---|---|---|
+| `DEV-GRP-001` | P0 / `pending` | 逐组记录 schema、输入键函数和只读 `plan`。完成条件：设计第十一节的过期判定金样通过，在 `15030286` 已有产物上离线 `plan` 零调用 |
+| `DEV-GRP-002` | P0 / `in_progress` | Layer 2 逐组翻译、复核、插件与按组 ID 返修（revise-by-group-ID 分支实现），从逐组记录组装 candidate、并行 worker。完成条件：组装结果与整篇路径逐字节相同，未知结果停止新付费派发。既有归属 `DEV-L2-001` |
+| `DEV-GRP-003` | P0 / `pending` | 返修额度按所选组的剩余次数与每次上界计算，预算授权加逐组明细。完成条件：全缓存重放后仍可修授权组。既有归属 `DEV-R242-026`、`DEV-COST-002` |
+| `DEV-GRP-004` | P1 / `pending` | 文字 QC 逐组判定，长度离群移到合并；校准 v4 稳定选组与试验缓存（需评审豁免合同）。完成条件：改 k 组只为 k 组的试验付费，检出率与误报率与 v3 同夹具一致。既有归属 `DEV-QC-001` |
+| `DEV-GRP-005` | P1 / `pending` | TTS、ASR 回查、单句音频 QC 逐组；preview 接受逐组记录，声音身份去掉位置与 batch 成员（待用户决定）。完成条件：改一组只重合成该组，preview 不进入音频包。既有归属 `DEV-L3-001` |
+| `DEV-GRP-006` | P0 / `pending` | 合并：组装 candidate 与音频包、排程与 8 秒检查、字幕、整轨核对、筛查与豁免、合并清单；失败映射回组 ID。完成条件：产物通过未修改的 L3 验证器与 L4 builder |
+| `DEV-GRP-008` | P0 / `pending` | 出错只修这一组（操作者硬性要求）：失败只送回受影响组的失败步骤，其他组记录原样复用；达到返修上限的组按豁免规则改显英文或只显字幕，5% 门限按 locale 判定。完成条件：一组失败时其他组记录哈希不变、合并清单多出变化组即拒绝；降级接通豁免、L3、L4（豁免文档“还没有接上”第 3 项） |
+| `DEV-GRP-007` | P1 / `pending` | 操作者命令 `plan`／`redo`／`status`／`merge` 与 runbook。完成条件：零付费演练后，经授权做一次小规模真实返修并导出运行报告 |
 
 <a id="backlog-clip-e2e-20261014"></a>
 

@@ -1,0 +1,6 @@
+{
+  "scope": "PR 1036 Tongxing iOS at c0224028",
+  "sourceUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39096320257",
+  "result": "Changes and native-client routing succeeded; ios-validation and contract-validation were skipped by scope.",
+  "limits": "No native build, device, or production claim."
+}

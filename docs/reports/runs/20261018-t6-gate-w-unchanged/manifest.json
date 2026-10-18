@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-gate-w-unchanged",
+  "runs": [
+    {
+      "label": "t6-gate-w-unchanged-c0224028",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-gate-w-unchanged-c0224028",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-gate-w-unchanged-c0224028",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 246,
+      "truncated": false,
+      "sha256": "bbdbd39300ae4b5476f0f59e231331a5d6c45572297f8becab7bc5fff1fbcfe4",
+      "redactions": {}
+    },
+    {
+      "run": "t6-gate-w-unchanged-c0224028",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 547,
+      "truncated": false,
+      "sha256": "1a86a2ff0f3e980ca1a901777e63278691d185fa21d5df431b0b6e6622d266cc",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

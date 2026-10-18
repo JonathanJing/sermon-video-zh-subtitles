@@ -1,0 +1,13 @@
+{
+  "scope": "Official controller.code_identity() and waiver.implementation_sha256() in isolated editable worktrees",
+  "results": {
+    "baseL2": "a80297045d86473ebc514fe1083c801610f39c6bbb54e441ed18b4256291c660",
+    "candidateL2": "6931172b4e013f73ab040b5db116e812f6d97bcf70c80520021770135c3af2cc",
+    "baseW": "df299eca0e9f11689e7a88654b7b2616df1e10bd8cd60a9847e3561d5db41b10",
+    "candidateW": "df299eca0e9f11689e7a88654b7b2616df1e10bd8cd60a9847e3561d5db41b10",
+    "scanFileCounts": "822 old, 823 new",
+    "changed": "scripts/sermon_review_gate.py 6ccc5d279217e697186731fe45cdb55b011d73594de4fb45068acc30528a7709 -> d0fa547236e0571ec274d05aafa437c419fdcc6c906776450374e8ddd878b3ea",
+    "added": "packages/production/src/tongxing_production/text/strict_review_gate.py f8bb24e4aed7e65308d0fde61e0e626c7f6ddb24f79668055088cb58e861acd6"
+  },
+  "limits": "Local identity calculation only; old production or experimental receipts not reissued; no model, Spark, paid QC, or publication."
+}

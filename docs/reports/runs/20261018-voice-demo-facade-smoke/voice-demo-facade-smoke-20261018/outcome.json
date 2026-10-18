@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-18T03:54:00Z",
+  "endedAt": "2026-10-18T03:54:27Z",
+  "deliveryType": "test",
+  "scope": "checkout-bound experiment facade classification and synthetic voice demo checks"
+}
