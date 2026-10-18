@@ -81,6 +81,12 @@ class _BudgetAwareCaller(_Caller):
         self.assert_provenance(payload, response, provenance)
         self.reused.append(copy.deepcopy(provenance))
 
+    def recover_returned_response(self, _api_key, payload, response, _source_root):
+        return self.paid_response_provenance(_api_key, payload, response)
+
+    def validate_recovery_source(self, _api_key, _source_root):
+        return None
+
     @staticmethod
     def assert_provenance(payload, response, provenance):
         if provenance != {"fixturePayload": subject.policy_tools.canonical_sha256(payload),
@@ -103,6 +109,7 @@ class Layer2PayloadCacheReuseTests(unittest.TestCase):
 
     def execute(self, out, caller, *, payload_cache_from=None,
                 emit_payload_cache_success=False, payload_cache_required=False,
+                partial_recovery_from=None,
                 reuse_from=None, backfill_payload_cache_success=False,
                 partial_repair_brief=None,
                 source=None, policy=None):
@@ -111,6 +118,8 @@ class Layer2PayloadCacheReuseTests(unittest.TestCase):
             out, "fixture-key", caller, None, self.fixture.plugin_path, None, reuse_from,
             partial_repair_brief=partial_repair_brief,
             payload_cache_from=payload_cache_from,
+            partial_recovery_from=partial_recovery_from,
+            partial_recovery_budget_root=partial_recovery_from,
             emit_payload_cache_success=emit_payload_cache_success,
             payload_cache_required=payload_cache_required,
             backfill_payload_cache_success=backfill_payload_cache_success)
@@ -165,6 +174,64 @@ class Layer2PayloadCacheReuseTests(unittest.TestCase):
         self.assertEqual(replay.calls, [])
         self.assertEqual(len(replay.reused), 4)
         self.assertTrue(all(row is not None for row in replay.reused))
+
+    def test_partial_round_recovery_reuses_complete_returned_group_without_sidecar(self):
+        paid = _BudgetAwareCaller(self)
+        original = self.execute(self.prior, paid, emit_payload_cache_success=True)
+        (self.prior / "group-0001-payload-cache-success.json").unlink()
+        replay = _BudgetAwareCaller(self, forbidden=True)
+        recovered = self.execute(
+            self.current, replay, payload_cache_from=self.prior,
+            partial_recovery_from=self.prior, emit_payload_cache_success=True)
+        self.assertEqual(recovered, original)
+        self.assertEqual(replay.calls, [])
+        self.assertEqual(len(replay.reused), 4)
+        self.assertTrue((self.current / "group-0001-payload-cache-success.json").is_file())
+
+    def test_partial_round_recovery_reruns_plugin_for_content_failure_without_sidecar(self):
+        paid = _BudgetAwareCaller(self)
+        self.execute(self.prior, paid, emit_payload_cache_success=True)
+        (self.prior / "group-0001-payload-cache-success.json").unlink()
+        parsed = self.prior / "group-0001-sol.json"
+        raw = self.prior / "group-0001-sol.raw.json"
+        value = json.loads(parsed.read_text())
+        value["result"]["targetUtterances"][0] += "禁"
+        parsed.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+        raw_value = json.loads(raw.read_text())
+        raw_value["response"]["choices"][0]["message"]["content"] = json.dumps(value["result"])
+        raw.write_text(json.dumps(raw_value, ensure_ascii=False, indent=2) + "\n")
+        replay = _BudgetAwareCaller(self, forbidden=True)
+        with self.assertRaisesRegex(ValueError, "language_plugin_group_blocked"):
+            self.execute(self.current, replay, payload_cache_from=self.prior,
+                         partial_recovery_from=self.prior,
+                         emit_payload_cache_success=True)
+        self.assertEqual(replay.calls, [])
+
+    def test_partial_round_recovery_rejects_incomplete_started_response_before_dispatch(self):
+        self.make_prior()
+        (self.prior / "group-0001-payload-cache-success.json").unlink()
+        (self.prior / "group-0001-sol.raw.json").unlink()
+        replay = _BudgetAwareCaller(self, forbidden=True)
+        with self.assertRaisesRegex(ValueError, "partial recovery response is incomplete"):
+            self.execute(self.current, replay, payload_cache_from=self.prior,
+                         partial_recovery_from=self.prior,
+                         emit_payload_cache_success=True)
+        self.assertEqual(replay.calls, [])
+
+    def test_partial_round_recovery_rejects_damaged_raw_response_before_dispatch(self):
+        paid = _BudgetAwareCaller(self)
+        self.execute(self.prior, paid, emit_payload_cache_success=True)
+        (self.prior / "group-0001-payload-cache-success.json").unlink()
+        raw = self.prior / "group-0001-astra.raw.json"
+        value = json.loads(raw.read_text())
+        value["response"]["choices"][0]["message"]["content"] = json.dumps({"forged": True})
+        raw.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+        replay = _BudgetAwareCaller(self, forbidden=True)
+        with self.assertRaisesRegex(ValueError, "parsed result differs from raw response"):
+            self.execute(self.current, replay, payload_cache_from=self.prior,
+                         partial_recovery_from=self.prior,
+                         emit_payload_cache_success=True)
+        self.assertEqual(replay.calls, [])
 
     def test_complete_current_runtime_run_can_backfill_success_receipts_without_dispatch(self):
         paid = _BudgetAwareCaller(self)

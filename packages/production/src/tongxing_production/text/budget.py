@@ -347,6 +347,37 @@ class BudgetedCaller:
         return self._direct_paid_provenance(self.root, request, fingerprint, response,
             max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
 
+    def validate_recovery_source(self, key, source_root):
+        """Require a terminal immutable direct-paid shard before any recovery call."""
+        self.verify_execution(key)
+        require(self.auth.get('reuseBudgetRoots') is not None,
+                'layer2_reuse_authorization_required')
+        root = Path(source_root).resolve()
+        approved = self.auth['reuseBudgetRoots'][self.policy['targetLocale']]
+        require(root in approved, 'layer2_recovery_budget_root_not_approved')
+        max_bytes = LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None
+        _, _, ledger = self._store_snapshot(root, max_bytes)
+        require(ledger['schemaVersion'] == budget.SCHEMA
+                and bool(ledger['reservations'])
+                and all(row.get('phase') == 'result'
+                        and (row.get('result') or {}).get('executionStatus') == 'succeeded'
+                        and 'settlement' not in row
+                        for row in ledger['reservations'].values()),
+                'layer2_recovery_source_not_terminal_direct_paid')
+
+    def recover_returned_response(self, key, payload, response, source_root):
+        """Bind one returned failed-round response to its direct-paid closure."""
+        self.verify_execution(key)
+        require(self.auth.get('reuseBudgetRoots') is not None,
+                'layer2_reuse_authorization_required')
+        root = Path(source_root).resolve()
+        require(root in self.auth['reuseBudgetRoots'][self.policy['targetLocale']],
+                'layer2_recovery_budget_root_not_approved')
+        fingerprint, _, _, _, request = self._call_binding(payload)
+        return self._direct_paid_provenance(
+            root, request, fingerprint, response,
+            max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
+
     def record_reuse(self, key, payload, response, provenance):
         """Validate an approved direct-paid root, then atomically record a free exact hit."""
         self.verify_execution(key)
