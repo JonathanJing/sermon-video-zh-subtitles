@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-cuv-t5-first-failure",
+  "runs": [
+    {
+      "label": "cuv-t5-first-failure-20261017",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/cuv-t5-first-failure-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "cuv-t5-first-failure-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 305,
+      "truncated": false,
+      "sha256": "3d4348f3c3ea20c9b69bbc1e6c154b35ece94509e993018a74aa23ea088291e8",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-t5-first-failure-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 505,
+      "truncated": false,
+      "sha256": "292bae895ef4d4de95393b273d4e3693430e25f497936be1d55140f538da0123",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

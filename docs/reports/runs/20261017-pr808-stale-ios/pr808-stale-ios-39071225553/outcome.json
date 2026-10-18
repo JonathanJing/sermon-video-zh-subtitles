@@ -1,0 +1,8 @@
+{
+  "status": "cancelled",
+  "exitCode": 1,
+  "deliveryType": "test",
+  "scope": "PR #808 stale draft Tongxing iOS run",
+  "codeCommit": "af7b14d866312a16db91811f1a223465e5d2dee2",
+  "runId": 39071225553
+}

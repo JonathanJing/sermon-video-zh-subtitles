@@ -1,0 +1,42 @@
+{
+  "createdAt": "2026-10-17T22:40:53Z",
+  "updatedAt": "2026-10-17T22:50:57Z",
+  "jobs": [
+    {
+      "name": "local-mock",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:41:12Z",
+      "completedAt": "2026-10-17T22:50:56Z"
+    },
+    {
+      "name": "fresh-source-mock",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:41:12Z",
+      "completedAt": "2026-10-17T22:42:55Z"
+    },
+    {
+      "name": "fresh-full-mock (test_actual_ordinary_timeout_then_original_receipt_reconciliation)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:41:12Z",
+      "completedAt": "2026-10-17T22:44:30Z"
+    },
+    {
+      "name": "fresh-full-mock (test_actual_confirmed_failure_explicit_retry_keeps_successful_neighbor)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:41:12Z",
+      "completedAt": "2026-10-17T22:45:15Z"
+    },
+    {
+      "name": "fresh-full-mock (test_actual_full_graph_then_clean_process_receipt_only_repeat)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:41:12Z",
+      "completedAt": "2026-10-17T22:45:48Z"
+    }
+  ],
+  "limits": "GitHub Actions mock CI; no live Prefect service or production provider proof"
+}

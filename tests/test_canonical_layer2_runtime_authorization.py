@@ -37,6 +37,22 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
         self.path.write_text(json.dumps(value))
         return b.load_authorization(self.base.config, self.path, self.base.code)
 
+    def write_v4(self, roots, scope='run'):
+        value = json.loads(self.base.auth_path.read_text())
+        receipt = json.loads(self.base.receipt.read_text())
+        frozen = {locale: [str(Path(root).resolve()) for root in selected]
+                  for locale, selected in roots.items()}
+        receipt['schemaVersion'] = b.REUSE_APPROVAL_SCHEMA
+        receipt['binding'].update(ledgerScope=scope, runtimeIdentity=self.runtime,
+                                  reuseBudgetRoots=frozen)
+        self.receipt.write_text(json.dumps(receipt))
+        value.update(schemaVersion=b.REUSE_SCHEMA, ledgerScope=scope,
+                     runtimeIdentity=self.runtime, reuseBudgetRoots=frozen,
+                     approvalReceipt=self.receipt.name)
+        value['authority']['approvalSha256'] = b.sha(self.receipt)
+        self.path.write_text(json.dumps(value))
+        return b.load_authorization(self.base.config, self.path, self.base.code)
+
     def caller(self, transport):
         return b.BudgetedCaller(b.load_authorization(self.base.config, self.path, self.base.code),
             self.base.config, self.base.source, self.base.anchor, self.base.policy, transport=transport)
@@ -169,6 +185,25 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
                                 approved_by='Fixture',evidence='Offline',reviewed_at='2026-10-13')
         self.assertFalse(out.exists())
 
+    def test_v4_plan_binds_resolved_per_locale_direct_paid_roots_exactly(self):
+        out=self.root/'reuse-plan';profile=json.loads(planner.PROFILE.read_text())
+        roots={locale:[self.root/'prior-ledger'/locale] for locale in self.base.config.lanes}
+        stage=planner.layer2_files(out,self.base.config.path,list(self.base.config.lanes),profile,'clip',
+                                  approved_by='Fixture',evidence='Offline',reviewed_at='2026-10-17',
+                                  reuse_budget_roots=roots)
+        value=json.loads(Path(stage['authorization']).read_text())
+        receipt=json.loads((Path(stage['authorization']).parent/value['approvalReceipt']).read_text())
+        self.assertEqual(value['schemaVersion'],b.REUSE_SCHEMA)
+        self.assertEqual(receipt['schemaVersion'],b.REUSE_APPROVAL_SCHEMA)
+        admitted=b.load_authorization(self.base.config,stage['authorization'],controller.code_identity())
+        self.assertEqual({locale:[str(path) for path in selected]
+                          for locale,selected in admitted['reuseBudgetRoots'].items()},
+                         value['reuseBudgetRoots'])
+        changed=copy.deepcopy(value);changed['reuseBudgetRoots'][next(iter(roots))][0]+='-changed'
+        Path(stage['authorization']).write_text(json.dumps(changed))
+        with self.assertRaisesRegex(ValueError,'budget_approval_not_bound'):
+            b.load_authorization(self.base.config,stage['authorization'],controller.code_identity())
+
     def test_continuation_ingests_v3_both_scopes_without_changing_legacy_shapes(self):
         from tests import test_sermon_unified_continuation as fixtures
         from scripts import sermon_unified_continuation as continuation
@@ -193,6 +228,26 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
                 before=copy.deepcopy(f.state)
                 actual=continuation.validate_evidence(f.state,f.recipe_path,f.root,'runtimeBudget',self.path)
                 self.assertEqual(actual['sha256'],c.file_sha(self.path));self.assertEqual(f.state,before)
+
+    def test_continuation_ingests_exact_v4_reuse_binding(self):
+        from tests import test_sermon_unified_continuation as fixtures
+        from scripts import sermon_unified_continuation as continuation
+        from scripts.sermon_unified import contracts as c
+        f=fixtures.ContinuationTests();f.setUp();self.addCleanup(f.doCleanups)
+        self.base.code=controller.code_identity()
+        value=json.loads(self.base.auth_path.read_text());value['codeIdentitySha256']=self.base.code
+        receipt=json.loads(self.base.receipt.read_text());receipt['binding']['codeIdentitySha256']=self.base.code
+        self.base.receipt.write_text(json.dumps(receipt));value['authority']['approvalSha256']=b.sha(self.base.receipt)
+        self.base.auth_path.write_text(json.dumps(value))
+        roots={locale:[self.root/'prior'/locale] for locale in self.base.config.lanes}
+        self.write_v4(roots)
+        f.manifest['productionRunId']=self.base.config.run_id;f.recipe['productionRunId']=self.base.config.run_id
+        f.manifest['bindings']['layer2Configuration']={'path':str(self.base.config.path),'sha256':c.file_sha(self.base.config.path)}
+        f.recipe['stages'][0]['requiredEvidence']=[{'kind':'budget_authorization','binding':'runtimeBudget',
+            'inputs':{'configuration':fixtures.token('binding','layer2Configuration')}}]
+        f.bind_recipe();before=copy.deepcopy(f.state)
+        actual=continuation.validate_evidence(f.state,f.recipe_path,f.root,'runtimeBudget',self.path)
+        self.assertEqual(actual['sha256'],c.file_sha(self.path));self.assertEqual(f.state,before)
 
     def test_actual_layer2_only_preflight_requires_selected_matching_launcher(self):
         out=self.root/'full-plan'

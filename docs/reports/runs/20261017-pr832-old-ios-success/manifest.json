@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr832-old-ios-success",
+  "runs": [
+    {
+      "label": "pr832-old-ios-success-20261017",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/pr832-old-ios-success-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr832-old-ios-success-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 407,
+      "truncated": false,
+      "sha256": "d3c2182fc42c5271feb0bd4bb33b5dd79b0d418f8d9da092f162ff9700e4aae7",
+      "redactions": {}
+    },
+    {
+      "run": "pr832-old-ios-success-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 766,
+      "truncated": false,
+      "sha256": "613b8e6de90f5c0f50d98ce0ce1976a224318e8a22ef9c3979607ed91e440e50",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-outcome-marker-ready-ios-39081756881",
+  "runs": [
+    {
+      "label": "outcome-marker-ready-ios-39081756881",
+      "source": "/private/tmp/sermon-outcome-marker-move-20261017/artifacts/outcome-marker-ready-ios-39081756881",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "outcome-marker-ready-ios-39081756881",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 254,
+      "truncated": false,
+      "sha256": "c6ccd8ccc3e3219e4a2a059e3b7ad99847b7ae389152b3dff736cef9cd24f899",
+      "redactions": {}
+    },
+    {
+      "run": "outcome-marker-ready-ios-39081756881",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 603,
+      "truncated": false,
+      "sha256": "a022abd872b212a482381866fa9b841c1e02520dd22589a3021e33c396167380",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

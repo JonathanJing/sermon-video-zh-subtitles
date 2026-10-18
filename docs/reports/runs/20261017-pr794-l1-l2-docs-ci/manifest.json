@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr794-l1-l2-docs-ci",
+  "runs": [
+    {
+      "label": "pr794-docs-ci-39070705018",
+      "source": "~/.codex/worktrees/l1-l2-remaining-design/sermon-video-zh-subtitles/artifacts/pr794-docs-ci-39070705018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr794-docs-ci-39070705018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 177,
+      "truncated": false,
+      "sha256": "bf6454a155935f9ad3da23fddea6d37cec7d2ffbfe8e1d293cd3b65d1bbc2209",
+      "redactions": {}
+    },
+    {
+      "run": "pr794-docs-ci-39070705018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 412,
+      "truncated": false,
+      "sha256": "028e11863d4d5d5dd5716f12568923de3c06735aa5b7a47003d87126e31044eb",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

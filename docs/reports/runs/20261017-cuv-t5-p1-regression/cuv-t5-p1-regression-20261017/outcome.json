@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "PR #832 local P1 delegated-code closure regression before commit",
+  "baseCommit": "d97938c34ed6972dbf5a2307d913d5b4f96b4fa1",
+  "resultCommit": "586dd21a763ba832b8d39c6d0c067f7357f888c6",
+  "testCount": 63,
+  "elapsedSeconds": 45.489,
+  "paidOrRemoteCalls": "none"
+}

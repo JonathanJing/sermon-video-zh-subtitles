@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "pr824-ci-run-outcome-v1",
+  "deliveryType": "test",
+  "status": "cancelled",
+  "workflow": "Tongxing iOS",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39072856922",
+  "headSha": "8f62ed294b2b326387b3e3ffba1670b1a0f97c83",
+  "runConclusion": "cancelled",
+  "startedAt": "2026-10-17T21:54:05Z",
+  "endedAt": "2026-10-17T21:58:55Z",
+  "modelCalls": 0
+}

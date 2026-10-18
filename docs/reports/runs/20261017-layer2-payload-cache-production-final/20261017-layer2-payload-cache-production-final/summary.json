@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "sermon-test-run-summary-v1",
+  "status": "production_path_tests_passed_live_canary_pending",
+  "commit": "2306728b",
+  "testsPassed": 261,
+  "subtestsPassed": 529,
+  "testsFailed": 0,
+  "realProviderCalls": 0,
+  "canonicalBudgetControllerTested": true,
+  "productionReadback": "pending_after_merge",
+  "notes": [
+    "Independent review found no remaining P0 or P1.",
+    "Exact hits revalidate controller binding, copied bytes, raw-versus-parsed content and original direct-paid provenance.",
+    "The final tree includes damaged-ledger and registered-input path-overlap hardening.",
+    "The scripts facade and path alias resolve to packages/production in this checkout."
+  ]
+}

@@ -389,6 +389,7 @@ class Scripture:
     coverage: Callable[[], ModuleType]         # english_scripture_coverage: CoverageEdition, CoverageError, coverage, ...
     candidate_queue: Callable[[], ModuleType]  # scripture_candidate_queue: BOOKS, SIGNALS
     library_path: Callable[[], Path]           # cuv_scripture.DEFAULT_LIBRARY_PATH
+    provenance_path: Callable[[], Path]        # cuv_scripture.DEFAULT_PROVENANCE_PATH
     coverage_data_path: Callable[[], Path]     # english_scripture_coverage.DATA_PATH
 
 

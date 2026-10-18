@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr870-python-success",
+  "runs": [
+    {
+      "label": "pr870-python-success-39076854464",
+      "source": "/private/tmp/sermon-project-credit-usage-move-20261017/artifacts/pr870-python-success-39076854464",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr870-python-success-39076854464",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 361,
+      "truncated": false,
+      "sha256": "4328316682ed20d90a410de693fabdea8d59d1d059844091ba0a9b3dc6530b53",
+      "redactions": {}
+    },
+    {
+      "run": "pr870-python-success-39076854464",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2320,
+      "truncated": false,
+      "sha256": "d34201adbdfef804a9f22b2321e81a6fa74a2a928ef7310f0e07368f846bc253",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

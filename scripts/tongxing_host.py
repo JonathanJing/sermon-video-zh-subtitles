@@ -802,7 +802,35 @@ def scripture() -> ports.Scripture:
                            coverage=_module('scripts.english_scripture_coverage'),
                            candidate_queue=_module('scripts.scripture_candidate_queue'),
                            library_path=_rule_constant('scripts.cuv_scripture', 'DEFAULT_LIBRARY_PATH'),
+                           provenance_path=_rule_constant('scripts.cuv_scripture', 'DEFAULT_PROVENANCE_PATH'),
                            coverage_data_path=_rule_constant('scripts.english_scripture_coverage', 'DATA_PATH'))
+
+
+def cuv_poc_module(name):
+    if name not in ('check_weekly_timing', 'run_weekly_dubbing', 'weekly_dubbing'):
+        raise ValueError('Unknown CUV timing helper')
+    directory = ROOT / 'experiments' / 'sermon-dubbing-poc'
+    if str(directory) not in sys.path:
+        sys.path.insert(0, str(directory))
+    return __import__(name)
+
+
+def cuv_poc_code_closure_sha256(root=None):
+    """Bind CUV timing to every Python helper in the delegated POC tree."""
+    root = ROOT if root is None else Path(root)
+    directory = root / 'experiments' / 'sermon-dubbing-poc'
+    files = sorted(directory.rglob('*.py'))
+    if not files:
+        raise ValueError('CUV timing helper code closure is empty')
+    digest = hashlib.sha256()
+    for path in files:
+        relative = path.relative_to(root).as_posix().encode('utf-8')
+        content = path.read_bytes()
+        digest.update(len(relative).to_bytes(8, 'big'))
+        digest.update(relative)
+        digest.update(len(content).to_bytes(8, 'big'))
+        digest.update(content)
+    return digest.hexdigest()
 
 
 def qc_runtime() -> ports.QcRuntime:
@@ -915,6 +943,9 @@ def dual_pdf_unmoved():
 # load on first use. Loaded at identity capture only when that entry is loaded, as
 # importing the entry did before W3c, so the identity still covers the code it runs.
 ENTRY_LOAD_TIME_IMPORTS = {
+    # T5: these were imported at the old CUV entry's load time; ports now defer them.
+    'tongxing_production.text.cuv_translation': (
+        'scripts.sermon_accounting', 'scripts.sermon_pipeline', 'scripts.cuv_scripture'),
     'tongxing_production.workflows.dual_pdf.timeline': (
         'backend.cloud', 'backend.config', 'backend.observability',
         'scripts.sermon_accounting', 'scripts.live_source_monitor',
@@ -1018,6 +1049,8 @@ source_backend.configure(source_backend.SourceBackend(core=_core, provider=_prov
 text_backend.configure(text_backend.TextBackend(core=_core, provider=_provider, code=_code, snapshot=_snapshot,
                                                 compute=_compute, resources=_resources_port,
                                                 terminology=_terminology, measure=_measure, accounting=_accounting,
+                                                scripture=scripture(), cuv_poc_module=cuv_poc_module,
+                                                cuv_poc_code_closure_sha256=cuv_poc_code_closure_sha256,
                                                 workspace=_workspace, plugins=_plugins, transports=_transports,
                                                 schemas=_schemas, diagnostic=_diagnostic,
                                                 worker_command=layer2_worker_command, unmoved=text_unmoved()))

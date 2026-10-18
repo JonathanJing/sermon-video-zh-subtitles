@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "pr824-ci-run-summary-v1",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39072856818",
+  "headSha": "8f62ed294b2b326387b3e3ffba1670b1a0f97c83",
+  "conclusion": "success",
+  "note": "Eight root test groups and unittest succeeded; native and shared client contracts skipped by path gate. This is code CI only.",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-3)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-4)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-6)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-7)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-5)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-2)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-1)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-0)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "unittest",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ]
+}

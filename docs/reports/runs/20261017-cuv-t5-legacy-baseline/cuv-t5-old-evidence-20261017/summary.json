@@ -1,0 +1,95 @@
+{
+  "currentImplementation": {
+    "mismatch": "spoken_review_reviewedBy_only",
+    "results": [
+      {
+        "cacheFiles": 47,
+        "elapsedSeconds": 0.154,
+        "errorType": "ValueError",
+        "evidenceFilesUnchanged": true,
+        "manifestSha256Prefix": "2d5810a5eac1",
+        "modelCalls": 0,
+        "sample": "translation-v4",
+        "status": "failed",
+        "writeCalls": 0
+      },
+      {
+        "cacheFiles": 2,
+        "elapsedSeconds": 0.148,
+        "errorType": "ValueError",
+        "evidenceFilesUnchanged": true,
+        "manifestSha256Prefix": "6054a2ade77a",
+        "modelCalls": 0,
+        "sample": "translation-timing-v3",
+        "status": "failed",
+        "writeCalls": 0
+      }
+    ],
+    "sha256": "40c65ee13dc091e7fe97d9c60bb870333dc58131f9cc8bf9aa1eb9538a8509b6"
+  },
+  "deliveryType": "test",
+  "evidence": [
+    {
+      "cacheFiles": 47,
+      "cacheInventorySha256": "1e1bdf80dd3fc9a0e995ab36977ec6c457137e90c8353b61e321e9fd981c4c5b",
+      "manifestSha256": "2d5810a5eac1f5f53189384f89d51c6d8eac3695923de25ad308a4ff0c9e131f",
+      "missingOrMismatchedBindings": 0,
+      "reportSha256": "60428932381fe4110f34b955cfbad3993c6142896cee308cc35c7960b1f8e52c",
+      "reviewSha256": "e8dd7731e2e58eb9265e8c40b09de3e3faa0a4bce682fb564ab8c9b519d07eba",
+      "sample": "translation-v4",
+      "uniqueBindingsChecked": 85
+    },
+    {
+      "cacheFiles": 2,
+      "cacheInventorySha256": "e57ba9c8d693d3a855d895fc8b572fae763a7bc064fbbe64ac7d94dd14e98afc",
+      "manifestSha256": "6054a2ade77acc4589ce3f3db7bb7c2f8b7cb844ea093bb70b44f57e2271d8e3",
+      "missingOrMismatchedBindings": 0,
+      "reportSha256": "bbd45e0cddf785b29ac6579a8a5c9792fbd2c6061b3c10f4488e151ec3723f43",
+      "reviewSha256": "ed8946a19878906dfa5f5c73f3e3510bef45f586cb42dd7eb7674e651d6be267",
+      "sample": "translation-timing-v3",
+      "uniqueBindingsChecked": 215
+    }
+  ],
+  "frozenImplementation": {
+    "gitCommit": "b2fbd570",
+    "results": [
+      {
+        "cacheFiles": 47,
+        "elapsedSeconds": 0.148,
+        "errorType": null,
+        "evidenceFilesUnchanged": true,
+        "modelCalls": 0,
+        "sample": "translation-v4",
+        "status": "passed",
+        "writeCalls": 0
+      },
+      {
+        "cacheFiles": 2,
+        "elapsedSeconds": 1.832,
+        "errorType": null,
+        "evidenceFilesUnchanged": true,
+        "modelCalls": 0,
+        "sample": "translation-timing-v3",
+        "status": "passed",
+        "writeCalls": 0
+      }
+    ],
+    "sha256": "56958a3c9a5f567041b6e261ba80fcc0b873209b6dc79a1275cef646b3fd1162"
+  },
+  "modelCalls": 0,
+  "notes": [
+    "All listed manifest/report/review/cache files existed; recursive file bindings matched their recorded SHA-256.",
+    "Current implementation reconstructed report and derived outputs, then rejected the historical reviewedBy field.",
+    "Frozen historical implementation replayed both samples with model and write guards.",
+    "Timing-v3 replay recursively validates its prior translation lineage."
+  ],
+  "preflightAttempt": {
+    "reason": "system_python_missing_editable_production_package",
+    "status": "failed_before_replay"
+  },
+  "productionOrPublication": "not_run",
+  "reportType": "offline_legacy_cuv_replay",
+  "schemaVersion": "cuv-t5-old-evidence-report-v1",
+  "sourceDataChanged": false,
+  "writeCallsToCuvArtifacts": 0
+}
