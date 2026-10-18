@@ -67,7 +67,7 @@ class SourceBoundAudioTests(unittest.TestCase):
                    'mediaPath': str(self.args.media), 'inputFileSha256': {}}
         return groups, binding
 
-    def test_pre_timing_run_reuses_batches_without_changing_frozen_receipts(self):
+    def test_pre_timing_run_requires_its_frozen_checkout_after_renderer_identity_change(self):
         from scripts.experiments import diagnostic_timing_compatibility as compatibility
         groups, binding = self.fake_binding(8)
         with patch.object(inputs, 'checked_inputs', return_value=(groups, binding)), \
@@ -82,33 +82,24 @@ class SourceBoundAudioTests(unittest.TestCase):
             frozen = {path: path.read_bytes() for path in frozen_paths}
             (self.args.out / 'manifest.json').unlink()
             factory = Mock(side_effect=AssertionError('completed batches must not reload'))
-            resumed = worker.render_tts(self.args, factory=factory)
-            factory.assert_not_called()
-            self.assertEqual(resumed['workerSha256'], compatibility.PRE_TIMING_WORKER)
-            self.assertEqual(resumed['groups'], first['groups'])
-            self.assertEqual(resumed['batchReceipts'], first['batchReceipts'])
-            self.assertTrue(all(path.read_bytes() == content for path, content in frozen.items()))
-            asr_args = copy.copy(self.voice.asr_args)
-            asr_args.batch_size = 8
-            with patch.object(worker, 'worker_identity', return_value=compatibility.PRE_TIMING_WORKER):
-                old_asr = worker.back_asr(asr_args, factory=Mock(return_value=audio_fixtures.FakeASR()))
-            asr_frozen = {path: path.read_bytes() for path in asr_args.out.glob('*.json')}
-            self.assertEqual(worker.back_asr(asr_args, factory=factory), old_asr)
-            self.assertTrue(all(path.read_bytes() == content for path, content in asr_frozen.items()))
-            self.args.seed += 1
             with self.assertRaisesRegex(ValueError, 'diagnostic_resume_identity_changed'):
                 worker.render_tts(self.args, factory=factory)
+            factory.assert_not_called()
+            self.assertTrue(all(path.read_bytes() == content for path, content in frozen.items()))
 
     def test_timing_compatibility_requires_exact_known_worker_versions(self):
         from scripts.experiments import diagnostic_timing_compatibility as compatibility
-        self.assertEqual(worker.sha(worker.__file__), compatibility.COMPATIBLE_CURRENT_WORKER)
+        current = worker.sha(worker.__file__)
+        self.assertNotEqual(current, compatibility.COMPATIBLE_CURRENT_WORKER)
         for saved in (compatibility.PRE_TIMING_WORKER, compatibility.TIMING_WORKER):
             self.assertEqual(compatibility.compatible_worker(compatibility.COMPATIBLE_CURRENT_WORKER, saved), saved)
             self.assertEqual(compatibility.compatible_worker('future-worker', saved), 'future-worker')
         self.assertEqual(compatibility.compatible_worker(compatibility.COMPATIBLE_CURRENT_WORKER, 'unrelated-worker'),
                          compatibility.COMPATIBLE_CURRENT_WORKER)
+        for saved in (compatibility.PRE_TIMING_WORKER, compatibility.TIMING_WORKER):
+            self.assertEqual(compatibility.compatible_worker(current, saved), current)
 
-    def test_pr_timing_run_preserves_completed_manifest_on_resume(self):
+    def test_pr_timing_run_requires_its_frozen_checkout_after_renderer_identity_change(self):
         from scripts.experiments import diagnostic_timing_compatibility as compatibility
         groups, binding = self.fake_binding(8)
         with patch.object(inputs, 'checked_inputs', return_value=(groups, binding)), \
@@ -117,7 +108,9 @@ class SourceBoundAudioTests(unittest.TestCase):
                 first = worker.render_tts(self.args)
             frozen = {path: path.read_bytes() for path in self.args.out.glob('*.json')}
             factory = Mock(side_effect=AssertionError('completed run must not reload'))
-            self.assertEqual(worker.render_tts(self.args, factory=factory), first)
+            with self.assertRaisesRegex(ValueError, 'diagnostic_resume_identity_changed'):
+                worker.render_tts(self.args, factory=factory)
+            factory.assert_not_called()
             self.assertTrue(all(path.read_bytes() == content for path, content in frozen.items()))
 
     def test_fake_46_group_tts_8x8_cpu4_then_single_asr_batch8_and_cached_zero_calls(self):

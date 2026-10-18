@@ -63,6 +63,14 @@ LAYER3 = {
     'scripts/dev_audio_test_profile.py': _AUDIO + 'dev_profile.py',
     'scripts/dev_audio_test_receipts.py': _AUDIO + 'dev_receipts.py',
     'scripts/prepare_target_language_speech_job.py': _AUDIO + 'speech_job.py',
+    # L3 A3, the identity generation (closure window G1).
+    'scripts/validate_target_language_audio_unit.py': _AUDIO + 'unit_integrity.py',
+    'scripts/screen_target_language_audio_units.py': _AUDIO + 'screening.py',
+    'scripts/build_target_language_audio_package.py': _AUDIO + 'package.py',
+    'scripts/render_formal_target_language_speech.py': _AUDIO + 'renderer.py',
+    'scripts/compact_formal_target_audio.py': _AUDIO + 'compaction.py',
+    'scripts/target_audio_predicted_schedule.py': _AUDIO + 'predicted_schedule.py',
+    'scripts/target_audio_timing_plan.py': _AUDIO + 'timing_plan.py',
 }
 
 # Shared compute (tongxing_production.compute): stage 1, infrastructure I0b and the audio batches.
@@ -73,6 +81,9 @@ COMPUTE = {
     'scripts/sermon_transcription_request.py': PRODUCTION + 'compute/transcription_request.py',
     # Layer 3 A1: the audio CPU limiter, moved byte for byte.
     'scripts/bounded_audio_cpu.py': PRODUCTION + 'compute/bounded_audio_cpu.py',
+    # L3 A3: the Spark TTS workers, moved byte for byte.
+    'scripts/spark_tts_replica_pool.py': PRODUCTION + 'compute/spark_tts_replica_pool.py',
+    'scripts/spark_tts_window_scheduler.py': PRODUCTION + 'compute/spark_tts_window_scheduler.py',
     # workflows/compute C1: byte-identical leaves.
     'scripts/sermon_provider_http.py': PRODUCTION + 'compute/provider_http.py',
     'scripts/sermon_provider_error.py': PRODUCTION + 'compute/sermon_provider_error.py',
