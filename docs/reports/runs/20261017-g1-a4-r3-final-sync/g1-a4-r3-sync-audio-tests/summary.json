@@ -1,0 +1,18 @@
+{
+  "suite": [
+    "tests.test_tongxing_audio_ports",
+    "tests.test_sermon_unified_audio",
+    "tests.test_render_speculative_target_language_speech",
+    "tests.test_inspect_canonical_audio",
+    "tests.test_tongxing_text_ports"
+  ],
+  "durationSeconds": 43.909,
+  "result": "OK",
+  "additionalChecks": [
+    "old/new same-object aliases for three A4 files",
+    "legacy identity keys resolve to package bytes",
+    "audio stage mapping",
+    "off-CWD worktree package import",
+    "waiver implementation sha256 and 23-key closure"
+  ]
+}

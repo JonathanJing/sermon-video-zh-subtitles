@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-a4-r3-final-sync",
+  "runs": [
+    {
+      "label": "g1-a4-r3-sync-audio-tests",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/g1-a4-r3-sync-audio-tests",
+      "skipped": {}
+    },
+    {
+      "label": "g1-a4-r3-final-test-only-sync",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/g1-a4-r3-final-test-only-sync",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-a4-r3-sync-audio-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 246,
+      "truncated": false,
+      "sha256": "9ffd1c34e30b11ff54dc2fa4ef4a53d679104261066f69fb4627dadf7801337b",
+      "redactions": {}
+    },
+    {
+      "run": "g1-a4-r3-sync-audio-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 541,
+      "truncated": false,
+      "sha256": "66103e3ad2ea1efeacc7abe809c0b09df2c6f53087dae6cb203230c5f7d89ff5",
+      "redactions": {}
+    },
+    {
+      "run": "g1-a4-r3-final-test-only-sync",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 246,
+      "truncated": false,
+      "sha256": "1468418e614a71cc97516ecf9f5af716a8489b7998bb4dbcd191cff601662268",
+      "redactions": {}
+    },
+    {
+      "run": "g1-a4-r3-final-test-only-sync",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 521,
+      "truncated": false,
+      "sha256": "f4e4f052467d5e53f891ce4bb50867b3495c35beb0fac8ef468a780b412c71f9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
