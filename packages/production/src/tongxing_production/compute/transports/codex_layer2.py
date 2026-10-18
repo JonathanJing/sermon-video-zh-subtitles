@@ -16,6 +16,7 @@ import threading
 import uuid
 import jsonschema
 from ...observability import model_call_observation as observation
+from ...storage.files import _sync_directory
 from .. import backend as _compute
 from . import codex_resources as resource_admission
 
@@ -87,7 +88,7 @@ def _write_bytes(path, data):
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, path)
-        _compute.current().job_files().sync_directory(path.parent)
+        _sync_directory(path.parent)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)

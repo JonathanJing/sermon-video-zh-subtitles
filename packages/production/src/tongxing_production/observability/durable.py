@@ -18,9 +18,8 @@ import stat
 from . import log_contract as contract
 from . import outbox
 from . import profile
-from .backend import JobFiles
+from ..storage import files as jobs  # the job store's file primitives (closure window G1)
 
-jobs = JobFiles()
 
 BINDING_SCHEMA = 'sermon-durable-controller-stream-v1'
 DELIVERY_SCHEMA = 'sermon-durable-controller-delivery-v1'

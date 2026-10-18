@@ -10,7 +10,7 @@ import stat
 import uuid
 
 from ..contracts import canonical as c
-from . import backend as _storage
+from .files import _directory_fd, _sync_directory_ancestry
 from .paths import safe_path as _safe_path
 
 
@@ -63,7 +63,7 @@ def save_once(path, value):
         saved, raw = read_snapshot(path)
         c.require(c.canonical_bytes(saved) == c.canonical_bytes(value), 'immutable_public_artifact_changed')
         return raw
-    directory = _storage.current().job_files.directory_fd(path.parent)
+    directory = _directory_fd(path.parent)
     temporary = '.' + path.name + '.' + uuid.uuid4().hex
     try:
         fd = os.open(temporary, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW,
@@ -80,7 +80,7 @@ def save_once(path, value):
         try: os.unlink(temporary, dir_fd=directory)
         except FileNotFoundError: pass
         os.close(directory)
-    _storage.current().job_files.sync_directory_ancestry(path.parent)
+    _sync_directory_ancestry(path.parent)
     saved, raw = read_snapshot(path)
     c.require(c.canonical_bytes(saved) == c.canonical_bytes(value), 'immutable_public_artifact_changed')
     return raw
