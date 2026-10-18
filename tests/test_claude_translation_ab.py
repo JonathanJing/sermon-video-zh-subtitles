@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
 from scripts.experiments import claude_translation_ab as ab
 from scripts import sermon_workflow_jobs as jobs
 
@@ -108,7 +109,7 @@ class ClaudeTranslationABTests(unittest.TestCase):
             for path in (directory, directory.parent, directory.parent.parent, self.root):
                 self.assertIn(path.resolve(), events)
             raise RuntimeError('offline boundary reached')
-        with patch.object(os, 'fsync', side_effect=sync), patch.object(jobs, '_sync_directory', side_effect=parent):
+        with patch.object(os, 'fsync', side_effect=sync), patch_job_store("_sync_directory", side_effect=parent):
             with self.assertRaisesRegex(RuntimeError, 'offline boundary'):
                 ab.run_call(directory, dispatch, {'messages': []}, {}, {}, execution={})
         self.assertTrue((directory / 'started.json').is_file())

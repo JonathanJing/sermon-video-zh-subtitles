@@ -16,6 +16,7 @@ import time
 import unittest
 from unittest.mock import patch
 
+from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
 from scripts import sermon_app_delivery as app
 from scripts import sermon_app_delivery_workflow as workflow
 from scripts import sermon_end_to_end as end_to_end
@@ -52,7 +53,10 @@ class AppDeliveryWorkflowTests(unittest.TestCase):
     def fail_worker_spawn(self, exception):
         original = subprocess.Popen
         def spawn(command, *args, **kwargs):
-            if len(command) > 1 and command[1] == str(Path(jobs.__file__).resolve()):
+            # The job worker the store spawns (the scripts/ entry the host names since G1).
+            from tongxing_production.orchestration import jobs_host
+            worker = jobs_host.current().worker_command(Path('/unused'), 'unused', 0)[1]
+            if len(command) > 1 and command[1] == worker:
                 raise exception
             return original(command, *args, **kwargs)
         with patch.object(jobs.subprocess, 'Popen', side_effect=spawn):
@@ -541,8 +545,8 @@ class AppDeliveryWorkflowTests(unittest.TestCase):
             if path.name in {'prepare-intent.json','frozen-app-plan.json'}:
                 self.assertIn(path.parent,synced)
             persist(path,value)
-        with patch.object(jobs,'_sync_directory_ancestry',side_effect=remember), \
-             patch.object(jobs,'_persist',side_effect=check):
+        with patch_job_store("_sync_directory_ancestry", side_effect=remember), \
+             patch_job_store("_persist", side_effect=check):
             prepared = workflow._prepare(self.config,identity)
         self.assertEqual(prepared['status'],'prepared_not_published')
 

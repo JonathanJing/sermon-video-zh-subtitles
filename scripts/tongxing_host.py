@@ -30,13 +30,15 @@ from tongxing_production.delivery import backend as delivery_backend  # noqa: E4
 from tongxing_production.audio import backend as audio_backend  # noqa: E402
 from tongxing_production.review import backend as review_backend  # noqa: E402
 from tongxing_production.compute import backend as compute_backend  # noqa: E402
-from tongxing_production.storage import backend as storage_backend  # noqa: E402
+from tongxing_production.orchestration import jobs_host as jobs_host_module  # noqa: E402
 from tongxing_production.observability import backend as observability_backend  # noqa: E402
 from tongxing_production.workflows.dual_pdf import host as dual_pdf_host  # noqa: E402
 
 
 def core() -> ports.Core:
-    from scripts import sermon_workflow_jobs as jobs
+    # The package module, not the scripts/ facade: core() runs while the host loads, and the
+    # facade imports the host first, so binding the facade here would bind a half-initialized module.
+    from tongxing_production.orchestration import jobs
     from scripts.sermon_execution_harness import atomic_json, utc_now
     from scripts.sermon_release_workflow import safe_path
     return ports.Core(repo_root=ROOT, artifact_root=ROOT / 'artifacts', jobs=jobs,
@@ -966,29 +968,26 @@ ENTRY_LOAD_TIME_IMPORTS = {
 }
 
 
-def _job_directory_fd(path):
-    from scripts import sermon_workflow_jobs as jobs
-    return jobs._directory_fd(path)
+def _jobs_worker_command(root, job_id, lock_fd):
+    # The job worker keeps running the scripts/ entry (its facade dispatches main()).
+    return [sys.executable, str(ROOT / 'scripts/sermon_workflow_jobs.py'), 'worker', '--root', str(root),
+            '--job-id', job_id, '--lock-fd', str(lock_fd)]
 
 
-def _job_sync_directory_ancestry(path):
-    from scripts import sermon_workflow_jobs as jobs
-    return jobs._sync_directory_ancestry(path)
+def _bounded_process(*arguments, **options):
+    from scripts import sermon_execution_harness
+    return sermon_execution_harness.bounded_process(*arguments, **options)
 
 
-def _job_file_function(name):
-    def call(*arguments, **options):
-        from scripts import sermon_workflow_jobs as jobs
-        return getattr(jobs, name)(*arguments, **options)
-    call.__name__ = name
-    return call
+def _execution_terminated():
+    from scripts.sermon_execution_harness import ExecutionTerminated
+    return ExecutionTerminated
 
 
-def job_files() -> ports.JobFiles:
-    # Temporary until the closure window W moves these primitives into storage/files.py.
-    return ports.JobFiles(directory_fd=_job_directory_fd, sync_directory_ancestry=_job_sync_directory_ancestry,
-                          **{name.lstrip('_'): _job_file_function(name) for name in (
-                              '_reject_link', '_persist', '_sync_directory', '_read', '_open_lock_file')})
+def jobs_host() -> jobs_host_module.JobsHost:
+    return jobs_host_module.JobsHost(repo_root=ROOT, worker_command=_jobs_worker_command,
+                                     bounded_process=_bounded_process, execution_terminated=_execution_terminated,
+                                     liveness=_scripts_module('sermon_job_liveness'))
 
 
 def load_producer_imports():
@@ -1031,10 +1030,9 @@ observability_backend.configure(observability_backend.ObservabilityBackend(
     safe_local_model_observation=lambda fields: _safe_observation('scripts.sermon_local_model_observation', fields),
     decision_code=lambda: _observation_code('scripts.sermon_decision_accounting'),
     safe_decision_observation=lambda fields: _safe_observation('scripts.sermon_decision_accounting', fields)))
-storage_backend.configure(storage_backend.StorageBackend(job_files=job_files()))
+jobs_host_module.configure(jobs_host())
 compute_backend.configure(compute_backend.ComputeBackend(accounting=_accounting, resources=_resources_port,
                                                          artifact_root=lambda: _core.artifact_root,
-                                                         job_files=lambda: storage_backend.current().job_files,
                                                          checkout_root=lambda: ROOT, unmoved=compute_unmoved()))
 source_backend.configure(source_backend.SourceBackend(core=_core, provider=_provider, code=_code, mfa=mfa(),
                                                       snapshot=_snapshot, compute=_compute,

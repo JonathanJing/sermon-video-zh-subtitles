@@ -67,6 +67,8 @@ IMPLEMENTATION_FILES = (
     "scripts/sermon_source_budget.py",
     "scripts/sermon_transcription_request.py",
     "scripts/sermon_workflow_jobs.py",
+    # The job store's file primitives split out in the closure window G1; the closure keeps covering them.
+    "packages/production/src/tongxing_production/storage/files.py",
     "scripts/sermon_sentence_interpretation.py",
     # The gates that admit candidates and issue or accept waivers on calibrated evidence.
     "scripts/machine_quality_waiver.py",

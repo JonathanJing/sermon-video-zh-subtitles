@@ -105,7 +105,9 @@ def implementation_sha256() -> str:
     root = _checkout_root()
     return json_sha256({name: file_sha256(root / path_aliases.resolve("scripts/" + name)) for name in (
         "machine_qc_audio_transports.py", "machine_qc_budget_authorization.py",
-        "sermon_source_budget.py", "sermon_transcription_request.py", "sermon_workflow_jobs.py")})
+        "sermon_source_budget.py", "sermon_transcription_request.py", "sermon_workflow_jobs.py")}
+        # The job store's file primitives split out in the closure window G1; T keeps covering them.
+        | {"storage/files.py": file_sha256(root / path_aliases.PRODUCTION / "storage/files.py")})
 
 
 def _sha(data: bytes) -> str:

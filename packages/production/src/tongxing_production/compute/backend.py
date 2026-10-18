@@ -32,7 +32,6 @@ class ComputeBackend:
     accounting: ports.Accounting               # subprocess_environment locates the outcome receipts
     resources: ports.Resources                 # the unified run's resource ledger (Codex CLI capacity)
     artifact_root: Callable[[], Path]          # default Codex call directories live under it
-    job_files: Callable[[], ports.JobFiles]    # the job store's private file primitives, until W
     checkout_root: Callable[[], Path]          # the audio QC transport hash (T) reads files relative to it
     unmoved: Unmoved
 

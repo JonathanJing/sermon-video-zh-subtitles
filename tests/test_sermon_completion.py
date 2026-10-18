@@ -217,8 +217,9 @@ class CompletionTests(unittest.TestCase):
             'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
         repository=Path(__file__).resolve().parents[1]
         before,after=compatibility.STORAGE_MOVE_HISTORICAL_SHA256,compatibility.STORAGE_MOVE_SOURCE_SHA256
+        # The snapshot changed again in v10 (G1); v8's current side is v10's historical side.
         for path in compatibility.STORAGE_MOVE_CHANGED:
-            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+            self.assertEqual(after[path],compatibility.JOBS_SPLIT_HISTORICAL_SHA256[path])
         for member,sha in compatibility.STORAGE_MOVE_MEMBER_SHA256.items():
             self.assertEqual(sha,c.bytes_sha256((repository/member).read_bytes()))
         self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.STORAGE_MOVE_CHANGED))
@@ -254,5 +255,25 @@ class CompletionTests(unittest.TestCase):
         # Generations do not compose: a v7-era parent cannot jump straight to the I4 checkout.
         with self.assertRaises(c.ContractError):
             compatibility.verify(compatibility.STORAGE_MOVE_HISTORICAL_SHA256,after,planned,binding)
+
+    def test_jobs_split_generation_covers_only_the_snapshot_import_change(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.JOBS_SPLIT_HISTORICAL_SHA256,compatibility.JOBS_SPLIT_SOURCE_SHA256
+        for path in compatibility.JOBS_SPLIT_CHANGED:
+            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        for member,sha in compatibility.JOBS_SPLIT_MEMBER_SHA256.items():
+            self.assertEqual(sha,c.bytes_sha256((repository/member).read_bytes()))
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.JOBS_SPLIT_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        planned.update(compatibility.JOBS_SPLIT_MEMBER_SHA256)
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.JOBS_SPLIT_MIGRATION)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        for member in compatibility.JOBS_SPLIT_MEMBER_SHA256:
+            changed_members=dict(planned);changed_members[member]='f'*64
+            with self.assertRaises(c.ContractError):
+                compatibility.verify(before,after,changed_members,binding)
 
 if __name__=='__main__':unittest.main()

@@ -24,8 +24,7 @@ def _contract_error(*arguments):
     return _resources().contract_error()(*arguments)
 
 
-def _sync_directory(path):
-    _compute.current().job_files().sync_directory(path)
+from ...storage.files import _sync_directory  # noqa: E402
 
 
 def reserve_classified(policy, *, operation_id, owner, resource_class, profile):

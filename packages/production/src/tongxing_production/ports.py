@@ -420,15 +420,3 @@ class Observability:
     log_event: Callable[..., None]             # (event, **fields)
     stable_hash: Callable[[str], str]
     url_summary: Callable[[Any], Any]          # (url) -> redacted summary or None
-
-
-@dataclass(frozen=True)
-class JobFiles:
-    """Temporary: the job store's private file primitives, until W splits them into storage/."""
-    directory_fd: Callable[..., int]           # (path) -> an O_DIRECTORY descriptor that never follows links
-    sync_directory_ancestry: Callable[..., None]   # (path) persist every containing entry
-    reject_link: Callable[..., None]           # (path, *, directory) refuse a symlinked entry
-    persist: Callable[..., None]               # (path, value) durable atomic JSON write
-    sync_directory: Callable[..., None]        # (path) fsync one directory
-    read: Callable[..., object]                # (path) a regular JSON file, never through a symlink
-    open_lock_file: Callable[..., int]         # (path, directory_fd) the lock descriptor the job store uses
