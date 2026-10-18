@@ -1,0 +1,11 @@
+{
+  "status": "cancelled",
+  "exitCode": null,
+  "startedAt": "2026-10-18T03:41:27Z",
+  "endedAt": "2026-10-18T03:54:53Z",
+  "deliveryType": "test",
+  "runId": 39094506316,
+  "headSha": "f831cdfe9995b19fd41dc29beccfc37744638ea8",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39094506316",
+  "reason": "pull request head advanced to 975a3348, causing concurrency cancellation after root-4 failure"
+}
