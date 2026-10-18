@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-test-run-summary-v1",
+  "status": "focused_post_merge_pass",
+  "commit": "5a1df5ed",
+  "testsPassed": 44,
+  "subtestsPassed": 439,
+  "testsFailed": 0,
+  "realProviderCalls": 0
+}

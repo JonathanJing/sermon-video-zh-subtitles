@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "ciRunId": 39079555642,
+  "workflow": "Tongxing iOS",
+  "codeHead": "e6a9c9a92e8230cc44f80dfe2dcf6cd5072748f2",
+  "modelCalls": 0,
+  "cloudRunRequests": 0
+}

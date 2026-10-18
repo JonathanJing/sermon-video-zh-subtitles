@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-ops-web-realtime-contract-unit-v2",
+  "runs": [
+    {
+      "label": "ops-web-realtime-contract-unit-20261017",
+      "source": "~/.codex/worktrees/ops-web-realtime-contract/sermon-video-zh-subtitles/artifacts/ops-web-realtime-contract-unit-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ops-web-realtime-contract-unit-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 168,
+      "truncated": false,
+      "sha256": "9fba61e73eab02a3c6a383e2809ca2f808a3f50bf95f575ee0df0dc0ab0308ee",
+      "redactions": {}
+    },
+    {
+      "run": "ops-web-realtime-contract-unit-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1168,
+      "truncated": false,
+      "sha256": "7ce8ed19fda5ecb3f24561e717366a539c190e9c6d74749d35d0d0abe1ec71b9",
+      "redactions": {}
+    },
+    {
+      "run": "ops-web-realtime-contract-unit-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 41,
+      "truncated": false,
+      "sha256": "5bb3aa5cd3afad2eff115dca2c18df129cdb605f73e679b4f6600ff9e15eabec",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr846-local-prefect-39076387700",
+  "runs": [
+    {
+      "label": "pr846-local-prefect-39076387700",
+      "source": "/private/tmp/sermon-ops-unified-preflight-20261017/artifacts/pr846-local-prefect-39076387700",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr846-local-prefect-39076387700",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 153,
+      "truncated": false,
+      "sha256": "1027a6bbbb56123194644213a8ef1294ed0519facf4db27363b368a830080b36",
+      "redactions": {}
+    },
+    {
+      "run": "pr846-local-prefect-39076387700",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1422,
+      "truncated": false,
+      "sha256": "614ea16ec105c830ccc46dd455bf85aa407a07440cfc54d1251a50cd2f122b25",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

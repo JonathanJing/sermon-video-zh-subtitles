@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "test-run-outcome-v1",
+  "kind": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T21:46:49.395915+00:00",
+  "finishedAt": "2026-10-17T21:46:50.019890+00:00",
+  "durationSeconds": 0.62,
+  "command": [
+    "python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_target_audio_rate_identity.py::test_each_real_dependency_mutation_invalidates_stored_coefficients"
+  ]
+}

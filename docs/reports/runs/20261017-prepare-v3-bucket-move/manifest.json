@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-prepare-v3-bucket-move",
+  "runs": [
+    {
+      "label": "prepare-v3-bucket-move-20261017",
+      "source": "/private/tmp/sermon-prepare-v3-bucket-move-20261017/artifacts/prepare-v3-bucket-move-20261017",
+      "skipped": {
+        ".py": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "prepare-v3-bucket-move-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 249,
+      "truncated": false,
+      "sha256": "77c79051a2015ddae240db22203b3b205df5d0410394ab05f74648195fb0a39d",
+      "redactions": {}
+    },
+    {
+      "run": "prepare-v3-bucket-move-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 593,
+      "truncated": false,
+      "sha256": "cc3d8432089a0b9a602fa1a18e44522befa8b01791584f05c5eb8d5421ad6146",
+      "redactions": {}
+    },
+    {
+      "run": "prepare-v3-bucket-move-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 672,
+      "truncated": false,
+      "sha256": "dd435da0aa5c910b60fded12b12fb419e2c2fb439f39657bef5ba34d2d98193c",
+      "redactions": {}
+    },
+    {
+      "run": "prepare-v3-bucket-move-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 53,
+      "truncated": false,
+      "sha256": "5af6d434c8b955df7eee1346c3921cf2db5a8406b7dec794910be34711e84138",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-cuv-t5-manifest-v2",
+  "runs": [
+    {
+      "label": "cuv-t5-manifest-v2-20261017",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/cuv-t5-manifest-v2-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "cuv-t5-manifest-v2-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 180,
+      "truncated": false,
+      "sha256": "cc2c3cddea7b96d67ac911aa5eb283991c6c3d727620d0d2588e6df1c96c1704",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-t5-manifest-v2-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 540,
+      "truncated": false,
+      "sha256": "3b3fea4b19da097f17a7ae9aa5ea17ae301ad17b97374738974504cf7da1be1e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

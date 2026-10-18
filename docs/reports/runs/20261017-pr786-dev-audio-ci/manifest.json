@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr786-dev-audio-ci",
+  "runs": [
+    {
+      "label": "pr786-full-ci-39068576083",
+      "source": "~/.codex/worktrees/ops-review-timeline-leaf/sermon-video-zh-subtitles/artifacts/pr786-full-ci-39068576083",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr786-full-ci-39068576083",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 175,
+      "truncated": false,
+      "sha256": "55f17fcb3a8d11f10f2588c2b57aace108dcb51dd3be1c0303a9f454237a1525",
+      "redactions": {}
+    },
+    {
+      "run": "pr786-full-ci-39068576083",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 674,
+      "truncated": false,
+      "sha256": "ba92cfda8fbbb47c804e995957688fcad055c444afce76b7ed890f495fe88a6e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

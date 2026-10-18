@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "local-offline-test-outcome-v1",
+  "status": "passed",
+  "startedAt": "2026-10-17T23:42:02.934912+00:00",
+  "endedAt": "2026-10-17T23:42:04.301918+00:00",
+  "exitCode": 0,
+  "purpose": "prepare_v3_bucket_video_migration_move"
+}

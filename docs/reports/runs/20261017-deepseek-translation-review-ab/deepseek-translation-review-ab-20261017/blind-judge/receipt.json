@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "deepseek-translation-review-ab-call-v1",
+  "stage": "blind-judge",
+  "requestedModel": "gpt-6-astra",
+  "reasoningEffort": "medium",
+  "requestedServiceTier": "default",
+  "elapsedSeconds": 9.267313,
+  "usage": {
+    "input_tokens": 15584,
+    "cached_input_tokens": 0,
+    "cache_write_input_tokens": 15581,
+    "output_tokens": 373,
+    "reasoning_output_tokens": 134
+  },
+  "outputTokensPerSecond": 40.249,
+  "exitCode": 0,
+  "toolCalls": 0,
+  "resultSha256": "7cfcbae120647e79b2589fe9dd97bdc7c6ab0fe0d062d61ddb11d4cc2558388f",
+  "schemaConformant": true,
+  "normalization": null
+}

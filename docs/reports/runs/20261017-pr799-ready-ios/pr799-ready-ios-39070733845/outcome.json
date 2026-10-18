@@ -1,0 +1,10 @@
+{
+  "status": "success",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "PR #799 ready-state Tongxing iOS CI (contract validation and native aggregate)",
+  "codeCommit": "9ca7dc9d20d62e7e93a1ee6c7c0a8f2e9a62bc01",
+  "runId": 39070733845,
+  "startedAt": "2026-10-17T21:23:26Z",
+  "endedAt": "2026-10-17T22:22:44Z"
+}

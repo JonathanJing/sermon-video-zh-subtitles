@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-a3-rate-test",
+  "runs": [
+    {
+      "label": "g1-a3-rate-test-20261017",
+      "source": "~/.codex/worktrees/g1-a3-sync-20261017/sermon-video-zh-subtitles/artifacts/g1-a3-rate-test-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-a3-rate-test-20261017",
+      "path": "focused-pytest.log",
+      "kind": "log",
+      "bytes": 98,
+      "truncated": false,
+      "sha256": "d23ba7a7244a561a7e47aaba2d7106faf62d830b682490b5adf75890ec6c60a8",
+      "redactions": {}
+    },
+    {
+      "run": "g1-a3-rate-test-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 415,
+      "truncated": false,
+      "sha256": "60145343731532a6c21bb2f215f36fe156e2b23e868ddfc668b645c631a0852c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
