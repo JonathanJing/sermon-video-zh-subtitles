@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-568-ready-ios",
+  "runs": [
+    {
+      "label": "pr568-ready-head-ios-20261017",
+      "source": "~/.codex/worktrees/g1-qc-cascade/sermon-video-zh-subtitles/artifacts/pr568-ready-head-ios-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr568-ready-head-ios-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 343,
+      "truncated": false,
+      "sha256": "cab40c0f1710ed681474d4c96d510cac3fd7eaa19dcd8a0707c667797d01c2a2",
+      "redactions": {}
+    },
+    {
+      "run": "pr568-ready-head-ios-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 690,
+      "truncated": false,
+      "sha256": "9f54858511dcc78c9d6d3f8f776ecdda38fcde6fccfe6a11e5da11d59e4fbd93",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
