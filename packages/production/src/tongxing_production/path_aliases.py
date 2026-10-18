@@ -247,6 +247,21 @@ def resolve(key):
     return PATH_ALIASES.get(key, key)
 
 
+def physical_closure_paths(keys):
+    """Files executed by an identity closure, including moved facades and targets.
+
+    Use actual repository paths as keys so a per-file hash always names the
+    bytes it describes. The resolver itself decides which target is reached.
+    """
+    paths = {PRODUCTION + 'path_aliases.py'}
+    for key in keys:
+        if not key.startswith(('scripts/', 'packages/')):
+            raise ValueError(f'Closure key is not a repository-relative file: {key}')
+        paths.add(key)
+        paths.add(resolve(key))
+    return tuple(sorted(paths))
+
+
 def recorded(identity, key):
     """Value a loaded-code identity map holds for a key, whichever path recorded it."""
     value = identity.get(resolve(key))

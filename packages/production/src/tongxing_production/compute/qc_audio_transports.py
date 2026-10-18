@@ -98,16 +98,23 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+TRANSPORT_IMPLEMENTATION_FILES = (
+    "scripts/machine_qc_audio_transports.py",
+    "scripts/machine_qc_budget_authorization.py",
+    "scripts/sermon_source_budget.py",
+    "scripts/sermon_transcription_request.py",
+    "scripts/sermon_workflow_jobs.py",
+    path_aliases.PRODUCTION + "storage/files.py",
+)
+TRANSPORT_PHYSICAL_FILES = path_aliases.physical_closure_paths(TRANSPORT_IMPLEMENTATION_FILES)
+
+
 def implementation_sha256() -> str:
     """This transport module; its hash joins every opinion's ``settings``."""
-    # Keys stay the scripts/ file names; a file that moved into the production
-    # package is hashed where it lives now, not as its import facade.
+    # Each key names the actual file read, including an executed facade and
+    # its package target when a legacy path moved.
     root = _checkout_root()
-    return json_sha256({name: file_sha256(root / path_aliases.resolve("scripts/" + name)) for name in (
-        "machine_qc_audio_transports.py", "machine_qc_budget_authorization.py",
-        "sermon_source_budget.py", "sermon_transcription_request.py", "sermon_workflow_jobs.py")}
-        # The job store's file primitives split out in the closure window G1; T keeps covering them.
-        | {"storage/files.py": file_sha256(root / path_aliases.PRODUCTION / "storage/files.py")})
+    return json_sha256({name: file_sha256(root / name) for name in TRANSPORT_PHYSICAL_FILES})
 
 
 def _sha(data: bytes) -> str:

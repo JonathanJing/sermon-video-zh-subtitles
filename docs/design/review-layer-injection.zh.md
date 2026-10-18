@@ -134,7 +134,7 @@ class ReviewBackend:
 
 ## 4 身份影响与必须的新旧映射
 
-这是本文的核心。L1–L3 的规则全部适用：身份键继续用旧 `scripts/` 路径，经共享别名表 `tongxing_production/path_aliases.py`（L2 §6 第 3 项）解析到现路径；字节不变则哈希不变；一个哈希自己或在自己闭包里的模块，搬家改了导入，就是新实现。
+这是本文的核心。L1–L3 的规则全部适用：旧逻辑键与 `implementation_path()` 的别名查询语义保留。G1 生成的 W、T、计分、语速四个身份则逐个哈希实际仓库相对路径：若旧 `scripts/` 键指向包内目标，门面与目标都入闭包；别名解析器自身也入闭包。任一实际执行文件改字节就是新实现，不能沿用旧校准或冻结收据。
 
 当前值（`dev@d12f239d`，与 L3 设计盘点时 `dev@0e19adfe` 的前四项相同，也与基础设施设计 §4.1 的基线相同，说明 L2 T0–T2、L4 D0–D1 都没有碰闭包）：
 
@@ -150,7 +150,7 @@ class ReviewBackend:
 
 ### 4.1 豁免实现闭包 W：每个成员归谁、何时会变
 
-基线的 22 个键全部经 `implementation_path()` 读取（`implementation_freeze.file_hashes`、`check_run_start`、`test_qc_runtime_implementation_closure` 同样如此）。G1 另外增加 `storage/files.py`、`audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py`、`review/unmoved.py` 和 `review/backend.py` 六个真实执行或绑定文件，R3 后共 28 键。按"谁搬、搬时字节是否变"分组：
+基线 22 个逻辑键经 `implementation_path()` 解析；G1 另加 `storage/files.py`、`audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py`、`review/unmoved.py` 和 `review/backend.py` 六个逻辑键，R3 后共 28 个。实际冻结和 `implementation_freeze.file_hashes()` 使用排序、去重的物理清单：28 个旧键对应的实际文件、19 个别名目标、`path_aliases.py` 及 `scripts/implementation_freeze.py` 准入 guard，共 49 个仓库相对路径。`check_run_start` 的 Spark 代码目录检查同用这 49 个物理路径。旧逻辑键及 `implementation_path()` 保持原有查询行为。R4 若将 guard 搬入包，仍在 G1 窗口内，门面和包内目标会分别入 W，届时按实际 checkout 重算。按"谁搬、搬时字节是否变"分组：
 
 | 成员 | 归属与批次 | 搬时字节 | 对 W 的影响 |
 |---|---|---|---|
@@ -163,9 +163,11 @@ class ReviewBackend:
 | `sermon_workflow_jobs.py` | storage/orchestration，基础设施在 G1 拆分 | 变 | W、T 变；拆出的文件原语 `storage/files.py` 作为**新成员**加进 `IMPLEMENTATION_FILES` 和 T 的文件表，闭包覆盖的代码不能变少（基础设施 §4.2） |
 | `audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py` | L3 A3 的规则代理、当前后端选择和宿主绑定 | G1 新增真实文件 | 三者作为**新成员**加入 W、计分、语速闭包；其中任一文件改字节，三种身份都改变。T 的传输闭包不含这三个文件 |
 | `review/unmoved.py`、`review/backend.py` | R3 的规则代理与当前后端选择 | G1 新增真实文件 | 两者作为**新成员**加入 W；其中任一文件改字节，W 改变。T、计分、语速不经这两个文件 |
+| 19 个旧 `scripts/` 门面与 `path_aliases.py` | G1 四身份安全闭包 | 门面执行导入或 CLI 派发；解析器选择包内目标 | 物理清单同时列门面、目标、解析器；任一字节变化都会改变对应身份，`file_hashes()` 逐文件列实际路径 |
+| `scripts/implementation_freeze.py` | G1 冻结准入 guard | QC CLI 在模型／远端工作前调用它 | 静态文件字节加入 W；guard 自身不调用其哈希计算，因此不形成递归。R4 搬迁须一并记录新目标路径 |
 | 两份插件规则、`ko_spoken_numerals.py` | 留 `scripts/`（L2 §6 第 1 项、L3 §6 第 3 项） | 不动 | 不变；这 3 个文件以后任何改字节都是新一代 |
 
-结论：W 必然改变，因为计算者 `machine_quality_waiver.py` 自己就要改字节；能控制的只是**改变几次**。R3 的 9 个文件、A3 的 3 个文件、传输和 jobs 拆分只要有一个不在同一个窗口里，W 就会多变一次，每个未发布 locale 就多一轮校准。G1 之后 W 里还留在 `scripts/` 的只有三个受 policy 固定的规则文件。
+结论：W 必然改变，因为计算者 `machine_quality_waiver.py` 自己就要改字节；能控制的只是**改变几次**。R3 的 9 个文件、A3 的 3 个文件、传输和 jobs 拆分只要有一个不在同一个窗口里，W 就会多变一次，每个未发布 locale 就多一轮校准。G1 后三个规则文件仍只在 `scripts/`；另有 19 个可执行兼容门面同时与其包内目标受 W 保护。
 
 ### 4.2 W 一变，下游哪些东西失效
 
@@ -184,7 +186,7 @@ class ReviewBackend:
 
 ### 4.3 传输闭包 T 与缓存
 
-T 对 5 个文件按 `compatibility.resolve("scripts/" + name)` 取哈希：`machine_qc_audio_transports.py`、`machine_qc_budget_authorization.py`、`sermon_source_budget.py`、`sermon_transcription_request.py`、`sermon_workflow_jobs.py`。这 5 个文件全部也在 W 里，所以 T 变一定伴随 W 变。R3 搬 `machine_qc_budget_authorization`、G1 拆 jobs 都会改变 T；转写请求在 I0b 按字节搬，不改变 T。T 写进副 ASR 和 TTS 渲染的 `settings`（副 ASR 的设置哈希又被校准记为 `asrSettingsSha256`），于是：
+T 的五个原逻辑键为 `machine_qc_audio_transports.py`、`machine_qc_budget_authorization.py`、`sermon_source_budget.py`、`sermon_transcription_request.py`、`sermon_workflow_jobs.py`；另含 `storage/files.py`。G1 物理清单把五个 `scripts/` 门面、五个包内目标、storage 文件与 `path_aliases.py` 一并记录，共 12 个实际路径；每项按其仓库相对路径独立取 SHA-256，最后生成 T。五个逻辑文件全部也在 W 里，所以 T 变一定伴随 W 变。R3 搬预算授权、G1 拆 jobs 会改变 T；新的物理身份代也使 I0b 转写请求门面和解析器受保护。T 写进副 ASR 和 TTS 渲染的 `settings`（副 ASR 的设置哈希又被校准记为 `asrSettingsSha256`），于是：
 
 | 缓存 | 键是否含 T | 键是否含 W | T 与 W 同时改变的额外代价 |
 |---|---|---|---|
@@ -209,10 +211,10 @@ T 对 5 个文件按 `compatibility.resolve("scripts/" + name)` 取哈希：`mac
 | 记录处 | 现在的键 | 处理 |
 |---|---|---|
 | Prefect `sermon_prefect_dag.CLOSURE` | `REPO/'scripts'/'sermon_review_budget.py'`，**不走别名** | 基础设施 I0 计划把它改为 `path_aliases.resolve`；R2 只在别名表加条目。若 I0 尚未合并，R2 同批改，否则 Prefect pilot 的 `codeSha256` 会哈希门面 |
-| `screen.SCORING_IMPLEMENTATION_FILES` | 读 `root / name`，不走别名 | 成员都不归 review；按 L3 §4.2 在 A3 改 |
-| `test_screen_transcript_folding` 第 287–293 行 | 以 `Path(subject.__file__).parents[1]` 为仓库根 | A3 改（L3 已列）；同一测试第 300–317 行对 W 已经经 `compatibility.resolve` |
-| `test_qc_runtime_implementation_closure`、`test_implementation_freeze` | 经 `implementation_path` | 不用改 |
-| `check_run_start` Spark 代码目录检查 | `implementation_path(…, Path())` 的相对路径 | 自动跟随别名；窗口关闭后 Spark 代码目录必须是新 checkout，检查本身会拦住旧目录 |
+| `screen.SCORING_IMPLEMENTATION_FILES` | 保留七个逻辑键 | 物理清单另含筛查 CLI 门面、包内目标和 `path_aliases.py`，共九个路径；显式 root 逐个读实际路径 |
+| `test_screen_transcript_folding` | 临时根按逻辑键复制会漏门面与解析器 | 显式 root fixture 复制计分与 W 的完整物理清单，再逐个扰动实际文件 |
+| `test_qc_runtime_implementation_closure`、`test_implementation_freeze` | 原先只复制别名目标 | 显式 root fixture 复制 W 的完整物理清单；旧逻辑 `implementation_path` 仍可定位目标 |
+| `check_run_start` Spark 代码目录检查 | 原先仅取 `implementation_path` 的别名目标 | 改用 W 与 `file_hashes` 相同的物理清单，同时核对门面、目标、解析器和 guard |
 | `clip_e2e_spark.py`（`scripts/run_machine_qc_audio_test.py`）、`run_clip_real_e2e.py`（`check_run_start.py`、`run_machine_qc_clip_test.py`） | 按文件路径启动 | CLI 门面保留，argv 不变 |
 | `schemas/` 与 [机器质检豁免](../machine-quality-waiver.zh.md)里的 `scripts/…` 路径 | 文字说明 | 不改：门面仍在；W 的键本来就保持旧名 |
 | L2 controller `codeIdentitySha256`、统一运行 `executionAdmission.closureSha256` | 所有受跟踪的代码 | 每批都变：只在没有进行中的 L2 run 和统一运行时合并（L2 §4.4、L4 §4.3） |
@@ -234,7 +236,16 @@ review 需要的新面都在宿主包装，不改这些文件。
 
 **G1**（基础设施设计称"W 闭包变更窗口"）是一段受控的合并窗口：W、T、计分、语速在窗口内一起变成新值，窗口内的中间提交上不做任何校准、签发或 QC 预算批准；窗口关闭后每个未发布 locale 只重新校准一次。
 
-G1 的 W 键表由基线 22 键扩为 R3 后 28 键：jobs 拆分加入 `storage/files.py`，A3 审查修复加入 `audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py`，R3 安全审查修复加入 `review/unmoved.py`、`review/backend.py`。旧 22 键仍保留；三个 audio 绑定文件也纳入计分与语速闭包，两个 review 绑定文件只纳入 W。代记录须逐键列旧值或“基线不存在”及新值，不能把新增键记作搬迁后同值。
+G1 的 W **逻辑键表**由基线 22 键扩为 R3 后 28 键：jobs 拆分加入 `storage/files.py`，A3 审查修复加入 `audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py`，R3 安全审查修复加入 `review/unmoved.py`、`review/backend.py`。旧 22 键仍保留。实际 W 物理清单在 R3 为 49 个路径；T 为 12 个、计分为九个、语速为 13 个，均同时列别名门面、包内目标和解析器。三个 audio 绑定文件也纳入计分与语速闭包，两个 review 绑定文件只纳入 W。R4 搬 guard 后须重算 W 的物理数和四值。代记录须逐个实际仓库相对路径列旧值或“基线不存在”及新值，不能把新增路径记作搬迁后同值。
+
+| 身份 | 保留的逻辑清单 | R3 物理清单 | 新增实际路径 |
+|---|---|---:|---|
+| W | `IMPLEMENTATION_FILES` 28 键 | 49 | 19 个别名另一端、`path_aliases.py`、`implementation_freeze.py` guard |
+| T | 五个传输依赖与 `storage/files.py` | 12 | 五个别名另一端、`path_aliases.py` |
+| 计分 | `SCORING_IMPLEMENTATION_FILES` 七键 | 9 | 筛查门面另一端、`path_aliases.py` |
+| 语速 | `RATE_IMPLEMENTATION_FILES` 九键 | 13 | 三个别名另一端、`path_aliases.py` |
+
+物理清单中的每个键都是实际仓库相对路径，`file_hashes` 逐路径只给该文件字节的 SHA-256；W 的总哈希按清单顺序绑定“路径 + 字节”。旧运行计划的 W 与新值不等，`implementation_freeze` 在任何模型调用前拒绝，旧校准和豁免不能作为新实现的授权。旧冻结 checkout 的收据不被改写。
 
 | 项 | 内容 |
 |---|---|
@@ -254,7 +265,7 @@ G1 的 W 键表由基线 22 键扩为 R3 后 28 键：jobs 拆分加入 `storage
 | R1 字节不变的叶子 | `machine_repair_ledger`、`audio_qc_human_acceptance`、`text_qc_human_acceptance` 按字节原样 → `review/`；别名表加三条 | `git diff -M100%` 显示纯重命名；W 与基线相等（这批证明别名对闭包成员有效）；不需窗口 |
 | R2 闭包外的裁决与账本（I1 之后） | `source_meaning_machine_adjudication`、`scripture_adjudication`、`scripture_machine_adjudication`、`sermon_review_budget` → `review/`；`Adjudication` 端口与 text `Unmoved` 改绑；Prefect `CLOSURE` 经别名读到包内文件 | W、T、计分、语速不变；源文含义 v1/v2 收据、经文冻结准入与复现、L1 机器文本审核测试全绿；经文 8 个输入全不为 `None`；两个自哈希的新值写进 PR；预算账本 fan-in 54 的调用方测试全绿 |
 | R3 豁免闭包（G1 成员，I1 之后） | `machine_quality_waiver`、`machine_quality_release_basis`、`target_text_auto_qc`、`target_audio_auto_qc`、`auto_qc_seeded_errors`、`machine_qc_budget_authorization`、`spoken_condensation`、`run_machine_qc_clip_test`、`run_machine_qc_audio_test` → `review/`（约 5,000 行）；`Waivers` 端口改绑；驱动保留 CLI 门面 | 同 fixture 的文字/音频 QC 结果、注错校准、豁免与精简绑定在**新哈希下**字节一致（除各处 `implementationSha256` 字段）；R3 相对 A3 入站增加两个 review 代理／绑定键，G1 的 28 键修订见 §5.1；宿主加载时仍不导入闭包文件；W、T 的新值和逐文件哈希写进 PR（G1 代记录的一部分）；只在 G1 开启后合并 |
-| R4 依赖 R3 的复核 | `machine_audio_waiver_acceptance`、`implementation_freeze`（加 `closure_files`）、`sermon_unified_reviews` → `review/`；`check_run_start` 改调 `review.implementation_freeze`；`Review` 端口改绑 | W 不变（这些不在闭包里）；统一 CLI 复核摄取六种 kind、试听豁免 v3、实现冻结 exit 2 测试全绿；`review/` 不导入任何阶段 |
+| R4 依赖 R3 的复核 | `machine_audio_waiver_acceptance`、`implementation_freeze`（加 `closure_files`）、`sermon_unified_reviews` → `review/`；`check_run_start` 改调 `review.implementation_freeze`；`Review` 端口改绑 | guard 已入 G1 W 物理闭包，搬迁时门面和包内目标分别哈希，W 须在同窗重算；统一 CLI 复核摄取六种 kind、试听豁免 v3、实现冻结 exit 2 测试全绿；`review/` 不导入任何阶段 |
 
 每批：迁移前后 `tests/` 的发现清单一一对应（提案 §5.5）；`python-tests.yml` 的 `py_compile` 清单若列有被搬文件同批更新；`sermon.py`、Spark 与 E2E 的 argv 不变；只在没有进行中的 L2 run 与统一运行时合并；每批只声明代码与测试证据，真实校准与发布另行报告。
 
@@ -289,7 +300,7 @@ G1 的 W 键表由基线 22 键扩为 R3 后 28 键：jobs 拆分加入 `storage
 ## 7 验收（按提案 §9）
 
 - 结构：`tongxing_production/review` 不导入 `scripts/backend/apps/tools/experiments`，不含 `__file__`，不导入 `source`、`text`、`audio`、`delivery`、`orchestration`；阶段可以导入 review。
-- 行为：同 fixture 的 QC、校准、豁免、精简绑定、复核摄取、裁决收据与预算账本字节一致；R1、R2、R4 后 W、T、计分、语速四值不变；`IMPLEMENTATION_FILES` 键表仅在 G1 增加 `storage/files.py`、`audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py`、`review/unmoved.py`、`review/backend.py`（基线 22→R3 后 28），`V1_IMPLEMENTATIONS`、`V1_MACHINE_REVIEW_WRITERS` 不变。
+- 行为：同 fixture 的 QC、校准、豁免、精简绑定、复核摄取、裁决收据与预算账本字节一致；R1、R2 后四值不变，R4 guard 搬迁在同一 G1 窗口内改变 W；`IMPLEMENTATION_FILES` 逻辑键表仅在 G1 增加 `storage/files.py`、`audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py`、`review/unmoved.py`、`review/backend.py`（基线 22→R3 后 28），实际物理文件清单另加可执行门面、目标、解析器和 guard；`V1_IMPLEMENTATIONS`、`V1_MACHINE_REVIEW_WRITERS` 不变。
 - 恢复：已签发的豁免与校准记录不改；G1 之后它们按设计不再授权新发布，未发布 locale 在新代码上重新校准并重签；源文含义 v1/v2 收据与冻结经文诊断继续准入；旧运行在其冻结 checkout 上完成。
 - 测试：76 个直接导入 §2.1 模块的测试模块全绿；清单映射一一对应。
 - 发布与真实运行：不在本设计范围；每批 PR 只声明软件验证，G1 之后的重新校准是独立的真实运行。
