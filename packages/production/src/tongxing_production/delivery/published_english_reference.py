@@ -120,14 +120,21 @@ def build_reference(public, page_id, source_path):
                             sha256=target["releasePackageJsonSha256"])
         require(release.get("status") == "published_http_verified" and release.get("contentStatus") in allowed,
                 f"Unpublished or unreviewed release: {locale}")
+        release_version = release.get("schemaVersion")
+        four_product = release_version in delivery_contract.FOUR_PRODUCT_RELEASES
+        require(four_product or release_version == "sermon-target-language-release-package-v2",
+                f"Unsupported published release: {locale}")
         if catalog["schemaVersion"] == delivery_contract.CATALOG_V4:
-            machine = release.get("schemaVersion") == delivery_contract.RELEASE_V4
+            machine = release_version == delivery_contract.RELEASE_V4
             require(machine == delivery_contract.machine_checked(target)
                     and (release.get("contentStatus"), release.get("audioStatus"))
                     == (target.get("contentStatus"), target.get("audioStatus"))
                     and target["releasePackageUrl"] == delivery_contract.release_path(release)
-                    and release.get("englishSourcePackageJsonSha256") == source_sha,
+                    and (not four_product or release.get("englishSourcePackageJsonSha256") == source_sha),
                     f"Release status/path/source differs from its v4 catalog target: {locale}")
+        elif four_product:
+            require(release.get("englishSourcePackageJsonSha256") == source_sha,
+                    f"Release source mismatch: {locale}")
         require(release.get("pageId") == page_id and release.get("targetLocale") == locale
                 and release.get("contentLocale") == locale, f"Release identity mismatch: {locale}")
         assets = {}
@@ -140,8 +147,14 @@ def build_reference(public, page_id, source_path):
         captions, captions_sha = assets["captions"]
         require(content.get("pageId") == page_id and content.get("targetLocale") == locale
                 and content.get("status") == release["contentStatus"], f"Content identity/status mismatch: {locale}")
-        require(content.get("englishSourcePackageJsonSha256") == source_sha
-                and content.get("sourceMediaSha256") == media_sha, f"Content source mismatch: {locale}")
+        if release_version == "sermon-target-language-release-package-v2":
+            require(page.get("sourceMediaSha256") == media_sha, f"Catalog source media mismatch: {locale}")
+            require(content.get("englishSourcePackageJsonSha256") == page["sourceIdentitySha256"]
+                    and content.get("sourceMediaSha256") == page["sourceMediaSha256"],
+                    f"Content source mismatch: {locale}")
+        else:
+            require(content.get("englishSourcePackageJsonSha256") == source_sha
+                    and content.get("sourceMediaSha256") == media_sha, f"Content source mismatch: {locale}")
         require(content.get("targetLanguageCandidateJsonSha256") == release.get("targetLanguageCandidateJsonSha256"),
                 f"Content candidate mismatch: {locale}")
         groups = content["cues"]
