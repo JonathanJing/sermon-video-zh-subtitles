@@ -3,7 +3,9 @@ import copy
 from dataclasses import replace
 import json
 from pathlib import Path
+import subprocess
 import sys
+import tempfile
 import unittest
 from unittest.mock import Mock
 
@@ -99,6 +101,28 @@ class GateEvaluationTests(unittest.TestCase):
         self.assertIs(g, strict_review_gate)
         self.assertIs(sys.modules['scripts.sermon_review_gate'], strict_review_gate)
         self.assertIs(g.c, c)
+
+    def test_direct_package_import_uses_explicit_schema_binding(self):
+        code = '''
+import sys
+from pathlib import Path
+from tongxing_production.ports import Unbound
+from tongxing_production.contracts import schemas
+from tongxing_production.text import strict_review_gate as gate
+try:
+    gate.c.validator('sermon-review-rubric-v1')
+except Unbound:
+    pass
+else:
+    raise AssertionError('direct package import silently found a schema root')
+schemas.configure(Path(sys.argv[1]))
+assert gate.c.validator('sermon-review-rubric-v1') is not None
+'''
+        with tempfile.TemporaryDirectory() as elsewhere:
+            result = subprocess.run(
+                [sys.executable, '-I', '-c', code, str(Path(__file__).resolve().parents[1] / 'schemas')],
+                cwd=elsewhere, capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def setUp(self):
         self.snapshot = fixture()
