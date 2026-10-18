@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "ci-run-summary-v1",
+  "runId": 39083272076,
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39083272076",
+  "headSha": "2ee5f054bc294a82ff886de876f1577628c3d95a",
+  "workflow": "Python tests",
+  "jobs": [
+    {
+      "name": "changes",
+      "conclusion": "success",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-5)",
+      "conclusion": "success",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-1)",
+      "conclusion": "success",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-7)",
+      "conclusion": "success",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-2)",
+      "conclusion": "success",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-3)",
+      "conclusion": "success",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-4)",
+      "conclusion": "success",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-0)",
+      "conclusion": "success",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-6)",
+      "conclusion": "success",
+      "status": "completed"
+    },
+    {
+      "name": "Native and shared client contracts",
+      "conclusion": "skipped",
+      "status": "completed"
+    },
+    {
+      "name": "unittest",
+      "conclusion": "success",
+      "status": "completed"
+    }
+  ]
+}
