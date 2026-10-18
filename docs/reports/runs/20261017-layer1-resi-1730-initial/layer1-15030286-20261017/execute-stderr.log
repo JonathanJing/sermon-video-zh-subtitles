@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/scripts/sermon_unified_source.py", line 18, in <module>
+    raise SystemExit(_implementation.main())
+                     ~~~~~~~~~~~~~~~~~~~~^^
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 588, in main
+    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+                                                                    ~~~~~~~^^^^^^^^^^^^^
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 362, in execute
+    return _execute(config, fresh, api_key=<redacted>, transport=transport,
+                    aligner=aligner or mfa_backend.align_reference_chunks,
+                    mfa_preflight=mfa_preflight or mfa_backend.preflight)
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 435, in _execute
+    aligned = aligner(references, clip, out / 'mfa', **_mfa_options(config))
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/mfa_backend.py", line 188, in align_reference_chunks
+    local._reference(chunk['text'], spoken_forms)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/mfa_alignment.py", line 102, in _reference
+    raise ValueError('Ambiguous numeric reference: configure its exact token in spoken forms before MFA')
+ValueError: Ambiguous numeric reference: configure its exact token in spoken forms before MFA
