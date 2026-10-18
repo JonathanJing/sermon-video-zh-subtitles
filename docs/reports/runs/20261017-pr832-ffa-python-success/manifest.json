@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr832-ffa-python-success",
+  "runs": [
+    {
+      "label": "pr832-ffa-python-success-39076715101",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/pr832-ffa-python-success-39076715101",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr832-ffa-python-success-39076715101",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 287,
+      "truncated": false,
+      "sha256": "a77cb01f95f72f57e225a661a6ab36e9e88e58843639b85780443e4d2691edbf",
+      "redactions": {}
+    },
+    {
+      "run": "pr832-ffa-python-success-39076715101",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2343,
+      "truncated": false,
+      "sha256": "95697fdebbc5f7c47fdaf5d2d5ee52f91fadf92217db1f4ff47f7f7dc569588a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

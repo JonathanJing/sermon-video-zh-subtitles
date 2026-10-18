@@ -1,0 +1,84 @@
+{
+  "createdAt": "2026-10-17T22:50:59Z",
+  "updatedAt": "2026-10-17T23:08:58Z",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:51:25Z",
+      "completedAt": "2026-10-17T22:51:35Z"
+    },
+    {
+      "name": "test-group (root-2)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:54:07Z",
+      "completedAt": "2026-10-17T23:02:28Z"
+    },
+    {
+      "name": "test-group (root-5)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:51:37Z",
+      "completedAt": "2026-10-17T23:04:29Z"
+    },
+    {
+      "name": "test-group (root-1)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:51:55Z",
+      "completedAt": "2026-10-17T23:03:39Z"
+    },
+    {
+      "name": "test-group (root-0)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:51:37Z",
+      "completedAt": "2026-10-17T23:04:40Z"
+    },
+    {
+      "name": "test-group (root-7)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:51:37Z",
+      "completedAt": "2026-10-17T23:06:11Z"
+    },
+    {
+      "name": "test-group (root-6)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:51:37Z",
+      "completedAt": "2026-10-17T23:05:55Z"
+    },
+    {
+      "name": "test-group (root-4)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:54:53Z",
+      "completedAt": "2026-10-17T23:02:37Z"
+    },
+    {
+      "name": "test-group (root-3)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:56:05Z",
+      "completedAt": "2026-10-17T23:08:53Z"
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T22:51:35Z",
+      "completedAt": "2026-10-17T22:51:35Z"
+    },
+    {
+      "name": "unittest",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:08:55Z",
+      "completedAt": "2026-10-17T23:08:58Z"
+    }
+  ],
+  "limits": "GitHub Actions Python CI, not production source/model/device acceptance"
+}
