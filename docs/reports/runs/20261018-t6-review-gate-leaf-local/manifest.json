@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-review-gate-leaf-local",
+  "runs": [
+    {
+      "label": "t6-review-gate-leaf-20261018-local",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-review-gate-leaf-20261018-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-review-gate-leaf-20261018-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 212,
+      "truncated": false,
+      "sha256": "e64af28348c914267c19c0dd129e1217db6b089c329ece5cb07c95107f489cdd",
+      "redactions": {}
+    },
+    {
+      "run": "t6-review-gate-leaf-20261018-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 703,
+      "truncated": false,
+      "sha256": "93f464e6031b59669dce2f3c966bc61ed1a323ad7aeecf297ff8f1acf6c685d8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
