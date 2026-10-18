@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-es-same-job-direct-reuse",
+  "runs": [
+    {
+      "label": "20261018-es-same-job-direct-reuse",
+      "source": "~/.codex/worktrees/es-same-job-direct-reuse/artifacts/test-runs/20261018-es-same-job-direct-reuse",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-es-same-job-direct-reuse",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 309,
+      "truncated": false,
+      "sha256": "09204c3f76b22147afcc3998b2368c5b64b7056d22918e2154ec8fd5e3c7dc51",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-es-same-job-direct-reuse",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 446,
+      "truncated": false,
+      "sha256": "bca6a217e0d15bd2e2d48391071f0523872778b266ebbf71a2fd2c0b0590f64e",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-es-same-job-direct-reuse",
+      "path": "tests.log",
+      "kind": "log",
+      "bytes": 163,
+      "truncated": false,
+      "sha256": "c8eec90bae2c3cbad1d6abc613b5a52173bfb361a7c2dd2851d14c1acf2b68bd",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-es-same-job-direct-reuse",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 57,
+      "truncated": false,
+      "sha256": "5f9df7e3e0b817a0d22ab17275b82d047e76e63e80b53427fd1ab882cd3e63f5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
