@@ -85,6 +85,9 @@ def file_sha(path: Path) -> str:
 
 SCORING_IMPLEMENTATION_FILES = (
     "scripts/screen_target_language_audio_units.py",
+    "packages/production/src/tongxing_production/audio/hosted.py",
+    "packages/production/src/tongxing_production/audio/backend.py",
+    "scripts/tongxing_host.py",
     "scripts/ko_spoken_numerals.py",
     "scripts/language_review_plugins/auto_qc_text_common.py",
     "scripts/language_review_plugins/common.py",
