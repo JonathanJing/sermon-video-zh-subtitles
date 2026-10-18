@@ -173,12 +173,15 @@ class FailureCollector:
     """Runner hook: record failed groups and stop dispatch on a systemic failure."""
 
     def __init__(self, total_groups: int, counted_group_ids=None, known_fingerprints=None,
-                 lineage_value: dict | None = None, group_workers: int = 1):
+                 lineage_value: dict | None = None, group_workers: int = 1, scattered_systemic: bool = True):
         """The systemic judgement counts only new evidence: ``counted_group_ids``
         limits it to groups dispatched this round (a repair round reuses the other
         failures unchanged), and a failure whose fingerprint is already in
         ``known_fingerprints`` repeats an earlier round instead of adding to a
-        batch-wide rule failure."""
+        batch-wide rule failure. ``scattered_systemic=False`` keeps only the
+        consecutive early stop: an operator group revision dispatches groups that
+        were picked because they share a problem, so a common code among them at
+        the end of a round is not evidence of a batch-wide rule gap."""
         _require(type(total_groups) is int and total_groups > 0, "Failure collection needs the group count")
         _require(type(group_workers) is int and 1 <= group_workers <= 16, "Group workers must be 1..16")
         self.group_workers = group_workers
@@ -188,9 +191,12 @@ class FailureCollector:
         self.known = frozenset(known_fingerprints or ())
         self.lineage_value = lineage_value
         _require(not self.known or lineage_value is not None, "Known fingerprints need the lineage")
+        self.scattered_systemic = scattered_systemic
         self.identity = {"routingVersion": ROUTING_VERSION, "systemicThreshold": self.threshold,
                          "countedGroupIds": None if self.counted is None else sorted(self.counted),
                          "knownFingerprints": sorted(self.known), "groupWorkers": group_workers}
+        if not scattered_systemic:
+            self.identity["scatteredSystemic"] = False
         self.failures: list[dict] = []
         self.not_dispatched: list[dict] = []
         self.systemic: dict | None = None
@@ -281,7 +287,7 @@ class FailureCollector:
 
     def finish(self, out: Path, request: dict, plan: list[dict]) -> None:
         with self._lock:
-            if self.systemic is None:
+            if self.systemic is None and self.scattered_systemic:
                 for code, count in sorted(self._counts().items()):
                     if count >= self.threshold and code not in UMBRELLA_CODES:
                         self.systemic = {"failureCode": code, "groups": count,
@@ -726,6 +732,19 @@ def token_cap(initial_tokens: int, token_bound: int | None) -> int:
     return fraction if token_bound is None else max(fraction, MINIMUM_REPAIR_CALLS * token_bound)
 
 
+def repair_caps(initial: dict, token_bound: int | None, allowance: dict | None = None) -> tuple[int, int]:
+    """``(calls, tokens)`` the repair rounds of a chain may spend in all.
+
+    By default 10% of the initial round (``token_cap``), at least ``MINIMUM_REPAIR_CALLS``
+    calls. An operator group revision passes its own ``allowance``, sized from the groups
+    it lists and the budget authorization's USD cap (text/group_revision.py): its initial
+    round dispatches only those groups, so 10% of it would leave almost nothing."""
+    if allowance is not None:
+        return allowance["calls"], allowance["tokens"]
+    return (max(MINIMUM_REPAIR_CALLS, math.ceil(initial["calls"] * SPEND_FRACTION)),
+            token_cap(initial["tokens"], token_bound))
+
+
 def _affordable_repairs(entries: list[dict]) -> tuple[int, str]:
     """How many groups the repair allowance can still reserve before any round runs, and the reason when short.
 
@@ -819,7 +838,8 @@ def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], val
 
 def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Path,
           ledger_root: Path, *, group_workers: int = 1, meaning_notes: dict | None = None,
-          meaning_notes_sha256: str | None = None, back_translation_qc: dict | None = None) -> dict:
+          meaning_notes_sha256: str | None = None, back_translation_qc: dict | None = None,
+          lineage_extra: dict | None = None, repair_allowance: dict | None = None) -> dict:
     """Run rounds until every group passes or repair stops; write and return a receipt.
 
     ``run_round(out, reuse_from, brief, collector)`` returns evidence when every
@@ -834,8 +854,19 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
 
     ``back_translation_qc`` is a failed text QC receipt of this chain's passed head
     (gate 4): its failed groups reopen the chain for one repair round (``_reopen_for_qc``).
+
+    ``lineage_extra`` starts a separate chain (an operator group revision binds its
+    revision record here, so a passed chain of the same policy is never mistaken for
+    its result), and ``repair_allowance`` replaces the 10% caps (``repair_caps``).
     """
-    value = lineage(request)
+    _require(lineage_extra is None or (isinstance(lineage_extra, dict) and lineage_extra
+                                       and not set(lineage_extra) & set(lineage(request))),
+             "Repair lineage extension must add new keys")
+    _require(repair_allowance is None or (isinstance(repair_allowance, dict)
+                                          and all(type(repair_allowance.get(key)) is int
+                                                  and repair_allowance[key] >= 0 for key in ("calls", "tokens"))),
+             "Repair allowance needs whole call and token caps")
+    value = lineage(request) if lineage_extra is None else {**lineage(request), **lineage_extra}
     out_root = Path(out_root)
     entries = load_ledger(ledger_root, value)
     if back_translation_qc is not None:
@@ -851,7 +882,8 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
         if reopened is not None:
             entries.append(reopened)
         if entries[-1]["outcome"] != "repairing":
-            return _receipt(out_root, ledger_root, value, entries, entries[-1]["outcome"], entries[-1]["stopped"])
+            return _receipt(out_root, ledger_root, value, entries, entries[-1]["outcome"], entries[-1]["stopped"],
+                            repair_allowance)
     # A loop resumes after its last recorded round; it never repeats one.
     sequence = len(entries)
     reuse_from = Path(entries[-1]["runDirectory"]) if entries else None
@@ -874,12 +906,12 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
                      and not initial["callsWithoutUsage"]
                      and not any(e["spend"]["callsWithoutUsage"] for e in entries[1:])
                      and spent["tokens"] + len(brief["groups"]) * CALLS_PER_REPAIR * token_bound
-                     <= token_cap(initial["tokens"], token_bound),
+                     <= repair_caps(initial, token_bound, repair_allowance)[1],
                      "repair_token_reservation_unavailable")
         collector = FailureCollector(
             total_groups, [row["translationGroupId"] for row in brief["groups"]] if brief else None,
             {item for entry in entries for row in entry["groups"] for item in [row["fingerprint"]] if item},
-            value, group_workers)
+            value, group_workers, scattered_systemic=lineage_extra is None)
         if (out / "group-failures.json").exists():
             # A saved report is the round's result. Replay after a crash never
             # re-dispatches its groups, even if the scheduler would now differ.
@@ -921,9 +953,8 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
             for skipped in report["notDispatched"]:
                 stopped.append({**skipped, "failureCodes": [], "reasonCode": "not_dispatched_after_systemic_stop",
                                 "evidencePath": None})
-            cap_calls = max(MINIMUM_REPAIR_CALLS, math.ceil(initial["calls"] * SPEND_FRACTION))
             token_bound = _repair_token_bound()
-            cap_tokens = token_cap(initial["tokens"], token_bound)
+            cap_calls, cap_tokens = repair_caps(initial, token_bound, repair_allowance)
             known_usage = not initial["callsWithoutUsage"] and not spend["callsWithoutUsage"] \
                 and not any(e["spend"]["callsWithoutUsage"] for e in entries[1:])
             # Repair as many groups as the cap still allows, in source order.
@@ -947,7 +978,8 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
             if not repairs:
                 outcome = "stopped"
         elif brief is not None and (spend["callsWithoutUsage"]
-                                    or spent["tokens"] > token_cap(initial["tokens"], _repair_token_bound())):
+                                    or spent["tokens"] > repair_caps(initial, _repair_token_bound(),
+                                                                     repair_allowance)[1]):
             # Even a passing injected/misbehaving transport cannot hide unknown
             # or excessive usage behind successful semantic/plugin checks.
             outcome = "stopped"
@@ -975,12 +1007,12 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
             "spend": spend, "groups": rows, "outcome": outcome, "stopped": stopped, "nextBrief": next_brief})
         entries.append(entry)
         if outcome != "repairing":
-            return _receipt(out_root, ledger_root, value, entries, outcome, stopped)
+            return _receipt(out_root, ledger_root, value, entries, outcome, stopped, repair_allowance)
         reuse_from, brief, inherited = out, next_brief, stopped
 
 
 def _receipt(out_root: Path, ledger_root: Path, value: dict, entries: list[dict], outcome: str,
-             stopped: list[dict]) -> dict:
+             stopped: list[dict], repair_allowance: dict | None = None) -> dict:
     last = entries[-1]
     receipt = {"schemaVersion": RECEIPT_SCHEMA, "routingVersion": ROUTING_VERSION, "lineage": value,
                "status": "all_groups_passed" if outcome == "passed" else "repair_stopped",
@@ -995,6 +1027,8 @@ def _receipt(out_root: Path, ledger_root: Path, value: dict, entries: list[dict]
                "ledgerRoot": str(Path(ledger_root).resolve()),
                "ledgerHeadSha256": json_sha256(last),
                "humanApproval": False, "reviewKind": "machine_review"}
+    if repair_allowance is not None:
+        receipt["repairAllowance"] = repair_allowance
     path = out_root / f"auto-repair-receipt-{len(entries):03d}.json"
     if not path.exists():
         runner.save_new(path, receipt)

@@ -193,6 +193,9 @@ def budget_root(config):
     base = config.job_root.parent / f'.{config.job_root.name}.layer2-budget'
     if (getattr(config, 'auto_repair', None) or {}).get('backTranslationQc'):
         return base.with_name(base.name + '-qc-' + config.sha256)
+    if getattr(config, 'group_revision', None):
+        # A group revision has its own authorization, like a Gate 4 revision.
+        return base.with_name(base.name + '-revision-' + config.sha256)
     return base
 
 
@@ -251,6 +254,14 @@ class BudgetedCaller:
                 'claude_reviewer_requires_claude_cli_opus_policy')
         self.claude_transport = self.claude_transports.get('translator')
         self._plugin_policy_migrations = {}
+
+    def remaining_cost_microusd(self):
+        """The authorization's USD cap (micro-USD) not yet reserved or spent in this ledger.
+
+        Unknown outcomes keep their full reservation, as at every admission."""
+        with self.store._locked() as (_, ledger):
+            used = budget._sum(ledger['reservations'].values())
+        return max(0, self.store.authority['globalBounds']['costMicrousd'] - used['costMicrousd'])
 
     def verify_execution(self, key):
         load_authorization(self.config, self.auth['path'], self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
