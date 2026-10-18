@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-outcome-marker-python-39080624624",
+  "runs": [
+    {
+      "label": "outcome-marker-python-39080624624",
+      "source": "/private/tmp/sermon-outcome-marker-move-20261017/artifacts/outcome-marker-python-39080624624",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "outcome-marker-python-39080624624",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 254,
+      "truncated": false,
+      "sha256": "6981e4dbed741bb7eaaf4e59ad395a503299fea6bfe88560a39eb9d66abead77",
+      "redactions": {}
+    },
+    {
+      "run": "outcome-marker-python-39080624624",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1346,
+      "truncated": false,
+      "sha256": "1e9178eaec37a0060c6c7450d7b0bf2f7b0ebf7e60d0df6122e1d570bb6f5386",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
