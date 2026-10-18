@@ -3,6 +3,8 @@ import copy
 import json
 import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -104,6 +106,11 @@ class FixedClipReplayTests(unittest.TestCase):
 
     def test_full_tts_batches_receipts_and_no_model_on_resume(self):
         report, model, _ = self.tts()
+        from scripts import sermon_source_producer_compatibility as compatibility
+        implementation = Path(__file__).resolve().parents[1] / compatibility.resolve(
+            'scripts/render_formal_target_language_speech.py')
+        self.assertEqual(worker.read(self.tts_args.out / 'run.json')['synthesizerImplementationSha256'],
+                         worker.sha(implementation))
         self.assertEqual([len(r) for r in model.calls], [2, 2, 2, 2, 2, 2, 1])
         self.assertEqual(len(report['groups']), 13)
         self.assertEqual(report['groups'][0]['text'], ''.join(self.evidence['groups'][0]['targetUtterances']))
@@ -127,6 +134,26 @@ class FixedClipReplayTests(unittest.TestCase):
         self.assertEqual(resumed, report)
         self.assertEqual(worker.sha(self.tts_args.out / 'manifest.json'), manifest_sha)
         factory.assert_not_called()
+
+    def test_cold_threaded_audio_decode_uses_package_implementation(self):
+        script = '''
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+import sys
+from scripts.experiments import replay_fixed_clip_local_models as worker
+from scripts.render_formal_target_language_speech import write_pcm16
+assert 'scripts.validate_target_language_audio_unit' not in sys.modules
+root = Path(sys.argv[1])
+with ThreadPoolExecutor(max_workers=4) as pool:
+    results = list(pool.map(lambda i: worker.audio_output(root, {'groupId': f'g{i}'},
+                                                       [0.2, -0.2] * 800, 16000), range(4)))
+assert len(results) == 4
+assert all(row['audioSeconds'] > 0 for row in results)
+assert 'scripts.validate_target_language_audio_unit' not in sys.modules
+'''
+        completed = subprocess.run([sys.executable, '-c', script, str(self.root)],
+                                   text=True, capture_output=True, timeout=30)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_resident_model_reuses_exact_key_across_two_tts_jobs(self):
         from scripts.experiments.local_model_session import LocalModelSession

@@ -242,7 +242,7 @@ def audio_output(root, group, wave, sample_rate):
     write_pcm16(tmp, wave, sample_rate)
     with tmp.open('rb') as stream:
         os.fsync(stream.fileno())
-    from scripts.validate_target_language_audio_unit import probe_full_decode
+    from tongxing_production.audio.unit_integrity import probe_full_decode
     decoded = probe_full_decode(tmp)
     return {**group, 'audioPath': name, 'audioSha256': sha(tmp), 'sampleRate': sample_rate,
             'audioSeconds': decoded['durationSeconds'], '_preparedAudioPath': tmp.name}
@@ -299,12 +299,13 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
     target_locale = binding['targetLocale'] if general else 'zh-Hans'
     checkpoint, voice = speaker_context(args.registry, args.checkpoint_map, target_locale)
     offline()
+    from scripts import sermon_source_producer_compatibility as compatibility
     identity = {'schemaVersion': 'fixed-clip-local-tts-run-v1', **FLAGS,
                 'mediaSha256': binding['sourceMediaSha256'] if general else MEDIA_SHA,
                 'sourceUnitCount': binding['sourceUnitCount'] if general else 39, 'groupCount': len(groups),
                 'evidenceSha256': sha(args.evidence), 'voice': voice, 'batchSize': batch_size,
                 'backend': 'local', 'model': 'Qwen/Qwen3-TTS-12Hz-1.7B-speaker-checkpoint',
-                'synthesizerImplementationSha256': sha(Path(__file__).resolve().parents[1] / 'render_formal_target_language_speech.py'),
+                'synthesizerImplementationSha256': sha(Path(__file__).resolve().parents[2] / compatibility.resolve('scripts/render_formal_target_language_speech.py')),
                 'checkpointValidatorImplementationSha256': sha(Path(__file__).resolve().parents[1] / 'render_multilingual_voice_demos.py'),
                 'settings': {'seed': args.seed, 'device': args.device, 'dtype': 'bfloat16',
                              'attention': args.attention}, 'workerSha256': worker_identity(args.out)}

@@ -37,6 +37,10 @@ class RuleCasesTests(unittest.TestCase):
     def test_timing_and_supervisor_do_not_leak_derived_answers(self):
         for case in rules.build_rule_cases():
             if case['stageId']=='E05':
+                source = case['sharedEvidence']['taskPolicy']['source']
+                path, line = source.rsplit(':', 1)
+                self.assertIn('def plan(', (Path(__file__).resolve().parents[1] / path)
+                              .read_text(encoding='utf-8').splitlines()[int(line) - 1])
                 self.assertNotIn('failures',case['sharedEvidence'])
                 self.assertNotIn('failureReasons',case['sharedEvidence'])
                 self.assertIn('rows',case['sharedEvidence'])
