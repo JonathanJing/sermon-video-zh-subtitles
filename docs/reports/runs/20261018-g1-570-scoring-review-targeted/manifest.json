@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-570-scoring-review-targeted",
+  "runs": [
+    {
+      "label": "g1-570-scoring-review-targeted-20261017",
+      "source": "~/.codex/worktrees/g1-a3-sync-20261017/sermon-video-zh-subtitles/artifacts/g1-570-scoring-review-targeted-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-570-scoring-review-targeted-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 370,
+      "truncated": false,
+      "sha256": "62410dea8dde1eaeb238138c1fe1b01b8a72d6b4ac45109df067c160714862d6",
+      "redactions": {}
+    },
+    {
+      "run": "g1-570-scoring-review-targeted-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 263,
+      "truncated": false,
+      "sha256": "04ecf2db40bb125a710cfda7b25dc90a3197ea3fe63a93a72b3bd9aff24ba48e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
