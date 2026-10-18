@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "checks": [
+    "package smoke bare-import facade classification",
+    "voice demo synthetic CLI and rejection tests",
+    "git diff --check"
+  ],
+  "passed": 5,
+  "failed": 0,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "realMediaUsed": false,
+  "ciContext": "PR Python root-4 failed before this test change; exact-head CI for 975a3348 pending"
+}
