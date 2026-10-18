@@ -5,7 +5,9 @@
 ## 结论先行
 
 <!-- 交付类型（dual_pdf／live_session／four_layer_release／测试）、最终状态和结束信号（outcome.json；独占 Spark 以 round: 行为准）、证据边界。模拟审核和诊断级结果原样写出。 -->
-待填写。
+交付类型为测试：`18ae775f` 上 11 项合成回归通过，退出码 0，见 `outcome.json` 和 `summary.json`。其中 10 项覆盖 MiLMMT 审计与旧入口，1 项验证包／工具／实验门面的裸导入。工作树隔离 `.venv` 已确认从本 checkout 导入 `tongxing_production`；无真实语料、模型、网络、训练或发布。
+
+身份边界：`tongxing_production.text.controller.code_identity()` 哈希全部 `scripts/**/*.py`。MiLMMT 迁移与门面改动会改变新 checkout 的 Layer 2 `codeIdentity`；此测试不证明旧冻结收据可用于新代码，也不解冻进行中的 Layer 2 任务。代码 PR #1012 待其终态与冻结 checkout 边界核实后才能合并。
 
 ## 总时间
 
@@ -51,14 +53,14 @@
 ## 实际覆盖范围
 
 <!-- 按 L1–L4 写本轮执行、复用和未执行的部分。 -->
-待填写。
+L1–L4 全部 `not_run`；只执行本地合成审计、legacy 入口和包门面回归，没有复用生产收据。
 
 ## 遗留状态
 
 <!-- Dev 上无引用的文件、未结束的 job hold、已用构建号、待删除的本地产物。 -->
-待填写。
+代码 PR #1012 保持草稿且未合并；活跃 Layer 2 任务的终态与 checkout 边界仍待核实。本报告只记录本地测试。
 
 ## 外部可见的变化
 
 <!-- Dev 发布、TestFlight、受保护分支推送各自的证据；没做的验收写 not_run。 -->
-待填写。
+没有 Dev 发布、TestFlight、设备或场地验收，均为 `not_run`。
