@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-cuv-t5-legacy-baseline",
+  "runs": [
+    {
+      "label": "cuv-t5-old-evidence-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/cuv-t5-old-evidence-20261017",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "cuv-t5-old-evidence-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 3361,
+      "truncated": false,
+      "sha256": "39fe1b26cc02d00c2860bda8752da60ab2bb520ca558f77e1751673f66661f14",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
