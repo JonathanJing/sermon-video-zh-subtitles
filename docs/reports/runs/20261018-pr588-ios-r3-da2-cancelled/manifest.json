@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr588-ios-r3-da2-cancelled",
+  "runs": [
+    {
+      "label": "pr588-ios-r3-da2-cancelled-39088726053",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/ci-runs/pr588-ios-r3-da2-cancelled-39088726053",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr588-ios-r3-da2-cancelled-39088726053",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 280,
+      "truncated": false,
+      "sha256": "51de51811c2cc444fb113aa959679ecd94d8bd4b61e5d7f90440ff046302b5bb",
+      "redactions": {}
+    },
+    {
+      "run": "pr588-ios-r3-da2-cancelled-39088726053",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 848,
+      "truncated": false,
+      "sha256": "6a66caaee468a4a772ddf870e8b4184f0dd608867b43218c916156cfaf808727",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
