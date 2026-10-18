@@ -1,0 +1,10 @@
+{
+  "kind": "ci",
+  "workflow": "Tongxing iOS ready-state",
+  "status": "success",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39081270333",
+  "headSha": "89aea32e1214bf2cd5f7d69955dae5f370a723a6",
+  "createdAt": "2026-10-18T00:02:18Z",
+  "updatedAt": "2026-10-18T00:04:21Z",
+  "event": "pull_request"
+}
