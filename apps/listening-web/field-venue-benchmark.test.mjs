@@ -158,3 +158,27 @@ test('independent truth requires a private output file', () => {
   }
   assert.equal(results[0].stderr, results[1].stderr);
 });
+
+test('legacy independent truth imports resolve the adjacent implementation', () => {
+  const repo = new URL('../../', import.meta.url).pathname;
+  const implementation = new URL('../../experiments/field-fingerprint-benchmark/field_venue_independent_truth.py', import.meta.url).pathname;
+  const script = `
+import hashlib, os, sys, tempfile
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+with tempfile.TemporaryDirectory() as temporary:
+    os.chdir(temporary)
+    Path('field_venue_independent_truth.py').write_text('raise AssertionError("ambient shadow loaded")')
+    from scripts import field_venue_independent_truth as legacy
+    from scripts.field_venue_independent_truth import METHOD_VERSION, checked_file, decode
+    assert METHOD_VERSION == 'band-energy-global-v1+waveform-local-v1'
+    assert legacy.checked_file is checked_file and legacy.decode is decode
+    assert Path(checked_file.__code__.co_filename).resolve() == Path(sys.argv[2]).resolve()
+    payload = Path('synthetic.bin')
+    payload.write_bytes(b'synthetic-only')
+    assert checked_file(Path(temporary).resolve(), {'path': payload.name, 'sha256': hashlib.sha256(payload.read_bytes()).hexdigest()}) == payload.resolve()
+`;
+  const result = spawnSync('python3', ['-c', script, repo, implementation], {encoding: 'utf8', cwd: tmpdir()});
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, '');
+});
