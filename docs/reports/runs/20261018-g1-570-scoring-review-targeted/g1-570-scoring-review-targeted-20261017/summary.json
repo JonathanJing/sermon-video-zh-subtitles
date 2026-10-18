@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "test-run-summary-v1",
+  "result": "1 passed after test root and alias resolution repair",
+  "patchPresentInWorkingTree": true,
+  "repairCommit": "108e3f3e626507a8734cb44ec4b07e0fc82a9111",
+  "paidDispatch": false,
+  "productionRun": false
+}
