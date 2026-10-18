@@ -39,6 +39,7 @@ from . import unit_integrity as integrity
 # Accounting, producer timing, the voice checkpoint reader and the Korean spoken-number
 # rules come through AudioBackend records; the tables below read the rules at import,
 # so this module imports after the host binds the audio backend (its facade does).
+from . import hosted as hosted_module
 from .hosted import accounting, demos, ko_spoken_numerals, measure
 
 
@@ -49,6 +50,24 @@ def _renderer_sha256() -> str:
 
 def _module_file_sha256(module) -> str:
     return identity.sha256(_audio.current().code.module_path(module))
+
+
+def preview_execution_binding_sha256(*, code=None) -> str:
+    """Bind preview routing and its producer code before cache or formal reuse."""
+    code = code or _audio.current().code
+    return identity.json_sha256({
+        'scripts/render_speculative_target_language_speech.py': identity.sha256(
+            code.physical_path('scripts/render_speculative_target_language_speech.py')),
+        'packages/production/src/tongxing_production/audio/speculative.py': identity.sha256(
+            code.physical_path('packages/production/src/tongxing_production/audio/speculative.py')),
+        'packages/production/src/tongxing_production/path_aliases.py': identity.sha256(
+            code.physical_path('packages/production/src/tongxing_production/path_aliases.py')),
+        'packages/production/src/tongxing_production/audio/hosted.py': identity.sha256(
+            code.module_path(hosted_module)),
+        'packages/production/src/tongxing_production/audio/backend.py': identity.sha256(
+            code.module_path(_audio)),
+        'scripts/tongxing_host.py': identity.sha256(code.implementation_path('scripts/tongxing_host.py')),
+    })
 
 
 VERSION = "sermon-formal-target-speech-render-v1"
@@ -668,11 +687,17 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
     if not manifest_path.is_file():
         raise ValueError("Speculative render manifest is missing")
     manifest = package.read_object(manifest_path)
-    require(manifest.get("schemaVersion") == "sermon-speculative-target-speech-v1"
+    # v1 has no preview producer/host binding. It remains valid only on its
+    # frozen checkout; stop before any model work on this checkout.
+    if manifest.get("schemaVersion") == "sermon-speculative-target-speech-v1":
+        raise ValueError("Legacy speculative preview requires its frozen checkout")
+    require(manifest.get("schemaVersion") == "sermon-speculative-target-speech-v3"
             and manifest.get("status") == "preview_only"
             and manifest.get("synthesisEligible") is False
             and manifest.get("releaseEligible") is False,
             "Speculative render cannot claim formal eligibility")
+    require(manifest.get("previewExecutionBindingSha256") == preview_execution_binding_sha256(),
+            "Speculative preview execution binding changed")
     snapshot_path = previous_root / "candidate.json"
     require(snapshot_path.is_file()
             and snapshot_path.resolve().is_relative_to(previous_root.resolve()),
@@ -724,10 +749,11 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
             f"Incomplete speculative unit: {unit['translationGroupId']}")
     receipt = package.read_object(receipt_path)
     sound = receipt.get("soundIdentity")
-    require(receipt.get("schemaVersion") == "sermon-speculative-target-speech-unit-v1"
+    require(receipt.get("schemaVersion") == "sermon-speculative-target-speech-unit-v2"
             and receipt.get("status") == "preview_only"
             and isinstance(sound, dict)
             and manifest.get("candidateJsonSha256") == receipt.get("candidateJsonSha256")
+            and receipt.get("previewExecutionBindingSha256") == manifest["previewExecutionBindingSha256"]
             and receipt.get("audioSha256") == identity.sha256(wav_path),
             f"Speculative audio evidence changed: {unit['translationGroupId']}")
     require(groups[index].get("translationGroupId") == sound.get("groupId")

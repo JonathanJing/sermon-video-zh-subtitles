@@ -1,5 +1,6 @@
 """Read-only source and preview evidence checks; all fixtures are synthetic."""
 import copy
+import io
 import json
 from pathlib import Path
 import unittest
@@ -76,6 +77,49 @@ class PreviewInspectionTests(unittest.TestCase):
         self.assertEqual(calls, len(previews.FakeSynth.calls))
         self.assertNotIn(str(self.root), json.dumps(first))
         self.assertNotIn(self.f.candidate['groups'][0]['targetText'], json.dumps(first))
+
+    def test_scoped_binding_required_in_manifest_and_unit(self):
+        manifest_path = self.out / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        self.assertEqual(manifest['previewExecutionBindingSha256'],
+            subject.preview.formal.preview_execution_binding_sha256())
+        old_manifest = dict(manifest)
+        old_manifest.pop('previewExecutionBindingSha256')
+        old_manifest['schemaVersion'] = 'sermon-speculative-target-speech-v2'
+        manifest_path.write_text(json.dumps(old_manifest))
+        self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
+        self.save_receipt()
+        with self.assertRaisesRegex(ValueError, 'diagnostic_delivery_preview_manifest_changed'):
+            self.inspect()
+        manifest_path.write_text(json.dumps(manifest))
+        unit_path = self.out / 'receipts/unit-0000.json'
+        unit = json.loads(unit_path.read_text())
+        for value in (None, '0' * 64):
+            broken = dict(unit)
+            if value is None: broken.pop('previewExecutionBindingSha256')
+            else: broken['previewExecutionBindingSha256'] = value
+            unit_path.write_text(json.dumps(broken))
+            self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
+            self.save_receipt()
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'diagnostic_delivery_preview_unit_changed'):
+                self.inspect()
+        unit_path.write_text(json.dumps(unit))
+        self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
+        self.save_receipt()
+        facade = subject.preview.formal._audio.current().code.physical_path(
+            'scripts/render_speculative_target_language_speech.py')
+        original_open = Path.open
+
+        def changed_open(path, *args, **kwargs):
+            mode = args[0] if args else kwargs.get('mode', 'r')
+            if path == facade and mode == 'rb':
+                with original_open(path, 'rb') as stream:
+                    return io.BytesIO(stream.read() + b'\n# changed facade\n')
+            return original_open(path, *args, **kwargs)
+
+        with patch.object(Path, 'open', changed_open):
+            with self.assertRaisesRegex(ValueError, 'diagnostic_delivery_preview_manifest_changed'):
+                self.inspect()
 
     def test_changed_original_voice_and_checkpoint_fail_closed(self):
         path = self.f.f.registry_path

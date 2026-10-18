@@ -247,12 +247,14 @@ G1 的 W **逻辑键表**由基线 22 键扩为 R3 后 28 键：jobs 拆分加�
 
 物理清单中的每个键都是实际仓库相对路径，`file_hashes` 逐路径只给该文件字节的 SHA-256；W 的总哈希按清单顺序绑定“路径 + 字节”。旧运行计划的 W 与新值不等，`implementation_freeze` 在任何模型调用前拒绝，旧校准和豁免不能作为新实现的授权。旧冻结 checkout 的收据不被改写。
 
+2026-10-17 补充：A4 的三个 Layer 3 入口使用 `audio/hosted.py` 的新代理，预渲染的正式复用也须核对该代理及宿主绑定。因此 A4 [#588](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/588) 属于同一个 G1 窗口；R3 [#579](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/579) 的 28 键值只是中间预览，不是最终代记录。旧 v1 预渲染只在冻结 checkout 上复用，新版预渲染的 manifest 和跨运行准入绑定生产者与宿主执行代码。A4 合并并核对最终四值、28 键图前，不在 dev 上开始新一代校准或签发。R4 仍排在 G1 之后，前提是它保持四值不变。
+
 | 项 | 内容 |
 |---|---|
-| 成员 | L3 A3（`audio/` 身份代批次）；review R3；基础设施的 jobs 拆分（`storage/files.py` + `orchestration/jobs.py`，§6 第 7 项）；compute 的 `machine_qc_audio_transports`（§6 第 2 项已决定）。顺序不限：review 经 `AudioRules` 取 L3，A3 只改宿主绑定；传输若在 R3 之前搬，暂经端口取 review。前置：基础设施 I0b（两个 compute 叶子按字节搬）和 I1（contracts）已合并 |
+| 成员 | L3 A3（`audio/` 身份代批次）；review R3；基础设施的 jobs 拆分（`storage/files.py` + `orchestration/jobs.py`，§6 第 7 项）；compute 的 `machine_qc_audio_transports`（§6 第 2 项已决定）；依赖 A3/R3 的 A4 三个 Layer 3 入口 [#588](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/588)。A4 在其父批次之后；review 经 `AudioRules` 取 L3，A3 只改宿主绑定；传输若在 R3 之前搬，暂经端口取 review。前置：基础设施 I0b（两个 compute 叶子按字节搬）和 I1（contracts）已合并 |
 | 开启条件 | 没有进行中的 QC、校准或 Spark 作业，没有未知结果（不变量 5）；没有进行中的 L2 run、统一运行、Prefect pilot 或 mock DAG（jobs 在两者的闭包里）；列出所有"已校准未签发"和"已签发未封存"的 locale，由你决定先在旧 checkout 上完成还是重做；记录四个基线值和 `implementation_freeze.file_hashes()` |
 | 窗口内 | 只合并成员 PR；dev 上不签豁免、不做校准、不批 QC 预算、不绑精简。旧运行可以在其冻结的 checkout 上继续（`implementation_freeze` 允许，因为那个 checkout 的值没变），但它签发的豁免只能在同一 checkout 上封存 |
-| 关闭条件 | 最后一个成员合并后，一份代记录写明旧→新四个值和逐文件哈希，并列出要重新校准、重筛、重拟合语速、重绑精简、重新批 QC 预算的 locale；放在最后一个成员 PR 的说明和对应的 docs PR 里 |
+| 关闭条件 | A4 作为最后一个成员合并后，一份代记录写明旧→新四个值和逐文件哈希，并列出要重新校准、重筛、重拟合语速、重绑精简、重新批 QC 预算的 locale；放在 A4 PR 的说明和对应的 docs PR 里。#579 的值不能充作关闭值 |
 | 关闭之后 | 按 locale 重新校准与签发（各自的运行计划记录新的 `expectedImplementation`）；这些是真实运行，按 AGENTS.md 导出运行报告 |
 
 ### 5.2 批次
