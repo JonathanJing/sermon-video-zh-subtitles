@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "pr824-ci-run-summary-v1",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39073098021",
+  "headSha": "8f62ed294b2b326387b3e3ffba1670b1a0f97c83",
+  "conclusion": "success",
+  "note": "Ready-state iOS run completed; native-client gate passed, iOS and contract validation were correctly skipped for the unchanged iOS scope.",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "ios-validation",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ]
+}
