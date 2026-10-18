@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 from . import unit_integrity as integrity, human_review as audio_review
 from . import backend as audio_backend
+from . import hosted as hosted_module
 from .hosted import renderer
 from ..source import sentence_interpretation as identity
 
@@ -142,6 +143,11 @@ def inspect(job_path, output_path=None):
     code_paths = {name: code.implementation_path('scripts/' + name) for name in
                   ('sermon_unified_audio.py', 'render_formal_target_language_speech.py',
                    'validate_target_language_audio_unit.py')}
+    code_paths.update({
+        'audio/hosted.py': code.module_path(hosted_module),
+        'audio/backend.py': code.module_path(audio_backend),
+        'scripts/tongxing_host.py': code.implementation_path('scripts/tongxing_host.py'),
+    })
     explicit_instructions = (json.loads(extra['unitInstructions'].read_text())
                              if extra.get('unitInstructions') else {})
     if (context['job']['targetLocale'] == 'ko'

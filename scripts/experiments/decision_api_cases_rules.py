@@ -351,7 +351,7 @@ def build_rule_cases():
                   'policy':{'reactionLagSeconds':.05,'interUtteranceGapSeconds':.05,'maxEndLagSeconds':8.0},
                   'locale':'zh-Hans','identities':{},
                   'taskPolicy':{'scope':'measured formal scheduling only; no WAV measurement/approval',
-                                'source':'scripts/target_audio_timing_plan.py:32',
+                                'source':'packages/production/src/tongxing_production/audio/timing_plan.py:31',
                                 'scheduleRule':'start=max(sourceStart+reactionLag,cursor+interGroupGap); end=start+audioSeconds; fail if end exceeds source_seconds or end-sourceEnd exceeds maxEndLagSeconds',
                                 'serialRule':'first sourceStart + reactionLag + sum(audioSeconds) + interGroup gaps exceeds source_seconds'}}
         cases.append(_case('E05',f'{name}-{index+1:02d}','target_audio_timing_plan',evidence,
