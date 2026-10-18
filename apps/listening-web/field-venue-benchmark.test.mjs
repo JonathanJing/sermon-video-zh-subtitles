@@ -174,6 +174,12 @@ with tempfile.TemporaryDirectory() as temporary:
     assert METHOD_VERSION == 'band-energy-global-v1+waveform-local-v1'
     assert legacy.checked_file is checked_file and legacy.decode is decode
     assert Path(checked_file.__code__.co_filename).resolve() == Path(sys.argv[2]).resolve()
+    marker = object()
+    legacy.np = marker
+    assert legacy.np is marker and legacy.global_peak.__globals__['np'] is marker
+    legacy.decode = marker
+    assert legacy.decode is marker and legacy.waveform_peak.__globals__['decode'] is marker
+    legacy.decode = decode
     payload = Path('synthetic.bin')
     payload.write_bytes(b'synthetic-only')
     assert checked_file(Path(temporary).resolve(), {'path': payload.name, 'sha256': hashlib.sha256(payload.read_bytes()).hexdigest()}) == payload.resolve()
