@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "deepseek-translation-review-ab-outcome-v1",
+  "status": "succeeded",
+  "startedAt": "2026-10-17T21:38:31+00:00",
+  "endedAt": "2026-10-17T21:43:28.679056+00:00",
+  "exitCode": 0,
+  "productionEligible": false,
+  "humanApproval": false,
+  "summarySha256": "06993c445b57f16e32d89baef15830a6fce6e59cf4d071e053674f4345cd4f05"
+}
