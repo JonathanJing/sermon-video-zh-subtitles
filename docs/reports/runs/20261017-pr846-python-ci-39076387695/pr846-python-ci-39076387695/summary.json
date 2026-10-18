@@ -1,0 +1,70 @@
+{
+  "status": "passed",
+  "runId": 39076387695,
+  "workflow": "Python tests",
+  "headSha": "d65d369fa1365475516716d68903131e844b0a38",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39076387695",
+  "scope": "PR #846 closure-fixed code CI",
+  "jobs": {
+    "changes": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:25Z",
+      "completedAt": "2026-10-17T22:46:35Z"
+    },
+    "test-group (root-5)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:37Z",
+      "completedAt": "2026-10-17T23:00:35Z"
+    },
+    "test-group (root-2)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:37Z",
+      "completedAt": "2026-10-17T23:01:04Z"
+    },
+    "test-group (root-6)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:37Z",
+      "completedAt": "2026-10-17T23:00:28Z"
+    },
+    "test-group (root-0)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:36Z",
+      "completedAt": "2026-10-17T22:55:54Z"
+    },
+    "test-group (root-7)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:37Z",
+      "completedAt": "2026-10-17T23:03:05Z"
+    },
+    "test-group (root-3)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:36Z",
+      "completedAt": "2026-10-17T22:58:27Z"
+    },
+    "test-group (root-1)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:48:16Z",
+      "completedAt": "2026-10-17T22:58:26Z"
+    },
+    "test-group (root-4)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:50:01Z",
+      "completedAt": "2026-10-17T23:03:51Z"
+    },
+    "Native and shared client contracts": {
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T22:46:35Z",
+      "completedAt": "2026-10-17T22:46:35Z"
+    },
+    "unittest": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:04:49Z",
+      "completedAt": "2026-10-17T23:04:53Z"
+    }
+  },
+  "limitations": [
+    "Code CI only; no paid or remote production run",
+    "Native/shared-client skipped in Python workflow",
+    "No HTTP, publication, device or venue acceptance"
+  ]
+}
