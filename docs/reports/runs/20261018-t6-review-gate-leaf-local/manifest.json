@@ -22,9 +22,9 @@
       "run": "t6-review-gate-leaf-20261018-local",
       "path": "summary.json",
       "kind": "whole",
-      "bytes": 703,
+      "bytes": 711,
       "truncated": false,
-      "sha256": "93f464e6031b59669dce2f3c966bc61ed1a323ad7aeecf297ff8f1acf6c685d8",
+      "sha256": "678d34d89a6f37f8b661b43a4f110f3c77655d536dd9404d9fe0bb614c868621",
       "redactions": {}
     }
   ],
