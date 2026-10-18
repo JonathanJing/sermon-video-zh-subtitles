@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "testGroups": 8,
+  "testGroupStatus": "all_success",
+  "aggregateUnittest": "success",
+  "nativeSharedClientContracts": "skipped",
+  "modelCalls": 0,
+  "providerCalls": 0,
+  "productionWrites": 0,
+  "scope": "current-head code CI only; Layer 2 frozen run and delivery not evaluated"
+}
