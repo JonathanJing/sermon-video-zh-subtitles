@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-r4-a4-postmerge-interrupted",
+  "runs": [
+    {
+      "label": "r4-a4-postmerge-interrupted",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/local-runs/r4-a4-postmerge-interrupted",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "r4-a4-postmerge-interrupted",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 154,
+      "truncated": false,
+      "sha256": "7a4adb6585c68e50a2060cb078fb17fde7c387749ef8a6bfa3a0cac8806c045f",
+      "redactions": {}
+    },
+    {
+      "run": "r4-a4-postmerge-interrupted",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 464,
+      "truncated": false,
+      "sha256": "6fbede6cf9e0438d75efce27aecf4f1e1ec44806370f4482e0ef402f734a361c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
