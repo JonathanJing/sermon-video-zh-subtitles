@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-r4-sync-focused",
+  "runs": [
+    {
+      "label": "20261017-g1-r4-sync-focused",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/local-test-runs/20261017-g1-r4-sync-focused",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-g1-r4-sync-focused",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 331,
+      "truncated": false,
+      "sha256": "aece7042ce5f859de040ce1d0c68c2b8decf51426c2e90bef6fc910aee289411",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
