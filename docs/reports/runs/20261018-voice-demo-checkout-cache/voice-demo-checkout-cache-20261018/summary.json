@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "initialAttempt": {
+    "status": "failed",
+    "passed": 3,
+    "failed": 1,
+    "reason": "macOS temp path symlink made test expected path noncanonical"
+  },
+  "finalAttempt": {
+    "status": "passed",
+    "passed": 4,
+    "failed": 0
+  },
+  "checks": [
+    "two-checkout implementation identity",
+    "legacy/new CLI equivalence on synthetic WAV",
+    "existing rejection tests",
+    "py_compile",
+    "git diff --check"
+  ],
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "realMediaUsed": false
+}
