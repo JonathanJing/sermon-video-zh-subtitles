@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-voice-demo-pr-ci-green",
+  "runs": [
+    {
+      "label": "voice-demo-pr-ci-green-20261018",
+      "source": "~/.codex/worktrees/voice-demo-package-leaf/sermon-video-zh-subtitles/artifacts/test-runs/voice-demo-pr-ci-green-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "voice-demo-pr-ci-green-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 323,
+      "truncated": false,
+      "sha256": "7d9d25bac5f2fd3143288fd488cab5a25e0de86059a1232cc36a1d75c79fc65b",
+      "redactions": {}
+    },
+    {
+      "run": "voice-demo-pr-ci-green-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 505,
+      "truncated": false,
+      "sha256": "80b97de48aec0c93d8c8f84dccac2d44594383ac989ae3183af4b25e4c73fdc4",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
