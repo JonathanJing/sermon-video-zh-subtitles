@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "local-exp-leaf-ci-observation-v1",
+  "status": "cancelled",
+  "exitCode": 1,
+  "deliveryType": "test",
+  "scope": "superseded exact-head Python CI",
+  "headSha": "8117b4d1f5ee8f5fa96ad07843ab962b2ccf911d",
+  "workflowRunId": 39094274377,
+  "reason": "superseded by fix for code-review P2 on legacy module assignments",
+  "jobs": {
+    "changes": "success",
+    "rootGroups": "cancelled (8)",
+    "unittest": "failure after cancellation",
+    "nativeContracts": "skipped"
+  },
+  "currentHead": "9d6bceb4b135d10ac8118aed8600965eb7db5199",
+  "realVenue": "not_run",
+  "spark": "not_run",
+  "paidCalls": 0
+}
