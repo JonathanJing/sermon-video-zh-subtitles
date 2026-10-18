@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "testCount": 88,
+  "wallSeconds": 53.685,
+  "scope": "package structure, diagnostic preview, unified review, freeze guard, facade identity and Spark start checks",
+  "modelCalls": 0
+}
