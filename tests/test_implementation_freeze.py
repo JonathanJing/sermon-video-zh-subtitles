@@ -10,12 +10,25 @@ from scripts import implementation_freeze as freeze
 from scripts import machine_quality_waiver as waiver
 from scripts import run_machine_qc_audio_test as audio_driver
 from scripts import run_machine_qc_clip_test as text_driver
+from tongxing_production.review import implementation_freeze as moved_freeze
 
 
 class ImplementationFreezeTests(unittest.TestCase):
     def test_current_checkout_matches_its_own_hash(self):
         self.assertIsNone(freeze.mismatch(waiver.implementation_sha256()))
         self.assertEqual(set(freeze.file_hashes()), set(waiver.IMPLEMENTATION_PHYSICAL_FILES))
+
+    def test_guard_alias_and_spark_closure_bind_the_physical_generation(self):
+        self.assertIs(freeze, moved_freeze)
+        self.assertEqual(freeze.ROOT, Path(__file__).resolve().parents[1])
+        self.assertEqual([str(path) for path in freeze.closure_files(Path())],
+                         list(waiver.IMPLEMENTATION_PHYSICAL_FILES))
+        self.assertEqual(set(freeze.file_hashes()), set(map(str, freeze.closure_files(Path()))))
+        self.assertIn('packages/production/src/tongxing_production/review/implementation_freeze.py',
+                      freeze.file_hashes())
+        # A4's exact 49-file identity is historical; R4's moved guard refuses it.
+        stale_a4 = '74b2f5a23c43dea429a0d31b27c5767ee66740b764cb5294081b89d58202de60'
+        self.assertEqual(freeze.mismatch(stale_a4)['exitCode'], 2)
 
     def test_other_hash_is_reported_with_the_changed_files(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -47,7 +60,8 @@ class ImplementationFreezeTests(unittest.TestCase):
         for name in ("scripts/machine_quality_waiver.py",
                      "packages/production/src/tongxing_production/review/waiver.py",
                      "packages/production/src/tongxing_production/path_aliases.py",
-                     "scripts/implementation_freeze.py"):
+                     "scripts/implementation_freeze.py",
+                     "packages/production/src/tongxing_production/review/implementation_freeze.py"):
             target = freeze.ROOT / name
             with self.subTest(name=name), patch.object(Path, "read_bytes",
                     lambda path: original(path) + b"\n# changed physical file\n"
