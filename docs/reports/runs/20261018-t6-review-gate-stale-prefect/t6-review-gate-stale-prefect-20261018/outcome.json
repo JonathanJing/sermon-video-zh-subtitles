@@ -1,0 +1,12 @@
+{
+  "deliveryType": "test",
+  "status": "cancelled",
+  "exitCode": null,
+  "headSha": "18f58aa00807d45bf2a6b4cc355a52bb0964eedc",
+  "workflow": "Local Prefect pilot",
+  "runId": 39095379575,
+  "workflowConclusion": "cancelled",
+  "successClaim": false,
+  "publication": "not_run",
+  "realProduction": "not_run"
+}
