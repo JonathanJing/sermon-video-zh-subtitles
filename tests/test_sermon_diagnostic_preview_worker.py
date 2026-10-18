@@ -172,6 +172,34 @@ class PreviewWorkerTests(unittest.TestCase):
         self.assertFalse(errors)
         self.assertTrue(any((row.get('stage') or '').endswith('.synthesis') for row in events))
 
+    def test_scoped_preview_binding_is_required_by_readonly_output_validation(self):
+        with self.session(): self.launch()
+        checked = subject.preview.checked_context(
+            {key: Path(value) for key, value in self.spec['paths'].items()},
+            Path(self.spec['checkpoint_map_path']), Path(self.spec['operation_policies_path']),
+            strict_rubric=self.f.rubric, diagnostic_context=self.context)
+        manifest_path = self.out / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        binding = subject.preview.formal.preview_execution_binding_sha256()
+        self.assertEqual(manifest['previewExecutionBindingSha256'], binding)
+        self.assertEqual(subject._manifest(checked), manifest)
+        old_manifest = dict(manifest)
+        old_manifest.pop('previewExecutionBindingSha256')
+        old_manifest['schemaVersion'] = 'sermon-speculative-target-speech-v2'
+        manifest_path.write_text(json.dumps(old_manifest))
+        with self.assertRaisesRegex(ValueError, 'preview_manifest_changed'):
+            subject._outputs(self.root, self.spec, checked)
+        manifest_path.write_text(json.dumps(manifest))
+        unit_path = self.out / 'receipts/unit-0000.json'
+        unit = json.loads(unit_path.read_text())
+        for value in (None, '0' * 64):
+            broken = dict(unit)
+            if value is None: broken.pop('previewExecutionBindingSha256')
+            else: broken['previewExecutionBindingSha256'] = value
+            unit_path.write_text(json.dumps(broken))
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'preview_unit_receipt_changed'):
+                subject._outputs(self.root, self.spec, checked)
+
     def test_scrubbed_environment_has_no_credentials_or_proxy(self):
         with self.session(), patch.dict(os.environ, {'OPENAI_API_KEY': 'secret', 'HTTPS_PROXY': 'secret'}):
             env = subject._environment(self.root, self.out, True)

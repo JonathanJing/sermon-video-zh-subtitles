@@ -163,6 +163,7 @@ def _inspect_preview(root, subject, context, locale, envelope, files):
         anchorJsonSha256=c.canonical_sha256(checked['anchor']),
         translationPolicySha256=candidate['translationPolicySha256'],
         previewRendererSha256=files.file(Path(preview.__file__).absolute()),
+        previewExecutionBindingSha256=preview.formal.preview_execution_binding_sha256(),
         strictRubricSha256=c.canonical_sha256(rubric), diagnosticContextSha256=c.canonical_sha256(context),
         humanAcceptance='pending', productionEligible=False)
     c.require(manifest_path in artifacts and manifest == expected, 'diagnostic_delivery_preview_manifest_changed')
@@ -181,6 +182,7 @@ def _inspect_preview(root, subject, context, locale, envelope, files):
         c.require(unit.get('schemaVersion') == preview.UNIT_VERSION and unit.get('status') == 'preview_only'
             and unit.get('candidateJsonSha256') == expected['candidateJsonSha256']
             and unit.get('previewContextSha256') == c.canonical_sha256(manifest)
+            and unit.get('previewExecutionBindingSha256') == expected['previewExecutionBindingSha256']
             and unit.get('soundIdentity') == sound and unit.get('audioSha256') == files.file(audio_path)
             and unit.get('fullDecode') == 'pass', 'diagnostic_delivery_preview_unit_changed')
         decoded = preview.integrity.probe_full_decode(audio_path)

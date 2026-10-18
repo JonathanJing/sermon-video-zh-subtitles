@@ -77,6 +77,32 @@ class PreviewInspectionTests(unittest.TestCase):
         self.assertNotIn(str(self.root), json.dumps(first))
         self.assertNotIn(self.f.candidate['groups'][0]['targetText'], json.dumps(first))
 
+    def test_scoped_binding_required_in_manifest_and_unit(self):
+        manifest_path = self.out / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        self.assertEqual(manifest['previewExecutionBindingSha256'],
+            subject.preview.formal.preview_execution_binding_sha256())
+        old_manifest = dict(manifest)
+        old_manifest.pop('previewExecutionBindingSha256')
+        old_manifest['schemaVersion'] = 'sermon-speculative-target-speech-v2'
+        manifest_path.write_text(json.dumps(old_manifest))
+        self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
+        self.save_receipt()
+        with self.assertRaisesRegex(ValueError, 'diagnostic_delivery_preview_manifest_changed'):
+            self.inspect()
+        manifest_path.write_text(json.dumps(manifest))
+        unit_path = self.out / 'receipts/unit-0000.json'
+        unit = json.loads(unit_path.read_text())
+        for value in (None, '0' * 64):
+            broken = dict(unit)
+            if value is None: broken.pop('previewExecutionBindingSha256')
+            else: broken['previewExecutionBindingSha256'] = value
+            unit_path.write_text(json.dumps(broken))
+            self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
+            self.save_receipt()
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'diagnostic_delivery_preview_unit_changed'):
+                self.inspect()
+
     def test_changed_original_voice_and_checkpoint_fail_closed(self):
         path = self.f.f.registry_path
         registry = json.loads(path.read_text()); registry['speakers'][0]['authorization']['status'] = 'revoked'
