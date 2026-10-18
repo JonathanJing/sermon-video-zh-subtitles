@@ -144,25 +144,27 @@ class RevisionFixture:
                                      evidence=["operator listed group numbers"])
         return run / record_decision.FILE_NAME, policy_tools.canonical_sha256(row)
 
-    def revision_request(self, groups, *, decision=None, **extra):
+    def revision_request(self, groups, *, decision=None, prior=None, **extra):
         decisions, row_sha = decision or self.decide()
         path = self.root / "revision" / "zh-Hans.json"
         path.parent.mkdir(exist_ok=True)
-        value = {"schemaVersion": group_revision.REQUEST_SCHEMA, "targetLocale": "zh-Hans",
-                 "priorCandidate": "../text/zh-Hans/candidate.json", "groups": groups,
+        value = {"schemaVersion": group_revision.REQUEST_SCHEMA, "targetLocale": "zh-Hans", "groups": groups,
+                 **(prior or {"priorCandidate": "../text/zh-Hans/candidate.json"}),
                  "decision": {"decisionsFile": str(decisions), "rowSha256": row_sha}, **extra}
         path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
         return path
 
-    def execution(self, *, workers=4):
-        path = self.root / "execution.json"
+    def execution(self, *, workers=4, job_root="jobs", revision=True, output="text-r2/zh-Hans",
+                  name="execution.json"):
+        path = self.root / name
         path.write_text(json.dumps({
-            "schemaVersion": subject.GROUP_REVISION_SCHEMA, "productionRunId": "a" * 64,
-            "inspectionConfig": "inspection.json", "jobRoot": "jobs",
-            "locales": {"zh-Hans": {"outputDirectory": "text-r2/zh-Hans", "plugin": str(self.plugin)}},
+            "schemaVersion": subject.GROUP_REVISION_SCHEMA if revision else subject.AUTO_REPAIR_SCHEMA,
+            "productionRunId": "a" * 64, "inspectionConfig": "inspection.json", "jobRoot": job_root,
+            "locales": {"zh-Hans": {"outputDirectory": output, "plugin": str(self.plugin)}},
             "layer2AutoRepair": {"routingVersion": auto_repair.ROUTING_VERSION, "groupWorkers": workers,
                                  "maxActiveLocales": 1},
-            "layer2GroupRevision": {"zh-Hans": "revision/zh-Hans.json"}}), encoding="utf-8")
+            **({"layer2GroupRevision": {"zh-Hans": "revision/zh-Hans.json"}} if revision else {})}),
+            encoding="utf-8")
         return path
 
     @property
@@ -197,9 +199,10 @@ class RevisionFixture:
 class Models:
     """Synthetic translator/reviewer: listed groups get new text; ``fail_first`` fail one review."""
 
-    def __init__(self, fail_first=(), hold_for=0):
+    def __init__(self, fail_first=(), hold_for=0, always_fail=(), text="修订"):
         self.calls, self.lock = [], threading.Lock()
         self.fail_first, self.failed = set(fail_first), set()
+        self.always_fail, self.text = set(always_fail), text
         self.active = self.peak = 0
         self.overlapped = threading.Event()
         self.hold_for = hold_for
@@ -216,7 +219,7 @@ class Models:
             self.overlapped.wait(self.hold_for)
         try:
             reviewer = payload["reasoning_effort"] == "medium"
-            utterances = [f"修订{data['translationGroupId']}第{n}句。" for n in range(len(data["sourceUnitIds"]))]
+            utterances = [f"{self.text}{data['translationGroupId']}第{n}句。" for n in range(len(data["sourceUnitIds"]))]
             answer = {"translationGroupId": data["translationGroupId"], "sourceUnitIds": data["sourceUnitIds"],
                       "targetUtterances": utterances,
                       "coverage": [{"sourceUnitId": unit, "targetText": text}
@@ -227,6 +230,7 @@ class Models:
                     fail = data["translationGroupId"] in self.fail_first - self.failed
                     if fail:
                         self.failed.add(data["translationGroupId"])
+                    fail = fail or data["translationGroupId"] in self.always_fail
                 if fail:
                     answer["semanticReview"]["status"] = "fail"
                     answer["semanticReview"]["checks"]["completeMeaning"] = "fail"
@@ -281,13 +285,13 @@ class GroupIdInterfaceTests(unittest.TestCase):
                                                  self.fixture.plan)
         other = self.fixture.root / "other.json"
         other.write_text("{}")
-        for decision, reason in ((self.fixture.decide(governs=other), "does_not_govern_prior_candidate"),
+        for decision, reason in ((self.fixture.decide(governs=other), "does_not_govern_prior_source"),
                                  ((self.fixture.decide()[0], "0" * 64), "group_revision_decision_row_missing")):
             with self.subTest(reason=reason), self.assertRaisesRegex(ValueError, reason):
                 group_revision.prepare(self.load([1], decision=decision), self.fixture.source, self.fixture.anchor,
                                        self.fixture.policy, self.fixture.plugin, rules)
         unbound = record_decision.record(self.fixture.root / "run", question="q", choice="c", decided_by="me")
-        with self.assertRaisesRegex(ValueError, "does_not_govern_prior_candidate"):
+        with self.assertRaisesRegex(ValueError, "does_not_govern_prior_source"):
             group_revision.prepare(
                 self.load([1], decision=(self.fixture.root / "run" / record_decision.FILE_NAME,
                                          policy_tools.canonical_sha256(unbound))),
@@ -459,6 +463,59 @@ class WorkerRevisionTests(unittest.TestCase):
         self.assertIn("groupRevisionSha256", repair["lineage"])
 
 
+class PriorRoundTests(unittest.TestCase):
+    """The 2026-10-18 Korean shape: a v3 round with every group run, a few failed, no candidate."""
+
+    def test_failed_round_without_candidate_is_revised_from_its_caches(self):
+        fixture = RevisionFixture(self, 30)
+        failed = [4, 11, 12, 27]
+        ids = [fixture.plan[index - 1]["translationGroupId"] for index in failed]
+        first = Models(always_fail=ids, text="初译")
+        v3 = fixture.execution(revision=False, job_root="jobs-f1", output="text-f1/zh-Hans", name="execution-f1.json")
+        with self.assertRaisesRegex(ValueError, "layer2_auto_repair_stopped"):
+            fixture.run_worker(first, v3)
+        round_dir = fixture.root / "text-f1" / "zh-Hans" / "repair-rounds" / "round-001"
+        report = json.loads((round_dir / "group-failures.json").read_text())
+        self.assertEqual(sorted(row["index"] for row in report["failures"]), failed)
+        self.assertFalse((fixture.root / "text-f1" / "zh-Hans" / "candidate.json").exists())
+        decision = fixture.decide(governs=round_dir / "group-failures.json")
+        prior = {"priorRound": "../text-f1/zh-Hans/repair-rounds/round-001"}
+        path = fixture.execution(job_root="jobs-r1", output="text-r1/zh-Hans")
+        # A list that misses a group the round failed is refused before any job exists.
+        fixture.revision_request(failed[:-1], decision=decision, prior=prior)
+        tick = subject.Controller(path).tick()
+        self.assertEqual((tick["reasonCode"], tick["groupRevision"]["unlistedFailures"]),
+                         ("group_revision_unlisted_groups_fail_current_checks",
+                          [{"group": 27, "translationGroupId": ids[-1], "reasons": ["independent_review_failed"]}]))
+        # An unknown paid outcome in the prior round stops the revision too.
+        marker = round_dir / "group-0031-sol.started.json"
+        marker.write_text("{}")
+        fixture.revision_request(failed, decision=decision, prior=prior)
+        self.assertEqual(subject.Controller(path).tick()["reasonCode"], "group_revision_prior_round_has_unknown_outcome")
+        marker.unlink()
+        self.assertEqual(subject.Controller(path).tick()["reasonCode"], "shadow_only")
+        models = Models()
+        result = fixture.run_worker(models, path)
+        self.assertEqual(result["status"], "machine_review_pass_human_review_pending")
+        self.assertEqual(sorted(models.groups()), sorted(ids * 2))
+        candidate = json.loads((fixture.output.parent.parent / "text-r1" / "zh-Hans" / "candidate.json").read_text())
+        for index, group in enumerate(candidate["groups"], 1):
+            cache = json.loads((round_dir / f"group-{index:04d}-sol.json").read_text())
+            if index in failed:
+                self.assertTrue(group["targetText"].startswith("修订"))
+            else:
+                self.assertEqual(group["targetUtterances"], cache["result"]["targetUtterances"])
+                self.assertEqual(candidate["generation"]["reviewer"]["requestIds"][index - 1], cache["requestId"])
+        receipt = json.loads((fixture.root / "text-r1" / "zh-Hans" / "group-revision-receipt.json").read_text())
+        self.assertEqual(receipt["priorSource"]["kind"], "round")
+        self.assertEqual(receipt["priorSource"]["sha256"],
+                         policy_tools.canonical_sha256(group_revision.round_manifest(round_dir)))
+        carried = receipt["carriedGroups"][0]
+        self.assertEqual(carried["priorCacheSha256"]["reviewer"],
+                         group_revision._file_sha256(round_dir / f"group-{carried['group']:04d}-sol.json"))
+        self.assertEqual([row["group"] for row in receipt["revisedGroups"]], failed)
+
+
 class EndToEndTests(unittest.TestCase):
     def test_three_of_about_four_hundred_groups_are_revised_and_nothing_else_is_called(self):
         fixture = RevisionFixture(self, 402)
@@ -499,7 +556,7 @@ class EndToEndTests(unittest.TestCase):
         self.assertEqual(result["groupRevisionReceiptSha256"], jobs._digest(receipt))
         self.assertEqual([row["group"] for row in receipt["revisedGroups"]], listed)
         self.assertEqual(len(receipt["carriedGroups"]), len(fixture.plan) - 3)
-        self.assertEqual(receipt["priorCandidateJsonSha256"], policy_tools.canonical_sha256(prior))
+        self.assertEqual(receipt["priorSource"], {"kind": "candidate", "sha256": policy_tools.canonical_sha256(prior)})
         self.assertEqual(receipt["carriedFrom"]["modelCalls"], 0)
         carried = receipt["carriedGroups"][0]
         self.assertEqual(carried["priorGroupSha256"], policy_tools.canonical_sha256(prior["groups"][0]))

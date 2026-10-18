@@ -5,56 +5,158 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schemaVersion", "status", "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256",
-    "priorCandidateJsonSha256", "priorCandidateFileSha256", "priorPolicySha256", "translationPolicySha256",
-    "policyChange", "ruleChange", "pluginGateSha256", "operatorDecision", "revisedGroups", "carriedGroups",
-    "carriedFrom", "repairAllowance", "repairReceiptSha256", "repairLedgerHeadSha256", "lineage",
-    "candidateJsonSha256", "downstreamTextQc", "releaseEligible", "humanApproval", "reviewKind"
+    "schemaVersion",
+    "status",
+    "targetLocale",
+    "englishSourcePackageJsonSha256",
+    "anchorManifestSha256",
+    "priorSource",
+    "priorPolicySha256",
+    "translationPolicySha256",
+    "policyChange",
+    "ruleChange",
+    "pluginGateSha256",
+    "operatorDecision",
+    "revisedGroups",
+    "carriedGroups",
+    "carriedFrom",
+    "repairAllowance",
+    "repairReceiptSha256",
+    "repairLedgerHeadSha256",
+    "lineage",
+    "candidateJsonSha256",
+    "downstreamTextQc",
+    "releaseEligible",
+    "humanApproval",
+    "reviewKind"
   ],
   "properties": {
-    "schemaVersion": { "const": "sermon-layer2-group-revision-receipt-v1" },
-    "status": { "const": "revised_machine_review_pass_human_review_pending" },
-    "targetLocale": { "type": "string", "minLength": 1 },
-    "englishSourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
-    "anchorManifestSha256": { "$ref": "#/$defs/sha256" },
-    "priorCandidateJsonSha256": { "$ref": "#/$defs/sha256" },
-    "priorCandidateFileSha256": { "$ref": "#/$defs/sha256" },
-    "priorPolicySha256": { "$ref": "#/$defs/sha256" },
-    "translationPolicySha256": { "$ref": "#/$defs/sha256" },
+    "schemaVersion": {
+      "const": "sermon-layer2-group-revision-receipt-v1"
+    },
+    "status": {
+      "const": "revised_machine_review_pass_human_review_pending"
+    },
+    "targetLocale": {
+      "type": "string",
+      "minLength": 1
+    },
+    "englishSourcePackageJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "anchorManifestSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "priorPolicySha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "translationPolicySha256": {
+      "$ref": "#/$defs/sha256"
+    },
     "policyChange": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["classification", "changedPolicyPaths", "priorPolicySha256", "policySha256"],
+      "required": [
+        "classification",
+        "changedPolicyPaths",
+        "priorPolicySha256",
+        "policySha256"
+      ],
       "properties": {
-        "classification": { "enum": ["unchanged", "plugin_only_migration", "approval_rebinding"] },
-        "changedPolicyPaths": { "type": "array", "items": { "type": "string" } },
-        "priorPolicySha256": { "$ref": "#/$defs/sha256" },
-        "policySha256": { "$ref": "#/$defs/sha256" }
+        "classification": {
+          "enum": [
+            "unchanged",
+            "plugin_only_migration",
+            "approval_rebinding"
+          ]
+        },
+        "changedPolicyPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "priorPolicySha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "policySha256": {
+          "$ref": "#/$defs/sha256"
+        }
       }
     },
     "ruleChange": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ruleBundleSha256", "priorRuleBundleSha256", "changedKeys", "groupsWithChangedRules"],
+      "required": [
+        "ruleBundleSha256",
+        "priorRuleBundleSha256",
+        "changedKeys",
+        "groupsWithChangedRules"
+      ],
       "properties": {
-        "ruleBundleSha256": { "$ref": "#/$defs/sha256" },
-        "priorRuleBundleSha256": { "$ref": "#/$defs/sha256" },
-        "changedKeys": { "type": "array", "items": { "enum": ["pluginNumberForms", "pluginNameForms", "exactQuotes"] } },
-        "groupsWithChangedRules": { "type": "array", "items": { "type": "integer", "minimum": 1 } }
+        "ruleBundleSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "priorRuleBundleSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "changedKeys": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "pluginNumberForms",
+              "pluginNameForms",
+              "exactQuotes"
+            ]
+          }
+        },
+        "groupsWithChangedRules": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
       }
     },
-    "pluginGateSha256": { "$ref": "#/$defs/sha256" },
+    "pluginGateSha256": {
+      "$ref": "#/$defs/sha256"
+    },
     "operatorDecision": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["rowSha256", "decidedBy", "at", "channel", "question", "choice"],
+      "required": [
+        "rowSha256",
+        "decidedBy",
+        "at",
+        "channel",
+        "question",
+        "choice"
+      ],
       "properties": {
-        "rowSha256": { "$ref": "#/$defs/sha256" },
-        "decidedBy": { "type": "string", "minLength": 1 },
-        "at": { "type": "string", "minLength": 1 },
-        "channel": { "type": ["string", "null"] },
-        "question": { "type": "string" },
-        "choice": { "type": "string" }
+        "rowSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "decidedBy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "channel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "question": {
+          "type": "string"
+        },
+        "choice": {
+          "type": "string"
+        }
       }
     },
     "revisedGroups": {
@@ -63,17 +165,59 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["group", "translationGroupId", "priorTargetTextSha256", "targetTextSha256", "targetTextChanged",
-                     "translatorRequestId", "reviewerRequestId", "noteSha256"],
+        "required": [
+          "group",
+          "translationGroupId",
+          "priorTargetTextSha256",
+          "targetTextSha256",
+          "targetTextChanged",
+          "translatorRequestId",
+          "reviewerRequestId",
+          "noteSha256"
+        ],
         "properties": {
-          "group": { "type": "integer", "minimum": 1 },
-          "translationGroupId": { "type": "string", "minLength": 1 },
-          "priorTargetTextSha256": { "$ref": "#/$defs/sha256" },
-          "targetTextSha256": { "$ref": "#/$defs/sha256" },
-          "targetTextChanged": { "type": "boolean" },
-          "translatorRequestId": { "type": "string", "minLength": 1 },
-          "reviewerRequestId": { "type": "string", "minLength": 1 },
-          "noteSha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] }
+          "group": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "translationGroupId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "priorTargetTextSha256": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/sha256"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "targetTextSha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "targetTextChanged": {
+            "type": "boolean"
+          },
+          "translatorRequestId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reviewerRequestId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "noteSha256": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/sha256"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
         }
       }
     },
@@ -82,39 +226,128 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["group", "translationGroupId", "targetTextSha256", "priorGroupSha256", "evidenceRowSha256"],
+        "required": [
+          "group",
+          "translationGroupId",
+          "targetTextSha256",
+          "priorGroupSha256",
+          "evidenceRowSha256"
+        ],
         "properties": {
-          "group": { "type": "integer", "minimum": 1 },
-          "translationGroupId": { "type": "string", "minLength": 1 },
-          "targetTextSha256": { "$ref": "#/$defs/sha256" },
-          "priorGroupSha256": { "$ref": "#/$defs/sha256" },
-          "evidenceRowSha256": { "$ref": "#/$defs/sha256" }
+          "group": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "translationGroupId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetTextSha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "priorGroupSha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "evidenceRowSha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "priorCacheSha256": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "translator",
+              "reviewer"
+            ],
+            "properties": {
+              "translator": {
+                "$ref": "#/$defs/sha256"
+              },
+              "reviewer": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          }
         }
       }
     },
     "carriedFrom": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["priorCandidateJsonSha256", "modelCalls", "reReviewed", "languagePlugin"],
+      "required": [
+        "priorSourceSha256",
+        "modelCalls",
+        "reReviewed",
+        "languagePlugin"
+      ],
       "properties": {
-        "priorCandidateJsonSha256": { "$ref": "#/$defs/sha256" },
-        "modelCalls": { "const": 0 },
-        "reReviewed": { "const": false },
-        "languagePlugin": { "const": "rerun_under_current_policy" }
+        "modelCalls": {
+          "const": 0
+        },
+        "reReviewed": {
+          "const": false
+        },
+        "languagePlugin": {
+          "const": "rerun_under_current_policy"
+        },
+        "priorSourceSha256": {
+          "$ref": "#/$defs/sha256"
+        }
       }
     },
-    "repairAllowance": { "type": "object" },
-    "repairReceiptSha256": { "$ref": "#/$defs/sha256" },
-    "repairLedgerHeadSha256": { "$ref": "#/$defs/sha256" },
-    "lineage": { "type": "object" },
-    "candidateJsonSha256": { "$ref": "#/$defs/sha256" },
-    "jobId": { "$ref": "#/$defs/sha256" },
-    "downstreamTextQc": { "const": "required_on_final_candidate" },
-    "releaseEligible": { "const": false },
-    "humanApproval": { "const": false },
-    "reviewKind": { "const": "machine_review" }
+    "repairAllowance": {
+      "type": "object"
+    },
+    "repairReceiptSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "repairLedgerHeadSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "lineage": {
+      "type": "object"
+    },
+    "candidateJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "jobId": {
+      "$ref": "#/$defs/sha256"
+    },
+    "downstreamTextQc": {
+      "const": "required_on_final_candidate"
+    },
+    "releaseEligible": {
+      "const": false
+    },
+    "humanApproval": {
+      "const": false
+    },
+    "reviewKind": {
+      "const": "machine_review"
+    },
+    "priorSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "sha256"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "candidate",
+            "round"
+          ]
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
   },
   "$defs": {
-    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
   }
 }

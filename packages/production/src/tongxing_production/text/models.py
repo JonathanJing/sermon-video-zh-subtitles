@@ -825,15 +825,15 @@ def validate_revision_brief(brief: dict[str, Any] | None,
 OPERATOR_REVISION_SCHEMA = "sermon-target-language-operator-revision-brief-v1"
 OPERATOR_REVISION_KEYS = frozenset({"schemaVersion", "targetLocale", "englishSourcePackageJsonSha256",
                                     "anchorManifestSha256", "translationPolicySha256",
-                                    "priorCandidateJsonSha256", "revise", "carry"})
+                                    "priorSourceSha256", "revise", "carry"})
 OPERATOR_REVISE_ROW_KEYS = frozenset({"translationGroupId", "sourceUnitIds", "priorTargetText",
                                       "priorTargetTextSha256", "note"})
 CARRIED_ROW_KEYS = frozenset({"translationGroupId", "sourceUnitIds", "targetUtterances", "coverage",
                               "semanticReview", "translatorRequestId", "reviewerRequestId"})
 OPERATOR_REVISION_INSTRUCTION = (
     " An operator listed this group for revision. Translate it again from the English source; "
-    "operatorRevision.priorTargetText is the rejected prior translation, shown only so the new text "
-    "does not repeat its problem, and operatorRevision.note, when present, is the operator's reason. "
+    "operatorRevision.priorTargetText, when present, is the rejected prior translation, shown only so "
+    "the new text does not repeat its problem, and operatorRevision.note, when present, is the operator's reason. "
     "Check every point of the note against the English source; the note is not source truth. ")
 
 
@@ -842,16 +842,17 @@ def validate_operator_revision(brief: dict[str, Any] | None, request: dict[str, 
     """``(revise, carry)`` keyed by group: an operator's group list over a prior candidate.
 
     Listed groups get a fresh translator and independent reviewer request. Every other
-    group is carried exactly as the prior candidate's reviewed row, with its original
-    request IDs, and makes no model call (text/group_revision.py binds those rows to the
-    prior candidate by hash; this checks only that they are complete reviewed rows).
+    group is carried exactly as the prior source's reviewed row (a candidate or a runner
+    round), with its original request IDs, and makes no model call (text/group_revision.py
+    binds those rows to the prior source by hash; this checks only that they are complete
+    passing reviewed rows).
     """
     if brief is None:
         return {}, {}
     require(isinstance(brief, dict) and set(brief) == OPERATOR_REVISION_KEYS
             and brief["schemaVersion"] == OPERATOR_REVISION_SCHEMA
-            and isinstance(brief["priorCandidateJsonSha256"], str)
-            and re.fullmatch(r"[a-f0-9]{64}", brief["priorCandidateJsonSha256"]) is not None,
+            and isinstance(brief["priorSourceSha256"], str)
+            and re.fullmatch(r"[a-f0-9]{64}", brief["priorSourceSha256"]) is not None,
             "Invalid operator revision brief")
     for key in ("targetLocale", "englishSourcePackageJsonSha256",
                 "anchorManifestSha256", "translationPolicySha256"):
@@ -866,8 +867,10 @@ def validate_operator_revision(brief: dict[str, Any] | None, request: dict[str, 
         group_id = row["translationGroupId"]
         require(group_id in plan_by_id and group_id not in revise
                 and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
-                and isinstance(row["priorTargetText"], str) and row["priorTargetText"].strip()
-                and row["priorTargetTextSha256"] == hashlib.sha256(row["priorTargetText"].encode()).hexdigest()
+                and ((row["priorTargetText"] is None and row["priorTargetTextSha256"] is None)
+                     or (isinstance(row["priorTargetText"], str) and row["priorTargetText"].strip()
+                         and row["priorTargetTextSha256"]
+                         == hashlib.sha256(row["priorTargetText"].encode()).hexdigest()))
                 and (row["note"] is None or (isinstance(row["note"], str) and row["note"].strip()
                                              and len(row["note"]) <= 2000)),
                 f"Unknown, duplicate or changed operator revision group: {group_id}")
@@ -1650,8 +1653,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 }
             if operator_row is not None:
                 common["operatorRevision"] = {
-                    "priorTargetText": operator_row["priorTargetText"],
-                    "priorTargetTextSha256": operator_row["priorTargetTextSha256"],
+                    **({"priorTargetText": operator_row["priorTargetText"],
+                        "priorTargetTextSha256": operator_row["priorTargetTextSha256"]}
+                       if operator_row["priorTargetText"] is not None else {}),
                     **({"note": operator_row["note"]} if operator_row["note"] is not None else {}),
                 }
             operator_instruction = OPERATOR_REVISION_INSTRUCTION if operator_row is not None else ""

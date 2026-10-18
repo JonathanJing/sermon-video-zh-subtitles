@@ -2,29 +2,55 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://local.invalid/schemas/sermon-layer2-group-revision-request-v1.schema.json",
   "title": "Layer 2 revision by group ID: the operator's group list over a prior candidate",
-  "description": "Paths resolve beside this file. priorPolicy and priorRulePreflight are required only when the current frozen policy differs from the prior candidate's.",
+  "description": "Paths resolve beside this file. The prior source is exactly one of priorCandidate or priorRound. priorPolicy (and, for a candidate, priorRulePreflight) is required only when the current frozen policy differs from the prior source's.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "targetLocale", "priorCandidate", "groups", "decision"],
+  "required": [
+    "schemaVersion",
+    "targetLocale",
+    "groups",
+    "decision"
+  ],
   "properties": {
-    "schemaVersion": { "const": "sermon-layer2-group-revision-request-v1" },
-    "targetLocale": { "type": "string", "minLength": 1 },
-    "priorCandidate": { "$ref": "#/$defs/path" },
-    "priorPolicy": { "$ref": "#/$defs/path" },
-    "priorRulePreflight": { "$ref": "#/$defs/path" },
+    "schemaVersion": {
+      "const": "sermon-layer2-group-revision-request-v1"
+    },
+    "targetLocale": {
+      "type": "string",
+      "minLength": 1
+    },
+    "priorCandidate": {
+      "$ref": "#/$defs/path"
+    },
+    "priorPolicy": {
+      "$ref": "#/$defs/path"
+    },
+    "priorRulePreflight": {
+      "$ref": "#/$defs/path"
+    },
     "groups": {
       "type": "array",
       "minItems": 1,
       "items": {
         "oneOf": [
-          { "$ref": "#/$defs/group" },
+          {
+            "$ref": "#/$defs/group"
+          },
           {
             "type": "object",
             "additionalProperties": false,
-            "required": ["group"],
+            "required": [
+              "group"
+            ],
             "properties": {
-              "group": { "$ref": "#/$defs/group" },
-              "note": { "type": "string", "minLength": 1, "maxLength": 2000 }
+              "group": {
+                "$ref": "#/$defs/group"
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
             }
           }
         ]
@@ -33,20 +59,74 @@
     "decision": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["decisionsFile", "rowSha256"],
+      "required": [
+        "decisionsFile",
+        "rowSha256"
+      ],
       "properties": {
-        "decisionsFile": { "$ref": "#/$defs/path" },
-        "rowSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        "decisionsFile": {
+          "$ref": "#/$defs/path"
+        },
+        "rowSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
       }
+    },
+    "priorRound": {
+      "$ref": "#/$defs/path",
+      "description": "a runner round directory (request.json, rule-preflight.json and group-NNNN caches)"
     }
   },
   "$defs": {
-    "path": { "type": "string", "minLength": 1 },
+    "path": {
+      "type": "string",
+      "minLength": 1
+    },
     "group": {
       "oneOf": [
-        { "type": "integer", "minimum": 1, "description": "1-based group number, the NNNN of group-NNNN" },
-        { "type": "string", "minLength": 1, "description": "exact translationGroupId" }
+        {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based group number, the NNNN of group-NNNN"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "description": "exact translationGroupId"
+        }
       ]
     }
-  }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "priorCandidate"
+      ],
+      "not": {
+        "required": [
+          "priorRound"
+        ]
+      }
+    },
+    {
+      "required": [
+        "priorRound"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "priorCandidate"
+            ]
+          },
+          {
+            "required": [
+              "priorRulePreflight"
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

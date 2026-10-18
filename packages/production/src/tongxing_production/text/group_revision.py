@@ -1,12 +1,15 @@
 """Layer 2 revision by group ID: translate only the groups an operator listed.
 
 Design: docs/canonical-layer2-controller.zh.md (按组号修订). The only required input
-is an existing candidate and the groups to revise, each with an optional note,
-plus the operator decision row that produced the list. Listed groups get a new
+is a prior source and the groups to revise, each with an optional note, plus the
+operator decision row that produced the list. The prior source is an admitted
+candidate, or a runner round directory (for example a failed repair round whose
+other groups passed review), whose caches are each checked against their saved
+raw responses. Listed groups get a new
 paid translator request, an independent reviewer request and the plugin check,
 in parallel, inside the bounded repair loop. Every other group keeps its exact
 target bytes and its prior translator/reviewer evidence, carried by hash from the
-named prior candidate, with no model call and no re-review.
+named prior source, with no model call and no re-review.
 
 A changed plugin or frozen policy is allowed only when no model-facing field
 changed (``policy_preview.classify_policy_change``). The current deterministic
@@ -45,8 +48,8 @@ ALLOWED_POLICY_CHANGES = frozenset({"unchanged", "plugin_only_migration", "appro
 # Rule bundle keys a plugin-only migration may change. Anything else in the bundle comes from
 # model-facing policy fields and would already classify as content_modified.
 PLUGIN_RULE_KEYS = frozenset({"pluginNumberForms", "pluginNameForms", "exactQuotes"})
-REQUIRED_KEYS = frozenset({"schemaVersion", "targetLocale", "priorCandidate", "groups", "decision"})
-OPTIONAL_KEYS = frozenset({"priorPolicy", "priorRulePreflight"})
+REQUIRED_KEYS = frozenset({"schemaVersion", "targetLocale", "groups", "decision"})
+OPTIONAL_KEYS = frozenset({"priorCandidate", "priorRound", "priorPolicy", "priorRulePreflight"})
 
 
 def _require(condition: bool, message: str) -> None:
@@ -87,8 +90,10 @@ class GroupRevisionGateFailed(ValueError):
 def load_request(path: Path) -> dict:
     """Read a revision request; file fields resolve beside it.
 
-    ``groups`` lists 1-based group numbers (the ``group-NNNN`` of the run files) or exact
-    ``translationGroupId`` strings, each optionally ``{"group": ..., "note": "..."}``.
+    The prior source is exactly one of ``priorCandidate`` (an admitted candidate) or
+    ``priorRound`` (a runner round directory, such as a failed repair round whose other
+    groups passed). ``groups`` lists 1-based group numbers (the ``group-NNNN`` of the run
+    files) or exact ``translationGroupId`` strings, each optionally ``{"group": ..., "note": "..."}``.
     ``decision`` names the run's ``decisions.ndjson`` and the canonical SHA-256 of the
     ``record_decision.py`` row that produced the list."""
     path = Path(path).absolute()
@@ -98,8 +103,10 @@ def load_request(path: Path) -> dict:
              and value["schemaVersion"] == REQUEST_SCHEMA
              and isinstance(value["targetLocale"], str) and value["targetLocale"]
              and isinstance(value["groups"], list) and value["groups"]
+             and (("priorCandidate" in value) != ("priorRound" in value))
+             and ("priorRulePreflight" not in value or "priorCandidate" in value)
              and all(isinstance(value.get(key, "x"), str) and value.get(key, "x")
-                     for key in ("priorCandidate", "priorPolicy", "priorRulePreflight")),
+                     for key in ("priorCandidate", "priorRound", "priorPolicy", "priorRulePreflight")),
              "invalid_group_revision_request")
     decision = value["decision"]
     _require(isinstance(decision, dict) and set(decision) == {"decisionsFile", "rowSha256"}
@@ -116,27 +123,45 @@ def load_request(path: Path) -> dict:
         entries.append({"group": group, "note": note.strip() if note else None})
     resolve = lambda name: (path.parent / value[name]).resolve() if name in value else None  # noqa: E731
     return {"path": path, "value": value, "groups": entries,
-            "priorCandidate": resolve("priorCandidate"), "priorPolicy": resolve("priorPolicy"),
-            "priorRulePreflight": resolve("priorRulePreflight"),
+            "priorCandidate": resolve("priorCandidate"), "priorRound": resolve("priorRound"),
+            "priorPolicy": resolve("priorPolicy"), "priorRulePreflight": resolve("priorRulePreflight"),
             "decisionsFile": (path.parent / decision["decisionsFile"]).resolve(),
             "decisionRowSha256": decision["rowSha256"]}
 
 
 def input_paths(loaded: dict) -> list[Path]:
-    return [item for item in (loaded["path"], loaded["priorCandidate"], loaded["priorPolicy"],
+    return [item for item in (loaded["path"], loaded["priorCandidate"], loaded["priorRound"], loaded["priorPolicy"],
                               loaded["priorRulePreflight"], loaded["decisionsFile"]) if item is not None]
 
 
+ROUND_FILES = ("request.json", "rule-preflight.json", "group-failures.json", "evidence.json")
+
+
+def round_manifest(round_dir: Path) -> dict:
+    """SHA-256 of every file a prior round contributes: its request, rules, report and model caches."""
+    round_dir = Path(round_dir)
+    _require(round_dir.is_dir() and not round_dir.is_symlink() and (round_dir / "request.json").is_file(),
+             "group_revision_prior_round_missing")
+    names = [name for name in ROUND_FILES if (round_dir / name).is_file()] + sorted(
+        path.name for path in round_dir.glob("group-*.json")
+        if path.name.endswith(("-astra.json", "-sol.json", "-astra.raw.json", "-sol.raw.json", ".started.json")))
+    return {name: _file_sha256(round_dir / name) for name in names}
+
+
 def identity(loaded: dict) -> str:
-    """The request and the bytes of every file it names: a new list or note is a new job."""
-    return policy_tools.canonical_sha256({
-        "request": loaded["value"],
-        "files": {name: _file_sha256(loaded[name]) if loaded[name] is not None else None
-                  for name in ("priorCandidate", "priorPolicy", "priorRulePreflight", "decisionsFile")}})
+    """The request and the bytes of every prior file it names: a new list or note is a new job.
+
+    The decision binds by its row hash only: ``decisions.ndjson`` is append-only, and later
+    rows recorded during the run must not change this job's identity."""
+    files = {name: _file_sha256(loaded[name]) if loaded[name] is not None else None
+             for name in ("priorCandidate", "priorPolicy", "priorRulePreflight")}
+    if loaded["priorRound"] is not None:
+        files["priorRound"] = policy_tools.canonical_sha256(round_manifest(loaded["priorRound"]))
+    return policy_tools.canonical_sha256({"request": loaded["value"], "files": files})
 
 
-def decision_row(decisions_file: Path, row_sha256: str, prior_candidate_file_sha256: str) -> dict:
-    """The record_decision.py row, artifact-bound to exactly the prior candidate's bytes."""
+def decision_row(decisions_file: Path, row_sha256: str, governed_sha256s: set[str]) -> dict:
+    """The record_decision.py row, artifact-bound to the prior source's exact bytes."""
     _require(decisions_file.is_file() and not decisions_file.is_symlink()
              and decisions_file.name == DECISIONS_FILE, "group_revision_decision_file_missing")
     matches = []
@@ -149,12 +174,127 @@ def decision_row(decisions_file: Path, row_sha256: str, prior_candidate_file_sha
     row = matches[0]
     _require(isinstance(row, dict) and row.get("authority") == "artifact_bound"
              and isinstance(row.get("governs"), list)
-             and any(isinstance(item, dict) and item.get("sha256") == prior_candidate_file_sha256
+             and any(isinstance(item, dict) and item.get("sha256") in governed_sha256s
                      for item in row["governs"])
              and all(isinstance(row.get(key), str) and row[key].strip()
                      for key in ("at", "question", "choice", "decidedBy")),
-             "group_revision_decision_does_not_govern_prior_candidate")
+             "group_revision_decision_does_not_govern_prior_source")
     return row
+
+
+# ---------------------------------------------------------------- prior source
+
+
+def _passed(semantic: dict) -> bool:
+    return (semantic.get("status") == "pass" and all(value == "pass" for value in semantic["checks"].values())
+            and not semantic.get("uncertainty") and not semantic.get("issues"))
+
+
+def _evidence_row(group: dict, utterances: list, coverage: list, semantic: dict,
+                  translator_id: str, reviewer_id: str) -> dict:
+    return {"translationGroupId": group["translationGroupId"], "sourceUnitIds": group["sourceUnitIds"],
+            "targetUtterances": copy.deepcopy(utterances), "coverage": copy.deepcopy(coverage),
+            "semanticReview": copy.deepcopy(semantic),
+            "translatorRequestId": translator_id, "reviewerRequestId": reviewer_id}
+
+
+def _prior_candidate(loaded: dict, source: dict, anchor: dict, request: dict, plan: list[dict]) -> dict:
+    path = loaded["priorCandidate"]
+    prior = _load(path)
+    _require(isinstance(prior, dict) and prior.get("schemaVersion") == producer.handoff.CANDIDATE_SCHEMA
+             and prior.get("targetLocale") == request["targetLocale"]
+             and prior.get("englishSourcePackageJsonSha256") == request["englishSourcePackageJsonSha256"]
+             and prior.get("anchorManifestSha256") == request["anchorManifestSha256"],
+             "group_revision_prior_source_belongs_to_another_source")
+    producer.handoff.validate_target_candidate(source, anchor, prior, require_human_approval=False)
+    groups = prior["groups"]
+    _require([(row["translationGroupId"], row["sourceUnitIds"]) for row in groups]
+             == [(row["translationGroupId"], row["sourceUnitIds"]) for row in plan],
+             "group_revision_prior_group_plan_differs")
+    translator_ids = prior["generation"]["translator"]["requestIds"]
+    reviewer_ids = prior["generation"]["reviewer"]["requestIds"]
+    # The runner admits one translator and one reviewer request per group, in group order.
+    _require(len(translator_ids) == len(groups) == len(reviewer_ids)
+             and len(set(translator_ids)) == len(groups) == len(set(reviewer_ids)),
+             "group_revision_prior_request_ids_not_per_group")
+    rows = {index: _evidence_row(plan[index - 1], row["targetUtterances"], row["coverage"], row["semanticReview"],
+                                 translator_ids[index - 1], reviewer_ids[index - 1])
+            for index, row in enumerate(groups, 1)}
+    return {"kind": "candidate", "sha256": policy_tools.canonical_sha256(prior),
+            "governedSha256s": {_file_sha256(path)}, "policySha256": prior["translationPolicySha256"],
+            "models": {role: prior["generation"][role] for role in ("translator", "reviewer")},
+            "candidate": prior, "rows": rows, "unusable": {}, "caches": {},
+            "rulePreflight": _load(loaded["priorRulePreflight"]) if loaded["priorRulePreflight"] else None}
+
+
+def _prior_round(loaded: dict, request: dict, plan: list[dict], policy: dict) -> dict:
+    """Reviewed rows from a runner round's caches, each backed by its saved raw response.
+
+    A group whose caches are missing, malformed or whose review did not pass has no row to
+    carry (``unusable``); it must be listed. A started call with neither cache nor raw
+    response is an unknown paid outcome and stops the revision before anything else."""
+    round_dir = loaded["priorRound"]
+    manifest = round_manifest(round_dir)
+    prior_request = _load(round_dir / "request.json")
+    _require(isinstance(prior_request, dict)
+             and all(prior_request.get(key) == request[key] for key in (
+                 "schemaVersion", "sourceLocale", "targetLocale", "englishSourcePackageJsonSha256",
+                 "anchorManifestSha256", "sourceUnits")),
+             "group_revision_prior_source_belongs_to_another_source")
+    for name in manifest:
+        if name.endswith(".started.json"):
+            stem = name.removesuffix(".started.json")
+            _require(stem + ".json" in manifest or stem + ".raw.json" in manifest,
+                     "group_revision_prior_round_has_unknown_outcome")
+    rows, unusable, caches = {}, {}, {}
+    for index, group in enumerate(plan, 1):
+        stem = f"group-{index:04d}"
+        names = {role: f"{stem}-{suffix}.json" for role, suffix in (("translator", "astra"), ("reviewer", "sol"))}
+        if not all(name in manifest for name in names.values()):
+            unusable[index] = "no_prior_result"
+            continue
+        saved = {role: _load(round_dir / name) for role, name in names.items()}
+        for role, name in names.items():
+            raw_name = name.removesuffix(".json") + ".raw.json"
+            raw = _load(round_dir / raw_name) if raw_name in manifest else None
+            response = raw.get("response") if isinstance(raw, dict) else None
+            _require(isinstance(saved[role], dict) and saved[role].get("model") == policy[role]["model"]
+                     and isinstance(saved[role].get("requestId"), str) and saved[role]["requestId"]
+                     and isinstance(response, dict) and response.get("id") == saved[role]["requestId"]
+                     and raw.get("payloadSha256") == saved[role].get("payloadSha256"),
+                     f"group_revision_prior_round_cache_not_backed_by_response: {name}")
+        result = saved["reviewer"].get("result")
+        try:
+            _require(isinstance(result, dict) and result.get("translationGroupId") == group["translationGroupId"]
+                     and result.get("sourceUnitIds") == group["sourceUnitIds"], "identity")
+            utterances = runner._utterances(result.get("targetUtterances"), group["sourceUnitIds"])
+            coverage = result.get("coverage")
+            text = "".join(utterances)
+            _require(isinstance(coverage, list)
+                     and [row.get("sourceUnitId") for row in coverage] == group["sourceUnitIds"]
+                     and all(isinstance(row.get("targetText"), str) and runner._coverage_substring(row["targetText"], text)
+                             for row in coverage), "coverage")
+            semantic = runner.normalize_semantic_review(result.get("semanticReview"))
+            _require(isinstance(semantic, dict) and isinstance(semantic.get("checks"), dict)
+                     and set(semantic["checks"]) == set(runner.SEMANTIC_CHECKS)
+                     and isinstance(semantic.get("evidence"), str) and semantic["evidence"].strip()
+                     and isinstance(semantic.get("uncertainty"), list) and isinstance(semantic.get("issues"), list),
+                     "review")
+        except ValueError:
+            unusable[index] = "prior_result_malformed"
+            continue
+        rows[index] = _evidence_row(group, utterances, coverage, semantic,
+                                    saved["translator"]["requestId"], saved["reviewer"]["requestId"])
+        caches[index] = {role: manifest[name] for role, name in names.items()}
+        if not _passed(semantic):
+            unusable[index] = "independent_review_failed"
+    governed = {manifest["request.json"]} | ({manifest["group-failures.json"]} if "group-failures.json" in manifest
+                                            else set())
+    return {"kind": "round", "sha256": policy_tools.canonical_sha256(manifest), "governedSha256s": governed,
+            "policySha256": prior_request["translationPolicySha256"], "models": None, "candidate": None,
+            "rows": rows, "unusable": unusable, "caches": caches,
+            "rulePreflight": _load(round_dir / "rule-preflight.json")
+            if (round_dir / "rule-preflight.json").is_file() else None}
 
 
 # ---------------------------------------------------------------- plan
@@ -208,75 +348,68 @@ def prepare(loaded: dict, source: dict, anchor: dict, policy: dict, plugin_path:
             rule_receipt: dict, *, gate_report_path: Path | None = None) -> dict:
     """Check the request against the current inputs and build the runner brief; no model call.
 
-    Raises GroupRevisionGateFailed (after writing its report) when the current plugin, or a
-    changed per-group quote rule, rejects a group the operator did not list."""
+    Raises GroupRevisionGateFailed (after writing its report) when a group the operator did not
+    list cannot be carried: the prior source has no passing reviewed result for it, the current
+    plugin rejects it, or its own quote rules changed."""
     request = producer.prepare_request(source, anchor, policy)
     _require(loaded["value"]["targetLocale"] == request["targetLocale"], "group_revision_locale_differs")
     plan = runner.group_plan(request, anchor)
-    prior_path = loaded["priorCandidate"]
-    prior_file_sha256 = _file_sha256(prior_path)
-    prior = _load(prior_path)
-    _require(isinstance(prior, dict) and prior.get("schemaVersion") == producer.handoff.CANDIDATE_SCHEMA
-             and prior.get("targetLocale") == request["targetLocale"]
-             and prior.get("englishSourcePackageJsonSha256") == request["englishSourcePackageJsonSha256"]
-             and prior.get("anchorManifestSha256") == request["anchorManifestSha256"],
-             "group_revision_prior_candidate_belongs_to_another_source")
-    producer.handoff.validate_target_candidate(source, anchor, prior, require_human_approval=False)
-    if prior["translationPolicySha256"] == request["translationPolicySha256"]:
-        prior_policy, prior_rules = policy, None
+    prior = (_prior_candidate(loaded, source, anchor, request, plan) if loaded["priorCandidate"] is not None
+             else _prior_round(loaded, request, plan, policy))
+    if prior["policySha256"] == request["translationPolicySha256"]:
+        prior_policy = policy
     else:
-        _require(loaded["priorPolicy"] is not None and loaded["priorRulePreflight"] is not None,
+        _require(loaded["priorPolicy"] is not None and prior["rulePreflight"] is not None,
                  "group_revision_policy_changed_requires_prior_policy_and_rule_preflight")
         prior_policy = _load(loaded["priorPolicy"])
-        prior_rules = _load(loaded["priorRulePreflight"])
-    producer.handoff.validate_policy_binding(prior, prior_policy)
+    _require(policy_tools.canonical_sha256(prior_policy) == prior["policySha256"],
+             "group_revision_prior_policy_differs")
+    if prior["candidate"] is not None:
+        producer.handoff.validate_policy_binding(prior["candidate"], prior_policy)
     policy_change = policy_preview.classify_policy_change(prior_policy, policy)
     _require(policy_change["classification"] in ALLOWED_POLICY_CHANGES,
              "group_revision_model_facing_policy_changed")
-    for role in ("translator", "reviewer"):
-        _require(prior["generation"][role]["model"] == policy[role]["model"]
-                 and prior["generation"][role]["promptVersion"] == policy[role]["promptVersion"],
+    for role, receipt_value in (prior["models"] or {}).items():
+        _require(receipt_value["model"] == policy[role]["model"]
+                 and receipt_value["promptVersion"] == policy[role]["promptVersion"],
                  "group_revision_model_or_prompt_changed")
-    groups = prior["groups"]
-    _require([(row["translationGroupId"], row["sourceUnitIds"]) for row in groups]
-             == [(row["translationGroupId"], row["sourceUnitIds"]) for row in plan],
-             "group_revision_prior_group_plan_differs")
-    translator_ids = prior["generation"]["translator"]["requestIds"]
-    reviewer_ids = prior["generation"]["reviewer"]["requestIds"]
-    # The runner admits one translator and one reviewer request per group, in group order.
-    _require(len(translator_ids) == len(groups) == len(reviewer_ids)
-             and len(set(translator_ids)) == len(groups) == len(set(reviewer_ids)),
-             "group_revision_prior_request_ids_not_per_group")
     listed = _resolve_groups(loaded["groups"], plan)
     listed_indices = {row["group"] for row in listed}
-    rule_change = _rule_change(prior_rules, rule_receipt, request,
+    rule_change = _rule_change(prior["rulePreflight"], rule_receipt, request,
                                policy_change["priorPolicySha256"], plan)
+    rows = prior["rows"]
+    checked = sorted(rows)
     evaluated = producer.evaluate_plugin_groups(
         policy, request, plugin_path, policy["languageReview"]["pluginImplementationSha256"],
-        [{key: row[key] for key in ("translationGroupId", "sourceUnitIds", "targetUtterances")}
-         for row in groups])
-    failing = {index for index, review in enumerate(evaluated["groupReviews"], 1) if review["status"] != "pass"}
-    required = sorted((failing | set(rule_change["groupsWithChangedRules"])) - listed_indices)
+        [{key: rows[index][key] for key in ("translationGroupId", "sourceUnitIds", "targetUtterances")}
+         for index in checked]) if checked else {"groupReviews": [], "pluginVersion": None,
+                                                 "pluginImplementationSha256": None}
+    reviews = dict(zip(checked, evaluated["groupReviews"]))
+    failing = {index for index, review in reviews.items() if review["status"] != "pass"}
+
+    def reasons(index: int) -> list[str]:
+        return [reason for reason, hit in (
+            (prior["unusable"].get(index), index in prior["unusable"]),
+            ("language_plugin_failed", index in failing),
+            ("group_model_rules_changed", index in rule_change["groupsWithChangedRules"])) if hit]
+
+    required = [index for index in range(1, len(plan) + 1) if index not in listed_indices and reasons(index)]
     gate = {"schemaVersion": GATE_SCHEMA, "targetLocale": request["targetLocale"],
-            "priorCandidateJsonSha256": policy_tools.canonical_sha256(prior),
+            "priorSource": {"kind": prior["kind"], "sha256": prior["sha256"]},
             "priorPolicySha256": policy_change["priorPolicySha256"],
             "translationPolicySha256": request["translationPolicySha256"],
             "pluginImplementationSha256": evaluated["pluginImplementationSha256"],
             "pluginVersion": evaluated["pluginVersion"],
-            "groupsChecked": len(groups), "listedGroups": sorted(listed_indices),
+            "groupsChecked": len(checked), "totalGroups": len(plan), "listedGroups": sorted(listed_indices),
+            "priorUnusable": [{"group": index, "reason": reason} for index, reason in sorted(prior["unusable"].items())],
             "pluginFailures": [{"group": index, "translationGroupId": plan[index - 1]["translationGroupId"],
                                 "listed": index in listed_indices,
-                                "failedChecks": [check["checkId"] for check in
-                                                 evaluated["groupReviews"][index - 1]["checks"]
+                                "failedChecks": [check["checkId"] for check in reviews[index]["checks"]
                                                  if check["status"] != "pass"]}
                                for index in sorted(failing)],
             "groupsWithChangedRules": rule_change["groupsWithChangedRules"],
             "unlistedFailures": [{"group": index, "translationGroupId": plan[index - 1]["translationGroupId"],
-                                  "reasons": [reason for reason, hit in (
-                                      ("language_plugin_failed", index in failing),
-                                      ("group_model_rules_changed", index in rule_change["groupsWithChangedRules"]))
-                                              if hit]}
-                                 for index in required],
+                                  "reasons": reasons(index)} for index in required],
             "status": "blocked" if required else "pass", "modelCalls": 0, "humanApproval": False}
     if gate_report_path is not None:
         gate_report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -288,36 +421,32 @@ def prepare(loaded: dict, source: dict, anchor: dict, policy: dict, plugin_path:
         raise GroupRevisionGateFailed(gate, gate_report_path)
     revise, carry, carried_rows = [], [], []
     notes = {row["group"]: row["note"] for row in listed}
-    for index, row in enumerate(groups, 1):
-        text = "".join(row["targetUtterances"])
+    for index, group in enumerate(plan, 1):
+        row = rows.get(index)
         if index in listed_indices:
-            revise.append({"translationGroupId": row["translationGroupId"], "sourceUnitIds": row["sourceUnitIds"],
-                           "priorTargetText": text, "priorTargetTextSha256": _text_sha256(text),
+            text = "".join(row["targetUtterances"]) if row is not None else None
+            revise.append({"translationGroupId": group["translationGroupId"], "sourceUnitIds": group["sourceUnitIds"],
+                           "priorTargetText": text, "priorTargetTextSha256": _text_sha256(text) if text else None,
                            "note": notes[index]})
             continue
-        evidence_row = {"translationGroupId": row["translationGroupId"], "sourceUnitIds": row["sourceUnitIds"],
-                        "targetUtterances": copy.deepcopy(row["targetUtterances"]),
-                        "coverage": copy.deepcopy(row["coverage"]),
-                        "semanticReview": copy.deepcopy(row["semanticReview"]),
-                        "translatorRequestId": translator_ids[index - 1],
-                        "reviewerRequestId": reviewer_ids[index - 1]}
-        carry.append(evidence_row)
-        carried_rows.append({"group": index, "translationGroupId": row["translationGroupId"],
-                             "targetTextSha256": _text_sha256(text),
-                             "priorGroupSha256": policy_tools.canonical_sha256(row),
-                             "evidenceRowSha256": policy_tools.canonical_sha256(evidence_row)})
+        carry.append(row)
+        carried_rows.append({"group": index, "translationGroupId": group["translationGroupId"],
+                             "targetTextSha256": _text_sha256("".join(row["targetUtterances"])),
+                             "priorGroupSha256": policy_tools.canonical_sha256(
+                                 prior["candidate"]["groups"][index - 1]) if prior["candidate"] is not None
+                             else policy_tools.canonical_sha256(row),
+                             "evidenceRowSha256": policy_tools.canonical_sha256(row),
+                             **({"priorCacheSha256": prior["caches"][index]} if index in prior["caches"] else {})})
     brief = {"schemaVersion": runner.OPERATOR_REVISION_SCHEMA,
              **{key: request[key] for key in ("targetLocale", "englishSourcePackageJsonSha256",
                                               "anchorManifestSha256", "translationPolicySha256")},
-             "priorCandidateJsonSha256": policy_tools.canonical_sha256(prior),
-             "revise": revise, "carry": carry}
-    decision = decision_row(loaded["decisionsFile"], loaded["decisionRowSha256"], prior_file_sha256)
+             "priorSourceSha256": prior["sha256"], "revise": revise, "carry": carry}
+    decision = decision_row(loaded["decisionsFile"], loaded["decisionRowSha256"], prior["governedSha256s"])
     record = {"requestSha256": identity(loaded), "briefSha256": policy_tools.canonical_sha256(brief),
               "decisionRowSha256": loaded["decisionRowSha256"]}
-    return {"request": request, "brief": brief, "prior": prior, "listed": listed,
-            "carried": carried_rows, "priorCandidateJsonSha256": brief["priorCandidateJsonSha256"],
-            "priorCandidateFileSha256": prior_file_sha256, "policyChange": policy_change,
-            "ruleChange": rule_change, "gate": gate, "decision": decision,
+    return {"request": request, "brief": brief, "prior": prior, "listed": listed, "carried": carried_rows,
+            "priorSource": {"kind": prior["kind"], "sha256": prior["sha256"]},
+            "policyChange": policy_change, "ruleChange": rule_change, "gate": gate, "decision": decision,
             "decisionRowSha256": loaded["decisionRowSha256"],
             # The repair loop starts a chain of its own for this record (auto_repair.drive lineage_extra).
             "lineageExtra": {"groupRevisionSha256": policy_tools.canonical_sha256(record)}}
@@ -363,29 +492,32 @@ def allowance(listed_groups: int, policy: dict, remaining_cost_microusd: int | N
 
 
 def verify_candidate(prepared: dict, candidate: dict) -> list[dict]:
-    """Every unlisted group's target bytes and model evidence are the prior candidate's."""
-    prior = prepared["prior"]
-    _require(len(candidate["groups"]) == len(prior["groups"]), "group_revision_group_count_changed")
+    """Every unlisted group's target bytes and model evidence are the prior source's."""
+    rows = prepared["prior"]["rows"]
+    _require(len(candidate["groups"]) == len(prepared["brief"]["revise"]) + len(prepared["carried"]),
+             "group_revision_group_count_changed")
     carried = {row["group"] for row in prepared["carried"]}
-    kept = ("translationGroupId", "sourceUnitIds", "targetUtterances", "coverage", "semanticReview", "targetText")
-    rows = []
-    for index, (before, after) in enumerate(zip(prior["groups"], candidate["groups"]), 1):
+    ids = {role: candidate["generation"][role]["requestIds"] for role in ("translator", "reviewer")}
+    revised = []
+    for index, after in enumerate(candidate["groups"], 1):
+        before = rows.get(index)
         if index in carried:
-            _require(all(before[key] == after[key] for key in kept),
+            _require(all(before[key] == after[key] for key in (
+                         "translationGroupId", "sourceUnitIds", "targetUtterances", "coverage", "semanticReview"))
+                     and after["targetText"] == "".join(before["targetUtterances"]),
                      f"group_revision_unlisted_group_changed: {index}")
-            _require(candidate["generation"]["translator"]["requestIds"][index - 1]
-                     == prior["generation"]["translator"]["requestIds"][index - 1]
-                     and candidate["generation"]["reviewer"]["requestIds"][index - 1]
-                     == prior["generation"]["reviewer"]["requestIds"][index - 1],
+            _require(ids["translator"][index - 1] == before["translatorRequestId"]
+                     and ids["reviewer"][index - 1] == before["reviewerRequestId"],
                      f"group_revision_unlisted_group_evidence_changed: {index}")
-        else:
-            rows.append({"group": index, "translationGroupId": after["translationGroupId"],
-                         "priorTargetTextSha256": _text_sha256(before["targetText"]),
-                         "targetTextSha256": _text_sha256(after["targetText"]),
-                         "targetTextChanged": before["targetText"] != after["targetText"],
-                         "translatorRequestId": candidate["generation"]["translator"]["requestIds"][index - 1],
-                         "reviewerRequestId": candidate["generation"]["reviewer"]["requestIds"][index - 1]})
-    return rows
+            continue
+        prior_text = "".join(before["targetUtterances"]) if before is not None else None
+        revised.append({"group": index, "translationGroupId": after["translationGroupId"],
+                        "priorTargetTextSha256": _text_sha256(prior_text) if prior_text else None,
+                        "targetTextSha256": _text_sha256(after["targetText"]),
+                        "targetTextChanged": prior_text != after["targetText"],
+                        "translatorRequestId": ids["translator"][index - 1],
+                        "reviewerRequestId": ids["reviewer"][index - 1]})
+    return revised
 
 
 def receipt(prepared: dict, candidate: dict, repair_receipt: dict, revision_allowance: dict, *,
@@ -394,34 +526,33 @@ def receipt(prepared: dict, candidate: dict, repair_receipt: dict, revision_allo
     revised = verify_candidate(prepared, candidate)
     notes = {row["group"]: row["note"] for row in prepared["listed"]}
     record = {"schemaVersion": RECEIPT_SCHEMA, "status": "revised_machine_review_pass_human_review_pending",
-            "targetLocale": candidate["targetLocale"],
-            "englishSourcePackageJsonSha256": candidate["englishSourcePackageJsonSha256"],
-            "anchorManifestSha256": candidate["anchorManifestSha256"],
-            "priorCandidateJsonSha256": prepared["priorCandidateJsonSha256"],
-            "priorCandidateFileSha256": prepared["priorCandidateFileSha256"],
-            "priorPolicySha256": prepared["policyChange"]["priorPolicySha256"],
-            "translationPolicySha256": candidate["translationPolicySha256"],
-            "policyChange": prepared["policyChange"], "ruleChange": prepared["ruleChange"],
-            "pluginGateSha256": policy_tools.canonical_sha256(prepared["gate"]),
-            "operatorDecision": {"rowSha256": prepared["decisionRowSha256"],
-                                 "decidedBy": prepared["decision"]["decidedBy"],
-                                 "at": prepared["decision"]["at"],
-                                 "channel": prepared["decision"].get("channel"),
-                                 "question": prepared["decision"]["question"][:500],
-                                 "choice": prepared["decision"]["choice"][:500]},
-            "revisedGroups": [{**row, "noteSha256": _text_sha256(notes[row["group"]])
-                               if notes[row["group"]] else None} for row in revised],
-            "carriedGroups": prepared["carried"],
-            "carriedFrom": {"priorCandidateJsonSha256": prepared["priorCandidateJsonSha256"],
-                            "modelCalls": 0, "reReviewed": False,
-                            "languagePlugin": "rerun_under_current_policy"},
-            "repairAllowance": revision_allowance,
-            "repairReceiptSha256": policy_tools.canonical_sha256(repair_receipt),
-            "repairLedgerHeadSha256": repair_receipt["ledgerHeadSha256"],
-            "lineage": repair_receipt["lineage"],
-            "candidateJsonSha256": policy_tools.canonical_sha256(candidate),
-            **({"jobId": job_id} if job_id is not None else {}),
-            "downstreamTextQc": "required_on_final_candidate",
-            "releaseEligible": False, "humanApproval": False, "reviewKind": "machine_review"}
+              "targetLocale": candidate["targetLocale"],
+              "englishSourcePackageJsonSha256": candidate["englishSourcePackageJsonSha256"],
+              "anchorManifestSha256": candidate["anchorManifestSha256"],
+              "priorSource": prepared["priorSource"],
+              "priorPolicySha256": prepared["policyChange"]["priorPolicySha256"],
+              "translationPolicySha256": candidate["translationPolicySha256"],
+              "policyChange": prepared["policyChange"], "ruleChange": prepared["ruleChange"],
+              "pluginGateSha256": policy_tools.canonical_sha256(prepared["gate"]),
+              "operatorDecision": {"rowSha256": prepared["decisionRowSha256"],
+                                   "decidedBy": prepared["decision"]["decidedBy"],
+                                   "at": prepared["decision"]["at"],
+                                   "channel": prepared["decision"].get("channel"),
+                                   "question": prepared["decision"]["question"][:500],
+                                   "choice": prepared["decision"]["choice"][:500]},
+              "revisedGroups": [{**row, "noteSha256": _text_sha256(notes[row["group"]])
+                                 if notes[row["group"]] else None} for row in revised],
+              "carriedGroups": prepared["carried"],
+              "carriedFrom": {"priorSourceSha256": prepared["priorSource"]["sha256"],
+                              "modelCalls": 0, "reReviewed": False,
+                              "languagePlugin": "rerun_under_current_policy"},
+              "repairAllowance": revision_allowance,
+              "repairReceiptSha256": policy_tools.canonical_sha256(repair_receipt),
+              "repairLedgerHeadSha256": repair_receipt["ledgerHeadSha256"],
+              "lineage": repair_receipt["lineage"],
+              "candidateJsonSha256": policy_tools.canonical_sha256(candidate),
+              **({"jobId": job_id} if job_id is not None else {}),
+              "downstreamTextQc": "required_on_final_candidate",
+              "releaseEligible": False, "humanApproval": False, "reviewKind": "machine_review"}
     _validate_schema(record, RECEIPT_SCHEMA + ".schema.json", "invalid_group_revision_receipt")
     return record
