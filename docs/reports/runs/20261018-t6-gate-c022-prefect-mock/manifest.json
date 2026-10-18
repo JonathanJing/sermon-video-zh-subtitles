@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-gate-c022-prefect-mock",
+  "runs": [
+    {
+      "label": "t6-gate-c022-prefect-mock-39096320250",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-gate-c022-prefect-mock-39096320250",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-gate-c022-prefect-mock-39096320250",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 419,
+      "truncated": false,
+      "sha256": "4bd8bca85d89af0e90dfa720c3e6429e2a3ecfda66c0712614b924e71c920958",
+      "redactions": {}
+    },
+    {
+      "run": "t6-gate-c022-prefect-mock-39096320250",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 380,
+      "truncated": false,
+      "sha256": "8d6c23f3d73062ca340d8dcfac4f18e4dc41a63e733b7b156a4652f3cd5fb2fe",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

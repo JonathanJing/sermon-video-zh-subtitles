@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -9,6 +10,7 @@ from scripts import check_run_start as start_check
 from scripts import sermon_review_budget as ledger
 from scripts import sermon_workflow_jobs as jobs
 from tests import test_canonical_layer2_budget as budget_fixtures
+from tongxing_production.contracts import canonical as canonical_contracts
 
 
 class CanonicalLayer2BudgetReuseTests(unittest.TestCase):
@@ -55,6 +57,109 @@ class CanonicalLayer2BudgetReuseTests(unittest.TestCase):
         self.assertEqual(ledger._sum(state['reservations'].values()),
                          dict.fromkeys(ledger.METRICS, 0))
         self.assertEqual(row['result']['usage'], dict.fromkeys(ledger.METRICS, 0))
+
+    def test_paid_provenance_coordinates_with_concurrent_ledger_writer(self):
+        caller, response, expected = self.paid()
+        other_payload = json.loads(json.dumps(self.base.payload))
+        other_payload['messages'][0]['content'] += ' '
+        start_writer = threading.Event()
+        writer_done = threading.Event()
+        writer_errors = []
+
+        def write_another_result():
+            start_writer.wait()
+            try:
+                caller('', other_payload)
+            except BaseException as error:  # Preserve the worker failure for the main assertion.
+                writer_errors.append(error)
+            finally:
+                writer_done.set()
+
+        writer = threading.Thread(target=write_another_result)
+        writer.start()
+        self.addCleanup(lambda: writer.join(timeout=5))
+        reader_thread = threading.get_ident()
+        first_reader_stat = True
+        real_fstat = canonical_contracts.os.fstat
+
+        def pause_after_open(fd):
+            nonlocal first_reader_stat
+            observed = real_fstat(fd)
+            if threading.get_ident() == reader_thread and first_reader_stat:
+                first_reader_stat = False
+                start_writer.set()
+                # Without reader/writer coordination the writer replaces state.json here,
+                # reproducing the production snapshot_changed_during_read failure. With
+                # the fix it waits for the provenance reader's BudgetStore lock instead.
+                writer_done.wait(timeout=2)
+            return observed
+
+        with patch.object(caller, 'verify_execution'), \
+                patch.object(canonical_contracts.os, 'fstat', side_effect=pause_after_open):
+            actual = caller.paid_response_provenance('', self.base.payload, response)
+        writer.join(timeout=5)
+        self.assertFalse(writer.is_alive())
+        self.assertEqual(writer_errors, [])
+        self.assertEqual(actual, expected)
+        state = jobs._read(caller.root / ledger.STORE_ID / 'state.json')
+        self.assertEqual(len(state['reservations']), 2)
+
+    def test_current_paid_provenance_lock_preserves_fail_closed_checks(self):
+        caller, response, provenance = self.paid()
+        _, folder, _ = jobs._paths(caller.root, ledger.STORE_ID)
+        state_path = folder / 'state.json'
+        original = jobs._read(state_path)
+        rid = provenance['reservationId']
+
+        unknown = json.loads(json.dumps(original))
+        unknown['reservations'][rid].update(phase='request')
+        unknown['reservations'][rid].pop('result')
+        jobs._persist(state_path, unknown)
+        with patch.object(caller, 'verify_execution'), self.assertRaisesRegex(
+                ValueError, 'provider_outcome_unknown'):
+            caller.paid_response_provenance('', self.base.payload, response)
+
+        jobs._persist(state_path, original)
+        response_path = caller.root / 'responses' / (provenance['inputSha256'] + '.json')
+        damaged = jobs._read(response_path)
+        damaged['response'] = {'forged': True}
+        jobs._persist(response_path, damaged)
+        with patch.object(caller, 'verify_execution'), self.assertRaisesRegex(
+                ValueError, 'reconciliation_required'):
+            caller.paid_response_provenance('', self.base.payload, response)
+
+    def test_later_round_reuses_same_job_direct_paid_response_without_rewriting_ledger(self):
+        external = self.destination / 'approved-prior'
+        with ledger.BudgetStore(external, self.base.auth['value']['authority'])._locked():
+            pass
+        current = self.destination_caller(external)
+        current.transport = lambda *_: {'id': 'paid-response',
+            'model': 'gpt-6-astra',
+            'usage': {'prompt_tokens': 11, 'completion_tokens': 7},
+            'choices': [{'finish_reason': 'stop', 'message': {'content': '{}'}}]}
+        with patch.object(current, 'verify_execution'):
+            response = current('', self.base.payload)
+            provenance = current.paid_response_provenance('', self.base.payload, response)
+        state_path = next(self.destination.glob('*/state.json'))
+        before = state_path.read_bytes()
+
+        with patch.object(current, 'verify_execution'):
+            result = current.record_reuse('', self.base.payload, response, provenance)
+
+        self.assertEqual(result['status'], 'succeeded')
+        self.assertFalse(result['created'])
+        self.assertFalse(result['executionAllowed'])
+        self.assertEqual(state_path.read_bytes(), before)
+        state = jobs._read(state_path)
+        row = next(iter(state['reservations'].values()))
+        self.assertNotIn('settlement', row)
+        self.assertEqual(row['result']['usage']['requests'], 1)
+
+        unapproved, _, unapproved_provenance = self.paid()
+        self.assertNotEqual(unapproved.root, external.resolve())
+        with patch.object(current, 'verify_execution'), self.assertRaisesRegex(
+                ValueError, 'layer2_reuse_operation_missing'):
+            current.record_reuse('', self.base.payload, response, unapproved_provenance)
 
     def test_unknown_damaged_or_intermediate_source_never_falls_through(self):
         source, response, provenance = self.paid()

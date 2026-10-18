@@ -20,6 +20,7 @@ from . import auto_repair
 from . import backend as _text
 from . import budget as budget_tools
 from . import candidate as producer
+from . import group_revision
 from . import models
 from . import rule_preflight
 from contextlib import nullcontext
@@ -72,8 +73,19 @@ QC_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v5'
 # keep their exact field sets and behavior; enabling this changes the execution,
 # budget and durable input identities explicitly.
 PAYLOAD_CACHE_SCHEMA = 'sermon-canonical-layer2-execution-v6'
+# v7 is v6 plus an explicit failed-job partial-round predecessor.  It can reuse
+# complete direct-paid responses without pretending that a missing success
+# sidecar passed semantic or language-plugin review.
+PARTIAL_RECOVERY_SCHEMA = 'sermon-canonical-layer2-execution-v7'
+# v8 is v3 plus a per-locale operator group revision (text/group_revision.py): the lane
+# translates again only the groups its revision request lists and carries every other
+# group from the named prior candidate. It does not combine with v5-v7 fields.
+GROUP_REVISION_SCHEMA = 'sermon-canonical-layer2-execution-v8'
 PAYLOAD_CACHE_CONFIG_SCHEMA = 'sermon-canonical-layer2-payload-cache-config-v1'
 PAYLOAD_CACHE_SNAPSHOT_SCHEMA = 'sermon-canonical-layer2-payload-cache-snapshot-v1'
+PARTIAL_RECOVERY_CONFIG_SCHEMA = 'sermon-canonical-layer2-partial-recovery-config-v1'
+PARTIAL_RECOVERY_SNAPSHOT_SCHEMA = 'sermon-canonical-layer2-partial-recovery-snapshot-v1'
+PARTIAL_RECOVERY_RECEIPT_SCHEMA = 'sermon-canonical-layer2-partial-recovery-receipt-v1'
 MAX_PAYLOAD_CACHE_GROUPS = 4096
 MAX_PAYLOAD_CACHE_FILE_BYTES = 4 * 1024 * 1024
 MAX_AUTO_REPAIR_LOCALES = 3
@@ -142,6 +154,8 @@ class Configuration:
     auto_repair: dict | None = None
     candidate_mode: str = 'production'
     payload_cache: dict | None = None
+    partial_recovery: dict | None = None
+    group_revision: dict | None = None
 
 
 def _file_digest(path):
@@ -234,6 +248,104 @@ def _payload_cache_binding(value, path, locales):
     return result
 
 
+def _partial_recovery_snapshot(failed_job_root, failed_job_id, round_root,
+                               direct_budget_root, locale):
+    failed_job_root = _safe_path(failed_job_root)
+    round_root = _safe_path(round_root)
+    direct_budget_root = _safe_path(direct_budget_root)
+    require(re.fullmatch(r'[0-9a-f]{64}', failed_job_id) is not None
+            and failed_job_root.is_dir() and not failed_job_root.is_symlink()
+            and round_root.is_dir() and not round_root.is_symlink()
+            and direct_budget_root.is_dir() and not direct_budget_root.is_symlink(),
+            'invalid_partial_recovery_source')
+    folder = _safe_path(failed_job_root / failed_job_id)
+    request_path, state_path = folder / 'request.json', folder / 'state.json'
+    request, state = jobs._read(request_path), jobs._read(state_path)
+    require(jobs._request_valid(request, failed_job_id)
+            and state.get('schemaVersion') == jobs.SCHEMA
+            and state.get('jobId') == failed_job_id and state.get('status') == 'failed'
+            and state.get('requestSha256') == jobs._digest(request)
+            and _command_option(request.get('command'), '--locale') == locale
+            and _command_option(request.get('command'), '--expected-job') == failed_job_id,
+            'partial_recovery_requires_failed_bound_job')
+    round_request = _json(round_root / 'request.json')
+    require(round_request.get('targetLocale') == locale
+            and isinstance(round_request.get('sourceUnits'), list)
+            and bool(round_request['sourceUnits']), 'partial_recovery_round_identity_changed')
+    files = [round_root / name for name in ('request.json', 'rule-preflight.json', 'run-identity.json')]
+    markers = {}
+    for entry in round_root.iterdir():
+        require(not entry.is_symlink(), 'partial_recovery_symlink_not_supported')
+        if re.fullmatch(r'group-[0-9]{4}-(?:astra|sol)\.started\.json', entry.name):
+            markers[entry.name.removesuffix('.started.json')] = entry
+        elif re.fullmatch(r'group-[0-9]{4}-(?:astra|sol)(?:\.raw|\.policy-preview)?\.json', entry.name) \
+                or re.fullmatch(r'group-[0-9]{4}-payload-cache-success\.json', entry.name):
+            require(entry.is_file() and entry.stat().st_size <= MAX_PAYLOAD_CACHE_FILE_BYTES,
+                    'invalid_partial_recovery_file')
+            files.append(entry)
+    require(len(markers) <= MAX_PAYLOAD_CACHE_GROUPS * 2,
+            'partial_recovery_group_limit_exceeded')
+    for stem, marker in sorted(markers.items()):
+        bound = tuple(round_root / f'{stem}{suffix}' for suffix in
+                      ('.json', '.raw.json', '.policy-preview.json'))
+        require(all(path.is_file() and not path.is_symlink()
+                    and path.stat().st_size <= MAX_PAYLOAD_CACHE_FILE_BYTES for path in bound),
+                'partial_recovery_unknown_paid_outcome')
+        files.extend((marker, *bound))
+    store, _, ledger = budget_tools.BudgetedCaller._store_snapshot(
+        direct_budget_root, budget_tools.LOCALE_LEDGER_MAX_BYTES)
+    require(ledger['schemaVersion'] == budget_tools.budget.SCHEMA
+            and bool(ledger['reservations'])
+            and all(row.get('phase') == 'result'
+                    and (row.get('result') or {}).get('executionStatus') == 'succeeded'
+                    and 'settlement' not in row for row in ledger['reservations'].values()),
+            'partial_recovery_budget_has_unknown_or_reused_result')
+    rows = [{'name': str(path.relative_to(round_root)), 'sha256': _file_digest(path),
+             'bytes': path.stat().st_size}
+            for path in sorted(set(files), key=lambda item: str(item))]
+    snapshot = {
+        'schemaVersion': PARTIAL_RECOVERY_SNAPSHOT_SCHEMA,
+        'locale': locale, 'failedJobId': failed_job_id,
+        'failedRequestSha256': jobs._digest(request),
+        'failedStateSha256': jobs._digest(state),
+        'roundRequestSha256': jobs._digest(round_request),
+        'roundFiles': rows,
+        'directBudgetRoot': str(direct_budget_root),
+        'directBudgetStoreSha256': store.store_sha256,
+        'directBudgetStateSha256': jobs._digest(ledger),
+        'directBudgetReservations': len(ledger['reservations']),
+    }
+    snapshot['sha256'] = jobs._digest(snapshot)
+    return snapshot
+
+
+def _partial_recovery_binding(value, path, locales, payload_cache):
+    require(isinstance(value, dict) and set(value) == {'schemaVersion', 'locales'}
+            and value.get('schemaVersion') == PARTIAL_RECOVERY_CONFIG_SCHEMA
+            and isinstance(value.get('locales'), dict) and bool(value['locales'])
+            and set(value['locales']) <= set(locales),
+            'invalid_partial_recovery_configuration')
+    result = {}
+    for locale, item in sorted(value['locales'].items()):
+        require(isinstance(item, dict) and set(item) == {
+                    'failedJobRoot', 'failedJobId', 'roundRoot', 'directPaidBudgetRoot'},
+                'invalid_partial_recovery_configuration')
+        failed_job_root = _path(path.parent, item['failedJobRoot'])
+        round_root = _path(path.parent, item['roundRoot'])
+        direct_budget_root = _path(path.parent, item['directPaidBudgetRoot'])
+        require(payload_cache is not None and locale in payload_cache
+                and payload_cache[locale]['root'] == round_root,
+                'partial_recovery_requires_matching_success_root')
+        snapshot = _partial_recovery_snapshot(
+            failed_job_root, item['failedJobId'], round_root, direct_budget_root, locale)
+        result[locale] = {
+            'failedJobRoot': failed_job_root, 'failedJobId': item['failedJobId'],
+            'roundRoot': round_root, 'budgetRoot': direct_budget_root,
+            'snapshot': snapshot, 'identity': snapshot['sha256'],
+        }
+    return result
+
+
 def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _json(path)
@@ -247,18 +359,45 @@ def load_configuration(path):
                  and value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, QC_REPAIR_SCHEMA})
              or (set(value) == required_keys | {'layer2AutoRepair', 'layer2PayloadCache'}
                  and value['schemaVersion'] == PAYLOAD_CACHE_SCHEMA)
+             or (set(value) == required_keys | {'layer2AutoRepair', 'layer2PayloadCache',
+                                                  'layer2PartialRecovery'}
+                 and value['schemaVersion'] == PARTIAL_RECOVERY_SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair', 'candidateMode'}
-                 and value['schemaVersion'] == SHADOW_SCHEMA and candidate_mode == 'shadow'))
+                 and value['schemaVersion'] == SHADOW_SCHEMA and candidate_mode == 'shadow')
+             or (set(value) == required_keys | {'layer2AutoRepair', 'layer2GroupRevision'}
+                 and value['schemaVersion'] == GROUP_REVISION_SCHEMA))
             and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
     repair_binding = (_auto_repair_binding(value['layer2AutoRepair'],
                                            allow_qc=value['schemaVersion'] in {QC_REPAIR_SCHEMA,
-                                                                               PAYLOAD_CACHE_SCHEMA})
+                                                                               PAYLOAD_CACHE_SCHEMA,
+                                                                               PARTIAL_RECOVERY_SCHEMA})
                       if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA, QC_REPAIR_SCHEMA,
-                                                    PAYLOAD_CACHE_SCHEMA} else None)
+                                                    PAYLOAD_CACHE_SCHEMA, PARTIAL_RECOVERY_SCHEMA,
+                                                    GROUP_REVISION_SCHEMA} else None)
     payload_cache = (_payload_cache_binding(value['layer2PayloadCache'], path, value['locales'])
-                     if value['schemaVersion'] == PAYLOAD_CACHE_SCHEMA else None)
+                     if value['schemaVersion'] in {PAYLOAD_CACHE_SCHEMA, PARTIAL_RECOVERY_SCHEMA} else None)
+    partial_recovery = (_partial_recovery_binding(
+        value['layer2PartialRecovery'], path, value['locales'], payload_cache)
+        if value['schemaVersion'] == PARTIAL_RECOVERY_SCHEMA else None)
+    require(partial_recovery is None or repair_binding['groupWorkers'] == 1,
+            'partial_recovery_requires_serial_group_worker')
+    revisions = None
+    if value['schemaVersion'] == GROUP_REVISION_SCHEMA:
+        named = value['layer2GroupRevision']
+        # The operator's per-group notes are the revision's only brief; meaning notes reopen a repair chain.
+        require('sourceMeaningNotes' not in repair_binding, 'invalid_execution_configuration')
+        require(isinstance(named, dict) and bool(named) and set(named) <= set(value['locales'])
+                and all(type(item) is str and item for item in named.values()), 'invalid_execution_configuration')
+        revisions = {}
+        for locale, item in sorted(named.items()):
+            try:
+                loaded = group_revision.load_request(_path(path.parent, item))
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                raise ValueError('invalid_group_revision_request') from error
+            require(loaded['value']['targetLocale'] == locale, 'invalid_group_revision_request')
+            revisions[locale] = loaded
     inspection_path = _path(path.parent, value['inspectionConfig'])
     inspection = _json(inspection_path)
     require(inspection.get('schemaVersion') == packages.SCHEMA
@@ -270,6 +409,11 @@ def load_configuration(path):
                    _path(root, inspection.get('anchor'))]
     if payload_cache:
         input_paths.extend(item['root'] for item in payload_cache.values() if item['root'] is not None)
+    if partial_recovery:
+        input_paths.extend(item for binding in partial_recovery.values()
+                           for item in (binding['failedJobRoot'], binding['roundRoot'], binding['budgetRoot']))
+    if revisions:
+        input_paths.extend(item for loaded in revisions.values() for item in group_revision.input_paths(loaded))
     if repair_binding and repair_binding.get('sourceMeaningNotes'):
         notes_path = _path(path.parent, repair_binding['sourceMeaningNotes'])
         repair_binding['sourceMeaningNotes'] = str(notes_path)
@@ -324,12 +468,15 @@ def load_configuration(path):
     if payload_cache is not None:
         binding['payloadCacheSnapshots'] = {
             locale: item['descriptor'] for locale, item in sorted(payload_cache.items())}
+    if partial_recovery is not None:
+        binding['partialRecoverySnapshots'] = {
+            locale: item['snapshot'] for locale, item in sorted(partial_recovery.items())}
     if concurrency_profile is not None:
         binding.update(concurrencyProfile=concurrency_profile, resourcePolicy=resource_policy)
     sha = jobs._digest(binding)
     return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha,
                          concurrency_profile, resource_policy, repair_binding,
-                         candidate_mode, payload_cache)
+                         candidate_mode, payload_cache, partial_recovery, revisions)
 
 
 def repair_ledger_root(config):
@@ -375,10 +522,20 @@ def package_view(config):
         view['packageIdentities']['backTranslationQc.' + locale] = digest
         view['stateRevision'] = jobs._digest({'packages': view['stateRevision'],
                                               'backTranslationQc.' + locale: digest})
+    for locale, loaded in sorted((getattr(config, 'group_revision', None) or {}).items()):
+        # The group list, notes, prior candidate and operator decision are inputs of that locale's
+        # text job: a new list or note is a new job identity.
+        key = 'groupRevision.' + locale
+        view['packageIdentities'][key] = group_revision.identity(loaded)
+        view['stateRevision'] = jobs._digest({'packages': view['stateRevision'], key: view['packageIdentities'][key]})
     for locale, binding in sorted((getattr(config, 'payload_cache', None) or {}).items()):
         # The resolved path stays in the execution configuration. Durable
         # identity receives only the content/implementation descriptor digest.
         key = 'payloadCache.' + locale
+        view['packageIdentities'][key] = binding['identity']
+        view['stateRevision'] = jobs._digest({'packages': view['stateRevision'], key: binding['identity']})
+    for locale, binding in sorted((getattr(config, 'partial_recovery', None) or {}).items()):
+        key = 'partialRecovery.' + locale
         view['packageIdentities'][key] = binding['identity']
         view['stateRevision'] = jobs._digest({'packages': view['stateRevision'], key: binding['identity']})
     return view
@@ -388,6 +545,10 @@ def _payload_cache_for(config, locale):
     binding = (getattr(config, 'payload_cache', None) or {}).get(locale)
     return (binding['root'] if binding else None, bool(binding),
             binding['identity'] if binding else None, binding['required'] if binding else False)
+
+
+def _partial_recovery_for(config, locale):
+    return (getattr(config, 'partial_recovery', None) or {}).get(locale)
 
 
 def join_jobs(config, view):
@@ -417,6 +578,10 @@ def _reopen_verifier(config):
         _, cache_enabled, cache_identity, _ = _payload_cache_for(config, locale)
         require(_command_option(original.get('command'), '--expected-payload-cache')
                 == (cache_identity if cache_enabled else None), 'reopen_payload_cache_binding_changed')
+        recovery = _partial_recovery_for(config, locale)
+        require(_command_option(original.get('command'), '--expected-partial-recovery')
+                == (recovery['identity'] if recovery is not None else None),
+                'reopen_partial_recovery_binding_changed')
         if locale not in ledgers:
             source, anchor, policy = _lane_values(config, locale, observed)
             ledgers[locale] = (auto_repair.load_ledger(repair_ledger_root(config), auto_repair.lineage(
@@ -497,6 +662,30 @@ def _inputs(config, locale, view):
     return source, anchor, policy
 
 
+def _revision_gate(config, locale, view):
+    """None when ``locale`` has no group revision or its request passes every pre-dispatch check;
+    otherwise the public reason (and the unlisted groups the current plugin rejects).
+
+    Read-only: shadow and execute ticks run it before a job exists, so a list that misses a
+    failing group is corrected without leaving a failed durable job behind."""
+    loaded = (getattr(config, 'group_revision', None) or {}).get(locale)
+    if loaded is None:
+        return None
+    try:
+        source, anchor, policy = _inputs(config, locale, view)
+        request = producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode)
+        rules = rule_preflight.preflight(request, policy, config.lanes[locale]['plugin'],
+                                         models.group_plan(request, anchor))
+        group_revision.prepare(loaded, source, anchor, policy, config.lanes[locale]['plugin'], rules)
+    except group_revision.GroupRevisionGateFailed as failed:
+        return {'reasonCode': 'group_revision_unlisted_groups_fail_current_checks',
+                'unlistedFailures': failed.report['unlistedFailures']}
+    except (ValueError, OSError, KeyError, TypeError) as error:
+        reason = str(error).split(':')[0]
+        return {'reasonCode': reason if reason.startswith('group_revision_') else 'group_revision_inputs_invalid'}
+    return None
+
+
 def _unreconciled_paid_call(config, locale):
     """A started-call marker with neither a validated cache nor a saved raw
     response is an unknown paid outcome. The runner's reconciliation check uses
@@ -529,6 +718,9 @@ def _worker_command(config, locale, job_id, code_sha, budget_authorization=None)
     _, enabled, identity, _ = _payload_cache_for(config, locale)
     if enabled:
         command += ['--expected-payload-cache', identity]
+    recovery = _partial_recovery_for(config, locale)
+    if recovery is not None:
+        command += ['--expected-partial-recovery', recovery['identity']]
     if budget_authorization is not None:
         command += ['--budget-authorization', str(budget_authorization['path']),
                     '--expected-budget', budget_authorization['sha256']]
@@ -604,6 +796,10 @@ class Controller:
         except (ValueError, OSError, KeyError, TypeError):
             return self._result('blocked', 'configuration_code_or_evidence_invalid', dispatched=False)
         locale = self._choose(observed, requested_locale)
+        gate = _revision_gate(config, locale, observed) if locale else None
+        if gate is not None:
+            return self._result('blocked', gate['reasonCode'], proposedWorkUnit='text.' + locale,
+                                groupRevision=gate, stateRevision=observed['stateRevision'], dispatched=False)
         if self.mode == 'deterministic_shadow':
             return self._result('ready' if locale else 'waiting',
                                 'layer2_capacity_reached' if self._capacity_full(observed) else 'shadow_only',
@@ -621,6 +817,7 @@ class Controller:
                     reason = 'layer2_capacity_reached' if self._capacity_full(fresh) else 'no_admitted_layer2_work'
                     return self._result('waiting', reason, nodes=fresh['nodes'], dispatched=False)
                 _inputs(config, locale, fresh)
+                require(_revision_gate(config, locale, fresh) is None, 'group_revision_gate_blocked')
                 ident = durable.identity(fresh, config.run_id, 'text.' + locale)
                 key = jobs._digest(ident)
                 dispatch_attempted = True
@@ -636,7 +833,8 @@ class Controller:
 
 
 def execute(config_path, locale, expected_configuration, expected_code, expected_job, *, caller=None, api_key=None,
-            budget_authorization=None, expected_budget=None, expected_payload_cache=None):
+            budget_authorization=None, expected_budget=None, expected_payload_cache=None,
+            expected_partial_recovery=None):
     """Fixed worker body. New jobs use the bound project API budget transport."""
     config = load_configuration(config_path)
     require(locale in config.lanes and config.sha256 == expected_configuration
@@ -645,12 +843,22 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
     require((expected_payload_cache is None and not payload_cache_enabled)
             or expected_payload_cache == payload_cache_identity,
             'worker_payload_cache_binding_changed')
+    partial_recovery = _partial_recovery_for(config, locale)
+    require((expected_partial_recovery is None and partial_recovery is None)
+            or partial_recovery is not None
+            and expected_partial_recovery == partial_recovery['identity'],
+            'worker_partial_recovery_binding_changed')
     budget_binding = (budget_tools.load_authorization(config, budget_authorization, expected_code, expected_budget)
                       if budget_authorization is not None else None)
     require((budget_authorization is None) == (expected_budget is None), 'budget_worker_binding_required')
     if payload_cache_enabled and budget_binding is not None:
         require(budget_binding.get('runtimeIdentity') is not None,
                 'payload_cache_requires_runtime_bound_budget')
+    if partial_recovery is not None and budget_binding is not None:
+        require(budget_binding.get('reuseBudgetRoots') is not None
+                and partial_recovery['budgetRoot'] in
+                    budget_binding['reuseBudgetRoots'][locale],
+                'partial_recovery_budget_root_not_approved')
     lane = config.lanes[locale]
     with work_lock(lane['output']), accounting.accounting_session(
             lane['output'] / 'accounting', 'canonical_layer2_worker',
@@ -675,6 +883,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     'worker_requires_active_bound_durable_job')
             source, anchor, policy = _inputs(config, locale, current)
         with liveness.report(request_path.parent, request) as progress:
+            budgeted = None
             if caller is None:
                 require(budget_binding is not None, 'bound_budget_authorization_required')
                 # OpenAI API only: no Spark session (2026-10-13; only GPU stages occupy Spark).
@@ -687,6 +896,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 transports = claude_transports(policy, lane) if backend == 'claude_cli_opus' else None
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
                                                      claude_transports=transports)
+                budgeted = caller
                 if transports is not None:
                     caller.execution_identity = {
                         'schemaVersion': 'claude-layer2-budget-transport-identity-v1', 'backend': 'claude_cli',
@@ -702,6 +912,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             elif budget_binding is not None:
                 _text.current().compute.reject_cli_transport(caller)
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy, transport=caller)
+                budgeted = caller
             def current_binding():
                 fresh_config = load_configuration(config.path)
                 require(fresh_config.sha256 == expected_configuration and code_identity() == expected_code,
@@ -731,7 +942,8 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     current_binding()
                     return result
                 bound_call.verify_execution = verify_execution
-            for attribute in ('paid_response_provenance', 'record_reuse'):
+            for attribute in ('paid_response_provenance', 'record_reuse',
+                              'validate_recovery_source', 'recover_returned_response'):
                 if hasattr(caller, attribute):
                     operation = getattr(caller, attribute)
                     def guarded(*args, _operation=operation, **kwargs):
@@ -741,8 +953,15 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                         return result
                     setattr(bound_call, attribute, guarded)
             model_completion = []
+            revision = None
             with (budget_tools.request_limits(budget_binding['limits']) if budget_binding else nullcontext()):
-                if config.auto_repair:
+                if locale in (getattr(config, 'group_revision', None) or {}):
+                    evidence, model_output, revision = _run_group_revision(
+                        config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
+                        admission_span, model_completion,
+                        revision_digest=current['packageIdentities']['groupRevision.' + locale],
+                        remaining_cost_microusd=budgeted.remaining_cost_microusd() if budgeted is not None else None)
+                elif config.auto_repair:
                     evidence, model_output = _run_auto_repair(
                         config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
                         admission_span, model_completion,
@@ -771,18 +990,49 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     lane['plugin'], plugin_sha, rule_preflight_receipt=rule_receipt)
                 candidate = producer.admit_evidence(source, anchor, policy, original_request, evidence,
                     receipt, lane['plugin'], plugin_sha, rule_preflight_receipt=rule_receipt)
+                revision_receipt = (group_revision.receipt(revision['prepared'], candidate, revision['repairReceipt'],
+                                                           revision['allowance'], job_id=expected_job)
+                                    if revision is not None else None)
                 current_binding()
                 progress.progress('candidate_validated')
                 models.save_new(lane['output'] / 'language-review.json', receipt)
                 models.save_new(lane['candidate'], candidate)
+                if revision_receipt is not None:
+                    models.save_new(lane['output'] / 'group-revision-receipt.json', revision_receipt)
                 accounting.record_workload('layer2.candidate_identity', {'candidateSha256': jobs._digest(candidate),
                     'languageReviewSha256': jobs._digest(receipt)})
             with accounting.stage('layer2.final_package_validation.' + locale, depends_on=[candidate_span],
                     executor_type='deterministic_program', work_unit_id='l2.' + locale + '.final_package_validation'):
                 checked = package_view(fresh_config)
                 require(checked['nodes']['text.' + locale]['status'] == 'validated', 'worker_candidate_not_validated')
+            recovery_receipt_sha = None
+            if partial_recovery is not None:
+                recovery_receipt = {
+                    'schemaVersion': PARTIAL_RECOVERY_RECEIPT_SCHEMA,
+                    'status': 'recovered_machine_review_pass_human_review_pending',
+                    'targetLocale': locale,
+                    'predecessorFailedJobId': partial_recovery['failedJobId'],
+                    'predecessorSnapshotSha256': partial_recovery['identity'],
+                    'successorJobId': expected_job,
+                    'successorConfigurationSha256': expected_configuration,
+                    'successorCodeIdentitySha256': expected_code,
+                    'evidenceSha256': jobs._digest(evidence),
+                    'candidateJsonSha256': jobs._digest(candidate),
+                    'releaseEligible': False, 'humanApproval': False,
+                }
+                receipt_path = lane['output'] / 'partial-round-recovery-receipt.json'
+                if receipt_path.exists():
+                    require(producer._load(receipt_path) == recovery_receipt,
+                            'partial_recovery_receipt_changed')
+                else:
+                    models.save_new(receipt_path, recovery_receipt)
+                recovery_receipt_sha = jobs._digest(recovery_receipt)
             return {'status': 'machine_review_pass_human_review_pending',
-                    'candidateJsonSha256': jobs._digest(candidate), 'releaseEligible': False}
+                    'candidateJsonSha256': jobs._digest(candidate), 'releaseEligible': False,
+                    **({'partialRecoveryReceiptSha256': recovery_receipt_sha}
+                       if recovery_receipt_sha is not None else {}),
+                    **({'groupRevisionReceiptSha256': jobs._digest(revision_receipt)}
+                       if revision_receipt is not None else {})}
 
 
 def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progress, admission_span,
@@ -803,12 +1053,17 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
         progress('repair_round')
         payload_cache_root, payload_cache_enabled, _, payload_cache_required = _payload_cache_for(
             config, policy['targetLocale'])
+        partial = _partial_recovery_for(config, policy['targetLocale'])
         return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
                                     None, reuse_from, partial_repair_brief=brief,
                                     progress_callback=progress, predecessor_spans=[admission_span],
                                     completion_spans=completion_spans, failure_collector=collector,
                                     candidate_mode=config.candidate_mode,
                                     payload_cache_from=payload_cache_root if reuse_from is None else None,
+                                    partial_recovery_from=(partial['roundRoot']
+                                                           if partial is not None and reuse_from is None else None),
+                                    partial_recovery_budget_root=(partial['budgetRoot']
+                                                                 if partial is not None and reuse_from is None else None),
                                     emit_payload_cache_success=payload_cache_enabled,
                                     payload_cache_required=payload_cache_required if reuse_from is None else False)
 
@@ -839,6 +1094,53 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
     return evidence, final
 
 
+def _run_group_revision(config, lane, source, anchor, policy, api_key, call, progress, admission_span,
+                        completion_spans, *, revision_digest, remaining_cost_microusd):
+    """Translate again only the groups the lane's revision request lists, inside this job.
+
+    Before any paid call: the request must be the one the admitted job identity bound, the
+    current plugin passes every unlisted prior group (or the job fails naming them), and the
+    repair allowance is frozen from the listed groups and the budget's remaining USD cap.
+    Listed groups then run in parallel through the bounded repair loop on a chain of their
+    own; unlisted groups are carried from the prior candidate and make no model call."""
+    locale = policy['targetLocale']
+    loaded = config.group_revision[locale]
+    require(group_revision.identity(loaded) == revision_digest, 'group_revision_changed_after_admission')
+    request = producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode)
+    plan = models.group_plan(request, anchor)
+    rule_receipt = rule_preflight.preflight(request, policy, lane['plugin'], plan)
+    prepared = group_revision.prepare(loaded, source, anchor, policy, lane['plugin'], rule_receipt,
+                                      gate_report_path=lane['output'] / 'group-revision-plugin-gate.json')
+    # Frozen at the first attempt: a resumed job keeps the caps its earlier rounds were chosen under.
+    allowance_path = lane['output'] / 'group-revision-allowance.json'
+    if allowance_path.exists():
+        allowance = producer._load(allowance_path)
+        require(allowance.get('listedGroups') == len(prepared['listed']), 'group_revision_allowance_changed')
+    else:
+        allowance = group_revision.allowance(len(prepared['listed']), policy, remaining_cost_microusd)
+        models.save_new(allowance_path, allowance)
+    rounds_root = lane['output'] / 'repair-rounds'
+
+    def run_round(out, reuse_from, brief, collector):
+        progress('repair_round')
+        return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
+                                    None, reuse_from, partial_repair_brief=brief,
+                                    progress_callback=progress, predecessor_spans=[admission_span],
+                                    completion_spans=completion_spans, failure_collector=collector,
+                                    candidate_mode=config.candidate_mode, operator_revision=prepared['brief'])
+
+    repair_receipt = auto_repair.drive(request, len(plan), run_round, rounds_root, repair_ledger_root(config),
+                                       group_workers=config.auto_repair['groupWorkers'],
+                                       lineage_extra=prepared['lineageExtra'], repair_allowance=allowance)
+    require(repair_receipt['status'] == 'all_groups_passed', 'layer2_group_revision_stopped')
+    final = Path(repair_receipt['finalRunDirectory'])
+    require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),
+            'auto_repair_final_round_outside_lane')
+    evidence = producer._load(final / 'evidence.json')
+    require(auto_repair.json_sha256(evidence) == repair_receipt['evidenceSha256'], 'auto_repair_evidence_changed')
+    return evidence, final, {'prepared': prepared, 'allowance': allowance, 'repairReceipt': repair_receipt}
+
+
 REOPEN_RESULT_SCHEMA = 'sermon-canonical-layer2-reopen-result-v1'
 
 
@@ -863,6 +1165,10 @@ def _reopen_plan(config, locale, view):
     _, cache_enabled, cache_identity, _ = _payload_cache_for(config, locale)
     require(_command_option(request['command'], '--expected-payload-cache')
             == (cache_identity if cache_enabled else None), 'reopen_payload_cache_binding_changed')
+    recovery = _partial_recovery_for(config, locale)
+    require(_command_option(request['command'], '--expected-partial-recovery')
+            == (recovery['identity'] if recovery is not None else None),
+            'reopen_partial_recovery_binding_changed')
     current = package_view(config)
     following = durable.identity(current, config.run_id, unit)
     require(request['identity']['nodeIdentity'] == following['nodeIdentity'] and request['identity'] != following,
@@ -991,6 +1297,7 @@ def main():
     worker.add_argument('--expected-code', required=True)
     worker.add_argument('--expected-job', required=True)
     worker.add_argument('--expected-payload-cache')
+    worker.add_argument('--expected-partial-recovery')
     worker.add_argument('--budget-authorization', type=Path)
     worker.add_argument('--expected-budget')
     reopen = commands.add_parser('reopen-repair', help='supersede a failed text job whose repair chain new '
@@ -1006,7 +1313,8 @@ def main():
     else:
         result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
                          budget_authorization=args.budget_authorization, expected_budget=args.expected_budget,
-                         expected_payload_cache=args.expected_payload_cache)
+                         expected_payload_cache=args.expected_payload_cache,
+                         expected_partial_recovery=args.expected_partial_recovery)
     print(json.dumps(result, sort_keys=True))
 
 

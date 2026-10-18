@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-voice-demo-package-move",
+  "runs": [
+    {
+      "label": "voice-demo-package-move-20261018",
+      "source": "~/.codex/worktrees/voice-demo-package-leaf/sermon-video-zh-subtitles/artifacts/test-runs/voice-demo-package-move-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "voice-demo-package-move-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 233,
+      "truncated": false,
+      "sha256": "9336b79b4f00ef05c1e3bd1dd4d3a543430ce6a5973f4cb47d2670d5826211e3",
+      "redactions": {}
+    },
+    {
+      "run": "voice-demo-package-move-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 311,
+      "truncated": false,
+      "sha256": "854904a9cfb3ba07ae3d57dd460be0fbb5a8d224f66d6d9131b77df29c134ffd",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

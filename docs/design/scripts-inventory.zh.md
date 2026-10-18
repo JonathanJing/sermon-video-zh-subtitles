@@ -4,6 +4,8 @@
 
 状态：**盘点，只读，不授权迁移**。基线：`dev@3dd5583d`（提交日期 2026-10-15）。本文对 `scripts/` 下每一个**非门面** `.py` 文件给出：行数、被谁导入、最后一次有意义的改动，以及它在提案 §2/§4 里的目标位置。已有设计决定的目标原样沿用；没有设计覆盖的，给出建议归属并标明“未排批次”或“未设计”。不移动文件，不改代码、合同、CI 或 backlog；表中的归属是迁移前的规划输入，不是已批准的移动清单。
 
+**实施读法更新（2026-10-17，`dev@92f82a6b`）：**本文以下 468 个非门面文件及各分类/批次数字只属于上述 2026-10-15 快照，**不是当前剩余工作量**。此后 [S5 sentence shadow #805](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/805)、[T5 CUV #832](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/832)、[W3 dual PDF pipeline #554](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/554) 及 [G1 六批实现](../reports/20261017-g1-implementation-generation.zh.md) 已进入 `dev`，这些旧 `scripts/` 路径现在是兼容门面而非表中所列的原实现。严格 L2 尚有 11 个非门面实现；是否可动取决于活跃实验/生产的逐文件冻结闭包证明，不能由本快照的文件名或扇入数推断。排新批次先重取当前 `dev` 的文件、调用方、路径身份与运行状态；历史表格保留供对照，不就地重算成未经复核的当前总数。
+
 ## 0 结论
 
 - `scripts/` 现有 **468** 个非门面 `.py` 文件、**144,353** 行（另有 31 个 `sys.modules[__name__] = _implementation` 门面已排除）。行数含 `scripts/experiments/` 与全部工具、实验和 POC 脚本，不是“生产库”的行数。
