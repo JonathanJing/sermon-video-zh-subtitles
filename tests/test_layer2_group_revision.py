@@ -339,8 +339,10 @@ class AllowanceTests(unittest.TestCase):
             allowance = group_revision.allowance(14, self.POLICY, None)
         self.assertEqual((allowance["pairs"], allowance["calls"], allowance["tokens"]), (28, 56, 112000))
         self.assertEqual(allowance["usdCap"], "not_bound")
-        # The default 10% rule on a 14-group revision round (28 calls) would allow max(4, 3) calls: 2 groups.
-        self.assertEqual(auto_repair.repair_caps({"calls": 28, "tokens": 2800}, 2000)[0], 4)
+        # The default rule on a 14-group revision round (28 calls) allows only its fixed floor:
+        # 10% of 28 is 3 calls, below MINIMUM_REPAIR_CALLS.
+        self.assertEqual(auto_repair.repair_caps({"calls": 28, "tokens": 2800}, 2000)[0],
+                         auto_repair.MINIMUM_REPAIR_CALLS)
         self.assertEqual(auto_repair.repair_caps({"calls": 0, "tokens": 0}, 2000, allowance), (56, 112000))
 
     def test_usd_cap_from_the_authorization_bounds_the_allowance(self):
