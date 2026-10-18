@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "mergeConflicts": 0,
+  "implementationSha256": "814167999332e588d624cead4faf2f7da8516a3a1ad2b072931cb8c2dff9bdaa",
+  "checks": [
+    "worktree venv imports local production package",
+    "checkout-bound facade smoke",
+    "four voice-demo tests with synthetic WAV/registry",
+    "git diff --check origin/dev..HEAD"
+  ],
+  "passed": 5,
+  "failed": 0,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "realMediaUsed": false,
+  "currentHeadCi": "pending"
+}
