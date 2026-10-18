@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "sermon-run-start-check-v1",
+  "status": "pass",
+  "failed": [],
+  "checks": [
+    {
+      "check": "code",
+      "status": "pass",
+      "head": "974862e6b85d7fa581240a6fa84f74da806f2391",
+      "qcImplementationSha256": "df299eca0e9f11689e7a88654b7b2616df1e10bd8cd60a9847e3561d5db41b10",
+      "problems": []
+    },
+    {
+      "check": "openai",
+      "status": "pass",
+      "environment": "dev",
+      "exitCode": 0
+    },
+    {
+      "check": "budget",
+      "status": "pass",
+      "plan": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/plans/post-g1-qc-20261017/plan.json",
+      "schedule": {
+        "mode": "all_stages_may_run_together",
+        "worstCaseUsd": 16.575,
+        "fits": true
+      },
+      "stages": [
+        [
+          "qc.es",
+          5.525
+        ],
+        [
+          "qc.ko",
+          5.525
+        ],
+        [
+          "qc.zh-Hans",
+          5.525
+        ]
+      ],
+      "problems": []
+    },
+    {
+      "check": "spark",
+      "status": "skip"
+    },
+    {
+      "check": "outputs",
+      "status": "pass",
+      "fresh": [
+        "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-g1-qc-20261017/es"
+      ],
+      "problems": []
+    },
+    {
+      "check": "drain",
+      "status": "skip"
+    },
+    {
+      "check": "page",
+      "status": "skip"
+    },
+    {
+      "check": "environment_binding",
+      "status": "pass",
+      "qcStages": 3,
+      "layer2Stages": 0,
+      "problems": []
+    }
+  ]
+}
