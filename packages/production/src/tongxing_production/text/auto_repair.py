@@ -116,7 +116,7 @@ INSTRUCTIONS = {
                                "of plain strings and one coverage row per source unit with an exact targetText substring."),
 }
 SYSTEMIC_MINIMUM_GROUPS = 3
-SYSTEMIC_FRACTION = 0.01
+SYSTEMIC_FRACTION = 0.05  # 15030286 only: deliberate fragment units (Jony 2026-10-18: fix only the failed groups), was 0.01
 SPEND_FRACTION = 0.10
 MINIMUM_REPAIR_CALLS = 40  # 15030286 only: operator decision 2026-10-18 (Jony), was 4
 PATIENCE_ROUNDS = 2
