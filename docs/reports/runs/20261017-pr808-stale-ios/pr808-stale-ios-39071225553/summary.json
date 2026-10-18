@@ -1,0 +1,20 @@
+{
+  "status": "cancelled",
+  "runId": 39071225553,
+  "workflow": "Tongxing iOS",
+  "trigger": "pull_request draft to ready transition",
+  "headSha": "af7b14d866312a16db91811f1a223465e5d2dee2",
+  "branch": "codex/l4-announcement-sidecar-20261017",
+  "base": "dev",
+  "jobs": {
+    "changes": "success",
+    "contract-validation": "skipped",
+    "ios-validation": "skipped",
+    "native-client": "success"
+  },
+  "reason": "run-level conclusion was cancelled on the draft-to-ready transition even though listed jobs succeeded",
+  "limitations": [
+    "draft-route jobs do not establish ready-state required checks",
+    "await current ready-state run before merge"
+  ]
+}
