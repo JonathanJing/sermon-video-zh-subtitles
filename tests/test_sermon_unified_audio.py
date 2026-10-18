@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 from tests import test_render_formal_target_language_speech as fixture
 from scripts import sermon_unified_audio as audio
+from scripts import ko_spoken_numerals
 from scripts import target_audio_capacity_experiment as capacity
 
 
@@ -30,12 +31,24 @@ class UnifiedAudioTests(unittest.TestCase):
         audio.freeze(draft, self.config)
         self.value = json.loads(self.config.read_text())
 
+    def test_adapter_hash_keeps_legacy_file_keys_and_hashes_package_bytes(self):
+        plan = audio.inspect(self.config)
+        code = audio.audio_backend.current().code
+        names = ('sermon_unified_audio.py', 'render_formal_target_language_speech.py',
+                 'validate_target_language_audio_unit.py')
+        expected = audio.identity.json_sha256({
+            name: audio.identity.sha256(code.implementation_path('scripts/' + name))
+            for name in names})
+        self.assertEqual(plan['adapterCodeSha256'], expected)
+        self.assertEqual(code.implementation_path('scripts/sermon_unified_audio.py'),
+                         audio.Path(audio.__file__).resolve())
+
     def test_registered_korean_plan_refuses_changed_spoken_form_dependency(self):
         self.f.context['job']['adapter']['normalizationPolicySha256'] = audio.identity.json_sha256(
             audio.renderer.SPOKEN_FORMS_NORMALIZATION_POLICY)
         plan = audio.inspect(self.config)
         original = audio.identity.sha256
-        root = audio.Path(audio.ko_spoken_numerals.__file__).parent
+        root = audio.audio_backend.current().code.implementation_path('scripts/ko_spoken_numerals.py').parent
         for name in ('ko_spoken_numerals.py', 'language_review_plugins/auto_qc_text_common.py',
                      'language_review_plugins/common.py'):
             target = root / name
@@ -51,7 +64,7 @@ class UnifiedAudioTests(unittest.TestCase):
         job['adapter']['normalizationPolicySha256'] = audio.identity.json_sha256(
             audio.renderer.SPOKEN_FORMS_NORMALIZATION_POLICY)
         job['units'][0]['text'] = '하박국 2장을 보십시오.'
-        document = audio.ko_spoken_numerals.build(job)
+        document = ko_spoken_numerals.build(job)
         path = self.f.root/'instructions.json'
         path.write_text(json.dumps(document))
         config = dict(self.value, unitInstructions=str(path))
@@ -62,7 +75,7 @@ class UnifiedAudioTests(unittest.TestCase):
         audio.freeze(draft, config_path)
         plan = audio.inspect(config_path)
         original = audio.identity.sha256
-        target = audio.Path(audio.ko_spoken_numerals.__file__)
+        target = audio.audio_backend.current().code.implementation_path('scripts/ko_spoken_numerals.py')
         with patch.object(audio.identity, 'sha256', side_effect=lambda path: '0' * 64
                           if audio.Path(path) == target else original(path)), \
                 patch.object(audio.renderer, 'render_accounted') as dispatch:
@@ -73,7 +86,7 @@ class UnifiedAudioTests(unittest.TestCase):
     def test_legacy_korean_spoken_override_cannot_freeze_a_plan(self):
         job = self.f.context['job']
         job['units'][0]['text'] = '시편 101편을 읽습니다.'
-        document = audio.ko_spoken_numerals.build(job)
+        document = ko_spoken_numerals.build(job)
         path = self.f.root/'legacy-instructions.json'
         path.write_text(json.dumps(document))
         config = dict(self.value, unitInstructions=str(path))
@@ -88,7 +101,7 @@ class UnifiedAudioTests(unittest.TestCase):
     def test_exact_text_plan_does_not_add_registered_rule_dependency(self):
         plan = audio.inspect(self.config)
         original = audio.identity.sha256
-        target = audio.Path(audio.ko_spoken_numerals.__file__)
+        target = audio.audio_backend.current().code.implementation_path('scripts/ko_spoken_numerals.py')
         with patch.object(audio.identity, 'sha256', side_effect=lambda path: '0' * 64
                           if audio.Path(path) == target else original(path)):
             self.assertEqual(audio.inspect(self.config)['planHash'], plan['planHash'])
