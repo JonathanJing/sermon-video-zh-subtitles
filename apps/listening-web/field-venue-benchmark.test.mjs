@@ -144,9 +144,17 @@ test('filesystem errors do not reveal private paths', () => {
 });
 
 test('independent truth requires a private output file', () => {
-  const cli = new URL('../../scripts/field_venue_independent_truth.py', import.meta.url);
-  const r = spawnSync('python3', [cli.pathname, 'manifest.json', '--data-root', '.'], {encoding: 'utf8'});
-  assert.equal(r.status, 2);
-  assert.match(r.stderr, /required: --out/);
-  assert.equal(r.stdout, '');
+  const entrypoints = [
+    new URL('../../scripts/field_venue_independent_truth.py', import.meta.url),
+    new URL('../../experiments/field-fingerprint-benchmark/field_venue_independent_truth.py', import.meta.url),
+  ];
+  const results = entrypoints.map(cli => spawnSync('python3', [cli.pathname, 'manifest.json', '--data-root', '.'], {
+    encoding: 'utf8', cwd: tmpdir(),
+  }));
+  for (const r of results) {
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /required: --out/);
+    assert.equal(r.stdout, '');
+  }
+  assert.equal(results[0].stderr, results[1].stderr);
 });

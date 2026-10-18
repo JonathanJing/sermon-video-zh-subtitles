@@ -6,9 +6,12 @@ landmark matcher. Private audio stays under --data-root. The complete report is
 written only to the required mode-0600 --out file; stdout carries a fixed status.
 
 Requires ffmpeg and numpy. The repository's main .venv may not include numpy;
-the Codex desktop bundled Python does. Example (from the PR worktree):
+the Codex desktop bundled Python does. Example (from the repository root):
   "$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3" \
-    scripts/field_venue_independent_truth.py MANIFEST --data-root CHECKOUT --out TRUTH.json
+    experiments/field-fingerprint-benchmark/field_venue_independent_truth.py \
+    MANIFEST --data-root CHECKOUT --out TRUTH.json
+
+The original scripts/field_venue_independent_truth.py CLI remains available.
 """
 
 import argparse
