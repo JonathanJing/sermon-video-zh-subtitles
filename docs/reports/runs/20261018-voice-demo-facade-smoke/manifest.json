@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-voice-demo-facade-smoke",
+  "runs": [
+    {
+      "label": "voice-demo-facade-smoke-20261018",
+      "source": "~/.codex/worktrees/voice-demo-package-leaf/sermon-video-zh-subtitles/artifacts/test-runs/voice-demo-facade-smoke-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "voice-demo-facade-smoke-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 238,
+      "truncated": false,
+      "sha256": "2dc8915d5e6a44a9e296b7d45c5ad4f015bd1c541f5785190f0ce9a541b6c83a",
+      "redactions": {}
+    },
+    {
+      "run": "voice-demo-facade-smoke-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 372,
+      "truncated": false,
+      "sha256": "9e181318cb068831ea65bf09b872f9f1d6be8abc5b1ace61c47eaee9a57c0d22",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
