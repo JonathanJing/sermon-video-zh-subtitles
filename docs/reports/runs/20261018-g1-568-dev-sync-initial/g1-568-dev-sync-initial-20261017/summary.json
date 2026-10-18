@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "test-run-summary-v1",
+  "result": "85 passed, 138 subtests passed, 1 failed; failed case was loaded-code identity child import because worktree venv lacked openai-agents",
+  "environment": "worktree-bound editable package; initial run lacked openai-agents, repair installed pinned requirements.txt",
+  "paidDispatch": false,
+  "productionRun": false
+}
