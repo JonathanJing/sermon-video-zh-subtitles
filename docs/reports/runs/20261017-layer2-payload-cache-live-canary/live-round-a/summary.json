@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "sermon-test-run-summary-v1",
+  "status": "production_canary_seed_succeeded",
+  "environment": "dev",
+  "locale": "zh-Hans",
+  "groups": 16,
+  "providerCalls": 32,
+  "inputTokens": 48278,
+  "outputTokens": 10084,
+  "estimatedCostMicrousd": 221542,
+  "successReceipts": 16,
+  "candidateJsonSha256": "251580ef15a56969a5190f1799a528b580279c03413f325d500edf2c550490fb",
+  "productionEligible": false,
+  "humanReview": "pending"
+}
