@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "cuv-t5-test-outcome-v1",
+  "deliveryType": "test",
+  "status": "passed",
+  "purpose": "CUV package loaded-code identity and final related regression tests",
+  "modelCalls": 0
+}

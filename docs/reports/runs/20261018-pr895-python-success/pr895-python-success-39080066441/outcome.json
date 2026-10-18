@@ -1,0 +1,10 @@
+{
+  "kind": "ci",
+  "workflow": "Python tests",
+  "status": "success",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39080066441",
+  "headSha": "89aea32e1214bf2cd5f7d69955dae5f370a723a6",
+  "createdAt": "2026-10-17T23:42:45Z",
+  "updatedAt": "2026-10-18T00:00:52Z",
+  "event": "pull_request"
+}

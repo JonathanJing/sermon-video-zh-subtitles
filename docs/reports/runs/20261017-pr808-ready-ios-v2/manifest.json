@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr808-ready-ios-v2",
+  "runs": [
+    {
+      "label": "pr808-ready-ios-39071256176",
+      "source": "~/.codex/worktrees/l4-announcement-sidecar/sermon-video-zh-subtitles/artifacts/pr808-ready-ios-39071256176",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr808-ready-ios-39071256176",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 322,
+      "truncated": false,
+      "sha256": "2a1c53b33eb2b6a672fe04e4691b7b766f7cf2ecbbdcedec3bbc5d62624f1a61",
+      "redactions": {}
+    },
+    {
+      "run": "pr808-ready-ios-39071256176",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 808,
+      "truncated": false,
+      "sha256": "4dfe0abd6662d24d74213a2d312f332880bc98c2379cf016e4e343f88819d622",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

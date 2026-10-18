@@ -1,0 +1,11 @@
+{
+  "tests": [
+    "old/new module identity",
+    "external-CWD old/new CLI and python -m",
+    "dynamic old-path load",
+    "reader resource path",
+    "synthetic invalid page/site and existing-output rejection before copy"
+  ],
+  "modelCalls": 0,
+  "networkRequests": 0
+}

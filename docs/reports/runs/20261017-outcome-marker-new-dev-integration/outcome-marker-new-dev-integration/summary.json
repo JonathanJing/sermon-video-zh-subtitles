@@ -1,0 +1,16 @@
+{
+  "status": "pass",
+  "scope": "synthetic merge-tree integration check, no branch or remote update",
+  "testsRun": 6,
+  "failures": 0,
+  "errors": 0,
+  "checks": [
+    "git merge-tree --write-tree clean",
+    "git diff --check clean",
+    "tests.test_outcome_marker: 6 passed",
+    "legacy-first module identity",
+    "package-first module identity",
+    "three scoped caller imports"
+  ],
+  "realRun": false
+}

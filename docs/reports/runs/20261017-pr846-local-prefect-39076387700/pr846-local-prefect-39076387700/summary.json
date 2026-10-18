@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "runId": 39076387700,
+  "workflow": "Local Prefect pilot",
+  "headSha": "d65d369fa1365475516716d68903131e844b0a38",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39076387700",
+  "scope": "Local Prefect pilot mock CI on PR #846 closure-fixed head",
+  "jobs": {
+    "local-mock": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:06Z",
+      "completedAt": "2026-10-17T22:55:48Z"
+    },
+    "fresh-source-mock": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:06Z",
+      "completedAt": "2026-10-17T22:47:54Z"
+    },
+    "fresh-full-mock (test_actual_confirmed_failure_explicit_retry_keeps_successful_neighbor)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:07Z",
+      "completedAt": "2026-10-17T22:51:31Z"
+    },
+    "fresh-full-mock (test_actual_full_graph_then_clean_process_receipt_only_repeat)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:06Z",
+      "completedAt": "2026-10-17T22:51:43Z"
+    },
+    "fresh-full-mock (test_actual_ordinary_timeout_then_original_receipt_reconciliation)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:06Z",
+      "completedAt": "2026-10-17T22:50:35Z"
+    }
+  },
+  "limitations": [
+    "Mock workflow only; no paid or remote production dispatch",
+    "No HTTP, publication, device or venue acceptance"
+  ]
+}

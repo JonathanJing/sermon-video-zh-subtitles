@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "test-run-outcome-v1",
+  "kind": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T21:26:54.039519+00:00",
+  "finishedAt": "2026-10-17T21:31:40.233779+00:00",
+  "durationSeconds": 286.19,
+  "command": [
+    "python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_run_post_live_subtitle_generation.py::LoadedCodeIdentityTests",
+    "tests/test_run_post_live_timeline_job.py",
+    "tests/test_infrastructure_compute_leaves.py",
+    "tests/test_machine_qc_runtime_budget.py",
+    "tests/test_run_machine_qc_audio_test.py",
+    "tests/test_qc_runtime_implementation_closure.py",
+    "tests/test_implementation_freeze.py",
+    "tests/test_tongxing_audio_ports.py",
+    "tests/test_tongxing_review_ports.py"
+  ],
+  "headBeforeCommit": "f2239312ae781725bbabc45f66e32cbd6410a107"
+}

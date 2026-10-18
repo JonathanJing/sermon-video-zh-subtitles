@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-deepseek-translation-review-low",
+  "runs": [
+    {
+      "label": "deepseek-translation-review-low-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/deepseek-translation-review-low-20261017",
+      "skipped": {
+        ".pyc": 1,
+        ".jsonl": 4,
+        ".json": 10,
+        ".txt": 4,
+        ".py": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "deepseek-translation-review-low-20261017",
+      "path": "blind-judge/receipt.json",
+      "kind": "whole",
+      "bytes": 608,
+      "truncated": false,
+      "sha256": "cd8c9ca39364462b751e3f5496063c1c8b2738487ce69ad2f4c6a10db46141a9",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-low-20261017",
+      "path": "deepseek-low-review/receipt.json",
+      "kind": "whole",
+      "bytes": 761,
+      "truncated": false,
+      "sha256": "b2a86fcb395252aed52c74cb25885c3afc115bf164bef9a7c3e925202f9804da",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-low-20261017",
+      "path": "deepseek-low-translate/receipt.json",
+      "kind": "whole",
+      "bytes": 803,
+      "truncated": false,
+      "sha256": "01ef704b7e94e0f47dc0fa8a73add2d86f4f3f6503ac576ab7be89ef386d7d60",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-low-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 347,
+      "truncated": false,
+      "sha256": "e740e523c46663d498c51f461458b09c934aae42661b3f912bec98cf166210a8",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-low-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 10697,
+      "truncated": false,
+      "sha256": "d0bc1a75355be8740f84fd4b7b5fbab232ed385ba58ad398f6afab2b17096324",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-low-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 159,
+      "truncated": false,
+      "sha256": "d446ba3a9934a8035bb27534e467d177600686d99c853ff453dced16173e4062",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

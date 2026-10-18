@@ -1,0 +1,5 @@
+stage	status	seconds
+deepseek-low-translate	pass	25.083445
+deepseek-low-review	pass	89.879946
+blind-judge-schema-preflight	failed	0
+blind-judge	pass	16.038058

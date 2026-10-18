@@ -1,0 +1,37 @@
+test_project_codex_credit_usage (unittest.loader._FailedTest.test_project_codex_credit_usage) ... ERROR
+
+======================================================================
+ERROR: test_project_codex_credit_usage (unittest.loader._FailedTest.test_project_codex_credit_usage)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_project_codex_credit_usage
+Traceback (most recent call last):
+  File "/private/tmp/sermon-project-credit-usage-move-20261017/scripts/sermon_accounting.py", line 11, in <module>
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/sermon-project-credit-usage-move-20261017/scripts/tongxing_host.py", line 25, in <module>
+    from tongxing_production import ports  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'tongxing_production'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/loader.py", line 141, in loadTestsFromName
+    module = __import__(module_name)
+  File "/private/tmp/sermon-project-credit-usage-move-20261017/tests/test_project_codex_credit_usage.py", line 10, in <module>
+    from tools.ops import project_codex_credit_usage as implementation
+  File "/private/tmp/sermon-project-credit-usage-move-20261017/tools/ops/project_codex_credit_usage.py", line 16, in <module>
+    from scripts import sermon_accounting as accounting
+  File "/private/tmp/sermon-project-credit-usage-move-20261017/scripts/sermon_accounting.py", line 14, in <module>
+    from scripts import tongxing_host  # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/sermon-project-credit-usage-move-20261017/scripts/tongxing_host.py", line 25, in <module>
+    from tongxing_production import ports  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'tongxing_production'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

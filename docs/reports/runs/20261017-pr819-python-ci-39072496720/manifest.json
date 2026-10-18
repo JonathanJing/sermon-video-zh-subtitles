@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr819-python-ci-39072496720",
+  "runs": [
+    {
+      "label": "pr819-python-ci-39072496720",
+      "source": "~/.codex/worktrees/ops-web-realtime-contract/sermon-video-zh-subtitles/artifacts/pr819-python-ci-39072496720",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr819-python-ci-39072496720",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 276,
+      "truncated": false,
+      "sha256": "609dab7f6ad6b286cd0f20b823544129821665c38bbce0ef021bd2e9e3320b89",
+      "redactions": {}
+    },
+    {
+      "run": "pr819-python-ci-39072496720",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2703,
+      "truncated": false,
+      "sha256": "e0c6d00326d5f96d73698a2269a58ccf0f49dedb32bbc83eef8eb5ca5d893264",
+      "redactions": {}
+    },
+    {
+      "run": "pr819-python-ci-39072496720",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 367,
+      "truncated": false,
+      "sha256": "833550cf71a62ed4e53b3968a6624b0ddccea3da950bf0539dded0cbe1ca7b03",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

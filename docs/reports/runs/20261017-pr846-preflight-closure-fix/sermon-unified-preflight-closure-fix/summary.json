@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "baseCodeCommit": "859998f6",
+  "newCodeIdentitySha256": "1ec5fde48bc0bd3322919a63937704d1cc733f07845b3bf823016c6f4c6c7d62",
+  "tests": {
+    "command": "python -m unittest tests.test_sermon_unified_preflight",
+    "ran": 6,
+    "result": "passed"
+  },
+  "identityMutationTest": "Synthetic changed bytes of tools/ops/sermon_unified_preflight.py produce different Layer 2 codeIdentitySha256; tracked file unchanged",
+  "diffCheck": "passed",
+  "limitations": [
+    "No paid or remote production execution",
+    "Existing frozen run identity must be rechecked"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "runId": 39068576083,
+  "workflow": "Python tests",
+  "trigger": "pull_request",
+  "headSha": "84fd2edd315f94dca9315f92c33e98e31ee1b572",
+  "branch": "codex/dev-local-audio-entry-leaf-20261017",
+  "base": "dev",
+  "rootGroups": {
+    "root-0": "success",
+    "root-1": "success",
+    "root-2": "success",
+    "root-3": "success",
+    "root-4": "success",
+    "root-5": "success",
+    "root-6": "success",
+    "root-7": "success"
+  },
+  "aggregator": "success",
+  "nativeSharedContracts": "skipped",
+  "companionChecks": {
+    "Tongxing iOS contract-validation": "success",
+    "native-client": "success"
+  },
+  "scope": "Dev local audio entry move and external-CWD bootstrap",
+  "limitations": [
+    "synthetic CI only; no real TTS/ASR, paid calls or production audio"
+  ]
+}

@@ -1,0 +1,178 @@
+................................ [ 24%]
+......................................... [ 55%]
+.............................................FF [ 91%]
+FFFF......F                                                            [100%]
+=================================== FAILURES ===================================
+_ test_each_real_dependency_mutation_invalidates_stored_coefficients[target_audio_predicted_schedule.py] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b4939a0>
+dependency = 'target_audio_predicted_schedule.py'
+
+    @pytest.mark.parametrize("dependency", predicted.RATE_IMPLEMENTATION_FILES)
+    def test_each_real_dependency_mutation_invalidates_stored_coefficients(monkeypatch, dependency):
+        fitted = rate()
+        original = Path.read_bytes
+        from scripts import sermon_source_producer_compatibility as compatibility
+        target = Path(predicted.__file__).resolve().parents[1] / compatibility.resolve("scripts/" + dependency)
+        baseline = fitted["rateImplementationSha256"]
+        with monkeypatch.context() as changed:
+            changed.setattr(Path, "read_bytes", lambda path: original(path) + b"\n# mutation\n" if path == target else original(path))
+>           assert predicted.rate_implementation_sha256() != baseline
+E           AssertionError: assert 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' != 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac'
+E            +  where 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' = <function rate_implementation_sha256 at 0x10ba9ac00>()
+E            +    where <function rate_implementation_sha256 at 0x10ba9ac00> = predicted.rate_implementation_sha256
+
+tests/test_target_audio_rate_identity.py:33: AssertionError
+_ test_each_real_dependency_mutation_invalidates_stored_coefficients[render_formal_target_language_speech.py] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b492ac0>
+dependency = 'render_formal_target_language_speech.py'
+
+    @pytest.mark.parametrize("dependency", predicted.RATE_IMPLEMENTATION_FILES)
+    def test_each_real_dependency_mutation_invalidates_stored_coefficients(monkeypatch, dependency):
+        fitted = rate()
+        original = Path.read_bytes
+        from scripts import sermon_source_producer_compatibility as compatibility
+        target = Path(predicted.__file__).resolve().parents[1] / compatibility.resolve("scripts/" + dependency)
+        baseline = fitted["rateImplementationSha256"]
+        with monkeypatch.context() as changed:
+            changed.setattr(Path, "read_bytes", lambda path: original(path) + b"\n# mutation\n" if path == target else original(path))
+>           assert predicted.rate_implementation_sha256() != baseline
+E           AssertionError: assert 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' != 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac'
+E            +  where 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' = <function rate_implementation_sha256 at 0x10ba9ac00>()
+E            +    where <function rate_implementation_sha256 at 0x10ba9ac00> = predicted.rate_implementation_sha256
+
+tests/test_target_audio_rate_identity.py:33: AssertionError
+_ test_each_real_dependency_mutation_invalidates_stored_coefficients[ko_spoken_numerals.py] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b493a10>
+dependency = 'ko_spoken_numerals.py'
+
+    @pytest.mark.parametrize("dependency", predicted.RATE_IMPLEMENTATION_FILES)
+    def test_each_real_dependency_mutation_invalidates_stored_coefficients(monkeypatch, dependency):
+        fitted = rate()
+        original = Path.read_bytes
+        from scripts import sermon_source_producer_compatibility as compatibility
+        target = Path(predicted.__file__).resolve().parents[1] / compatibility.resolve("scripts/" + dependency)
+        baseline = fitted["rateImplementationSha256"]
+        with monkeypatch.context() as changed:
+            changed.setattr(Path, "read_bytes", lambda path: original(path) + b"\n# mutation\n" if path == target else original(path))
+>           assert predicted.rate_implementation_sha256() != baseline
+E           AssertionError: assert 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' != 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac'
+E            +  where 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' = <function rate_implementation_sha256 at 0x10ba9ac00>()
+E            +    where <function rate_implementation_sha256 at 0x10ba9ac00> = predicted.rate_implementation_sha256
+
+tests/test_target_audio_rate_identity.py:33: AssertionError
+_ test_each_real_dependency_mutation_invalidates_stored_coefficients[sermon_sentence_interpretation.py] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b493380>
+dependency = 'sermon_sentence_interpretation.py'
+
+    @pytest.mark.parametrize("dependency", predicted.RATE_IMPLEMENTATION_FILES)
+    def test_each_real_dependency_mutation_invalidates_stored_coefficients(monkeypatch, dependency):
+        fitted = rate()
+        original = Path.read_bytes
+        from scripts import sermon_source_producer_compatibility as compatibility
+        target = Path(predicted.__file__).resolve().parents[1] / compatibility.resolve("scripts/" + dependency)
+        baseline = fitted["rateImplementationSha256"]
+        with monkeypatch.context() as changed:
+            changed.setattr(Path, "read_bytes", lambda path: original(path) + b"\n# mutation\n" if path == target else original(path))
+>           assert predicted.rate_implementation_sha256() != baseline
+E           AssertionError: assert 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' != 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac'
+E            +  where 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' = <function rate_implementation_sha256 at 0x10ba9ac00>()
+E            +    where <function rate_implementation_sha256 at 0x10ba9ac00> = predicted.rate_implementation_sha256
+
+tests/test_target_audio_rate_identity.py:33: AssertionError
+_ test_each_real_dependency_mutation_invalidates_stored_coefficients[language_review_plugins/auto_qc_text_common.py] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b491080>
+dependency = 'language_review_plugins/auto_qc_text_common.py'
+
+    @pytest.mark.parametrize("dependency", predicted.RATE_IMPLEMENTATION_FILES)
+    def test_each_real_dependency_mutation_invalidates_stored_coefficients(monkeypatch, dependency):
+        fitted = rate()
+        original = Path.read_bytes
+        from scripts import sermon_source_producer_compatibility as compatibility
+        target = Path(predicted.__file__).resolve().parents[1] / compatibility.resolve("scripts/" + dependency)
+        baseline = fitted["rateImplementationSha256"]
+        with monkeypatch.context() as changed:
+            changed.setattr(Path, "read_bytes", lambda path: original(path) + b"\n# mutation\n" if path == target else original(path))
+>           assert predicted.rate_implementation_sha256() != baseline
+E           AssertionError: assert 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' != 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac'
+E            +  where 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' = <function rate_implementation_sha256 at 0x10ba9ac00>()
+E            +    where <function rate_implementation_sha256 at 0x10ba9ac00> = predicted.rate_implementation_sha256
+
+tests/test_target_audio_rate_identity.py:33: AssertionError
+_ test_each_real_dependency_mutation_invalidates_stored_coefficients[language_review_plugins/common.py] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b491f60>
+dependency = 'language_review_plugins/common.py'
+
+    @pytest.mark.parametrize("dependency", predicted.RATE_IMPLEMENTATION_FILES)
+    def test_each_real_dependency_mutation_invalidates_stored_coefficients(monkeypatch, dependency):
+        fitted = rate()
+        original = Path.read_bytes
+        from scripts import sermon_source_producer_compatibility as compatibility
+        target = Path(predicted.__file__).resolve().parents[1] / compatibility.resolve("scripts/" + dependency)
+        baseline = fitted["rateImplementationSha256"]
+        with monkeypatch.context() as changed:
+            changed.setattr(Path, "read_bytes", lambda path: original(path) + b"\n# mutation\n" if path == target else original(path))
+>           assert predicted.rate_implementation_sha256() != baseline
+E           AssertionError: assert 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' != 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac'
+E            +  where 'baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac' = <function rate_implementation_sha256 at 0x10ba9ac00>()
+E            +    where <function rate_implementation_sha256 at 0x10ba9ac00> = predicted.rate_implementation_sha256
+
+tests/test_target_audio_rate_identity.py:33: AssertionError
+_ ImplementationFreezeTests.test_other_hash_is_reported_with_the_changed_files _
+
+self = <test_implementation_freeze.ImplementationFreezeTests testMethod=test_other_hash_is_reported_with_the_changed_files>
+
+    def test_other_hash_is_reported_with_the_changed_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in waiver.IMPLEMENTATION_FILES:
+                destination = waiver.implementation_path(name, root)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(waiver.implementation_path(name), destination)
+            frozen_hash = waiver.implementation_sha256(root)
+            frozen_files = freeze.file_hashes(root)
+            self.assertEqual(frozen_hash, waiver.implementation_sha256())
+            edited = root / "scripts/target_audio_auto_qc.py"
+>           edited.write_text(edited.read_text(encoding="utf-8") + "\n# edited after the run plan froze\n", encoding="utf-8")
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_implementation_freeze.py:30:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = PosixPath('/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpp_m28pse/scripts/target_audio_auto_qc.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpp_m28pse/scripts/target_audio_auto_qc.py'
+
+/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_local.py:537: FileNotFoundError
+=========================== short test summary info ============================
+FAILED tests/test_target_audio_rate_identity.py::test_each_real_dependency_mutation_invalidates_stored_coefficients[target_audio_predicted_schedule.py]
+FAILED tests/test_target_audio_rate_identity.py::test_each_real_dependency_mutation_invalidates_stored_coefficients[render_formal_target_language_speech.py]
+FAILED tests/test_target_audio_rate_identity.py::test_each_real_dependency_mutation_invalidates_stored_coefficients[ko_spoken_numerals.py]
+FAILED tests/test_target_audio_rate_identity.py::test_each_real_dependency_mutation_invalidates_stored_coefficients[sermon_sentence_interpretation.py]
+FAILED tests/test_target_audio_rate_identity.py::test_each_real_dependency_mutation_invalidates_stored_coefficients[language_review_plugins/auto_qc_text_common.py]
+FAILED tests/test_target_audio_rate_identity.py::test_each_real_dependency_mutation_invalidates_stored_coefficients[language_review_plugins/common.py]
+FAILED tests/test_implementation_freeze.py::ImplementationFreezeTests::test_other_hash_is_reported_with_the_changed_files
+7 failed, 124 passed, 170 subtests passed in 764.76s (0:12:44)

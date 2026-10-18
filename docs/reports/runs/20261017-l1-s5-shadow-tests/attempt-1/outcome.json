@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "local-targeted-test-v1",
+  "status": "failed",
+  "exitCode": 1,
+  "purpose": "44 offline unit tests on S5 worktree using original checkout editable environment",
+  "error": {
+    "type": "wrong_editable_package",
+    "message": "External-CWD facade subprocess resolved production package from the original checkout; 43 tests passed and one package import test failed."
+  }
+}

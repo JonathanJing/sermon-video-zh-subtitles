@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "cuv-t5-test-summary-v1",
+  "command": "pytest CUV modules plus package and alias modules",
+  "result": "109 passed, 5 skipped, 492 subtests passed",
+  "oldNewComparison": {
+    "status": "passed",
+    "modelPayloadsEqual": true,
+    "cacheResponsesEqual": true,
+    "blocksEqual": true,
+    "requestsEqualExceptIdentity": true,
+    "oldManifestVersion": "sermon-cuv-translation-v1",
+    "newManifestVersion": "sermon-cuv-translation-v2",
+    "unchangedRequestVersion": "sermon-cuv-translation-v1",
+    "cacheCount": 4,
+    "fakeModelCallsPerRun": 4
+  },
+  "sourceCommit": "04f2f418",
+  "paidRequests": 0
+}

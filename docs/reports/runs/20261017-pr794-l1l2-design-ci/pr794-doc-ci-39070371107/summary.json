@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "runId": 39070371107,
+  "workflow": "Python tests",
+  "headSha": "70501a08004db5af2439eaf26630c5a99722792c",
+  "scope": "docs-only L1/L2 remaining migration design",
+  "jobs": {
+    "changes": "success",
+    "unittest": "success",
+    "nativeSharedContracts": "skipped",
+    "rootMatrix": "skipped"
+  },
+  "companionRun": {
+    "runId": 39070428390,
+    "workflow": "Tongxing iOS",
+    "changes": "success",
+    "nativeClient": "success",
+    "contractValidation": "skipped",
+    "iosValidation": "skipped"
+  },
+  "limitations": [
+    "documentation and route checks only; no code migration or production run"
+  ]
+}
