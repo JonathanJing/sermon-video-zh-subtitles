@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-a3-review-expanded-73",
+  "runs": [
+    {
+      "label": "g1-a3-review-expanded-73",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-a3-review-expanded-73",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-a3-review-expanded-73",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 152,
+      "truncated": false,
+      "sha256": "d0c4c6ac1e9b544158caaa27e55c563d51aeaf0c0f0dcee180e0fd62443ccd5f",
+      "redactions": {}
+    },
+    {
+      "run": "g1-a3-review-expanded-73",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 538,
+      "truncated": false,
+      "sha256": "a0bdfb318aa79dc8ec3a4cd4868e50bead313a86acddbb9fe9f9c1cbc559c726",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
