@@ -157,6 +157,16 @@ REVIEW = {
     'scripts/scripture_adjudication.py': _REVIEW + 'scripture.py',
     'scripts/scripture_machine_adjudication.py': _REVIEW + 'scripture_machine.py',
     'scripts/sermon_review_budget.py': _REVIEW + 'review_budget.py',
+    # R3: waiver and machine QC implementation closure.
+    'scripts/machine_quality_waiver.py': _REVIEW + 'waiver.py',
+    'scripts/machine_quality_release_basis.py': _REVIEW + 'release_basis.py',
+    'scripts/target_text_auto_qc.py': _REVIEW + 'text_qc.py',
+    'scripts/target_audio_auto_qc.py': _REVIEW + 'audio_qc.py',
+    'scripts/auto_qc_seeded_errors.py': _REVIEW + 'seeded_errors.py',
+    'scripts/machine_qc_budget_authorization.py': _REVIEW + 'qc_budget_authorization.py',
+    'scripts/spoken_condensation.py': _REVIEW + 'condensation.py',
+    'scripts/run_machine_qc_clip_test.py': _REVIEW + 'qc_text_run.py',
+    'scripts/run_machine_qc_audio_test.py': _REVIEW + 'qc_audio_run.py',
 }
 
 # Prepared-workflow composition (tongxing_production.workflows.prepared), batch W2.
@@ -235,6 +245,21 @@ PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **
 def resolve(key):
     """Repository-relative path of the file a legacy identity key names today."""
     return PATH_ALIASES.get(key, key)
+
+
+def physical_closure_paths(keys):
+    """Files executed by an identity closure, including moved facades and targets.
+
+    Use actual repository paths as keys so a per-file hash always names the
+    bytes it describes. The resolver itself decides which target is reached.
+    """
+    paths = {PRODUCTION + 'path_aliases.py'}
+    for key in keys:
+        if not key.startswith(('scripts/', 'packages/')):
+            raise ValueError(f'Closure key is not a repository-relative file: {key}')
+        paths.add(key)
+        paths.add(resolve(key))
+    return tuple(sorted(paths))
 
 
 def recorded(identity, key):

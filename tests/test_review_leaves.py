@@ -2,11 +2,11 @@
 import importlib
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
 
 from scripts import machine_quality_waiver as waiver
 from tongxing_production import path_aliases
@@ -36,16 +36,23 @@ class ReviewLeafTests(unittest.TestCase):
         key = 'scripts/machine_repair_ledger.py'
         self.assertIn(key, waiver.IMPLEMENTATION_FILES)
         self.assertEqual(waiver.implementation_path(key), ROOT/path_aliases.resolve(key))
-        moved = waiver.implementation_path(key).read_bytes()
+        moved_key = path_aliases.resolve(key)
+        self.assertIn(moved_key, waiver.IMPLEMENTATION_PHYSICAL_FILES)
         before = waiver.implementation_sha256()
         with tempfile.TemporaryDirectory() as directory:
-            changed = Path(directory)/'repair_ledger.py'
+            checkout = Path(directory)
+            for name in waiver.IMPLEMENTATION_PHYSICAL_FILES:
+                source = ROOT/name
+                target = checkout/name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, target)
+            changed = checkout/moved_key
+            moved = changed.read_bytes()
+            self.assertEqual(waiver.implementation_sha256(checkout), before)
             changed.write_bytes(moved + b'\n# changed\n')
-            with patch.dict(path_aliases.PATH_ALIASES, {key: str(changed)}):
-                self.assertNotEqual(waiver.implementation_sha256(), before)
+            self.assertNotEqual(waiver.implementation_sha256(checkout), before)
             changed.write_bytes(moved)
-            with patch.dict(path_aliases.PATH_ALIASES, {key: str(changed)}):
-                self.assertEqual(waiver.implementation_sha256(), before)
+            self.assertEqual(waiver.implementation_sha256(checkout), before)
 
     def test_facades_import_with_only_the_spark_container_path(self):
         """Spark containers run without site-packages and put <code>/packages/production/src

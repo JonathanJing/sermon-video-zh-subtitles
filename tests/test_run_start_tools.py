@@ -325,6 +325,20 @@ class StartCheckTests(unittest.TestCase):
             self.assertEqual(check.check_spark('host',False,None)['session'],'not_required_api_only')
             self.assertEqual(check.check_spark('host',True,None)['status'],'fail')
 
+    def test_spark_code_preflight_checks_the_frozen_physical_files(self):
+        from scripts import machine_quality_waiver as waiver
+        names = waiver.IMPLEMENTATION_PHYSICAL_FILES
+        stdout = '\n'.join(f'{hashlib.sha256((check.ROOT / name).read_bytes()).hexdigest()}  {name}'
+                           for name in names)
+        with mock.patch.object(check, 'ssh', return_value=mock.Mock(returncode=0, stdout=stdout)) as ssh:
+            result = check.check_spark('host', False, '/remote/code')
+        self.assertEqual(result['status'], 'pass')
+        command = ssh.call_args.args[0]
+        self.assertEqual(command.count('scripts/machine_quality_waiver.py'), 1)
+        self.assertIn('packages/production/src/tongxing_production/review/waiver.py', command)
+        self.assertIn('packages/production/src/tongxing_production/path_aliases.py', command)
+        self.assertEqual(len(names), len(set(names)))
+
     def test_fresh_paths_reject_an_occupied_directory(self):
         with tempfile.TemporaryDirectory() as root:
             path=Path(root)

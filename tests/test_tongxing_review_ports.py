@@ -7,6 +7,7 @@ binding them imports no waiver-closure file.
 """
 import builtins
 import dataclasses
+from pathlib import Path
 import subprocess
 import sys
 import unittest
@@ -76,6 +77,19 @@ class ReviewPortsTests(unittest.TestCase):
         for name in scripture_machine.GENERATOR_MODULES:
             with self.subTest(name=name):
                 self.assertTrue(code.implementation_path('scripts/' + name).is_file())
+
+    def test_review_proxy_and_backend_bytes_invalidate_waiver_identity(self):
+        keys = ('packages/production/src/tongxing_production/review/unmoved.py',
+                'packages/production/src/tongxing_production/review/backend.py')
+        baseline = waiver.implementation_sha256()
+        original = Path.read_bytes
+        for key in keys:
+            with self.subTest(key=key):
+                target = host.ROOT / key
+                with patch.object(Path, 'read_bytes',
+                                  lambda path: original(path) + b'\n# changed binding\n'
+                                  if path == target else original(path)):
+                    self.assertNotEqual(waiver.implementation_sha256(), baseline)
 
     def test_audio_rules_reach_layer_3(self):
         audio = review.current().audio

@@ -1,4 +1,5 @@
 import json
+import hashlib
 from pathlib import Path
 import shutil
 import tempfile
@@ -14,30 +15,55 @@ from scripts import run_machine_qc_clip_test as text_driver
 class ImplementationFreezeTests(unittest.TestCase):
     def test_current_checkout_matches_its_own_hash(self):
         self.assertIsNone(freeze.mismatch(waiver.implementation_sha256()))
-        self.assertEqual(set(freeze.file_hashes()), set(waiver.IMPLEMENTATION_FILES))
+        self.assertEqual(set(freeze.file_hashes()), set(waiver.IMPLEMENTATION_PHYSICAL_FILES))
 
     def test_other_hash_is_reported_with_the_changed_files(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            for name in waiver.IMPLEMENTATION_FILES:
-                destination = waiver.implementation_path(name, root)
+            for name in waiver.IMPLEMENTATION_PHYSICAL_FILES:
+                destination = root / name
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(waiver.implementation_path(name), destination)
+                shutil.copyfile(freeze.ROOT / name, destination)
             frozen_hash = waiver.implementation_sha256(root)
             frozen_files = freeze.file_hashes(root)
             self.assertEqual(frozen_hash, waiver.implementation_sha256())
-            edited = root / "scripts/target_audio_auto_qc.py"
+            edited = waiver.implementation_path("scripts/target_audio_auto_qc.py", root)
             edited.write_text(edited.read_text(encoding="utf-8") + "\n# edited after the run plan froze\n", encoding="utf-8")
             report = freeze.mismatch(frozen_hash, recorded_files=frozen_files, root=root)
             self.assertEqual(report["status"], "implementation_mismatch")
             self.assertEqual(report["expectedImplementationSha256"], frozen_hash)
             self.assertNotEqual(report["currentImplementationSha256"], frozen_hash)
-            self.assertEqual(report["changedFiles"], ["scripts/target_audio_auto_qc.py"])
+            self.assertEqual(report["changedFiles"], ["packages/production/src/tongxing_production/review/audio_qc.py"])
             self.assertEqual(report["exitCode"], 2)
             # Without recorded per-file hashes the report still names the current hashes.
             self.assertIsNone(freeze.mismatch(frozen_hash, root=root)["changedFiles"])
         with self.assertRaisesRegex(ValueError, "64-hex"):
             freeze.mismatch("not-a-sha")
+
+    def test_facade_target_and_alias_resolver_each_invalidate_freeze(self):
+        baseline = waiver.implementation_sha256()
+        frozen_files = freeze.file_hashes()
+        original = Path.read_bytes
+        for name in ("scripts/machine_quality_waiver.py",
+                     "packages/production/src/tongxing_production/review/waiver.py",
+                     "packages/production/src/tongxing_production/path_aliases.py",
+                     "scripts/implementation_freeze.py"):
+            target = freeze.ROOT / name
+            with self.subTest(name=name), patch.object(Path, "read_bytes",
+                    lambda path: original(path) + b"\n# changed physical file\n"
+                    if path == target else original(path)):
+                report = freeze.mismatch(baseline, recorded_files=frozen_files)
+                self.assertEqual(report["changedFiles"], [name])
+                self.assertNotEqual(report["currentImplementationSha256"], baseline)
+                self.assertNotEqual(report["files"][name], frozen_files[name])
+
+    def test_pre_facade_freeze_is_refused(self):
+        old = hashlib.sha256()
+        for name in waiver.IMPLEMENTATION_FILES:
+            old.update(name.encode("utf-8") + b"\0" + waiver.implementation_path(name).read_bytes() + b"\0")
+        old_hash = old.hexdigest()
+        self.assertNotEqual(old_hash, waiver.implementation_sha256())
+        self.assertEqual(freeze.mismatch(old_hash)["status"], "implementation_mismatch")
 
     def test_both_drivers_refuse_other_code_before_doing_anything(self):
         stale = "0" * 64

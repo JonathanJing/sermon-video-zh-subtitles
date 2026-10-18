@@ -442,7 +442,7 @@ def check_spark(host, spark_stages, code_dir):
         evidence["session"] = "not_required_api_only"
     if code_dir:
         from scripts import machine_quality_waiver as waiver
-        files = [str(waiver.implementation_path(path, Path())) for path in waiver.IMPLEMENTATION_FILES]
+        files = list(waiver.IMPLEMENTATION_PHYSICAL_FILES)
         remote = ssh("cd " + shlex.quote(code_dir) + " && sha256sum " + " ".join(shlex.quote(path) for path in files), host)
         local = {path: sha256(ROOT / path) for path in files}
         observed = dict(reversed(line.split(None, 1)) for line in remote.stdout.splitlines() if line.strip())

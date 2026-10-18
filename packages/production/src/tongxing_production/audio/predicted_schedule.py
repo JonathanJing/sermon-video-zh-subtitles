@@ -39,6 +39,9 @@ RATE_IMPLEMENTATION_FILES = (
     "language_review_plugins/auto_qc_text_common.py",
     "language_review_plugins/common.py",
 )
+RATE_PHYSICAL_FILES = path_aliases.physical_closure_paths(
+    tuple(name if name.startswith(("packages/", "scripts/")) else "scripts/" + name
+          for name in RATE_IMPLEMENTATION_FILES))
 EPSILON = 1e-6
 # Speech-job adapter fields that change how long the same text sounds. A rate
 # fitted under one identity is never used to budget another.
@@ -67,12 +70,11 @@ def _check_identity(identity: dict, locale: str) -> None:
 
 def rate_implementation_sha256() -> str:
     """Bind the rate's fitting/counting code and complete spoken-rule dependency closure."""
-    # Names are the rate identity's keys; a file that moved into the production
-    # package is read at its alias, with the same bytes.
+    # Each key names the actual file read, including the executed facade and
+    # package target when a legacy path moved.
     root = _audio.current().core.repo_root
-    files = {name: hashlib.sha256((root / path_aliases.resolve(
-                name if name.startswith(("packages/", "scripts/")) else "scripts/" + name)).read_bytes()).hexdigest()
-             for name in RATE_IMPLEMENTATION_FILES}
+    files = {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+             for name in RATE_PHYSICAL_FILES}
     return hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 

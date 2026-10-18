@@ -20,6 +20,7 @@ import unicodedata
 import tempfile
 from typing import Callable
 
+from .. import path_aliases
 from ..source import sentence_interpretation as identity
 from . import backend as _audio
 from . import dev_profile, dev_receipts
@@ -92,17 +93,17 @@ SCORING_IMPLEMENTATION_FILES = (
     "scripts/language_review_plugins/auto_qc_text_common.py",
     "scripts/language_review_plugins/common.py",
 )
+SCORING_PHYSICAL_FILES = path_aliases.physical_closure_paths(SCORING_IMPLEMENTATION_FILES)
 
 
 def implementation_sha256(root: Path | None = None) -> str:
     """Current scoring closure; v5 single-file receipts require explicit rescreening."""
-    # The keys stay the legacy path strings (they are hash input); each file is read where
-    # its key resolves today (L3 design section 4.2), or under an explicit root.
-    code = _audio.current().code
+    # Each key names the actual file read, including the executed facade and
+    # package target when a legacy path moved.
+    checkout = root or _audio.current().core.repo_root
     digest = hashlib.sha256()
-    for name in SCORING_IMPLEMENTATION_FILES:
-        path = root / name if root is not None else code.implementation_path(name)
-        digest.update(name.encode() + b"\0" + path.read_bytes() + b"\0")
+    for name in SCORING_PHYSICAL_FILES:
+        digest.update(name.encode() + b"\0" + (checkout / name).read_bytes() + b"\0")
     return digest.hexdigest()
 
 
