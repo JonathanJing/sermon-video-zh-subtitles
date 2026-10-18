@@ -65,6 +65,7 @@ def test_v5_projects_mixed_family_to_two_honest_legacy_pages():
 def test_v5_incremental_merge_allows_target_source_to_differ_from_siblings():
     baseline = catalog(('es', 'ko'))
     candidate = catalog(('zh-Hans',))
+    candidate['pages'][0]['defaultTargetLocale'] = baseline['pages'][0]['defaultTargetLocale']
     plan = {'schemaVersion': 'sermon-locale-release-plan-v1',
             'baselineCatalogV5Sha256': contract.sha(baseline), 'baselineVersion': 'v1',
             'pageId': 'family-page', 'locales': ['zh-Hans'],
@@ -75,10 +76,27 @@ def test_v5_incremental_merge_allows_target_source_to_differ_from_siblings():
     assert merged['pages'][0]['targets']['zh-Hans']['sourceIdentitySha256'] == SOURCE_A
 
 
+def test_v5_incremental_merge_rejects_shared_presentation_changes():
+    baseline = catalog(('es', 'ko'))
+    candidate = catalog(('zh-Hans',))
+    candidate['pages'][0]['defaultTargetLocale'] = baseline['pages'][0]['defaultTargetLocale']
+    candidate['pages'][0]['title'] = 'A different family title'
+    plan = {'schemaVersion': 'sermon-locale-release-plan-v1',
+            'baselineCatalogV5Sha256': contract.sha(baseline), 'baselineVersion': 'v1',
+            'pageId': 'family-page', 'locales': ['zh-Hans'],
+            'requiredLocales': ['zh-Hans', 'es', 'ko'], 'mode': 'incremental'}
+    with pytest.raises(ValueError, match='Shared page presentation changed'):
+        contract.merge_catalog(baseline, candidate, plan)
+
+
 def test_v5_merge_promotes_existing_single_source_siblings_without_rewriting_release_identity():
     legacy = contract.project_legacy_catalog_v4(catalog(('es', 'ko')))
     baseline = contract.upgrade_catalog_v5(legacy)
     candidate = catalog()
+    candidate['pages'][0]['title'] = 'Incoming family title'
+    candidate['pages'][0]['displayCategory'] = {
+        'schemaVersion': 'sermon-page-display-category-v1',
+        'labels': {'en': 'Full Sermon', 'zh-Hans': '完整讲道'}}
     plan = {'schemaVersion': 'sermon-locale-release-plan-v1',
             'baselineCatalogV5Sha256': contract.sha(baseline), 'baselineVersion': 'v1',
             'pageId': 'family-page', 'locales': ['zh-Hans', 'es', 'ko'],
@@ -90,6 +108,14 @@ def test_v5_merge_promotes_existing_single_source_siblings_without_rewriting_rel
     assert page['targets']['es']['editionId'] == 'family-page'
     assert page['targets']['es']['sourceIdentitySha256'] == SOURCE_B
     assert page['targets']['zh-Hans']['editionId'] == 'broadcast-edition'
+    assert page['title'] == 'Incoming family title'
+    assert page['defaultTargetLocale'] == 'zh-Hans'
+    assert page['displayCategory'] == candidate['pages'][0]['displayCategory']
+    assert merged['defaultPageId'] == 'family-page'
+    projected = contract.project_legacy_catalog_v4(merged)
+    projected_pages = {item['id']: item for item in projected['pages']}
+    assert {item['title'] for item in projected_pages.values()} == {'Incoming family title'}
+    assert projected['defaultPageId'] == 'broadcast-edition'
 
 
 def test_v5_merge_rejects_partial_or_cross_hash_single_source_promotion():

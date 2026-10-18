@@ -416,10 +416,19 @@ def merge_catalog(baseline, candidate, plan, *, anchor=None):
                 previous = promoted
                 promotion = True
             require(previous['sourceMode'] == incoming['sourceMode'], 'Page source mode changed')
-        merged = copy.deepcopy(previous)
-        merged['targets'].update(copy.deepcopy(incoming['targets']))
-        # Shared page fields cannot silently change while preserving other locales.
         require(all(previous.get(k) == incoming.get(k) for k in ('date', 'sourceLocale')), 'Page identity changed')
+        if promotion:
+            # Full promotion replaces every target, so the incoming family also owns
+            # the shared presentation (title, default locale, category, and so on).
+            merged = copy.deepcopy(incoming)
+        else:
+            if baseline['schemaVersion'] == CATALOG_V5 and previous['sourceMode'] == 'per_target':
+                previous_shared = {key: value for key, value in previous.items() if key != 'targets'}
+                incoming_shared = {key: value for key, value in incoming.items() if key != 'targets'}
+                require(previous_shared == incoming_shared,
+                        'Shared page presentation changed during incremental target merge')
+            merged = copy.deepcopy(previous)
+            merged['targets'].update(copy.deepcopy(incoming['targets']))
         result['pages'][previous_index] = merged
         if promotion:
             editions = {target['editionId'] for target in incoming['targets'].values()}
