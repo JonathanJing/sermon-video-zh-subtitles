@@ -6,8 +6,8 @@ try:
 except ImportError:
     from language_review_plugins.weekly_15030286_common import REQUIRED, review_15030286_group
 
-PLUGIN_ID = "es-weekly-15030286-v1"
-PLUGIN_VERSION = "2026-10-17-v1"
+PLUGIN_ID = "es-weekly-15030286-v2"
+PLUGIN_VERSION = "2026-10-18-v2"
 FORBIDDEN_REGISTER = (r"\b(?:vosotros|vosotras|os|sois|vais|vuestr[oa]s?)\b|\b\w+(?:áis|éis)\b"
                       r"|\b(?!(?:pa|par|an|lu)ís\b)\w+ís\b")
 
