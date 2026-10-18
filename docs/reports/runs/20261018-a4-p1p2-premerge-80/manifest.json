@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-a4-p1p2-premerge-80",
+  "runs": [
+    {
+      "label": "a4-p1p2-premerge-80",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/local-runs/a4-p1p2-premerge-80",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "a4-p1p2-premerge-80",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 114,
+      "truncated": false,
+      "sha256": "48ef71d7b0da915b42e6146f5ff73c36e1e0fa75f3df29c20c2edf26ba727b7b",
+      "redactions": {}
+    },
+    {
+      "run": "a4-p1p2-premerge-80",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 341,
+      "truncated": false,
+      "sha256": "347c57be5adc21ec69e968c0ec98adc40ac38e6a28cfc5ebe10c1c49772bba17",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
