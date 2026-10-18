@@ -1,0 +1,39 @@
+{
+  "status": "cancelled",
+  "pr": 588,
+  "runId": 39086452313,
+  "headSha": "3c22a7a398964df3252ab5856a41d54b4bd7cdec",
+  "workflow": "Tongxing iOS",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "ios-validation (transcript-collapse)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "ios-validation (remaining-listening)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "ios-validation (app-system)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "failure"
+    }
+  ]
+}
