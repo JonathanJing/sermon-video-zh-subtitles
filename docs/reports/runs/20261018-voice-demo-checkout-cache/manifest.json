@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-voice-demo-checkout-cache",
+  "runs": [
+    {
+      "label": "voice-demo-checkout-cache-20261018",
+      "source": "~/.codex/worktrees/voice-demo-package-leaf/sermon-video-zh-subtitles/artifacts/test-runs/voice-demo-checkout-cache-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "voice-demo-checkout-cache-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 220,
+      "truncated": false,
+      "sha256": "bb4028ef16a46a24b44cda7d5a187413ff5510660420409e220d933df750b229",
+      "redactions": {}
+    },
+    {
+      "run": "voice-demo-checkout-cache-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 522,
+      "truncated": false,
+      "sha256": "39a2d3b200764073aa3e335ebafdcd078a37cbac166b6acc4fae04d7d4a98a06",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

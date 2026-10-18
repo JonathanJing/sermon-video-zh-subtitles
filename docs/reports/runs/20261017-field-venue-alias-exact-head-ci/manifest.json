@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-field-venue-alias-exact-head-ci",
+  "runs": [
+    {
+      "label": "field-venue-alias-exact-head-ci-20261017",
+      "source": "/private/tmp/field-venue-exp-leaf-20261017/artifacts/field-venue-alias-exact-head-ci-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "field-venue-alias-exact-head-ci-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 665,
+      "truncated": false,
+      "sha256": "92daebea20a3438d6128cf772169326b2cf95d35402cf340f5964dc691de3531",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

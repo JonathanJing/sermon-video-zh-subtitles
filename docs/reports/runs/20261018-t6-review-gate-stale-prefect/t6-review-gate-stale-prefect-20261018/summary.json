@@ -1,0 +1,7 @@
+{
+  "scope": "Superseded initial-head Local Prefect pilot workflow for draft PR 1036",
+  "sourceUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39095379575",
+  "finding": "All five mock jobs ended cancelled after the code head was superseded; no pass/fail inference.",
+  "supersededBy": "51f5dfc004ab15426885568a6101e3a222c2e61a",
+  "limits": "Terminal cancellation is a workflow receipt, not validation. No model, Spark, paid API, or publication claim."
+}

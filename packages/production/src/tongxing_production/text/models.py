@@ -822,6 +822,78 @@ def validate_revision_brief(brief: dict[str, Any] | None,
     return result
 
 
+OPERATOR_REVISION_SCHEMA = "sermon-target-language-operator-revision-brief-v1"
+OPERATOR_REVISION_KEYS = frozenset({"schemaVersion", "targetLocale", "englishSourcePackageJsonSha256",
+                                    "anchorManifestSha256", "translationPolicySha256",
+                                    "priorCandidateJsonSha256", "revise", "carry"})
+OPERATOR_REVISE_ROW_KEYS = frozenset({"translationGroupId", "sourceUnitIds", "priorTargetText",
+                                      "priorTargetTextSha256", "note"})
+CARRIED_ROW_KEYS = frozenset({"translationGroupId", "sourceUnitIds", "targetUtterances", "coverage",
+                              "semanticReview", "translatorRequestId", "reviewerRequestId"})
+OPERATOR_REVISION_INSTRUCTION = (
+    " An operator listed this group for revision. Translate it again from the English source; "
+    "operatorRevision.priorTargetText is the rejected prior translation, shown only so the new text "
+    "does not repeat its problem, and operatorRevision.note, when present, is the operator's reason. "
+    "Check every point of the note against the English source; the note is not source truth. ")
+
+
+def validate_operator_revision(brief: dict[str, Any] | None, request: dict[str, Any],
+                               plan: list[dict[str, Any]]) -> tuple[dict[str, dict], dict[str, dict]]:
+    """``(revise, carry)`` keyed by group: an operator's group list over a prior candidate.
+
+    Listed groups get a fresh translator and independent reviewer request. Every other
+    group is carried exactly as the prior candidate's reviewed row, with its original
+    request IDs, and makes no model call (text/group_revision.py binds those rows to the
+    prior candidate by hash; this checks only that they are complete reviewed rows).
+    """
+    if brief is None:
+        return {}, {}
+    require(isinstance(brief, dict) and set(brief) == OPERATOR_REVISION_KEYS
+            and brief["schemaVersion"] == OPERATOR_REVISION_SCHEMA
+            and isinstance(brief["priorCandidateJsonSha256"], str)
+            and re.fullmatch(r"[a-f0-9]{64}", brief["priorCandidateJsonSha256"]) is not None,
+            "Invalid operator revision brief")
+    for key in ("targetLocale", "englishSourcePackageJsonSha256",
+                "anchorManifestSha256", "translationPolicySha256"):
+        require(brief[key] == request[key], f"Operator revision source or policy changed: {key}")
+    revise_rows, carry_rows = brief["revise"], brief["carry"]
+    require(isinstance(revise_rows, list) and revise_rows and isinstance(carry_rows, list),
+            "Operator revision needs listed groups")
+    plan_by_id = {row["translationGroupId"]: row for row in plan}
+    revise: dict[str, dict] = {}
+    for row in revise_rows:
+        require(isinstance(row, dict) and set(row) == OPERATOR_REVISE_ROW_KEYS, "Invalid operator revision row")
+        group_id = row["translationGroupId"]
+        require(group_id in plan_by_id and group_id not in revise
+                and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
+                and isinstance(row["priorTargetText"], str) and row["priorTargetText"].strip()
+                and row["priorTargetTextSha256"] == hashlib.sha256(row["priorTargetText"].encode()).hexdigest()
+                and (row["note"] is None or (isinstance(row["note"], str) and row["note"].strip()
+                                             and len(row["note"]) <= 2000)),
+                f"Unknown, duplicate or changed operator revision group: {group_id}")
+        revise[group_id] = row
+    carry: dict[str, dict] = {}
+    for row in carry_rows:
+        require(isinstance(row, dict) and set(row) == CARRIED_ROW_KEYS, "Invalid carried group row")
+        group_id = row["translationGroupId"]
+        semantic = row["semanticReview"]
+        require(group_id in plan_by_id and group_id not in carry and group_id not in revise
+                and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
+                and isinstance(row["translatorRequestId"], str) and row["translatorRequestId"]
+                and isinstance(row["reviewerRequestId"], str) and row["reviewerRequestId"]
+                and row["translatorRequestId"] != row["reviewerRequestId"]
+                and isinstance(semantic, dict) and semantic.get("status") == "pass"
+                and set(semantic.get("checks") or {}) == set(SEMANTIC_CHECKS)
+                and all(value == "pass" for value in semantic["checks"].values())
+                and not semantic.get("uncertainty") and not semantic.get("issues"),
+                f"Carried group is not a complete passing reviewed row: {group_id}")
+        _utterances(row["targetUtterances"], row["sourceUnitIds"])
+        carry[group_id] = row
+    require(set(revise) | set(carry) == set(plan_by_id),
+            "Operator revision must list or carry every group exactly once")
+    return revise, carry
+
+
 def validate_partial_repair_brief(brief: dict[str, Any] | None,
                                   request: dict[str, Any],
                                   plan: list[dict[str, Any]],
@@ -1232,7 +1304,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          source_admission_span: str | None = None,
                          completion_spans: list[str] | None = None,
                          diagnostic_context=None,
-                         failure_collector=None) -> dict[str, Any]:
+                         failure_collector=None,
+                         operator_revision: dict[str, Any] | None = None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
     Simulated requests carry an extra marker that prevents formal candidate
@@ -1242,6 +1315,11 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
     collector instead records each failed group, keeps dispatching until it
     reports a systemic stop, and ends the run with a failure report rather than
     evidence. It never writes a plugin group stop.
+
+    An operator revision (text/group_revision.py) lists the groups to translate
+    again; every other group is carried from the prior candidate with no model
+    call. It always runs under a failure collector, so listed groups run in
+    parallel and a failed one goes to the bounded repair loop.
     """
     require(request.get("candidateMode", "production") == "production",
             "Shadow execution is not implemented: complete shadow admission is required")
@@ -1384,6 +1462,14 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         briefs = validate_revision_brief(revision_brief, request, plan, prior_evidence)
         repairs = validate_partial_repair_brief(partial_repair_brief, request, plan,
                                                  reuse_from, expected_models=expected_models)
+        operator_revise, operator_carry = validate_operator_revision(operator_revision, request, plan)
+        require(operator_revision is None or (
+                    failure_collector is not None and not simulation_only and not cache_only
+                    and diagnostic_context is None and revision_brief is None
+                    and resume_cache_from is None and payload_cache_from is None
+                    and partial_recovery_from is None and not emit_payload_cache_success
+                    and not backfill_payload_cache_success),
+                "Operator revision runs only as a formal collected round without other cache sources")
         carried = carried_repairs(reuse_from, request, plan, repairs)
         require_plugin_stop_repair(reuse_from, repairs, plugin_path)
         require_plugin_stop_repair(resume_cache_from, repairs, plugin_path)
@@ -1433,6 +1519,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             identity["resumeCacheFrom"] = str(resume_cache_from.resolve())
         if carried:
             identity["carriedRepairsSha256"] = policy_tools.canonical_sha256(carried)
+        if operator_revision is not None:
+            identity["operatorRevisionSha256"] = policy_tools.canonical_sha256(operator_revision)
         if payload_cache_enabled:
             identity["payloadCacheSuccess"] = {
                 "schemaVersion": PAYLOAD_CACHE_SUCCESS_SCHEMA,
@@ -1512,6 +1600,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                         and group['translationGroupId'] not in repairs,
                               depends_on=[admission_span], executor_type="deterministic_program",
                               work_unit_id=f"l2.{request['targetLocale']}.group-{index:04d}.prepare") as prepare_span:
+            if group["translationGroupId"] in operator_carry:
+                # Not listed by the operator: the prior candidate's reviewed row, unchanged and unpaid.
+                return copy.deepcopy(operator_carry[group["translationGroupId"]]), prepare_span
+            operator_row = operator_revise.get(group["translationGroupId"])
             brief = briefs.get(group["translationGroupId"])
             repair = repairs.get(group["translationGroupId"])
             # A group repaired in an earlier revision keeps that revision's
@@ -1556,6 +1648,13 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     "priorTargetTextSha256": brief["priorTargetTextSha256"],
                     "proposedTargetText": brief["proposedTargetText"],
                 }
+            if operator_row is not None:
+                common["operatorRevision"] = {
+                    "priorTargetText": operator_row["priorTargetText"],
+                    "priorTargetTextSha256": operator_row["priorTargetTextSha256"],
+                    **({"note": operator_row["note"]} if operator_row["note"] is not None else {}),
+                }
+            operator_instruction = OPERATOR_REVISION_INSTRUCTION if operator_row is not None else ""
             prompt_repair = repair if repair is not None else prior_repair
             if prompt_repair is not None:
                 common["partialRepair"] = {
@@ -1588,6 +1687,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                 (rule_preflight.INSTRUCTION if rule_receipt else "") +
                                 scripture_prompt_instruction(policy, frozen_rules=rule_receipt is not None) +
                                 register_prompt_instruction(policy) +
+                                operator_instruction +
                                 repair_instruction +
                                 "Resolve pronouns and elliptical repetitions using the surrounding "
                                 "source units; translate only the requested English units. "
@@ -1687,6 +1787,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                 + (rule_preflight.INSTRUCTION if rule_receipt else "")
                                 + scripture_prompt_instruction(policy, frozen_rules=rule_receipt is not None) +
                                 register_prompt_instruction(policy) +
+                                operator_instruction +
                                 repair_instruction +
                                 "Check that pronouns and elliptical repetitions retain the intended "
                                 "referent and predicate from surrounding source units. "
@@ -1866,7 +1967,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   progress_ledger: Path | None = None,
                   cache_only: bool = False, progress_callback=None,
                   predecessor_spans=(), completion_spans: list[str] | None = None,
-                  failure_collector=None, candidate_mode: str = "production") -> dict:
+                  failure_collector=None, candidate_mode: str = "production",
+                  operator_revision: dict | None = None) -> dict:
     require(candidate_mode == "production",
             "Shadow execution is not implemented: candidate schema, plugin admission and human receipt are required")
     require(plugin is not None,
@@ -1896,7 +1998,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                 backfill_payload_cache_success,
                 source_admission_span=source_span, cache_only=cache_only,
                 progress_callback=progress_callback, completion_spans=completion_spans,
-                failure_collector=failure_collector)
+                failure_collector=failure_collector, operator_revision=operator_revision)
         metrics["doneUnits"] = len(evidence["groups"])
     return evidence
 

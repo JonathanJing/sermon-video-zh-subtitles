@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-gate-c022-python-ci",
+  "runs": [
+    {
+      "label": "t6-gate-c022-python-ci-39096320227",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-gate-c022-python-ci-39096320227",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-gate-c022-python-ci-39096320227",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 407,
+      "truncated": false,
+      "sha256": "6793ed4ba8789cc0046d2fc2070ec5de131801b8daf6c8ecb7d7b01688b43e1f",
+      "redactions": {}
+    },
+    {
+      "run": "t6-gate-c022-python-ci-39096320227",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 530,
+      "truncated": false,
+      "sha256": "be0ff1742547014d97b320c7dafcc3a14258ee9565cba045edbffb89fa40d991",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

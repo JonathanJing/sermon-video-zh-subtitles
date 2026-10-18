@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr1012-9faa-python-root4-fail",
+  "runs": [
+    {
+      "label": "milmmt-pr1012-ci-root4-failed",
+      "source": "~/.codex/worktrees/milmmt-exp-leaf/sermon-video-zh-subtitles/artifacts/milmmt-pr1012-ci-root4-failed",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "milmmt-pr1012-ci-root4-failed",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 389,
+      "truncated": false,
+      "sha256": "5e327071bb11e68862e8067b2b39c46f169f8c29d87e9a9fb44bdf0be59e970a",
+      "redactions": {}
+    },
+    {
+      "run": "milmmt-pr1012-ci-root4-failed",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 440,
+      "truncated": false,
+      "sha256": "d101a106de0c9f975b38877f06cbf8bc2d91c08daaff195a8c7448c6dfcd66af",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

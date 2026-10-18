@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr1012-18ae-exact-ci",
+  "runs": [
+    {
+      "label": "milmmt-pr1012-ci-python-18ae",
+      "source": "~/.codex/worktrees/milmmt-exp-leaf/sermon-video-zh-subtitles/artifacts/milmmt-pr1012-ci-python-18ae",
+      "skipped": {}
+    },
+    {
+      "label": "milmmt-pr1012-ci-ios-18ae",
+      "source": "~/.codex/worktrees/milmmt-exp-leaf/sermon-video-zh-subtitles/artifacts/milmmt-pr1012-ci-ios-18ae",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "milmmt-pr1012-ci-python-18ae",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 389,
+      "truncated": false,
+      "sha256": "d6fbe8ecb9d5de1c6d52fe58b60281ad52540c6b82e38539d1c18aff3ff350a7",
+      "redactions": {}
+    },
+    {
+      "run": "milmmt-pr1012-ci-python-18ae",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 311,
+      "truncated": false,
+      "sha256": "5246b7082faa3fa90375d96d8934406aafe9416fefb3cf81e699c8d2baf3b07a",
+      "redactions": {}
+    },
+    {
+      "run": "milmmt-pr1012-ci-ios-18ae",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 389,
+      "truncated": false,
+      "sha256": "c9a35c8a362d73edc6fc807f7181da96d9429fb44a4cf4349ba604a19be490b0",
+      "redactions": {}
+    },
+    {
+      "run": "milmmt-pr1012-ci-ios-18ae",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 305,
+      "truncated": false,
+      "sha256": "f5b16daf55cd68017030bdc46a437ad7d9e2ccf0e2c087e3bad0def8f0c8c369",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
