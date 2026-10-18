@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr846-tongxing-ios-39076387764",
+  "runs": [
+    {
+      "label": "pr846-tongxing-ios-39076387764",
+      "source": "/private/tmp/sermon-ops-unified-preflight-20261017/artifacts/pr846-tongxing-ios-39076387764",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr846-tongxing-ios-39076387764",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 153,
+      "truncated": false,
+      "sha256": "6ea5f52dfbbed1c34c892ec46461504acda28a21e5ad7f587c4a985ea4399b35",
+      "redactions": {}
+    },
+    {
+      "run": "pr846-tongxing-ios-39076387764",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1040,
+      "truncated": false,
+      "sha256": "efb9b349240e1f1ab88cc3d683fc13506b4d558613bf40ff7c4ff712b77e9ef9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
