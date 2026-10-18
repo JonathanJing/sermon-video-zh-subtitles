@@ -76,3 +76,18 @@ cuv_scripture = _HostModule(lambda: _current().scripture.cuv())
 scripture_editions = _HostModule(lambda: _current().scripture.editions())
 coverage_module = _HostModule(lambda: _current().scripture.coverage())
 queue_module = _HostModule(lambda: _current().scripture.candidate_queue())
+
+
+# R3's review closure reaches stage and R4 modules through the already bound ports.
+plugin_rules = _HostModule(lambda: _current().plugins.module('language_review_plugins.auto_qc_text_common'))
+audio_rules = _Renamed(lambda: _current().audio,
+                       {'registered_normalization_policy': 'registered_normalization_policy'})
+predicted_rules = _Renamed(lambda: _current().audio,
+                           {'_check_identity': 'check_identity', 'policy_texts': 'policy_texts',
+                            'speech_units': 'speech_units', 'budget': 'budget'},
+                           {'SCHEMA': 'predicted_schema'})
+freeze = _HostModule(lambda: _current().qc_runtime.implementation_freeze())
+audio_waiver_acceptance = _HostModule(lambda: _current().qc_runtime.audio_waiver_acceptance())
+codex_text_transport = _HostModule(lambda: _current().qc_runtime.codex_text_transport())
+audio_qc_transports = _HostModule(lambda: _current().transports.audio_qc())
+transcription_limits = _HostModule(lambda: _current().provider.transcription_limits())
