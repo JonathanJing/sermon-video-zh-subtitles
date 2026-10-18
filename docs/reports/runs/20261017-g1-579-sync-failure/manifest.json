@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-579-sync-failure",
+  "runs": [
+    {
+      "label": "g1-sync-579-20261017",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-sync-579-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-sync-579-20261017",
+      "path": "focused-pytest.log",
+      "kind": "log",
+      "bytes": 13066,
+      "truncated": false,
+      "sha256": "eb93c5346d7b49141b2e2f6cb5fef7d2d8ac48c0d0b351b0727758ecee6623db",
+      "redactions": {
+        "email": 3
+      }
+    },
+    {
+      "run": "g1-sync-579-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 800,
+      "truncated": false,
+      "sha256": "2ff5a066997af842ff0387c4879b479b29105369b02824cce4322085961b25db",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
