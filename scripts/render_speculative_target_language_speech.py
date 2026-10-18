@@ -5,11 +5,11 @@ Both import paths name one module object; the old CLI still dispatches main().
 from pathlib import Path
 import sys
 
-try:
-    from scripts import tongxing_host  # noqa: F401  binds audio ports
-except ModuleNotFoundError:  # direct execution from scripts/
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from scripts import tongxing_host  # noqa: F401
+_ROOT = Path(__file__).resolve().parents[1]
+for _path in (_ROOT, _ROOT / "packages/production/src"):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
+from scripts import tongxing_host  # noqa: F401  binds audio ports
 from tongxing_production.audio import speculative as _implementation  # noqa: E402
 
 if __name__ == "__main__":
