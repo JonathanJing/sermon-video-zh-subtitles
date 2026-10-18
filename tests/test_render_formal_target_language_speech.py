@@ -536,7 +536,7 @@ class FormalRenderTests(unittest.TestCase):
             subject.unit_instructions(job, map_path)
 
     def test_tracked_layer3_adapters_bind_the_tracked_policies(self):
-        config = Path(subject.__file__).resolve().parents[1] / "config"
+        config = Path(__file__).resolve().parents[1] / "config"
         policies = subject.package.read_object(config / "layer3-audio-operation-policies.json")
         self.assertEqual(policies["normalization"], subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
         for locale in ("zh-Hans", "ko", "es"):

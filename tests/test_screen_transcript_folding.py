@@ -284,11 +284,12 @@ def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
     from pathlib import Path
     import shutil
     from scripts import machine_quality_waiver as waiver
-    root = Path(subject.__file__).resolve().parents[1]
+    from scripts import sermon_source_producer_compatibility as compatibility
+    root = Path(__file__).resolve().parents[1]
     for name in subject.SCORING_IMPLEMENTATION_FILES:
         target = tmp_path / name
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(root / name, target)
+        shutil.copyfile(root / compatibility.resolve(name), target)
     initial = subject.implementation_sha256(tmp_path)
     for name in subject.SCORING_IMPLEMENTATION_FILES:
         path = tmp_path / name
@@ -297,7 +298,6 @@ def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
         assert subject.implementation_sha256(tmp_path) != initial
         path.write_bytes(original)
     assert "scripts/ko_spoken_numerals.py" in waiver.IMPLEMENTATION_FILES
-    from scripts import sermon_source_producer_compatibility as compatibility
     for name in waiver.IMPLEMENTATION_FILES:
         # A closure key names a file at its alias once it moved into the production package.
         target = tmp_path / compatibility.resolve(name)

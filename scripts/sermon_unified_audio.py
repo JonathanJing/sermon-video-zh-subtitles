@@ -15,6 +15,7 @@ from scripts import render_formal_target_language_speech as renderer
 from scripts import validate_target_language_audio_unit as integrity
 from scripts import sermon_sentence_interpretation as identity
 from scripts import review_target_language_audio as audio_review
+from scripts import ko_spoken_numerals
 
 SCHEMA = 'sermon-unified-audio-job-v2'
 LEGACY_SCHEMA = 'sermon-unified-audio-job-v1'
@@ -137,13 +138,16 @@ def inspect(job_path, output_path=None):
         raise ValueError('Audio input snapshot changed; create a new bound configuration')
     cache = {'committedUnits': committed, 'missingUnits': missing, 'plannedGeneratedUnits': generated_units,
              'soundIdentityAdmission': 'renderer_required'}
-    code_paths = [Path(__file__), Path(renderer.__file__), Path(integrity.__file__)]
+    # Keys stay the file names the plans recorded before Layer 3 moved into the package.
+    code_paths = {Path(__file__).name: Path(__file__),
+                  'render_formal_target_language_speech.py': Path(renderer.__file__),
+                  'validate_target_language_audio_unit.py': Path(integrity.__file__)}
     explicit_instructions = (json.loads(extra['unitInstructions'].read_text())
                              if extra.get('unitInstructions') else {})
     if (context['job']['targetLocale'] == 'ko'
             and (renderer.registered_normalization_policy(context['job']) is not None
                  or explicit_instructions.get('schemaVersion') == 'sermon-unit-delivery-instructions-v2')):
-        code_paths.extend(Path(renderer.ko_spoken_numerals.__file__).parent / name for name in
+        code_paths.update((Path(name).name, Path(ko_spoken_numerals.__file__).parent / name) for name in
                           ('ko_spoken_numerals.py', 'language_review_plugins/auto_qc_text_common.py',
                            'language_review_plugins/common.py'))
     plan = {'schemaVersion': 'sermon-unified-audio-plan-v2', 'adapter': 'canonical.audio',
@@ -157,8 +161,8 @@ def inspect(job_path, output_path=None):
             'policySha256': identity.sha256(paths['policy']), 'speechJobSha256': identity.sha256(paths['job']),
             'settings': settings, 'dependencies': dependencies, 'inputsSha256': inputs_sha,
             'snapshotBound': config.get('inputSnapshotSha256') == inputs_sha,
-            'adapterCodeSha256': identity.json_sha256({p.name: identity.sha256(p) for p in
-                code_paths}),
+            'adapterCodeSha256': identity.json_sha256({name: identity.sha256(p) for name, p in
+                code_paths.items()}),
             'cache': cache, 'maxEndLagSeconds': 8.0, 'humanListeningReview': 'pending',
             'productionEligible': False}
     # Cache growth during a resumed attempt does not change the admitted plan.
