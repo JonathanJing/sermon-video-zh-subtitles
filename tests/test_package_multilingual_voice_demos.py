@@ -22,6 +22,26 @@ IMPLEMENTATION = ROOT / "experiments/sermon-dubbing-poc/package_multilingual_voi
 
 
 class MultilingualVoiceDemoPackageTest(unittest.TestCase):
+    def test_facade_loads_implementation_from_its_own_checkout(self):
+        with tempfile.TemporaryDirectory() as folder:
+            loaded = []
+            for name in ("checkout-one", "checkout-two"):
+                root = Path(folder) / name
+                facade = root / "scripts/package_multilingual_voice_demos.py"
+                implementation = root / "experiments/sermon-dubbing-poc/package_multilingual_voice_demos.py"
+                facade.parent.mkdir(parents=True)
+                implementation.parent.mkdir(parents=True)
+                shutil.copy2(ROOT / "scripts/package_multilingual_voice_demos.py", facade)
+                shutil.copy2(IMPLEMENTATION, implementation)
+                spec = importlib.util.spec_from_file_location(f"isolated_{name.replace('-', '_')}", facade)
+                module = importlib.util.module_from_spec(spec)
+                assert spec.loader is not None
+                spec.loader.exec_module(module)
+                self.assertEqual(Path(module._implementation.__file__).resolve(), implementation.resolve())
+                loaded.append(module)
+            self.assertIsNot(loaded[0]._implementation, loaded[1]._implementation)
+            self.assertIsNot(loaded[0].collect_tracks, loaded[1].collect_tracks)
+
     def test_legacy_and_new_cli_from_external_cwd(self):
         if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
             self.skipTest("ffmpeg and ffprobe are required for the synthetic audio fixture")
