@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "testCount": 29,
+  "wallSeconds": 4.681,
+  "scope": "package structure, review ports, freeze, run start, unified reviews",
+  "modelCalls": 0
+}
