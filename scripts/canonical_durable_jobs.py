@@ -71,6 +71,10 @@ def _input_identity(view, unit):
         # successful-group cache. The path remains private configuration; this
         # digest prevents cache evidence changing underneath a durable job.
         selected['payloadCache.' + locale] = hashes['payloadCache.' + locale]
+    if phase == 'text' and locale and 'groupRevision.' + locale in hashes:
+        # Execution v8: the operator's group list, notes, decision row and prior candidate bytes.
+        # A new list or note is a new text job; an unchanged one resumes its own repair chain.
+        selected['groupRevision.' + locale] = hashes['groupRevision.' + locale]
     if locale:
         for name in ('policy', 'candidate', 'review')[:{'text': 1, 'audio': 3, 'page': 3}[phase]]:
             key = name + '.' + locale
