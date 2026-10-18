@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-568-dev-sync-initial",
+  "runs": [
+    {
+      "label": "g1-568-dev-sync-initial-20261017",
+      "source": "~/.codex/worktrees/g1-qc-cascade/sermon-video-zh-subtitles/artifacts/g1-568-dev-sync-initial-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-568-dev-sync-initial-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 361,
+      "truncated": false,
+      "sha256": "6edbeb5dcb810e1b1ca51654714d2bda554fb3c4daa2da22b1ac85e408caa0bc",
+      "redactions": {}
+    },
+    {
+      "run": "g1-568-dev-sync-initial-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 374,
+      "truncated": false,
+      "sha256": "8bc3daa5d58546df19cea360f4289f529d016b5c0306210b33b6092d28794c87",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
