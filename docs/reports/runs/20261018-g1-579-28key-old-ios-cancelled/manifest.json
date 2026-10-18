@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-579-28key-old-ios-cancelled",
+  "runs": [
+    {
+      "label": "g1-579-28key-old-ios-cancelled-20261018",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-579-28key-old-ios-cancelled-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-579-28key-old-ios-cancelled-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 349,
+      "truncated": false,
+      "sha256": "b0a214ff7995840a4cbdcb2a376d62cff17ecae8680917c553704bdf02912f19",
+      "redactions": {}
+    },
+    {
+      "run": "g1-579-28key-old-ios-cancelled-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 950,
+      "truncated": false,
+      "sha256": "b0e835be4020d6d9fd84aa6040b675504fb157bc2ba6965ced547286aaa8d3c2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
