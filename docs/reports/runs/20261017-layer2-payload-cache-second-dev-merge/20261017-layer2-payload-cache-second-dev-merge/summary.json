@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "sermon-test-run-summary-v1",
+  "status": "focused_post_merge_pass",
+  "commit": "7d947af5",
+  "testsPassed": 44,
+  "subtestsPassed": 439,
+  "testsFailed": 0,
+  "realProviderCalls": 0,
+  "scope": "payload cache, canonical controller, budget reuse, migrated package paths"
+}
