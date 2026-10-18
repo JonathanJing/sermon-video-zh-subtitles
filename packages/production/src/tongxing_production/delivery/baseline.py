@@ -71,6 +71,40 @@ def safe_relative(value):
     return path
 
 
+def ensure_video_redirect(config, delivery):
+    """Add one exact immutable video redirect without depending on legacy adapters."""
+    value = copy.deepcopy(config)
+    hosting = value.get('hosting')
+    contract.require(isinstance(hosting, dict) and hosting.get('public') == 'public',
+                     'Expected complete Hosting configuration')
+    expected = {'source': delivery['canonicalUrl'], 'destination': delivery['storageUrl'], 'type': 302}
+    matches = [row for row in hosting.setdefault('redirects', [])
+               if row.get('source') == delivery['canonicalUrl']]
+    contract.require(not matches or matches == [expected], 'Video redirect conflicts with target edition')
+    added = not matches
+    if added:
+        hosting['redirects'].append(expected)
+    csp = [header for rule in hosting.get('headers', []) for header in rule.get('headers', [])
+           if header.get('key', '').lower() == 'content-security-policy']
+    contract.require(len(csp) == 1, 'Expected exactly one site-wide media CSP')
+    text = csp[0].get('value', '')
+    if "media-src 'self' blob:" in text:
+        csp[0]['value'] = text.replace("media-src 'self' blob:",
+                                      "media-src 'self' https://storage.googleapis.com blob:")
+    else:
+        contract.require("media-src 'self' https://storage.googleapis.com blob:" in text,
+                         'Unexpected CSP media-src; review before migration')
+    return value, added
+
+
+def require_video_environment(delivery, environment):
+    bucket = 'prod' if environment == 'production' else 'dev'
+    contract.require(environment in ('production', 'dev')
+                     and delivery['storageUrl'].startswith(
+                         f'https://storage.googleapis.com/ai-for-god-sermon-media-{bucket}/'),
+                     'Target video bucket differs from publication environment')
+
+
 def firebase_config(config, *, environment='dev'):
     """Lossless mapping of supported API VersionConfig to Firebase CLI keys."""
     allowed = {'headers', 'redirects', 'rewrites', 'cleanUrls', 'trailingSlashBehavior'}
@@ -112,11 +146,13 @@ def config_semantics(config):
 
 
 def catalog_report(public):
-    """Both catalog hashes once the site carries v4; v3 alone before that."""
+    """All catalog hashes present in a complete Hosting snapshot."""
     public = Path(public)
     v4 = public / contract.CATALOG_FILES[contract.CATALOG_V4]
+    v5 = public / contract.CATALOG_FILES[contract.CATALOG_V5]
     return {'catalogSha256': digest(public / 'multilingual-v3.json'),
-            **({'catalogV4Sha256': digest(v4)} if v4.exists() else {})}
+            **({'catalogV4Sha256': digest(v4)} if v4.exists() else {}),
+            **({'catalogV5Sha256': digest(v5)} if v5.exists() else {})}
 
 
 def files_report(public):
@@ -279,6 +315,7 @@ def publication_config(base, out, *, environment='dev'):
     return {'snapshot': str(out), 'intent': intent, 'routes': routes,
             'baseline_version': version, 'baseline_catalog_sha': digest(base / 'public/multilingual-v3.json'),
             'baseline_catalog_v4_sha': catalog_report(base / 'public').get('catalogV4Sha256'),
+            'baseline_catalog_v5_sha': catalog_report(base / 'public').get('catalogV5Sha256'),
             'lease_bucket': target['lease_bucket']}
 
 
@@ -456,6 +493,85 @@ def machine_checked_overlay(baseline_path, overlay_public, catalog_path, out):
           'siblingsPreserved': len(old_pages), 'managedFilesPreservedByFirebase': [r for r in receipt['rows'] if r['managed']],
           'hostingConfigPreservedSha256': digest(out / 'firebase.json'), 'modelCalls': 0})
     return {'status': 'prepared_not_deployed', 'publishConfig': str(out / 'publish-config.json'), 'pageId': added[0]['id']}
+
+
+def mixed_source_catalog_overlay(baseline_path, catalog_path, release_plan_path, out, *, environment='production'):
+    """Atomically stage mixed catalogs, trusted runtime and edition video redirects."""
+    base, catalog_path, plan_path, out = map(Path, (baseline_path, catalog_path, release_plan_path, out))
+    base, catalog_path, plan_path, out = (path.resolve() for path in (base, catalog_path, plan_path, out))
+    contract.require(not out.exists() and not out.is_relative_to(base) and not base.is_relative_to(out),
+                     'Unsafe mixed-source overlay output')
+    contract.validate_catalog_snapshot(base)
+    candidate = contract.validate_catalog_schema(read(catalog_path))
+    contract.require(candidate['schemaVersion'] == contract.CATALOG_V5 and len(candidate['pages']) == 1
+                     and candidate['pages'][0]['sourceMode'] == 'per_target',
+                     'Mixed-source overlay needs one per-target family page')
+    plan = read(plan_path)
+    current = contract.snapshot_catalog_v5(base)
+    merged = contract.merge_catalog(current, candidate, plan)
+    v4 = contract.project_legacy_catalog_v4(merged)
+    v3 = contract.project_human_catalog(v4)
+    out.mkdir(parents=True)
+    shutil.copytree(base / 'public', out / 'public')
+    shutil.copyfile(base / 'baseline-receipt.json', out / 'baseline-receipt.json')
+    public = out / 'public'
+    changed = []
+    runtime_root = _builder().runtime_web_root()
+    runtime_files = _builder().runtime_web_files(runtime_root)
+    for name in runtime_files:
+        source, target = runtime_root / name, public / name
+        contract.require(source.is_file() and not source.is_symlink(), 'Trusted runtime file is missing: ' + name)
+        if target.exists() and digest(target) == digest(source):
+            continue
+        contract.require(not target.exists() or (not target.is_symlink() and target.resolve().is_relative_to(public)),
+                         'Unsafe runtime replacement: ' + name)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+        changed.append('/' + name)
+
+    config = read(base / 'firebase.json')
+    videos = {}
+    for target in candidate['pages'][0]['targets'].values():
+        delivery = target['videoDelivery']
+        canonical = delivery['canonicalUrl']
+        contract.require(canonical not in videos or videos[canonical] == delivery,
+                         'Mixed-source targets disagree on one video redirect')
+        videos[canonical] = delivery
+    for delivery in videos.values():
+        require_video_environment(delivery, environment)
+        config, added = ensure_video_redirect(config, delivery)
+        if added:
+            changed.append('/firebase.json#redirect:' + delivery['canonicalUrl'])
+    write(out / 'firebase.json', config)
+    for version, value in ((contract.CATALOG_V5, merged), (contract.CATALOG_V4, v4),
+                           (contract.CATALOG_V3, v3)):
+        path = public / contract.CATALOG_FILES[version]
+        if path.exists():
+            path.unlink()
+        write(path, value)
+    report = {**catalog_report(public), 'files': files_report(public)}
+    write(out / 'seal-report.json', report)
+    contract.validate_catalog_snapshot(out)
+    write(out / 'publish-config.json', publication_config(base, out, environment=environment))
+    base_public = {str(path.relative_to(base / 'public')): digest(path)
+                   for path in (base / 'public').rglob('*') if path.is_file()
+                   and str(path.relative_to(base / 'public')) not in runtime_files
+                   and str(path.relative_to(base / 'public')) not in contract.CATALOG_FILES.values()}
+    overlaid_public = {name: digest(public / name) for name in base_public}
+    contract.require(base_public == overlaid_public, 'Edition asset bytes changed during mixed-source overlay')
+    write(out / 'mixed-source-catalog-plan.json', {
+        'schemaVersion': 'sermon-mixed-source-catalog-overlay-v1',
+        'status': 'prepared_not_deployed', 'pageId': candidate['pages'][0]['id'],
+        'baselineCatalogV5Sha256': contract.sha(current),
+        'candidateCatalogV5Sha256': contract.sha(candidate),
+        'catalogV5Sha256': report['catalogV5Sha256'],
+        'catalogV4Sha256': report['catalogV4Sha256'], 'catalogSha256': report['catalogSha256'],
+        'changedPaths': sorted(changed + ['/multilingual-v5.json', '/multilingual-v4.json', '/multilingual-v3.json']),
+        'editionAssetsChanged': False, 'preservedEditionAssetsSha256': contract.sha(base_public),
+        'runtimeFiles': sorted(runtime_files), 'firebaseConfigSha256': digest(out / 'firebase.json'),
+        'publication': 'not_started'})
+    return {'status': 'prepared_not_deployed', 'publishConfig': str(out / 'publish-config.json'),
+            'pageId': candidate['pages'][0]['id']}
 
 
 def overlay(baseline_path, overlay_public, catalog_path, out):

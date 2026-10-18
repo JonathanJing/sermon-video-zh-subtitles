@@ -83,6 +83,7 @@ export function validateCatalog(catalog) {
 
 export function chooseWeek(catalog, id) {
   return catalog.weeks.find(w => w.id === id)
+    || catalog.weeks.find(w => Object.values(w.contentVariants || {}).some(variant => variant.editionId === id))
     || catalog.weeks.find(w => w.date === id && w.sourceRoute === 'same_video')
     || catalog.weeks.find(w => w.date === id)
     || catalog.weeks.find(w => w.id === catalog.defaultWeekId);

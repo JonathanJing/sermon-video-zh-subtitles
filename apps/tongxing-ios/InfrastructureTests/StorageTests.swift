@@ -180,6 +180,125 @@ final class StorageTests {
         #expect(try await repository.loadPage(for: package).html.contains("한국어"))
     }
 
+    @Test func mixedSourceV5UsesTargetEditionForReleaseTranscriptAndCache() async throws {
+        func json(_ value: [String: Any]) throws -> Data {
+            try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys])
+        }
+        func hash(_ data: Data) -> String {
+            SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        }
+        let family = "resi-20261018-15030286", edition = "resi-20261018-broadcast"
+        let source = String(repeating: "a", count: 64), media = String(repeating: "b", count: 64)
+        let candidate = String(repeating: "c", count: 64)
+        let content = try json([
+            "schemaVersion": "sermon-full-video-text-content-v1", "pageId": edition,
+            "sourceLocale": "en", "targetLocale": "zh-Hans", "status": "human_reviewed",
+            "englishSourcePackageJsonSha256": source,
+            "targetLanguageCandidateJsonSha256": candidate, "sourceMediaSha256": media,
+            // Intentionally no sourceVideoUrl: target videoDelivery is authoritative.
+            "durationSeconds": 12.0, "title": "中文标题",
+            "cues": [["textGroupId": "group-1", "sourceUnitIds": ["source-1"],
+                      "text": "完整中文。", "start": 0.0, "end": 12.0]],
+        ])
+        let captions = try json(["cues": [["textGroupId": "group-1", "text": "完整中文。",
+                                             "start": 0.0, "end": 12.0]]])
+        let html = Data("<html><body>中文标题</body></html>".utf8)
+        let releaseValue: [String: Any] = [
+            "schemaVersion": TargetLanguageReleasePackage.dualScriptSchemaVersion,
+            "packageId": "\(edition)-zh-Hans", "pageId": edition, "sourceLocale": "en",
+            "targetLocale": "zh-Hans", "targetLanguageCandidateJsonSha256": candidate,
+            "spokenTargetLanguageCandidateJsonSha256": source,
+            "targetLanguageAudioPackageJsonSha256": NSNull(),
+            "status": "published_http_verified", "contentStatus": "human_reviewed",
+            "audioStatus": "unavailable", "interfaceLocale": "zh-Hans", "contentLocale": "zh-Hans",
+            "audioLocale": NSNull(), "assets": [
+                ["role": "page", "path": "/pages/\(edition)/zh-Hans/index.html", "sha256": hash(html)],
+                ["role": "content", "path": "/content/\(edition)/zh-Hans.json", "sha256": hash(content)],
+                ["role": "captions", "path": "/captions/\(edition)/zh-Hans.json", "sha256": hash(captions)],
+            ],
+            "httpVerification": ["status": "pass", "evidenceSha256": source],
+            "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
+            "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": [],
+        ]
+        let release = try json(releaseValue)
+        let catalog = try json([
+            "schemaVersion": MultilingualCatalog.mixedSourceSchemaVersion,
+            "generatedAt": "2026-10-18T00:00:00Z", "defaultPageId": family,
+            "pages": [["id": family, "title": "Family", "date": "2026-10-18",
+                       "sourceLocale": "en", "sourceMode": "per_target",
+                       "defaultTargetLocale": "zh-Hans", "targets": ["zh-Hans": [
+                        "editionId": edition, "sourceIdentitySha256": source, "sourceMediaSha256": media,
+                        "videoDelivery": ["schemaVersion": "sermon-video-delivery-v1",
+                            "canonicalUrl": "/pages/\(edition)/full-video-browser.mp4",
+                            "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/\(edition)/\(media).mp4",
+                            "sha256": media, "bytes": 1234],
+                        "releasePackageUrl": "/releases-v2/\(edition)/zh-Hans.json",
+                        "releasePackageJsonSha256": hash(release), "contentStatus": "human_reviewed",
+                        "audioStatus": "unavailable", "capabilities": ["text", "captions"],
+                       ]]]],
+        ])
+        StubURLProtocol.install(host: baseURL.host!) { request in
+            switch request.url?.path {
+            case "/multilingual-v5.json": return .init(chunks: [catalog])
+            case "/releases-v2/\(edition)/zh-Hans.json": return .init(chunks: [release])
+            case "/pages/\(edition)/zh-Hans/index.html": return .init(chunks: [html])
+            case "/content/\(edition)/zh-Hans.json": return .init(chunks: [content])
+            case "/captions/\(edition)/zh-Hans.json": return .init(chunks: [captions])
+            default: return .init(status: 404, chunks: [])
+            }
+        }
+        let cache = directory.appendingPathComponent("mixed-source")
+        let repository = MultilingualCatalogRepository(origin: baseURL, cacheDirectory: cache, session: session)
+        let loaded = try await repository.loadCatalog()
+        let page = loaded.catalog.defaultPage
+        #expect(page.id == family)
+        #expect(page.sourceIdentitySha256 == nil)
+        let package = try await repository.loadRelease(page: page, locale: "zh-Hans")
+        #expect(package.pageId == edition)
+        let transcript = try await repository.loadPublishedTranscript(for: package, page: page)
+        #expect(transcript.pageID == family)
+        #expect(transcript.editionID == edition)
+        #expect(transcript.sourceIdentitySha256 == source)
+        #expect(transcript.title == "中文标题")
+        #expect(FileManager.default.fileExists(atPath:
+            cache.appendingPathComponent("Releases/\(edition)/zh-Hans.json").path))
+        #expect(!FileManager.default.fileExists(atPath:
+            cache.appendingPathComponent("Releases/\(family)/zh-Hans.json").path))
+
+        var invalidV5 = try #require(JSONSerialization.jsonObject(with: catalog) as? [String: Any])
+        var invalidPages = invalidV5["pages"] as! [[String: Any]], invalidPage = invalidPages[0]
+        var invalidTargets = invalidPage["targets"] as! [String: [String: Any]]
+        invalidTargets["zh-Hans"]!.removeValue(forKey: "videoDelivery")
+        invalidPage["targets"] = invalidTargets; invalidPages[0] = invalidPage; invalidV5["pages"] = invalidPages
+        let invalidV5Data = try json(invalidV5)
+        let fallbackV4 = try json([
+            "schemaVersion": MultilingualCatalog.machineCheckedSchemaVersion,
+            "generatedAt": "2026-10-18T00:00:00Z", "defaultPageId": edition,
+            "pages": [["id": edition, "title": "Compatible single source", "date": "2026-10-18",
+                       "sourceLocale": "en", "sourceIdentitySha256": source, "sourceMediaSha256": media,
+                       "defaultTargetLocale": "zh-Hans", "targets": ["zh-Hans": [
+                        "releasePackageUrl": "/releases-v2/\(edition)/zh-Hans.json",
+                        "releasePackageJsonSha256": hash(release), "contentStatus": "human_reviewed",
+                        "audioStatus": "unavailable", "capabilities": ["text", "captions"],
+                       ]]]],
+        ])
+        StubURLProtocol.install(host: baseURL.host!) { request in
+            switch request.url?.path {
+            case "/multilingual-v5.json": return .init(chunks: [invalidV5Data])
+            case "/multilingual-v4.json": return .init(chunks: [fallbackV4])
+            case "/releases-v2/\(edition)/zh-Hans.json": return .init(chunks: [release])
+            default: return .init(status: 404, chunks: [])
+            }
+        }
+        let fallbackRepository = MultilingualCatalogRepository(origin: baseURL,
+            cacheDirectory: directory.appendingPathComponent("mixed-source-fallback"), session: session)
+        let fallback = try await fallbackRepository.loadCatalog()
+        #expect(fallback.catalog.schemaVersion == MultilingualCatalog.machineCheckedSchemaVersion)
+        #expect(fallback.catalog.defaultPage.id == edition)
+        #expect(fallback.mixedSourceCatalogError != nil)
+        #expect(fallback.machineCheckedCatalogError == nil)
+    }
+
     @Test func machineCheckedCatalogV4LoadsFirstAndFallsBackToHumanOnlyV3() async throws {
         func json(_ value: [String: Any]) throws -> Data { try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]) }
         func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }

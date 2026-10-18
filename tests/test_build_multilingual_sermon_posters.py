@@ -56,6 +56,52 @@ class MultilingualPosterTests(unittest.TestCase):
             self.assertEqual(parse_qs(url.query), dict(week=['week-id'], contentLang=[locale], lang=[poster.COPY[locale]['lang']]))
             self.assertEqual(brief['title'], 'Title ' + locale)
 
+    def make_mixed_source_v5(self):
+        self.page['sourceMode'] = 'per_target'
+        del self.page['sourceIdentitySha256']
+        for locale, target in self.page['targets'].items():
+            edition = 'broadcast-edition' if locale == 'zh-Hans' else 'week-id'
+            source = ('a' if locale == 'zh-Hans' else 'b') * 64
+            media = ('c' if locale == 'zh-Hans' else 'd') * 64
+            package = poster.read(self.public / target['releasePackageUrl'].lstrip('/'))
+            old_content_path = next(a['path'] for a in package['assets'] if a['role'] == 'content')
+            content = poster.read(self.public / old_content_path.lstrip('/'))
+            content.update(pageId=edition, englishSourcePackageJsonSha256=source, sourceMediaSha256=media)
+            content_path = f'/content/{edition}/{locale}.json'
+            content_sha = self.save(content_path, content)
+            package.update(pageId=edition, englishSourcePackageJsonSha256=source)
+            next(a for a in package['assets'] if a['role'] == 'content').update(path=content_path, sha256=content_sha)
+            package_path = f'/releases-v2/{edition}/{locale}.json'
+            target.update(editionId=edition, sourceIdentitySha256=source, sourceMediaSha256=media,
+                          videoDelivery=dict(schemaVersion='sermon-video-delivery-v1',
+                                             canonicalUrl=f'/pages/{edition}/full-video-browser.mp4',
+                                             storageUrl=f'https://storage.googleapis.com/bucket/{edition}/{media}.mp4',
+                                             sha256=media, bytes=1234),
+                          releasePackageUrl=package_path,
+                          releasePackageJsonSha256=self.save(package_path, package))
+        self.save('/multilingual-v5.json', dict(schemaVersion='sermon-multilingual-catalog-v5', pages=[self.page]))
+
+    def test_mixed_source_family_reads_each_edition_and_qr_falls_back_to_that_edition(self):
+        self.make_mixed_source_v5()
+        bundles, checks = self.load()
+        self.assertIn('/multilingual-v5.json', checks)
+        self.assertNotIn('/multilingual-v4.json', checks)
+        self.assertEqual({bundle['source']['editionId'] for bundle in bundles.values()}, {'week-id', 'broadcast-edition'})
+        self.assertEqual(bundles['zh-Hans']['source']['sourceIdentitySha256'], 'a' * 64)
+        self.assertEqual(bundles['ko']['source']['sourceIdentitySha256'], 'b' * 64)
+        for locale, bundle in bundles.items():
+            query = parse_qs(urlsplit(bundle['brief']['qrURL']).query)
+            self.assertEqual(query['week'], [bundle['source']['editionId']])
+            self.assertEqual(query['contentLang'], [locale])
+            self.assertEqual(bundle['brief']['title'], 'Title ' + locale)
+
+    def test_mixed_source_family_rejects_crossed_target_source_hash(self):
+        self.make_mixed_source_v5()
+        self.page['targets']['zh-Hans']['sourceIdentitySha256'] = 'b' * 64
+        self.save('/multilingual-v5.json', dict(schemaVersion='sermon-multilingual-catalog-v5', pages=[self.page]))
+        with self.assertRaisesRegex(ValueError, 'source.*identity mismatch'):
+            self.load()
+
     def test_changed_content_fails_hash_binding(self):
         self.save('/content/ko.json', {'title': 'modified'})
         with self.assertRaisesRegex(ValueError, 'SHA-256 mismatch'):

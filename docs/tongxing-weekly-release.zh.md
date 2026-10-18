@@ -18,6 +18,13 @@
 
 按 [机器质检豁免](machine-quality-waiver.zh.md) 自动发布的语言走四层封存（`build_full_video_app_release.py seal` 与托管发布），不走下面的 v3 组装器。封存写出 `/releases-v4/<pageId>/<locale>.json`、`/multilingual-v4.json`，并把 `/multilingual-v3.json` 写成 v4 去掉机器质检语言后的投影：旧版 iOS 看到的目录与上周相同，新版网页和 iOS 先读 v4，显示“机器质检”标签和披露文案。两份目录一起比较交换、一起回读；只会改 v3 的旧组装器遇到带 v4 的基线会拒绝。字段见 [四产物公开交付](layer4-four-product-public-delivery.zh.md#机器质检发布release-v4--catalog-v4)。
 
+### 同一讲道、不同视频来源：v5 family 页面
+
+中文与西语／韩语等 target 若绑定不同 L1 或视频，使用 `multilingual-v5.json` 的 `per_target` family；用户在一个 `page.id` 中切换语言，各 target 继续引用自己的 `editionId`、release/content、来源哈希、视频和定位。网页与新版 iOS 先读 v5；v4 兼容投影仍按 edition 显示为两个来源页面，v3 仍只含人工审核 target。海报二维码编码 target edition 以兼容 v4 fallback，v5 reader 会把这个 edition 深链映射回 family；App announcement 的 `pageID` 仍指向 family，收据与实际资源校验仍绑定 target edition。具体身份和晋升限制见[四产物公开交付的跨来源单页](layer4-four-product-public-delivery.zh.md#跨来源单页catalog-v5)。
+
+这类周更必须从当场取得的完整 production baseline 构造原子候选：同一 Hosting 版本更新受信任 reader runtime、缺失的视频精确 302、v5/v4/v3 三份目录及 seal report；edition 的 release、content、字幕、音轨、学习产物和 sidecar 字节保持不变。部署前比较 live version 与三份目录基线，部署后按本次 Firebase version 回读三份目录。任何 target 的 edition/source/media/video 交叉不一致都停止发布。
+
+
 ### v3 周更发布清单与验收
 
 这一清单优先于下文仅适用于 `weekly.json` 的 legacy 命令。当前仓库的 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只处理 v2 Catalog／v1 Release；在 v3 入口实现并通过定向测试前，不得用这些命令部署新周后宣称两端已经刷新可用。

@@ -6,6 +6,114 @@ struct MultilingualCatalogTests {
     private let hashA = String(repeating: "a", count: 64)
     private let hashB = String(repeating: "b", count: 64)
 
+    private func mixedSourceCatalog(change: (inout [String: Any]) -> Void = { _ in }) throws -> Data {
+        let family = "resi-20261018-15030286"
+        let broadcast = "resi-20261018-broadcast"
+        func video(_ edition: String, _ hash: String) -> [String: Any] {[
+            "schemaVersion": "sermon-video-delivery-v1",
+            "canonicalUrl": "/pages/\(edition)/full-video-browser.mp4",
+            "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/\(edition)/\(hash).mp4",
+            "sha256": hash, "bytes": 1024,
+        ]}
+        func target(_ edition: String, source: String, media: String) -> [String: Any] {[
+            "editionId": edition, "sourceIdentitySha256": source, "sourceMediaSha256": media,
+            "videoDelivery": video(edition, media),
+            "releasePackageUrl": "/releases-v2/\(edition)/ko.json",
+            "releasePackageJsonSha256": hashB, "contentStatus": "human_reviewed",
+            "audioStatus": "human_reviewed", "capabilities": ["text", "captions", "audio"],
+        ]}
+        var chinese = target(broadcast, source: hashA, media: hashA)
+        chinese["releasePackageUrl"] = "/releases-v2/\(broadcast)/zh-Hans.json"
+        chinese["audioFingerprint"] = [
+            "schemaVersion": "sermon-audio-fingerprint-binding-v1", "pageId": broadcast,
+            "sourceSha256": hashA, "trackSha256": hashB,
+            "sourceStartSeconds": 0, "sourceEndSeconds": 138,
+            "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
+            "indexSha256": hashA, "indexUrl": "/fingerprints/aaaaaaaaaaaaaaaa-landmarks.json",
+        ]
+        chinese["capabilities"] = ["text", "captions", "audio", "alignment"]
+        var korean = target(family, source: hashB, media: hashB)
+        korean["releasePackageUrl"] = "/releases-v2/\(family)/ko.json"
+        var value: [String: Any] = [
+            "schemaVersion": MultilingualCatalog.mixedSourceSchemaVersion,
+            "generatedAt": "2026-10-18T00:00:00Z", "defaultPageId": family,
+            "pages": [["id": family, "title": "Family page", "date": "2026-10-18",
+                       "sourceLocale": "en", "sourceMode": "per_target",
+                       "defaultTargetLocale": "zh-Hans",
+                       "targets": ["zh-Hans": chinese, "ko": korean]]],
+        ]
+        change(&value)
+        return try JSONSerialization.data(withJSONObject: value)
+    }
+
+    @Test func mixedSourceV5KeepsFamilySelectionAndTargetResourceIdentitySeparate() throws {
+        let catalog = try MultilingualCatalog.decode(mixedSourceCatalog())
+        let page = catalog.defaultPage
+        #expect(page.id == "resi-20261018-15030286")
+        #expect(page.sourceMode == "per_target")
+        #expect(page.sourceIdentitySha256 == nil)
+        #expect(page.sourceMediaSha256 == nil)
+        let chinese = try #require(page.targets["zh-Hans"])
+        let chineseSource = try chinese.sourceBinding(in: page)
+        #expect(chineseSource.familyPageId == page.id)
+        #expect(chineseSource.editionId == "resi-20261018-broadcast")
+        #expect(chineseSource.sourceIdentitySha256 == hashA)
+        #expect(chineseSource.videoDelivery?.canonicalUrl == "/pages/resi-20261018-broadcast/full-video-browser.mp4")
+        #expect(chinese.audioFingerprint?.pageId == chineseSource.editionId)
+        let koreanSource = try #require(page.targets["ko"]).sourceBinding(in: page)
+        #expect(koreanSource.editionId == page.id)
+        #expect(koreanSource.sourceIdentitySha256 == hashB)
+    }
+
+    @Test func mixedSourceV5RejectsCrossTargetHashesAndEditionPaths() throws {
+        #expect(throws: (any Error).self) {
+            try MultilingualCatalog.decode(mixedSourceCatalog { root in
+                var pages = root["pages"] as! [[String: Any]], page = pages[0]
+                var targets = page["targets"] as! [String: [String: Any]]
+                var chinese = targets["zh-Hans"]!, fingerprint = chinese["audioFingerprint"] as! [String: Any]
+                fingerprint["sourceSha256"] = self.hashB
+                chinese["audioFingerprint"] = fingerprint; targets["zh-Hans"] = chinese
+                page["targets"] = targets; pages[0] = page; root["pages"] = pages
+            })
+        }
+        #expect(throws: (any Error).self) {
+            try MultilingualCatalog.decode(mixedSourceCatalog { root in
+                var pages = root["pages"] as! [[String: Any]], page = pages[0]
+                var targets = page["targets"] as! [String: [String: Any]]
+                targets["zh-Hans"]!["releasePackageUrl"] = "/releases-v2/\(page["id"]!)/zh-Hans.json"
+                page["targets"] = targets; pages[0] = page; root["pages"] = pages
+            })
+        }
+        #expect(throws: (any Error).self) {
+            try MultilingualCatalog.decode(mixedSourceCatalog { root in
+                var pages = root["pages"] as! [[String: Any]], page = pages[0]
+                var targets = page["targets"] as! [String: [String: Any]]
+                targets["zh-Hans"]!.removeValue(forKey: "videoDelivery")
+                page["targets"] = targets; pages[0] = page; root["pages"] = pages
+            })
+        }
+        #expect(throws: (any Error).self) {
+            try MultilingualCatalog.decode(mixedSourceCatalog { root in
+                var pages = root["pages"] as! [[String: Any]], page = pages[0]
+                var targets = page["targets"] as! [String: [String: Any]]
+                var chinese = targets["zh-Hans"]!, video = chinese["videoDelivery"] as! [String: Any]
+                video["storageUrl"] = "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/resi-20261018-broadcast/\(self.hashB).mp4"
+                chinese["videoDelivery"] = video; targets["zh-Hans"] = chinese
+                page["targets"] = targets; pages[0] = page; root["pages"] = pages
+            })
+        }
+        #expect(throws: (any Error).self) {
+            try MultilingualCatalog.decode(mixedSourceCatalog { root in
+                var pages = root["pages"] as! [[String: Any]], page = pages[0]
+                var targets = page["targets"] as! [String: [String: Any]]
+                var chinese = targets["zh-Hans"]!, video = chinese["videoDelivery"] as! [String: Any]
+                video["storageUrl"] = "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/resi-20261018-15030286/\(self.hashA).mp4?wrong=1"
+                chinese["videoDelivery"] = video; targets["zh-Hans"] = chinese
+                page["targets"] = targets; pages[0] = page; root["pages"] = pages
+            })
+        }
+    }
+
     private func catalogData(change: (inout [String: Any]) -> Void = { _ in }) throws -> Data {
         var value: [String: Any] = [
             "schemaVersion": "sermon-multilingual-catalog-v2",

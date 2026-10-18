@@ -21,7 +21,7 @@ struct PublishedTranscriptClockTests {
         }
         let package = try TargetLanguageReleasePackage.decode(data(release))
         let cue: [String: Any] = ["textGroupId": "group-1", "sourceUnitIds": ["source-1"], "text": "Complete source sentence.", "start": 0.0, "end": 180.0]
-        let content: [String: Any] = ["schemaVersion": schema, "pageId": page.id, "sourceLocale": "en", "targetLocale": "zh-Hans", "status": "human_reviewed", "englishSourcePackageJsonSha256": page.sourceIdentitySha256, "targetLanguageCandidateJsonSha256": package.targetLanguageCandidateJsonSha256, "sourceMediaSha256": page.sourceMediaSha256 ?? String(repeating: "b", count: 64), "durationSeconds": 180.013167, "audioDurationSeconds": 215.2, "reviewMode": "formal", "title": "Independent clocks", "cues": [cue]]
+        let content: [String: Any] = ["schemaVersion": schema, "pageId": page.id, "sourceLocale": "en", "targetLocale": "zh-Hans", "status": "human_reviewed", "englishSourcePackageJsonSha256": try #require(page.sourceIdentitySha256), "targetLanguageCandidateJsonSha256": package.targetLanguageCandidateJsonSha256, "sourceMediaSha256": page.sourceMediaSha256 ?? String(repeating: "b", count: 64), "durationSeconds": 180.013167, "audioDurationSeconds": 215.2, "reviewMode": "formal", "title": "Independent clocks", "cues": [cue]]
         var spoken = cue
         spoken["text"] = "Complete spoken sentence."
         spoken["end"] = 215.2

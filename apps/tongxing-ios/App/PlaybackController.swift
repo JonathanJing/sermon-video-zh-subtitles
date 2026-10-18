@@ -201,6 +201,7 @@ final class PlaybackController: ObservableObject {
     private var pendingSeek: (position: Double, offset: Double)?
     private struct PublishedLanguageTransfer {
         let pageID: String
+        let editionID: String
         let sourceIdentity: String
         let position: Double
         let duration: Double
@@ -211,18 +212,21 @@ final class PlaybackController: ObservableObject {
 
     /// Hold the requested timeline position while another reviewed locale is
     /// downloaded, including a text-only stop between two audio locales.
-    func preparePublishedLanguageSwitch(pageID: String, sourceIdentity: String) {
+    func preparePublishedLanguageSwitch(pageID: String, editionID: String? = nil, sourceIdentity: String) {
+        let editionID = editionID ?? pageID
         let retained: PublishedLanguageTransfer?
         if let existing = publishedLanguageTransfer,
-           existing.pageID == pageID, existing.sourceIdentity == sourceIdentity {
+           existing.pageID == pageID, existing.editionID == editionID,
+           existing.sourceIdentity == sourceIdentity {
             if isReady {
-                retained = PublishedLanguageTransfer(pageID: pageID, sourceIdentity: sourceIdentity,
+                retained = PublishedLanguageTransfer(pageID: pageID, editionID: editionID, sourceIdentity: sourceIdentity,
                     position: pendingSeek?.position ?? currentPosition(), duration: duration,
                     offset: pendingSeek?.offset ?? offset, autoplay: wantsPlayback || isPlaying)
             } else { retained = existing }
         } else if case .some(.published(let audio)) = loadedSource,
-                  audio.pageID == pageID, audio.sourceIdentitySha256 == sourceIdentity {
-            retained = PublishedLanguageTransfer(pageID: pageID, sourceIdentity: sourceIdentity,
+                  audio.pageID == pageID, audio.editionID == editionID,
+                  audio.sourceIdentitySha256 == sourceIdentity {
+            retained = PublishedLanguageTransfer(pageID: pageID, editionID: editionID, sourceIdentity: sourceIdentity,
                 position: pendingSeek?.position ?? currentPosition(), duration: duration,
                 offset: pendingSeek?.offset ?? offset, autoplay: wantsPlayback || isPlaying)
         } else {
@@ -294,9 +298,15 @@ final class PlaybackController: ObservableObject {
     func loadPublishedAudio(_ audio: VerifiedLanguageAudio) {
         let next = TrackIdentity(weekID: audio.pageID, trackID: "published_\(audio.locale)", audioSHA256: audio.sha256)
         guard next.isValid, audio.localURL.isFileURL, audio.sourceIdentitySha256.count == 64 else { return }
-        if next == identity, sourceID == audio.sourceIdentitySha256, !publishedPositionRestoreFailed { return }
+        let sameEdition: Bool
+        if case .some(.published(let loaded)) = loadedSource {
+            sameEdition = loaded.editionID == audio.editionID
+        } else { sameEdition = false }
+        if next == identity, sourceID == audio.sourceIdentitySha256, sameEdition,
+           !publishedPositionRestoreFailed { return }
         let transfer = publishedLanguageTransfer.flatMap {
-            $0.pageID == audio.pageID && $0.sourceIdentity == audio.sourceIdentitySha256 ? $0 : nil
+            $0.pageID == audio.pageID && $0.editionID == audio.editionID
+                && $0.sourceIdentity == audio.sourceIdentitySha256 ? $0 : nil
         }
         loadSource(identity: next, sourceID: audio.sourceIdentitySha256, title: SermonHeading.displayTitle(nil, pageID: audio.pageID, date: "", fallback: AppLocalization.shared.text("证道")),
                    speaker: "", url: audio.localURL, duration: 0, source: .published(audio),
