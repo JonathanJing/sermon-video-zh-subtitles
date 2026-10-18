@@ -1,0 +1,24 @@
+{
+  "scope": "synthetic local Hosting migration candidate only",
+  "headSha": "89aea32e1214bf2cd5f7d69955dae5f370a723a6",
+  "phases": [
+    {
+      "phase": "pre_move_vs_current_candidate",
+      "status": "passed",
+      "entrypoints": 3,
+      "allCandidateFilesByteIdentical": true,
+      "reportIdenticalExceptCreatedAt": true,
+      "sourceSnapshotUnchanged": true,
+      "candidateFileCount": 23
+    },
+    {
+      "phase": "targeted_unittest",
+      "status": "passed",
+      "testCount": 3,
+      "exitCode": 0
+    }
+  ],
+  "remoteCalls": 0,
+  "deployments": 0,
+  "newModelCalls": 0
+}
