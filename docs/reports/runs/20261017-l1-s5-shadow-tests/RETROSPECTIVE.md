@@ -18,12 +18,20 @@ L1 shadow 仅使用固定的本地英文分段 fixture；模型调用数 0，费
 |---|---|---|---|
 | 首轮包外 CWD 门面测试 | 43 项通过、1 项失败；外部子进程读到另一棵 checkout 的生产包 | 测试复用了原仓库 editable Python 环境，子进程删除 `PYTHONPATH`。改用临时解释器，使其子进程也从 S5 worktree 加载包；未修改用户原环境。 | 44 项通过，包外 CWD 门面导入和 CLI `--help` 通过。 |
 
+## 可以改进的地方
+
+预检：在独立 worktree 执行测试前核对解释器中的 editable package 是否解析到该 worktree，并确保清除 `PYTHONPATH` 的子进程继承同一包身份。依据是首轮唯一失败；预期收益是在完整测试前发现 checkout 身份漂移。负责人为迁移执行者；跟踪后续 S5/G1 集成测试。
+
 ## 实际覆盖范围
 
 - 旧/新 runner 哈希及输出目录不同，旧收据文件保留；anchor JSON 和文件字节相同。
 - 新 Source Package 的 `anchors.artifact.path` 随新目录改变，包文件哈希改变；`packageId` 与 `downstreamInvalidationKey` 相同。这个固定 fixture 不证明所有历史产物可复用。
 - 定向测试包括 shadow、fragment POC、post-live 工作流及生产包导入边界；没有运行完整四层作业。
 
-## 遗留状态与外部变化
+## 遗留状态
 
-没有模型任务、job hold、发布或远端写入。代码 PR 与本报告 PR 分开评审；尚需在实际来源收据上确认历史校验与下游绑定，不把本地 fixture 当成现场验收。
+没有模型任务或 job hold。尚需在实际来源收据上确认历史校验与下游绑定；本地 fixture 不能替代该验证。
+
+## 外部可见的变化
+
+代码 PR 与本报告 PR 分开评审；没有发布、远端写入、TestFlight、设备或场地验收。
