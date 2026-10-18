@@ -1,0 +1,33 @@
+{
+  "runId": 39071256176,
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:40:22Z",
+      "completedAt": "2026-10-17T21:40:31Z"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:12:38Z",
+      "completedAt": "2026-10-17T22:14:52Z"
+    },
+    {
+      "name": "ios-validation",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T21:40:31Z",
+      "completedAt": "2026-10-17T21:40:31Z"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:17:01Z",
+      "completedAt": "2026-10-17T22:17:03Z"
+    }
+  ]
+}
