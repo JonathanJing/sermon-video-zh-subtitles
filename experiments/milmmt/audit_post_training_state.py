@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-DEFAULT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_VERSION = "milmmt-post-training-state-audit-v1"
 DATASET_ROOT = Path("data/derived/sermon-dataset-v2")
 CANARY_PATH = Path("data/derived/sermon-dataset-v2-canary/canary.jsonl")

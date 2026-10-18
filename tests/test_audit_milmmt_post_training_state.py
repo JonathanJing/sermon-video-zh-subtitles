@@ -1,19 +1,56 @@
+import importlib
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts/audit_milmmt_post_training_state.py"
-SPEC = importlib.util.spec_from_file_location("audit_milmmt_post_training_state", SCRIPT)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = REPO_ROOT / "experiments/milmmt/audit_post_training_state.py"
+LEGACY_SCRIPT = REPO_ROOT / "scripts/audit_milmmt_post_training_state.py"
+SPEC = importlib.util.spec_from_file_location("audit_post_training_state", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(MODULE)
 
 
 class AuditMiLMMTStateTest(unittest.TestCase):
+    def test_legacy_and_new_cli_agree_from_another_working_directory(self):
+        self.assertEqual(MODULE.DEFAULT_ROOT, REPO_ROOT)
+        self.assertIs(importlib.import_module("scripts.audit_milmmt_post_training_state"),
+                      importlib.import_module("experiments.milmmt.audit_post_training_state"))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            inputs = [MODULE.DATASET_ROOT / "train.jsonl", MODULE.DATASET_ROOT / "dev.jsonl",
+                      MODULE.CANARY_PATH, MODULE.PROMOTED_PATH, MODULE.PRE_FILTER_PATH,
+                      MODULE.V3_ROOT / "train.jsonl"]
+            for relative in inputs:
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("")
+            split = root / MODULE.SPLIT_PATH
+            split.parent.mkdir(parents=True, exist_ok=True)
+            split.write_text(json.dumps({"sermons": [], "candidateCount": 0}))
+
+            reports = []
+            for name, script in (("old", LEGACY_SCRIPT), ("new", SCRIPT)):
+                output = root / f"{name}.json"
+                command = [sys.executable, str(script), "--root", str(root), "--output", str(output)]
+                result = subprocess.run(command, cwd=root, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(result.stdout)["status"], "evidence_collected_not_a_promotion_gate")
+                reports.append(json.loads(output.read_text()))
+                refused = subprocess.run(command, cwd=root, capture_output=True, text=True)
+                self.assertNotEqual(refused.returncode, 0)
+                self.assertIn("Output already exists", refused.stderr)
+            for report in reports:
+                report.pop("generatedAt")
+            self.assertEqual(reports[0], reports[1])
+
     def test_audit_keeps_provider_output_training_blocked(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
