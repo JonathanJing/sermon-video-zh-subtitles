@@ -1,10 +1,12 @@
 """Infrastructure I0b: the two standard-library compute leaves live in the package behind facades."""
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts import machine_qc_audio_transports as transports
 from scripts import machine_quality_waiver as waiver
@@ -33,14 +35,26 @@ class ComputeLeafTests(unittest.TestCase):
                 self.assertTrue(waiver.implementation_path(key).is_file())
 
     def test_transport_identity_reads_the_moved_request_builder(self):
-        moved = (ROOT/path_aliases.resolve('scripts/sermon_transcription_request.py')).read_bytes()
+        key = path_aliases.resolve('scripts/sermon_transcription_request.py')
+        self.assertIn(key, transports.TRANSPORT_PHYSICAL_FILES)
+        before = transports.implementation_sha256()
         with tempfile.TemporaryDirectory() as directory:
-            changed = Path(directory)/'transcription_request.py'
+            checkout = Path(directory)
+            for name in transports.TRANSPORT_PHYSICAL_FILES:
+                source = ROOT/name
+                target = checkout/name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, target)
+            changed = checkout/key
+            moved = changed.read_bytes()
+            with patch.object(transports, '_checkout_root', return_value=checkout):
+                self.assertEqual(transports.implementation_sha256(), before)
             changed.write_bytes(moved + b'\n# changed\n')
-            before = transports.implementation_sha256()
-            from unittest.mock import patch
-            with patch.dict(path_aliases.PATH_ALIASES, {'scripts/sermon_transcription_request.py': str(changed)}):
+            with patch.object(transports, '_checkout_root', return_value=checkout):
                 self.assertNotEqual(transports.implementation_sha256(), before)
+            changed.write_bytes(moved)
+            with patch.object(transports, '_checkout_root', return_value=checkout):
+                self.assertEqual(transports.implementation_sha256(), before)
 
     def test_facades_import_with_only_the_spark_container_path(self):
         """Spark containers run without site-packages and put <code>/packages/production/src
