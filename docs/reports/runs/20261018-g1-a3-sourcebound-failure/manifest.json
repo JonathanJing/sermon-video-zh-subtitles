@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-a3-sourcebound-failure",
+  "runs": [
+    {
+      "label": "g1-a3-sourcebound-failure",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-a3-sourcebound-failure",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-a3-sourcebound-failure",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 152,
+      "truncated": false,
+      "sha256": "be8141ff3b22c6f77170504e921dc918c5cce482e5c54ee3094fd191d49339b9",
+      "redactions": {}
+    },
+    {
+      "run": "g1-a3-sourcebound-failure",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 463,
+      "truncated": false,
+      "sha256": "04e2eafc2f8ce5b9e084fcb96dfa61cde3c92b2d875d49d2106b74ff1b746f60",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
