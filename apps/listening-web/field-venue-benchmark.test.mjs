@@ -163,7 +163,7 @@ test('legacy independent truth imports resolve the adjacent implementation', () 
   const repo = new URL('../../', import.meta.url).pathname;
   const implementation = new URL('../../experiments/field-fingerprint-benchmark/field_venue_independent_truth.py', import.meta.url).pathname;
   const script = `
-import hashlib, os, sys, tempfile
+import hashlib, os, pickle, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
 with tempfile.TemporaryDirectory() as temporary:
@@ -180,6 +180,11 @@ with tempfile.TemporaryDirectory() as temporary:
     legacy.decode = marker
     assert legacy.decode is marker and legacy.waveform_peak.__globals__['decode'] is marker
     legacy.decode = decode
+    wildcard = {}
+    exec('from scripts.field_venue_independent_truth import *', wildcard)
+    assert wildcard['checked_file'] is checked_file
+    assert wildcard['METHOD_VERSION'] == METHOD_VERSION
+    assert pickle.loads(pickle.dumps(checked_file)) is checked_file
     payload = Path('synthetic.bin')
     payload.write_bytes(b'synthetic-only')
     assert checked_file(Path(temporary).resolve(), {'path': payload.name, 'sha256': hashlib.sha256(payload.read_bytes()).hexdigest()}) == payload.resolve()
