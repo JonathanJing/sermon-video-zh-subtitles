@@ -18,6 +18,10 @@
 
 候选没有新增 `path_aliases.py` 映射：当前没有对 `scripts/sermon_review_gate.py` 逻辑键的 resolver 消费者；增加无关映射仍会改变 G1 质检物理闭包所包含的 resolver 字节。删去映射后的本地 W 为 `df299eca0e9f11689e7a88654b7b2616df1e10bd8cd60a9847e3561d5db41b10`，与 [G1 实施代记录](../reports/20261017-g1-implementation-generation.zh.md)相同，见[定向报告 #1045](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1045)。未来如确需给 gate 的版本化逻辑键新增别名，应单独评审新旧实施代及机器质检收据影响。
 
+## 历史实验恢复决定
+
+用户于 2026-10-17（PDT，UTC 为 10-18）在本次迁移讨论中选择：**保留旧快照；今后重启另建新计划**。因此上述旧 revision、run-plan 和 stage snapshot 保持只读，绑定旧 gate 哈希；#1036 合并后不在新 checkout 上续用它们。未来若重启实验，须另建计划、冻结新的实施身份并独立取得届时所需的资源与预算授权。此决定不改变当前正式三语 Layer 2 的运行边界，也不把旧实验标为完成。
+
 ## 合并前的证据
 
 1. 正式三语 Layer 2 运行达到终态并正常关闭；核对预算结算、未知结果、候选/返修 intent，以及运行时 checkout 未被热替换。技术终态不代表人工内容批准。
