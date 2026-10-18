@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "ci-run-summary-v1",
+  "runId": 39084686553,
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39084686553",
+  "headSha": "6013fb16000e701a9102821084faee8aeb989f08",
+  "workflow": "Python tests",
+  "cancelReason": "Superseded by three confirmed #570 review findings: renderer identity, E05 source provenance and rule proxy identity closure",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-2)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-3)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-5)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-4)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-7)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-0)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-6)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-1)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "unittest",
+      "status": "completed",
+      "conclusion": "failure"
+    }
+  ]
+}
