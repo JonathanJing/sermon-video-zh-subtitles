@@ -169,6 +169,7 @@ class Code:
     module_sha256: Callable[[ModuleType], str]
     module_path: Callable[[ModuleType], Path]
     implementation_path: Callable[[str], Path]   # (legacy identity key) -> the file it names today, via path_aliases
+    physical_path: Callable[[str], Path]         # repository-relative path without alias resolution
 
 
 @dataclass(frozen=True)

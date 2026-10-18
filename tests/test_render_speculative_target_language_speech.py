@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import copy
+import io
 import json
 from pathlib import Path
+import subprocess
+import sys
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
@@ -28,11 +31,30 @@ class FakeSynth:
 
 
 class PreviewExecutionBindingTests(unittest.TestCase):
+    def test_isolated_facade_bootstraps_package_without_site_or_checkout_cwd(self):
+        import jsonschema
+        facade = Path(__file__).resolve().parents[1] / 'scripts/render_speculative_target_language_speech.py'
+        package = facade.parents[1] / 'packages/production/src/tongxing_production/__init__.py'
+        dependencies = Path(jsonschema.__file__).resolve().parents[1]
+        smoke = ('import sys,runpy;sys.path.insert(0,sys.argv[1]);'
+                 'runpy.run_path(sys.argv[2],run_name="preview_import_smoke");'
+                 'import tongxing_production;print(tongxing_production.__file__)')
+        with TemporaryDirectory() as directory:
+            result = subprocess.run([sys.executable, '-I', '-B', '-S', '-c', smoke,
+                                     str(dependencies), str(facade)],
+                                    cwd=directory, text=True, capture_output=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), str(package))
+
     def test_every_producer_and_host_source_changes_binding(self):
         code = formal._audio.current().code
         sources = {
             'scripts/render_speculative_target_language_speech.py':
-                code.implementation_path('scripts/render_speculative_target_language_speech.py'),
+                code.physical_path('scripts/render_speculative_target_language_speech.py'),
+            'packages/production/src/tongxing_production/audio/speculative.py':
+                code.physical_path('packages/production/src/tongxing_production/audio/speculative.py'),
+            'packages/production/src/tongxing_production/path_aliases.py':
+                code.physical_path('packages/production/src/tongxing_production/path_aliases.py'),
             'packages/production/src/tongxing_production/audio/hosted.py':
                 code.module_path(formal.hosted_module),
             'packages/production/src/tongxing_production/audio/backend.py':
@@ -48,6 +70,7 @@ class PreviewExecutionBindingTests(unittest.TestCase):
             modules = {formal.hosted_module: copies['packages/production/src/tongxing_production/audio/hosted.py'],
                        formal._audio: copies['packages/production/src/tongxing_production/audio/backend.py']}
             fake_code = SimpleNamespace(implementation_path=lambda name: copies[name],
+                                        physical_path=lambda name: copies[name],
                                         module_path=lambda module: modules[module])
             original = formal.preview_execution_binding_sha256(code=fake_code)
             for name, target in copies.items():
@@ -123,6 +146,25 @@ class SpeculativeRenderTests(unittest.TestCase):
         self.render(group_ids=['g1'])
         FakeSynth.calls = []
         with patch.object(subject.formal, 'preview_execution_binding_sha256', return_value='0' * 64):
+            with self.assertRaisesRegex(ValueError, 'another candidate'):
+                self.render(group_ids=['g1'])
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_changed_facade_bytes_block_same_folder_cache_before_model(self):
+        self.render(group_ids=['g1'])
+        FakeSynth.calls = []
+        facade = subject.formal._audio.current().code.physical_path(
+            'scripts/render_speculative_target_language_speech.py')
+        original_open = Path.open
+
+        def changed_open(path, *args, **kwargs):
+            mode = args[0] if args else kwargs.get('mode', 'r')
+            if path == facade and mode == 'rb':
+                with original_open(path, 'rb') as stream:
+                    return io.BytesIO(stream.read() + b'\n# changed facade\n')
+            return original_open(path, *args, **kwargs)
+
+        with patch.object(Path, 'open', changed_open):
             with self.assertRaisesRegex(ValueError, 'another candidate'):
                 self.render(group_ids=['g1'])
         self.assertEqual(FakeSynth.calls, [])

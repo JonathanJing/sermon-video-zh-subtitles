@@ -1,5 +1,6 @@
 """Read-only source and preview evidence checks; all fixtures are synthetic."""
 import copy
+import io
 import json
 from pathlib import Path
 import unittest
@@ -101,6 +102,23 @@ class PreviewInspectionTests(unittest.TestCase):
             self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
             self.save_receipt()
             with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'diagnostic_delivery_preview_unit_changed'):
+                self.inspect()
+        unit_path.write_text(json.dumps(unit))
+        self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
+        self.save_receipt()
+        facade = subject.preview.formal._audio.current().code.physical_path(
+            'scripts/render_speculative_target_language_speech.py')
+        original_open = Path.open
+
+        def changed_open(path, *args, **kwargs):
+            mode = args[0] if args else kwargs.get('mode', 'r')
+            if path == facade and mode == 'rb':
+                with original_open(path, 'rb') as stream:
+                    return io.BytesIO(stream.read() + b'\n# changed facade\n')
+            return original_open(path, *args, **kwargs)
+
+        with patch.object(Path, 'open', changed_open):
+            with self.assertRaisesRegex(ValueError, 'diagnostic_delivery_preview_manifest_changed'):
                 self.inspect()
 
     def test_changed_original_voice_and_checkpoint_fail_closed(self):

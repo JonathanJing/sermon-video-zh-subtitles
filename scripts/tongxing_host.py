@@ -162,7 +162,14 @@ def module_sha256(module) -> str:
 
 def code() -> ports.Code:
     return ports.Code(code_identity=_code_identity, module_sha256=module_sha256, module_path=module_path,
-                      implementation_path=implementation_path)
+                      implementation_path=implementation_path, physical_path=physical_path)
+
+
+def physical_path(name: str) -> Path:
+    path = Path(name)
+    if path.is_absolute() or ".." in path.parts:
+        raise ValueError("Physical code path must be repository-relative")
+    return ROOT / path
 
 
 def _mfa_options(args):

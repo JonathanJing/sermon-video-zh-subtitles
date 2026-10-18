@@ -57,7 +57,11 @@ def preview_execution_binding_sha256(*, code=None) -> str:
     code = code or _audio.current().code
     return identity.json_sha256({
         'scripts/render_speculative_target_language_speech.py': identity.sha256(
-            code.implementation_path('scripts/render_speculative_target_language_speech.py')),
+            code.physical_path('scripts/render_speculative_target_language_speech.py')),
+        'packages/production/src/tongxing_production/audio/speculative.py': identity.sha256(
+            code.physical_path('packages/production/src/tongxing_production/audio/speculative.py')),
+        'packages/production/src/tongxing_production/path_aliases.py': identity.sha256(
+            code.physical_path('packages/production/src/tongxing_production/path_aliases.py')),
         'packages/production/src/tongxing_production/audio/hosted.py': identity.sha256(
             code.module_path(hosted_module)),
         'packages/production/src/tongxing_production/audio/backend.py': identity.sha256(

@@ -1,5 +1,6 @@
 """Actual fixed child and speculative renderer; synthetic input/PCM only."""
 import copy
+import io
 import json
 import os
 from pathlib import Path
@@ -198,6 +199,21 @@ class PreviewWorkerTests(unittest.TestCase):
             else: broken['previewExecutionBindingSha256'] = value
             unit_path.write_text(json.dumps(broken))
             with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'preview_unit_receipt_changed'):
+                subject._outputs(self.root, self.spec, checked)
+        unit_path.write_text(json.dumps(unit))
+        facade = subject.preview.formal._audio.current().code.physical_path(
+            'scripts/render_speculative_target_language_speech.py')
+        original_open = Path.open
+
+        def changed_open(path, *args, **kwargs):
+            mode = args[0] if args else kwargs.get('mode', 'r')
+            if path == facade and mode == 'rb':
+                with original_open(path, 'rb') as stream:
+                    return io.BytesIO(stream.read() + b'\n# changed facade\n')
+            return original_open(path, *args, **kwargs)
+
+        with patch.object(Path, 'open', changed_open):
+            with self.assertRaisesRegex(ValueError, 'preview_manifest_changed'):
                 subject._outputs(self.root, self.spec, checked)
 
     def test_scrubbed_environment_has_no_credentials_or_proxy(self):
