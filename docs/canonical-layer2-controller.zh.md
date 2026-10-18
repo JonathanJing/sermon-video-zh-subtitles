@@ -73,6 +73,13 @@ symlink，或者与当前 output、job、repair、budget、source、anchor、pol
 抢先付费；false 才允许正常的新请求。auto-repair 只有 fresh 首轮读取跨运行 prior，后续轮继续使用本
 job 的 `reuse_from`；每轮都为最终成功组生成新收据。
 
+执行配置 v7 的 partial-round recovery 还覆盖 **plugin-only policy migration**：只有
+`languageReview` 的插件实现身份改变、模型实际收到的 bounded payload 字节不变时，恢复器从批准的
+原始直接付费账本核对 translator/reviewer 返回值，在新输出里以 `$0 reused` 重放，再运行新插件。
+新 policy、插件和候选身份全部重新绑定；任一模型 payload 改变都会 cache miss 并走正常新请求，不能
+把插件迁移扩大成模型提示词复用。来源预算根必须仍是 direct-paid succeeded，不能拿 reused 中间链
+继续转签。
+
 生产复用还要求 `sermon-canonical-layer2-budget-authorization-v4`／批准 v3。授权的
 `reuseBudgetRoots` 明确列出每语言原始直接付费账本根；目标 BudgetStore v2 把命中记为
 `settlement.costStatus=reused`、`costMicrousd=0`，不占请求、token、时间或美元 cap。来源必须是
