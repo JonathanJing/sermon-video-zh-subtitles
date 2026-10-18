@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-568-sync",
+  "runs": [
+    {
+      "label": "g1-sync-568-20261017",
+      "source": "~/.codex/worktrees/g1-qc-cascade/sermon-video-zh-subtitles/artifacts/g1-sync-568-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-sync-568-20261017",
+      "path": "focused-pytest.log",
+      "kind": "log",
+      "bytes": 226,
+      "truncated": false,
+      "sha256": "5246cba989266e626cbc237186724bf10ccbea0ac04e3471781d30ad91a9369a",
+      "redactions": {}
+    },
+    {
+      "run": "g1-sync-568-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 823,
+      "truncated": false,
+      "sha256": "c874b651942836583a516811a773802fb19af59d655fef0304d7b2258c6ab22e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

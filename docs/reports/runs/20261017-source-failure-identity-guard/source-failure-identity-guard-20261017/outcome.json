@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "scope": "propagate #571 identity guard to PR #625",
+  "upstreamHead": "496df474af348703e621b30697aedebf8f9721a7",
+  "branchHead": "d018f9dd93957b7a721c9f03c9c9e06f8a4dea80",
+  "pytestPassed": 76,
+  "subtestsPassed": 77,
+  "pytestSeconds": 22.6,
+  "diffCheck": "passed",
+  "ancestryCheck": "passed",
+  "remoteCommitReadback": "passed",
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

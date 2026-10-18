@@ -14,6 +14,7 @@ from unittest import mock
 
 from jsonschema import Draft202012Validator
 from scripts import audit_portable_media as subject
+from tools.ops import audit_portable_media as implementation
 from scripts import review_target_language_audio as review
 
 
@@ -335,19 +336,48 @@ class PortableMediaTests(unittest.TestCase):
                 "--expected-locale", "ko", "--expected-candidate-sha256", "b" * 64]
 
     def test_cli_audit_subprocess_pass_and_redacted_failure(self):
-        script = Path(subject.__file__)
+        self.assertIs(subject, implementation)
+        root = Path(__file__).resolve().parents[1]
+        commands = (
+            [sys.executable, str(root / "scripts/audit_portable_media.py")],
+            [sys.executable, "-m", "scripts.audit_portable_media"],
+            [sys.executable, str(root / "tools/ops/audit_portable_media.py")],
+            [sys.executable, "-m", "tools.ops.audit_portable_media"],
+        )
+        prepare_results = []
+        for index, command in enumerate(commands):
+            output = self.root / f"prepared-{index}.json"
+            args = self.cli_args("prepare") + ["--mapping", str(self.mapping_path),
+                    "--archive-id", "synthetic-week-r2", "--out", str(output)]
+            result = subprocess.run([*command, *args], cwd=root,
+                                    capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            prepare_results.append((result.stdout, output.read_bytes()))
+        self.assertTrue(all(value == prepare_results[0] for value in prepare_results))
+
         args = self.cli_args("audit") + ["--manifest", str(self.manifest_path)]
-        result = subprocess.run([sys.executable, str(script), *args], capture_output=True, text=True, timeout=20)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(json.loads(result.stdout)["status"], "verified")
+        passed = []
+        for command in commands:
+            result = subprocess.run([*command, *args], cwd=root,
+                                    capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)["status"], "verified")
+            passed.append(result.stdout)
+        self.assertEqual(len(set(passed)), 1)
+
         self.manifest["artifacts"][0]["archiveRelativePath"] = "/private/SECRET-HOST-PATH"
         write_json(self.manifest_path, self.manifest)
-        result = subprocess.run([sys.executable, str(script), *args], capture_output=True, text=True, timeout=20)
-        self.assertEqual(result.returncode, 1)
-        self.assertEqual(json.loads(result.stdout)["status"], "blocked")
-        self.assertNotIn("SECRET", result.stdout + result.stderr)
-        self.assertNotIn(str(self.root), result.stdout + result.stderr)
-        self.assertNotIn("Traceback", result.stderr)
+        blocked = []
+        for command in commands:
+            result = subprocess.run([*command, *args], cwd=root,
+                                    capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(json.loads(result.stdout)["status"], "blocked")
+            self.assertNotIn("SECRET", result.stdout + result.stderr)
+            self.assertNotIn(str(self.root), result.stdout + result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+            blocked.append(result.stdout)
+        self.assertEqual(len(set(blocked)), 1)
 
     def test_prepare_cli_exclusive_output_preserves_package_and_approval(self):
         args = self.cli_args("prepare") + ["--mapping", str(self.mapping_path),

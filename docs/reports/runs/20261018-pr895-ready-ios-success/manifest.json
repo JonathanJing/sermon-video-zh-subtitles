@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr895-ready-ios-success",
+  "runs": [
+    {
+      "label": "pr895-ready-ios-success-39081270333",
+      "source": "/private/tmp/sermon-prepare-v3-bucket-move-20261017/artifacts/pr895-ready-ios-success-39081270333",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr895-ready-ios-success-39081270333",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 344,
+      "truncated": false,
+      "sha256": "042aa29b582e7ef409d452eb62522ddcf9ff7413beb5fb75a8abd1af3e39cac9",
+      "redactions": {}
+    },
+    {
+      "run": "pr895-ready-ios-success-39081270333",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1423,
+      "truncated": false,
+      "sha256": "6767dff6a7868ec31725581b6838476e45538751e6c3d8feeb7725f737d210eb",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

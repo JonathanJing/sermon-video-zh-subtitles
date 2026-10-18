@@ -1,0 +1,6 @@
+stage	status	seconds
+discover	pass	0.0
+zh-Hans.track-check	pass	0.7
+zh-Hans.calibration.prefetch	pass	44.8
+zh-Hans.calibration	pass	252.0
+zh-Hans.audio-waiver	fail	0.0

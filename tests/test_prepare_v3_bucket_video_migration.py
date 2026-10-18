@@ -1,9 +1,12 @@
 import json
+import subprocess
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
 from scripts import prepare_v3_bucket_video_migration as migration
+from tools.ops import prepare_v3_bucket_video_migration as implementation
 from scripts import assemble_multilingual_v3_update as weekly
 from tests.test_assemble_multilingual_v3_update import page_fixture, catalog, write
 
@@ -47,6 +50,33 @@ class BucketVideoMigrationTests(unittest.TestCase):
         self.assertIn("https://storage.googleapis.com",
                       config["headers"][0]["headers"][0]["value"])
         weekly.validate_page(out / "public", candidate_page)
+
+    def test_legacy_and_new_cli_candidate_bytes_match(self) -> None:
+        self.assertIs(migration, implementation)
+        repo = Path(__file__).resolve().parents[1]
+        source = {p.relative_to(self.base).as_posix(): p.read_bytes()
+                  for p in self.base.rglob("*") if p.is_file()}
+        candidates = []
+        for index, command in enumerate((
+            [sys.executable, str(repo / "scripts/prepare_v3_bucket_video_migration.py")],
+            [sys.executable, "-m", "scripts.prepare_v3_bucket_video_migration"],
+            [sys.executable, str(repo / "tools/ops/prepare_v3_bucket_video_migration.py")],
+            [sys.executable, "-m", "tools.ops.prepare_v3_bucket_video_migration"],
+        )):
+            out = self.root / f"candidate-{index}"
+            result = subprocess.run([*command, "--base", str(self.base), "--page-id", "sermon-1",
+                                     "--bucket", "ai-for-god-sermon-media-dev", "--out", str(out)],
+                                    cwd=repo, capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            files = {p.relative_to(out).as_posix(): p.read_bytes()
+                     for p in out.rglob("*") if p.is_file() and p.name != "migration-report.json"}
+            report = json.loads((out / "migration-report.json").read_text())
+            self.assertIn("createdAt", report)
+            del report["createdAt"]
+            candidates.append((result.stdout, files, report))
+        self.assertTrue(all(candidate == candidates[0] for candidate in candidates))
+        self.assertEqual(source, {p.relative_to(self.base).as_posix(): p.read_bytes()
+                                  for p in self.base.rglob("*") if p.is_file()})
 
     def test_bad_bucket_and_existing_output_fail_without_changing_source(self) -> None:
         with self.assertRaisesRegex(ValueError, "dedicated public"):

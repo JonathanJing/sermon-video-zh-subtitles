@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "result": "Backend Docker image built; schema and terminology loaders passed inside container"
+}

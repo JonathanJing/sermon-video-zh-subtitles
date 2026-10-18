@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-ops-dev-bucket-readback-synthetic",
+  "runs": [
+    {
+      "label": "ops-dev-bucket-readback-synthetic",
+      "source": "~/.codex/worktrees/ops-dev-bucket-readback/sermon-video-zh-subtitles/artifacts/ops-dev-bucket-readback-synthetic",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ops-dev-bucket-readback-synthetic",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 333,
+      "truncated": false,
+      "sha256": "62d2a8818063152effee8e22a709b936ec08cdde5f250bb82fe10c130685b350",
+      "redactions": {}
+    },
+    {
+      "run": "ops-dev-bucket-readback-synthetic",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 260,
+      "truncated": false,
+      "sha256": "adae6ef38a78367963906d275214fb6247942a8ae0652b2fa3bf6638a8d222a7",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

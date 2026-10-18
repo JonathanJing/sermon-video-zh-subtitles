@@ -1,0 +1,6 @@
+{
+  "schemaVersion": "local-code-check-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "scope": "Local code migration checks only; no production or browser deployment"
+}

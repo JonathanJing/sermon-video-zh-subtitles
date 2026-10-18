@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr846-ios-ready-39079176434",
+  "runs": [
+    {
+      "label": "pr846-ios-ready-39079176434",
+      "source": "/private/tmp/sermon-ops-unified-preflight-20261017/artifacts/pr846-ios-ready-39079176434",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr846-ios-ready-39079176434",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 153,
+      "truncated": false,
+      "sha256": "48a667c13b55287af60496f3d42aa1abe33a8c1474218194781d2d66b8ba19e5",
+      "redactions": {}
+    },
+    {
+      "run": "pr846-ios-ready-39079176434",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1185,
+      "truncated": false,
+      "sha256": "2a56a3bb994c59e9af7c57a24b5167b39d325222eedefa26914505575991a037",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

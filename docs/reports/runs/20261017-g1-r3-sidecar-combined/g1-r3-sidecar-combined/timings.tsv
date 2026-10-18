@@ -1,0 +1,2 @@
+stage	status	seconds	result
+focused_pytest	pass	2.36	45 cases and 104 subtests passed

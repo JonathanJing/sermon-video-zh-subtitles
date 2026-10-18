@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr803-stale-ios",
+  "runs": [
+    {
+      "label": "pr803-stale-ios-39070890649",
+      "source": "~/.codex/worktrees/ops-dev-dry-run-installer/sermon-video-zh-subtitles/artifacts/pr803-stale-ios-39070890649",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr803-stale-ios-39070890649",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 181,
+      "truncated": false,
+      "sha256": "875011c3e908131c94ebc7f655e8a00783ab9c6336a125df71b1d48fcc0188c4",
+      "redactions": {}
+    },
+    {
+      "run": "pr803-stale-ios-39070890649",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 610,
+      "truncated": false,
+      "sha256": "36b43270aee39426550f1c43948a6356e9da82fbef5ab6a437e4624880a8c220",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

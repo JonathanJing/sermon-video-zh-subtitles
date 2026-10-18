@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "pass",
+  "exitCode": 0,
+  "command": "PYTHONPATH=$PWD/packages/production/src:$PWD .venv/bin/python -m unittest tests.test_outcome_marker -v",
+  "testsRun": 6,
+  "failures": 0,
+  "errors": 0,
+  "scope": "local focused unittest; no real production run"
+}

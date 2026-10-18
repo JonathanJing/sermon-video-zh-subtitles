@@ -1,0 +1,4 @@
+plan-qc-zh-Hans	pass	0
+check-ae-qc-preflight	pass	0
+check-qc-zh-Hans-out	pass	0
+text-qc.zh-Hans.out	fail(1)	255

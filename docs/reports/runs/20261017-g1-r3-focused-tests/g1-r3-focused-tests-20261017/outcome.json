@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "sermon-local-test-outcome-v1",
+  "status": "passed",
+  "testCount": 175,
+  "testSubcount": 128,
+  "durationSeconds": 288.12,
+  "kind": "software_tests"
+}

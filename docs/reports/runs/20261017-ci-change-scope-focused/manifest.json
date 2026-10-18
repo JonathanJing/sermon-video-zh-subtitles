@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-ci-change-scope-focused",
+  "runs": [
+    {
+      "label": "ci-change-scope-focused-20261017",
+      "source": "~/.codex/worktrees/ci-scope-move/sermon-video-zh-subtitles/artifacts/ci-change-scope-focused-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ci-change-scope-focused-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 243,
+      "truncated": false,
+      "sha256": "47dd35d8220e8df2eb678d446c6f0149e6cacfeff40aafc2e3ef182efee237f8",
+      "redactions": {}
+    },
+    {
+      "run": "ci-change-scope-focused-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 306,
+      "truncated": false,
+      "sha256": "9fa111d9ec3355d0ed346d54b9e9b2f5fc0ec258ba3332bf77e8258440a5c201",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

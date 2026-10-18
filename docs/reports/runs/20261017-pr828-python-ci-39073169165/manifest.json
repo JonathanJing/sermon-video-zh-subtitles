@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr828-python-ci-39073169165",
+  "runs": [
+    {
+      "label": "pr828-python-ci-39073169165",
+      "source": "/private/tmp/sermon-ops-cloud-run-realtime-plan/artifacts/pr828-python-ci-39073169165",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr828-python-ci-39073169165",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 166,
+      "truncated": false,
+      "sha256": "547bb532823cf8b7ed2729a75704ee62a12efe2828a6762776238f6105874ce3",
+      "redactions": {}
+    },
+    {
+      "run": "pr828-python-ci-39073169165",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2185,
+      "truncated": false,
+      "sha256": "571ce326957cd873b8bd8790e01976c198fec744387bb2b83245c4e392c0b013",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

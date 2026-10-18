@@ -389,6 +389,7 @@ class Scripture:
     coverage: Callable[[], ModuleType]         # english_scripture_coverage: CoverageEdition, CoverageError, coverage, ...
     candidate_queue: Callable[[], ModuleType]  # scripture_candidate_queue: BOOKS, SIGNALS
     library_path: Callable[[], Path]           # cuv_scripture.DEFAULT_LIBRARY_PATH
+    provenance_path: Callable[[], Path]        # cuv_scripture.DEFAULT_PROVENANCE_PATH
     coverage_data_path: Callable[[], Path]     # english_scripture_coverage.DATA_PATH
 
 
@@ -409,7 +410,10 @@ class Cloud:
     Replaced by the storage/ adapters once that design moves them; never a credential value."""
     access_secret: Callable[[str], str]        # (resource_name) -> secret text, for the run's own use only
     read_gcs_bytes: Callable[[str], bytes]     # (gs:// uri)
+    read_gcs_text: Callable[[str], str]         # (gs:// uri)
+    download_file_from_gcs: Callable[..., Path]  # (gs:// uri, local destination)
     upload_file_to_gcs: Callable[..., None]    # (local_path, uri)
+    write_gcs_text: Callable[..., None]         # (uri, text)
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,4 @@
+{
+  "status": "failed",
+  "testSummary": "97 passed, 2 failed, 62 subtests passed; invalid reference became unavailable; nonprivate sidecar raised ValueError."
+}

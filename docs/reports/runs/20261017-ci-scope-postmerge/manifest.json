@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-ci-scope-postmerge",
+  "runs": [
+    {
+      "label": "ci-scope-postmerge-20261017",
+      "source": "~/.codex/worktrees/ci-scope-move/sermon-video-zh-subtitles/artifacts/ci-scope-postmerge-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ci-scope-postmerge-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 144,
+      "truncated": false,
+      "sha256": "d3ecbfd656aff52ce537c1c493dea6b51995eba1d3031f3cd7671323aec3665e",
+      "redactions": {}
+    },
+    {
+      "run": "ci-scope-postmerge-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 348,
+      "truncated": false,
+      "sha256": "3d57e9fe6e4ff36ff69600031cce64bb168fa503a447cfd5982faf4d4575e3aa",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

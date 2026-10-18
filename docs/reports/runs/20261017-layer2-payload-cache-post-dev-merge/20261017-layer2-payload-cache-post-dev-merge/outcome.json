@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "post_dev_merge_tests_passed_live_canary_pending",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T23:17:50Z",
+  "endedAt": "2026-10-17T23:19:26Z",
+  "deliveryType": "test",
+  "testScope": "261 focused tests and 532 subtests passed after merging current origin/dev into branch; editable production package resolved to this checkout; live canary pending"
+}

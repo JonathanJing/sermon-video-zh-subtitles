@@ -5,9 +5,14 @@ from argparse import Namespace
 from pathlib import Path
 
 import scripts.prepare_cloud_run_realtime_update_plan as mod
+from tools.ops import prepare_cloud_run_realtime_update_plan as implementation
 
 
 class PrepareCloudRunRealtimeUpdatePlanTest(unittest.TestCase):
+    def test_legacy_import_uses_moved_implementation(self):
+        self.assertIs(mod, implementation)
+        self.assertEqual(mod.REPO_ROOT, Path(__file__).resolve().parents[1])
+
     def test_failed_config_generates_redacted_approval_plan(self):
         with tempfile.TemporaryDirectory() as tmp:
             report = Path(tmp) / "config.json"

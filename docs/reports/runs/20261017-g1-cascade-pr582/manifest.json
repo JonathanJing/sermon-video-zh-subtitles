@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-cascade-pr582",
+  "runs": [
+    {
+      "label": "g1-cascade-pr582-20261017",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/g1-cascade-pr582-20261017",
+      "skipped": {
+        ".json": 2,
+        ".txt": 2
+      }
+    },
+    {
+      "label": "g1-cascade-pr582-mini-broad-20261017",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/g1-cascade-pr582-mini-broad-20261017",
+      "skipped": {
+        ".txt": 2
+      }
+    },
+    {
+      "label": "g1-cascade-pr582-mini-smoke-20261017",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/g1-cascade-pr582-mini-smoke-20261017",
+      "skipped": {
+        ".txt": 2
+      }
+    },
+    {
+      "label": "g1-cascade-pr582-mini-noffprobe-20261017",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/g1-cascade-pr582-mini-noffprobe-20261017",
+      "skipped": {
+        ".txt": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-cascade-pr582-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 666,
+      "truncated": false,
+      "sha256": "166ef69e5f811366b791fb775a0d02d2666234099d26d2628d2c02ab65a4ee19",
+      "redactions": {}
+    },
+    {
+      "run": "g1-cascade-pr582-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 6980,
+      "truncated": false,
+      "sha256": "61db8794c2e66ae2b2eb015de2bcdc841b607b6466949e91f37425b19729a680",
+      "redactions": {
+        "home_dir": 15
+      }
+    },
+    {
+      "run": "g1-cascade-pr582-mini-broad-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 746,
+      "truncated": false,
+      "sha256": "d3134c83b10ee57041a5d2b39886734a7fa068a7ba67380a673ce8050183def2",
+      "redactions": {}
+    },
+    {
+      "run": "g1-cascade-pr582-mini-broad-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 8031,
+      "truncated": false,
+      "sha256": "3eb6bc2850c9584fd1fab5188a08f6d9f6a149e80d8d6cfe46fc7ac819383010",
+      "redactions": {
+        "email": 22,
+        "home_dir": 9
+      }
+    },
+    {
+      "run": "g1-cascade-pr582-mini-smoke-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 742,
+      "truncated": false,
+      "sha256": "503400e8f42ab3221d389545667bb4ec6c6cdf85a1769f4ac23e0a35f9b81ec2",
+      "redactions": {}
+    },
+    {
+      "run": "g1-cascade-pr582-mini-smoke-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 66030,
+      "truncated": true,
+      "sha256": "42b4bfeeb558844e2ea66f94150cbf3e19d81a2c239511bc9d96836fa79601c2",
+      "redactions": {
+        "email": 18,
+        "home_dir": 32
+      }
+    },
+    {
+      "run": "g1-cascade-pr582-mini-noffprobe-20261017",
+      "path": "identity-receipt.json",
+      "kind": "whole",
+      "bytes": 4967,
+      "truncated": false,
+      "sha256": "647bd1ab151c5eec2093b00031909b944b914776f4776240dfe125ee896482b4",
+      "redactions": {}
+    },
+    {
+      "run": "g1-cascade-pr582-mini-noffprobe-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 707,
+      "truncated": false,
+      "sha256": "a09029fdaddbcfa30fd85b252ffd77a3098d0f4d92296ea36dc15ed8a87b65d5",
+      "redactions": {}
+    },
+    {
+      "run": "g1-cascade-pr582-mini-noffprobe-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 8185,
+      "truncated": false,
+      "sha256": "83d02ed5d6672a15ceb14eeb433d45df07c08b71176a717ecd7edfdb889ca379",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

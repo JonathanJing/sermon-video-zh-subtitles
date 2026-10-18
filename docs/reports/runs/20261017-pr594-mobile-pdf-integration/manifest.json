@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr594-mobile-pdf-integration",
+  "runs": [
+    {
+      "label": "pr594-mobile-pdf-integration-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-mobile-pdf/sermon-video-zh-subtitles/artifacts/pr594-mobile-pdf-integration-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr594-mobile-pdf-integration-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 338,
+      "truncated": false,
+      "sha256": "f6b07119417d66ed73dc4164caad131a4e9b17be43c8a2a3b08e8bab6f77e43a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

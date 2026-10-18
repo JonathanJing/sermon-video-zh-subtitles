@@ -1,0 +1,38 @@
+{
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:42:47Z",
+      "completedAt": "2026-10-17T23:42:59Z",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39080066426/job/117535029360"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:43:06Z",
+      "completedAt": "2026-10-17T23:43:09Z",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39080066426/job/117535071336"
+    },
+    {
+      "name": "ios-validation",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T23:42:59Z",
+      "completedAt": "2026-10-17T23:42:59Z",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39080066426/job/117535072007"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T23:43:00Z",
+      "completedAt": "2026-10-17T23:42:59Z",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39080066426/job/117535072451"
+    }
+  ],
+  "scope": "native/shared changes detection only; ios-validation and contract-validation skipped",
+  "implementationSha256": "89aea32e1214bf2cd5f7d69955dae5f370a723a6"
+}

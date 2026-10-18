@@ -7,9 +7,13 @@ from unittest.mock import patch
 
 from scripts import outcome_marker
 from scripts.experiments import run_spark_diagnostic_audio as runner
+from tongxing_production.orchestration import outcome_marker as package_outcome_marker
 
 
 class OutcomeMarkerTests(unittest.TestCase):
+    def test_legacy_import_is_same_module_as_package(self):
+        self.assertIs(outcome_marker, package_outcome_marker)
+
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)

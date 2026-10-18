@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-browser-capture-postmove",
+  "runs": [
+    {
+      "label": "browser-capture-postmove-report-20261017",
+      "source": "~/.codex/worktrees/dev-browser-cache-smoke/sermon-video-zh-subtitles/artifacts/browser-capture-postmove-report-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "browser-capture-postmove-report-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 732,
+      "truncated": false,
+      "sha256": "ff0f6a0ec6904f263576fce9b9b4e9c0c4eb65d59e94495e89c3506395868c2e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "head": "98cf28441bf75aaeb61799676a2c121f884576cb",
+  "targetPr": 579,
+  "upstreamPr": 570,
+  "executed": 68,
+  "passed": 68,
+  "testScope": "review ports/contracts, accounting profile/observability, report snapshot",
+  "diffCheck": "passed",
+  "externalCalls": 0
+}

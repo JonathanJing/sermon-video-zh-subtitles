@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-clip-review-timeline-tool-tests",
+  "runs": [
+    {
+      "label": "clip-review-timeline-tool-tests-20261017",
+      "source": "~/.codex/worktrees/clip-review-timeline-tool/sermon-video-zh-subtitles/artifacts/clip-review-timeline-tool-tests-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-review-timeline-tool-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 513,
+      "truncated": false,
+      "sha256": "478f1fb4a9ea35d3b03df750980b507d797259bd5450a490a195eaa4aedd3c45",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

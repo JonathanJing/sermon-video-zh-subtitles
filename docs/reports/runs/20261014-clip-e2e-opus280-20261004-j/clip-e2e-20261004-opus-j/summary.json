@@ -1,0 +1,28 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-j",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-14T21:01:13+00:00",
+      "units": 50,
+      "inputs": "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/clip-e2e-opus280-20261004-j/inputs",
+      "layer1Backend": "claude_cli_opus"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-14T21:01:18+00:00"
+    }
+  },
+  "stopped": [
+    "Layer 2 budget plan rejected 50 source groups (100 initial calls): existing Claude subscription list-price cap is 8 USD-equivalent per locale, below the initial worst-case reservation; no Layer 2 call dispatched."
+  ],
+  "settledUsd": 10.422771,
+  "claudeListPriceEquivalentUsd": 0.0,
+  "status": "failed_budget_preflight",
+  "newOpenaiUsd": 0.0,
+  "layer1ClaudeSubscriptionListPriceEquivalentUsd": 0.610338,
+  "layer1MachineStatus": "approved_for_layer2_shadow",
+  "layer2Dispatched": false,
+  "audioDispatched": false,
+  "published": false
+}

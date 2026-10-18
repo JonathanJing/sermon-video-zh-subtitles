@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-ops-dev-dry-run-installer-synthetic",
+  "runs": [
+    {
+      "label": "ops-dev-dry-run-installer-synthetic",
+      "source": "~/.codex/worktrees/ops-dev-dry-run-installer/sermon-video-zh-subtitles/artifacts/ops-dev-dry-run-installer-synthetic",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ops-dev-dry-run-installer-synthetic",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 339,
+      "truncated": false,
+      "sha256": "b95ab229a7c57582779ae12d74f61934f704aca866d9024b38a25fb656a4bb0d",
+      "redactions": {}
+    },
+    {
+      "run": "ops-dev-dry-run-installer-synthetic",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 274,
+      "truncated": false,
+      "sha256": "db40770d61932aa9c43e5fae5e4525a889f56ee7101d3fd5e13f3d89e86d573e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

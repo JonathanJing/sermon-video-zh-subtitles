@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "runId": 39070662178,
+  "workflow": "Python tests",
+  "trigger": "pull_request",
+  "headSha": "9ca7dc9d20d62e7e93a1ee6c7c0a8f2e9a62bc01",
+  "branch": "codex/ops-dev-bucket-readback-20261017",
+  "base": "dev",
+  "rootGroups": {
+    "root-0": "success",
+    "root-1": "success",
+    "root-2": "success",
+    "root-3": "success",
+    "root-4": "success",
+    "root-5": "success",
+    "root-6": "success",
+    "root-7": "success"
+  },
+  "aggregator": "success",
+  "nativeSharedContracts": "skipped",
+  "scope": "PR #799 Firebase Dev bucket readback tool move",
+  "limitations": [
+    "synthetic CI and focused local tests only",
+    "no real Firebase Dev readback, HTTP, publication, device or venue acceptance"
+  ]
+}

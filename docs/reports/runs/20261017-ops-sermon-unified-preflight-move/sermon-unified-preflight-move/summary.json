@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "codeCommit": "859998f6",
+  "baseCommit": "212027ee",
+  "target": "scripts/sermon_unified_preflight.py to tools/ops with old facade",
+  "tests": {
+    "command": "python -m unittest tests.test_sermon_unified_preflight",
+    "ran": 5,
+    "result": "passed"
+  },
+  "cliEquivalence": {
+    "forms": [
+      "old path",
+      "new path",
+      "old module",
+      "new module"
+    ],
+    "fixture": "synthetic invalid config",
+    "result": "same blocked JSON and exit code 2"
+  },
+  "identityComparison": {
+    "status": "passed",
+    "oldCodeIdentitySha256": "19e105ffefe0cbf58babd4ea5a317bfd6045c1faf392e464a7877b38cd42bba6",
+    "newCodeIdentitySha256": "963e6027399bbdd9a9fe15398e5dd3d8b12b7dcd42f7b5650194fa96a9eb548d",
+    "packageIdentitiesEqual": true,
+    "preflightResultsEqualExceptCodeIdentity": true,
+    "noFixtureWrites": true,
+    "noCredentialLookupOrDispatch": true
+  },
+  "movedBytes": "same except direct CLI repo-root depth",
+  "diffCheck": "passed",
+  "limitations": [
+    "Layer 2 code identity changed because scripts tree is hashed; frozen runs require recheck",
+    "No paid model calls, remote production, HTTP, device or venue check"
+  ]
+}

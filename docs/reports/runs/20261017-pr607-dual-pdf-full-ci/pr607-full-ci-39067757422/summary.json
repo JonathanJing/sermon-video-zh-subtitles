@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "runId": 39067757422,
+  "workflow": "Python tests",
+  "trigger": "workflow_dispatch",
+  "headSha": "1c5190acd727fd5a74413192646aa80747ff9c59",
+  "branch": "codex/dual-pdf-timeline-move",
+  "rootGroups": {
+    "root-0": "success",
+    "root-1": "success",
+    "root-2": "success",
+    "root-3": "success",
+    "root-4": "success",
+    "root-5": "success",
+    "root-6": "success",
+    "root-7": "success"
+  },
+  "aggregator": "success",
+  "nativeSharedContracts": "skipped",
+  "scope": "stacked dual PDF migrations through #607 including timeline optional dependency",
+  "limitations": [
+    "CI ran before #602 was retargeted to current dev; merge cascade still pending",
+    "no real PDF, HTTP, device or venue acceptance"
+  ]
+}

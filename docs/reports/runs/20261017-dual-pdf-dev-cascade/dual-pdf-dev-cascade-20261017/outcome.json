@@ -1,0 +1,55 @@
+{
+  "status": "success_after_test_environment_correction",
+  "deliveryType": "test",
+  "scope": "integrate dev after weekly projection into dual PDF PR stack",
+  "parentHead": "dd49c7fe4bf9c9fcf76286f1dcb6d177e2890392",
+  "stages": [
+    {
+      "pr": 594,
+      "head": "d229eafb151bbbd1913663b5adb2a3e805c64015",
+      "mergeConflict": false
+    },
+    {
+      "pr": 598,
+      "head": "6bb50cecca6104779a18b24400ff24fd90d9c98c",
+      "mergeConflict": false
+    },
+    {
+      "pr": 602,
+      "head": "321a5ee1a70fff7685d3b77cb56a58a2f84181f3",
+      "mergeConflict": "tongxing_host load-time imports, both entries preserved"
+    },
+    {
+      "pr": 607,
+      "head": "8c57cbd844ef2dc14459606fab43088affa07362",
+      "mergeConflict": false
+    }
+  ],
+  "verificationAttempts": [
+    {
+      "environment": "main venv with relative PYTHONPATH",
+      "testsPassed": 105,
+      "failed": 3,
+      "reason": "subprocesses resolved main checkout package"
+    },
+    {
+      "environment": "main venv with absolute PYTHONPATH",
+      "testsPassed": 107,
+      "failed": 1,
+      "reason": "structural test removes PYTHONPATH"
+    },
+    {
+      "environment": "worktree venv with worktree package precedence",
+      "focusedRegression": "1 passed",
+      "testsPassed": 108,
+      "subtestsPassed": 435,
+      "failed": 0,
+      "exitCode": 0
+    }
+  ],
+  "diffCheck": "passed",
+  "ancestryCheck": "passed",
+  "production": "not_run",
+  "publication": "not_run",
+  "device": "not_run"
+}

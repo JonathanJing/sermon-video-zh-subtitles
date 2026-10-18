@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "local-code-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "endedAt": "2026-10-17T16:09:49.019928+00:00",
+  "scope": "#579 R3 review branch merged #570 latest",
+  "productionRun": "not_run",
+  "paidModelCalls": 0
+}

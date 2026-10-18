@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr895-python-success",
+  "runs": [
+    {
+      "label": "pr895-python-success-39080066441",
+      "source": "/private/tmp/sermon-prepare-v3-bucket-move-20261017/artifacts/pr895-python-success-39080066441",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr895-python-success-39080066441",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 332,
+      "truncated": false,
+      "sha256": "20ee9975b940bdd92a51785ce7ac24f1c6347f16121519f44c42ec583c5d6a9b",
+      "redactions": {}
+    },
+    {
+      "run": "pr895-python-success-39080066441",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 3622,
+      "truncated": false,
+      "sha256": "4ea594af456c030ad9d687f6634ff8be3bd725054ad87c1da218108d749434ef",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

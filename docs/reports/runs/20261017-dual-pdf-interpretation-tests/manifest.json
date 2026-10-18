@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-interpretation-tests",
+  "runs": [
+    {
+      "label": "dual-pdf-interpretation-tests-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-interpretation/sermon-video-zh-subtitles/artifacts/dual-pdf-interpretation-tests-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-interpretation-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 167,
+      "truncated": false,
+      "sha256": "18fcccbab66627856bf9d55b0c93012500f43cb8759b037038335ac128e7c6de",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-interpretation-tests-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 912,
+      "truncated": false,
+      "sha256": "7ebf5ca2558ef68bea998f2f3d42743f2328d704a33d787ed7b18bae6afe851d",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-interpretation-tests-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 50,
+      "truncated": false,
+      "sha256": "1ecd3b92a3a4d5ee40b251213fb2bf73578c06de0b4101d0f056e2d290da4562",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

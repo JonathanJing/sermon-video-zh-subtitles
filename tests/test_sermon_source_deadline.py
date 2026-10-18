@@ -166,6 +166,19 @@ class TypedFailureTests(unittest.TestCase):
         self.plan={'providerConfig':{'runId':'a'*64}}
         self.known={'unknownModelCallIds':[],'reservedMicrousd':123}
 
+    def test_legacy_import_and_identity_resolve_to_moved_implementation(self):
+        from tongxing_production.source import failure as moved
+        from tongxing_production.path_aliases import resolve
+        from tongxing_production.compute.legacy_openai import PreDispatchRejection as MovedRejection
+        from tongxing_production.contracts.canonical import ContractError
+        self.assertIs(failure, moved)
+        self.assertIs(PreDispatchRejection, MovedRejection)
+        self.assertIs(c.ContractError, ContractError)
+        self.assertEqual(resolve('scripts/sermon_source_failure.py'),
+            'packages/production/src/tongxing_production/source/failure.py')
+        self.assertEqual(accounting.code_path(failure),
+            'packages/production/src/tongxing_production/source/failure.py')
+
     def test_controlled_codes_only_preserve_pending_and_no_refunds(self):
         for error,reason in [(c.ContractError('fresh_mfa_original_deadline_reached'),'fresh_mfa_original_deadline_reached'),
             (PreDispatchRejection('provider_run_deadline_reached'),'provider_run_deadline_reached'),

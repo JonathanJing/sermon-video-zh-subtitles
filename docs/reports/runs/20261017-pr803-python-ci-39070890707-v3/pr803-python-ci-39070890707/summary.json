@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "github-actions-ci-summary-v1",
+  "status": "passed",
+  "deliveryType": "test",
+  "scope": "Exact-head Python tests workflow only; no publication, deployment, device or venue acceptance",
+  "pullRequest": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/803",
+  "baseRef": "dev",
+  "headSha": "a7c66571190e94ce16210c4aba608fbe41f168aa",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707",
+  "runId": 39070890707,
+  "workflow": "Python tests",
+  "event": "pull_request",
+  "shardsExpected": 8,
+  "shardsSucceeded": 8,
+  "aggregate": "success",
+  "nativeJob": "skipped_by_full_scope_rule",
+  "jobs": [
+    {
+      "name": "Native and shared client contracts",
+      "jobId": 117508634328,
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707/job/117508634328",
+      "startedAt": "2026-10-17T21:28:18Z",
+      "completedAt": "2026-10-17T21:28:17Z",
+      "elapsedSeconds": null
+    },
+    {
+      "name": "changes",
+      "jobId": 117508083655,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707/job/117508083655",
+      "startedAt": "2026-10-17T21:28:06Z",
+      "completedAt": "2026-10-17T21:28:17Z",
+      "elapsedSeconds": 11.0
+    },
+    {
+      "name": "test-group (root-0)",
+      "jobId": 117508633405,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707/job/117508633405",
+      "startedAt": "2026-10-17T21:38:08Z",
+      "completedAt": "2026-10-17T21:45:27Z",
+      "elapsedSeconds": 439.0
+    },
+    {
+      "name": "test-group (root-1)",
+      "jobId": 117508633349,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707/job/117508633349",
+      "startedAt": "2026-10-17T21:29:31Z",
+      "completedAt": "2026-10-17T21:39:26Z",
+      "elapsedSeconds": 595.0
+    },
+    {
+      "name": "test-group (root-2)",
+      "jobId": 117508633379,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707/job/117508633379",
+      "startedAt": "2026-10-17T21:34:00Z",
+      "completedAt": "2026-10-17T21:48:32Z",
+      "elapsedSeconds": 872.0
+    },
+    {
+      "name": "test-group (root-3)",
+      "jobId": 117508633433,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707/job/117508633433",
+      "startedAt": "2026-10-17T21:38:45Z",
+      "completedAt": "2026-10-17T21:51:58Z",
+      "elapsedSeconds": 793.0
+    },
+    {
+      "name": "test-group (root-4)",
+      "jobId": 117508633476,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707/job/117508633476",
+      "startedAt": "2026-10-17T21:38:38Z",
+      "completedAt": "2026-10-17T21:47:07Z",
+      "elapsedSeconds": 509.0
+    },
+    {
+      "name": "test-group (root-5)",
+      "jobId": 117508633307,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707/job/117508633307",
+      "startedAt": "2026-10-17T21:30:12Z",
+      "completedAt": "2026-10-17T21:44:46Z",
+      "elapsedSeconds": 874.0
+    },
+    {
+      "name": "test-group (root-6)",
+      "jobId": 117508633330,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707/job/117508633330",
+      "startedAt": "2026-10-17T21:32:03Z",
+      "completedAt": "2026-10-17T21:45:30Z",
+      "elapsedSeconds": 807.0
+    },
+    {
+      "name": "test-group (root-7)",
+      "jobId": 117508633304,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707/job/117508633304",
+      "startedAt": "2026-10-17T21:30:06Z",
+      "completedAt": "2026-10-17T21:45:44Z",
+      "elapsedSeconds": 938.0
+    },
+    {
+      "name": "unittest",
+      "jobId": 117513463954,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39070890707/job/117513463954",
+      "startedAt": "2026-10-17T21:52:06Z",
+      "completedAt": "2026-10-17T21:52:08Z",
+      "elapsedSeconds": 2.0
+    }
+  ],
+  "failedChecks": []
+}

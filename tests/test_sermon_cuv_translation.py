@@ -84,8 +84,17 @@ class CuvTranslationTests(unittest.TestCase):
             self.assertEqual("passed", mod.validate_spoken_review(self.parent.parent, self.out / "spoken-review.json")["status"])
         review = mod.read(self.out / "spoken-review.json")
         self.assertFalse(review["humanApproval"])
+        self.assertEqual(mod.MODEL + " CUV quotation and independent narrative review", review["reviewedBy"])
         self.assertEqual([0, 1], review["reviewedBlockIds"])
         self.assertEqual({k: "pass" for k in mod.CHECKS}, review["checks"])
+
+    def test_historical_astra_review_label_is_reconstructed_without_rewriting_receipt(self):
+        manifest = {"parentJob": mod.bind(self.parent), "model": "gpt-6-astra", "reasoningEffort": "medium"}
+        self.write(self.out / "cuv-manifest.json", manifest)
+        self.write(self.out / "report.json", {"status": "passed"})
+        review = mod.review_document(manifest, self.out / "report.json", self.blocks, "2026-09-12T00:00:00Z")
+        self.assertEqual("Astra CUV quotation and independent narrative review", review["reviewedBy"])
+        self.assertEqual("gpt-6-astra", review["model"])
 
     def test_sixty_seven_blocks_complete_and_resume_without_model(self):
         self.make_source(67)

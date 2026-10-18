@@ -217,21 +217,49 @@ def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False
     return value
 
 
-def inspect_layer2_root(root, authority, *, locale_scope):
+def inspect_layer2_root(root, authority, *, locale_scope, reuse_roots=(), as_reuse_source=False):
     from scripts import sermon_review_budget as ledger, sermon_workflow_jobs as jobs
-    store=ledger.BudgetStore(root,authority,max_ledger_bytes=8*1024*1024 if locale_scope else None)
-    _,folder,_=jobs._paths(store.root,ledger.STORE_ID)
+    root = Path(root).resolve()
+    _,folder,_=jobs._paths(root,ledger.STORE_ID)
     path=folder/'state.json'
     if not folder.exists():return
-    value,_=ledger.read_snapshot(path,max_bytes=store.max_ledger_bytes)
-    if (set(value)!={'schemaVersion','authority','storeSha256','reservations'}
-            or value['schemaVersion']!=ledger.SCHEMA or value['authority']!=store.authority
+    max_bytes=8*1024*1024 if locale_scope else None
+    value,_=ledger.read_snapshot(path,max_bytes=max_bytes)
+    version=value.get('schemaVersion') if isinstance(value,dict) else None
+    expected={'schemaVersion','authority','storeSha256','reservations'} | ({'reuseBudgetRoots','migration'} if version==ledger.REUSE_SCHEMA else set())
+    roots=(value.get('reuseBudgetRoots',()) if as_reuse_source else reuse_roots)
+    store=ledger.BudgetStore(root,value.get('authority') if authority is None else authority,
+                             max_ledger_bytes=max_bytes,reuse_roots=roots)
+    if (set(value)!=expected
+            or version not in {ledger.SCHEMA,ledger.REUSE_SCHEMA} or value['authority']!=store.authority
             or value['storeSha256']!=store.store_sha256 or not isinstance(value['reservations'],dict)):
         raise ValueError('Layer 2 budget identity changed')
+    if version==ledger.REUSE_SCHEMA:
+        ledger._migration(value['migration'])
+    if reuse_roots and (version!=ledger.REUSE_SCHEMA or value['reuseBudgetRoots']!=[str(Path(item).resolve()) for item in reuse_roots]):
+        raise ValueError('Layer 2 reuse ledger requires explicit v2 migration')
     for key,row in value['reservations'].items():
-        store._validate_row(key,row)
+        store._validate_row(key,row,version=version,
+                            reuse_roots=value.get('reuseBudgetRoots',()))
         if row['phase']!='result' or row['result']['executionStatus']=='outcome_unknown':
             raise ValueError('Layer 2 budget has unresolved reservations; reconcile before dispatch')
+        marker,_=ledger.read_snapshot(folder/(key+'.result.json'))
+        expected_marker={'reservationId':key,'result':row['result'],
+                         **({'settlement':row['settlement']} if 'settlement' in row else {})}
+        if marker!=expected_marker:
+            raise ValueError('Layer 2 budget result marker changed')
+        if as_reuse_source and 'settlement' in row:
+            raise ValueError('Layer 2 reuse requires a direct paid source root')
+        if as_reuse_source:
+            if row['result']['executionStatus']!='succeeded' or row['result']['usage']['requests']!=1:
+                raise ValueError('Layer 2 reuse requires a successful direct paid source root')
+            fingerprint=row['request']['inputSha256']
+            response=jobs._read(root/'responses'/(fingerprint+'.json'))
+            if (not isinstance(response,dict) or response.get('payloadSha256')!=fingerprint
+                    or response.get('reservationId')!=key
+                    or not isinstance(response.get('response'),dict)
+                    or jobs._digest(response)!=row['result']['receiptSha256']):
+                raise ValueError('Layer 2 direct paid response changed')
 
 
 
@@ -352,12 +380,26 @@ def check_budget(plan_dir: Path):
                     raise ValueError('Layer 2 group sizing changed')
                 checked = l2_budget.load_authorization(config, authorization, controller.code_identity(), stage["authorizationSha256"])
                 if checked.get('runtimeIdentity') is None or stage.get('runtimeIdentity') != checked['runtimeIdentity']:
-                    raise ValueError('Layer 2 runtime binding requires explicit v3 re-plan')
+                    raise ValueError('Layer 2 runtime binding requires an explicit current-schema re-plan')
+                frozen_reuse = ({locale:[str(path) for path in roots]
+                                 for locale,roots in checked.get('reuseBudgetRoots',{}).items()}
+                                if checked.get('reuseBudgetRoots') is not None else None)
+                if stage.get('reuseBudgetRoots') != frozen_reuse:
+                    raise ValueError('Layer 2 reuse roots differ from the signed authorization')
                 inspect_layer2_calls(config)
                 roots=([l2_budget.ledger_root(checked,locale) for locale in config.lanes]
                        if checked['scope']=='locale' else [checked['root']])
                 for root in roots:
-                    inspect_layer2_root(root,checked['value']['authority'],locale_scope=checked['scope']=='locale')
+                    locale = root.name if checked['scope']=='locale' else next(iter(config.lanes))
+                    approved = (checked.get('reuseBudgetRoots', {}).get(locale, ())
+                        if checked['scope']=='locale' else tuple(dict.fromkeys(
+                            item for name in sorted(checked.get('reuseBudgetRoots', {}))
+                            for item in checked['reuseBudgetRoots'][name])))
+                    inspect_layer2_root(root,checked['value']['authority'],locale_scope=checked['scope']=='locale',
+                                        reuse_roots=approved)
+                    for source_root in approved:
+                        inspect_layer2_root(source_root, None, locale_scope=checked['scope']=='locale',
+                                            as_reuse_source=True)
                 cap = checked["value"]["authority"]["globalBounds"]["costMicrousd"]
                 if checked["scope"] == "locale":
                     cap *= len(config.lanes)

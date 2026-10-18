@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "local-code-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "endedAt": "2026-10-17T15:34:56.349081+00:00",
+  "scope": "CUV preflight move focused offline tests",
+  "modelCalls": 0
+}

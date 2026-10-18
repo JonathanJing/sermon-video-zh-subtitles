@@ -1,0 +1,15 @@
+
+== 2026-10-14T22:06:23+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_with_openai_environment.py --environment dev --env-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.env.openai -- ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_machine_qc_clip_test.py --run-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/textqc-ko/run-out-r1 --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/textqc-ko/out-r1 --state-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/textqc-ko/state --locales ko --text-backend api --api-budget-authorization ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/plans/qc-ko/qc-ko/api-budget-authorization.json --workers 8 --expected-implementation 29a3fe552d16b1c58e167431c528eb38cc0540c6c998e81f7743f446af5c8ebb
+discover	pass	0.0
+ko.text-qc.prefetch	pass	40.0
+ko.text-qc	pass	2.6
+Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/20261014-220707-machine-qc-text
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+Digest: ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/run-reports/20261014-220707-machine-qc-text (3 files, 10 redactions)

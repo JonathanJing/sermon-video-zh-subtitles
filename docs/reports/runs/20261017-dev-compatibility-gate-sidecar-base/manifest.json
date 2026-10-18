@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dev-compatibility-gate-sidecar-base",
+  "runs": [
+    {
+      "label": "dev-compatibility-gate-sidecar-base-20261017",
+      "source": "~/.codex/worktrees/dev-compatibility-gate/sermon-video-zh-subtitles/artifacts/dev-compatibility-gate-sidecar-base-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dev-compatibility-gate-sidecar-base-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 305,
+      "truncated": false,
+      "sha256": "670850613c4aaf9d50830568541afd193608104142d17bdbe663347958124e26",
+      "redactions": {}
+    },
+    {
+      "run": "dev-compatibility-gate-sidecar-base-20261017",
+      "path": "test-venv.log",
+      "kind": "log",
+      "bytes": 112,
+      "truncated": false,
+      "sha256": "bb39335a0ea0b67d3e68b9ea7dc7eeff1fcb7be6aff549370255e90eaa40661e",
+      "redactions": {}
+    },
+    {
+      "run": "dev-compatibility-gate-sidecar-base-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 51,
+      "truncated": false,
+      "sha256": "e85b0cf43d10e96fca984acdc22f6a26f0cf5842e74c048865aa30307745d6b3",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

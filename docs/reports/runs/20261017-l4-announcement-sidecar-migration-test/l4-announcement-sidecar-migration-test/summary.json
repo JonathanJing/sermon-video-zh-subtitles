@@ -1,0 +1,23 @@
+{
+  "initialFailure": "dynamic old-path loader retained facade module without digest/build attributes; fixed by facade __getattr__ delegation, then 4 tests passed",
+  "checks": [
+    "three existing synthetic binding tests",
+    "old/new external-CWD CLI and module alias",
+    "raw implementation bytes equal",
+    "frozen-clock old/new sidecar, PNG and binding receipt bytes equal"
+  ],
+  "comparison": {
+    "status": "pass",
+    "base": "55d10a9e",
+    "implementationSha256": "75cbf7264edfdc51542668391403af8015472b45b051de9642c30a60cd8ed31f",
+    "files": {
+      "announcement-binding-receipts/week-1-zh-Hans.json": "22a7c42997e9c4181849f3d195759a74007507129427d55ec72766e3ff1e9eb3",
+      "posters/week-1/zh-Hans-8aaea6b48919b9bd03bf440d797f7052c95f51e45841d9845507f1cc2f8a2595.png": "8aaea6b48919b9bd03bf440d797f7052c95f51e45841d9845507f1cc2f8a2595",
+      "weekly-announcements-v1.json": "99555d6b7e3b12349e256b8dbcf42632731922adfbf27f64247a5fcb569c4320"
+    },
+    "byteEqual": true,
+    "networkRequests": 0
+  },
+  "modelCalls": 0,
+  "networkRequests": 0
+}

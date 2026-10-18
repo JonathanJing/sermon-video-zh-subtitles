@@ -66,6 +66,11 @@ def _input_identity(view, unit):
         # A failed back-translation QC receipt of this lane's passed chain (gate 4): a new receipt is a
         # new text job, which reopens the same repair chain for the groups it failed.
         selected['backTranslationQc.' + locale] = hashes['backTranslationQc.' + locale]
+    if phase == 'text' and locale and 'payloadCache.' + locale in hashes:
+        # Canonical execution v6 binds the immutable snapshot of the prior
+        # successful-group cache. The path remains private configuration; this
+        # digest prevents cache evidence changing underneath a durable job.
+        selected['payloadCache.' + locale] = hashes['payloadCache.' + locale]
     if locale:
         for name in ('policy', 'candidate', 'review')[:{'text': 1, 'audio': 3, 'page': 3}[phase]]:
             key = name + '.' + locale

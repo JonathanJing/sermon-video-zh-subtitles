@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-sidecar-review-p2-tests",
+  "runs": [
+    {
+      "label": "sidecar-review-p2-tests",
+      "source": "~/.codex/worktrees/sidecar-p1-integration/sermon-video-zh-subtitles/artifacts/sidecar-review-p2-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "sidecar-review-p2-tests",
+      "path": "node.log",
+      "kind": "log",
+      "bytes": 3752,
+      "truncated": false,
+      "sha256": "05e2fed06fd70a0d7a4854ed7463d5ae5788067fd963d88ffb51e93ceb8f248d",
+      "redactions": {
+        "email": 1
+      }
+    },
+    {
+      "run": "sidecar-review-p2-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 291,
+      "truncated": false,
+      "sha256": "1f2f3fce10e79d9f947a464d1a2644b513abb0084cb15b07b26c0df8237cd4fd",
+      "redactions": {}
+    },
+    {
+      "run": "sidecar-review-p2-tests",
+      "path": "python.log",
+      "kind": "log",
+      "bytes": 98,
+      "truncated": false,
+      "sha256": "13f578352a1a9d14a015a6e993eca34add142acc545983a14e0ba10f7aa196ca",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

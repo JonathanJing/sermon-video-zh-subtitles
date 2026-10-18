@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "runId": 39077688001,
+  "workflow": "Tongxing iOS",
+  "event": "pull_request ready_for_review",
+  "headSha": "d65d369fa1365475516716d68903131e844b0a38",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39077688001",
+  "scope": "Ready-state Tongxing iOS CI on PR #846",
+  "createdAt": "2026-10-17T23:05:58Z",
+  "completedAt": "2026-10-17T23:08:30Z",
+  "jobs": {
+    "changes": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:06:01Z",
+      "completedAt": "2026-10-17T23:06:13Z"
+    },
+    "contract-validation": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:06:21Z",
+      "completedAt": "2026-10-17T23:08:23Z"
+    },
+    "ios-validation": {
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T23:06:14Z",
+      "completedAt": "2026-10-17T23:06:14Z"
+    },
+    "native-client": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:08:26Z",
+      "completedAt": "2026-10-17T23:08:29Z"
+    }
+  },
+  "limitations": [
+    "ios-validation skipped by workflow routing",
+    "GitHub Actions CI does not establish physical device playback or venue acceptance"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-spark-wait-ready-move",
+  "runs": [
+    {
+      "label": "spark-wait-ready-move-tests-20261017",
+      "source": "~/.codex/worktrees/dev-icon-alignment-tool/sermon-video-zh-subtitles/artifacts/spark-wait-ready-move-tests-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "spark-wait-ready-move-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 372,
+      "truncated": false,
+      "sha256": "9e44f44d1d8af2cf168938a06ea6d7c24822e7578b7801d54d7d566cb790d2b3",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
