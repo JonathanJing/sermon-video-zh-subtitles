@@ -29,8 +29,8 @@ EXIT_CODE = 2
 
 def file_hashes(root: Path = ROOT) -> dict[str, str]:
     """Each hashed implementation file's own SHA-256, for explaining a mismatch."""
-    return {name: hashlib.sha256(waiver.implementation_path(name, root).read_bytes()).hexdigest()
-            for name in waiver.IMPLEMENTATION_FILES}
+    return {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+            for name in waiver.IMPLEMENTATION_PHYSICAL_FILES}
 
 
 def mismatch(expected: str, *, recorded_files: dict[str, str] | None = None, root: Path = ROOT) -> dict | None:

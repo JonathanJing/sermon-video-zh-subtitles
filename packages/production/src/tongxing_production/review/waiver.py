@@ -81,6 +81,13 @@ IMPLEMENTATION_FILES = (
     "scripts/machine_quality_release_basis.py",
     "scripts/machine_repair_ledger.py",
 )
+# Keep the recorded logical keys above and their public alias lookup unchanged.
+# A frozen implementation also includes each executable scripts/ facade, its
+# package target, the resolver that selects the target, and the guard that
+# refuses stale code before model or remote work. Reading guard bytes is not a
+# call back into its mismatch() function.
+IMPLEMENTATION_PHYSICAL_FILES = path_aliases.physical_closure_paths(
+    (*IMPLEMENTATION_FILES, "scripts/implementation_freeze.py"))
 MAX_UNDUBBED_SHARE = 0.05
 MAX_SOURCE_FALLBACK_SHARE = 0.05
 CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.9,
@@ -118,8 +125,9 @@ def implementation_path(name: str, root: Path | None = None) -> Path:
 
 def implementation_sha256(root: Path | None = None) -> str:
     digest = hashlib.sha256()
-    for name in IMPLEMENTATION_FILES:
-        digest.update(name.encode("utf-8") + b"\0" + implementation_path(name, root).read_bytes() + b"\0")
+    checkout = root or _review.current().core.repo_root
+    for name in IMPLEMENTATION_PHYSICAL_FILES:
+        digest.update(name.encode("utf-8") + b"\0" + (checkout / name).read_bytes() + b"\0")
     return digest.hexdigest()
 
 
