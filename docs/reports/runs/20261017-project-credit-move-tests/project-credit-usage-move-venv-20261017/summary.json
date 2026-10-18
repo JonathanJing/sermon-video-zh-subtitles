@@ -1,0 +1,6 @@
+{
+  "testCount": 6,
+  "testScope": "offline synthetic credit projection; legacy and new CLI equivalence",
+  "exitCode": 0,
+  "newModelCalls": 0
+}
