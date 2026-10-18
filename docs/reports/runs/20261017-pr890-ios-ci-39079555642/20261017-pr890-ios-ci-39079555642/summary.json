@@ -1,0 +1,39 @@
+{
+  "conclusion": "success",
+  "createdAt": "2026-10-17T23:34:34Z",
+  "headSha": "e6a9c9a92e8230cc44f80dfe2dcf6cd5072748f2",
+  "jobs": [
+    {
+      "completedAt": "2026-10-17T23:34:45Z",
+      "conclusion": "success",
+      "name": "changes",
+      "startedAt": "2026-10-17T23:34:37Z",
+      "status": "completed"
+    },
+    {
+      "completedAt": "2026-10-17T23:34:51Z",
+      "conclusion": "success",
+      "name": "native-client",
+      "startedAt": "2026-10-17T23:34:48Z",
+      "status": "completed"
+    },
+    {
+      "completedAt": "2026-10-17T23:34:45Z",
+      "conclusion": "skipped",
+      "name": "contract-validation",
+      "startedAt": "2026-10-17T23:34:46Z",
+      "status": "completed"
+    },
+    {
+      "completedAt": "2026-10-17T23:34:45Z",
+      "conclusion": "skipped",
+      "name": "ios-validation",
+      "startedAt": "2026-10-17T23:34:46Z",
+      "status": "completed"
+    }
+  ],
+  "status": "completed",
+  "updatedAt": "2026-10-17T23:34:52Z",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39079555642",
+  "workflowName": "Tongxing iOS"
+}
