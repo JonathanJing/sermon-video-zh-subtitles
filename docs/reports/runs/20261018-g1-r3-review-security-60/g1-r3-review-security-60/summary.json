@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "command": ".venv/bin/python -m pytest -q tests/test_tongxing_review_ports.py tests/test_implementation_freeze.py tests/test_qc_runtime_implementation_closure.py tests/test_tongxing_audio_ports.py tests/test_screen_transcript_folding.py tests/test_target_audio_rate_identity.py --tb=short",
+  "result": "60 passed, 175 subtests passed",
+  "note": "Independent byte perturbations to review/unmoved.py and review/backend.py changed W. Existing audio proxy, freeze and review port tests passed.",
+  "scope": "targeted code tests; no model, paid request, calibration, waiver or release"
+}
