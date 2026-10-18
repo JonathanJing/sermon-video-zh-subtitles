@@ -1,0 +1,6 @@
+{
+  "scope": "PR 1036 Local Prefect pilot at 51f5dfc0",
+  "sourceUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39095455816",
+  "result": "All five mock jobs completed successfully: three fresh-full-mock, fresh-source-mock, and local-mock.",
+  "limits": "Mock-only; no actual Spark, model, or production run."
+}
