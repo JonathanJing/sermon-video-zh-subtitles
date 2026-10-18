@@ -20,6 +20,26 @@ SPEC.loader.exec_module(MODULE)
 
 
 class AuditMiLMMTStateTest(unittest.TestCase):
+    def test_legacy_loader_keeps_two_checkouts_separate(self):
+        first = importlib.import_module("scripts.audit_milmmt_post_training_state")
+        with tempfile.TemporaryDirectory() as tmp:
+            checkout = Path(tmp) / "other-checkout"
+            second_impl = checkout / "experiments/milmmt/audit_post_training_state.py"
+            second_facade = checkout / "scripts/audit_milmmt_post_training_state.py"
+            second_impl.parent.mkdir(parents=True)
+            second_facade.parent.mkdir(parents=True)
+            second_impl.write_bytes(SCRIPT.read_bytes())
+            second_facade.write_bytes(LEGACY_SCRIPT.read_bytes())
+            spec = importlib.util.spec_from_file_location("milmmt_other_checkout", second_facade)
+            other = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(other)
+            other = sys.modules["milmmt_other_checkout"]
+            self.assertEqual(Path(other.__file__), second_impl.resolve())
+            self.assertEqual(other.DEFAULT_ROOT, checkout.resolve())
+            self.assertIsNot(other.audit, first.audit)
+            self.assertEqual(Path(first.__file__), SCRIPT)
+
     def test_legacy_and_new_cli_agree_from_another_working_directory(self):
         self.assertEqual(MODULE.DEFAULT_ROOT, REPO_ROOT)
         legacy = importlib.import_module("scripts.audit_milmmt_post_training_state")

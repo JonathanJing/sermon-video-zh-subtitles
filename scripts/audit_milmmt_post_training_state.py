@@ -1,11 +1,13 @@
 """Compatibility entry for the MiLMMT post-training evidence audit."""
 
+import hashlib
 import importlib.util
 from pathlib import Path
 import sys
 
 _IMPLEMENTATION_PATH = Path(__file__).resolve().parents[1] / "experiments/milmmt/audit_post_training_state.py"
-_MODULE_NAME = "_tongxing_milmmt_post_training_state_audit"
+_path_hash = hashlib.sha256(str(_IMPLEMENTATION_PATH).encode("utf-8")).hexdigest()
+_MODULE_NAME = f"_tongxing_milmmt_post_training_state_audit_{_path_hash}"
 _implementation = sys.modules.get(_MODULE_NAME)
 if _implementation is None:
     _spec = importlib.util.spec_from_file_location(_MODULE_NAME, _IMPLEMENTATION_PATH)
