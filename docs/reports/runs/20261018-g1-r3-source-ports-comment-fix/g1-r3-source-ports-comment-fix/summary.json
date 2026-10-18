@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "command": ".venv/bin/python -m unittest tests.test_tongxing_source_ports -v",
+  "result": "6 tests passed",
+  "note": "R3 QcRuntime comment no longer triggers source layer host-import text assertion; no production code changed.",
+  "scope": "targeted code tests; no model, paid request, calibration, waiver or release"
+}
