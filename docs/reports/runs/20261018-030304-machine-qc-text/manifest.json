@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-030304-machine-qc-text",
+  "runs": [
+    {
+      "label": "text",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-g1-qc-20261017/es/text",
+      "skipped": {
+        ".lock": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "text",
+      "path": "es/preflight.json",
+      "kind": "whole",
+      "bytes": 1352,
+      "truncated": false,
+      "sha256": "3f5de84c9dd3dcedb526a0658bddef989e22b5d8ef44a5386364505034dea216",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "text",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1805,
+      "truncated": false,
+      "sha256": "287d8a1947e0889b82145761ad1d04864acce8659dee9382c5807b9e9473f093",
+      "redactions": {
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "text",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 39,
+      "truncated": false,
+      "sha256": "447eed9358982b787391fcb580d67eee92bcd9c95c9c32664ef25417527af9f9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
