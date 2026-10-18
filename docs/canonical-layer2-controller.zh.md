@@ -85,6 +85,20 @@ validator 全通过且无 unknown marker 时写到新的 sibling 目录；它只
 不修改旧 root。v2 或更早、transport identity 不匹配的历史缓存不得重签。回滚 v6 时保留其 durable
 历史，换新的 productionRunId/jobRoot/output 用 v5 重跑，不在原 job 上降级配置。
 
+部分完成但 durable job 已失败时使用 `sermon-canonical-layer2-execution-v7`。它在 v6 上增加
+`layer2PartialRecovery`，每个 locale 显式绑定旧 `failedJobRoot + failedJobId`、失败轮目录和原始
+direct-paid budget root；新 `jobRoot` 与 `outputDirectory` 仍由 execution 配置给出。准入要求旧 job
+保持 `failed`、旧预算的每条 reservation 都是直接付费且已知成功，并把旧 job request/state、失败轮
+文件和预算账本摘要加入新 durable identity。`groupWorkers` 必须为 1。
+
+有 PR #868 success sidecar 的组走原 v6 路径；缺 sidecar 的已返回角色只有在 policy preview 的完整
+bounded payload、parsed/raw response、provider request id、直接付费 result marker 与 response record
+全部精确一致后，才在新 v4 目标账本写 `$0 reused`。随后照常重跑语义检查、语言插件和 failure
+collector；因此旧内容失败不会被误签为成功。旧 started marker 缺任一 parsed/raw/preview 文件、未知
+provider outcome、损坏 bytes 或 intermediate reused 来源都会在任何新请求前阻断。旧预算里没有对应
+operation 的未派发组才可按新授权付费。完成后在新 lane 写
+`partial-round-recovery-receipt.json`，绑定旧 failed job 与新 successor job；旧 state 不改写。
+
 默认顺序是排序后的可准入 locale，没有循环轮询或无限 Agent 对话。工作中可重复调用 tick
 检查，但 active/failed/unknown durable receipt 不会产生第二个相同工作。
 
