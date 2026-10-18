@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-milmmt-exp-leaf-facade-smoke",
+  "runs": [
+    {
+      "label": "milmmt-exp-leaf-facade-smoke",
+      "source": "~/.codex/worktrees/milmmt-exp-leaf/sermon-video-zh-subtitles/artifacts/milmmt-exp-leaf-facade-smoke",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "milmmt-exp-leaf-facade-smoke",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 286,
+      "truncated": false,
+      "sha256": "50404cc0e6ea71c767544697cc4176f78a667c6c23662ac53e2abdedd2d5c251",
+      "redactions": {}
+    },
+    {
+      "run": "milmmt-exp-leaf-facade-smoke",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 127,
+      "truncated": false,
+      "sha256": "c3e5f9a9fcf75dbed17808168377ad2522e752315da7a237243fb0a75b9f49bd",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

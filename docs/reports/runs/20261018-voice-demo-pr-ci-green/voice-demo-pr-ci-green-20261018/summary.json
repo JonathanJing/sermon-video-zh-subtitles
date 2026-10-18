@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "event": "pull_request",
+  "headSha": "975a33481e4cefabc3d5d7de79cc1a8ea8f14784",
+  "changes": "success",
+  "testGroup": {
+    "root-0": "success",
+    "root-1": "success",
+    "root-2": "success",
+    "root-3": "success",
+    "root-4": "success",
+    "root-5": "success",
+    "root-6": "success",
+    "root-7": "success"
+  },
+  "aggregateUnittest": "success",
+  "nativeContracts": "skipped_by_full_scope",
+  "productionRun": false,
+  "modelCalls": 0,
+  "realMediaUsed": false
+}

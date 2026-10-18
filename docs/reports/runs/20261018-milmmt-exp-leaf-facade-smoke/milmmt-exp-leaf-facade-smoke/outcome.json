@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-18T03:53:43.114026+00:00",
+  "endedAt": "2026-10-18T03:53:44.139833+00:00",
+  "scope": "MiLMMT audit and checkout-bound experiment facade smoke",
+  "headRevision": "18ae775f"
+}

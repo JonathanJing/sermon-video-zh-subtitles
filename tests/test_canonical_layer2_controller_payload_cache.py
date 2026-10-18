@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from scripts import canonical_durable_jobs as durable
 from scripts import canonical_layer2_controller as subject
+from scripts import sermon_review_budget as review_budget
 from scripts import sermon_workflow_jobs as jobs
 from tests import test_canonical_layer2_controller as controller_fixtures
 
@@ -72,6 +73,50 @@ class CanonicalLayer2PayloadCacheTests(unittest.TestCase):
         })
         self.base.save_config()
 
+    def enable_v7_partial_recovery(self):
+        self.enable_v6()
+        self.base.config_data["schemaVersion"] = subject.PARTIAL_RECOVERY_SCHEMA
+        self.base.config_data["layer2AutoRepair"]["groupWorkers"] = 1
+        failed_jobs = self.root / "failed-jobs"
+        identity = {"schemaVersion": "fixture-failed-layer2-v1", "locale": "zh-Hans"}
+        failed_job_id = jobs._digest(identity)
+        command = ["python", "canonical_layer2_controller.py", "worker", "--config", "old.json",
+                   "--locale", "zh-Hans", "--expected-job", failed_job_id]
+        request = {"schemaVersion": jobs.SCHEMA, "jobId": failed_job_id,
+                   "identity": identity, "command": command,
+                   "commandSha256": jobs._digest(command)}
+        folder = failed_jobs / failed_job_id
+        folder.mkdir(parents=True)
+        jobs._persist(folder / "request.json", request)
+        jobs._persist(folder / "state.json", {"schemaVersion": jobs.SCHEMA,
+            "jobId": failed_job_id, "status": "failed",
+            "requestSha256": jobs._digest(request), "returnCode": 1})
+        budget_root = self.root / "direct-budget"
+        bounds = dict.fromkeys(review_budget.METRICS, 10_000)
+        authority = {"approvalSha256": "a" * 64, "globalBounds": bounds,
+                     "unitBounds": bounds, "limits": {"contentRevisions": 2,
+                     "reviewAttemptsPerRevision": 2, "decisionProposals": 1}}
+        store = review_budget.BudgetStore(budget_root, authority)
+        chain = review_budget.chain_identity({
+            "sourceIdentitySha256": "1" * 64, "sourcePackageSha256": "2" * 64,
+            "anchorSha256": "3" * 64, "policySha256": "4" * 64,
+            "rubricSha256": "5" * 64, "targetLocale": "zh-Hans",
+            "workUnitId": "l2.zh-Hans.call-" + "6" * 64})
+        reserved = store.reserve(chain, operation_id="model." + "6" * 64,
+            kind="initial_generation", revision_id="initial", revision_number=1,
+            input_sha256="6" * 64, bounds=dict.fromkeys(review_budget.METRICS, 1))
+        store.mark_request(reserved["reservationId"])
+        store.record_result(reserved["reservationId"], {
+            "executionStatus": "succeeded", "contentStatus": "not_assessed",
+            "receiptSha256": "7" * 64, "usage": dict.fromkeys(review_budget.METRICS, 1)})
+        self.base.config_data["layer2PartialRecovery"] = {
+            "schemaVersion": subject.PARTIAL_RECOVERY_CONFIG_SCHEMA,
+            "locales": {"zh-Hans": {"failedJobRoot": str(failed_jobs),
+                "failedJobId": failed_job_id, "roundRoot": str(self.prior),
+                "directPaidBudgetRoot": str(budget_root)}}}
+        self.base.save_config()
+        return failed_jobs, failed_job_id, budget_root
+
     @contextmanager
     def active(self):
         config = subject.load_configuration(self.base.path)
@@ -106,6 +151,61 @@ class CanonicalLayer2PayloadCacheTests(unittest.TestCase):
         command = subject._worker_command(config, "zh-Hans", jobs._digest(current), "c" * 64)
         self.assertEqual(subject._command_option(command, "--expected-payload-cache"), cache["identity"])
         self.assertTrue(str(cache["root"]).startswith(str(self.root.resolve())))
+
+    def test_v7_partial_round_binds_failed_job_round_budget_and_successor_command(self):
+        self.make_prior()
+        failed_jobs, failed_job_id, budget_root = self.enable_v7_partial_recovery()
+        config = subject.load_configuration(self.base.path)
+        recovery = config.partial_recovery["zh-Hans"]
+        self.assertEqual(recovery["failedJobId"], failed_job_id)
+        self.assertEqual(recovery["budgetRoot"], budget_root.resolve())
+        self.assertGreater(recovery["snapshot"]["directBudgetReservations"], 0)
+        view = subject.package_view(config)
+        self.assertEqual(view["packageIdentities"]["partialRecovery.zh-Hans"],
+                         recovery["identity"])
+        successor = jobs._digest(durable.identity(view, config.run_id, "text.zh-Hans"))
+        command = subject._worker_command(config, "zh-Hans", successor, "c" * 64)
+        self.assertEqual(subject._command_option(command, "--expected-partial-recovery"),
+                         recovery["identity"])
+        old_state = jobs._read(failed_jobs / failed_job_id / "state.json")
+        self.assertEqual(old_state["status"], "failed")
+
+    def test_v7_partial_round_rejects_nonfailed_or_unknown_predecessor(self):
+        self.make_prior()
+        failed_jobs, failed_job_id, _ = self.enable_v7_partial_recovery()
+        state_path = failed_jobs / failed_job_id / "state.json"
+        state = jobs._read(state_path)
+        state["status"] = "running"
+        jobs._persist(state_path, state)
+        with self.assertRaisesRegex(ValueError, "requires_failed_bound_job"):
+            subject.load_configuration(self.base.path)
+        state["status"] = "failed"
+        jobs._persist(state_path, state)
+        marker = self.prior / "group-9999-astra.started.json"
+        marker.write_text(json.dumps({"status": "unknown"}))
+        with self.assertRaisesRegex(ValueError, "unknown_paid_outcome"):
+            subject.load_configuration(self.base.path)
+
+    def test_v7_partial_round_success_writes_bound_recovery_receipt_and_keeps_old_failed(self):
+        self.make_prior()
+        failed_jobs, failed_job_id, _ = self.enable_v7_partial_recovery()
+        caller = self.api_caller(forbidden=True)
+        caller.validate_recovery_source = lambda *_: None
+        with patch.object(subject, "code_identity", return_value="c" * 64), \
+             self.active() as (config, code, key, _):
+            recovery = config.partial_recovery["zh-Hans"]
+            result = subject.execute(
+                config.path, "zh-Hans", config.sha256, code, key,
+                caller=caller, api_key="fixture-key",
+                expected_payload_cache=config.payload_cache["zh-Hans"]["identity"],
+                expected_partial_recovery=recovery["identity"])
+        self.assertEqual(result["status"], "machine_review_pass_human_review_pending")
+        receipt = jobs._read(self.base.output / "partial-round-recovery-receipt.json")
+        self.assertEqual(receipt["schemaVersion"], subject.PARTIAL_RECOVERY_RECEIPT_SCHEMA)
+        self.assertEqual(receipt["predecessorFailedJobId"], failed_job_id)
+        self.assertEqual(receipt["successorJobId"], key)
+        self.assertFalse(receipt["humanApproval"])
+        self.assertEqual(jobs._read(failed_jobs / failed_job_id / "state.json")["status"], "failed")
 
     def test_prior_bytes_change_after_admission_blocks_before_model(self):
         self.make_prior()

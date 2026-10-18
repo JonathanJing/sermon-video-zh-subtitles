@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-gate-c022-ios-ci",
+  "runs": [
+    {
+      "label": "t6-gate-ios-c022-20261018",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-gate-ios-c022-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-gate-ios-c022-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 273,
+      "truncated": false,
+      "sha256": "aec816d2523b623a2195a4e070341e606cd2a2d5bd91a82a57f77353c4fd4f21",
+      "redactions": {}
+    },
+    {
+      "run": "t6-gate-ios-c022-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 334,
+      "truncated": false,
+      "sha256": "2703b370ef41bcba0d23df2b1f1d6b50ebf831b949e9e87202a25946058e7fe5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

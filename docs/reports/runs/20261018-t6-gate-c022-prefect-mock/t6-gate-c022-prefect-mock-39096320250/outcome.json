@@ -1,0 +1,17 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "headSha": "c0224028f1ae054b73fb86dd5984f5503578617e",
+  "workflow": "Local Prefect pilot",
+  "runId": 39096320250,
+  "workflowConclusion": "success",
+  "jobs": {
+    "local-mock": "success",
+    "fresh-source-mock": "success",
+    "fresh-full-mock": "3 success"
+  },
+  "publication": "not_run",
+  "realProduction": "not_run",
+  "spark": "not_run"
+}

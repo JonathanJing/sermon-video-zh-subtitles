@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-gate-51f-prefect-mock",
+  "runs": [
+    {
+      "label": "t6-gate-prefect-51f-20261018",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-gate-prefect-51f-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-gate-prefect-51f-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 280,
+      "truncated": false,
+      "sha256": "3a792efa0e03cb696dd88823913c465bb97a9abd0a6593d1e98525be915c5a9c",
+      "redactions": {}
+    },
+    {
+      "run": "t6-gate-prefect-51f-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 343,
+      "truncated": false,
+      "sha256": "e85f8f795b88a8ad77686c554068cc4774616b3aefb578d3a539a06ea2378758",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

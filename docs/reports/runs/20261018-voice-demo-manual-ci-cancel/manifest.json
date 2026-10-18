@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-voice-demo-manual-ci-cancel",
+  "runs": [
+    {
+      "label": "voice-demo-manual-ci-cancel-20261018",
+      "source": "~/.codex/worktrees/voice-demo-package-leaf/sermon-video-zh-subtitles/artifacts/test-runs/voice-demo-manual-ci-cancel-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "voice-demo-manual-ci-cancel-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 454,
+      "truncated": false,
+      "sha256": "34d48fdd6d949305a26d4f2054130e5249cabf8ff97e42e0c3c55b4969b789d0",
+      "redactions": {}
+    },
+    {
+      "run": "voice-demo-manual-ci-cancel-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 589,
+      "truncated": false,
+      "sha256": "cde5477197c7cbfc5b8cf4af56de5e8db60476401c261d5a616593c597aaf2f6",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

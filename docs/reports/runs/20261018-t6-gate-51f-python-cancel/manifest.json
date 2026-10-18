@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-gate-51f-python-cancel",
+  "runs": [
+    {
+      "label": "t6-gate-python-cancel-51f-20261018",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-gate-python-cancel-51f-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-gate-python-cancel-51f-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 281,
+      "truncated": false,
+      "sha256": "ee35aaf218559e9b4a011450d8cb9757b3254d85d6ac027d4aa979216f958730",
+      "redactions": {}
+    },
+    {
+      "run": "t6-gate-python-cancel-51f-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 352,
+      "truncated": false,
+      "sha256": "ca7cb9ee39868a43751834cde14a3ba1deb413e740600f5723a81116a7c018f0",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

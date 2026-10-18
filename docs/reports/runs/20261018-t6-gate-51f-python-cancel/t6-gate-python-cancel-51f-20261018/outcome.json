@@ -1,0 +1,11 @@
+{
+  "deliveryType": "test",
+  "status": "cancelled",
+  "exitCode": null,
+  "headSha": "51f5dfc004ab15426885568a6101e3a222c2e61a",
+  "workflow": "Python tests",
+  "runId": 39095455886,
+  "workflowConclusion": "cancelled",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}
