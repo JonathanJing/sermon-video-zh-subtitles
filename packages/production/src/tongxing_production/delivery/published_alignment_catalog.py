@@ -100,11 +100,19 @@ def _bind(public, catalog, page_id, *, machine):
                 and binding.get('algorithmVersion') == 'spectral-landmarks-v1'
                 and binding.get('captureSeconds') == 10 and binding.get('pageId') == page_id
                 and binding.get('trackSha256') == assets['audio']['sha256'], 'Invalid fingerprint binding')
-        require(content.get('sourceMediaSha256') == binding['sourceSha256']
+        source_window = content.get('sourceWindow')
+        start, end = binding.get('sourceStartSeconds'), binding.get('sourceEndSeconds')
+        require(isinstance(source_window, dict)
+                and isinstance(start, (int, float)) and not isinstance(start, bool)
+                and isinstance(end, (int, float)) and not isinstance(end, bool)
+                and 0 <= start < end
+                and content.get('sourceMediaSha256') == binding['sourceSha256']
+                and source_window.get('mediaSha256') == binding['sourceSha256']
+                and source_window.get('startSeconds') == start
+                and source_window.get('endSeconds') == end
                 and content.get('englishSourcePackageJsonSha256') == page['sourceIdentitySha256']
                 and content.get('pageId') == page_id and content.get('targetLocale') == locale
-                and binding.get('sourceStartSeconds') == 0
-                and binding.get('sourceEndSeconds') == content.get('durationSeconds')
+                and end - start == content.get('durationSeconds')
                 and content['durationSeconds'] > 0, 'Fingerprint source/window mismatch')
         if machine:
             # Landmark alignment maps the dub 1:1 onto source time; a dub on its own
@@ -122,7 +130,8 @@ def _bind(public, catalog, page_id, *, machine):
         require(index.get('schemaVersion') == 'sermon-landmark-index-v1'
                 and all(index.get(k) == binding[k] for k in ('algorithmVersion', 'pageId', 'sourceSha256', 'trackSha256',
                                                             'sourceStartSeconds', 'sourceEndSeconds'))
-                and index.get('durationSeconds') == content['durationSeconds'], 'Index identity mismatch')
+                and index.get('durationSeconds') == end - start == content['durationSeconds'],
+                'Index identity mismatch')
         require('audio' in target['capabilities'], 'Missing audio capability')
         require(target.get('audioFingerprint', binding) == binding, 'Existing binding conflicts')
         target['audioFingerprint'] = copy.deepcopy(binding)
