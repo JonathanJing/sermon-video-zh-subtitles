@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/scripts/run_target_language_models.py", line 18, in <module>
+    raise SystemExit(_implementation.main())
+                     ~~~~~~~~~~~~~~~~~~~~^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/models.py", line 2024, in main
+    print(json.dumps(controller.drive(config.path, locale,
+                     ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+                     budget_authorization=<redacted>, sort_keys=True))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/controller.py", line 1146, in drive
+    controller = Controller(config_path, mode='deterministic_execute', budget_authorization=<redacted>
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/controller.py", line 693, in __init__
+    budget_tools.verify_runtime(self.budget_authorization)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/budget.py", line 136, in verify_runtime
+    require(selected_runtime_identity(key) == frozen, 'layer2_runtime_identity_changed')
+            ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/budget.py", line 97, in selected_runtime_identity
+    require(route is not None, 'layer2_runtime_requires_explicit_launcher')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/budget.py", line 92, in require
+    raise ValueError(code)
+ValueError: layer2_runtime_requires_explicit_launcher
+exit=1
