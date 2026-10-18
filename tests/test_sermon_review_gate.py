@@ -3,6 +3,7 @@ import copy
 from dataclasses import replace
 import json
 from pathlib import Path
+import sys
 import unittest
 from unittest.mock import Mock
 
@@ -92,6 +93,13 @@ def change_review(snapshot, mutate, *, inventory=True):
 
 
 class GateEvaluationTests(unittest.TestCase):
+    def test_legacy_import_names_the_package_module(self):
+        from tongxing_production.text import strict_review_gate
+
+        self.assertIs(g, strict_review_gate)
+        self.assertIs(sys.modules['scripts.sermon_review_gate'], strict_review_gate)
+        self.assertIs(g.c, c)
+
     def setUp(self):
         self.snapshot = fixture()
 
