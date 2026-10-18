@@ -1,0 +1,7 @@
+{
+  "scope": "Superseded initial-head Python tests workflow for draft PR 1036",
+  "sourceUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39095379635",
+  "finding": "Changes and test groups were cancelled; unittest aggregate failed only because CHANGE_RESULT and TEST_GROUP_RESULT were cancelled.",
+  "supersededBy": "51f5dfc004ab15426885568a6101e3a222c2e61a",
+  "limits": "Terminal cancellation is a workflow receipt, not validation. No model, Spark, paid API, or publication claim."
+}
