@@ -264,6 +264,20 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
 
 不要把 cookies 文件加入 Git、GCS artifact 或 automation prompt。
 
+## Broadcast Message 网盘上传检查（2026-10-18 起）
+
+周六晚间另有一份证道录像上传到公开 Google Drive 文件夹「Broadcast Message Files」：<https://drive.google.com/drive/folders/1PsAKaZhYCXsNfzYFkFBTng66N1tPw1sF>（文件夹 ID `1PsAKaZhYCXsNfzYFkFBTng66N1tPw1sF`，所有者在公开视图中隐藏）。首个观察样本是 `20261018 BROADCAST MESSAGE.mp4`（`video/mp4`，1,085,721,714 字节），页面内嵌的两个时间戳为洛杉矶时间 2026-10-17 18:47:54 与 18:50:01；未登录视图不标明哪个是创建、哪个是修改时间，上传落在这两分钟内。
+
+本机 Claude 定时任务 `sermon-drive-upload-watch`（「每周六 证道视频上传检查」）只检测上传，规则如下：
+
+- **时间。** cron `*/10 18-19 * * 6`（本机洛杉矶时间），实际检查窗口为周六 18:40–20:00；18:40 前的唤醒直接退出，最后一次约 19:50 加调度延迟。App 关闭时到点不跑，下次打开时补跑。
+- **读取方式。** 匿名 HTTP GET 文件夹页面，解析内嵌的 `_DRIVE_ivd` 文件列表（文件 ID、名称、MIME、大小、两个毫秒时间戳），不用浏览器、不登录 Google、不读 cookies。
+- **匹配规则。** 本周文件名须以即将到来的周日日期 `YYYYMMDD` 开头（周六运行即次日，例如 10/24 检查 `20261025`）。本周（上一个周日 00:00 后）上传但名称不符的文件单独列为 `otherRecentFiles`，提示可能改名，不算命中。
+- **结果与通知。** `found_new` 首次发现时发 macOS 通知并推送一行（文件名 · GB · 最早时间 PT），同一文件 ID 只通知一次；19:45 后仍无匹配为 `missing_final`，每周只通知一次并列出文件夹现有文件；连续两次读取失败（文件夹转私有或页面格式改变）通知 `error`，不静默跳过。通知状态记在任务目录的 `state.json`。
+- **位置。** 脚本与提示词只在本机 `~/.claude/scheduled-tasks/sermon-drive-upload-watch/`（`check_upload.py`、`SKILL.md`、`state.json`），不在仓库内；可用 `--now <ISO 时间> --no-notify` 模拟某一时刻、`--ignore-window` 跳过窗口检查。
+
+边界：该检查只读，不下载视频，不写 GCS state，不建立 Layer 1 来源身份，也不启动任何生产阶段。检测到文件不等于确认它与周六直播或周日讲道同篇，也不等于确认可用于生产；要把它作为来源，须另行核实使用授权与来源署名，并按[四层合同](multilingual-production-interfaces.zh.md)从 Layer 1 开始绑定 source ID、URL、媒体哈希与时长。
+
 ## 完成标准
 
 下列条件只能建立 **`dual_pdf` 范围完成**：
