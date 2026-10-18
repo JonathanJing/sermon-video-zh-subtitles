@@ -117,6 +117,8 @@ operation 的未派发组才可按新授权付费。完成后在新 lane 写
 ```
 
    组号是运行文件 `group-NNNN` 的 1 起序号，也可写确切的 `translationGroupId`。冻结 policy 与旧候选不同时（例如插件改过），还要 `priorPolicy` 和旧运行的 `priorRulePreflight`（`rule-preflight.json`）。
+
+   没有候选、只有一轮跑完的 runner 输出时（例如修复循环停下、多数组已通过复核的 `repair-rounds/round-001`，没有 payload cache 成功收据也可以），把 `priorCandidate` 换成 `"priorRound": "<轮目录>"`。每个沿用组要有译者和复核缓存，且各自与保存的 raw 响应一致（请求 ID、payload 哈希）；那一轮失败、缺结果或格式坏的组必须列出；轮里有开始了却没有缓存或 raw 的调用（结果未知）时整条修订拒绝。轮里自带的 `rule-preflight.json` 用作旧规则包。决定行这时绑定该轮的 `group-failures.json`（或 `request.json`）。决定只按行哈希绑定，`decisions.ndjson` 之后追加的行不改变 job 身份。
 3. 复制执行配置，`schemaVersion` 改为 `sermon-canonical-layer2-execution-v8`（v3 字段加 `layer2GroupRevision: {"es": "revision/es.json"}`；不接受 v5–v7 字段和 `sourceMeaningNotes`），该语言的 `outputDirectory` 换到新目录（如 `text-r2/es`），`jobRoot` 不变。请求文件和它指向的每个文件的字节进入 `text.<locale>` 的输入身份（`packageIdentities.groupRevision.<locale>`），换列表或备注就是新 job。为新配置签发 Layer 2 预算（预算根按配置隔离：`.<jobRoot>.layer2-budget-revision-<配置哈希>`），照常 `tick`/`drive`。
 
 派发前（shadow tick、execute tick 和 worker 各查一次，都不调用模型）：
@@ -124,17 +126,17 @@ operation 的未派发组才可按新授权付费。完成后在新 lane 写
 - 旧候选必须通过当前 validator，并绑定它自己的 policy；policy 变化只允许 `plugin_only_migration` 或 `approval_rebinding`（`policy_preview.classify_policy_change`，与 `compare_previews` 同一组字段），提示词、模型、术语、经文等面向模型的字段变了就拒绝（`group_revision_model_facing_policy_changed`）。
 - 规则包（`rule-preflight`）只允许插件的数字、名称和经文引文形式变化；某个未列出的组自己的经文引文规则变了，它必须进列表。
 - 当前插件在本地对旧候选的**每一组**重跑。未列出的组现在不通过时，tick 返回 `blocked`、`group_revision_unlisted_groups_fail_current_checks`，并列出这些组号（worker 另写 `group-revision-plugin-gate.json`），不建 job、不付费；把它们加进列表（或修插件）后重来。不会静默放过。
-- 决定行必须存在、`artifact_bound` 且绑定旧候选的确切字节。
+- 决定行必须存在、`artifact_bound` 且绑定旧来源的确切字节（候选文件，或该轮的 `group-failures.json`／`request.json`）。
 
-执行：列出的组按 `groupWorkers` 并行，各发新的译者请求（提示里带 `operatorRevision`：旧译文、其哈希和备注，标明旧译文已被否、备注要对照英文核实）和独立复核请求，再过插件；未列出的组直接取旧候选那一行（译文、coverage、复核结论和原请求 ID），不调用模型、不重新复核，也不在轮目录留下任何文件。列出的组若在门 1/门 2 失败，进入同一个有界修复循环，但：
+执行：列出的组按 `groupWorkers` 并行，各发新的译者请求（提示里带 `operatorRevision`：旧译文、其哈希和备注，标明旧译文已被否、备注要对照英文核实）和独立复核请求，再过插件；未列出的组直接取旧候选（或旧轮缓存）那一行（译文、coverage、复核结论和原请求 ID），不调用模型、不重新复核，也不在轮目录留下任何文件。列出的组若在门 1/门 2 失败，进入同一个有界修复循环，但：
 
 - 修复账本另起一条链（lineage 加 `groupRevisionSha256`，绑定请求、简报和决定行），不会把同 policy 已通过的链误当成结果；
 - 修复额度按列表算：每个列出的组最多 2 对译者／复核（`REPAIR_PAIRS_PER_LISTED_GROUP`），每次按强制的最坏 token 数预留，再受预算授权剩余美元上限约束（先扣掉首轮每组一对），第一次计算时冻结在 `group-revision-allowance.json`；不再用“首轮调用的 10%”（重放时为 0，10-18 只够约 4 组）。每单元 4 次、指纹重现和耐心规则照旧；
 - 列出的组同一失败码分散出现不算系统性（它们本来就是因同类问题被挑出来的），连续早停照旧。
 
-结果是普通的 `sermon-target-language-candidate-v2`：仍由 `run_language_plugin` + `admit_evidence` 准入（插件再对全部组跑一次），`status=machine_review_pass_human_review_pending`、`humanApproval` 不变，文本质检、语音任务、音频包和发布 v4 按原样消费；整篇文本质检仍要在这个最终候选上跑。准入前核对每个未列出的组与旧候选逐字节相同、请求 ID 不变，再在 lane 写 `group-revision-receipt.json`（[schema](../schemas/sermon-layer2-group-revision-receipt-v1.schema.json)）：新旧候选与 policy 哈希、policy 变化分类、规则包变化、插件门报告哈希、决定行（哈希、谁、何时、问题与选择）、每个修订组的新旧译文哈希、备注哈希和新请求 ID、每个沿用组的译文哈希、旧组哈希和证据行哈希，以及修复额度、修复收据和账本链头。它是机器证据，`releaseEligible=false`、`humanApproval=false`。
+结果是普通的 `sermon-target-language-candidate-v2`：仍由 `run_language_plugin` + `admit_evidence` 准入（插件再对全部组跑一次），`status=machine_review_pass_human_review_pending`、`humanApproval` 不变，文本质检、语音任务、音频包和发布 v4 按原样消费；整篇文本质检仍要在这个最终候选上跑。准入前核对每个未列出的组与旧来源逐字节相同、请求 ID 不变，再在 lane 写 `group-revision-receipt.json`（[schema](../schemas/sermon-layer2-group-revision-receipt-v1.schema.json)）：旧来源（种类与哈希；旧轮另记每组缓存哈希）、新候选与新旧 policy 哈希、policy 变化分类、规则包变化、插件门报告哈希、决定行（哈希、谁、何时、问题与选择）、每个修订组的新旧译文哈希、备注哈希和新请求 ID、每个沿用组的译文哈希、旧组哈希和证据行哈希，以及修复额度、修复收据和账本链头。它是机器证据，`releaseEligible=false`、`humanApproval=false`。
 
-离线验证：`tests/test_layer2_group_revision.py`（组号接口、沿用绑定、插件变化门、并行与额度，以及 402 句里改 3 组、其余零调用的端到端）。没有真实模型、付费金额或翻译质量结论。
+离线验证：`tests/test_layer2_group_revision.py`（组号接口、沿用绑定、插件变化门、并行与额度、从失败轮修订，以及 402 句里改 3 组、其余零调用的端到端）。没有真实模型、付费金额或翻译质量结论。
 
 默认顺序是排序后的可准入 locale，没有循环轮询或无限 Agent 对话。工作中可重复调用 tick
 检查，但 active/failed/unknown durable receipt 不会产生第二个相同工作。
