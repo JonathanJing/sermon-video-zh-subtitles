@@ -80,4 +80,3 @@ def review_15030286_group(policy: dict, english_units: list[dict], group: dict, 
                    + ("; " + "; ".join(problems) if problems else "; pass"))
             if row["checkId"] == "untranslated_source" else row for row in reviews]
     return reviews
-
