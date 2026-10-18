@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-a4-r3-da2-sync-38",
+  "runs": [
+    {
+      "label": "a4-r3-da2-sync-38",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/local-runs/a4-r3-da2-sync-38",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "a4-r3-da2-sync-38",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 146,
+      "truncated": false,
+      "sha256": "6a4e0092240dc4dbece169e9977c557b717a111ef55ba05e9cac001c64b18276",
+      "redactions": {}
+    },
+    {
+      "run": "a4-r3-da2-sync-38",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 282,
+      "truncated": false,
+      "sha256": "06c6a2ca7cf8d8bb9a69fdb12037493d2ff78c1d175839b46216d9ec960c5de1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
