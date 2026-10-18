@@ -344,8 +344,18 @@ class BudgetedCaller:
         """Return immutable direct-paid evidence for a just-settled exact payload."""
         self.verify_execution(key)
         fingerprint, _, _, _, request = self._call_binding(payload)
-        return self._direct_paid_provenance(self.root, request, fingerprint, response,
-            max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
+        max_bytes = LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None
+
+        def read_current_result():
+            # Other group workers settle into this same mutable locale ledger. Hold
+            # its writer lock while collecting the exact result, marker and response
+            # closure so a legitimate atomic state.json replacement cannot look like
+            # tampering. Prior reuse roots remain lock-free and immutable by contract.
+            with self.store._locked():
+                return self._direct_paid_provenance(
+                    self.root, request, fingerprint, response, max_bytes=max_bytes)
+
+        return self._ledger(read_current_result)
 
     def record_reuse(self, key, payload, response, provenance):
         """Validate an approved direct-paid root, then atomically record a free exact hit."""
