@@ -113,7 +113,9 @@ INSTRUCTIONS = {
                                "keep each utterance at most 180 characters (split at natural clause boundaries), "
                                "use the policy register, and keep every number, name and reference the English says."),
     "malformed_model_output": ("The prior reply broke the JSON contract. Return targetUtterances as a JSON array "
-                               "of plain strings and one coverage row per source unit with an exact targetText substring."),
+                               "of plain strings and one coverage row per source unit with an exact targetText substring. "
+                               "Keep exactly this group's translationGroupId and sourceUnitIds; never merge a "
+                               "neighbouring unit into this group."),
 }
 SYSTEMIC_MINIMUM_GROUPS = 3
 SYSTEMIC_FRACTION = 0.05  # 15030286 only: deliberate fragment units (Jony 2026-10-18: fix only the failed groups), was 0.01

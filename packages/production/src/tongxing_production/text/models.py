@@ -986,11 +986,13 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
                 f"Partial repair failed cache is missing or changed: {group_id}")
         saved = producer._load(failed_cache)
         prior_result = saved.get("result")
+        # A malformed reply may name other units; it is still this group's cache by position and hash.
+        malformed = row["failureReason"].startswith("malformed_model_output")
         require(saved.get("model") == model_roles[row["failedRole"]]
                 and isinstance(saved.get("payloadSha256"), str)
                 and isinstance(prior_result, dict)
-                and prior_result.get("translationGroupId") == group_id
-                and prior_result.get("sourceUnitIds") == group["sourceUnitIds"],
+                and (malformed or (prior_result.get("translationGroupId") == group_id
+                                   and prior_result.get("sourceUnitIds") == group["sourceUnitIds"])),
                 f"Partial repair failed cache has different group identity: {group_id}")
         if "backTranslationQc" in row:
             # The QC rejected exactly the text this reviewer cache holds, not some other revision.
@@ -1796,10 +1798,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                               depends_on=[translator_span], executor_type="deterministic_program",
                               work_unit_id=f"l2.{request['targetLocale']}.{stem}.draft_validation") as draft_span:
             draft = translated["result"]
-            require(draft.get("translationGroupId") == group["translationGroupId"]
-                    and draft.get("sourceUnitIds") == group["sourceUnitIds"],
-                    f"Astra group identity changed: {stem}")
             try:
+                # A reply naming other units (a merged neighbour) breaks the output contract like
+                # missing coverage: under collection it fails only this group, for one more repair.
+                require(draft.get("translationGroupId") == group["translationGroupId"]
+                        and draft.get("sourceUnitIds") == group["sourceUnitIds"],
+                        f"Astra group identity changed: {stem}")
                 draft_text = "".join(_utterances(draft.get("targetUtterances"), group["sourceUnitIds"]))
                 require(isinstance(draft.get("coverage"), list)
                         and [row.get("sourceUnitId") for row in draft["coverage"]] == group["sourceUnitIds"]
@@ -1899,10 +1903,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                               depends_on=[reviewer_span], executor_type="deterministic_program",
                               work_unit_id=f"l2.{request['targetLocale']}.{stem}.review_validation") as validation_span:
             result = reviewed_response["result"]
-            require(result.get("translationGroupId") == group["translationGroupId"]
-                    and result.get("sourceUnitIds") == group["sourceUnitIds"],
-                    f"Sol group identity changed: {stem}")
             try:
+                require(result.get("translationGroupId") == group["translationGroupId"]
+                        and result.get("sourceUnitIds") == group["sourceUnitIds"],
+                        f"Sol group identity changed: {stem}")
                 utterances = _utterances(result.get("targetUtterances"), group["sourceUnitIds"])
                 final_text = "".join(utterances)
                 coverage = result.get("coverage")

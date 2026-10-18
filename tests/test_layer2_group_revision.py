@@ -199,8 +199,9 @@ class RevisionFixture:
 class Models:
     """Synthetic translator/reviewer: listed groups get new text; ``fail_first`` fail one review."""
 
-    def __init__(self, fail_first=(), hold_for=0, always_fail=(), text="修订"):
+    def __init__(self, fail_first=(), hold_for=0, always_fail=(), text="修订", merge_first=()):
         self.calls, self.lock = [], threading.Lock()
+        self.merge_first, self.merged = set(merge_first), set()
         self.fail_first, self.failed = set(fail_first), set()
         self.always_fail, self.text = set(always_fail), text
         self.active = self.peak = 0
@@ -226,6 +227,12 @@ class Models:
                                    for unit, text in zip(data["sourceUnitIds"], utterances)]}
             if reviewer:
                 answer["semanticReview"] = copy.deepcopy(PASSING_REVIEW)
+                with self.lock:
+                    merge = data["translationGroupId"] in self.merge_first - self.merged
+                    self.merged |= {data["translationGroupId"]} if merge else set()
+                if merge:
+                    # The 2026-10-18 ko failure: the reviewer folded the next unit into this group.
+                    answer["sourceUnitIds"] = data["sourceUnitIds"] + ["block-1-u999"]
                 with self.lock:
                     fail = data["translationGroupId"] in self.fail_first - self.failed
                     if fail:
@@ -516,6 +523,61 @@ class PriorRoundTests(unittest.TestCase):
         self.assertEqual(carried["priorCacheSha256"]["reviewer"],
                          group_revision._file_sha256(round_dir / f"group-{carried['group']:04d}-sol.json"))
         self.assertEqual([row["group"] for row in receipt["revisedGroups"]], failed)
+
+
+class ResumeFromStoppedRevisionTests(unittest.TestCase):
+    def test_rounds_of_a_failed_revision_job_carry_their_passing_groups_and_merged_units_are_repaired(self):
+        fixture = RevisionFixture(self, 30)
+        failed = [4, 11, 12, 27]
+        ids = {index: fixture.plan[index - 1]["translationGroupId"] for index in failed}
+        v3 = fixture.execution(revision=False, job_root="jobs-f1", output="text-f1/zh-Hans", name="execution-f1.json")
+        with self.assertRaisesRegex(ValueError, "layer2_auto_repair_stopped"):
+            fixture.run_worker(Models(always_fail=list(ids.values()), text="初译"), v3)
+        f1 = fixture.root / "text-f1" / "zh-Hans" / "repair-rounds" / "round-001"
+        decision = fixture.decide(governs=f1 / "group-failures.json")
+        # Revision job g1: groups 11 and 12 fail their first review; the job then dies in round 2
+        # (here: the plugin raises for group 11) after group 11's repair returned. No unknown outcome.
+        fixture.revision_request(failed, decision=decision, prior={"priorRound": "../text-f1/zh-Hans/repair-rounds/round-001"})
+        g1 = fixture.execution(job_root="jobs-g1", output="text-g1/zh-Hans", name="execution-g1.json", workers=1)
+        review = subject.models._plugin_group_review
+
+        def crashing(policy, request, plugin_path, row, **kwargs):
+            if row["translationGroupId"] == ids[11]:
+                raise RuntimeError("worker died")
+            return review(policy, request, plugin_path, row, **kwargs)
+        with patch.object(subject.models, "_plugin_group_review", crashing), \
+                self.assertRaisesRegex(RuntimeError, "worker died"):
+            fixture.run_worker(Models(fail_first=[ids[11], ids[12]], text="一修"), g1)
+        rounds = fixture.root / "text-g1" / "zh-Hans" / "repair-rounds"
+        self.assertTrue((rounds / "round-002" / "group-0011-sol.json").is_file())
+        self.assertFalse((rounds / "round-002" / "group-0012-sol.json").exists())
+        # g2 names all three rounds: 4, 11 and 27 passed somewhere last; 12's latest attempt failed.
+        prior = {"priorRound": ["../text-f1/zh-Hans/repair-rounds/round-001",
+                                "../text-g1/zh-Hans/repair-rounds/round-001",
+                                "../text-g1/zh-Hans/repair-rounds/round-002"]}
+        fixture.revision_request([4], decision=decision, prior=prior)
+        g2 = fixture.execution(job_root="jobs-g2", output="text-g2/zh-Hans", name="execution-g2.json")
+        tick = subject.Controller(g2).tick()
+        self.assertEqual(tick["groupRevision"]["unlistedFailures"],
+                         [{"group": 12, "translationGroupId": ids[12], "reasons": ["independent_review_failed"]}])
+        fixture.revision_request([12], decision=decision, prior=prior)
+        self.assertEqual(subject.Controller(g2).tick()["reasonCode"], "shadow_only")
+        # Its reviewer first folds in a neighbouring unit: recorded as a malformed reply and repaired.
+        models = Models(merge_first=[ids[12]])
+        result = fixture.run_worker(models, g2)
+        self.assertEqual(result["status"], "machine_review_pass_human_review_pending")
+        self.assertEqual(models.groups(), [ids[12]] * 4)
+        output = fixture.root / "text-g2" / "zh-Hans"
+        report = json.loads((output / "repair-rounds" / "round-001" / "group-failures.json").read_text())
+        self.assertEqual([row["failureCodes"] for row in report["failures"]], [["malformed_model_output"]])
+        receipt = json.loads((output / "group-revision-receipt.json").read_text())
+        carried = {row["group"]: row for row in receipt["carriedGroups"]}
+        self.assertEqual((carried[11]["priorRound"], carried[4]["priorRound"], carried[27]["priorRound"],
+                          carried[1]["priorRound"]), (2, 2, 1, 0))
+        candidate = json.loads((output / "candidate.json").read_text())
+        g1_review = json.loads((rounds / "round-002" / "group-0011-sol.json").read_text())
+        self.assertEqual(candidate["generation"]["reviewer"]["requestIds"][10], g1_review["requestId"])
+        self.assertTrue(candidate["groups"][10]["targetText"].startswith("一修"))
 
 
 class EndToEndTests(unittest.TestCase):

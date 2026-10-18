@@ -266,6 +266,11 @@
                 "$ref": "#/$defs/sha256"
               }
             }
+          },
+          "priorRound": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "position in the request's priorRound list"
           }
         }
       }

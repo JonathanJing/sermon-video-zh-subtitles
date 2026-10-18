@@ -106,7 +106,10 @@ def load_request(path: Path) -> dict:
              and (("priorCandidate" in value) != ("priorRound" in value))
              and ("priorRulePreflight" not in value or "priorCandidate" in value)
              and all(isinstance(value.get(key, "x"), str) and value.get(key, "x")
-                     for key in ("priorCandidate", "priorRound", "priorPolicy", "priorRulePreflight")),
+                     for key in ("priorCandidate", "priorPolicy", "priorRulePreflight"))
+             and (isinstance(value.get("priorRound", "x"), str) and value.get("priorRound", "x")
+                  or (isinstance(value.get("priorRound"), list) and value["priorRound"]
+                      and all(isinstance(item, str) and item for item in value["priorRound"]))),
              "invalid_group_revision_request")
     decision = value["decision"]
     _require(isinstance(decision, dict) and set(decision) == {"decisionsFile", "rowSha256"}
@@ -122,16 +125,21 @@ def load_request(path: Path) -> dict:
                  "invalid_group_revision_request")
         entries.append({"group": group, "note": note.strip() if note else None})
     resolve = lambda name: (path.parent / value[name]).resolve() if name in value else None  # noqa: E731
+    rounds = value.get("priorRound")
+    rounds = None if rounds is None else [(path.parent / item).resolve()
+                                          for item in ([rounds] if isinstance(rounds, str) else rounds)]
+    _require(rounds is None or len(set(rounds)) == len(rounds), "invalid_group_revision_request")
     return {"path": path, "value": value, "groups": entries,
-            "priorCandidate": resolve("priorCandidate"), "priorRound": resolve("priorRound"),
+            "priorCandidate": resolve("priorCandidate"), "priorRound": rounds,
             "priorPolicy": resolve("priorPolicy"), "priorRulePreflight": resolve("priorRulePreflight"),
             "decisionsFile": (path.parent / decision["decisionsFile"]).resolve(),
             "decisionRowSha256": decision["rowSha256"]}
 
 
 def input_paths(loaded: dict) -> list[Path]:
-    return [item for item in (loaded["path"], loaded["priorCandidate"], loaded["priorRound"], loaded["priorPolicy"],
-                              loaded["priorRulePreflight"], loaded["decisionsFile"]) if item is not None]
+    return [item for item in (loaded["path"], loaded["priorCandidate"], *(loaded["priorRound"] or ()),
+                              loaded["priorPolicy"], loaded["priorRulePreflight"], loaded["decisionsFile"])
+            if item is not None]
 
 
 ROUND_FILES = ("request.json", "rule-preflight.json", "group-failures.json", "evidence.json")
@@ -148,6 +156,12 @@ def round_manifest(round_dir: Path) -> dict:
     return {name: _file_sha256(round_dir / name) for name in names}
 
 
+def _rounds_sha256(rounds: list[Path]) -> str:
+    """One round keeps the single-round digest; several bind every round's manifest in order."""
+    manifests = [round_manifest(item) for item in rounds]
+    return policy_tools.canonical_sha256(manifests[0] if len(manifests) == 1 else manifests)
+
+
 def identity(loaded: dict) -> str:
     """The request and the bytes of every prior file it names: a new list or note is a new job.
 
@@ -156,7 +170,7 @@ def identity(loaded: dict) -> str:
     files = {name: _file_sha256(loaded[name]) if loaded[name] is not None else None
              for name in ("priorCandidate", "priorPolicy", "priorRulePreflight")}
     if loaded["priorRound"] is not None:
-        files["priorRound"] = policy_tools.canonical_sha256(round_manifest(loaded["priorRound"]))
+        files["priorRound"] = _rounds_sha256(loaded["priorRound"])
     return policy_tools.canonical_sha256({"request": loaded["value"], "files": files})
 
 
@@ -227,14 +241,8 @@ def _prior_candidate(loaded: dict, source: dict, anchor: dict, request: dict, pl
             "rulePreflight": _load(loaded["priorRulePreflight"]) if loaded["priorRulePreflight"] else None}
 
 
-def _prior_round(loaded: dict, request: dict, plan: list[dict], policy: dict) -> dict:
-    """Reviewed rows from a runner round's caches, each backed by its saved raw response.
-
-    A group whose caches are missing, malformed or whose review did not pass has no row to
-    carry (``unusable``); it must be listed. A started call with neither cache nor raw
-    response is an unknown paid outcome and stops the revision before anything else."""
-    round_dir = loaded["priorRound"]
-    manifest = round_manifest(round_dir)
+def _round_rows(round_dir: Path, manifest: dict, request: dict, plan: list[dict], policy: dict) -> dict:
+    """One round's reviewed rows, each backed by its saved raw responses."""
     prior_request = _load(round_dir / "request.json")
     _require(isinstance(prior_request, dict)
              and all(prior_request.get(key) == request[key] for key in (
@@ -251,7 +259,6 @@ def _prior_round(loaded: dict, request: dict, plan: list[dict], policy: dict) ->
         stem = f"group-{index:04d}"
         names = {role: f"{stem}-{suffix}.json" for role, suffix in (("translator", "astra"), ("reviewer", "sol"))}
         if not all(name in manifest for name in names.values()):
-            unusable[index] = "no_prior_result"
             continue
         saved = {role: _load(round_dir / name) for role, name in names.items()}
         for role, name in names.items():
@@ -288,13 +295,46 @@ def _prior_round(loaded: dict, request: dict, plan: list[dict], policy: dict) ->
         caches[index] = {role: manifest[name] for role, name in names.items()}
         if not _passed(semantic):
             unusable[index] = "independent_review_failed"
-    governed = {manifest["request.json"]} | ({manifest["group-failures.json"]} if "group-failures.json" in manifest
-                                            else set())
-    return {"kind": "round", "sha256": policy_tools.canonical_sha256(manifest), "governedSha256s": governed,
-            "policySha256": prior_request["translationPolicySha256"], "models": None, "candidate": None,
+    return {"request": prior_request, "rows": rows, "unusable": unusable, "caches": caches}
+
+
+def _prior_round(loaded: dict, request: dict, plan: list[dict], policy: dict) -> dict:
+    """Reviewed rows from one or more runner rounds' caches, each backed by its saved raw response.
+
+    With several rounds (for example the original failed round, then the rounds of a revision
+    job that stopped early), the last round that holds any result for a group decides it: a
+    passing review there is carried, and a failed or malformed one makes the group ``unusable``
+    (it must be listed) even if an older round passed it, since the later attempt superseded
+    that text. A group no round holds is ``no_prior_result``. A started call with neither cache nor raw response in any
+    round is an unknown paid outcome and stops the revision before anything else."""
+    rows, unusable, caches, governed, manifests, policies, rules = {}, {}, {}, set(), [], set(), []
+    for position, round_dir in enumerate(loaded["priorRound"]):
+        manifest = round_manifest(round_dir)
+        manifests.append(manifest)
+        found = _round_rows(round_dir, manifest, request, plan, policy)
+        policies.add(found["request"]["translationPolicySha256"])
+        if (round_dir / "rule-preflight.json").is_file():
+            rules.append(_load(round_dir / "rule-preflight.json"))
+        governed |= {manifest["request.json"]} | (
+            {manifest["group-failures.json"]} if "group-failures.json" in manifest else set())
+        for index in set(found["rows"]) | set(found["unusable"]):
+            rows.pop(index, None)
+            caches.pop(index, None)
+            unusable.pop(index, None)
+            if index in found["rows"]:
+                rows[index] = found["rows"][index]
+                caches[index] = {**found["caches"][index], "round": position}
+            if index in found["unusable"]:
+                unusable[index] = found["unusable"][index]
+    _require(len(policies) == 1 and all(item == rules[0] for item in rules),
+             "group_revision_prior_rounds_differ_in_policy_or_rules")
+    for index in range(1, len(plan) + 1):
+        if index not in rows and index not in unusable:
+            unusable[index] = "no_prior_result"
+    return {"kind": "round", "sha256": _rounds_sha256(loaded["priorRound"]), "governedSha256s": governed,
+            "policySha256": policies.pop(), "models": None, "candidate": None,
             "rows": rows, "unusable": unusable, "caches": caches,
-            "rulePreflight": _load(round_dir / "rule-preflight.json")
-            if (round_dir / "rule-preflight.json").is_file() else None}
+            "rulePreflight": rules[-1] if rules else None}
 
 
 # ---------------------------------------------------------------- plan
@@ -436,7 +476,10 @@ def prepare(loaded: dict, source: dict, anchor: dict, policy: dict, plugin_path:
                                  prior["candidate"]["groups"][index - 1]) if prior["candidate"] is not None
                              else policy_tools.canonical_sha256(row),
                              "evidenceRowSha256": policy_tools.canonical_sha256(row),
-                             **({"priorCacheSha256": prior["caches"][index]} if index in prior["caches"] else {})})
+                             **({"priorCacheSha256": {role: prior["caches"][index][role]
+                                                      for role in ("translator", "reviewer")},
+                                 "priorRound": prior["caches"][index]["round"]}
+                                if index in prior["caches"] else {})})
     brief = {"schemaVersion": runner.OPERATOR_REVISION_SCHEMA,
              **{key: request[key] for key in ("targetLocale", "englishSourcePackageJsonSha256",
                                               "anchorManifestSha256", "translationPolicySha256")},

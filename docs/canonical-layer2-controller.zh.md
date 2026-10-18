@@ -126,6 +126,8 @@ operation 的未派发组才可按新授权付费。完成后在新 lane 写
    组号是运行文件 `group-NNNN` 的 1 起序号，也可写确切的 `translationGroupId`。冻结 policy 与旧候选不同时（例如插件改过），还要 `priorPolicy` 和旧运行的 `priorRulePreflight`（`rule-preflight.json`）。
 
    没有候选、只有一轮跑完的 runner 输出时（例如修复循环停下、多数组已通过复核的 `repair-rounds/round-001`，没有 payload cache 成功收据也可以），把 `priorCandidate` 换成 `"priorRound": "<轮目录>"`。每个沿用组要有译者和复核缓存，且各自与保存的 raw 响应一致（请求 ID、payload 哈希）；那一轮失败、缺结果或格式坏的组必须列出；轮里有开始了却没有缓存或 raw 的调用（结果未知）时整条修订拒绝。轮里自带的 `rule-preflight.json` 用作旧规则包。决定行这时绑定该轮的 `group-failures.json`（或 `request.json`）。决定只按行哈希绑定，`decisions.ndjson` 之后追加的行不改变 job 身份。
+
+   `priorRound` 也可以是按时间排列的多个轮目录。修订 job 中途失败（结果都已知）后用它续上：例如 `["<原失败轮>", "<修订 job 的 round-001>", "<修订 job 的 round-002>"]`。每组以**最后一个**含该组结果的轮为准：那里复核通过就沿用（不调用模型，也就不需要预算复用），失败、格式坏或缺失就必须列出，即使更早的轮通过过。所以新请求只为仍没有通过结果的组付费。各轮必须是同一 policy 和规则包；新 job 用新的 `jobRoot`／输出目录（失败 job 的身份不能重启，预算账本绑定代码身份）。
 3. 复制执行配置，`schemaVersion` 改为 `sermon-canonical-layer2-execution-v8`（v3 字段加 `layer2GroupRevision: {"es": "revision/es.json"}`；不接受 v5–v7 字段和 `sourceMeaningNotes`），该语言的 `outputDirectory` 换到新目录（如 `text-r2/es`），`jobRoot` 不变。请求文件和它指向的每个文件的字节进入 `text.<locale>` 的输入身份（`packageIdentities.groupRevision.<locale>`），换列表或备注就是新 job。为新配置签发 Layer 2 预算（预算根按配置隔离：`.<jobRoot>.layer2-budget-revision-<配置哈希>`），照常 `tick`/`drive`。
 
 派发前（shadow tick、execute tick 和 worker 各查一次，都不调用模型）：
@@ -140,6 +142,7 @@ operation 的未派发组才可按新授权付费。完成后在新 lane 写
 - 修复账本另起一条链（lineage 加 `groupRevisionSha256`，绑定请求、简报和决定行），不会把同 policy 已通过的链误当成结果；
 - 修复额度按列表算：每个列出的组最多 2 对译者／复核（`REPAIR_PAIRS_PER_LISTED_GROUP`），每次按强制的最坏 token 数预留，再受预算授权剩余美元上限约束（先扣掉首轮每组一对），第一次计算时冻结在 `group-revision-allowance.json`；不再用“首轮调用的 10%”（重放时为 0，10-18 只够约 4 组）。每单元 4 次、指纹重现和耐心规则照旧；
 - 列出的组同一失败码分散出现不算系统性（它们本来就是因同类问题被挑出来的），连续早停照旧。
+- 译者或复核回复改了组身份（例如把下一个单元并进本组，2026-10-18 韩语第 24 组）时，与缺 coverage 一样记为 `malformed_model_output`，只让这一组再修一次，不再让整个 job 失败；修复说明要求保持本组的 `translationGroupId` 和 `sourceUnitIds`。这对所有收集失败的修复轮都生效。
 
 结果是普通的 `sermon-target-language-candidate-v2`：仍由 `run_language_plugin` + `admit_evidence` 准入（插件再对全部组跑一次），`status=machine_review_pass_human_review_pending`、`humanApproval` 不变，文本质检、语音任务、音频包和发布 v4 按原样消费；整篇文本质检仍要在这个最终候选上跑。准入前核对每个未列出的组与旧来源逐字节相同、请求 ID 不变，再在 lane 写 `group-revision-receipt.json`（[schema](../schemas/sermon-layer2-group-revision-receipt-v1.schema.json)）：旧来源（种类与哈希；旧轮另记每组缓存哈希）、新候选与新旧 policy 哈希、policy 变化分类、规则包变化、插件门报告哈希、决定行（哈希、谁、何时、问题与选择）、每个修订组的新旧译文哈希、备注哈希和新请求 ID、每个沿用组的译文哈希、旧组哈希和证据行哈希，以及修复额度、修复收据和账本链头。它是机器证据，`releaseEligible=false`、`humanApproval=false`。
 
