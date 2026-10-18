@@ -8,9 +8,10 @@
     "tests.test_canonical_layer2_auto_repair",
     "tests.test_canonical_layer2_runtime_authorization"
   ],
-  "testsRun": 63,
+  "testsRun": 65,
   "failures": 0,
   "errors": 0,
   "exitCode": 0,
-  "wallSeconds": 31.493
+  "wallSeconds": 30.287,
+  "baseCommit": "ce05f79a"
 }

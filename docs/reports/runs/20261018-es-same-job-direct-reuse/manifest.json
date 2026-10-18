@@ -13,27 +13,27 @@
       "run": "20261018-es-same-job-direct-reuse",
       "path": "outcome.json",
       "kind": "whole",
-      "bytes": 309,
+      "bytes": 339,
       "truncated": false,
-      "sha256": "09204c3f76b22147afcc3998b2368c5b64b7056d22918e2154ec8fd5e3c7dc51",
+      "sha256": "ad015c74e8f90898255d7f17547e924f1da7b42b6423f709b9f1d238a4dd62d0",
       "redactions": {}
     },
     {
       "run": "20261018-es-same-job-direct-reuse",
       "path": "summary.json",
       "kind": "whole",
-      "bytes": 446,
+      "bytes": 474,
       "truncated": false,
-      "sha256": "bca6a217e0d15bd2e2d48391071f0523872778b266ebbf71a2fd2c0b0590f64e",
+      "sha256": "8f1759307cb962db1f58141381b20ff4e5a90ae4f2c7841ea938f79e96c887cc",
       "redactions": {}
     },
     {
       "run": "20261018-es-same-job-direct-reuse",
       "path": "tests.log",
       "kind": "log",
-      "bytes": 163,
+      "bytes": 165,
       "truncated": false,
-      "sha256": "c8eec90bae2c3cbad1d6abc613b5a52173bfb361a7c2dd2851d14c1acf2b68bd",
+      "sha256": "7413ce54be39f3d980bb62f7b3d8a636f052417a69773aeff40a121ac53da9e0",
       "redactions": {}
     },
     {
@@ -42,7 +42,7 @@
       "kind": "whole",
       "bytes": 57,
       "truncated": false,
-      "sha256": "5f9df7e3e0b817a0d22ab17275b82d047e76e63e80b53427fd1ab882cd3e63f5",
+      "sha256": "c4a90b823b692d16a93581d1278a04f113dd1087ec4259dceddab2b423e5bb39",
       "redactions": {}
     }
   ],
