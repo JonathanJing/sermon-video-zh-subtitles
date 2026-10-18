@@ -227,6 +227,7 @@ def _manifest(checked):
         candidateJsonSha256=c.canonical_sha256(candidate), sourceJsonSha256=c.canonical_sha256(checked['source']),
         anchorJsonSha256=c.canonical_sha256(checked['anchor']), translationPolicySha256=candidate['translationPolicySha256'],
         previewRendererSha256=preview.identity.sha256(Path(preview.__file__)),
+        previewExecutionBindingSha256=preview.formal.preview_execution_binding_sha256(),
         strictRubricSha256=c.canonical_sha256(checked['strict_rubric']),
         diagnosticContextSha256=c.canonical_sha256(checked['diagnostic_context']),
         humanAcceptance='pending', productionEligible=False)
@@ -235,7 +236,8 @@ def _manifest(checked):
 def _outputs(root, spec, checked):
     out = _tree(root, spec['out'])
     manifest = out / 'manifest.json'
-    c.require(_read(manifest) == _manifest(checked), 'preview_manifest_changed')
+    expected_manifest = _manifest(checked)
+    c.require(_read(manifest) == expected_manifest, 'preview_manifest_changed')
     snapshots = []
     for name in (*PATH_KEYS, 'strict_rubric', 'diagnostic_context'):
         path = out / (name + '.json')
@@ -254,7 +256,8 @@ def _outputs(root, spec, checked):
         measured = preview.integrity.probe_full_decode(wav)
         c.require(unit.get('schemaVersion') == preview.UNIT_VERSION and unit.get('status') == 'preview_only'
             and unit.get('candidateJsonSha256') == c.canonical_sha256(checked['candidate'])
-            and unit.get('previewContextSha256') == c.canonical_sha256(_manifest(checked))
+            and unit.get('previewContextSha256') == c.canonical_sha256(expected_manifest)
+            and unit.get('previewExecutionBindingSha256') == expected_manifest['previewExecutionBindingSha256']
             and unit.get('soundIdentity') == expected and unit.get('audioSha256') == _ref(wav)['fileBytesSha256']
             and unit.get('durationSeconds') == measured['durationSeconds'] and unit.get('fullDecode') == 'pass',
             'preview_unit_receipt_changed')
