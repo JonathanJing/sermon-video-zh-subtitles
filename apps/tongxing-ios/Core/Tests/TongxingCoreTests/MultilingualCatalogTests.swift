@@ -65,6 +65,26 @@ struct MultilingualCatalogTests {
         #expect(koreanSource.sourceIdentitySha256 == hashB)
     }
 
+    @Test func catalogV5SingleSourceStillUsesPageIdentity() throws {
+        let catalog = try MultilingualCatalog.decode(catalogData { root in
+            root["schemaVersion"] = MultilingualCatalog.mixedSourceSchemaVersion
+            var pages = root["pages"] as! [[String: Any]], page = pages[0]
+            page["title"] = "Compatible single source"
+            page["sourceMode"] = "single_source"
+            page["sourceMediaSha256"] = self.hashB
+            var targets = page["targets"] as! [String: [String: Any]]
+            for locale in targets.keys {
+                targets[locale]!["releasePackageUrl"] = "/releases-v2/page-1/\(locale).json"
+            }
+            page["targets"] = targets; pages[0] = page; root["pages"] = pages
+        })
+        let page = catalog.defaultPage
+        let source = try #require(page.targets["zh-Hans"]).sourceBinding(in: page)
+        #expect(source.editionId == page.id)
+        #expect(source.sourceIdentitySha256 == hashA)
+        #expect(source.sourceMediaSha256 == hashB)
+    }
+
     @Test func mixedSourceV5RejectsCrossTargetHashesAndEditionPaths() throws {
         #expect(throws: (any Error).self) {
             try MultilingualCatalog.decode(mixedSourceCatalog { root in

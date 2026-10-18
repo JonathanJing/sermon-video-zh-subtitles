@@ -80,7 +80,7 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
               source.englishSourcePackageJsonSha256 == targetSource.sourceIdentitySha256,
               source.targetLanguageCandidateJsonSha256 == package.targetLanguageCandidateJsonSha256,
               (candidate ? true : source.sourceMediaSha256.map(Validation.sha256) == true),
-              (candidate ? true : targetSource.sourceMediaSha256 == source.sourceMediaSha256),
+              (candidate ? true : targetSource.sourceMediaSha256.map({ $0 == source.sourceMediaSha256 }) ?? true),
               source.sourceVideoUrl.map({ targetSource.videoDelivery == nil
                   || $0 == targetSource.videoDelivery?.canonicalUrl }) ?? true,
               source.durationSeconds.isFinite, source.durationSeconds > 0,

@@ -221,6 +221,16 @@ final class StorageTests {
             "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": [],
         ]
         let release = try json(releaseValue)
+        let english = try json([
+            "schemaVersion": "sermon-published-english-reference-v1", "pageId": edition,
+            "sourceIdentitySha256": source, "sourceMediaSha256": media,
+            "reviewState": "human_approved", "targets": ["zh-Hans": [
+                "contentSha256": hash(content), "captionsSha256": hash(captions),
+                "releasePackageJsonSha256": hash(release),
+                "blocks": [["textGroupId": "group-1", "sourceUnitIds": ["source-1"],
+                            "english": "Approved broadcast English."]],
+            ]],
+        ])
         let catalog = try json([
             "schemaVersion": MultilingualCatalog.mixedSourceSchemaVersion,
             "generatedAt": "2026-10-18T00:00:00Z", "defaultPageId": family,
@@ -244,6 +254,7 @@ final class StorageTests {
             case "/pages/\(edition)/zh-Hans/index.html": return .init(chunks: [html])
             case "/content/\(edition)/zh-Hans.json": return .init(chunks: [content])
             case "/captions/\(edition)/zh-Hans.json": return .init(chunks: [captions])
+            case "/english-reference/\(edition).json": return .init(chunks: [english])
             default: return .init(status: 404, chunks: [])
             }
         }
@@ -260,6 +271,8 @@ final class StorageTests {
         #expect(transcript.editionID == edition)
         #expect(transcript.sourceIdentitySha256 == source)
         #expect(transcript.title == "中文标题")
+        #expect(transcript.fullText.map(\.english) == ["Approved broadcast English."])
+        #expect(transcript.captions.map(\.english) == ["Approved broadcast English."])
         #expect(FileManager.default.fileExists(atPath:
             cache.appendingPathComponent("Releases/\(edition)/zh-Hans.json").path))
         #expect(!FileManager.default.fileExists(atPath:

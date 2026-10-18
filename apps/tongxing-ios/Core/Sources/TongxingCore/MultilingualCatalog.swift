@@ -340,8 +340,7 @@ public extension PageTarget {
     /// fingerprint and cache checks. v4 and earlier are single-source.
     func sourceBinding(in page: MultilingualPage,
                        catalogSchemaVersion: String? = nil) throws -> PageTargetSourceBinding {
-        let mixed = catalogSchemaVersion == MultilingualCatalog.mixedSourceSchemaVersion
-            || page.sourceMode == "per_target"
+        let mixed = page.sourceMode == "per_target"
         let result = PageTargetSourceBinding(
             familyPageId: page.id,
             editionId: mixed ? (editionId ?? "") : page.id,
