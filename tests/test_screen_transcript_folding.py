@@ -286,23 +286,22 @@ def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
     from scripts import machine_quality_waiver as waiver
     from scripts import sermon_source_producer_compatibility as compatibility
     root = Path(__file__).resolve().parents[1]
-    for name in subject.SCORING_IMPLEMENTATION_FILES:
+    for name in subject.SCORING_PHYSICAL_FILES:
         target = tmp_path / name
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(root / compatibility.resolve(name), target)
+        shutil.copyfile(root / name, target)
     initial = subject.implementation_sha256(tmp_path)
-    for name in subject.SCORING_IMPLEMENTATION_FILES:
+    for name in subject.SCORING_PHYSICAL_FILES:
         path = tmp_path / name
         original = path.read_bytes()
         path.write_bytes(original + b"\n# changed dependency\n")
         assert subject.implementation_sha256(tmp_path) != initial
         path.write_bytes(original)
     assert "scripts/ko_spoken_numerals.py" in waiver.IMPLEMENTATION_FILES
-    for name in waiver.IMPLEMENTATION_FILES:
-        # A closure key names a file at its alias once it moved into the production package.
-        target = tmp_path / compatibility.resolve(name)
+    for name in waiver.IMPLEMENTATION_PHYSICAL_FILES:
+        target = tmp_path / name
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(root / compatibility.resolve(name), target)
+        shutil.copyfile(root / name, target)
     original_waiver = waiver.implementation_sha256(tmp_path)
     helper = tmp_path / "scripts/ko_spoken_numerals.py"
     helper.write_bytes(helper.read_bytes() + b"\n# changed rule\n")

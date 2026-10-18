@@ -328,13 +328,15 @@ class StartCheckTests(unittest.TestCase):
 
     def test_spark_code_dir_hashes_all_current_package_closure_paths(self):
         from scripts import implementation_freeze, machine_quality_waiver as waiver
-        from tongxing_production import path_aliases
         files = [str(path) for path in implementation_freeze.closure_files(Path())]
-        self.assertEqual(len(files), 28)
-        self.assertEqual(files, [str(path_aliases.resolve(name)) for name in waiver.IMPLEMENTATION_FILES])
+        self.assertEqual(files, list(waiver.IMPLEMENTATION_PHYSICAL_FILES))
         self.assertEqual(len(set(files)), len(files))
+        self.assertIn('scripts/machine_quality_waiver.py', files)
+        self.assertIn('scripts/implementation_freeze.py', files)
         self.assertIn('packages/production/src/tongxing_production/review/waiver.py', files)
+        self.assertIn('packages/production/src/tongxing_production/review/implementation_freeze.py', files)
         self.assertIn('packages/production/src/tongxing_production/audio/screening.py', files)
+        self.assertIn('packages/production/src/tongxing_production/path_aliases.py', files)
         self.assertTrue(all((check.ROOT / path).is_file() for path in files))
         observed_commands = []
         corrupt_remote_hash = False

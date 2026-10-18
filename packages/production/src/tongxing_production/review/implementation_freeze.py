@@ -8,8 +8,8 @@ whose bytes changed. On 2026-10-11 two unnoticed edits to hashed files
 invalidated issued waivers and cost two re-issue rounds; a guard at the entry
 turns that into an immediate, explained refusal.
 
-This module is deliberately outside the hashed file set so adding the guard did
-not itself move the hash.
+Its executable facade and package bytes join the physical closure, so changes
+to the admission guard invalidate a frozen run.
 """
 from __future__ import annotations
 
@@ -19,19 +19,24 @@ from pathlib import Path
 
 from . import backend, waiver
 
-ROOT = None
 SHA = re.compile(r"[a-f0-9]{64}")
 EXIT_CODE = 2
 
 
-def file_hashes(root: Path | None = ROOT) -> dict[str, str]:
+def __getattr__(name):
+    if name == "ROOT":
+        return backend.current().core.repo_root
+    raise AttributeError(name)
+
+
+def file_hashes(root: Path | None = None) -> dict[str, str]:
     """Each hashed implementation file's own SHA-256, for explaining a mismatch."""
     root = root or backend.current().core.repo_root
-    return {name: hashlib.sha256(waiver.implementation_path(name, root).read_bytes()).hexdigest()
-            for name in waiver.IMPLEMENTATION_FILES}
+    return {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+            for name in waiver.IMPLEMENTATION_PHYSICAL_FILES}
 
 
-def mismatch(expected: str, *, recorded_files: dict[str, str] | None = None, root: Path | None = ROOT) -> dict | None:
+def mismatch(expected: str, *, recorded_files: dict[str, str] | None = None, root: Path | None = None) -> dict | None:
     """``None`` when the checkout is the expected implementation; otherwise a
     report with the current hash and, when the run plan recorded per-file hashes,
     the files that differ."""
@@ -58,8 +63,6 @@ def add_argument(parser) -> None:
                              "value from the run plan (exit 2 before any model call)")
 
 
-def closure_files(root: Path | None = ROOT) -> list[Path]:
-    """Resolve the closure files to their current paths for code synchronization."""
-    root = root or backend.current().core.repo_root
-    return [waiver.implementation_path(name, root).relative_to(root)
-            for name in waiver.IMPLEMENTATION_FILES]
+def closure_files(root: Path | None = None) -> list[Path]:
+    """List every physical file used for frozen-code synchronization."""
+    return [Path(name) for name in waiver.IMPLEMENTATION_PHYSICAL_FILES]
