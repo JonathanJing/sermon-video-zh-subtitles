@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-final-dev-97",
+  "runs": [
+    {
+      "label": "g1-final-dev-97",
+      "source": "/private/tmp/g1-baseline-20261017/artifacts/local-runs/g1-final-dev-97",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-final-dev-97",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 146,
+      "truncated": false,
+      "sha256": "7d306d502a1294871049fce3e941dda218ce1904a1d119bc0212ef06bb40f863",
+      "redactions": {}
+    },
+    {
+      "run": "g1-final-dev-97",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 551,
+      "truncated": false,
+      "sha256": "6f17e26c0917990c1c8263a9239639647bc89223340ba4d5f3e7e17788498885",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
