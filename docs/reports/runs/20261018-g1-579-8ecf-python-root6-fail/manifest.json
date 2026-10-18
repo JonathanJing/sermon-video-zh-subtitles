@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-579-8ecf-python-root6-fail",
+  "runs": [
+    {
+      "label": "g1-579-8ecf-python-root6-fail",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-579-8ecf-python-root6-fail",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-579-8ecf-python-root6-fail",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 349,
+      "truncated": false,
+      "sha256": "0dcb65229ec45f18ed0d8cac142691293188804c0dfbe6c7f3826145722b28f2",
+      "redactions": {}
+    },
+    {
+      "run": "g1-579-8ecf-python-root6-fail",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1601,
+      "truncated": false,
+      "sha256": "3bddf7f7d0dbf05528466f664adbceffcc1d29ff823d0276e4bddc60567aabc9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

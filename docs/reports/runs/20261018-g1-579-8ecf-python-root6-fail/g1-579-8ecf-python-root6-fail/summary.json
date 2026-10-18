@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "ci-run-summary-v1",
+  "runId": 39087751408,
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39087751408",
+  "headSha": "8ecf749381419c682fab06e3cd4796ac9e995018",
+  "workflow": "Python tests",
+  "cancelReason": "Root-6 failed obsolete review-leaf alias-patch assertion; cancelled other shards after repair committed as b6507b5d",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-2)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-7)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-6)",
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "name": "test-group (root-0)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-3)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-5)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-1)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-4)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "unittest",
+      "status": "completed",
+      "conclusion": "failure"
+    }
+  ]
+}
