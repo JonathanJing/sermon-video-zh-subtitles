@@ -379,12 +379,29 @@ class BudgetedCaller:
             max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
 
     def record_reuse(self, key, payload, response, provenance):
-        """Validate an approved direct-paid root, then atomically record a free exact hit."""
+        """Validate an exact direct-paid hit, recording only cross-root reuse.
+
+        A later repair round can read a success sidecar produced by an earlier
+        round of this same durable job.  Its exact operation is already settled
+        as direct-paid in this store, so validate that immutable closure and
+        return the existing result without rewriting it as a reused row.
+        """
         self.verify_execution(key)
-        require(self.auth.get('reuseBudgetRoots') is not None,
-                'layer2_reuse_authorization_required')
         require(isinstance(provenance, dict), 'layer2_reuse_provenance_changed')
         fingerprint, _, identity, bounds, request = self._call_binding(payload)
+        if provenance.get('budgetRoot') == str(Path(self.root).resolve()):
+            # Unlike approved predecessor roots, this store remains active for
+            # the durable job.  Hold its ordinary budget lock so another group
+            # cannot change the ledger between the state and result reads.
+            with self.store._locked():
+                selected = self._direct_paid_provenance(
+                    self.root, request, fingerprint, response,
+                    max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
+            require(selected == provenance, 'layer2_reuse_provenance_changed')
+            return {'reservationId': selected['reservationId'], 'created': False,
+                    'executionAllowed': False, 'status': 'succeeded', 'phase': 'result'}
+        require(self.auth.get('reuseBudgetRoots') is not None,
+                'layer2_reuse_authorization_required')
         selected = None
         for root in self.auth['reuseBudgetRoots'][self.policy['targetLocale']]:
             try:

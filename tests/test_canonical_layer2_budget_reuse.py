@@ -56,6 +56,39 @@ class CanonicalLayer2BudgetReuseTests(unittest.TestCase):
                          dict.fromkeys(ledger.METRICS, 0))
         self.assertEqual(row['result']['usage'], dict.fromkeys(ledger.METRICS, 0))
 
+    def test_later_round_reuses_same_job_direct_paid_response_without_rewriting_ledger(self):
+        external = self.destination / 'approved-prior'
+        with ledger.BudgetStore(external, self.base.auth['value']['authority'])._locked():
+            pass
+        current = self.destination_caller(external)
+        current.transport = lambda *_: {'id': 'paid-response',
+            'model': 'gpt-6-astra',
+            'usage': {'prompt_tokens': 11, 'completion_tokens': 7},
+            'choices': [{'finish_reason': 'stop', 'message': {'content': '{}'}}]}
+        with patch.object(current, 'verify_execution'):
+            response = current('', self.base.payload)
+            provenance = current.paid_response_provenance('', self.base.payload, response)
+        state_path = next(self.destination.glob('*/state.json'))
+        before = state_path.read_bytes()
+
+        with patch.object(current, 'verify_execution'):
+            result = current.record_reuse('', self.base.payload, response, provenance)
+
+        self.assertEqual(result['status'], 'succeeded')
+        self.assertFalse(result['created'])
+        self.assertFalse(result['executionAllowed'])
+        self.assertEqual(state_path.read_bytes(), before)
+        state = jobs._read(state_path)
+        row = next(iter(state['reservations'].values()))
+        self.assertNotIn('settlement', row)
+        self.assertEqual(row['result']['usage']['requests'], 1)
+
+        unapproved, _, unapproved_provenance = self.paid()
+        self.assertNotEqual(unapproved.root, external.resolve())
+        with patch.object(current, 'verify_execution'), self.assertRaisesRegex(
+                ValueError, 'layer2_reuse_operation_missing'):
+            current.record_reuse('', self.base.payload, response, unapproved_provenance)
+
     def test_unknown_damaged_or_intermediate_source_never_falls_through(self):
         source, response, provenance = self.paid()
         destination = self.destination_caller(source.root)
