@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "nativeClient": "success",
+  "contractValidation": "skipped",
+  "iosValidation": "skipped",
+  "deviceAcceptance": "not_run",
+  "modelCalls": 0,
+  "providerCalls": 0,
+  "productionWrites": 0,
+  "scope": "current-head code CI only; Layer 2 frozen run and delivery not evaluated"
+}
