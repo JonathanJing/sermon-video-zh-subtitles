@@ -22,9 +22,9 @@ from .hosted import accounting, demos, diagnostic, local_observation, renderer a
 from ..source import sentence_interpretation as identity
 
 
-MANIFEST_VERSION = "sermon-speculative-target-speech-v1"
-UNIT_VERSION = "sermon-speculative-target-speech-unit-v1"
-SCOPED_MANIFEST_VERSION = "sermon-speculative-target-speech-v2"
+MANIFEST_VERSION = "sermon-speculative-target-speech-v3"
+UNIT_VERSION = "sermon-speculative-target-speech-unit-v2"
+SCOPED_MANIFEST_VERSION = "sermon-speculative-target-speech-v4"
 _monotonic = time.monotonic
 
 
@@ -198,6 +198,7 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
         "sourceJsonSha256": identity.json_sha256(context["source"]),
         "anchorJsonSha256": identity.json_sha256(context["anchor"]),
         "translationPolicySha256": candidate["translationPolicySha256"],
+        "previewExecutionBindingSha256": formal.preview_execution_binding_sha256(),
     }
     if scoped:
         manifest.update(previewRendererSha256=identity.sha256(
@@ -254,6 +255,8 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
                                    and receipt.get("status") == "preview_only"
                                    and receipt.get("candidateJsonSha256") == manifest["candidateJsonSha256"]
                                    and receipt.get("soundIdentity") == expected
+                                   and receipt.get("previewExecutionBindingSha256")
+                                   == manifest["previewExecutionBindingSha256"]
                                    and all(receipt.get(k) == v for k, v in context_binding.items()),
                                    "Speculative unit identity changed")
                     if not wav_path.exists():
@@ -322,6 +325,7 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
                                       depends_on=[validation_span]) as completed_span:
                     receipt = {'schemaVersion': UNIT_VERSION, 'status': 'preview_only',
                         'candidateJsonSha256': manifest['candidateJsonSha256'], **context_binding,
+                        'previewExecutionBindingSha256': manifest['previewExecutionBindingSha256'],
                         'soundIdentity': expected, 'audioSha256': identity.sha256(partial),
                         'durationSeconds': decoded['durationSeconds'], 'fullDecode': 'pass'}
                     _check_deadline(deadline_monotonic)

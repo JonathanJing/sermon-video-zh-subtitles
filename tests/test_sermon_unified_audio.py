@@ -37,8 +37,13 @@ class UnifiedAudioTests(unittest.TestCase):
         names = ('sermon_unified_audio.py', 'render_formal_target_language_speech.py',
                  'validate_target_language_audio_unit.py')
         expected = audio.identity.json_sha256({
-            name: audio.identity.sha256(code.implementation_path('scripts/' + name))
-            for name in names})
+            **{name: audio.identity.sha256(code.implementation_path('scripts/' + name))
+               for name in names},
+            'audio/hosted.py': audio.identity.sha256(code.module_path(audio.hosted_module)),
+            'audio/backend.py': audio.identity.sha256(code.module_path(audio.audio_backend)),
+            'scripts/tongxing_host.py': audio.identity.sha256(
+                code.implementation_path('scripts/tongxing_host.py')),
+        })
         self.assertEqual(plan['adapterCodeSha256'], expected)
         self.assertEqual(code.implementation_path('scripts/sermon_unified_audio.py'),
                          audio.Path(audio.__file__).resolve())

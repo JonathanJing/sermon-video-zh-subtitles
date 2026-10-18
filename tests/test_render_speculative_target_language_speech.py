@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import copy
+import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -22,6 +25,37 @@ class FakeSynth:
     def __call__(self, text, language, speaker, *, seed):
         self.calls.append((text, language, speaker, seed))
         return [0.03] * 1280, 16000
+
+
+class PreviewExecutionBindingTests(unittest.TestCase):
+    def test_every_producer_and_host_source_changes_binding(self):
+        code = formal._audio.current().code
+        sources = {
+            'scripts/render_speculative_target_language_speech.py':
+                code.implementation_path('scripts/render_speculative_target_language_speech.py'),
+            'packages/production/src/tongxing_production/audio/hosted.py':
+                code.module_path(formal.hosted_module),
+            'packages/production/src/tongxing_production/audio/backend.py':
+                code.module_path(formal._audio),
+            'scripts/tongxing_host.py': code.implementation_path('scripts/tongxing_host.py'),
+        }
+        with TemporaryDirectory() as directory:
+            copies = {}
+            for index, (name, source) in enumerate(sources.items()):
+                target = Path(directory) / f'{index}.py'
+                target.write_bytes(source.read_bytes())
+                copies[name] = target
+            modules = {formal.hosted_module: copies['packages/production/src/tongxing_production/audio/hosted.py'],
+                       formal._audio: copies['packages/production/src/tongxing_production/audio/backend.py']}
+            fake_code = SimpleNamespace(implementation_path=lambda name: copies[name],
+                                        module_path=lambda module: modules[module])
+            original = formal.preview_execution_binding_sha256(code=fake_code)
+            for name, target in copies.items():
+                with self.subTest(source=name):
+                    old = target.read_bytes()
+                    target.write_bytes(old + b'\n# changed binding\n')
+                    self.assertNotEqual(formal.preview_execution_binding_sha256(code=fake_code), original)
+                    target.write_bytes(old)
 
 
 class SpeculativeRenderTests(unittest.TestCase):
@@ -84,6 +118,14 @@ class SpeculativeRenderTests(unittest.TestCase):
         self.assertEqual(len(FakeSynth.calls), 1)
         self.assertEqual(self.render(group_ids=["g2"])["renderedGroupIds"], ["g2"])
         self.assertEqual(len(FakeSynth.calls), 2)
+
+    def test_changed_execution_binding_blocks_same_folder_cache_before_model(self):
+        self.render(group_ids=['g1'])
+        FakeSynth.calls = []
+        with patch.object(subject.formal, 'preview_execution_binding_sha256', return_value='0' * 64):
+            with self.assertRaisesRegex(ValueError, 'another candidate'):
+                self.render(group_ids=['g1'])
+        self.assertEqual(FakeSynth.calls, [])
 
     def test_verified_adapter_with_unreviewed_locale_is_preview_only(self):
         self.fixture.adapter["capabilityStatus"] = "verified"
@@ -170,6 +212,7 @@ class FormalAdmissionTests(unittest.TestCase):
             "sourceJsonSha256": subject.identity.json_sha256(context["source"]),
             "anchorJsonSha256": subject.identity.json_sha256(context["anchor"]),
             "translationPolicySha256": pending["translationPolicySha256"],
+            "previewExecutionBindingSha256": formal.preview_execution_binding_sha256(),
         })
         for index, group in enumerate(pending["groups"]):
             sound = subject.sound_identity(context, index, seed=42,
@@ -182,6 +225,7 @@ class FormalAdmissionTests(unittest.TestCase):
                 self.spec_root / f"receipts/unit-{index:04d}.json", {
                     "schemaVersion": subject.UNIT_VERSION, "status": "preview_only",
                     "candidateJsonSha256": subject.identity.json_sha256(pending),
+                    "previewExecutionBindingSha256": formal.preview_execution_binding_sha256(),
                     "soundIdentity": sound, "audioSha256": subject.identity.sha256(audio),
                     "durationSeconds": 0.08, "fullDecode": "pass",
                 })
@@ -193,6 +237,22 @@ class FormalAdmissionTests(unittest.TestCase):
                                    self.fixture.root / "checkpoint-map.json",
                                    speculative_from=self.spec_root,
                                    synth_factory=FakeSynth)
+
+    def test_changed_preview_execution_binding_stops_before_model_dispatch(self):
+        with patch.object(formal, 'preview_execution_binding_sha256', return_value='0' * 64):
+            with self.assertRaisesRegex(ValueError, 'execution binding changed'):
+                self.formal_render()
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_legacy_preview_requires_frozen_checkout_before_model_dispatch(self):
+        manifest_path = self.spec_root / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        manifest['schemaVersion'] = 'sermon-speculative-target-speech-v1'
+        manifest.pop('previewExecutionBindingSha256')
+        manifest_path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, 'frozen checkout'):
+            self.formal_render()
+        self.assertEqual(FakeSynth.calls, [])
 
     def test_same_audio_is_reused_only_after_formal_job_validation(self):
         # Admission is called by render() after checked_context; this unit test
@@ -337,6 +397,18 @@ class DiagnosticPreviewTests(unittest.TestCase):
         self.assertFalse((self.preview.out / 'job.json').exists())
         self.render()
         self.assertEqual(len(FakeSynth.calls), 2)
+
+    def test_scoped_v2_cache_cannot_resume_as_v4(self):
+        self.render(group_ids=['g1'])
+        manifest_path = self.preview.out / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        manifest['schemaVersion'] = 'sermon-speculative-target-speech-v2'
+        manifest.pop('previewExecutionBindingSha256')
+        manifest_path.write_text(json.dumps(manifest))
+        FakeSynth.calls = []
+        with self.assertRaisesRegex(ValueError, 'another candidate'):
+            self.render(group_ids=['g1'])
+        self.assertEqual(FakeSynth.calls, [])
 
     def test_context_and_original_deadline_are_mandatory_for_pending_source(self):
         for overrides in ({'diagnostic_context': None}, {'deadline_monotonic': None},
