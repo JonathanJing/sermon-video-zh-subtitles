@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "test-run-outcome-v1",
+  "kind": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T22:01:50.040381+00:00",
+  "endedAt": "2026-10-17T22:01:50.981864+00:00",
+  "durationSeconds": 0.94,
+  "head": "0c3db8330fc05a56a49625fa062f6d65ae220533",
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_tongxing_production_package.py::ProductionPackageTests::test_every_facade_imports_by_bare_name_from_a_script_run_in_scripts"
+  ]
+}

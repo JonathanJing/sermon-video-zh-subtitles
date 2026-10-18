@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr799-dev-bucket-ci",
+  "runs": [
+    {
+      "label": "pr799-full-ci-39070662178",
+      "source": "~/.codex/worktrees/ops-dev-bucket-readback/sermon-video-zh-subtitles/artifacts/pr799-full-ci-39070662178",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr799-full-ci-39070662178",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 175,
+      "truncated": false,
+      "sha256": "efe435cc2e7ef10603351aad2638e7aed6005aa8c889499eddd9bba64b4ec4b3",
+      "redactions": {}
+    },
+    {
+      "run": "pr799-full-ci-39070662178",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 627,
+      "truncated": false,
+      "sha256": "417f0f1231326283232de38d69556aacc6bba321d0b2aa360529d56da7a36a94",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

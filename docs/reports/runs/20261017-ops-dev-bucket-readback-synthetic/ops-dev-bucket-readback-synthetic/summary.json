@@ -1,0 +1,10 @@
+{
+  "tests": [
+    "old/new module identity",
+    "external-CWD old/new CLI and python -m",
+    "dynamic old-path load",
+    "synthetic candidate rejects invalid schema and changed baseline receipt before HTTP"
+  ],
+  "modelCalls": 0,
+  "networkRequests": 0
+}

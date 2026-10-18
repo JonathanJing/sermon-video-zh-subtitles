@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "runId": 39068165894,
+  "workflow": "Python tests",
+  "trigger": "pull_request",
+  "headSha": "88755d17d3096d056c0d84d618418a677e8deb7b",
+  "branch": "codex/dual-pdf-local-download-20261017",
+  "base": "dev",
+  "rootGroups": {
+    "root-0": "success",
+    "root-1": "success",
+    "root-2": "success",
+    "root-3": "success",
+    "root-4": "success",
+    "root-5": "success",
+    "root-6": "success",
+    "root-7": "success"
+  },
+  "aggregator": "success",
+  "nativeSharedContracts": "skipped",
+  "scope": "local post-live download migration after #598 merge",
+  "limitations": [
+    "synthetic CI and 40 focused local tests only",
+    "no real source download, PDF publication, HTTP, device or venue acceptance"
+  ]
+}

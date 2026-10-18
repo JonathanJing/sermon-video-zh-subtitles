@@ -7,6 +7,8 @@ on:
       - Dockerfile
       - .dockerignore
       - requirements.txt
+      - services/api/**
+      - backend/cloud_run_jobs.py
       - schemas/**
       - docs/series-terminology.zh.md
       - .github/workflows/backend-image-resources.yml
@@ -33,4 +35,13 @@ jobs:
           from scripts import series_terminology
           catalog = series_terminology.context()
           assert catalog["entries"]
+          '
+      - name: Import API dispatcher through both service and legacy paths
+        run: |
+          docker run --rm --entrypoint python sermon-backend-resource-smoke -c '
+          import backend.cloud_run_jobs as legacy
+          from tongxing_api import cloud_run_jobs as service
+          from backend.app import dispatch_cloud_run_job
+          assert legacy is service
+          assert dispatch_cloud_run_job is service.dispatch_cloud_run_job
           '

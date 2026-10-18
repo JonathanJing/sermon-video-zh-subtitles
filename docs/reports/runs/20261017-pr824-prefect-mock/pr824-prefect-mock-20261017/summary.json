@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "pr824-ci-run-summary-v1",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39072856862",
+  "headSha": "8f62ed294b2b326387b3e3ffba1670b1a0f97c83",
+  "conclusion": "success",
+  "note": "All local and fresh Prefect mock jobs completed successfully; this is mocked workflow evidence only.",
+  "jobs": [
+    {
+      "name": "fresh-full-mock (test_actual_ordinary_timeout_then_original_receipt_reconciliation)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "local-mock",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "fresh-source-mock",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "fresh-full-mock (test_actual_confirmed_failure_explicit_retry_keeps_successful_neighbor)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "fresh-full-mock (test_actual_full_graph_then_clean_process_receipt_only_repeat)",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ]
+}

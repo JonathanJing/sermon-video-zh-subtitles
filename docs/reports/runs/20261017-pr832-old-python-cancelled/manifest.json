@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr832-old-python-cancelled",
+  "runs": [
+    {
+      "label": "pr832-old-python-cancelled-20261017",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/pr832-old-python-cancelled-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr832-old-python-cancelled-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 412,
+      "truncated": false,
+      "sha256": "1f004ed3bab20c89d63b1f36a315b9f122d3a6a394acd503c12b53701852c8fd",
+      "redactions": {}
+    },
+    {
+      "run": "pr832-old-python-cancelled-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1618,
+      "truncated": false,
+      "sha256": "3eed97e0c607f31a7fd174f6c784fa5b31ff6050927555e6c9e0d39e579b1f86",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

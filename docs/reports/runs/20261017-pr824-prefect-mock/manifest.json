@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr824-prefect-mock",
+  "runs": [
+    {
+      "label": "pr824-prefect-mock-20261017",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/pr824-prefect-mock-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr824-prefect-mock-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 414,
+      "truncated": false,
+      "sha256": "3ccb6fad1bb5eb4b5499495543e40080d9745e3fbd94d56ff29a47879a9da725",
+      "redactions": {}
+    },
+    {
+      "run": "pr824-prefect-mock-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1088,
+      "truncated": false,
+      "sha256": "cf2cc2b5b7efb289ec9184369326fdb18bbe3d5913dbd10fa4f793ee0fcae49f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

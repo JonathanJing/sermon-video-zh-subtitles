@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "deepseek-translation-review-ab-call-v1",
+  "stage": "deepseek-low-translate",
+  "requestedModel": "deepseek/deepseek-v4.1-flash-1017",
+  "reasoningEffort": "low",
+  "requestedServiceTier": "default",
+  "elapsedSeconds": 25.083445,
+  "usage": {
+    "input_tokens": 17472,
+    "cached_input_tokens": 0,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 4348,
+    "reasoning_output_tokens": 2865
+  },
+  "outputTokensPerSecond": 173.3414,
+  "exitCode": 0,
+  "toolCalls": 0,
+  "resultSha256": "c94b01150975cf224440d9a87451313198a5c9b9e397a1a4b70d4ab4292e087d",
+  "schemaConformant": false,
+  "normalization": "wrapped top-level array and renamed translated `english` field to `zh`",
+  "normalizedResultSha256": "4a85d928d7725ee546279125419563bd6fca760b398b73d318910c5ce9bd8ae3"
+}

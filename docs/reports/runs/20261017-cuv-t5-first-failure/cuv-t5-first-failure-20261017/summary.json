@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "cuv-t5-test-summary-v1",
+  "initialCommand": "pytest tests/test_tongxing_production_package.py tests/test_infrastructure_path_aliases.py",
+  "initialResult": "1 failed, 13 passed, 1 skipped, 429 subtests passed",
+  "diagnosis": "The first subprocess resolved tongxing_production from the original checkout. A dedicated editable worktree venv removed that mismatch; its first passes stopped on missing reportlab and requests. No product assertion failed.",
+  "sourceCommit": "8d78f147",
+  "paidRequests": 0
+}

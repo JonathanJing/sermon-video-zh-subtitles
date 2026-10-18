@@ -1,0 +1,8 @@
+test_bad_bucket_and_existing_output_fail_without_changing_source (tests.test_prepare_v3_bucket_video_migration.BucketVideoMigrationTests.test_bad_bucket_and_existing_output_fail_without_changing_source) ... ok
+test_legacy_and_new_cli_candidate_bytes_match (tests.test_prepare_v3_bucket_video_migration.BucketVideoMigrationTests.test_legacy_and_new_cli_candidate_bytes_match) ... ok
+test_migration_preserves_assets_and_adds_exact_redirect (tests.test_prepare_v3_bucket_video_migration.BucketVideoMigrationTests.test_migration_preserves_assets_and_adds_exact_redirect) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.708s
+
+OK

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr890-python-ci-39079555633",
+  "runs": [
+    {
+      "label": "20261017-pr890-python-ci-39079555633",
+      "source": "/private/tmp/backend-cloud-run-jobs-20261017/artifacts/20261017-pr890-python-ci-39079555633",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-pr890-python-ci-39079555633",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 209,
+      "truncated": false,
+      "sha256": "380411af3969a964e2dbc0954c8d0fad0283dbf384ed770147c23e212ed32a61",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-pr890-python-ci-39079555633",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2494,
+      "truncated": false,
+      "sha256": "045cb0522f98953f7756e44274bfddd6937bb19ef83befde593062a26107b960",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

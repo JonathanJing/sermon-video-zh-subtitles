@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr884-ios-success",
+  "runs": [
+    {
+      "label": "pr884-ios-success-39078673703",
+      "source": "/private/tmp/sermon-audit-portable-media-move-20261017/artifacts/pr884-ios-success-39078673703",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr884-ios-success-39078673703",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 361,
+      "truncated": false,
+      "sha256": "0509e1267814f7ed1344f75266b952926a6b32aec188a4cda44b6c3cce008105",
+      "redactions": {}
+    },
+    {
+      "run": "pr884-ios-success-39078673703",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 914,
+      "truncated": false,
+      "sha256": "0daabd78c0eaf850e22eb372329adcceb440fbe7371c15271e7ff60332d48a24",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

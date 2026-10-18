@@ -1,0 +1,69 @@
+{
+  "status": "cancelled",
+  "runId": 39075395717,
+  "workflow": "Python tests",
+  "headSha": "859998f61afcb133a1d16e38c46204cce15d93d6",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39075395717",
+  "scope": "Original draft-head Python CI superseded during closure fix",
+  "jobs": {
+    "changes": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:31:06Z",
+      "completedAt": "2026-10-17T22:31:17Z"
+    },
+    "test-group (root-5)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:31:19Z",
+      "completedAt": "2026-10-17T22:41:09Z"
+    },
+    "test-group (root-1)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:31:19Z",
+      "completedAt": "2026-10-17T22:43:28Z"
+    },
+    "test-group (root-4)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:31:19Z",
+      "completedAt": "2026-10-17T22:42:28Z"
+    },
+    "test-group (root-0)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:31:19Z",
+      "completedAt": "2026-10-17T22:43:39Z"
+    },
+    "test-group (root-2)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:31:21Z",
+      "completedAt": "2026-10-17T22:45:40Z"
+    },
+    "test-group (root-7)": {
+      "conclusion": "cancelled",
+      "startedAt": "2026-10-17T22:31:21Z",
+      "completedAt": "2026-10-17T22:46:19Z"
+    },
+    "test-group (root-6)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:31:19Z",
+      "completedAt": "2026-10-17T22:44:02Z"
+    },
+    "test-group (root-3)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:31:22Z",
+      "completedAt": "2026-10-17T22:42:03Z"
+    },
+    "Native and shared client contracts": {
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T22:31:18Z",
+      "completedAt": "2026-10-17T22:31:17Z"
+    },
+    "unittest": {
+      "conclusion": "failure",
+      "startedAt": "2026-10-17T22:46:21Z",
+      "completedAt": "2026-10-17T22:46:23Z"
+    }
+  },
+  "limitations": [
+    "Seven root shards succeeded; root-7 cancelled; unittest aggregate failed",
+    "No complete Python CI pass on this head"
+  ]
+}

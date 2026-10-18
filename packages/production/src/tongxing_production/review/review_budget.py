@@ -20,6 +20,7 @@ from .contracts import canonical_sha256, read_snapshot, require
 from .unmoved import jobs
 
 SCHEMA = 'sermon-review-budget-v1'
+REUSE_SCHEMA = 'sermon-review-budget-v2'
 SNAPSHOT_SCHEMA = 'sermon-review-budget-snapshot-v1'
 STORE_ID = canonical_sha256({'schemaVersion': SCHEMA})
 METRICS = ('requests', 'inputTokens', 'outputTokens', 'wallTimeMs', 'costMicrousd')
@@ -27,6 +28,7 @@ DEFAULT_LIMITS = {'contentRevisions': 2, 'reviewAttemptsPerRevision': 2, 'decisi
 IDENTITY_FIELDS = ('sourceIdentitySha256', 'sourcePackageSha256', 'anchorSha256',
                    'policySha256', 'rubricSha256', 'targetLocale', 'workUnitId')
 KINDS = ('initial_generation', 'review', 'content_revision', 'decision_proposal')
+REUSE_PROVENANCE_SCHEMA = 'sermon-review-budget-direct-paid-provenance-v1'
 
 
 def _exact(value, keys, code):
@@ -104,7 +106,54 @@ def _result(value):
     return deepcopy(value)
 
 
+def _reuse_provenance(value):
+    _exact(value, ('schemaVersion', 'budgetRoot', 'ledgerSchemaVersion', 'storeSha256',
+                   'authoritySha256', 'reservationId', 'operationId', 'inputSha256',
+                   'resultMarkerSha256', 'responseSha256'), 'invalid_budget_reuse_provenance')
+    require(value['schemaVersion'] == REUSE_PROVENANCE_SCHEMA
+            and value['ledgerSchemaVersion'] in (SCHEMA, REUSE_SCHEMA)
+            and type(value['budgetRoot']) is str
+            and Path(value['budgetRoot']).is_absolute()
+            and str(Path(value['budgetRoot']).resolve()) == value['budgetRoot'],
+            'invalid_budget_reuse_provenance')
+    for key in ('storeSha256', 'authoritySha256', 'reservationId', 'inputSha256',
+                'resultMarkerSha256', 'responseSha256'):
+        _hash(value[key])
+    _label(value['operationId'])
+    return deepcopy(value)
+
+
+def _reuse_settlement(value):
+    _exact(value, ('costStatus', 'costMicrousd', 'reusedFrom'), 'invalid_budget_reuse_settlement')
+    require(value['costStatus'] == 'reused' and type(value['costMicrousd']) is int
+            and value['costMicrousd'] == 0, 'invalid_budget_reuse_settlement')
+    return {'costStatus': 'reused', 'costMicrousd': 0,
+            'reusedFrom': _reuse_provenance(value['reusedFrom'])}
+
+
+def _reuse_result(value):
+    _exact(value, ('executionStatus', 'contentStatus', 'receiptSha256', 'usage'),
+           'invalid_budget_reuse_result')
+    require(value['executionStatus'] == 'succeeded'
+            and value['contentStatus'] == 'not_assessed', 'invalid_budget_reuse_result')
+    _hash(value['receiptSha256'])
+    _amounts(value['usage'], positive=False)
+    require(value['usage'] == dict.fromkeys(METRICS, 0), 'invalid_budget_reuse_result')
+    return deepcopy(value)
+
+
+def _migration(value):
+    if value is None:
+        return None
+    _exact(value, ('fromSchemaVersion', 'priorApprovalSha256'), 'invalid_budget_migration')
+    require(value['fromSchemaVersion'] == SCHEMA, 'invalid_budget_migration')
+    _hash(value['priorApprovalSha256'])
+    return deepcopy(value)
+
+
 def _charge(row):
+    if row.get('settlement', {}).get('costStatus') == 'reused':
+        return dict.fromkeys(METRICS, 0)
     result = row.get('result')
     if result is None or result['executionStatus'] == 'outcome_unknown':
         return row['request']['bounds']
@@ -117,7 +166,7 @@ def _sum(rows):
 
 
 class BudgetStore:
-    def __init__(self, root, authority, *, max_ledger_bytes=None):
+    def __init__(self, root, authority, *, max_ledger_bytes=None, reuse_roots=()):
         """``max_ledger_bytes`` widens the single-file ledger for a caller whose
         store holds many reservations (the per-locale canonical Layer 2 shard);
         every other store keeps the shared snapshot limit."""
@@ -127,6 +176,9 @@ class BudgetStore:
         # None follows the shared limit at use time, as before.
         self.max_ledger_bytes = max_ledger_bytes
         self.root = Path(root).resolve()
+        self.reuse_roots = tuple(Path(value).resolve() for value in reuse_roots)
+        require(len(set(self.reuse_roots)) == len(self.reuse_roots)
+                and self.root not in self.reuse_roots, 'invalid_budget_reuse_roots')
         self.authority = _authority(authority)
         self.authority_sha256 = canonical_sha256(self.authority)
         self.store_sha256 = canonical_sha256({'root': str(self.root), 'schemaVersion': SCHEMA})
@@ -144,23 +196,38 @@ class BudgetStore:
                 os.fsync(fd)
                 jobs._sync_directory(self.root / '.locks')
                 jobs._sync_directory_ancestry(self.root)
-                ledger = {'schemaVersion': SCHEMA, 'authority': self.authority,
-                          'storeSha256': self.store_sha256, 'reservations': {}}
+                ledger = {'schemaVersion': REUSE_SCHEMA if self.reuse_roots else SCHEMA,
+                          'authority': self.authority,
+                          'storeSha256': self.store_sha256, 'reservations': {},
+                          **({'reuseBudgetRoots': [str(root) for root in self.reuse_roots],
+                              'migration': None}
+                             if self.reuse_roots else {})}
                 jobs._persist(folder / 'state.json', ledger)
             # An existing folder with missing/corrupt state is never reset.
             ledger, _ = read_snapshot(folder / 'state.json', max_bytes=self.max_ledger_bytes)
-            _exact(ledger, ('schemaVersion', 'authority', 'storeSha256', 'reservations'),
+            version = ledger.get('schemaVersion') if isinstance(ledger, dict) else None
+            _exact(ledger, ('schemaVersion', 'authority', 'storeSha256', 'reservations')
+                   + (('reuseBudgetRoots', 'migration') if version == REUSE_SCHEMA else ()),
                    'invalid_budget_ledger')
-            require(ledger['schemaVersion'] == SCHEMA and ledger['authority'] == self.authority
+            require(version in (SCHEMA, REUSE_SCHEMA) and ledger['authority'] == self.authority
                     and ledger['storeSha256'] == self.store_sha256, 'budget_authority_changed')
+            require((version != REUSE_SCHEMA or ledger['reuseBudgetRoots'] ==
+                     [str(root) for root in self.reuse_roots]), 'budget_reuse_roots_changed')
+            if version == REUSE_SCHEMA:
+                _migration(ledger['migration'])
+            require(not self.reuse_roots or version == REUSE_SCHEMA,
+                    'budget_v2_explicit_migration_required')
             require(type(ledger['reservations']) is dict, 'invalid_budget_ledger')
-            for key, row in ledger['reservations'].items(): self._validate_row(key, row)
+            for key, row in ledger['reservations'].items():
+                self._validate_row(key, row, version=version,
+                                   reuse_roots=ledger.get('reuseBudgetRoots', ()))
             yield folder, ledger
 
-    def _validate_row(self, key, row):
+    def _validate_row(self, key, row, *, version=SCHEMA, reuse_roots=()):
         _hash(key)
         require(type(row) is dict and set(row) in
-                ({'request', 'phase'}, {'request', 'phase', 'result'}), 'invalid_budget_reservation')
+                ({'request', 'phase'}, {'request', 'phase', 'result'},
+                 {'request', 'phase', 'result', 'settlement'}), 'invalid_budget_reservation')
         request = row['request']
         _exact(request, ('identity', 'operationId', 'kind', 'revisionId', 'revisionNumber',
                          'inputSha256', 'bounds'), 'invalid_budget_request')
@@ -169,7 +236,15 @@ class BudgetStore:
         require(key == self._reservation_id(request), 'invalid_budget_reservation_identity')
         require(row['phase'] in ('intent', 'request', 'result'), 'invalid_budget_phase')
         require(('result' in row) == (row['phase'] == 'result'), 'invalid_budget_result_phase')
-        if 'result' in row: _result(row['result'])
+        if 'settlement' in row:
+            require(version == REUSE_SCHEMA, 'invalid_budget_reservation')
+            require(row['phase'] == 'result', 'invalid_budget_reuse_result')
+            _reuse_result(row['result'])
+            settlement = _reuse_settlement(row['settlement'])
+            require(settlement['reusedFrom']['budgetRoot'] in reuse_roots,
+                    'budget_reuse_source_not_approved')
+        elif 'result' in row:
+            _result(row['result'])
 
     def _reservation_id(self, request):
         return canonical_sha256({'chainId': canonical_sha256(request['identity']),
@@ -201,6 +276,84 @@ class BudgetStore:
         # Ensure we never publish a ledger larger than our bounded reader accepts.
         self._check_serialized_size(ledger, self.max_ledger_bytes)
         jobs._persist(folder / 'state.json', ledger)
+
+    def migrate_to_v2(self):
+        """Explicitly add the approved reuse-root identity without changing old rows."""
+        require(self.reuse_roots, 'budget_reuse_roots_required')
+        with jobs._lock(self.root, STORE_ID) as (folder, _, held):
+            require(held, 'budget_store_busy')
+            require(folder.exists(), 'budget_v1_ledger_required')
+            ledger, _ = read_snapshot(folder / 'state.json', max_bytes=self.max_ledger_bytes)
+            if ledger.get('schemaVersion') == REUSE_SCHEMA:
+                _exact(ledger, ('schemaVersion', 'authority', 'storeSha256', 'reservations',
+                                'reuseBudgetRoots', 'migration'), 'invalid_budget_ledger')
+                require(ledger.get('reuseBudgetRoots') == [str(root) for root in self.reuse_roots]
+                        and ledger.get('authority') == self.authority
+                        and ledger.get('storeSha256') == self.store_sha256
+                        and isinstance(ledger.get('reservations'), dict),
+                        'budget_reuse_roots_changed')
+                _migration(ledger.get('migration'))
+                for key, row in ledger['reservations'].items():
+                    self._validate_row(key, row, version=REUSE_SCHEMA,
+                                       reuse_roots=ledger['reuseBudgetRoots'])
+                return {'status': 'already_v2', 'from': REUSE_SCHEMA, 'to': REUSE_SCHEMA}
+            _exact(ledger, ('schemaVersion', 'authority', 'storeSha256', 'reservations'),
+                   'invalid_budget_ledger')
+            prior_authority = _authority(ledger.get('authority'))
+            require(ledger['schemaVersion'] == SCHEMA
+                    and all(prior_authority[key] == self.authority[key]
+                            for key in ('globalBounds', 'unitBounds', 'limits'))
+                    and ledger['storeSha256'] == self.store_sha256
+                    and isinstance(ledger['reservations'], dict), 'budget_authority_changed')
+            for key, row in ledger['reservations'].items():
+                self._validate_row(key, row, version=SCHEMA)
+            ledger.update(schemaVersion=REUSE_SCHEMA, authority=self.authority,
+                          reuseBudgetRoots=[str(root) for root in self.reuse_roots],
+                          migration={'fromSchemaVersion': SCHEMA,
+                                     'priorApprovalSha256': prior_authority['approvalSha256']})
+            self._save(folder, ledger)
+            jobs._sync_directory_ancestry(folder)
+            return {'status': 'migrated', 'from': SCHEMA, 'to': REUSE_SCHEMA,
+                    'reservations': len(ledger['reservations'])}
+
+    def record_reuse(self, identity, *, operation_id, kind, revision_id,
+                     revision_number, input_sha256, bounds, reused_from):
+        """Record an exact directly-paid response without granting execution or charging a bound."""
+        require(self.reuse_roots, 'budget_reuse_roots_required')
+        request = _request(identity, operation_id, kind, revision_id, revision_number,
+                           input_sha256, bounds)
+        provenance = _reuse_provenance(reused_from)
+        require(Path(provenance['budgetRoot']) in self.reuse_roots,
+                'budget_reuse_source_not_approved')
+        rid = self._reservation_id(request)
+        result = {'executionStatus': 'succeeded', 'contentStatus': 'not_assessed',
+                  'receiptSha256': provenance['responseSha256'],
+                  'usage': dict.fromkeys(METRICS, 0)}
+        settlement = {'costStatus': 'reused', 'costMicrousd': 0,
+                      'reusedFrom': provenance}
+        with self._locked() as (folder, ledger):
+            require(ledger['schemaVersion'] == REUSE_SCHEMA,
+                    'budget_v2_explicit_migration_required')
+            rows = ledger['reservations']
+            if rid in rows:
+                require(rows[rid] == {'request': request, 'phase': 'result',
+                                      'result': result, 'settlement': settlement},
+                        'reservation_idempotency_conflict')
+                return self._public(rid, rows[rid], False)
+            same = [row for row in rows.values() if row['request']['identity'] == identity]
+            require(not any(row['phase'] != 'result'
+                            or row['result']['executionStatus'] == 'outcome_unknown'
+                            for row in same), 'budget_reconciliation_required')
+            self._check_transition(request, same)
+            marker = folder / (rid + '.result.json')
+            require(not marker.exists(), 'conflicting_saved_result')
+            jobs._persist(marker, {'reservationId': rid, 'result': result,
+                                   'settlement': settlement})
+            rows[rid] = {'request': request, 'phase': 'result', 'result': result,
+                         'settlement': settlement}
+            self._save(folder, ledger)
+            jobs._sync_directory_ancestry(folder)
+            return self._public(rid, rows[rid], True)
 
     def reserve(self, identity, *, operation_id, kind, revision_id, revision_number,
                 input_sha256, bounds, locked_check=None):
@@ -306,6 +459,7 @@ class BudgetStore:
         with self._locked() as (folder, ledger):
             row = ledger['reservations'].get(rid)
             require(row is not None, 'unknown_budget_reservation')
+            require('settlement' not in row, 'reused_result_is_immutable')
             require(reconciliation or row['phase'] != 'intent', 'result_requires_started_request')
             if 'result' in row and row['result'] == result:
                 return self._public(rid, row, False)

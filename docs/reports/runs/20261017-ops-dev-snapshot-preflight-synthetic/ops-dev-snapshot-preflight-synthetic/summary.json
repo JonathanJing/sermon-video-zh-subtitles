@@ -1,0 +1,12 @@
+{
+  "tests": [
+    "old/new module identity",
+    "external-CWD old/new CLI and python -m",
+    "dynamic file loading alias",
+    "synthetic full and incremental HTTP comparison",
+    "mismatch refusal"
+  ],
+  "environmentNote": "System python lacked pytest; worktree-local venv used for successful run.",
+  "modelCalls": 0,
+  "networkRequests": 0
+}

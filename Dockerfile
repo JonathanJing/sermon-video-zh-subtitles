@@ -8,10 +8,12 @@ RUN apt-get update \
 
 COPY requirements.txt /app/requirements.txt
 COPY packages/ /app/packages/
+COPY services/api/ /app/services/api/
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY backend/ /app/backend/
 COPY scripts/ /app/scripts/
+COPY tools/ops/sermon_unified_preflight.py /app/tools/ops/sermon_unified_preflight.py
 COPY schemas/ /app/schemas/
 COPY docs/series-terminology.zh.md /app/docs/series-terminology.zh.md
 COPY data/scripture/ /app/data/scripture/

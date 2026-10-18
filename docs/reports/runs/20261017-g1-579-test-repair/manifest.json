@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-579-test-repair",
+  "runs": [
+    {
+      "label": "g1-sync-579-repair-20261017",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-sync-579-repair-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-sync-579-repair-20261017",
+      "path": "focused-pytest.log",
+      "kind": "log",
+      "bytes": 98,
+      "truncated": false,
+      "sha256": "42317fada6dcccf66125f116d742efc2b7f7fa15372a60582b23352bdc60c64e",
+      "redactions": {}
+    },
+    {
+      "run": "g1-sync-579-repair-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 609,
+      "truncated": false,
+      "sha256": "a7455b85c1ba5c3d7f3eb2a0d82be0f2a90e0f7a4ea5d908a409c563c2efbae5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

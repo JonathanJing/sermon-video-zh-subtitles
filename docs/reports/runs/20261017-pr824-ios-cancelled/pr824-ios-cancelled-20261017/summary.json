@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "pr824-ci-run-summary-v1",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39072856922",
+  "headSha": "8f62ed294b2b326387b3e3ffba1670b1a0f97c83",
+  "conclusion": "cancelled",
+  "note": "Initial draft iOS run canceled when PR changed state; required native-client gate failed because changes and downstream jobs were canceled.",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "name": "ios-validation",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "cancelled"
+    }
+  ]
+}

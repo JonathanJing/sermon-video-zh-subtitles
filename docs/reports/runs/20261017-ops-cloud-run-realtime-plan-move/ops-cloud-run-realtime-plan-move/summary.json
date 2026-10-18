@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "codeCommit": "2c4d3747",
+  "base": "origin/dev f873e4a7",
+  "tests": {
+    "command": "python3 -m unittest tests.test_prepare_cloud_run_realtime_update_plan tests.test_refresh_production_preflight_evidence",
+    "ran": 15,
+    "result": "passed"
+  },
+  "cliEquivalence": {
+    "forms": [
+      "scripts path",
+      "tools/ops path",
+      "scripts module",
+      "tools.ops module"
+    ],
+    "input": "synthetic JSON report",
+    "result": "identical stdout and --out JSON; approval_required"
+  },
+  "diffCheck": "passed",
+  "limits": [
+    "No Cloud Run command executed",
+    "No remote readback, deployment, HTTP, device or venue check"
+  ]
+}

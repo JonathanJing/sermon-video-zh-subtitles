@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "runId": 39070467631,
+  "workflow": "Python tests",
+  "trigger": "pull_request",
+  "headSha": "a9596c260dfb8d77a74b8589981e33b3efe04e73",
+  "branch": "codex/ops-dev-snapshot-preflight-20261017",
+  "base": "dev",
+  "rootGroups": {
+    "root-0": "success",
+    "root-1": "success",
+    "root-2": "success",
+    "root-3": "success",
+    "root-4": "success",
+    "root-5": "success",
+    "root-6": "success",
+    "root-7": "success"
+  },
+  "aggregator": "success",
+  "nativeSharedContracts": "skipped",
+  "scope": "PR #796 Firebase Dev snapshot preflight tool move",
+  "limitations": [
+    "synthetic CI and focused local tests only",
+    "no real Firebase Dev readback, HTTP, publication, device or venue acceptance"
+  ]
+}
