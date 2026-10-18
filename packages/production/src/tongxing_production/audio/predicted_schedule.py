@@ -32,6 +32,9 @@ RATE_SCHEMA_V1 = "sermon-target-speech-rate-v1"
 RATE_SCHEMA = "sermon-target-speech-rate-v2"
 RATE_IMPLEMENTATION_FILES = (
     "target_audio_predicted_schedule.py", "render_formal_target_language_speech.py",
+    "packages/production/src/tongxing_production/audio/hosted.py",
+    "packages/production/src/tongxing_production/audio/backend.py",
+    "scripts/tongxing_host.py",
     "ko_spoken_numerals.py", "sermon_sentence_interpretation.py",
     "language_review_plugins/auto_qc_text_common.py",
     "language_review_plugins/common.py",
@@ -67,7 +70,8 @@ def rate_implementation_sha256() -> str:
     # Names are the rate identity's keys; a file that moved into the production
     # package is read at its alias, with the same bytes.
     root = _audio.current().core.repo_root
-    files = {name: hashlib.sha256((root / path_aliases.resolve("scripts/" + name)).read_bytes()).hexdigest()
+    files = {name: hashlib.sha256((root / path_aliases.resolve(
+                name if name.startswith(("packages/", "scripts/")) else "scripts/" + name)).read_bytes()).hexdigest()
              for name in RATE_IMPLEMENTATION_FILES}
     return hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 

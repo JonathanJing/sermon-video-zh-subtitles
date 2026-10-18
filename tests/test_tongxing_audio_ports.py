@@ -97,13 +97,31 @@ class AudioPortsTests(unittest.TestCase):
                 self.assertEqual(code.implementation_path(name), waiver.implementation_path(name))
         for name in predicted.RATE_IMPLEMENTATION_FILES:
             with self.subTest(closure='rate', name=name):
-                self.assertEqual(code.implementation_path('scripts/' + name),
-                                 host.ROOT / producer_compatibility.resolve('scripts/' + name))
+                key = name if name.startswith(('packages/', 'scripts/')) else 'scripts/' + name
+                self.assertEqual(code.implementation_path(key),
+                                 host.ROOT / producer_compatibility.resolve(key))
         for name in screening.SCORING_IMPLEMENTATION_FILES:  # legacy keys, read where each file lives now
             with self.subTest(closure='scoring', name=name):
                 self.assertEqual(code.implementation_path(name), host.ROOT / path_aliases.resolve(name))
         self.assertEqual(code.implementation_path('scripts/sermon_sentence_interpretation.py'),
                          host.ROOT / 'packages/production/src/tongxing_production/source/sentence_interpretation.py')
+
+    def test_host_rule_binding_bytes_invalidate_every_affected_identity(self):
+        keys = ('packages/production/src/tongxing_production/audio/hosted.py',
+                'packages/production/src/tongxing_production/audio/backend.py',
+                'scripts/tongxing_host.py')
+        baseline = (waiver.implementation_sha256(), screening.implementation_sha256(),
+                    predicted.rate_implementation_sha256())
+        original = Path.read_bytes
+        for key in keys:
+            with self.subTest(key=key):
+                target = host.ROOT / key
+                with patch.object(Path, 'read_bytes',
+                                  lambda path: original(path) + b'\n# changed binding\n'
+                                  if path == target else original(path)):
+                    changed = (waiver.implementation_sha256(), screening.implementation_sha256(),
+                               predicted.rate_implementation_sha256())
+                self.assertTrue(all(new != old for new, old in zip(changed, baseline)))
 
     def test_self_hashes_match_the_values_layer_3_records_today(self):
         code, runtime = audio.current().code, audio.current().tts_runtime
