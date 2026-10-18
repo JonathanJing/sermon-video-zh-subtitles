@@ -400,8 +400,8 @@ class QcRuntime:
     write_report: Callable[..., Any]           # export_run_digest.write_report(run_dirs, label)
     codex_text_transport: Callable[[], ModuleType]   # sermon_codex_transport: TEXT_MODEL; its file hash is adapter identity
     validate_target_candidate: Callable[..., dict]   # (source_package, anchor, candidate, *, require_human_approval=True, ...)
-    implementation_freeze: Callable[[], ModuleType]  # R4 module remains in the host until the next review batch
-    audio_waiver_acceptance: Callable[[], ModuleType]  # R4 machine acceptance builder
+    implementation_freeze: Callable[[], ModuleType]  # review/ freeze guard for QC drivers
+    audio_waiver_acceptance: Callable[[], ModuleType]  # review/ machine acceptance builder
 
 
 @dataclass(frozen=True)
