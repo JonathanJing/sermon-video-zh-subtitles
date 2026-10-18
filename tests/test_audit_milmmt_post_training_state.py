@@ -20,6 +20,22 @@ SPEC.loader.exec_module(MODULE)
 
 
 class AuditMiLMMTStateTest(unittest.TestCase):
+    def test_legacy_bare_and_package_import_share_patch_state(self):
+        legacy = importlib.import_module("scripts.audit_milmmt_post_training_state")
+        sys.path.insert(0, str(REPO_ROOT / "scripts"))
+        try:
+            bare = importlib.import_module("audit_milmmt_post_training_state")
+        finally:
+            sys.path.pop(0)
+        self.assertIs(bare, legacy)
+        original = legacy.audit
+        marker = object()
+        try:
+            legacy.audit = marker
+            self.assertIs(bare.audit, marker)
+        finally:
+            legacy.audit = original
+
     def test_legacy_loader_keeps_two_checkouts_separate(self):
         first = importlib.import_module("scripts.audit_milmmt_post_training_state")
         with tempfile.TemporaryDirectory() as tmp:
@@ -34,16 +50,15 @@ class AuditMiLMMTStateTest(unittest.TestCase):
             other = importlib.util.module_from_spec(spec)
             assert spec.loader is not None
             spec.loader.exec_module(other)
-            other = sys.modules["milmmt_other_checkout"]
-            self.assertEqual(Path(other.__file__), second_impl.resolve())
+            self.assertEqual(Path(other.audit.__code__.co_filename), second_impl.resolve())
             self.assertEqual(other.DEFAULT_ROOT, checkout.resolve())
             self.assertIsNot(other.audit, first.audit)
-            self.assertEqual(Path(first.__file__), SCRIPT)
+            self.assertEqual(Path(first.audit.__code__.co_filename), SCRIPT)
 
     def test_legacy_and_new_cli_agree_from_another_working_directory(self):
         self.assertEqual(MODULE.DEFAULT_ROOT, REPO_ROOT)
         legacy = importlib.import_module("scripts.audit_milmmt_post_training_state")
-        self.assertEqual(Path(legacy.__file__), SCRIPT)
+        self.assertEqual(Path(legacy.audit.__code__.co_filename), SCRIPT)
         self.assertIs(sys.modules["scripts.audit_milmmt_post_training_state"], legacy)
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -94,6 +109,16 @@ class AuditMiLMMTStateTest(unittest.TestCase):
             )
             self.assertEqual(imported.returncode, 0, imported.stderr)
             self.assertEqual(Path(imported.stdout.strip()), SCRIPT)
+
+            bare = subprocess.run(
+                [sys.executable, "-c", "import sys; sys.path.insert(0, sys.argv[1]); "
+                 "import audit_milmmt_post_training_state as audit; print(audit.audit.__code__.co_filename)",
+                 str(REPO_ROOT / "scripts")],
+                cwd=root, capture_output=True, text=True,
+                env={key: value for key, value in os.environ.items() if key != "PYTHONPATH"},
+            )
+            self.assertEqual(bare.returncode, 0, bare.stderr)
+            self.assertEqual(Path(bare.stdout.strip()), SCRIPT)
 
     def test_audit_keeps_provider_output_training_blocked(self):
         with tempfile.TemporaryDirectory() as tmp:
