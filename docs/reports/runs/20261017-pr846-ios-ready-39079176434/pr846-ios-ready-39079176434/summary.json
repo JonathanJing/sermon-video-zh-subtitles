@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "runId": 39079176434,
+  "workflow": "Tongxing iOS",
+  "event": "pull_request ready_for_review",
+  "headSha": "6298c7be2326472207d8b8a8fd71103547a252b2",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39079176434",
+  "scope": "Ready-state Tongxing iOS CI on PR #846 after Dockerfile fix",
+  "createdAt": "2026-10-17T23:28:45Z",
+  "completedAt": "2026-10-17T23:31:38Z",
+  "jobs": {
+    "changes": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:28:47Z",
+      "completedAt": "2026-10-17T23:28:56Z"
+    },
+    "contract-validation": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:29:06Z",
+      "completedAt": "2026-10-17T23:31:31Z"
+    },
+    "ios-validation": {
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T23:28:56Z",
+      "completedAt": "2026-10-17T23:28:56Z"
+    },
+    "native-client": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:31:33Z",
+      "completedAt": "2026-10-17T23:31:37Z"
+    }
+  },
+  "limitations": [
+    "ios-validation skipped by workflow routing",
+    "CI does not establish physical device playback or venue acceptance"
+  ]
+}
