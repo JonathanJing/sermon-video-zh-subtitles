@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Bind analytics locales to verified published assets; retain prior API sources.
 
-Reads the v4 multilingual catalog when published (machine-checked locales included),
-otherwise its human-only v3 projection."""
+Reads the v5 multilingual catalog when published (including per-target source
+editions), otherwise v4 and then its human-only v3 projection."""
 import argparse
 import copy
 import hashlib
@@ -95,37 +95,61 @@ def build(public, previous_catalog, legacy_locale):
             asset(public, track['audioUrl'], track['sha256'])
             add(source(week.get('date', week['id']), track['id'], track['sha256'],
                        track['durationSeconds'], track['cues'], week['id'], legacy_locale))
-    # v4 lists every published locale, machine-checked ones included; v3 is its human-only projection.
-    v4 = public / 'multilingual-v4.json'
-    multilingual = read(asset(public, '/multilingual-v4.json' if v4.exists() else '/multilingual-v3.json'))
-    if multilingual.get('schemaVersion') not in {'sermon-multilingual-catalog-v3', 'sermon-multilingual-catalog-v4'}:
-        raise ValueError('Expected multilingual catalog v3 or v4')
+    # v5 lists presentation families with target-bound source editions; v4/v3
+    # remain the exact legacy fallback when v5 is absent.
+    catalog_name = next((name for name in ('multilingual-v5.json', 'multilingual-v4.json', 'multilingual-v3.json')
+                         if (public / name).is_file()), 'multilingual-v3.json')
+    multilingual = read(asset(public, '/' + catalog_name))
+    if multilingual.get('schemaVersion') not in {'sermon-multilingual-catalog-v3', 'sermon-multilingual-catalog-v4',
+                                                  'sermon-multilingual-catalog-v5'}:
+        raise ValueError('Expected multilingual catalog v3, v4 or v5')
     for page in multilingual['pages']:
         for locale, target in page['targets'].items():
             if target.get('audioStatus') not in PLAYABLE:
                 continue
+            per_target = multilingual['schemaVersion'] == 'sermon-multilingual-catalog-v5' and page.get('sourceMode') == 'per_target'
+            edition = target.get('editionId') if per_target else page['id']
+            source_identity = target.get('sourceIdentitySha256') if per_target else page['sourceIdentitySha256']
+            source_media = target.get('sourceMediaSha256') if per_target else page.get('sourceMediaSha256')
+            if per_target:
+                video = target.get('videoDelivery')
+                if (not isinstance(edition, str) or not HASH.fullmatch(source_identity or '')
+                        or not HASH.fullmatch(source_media or '') or not isinstance(video, dict)
+                        or video.get('canonicalUrl') != f'/pages/{edition}/full-video-browser.mp4'
+                        or video.get('sha256') != source_media):
+                    raise ValueError('Target source/video identity mismatch')
             release = read(asset(public, target['releasePackageUrl'], target['releasePackageJsonSha256']))
             machine = release.get('schemaVersion') == 'sermon-target-language-release-package-v4'
+            expected_release = f"/releases-v{4 if machine else 2}/{edition}/{locale}.json"
             if (release.get('schemaVersion') not in RELEASES or release.get('status') != 'published_http_verified'
-                    or release.get('pageId') != page['id'] or release.get('audioLocale') != locale
+                    or (per_target and target.get('releasePackageUrl') != expected_release)
+                    or release.get('pageId') != edition or release.get('audioLocale') != locale
                     or release.get('targetLocale') != locale or release.get('contentLocale') != locale
                     or release.get('audioStatus') != target['audioStatus']
                     or release.get('contentStatus') != target.get('contentStatus', 'human_reviewed')
                     or (not machine and (release['audioStatus'], release['contentStatus'])
                         != ('human_reviewed', 'human_reviewed'))
-                    or (machine and (multilingual['schemaVersion'] != 'sermon-multilingual-catalog-v4'
+                    or (machine and (multilingual['schemaVersion'] not in {'sermon-multilingual-catalog-v4', 'sermon-multilingual-catalog-v5'}
                                      or not target['releasePackageUrl'].startswith('/releases-v4/')
-                                     or release.get('englishSourcePackageJsonSha256') != page['sourceIdentitySha256']))):
+                                     or release.get('englishSourcePackageJsonSha256') != source_identity
+                                     or (per_target and release.get('sourceIdentity', {}).get('mediaSha256') != source_media)))):
                 raise ValueError('Release is not a same-locale published package of its catalog status')
             assets = {a['role']: a for a in release['assets']}
             if len(assets) != len(release['assets']):
                 raise ValueError('Duplicate release asset')
             verified = {role: asset(public, assets[role]['path'], assets[role]['sha256'])
                         for role in ('content', 'captions', 'audio')}
+            if per_target:
+                expected_assets = {'content': f'/content/{edition}/{locale}.json',
+                                   'captions': f'/captions/{edition}/{locale}.json',
+                                   'audio': f'/media/{edition}/{locale}.mp3'}
+                if any(assets[role].get('path') != path for role, path in expected_assets.items()):
+                    raise ValueError('Release assets differ from target edition')
             content, captions = read(verified['content']), read(verified['captions'])
-            if (content.get('pageId') != page['id'] or content.get('targetLocale') != locale
+            if (content.get('pageId') != edition or content.get('targetLocale') != locale
                     or content.get('status') != release['contentStatus']
-                    or content.get('englishSourcePackageJsonSha256') != page['sourceIdentitySha256']
+                    or content.get('englishSourcePackageJsonSha256') != source_identity
+                    or (per_target and content.get('sourceMediaSha256') != source_media)
                     or content.get('targetLanguageCandidateJsonSha256') != release['targetLanguageCandidateJsonSha256']):
                 raise ValueError('Published content source mismatch')
             sha = assets['audio']['sha256']

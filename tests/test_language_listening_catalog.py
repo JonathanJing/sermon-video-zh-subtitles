@@ -80,6 +80,61 @@ class CatalogTests(unittest.TestCase):
                          (f'week-one-ko-{sha[:12]}', 12))
         self.assertEqual(sources['zh-Hans']['durationSeconds'], 10)
 
+    def make_mixed_source_v5(self):
+        family, edition, locale = 'week-one', 'broadcast-edition', 'zh-Hans'
+        source_identity, source_media = 'c' * 64, 'd' * 64
+        cues = [dict(start=0, end=10, text='approved', textGroupId='g1')]
+        content = dict(schemaVersion='sermon-full-video-text-content-v2', pageId=edition,
+                       targetLocale=locale, status='human_reviewed',
+                       englishSourcePackageJsonSha256=source_identity,
+                       sourceMediaSha256=source_media, targetLanguageCandidateJsonSha256='b' * 64,
+                       durationSeconds=10, audioDurationSeconds=10)
+        assets = []
+        for role, path, payload in (
+                ('content', f'content/{edition}/{locale}.json', content),
+                ('captions', f'captions/{edition}/{locale}.json', dict(cues=cues)),
+                ('audio', f'media/{edition}/{locale}.mp3', b'family-audio')):
+            self.write(path, payload)
+            assets.append(dict(role=role, path='/' + path, sha256=module.digest(self.public / path)))
+        release = dict(schemaVersion='sermon-target-language-release-package-v2',
+                       status='published_http_verified', pageId=edition, targetLocale=locale,
+                       contentLocale=locale, audioLocale=locale, audioStatus='human_reviewed',
+                       contentStatus='human_reviewed', targetLanguageCandidateJsonSha256='b' * 64,
+                       assets=assets)
+        release_path = f'releases-v2/{edition}/{locale}.json'
+        self.write(release_path, release)
+        target = dict(editionId=edition, sourceIdentitySha256=source_identity,
+                      sourceMediaSha256=source_media, audioStatus='human_reviewed',
+                      contentStatus='human_reviewed', releasePackageUrl='/' + release_path,
+                      releasePackageJsonSha256=module.digest(self.public / release_path),
+                      videoDelivery=dict(schemaVersion='sermon-video-delivery-v1',
+                                         canonicalUrl=f'/pages/{edition}/full-video-browser.mp4',
+                                         storageUrl=f'https://storage.googleapis.com/bucket/weekly/{edition}/{source_media}.mp4',
+                                         sha256=source_media, bytes=1234))
+        page = dict(id=family, date='2026-09-27', sourceMode='per_target',
+                    defaultTargetLocale=locale, targets={locale: target})
+        self.write('multilingual-v5.json', dict(schemaVersion='sermon-multilingual-catalog-v5', pages=[page]))
+        return page, target, assets[-1]['sha256'], cues
+
+    def test_v5_family_source_uses_edition_assets_but_keeps_previous_broadcast_alias(self):
+        page, _, audio_sha, cues = self.make_mixed_source_v5()
+        old = module.source(page['date'], f"broadcast-edition-zh-Hans-{audio_sha[:12]}",
+                            audio_sha, 10, cues, 'broadcast-edition', 'zh-Hans')
+        previous = copy.deepcopy(self.previous); previous['sources'].append(old)
+        result = self.build(previous)
+        family = next(row for row in result['sources'] if row['trackId'].startswith('week-one-zh-Hans-'))
+        self.assertEqual((family['week'], family['pageId'], family['audioLocale']),
+                         ('2026-09-27', 'week-one', 'zh-Hans'))
+        self.assertEqual(family['audioSha256'], audio_sha)
+        self.assertIn(old, result['sources'])
+
+    def test_v5_family_rejects_crossed_target_source(self):
+        page, target, _, _ = self.make_mixed_source_v5()
+        target['sourceIdentitySha256'] = 'e' * 64
+        self.write('multilingual-v5.json', dict(schemaVersion='sermon-multilingual-catalog-v5', pages=[page]))
+        with self.assertRaisesRegex(ValueError, 'content source mismatch'):
+            self.build()
+
     def test_v4_catalog_keeps_human_four_product_v3_releases(self):
         # Adding a machine-checked locale to a four-product page keeps its human v3 releases.
         page, _ = self.machine_checked_ko()
