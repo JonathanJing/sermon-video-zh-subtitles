@@ -1,0 +1,22 @@
+{
+  "baseCommit": "55d10a9e",
+  "codeCommit": "8f62ed29",
+  "paidOrRemoteProductionCalls": 0,
+  "realEvidence": {
+    "cacheFiles": 49,
+    "modelCalls": 0,
+    "samples": 2,
+    "sha256Unchanged": true,
+    "writeCalls": 0
+  },
+  "schemaVersion": "cuv-legacy-review-test-summary-v1",
+  "scope": "historical_reviewedBy_reconstruction_only",
+  "sourceContentExported": false,
+  "tests": {
+    "count": 3,
+    "elapsedSeconds": 2.694,
+    "legacyV4AndTimingV3OfflineReplay": "passed",
+    "newSolFullFakeChain": "passed",
+    "syntheticAstraLabel": "passed"
+  }
+}

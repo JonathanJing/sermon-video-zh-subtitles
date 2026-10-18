@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "testFiles": [
+    "tests/test_accounting_observability.py",
+    "tests/test_accounting_log_contract.py",
+    "tests/test_sermon_strict_layer2.py",
+    "tests/test_run_post_live_timeline_job.py",
+    "tests/test_timeline_recovery_and_handoff.py",
+    "tests/test_sermon_production_supervisor.py"
+  ],
+  "limitations": "One local targeted pytest invocation on final stack head. No full suite, production source, PDF delivery, or device validation."
+}

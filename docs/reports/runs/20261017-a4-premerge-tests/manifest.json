@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-a4-premerge-tests",
+  "runs": [
+    {
+      "label": "a4-premerge-tests-20261017",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/a4-premerge-tests-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "a4-premerge-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 284,
+      "truncated": false,
+      "sha256": "494f1cddf6add84a708eecdfa78003c35ef1af13b9f43c13f7f1ea83a8d18d65",
+      "redactions": {}
+    },
+    {
+      "run": "a4-premerge-tests-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 312,
+      "truncated": false,
+      "sha256": "ef952263576869b58f79549fe05bf32c9f4311589ef5a984b1caedbac06422a1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

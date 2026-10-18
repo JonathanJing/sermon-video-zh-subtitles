@@ -1,0 +1,16 @@
+{
+  "scope": "R4 Review module migration; focused pytest and structural checks",
+  "results": {
+    "focusedPytest": "117 passed, 111 subtests passed",
+    "gitDiffCheck": "pass",
+    "reviewStageImportScan": "pass"
+  },
+  "identity": {
+    "W": "6eeb52aa5d640df366ec9a623ae5b7998e353907528c019c53a388e2e73d6f89",
+    "T": "d32c3865b5d3915778f8de3366d1c64d1abd700824f5d705ac5e033c2c17b4fa",
+    "scoring": "bb055d32a3d1b06f5fac52d60fdaf1da1b324a5a33ac92d5b45fc41d6f95709c",
+    "rate": "baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac"
+  },
+  "baseline": "R3 fcd623b359aa08a3b3c30b9e9730003e7c17392d",
+  "note": "An old freeze test assumed the moved audio QC file still lived in scripts; updated test to resolve its alias, then all focused tests passed. No paid or production run."
+}

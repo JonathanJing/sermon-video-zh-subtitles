@@ -1,0 +1,8 @@
+plan-qc-zh-Hans	pass	0
+check-af-qc-preflight	pass	0
+check-qc-zh-Hans-out	pass	0
+text-qc.zh-Hans.out	pass	71
+spark-begin-1	pass	3
+voice-auth.zh-Hans	pass	0
+speech-job.zh-Hans	fail(1)	0
+spark-finish	pass	7

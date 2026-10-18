@@ -1,0 +1,12 @@
+{
+  "status": "success",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "headCommitSha": "1c5190acd727fd5a74413192646aa80747ff9c59",
+  "check": "Timeline optional dependency wheel metadata",
+  "tomlParsed": true,
+  "wheelBuiltWithIsolatedBuildDependencies": true,
+  "wheelProvidesExtra": "timeline",
+  "wheelRequiresDist": "requests<3,>=2.32; extra == timeline",
+  "producerApiCalls": 0
+}

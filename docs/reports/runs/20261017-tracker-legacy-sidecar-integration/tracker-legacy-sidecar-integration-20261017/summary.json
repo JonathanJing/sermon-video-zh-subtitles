@@ -1,0 +1,17 @@
+{
+  "testModules": [
+    "test_accounting_observability",
+    "test_accounting_log_contract",
+    "test_verify_sermon_observability_sidecars",
+    "test_build_tracker_dag_projection",
+    "test_project_codex_credit_usage",
+    "test_sermon_trace_export"
+  ],
+  "focusedTest": "test_sermon_strict_layer2.StrictAdapterTests.test_ambiguous_http_and_transport_failures_stay_unknown_without_retry",
+  "testsRun": 86,
+  "failures": 0,
+  "errors": 0,
+  "wallSeconds": 5.802,
+  "diffCheck": "passed",
+  "fullCiRun": "not_run_on_this_head"
+}

@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "commit": "496df474af348703e621b30697aedebf8f9721a7",
+  "cases": [
+    {
+      "name": "legacy_identity_deep_sidecar_invalid_version",
+      "testsRun": 3,
+      "failed": 0,
+      "elapsedSeconds": 0.727
+    },
+    {
+      "name": "affected_observability_and_projection_suite",
+      "testsRun": 80,
+      "failed": 0,
+      "elapsedSeconds": 6.053
+    }
+  ],
+  "exitCode": 0
+}

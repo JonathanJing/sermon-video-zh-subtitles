@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr775-spark-wait-ci",
+  "runs": [
+    {
+      "label": "pr775-full-ci-39066042923",
+      "source": "~/.codex/worktrees/dev-icon-alignment-tool/sermon-video-zh-subtitles/artifacts/pr775-full-ci-39066042923",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr775-full-ci-39066042923",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 367,
+      "truncated": false,
+      "sha256": "345540a01498ab4b05292ab9c20b9319fbac3ca15986ae3804c6bfeb6460ead5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

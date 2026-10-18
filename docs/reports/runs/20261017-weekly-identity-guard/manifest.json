@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-weekly-identity-guard",
+  "runs": [
+    {
+      "label": "weekly-identity-guard-20261017",
+      "source": "~/.codex/worktrees/weekly-report-projection/sermon-video-zh-subtitles/artifacts/weekly-identity-guard-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-identity-guard-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 448,
+      "truncated": false,
+      "sha256": "151d6802e886285edf1e5bdba2151d76d2729ef02b2cc5242451541d246757c1",
+      "redactions": {}
+    },
+    {
+      "run": "weekly-identity-guard-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 354,
+      "truncated": false,
+      "sha256": "af16143700785e4518851f87ff55a6119335fcdbbb22f04c4a7d951b89f09659",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

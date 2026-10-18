@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "success",
+  "startedAt": "2026-10-17T16:54:58.099115+00:00",
+  "deliveryType": "test",
+  "modelCalls": 0,
+  "endedAt": "2026-10-17T16:55:01.346882+00:00",
+  "pythonExit": 0,
+  "nodeExit": 0,
+  "pythonTests": 48,
+  "nodeTests": 32
+}

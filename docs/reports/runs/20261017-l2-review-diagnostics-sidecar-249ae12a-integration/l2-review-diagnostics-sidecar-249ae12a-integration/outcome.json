@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "L2 review diagnostics and sidecar integration",
+  "codeHead": "aeb3659b43",
+  "parentHead": "249ae12a34",
+  "pythonTests": {
+    "run": 85,
+    "passed": 84,
+    "skipped": 1,
+    "failed": 0
+  },
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr808-python-ci-39071225496",
+  "runs": [
+    {
+      "label": "pr808-python-ci-39071225496",
+      "source": "~/.codex/worktrees/l4-announcement-sidecar/sermon-video-zh-subtitles/artifacts/pr808-python-ci-39071225496",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr808-python-ci-39071225496",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 279,
+      "truncated": false,
+      "sha256": "97f0773f419907ff709c376d6cff9867a81041e9548e1731474ad32a027cb4a7",
+      "redactions": {}
+    },
+    {
+      "run": "pr808-python-ci-39071225496",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2703,
+      "truncated": false,
+      "sha256": "49883ca97623b3cb20fce36dd9f1c4941ce884e4a876640e5b9d7fd4c350dc25",
+      "redactions": {}
+    },
+    {
+      "run": "pr808-python-ci-39071225496",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 368,
+      "truncated": false,
+      "sha256": "ec61bcbc3f466fcc81956354a64ac259b85498bfce0086d8229fcae13e8a284f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

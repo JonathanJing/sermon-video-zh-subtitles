@@ -1,0 +1,6 @@
+stage	status	seconds
+deepseek-translate	pass	24.284491
+deepseek-review	pass	167.036143
+sol-translate	pass	52.276202
+sol-review	pass	22.825828
+blind-judge	pass	9.267313

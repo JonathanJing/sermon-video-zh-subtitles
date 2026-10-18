@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "github-actions-ci-outcome-v1",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-17T16:27:43Z",
+  "endedAt": "2026-10-17T16:48:18Z",
+  "deliveryType": "test",
+  "productionRun": "not_run",
+  "paidModelCalls": 0,
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39049502001",
+  "headSha": "f43b562f4f7ba0d9df4e534fbc8847827aaa3185"
+}

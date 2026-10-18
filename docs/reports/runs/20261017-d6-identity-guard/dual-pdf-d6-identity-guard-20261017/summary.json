@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "testFiles": [
+    "tests/test_accounting_observability.py",
+    "tests/test_accounting_log_contract.py",
+    "tests/test_sermon_strict_layer2.py",
+    "tests/test_bind_published_alignment_catalog.py",
+    "tests/test_build_published_english_reference.py"
+  ],
+  "limitations": "Local targeted tests only. No full CI, dev merge, production execution, PDF publication, or device validation."
+}

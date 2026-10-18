@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-timeline-move-local-tests",
+  "runs": [
+    {
+      "label": "timeline-move-local-tests",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/timeline-move-local-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "timeline-move-local-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 812,
+      "truncated": false,
+      "sha256": "c91bcc321fcd4a349f14a4996e1faf999143e2b07f6cabb856166fc1cecd4a32",
+      "redactions": {}
+    },
+    {
+      "run": "timeline-move-local-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 221,
+      "truncated": false,
+      "sha256": "47f176681190da9f33de15db6bf53bcf7d1a5b88e68bc498f6a893fca8cf1775",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

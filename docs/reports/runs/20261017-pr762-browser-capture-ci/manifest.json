@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr762-browser-capture-ci",
+  "runs": [
+    {
+      "label": "pr762-full-ci-39064179487",
+      "source": "~/.codex/worktrees/dev-browser-cache-smoke/sermon-video-zh-subtitles/artifacts/pr762-full-ci-39064179487",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr762-full-ci-39064179487",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 367,
+      "truncated": false,
+      "sha256": "7b9bfc2dd933d0323fe0b502d947e18ef05fa53307e6fec66dc9a58e566dd308",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

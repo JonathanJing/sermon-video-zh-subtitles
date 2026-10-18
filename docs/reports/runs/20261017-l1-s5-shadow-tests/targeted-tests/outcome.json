@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "local-targeted-test-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "purpose": "44 offline unit tests on S5 worktree in isolated interpreter with child imports bound to this worktree",
+  "testCount": 44
+}

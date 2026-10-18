@@ -1,0 +1,71 @@
+{
+  "status": "passed",
+  "runId": 39078119883,
+  "workflow": "Python tests",
+  "headSha": "6298c7be2326472207d8b8a8fd71103547a252b2",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39078119883",
+  "scope": "Exact-head Python test shards and aggregate after Dockerfile fix and dev base merge",
+  "createdAt": "2026-10-17T23:12:32Z",
+  "completedAt": "2026-10-17T23:27:52Z",
+  "jobs": {
+    "changes": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:12:34Z",
+      "completedAt": "2026-10-17T23:12:42Z"
+    },
+    "test-group (root-5)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:13:16Z",
+      "completedAt": "2026-10-17T23:22:17Z"
+    },
+    "test-group (root-0)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:13:32Z",
+      "completedAt": "2026-10-17T23:21:42Z"
+    },
+    "test-group (root-4)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:13:34Z",
+      "completedAt": "2026-10-17T23:20:08Z"
+    },
+    "test-group (root-2)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:13:57Z",
+      "completedAt": "2026-10-17T23:27:12Z"
+    },
+    "test-group (root-1)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:13:54Z",
+      "completedAt": "2026-10-17T23:21:31Z"
+    },
+    "test-group (root-7)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:13:44Z",
+      "completedAt": "2026-10-17T23:27:22Z"
+    },
+    "test-group (root-6)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:13:56Z",
+      "completedAt": "2026-10-17T23:27:46Z"
+    },
+    "test-group (root-3)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:14:10Z",
+      "completedAt": "2026-10-17T23:26:41Z"
+    },
+    "Native and shared client contracts": {
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T23:12:43Z",
+      "completedAt": "2026-10-17T23:12:42Z"
+    },
+    "unittest": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:27:48Z",
+      "completedAt": "2026-10-17T23:27:52Z"
+    }
+  },
+  "limitations": [
+    "Native and shared client contracts skipped by workflow routing",
+    "CI tests do not establish production, paid, device or venue acceptance"
+  ]
+}

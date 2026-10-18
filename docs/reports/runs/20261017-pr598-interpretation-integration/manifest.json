@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr598-interpretation-integration",
+  "runs": [
+    {
+      "label": "pr598-interpretation-integration-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-interpretation/sermon-video-zh-subtitles/artifacts/pr598-interpretation-integration-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr598-interpretation-integration-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 441,
+      "truncated": false,
+      "sha256": "c3107b56693cfd3330f2b637b7b94e421797d2e880b9af0aed503114916cd74f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

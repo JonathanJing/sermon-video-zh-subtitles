@@ -1,0 +1,49 @@
+Traceback (most recent call last):
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 813, in <module>
+    main()
+    ~~~~^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 807, in main
+    result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
+                     budget_authorization=<redacted>, expected_budget=args.expected_budget)
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 545, in execute
+    evidence, model_output = _run_auto_repair(
+                             ~~~~~~~~~~~~~~~~^
+        config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        admission_span, model_completion,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        qc_digest=current['packageIdentities'].get('backTranslationQc.' + locale))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 621, in _run_auto_repair
+    receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
+                                group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
+                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt)
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/layer2_auto_repair.py", line 881, in drive
+    evidence = run_round(out, reuse_from, brief, collector)
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 600, in run_round
+    return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                None, reuse_from, partial_repair_brief=brief,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                progress_callback=progress, predecessor_spans=[admission_span],
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                completion_spans=completion_spans, failure_collector=collector,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                candidate_mode=config.candidate_mode)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_target_language_models.py", line 1435, in run_accounted
+    evidence = _run_prepared_groups(
+        request, anchor, policy, out_dir, api_key, call, plan, plugin,
+    ...<2 lines>...
+        progress_callback=progress_callback, completion_spans=completion_spans,
+        failure_collector=failure_collector)
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_target_language_models.py", line 1082, in _run_prepared_groups
+    require(not out.exists() or all(entry.name == "accounting" and entry.is_dir()
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                    for entry in out.iterdir()),
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "Output directory is not empty")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_target_language_models.py", line 136, in require
+    raise ValueError(message)
+ValueError: Output directory is not empty

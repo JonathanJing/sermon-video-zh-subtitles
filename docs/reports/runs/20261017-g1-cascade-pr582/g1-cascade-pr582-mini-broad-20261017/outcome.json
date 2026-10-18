@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "commitSha256": "be9c558d3883063a99343e1da8e18b3e0c5adcba",
+  "purpose": "G1 stacked PR 582 exact-head focused verification",
+  "limits": [
+    "Code tests only; no calibration, paid provider, Spark, publication, or device acceptance"
+  ],
+  "status": "interrupted",
+  "exitCode": 130,
+  "startedAt": "2026-10-17T17:03:03Z",
+  "endedAt": "2026-10-17T17:08:08Z",
+  "environment": {
+    "hostId": "mac-mini-relay",
+    "python": "3.14.6",
+    "isolation": "independent worktree and editable venv"
+  },
+  "tests": {
+    "scope": "19-module broad suite stopped at five-minute bound; no completed suite count",
+    "reason": "Korean audio screening regex compilation was active at interrupt"
+  }
+}

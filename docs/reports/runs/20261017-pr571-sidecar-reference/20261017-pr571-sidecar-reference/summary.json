@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "testsRun": 36,
+  "durationSeconds": 1.56,
+  "note": "Includes earlier focused 2-test pass; initial system Python attempt failed on missing worktree package import before worktree_venv.py setup."
+}

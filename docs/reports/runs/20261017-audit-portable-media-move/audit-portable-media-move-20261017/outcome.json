@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "local-offline-test-outcome-v1",
+  "status": "passed",
+  "startedAt": "2026-10-17T23:20:06.538088+00:00",
+  "endedAt": "2026-10-17T23:20:09.800630+00:00",
+  "exitCode": 0,
+  "purpose": "audit_portable_media_move"
+}

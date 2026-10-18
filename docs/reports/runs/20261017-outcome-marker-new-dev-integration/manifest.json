@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-outcome-marker-new-dev-integration",
+  "runs": [
+    {
+      "label": "outcome-marker-new-dev-integration",
+      "source": "/private/tmp/sermon-outcome-marker-move-20261017/artifacts/outcome-marker-new-dev-integration",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "outcome-marker-new-dev-integration",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 314,
+      "truncated": false,
+      "sha256": "bb9cbda2d55e2cd8852e4e3a8a50532070ce5824374b44bf35ea6fbddeb11155",
+      "redactions": {}
+    },
+    {
+      "run": "outcome-marker-new-dev-integration",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 413,
+      "truncated": false,
+      "sha256": "1068f7340f5c1b0e805f8d8743ed734ee9f05f01450b55284d3a8a8fe5fdd27b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

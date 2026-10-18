@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "runId": 39078119877,
+  "workflow": "Local Prefect pilot",
+  "headSha": "6298c7be2326472207d8b8a8fd71103547a252b2",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39078119877",
+  "scope": "Exact-head local mock workflow after Dockerfile fix and dev base merge",
+  "createdAt": "2026-10-17T23:12:32Z",
+  "completedAt": "2026-10-17T23:22:09Z",
+  "jobs": {
+    "fresh-source-mock": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:12:34Z",
+      "completedAt": "2026-10-17T23:15:14Z"
+    },
+    "fresh-full-mock (test_actual_confirmed_failure_explicit_retry_keeps_successful_neighbor)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:12:34Z",
+      "completedAt": "2026-10-17T23:17:10Z"
+    },
+    "local-mock": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:12:34Z",
+      "completedAt": "2026-10-17T23:22:09Z"
+    },
+    "fresh-full-mock (test_actual_full_graph_then_clean_process_receipt_only_repeat)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:12:34Z",
+      "completedAt": "2026-10-17T23:15:41Z"
+    },
+    "fresh-full-mock (test_actual_ordinary_timeout_then_original_receipt_reconciliation)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:12:34Z",
+      "completedAt": "2026-10-17T23:16:18Z"
+    }
+  },
+  "limitations": [
+    "all jobs are local/mock CI checks, not production dispatch",
+    "no paid, live, device or venue acceptance"
+  ]
+}

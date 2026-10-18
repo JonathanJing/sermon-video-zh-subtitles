@@ -1,0 +1,10 @@
+{
+  "ciRun": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39042101166",
+  "ciJob": "root-2",
+  "ciTestsRun": 711,
+  "ciFailures": 1,
+  "ciSkipped": 5,
+  "failure": "CI interpreter editable install left checkout packages/production/src on sys.path; wheel test assumed clearing PYTHONPATH removed it",
+  "fixCommit": "f8f1b521",
+  "localRecheck": "1/1 wheel-resource test passed with checkout source removed from subprocess sys.path before wheel import"
+}

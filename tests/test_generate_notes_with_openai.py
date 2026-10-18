@@ -3,6 +3,7 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 
@@ -15,6 +16,13 @@ SPEC.loader.exec_module(mod)
 
 
 class GenerateNotesWithOpenAITest(unittest.TestCase):
+    def test_lazy_pdf_consumer_reaches_moved_renderer(self):
+        from scripts import render_sermon_interpretation_pdf as renderer
+        with patch.object(renderer, "render_interpretation_pdf", return_value={"status": "pass"}) as render:
+            self.assertEqual(mod.render_interpretation_pdf({"fixed": True}, Path("fixed.pdf")),
+                             {"status": "pass"})
+        render.assert_called_once_with({"fixed": True}, Path("fixed.pdf"))
+
     def test_parses_chinese_srt_as_note_segments(self):
         srt = """1
 00:00:01,000 --> 00:00:04,500

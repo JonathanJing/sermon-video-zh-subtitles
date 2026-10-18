@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T16:57:10Z",
+  "endedAt": "2026-10-17T16:57:17Z",
+  "purpose": "PR 571 exact-head targeted accounting sidecar verification",
+  "commitSha256": "249ae12a34d19baaaaf899e2e1e1ad0106cf1c9c",
+  "environment": {
+    "hostId": "mac-mini-relay",
+    "python": "3.14.6",
+    "ciPython": "3.12",
+    "isolation": "independent clone and venv"
+  },
+  "tests": {
+    "count": 82,
+    "runner": "unittest",
+    "scope": [
+      "test_accounting_observability",
+      "test_verify_sermon_observability_sidecars",
+      "test_accounting_log_contract",
+      "test_sermon_log_profile",
+      "test_build_tracker_dag_projection"
+    ]
+  },
+  "limits": [
+    "CI uses Python 3.12 and Linux; this Mac run uses Python 3.14 on macOS",
+    "No provider, Spark, publication, or device work"
+  ]
+}

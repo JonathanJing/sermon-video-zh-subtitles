@@ -1,0 +1,10 @@
+{
+  "kind": "local_test",
+  "status": "success",
+  "exitCode": 0,
+  "branchHead": "592a8eb2cf15b7d1ebc9914e6b8014dc77d8266b",
+  "baseHead": "00233589a2c6592e4124d49f5ea593135c7739ea",
+  "testsRun": 3,
+  "durationSeconds": 0.962,
+  "scope": "worktree venv focused tests and package facade contract"
+}

@@ -1,0 +1,81 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/main.py", line 105, in __init__
+    self.runTests()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/main.py", line 281, in runTests
+    self.result = testRunner.run(self.test)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/runner.py", line 240, in run
+    test(result)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py", line 122, in run
+    test(result)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py", line 122, in run
+    test(result)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py", line 122, in run
+    test(result)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/case.py", line 690, in __call__
+    return self.run(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/case.py", line 634, in run
+    self._callTestMethod(testMethod)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/case.py", line 589, in _callTestMethod
+    if method() is not None:
+       ^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/tests/test_machine_quality_waiver.py", line 990, in test_calibration_count_rate_inconsistencies_block
+    calibration = self.calibration("ko")
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/tests/test_machine_quality_waiver.py", line 601, in calibration
+    return seeded.calibrate(locale, fixtures.groups(locale), fixtures.units(locale),
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/packages/production/src/tongxing_production/review/seeded_errors.py", line 585, in calibrate
+    audio = calibrate_audio(units, locale, asr=asr, render=render, max_trials=max_trials,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/packages/production/src/tongxing_production/review/seeded_errors.py", line 513, in calibrate_audio
+    result = audio_qc.screen(rows, locale, calibration_policy_sha256=normalization_policy_sha256)["results"][index]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/packages/production/src/tongxing_production/review/audio_qc.py", line 418, in screen
+    primary, primary_stale = bound_opinion((row.get("asr") or {}).get("primary"), audio_sha, row["text"], locale)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/packages/production/src/tongxing_production/review/audio_qc.py", line 364, in bound_opinion
+    if opinion["similarity"] != transcript_similarity(text, opinion["recognized"], locale):
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/packages/production/src/tongxing_production/review/audio_qc.py", line 219, in transcript_similarity
+    return score(text, recognized, locale, 1.0)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/scripts/tongxing_host.py", line 675, in call
+    return getattr(_module(module)(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/packages/production/src/tongxing_production/audio/screening.py", line 636, in score
+    and protected_text_agrees(expected, recognized, locale, strip_punctuation=folded))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/packages/production/src/tongxing_production/audio/screening.py", line 207, in protected_text_agrees
+    if korean_native_numbers(left) != korean_native_numbers(right):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/packages/production/src/tongxing_production/audio/screening.py", line 167, in korean_native_numbers
+    return [text[start:end] for start, end in _korean_spans(text, _korean_native_forms())]
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/packages/production/src/tongxing_production/audio/screening.py", line 150, in _korean_spans
+    found = sorted((match.start(), -len(form)) for form in forms
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/packages/production/src/tongxing_production/audio/screening.py", line 151, in <genexpr>
+    for match in re.finditer(rules._ko_pattern(form, sino=sino), text))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/scripts/tongxing_host.py", line 675, in call
+    return getattr(_module(module)(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/scripts/language_review_plugins/auto_qc_text_common.py", line 211, in _ko_pattern
+    counters = "|".join(map(re.escape, _KO_COUNTERS))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

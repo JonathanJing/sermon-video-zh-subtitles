@@ -1,0 +1,48 @@
+
+> <email> test
+> node --test tests/*.test.mjs
+
+(node:36471) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ synthetic demo renders actual dependency branches and node selection without private links (52.024042ms)
+✔ language rerender and repeated node/toggle clicks retain a valid accessible selection (21.810458ms)
+✔ unavailable legacy graph preserves an explicit empty state and malformed graph fails closed (3.100541ms)
+✔ running node with stale heartbeat is a warning, not active; nonrequired gates are explicit (4.684708ms)
+✔ aging a previously estimated snapshot withholds old DAG ETA without rerendering focused controls (5.699292ms)
+✔ publisher silence ages fresh heartbeat display without erasing current keyboard focus (5.635333ms)
+✔ new snapshot retains expanded explanations and keyboard context without stale node identity (8.342875ms)
+✔ a refreshed outer wrapper cannot revive an old nested DAG ETA or heartbeat (4.428458ms)
+✔ timer refresh ages log evidence without a new snapshot (zh) (6.892583ms)
+✔ timer refresh ages log evidence without a new snapshot (en) (7.782292ms)
+(node:36472) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ closed public DAG removes raw logs, paths, identifiers, URLs and nonallowlisted models (2.568041ms)
+✔ DAG handles parallel branches by dependency levels, not serial list position (0.329458ms)
+✔ malformed cycles/duplicates/oversized graphs fail closed and missing dependencies remain explicit (0.254166ms)
+✔ missing durations never become zero; invalid ETA range remains unknown (0.116208ms)
+✔ v2 publisher retains the closed DAG while legacy snapshots do not invent one (0.586542ms)
+✔ timestamp-only regeneration does not fabricate progress or write every 15 seconds (0.565583ms)
+✔ public synthetic, mixed or unknown evidence cannot claim real approval or production ETA (0.315ms)
+✔ planned heartbeat remains explicit and actual observed node count survives display bounds (0.168541ms)
+✔ reported complete phase never hides canonical incomplete gates or unknown prior attempts (0.2855ms)
+✔ timestamps cannot carry comments or arbitrary payloads and malformed optional log shape is safe (0.158ms)
+✔ current and legacy accounting contract versions survive the public allowlist (0.2135ms)
+✔ numeric and complete ETA require a coherent nonempty bound plan, including every node mode (0.306084ms)
+✔ contradictory complete flags do not overrule missing required evidence (0.153375ms)
+✔ unknown ETA never preserves contradictory numeric endpoints in a valid real plan (0.077791ms)
+✔ freshness separates old snapshots, missing times and future clock skew from liveness (1.431334ms)
+✔ reconnect cannot replace a newer snapshot with stale, untimed or conflicting state (1.0305ms)
+✔ malformed and duplicate snapshots are bounded and do not blank last verified data (0.123ms)
+✔ completed checkpoint ledger never invents a completion timestamp from a serial ETA (0.085083ms)
+✔ one malformed document does not erase another page in a multi-page reconnect (0.117542ms)
+✔ malformed render shape cannot replace a good snapshot with a newer timestamp (0.117833ms)
+✔ nested optional malformed fields are normalized before rendering a new snapshot (0.086292ms)
+✔ incomplete or empty offline cache cannot erase last server-known pages during reconnect (0.103041ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 402.675083

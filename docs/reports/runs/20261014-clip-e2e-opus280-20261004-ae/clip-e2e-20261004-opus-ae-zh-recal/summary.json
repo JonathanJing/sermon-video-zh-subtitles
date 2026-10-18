@@ -1,0 +1,43 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-15T00:51:24+00:00",
+      "reusedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ac-zh-aqc",
+      "manifest": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal/reuse-manifest.json"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-15T00:51:24+00:00",
+      "reusedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ac-zh-aqc",
+      "manifest": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal/reuse-manifest.json"
+    },
+    "layer2": {
+      "status": "done",
+      "at": "2026-10-15T00:51:24+00:00",
+      "reusedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ac-zh-aqc",
+      "manifest": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal/reuse-manifest.json"
+    },
+    "qc.zh-Hans": {
+      "status": "failed",
+      "at": "2026-10-15T00:55:51+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal/l2/text/zh-Hans/candidate.json",
+          "out": "out",
+          "status": "error",
+          "failedGroups": null,
+          "receipt": null,
+          "waiverDir": null
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-ae-zh-recal/l2/text/zh-Hans/candidate.json"
+    }
+  },
+  "stopped": [
+    "qc.zh-Hans: error after 0 revision(s); failed None"
+  ],
+  "settledUsd": 18.364104,
+  "claudeListPriceEquivalentUsd": 0.0
+}

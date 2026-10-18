@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-tracker-full-recheck",
+  "runs": [
+    {
+      "label": "tracker-full-recheck",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/cascade-pr571/tracker-full-recheck",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tracker-full-recheck",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 533,
+      "truncated": false,
+      "sha256": "838cf1705f3e6632354c9e8b05b85613bbfeeeb73554379bc485f4354769c60a",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-full-recheck",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 200,
+      "truncated": false,
+      "sha256": "ecb7d682e3f2d3ee992a57e4bbfaae609e3dbff3ddd36dac590bc840361b9dbd",
+      "redactions": {}
+    },
+    {
+      "run": "tracker-full-recheck",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 185,
+      "truncated": false,
+      "sha256": "064100bb535908918e3d37c070a647a04ca99ec7d85fee1b00df7d5d31eef91c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

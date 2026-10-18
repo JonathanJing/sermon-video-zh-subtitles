@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "run": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39044515997",
+  "head": "8de4dda5ca04f3cc54230c974cec7742609f1d70",
+  "imagePublished": false,
+  "checks": [
+    "Docker build succeeded",
+    "production schema loader read sermon-app-delivery-v1",
+    "series_terminology.context read nonempty catalog"
+  ]
+}

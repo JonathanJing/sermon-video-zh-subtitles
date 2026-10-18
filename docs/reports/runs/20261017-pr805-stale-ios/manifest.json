@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr805-stale-ios",
+  "runs": [
+    {
+      "label": "pr805-stale-ios-39071169430",
+      "source": "~/.codex/worktrees/l1-s5-shadow/sermon-video-zh-subtitles/artifacts/pr805-stale-ios-39071169430",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr805-stale-ios-39071169430",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 181,
+      "truncated": false,
+      "sha256": "a8f43356de000dfd8127bbbbf277cdb18e3aa3720872756c1aaf1cab68e0a3ee",
+      "redactions": {}
+    },
+    {
+      "run": "pr805-stale-ios-39071169430",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 597,
+      "truncated": false,
+      "sha256": "742c856d433eb67e3a3a65de5c5db7477fa245ca335d2d8138380bbf08f1d795",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-audit-portable-media-move",
+  "runs": [
+    {
+      "label": "audit-portable-media-move-20261017",
+      "source": "/private/tmp/sermon-audit-portable-media-move-20261017/artifacts/audit-portable-media-move-20261017",
+      "skipped": {
+        ".py": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "audit-portable-media-move-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 236,
+      "truncated": false,
+      "sha256": "68c7d305cf0959a089d1c8925b9080271bab0717605dd238279001a0b1a03e92",
+      "redactions": {}
+    },
+    {
+      "run": "audit-portable-media-move-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 888,
+      "truncated": false,
+      "sha256": "5b2cf2b493d953c63f30a1f2fece8f0ba94646322b87f2b6ffd1b9adf3fa2c2c",
+      "redactions": {}
+    },
+    {
+      "run": "audit-portable-media-move-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 4973,
+      "truncated": false,
+      "sha256": "bfae5659795d69f464b31c9d6aa295228f602d0c0a9557e91f732f5d89baa55c",
+      "redactions": {}
+    },
+    {
+      "run": "audit-portable-media-move-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 53,
+      "truncated": false,
+      "sha256": "0034b92de587d043d3ce455a11e64cad6028a573b8032555e549da4890a2707a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

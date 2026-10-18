@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "baseCommit": "1f47e028f51638fc37861de64b861f167dd8b978",
+  "codeCommit": "4baa3cf81ddc875e31fe78039af0eaec16284065",
+  "scope": "retarget #607 to dev after #602 merge",
+  "commands": [
+    {
+      "name": "timeline, local download, interpretation PDF, parallel reading and notes unittest",
+      "tests": 53,
+      "exitCode": 0,
+      "seconds": 3.054431792
+    },
+    {
+      "name": "git diff --check origin/dev...HEAD",
+      "exitCode": 0
+    },
+    {
+      "name": "verify worktree production-package import path",
+      "exitCode": 0
+    }
+  ],
+  "externalCalls": 0,
+  "limitations": [
+    "mock and fixture checks only; no real post-live media or publication",
+    "prior full CI run 39067757422 is on pre-retarget head; new head CI pending"
+  ]
+}

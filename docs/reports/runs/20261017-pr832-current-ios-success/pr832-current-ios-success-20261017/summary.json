@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "pr832-ci-run-summary-v1",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39076056506",
+  "headSha": "586dd21a763ba832b8d39c6d0c067f7357f888c6",
+  "conclusion": "success",
+  "note": "Current-head iOS path gate succeeded; native-client passed, iOS and contract validation skipped.",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "ios-validation",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ]
+}

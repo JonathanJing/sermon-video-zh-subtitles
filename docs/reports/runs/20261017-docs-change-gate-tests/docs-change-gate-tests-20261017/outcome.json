@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "scope": "docs change gate move on ci-change-scope parent, focused local tests and fail-closed CLI parity",
+  "baseCommit": "00233589a2c6592e4124d49f5ea593135c7739ea",
+  "committedAs": "cacd5fc20bb9c80cf5516ad3ace52db497e32a37",
+  "unitTests": {
+    "passed": 17,
+    "failed": 0,
+    "exitCode": 0,
+    "seconds": 5.366
+  },
+  "cliParity": {
+    "entryPoints": 3,
+    "exitCode": 0,
+    "outputIdentical": true,
+    "classification": "docs_only=false"
+  },
+  "dynamicFileSpec": "existing test passed",
+  "packageFacade": "same implementation module",
+  "production": "not_run",
+  "publication": "not_run"
+}

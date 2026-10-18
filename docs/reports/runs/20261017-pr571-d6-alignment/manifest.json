@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-d6-alignment",
+  "runs": [
+    {
+      "label": "d6-alignment",
+      "source": "~/.codex/worktrees/tracker-projections/sermon-video-zh-subtitles/artifacts/cascade-pr571/d6-alignment",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "d6-alignment",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 102,
+      "truncated": false,
+      "sha256": "6c56f2f100954297311d258e64c6c8c7b8dfca6eb3c7507d981b25fc69a7b80d",
+      "redactions": {}
+    },
+    {
+      "run": "d6-alignment",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 68,
+      "truncated": false,
+      "sha256": "c06e614b5371f5090841939e6265753305b40aa37b854e3c3d0b56a004ef27f9",
+      "redactions": {}
+    },
+    {
+      "run": "d6-alignment",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "84fba77736dc4bb3f4a099cd1c3fd704c69fba2a53dbe02039ec354f357140f5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

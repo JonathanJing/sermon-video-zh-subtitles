@@ -1,0 +1,82 @@
+{
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:53:48Z",
+      "completedAt": "2026-10-17T22:54:01Z"
+    },
+    {
+      "name": "test-group (root-1)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:56:34Z",
+      "completedAt": "2026-10-17T23:04:20Z"
+    },
+    {
+      "name": "test-group (root-3)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:56:29Z",
+      "completedAt": "2026-10-17T23:08:32Z"
+    },
+    {
+      "name": "test-group (root-2)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:56:32Z",
+      "completedAt": "2026-10-17T23:11:01Z"
+    },
+    {
+      "name": "test-group (root-5)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:56:42Z",
+      "completedAt": "2026-10-17T23:11:24Z"
+    },
+    {
+      "name": "test-group (root-4)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:59:07Z",
+      "completedAt": "2026-10-17T23:14:08Z"
+    },
+    {
+      "name": "test-group (root-0)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:00:36Z",
+      "completedAt": "2026-10-17T23:13:50Z"
+    },
+    {
+      "name": "test-group (root-6)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:00:10Z",
+      "completedAt": "2026-10-17T23:13:14Z"
+    },
+    {
+      "name": "test-group (root-7)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:00:39Z",
+      "completedAt": "2026-10-17T23:16:53Z"
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T22:54:01Z",
+      "completedAt": "2026-10-17T22:54:01Z"
+    },
+    {
+      "name": "unittest",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:16:55Z",
+      "completedAt": "2026-10-17T23:16:57Z"
+    }
+  ],
+  "scope": "full Python selected suite; eight root test groups and aggregate unittest succeeded; native/shared-client job skipped by scope."
+}

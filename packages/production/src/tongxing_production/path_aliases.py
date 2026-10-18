@@ -15,8 +15,10 @@ LAYER1 = {
     # workflows/compute W3a: the versioned review prompts, moved byte for byte.
     'scripts/review_prompts.py': _SOURCE + 'review_prompts.py',
     'scripts/sermon_sentence_interpretation.py': _SOURCE + 'sentence_interpretation.py',
+    'scripts/prepare_sentence_interpretation_shadow.py': _SOURCE + 'sentence_interpretation_shadow.py',
     'scripts/mfa_alignment.py': _SOURCE + 'mfa_alignment.py',
     'scripts/sermon_source_producer_compatibility.py': _SOURCE + 'producer_compatibility.py',
+    'scripts/sermon_source_failure.py': _SOURCE + 'failure.py',
     'scripts/sermon_mfa_identity.py': _SOURCE + 'mfa_identity.py',
     'scripts/build_english_source_package.py': _SOURCE + 'english_source_package.py',
     'scripts/judge_english_source_for_translation.py': _SOURCE + 'english_source_judge.py',
@@ -32,6 +34,9 @@ LAYER1 = {
 # Layer 2 Text (tongxing_production.text), batches T1-T4.
 _TEXT = PRODUCTION + 'text/'
 LAYER2 = {
+    'scripts/sermon_cuv_translation.py': _TEXT + 'cuv_translation.py',
+    'scripts/cuv_preflight.py': _TEXT + 'cuv_preflight.py',
+    'scripts/sermon_review_diagnostics.py': _TEXT + 'review_diagnostics.py',
     'scripts/target_language_policy.py': _TEXT + 'policy.py',
     'scripts/target_language_policy_preview.py': _TEXT + 'policy_preview.py',
     'scripts/produce_target_language_candidate.py': _TEXT + 'candidate.py',
@@ -109,6 +114,8 @@ _DELIVERY = PRODUCTION + 'delivery/'
 _LEGACY = PRODUCTION + 'adapters/legacy/'
 LAYER4 = {
     'scripts/delivery_contract.py': _DELIVERY + 'contract.py',
+    'scripts/build_published_english_reference.py': _DELIVERY + 'published_english_reference.py',
+    'scripts/bind_published_alignment_catalog.py': _DELIVERY + 'published_alignment_catalog.py',
     'scripts/study_artifacts.py': _DELIVERY + 'study_artifacts.py',
     'scripts/release_asset_io.py': _DELIVERY + 'asset_io.py',
     'scripts/sermon_delivery_intent.py': _DELIVERY + 'intent.py',
@@ -182,6 +189,11 @@ WORKFLOWS = {
     # dual_pdf (tongxing_production.workflows.dual_pdf), batch W3a.
     'scripts/sermon_pipeline.py': PRODUCTION + 'workflows/dual_pdf/pipeline.py',
     'scripts/run_post_live_subtitle_generation.py': PRODUCTION + 'workflows/dual_pdf/post_live.py',  # W3c
+    'scripts/run_post_live_timeline_job.py': PRODUCTION + 'workflows/dual_pdf/timeline.py',
+    'scripts/post_live_run_status.py': PRODUCTION + 'workflows/dual_pdf/run_status.py',
+    'scripts/render_mobile_pdf_from_srt.py': PRODUCTION + 'workflows/dual_pdf/mobile_pdf.py',
+    'scripts/render_sermon_interpretation_pdf.py': PRODUCTION + 'workflows/dual_pdf/interpretation_pdf.py',
+    'scripts/run_local_post_live_download.py': PRODUCTION + 'workflows/dual_pdf/local_post_live_download.py',
     'scripts/run_codex_local_sermon_production.py': PRODUCTION + 'workflows/dual_pdf/codex_local.py',  # W3c
 }
 
@@ -193,6 +205,7 @@ STORAGE = {         # tongxing_production.storage, batch I2
     'scripts/sermon_public_snapshot.py': PRODUCTION + 'storage/snapshot.py',
 }
 OBSERVABILITY = {   # tongxing_production.observability, batches I3-I4
+    'scripts/weekly_pipeline_report.py': PRODUCTION + 'observability/weekly_projection.py',
     # I3: the accounting ring and its leaves.
     'scripts/sermon_accounting.py': PRODUCTION + 'observability/accounting.py',
     'scripts/sermon_log_contract.py': PRODUCTION + 'observability/log_contract.py',

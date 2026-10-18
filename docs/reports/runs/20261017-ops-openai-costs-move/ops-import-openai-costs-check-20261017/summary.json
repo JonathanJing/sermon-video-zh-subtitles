@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "local-code-check-summary-v1",
+  "status": "passed",
+  "baseCommit": "55d10a9e34bc22571089be9a65932a23e7474bff",
+  "checks": [
+    {
+      "name": "system_python_attempt",
+      "status": "failed",
+      "reason": "ModuleNotFoundError: jsonschema before test import; no test body ran"
+    },
+    {
+      "name": "worktree_venv_setup",
+      "status": "passed",
+      "detail": "Worktree venv imports tongxing_production from this checkout"
+    },
+    {
+      "name": "targeted_unittest",
+      "status": "passed",
+      "command": ".venv/bin/python -m unittest tests.test_import_openai_costs -v",
+      "testsRun": 12,
+      "failures": 0,
+      "errors": 0,
+      "elapsedSecondsReportedByUnittest": 0.008
+    },
+    {
+      "name": "synthetic_cli_parity",
+      "status": "passed",
+      "detail": "Old import alias, old -m CLI, old direct CLI, and new direct CLI from external CWD; output JSON equal and settlementStatus pending"
+    },
+    {
+      "name": "staged_diff_check",
+      "status": "passed",
+      "detail": "git diff --cached --check returned 0"
+    }
+  ],
+  "limits": [
+    "No real OpenAI Costs export, credentials, provider API, billing settlement, or production workflow was used."
+  ]
+}

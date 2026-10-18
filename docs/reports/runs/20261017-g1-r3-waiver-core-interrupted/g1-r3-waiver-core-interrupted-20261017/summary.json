@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "sermon-local-test-summary-v1",
+  "kind": "software_tests",
+  "checkout": "codex/g1-r3-review-20261017@fcd623b3",
+  "status": "stopped",
+  "command": ".venv/bin/python -m pytest -q tests/test_machine_quality_waiver.py",
+  "exitCode": 2,
+  "observedPassedTests": 48,
+  "observedPassedSubtests": 25,
+  "durationSeconds": 256.19,
+  "reason": "operator stopped optional slow fixture run after sufficient focused receipts; KeyboardInterrupt; no final suite result",
+  "scope": "local unit fixtures only; no model calls or publication"
+}

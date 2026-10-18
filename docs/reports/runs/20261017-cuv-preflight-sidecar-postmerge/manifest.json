@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-cuv-preflight-sidecar-postmerge",
+  "runs": [
+    {
+      "label": "cuv-preflight-sidecar-postmerge",
+      "source": "~/.codex/worktrees/cuv-preflight-move/sermon-video-zh-subtitles/artifacts/cuv-preflight-sidecar-postmerge",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "cuv-preflight-sidecar-postmerge",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 105,
+      "truncated": false,
+      "sha256": "85cf2f4404c8c55b7f88fe00acdfa9a1cf268768c7c525c8acf85b08577038be",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-preflight-sidecar-postmerge",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 240,
+      "truncated": false,
+      "sha256": "25a526c6f0d316eb3f0da20405b3000fb67dab210e3a7ea56d917f4e0893dd19",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
