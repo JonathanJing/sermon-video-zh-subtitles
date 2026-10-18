@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-568-exact-head-ios",
+  "runs": [
+    {
+      "label": "pr568-exact-head-ios-20261017",
+      "source": "~/.codex/worktrees/g1-qc-cascade/sermon-video-zh-subtitles/artifacts/pr568-exact-head-ios-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr568-exact-head-ios-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 343,
+      "truncated": false,
+      "sha256": "c744a2131a5919c7905ff8fd0ca42a7bd3121290dc83355b3b72641c2cfa05bd",
+      "redactions": {}
+    },
+    {
+      "run": "pr568-exact-head-ios-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 678,
+      "truncated": false,
+      "sha256": "5ddf30c5a8d66424dd6999c3effaabe0362929705a9f37e0cf312cc12e1e508f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
