@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "command": ".venv/bin/python -m unittest tests.test_review_leaves -v",
+  "result": "4 tests passed; independent pytest 4 passed, 6 subtests",
+  "note": "Temp root copies complete 49-file W physical list, mutates only moved repair ledger target, then restores; no real checkout file changed.",
+  "scope": "targeted code tests; no model, paid request, calibration, waiver or release"
+}
