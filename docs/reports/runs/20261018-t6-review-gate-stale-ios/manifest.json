@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-review-gate-stale-ios",
+  "runs": [
+    {
+      "label": "t6-review-gate-stale-ios-20261018",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-review-gate-stale-ios-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-review-gate-stale-ios-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 306,
+      "truncated": false,
+      "sha256": "035e8893ad4e5e1c557e16fa9a3399922d6af435d1ba8abb3eea1a5592ba4a3b",
+      "redactions": {}
+    },
+    {
+      "run": "t6-review-gate-stale-ios-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 496,
+      "truncated": false,
+      "sha256": "890a24ebdb818645eece12d33cb0fbed54274c4616242dda7dca61dac47508ee",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
