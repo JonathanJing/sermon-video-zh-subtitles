@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "test-run-outcome-v1",
+  "kind": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "durationSeconds": 2.75,
+  "headBeforeCommit": "2ee5f054bc294a82ff886de876f1577628c3d95a",
+  "testCase": "test_run_post_live_subtitle_generation.py::LoadedCodeIdentityTests::test_codex_local_load_time_imports_and_the_post_live_entry_are_in_the_identity"
+}
