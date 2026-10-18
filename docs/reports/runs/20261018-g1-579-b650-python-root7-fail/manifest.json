@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-579-b650-python-root7-fail",
+  "runs": [
+    {
+      "label": "g1-579-b650-python-root7-fail",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-579-b650-python-root7-fail",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-579-b650-python-root7-fail",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 349,
+      "truncated": false,
+      "sha256": "90028debe99ebadaabc281ad4b75d3e4b48bb22ab83e15a1be590614d2bd3488",
+      "redactions": {}
+    },
+    {
+      "run": "g1-579-b650-python-root7-fail",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1590,
+      "truncated": false,
+      "sha256": "1864b308c0faa819fabdb9b20d9067128920322a24aa184120b42658dbd6cd5b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
