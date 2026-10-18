@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "runType": "ios_test",
+  "status": "pass",
+  "startedAt": "2026-10-18T16:54:00Z",
+  "endedAt": "2026-10-18T16:58:30Z",
+  "exitCode": 0,
+  "pageId": "resi-20261018-15030286",
+  "locale": "zh-Hans",
+  "modelCalls": 0
+}
