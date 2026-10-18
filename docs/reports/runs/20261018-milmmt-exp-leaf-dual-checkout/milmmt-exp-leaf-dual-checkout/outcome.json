@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-18T03:35:11.038969+00:00",
+  "endedAt": "2026-10-18T03:35:11.452255+00:00",
+  "scope": "MiLMMT synthetic audit, CLI, foreign package, and dual-checkout loader tests",
+  "headRevision": "9faa27c1"
+}
