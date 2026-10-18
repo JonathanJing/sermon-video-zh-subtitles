@@ -1,0 +1,17 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "headSha": "c0224028f1ae054b73fb86dd5984f5503578617e",
+  "workflow": "Python tests",
+  "runId": 39096320227,
+  "workflowConclusion": "success",
+  "jobs": {
+    "changes": "success",
+    "rootGroups": "8 success",
+    "unittest": "success",
+    "nativeContracts": "skipped"
+  },
+  "publication": "not_run",
+  "realProduction": "not_run"
+}
