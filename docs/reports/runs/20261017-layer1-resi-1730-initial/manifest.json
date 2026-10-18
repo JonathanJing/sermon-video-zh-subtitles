@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-layer1-resi-1730-initial",
+  "runs": [
+    {
+      "label": "layer1-15030286-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-15030286-20261017",
+      "skipped": {
+        ".lock": 159,
+        ".json": 306,
+        ".jsonl": 2,
+        ".csv": 6,
+        ".wav": 24
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "layer1-15030286-20261017",
+      "path": ".jobs-v2.source-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 70983,
+      "truncated": false,
+      "source": ".jobs-v2.source-budget/source-budget.json",
+      "sha256": "400bb874aacbfa01b74147185619401d1b66e508d8d2ba7a3dc9e15380bce7f5",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": ".jobs.source-budget/source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 8702,
+      "truncated": false,
+      "source": ".jobs.source-budget/source-budget.json",
+      "sha256": "240d90895b6493b65e7a3388c801b07ea2948e56dece246eb645cbe30376c128",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "decisions.ndjson",
+      "kind": "whole",
+      "bytes": 1944,
+      "truncated": false,
+      "sha256": "78171f6b083096662a1839265b4fd61ed739a87ec14f59f747c6105da7a13769",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "execute-stderr.log",
+      "kind": "log",
+      "bytes": 1954,
+      "truncated": false,
+      "sha256": "cd5175067edba23b8e5e089938011ed343aa2eebd5b1a2444606b7a34a2dfd59",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "execute-v2-resume-stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "execute-v2-stderr.log",
+      "kind": "log",
+      "bytes": 3229,
+      "truncated": false,
+      "sha256": "16cf3a07f6ec669f11adfdd6ee2cec2a9988ff088df0324e5c4e51c0585fea9b",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 991,
+      "truncated": false,
+      "sha256": "e5a7fb1ed7061bee768491cb7c759db14eac5440da6a1f7a110035dba1ddf49d",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "output/accounting/operations.log",
+      "kind": "log",
+      "bytes": 7835,
+      "truncated": false,
+      "sha256": "963b5b23aa9fa97cf57b4aed5e642424d4817fca3e41b838c4ceb26d726cf5ef",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "output/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 47031,
+      "truncated": false,
+      "sha256": "5910d2137605b62d7083b980647f6c89433715e3cc8d8967d1e2c7db622a3b1d",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "output-v2/accounting/operations.log",
+      "kind": "log",
+      "bytes": 46368,
+      "truncated": false,
+      "sha256": "fc184d52064f1de4f7faff44400066fa6d42b1848a9e51cec8197d48231a5d41",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "output-v2/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 176432,
+      "truncated": false,
+      "sha256": "49d16fdccc0bb84a4a6d51c4abe28ec91f7ebcd63257cd8875b3ea69c96c6291",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "output-v2/alignment-receipt.json",
+      "kind": "whole",
+      "bytes": 23044,
+      "truncated": false,
+      "sha256": "bfb2b7ae8ad7f5c8de674d6ee7c50e03812900757fb971affaa1498a9815480e",
+      "redactions": {
+        "private_ip": 1,
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "output-v2/summary.json",
+      "kind": "whole",
+      "bytes": 24793,
+      "truncated": false,
+      "sha256": "5da5a4c4a72b2ca675faf57b9226e8b8e576f8bc617fef9f39c0d80a254d1ba9",
+      "redactions": {
+        "private_ip": 1,
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "layer1-15030286-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1386,
+      "truncated": false,
+      "sha256": "47ebe16c98a5859af2abbdc1af6d5c2bdf638ef20779f06afcb7fb0788724dc3",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
