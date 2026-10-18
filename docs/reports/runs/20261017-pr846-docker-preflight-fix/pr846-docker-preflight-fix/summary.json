@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "headSha": "6298c7be2326472207d8b8a8fd71103547a252b2",
+  "scope": "Dockerfile packaging fix after origin/dev bd190d33 merge",
+  "checks": [
+    {
+      "name": "tests.test_sermon_unified_preflight",
+      "result": "6 passed",
+      "durationSeconds": 0.911
+    },
+    {
+      "name": "Docker image-layout simulation",
+      "result": "facade import and code_identity succeeded",
+      "method": "temporary root copied Docker source paths; no network or provider dispatch"
+    },
+    {
+      "name": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "limitations": [
+    "docker command unavailable; actual docker build not run",
+    "no real production, paid API, device or venue run"
+  ]
+}

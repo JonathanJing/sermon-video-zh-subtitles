@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-cuv-t5-p1-regression",
+  "runs": [
+    {
+      "label": "cuv-t5-p1-regression-20261017",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/cuv-t5-p1-regression-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "cuv-t5-p1-regression-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 347,
+      "truncated": false,
+      "sha256": "9d8f54a6146e804e63e10ed7d594736b0a662e6992e35701aecc02d032a1f1eb",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-t5-p1-regression-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 703,
+      "truncated": false,
+      "sha256": "d732848fb48dfd095b54cd00442af3544fa61e3937f3600967e7268beb16f704",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-t5-p1-regression-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 60,
+      "truncated": false,
+      "sha256": "3693df46a6cc6c5bb0d7604f1bdb4b17d8f0b1097dc863021ab99552b7a3d03e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr846-python-ci-cancelled-39075395717",
+  "runs": [
+    {
+      "label": "pr846-python-ci-cancelled-39075395717",
+      "source": "/private/tmp/sermon-ops-unified-preflight-20261017/artifacts/pr846-python-ci-cancelled-39075395717",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr846-python-ci-cancelled-39075395717",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 159,
+      "truncated": false,
+      "sha256": "d53a31149e819a87bf3ded326b4b2e41b9b8447e13fd603ea789a88368b08c36",
+      "redactions": {}
+    },
+    {
+      "run": "pr846-python-ci-cancelled-39075395717",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2162,
+      "truncated": false,
+      "sha256": "75cff8d4bd5ebad805e601d8dc1c5439c378d1ed218259d4a2b41a37d726f933",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

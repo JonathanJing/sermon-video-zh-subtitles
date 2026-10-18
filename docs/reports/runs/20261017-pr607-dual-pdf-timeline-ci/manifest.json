@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr607-dual-pdf-timeline-ci",
+  "runs": [
+    {
+      "label": "pr607-full-ci-39069811515",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/pr607-full-ci-39069811515",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr607-full-ci-39069811515",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 175,
+      "truncated": false,
+      "sha256": "4084fb2a56bb8b57dfe670b0be41829999eac19f1a196b01ca5a66d039b90615",
+      "redactions": {}
+    },
+    {
+      "run": "pr607-full-ci-39069811515",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 612,
+      "truncated": false,
+      "sha256": "e37a8650e10c34ffb2a2ac1c46d2214d214b635911c298949f0fdbe64557e19c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

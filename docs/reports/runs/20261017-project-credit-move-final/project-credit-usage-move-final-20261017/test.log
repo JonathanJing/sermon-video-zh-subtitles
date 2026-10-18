@@ -1,0 +1,11 @@
+test_legacy_and_new_cli_write_identical_bound_projection (tests.test_project_codex_credit_usage.CreditProjectionTests.test_legacy_and_new_cli_write_identical_bound_projection) ... ok
+test_projection_binds_legacy_receipts_without_new_calls_or_source_mutation (tests.test_project_codex_credit_usage.CreditProjectionTests.test_projection_binds_legacy_receipts_without_new_calls_or_source_mutation) ... ok
+test_refuses_overwrite_and_identity_or_usage_mismatch (tests.test_project_codex_credit_usage.CreditProjectionTests.test_refuses_overwrite_and_identity_or_usage_mismatch) ... ok
+test_rejects_invalid_private_sidecar_before_creating_output (tests.test_project_codex_credit_usage.CreditProjectionTests.test_rejects_invalid_private_sidecar_before_creating_output) ... ok
+test_resource_call_identity_comes_from_binding_not_payload_folder (tests.test_project_codex_credit_usage.CreditProjectionTests.test_resource_call_identity_comes_from_binding_not_payload_folder) ... ok
+test_tampered_outcome_fails_before_creating_output (tests.test_project_codex_credit_usage.CreditProjectionTests.test_tampered_outcome_fails_before_creating_output) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.805s
+
+OK

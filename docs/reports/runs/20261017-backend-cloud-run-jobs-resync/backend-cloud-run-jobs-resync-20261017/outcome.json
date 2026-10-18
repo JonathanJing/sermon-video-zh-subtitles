@@ -1,0 +1,10 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "scope": "Cloud Run job dispatcher package move after dev merge",
+  "testsRun": 44,
+  "testsPassed": 44,
+  "modelCalls": 0,
+  "cloudRunRequests": 0,
+  "imageBuild": "not_run_no_docker"
+}

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-project-credit-move-tests",
+  "runs": [
+    {
+      "label": "project-credit-usage-move-venv-20261017",
+      "source": "/private/tmp/sermon-project-credit-usage-move-20261017/artifacts/project-credit-usage-move-venv-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "project-credit-usage-move-venv-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 364,
+      "truncated": false,
+      "sha256": "98c0d8f5f8762d4838ba786bc00bb99ea0259b13d20729546002b2ae11467464",
+      "redactions": {}
+    },
+    {
+      "run": "project-credit-usage-move-venv-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 146,
+      "truncated": false,
+      "sha256": "5732a17676f50d8741f4cdb290091c57d81af1d2f248699f31dccde574697dbd",
+      "redactions": {}
+    },
+    {
+      "run": "project-credit-usage-move-venv-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 1238,
+      "truncated": false,
+      "sha256": "db33c873d7b756c3acc84e98291793dae2bbdfd0111be65d8d43679831364c06",
+      "redactions": {}
+    },
+    {
+      "run": "project-credit-usage-move-venv-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 51,
+      "truncated": false,
+      "sha256": "2ddaf3884124dde49a6715ddf530f4b23687c6e1194eb7b67ee652311cd9b468",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

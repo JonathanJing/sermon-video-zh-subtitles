@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr832-ffa-ios-success",
+  "runs": [
+    {
+      "label": "pr832-ffa-ios-success-39076715098",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/pr832-ffa-ios-success-39076715098",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr832-ffa-ios-success-39076715098",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 261,
+      "truncated": false,
+      "sha256": "b660632d4ef1469324660c4aa896e2f13dedc8fd064fd66ab731873428c84609",
+      "redactions": {}
+    },
+    {
+      "run": "pr832-ffa-ios-success-39076715098",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 932,
+      "truncated": false,
+      "sha256": "8bd3a33b3b6469f1e45b4df629f8d455fbcda1a5702cbb5773eba41748ef0b91",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

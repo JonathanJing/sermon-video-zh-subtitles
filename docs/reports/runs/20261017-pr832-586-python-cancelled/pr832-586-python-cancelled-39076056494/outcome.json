@@ -1,0 +1,8 @@
+{
+  "deliveryType": "test",
+  "status": "cancelled",
+  "workflow": "Python tests",
+  "runId": 39076056494,
+  "headSha": "586dd21a763ba832b8d39c6d0c067f7357f888c6",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39076056494"
+}

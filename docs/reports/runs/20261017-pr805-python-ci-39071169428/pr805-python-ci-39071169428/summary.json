@@ -1,0 +1,97 @@
+{
+  "status": "passed",
+  "runId": 39071169428,
+  "workflow": "Python tests",
+  "headSha": "71dee24ed1be77d57df6a6734b44eaf6eebc1452",
+  "rootGroups": {
+    "test-group (root-6)": "success",
+    "test-group (root-3)": "success",
+    "test-group (root-4)": "success",
+    "test-group (root-5)": "success",
+    "test-group (root-0)": "success",
+    "test-group (root-2)": "success",
+    "test-group (root-1)": "success",
+    "test-group (root-7)": "success"
+  },
+  "aggregate": "success",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:30:01Z",
+      "completedAt": "2026-10-17T21:30:10Z"
+    },
+    {
+      "name": "test-group (root-6)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:30:29Z",
+      "completedAt": "2026-10-17T21:40:20Z"
+    },
+    {
+      "name": "test-group (root-3)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:30:48Z",
+      "completedAt": "2026-10-17T21:39:42Z"
+    },
+    {
+      "name": "test-group (root-4)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:30:57Z",
+      "completedAt": "2026-10-17T21:42:00Z"
+    },
+    {
+      "name": "test-group (root-5)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:38:10Z",
+      "completedAt": "2026-10-17T21:50:30Z"
+    },
+    {
+      "name": "test-group (root-0)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:39:27Z",
+      "completedAt": "2026-10-17T21:51:18Z"
+    },
+    {
+      "name": "test-group (root-2)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:35:20Z",
+      "completedAt": "2026-10-17T21:49:47Z"
+    },
+    {
+      "name": "test-group (root-1)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:39:44Z",
+      "completedAt": "2026-10-17T21:50:28Z"
+    },
+    {
+      "name": "test-group (root-7)",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:39:55Z",
+      "completedAt": "2026-10-17T21:55:25Z"
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T21:30:11Z",
+      "completedAt": "2026-10-17T21:30:10Z"
+    },
+    {
+      "name": "unittest",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:58:36Z",
+      "completedAt": "2026-10-17T21:58:40Z"
+    }
+  ],
+  "productionOrPublication": "not_run"
+}

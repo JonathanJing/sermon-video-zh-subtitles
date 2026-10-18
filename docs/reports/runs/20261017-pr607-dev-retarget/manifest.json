@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr607-dev-retarget",
+  "runs": [
+    {
+      "label": "pr607-dev-retarget-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/pr607-dev-retarget-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr607-dev-retarget-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 170,
+      "truncated": false,
+      "sha256": "cc3eff60e50b643bb077c2ae3a04eda72fa45ddcd006ba6b910c17311b682588",
+      "redactions": {}
+    },
+    {
+      "run": "pr607-dev-retarget-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 644,
+      "truncated": false,
+      "sha256": "c658fe1326a7639ddfbbb0052291a0ba9216e0c3c9bff008b72e4316672fb852",
+      "redactions": {}
+    },
+    {
+      "run": "pr607-dev-retarget-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 59,
+      "truncated": false,
+      "sha256": "57e73c6956c3a5d66fea5c79981cfb36b05e3ba7d99b5e2e00ade519aca017c2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

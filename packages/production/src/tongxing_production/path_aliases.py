@@ -34,6 +34,7 @@ LAYER1 = {
 # Layer 2 Text (tongxing_production.text), batches T1-T4.
 _TEXT = PRODUCTION + 'text/'
 LAYER2 = {
+    'scripts/sermon_cuv_translation.py': _TEXT + 'cuv_translation.py',
     'scripts/cuv_preflight.py': _TEXT + 'cuv_preflight.py',
     'scripts/sermon_review_diagnostics.py': _TEXT + 'review_diagnostics.py',
     'scripts/target_language_policy.py': _TEXT + 'policy.py',

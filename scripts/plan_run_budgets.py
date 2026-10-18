@@ -190,7 +190,8 @@ def layer2_spec(execution, locales, profile, scale):
     return config, bounds, sizing
 
 
-def layer2_files(out, execution, locales, profile, scale, *, approved_by, evidence, reviewed_at, prepared=None):
+def layer2_files(out, execution, locales, profile, scale, *, approved_by, evidence, reviewed_at,
+                 prepared=None, reuse_budget_roots=None):
     from scripts import canonical_layer2_budget as budget_tools
     from scripts import canonical_layer2_controller as controller
     config, per_locale, sizing = prepared or layer2_spec(execution, locales, profile, scale)
@@ -200,28 +201,41 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
     bounds = per_locale if sharded else {k: v * len(locales) for k, v in per_locale.items()}
     limits, rules = layer2["requestLimits"], layer2["limits"]
     root = budget_tools.budget_root(config)
+    reuse_budget_roots = reuse_budget_roots or None
+    if reuse_budget_roots is not None:
+        reuse_budget_roots = {locale: [str(Path(path).resolve()) for path in roots]
+                              for locale, roots in reuse_budget_roots.items()}
+        reuse_budget_roots = budget_tools.validate_reuse_budget_roots(
+            reuse_budget_roots, config, root, 'locale' if sharded else 'run')
+        reuse_budget_roots = {locale: [str(path) for path in roots]
+                              for locale, roots in reuse_budget_roots.items()}
     directory = out / "layer2"
     binding = {"productionRunId": config.run_id, "configurationSha256": config.sha256,
                "codeIdentitySha256": controller.code_identity(), "budgetRoot": str(root),
                "requestLimits": limits, "globalBounds": bounds, "unitBounds": bounds, "limits": rules,
-               "ledgerScope": "locale" if sharded else "run", "runtimeIdentity": runtime_identity}
+               "ledgerScope": "locale" if sharded else "run", "runtimeIdentity": runtime_identity,
+               **({"reuseBudgetRoots": reuse_budget_roots} if reuse_budget_roots is not None else {})}
     approval = write_new(directory / "budget-approval.json", {
-        "schemaVersion": budget_tools.RUNTIME_APPROVAL_SCHEMA, "binding": binding,
+        "schemaVersion": (budget_tools.REUSE_APPROVAL_SCHEMA if reuse_budget_roots is not None
+                           else budget_tools.RUNTIME_APPROVAL_SCHEMA), "binding": binding,
         "humanApproval": True, "decision": "approved", "reviewedBy": approved_by,
         "reviewedAt": reviewed_at, "operatorEvidence": evidence})
     authorization = write_new(directory / "budget-authorization.json", {
-        "schemaVersion": budget_tools.RUNTIME_SCHEMA,
+        "schemaVersion": (budget_tools.REUSE_SCHEMA if reuse_budget_roots is not None
+                           else budget_tools.RUNTIME_SCHEMA),
         "productionRunId": config.run_id, "configurationSha256": config.sha256,
         "codeIdentitySha256": binding["codeIdentitySha256"], "requestLimits": limits,
         "authority": {"approvalSha256": file_sha256(approval), "globalBounds": bounds,
                       "unitBounds": bounds, "limits": rules}, "approvalReceipt": approval.name,
-        "ledgerScope": "locale" if sharded else "run", "runtimeIdentity": runtime_identity})
+        "ledgerScope": "locale" if sharded else "run", "runtimeIdentity": runtime_identity,
+        **({"reuseBudgetRoots": reuse_budget_roots} if reuse_budget_roots is not None else {})})
     budget_tools.load_authorization(config, authorization, binding["codeIdentitySha256"])
     backend = layer2_backend_of(execution)
     cap, counts = layer2_cap_per_locale(profile, scale, backend)
     return {"stage": "layer2", "authorization": str(authorization),
             "authorizationSha256": file_sha256(authorization), "approvalSha256": file_sha256(approval),
             "budgetRoot": str(root), "runtimeIdentity": runtime_identity, "capUsd": cap * len(locales),
+            **({"reuseBudgetRoots": reuse_budget_roots} if reuse_budget_roots is not None else {}),
             "layer2Backend": backend, "countsTowardTotal": counts,
             "execution": str(execution), "executionSha256": file_sha256(execution), "locales": locales,
             "sizing": sizing, "inputFiles": [
@@ -260,6 +274,8 @@ def main(argv=None):
                         help="QC replay-only roots: missing operations refuse payment; not partial-run continuation")
     parser.add_argument("--resume-qc-authorization", type=Path, action="append", default=[],
                         help="Resume unfinished QC under unchanged original v4 authority/root; repeat per locale. Mutually exclusive with --reuse-from")
+    parser.add_argument("--layer2-reuse-budget-root", action="append", default=[], metavar="LOCALE=ABSOLUTE_ROOT",
+                        help="Approved direct-paid canonical Layer 2 ledger root; repeat for every locale/root")
     parser.add_argument("--profile", type=Path, default=PROFILE)
     args = parser.parse_args(argv)
     from scripts import machine_qc_budget_authorization as auth
@@ -272,6 +288,19 @@ def main(argv=None):
     locales = args.locales.split(",")
     if not locales or len(set(locales)) != len(locales) or set(locales) - set(LOCALES):
         parser.error("Locales must be distinct supported values")
+    layer2_reuse = None
+    if args.layer2_reuse_budget_root:
+        layer2_reuse = {locale: [] for locale in locales}
+        for item in args.layer2_reuse_budget_root:
+            locale, separator, raw = item.partition('=')
+            if not separator or locale not in layer2_reuse or not Path(raw).is_absolute():
+                parser.error("Layer 2 reuse roots use LOCALE=/absolute/resolved/ledger/root")
+            resolved = str(Path(raw).resolve())
+            if resolved != raw or resolved in layer2_reuse[locale]:
+                parser.error("Layer 2 reuse roots must be distinct resolved absolute paths")
+            layer2_reuse[locale].append(resolved)
+        if any(not roots for roots in layer2_reuse.values()):
+            parser.error("Layer 2 reuse authorization requires at least one root for every selected locale")
     if not args.approved_by.strip() or not args.evidence.strip():
         parser.error("Approval needs an actual approver and evidence")
     if args.out.exists() and (not args.out.is_dir() or any(args.out.iterdir())):
@@ -290,6 +319,8 @@ def main(argv=None):
     if args.stage and (len(set(args.stage)) != len(args.stage) or set(args.stage) - {s["stage"] for s in available}):
         parser.error("Selected stage is not in this plan")
     selected = [s for s in available if not args.stage or s["stage"] in args.stage]
+    if layer2_reuse is not None and not any(stage['stage'] == 'layer2' for stage in selected):
+        parser.error("Layer 2 reuse roots require a selected Layer 2 stage")
     planned = schedule(selected, total=args.total_usd, settled=args.settled_usd)
     if not planned["fits"] and not args.resume_qc_authorization:
         print(json.dumps(planned)); return 1
@@ -369,7 +400,7 @@ def main(argv=None):
     for stage in selected:
         if stage["stage"] == "layer2":
             stages.append(layer2_files(args.out, args.layer2_execution.resolve(), locales, profile, args.scale,
-                                       prepared=prepared, **common))
+                                       prepared=prepared, reuse_budget_roots=layer2_reuse, **common))
         else:
             locale = stage["stage"].split(".")[1]
             stages.append(resumes[locale] if locale in resumes else qc_files(
