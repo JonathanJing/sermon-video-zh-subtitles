@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "production_cache_reuse_succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-10-18T00:24:30Z",
+  "endedAt": "2026-10-18T00:24:47Z",
+  "deliveryType": "test",
+  "testScope": "OpenAI dev canonical Layer 2 execution v6 with cacheRequired; all 16 zh-Hans groups reused; zero provider calls and zero reuse charge; no publication"
+}

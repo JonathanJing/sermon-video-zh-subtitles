@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "sermon-test-run-summary-v1",
+  "status": "production_cache_reuse_succeeded",
+  "environment": "dev",
+  "locale": "zh-Hans",
+  "groups": 16,
+  "providerCalls": 0,
+  "budgetRows": 32,
+  "reusedRows": 32,
+  "reuseCostMicrousd": 0,
+  "usageRequests": 0,
+  "providerResponseFiles": 0,
+  "successReceipts": 16,
+  "candidateJsonSha256": "251580ef15a56969a5190f1799a528b580279c03413f325d500edf2c550490fb",
+  "candidateBytesEqualRoundA": true,
+  "productionEligible": false,
+  "humanReview": "pending"
+}

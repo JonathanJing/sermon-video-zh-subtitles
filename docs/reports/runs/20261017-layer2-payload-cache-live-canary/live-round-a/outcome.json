@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "production_canary_seed_succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-10-18T00:18:56Z",
+  "endedAt": "2026-10-18T00:23:18Z",
+  "deliveryType": "test",
+  "testScope": "OpenAI dev canonical Layer 2 execution v6; 16 zh-Hans groups; machine review passed; human review pending; no publication"
+}
