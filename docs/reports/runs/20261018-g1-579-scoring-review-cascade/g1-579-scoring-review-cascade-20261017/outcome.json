@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "test-run-outcome-v1",
+  "kind": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "durationSeconds": 0.68,
+  "headBeforeCommit": "6013fb16000e701a9102821084faee8aeb989f08",
+  "command": [
+    "python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_screen_transcript_folding.py"
+  ]
+}
