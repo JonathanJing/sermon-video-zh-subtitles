@@ -487,7 +487,7 @@ def _require_partial_recovery_source(root: Path, budget_root: Path, caller, api_
 
 def _returned_payload_cache(prior_root: Path | None, stem: str, role: str,
                             payload_sha256: str, request: dict[str, Any],
-                            group: dict[str, Any], caller, api_key: str,
+                            group: dict[str, Any], policy: dict[str, Any], caller, api_key: str,
                             budget_root: Path) -> dict[str, Any] | None:
     """Recover one complete returned role that lacks a group-success sidecar.
 
@@ -542,7 +542,13 @@ def _returned_payload_cache(prior_root: Path | None, stem: str, role: str,
     provenance_reader = getattr(caller, "recover_returned_response", None)
     require(callable(provenance_reader),
             "Partial recovery requires direct-paid response provenance")
-    provenance = provenance_reader(api_key, preview_record["payload"], response, budget_root)
+    migration = {
+        "before": copy.deepcopy(preview_record),
+        "after": policy_preview.payload_preview(role, preview_record["payload"], policy),
+    }
+    provenance = provenance_reader(
+        api_key, preview_record["payload"], response, budget_root,
+        policy_migration=migration)
     binding = {
         "payloadSha256": payload_sha256,
         "cacheKeySha256": _payload_cache_key(role, payload_sha256),
@@ -1639,7 +1645,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 payload_translator_cache = _returned_payload_cache(
                     partial_recovery_from, stem, "translator",
                     _model_fingerprint(translator_payload, caller, api_key), request, group,
-                    caller, api_key, partial_recovery_budget_root)
+                    policy, caller, api_key, partial_recovery_budget_root)
             if (payload_translator_cache is None and payload_cache_enabled
                     and prior_cache_root is not None):
                 # A later auto-repair round carries the original direct-paid
@@ -1744,7 +1750,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 payload_reviewer_cache = _returned_payload_cache(
                     partial_recovery_from, stem, "reviewer",
                     _model_fingerprint(reviewer_payload, caller, api_key), request, group,
-                    caller, api_key, partial_recovery_budget_root)
+                    policy, caller, api_key, partial_recovery_budget_root)
             if (payload_reviewer_cache is None and payload_cache_enabled
                     and prior_cache_root is not None):
                 payload_reviewer_cache = _successful_payload_cache(

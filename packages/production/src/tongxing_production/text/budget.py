@@ -4,6 +4,7 @@ Frozen provider rates are planning upper-bound assumptions, never invoice proof.
 No missing/unknown reservation is released or retried automatically.
 """
 from __future__ import annotations
+import copy
 from contextlib import contextmanager
 from contextvars import ContextVar
 import hashlib
@@ -17,6 +18,7 @@ import urllib.request
 
 from ..compute import provider_limits as limits
 from . import backend as _text
+from . import policy_preview
 
 
 class _HostCollaborator:
@@ -248,12 +250,14 @@ class BudgetedCaller:
         require('reviewer' not in self.claude_transports or policies.layer2_backend(policy) == 'claude_cli_opus',
                 'claude_reviewer_requires_claude_cli_opus_policy')
         self.claude_transport = self.claude_transports.get('translator')
+        self._plugin_policy_migrations = {}
 
     def verify_execution(self, key):
         load_authorization(self.config, self.auth['path'], self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
         verify_runtime(self.auth, key)
 
-    def _call_binding(self, payload):
+    def _call_binding(self, payload, *, policy=None):
+        selected_policy = self.policy if policy is None else policy
         require_bounded_api_payload = _text.current().compute.admit
         require_bounded_api_payload(payload, self.auth['limits'], surface='canonical_api')
         capped = limits.bounded_payload(payload, self.auth['limits'])
@@ -261,21 +265,45 @@ class BudgetedCaller:
         fingerprint = jobs._digest({'payload': payload, 'runtimeIdentity': self.auth['runtimeIdentity']}
                                    if self.auth.get('runtimeIdentity') is not None else payload)
         roles = [name for name in ('translator', 'reviewer')
-                 if payload['model'] == self.policy[name]['model']
-                 and payload['reasoning_effort'] == self.policy[name]['reasoningEffort']]
+                 if payload['model'] == selected_policy[name]['model']
+                 and payload['reasoning_effort'] == selected_policy[name]['reasoningEffort']]
         require(len(roles) == 1, 'budgeted_model_role_ambiguous')
         role = roles[0]
         identity = budget.chain_identity({
             'sourceIdentitySha256': self.source['downstreamInvalidationKey'],
             'sourcePackageSha256': jobs._digest(self.source), 'anchorSha256': jobs._digest(self.anchor),
-            'policySha256': jobs._digest(self.policy), 'rubricSha256': jobs._digest({'role': role}),
-            'targetLocale': self.policy['targetLocale'],
-            'workUnitId': 'l2.' + self.policy['targetLocale'] + '.call-' + fingerprint})
+            'policySha256': jobs._digest(selected_policy), 'rubricSha256': jobs._digest({'role': role}),
+            'targetLocale': selected_policy['targetLocale'],
+            'workUnitId': 'l2.' + selected_policy['targetLocale'] + '.call-' + fingerprint})
         bounds = limits.request_bounds(payload, self.auth['limits'])
         request = budget._request(identity, 'model.' + fingerprint,
             'initial_generation' if role == 'translator' else 'review', 'initial', 1,
             fingerprint, bounds)
         return fingerprint, role, identity, bounds, request
+
+    def _plugin_only_migration_request(self, payload, migration):
+        require(isinstance(migration, dict) and set(migration) == {'before', 'after'},
+                'layer2_plugin_policy_migration_required')
+        before, after = migration['before'], migration['after']
+        require(isinstance(before, dict) and isinstance(after, dict)
+                and after.get('payload') == payload
+                and after.get('policy') == self.policy,
+                'layer2_plugin_policy_migration_required')
+        try:
+            change = policy_preview.compare_previews(
+                before, after, prior_outcome='succeeded')
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError('layer2_plugin_policy_migration_required') from error
+        require(change['classification'] == 'plugin_only_migration'
+                and change['modelPayloadUnchanged'] is True
+                and change['blockedByPriorOutcome'] is False,
+                'layer2_plugin_policy_migration_required')
+        current = self._call_binding(payload)
+        prior = self._call_binding(payload, policy=before['policy'])
+        require(prior[0] == current[0] and prior[1] == current[1]
+                and before.get('role') == current[1] == after.get('role'),
+                'layer2_plugin_policy_migration_required')
+        return prior[4]
 
     @staticmethod
     def _store_snapshot(root, max_bytes):
@@ -375,7 +403,8 @@ class BudgetedCaller:
                         for row in ledger['reservations'].values()),
                 'layer2_recovery_source_not_terminal_direct_paid')
 
-    def recover_returned_response(self, key, payload, response, source_root):
+    def recover_returned_response(self, key, payload, response, source_root, *,
+                                  policy_migration=None):
         """Bind one returned failed-round response to its direct-paid closure."""
         self.verify_execution(key)
         require(self.auth.get('reuseBudgetRoots') is not None,
@@ -384,9 +413,18 @@ class BudgetedCaller:
         require(root in self.auth['reuseBudgetRoots'][self.policy['targetLocale']],
                 'layer2_recovery_budget_root_not_approved')
         fingerprint, _, _, _, request = self._call_binding(payload)
-        return self._direct_paid_provenance(
-            root, request, fingerprint, response,
-            max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
+        max_bytes = LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None
+        try:
+            return self._direct_paid_provenance(
+                root, request, fingerprint, response, max_bytes=max_bytes)
+        except ValueError as error:
+            if str(error) != 'layer2_reuse_operation_missing':
+                raise
+        prior_request = self._plugin_only_migration_request(payload, policy_migration)
+        provenance = self._direct_paid_provenance(
+            root, prior_request, fingerprint, response, max_bytes=max_bytes)
+        self._plugin_policy_migrations[(str(root), fingerprint)] = copy.deepcopy(policy_migration)
+        return provenance
 
     def record_reuse(self, key, payload, response, provenance):
         """Validate an exact direct-paid hit, recording only cross-root reuse.
@@ -421,9 +459,15 @@ class BudgetedCaller:
                 found = self._direct_paid_provenance(root, request, fingerprint, response,
                     max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
             except ValueError as error:
-                if str(error) == 'layer2_reuse_operation_missing':
+                if str(error) != 'layer2_reuse_operation_missing':
+                    raise
+                migration = self._plugin_policy_migrations.get((str(root), fingerprint))
+                if migration is None:
                     continue
-                raise
+                prior_request = self._plugin_only_migration_request(payload, migration)
+                found = self._direct_paid_provenance(
+                    root, prior_request, fingerprint, response,
+                    max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
             if str(root) == provenance.get('budgetRoot'):
                 selected = found
         require(selected is not None, 'layer2_reuse_operation_missing')

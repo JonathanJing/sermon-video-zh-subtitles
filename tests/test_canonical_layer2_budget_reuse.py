@@ -1,3 +1,4 @@
+import copy
 import json
 from pathlib import Path
 import tempfile
@@ -11,6 +12,8 @@ from scripts import sermon_review_budget as ledger
 from scripts import sermon_workflow_jobs as jobs
 from tests import test_canonical_layer2_budget as budget_fixtures
 from tongxing_production.contracts import canonical as canonical_contracts
+from tongxing_production.text import policy as policy_tools
+from tongxing_production.text import policy_preview
 
 
 class CanonicalLayer2BudgetReuseTests(unittest.TestCase):
@@ -33,15 +36,23 @@ class CanonicalLayer2BudgetReuseTests(unittest.TestCase):
         provenance = caller.paid_response_provenance('', self.base.payload, response)
         return caller, response, provenance
 
-    def destination_caller(self, source):
+    def destination_caller(self, source, *, root=None, policy=None):
+        root = self.destination if root is None else root
         caller = subject.BudgetedCaller(self.base.auth, self.base.config, self.base.source,
-                                        self.base.anchor, self.base.policy,
+                                        self.base.anchor, policy or self.base.policy,
                                         transport=lambda *_: self.fail('reused response dispatched'))
-        caller.root = self.destination
+        caller.root = root
         caller.auth = {**caller.auth, 'reuseBudgetRoots': {'zh-Hans': [source]}, 'scope': 'run'}
-        caller.store = ledger.BudgetStore(self.destination, self.base.auth['value']['authority'],
+        caller.store = ledger.BudgetStore(root, self.base.auth['value']['authority'],
                                           reuse_roots=[source])
         return caller
+
+    def plugin_only_policy(self):
+        value = copy.deepcopy(self.base.policy)
+        value.pop('componentSha256')
+        value['languageReview']['pluginId'] += '-repaired'
+        value['languageReview']['pluginImplementationSha256'] = 'f' * 64
+        return policy_tools.freeze_policy(value)
 
     def test_direct_paid_response_records_zero_charge_without_a_reservation(self):
         source, response, provenance = self.paid()
@@ -160,6 +171,83 @@ class CanonicalLayer2BudgetReuseTests(unittest.TestCase):
         with patch.object(current, 'verify_execution'), self.assertRaisesRegex(
                 ValueError, 'layer2_reuse_operation_missing'):
             current.record_reuse('', self.base.payload, response, unapproved_provenance)
+
+    def test_plugin_only_policy_migration_recovers_and_records_real_budget_provenance(self):
+        source, response, _ = self.paid()
+        changed = self.plugin_only_policy()
+        destination = self.destination_caller(source.root, policy=changed)
+        migration = {
+            'before': policy_preview.payload_preview('translator', self.base.payload, self.base.policy),
+            'after': policy_preview.payload_preview('translator', self.base.payload, changed),
+        }
+
+        with patch.object(destination, 'verify_execution'):
+            provenance = destination.recover_returned_response(
+                '', self.base.payload, response, source.root,
+                policy_migration=migration)
+            result = destination.record_reuse(
+                '', self.base.payload, response, provenance)
+
+        self.assertEqual(result['status'], 'succeeded')
+        state = jobs._read(self.destination / ledger.STORE_ID / 'state.json')
+        row = next(iter(state['reservations'].values()))
+        self.assertEqual(row['request']['identity']['policySha256'], jobs._digest(changed))
+        self.assertEqual(row['settlement']['costStatus'], 'reused')
+        self.assertEqual(row['settlement']['reusedFrom'], provenance)
+        self.assertEqual(row['result']['usage'], dict.fromkeys(ledger.METRICS, 0))
+
+    def test_plugin_policy_migration_rejects_model_payload_or_nonplugin_policy_change(self):
+        source, response, _ = self.paid()
+        changed = self.plugin_only_policy()
+        destination = self.destination_caller(source.root, policy=changed)
+        before = policy_preview.payload_preview('translator', self.base.payload, self.base.policy)
+        changed_payload = copy.deepcopy(self.base.payload)
+        changed_payload['messages'][0]['content'] += ' changed'
+        payload_migration = {
+            'before': before,
+            'after': policy_preview.payload_preview('translator', changed_payload, changed),
+        }
+        with patch.object(destination, 'verify_execution'), self.assertRaisesRegex(
+                ValueError, 'layer2_plugin_policy_migration_required'):
+            destination.recover_returned_response(
+                '', changed_payload, response, source.root,
+                policy_migration=payload_migration)
+
+        nonplugin = copy.deepcopy(self.base.policy)
+        nonplugin.pop('componentSha256')
+        nonplugin['translator']['promptVersion'] += '-changed'
+        nonplugin = policy_tools.freeze_policy(nonplugin)
+        destination = self.destination_caller(
+            source.root, root=self.destination / 'nonplugin', policy=nonplugin)
+        policy_migration = {
+            'before': before,
+            'after': policy_preview.payload_preview('translator', self.base.payload, nonplugin),
+        }
+        with patch.object(destination, 'verify_execution'), self.assertRaisesRegex(
+                ValueError, 'layer2_plugin_policy_migration_required'):
+            destination.recover_returned_response(
+                '', self.base.payload, response, source.root,
+                policy_migration=policy_migration)
+
+    def test_plugin_policy_migration_never_promotes_an_intermediate_reused_root(self):
+        source, response, provenance = self.paid()
+        intermediate_root = self.destination / 'intermediate'
+        intermediate = self.destination_caller(source.root, root=intermediate_root)
+        with patch.object(intermediate, 'verify_execution'):
+            intermediate.record_reuse('', self.base.payload, response, provenance)
+
+        changed = self.plugin_only_policy()
+        destination = self.destination_caller(
+            intermediate.store.root, root=self.destination / 'final', policy=changed)
+        migration = {
+            'before': policy_preview.payload_preview('translator', self.base.payload, self.base.policy),
+            'after': policy_preview.payload_preview('translator', self.base.payload, changed),
+        }
+        with patch.object(destination, 'verify_execution'), self.assertRaisesRegex(
+                ValueError, 'layer2_reuse_requires_direct_paid_root'):
+            destination.recover_returned_response(
+                '', self.base.payload, response, intermediate.store.root,
+                policy_migration=migration)
 
     def test_unknown_damaged_or_intermediate_source_never_falls_through(self):
         source, response, provenance = self.paid()

@@ -11,14 +11,18 @@ from .policy import canonical_sha256
 SCHEMA = 'sermon-target-language-consumed-policy-v1'
 
 
-def freeze_payload_preview(role: str, payload: dict, policy: dict, path: Path) -> dict:
+def payload_preview(role: str, payload: dict, policy: dict) -> dict:
     if role not in {'translator', 'reviewer'}:
         raise ValueError('Unknown model role')
     # This is the very payload passed to the provider, after request limits.
-    preview = {'schemaVersion': SCHEMA, 'role': role,
-               'payload': copy.deepcopy(payload), 'payloadSha256': canonical_sha256(payload),
-               'policy': copy.deepcopy(policy), 'policySha256': canonical_sha256(policy),
-               'humanApproval': False, 'status': 'input_frozen_not_execution_evidence'}
+    return {'schemaVersion': SCHEMA, 'role': role,
+            'payload': copy.deepcopy(payload), 'payloadSha256': canonical_sha256(payload),
+            'policy': copy.deepcopy(policy), 'policySha256': canonical_sha256(policy),
+            'humanApproval': False, 'status': 'input_frozen_not_execution_evidence'}
+
+
+def freeze_payload_preview(role: str, payload: dict, policy: dict, path: Path) -> dict:
+    preview = payload_preview(role, payload, policy)
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
