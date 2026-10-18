@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "cuv-t5-test-outcome-v1",
+  "deliveryType": "test",
+  "status": "passed",
+  "purpose": "CUV package move offline tests in worktree-only editable environment",
+  "modelCalls": 0
+}
