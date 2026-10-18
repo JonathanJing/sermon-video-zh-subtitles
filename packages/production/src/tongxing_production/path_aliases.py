@@ -37,7 +37,6 @@ LAYER2 = {
     'scripts/sermon_cuv_translation.py': _TEXT + 'cuv_translation.py',
     'scripts/cuv_preflight.py': _TEXT + 'cuv_preflight.py',
     'scripts/sermon_review_diagnostics.py': _TEXT + 'review_diagnostics.py',
-    'scripts/sermon_review_gate.py': _TEXT + 'strict_review_gate.py',
     'scripts/target_language_policy.py': _TEXT + 'policy.py',
     'scripts/target_language_policy_preview.py': _TEXT + 'policy_preview.py',
     'scripts/produce_target_language_candidate.py': _TEXT + 'candidate.py',
