@@ -1,6 +1,7 @@
 import importlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -21,8 +22,9 @@ SPEC.loader.exec_module(MODULE)
 class AuditMiLMMTStateTest(unittest.TestCase):
     def test_legacy_and_new_cli_agree_from_another_working_directory(self):
         self.assertEqual(MODULE.DEFAULT_ROOT, REPO_ROOT)
-        self.assertIs(importlib.import_module("scripts.audit_milmmt_post_training_state"),
-                      importlib.import_module("experiments.milmmt.audit_post_training_state"))
+        legacy = importlib.import_module("scripts.audit_milmmt_post_training_state")
+        self.assertEqual(Path(legacy.__file__), SCRIPT)
+        self.assertIs(sys.modules["scripts.audit_milmmt_post_training_state"], legacy)
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             inputs = [MODULE.DATASET_ROOT / "train.jsonl", MODULE.DATASET_ROOT / "dev.jsonl",
@@ -50,6 +52,28 @@ class AuditMiLMMTStateTest(unittest.TestCase):
             for report in reports:
                 report.pop("generatedAt")
             self.assertEqual(reports[0], reports[1])
+
+            shadow = root / "shadow"
+            foreign = shadow / "experiments"
+            foreign.mkdir(parents=True)
+            (foreign / "__init__.py").write_text("")
+            output = root / "shadowed.json"
+            command = [sys.executable, str(LEGACY_SCRIPT), "--root", str(root), "--output", str(output)]
+            result = subprocess.run(command, cwd=root, capture_output=True, text=True,
+                                    env={**os.environ, "PYTHONPATH": str(shadow)})
+            self.assertEqual(result.returncode, 0, result.stderr)
+            shadowed = json.loads(output.read_text())
+            shadowed.pop("generatedAt")
+            self.assertEqual(shadowed, reports[0])
+
+            imported = subprocess.run(
+                [sys.executable, "-c", "import experiments; from scripts import audit_milmmt_post_training_state as audit; "
+                 "print(audit.__file__)"],
+                cwd=root, capture_output=True, text=True,
+                env={**os.environ, "PYTHONPATH": os.pathsep.join((str(shadow), str(REPO_ROOT)))},
+            )
+            self.assertEqual(imported.returncode, 0, imported.stderr)
+            self.assertEqual(Path(imported.stdout.strip()), SCRIPT)
 
     def test_audit_keeps_provider_output_training_blocked(self):
         with tempfile.TemporaryDirectory() as tmp:
