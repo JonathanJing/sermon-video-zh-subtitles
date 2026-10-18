@@ -1,0 +1,1839 @@
+{
+  "baselineVersion": "sites/ai-for-god-sermon-audio/versions/c9ec668186401bda",
+  "catalogSha256": "7a0dda6c3311067bc409b775a3fdb20f54c39e3cd5824d54c1715ce28c5825fc",
+  "channel": "production_web",
+  "checkedAt": "2026-10-18T15:32:19.138267+00:00",
+  "configSemanticEqual": true,
+  "deployment": "not_started",
+  "environment": "production",
+  "firebaseJsonSha256": "522068588c77f69c2433bd9689605236c475700a26788b87d1a251c8659a1742",
+  "liveConfig": {
+    "headers": [
+      {
+        "glob": "**",
+        "headers": {
+          "Cache-Control": "no-cache",
+          "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; media-src 'self' https://storage.googleapis.com blob:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'; worker-src 'self'",
+          "Referrer-Policy": "no-referrer",
+          "X-Content-Type-Options": "nosniff",
+          "X-Frame-Options": "DENY"
+        }
+      },
+      {
+        "glob": "**/*.mjs",
+        "headers": {
+          "Content-Type": "text/javascript; charset=utf-8"
+        }
+      },
+      {
+        "glob": "/weekly.json",
+        "headers": {
+          "Cache-Control": "no-store"
+        }
+      },
+      {
+        "glob": "/media/**",
+        "headers": {
+          "Cache-Control": "public,max-age=31536000,immutable"
+        }
+      },
+      {
+        "glob": "/downloads/**",
+        "headers": {
+          "Cache-Control": "public,max-age=31536000,immutable"
+        }
+      },
+      {
+        "glob": "/fingerprints/**",
+        "headers": {
+          "Cache-Control": "public,max-age=31536000,immutable"
+        }
+      },
+      {
+        "glob": "/pages/2026-09-27-weekend-sermon-drive-530/full-video-browser.mp4",
+        "headers": {
+          "Cache-Control": "public,max-age=31536000,immutable"
+        }
+      },
+      {
+        "glob": "/multilingual-v3.json",
+        "headers": {
+          "Cache-Control": "no-store"
+        }
+      }
+    ],
+    "redirects": [
+      {
+        "glob": "/pages/2026-09-27-weekend-sermon-drive-530/full-video-browser.mp4",
+        "location": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/2026-09-27-weekend-sermon-drive-530/01cdde6f014192dff4b2243372c0a0b1ad61f018dfaa98b5256715916bfe56cd.mp4",
+        "statusCode": 302
+      },
+      {
+        "glob": "/pages/resi-20261004-69ba7a66/full-video-browser.mp4",
+        "location": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/resi-20261004-69ba7a66/41b6d4cad62c396158609cba873655b6aa8aec9d36fc793507ca996d06cbc87d.mp4",
+        "statusCode": 302
+      },
+      {
+        "glob": "/pages/resi-20261011-54475d42/full-video-browser.mp4",
+        "location": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/resi-20261011-54475d42/9865990575af53071fb6486a86e6092caa16766664026bd7bfe89fce83392be9.mp4",
+        "statusCode": 302
+      }
+    ],
+    "rewrites": [
+      {
+        "glob": "/api/**",
+        "run": {
+          "region": "us-west1",
+          "serviceId": "sermon-feedback-api"
+        }
+      }
+    ]
+  },
+  "liveFileCount": 217,
+  "managedFileCount": 2,
+  "modelCalls": 0,
+  "origin": "https://ai-for-god-sermon-audio.web.app",
+  "project": "ai-for-god-caption-dev",
+  "publicFileCount": 215,
+  "rows": [
+    {
+      "liveGzipSha256": "537f8978772464f10e662ecb64e6a9b9fb9dd7293ba41d001059079f830a8e82",
+      "managed": true,
+      "path": "/__/firebase/init.js",
+      "rawBytes": 458,
+      "rawSha256": "c61e11f54be90589af223f427546b489f9e8ab625bcb84f6f681339522b24d56",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "85ea92860871aa17a217866aec8921168a85f7c58c4dad181255f7b753a163ec",
+      "managed": true,
+      "path": "/__/firebase/init.json",
+      "rawBytes": 281,
+      "rawSha256": "89370522ea0e47e9adaeabd44f136c0e18db1a7cf7ceae6c9ec7135ea8ebe1b8",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "dbc627ce891e66aa833d2c018bf5d5dad005a78dceef315d22b5b2879a76c60f",
+      "managed": false,
+      "path": "/alignment/2026-09-27-weekend-sermon-drive-530.json",
+      "rawBytes": 2555,
+      "rawSha256": "a1546994a9f1f551a82b90758f816ada68b88c7cef9fcc689486c0cdfa85a141",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "d8c5c4421d31ca123290e870613a304e64115461398e3ae96c5f1fe04982b44e",
+      "managed": false,
+      "path": "/alignment/resi-20261004-69ba7a66.json",
+      "rawBytes": 2515,
+      "rawSha256": "16dcd85bd876bbb22b6a8b61f3d785db9a34eabea7d25fb49e690fb96447403f",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "5377a6b411b3246f06d32a7df48022b4bf456dffae3f20fee610737bf699ccac",
+      "managed": false,
+      "path": "/alignment/resi-20261011-54475d42.json",
+      "rawBytes": 2491,
+      "rawSha256": "703d1fe26a2006048b82460e77e7af7714d26fc08a356a64a651ad3c1acb5ac1",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "df4b28c0742a64c3a02faa8cc2de272795aa6c3400acb0aef2cff6021cf00a44",
+      "managed": false,
+      "path": "/app.mjs",
+      "rawBytes": 65008,
+      "rawSha256": "99b4560593776906249eb107a140adf38dd76b457c4ff8fdf16eeafc00829ccc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2401f84a5a0fe41dd0e145c69678d4cc874caa83ea6e8c3d25ffa196347046ee",
+      "managed": false,
+      "path": "/brand-icon-light.png",
+      "rawBytes": 844616,
+      "rawSha256": "2af94bfca65bbd71f9790a97c3151962a6e8530fde91531bcf622a9e7a6b6eaf",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "109144924e4c28d30a671fc66281843414ad92d3802e6f86a30a896c8f4c6968",
+      "managed": false,
+      "path": "/brand-icon-light.svg",
+      "rawBytes": 418,
+      "rawSha256": "b97138d54655d70eedcf88d4d1b9353753cc3139db4d010bb869fa236ae875a1",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "3e0816caf570357a3c1ae2db00b63edfcffa82624bfd90debf29ab86d4eff6f2",
+      "managed": false,
+      "path": "/brand-icon.png",
+      "rawBytes": 923395,
+      "rawSha256": "12e138ca3e35ec7613eda6de48441a4362665b24977a43faca1472517747f36d",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "5d57364c5bffbf76683c0768c6a85c7400105476ff07dfb7806d15364bbec0e0",
+      "managed": false,
+      "path": "/brand-icon.svg",
+      "rawBytes": 418,
+      "rawSha256": "ee5956f7f490642baa72c68da8aa5d6ae4c3075da359b891c5244f3045e55b5e",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "7f838edd1dd94d97ec5166e55f618db137e548f4be99d367e0ab985bccdc3c21",
+      "managed": false,
+      "path": "/captions/2026-09-27-weekend-sermon-drive-530/es.json",
+      "rawBytes": 78238,
+      "rawSha256": "e2ad9d114c89c46583685db51eb1d32d7c0319e5b00480d6154150e5d598948b",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "fe677c5e8c2f94da3285c22425973cfac24a349f7ecad8251b3579a9bd00499b",
+      "managed": false,
+      "path": "/captions/2026-09-27-weekend-sermon-drive-530/ko.json",
+      "rawBytes": 84757,
+      "rawSha256": "f8498df0dde06e5de6e9ce6d9c4796459dbf50daac0d626dfccee1e8ea9adf97",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "2d20a6f0ad4ad8a1e1e916c7d6398d258cdd24db262e63d96cd91e2c0fca5095",
+      "managed": false,
+      "path": "/captions/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+      "rawBytes": 80486,
+      "rawSha256": "f7e811f9fcd9be4cb8d6522ad57b083036a983b37932c5d2929951062836b0a0",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "98dc91eb47235221b12e89e99a4771f5245fade46d2d7a9b4d0246b0bf7b83eb",
+      "managed": false,
+      "path": "/captions/if-i-had-more-time-jesus-is-worthy/es.json",
+      "rawBytes": 202734,
+      "rawSha256": "a5d1ef29a39eb82a49dd5cab37425e13924a9927f151c7e8f0582b77e1dee202",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "bd51ba11e1b423d2def20c82229634405567631cb06763e789b275419374fdca",
+      "managed": false,
+      "path": "/captions/if-i-had-more-time-jesus-is-worthy/ko.json",
+      "rawBytes": 225507,
+      "rawSha256": "5da206f6d288151643f0f6fd408abbf7b4de86c4a9f49af87277715880319a47",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "ceac1c029174110df66daffb5689581b48bd4439bd8f63d6f4f49ba152320433",
+      "managed": false,
+      "path": "/captions/if-i-had-more-time-jesus-is-worthy/zh-Hans.json",
+      "rawBytes": 197593,
+      "rawSha256": "cf40e69e05d83283e6d89e8d748cdd3c51e6be0c010fd090529fb4ba744de840",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "50bc1172046bdfe5719a5bbf7845c79265485c208e13417968064608c628f294",
+      "managed": false,
+      "path": "/captions/resi-20261004-69ba7a66/es.json",
+      "rawBytes": 86732,
+      "rawSha256": "320f52c7491722efde5b282b45c6512c9c56f08ae523a5beb83bd18d047df819",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8cca558f69e85cbfc83657384f5e9b7b9c6ad356a22be5ab123f1a4ab130205e",
+      "managed": false,
+      "path": "/captions/resi-20261004-69ba7a66/ko.json",
+      "rawBytes": 92498,
+      "rawSha256": "0b0a3a9035fbf0f6df2e599f03d7bc7d188a02bb9f7004629db95f8a01188a3e",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "ae1c65eca41b89283bbd3508483c3085528d2a427a68b5382cffbcd9d91587a7",
+      "managed": false,
+      "path": "/captions/resi-20261004-69ba7a66/zh-Hans.json",
+      "rawBytes": 84241,
+      "rawSha256": "2df2aec8a5745f7b9ff547523320afa8bfe4ac6627f85f526dd5775cc2ab9869",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "aaa7c8a756e156de49d76a2b70a3584e1cb67779ed4281a4a1d789a75c1726a1",
+      "managed": false,
+      "path": "/captions/resi-20261011-54475d42/es.json",
+      "rawBytes": 91524,
+      "rawSha256": "d86aad24d3c6ca94d0abb349aea87d6cca4569d0080b606767c62f3eaae3731f",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "334104262a0a6c14c6fd880598dabeac02b3a30c7c9e34912ef5e96ce19b1237",
+      "managed": false,
+      "path": "/captions/resi-20261011-54475d42/ko.json",
+      "rawBytes": 99074,
+      "rawSha256": "0978e7d96ee345520a64f1bcee2e745fbb35fc9ff7429f49cb552c02055f689b",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "dc3f30db1de289c6760c8736155b977aaa9059c5246f72130e752323ef0c1428",
+      "managed": false,
+      "path": "/captions/resi-20261011-54475d42/zh-Hans.json",
+      "rawBytes": 90008,
+      "rawSha256": "ce3b1a8760ba8aa7208a6db56042bc23413a8af04823bdaa9dd01c3b810d5cf1",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "c494ec50f83e19b94f3cd5fbfa2a870b8b9f370a0f64e585b0b947b96f19b12c",
+      "managed": false,
+      "path": "/captions/resi-20261018-15030286/es.json",
+      "rawBytes": 80338,
+      "rawSha256": "382be9acdf02ec4fe15a4fd896c1bd72c5b96dd69188a988ac82b9cf922be972",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "ea0c0f8290ad467d69a31c1e931f02e5a4495d3814beef1505bf99d951797f18",
+      "managed": false,
+      "path": "/catalog.mjs",
+      "rawBytes": 14238,
+      "rawSha256": "ef1242783050bbf8329d3169eb7bb81ff771aeeff4deff95d4ba9f7ed7e05da5",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "3cfe79165c6ed8b8256fd87eb0e061b8d07f2d1ce99559186b6cc540176ca430",
+      "managed": false,
+      "path": "/content-locales.mjs",
+      "rawBytes": 78659,
+      "rawSha256": "81c09781caf40fa46b1cdf5ada758ff259cae05853c4724eb0841b62711fd5df",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "dc1f3602a0f0cb28e2dab394fcaf24d85c042cf9b586c5b998b5e5cd6fd7bd0a",
+      "managed": false,
+      "path": "/content/2026-09-27-weekend-sermon-drive-530/es.json",
+      "rawBytes": 109716,
+      "rawSha256": "9fe8da801ebe139fa1c3fac33622744c9cabd2128e3b4ef8334dc611dc5c5ae7",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "ff6cda7b2fcbd13db62023d44522b0af3ca5b0030d047f571d2d4a865318cd03",
+      "managed": false,
+      "path": "/content/2026-09-27-weekend-sermon-drive-530/ko.json",
+      "rawBytes": 121920,
+      "rawSha256": "3e715908a42e33ff57274c3cc4edda68264a74ee030643b280c35526361daa68",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "7cd19d5cfdb853754577474f0ab88fe2c4a0c728723ba5759cad51439eac4368",
+      "managed": false,
+      "path": "/content/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+      "rawBytes": 105186,
+      "rawSha256": "0d425106d368ebfab59e854f10489aabed025f947f2a61a79863e663e7f67a88",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "f30ed9d64725e4f6dad16d1c03e04dc3c0fc08cf40d9d6eea88089a6ba763b11",
+      "managed": false,
+      "path": "/content/if-i-had-more-time-jesus-is-worthy/es.json",
+      "rawBytes": 210980,
+      "rawSha256": "3114731ddb19c448ef624eab3815e31d8e29c2f82b0e3404f41e8b3c313819c8",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "2700360a587984a85de8211509eae4dd9eb8ad8d5f6286738f59d29356d19f78",
+      "managed": false,
+      "path": "/content/if-i-had-more-time-jesus-is-worthy/ko.json",
+      "rawBytes": 233689,
+      "rawSha256": "d490e4200cc814285e327b5f1637e28ac7a8cb1768a113bffdbeba2e4f08cbed",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "f4ab28f3ae534ea419fdb156fa4db450857c696297c072ae65c40a23814117fd",
+      "managed": false,
+      "path": "/content/if-i-had-more-time-jesus-is-worthy/zh-Hans.json",
+      "rawBytes": 205904,
+      "rawSha256": "39a37f5a9dff6e7ec16702f2b3617b64f28abfbba5081a0aa1c7a149ce567912",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "7316c3ad6fdaf55db44edb6c2f7f24842d48ad6f786f4711fa7457cb55b16271",
+      "managed": false,
+      "path": "/content/resi-20261004-69ba7a66/es.json",
+      "rawBytes": 114938,
+      "rawSha256": "642eee2cd730c9b56f5d0a7b7a91d9b7fa60b8773c3e2da3e2ac74784a511a7f",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8789924844168a67dbd25d7368ecde5e97f0ad4d43bcf297262b2d9d6f05a29f",
+      "managed": false,
+      "path": "/content/resi-20261004-69ba7a66/ko.json",
+      "rawBytes": 118053,
+      "rawSha256": "075ad4a58237ce1cd6d4f565110b9dc99699a7ddc4b141fc3451a9be619a242c",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "97a90a7c6d14d9c481f4c4d82b45e2e4033041dcebfe76829d66c1f3e9fbb600",
+      "managed": false,
+      "path": "/content/resi-20261004-69ba7a66/zh-Hans.json",
+      "rawBytes": 110909,
+      "rawSha256": "1c3cb8cd34129083983de4221b799565bac0adbec6571c86082da6972bccaa9d",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "ce7eea2833f950623e3decbdbefba8a98bdaff9d7005020e6126c8cab93e257c",
+      "managed": false,
+      "path": "/content/resi-20261011-54475d42/es.json",
+      "rawBytes": 118374,
+      "rawSha256": "392cae6952eeabaf2833ce1890c422d00f91c2c1f42b22b358f9db1dc72f6187",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "083b2253493ff3b7989fbb5a01076d4bf0d120c5f934026afbe5241a911de9cc",
+      "managed": false,
+      "path": "/content/resi-20261011-54475d42/ko.json",
+      "rawBytes": 128281,
+      "rawSha256": "55dc057013c01cbf127aa0e58196aa78ef6cddede0734d10111facf95d0cca4e",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "503fafeab1fdc48d10dfd33ff915fa8095295c48f25056cd59e2a80287d4282d",
+      "managed": false,
+      "path": "/content/resi-20261011-54475d42/zh-Hans.json",
+      "rawBytes": 116824,
+      "rawSha256": "fa95a519ae45ed699d72011db56f1f4c5e88d964c01d79745d2ff40b58b2e2d3",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "187fb2a926a43eef5f9e5eb5e517567033bbc5886000358d2ca1bd95658457e0",
+      "managed": false,
+      "path": "/content/resi-20261018-15030286/es.json",
+      "rawBytes": 93105,
+      "rawSha256": "711da88bf6e58f9577b0aa4386d84e76f504d2585d72238a24b1d52d681be07c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "01fa7cb83d4004fe6bf7d2cc9c1cdba34072934e2f78e244a191d014ce979afa",
+      "managed": false,
+      "path": "/current-week-router.js",
+      "rawBytes": 144,
+      "rawSha256": "781ef032da038aa9587acfe22c2fc76e3a85138485ea4af22a6f1b00c3db7a40",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "d3c3fd6a99b9be0b84695ef3d337e8e10bea8f7a51beba6235e25e0971fcd8ef",
+      "managed": false,
+      "path": "/downloads/007764790a1e3b72-full-video-clock.srt",
+      "rawBytes": 30427,
+      "rawSha256": "007764790a1e3b728cfdbb38fbb793d90798e25f848c16539a26b89ffedeeda3",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "59853e1e71f437502c8ed6be8ff6923a84edf30a906601fce704bd4bf413cbf2",
+      "managed": false,
+      "path": "/downloads/19688e762c661a38-full-video-clock.mp3",
+      "rawBytes": 73077932,
+      "rawSha256": "19688e762c661a3885963cacd691ee2ec920a97cd19a8d2c21e60f673471ec58",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "99eb6eb39f912d82fc5506af9128e239bcf2accc0be3d0f7bb1d15349602434d",
+      "managed": false,
+      "path": "/downloads/2c1c6d6a7cd37a83-reading.pdf",
+      "rawBytes": 528843,
+      "rawSha256": "2c1c6d6a7cd37a831a30d1230526efc4fdcc168f43aba6d6f6a9346a7fb7ffd3",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "2c233fa8b0247e9ceb9cbdc2cf3349a763f2db033942fc9766b76b0354140075",
+      "managed": false,
+      "path": "/downloads/7270acd5d4650649-full-video-clock.srt",
+      "rawBytes": 34887,
+      "rawSha256": "7270acd5d46506492e2ed1386d9e2b087aca0042ab39505812899a8516db05bc",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "2adeb25e4fdfaa67d5b98dba932fd9e40b2ee22800b327942520ebcd5227e524",
+      "managed": false,
+      "path": "/downloads/735b6b83330a323f-full-video-clock.mp3",
+      "rawBytes": 76831532,
+      "rawSha256": "735b6b83330a323fb642e7310bf10e1e0a8d9ac7116dd5848d3d80ebb29c5151",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "0ec86fb31dcd747ed940e26b58d5bf946b57b2e4a4f2a1f70b0892a313e0f5cb",
+      "managed": false,
+      "path": "/downloads/9963891d1b5d842e-sermon_zh_en_reading.pdf",
+      "rawBytes": 502711,
+      "rawSha256": "9963891d1b5d842e6679a51752832b08971c738b43968c0d37b7b465ac3058fa",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8c9235b7d39eb47b7fd0044d6841983d3be9c1e31762dd99691cfd2a97199da8",
+      "managed": false,
+      "path": "/downloads/e47d97bef378bc33-companion.pdf",
+      "rawBytes": 290587,
+      "rawSha256": "e47d97bef378bc33892430bd1292cc6b36160d2474de5b011fba93b2b58a92da",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "b12f88dda64fd21c7e06bbfad07f947ab7e65eed0bebc79027d78b95a773f08a",
+      "managed": false,
+      "path": "/downloads/fe30fd8cc921b945-sermon_interpretation_zh.pdf",
+      "rawBytes": 316168,
+      "rawSha256": "fe30fd8cc921b945663d6d88174f6033f43b6dd33cfb0be2e1cc8142d1ab820d",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "037d2077c3bb9a055bb5031cc65d1759205bca85fb5d63f8168dfe5c8931a07b",
+      "managed": false,
+      "path": "/engagement.json",
+      "rawBytes": 80,
+      "rawSha256": "03c2aea2d8a3ffb8526b0cd467671adbd00e9cee4aa104ffc6d4c54a9fac9dd9",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "67affc0e080669e0aafc4d21c6f2016ca69baaab4c2ffa6a877187d23441a0ae",
+      "managed": false,
+      "path": "/english-reference/2026-09-27-weekend-sermon-drive-530.json",
+      "rawBytes": 282866,
+      "rawSha256": "380bc949e821600a98e38994147f85614b63bf48331e7d297ebba72d520b1c9b",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "90bb564b84aa2d54f13ab1656f858e0e39406e634dbb84aca792db6b850e2481",
+      "managed": false,
+      "path": "/english-reference/if-i-had-more-time-jesus-is-worthy.json",
+      "rawBytes": 541089,
+      "rawSha256": "4234d8b40c5a140f86550157755d0b66af77f70c57c35889d10d89e2bbb34e11",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "981a43f0fc74ed7e6c2acdd57e89004548079187de5425a0c131e5bc71aa697d",
+      "managed": false,
+      "path": "/english-reference/resi-20261004-69ba7a66.json",
+      "rawBytes": 311055,
+      "rawSha256": "0c7420ef137e930a1aa62e7f5290c4310476d47fbcdc12e74fdbf7bba921a03a",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "50fcfd46e4e6ce1805c7445a75761961460de609fb0e5d4f58389003af586f0e",
+      "managed": false,
+      "path": "/english-reference/resi-20261011-54475d42.json",
+      "rawBytes": 320628,
+      "rawSha256": "ebb7c832f424771de3f941ce9e0bebf189e632c3b50ac82a255ca99d62741e75",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "6fd4096ed3e9f891388d17ac33220903b18e52781b732b4b6c4b58b15fcd7e9b",
+      "managed": false,
+      "path": "/feedback-client.mjs",
+      "rawBytes": 5419,
+      "rawSha256": "fcee2848c2725f1c7df0c946c14069009a1c318814e102f2232308041f49f017",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "c73ab37f7082a2ad2ef95ef894ede33a764220a7ddc769ad993205b19222f822",
+      "managed": false,
+      "path": "/feedback.mjs",
+      "rawBytes": 13371,
+      "rawSha256": "75e6c59d6df3df6835f865cc43daeccba6f2ab921f5d2778734febb717a5e48b",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "ef77f373c80b9a167078e567fb11703d964656f86cbc822a43181d8839cb875b",
+      "managed": false,
+      "path": "/fingerprint-capture.mjs",
+      "rawBytes": 11821,
+      "rawSha256": "bc5c9cb3f464fd37eaf6c2cd086924a1f13256676ae0bd7cc792c0e7d3fc7c7b",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b6daf37ddcc344b47b29cb589c65b3c25a0dca4804256099323cc9c97bb6c42e",
+      "managed": false,
+      "path": "/fingerprint-core.mjs",
+      "rawBytes": 7802,
+      "rawSha256": "7eb13381054ac1faa0ab48d3161669184e2945c9e9146c3e251dddd05894b6c0",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f0c99ad0620ea8ab8220c913a5a491c21c8d5f0c2283c0d788c2f3d16636aa94",
+      "managed": false,
+      "path": "/fingerprint-diagnostics.mjs",
+      "rawBytes": 4534,
+      "rawSha256": "67f3a94f11e26880c2caba243b57bb476788e5905b7c9e1cafcdb7eecdd19b96",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "17c7dd4fa316ab6d4adca2243ec33461dfaddc1f77f58e6ee481ea2dee18b01c",
+      "managed": false,
+      "path": "/fingerprint-ui.mjs",
+      "rawBytes": 29428,
+      "rawSha256": "943b49e0fa1a9711af71d72a504d0a29c0b7dfd581d253b93d1a0ab552eed9d5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "28d5104b963abc8e38020bc7b707fffd7b8a126b108ae595e5f3c75cf81980e1",
+      "managed": false,
+      "path": "/fingerprint-worker.mjs",
+      "rawBytes": 7479,
+      "rawSha256": "fabe4dd5381771a10573c3eab6d2761febef80c9a489813710bde88e4f4c2c15",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "14217eb6b9bb1030f988fc30d6fd06b0b1fa03210725f84fe3d697d7403b30e4",
+      "managed": false,
+      "path": "/fingerprint-worklet.mjs",
+      "rawBytes": 4247,
+      "rawSha256": "f31ccd00f57441778a1a4f549e49fb6a0c0b1a97660b95eec0bfdda9f13984ec",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "220a6ace1fadf15f500a50c60dcc5ae4231a84ab139d84020dc4fd035d028641",
+      "managed": false,
+      "path": "/fingerprints/003e1983708381ad-landmarks.json",
+      "rawBytes": 2677675,
+      "rawSha256": "003e1983708381adc25233f67898fa32eebb9f0f151ba7aa7c4f74109947dba6",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "1d0190b21745d2528fbaf8cc27b69acef4bf9e68a34ae8d4e907daf98a5da08b",
+      "managed": false,
+      "path": "/fingerprints/1870480de8a66acc-landmarks.json",
+      "rawBytes": 2716592,
+      "rawSha256": "1870480de8a66acc450ebc468dee4db98cf3f31fc7d2ea02ca074c48d2d2b17b",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "b36792d2db4d8c79f59c905eaf82178277dadc844b69ef1e368b324d8a858b3e",
+      "managed": false,
+      "path": "/fingerprints/1e52515b350ddee4-landmarks.json",
+      "rawBytes": 2758423,
+      "rawSha256": "1e52515b350ddee4fa92a00d73ac02dfb2211e7632e88bd9d66ae8e2c28528d4",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "a723008f88a38c7670340539c23d09b205be193fc0afc3b8f164feadd295d292",
+      "managed": false,
+      "path": "/fingerprints/28c42d66527e39f5-landmarks.json",
+      "rawBytes": 2758423,
+      "rawSha256": "28c42d66527e39f5097b3cb5c8bad02b7f0405039e5cb4e741610804c3ba766e",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "a6552dd0a97133e0c1955b732e3368257c0827dc872611a962b47f59e9143c29",
+      "managed": false,
+      "path": "/fingerprints/4cda22a17d051100-landmarks.json",
+      "rawBytes": 2670771,
+      "rawSha256": "4cda22a17d0511002c228cc161f94ce3c2cd05fb2403ba8ef0a159375452b057",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "3a2e0596340aa8bb11d2089e1529bd1f12cfa8c65f6676461db41ba22f60d816",
+      "managed": false,
+      "path": "/fingerprints/a5501bffe077cb9b-landmarks.json",
+      "rawBytes": 2984181,
+      "rawSha256": "a5501bffe077cb9b480314de43e98ab0bc755ea5cbd6f59119c8e2668fe27d35",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "17f6acfb455e10558ea85f29c00787786b937002ee79c8ac3e2dc23cf48e9db2",
+      "managed": false,
+      "path": "/fingerprints/ae274a6b4ba914fa-landmarks.json",
+      "rawBytes": 6289426,
+      "rawSha256": "ae274a6b4ba914faf3b8f0adb9deebc3294f2b0513312eb912218d908edf5cfa",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "525225353e881e1a6e9be38c994255efe1037e5d8d6042af0c9d2ac44de762d1",
+      "managed": false,
+      "path": "/fingerprints/b91e6d9ca4061db1-landmarks.json",
+      "rawBytes": 2984181,
+      "rawSha256": "b91e6d9ca4061db123bd9f8706f24f44f2c84c5b7e71d0d61ff6f57bfd2ea086",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "767dbed8279894a60d8fb40bbd824a2ff7823a80947623b5bd872d810025e86a",
+      "managed": false,
+      "path": "/fingerprints/c4a4d5c10efe56a0-landmarks.json",
+      "rawBytes": 2716592,
+      "rawSha256": "c4a4d5c10efe56a0c05c10cfc0acf800dac6b9f54b6183d6cd0c648eff21e6bf",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "44a90dde7bee010354e78b39de825731e0161a891b9c59fd306e30235d09c2c4",
+      "managed": false,
+      "path": "/fingerprints/c88613728c98fbcd-landmarks.json",
+      "rawBytes": 2716592,
+      "rawSha256": "c88613728c98fbcd3946eb7b1fe960ca0c91fe6007fdd1dbbc0cf6a8b477c4bc",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "b7f48395e3e9f1a28a5dfb2ce111bf5c9a1ab7231214a5c8ec750435e35772bc",
+      "managed": false,
+      "path": "/fingerprints/cb443e455d5c440f-landmarks.json",
+      "rawBytes": 2758423,
+      "rawSha256": "cb443e455d5c440f37b74ab87b395d435ba6fb417991ba153ceb8ad76b6fff6e",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "f8ccfd9b55d9056b7d9745e80a04c9d3ff01fa20540ab03c3bba3de542e4a47b",
+      "managed": false,
+      "path": "/fingerprints/ebe4a4f40bf36271-landmarks.json",
+      "rawBytes": 2984181,
+      "rawSha256": "ebe4a4f40bf3627142906625dfea0b0c587353cc5523a92578b088797adab73c",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "a2a15d6a59d43a9176b652bf83855f63141142a0fab5ea2deaa2036e219d6617",
+      "managed": false,
+      "path": "/fingerprints/faee5bf40f4e1816-landmarks.json",
+      "rawBytes": 2670771,
+      "rawSha256": "faee5bf40f4e1816f3280cf4a083c5415c36032811f0aea49f5d438952b6d10e",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "b3bde21657148287b50a030e425577a5c2025f382d46c967a47bfded3ad3afd7",
+      "managed": false,
+      "path": "/fingerprints/fd64741693dc955b-landmarks.json",
+      "rawBytes": 2670771,
+      "rawSha256": "fd64741693dc955bf6169fa2d29b7156230c0e1163e7bf6532031e06eeddd8e5",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "bdf8a2612789d30982c05f9796c0f67efad6d829b0ab9ab26e5dc84738f7aeb3",
+      "managed": false,
+      "path": "/i18n.mjs",
+      "rawBytes": 4675,
+      "rawSha256": "9e30fcd05147a623778fea255be86dbc0336092009cf52fd4d658566844687cb",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "3839acd398c52c8bc44485710e3194a4930fcedd3fcf823c384e50a6d6cdf6a5",
+      "managed": false,
+      "path": "/icons.mjs",
+      "rawBytes": 1522,
+      "rawSha256": "37a516b584e45a1b9815478f99988568bc17dfed57c7b2b82eccde6b5fb6851c",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "1b323a5a9aa5f957ddff8302678a59ed407b69d8322b2398eaec294c01ba0d1a",
+      "managed": false,
+      "path": "/icons.svg",
+      "rawBytes": 13138,
+      "rawSha256": "d21d17103cfcd6851a1aa815d1bce5a0df343c8fc79aa5bcb59e9e4de6a12b33",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2594af3dc8b3acd10d3d99de9350fe924ccd98bd975ccd23f163d8e9aab492c6",
+      "managed": false,
+      "path": "/index.html",
+      "rawBytes": 35668,
+      "rawSha256": "af5b2c597c5474fedc23eeef4fb7343f9daeda1f3469d3da8f12959dec736a57",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "3f6458e4f37df77718ec251712db822d2aaafbdbd819f618f6b9c6467a914665",
+      "managed": false,
+      "path": "/language-listening-client.mjs",
+      "rawBytes": 2993,
+      "rawSha256": "2d28d72baeb2fc5a180fb8aeb6aa21cc2d2b0493772a2d7cef58a9bc2de83acc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "01f0d02a15111159d6fc826d19d8b4af037ab9b20c005280991bb15647137f60",
+      "managed": false,
+      "path": "/language-listening.mjs",
+      "rawBytes": 9365,
+      "rawSha256": "8aa7853da2ce974c821d14383454240a563c8eb86ba4a13933c7275047cd0d27",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "45b4afe1c79c6eff3b0a36cfb715c1de139cdd7f4b2cb80e779ec2fc2e651fe8",
+      "managed": false,
+      "path": "/listening.mjs",
+      "rawBytes": 2301,
+      "rawSha256": "fd9e914f2bbf8ef3302fb5e639f131aa77ba54228c4d7d090a1a10936fc419fd",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "f297a75106467ab610b7ceceaf333396932dad66013c4a612dd46a2d7a1b47c2",
+      "managed": false,
+      "path": "/locales-app.mjs",
+      "rawBytes": 19738,
+      "rawSha256": "9f7758d56bde369f34431e6bf65e37aeba56ed24a30722064785a5bdc890f48f",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "a07f7717c27afca79ef2670aa28cb0391f10f5afb7e873c4a8931c29cc31e337",
+      "managed": false,
+      "path": "/locales-es.mjs",
+      "rawBytes": 12603,
+      "rawSha256": "0ac44ddd4d855b95b6fbb1dac19eae959210e683e7d358b6b5bfad76d8679006",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "b4f392aedc239eda833e9cec980839269e5718039660dc17dae4adc541588c08",
+      "managed": false,
+      "path": "/locales-feedback.mjs",
+      "rawBytes": 14870,
+      "rawSha256": "83774a2a4f349d43a1c49630393eeed95bab8c8321b98ac13914dac837fb517a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "789d2667a4038a4c1b4efaaff17cf740446dfefe49d30ce6ec0278b378c731e5",
+      "managed": false,
+      "path": "/locales-interface.mjs",
+      "rawBytes": 19154,
+      "rawSha256": "55320af042c7a2f5050a841dac45fb0ba7995c61b247b64b753fa58dbe04ecb9",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "005e4a896d0cbc324de76e41d95b3ec8cfb1dca9643f0817fe599270ee9deb8d",
+      "managed": false,
+      "path": "/locales-ko.mjs",
+      "rawBytes": 16519,
+      "rawSha256": "73aafa25fcdfc5af0b0fd933b5b3a0eae111c31768bc7e38a04dc4719ccef85a",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "a570a6ed8d12f00a708158b572aaa14351c520885559eb53603e0c3fd061c115",
+      "managed": false,
+      "path": "/locales-reader.mjs",
+      "rawBytes": 7535,
+      "rawSha256": "f5b86c5d3f1d68354d6a43a614e30c2a7a5e085d9a0d7d8946aee73274c0cf7b",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "6fbfe434d45ceddbc252aa9444d91102a14cf58699e7b9224b20a6eaf9c5e23d",
+      "managed": false,
+      "path": "/media-session.mjs",
+      "rawBytes": 2659,
+      "rawSha256": "7a8aae478204c46a361d05a844180ea00812463f62519da775f1eca2548f06e9",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8ba966ee7eedf50b748130955faaf7783ede883c26c87598928a2237887c9a95",
+      "managed": false,
+      "path": "/media/00c22d24b3c723f8-christine_caine-zh.mp3",
+      "rawBytes": 680300,
+      "rawSha256": "00c22d24b3c723f8fa63df92fdba553e355b8b217903dd2caf223573b4652d07",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "f249ab01074081a8847f01dc95b55d0bd42164f740229c4f10db9b4252d30873",
+      "managed": false,
+      "path": "/media/0661d53954b41e34-steve_bang_lee-reference.mp3",
+      "rawBytes": 274796,
+      "rawSha256": "0661d53954b41e34ac96255c9cb67c73e80a06297f19a0b2976854c81eae3950",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "24116a2e5424fa7fccb0089ce42af8e7d7757c3ef7bd76e97495eb24bece4144",
+      "managed": false,
+      "path": "/media/0e654628269dd944-jared_kirkwood-zh.mp3",
+      "rawBytes": 637676,
+      "rawSha256": "0e654628269dd944c79e3aa00ac8614bb746df13eaf95c00e9da2e6097fe939a",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "4b6f1ed5f8d6987faab5b3e0090f94db819244d06390b54dbc573c8dad1eb2fb",
+      "managed": false,
+      "path": "/media/1175dcd29bb72d56-zh-natural.mp3",
+      "rawBytes": 43869356,
+      "rawSha256": "1175dcd29bb72d56fe49898b90f83ce498569b983e20cb6b85801b9de80d3f97",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "65c39631f573d1597c355bfa79fa504acbae31db1b8c8ac4a4a346dccd219d1d",
+      "managed": false,
+      "path": "/media/2026-09-27-weekend-sermon-drive-530/es.mp3",
+      "rawBytes": 15134061,
+      "rawSha256": "17990aaa6369922a2a7b2ad2d8bf9f4486b5a0d7a282deb2ae2fe6569b876496",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "083870bed8f720d03b804202f4ecc03de62f4b6cc6b0f2be8b8e3076e8321ce0",
+      "managed": false,
+      "path": "/media/2026-09-27-weekend-sermon-drive-530/ko.mp3",
+      "rawBytes": 15134061,
+      "rawSha256": "b6317fa0589ef7ae2805e73862f75f6b9b81b8b81cfb97310e0f33b6539ade46",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8048d4446503c2f2a4e15adba8304fb3304cbb457b4246fcb44970450f82caad",
+      "managed": false,
+      "path": "/media/2026-09-27-weekend-sermon-drive-530/zh-Hans.mp3",
+      "rawBytes": 15134061,
+      "rawSha256": "5ef201d0fd4d726d2927301fcd776415652fc1251c52971213e2665ad0f3faeb",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "eabce4cbac1ee81137a517a083528f14a0e6543830d8e582cca0cb09d15dad45",
+      "managed": false,
+      "path": "/media/2556a9a3416c5511-kenton_beshore-zh.mp3",
+      "rawBytes": 709100,
+      "rawSha256": "2556a9a3416c55115d8ab6732745d507619d66efcf487c91354efa4dd89577e2",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "503dd679d72f3fc286bdcd5b6cf06319bdeb325bec7f6f7011f4b8861a76e2e6",
+      "managed": false,
+      "path": "/media/286eaa0bf6cd281e-zh-natural.mp3",
+      "rawBytes": 44473004,
+      "rawSha256": "286eaa0bf6cd281e844b8391f8659647abb486ef7cd677d1f1f1ab55b0b83db6",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "6d79f4d10f91dd021d19124790c4553ef2d84a14212588fff0748c0302ce88dc",
+      "managed": false,
+      "path": "/media/394552afddac93e0-kenton_beshore-reference.mp3",
+      "rawBytes": 288620,
+      "rawSha256": "394552afddac93e08f3049b40ecb52fb62c382205418910e721520e4786d7ab3",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "93021b2f9a981c566f8e01f694c3de4cacca17b3d288f79e8a347052852c6ef2",
+      "managed": false,
+      "path": "/media/396a469da3730b41-zh-natural.mp3",
+      "rawBytes": 40716908,
+      "rawSha256": "396a469da3730b41cfd8bd20a3f1611671041bd4019abdd6c305463416fbd4f2",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "5ae6d04c82de166b070b665b57d4a2861f662da0275eb19030659dc4daec6828",
+      "managed": false,
+      "path": "/media/5d9c1f7a4b3be528-zh-natural.mp3",
+      "rawBytes": 39558572,
+      "rawSha256": "5d9c1f7a4b3be528204c1d4ce1a15fa39bdf1ab45602bddf9a607af8abbd72e1",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "5cc03b954154fbffc7582b48245c0c0b319ca66b154adf5d1785514ef02c5915",
+      "managed": false,
+      "path": "/media/7cb57ace1d05bd18-zh-synced.mp3",
+      "rawBytes": 53761580,
+      "rawSha256": "7cb57ace1d05bd183f76da0e5c14925edefa69a834ec2ccc66df78a9865839d9",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "91caec176e811dd96b29b0d2fa0e48d43ce96f03965787723b33635330c964dd",
+      "managed": false,
+      "path": "/media/8672c7398848aeb3-zh-natural.mp3",
+      "rawBytes": 42315308,
+      "rawSha256": "8672c7398848aeb36bedbc8c4fd534b9c15ea586dd55cd138917ac3babb62981",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "55f5b59a8395f21f11971ad958feae5b7147d326b54e56c3ae28a5c477494d30",
+      "managed": false,
+      "path": "/media/89e92f9a1efd4982-zh-natural.mp3",
+      "rawBytes": 47353004,
+      "rawSha256": "89e92f9a1efd4982223b618a24adb7963191c9bc57ccdba7ceaee9f4329abcc9",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "a605407db38bde4ea07d58e0ec209fea220eefee1ca8cb301b4c0f5bfc1ba5cc",
+      "managed": false,
+      "path": "/media/8c83cca82f89987b-sft_expanded.mp3",
+      "rawBytes": 1806380,
+      "rawSha256": "8c83cca82f89987b9432cc68b7795dd4f92c308bc298b153e0926be795e9d6c7",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "91f8c423ce26a1433624e78a8fbc46cbad16d85f0ebf80106a876ee33bbb947d",
+      "managed": false,
+      "path": "/media/926e37b4f92c5c9c-jared_kirkwood-reference.mp3",
+      "rawBytes": 286316,
+      "rawSha256": "926e37b4f92c5c9c33c841886f4e22f54d6b214b1c1a1c3c1be2f22b61987e17",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "495aec0bf03d86cf80c299dd2ae5e2eb376d9bdc52271a34fe2de5ea9e0cd4c3",
+      "managed": false,
+      "path": "/media/95fb563d94990e64-doug_fields-reference.mp3",
+      "rawBytes": 286316,
+      "rawSha256": "95fb563d94990e64012cd0463d75313eefe08cfe785ef306ddccaf5001423440",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "08c900d691c62a02605b401e2c41be382c44b45545b596d49c929e5943a8ff26",
+      "managed": false,
+      "path": "/media/a96bdd6abf2b9419-christine_caine-reference.mp3",
+      "rawBytes": 288620,
+      "rawSha256": "a96bdd6abf2b94197c56a3d76f94504145e88f79b14372ec53328216c34c2f81",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "4cf886acca7282955061a4aecda86c0987a56bbdf5743e85ae412fcb27222c07",
+      "managed": false,
+      "path": "/media/ba2346ac01d28981-steve_bang_lee-zh.mp3",
+      "rawBytes": 739628,
+      "rawSha256": "ba2346ac01d28981889309355c54a9f3873a584aa6d48f857de79a3aa555ecd5",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "add14fe6acb50694379b71faa61f939bc90f76dcfeb3a3789f810edc22cab3a4",
+      "managed": false,
+      "path": "/media/bb156cd1c68422d9-zh-natural.mp3",
+      "rawBytes": 46346156,
+      "rawSha256": "bb156cd1c68422d979be41a9d1d9ac61335b4076c81ed4c9199468bd048f7159",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "630dd0404610b03f870eedce0c99b87ae0aa508dddc8eea43327e6ee8abb5afb",
+      "managed": false,
+      "path": "/media/d19357e195618b6b-zh-synced.mp3",
+      "rawBytes": 53761580,
+      "rawSha256": "d19357e195618b6bb98079470345e853b862a66c356b73a5739c470de0cad248",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "525b5c52af041e80811e7404f9dad748e12cfa2ab77a00c0fd0aa04180ba017f",
+      "managed": false,
+      "path": "/media/de6cbfb214255348-zh-synced.mp3",
+      "rawBytes": 46561580,
+      "rawSha256": "de6cbfb214255348260c42221733e02ca70d5eb19bb485e83830eac309fb7798",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "e8c9c2661a5e6a76ccde99eaa303b4d3aeb26a3e46d021acc9559244dea5d0c9",
+      "managed": false,
+      "path": "/media/e0dc64453d8ba46e-zh-synced.mp3",
+      "rawBytes": 46561580,
+      "rawSha256": "e0dc64453d8ba46ec5ea3fc13b029df2e774973ea41bf041a03497f49bffba27",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "3799be22f905d152052a01db40749b4e778acf71f9cd620eefe0ea5e5493f8dc",
+      "managed": false,
+      "path": "/media/e4d768bd86ef4c33-eric-reference.mp3",
+      "rawBytes": 208583,
+      "rawSha256": "e4d768bd86ef4c3377acd086aa9fdf254ea1ea72d4957e39feae9d44dc8770e4",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "923be6fafb390077e184e3f9800991cd626e1ed495cb63d18e05559cbc6c83ae",
+      "managed": false,
+      "path": "/media/f65553b0574524cd-doug_fields-zh.mp3",
+      "rawBytes": 728108,
+      "rawSha256": "f65553b0574524cd5afa60a280f651fd870550a0345f7597fc9c21a7c2e09168",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "75ac118f129e65042eba43fe89bf36f9817760cd7d69fa6f60e5e9b3e8dbc057",
+      "managed": false,
+      "path": "/media/if-i-had-more-time-jesus-is-worthy/es.mp3",
+      "rawBytes": 82260044,
+      "rawSha256": "6d0295041a4bfde7301af07387e5d042c2b0aef0498f4df6db1bf6de16e8b550",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "475c5f3401316d3d0b1cf31ee72e332f4138c049a6bdd01acf535ff6a55021c7",
+      "managed": false,
+      "path": "/media/if-i-had-more-time-jesus-is-worthy/ko.mp3",
+      "rawBytes": 92196044,
+      "rawSha256": "fd6d4c1fb1175c9eca131752e96dd5e43c3def31491bd1c80a5247e680565cdc",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8005eb9a71f56415f50c877305ef0342fd41f2dfe28bb86d1192a14616e6caa7",
+      "managed": false,
+      "path": "/media/if-i-had-more-time-jesus-is-worthy/zh-Hans.mp3",
+      "rawBytes": 76095404,
+      "rawSha256": "022b28de0d088e21184b43074f84d2ecc5da0391393737c358ef69e71afdbaa0",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "b9c567f43eae04635c0894b4e76c6c14a96827d2a0d30b96857db35274822ede",
+      "managed": false,
+      "path": "/media/resi-20261004-69ba7a66/es.mp3",
+      "rawBytes": 15537644,
+      "rawSha256": "4fca575d373c3c800d0f4f3755aef4dd9dc71a31b9dcafb8432e10ef542cbe01",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "6af6a84fe4e5ac0d2acb74fbc8329d24ede2fefba370dd746aa5722b4ad9783e",
+      "managed": false,
+      "path": "/media/resi-20261004-69ba7a66/ko.mp3",
+      "rawBytes": 15537644,
+      "rawSha256": "804c81b719c0dfd3c992c96dee3abdab33a4a5b97025dbd1409986dba428fb47",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "6a59b935e7cc4bb8d48268106cbe5f092310614560aae6d24f6601cb4bf6c174",
+      "managed": false,
+      "path": "/media/resi-20261004-69ba7a66/zh-Hans.mp3",
+      "rawBytes": 15537645,
+      "rawSha256": "d34c0e2c2d3c8f5bf79337871d0a9dc5e8549eefd81c4e6a2a37c90bbbad58aa",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "3d116d1a14856e533f306503df3131ccd3843b39c4fa77023ff42a3addcc11b8",
+      "managed": false,
+      "path": "/media/resi-20261011-54475d42/es.mp3",
+      "rawBytes": 25578765,
+      "rawSha256": "d4b2845f28b2b7fe1c761604b7b3ffc26489648056958de49908f4e76fd41369",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "cc3a56385019e245f8bd659dee0632cc6a0d5b0e8a71b6943def0d3ab36279c7",
+      "managed": false,
+      "path": "/media/resi-20261011-54475d42/ko.mp3",
+      "rawBytes": 25573005,
+      "rawSha256": "f77d72241cffe5ffe4a74be5dfa4cc7ed5c5388c5254f6449ff46ef642982562",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8967d7a9cf24144e50bced646fd617db02e51f5fbb89f7e45dd510bb8854964b",
+      "managed": false,
+      "path": "/media/resi-20261011-54475d42/zh-Hans.mp3",
+      "rawBytes": 25579341,
+      "rawSha256": "e16380a609b2dc75059a12b7ad3cfedc304b73ac4aa49578e9264de6ba22d1b7",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "aaa179208182759316db63e5dcdf5cc62fba17ecb34458ca0782060233babfe4",
+      "managed": false,
+      "path": "/media/resi-20261018-15030286/es.mp3",
+      "rawBytes": 22741101,
+      "rawSha256": "ed1c8dcbbcec3f73c0065691354e4e1cf8326d01d3dd0e27759b466b43e95601",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "eda53b99c0ae57b8ace3b37f911c9e7b0b70023c3223e65fc07d3f33559a6f53",
+      "managed": false,
+      "path": "/multilingual-v3.json",
+      "rawBytes": 10834,
+      "rawSha256": "7a0dda6c3311067bc409b775a3fdb20f54c39e3cd5824d54c1715ce28c5825fc",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "e03683fd6ee53fec0d086ea132543349579ead80e322ae2f9f8d614a88a072c1",
+      "managed": false,
+      "path": "/multilingual-v4.json",
+      "rawBytes": 15106,
+      "rawSha256": "1386fe412c00922781234390ba0e6e97d9194f3d879126cfacf815c40a301f49",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "dc2d451521c8e2afb62c06961516f1083741fbad6ad02ec70cf46f09ebd0177f",
+      "managed": false,
+      "path": "/offline-worker.js",
+      "rawBytes": 9194,
+      "rawSha256": "40607b2464167f7df9ccea4485074a07307ceeecf69e45b90d8d83a7b1f8b5fc",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "9d75179dafa620c849cb837401b70c28d42f3075280e5682ddef327033c32995",
+      "managed": false,
+      "path": "/offline.mjs",
+      "rawBytes": 5217,
+      "rawSha256": "1026aa4b42a69b2652f5cc5f4566f94e7ac9c8f06a0a290baff06a292789a654",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "4e3fa08ce326eae2aa41f7137d7b4b50ac1d4576c48d909253d5b500d2497117",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/audio-extension.json",
+      "rawBytes": 3726,
+      "rawSha256": "c905c8cc1521e0599ba173ac0175dcf6fe27f2e649cf8e8a63dc9de32dfdfa33",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "92f3195af01402bac17dcc6e19edd3ca441c4b642b9d11a12dba2e38286eeb02",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/es/index.html",
+      "rawBytes": 54124,
+      "rawSha256": "9d537bb6e0b039e21c28c8b31fed4f65a9119a31b9e8d5828201d276db6ed90e",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "da3f44a7b47d177e0d3b5181a14e1f0e676313d257bfe9603c17a584d2687e42",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/index.html",
+      "rawBytes": 1785,
+      "rawSha256": "9c2c99ac2ed942bb4d6d231d1b6494c39621610b146d07b988b25bedc38afe94",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "3cdbd1d026310af6018c3a5114d6c003dbeafe70a4cd164336be5151b71c264a",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/ko/index.html",
+      "rawBytes": 66344,
+      "rawSha256": "9ebf44a5ad788964474d189d29e9bb6fa3eaaf8a2fae3bd0b0f926bb1a6728c6",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8780457ad2b3c3c6a4e04e66082671642d6fe5e1c0cda16d11c862d603790fe2",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/page-data.js",
+      "rawBytes": 222411,
+      "rawSha256": "fa071d1b7678eeaad7c5ae4c1539d2b6f8b908322b2e12283881b0be304362f3",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "287bd98f150ab8be1920da69f0df6a5f54cca8324a65b20de8b3c2750dba561d",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/page.js",
+      "rawBytes": 2896,
+      "rawSha256": "07dfd1990bed804d083346bd85f43fdbdc9bdc372645f2a7caa1b804e5c4271d",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "413351329be95ccd8c6bd8e928028c426e49b2d778db7a2062554777280f7375",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/poster.jpg",
+      "rawBytes": 47052,
+      "rawSha256": "61d25b947f347ea46ee90521390ce48d08e2fd75b3ccaf978d0ae4ca03842bfd",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "b26c5bbcd647737a06865a58bd394b8fc98e85f9d1063555981cc134d5c196ec",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/sep27-page-audio-extension.mjs",
+      "rawBytes": 12590,
+      "rawSha256": "073524cbfe0f8123d71fd10381f80307360e92901fc8b343fe8a43ca2d18e676",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "46c99c5c49b1114f87e27628890196a0d51135542a014f51770ac92625ee2e58",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/style.css",
+      "rawBytes": 2565,
+      "rawSha256": "6ee92eef144edd6a7a091668467f4fa524d12f8101cfbf0a32cbd2f478c22f15",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "d99d24bc7e2c92cbaaa41dfa8b2f8221da9a8ea856d3910544c40e38b736d50d",
+      "managed": false,
+      "path": "/pages/2026-09-27-weekend-sermon-drive-530/zh-Hans/index.html",
+      "rawBytes": 49698,
+      "rawSha256": "2feb02398dbeb545e8c2d7c3d68b09187c473381cb965720c376e8bb2ec5e63f",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "852ae5bae977de4ad8e3dbd5608050b0ba55b22fc3434c66895022fe15b7c30a",
+      "managed": false,
+      "path": "/pages/if-i-had-more-time-jesus-is-worthy/es/index.html",
+      "rawBytes": 67181,
+      "rawSha256": "52fbadde8e5fcb6ecb1fc9c67463fd2c73e8d13275d20f8b052ae95a78914630",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "51ea97e6b2d3efbcddb992b8c6b00f900664d41bfe503de5daad96ddd9165fc3",
+      "managed": false,
+      "path": "/pages/if-i-had-more-time-jesus-is-worthy/ko/index.html",
+      "rawBytes": 89890,
+      "rawSha256": "01c5664fb532ab796311ec4f5076aaa7759fe8a4ed9ec16c427025add738f62b",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "27fc33d91ac940266b10464f1624883c54ee0442063490ab4231ec6f3e770a14",
+      "managed": false,
+      "path": "/pages/if-i-had-more-time-jesus-is-worthy/zh-Hans/index.html",
+      "rawBytes": 62105,
+      "rawSha256": "3b1bde625c724c67f325851f0f82acccb98b76d7520e9f50b43f309685f9e200",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "83770c46c229e8765409b7680d8d9e2c3a737e109e0e51b016e77d262a4df43a",
+      "managed": false,
+      "path": "/pages/resi-20261004-69ba7a66/es/index.html",
+      "rawBytes": 52109,
+      "rawSha256": "2d536af90ada2b1365ac63ae0575c8999fb1bc119a26a4177f3eaaea274a7b9d",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "330b2f04aa3eaefbe7adfe82d9d1e4ab4631f087fc56eb4967248f725e4c6bd8",
+      "managed": false,
+      "path": "/pages/resi-20261004-69ba7a66/ko/index.html",
+      "rawBytes": 55247,
+      "rawSha256": "1c334ddb3b88f98cba42c5283ac11e393ef75884aa1603d04ea4ecb0f2a7bcb8",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "b257fc0c1929d7b003caf6e48ab82f68da441bbe140a55d723d9cb18612f498a",
+      "managed": false,
+      "path": "/pages/resi-20261004-69ba7a66/zh-Hans/index.html",
+      "rawBytes": 48080,
+      "rawSha256": "a81aaeabb2b5009c2be63729eb2fad9e5b31068909be7d15b79e073f95c71b2e",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "2a5bb345489c9d4eb90d0d37a24206cb38a2d453a23a858e12f36368a99bad75",
+      "managed": false,
+      "path": "/pages/resi-20261011-54475d42/es/index.html",
+      "rawBytes": 61953,
+      "rawSha256": "9054d4552823744d9f25e6f1f323518fe8c346411bf3ba06f353e346b2d5eaeb",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "54e9da12665bbbada39a520e4cf6027f55e05030c3a236118a47ec3a42777162",
+      "managed": false,
+      "path": "/pages/resi-20261011-54475d42/ko/index.html",
+      "rawBytes": 74313,
+      "rawSha256": "35ad105bee908a413e5c074104e94941a7345a32611ca6a662b9be11b52d2b3b",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "f1640aed566ceb999c5bca05d92619ced8b45c0f10d72cfe3b33b1ebdedfef56",
+      "managed": false,
+      "path": "/pages/resi-20261011-54475d42/zh-Hans/index.html",
+      "rawBytes": 59042,
+      "rawSha256": "a355e394f2a1ed699187ab44948e739b369df43f5763672f82ea49f83461a4ce",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "4392f5be7600c476d704227a33ce76eac5272bac8305a38d34219d8dfeb709ef",
+      "managed": false,
+      "path": "/pages/resi-20261018-15030286/es/index.html",
+      "rawBytes": 52911,
+      "rawSha256": "a045eca3b98efead9b0037706058ebed7e292aa9a70dcd803a653302e3f4aba5",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "0e70eb8278fb7ccfec450031f3c36b164688588c4ea62cfc4b47191b25a96694",
+      "managed": false,
+      "path": "/playback-memory.mjs",
+      "rawBytes": 5338,
+      "rawSha256": "448b32804b26bb36c3e8a8da70f712cca884350e2fc08a0ff88a950cd15755df",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8a6bf45f7b9ab31e03d5ea9c40cea017148005ad1aa9677116d021de87a7bedb",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/en-1dc7480b17ce70dbf9f835af318d2e542d6983913cf8c18ad111652fb14823b5.png",
+      "rawBytes": 2119509,
+      "rawSha256": "1dc7480b17ce70dbf9f835af318d2e542d6983913cf8c18ad111652fb14823b5",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "610f5dc8d03b98375fb8b21118674f42fd31a3a7eb5925698b2502cc0b4a5ecd",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/en-preview-59302a7a513d9c0338343f749b750a0dc94f98c942bad1241ca682d00614ccdd.png",
+      "rawBytes": 636938,
+      "rawSha256": "59302a7a513d9c0338343f749b750a0dc94f98c942bad1241ca682d00614ccdd",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "bff1b72f38fafaacec5288cd7857069b5f2a9b47fb6cb8daa2a486b18022783a",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/es-8047c6384035f83b3bfe71de7ba99e376f89d424e4d87e7013ed02a0e4229112.png",
+      "rawBytes": 2120028,
+      "rawSha256": "8047c6384035f83b3bfe71de7ba99e376f89d424e4d87e7013ed02a0e4229112",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "d08f462886fd352c2226cd18b0e195d21010fca2c29d91e9b85af067b4786288",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/es-preview-696581f6257d7f4116f36467de599434b6022c3b4a011da9bb72517140fb59b3.png",
+      "rawBytes": 637293,
+      "rawSha256": "696581f6257d7f4116f36467de599434b6022c3b4a011da9bb72517140fb59b3",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "1b167a43ea264e7ca4869274f41f3ac42126918145fc4b68ef68d734cb15b060",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/ko-80d73dea581798eee7b8d1200c6dc54c60a8425d93116cc0ba6d23a0ab50c7d9.png",
+      "rawBytes": 2103355,
+      "rawSha256": "80d73dea581798eee7b8d1200c6dc54c60a8425d93116cc0ba6d23a0ab50c7d9",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8cdd40681a87fa0fb8671580bd1b1346108c35089025d9e0a03da22f1daf99d7",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/ko-c88dbc1fa70c0216140d8d738122e07433330cd681b146dd4ca924b8faa65262.png",
+      "rawBytes": 2103821,
+      "rawSha256": "c88dbc1fa70c0216140d8d738122e07433330cd681b146dd4ca924b8faa65262",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "454b771d8ffebd771196379ef3869600d0638a49d41a2e660e367d92a9729d94",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/ko-preview-0cac2b0234e87f2420dd5d791a4516b427fbe991ae4522ab4ead3b82fa86602c.png",
+      "rawBytes": 631827,
+      "rawSha256": "0cac2b0234e87f2420dd5d791a4516b427fbe991ae4522ab4ead3b82fa86602c",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "f3ebbb6d51c408a17968a97c2c5463aaf4bceb13001bfccd7a58c7b1be35ef0d",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/ko-preview-cec24a8e4e42d11e8a2dcc07f341a770d4333d2f89b2973054a3c7d90638a094.png",
+      "rawBytes": 631956,
+      "rawSha256": "cec24a8e4e42d11e8a2dcc07f341a770d4333d2f89b2973054a3c7d90638a094",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "ba10bd792ca946eb450734654d73a60619bbfe52bea6e8fe66d315f1dfd4c158",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/zh-Hans-36f7f483b56db4dfe0e282c2edebaab9cae4c618fd57085d789786f932bc9beb.png",
+      "rawBytes": 2095075,
+      "rawSha256": "36f7f483b56db4dfe0e282c2edebaab9cae4c618fd57085d789786f932bc9beb",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "98c70027ef804e3848b0b25f4619025291fde2487a2dd15003725ce1a41b8feb",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/zh-Hans-d6f8f9f07fc672daa99abb1d03f1d91e00310bc50b56cdd827544ef3c8a41698.png",
+      "rawBytes": 2091611,
+      "rawSha256": "d6f8f9f07fc672daa99abb1d03f1d91e00310bc50b56cdd827544ef3c8a41698",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "2a2bf29e517e0165ae48429a6c17d5b14de73c2b3e5d16910a334b3f28295bff",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/zh-Hans-preview-d1f5bc5ee42e671b551f4dfe4acb66b72cb0d09e51fcac91ae51f4ec3349cf47.png",
+      "rawBytes": 626852,
+      "rawSha256": "d1f5bc5ee42e671b551f4dfe4acb66b72cb0d09e51fcac91ae51f4ec3349cf47",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "dc365e622c119f0fb3e30150480f59dd8470431049ea1b4b4c7879963f43b55b",
+      "managed": false,
+      "path": "/posters/resi-20261004-69ba7a66/zh-Hans-preview-d881e8c10ffa6f007f59fd51d81a76e1d5762f807d6367621ca5533ca7ceb6f0.png",
+      "rawBytes": 628371,
+      "rawSha256": "d881e8c10ffa6f007f59fd51d81a76e1d5762f807d6367621ca5533ca7ceb6f0",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "500199787614d3c26a8ff9a84a9e0e418c0ef8ec7b5121f8be01d6024ed3ae94",
+      "managed": false,
+      "path": "/posters/resi-20261011-54475d42/es-395dd1afece977903bdf3fac970f0772d0c8e9cc2a42f9dd906376b94bb7648e.png",
+      "rawBytes": 2062610,
+      "rawSha256": "395dd1afece977903bdf3fac970f0772d0c8e9cc2a42f9dd906376b94bb7648e",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "c25be0092e1e7b1c5586325999e468595e821c77e67645bf3324e19e9acc96a0",
+      "managed": false,
+      "path": "/posters/resi-20261011-54475d42/es-preview-d0bf68a72e71b7ac0226363e97ee2eda3a0125567c2a99cfad0274662f16413e.png",
+      "rawBytes": 631492,
+      "rawSha256": "d0bf68a72e71b7ac0226363e97ee2eda3a0125567c2a99cfad0274662f16413e",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8003869c0fbee95b92e1caedb694f86ce8a8f57851938b9d72298f3425712f77",
+      "managed": false,
+      "path": "/posters/resi-20261011-54475d42/ko-0d298c3bca3d4ad60a633b11e07ca89a701a3047e658201ccbe5b6dc7df7e23b.png",
+      "rawBytes": 2044445,
+      "rawSha256": "0d298c3bca3d4ad60a633b11e07ca89a701a3047e658201ccbe5b6dc7df7e23b",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "318cba5d5331a54643f5f749e2b01e8d334a0c92782cd7f518eac0f14273f79a",
+      "managed": false,
+      "path": "/posters/resi-20261011-54475d42/ko-preview-fe82e5a76183c5575bc8ea59655d249ad31820d8f728871b29cba606989a2285.png",
+      "rawBytes": 625734,
+      "rawSha256": "fe82e5a76183c5575bc8ea59655d249ad31820d8f728871b29cba606989a2285",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "8e1c6b0cc41d62414126e9a483f67cb508df722475d8ea8cf6ff10f56cb8e00c",
+      "managed": false,
+      "path": "/posters/resi-20261011-54475d42/zh-Hans-f0edf7eab5b3cde7ec3b683e90853b31a761016ece482b2342f702ba720f9611.png",
+      "rawBytes": 2034591,
+      "rawSha256": "f0edf7eab5b3cde7ec3b683e90853b31a761016ece482b2342f702ba720f9611",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "f5dcb9d3dec65db09c21dec45bc6a8dca2a6388ec264045cdcb053db0095154b",
+      "managed": false,
+      "path": "/posters/resi-20261011-54475d42/zh-Hans-preview-25cccc7f4b98337db1aab688e805b6b1c2f4d94074c70111718c5c6a43290455.png",
+      "rawBytes": 621687,
+      "rawSha256": "25cccc7f4b98337db1aab688e805b6b1c2f4d94074c70111718c5c6a43290455",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "27d020a19f027c473f09b27c1912d58b2afd7995921296709d47ca587f8e13f3",
+      "managed": false,
+      "path": "/published-weeks.mjs",
+      "rawBytes": 57014,
+      "rawSha256": "0fabcc74784eb59a2c2ece444edf5fe8b57158edf6b444c40571081b0f160f3d",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "2f3b0d7d0cd4d1d82f64bac4527b1528e403d13bee57cc84ad4e9905dac9fa53",
+      "managed": false,
+      "path": "/reading-mode.mjs",
+      "rawBytes": 2495,
+      "rawSha256": "a2320e16e6d680e95d46771a013da7a58e6908cfbdf9abe74c4e48b618acd916",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "f9a8437d7ae1ff43ecf9fdb91cb763dc9bf7fea00582be750ff4c364e5ffaefb",
+      "managed": false,
+      "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/es.json",
+      "rawBytes": 1848,
+      "rawSha256": "89bd0ae679a4c4af3b83d753128a1b729d4a89a80269a2d575855a87eb7508d8",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "2b779beed6c71082803bae75bf915b3cb7b18003a1bd3ec555b071a920a7d369",
+      "managed": false,
+      "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/ko.json",
+      "rawBytes": 1848,
+      "rawSha256": "c7bafcd623bf7bd3658f9c0012ce73a4fcd3aca7e1a766e728874d7e3978b9f7",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "c2006e02a94a8c4aa376883bfe3b9f171b1776fccc6c21bb55b76a817ae43fa8",
+      "managed": false,
+      "path": "/releases-v2/2026-09-27-weekend-sermon-drive-530/zh-Hans.json",
+      "rawBytes": 1893,
+      "rawSha256": "32755dff59bd449c3199e760d6e280407d56bbd286fafd235ccf4adc94f8b675",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "5777d3c430f9f6d1668b5825a06a9633c108d8d48813b88e627deb06a2244abf",
+      "managed": false,
+      "path": "/releases-v2/if-i-had-more-time-jesus-is-worthy/es.json",
+      "rawBytes": 1844,
+      "rawSha256": "ee72ef71fab0f25a540633557738239524282db222d001007b4c90d2462486dc",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "e5461254e713eed8c332baf95afd09534e4430526e04503b2c4730957d147f4f",
+      "managed": false,
+      "path": "/releases-v2/if-i-had-more-time-jesus-is-worthy/ko.json",
+      "rawBytes": 1844,
+      "rawSha256": "4069c0e8043f71579f845d4defe7671bc105a5ab9055ee1cf68bddf33dfadd1c",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "798e1d09e42119d26fc66eb10d86973ec11d7b46b2837c1c52afa4a8173bf9fa",
+      "managed": false,
+      "path": "/releases-v2/if-i-had-more-time-jesus-is-worthy/zh-Hans.json",
+      "rawBytes": 1889,
+      "rawSha256": "857fa9d3528a30393b964e0a800dd5a89c5b797262e0d79ea1ef1731201d5a35",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "28a6039f2702dc078734069c24eb23bd8200bd1fdd47c8a43299cbbbdb178a57",
+      "managed": false,
+      "path": "/releases-v2/resi-20261004-69ba7a66/es.json",
+      "rawBytes": 1770,
+      "rawSha256": "55988ec5bd280f6980485d261c4bb5930aeccb6305373818bf4d5794ba2aaff6",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "663a9a9511b7ae5ebb054e52c73a09fb4b8fdebc87ea6a9a5ba6775740b57b5f",
+      "managed": false,
+      "path": "/releases-v2/resi-20261004-69ba7a66/ko.json",
+      "rawBytes": 1770,
+      "rawSha256": "4a3712ae8ac69d37f84f9798a1c94a8e2c1efc51b39272677410ede7a50341c9",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "fc2d6df9e32d2369a78c4dab80c41de950dccdc35e2bc51d611d86d774d019fd",
+      "managed": false,
+      "path": "/releases-v2/resi-20261004-69ba7a66/zh-Hans.json",
+      "rawBytes": 1815,
+      "rawSha256": "6d85d1c27c7cfcf676c9a77bdae55153389265e0056efe2e25ba2eec30e51063",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "a70981962ad3cd992d5ed6af3ca737706fd979a215fe7d31ec526238097ad069",
+      "managed": false,
+      "path": "/releases-v4/resi-20261011-54475d42/es.json",
+      "rawBytes": 4687,
+      "rawSha256": "bbaf5a8576efb00708d27f0016936f4f9493f3d42c4d55a053de8cab5158576c",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "6bacd0b1e4a42b6324228d1322f400a7aa48b5a23e697736d3ae296a05928a52",
+      "managed": false,
+      "path": "/releases-v4/resi-20261011-54475d42/ko.json",
+      "rawBytes": 4708,
+      "rawSha256": "0c9e90e0d9554252ad62fe124c7637f7485a45d0583b2cd044686e456711e1c6",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "0617e44bc030c44357a03caa6aa572a535f87968ebd56ec60592c578d9dd7538",
+      "managed": false,
+      "path": "/releases-v4/resi-20261011-54475d42/zh-Hans.json",
+      "rawBytes": 4715,
+      "rawSha256": "2503ca70abb2372d513bd9a14603d42b5aac6401d5cc0e635dbc988ec8c84e51",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "7b73d4dee7fd1a7458bce221d02922ef8cc641d53b6ab8644391b3ff76544542",
+      "managed": false,
+      "path": "/releases-v4/resi-20261018-15030286/es.json",
+      "rawBytes": 4657,
+      "rawSha256": "f51ddc81d5db7032f8ee2c3d689ceb5cb2bbb7acf548c5f7cac36598a4c8facf",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "2c62a5bfe9ac4c0f481efa81eede048989fc3574eb44da3f1b7e3822b08becef",
+      "managed": false,
+      "path": "/speaker-clip-demos.mjs",
+      "rawBytes": 24629,
+      "rawSha256": "b1a649903fca043fc69a0e99522cfbf05e756a60f0e950a0ec47950f2b706e88",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "efba48ffde37a25ede4f4ac918dc092235a13b183328420013a7cc6382cbe587",
+      "managed": false,
+      "path": "/study/resi-20261011-54475d42/es/meditation.json",
+      "rawBytes": 6666,
+      "rawSha256": "43fb9c1061bafb5a05e6769264c7e6f698b1c4b1f131f649e977baa94b89c875",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "ff711bcb02ee457d470b24d6cb5d342d487fc1c33e4f6245d565b724aa5ef9ed",
+      "managed": false,
+      "path": "/study/resi-20261011-54475d42/es/outline.json",
+      "rawBytes": 12600,
+      "rawSha256": "72d1b44dad5aa3ab05522da596716557953b9688646372df400a78a19a5137e6",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "2c4c781c1768136e5539e7cc1e46c3258b6033b4e31113f6976c176755bce025",
+      "managed": false,
+      "path": "/study/resi-20261011-54475d42/es/products.json",
+      "rawBytes": 1559,
+      "rawSha256": "2f5e610073ed46f05fd38d3b39b1390463c0470e8c9e9e06a16c8c20c8d3433b",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "eea5ecf1186d2dc1e89125c28c9ecf029d7c2f4df564f617b1a964c8bd228268",
+      "managed": false,
+      "path": "/study/resi-20261011-54475d42/ko/meditation.json",
+      "rawBytes": 7819,
+      "rawSha256": "6cd6e0e90ca4b0dd02c838e8c017fbdca169a4dba6acffc35c6af1729ab9f1c9",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "311b3b18143f3354093f55c3e47f338d7d4746041b8ac2160751a5a555dcefb9",
+      "managed": false,
+      "path": "/study/resi-20261011-54475d42/ko/outline.json",
+      "rawBytes": 13893,
+      "rawSha256": "1ab3850e974e998173b03fec9011a094cb5d554812ec7497d935a55731756ddc",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "fe5f9a1fa74f7d52af591cc1e767aa9334de5c44db46b5c6a302d4ef84127601",
+      "managed": false,
+      "path": "/study/resi-20261011-54475d42/ko/products.json",
+      "rawBytes": 1559,
+      "rawSha256": "31e99d283850556b16be5f1018a79a8cbde4e23acf71a81cfc74620d98efaa0e",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "82536b530a81fd0f29ababe2deb26b399dd94f45c5c5cbaf5fbc077931f7be74",
+      "managed": false,
+      "path": "/study/resi-20261011-54475d42/zh-Hans/meditation.json",
+      "rawBytes": 6409,
+      "rawSha256": "e132281a3277c76ff55b3c9993b32bb53846d06b7bc48f2f46d3272fb2b68ca1",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "2bdfcccfb79ee8f88e1ebb0e9ef7e89656a0d5f54229370d5b45285ee22a4935",
+      "managed": false,
+      "path": "/study/resi-20261011-54475d42/zh-Hans/outline.json",
+      "rawBytes": 11541,
+      "rawSha256": "acc9348c28f7e004de90e1dde406868f4bca973af762f3d0e59176c2855a7231",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "284562f55825d7f9f88f0e56e7f304a5238070215f89258f35a1d5a0f5023029",
+      "managed": false,
+      "path": "/study/resi-20261011-54475d42/zh-Hans/products.json",
+      "rawBytes": 1564,
+      "rawSha256": "9e2677f3a1667879ef35fab3dc155025b61931889e9a27cea21a75806df6257a",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "6e905886c044db0e477f95404c4bb0393a5494652ca9364cb0f2571f8bb08e29",
+      "managed": false,
+      "path": "/study/resi-20261018-15030286/es/meditation.json",
+      "rawBytes": 6287,
+      "rawSha256": "ffa48ccdabd3d805f57a6dc3e9f3c334c65a3937514a5a7037cb7f8f555d1dfa",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "f2ebf0a9a2147ac21182d21e8eaefec248015081ba3e0ea09eed57de5455db48",
+      "managed": false,
+      "path": "/study/resi-20261018-15030286/es/outline.json",
+      "rawBytes": 17944,
+      "rawSha256": "eeb7b2f16462d92eefa94746b3d9dc293388d75ae71ae45b3781e8a7101fbe35",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "6bb1954502ceeda08352097f3fdebb0b576b2658fd4265f0c4e5a5ae2d9dfd3b",
+      "managed": false,
+      "path": "/study/resi-20261018-15030286/es/products.json",
+      "rawBytes": 1592,
+      "rawSha256": "7c9ecb9d0e6e20ae17e4800f316a60fa6afbd74bb6334977d71b25843313c0fc",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "fd843a9c80d800abb278ca4b5f8423477a36109329a9260b3d96a31dccdeb600",
+      "managed": false,
+      "path": "/style.css",
+      "rawBytes": 47723,
+      "rawSha256": "f4286e098a8a6e396cefe10fe6251fb067eb4243c53330ac617be5b7b54a1ba8",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "758a3ea4338bbf551e00a009f855e180e535742bf1c38cc7df0b6300ef1d6221",
+      "managed": false,
+      "path": "/theme.js",
+      "rawBytes": 2096,
+      "rawSha256": "557cf797bbc1ce8553131a6264e5a9d52701db363189854d9fa118803f5bc54c",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "61c5d5bd50587729b3bb2e30398c95ee571d4d749903bdbeb5194d57bf3ff216",
+      "managed": false,
+      "path": "/timing.mjs",
+      "rawBytes": 727,
+      "rawSha256": "74c007ea62d54a6c851fa828465e2a55f442e20d328bd65ee4b7c0738b52b888",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "84614706addacca7e43ff246987992e498f5be3234025b137fa1d410be73dc41",
+      "managed": false,
+      "path": "/usage-client.mjs",
+      "rawBytes": 4626,
+      "rawSha256": "5a0f646b22f8851f5eb88f699a7aa059f1167a7f0d4292009a0f3c375536047f",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "6498730e699834212ec4be5c2a26415f86eb7b115da2db5fa41c31df3c34941d",
+      "managed": false,
+      "path": "/usage.mjs",
+      "rawBytes": 6676,
+      "rawSha256": "0febf0532d5a52f96fce054e2445bdf7d51e1e5e345fc83f625fb64adac20e2e",
+      "sourceKind": "live_get_version_hash_verified"
+    },
+    {
+      "liveGzipSha256": "da396c83413fa7d16807b0a8839e44545339f88cf98f6a58d59643b97ff24fe8",
+      "managed": false,
+      "path": "/voice-demo.css",
+      "rawBytes": 2793,
+      "rawSha256": "4511dfd39236c9171c7789b516fb11bb40379947e35b7deb9767f637250b9771",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "df60b8fea9eca5dc41fd5fc3816621e377e9ead94ee3db8ee3d9218be72bacd7",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/christine_caine/es.mp3",
+      "rawBytes": 235354,
+      "rawSha256": "fb84701435afa32187ba02c207be9ee24c0687b4f63a798ae8d5512d1aa1045c",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "1b688f12079f65f49665fad0313646cbc557866a6dd6424cf13dbfd65bdd8467",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/christine_caine/ko.mp3",
+      "rawBytes": 236607,
+      "rawSha256": "685830e7c8afc7e4917448b742c07a92536cfbf49bd0be22534ccc7894285eee",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "10de67d842059aafa54770c86e6ec8d4f6b9be655dd714417eff10a817291095",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/doug_fields/es.mp3",
+      "rawBytes": 226158,
+      "rawSha256": "00ae97eb6bbf4531492d5bdf11138c9ee3ca1fca552bc3b4b213294847a04759",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "87f4df2089a46c99c949c52c02240231189c13f0689adc323216fecf44c9bccb",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/doug_fields/ko.mp3",
+      "rawBytes": 270044,
+      "rawSha256": "eeb6314b9eda4fdae57ae287a4ef9663cc269b81e8e201a62258201952dd7572",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "89039cb4a975a8d4cbd463d8c62475e9552b8cfac8c932583cbfaededfa56f73",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/eric_geiger/es.mp3",
+      "rawBytes": 211112,
+      "rawSha256": "908c0ebe4c11426b07eb468233451125c57ea9b7f3d9e6148ec90a66102ffb5d",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "5bc40b13c7cc52f22074240a12d9235fc7754ba6c8b573e7f0c573a8005c499b",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/eric_geiger/ko.mp3",
+      "rawBytes": 258341,
+      "rawSha256": "5ecd6c2a969e45b770fe0c8835e1b193f99fd67b2f939cb25d32f8b13555c053",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "5a269e5da284b107322aa87ca929e151b1b207d2ff9278ad902e11aea8fb43ef",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/jared_kirkwood/es.mp3",
+      "rawBytes": 221143,
+      "rawSha256": "0cf737da42e264a7e56aa76f7d415ed5a9361f4f80ebba2f7f2077bc1515e613",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "771c27d3826b49e12a5dc85ce7a8b6edf5a908915a3750c7618cb4ff37219fe8",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/jared_kirkwood/ko.mp3",
+      "rawBytes": 226158,
+      "rawSha256": "aa17eafeeb43b59735dc10aa04bf42a0bba91181b941331ba8f74f62c4a22819",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "a24e14cfe26d3dccfb94d1f8b1b36ef3c333b1d8f36f9e6a8d9f139045092c27",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/kenton_beshore/es.mp3",
+      "rawBytes": 230338,
+      "rawSha256": "8292b3d5816a48f4a185edc522f76fd27bac488bc8ad90e1080380c0afc30e42",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "b259ad9dfb4e99fa77059632c9809751af90b876260a3b243783996779193961",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/kenton_beshore/ko.mp3",
+      "rawBytes": 276314,
+      "rawSha256": "ca765d0dbb2b28a5ba63b49cb601075d79da1cffa5eaea39227bc2ff318f4d0a",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "537c7bc3bdb407501b389fc791ff72fd3b93fbeab76baa498edd2d80c7f89057",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/production-ko-es.json",
+      "rawBytes": 8111,
+      "rawSha256": "bf6dcfbe6a745c0198e0ca02d6653c14914b79a5213e63565b20061421f5ae2c",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "e6c6adcb0c557ecff53ef5500279b9837ee5c1b2502729523200bd4c2541c716",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/steve_bang_lee/es.mp3",
+      "rawBytes": 217381,
+      "rawSha256": "88561dfccbcb7938a6d28951b7801fe94f5db22b9c419ce0e1d58c1a1f904437",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "30e8c5d5353e0c2ce7c5ffcc423eaaa8301fee99455c21d0e111e7400e45e144",
+      "managed": false,
+      "path": "/voice-demos/2026-09-21-v2/steve_bang_lee/ko.mp3",
+      "rawBytes": 253326,
+      "rawSha256": "ea566e3e9566b1b2216e36996937c1e4e8f55be036fae8e4cd1615684dbbf94f",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "3f454fb00911dc5efcfc1cd31129e057d2f67edddf0f92d4e55e04a9042eca77",
+      "managed": false,
+      "path": "/voice-samples.mjs",
+      "rawBytes": 2227,
+      "rawSha256": "5297a821b6e91135a7f4914067f4d8758a532bc82dff799a69816314e1a58b91",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "46c7b76b6c8825a7ba7c216731e53bf01ad7a15e4d859d3dae21fc3cecdc7131",
+      "managed": false,
+      "path": "/weekly-announcements-v1.json",
+      "rawBytes": 4319,
+      "rawSha256": "9938d6780c9a5e34e2d5c6309bc61364666fbd92cb44fe81ae79db01d5e28b5d",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    },
+    {
+      "liveGzipSha256": "5f966758011a1855023ed461e423897cdb82b212d39dbec25c5ae4163b1ac2c7",
+      "managed": false,
+      "path": "/weekly.json",
+      "rawBytes": 1180600,
+      "rawSha256": "6b7bbd018e1df2d39ea5287c9e6a3114ee6a6a0c953e2f39cdc4d3d3244204bf",
+      "sourceKind": "verified_cached_bytes_live_version_hash_join"
+    }
+  ],
+  "schemaVersion": "sermon-production-live-baseline-v1",
+  "site": "ai-for-god-sermon-audio",
+  "status": "complete_verified_not_deployed"
+}

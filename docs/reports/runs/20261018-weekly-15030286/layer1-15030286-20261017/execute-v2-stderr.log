@@ -1,0 +1,30 @@
+Traceback (most recent call last):
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/scripts/sermon_unified_source.py", line 18, in <module>
+    raise SystemExit(_implementation.main())
+                     ~~~~~~~~~~~~~~~~~~~~^^
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 588, in main
+    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+                                                                    ~~~~~~~^^^^^^^^^^^^^
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 362, in execute
+    return _execute(config, fresh, api_key=<redacted>, transport=transport,
+                    aligner=aligner or mfa_backend.align_reference_chunks,
+                    mfa_preflight=mfa_preflight or mfa_backend.preflight)
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 435, in _execute
+    aligned = aligner(references, clip, out / 'mfa', **_mfa_options(config))
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/mfa_backend.py", line 201, in align_reference_chunks
+    segments = spark.align_reference_chunks(frozen, clip_path, outdir, **spark_options)
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/mfa_spark.py", line 183, in align_reference_chunks
+    result = _call('align', chunks=chunks, clip_path=clip_path, **options)
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/mfa_spark.py", line 139, in _call
+    _source.current().compute.require_session(verifier=session_verifier)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/scripts/tongxing_host.py", line 227, in _require_session
+    return production_spark_admission.require_session(verifier=verifier)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/compute/spark_admission.py", line 19, in require_session
+    return _checked_receipt(Client.from_environment().require_ready())
+                            ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "~/.codex/worktrees/layer1-20261017/sermon-video-zh-subtitles/packages/production/src/tongxing_production/compute/spark_exclusive_session.py", line 733, in from_environment
+    if not session_id or not owner: raise SessionError('spark_exclusive_session_required')
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tongxing_production.compute.spark_exclusive_session.SessionError: spark_exclusive_session_required
