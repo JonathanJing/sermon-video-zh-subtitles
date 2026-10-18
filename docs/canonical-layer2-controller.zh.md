@@ -59,6 +59,32 @@ python scripts/canonical_layer2_controller.py reopen-repair \
 新运行的 API 缓存身份 v3 绑定实际 route 和凭据指纹，不绑定每次修订都会变化的预算授权文件哈希；每次缓存读取和模型派发仍单独验证该次预算授权。既有 v2 缓存身份保持冻结，不能静默混用。
 门 4 每次修订的预算账本根再按执行配置身份隔离；修复账本及 durable job 根仍沿用原运行。这样新预算授权不会与初译或前一修订的账本 authority 冲突，旧结果及费用仍保留并计入总额。
 
+跨顶层运行复用使用 opt-in `sermon-canonical-layer2-execution-v6`。它在 v5 字段上增加
+`layer2PayloadCache`：`emitSuccess`、`cacheRequired` 和逐语言 `priorSuccessRoots`。路径相对执行配置
+解析后冻结为绝对路径；prior root 的成功收据、parsed/raw response、policy preview 与 unknown marker
+共同生成内容摘要，并进入 package、durable job 和 worker 命令身份。目录、任一祖先或绑定文件为
+symlink，或者与当前 output、job、repair、budget、source、anchor、policy、plugin 路径重叠时拒绝。
+实际实现始终是 `packages/production/src/tongxing_production/text/`；`scripts/` 入口只是同模块对象的
+兼容 façade，不作为新的实现位置。
+
+成功组收据只在 translator/reviewer 响应完整、独立复核全 pass、无 uncertainty/issues、语言插件通过
+后签发。缓存键绑定完整 bounded payload、OpenAI route/key 指纹、translator draft、runner 与 cache
+实现身份。`cacheRequired=true` 时任何角色 miss 都在 provider 调用前停止，并串行预检组，避免其他组
+抢先付费；false 才允许正常的新请求。auto-repair 只有 fresh 首轮读取跨运行 prior，后续轮继续使用本
+job 的 `reuse_from`；每轮都为最终成功组生成新收据。
+
+生产复用还要求 `sermon-canonical-layer2-budget-authorization-v4`／批准 v3。授权的
+`reuseBudgetRoots` 明确列出每语言原始直接付费账本根；目标 BudgetStore v2 把命中记为
+`settlement.costStatus=reused`、`costMicrousd=0`，不占请求、token、时间或美元 cap。来源必须是
+直接付费 succeeded 行、immutable result marker 与 response record 的完整闭环；unknown、损坏、
+中间 reused 链或缺成功 sidecar 都阻止再次付费。旧 BudgetStore v1 只有经显式 `migrate_to_v2()`
+并由新批准绑定相同 bounds/limits 后才可作为目标账本继续使用；来源账本始终只读。
+
+旧 current-v3 完整运行可用内部 backfill API 在同 route/key、相同 source/anchor/policy/plugin、当前
+validator 全通过且无 unknown marker 时写到新的 sibling 目录；它只从原缓存读取并禁止 dispatch，
+不修改旧 root。v2 或更早、transport identity 不匹配的历史缓存不得重签。回滚 v6 时保留其 durable
+历史，换新的 productionRunId/jobRoot/output 用 v5 重跑，不在原 job 上降级配置。
+
 默认顺序是排序后的可准入 locale，没有循环轮询或无限 Agent 对话。工作中可重复调用 tick
 检查，但 active/failed/unknown durable receipt 不会产生第二个相同工作。
 

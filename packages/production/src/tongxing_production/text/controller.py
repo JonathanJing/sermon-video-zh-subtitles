@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 
 from ..contracts import pipeline_definition as pipeline
 from . import auto_repair
@@ -67,6 +68,14 @@ SHADOW_SCHEMA = 'sermon-canonical-layer2-execution-v4'
 # receipt of that lane's passed repair chain. v3/v4 keep their exact field set; a v3
 # configuration needs no migration and becomes v5 only to carry a QC repair.
 QC_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v5'
+# v6 is the production-only, OpenAI-API payload-cache contract.  Older schemas
+# keep their exact field sets and behavior; enabling this changes the execution,
+# budget and durable input identities explicitly.
+PAYLOAD_CACHE_SCHEMA = 'sermon-canonical-layer2-execution-v6'
+PAYLOAD_CACHE_CONFIG_SCHEMA = 'sermon-canonical-layer2-payload-cache-config-v1'
+PAYLOAD_CACHE_SNAPSHOT_SCHEMA = 'sermon-canonical-layer2-payload-cache-snapshot-v1'
+MAX_PAYLOAD_CACHE_GROUPS = 4096
+MAX_PAYLOAD_CACHE_FILE_BYTES = 4 * 1024 * 1024
 MAX_AUTO_REPAIR_LOCALES = 3
 
 
@@ -132,6 +141,97 @@ class Configuration:
     resource_policy: dict | None = None
     auto_repair: dict | None = None
     candidate_mode: str = 'production'
+    payload_cache: dict | None = None
+
+
+def _file_digest(path):
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _payload_cache_snapshot(root):
+    """Bind exactly the prior evidence the runner may consume.
+
+    A root may be partial: missing success receipts are cache misses.  Once a
+    receipt exists, its receipt/cache/raw/preview bytes are all part of the
+    execution identity.  Started markers are also bound so an unknown paid
+    outcome cannot appear or disappear after durable admission.
+    """
+    root = _safe_path(root)
+    require(root.is_dir() and not root.is_symlink(), 'invalid_payload_cache_root')
+    receipts = {}
+    markers = []
+    for entry in root.iterdir():
+        require(not entry.is_symlink(), 'payload_cache_symlink_not_supported')
+        receipt_match = re.fullmatch(r'(group-[0-9]{4})-payload-cache-success\.json', entry.name)
+        marker_match = re.fullmatch(r'group-[0-9]{4}-(?:astra|sol)\.started\.json', entry.name)
+        if receipt_match:
+            require(entry.is_file() and entry.stat().st_size <= MAX_PAYLOAD_CACHE_FILE_BYTES,
+                    'invalid_payload_cache_file')
+            receipts[receipt_match.group(1)] = entry
+        elif marker_match:
+            require(entry.is_file() and entry.stat().st_size <= MAX_PAYLOAD_CACHE_FILE_BYTES,
+                    'invalid_payload_cache_file')
+            stem = entry.name.removesuffix('.started.json')
+            require((root / f'{stem}.json').is_file() or (root / f'{stem}.raw.json').is_file(),
+                    'payload_cache_unknown_paid_outcome')
+            markers.append(entry)
+    require(len(receipts) <= MAX_PAYLOAD_CACHE_GROUPS, 'payload_cache_group_limit_exceeded')
+    files = list(markers)
+    for stem, receipt_path in sorted(receipts.items()):
+        receipt = _json(receipt_path)
+        require(receipt.get('schemaVersion') == models.PAYLOAD_CACHE_SUCCESS_SCHEMA,
+                'invalid_payload_cache_success_receipt')
+        files.append(receipt_path)
+        for suffix in ('astra.json', 'astra.raw.json', 'astra.policy-preview.json',
+                       'sol.json', 'sol.raw.json', 'sol.policy-preview.json'):
+            bound = root / f'{stem}-{suffix}'
+            require(bound.is_file() and not bound.is_symlink()
+                    and bound.stat().st_size <= MAX_PAYLOAD_CACHE_FILE_BYTES,
+                    'incomplete_payload_cache_success_evidence')
+            files.append(bound)
+    rows = [{'name': path.name, 'sha256': _file_digest(path), 'bytes': path.stat().st_size}
+            for path in sorted(set(files), key=lambda item: item.name)]
+    snapshot = {'schemaVersion': PAYLOAD_CACHE_SNAPSHOT_SCHEMA,
+                'payloadCacheImplementationSha256': models.PAYLOAD_CACHE_IMPLEMENTATION_SHA256,
+                'successfulGroups': len(receipts), 'files': rows}
+    snapshot['sha256'] = jobs._digest(snapshot)
+    return snapshot
+
+
+def _payload_cache_binding(value, path, locales):
+    required_keys = {'schemaVersion', 'emitSuccess', 'priorSuccessRoots'}
+    require(isinstance(value, dict)
+            and required_keys <= set(value) <= required_keys | {'cacheRequired'}
+            and value.get('schemaVersion') == PAYLOAD_CACHE_CONFIG_SCHEMA
+            and value.get('emitSuccess') is True
+            and type(value.get('cacheRequired', False)) is bool
+            and isinstance(value.get('priorSuccessRoots'), dict)
+            and set(value['priorSuccessRoots']) <= set(locales)
+            and all(type(item) is str and item for item in value['priorSuccessRoots'].values()),
+            'invalid_payload_cache_configuration')
+    cache_required = value.get('cacheRequired', False)
+    require(not cache_required or set(value['priorSuccessRoots']) == set(locales),
+            'required_payload_cache_needs_prior_root_per_locale')
+    result = {}
+    for locale in sorted(locales):
+        root = (_path(path.parent, value['priorSuccessRoots'][locale])
+                if locale in value['priorSuccessRoots'] else None)
+        snapshot = _payload_cache_snapshot(root) if root is not None else None
+        require(snapshot is None or snapshot['successfulGroups'] > 0,
+                'payload_cache_source_has_no_success_receipts')
+        descriptor = {'schemaVersion': PAYLOAD_CACHE_CONFIG_SCHEMA,
+                      'emitSuccess': True,
+                      'cacheRequired': cache_required,
+                      'payloadCacheImplementationSha256': models.PAYLOAD_CACHE_IMPLEMENTATION_SHA256,
+                      'priorSnapshotSha256': snapshot['sha256'] if snapshot is not None else None,
+                      'successfulGroups': snapshot['successfulGroups'] if snapshot is not None else 0}
+        result[locale] = {'root': root, 'snapshot': snapshot, 'required': cache_required,
+                          'identity': jobs._digest(descriptor), 'descriptor': descriptor}
+    return result
 
 
 def load_configuration(path):
@@ -145,13 +245,20 @@ def load_configuration(path):
                  and value['schemaVersion'] == CONCURRENT_SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair'}
                  and value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, QC_REPAIR_SCHEMA})
+             or (set(value) == required_keys | {'layer2AutoRepair', 'layer2PayloadCache'}
+                 and value['schemaVersion'] == PAYLOAD_CACHE_SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair', 'candidateMode'}
                  and value['schemaVersion'] == SHADOW_SCHEMA and candidate_mode == 'shadow'))
             and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
-    repair_binding = (_auto_repair_binding(value['layer2AutoRepair'], allow_qc=value['schemaVersion'] == QC_REPAIR_SCHEMA)
-                      if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA, QC_REPAIR_SCHEMA} else None)
+    repair_binding = (_auto_repair_binding(value['layer2AutoRepair'],
+                                           allow_qc=value['schemaVersion'] in {QC_REPAIR_SCHEMA,
+                                                                               PAYLOAD_CACHE_SCHEMA})
+                      if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA, QC_REPAIR_SCHEMA,
+                                                    PAYLOAD_CACHE_SCHEMA} else None)
+    payload_cache = (_payload_cache_binding(value['layer2PayloadCache'], path, value['locales'])
+                     if value['schemaVersion'] == PAYLOAD_CACHE_SCHEMA else None)
     inspection_path = _path(path.parent, value['inspectionConfig'])
     inspection = _json(inspection_path)
     require(inspection.get('schemaVersion') == packages.SCHEMA
@@ -161,6 +268,8 @@ def load_configuration(path):
     job_root = _path(path.parent, value['jobRoot'])
     input_paths = [path, inspection_path, _path(root, inspection.get('source')),
                    _path(root, inspection.get('anchor'))]
+    if payload_cache:
+        input_paths.extend(item['root'] for item in payload_cache.values() if item['root'] is not None)
     if repair_binding and repair_binding.get('sourceMeaningNotes'):
         notes_path = _path(path.parent, repair_binding['sourceMeaningNotes'])
         repair_binding['sourceMeaningNotes'] = str(notes_path)
@@ -188,6 +297,9 @@ def load_configuration(path):
         inspect_lane = inspection['locales'][locale]
         require(isinstance(inspect_lane, dict), 'invalid_inspection_lane')
         policy = _path(root, inspect_lane.get('policy'))
+        if payload_cache is not None:
+            require(models.production_backend(_json(policy)) == 'openai_api',
+                    'payload_cache_requires_openai_api')
         candidate = output / 'candidate.json'
         if 'candidate' in inspect_lane:
             require(_path(root, inspect_lane['candidate']) == candidate, 'candidate_output_path_changed')
@@ -198,16 +310,26 @@ def load_configuration(path):
     outputs = [lane['output'] for lane in lanes.values()]
     # Derived durable roots: clearing a lane output must never erase repair or budget history.
     durable = [job_root.parent / ('.' + job_root.name + suffix) for suffix in ('.layer2-repair', '.layer2-budget')]
+    cache_roots = ([item['root'] for item in payload_cache.values() if item['root'] is not None]
+                   if payload_cache else [])
+    non_cache_inputs = [item for item in input_paths if item not in cache_roots]
     require(not any(_overlap(output, path) for output in outputs for path in input_paths + durable)
+            and not any(_overlap(cache_root, path) for cache_root in cache_roots
+                        for path in [job_root, *durable, *non_cache_inputs])
+            and not any(_overlap(a, b) for i, a in enumerate(cache_roots)
+                        for b in cache_roots[i + 1:])
             and not any(_overlap(a, b) for i, a in enumerate(outputs) for b in outputs[i + 1:]),
             'execution_paths_overlap')
     binding = {'execution': value, 'inspection': inspection, 'plugins': plugin_hashes}
+    if payload_cache is not None:
+        binding['payloadCacheSnapshots'] = {
+            locale: item['descriptor'] for locale, item in sorted(payload_cache.items())}
     if concurrency_profile is not None:
         binding.update(concurrencyProfile=concurrency_profile, resourcePolicy=resource_policy)
     sha = jobs._digest(binding)
     return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha,
                          concurrency_profile, resource_policy, repair_binding,
-                         candidate_mode)
+                         candidate_mode, payload_cache)
 
 
 def repair_ledger_root(config):
@@ -253,7 +375,19 @@ def package_view(config):
         view['packageIdentities']['backTranslationQc.' + locale] = digest
         view['stateRevision'] = jobs._digest({'packages': view['stateRevision'],
                                               'backTranslationQc.' + locale: digest})
+    for locale, binding in sorted((getattr(config, 'payload_cache', None) or {}).items()):
+        # The resolved path stays in the execution configuration. Durable
+        # identity receives only the content/implementation descriptor digest.
+        key = 'payloadCache.' + locale
+        view['packageIdentities'][key] = binding['identity']
+        view['stateRevision'] = jobs._digest({'packages': view['stateRevision'], key: binding['identity']})
     return view
+
+
+def _payload_cache_for(config, locale):
+    binding = (getattr(config, 'payload_cache', None) or {}).get(locale)
+    return (binding['root'] if binding else None, bool(binding),
+            binding['identity'] if binding else None, binding['required'] if binding else False)
 
 
 def join_jobs(config, view):
@@ -279,6 +413,10 @@ def _reopen_verifier(config):
     def verify(receipt, observed, expected):
         locale = receipt['identity']['workUnitId'][len('text.'):]
         require(locale in config.lanes and bool(config.auto_repair), 'reopen_lane_not_registered')
+        original = jobs._read(_safe_path(config.job_root / receipt['jobId'] / 'request.json'))
+        _, cache_enabled, cache_identity, _ = _payload_cache_for(config, locale)
+        require(_command_option(original.get('command'), '--expected-payload-cache')
+                == (cache_identity if cache_enabled else None), 'reopen_payload_cache_binding_changed')
         if locale not in ledgers:
             source, anchor, policy = _lane_values(config, locale, observed)
             ledgers[locale] = (auto_repair.load_ledger(repair_ledger_root(config), auto_repair.lineage(
@@ -388,10 +526,23 @@ def _worker_command(config, locale, job_id, code_sha, budget_authorization=None)
     command = _text.current().worker_command('worker', '--config', str(config.path),
             '--locale', locale, '--expected-configuration', config.sha256,
             '--expected-code', code_sha, '--expected-job', job_id)
+    _, enabled, identity, _ = _payload_cache_for(config, locale)
+    if enabled:
+        command += ['--expected-payload-cache', identity]
     if budget_authorization is not None:
         command += ['--budget-authorization', str(budget_authorization['path']),
                     '--expected-budget', budget_authorization['sha256']]
     return command
+
+
+def _command_option(command, name):
+    require(isinstance(command, list) and command.count(name) <= 1, 'original_execution_binding_changed')
+    if name not in command:
+        return None
+    index = command.index(name)
+    require(index + 1 < len(command) and isinstance(command[index + 1], str),
+            'original_execution_binding_changed')
+    return command[index + 1]
 
 
 class Controller:
@@ -484,14 +635,22 @@ class Controller:
                                 workUnitId='text.' + locale, job=outcome, dispatched=True)
 
 
-def execute(config_path, locale, expected_configuration, expected_code, expected_job, *, caller=None, api_key=None, budget_authorization=None, expected_budget=None):
+def execute(config_path, locale, expected_configuration, expected_code, expected_job, *, caller=None, api_key=None,
+            budget_authorization=None, expected_budget=None, expected_payload_cache=None):
     """Fixed worker body. New jobs use the bound project API budget transport."""
     config = load_configuration(config_path)
     require(locale in config.lanes and config.sha256 == expected_configuration
             and code_identity() == expected_code, 'worker_configuration_or_code_changed')
+    payload_cache_root, payload_cache_enabled, payload_cache_identity, payload_cache_required = _payload_cache_for(config, locale)
+    require((expected_payload_cache is None and not payload_cache_enabled)
+            or expected_payload_cache == payload_cache_identity,
+            'worker_payload_cache_binding_changed')
     budget_binding = (budget_tools.load_authorization(config, budget_authorization, expected_code, expected_budget)
                       if budget_authorization is not None else None)
     require((budget_authorization is None) == (expected_budget is None), 'budget_worker_binding_required')
+    if payload_cache_enabled and budget_binding is not None:
+        require(budget_binding.get('runtimeIdentity') is not None,
+                'payload_cache_requires_runtime_bound_budget')
     lane = config.lanes[locale]
     with work_lock(lane['output']), accounting.accounting_session(
             lane['output'] / 'accounting', 'canonical_layer2_worker',
@@ -558,11 +717,29 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     current_binding()
                     progress.progress('model_request')
                     return caller(key, payload)
-            # Preserve terminal decoding and transport identity through the
-            # state-binding wrapper. A CLI envelope is not an API response.
-            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing', 'verify_execution'):
+            # Preserve passive transport metadata. Cache-sensitive methods get
+            # wrappers below so a hit rechecks config/code/package identity just
+            # like a paid dispatch; otherwise prior bytes could change between
+            # admission and copy without ever entering bound_call().
+            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing'):
                 if hasattr(caller, attribute):
                     setattr(bound_call, attribute, getattr(caller, attribute))
+            if hasattr(caller, 'verify_execution'):
+                def verify_execution(key):
+                    current_binding()
+                    result = caller.verify_execution(key)
+                    current_binding()
+                    return result
+                bound_call.verify_execution = verify_execution
+            for attribute in ('paid_response_provenance', 'record_reuse'):
+                if hasattr(caller, attribute):
+                    operation = getattr(caller, attribute)
+                    def guarded(*args, _operation=operation, **kwargs):
+                        current_binding()
+                        result = _operation(*args, **kwargs)
+                        current_binding()
+                        return result
+                    setattr(bound_call, attribute, guarded)
             model_completion = []
             with (budget_tools.request_limits(budget_binding['limits']) if budget_binding else nullcontext()):
                 if config.auto_repair:
@@ -575,7 +752,10 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     evidence = models.run_accounted(source, anchor, policy, model_output, api_key,
                                                  bound_call, None, lane['plugin'], None, None,
                                                  progress_callback=progress.progress, predecessor_spans=[admission_span],
-                                                 completion_spans=model_completion, candidate_mode=config.candidate_mode)
+                                                 completion_spans=model_completion, candidate_mode=config.candidate_mode,
+                                                 payload_cache_from=payload_cache_root,
+                                                 emit_payload_cache_success=payload_cache_enabled,
+                                                 payload_cache_required=payload_cache_required)
             # Paid results remain recoverable if approval/source/config/code drifted
             # while a request was outstanding. Never turn those results into approval.
             with accounting.stage('layer2.post_model_binding.' + locale, depends_on=model_completion,
@@ -621,11 +801,16 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
 
     def run_round(out, reuse_from, brief, collector):
         progress('repair_round')
+        payload_cache_root, payload_cache_enabled, _, payload_cache_required = _payload_cache_for(
+            config, policy['targetLocale'])
         return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
                                     None, reuse_from, partial_repair_brief=brief,
                                     progress_callback=progress, predecessor_spans=[admission_span],
                                     completion_spans=completion_spans, failure_collector=collector,
-                                    candidate_mode=config.candidate_mode)
+                                    candidate_mode=config.candidate_mode,
+                                    payload_cache_from=payload_cache_root if reuse_from is None else None,
+                                    emit_payload_cache_success=payload_cache_enabled,
+                                    payload_cache_required=payload_cache_required if reuse_from is None else False)
 
     notes = None
     notes_artifact_sha256 = None
@@ -675,6 +860,9 @@ def _reopen_plan(config, locale, view):
     require(jobs._request_valid(request, key) and jobs._digest(request) == failed[0]['requestSha256']
             and request['command'][2:7] == ['worker', '--config', str(config.path), '--locale', locale],
             'original_execution_binding_changed')
+    _, cache_enabled, cache_identity, _ = _payload_cache_for(config, locale)
+    require(_command_option(request['command'], '--expected-payload-cache')
+            == (cache_identity if cache_enabled else None), 'reopen_payload_cache_binding_changed')
     current = package_view(config)
     following = durable.identity(current, config.run_id, unit)
     require(request['identity']['nodeIdentity'] == following['nodeIdentity'] and request['identity'] != following,
@@ -802,6 +990,7 @@ def main():
     worker.add_argument('--expected-configuration', required=True)
     worker.add_argument('--expected-code', required=True)
     worker.add_argument('--expected-job', required=True)
+    worker.add_argument('--expected-payload-cache')
     worker.add_argument('--budget-authorization', type=Path)
     worker.add_argument('--expected-budget')
     reopen = commands.add_parser('reopen-repair', help='supersede a failed text job whose repair chain new '
@@ -816,7 +1005,8 @@ def main():
         result = reopen_repair(args.config, args.locale, args.expected_state_revision)
     else:
         result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
-                         budget_authorization=args.budget_authorization, expected_budget=args.expected_budget)
+                         budget_authorization=args.budget_authorization, expected_budget=args.expected_budget,
+                         expected_payload_cache=args.expected_payload_cache)
     print(json.dumps(result, sort_keys=True))
 
 
