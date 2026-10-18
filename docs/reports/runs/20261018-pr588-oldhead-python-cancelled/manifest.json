@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr588-oldhead-python-cancelled",
+  "runs": [
+    {
+      "label": "pr588-python-cancelled-39086451994",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/pr588-python-cancelled-39086451994",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr588-python-cancelled-39086451994",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 280,
+      "truncated": false,
+      "sha256": "56ae3319e35c87972956cbda1ce80a7e315f723c23cec20d9c50200ccc2b6f2f",
+      "redactions": {}
+    },
+    {
+      "run": "pr588-python-cancelled-39086451994",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1375,
+      "truncated": false,
+      "sha256": "d2da8e0ceea25636419b4ec50eac6f3de90c9908eb6ae6867616ccbde5593a5e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
