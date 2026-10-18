@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-r4-a4-3c22-combined",
+  "runs": [
+    {
+      "label": "20261017-g1-r4-a4-3c22-four-module",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/local-test-runs/20261017-g1-r4-a4-3c22-four-module",
+      "skipped": {}
+    },
+    {
+      "label": "20261017-g1-r4-a4-3c22-five-module",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/local-test-runs/20261017-g1-r4-a4-3c22-five-module",
+      "skipped": {}
+    },
+    {
+      "label": "20261017-g1-r4-runstart-before-path-test",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/local-test-runs/20261017-g1-r4-runstart-before-path-test",
+      "skipped": {}
+    },
+    {
+      "label": "20261017-g1-r4-runstart-after-path-test",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/local-test-runs/20261017-g1-r4-runstart-after-path-test",
+      "skipped": {}
+    },
+    {
+      "label": "20261017-g1-r4-mistyped-test-selector",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/local-test-runs/20261017-g1-r4-mistyped-test-selector",
+      "skipped": {}
+    },
+    {
+      "label": "20261017-g1-r4-closure-path-targeted",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/local-test-runs/20261017-g1-r4-closure-path-targeted",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-g1-r4-a4-3c22-four-module",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 358,
+      "truncated": false,
+      "sha256": "9983b6420418b33d10e2cf6fa7b1956308f04cc5ad97ab61830f6f67be20128d",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-g1-r4-a4-3c22-five-module",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 391,
+      "truncated": false,
+      "sha256": "e6030fb493871c1847e248c0e6896df0a662b02ec9169533de8070e9dae520c7",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-g1-r4-runstart-before-path-test",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 356,
+      "truncated": false,
+      "sha256": "abbee07025b67a86ddb40faaca8f13371518b6404a1b23ea4e4cac3ea6399ca9",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-g1-r4-runstart-after-path-test",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 355,
+      "truncated": false,
+      "sha256": "13fa8e0d5590e074cabcc52c630320a6d848eaef25368a6514dbd692205ae508",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-g1-r4-mistyped-test-selector",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 452,
+      "truncated": false,
+      "sha256": "40b0b465a4e3ba583cba613f59bd52a350a53e8e85835e467101b8a5b6b4aa71",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-g1-r4-closure-path-targeted",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 387,
+      "truncated": false,
+      "sha256": "0e5c7f3d4ffd44035b164cc74f824aefa76982c7b9d8090eeda886c7d29d4416",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
