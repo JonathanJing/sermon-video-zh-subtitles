@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import shlex
 import tempfile
 import unittest
 from unittest import mock
@@ -324,6 +325,42 @@ class StartCheckTests(unittest.TestCase):
         with mock.patch.object(check,'ssh',return_value=mock.Mock(returncode=0,stdout='spark')),mock.patch.dict('os.environ',{},clear=True):
             self.assertEqual(check.check_spark('host',False,None)['session'],'not_required_api_only')
             self.assertEqual(check.check_spark('host',True,None)['status'],'fail')
+
+    def test_spark_code_dir_hashes_all_current_package_closure_paths(self):
+        from scripts import implementation_freeze, machine_quality_waiver as waiver
+        from tongxing_production import path_aliases
+        files = [str(path) for path in implementation_freeze.closure_files(Path())]
+        self.assertEqual(len(files), 28)
+        self.assertEqual(files, [str(path_aliases.resolve(name)) for name in waiver.IMPLEMENTATION_FILES])
+        self.assertEqual(len(set(files)), len(files))
+        self.assertIn('packages/production/src/tongxing_production/review/waiver.py', files)
+        self.assertIn('packages/production/src/tongxing_production/audio/screening.py', files)
+        self.assertTrue(all((check.ROOT / path).is_file() for path in files))
+        observed_commands = []
+        corrupt_remote_hash = False
+
+        def fake_ssh(command, host):
+            self.assertEqual(host, 'spark-fixture')
+            observed_commands.append(command)
+            if command == 'hostname':
+                return mock.Mock(returncode=0, stdout='spark-fixture\n')
+            words = shlex.split(command)
+            self.assertEqual(words[:3], ['cd', '/remote/code dir', '&&'])
+            self.assertEqual(words[3], 'sha256sum')
+            self.assertEqual(words[4:], files)
+            rows = [f'{hashlib.sha256((check.ROOT / path).read_bytes()).hexdigest()}  {path}'
+                    for path in words[4:]]
+            if corrupt_remote_hash:
+                rows[0] = f'{"0" * 64}  {words[4]}'
+            return mock.Mock(returncode=0, stdout='\n'.join(rows) + '\n')
+
+        with mock.patch.object(check, 'ssh', side_effect=fake_ssh):
+            result = check.check_spark('spark-fixture', False, '/remote/code dir')
+        self.assertEqual(result['status'], 'pass')
+        self.assertEqual(len(observed_commands), 2)
+        corrupt_remote_hash = True
+        with mock.patch.object(check, 'ssh', side_effect=fake_ssh):
+            self.assertEqual(check.check_spark('spark-fixture', False, '/remote/code dir')['status'], 'fail')
 
     def test_fresh_paths_reject_an_occupied_directory(self):
         with tempfile.TemporaryDirectory() as root:
