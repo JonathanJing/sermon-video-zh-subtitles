@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "testGroups": 8,
+  "testGroupStatus": "all_success",
+  "aggregateUnittest": "success",
+  "nativeSharedClientContracts": "skipped",
+  "modelCalls": 0,
+  "providerCalls": 0,
+  "productionWrites": 0,
+  "scope": "post-merge code CI only; formal Layer 2 human review and Layer 3 not evaluated"
+}
