@@ -58,6 +58,9 @@ IMPLEMENTATION_FILES = (
     "packages/production/src/tongxing_production/audio/hosted.py",
     "packages/production/src/tongxing_production/audio/backend.py",
     "scripts/tongxing_host.py",
+    # R3 reaches review rules and runtime through these new proxy/binding files.
+    "packages/production/src/tongxing_production/review/unmoved.py",
+    "packages/production/src/tongxing_production/review/backend.py",
     "scripts/ko_spoken_numerals.py",
     # Calibration executes these paths to derive and synthesize registered spoken forms.
     "scripts/render_formal_target_language_speech.py",

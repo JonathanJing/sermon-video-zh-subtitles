@@ -150,7 +150,7 @@ class ReviewBackend:
 
 ### 4.1 豁免实现闭包 W：每个成员归谁、何时会变
 
-基线的 22 个键全部经 `implementation_path()` 读取（`implementation_freeze.file_hashes`、`check_run_start`、`test_qc_runtime_implementation_closure` 同样如此）。G1 另外增加 `storage/files.py`、`audio/hosted.py`、`audio/backend.py` 和 `scripts/tongxing_host.py` 四个真实执行或绑定文件，窗口成品共 26 键。按"谁搬、搬时字节是否变"分组：
+基线的 22 个键全部经 `implementation_path()` 读取（`implementation_freeze.file_hashes`、`check_run_start`、`test_qc_runtime_implementation_closure` 同样如此）。G1 另外增加 `storage/files.py`、`audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py`、`review/unmoved.py` 和 `review/backend.py` 六个真实执行或绑定文件，R3 后共 28 键。按"谁搬、搬时字节是否变"分组：
 
 | 成员 | 归属与批次 | 搬时字节 | 对 W 的影响 |
 |---|---|---|---|
@@ -162,6 +162,7 @@ class ReviewBackend:
 | `sermon_openai_runtime.py`、`sermon_transcription_request.py` | compute，基础设施 I0b | **不变**（只用标准库） | 别名表加两条，W、T 不变；不需窗口 |
 | `sermon_workflow_jobs.py` | storage/orchestration，基础设施在 G1 拆分 | 变 | W、T 变；拆出的文件原语 `storage/files.py` 作为**新成员**加进 `IMPLEMENTATION_FILES` 和 T 的文件表，闭包覆盖的代码不能变少（基础设施 §4.2） |
 | `audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py` | L3 A3 的规则代理、当前后端选择和宿主绑定 | G1 新增真实文件 | 三者作为**新成员**加入 W、计分、语速闭包；其中任一文件改字节，三种身份都改变。T 的传输闭包不含这三个文件 |
+| `review/unmoved.py`、`review/backend.py` | R3 的规则代理与当前后端选择 | G1 新增真实文件 | 两者作为**新成员**加入 W；其中任一文件改字节，W 改变。T、计分、语速不经这两个文件 |
 | 两份插件规则、`ko_spoken_numerals.py` | 留 `scripts/`（L2 §6 第 1 项、L3 §6 第 3 项） | 不动 | 不变；这 3 个文件以后任何改字节都是新一代 |
 
 结论：W 必然改变，因为计算者 `machine_quality_waiver.py` 自己就要改字节；能控制的只是**改变几次**。R3 的 9 个文件、A3 的 3 个文件、传输和 jobs 拆分只要有一个不在同一个窗口里，W 就会多变一次，每个未发布 locale 就多一轮校准。G1 之后 W 里还留在 `scripts/` 的只有三个受 policy 固定的规则文件。
@@ -233,7 +234,7 @@ review 需要的新面都在宿主包装，不改这些文件。
 
 **G1**（基础设施设计称"W 闭包变更窗口"）是一段受控的合并窗口：W、T、计分、语速在窗口内一起变成新值，窗口内的中间提交上不做任何校准、签发或 QC 预算批准；窗口关闭后每个未发布 locale 只重新校准一次。
 
-G1 的 W 键表由基线 22 键扩为 26 键：jobs 拆分加入 `storage/files.py`，A3 审查修复加入 `audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py`。旧 22 键仍保留；新增三个规则绑定文件也纳入计分与语速闭包。代记录须逐键列旧值或“基线不存在”及新值，不能把新增键记作搬迁后同值。
+G1 的 W 键表由基线 22 键扩为 R3 后 28 键：jobs 拆分加入 `storage/files.py`，A3 审查修复加入 `audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py`，R3 安全审查修复加入 `review/unmoved.py`、`review/backend.py`。旧 22 键仍保留；三个 audio 绑定文件也纳入计分与语速闭包，两个 review 绑定文件只纳入 W。代记录须逐键列旧值或“基线不存在”及新值，不能把新增键记作搬迁后同值。
 
 | 项 | 内容 |
 |---|---|
@@ -252,7 +253,7 @@ G1 的 W 键表由基线 22 键扩为 26 键：jobs 拆分加入 `storage/files.
 | D2a（L4 所有） | `validate_audio_screening_review` → `review/audio_screening.py`，按 L4 §5 | L4 已列的出口条件；它是 review/ 的第一个模块，用 R0 的 `ReviewBackend`（若 D2a 先合并，由它建立只含所需字段的同形记录，R0 补齐）；不在任何闭包里，可随时合并 |
 | R1 字节不变的叶子 | `machine_repair_ledger`、`audio_qc_human_acceptance`、`text_qc_human_acceptance` 按字节原样 → `review/`；别名表加三条 | `git diff -M100%` 显示纯重命名；W 与基线相等（这批证明别名对闭包成员有效）；不需窗口 |
 | R2 闭包外的裁决与账本（I1 之后） | `source_meaning_machine_adjudication`、`scripture_adjudication`、`scripture_machine_adjudication`、`sermon_review_budget` → `review/`；`Adjudication` 端口与 text `Unmoved` 改绑；Prefect `CLOSURE` 经别名读到包内文件 | W、T、计分、语速不变；源文含义 v1/v2 收据、经文冻结准入与复现、L1 机器文本审核测试全绿；经文 8 个输入全不为 `None`；两个自哈希的新值写进 PR；预算账本 fan-in 54 的调用方测试全绿 |
-| R3 豁免闭包（G1 成员，I1 之后） | `machine_quality_waiver`、`machine_quality_release_basis`、`target_text_auto_qc`、`target_audio_auto_qc`、`auto_qc_seeded_errors`、`machine_qc_budget_authorization`、`spoken_condensation`、`run_machine_qc_clip_test`、`run_machine_qc_audio_test` → `review/`（约 5,000 行）；`Waivers` 端口改绑；驱动保留 CLI 门面 | 同 fixture 的文字/音频 QC 结果、注错校准、豁免与精简绑定在**新哈希下**字节一致（除各处 `implementationSha256` 字段）；R3 相对 A3 入站键表不再增删键，G1 的 26 键修订见 §5.1；宿主加载时仍不导入闭包文件；W、T 的新值和逐文件哈希写进 PR（G1 代记录的一部分）；只在 G1 开启后合并 |
+| R3 豁免闭包（G1 成员，I1 之后） | `machine_quality_waiver`、`machine_quality_release_basis`、`target_text_auto_qc`、`target_audio_auto_qc`、`auto_qc_seeded_errors`、`machine_qc_budget_authorization`、`spoken_condensation`、`run_machine_qc_clip_test`、`run_machine_qc_audio_test` → `review/`（约 5,000 行）；`Waivers` 端口改绑；驱动保留 CLI 门面 | 同 fixture 的文字/音频 QC 结果、注错校准、豁免与精简绑定在**新哈希下**字节一致（除各处 `implementationSha256` 字段）；R3 相对 A3 入站增加两个 review 代理／绑定键，G1 的 28 键修订见 §5.1；宿主加载时仍不导入闭包文件；W、T 的新值和逐文件哈希写进 PR（G1 代记录的一部分）；只在 G1 开启后合并 |
 | R4 依赖 R3 的复核 | `machine_audio_waiver_acceptance`、`implementation_freeze`（加 `closure_files`）、`sermon_unified_reviews` → `review/`；`check_run_start` 改调 `review.implementation_freeze`；`Review` 端口改绑 | W 不变（这些不在闭包里）；统一 CLI 复核摄取六种 kind、试听豁免 v3、实现冻结 exit 2 测试全绿；`review/` 不导入任何阶段 |
 
 每批：迁移前后 `tests/` 的发现清单一一对应（提案 §5.5）；`python-tests.yml` 的 `py_compile` 清单若列有被搬文件同批更新；`sermon.py`、Spark 与 E2E 的 argv 不变；只在没有进行中的 L2 run 与统一运行时合并；每批只声明代码与测试证据，真实校准与发布另行报告。
@@ -288,7 +289,7 @@ G1 的 W 键表由基线 22 键扩为 26 键：jobs 拆分加入 `storage/files.
 ## 7 验收（按提案 §9）
 
 - 结构：`tongxing_production/review` 不导入 `scripts/backend/apps/tools/experiments`，不含 `__file__`，不导入 `source`、`text`、`audio`、`delivery`、`orchestration`；阶段可以导入 review。
-- 行为：同 fixture 的 QC、校准、豁免、精简绑定、复核摄取、裁决收据与预算账本字节一致；R1、R2、R4 后 W、T、计分、语速四值不变；`IMPLEMENTATION_FILES` 键表仅在 G1 增加 `storage/files.py`、`audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py`（基线 22→成品 26），`V1_IMPLEMENTATIONS`、`V1_MACHINE_REVIEW_WRITERS` 不变。
+- 行为：同 fixture 的 QC、校准、豁免、精简绑定、复核摄取、裁决收据与预算账本字节一致；R1、R2、R4 后 W、T、计分、语速四值不变；`IMPLEMENTATION_FILES` 键表仅在 G1 增加 `storage/files.py`、`audio/hosted.py`、`audio/backend.py`、`scripts/tongxing_host.py`、`review/unmoved.py`、`review/backend.py`（基线 22→R3 后 28），`V1_IMPLEMENTATIONS`、`V1_MACHINE_REVIEW_WRITERS` 不变。
 - 恢复：已签发的豁免与校准记录不改；G1 之后它们按设计不再授权新发布，未发布 locale 在新代码上重新校准并重签；源文含义 v1/v2 收据与冻结经文诊断继续准入；旧运行在其冻结 checkout 上完成。
 - 测试：76 个直接导入 §2.1 模块的测试模块全绿；清单映射一一对应。
 - 发布与真实运行：不在本设计范围；每批 PR 只声明软件验证，G1 之后的重新校准是独立的真实运行。
