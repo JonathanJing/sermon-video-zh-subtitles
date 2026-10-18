@@ -1,0 +1,29 @@
+{
+  "status": "cancelled",
+  "pr": 582,
+  "runId": 39086714087,
+  "headSha": "c0e2a9c565a37dc23de72a935b1ac9597b867465",
+  "workflow": "Python tests",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "unittest",
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-${{ matrix.shard_index }})",
+      "status": "completed",
+      "conclusion": "cancelled"
+    }
+  ]
+}
