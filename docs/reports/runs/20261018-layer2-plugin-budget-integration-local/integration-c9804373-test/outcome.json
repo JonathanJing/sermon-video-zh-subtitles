@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "sermon-local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "c980437357874f2cf1dbc76151fdb8154dd45575",
+  "testsPassed": 58,
+  "subtestsPassed": 5,
+  "externalProviderCalls": 0,
+  "wallTimeSeconds": 12.8
+}
