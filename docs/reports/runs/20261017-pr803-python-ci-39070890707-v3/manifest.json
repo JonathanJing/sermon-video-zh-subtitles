@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr803-python-ci-39070890707-v3",
+  "runs": [
+    {
+      "label": "pr803-python-ci-39070890707",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/pr803-python-ci-39070890707",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr803-python-ci-39070890707",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 460,
+      "truncated": false,
+      "sha256": "4be8290bfbc24f1ad77f2ba6517c102fd904ae5c85d37de6a0e9e9f7fd187585",
+      "redactions": {}
+    },
+    {
+      "run": "pr803-python-ci-39070890707",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 4800,
+      "truncated": false,
+      "sha256": "221efff7ab59d1fc70f4b05af6a8c6cfefbeb5b642578a547b6b4efc61b17aeb",
+      "redactions": {}
+    },
+    {
+      "run": "pr803-python-ci-39070890707",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 285,
+      "truncated": false,
+      "sha256": "c09e1272617f5c22f92c755eb4727ee98be558e9f7e9c8d303a9627b4a0d1695",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
