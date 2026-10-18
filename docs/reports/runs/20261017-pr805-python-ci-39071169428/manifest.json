@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr805-python-ci-39071169428",
+  "runs": [
+    {
+      "label": "pr805-python-ci-39071169428",
+      "source": "~/.codex/worktrees/l1-s5-shadow/sermon-video-zh-subtitles/artifacts/pr805-python-ci-39071169428",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr805-python-ci-39071169428",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 279,
+      "truncated": false,
+      "sha256": "4f121e1e2d2efc9dcbb1a694b4f668e703e1fdbd354396ebb2402bbc775b4b10",
+      "redactions": {}
+    },
+    {
+      "run": "pr805-python-ci-39071169428",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2703,
+      "truncated": false,
+      "sha256": "ab7e00b15417c58d52f65e8dbf77a153043da6a4194f776de9aed001f30bea4b",
+      "redactions": {}
+    },
+    {
+      "run": "pr805-python-ci-39071169428",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 368,
+      "truncated": false,
+      "sha256": "d644a76e8e7cb6ded6aadbade4c8031befbe4111edf29cfa6f799032b2baf810",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
