@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "test-run-outcome-v1",
+  "kind": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "durationSeconds": 37.92,
+  "headBeforeCommit": "f1f8e77aa9588f70ac0eebe5077a2eb90d8f06f4",
+  "command": [
+    "python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_tongxing_audio_ports.py",
+    "tests/test_screen_target_language_audio_units.py",
+    "tests/test_target_audio_rate_identity.py",
+    "tests/test_render_formal_target_language_speech.py",
+    "tests/test_sermon_unified_audio.py"
+  ]
+}
