@@ -108,6 +108,7 @@ def derive_records(manifest: dict, base: Path, layer1: dict, anchor: dict) -> di
     out = {}
     for locale, entry in manifest["locales"].items():
         candidate = legacy.load_json(_path(entry["candidate"], base))
+        _require(candidate.get("targetLocale") == locale, f"candidate_belongs_to_another_locale:{locale}")
         groups = candidate["groups"]
         by_group: dict[str, dict] = {group["translationGroupId"]: {} for group in groups}
         candidate_layer1 = records.layer1_identity(candidate["englishSourcePackageJsonSha256"],

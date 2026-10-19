@@ -269,7 +269,11 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
             # carried byte for byte from the round's reuse source keeps that source's runner,
             # which may be unrecorded (None).
             recorded = load_json(round_runner)
-            if recorded.get("schemaVersion") == "sermon-layer2-round-runner-identity-v1":
+            run_identity = Path(root) / "run-identity.json"
+            # The sidecar speaks for this round only if it names this round's run identity.
+            if (recorded.get("schemaVersion") == "sermon-layer2-round-runner-identity-v1"
+                    and run_identity.is_file()
+                    and recorded.get("runIdentitySha256") == load_json(run_identity).get("sha256")):
                 runner = recorded.get("runnerImplementationSha256")
                 carry = recorded.get("carrySource")
                 if isinstance(carry, dict) and _carried_from(files, Path(carry.get("root", ""))):
@@ -314,7 +318,13 @@ def plugin_records(layer1: dict, locale: str, anchor: dict, receipt: dict) -> di
     english_known = receipt_layer1 == layer1
     out = {}
     for row in receipt["groupReviews"]:
-        failed = [check["checkId"] for check in row["checks"] if check["status"] != "pass"]
+        checks = row.get("checks") if isinstance(row.get("checks"), list) else []
+        failed = [check.get("checkId", "unnamed_check") for check in checks if check.get("status") != "pass"]
+        ids = [check.get("checkId") for check in checks]
+        # The producer passes a group only when its whole check set passes; recompute that here.
+        passed = row.get("status") == "pass" and bool(checks) and not failed and len(set(ids)) == len(ids)
+        if row.get("status") == "pass" and not passed:
+            failed = failed or ["plugin_receipt_checks_incomplete"]
         inputs = {"languageReviewPolicySha256": receipt["languageReviewPolicySha256"],
                   # The English the plugin read is fixed by the receipt's Layer 1 identity;
                   # it is computed here only when that identity is the one supplied.
@@ -323,7 +333,7 @@ def plugin_records(layer1: dict, locale: str, anchor: dict, receipt: dict) -> di
                   "targetTextSha256": row["targetTextSha256"]}
         out[row["translationGroupId"]] = records.make_record(
             "P", receipt_layer1, locale, row["translationGroupId"], row["sourceUnitIds"], inputs,
-            receipt["pluginImplementationSha256"], {}, "pass" if row["status"] == "pass" else "fail",
+            receipt["pluginImplementationSha256"], {}, "pass" if passed else "fail",
             codes=failed, provenance={"derivation": "legacy_plugin_receipt", "pluginId": receipt.get("pluginId"),
                                       "notRecorded": [] if english_known else ["englishUnitsSha256"]})
     return out
