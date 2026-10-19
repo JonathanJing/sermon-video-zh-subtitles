@@ -237,7 +237,7 @@ shasum -a 256 /absolute/path/to/full-source.mp4 \
 在 Mac 上确认 Spark exclusive session 的当前观察状态；这一步为只读 inspect，不创建/占用新 session：
 
 ```bash
-.venv/bin/python scripts/spark_exclusive_session.py \
+.venv/bin/python tools/ops/run.py compute.spark_exclusive_session \
   --host achillesjing@192.168.1.152 inspect
 ```
 
@@ -303,7 +303,7 @@ shasum -a 256 /absolute/path/to/full-source.mp4 \
 先在当前干净、已核实的 checkout 上按对应 release builder 生成新候选。对 bucket profile，官方组装形状如下：
 
 ```bash
-.venv/bin/python scripts/assemble_multilingual_v3_update.py \
+.venv/bin/python tools/ops/run.py adapters.legacy.assemble_multilingual_v3_update \
   --base-public artifacts/<完整线上基线>/public \
   --stage-public artifacts/<本周已审资产>/public \
   --stage-manifest artifacts/<本周已审资产>/stage-manifest.json \
@@ -353,7 +353,7 @@ Dev 把 mode 和绑定候选换成 `dev`。核对 environment、项目/site、�
 先运行多语言海报生成器的准备模式，不传 `--art`：
 
 ```bash
-.venv/bin/python scripts/build_multilingual_sermon_posters.py \
+.venv/bin/python tools/ops/run.py delivery.posters.build \
   --release artifacts/weekly-release/<已发布发行目录> \
   --page-id '<本周完整pageId>' \
   --origin https://ai-for-god-sermon-audio.web.app \
@@ -367,7 +367,7 @@ Dev 把 mode 和绑定候选换成 `dev`。核对 environment、项目/site、�
 必须沿用相同发行目录、pageId、origin、locale scope 和输出目录：
 
 ```bash
-.venv/bin/python scripts/build_multilingual_sermon_posters.py \
+.venv/bin/python tools/ops/run.py delivery.posters.build \
   --release artifacts/weekly-release/<已发布发行目录> \
   --page-id '<本周完整pageId>' \
   --origin https://ai-for-god-sermon-audio.web.app \

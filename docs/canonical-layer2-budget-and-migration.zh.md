@@ -41,7 +41,7 @@ result = drive(execution_config, target_locale, budget_authorization=authorizati
 ## 跨版本缓存迁移
 
 ```sh
-.venv/bin/python scripts/migrate_target_language_model_cache.py \
+.venv/bin/python tools/ops/run.py text.model_cache_migration \
   --old-source /absolute/old-source.json --source /absolute/source.json \
   --anchor /absolute/anchor.json \
   --old-policy /absolute/old-policy.json --policy /absolute/policy.json \

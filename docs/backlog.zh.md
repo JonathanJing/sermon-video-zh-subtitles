@@ -18,7 +18,7 @@ English index: [backlog.md](./backlog.md)
 4. P0 是进入下一次完整周产或修复已观察现场问题所必需；P1 是稳定性、效率和可运营性；P2 是实验、扩展或历史方向。
 5. 每周内容运行不在这里逐组打勾；使用 Tracker 的 `L1-01`—`L4-04`。这里管理让这些检查点可重复完成的工程能力。
 6. 日期小节记录那一次核对的证据和新增事项；同一事项的状态变化改原行并注明日期，不要在多个日期小节重复叙述。不要用“今天”“明天”这类相对时间做标题。
-7. 查某个 ID 或前缀当前在哪几行、状态是什么：`python3 scripts/backlog_ids.py DEV-R242-011`（或 `DEV-R242`）；文件越靠前的小节越新。
+7. 查某个 ID 或前缀当前在哪几行、状态是什么：`python3 tools/development/backlog_ids.py DEV-R242-011`（或 `DEV-R242`）；文件越靠前的小节越新。
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
 

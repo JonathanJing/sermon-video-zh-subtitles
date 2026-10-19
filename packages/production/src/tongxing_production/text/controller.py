@@ -489,11 +489,12 @@ def code_identity():
     # Pin the runtime source/schema closure, not a branch name or stale commit
     # label. The worker rechecks it before any paid call and candidate admission.
     # Code that moved into the production package runs from there; scripts/
-    # keeps only its import facade, so the package source is part of the closure.
+    # keeps only its import facade, so the package source is part of the closure. Package commands
+    # also run through tools/ops/run.py, which binds the host and picks the module, so it is hashed too.
     root = _text.current().core.repo_root
     files = sorted([*root.joinpath('scripts').rglob('*.py'), *root.joinpath('packages/production/src').rglob('*.py'),
                     *root.joinpath('schemas').rglob('*.json'), root / 'docs/series-terminology.zh.md',
-                    root / 'tools/ops/sermon_unified_preflight.py'])
+                    root / 'tools/ops/sermon_unified_preflight.py', root / 'tools/ops/run.py'])
     return jobs._digest({str(p.relative_to(root)): hashlib.sha256(_safe_path(p).read_bytes()).hexdigest() for p in files})
 
 

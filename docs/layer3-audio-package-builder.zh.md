@@ -3,7 +3,7 @@
 入口：`scripts/build_target_language_audio_package.py`。输入为已人工批准的 Layer 2 candidate、原 Layer 1 source/anchor、冻结的目标语言 policy 与独立人审收据、Speaker Registry、由 `prepare_target_language_speech_job.py` 创建的 verified v2 job/adapter 与片段范围 voice 收据，以及独立 renderer 写出的 `render-manifest.json`。构建器不合成、剪辑、加速或改写文字；产出最高状态为 `machine_screened`，`humanReview` 保持 pending。
 
 ```bash
-.venv/bin/python scripts/build_target_language_audio_package.py \
+.venv/bin/python tools/ops/run.py audio.package \
   --source english-source-package.json --anchor anchor-manifest.json \
   --candidate target-language-candidate.json --job job.json \
   --adapter speech-adapter.json --policy target-language-policy.json \

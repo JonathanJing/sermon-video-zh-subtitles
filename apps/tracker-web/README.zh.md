@@ -42,9 +42,9 @@ firebase deploy --only hosting:sermonTrackerAdmin --project YOUR_PROJECT
 本轮之后的片段 POC 用[四层 Tracker 文档](../../docs/four-layer-production-tracker.zh.md)中的 `init-poc` 建立准确 `pageId`、原视频及候选窗口绑定的新账本；它不授予人工范围批准。耗时审计使用[四层计时入口](../../scripts/four_layer_measure.py)：首批正式 producer 加 `--progress-ledger` 即自动写执行 span；未接入的命令仍用 `run --step` 包装。`audit` 只读地将私有 `accounting/events.jsonl` 关联到检查点，并列出缺少计时的已完成步骤。公开 Firebase 页面在 Layer 1、各语言 Layer 2–3、联合 Layer 4 和逐项列表显示同一检查点的实测执行累计、重试／失败次数，以及有开始事件时截至快照的进行中状态和未结束执行时长；未记录的耗时明确显示未知。状态持续时间不等于实际执行或人工审阅时间。页面不上传模型请求细节、私有开始时间或日志。人工审核等待需在发出和收到审核时及时更新 Tracker 状态；旧产物的文件时间不能补作实测耗时。
 
 ```bash
-python scripts/four_layer_progress.py artifacts/my-run/four-layer-progress.json init \
+.venv/bin/python tools/ops/run.py observability.progress artifacts/my-run/four-layer-progress.json init \
   --page-id my-page --target dev --locales zh-Hans ko es
-python scripts/build_four_layer_tracker_snapshot.py \
+.venv/bin/python tools/ops/run.py observability.projections.four_layer_tracker_snapshot \
   --ledger artifacts/my-run/four-layer-progress.json \
   --out artifacts/my-run/public-tracker-snapshot.json \
   --source-monitor artifacts/live-source-monitor/report.json \
@@ -117,7 +117,7 @@ tail -f watch-config.json.publisher.log
 默认不扫描其他日志、不选择“最新 run”。添加以下参数时，选定 run 的 workflow 必须绑定当前账本的 `pageId + target + ledgerIdentitySha256`，且工作流祖先无冲突、无环；无关工作流和显式矛盾的子流程会阻止生成。账本重建、来源窗口改变或 Dev/production 不同均不能沿用绑定。
 
 ```sh
-python scripts/build_four_layer_tracker_snapshot.py \
+.venv/bin/python tools/ops/run.py observability.projections.four_layer_tracker_snapshot \
   --ledger artifacts/my-run/four-layer-progress.json \
   --out artifacts/my-run/public-tracker-snapshot.json \
   --dag-accounting-dir artifacts/my-run/accounting \
