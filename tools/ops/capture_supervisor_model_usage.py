@@ -11,8 +11,10 @@ import json
 from pathlib import Path
 import sys
 
-if __package__ in (None, ''):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+# Loaded as tools.ops.<name> or run directly: ``from scripts import`` needs the repo root.
+_ROOT = str(Path(__file__).resolve().parents[2])
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
 from scripts import sermon_accounting as accounting
 from scripts import sermon_model_call_observation as observations
