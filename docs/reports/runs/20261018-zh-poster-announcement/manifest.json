@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-zh-poster-announcement",
+  "runs": [
+    {
+      "label": "prod-mixed-family-poster-v1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-broadcast-20261018/prod-mixed-family-poster-v1",
+      "skipped": {
+        ".cache": 1,
+        ".json": 105,
+        ".lock": 1,
+        ".mjs": 33,
+        ".png": 26,
+        ".svg": 3,
+        ".js": 5,
+        ".srt": 2,
+        ".mp3": 52,
+        ".pdf": 4,
+        ".html": 17,
+        ".jpg": 1,
+        ".css": 3
+      }
+    },
+    {
+      "label": "zh-family-v2",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sermon-poster/2026-10-18/zh-family-v2",
+      "skipped": {
+        ".svg": 1,
+        ".json": 5,
+        ".txt": 1,
+        ".png": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "prod-mixed-family-poster-v1",
+      "path": "baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 94106,
+      "truncated": false,
+      "sha256": "c304500501cbf1cb39a9f92e870fbf52a3d7e416bb0c0819def893e3e54ccecd",
+      "redactions": {}
+    },
+    {
+      "run": "prod-mixed-family-poster-v1",
+      "path": "hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "prod-mixed-family-poster-v1",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 372,
+      "truncated": false,
+      "sha256": "625ca6abd8f213d29574c514524458ab6a7790f32ccdb0b81f5c0faf5e1fbcac",
+      "redactions": {}
+    },
+    {
+      "run": "prod-mixed-family-poster-v1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 637,
+      "truncated": false,
+      "sha256": "c2a22b9d1c4ce4a43addc7eb6354efb3990b7f9f5469c1256c388423df7caf75",
+      "redactions": {}
+    },
+    {
+      "run": "prod-mixed-family-poster-v1",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 109,
+      "truncated": false,
+      "sha256": "50474fc71e529f85ef62cd1d63381195c149995623e5e90f9c6f5ec10a547aa5",
+      "redactions": {}
+    },
+    {
+      "run": "zh-family-v2",
+      "path": "zh-Hans/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 3803,
+      "truncated": false,
+      "sha256": "5d9d7cc0f6e2fae6c674eb0d27ebc9cbcb7efd5a91084264ad8a2fbf3b8f4d50",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
