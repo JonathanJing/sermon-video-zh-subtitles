@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-ko-layer2-v7-partial-recovery",
+  "runs": [
+    {
+      "label": "20261018-ko-layer2-v7-partial-recovery",
+      "source": "~/.codex/worktrees/layer2-source-bound-number-fixes/sermon-video-zh-subtitles/artifacts/test-runs/20261018-ko-layer2-v7-partial-recovery",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-ko-layer2-v7-partial-recovery",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1560,
+      "truncated": false,
+      "sha256": "e8a8964b7e6b30d270a932eb21aea314d16c6631a712adf7717a4857f3134189",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-ko-layer2-v7-partial-recovery",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1781,
+      "truncated": false,
+      "sha256": "322f33430839dcf46b5625da2d41216d255931b1e0d4bf4e5e88a78986e85ae8",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-ko-layer2-v7-partial-recovery",
+      "path": "targeted.log",
+      "kind": "log",
+      "bytes": 1135,
+      "truncated": false,
+      "sha256": "36ebc2fe190e2ab67eae226da02babccf4b3136ea7ec14ab658b426e12469a2f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
