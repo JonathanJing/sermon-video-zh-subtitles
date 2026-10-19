@@ -5,8 +5,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import layer2_auto_repair as subject
-from scripts import run_target_language_models as runner
+from tongxing_production.text import auto_repair as subject
+from tongxing_production.text import models as runner
 from tests import test_run_target_language_models as runner_tests
 
 PASS = {"status": "pass", "checks": {name: "pass" for name in subject.CHECK_CODES},
@@ -27,7 +27,7 @@ def failing(*checks, uncertainty=(), issues=("problem",)):
 
 class ClassificationTests(unittest.TestCase):
     def test_repair_bound_uses_enforced_input_and_completion_limits(self):
-        from scripts.canonical_layer2_budget import CURRENT_LIMITS, request_limits
+        from tongxing_production.text.budget import CURRENT_LIMITS, request_limits
         from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
         with request_limits(DEFAULT_REQUEST_LIMITS):
             self.assertEqual(subject._repair_token_bound(),

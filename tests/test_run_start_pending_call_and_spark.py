@@ -79,7 +79,8 @@ class Layer2CallMarkerTests(unittest.TestCase):
 
     def test_actual_plan_consumer_refuses_settled_ledger_with_unrestored_lane_marker(self):
         from tests.test_run_start_tools import PlanTests, run_plan
-        from scripts import canonical_layer2_budget as l2, sermon_review_budget as budget
+        from scripts import sermon_review_budget as budget
+        from tongxing_production.text import budget as l2
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.text import controller
         from tests.test_sermon_review_budget import identity, request, result

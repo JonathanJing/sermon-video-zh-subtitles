@@ -11,7 +11,7 @@ from tests import test_build_english_source_package as source_fixtures
 from tongxing_production.source import english_source_package as english
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as anchors
-from scripts import target_language_policy as policies
+from tongxing_production.text import policy as policies
 
 
 class PackageInspectionTests(unittest.TestCase):

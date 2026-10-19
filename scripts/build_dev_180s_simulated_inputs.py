@@ -33,7 +33,7 @@ from tongxing_production.source import english_source_package as source_builder
 from tongxing_production.source import english_source_judge as source_judge
 from tongxing_production.delivery import app_release as release
 from tongxing_production.delivery import contract
-from scripts import produce_target_language_candidate as candidate_validator
+from tongxing_production.text import candidate as candidate_validator
 from tongxing_production.delivery import unified_stage as delivery
 from scripts import sermon_unified_reviews as reviews
 from tongxing_production.delivery import study_artifacts

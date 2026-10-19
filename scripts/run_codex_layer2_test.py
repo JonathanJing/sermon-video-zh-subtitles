@@ -12,8 +12,10 @@ from pathlib import Path
 import sys
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import run_target_language_models as runner, sermon_accounting as accounting
-from scripts import target_language_policy as policy_tools
+from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import models as runner
+from tongxing_production.text import policy as policy_tools
 from scripts import production_spark_admission as spark_admission
 from scripts.codex_layer2_transport import CodexLayer2Transport, TEST_CONFIGURATION, validate_test_configuration
 

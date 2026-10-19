@@ -8,7 +8,7 @@ from tongxing_production.audio import speech_job as speech
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio import renderer as render
 from tongxing_production.audio import human_review as audio_review
-from scripts import target_language_policy as policies
+from tongxing_production.text import policy as policies
 from scripts import sermon_review_contracts as contracts
 from tongxing_production.audio import unit_integrity as integrity
 from tests import test_build_target_language_audio_package as fixtures

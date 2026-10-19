@@ -4,8 +4,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import layer2_auto_repair as repair
-from scripts import run_target_language_models as runner
+from tongxing_production.text import auto_repair as repair
+from tongxing_production.text import models as runner
 
 
 class UtteranceShapeTests(unittest.TestCase):
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 class PolicyV4AdmissionTests(unittest.TestCase):
     def test_v4_is_admitted_like_v2_and_strict_still_needs_v3(self):
         import inspect
-        from scripts import produce_target_language_candidate as producer
+        from tongxing_production.text import candidate as producer
         source = inspect.getsource(producer)
         self.assertIn("{policy_tools.POLICY_V2, policy_tools.POLICY_V4}", source)
         self.assertIn("{policy_tools.POLICY_V3} if strict_rubric is not None", source)
@@ -84,7 +84,7 @@ class ApiJudgeTests(unittest.TestCase):
 class ProviderRetryTests(unittest.TestCase):
     def test_5xx_error_documents_are_retried_and_4xx_is_not(self):
         import urllib.error
-        from scripts import canonical_layer2_budget as budget
+        from tongxing_production.text import budget
         calls = []
 
         def executor(req, wall, *, deadline):
