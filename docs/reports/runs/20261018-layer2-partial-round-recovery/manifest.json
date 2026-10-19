@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-layer2-partial-round-recovery",
+  "runs": [
+    {
+      "label": "20261018-layer2-partial-round-recovery",
+      "source": "~/.codex/worktrees/layer2-partial-round-recovery/sermon-video-zh-subtitles/artifacts/test-runs/20261018-layer2-partial-round-recovery",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-layer2-partial-round-recovery",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 342,
+      "truncated": false,
+      "sha256": "c2a0eec0a41d8f991d782992feb2ae5ff1b4a5d301f47da8d865e73b29da7540",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-layer2-partial-round-recovery",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1023,
+      "truncated": false,
+      "sha256": "5f7bc6e7527f6cb465969587b70941e5100a9f4db4afc03ed22936cfe0a68a23",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
