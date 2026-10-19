@@ -197,6 +197,12 @@ PYTHONPATH=packages/production/src:. .venv/bin/python \
 
 前置条件：`audio_unavailable` 生产者（目前只有 schema 和测试 fixture，没有脚本）、Web/iOS 对纯文字页的兼容、音频后补的版本化路径。三者缺一，S1 只能做到“文字页”而不能安全升级。
 
+S1 的可行性边界（已核对）：
+
+- `tests/test_shared_text_only_release_fixtures.py`：**5 passed，37 subtests**。在 v1 schema + 匹配的 `audio_unavailable` 包下，catalog 能构建纯文字 target（`capabilities=['text']`、`audioStatus='unavailable'`、`contentStatus='human_reviewed'`）。
+- 这证明**不是 catalog 不支持**；缺的是真实 producer（现在只有 fixture）和 Web/iOS 的纯文字证据（现行 Web 桥接仍要求正式音轨）。
+- 所以 S1 的产品工作量集中在 producer + client evidence + 音频后补路径，不在目录层。
+
 ### 方案 S2：音频先行（若页面必须有音频）
 
 1. 每语独立页面 + 逐组流式。
