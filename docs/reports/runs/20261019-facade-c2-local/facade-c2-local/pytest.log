@@ -1,0 +1,17 @@
+== pytest-style CI files
+211 passed, 8 subtests passed in 111.82s (0:01:51)
+exit 0
+== sermon-dubbing-poc discover
+Ran 401 tests in 57.685s
+OK
+== after fixes (f9fe0fc4): experiment-log + package tests
+64 passed, 541 subtests passed
+== test_backend_app + test_cloud_run_jobs with services/api installed
+44 passed, 5 subtests passed
+== test_layer2_large_fan_in on clean origin/dev
+2 failed, 1 passed (same utc_clock_discontinuity failure)
+== tracker-publisher node --test
+tests 13 pass 13 fail 0
+== mock/fresh DAG modules after alias fix
+10 passed, 3 skipped in 788.04s (0:13:08)
+5 passed, 3 skipped in 1240.24s (0:20:40)
