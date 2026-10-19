@@ -129,7 +129,10 @@ def frozen_code():
     # not as their import facades.
     from tongxing_production import path_aliases
     # A legacy file split across package files also hashes, by repository path, the parts it lost.
-    code = {name: digest(ROOT / path_aliases.resolve('scripts/' + name)) for name in names}
+    # The two experiment files left scripts/; their legacy paths are facades.
+    moved = {'experiments/layer2_ab.py': 'experiments/layer2-translation-ab/layer2_ab.py',
+             'experiments/benchmark_layer2_bounded.py': 'experiments/layer2-translation-ab/benchmark_layer2_bounded.py'}
+    code = {name: digest(ROOT / (moved.get(name) or path_aliases.resolve('scripts/' + name))) for name in names}
     code.update({path: digest(ROOT / path) for name in names
                  for path in path_aliases.SPLIT_MEMBERS.get('scripts/' + name, ())})
     return code

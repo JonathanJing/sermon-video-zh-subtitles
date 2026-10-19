@@ -44,7 +44,7 @@ claude -p --model claude-opus-5-5 --effort high --output-format json \
 - **两臂**：
   - Sol：`gpt-6.1-sol` high fast，经 ChatGPT 登录的 Codex CLI（`CodexLayer2Transport`），即 10/5 用户指定的实验基线。
   - Opus：`claude-opus-5-5` high，经订阅登录的 Claude CLI（`ClaudeLayer2Transport`）。
-- **执行**：`scripts/experiments/claude_translation_ab.py` 逐组串行（workers=1），两臂在同一组内紧挨着跑，偶数组 Sol 先、奇数组 Opus 先，减少服务负载随时间变化的影响。两臂都不带 API key，不重试，不回退。共 26 次新调用。
+- **执行**：`experiments/layer2-translation-ab/claude_translation_ab.py` 逐组串行（workers=1），两臂在同一组内紧挨着跑，偶数组 Sol 先、奇数组 Opus 先，减少服务负载随时间变化的影响。两臂都不带 API key，不重试，不回退。共 26 次新调用。
 - **校验**：每个结果都要过 schema、组和单元身份、coverage 子串检查；Opus 的模型身份以 CLI 返回的 `modelUsage` 为准，Sol 只有请求身份。
 - **盲评**：`blind.json` 每组给出 X/Y 两版，位置按组轮换；由一个只读 `blind.json` 的独立 Agent 逐组评，标出遗漏、否定、数字、人名、增译和明显不自然的口语，并按轻/中/重分级；评完才打开 `blind-key.json` 映射。
 
