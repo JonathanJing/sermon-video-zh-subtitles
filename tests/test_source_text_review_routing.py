@@ -61,7 +61,7 @@ def reading_manifest_fixture(reading, *, applied=False):
 
 class SourceTextReviewRoutingTests(unittest.TestCase):
     def setUp(self):
-        remote = patch('scripts.mfa_backend.preflight', return_value={'backend': 'dgx-spark-ssh', 'runtime': {'version': 'fixture'}})
+        remote = patch('tongxing_production.source.mfa_backend.preflight', return_value={'backend': 'dgx-spark-ssh', 'runtime': {'version': 'fixture'}})
         remote.start()
         self.addCleanup(remote.stop)
         self.enterContext(patch_both("ffprobe_duration", return_value=5.0))

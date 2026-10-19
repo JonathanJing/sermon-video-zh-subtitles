@@ -89,7 +89,7 @@ def write_state(path: Path, *, sunday: str = "2026-06-28", url: str = "https://w
 
 class PostLiveSubtitleGenerationTest(unittest.TestCase):
     def setUp(self):
-        remote = mock.patch('scripts.mfa_backend.preflight', return_value={'backend': 'dgx-spark-ssh', 'runtime': {'modelSha256': 'original'}})
+        remote = mock.patch('tongxing_production.source.mfa_backend.preflight', return_value={'backend': 'dgx-spark-ssh', 'runtime': {'modelSha256': 'original'}})
         self.spark_preflight = remote.start()
         self.addCleanup(remote.stop)
 

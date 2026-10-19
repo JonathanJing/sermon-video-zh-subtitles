@@ -8,7 +8,7 @@
 
 | 工作线 | 当前证据与下一步 | 写入边界 |
 |---|---|---|
-| L1 shadow | [旧入口](../../scripts/prepare_sentence_interpretation_shadow.py) 已是门面；[#805](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/805) 的包内实现见 [`source/sentence_interpretation_shadow.py`](../../packages/production/src/tongxing_production/source/sentence_interpretation_shadow.py)。对仍在冻结 checkout 的旧收据，只读核对实现身份与缓存；不把新门面当作旧字节。 | 只读；不改 shadow、收据或现有缓存。 |
+| L1 shadow | 旧入口门面已删除；[#805](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/805) 的包内实现见 [`source/sentence_interpretation_shadow.py`](../../packages/production/src/tongxing_production/source/sentence_interpretation_shadow.py)。对仍在冻结 checkout 的旧收据，只读核对实现身份与缓存；不把新门面当作旧字节。 | 只读；不改 shadow、收据或现有缓存。 |
 | CUV 翻译 | [旧 CLI](../../scripts/sermon_cuv_translation.py) 已是门面；[#832](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/832) 的包内实现见 [`text/cuv_translation.py`](../../packages/production/src/tongxing_production/text/cuv_translation.py)。新 manifest 的实现身份与旧 v1/v2 收据分开核对；仍需保留冻结 checkout 的历史复现。 | 只读；不发模型请求、不改任何 job/manifest。 |
 | 严格 L2 | 对下表 11 个实现和已迁的 diagnostics，重新提取**顶层及延迟导入**；用两条实验线保存的计划/manifest，逐文件核对活跃入口和依赖闭包。明确记录能证明闭包外、仍受影响、无法排除三种结果及可恢复证据。 | 只读；不改冻结 checkout、预算账本或作业。 |
 

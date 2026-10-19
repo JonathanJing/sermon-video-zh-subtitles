@@ -21,7 +21,8 @@ if str(ROOT) not in sys.path:
 if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
     sys.path.append(str(Path(__file__).resolve().parent))
 import decision_api_weekly_ab as ab
-from scripts import judge_english_source_for_translation as english
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import english_source_judge as english
 from scripts import run_target_language_models as translation
 
 

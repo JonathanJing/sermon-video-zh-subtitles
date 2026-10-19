@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import run_sentence_interpretation_models as runner
+from tongxing_production.source import sentence_interpretation_models as runner
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as contract
 

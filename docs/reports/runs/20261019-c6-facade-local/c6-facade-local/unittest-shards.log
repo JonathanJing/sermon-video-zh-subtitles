@@ -1,0 +1,25 @@
+## c6run (C6 alone 78a523d9)
+s0: Ran 547 tests in 689.250s OK (skipped=3) exit=0
+s1: Ran 563 tests in 569.482s OK (skipped=4) exit=0
+s2: Ran 581 tests in 623.753s OK (skipped=4) exit=0
+s3: Ran 606 tests in 620.173s OK (skipped=2) exit=0
+s4: Ran 607 tests in 713.124s OK (skipped=3) exit=0
+s5: Ran 611 tests in 745.154s OK (skipped=4) exit=0
+s6: Ran 611 tests in 662.922s OK (skipped=5) exit=0
+s7: Ran 619 tests in 679.018s FAILED (failures=1, skipped=5) exit=1
+s8: Ran 620 tests in 651.134s OK (skipped=5) exit=0
+s9: Ran 620 tests in 923.682s OK (skipped=3) exit=0
+FAIL: test_129_group_actual_producer_can_assemble_and_resume_without_calls (test_layer2_large_fan_in.LargeLayer2FanInTests.test_129_group_actual_producer_can_assemble_and_resume_without_calls)
+## c6run2 (stacked on C5, 15e3dfed)
+s0: Ran 547 tests in 848.777s OK (skipped=3) exit=0
+s1: Ran 563 tests in 682.702s OK (skipped=4) exit=0
+s2: Ran 581 tests in 763.085s OK (skipped=4) exit=0
+s3: Ran 606 tests in 755.653s OK (skipped=2) exit=0
+s4: Ran 607 tests in 904.015s OK (skipped=3) exit=0
+s5: Ran 611 tests in 932.614s OK (skipped=4) exit=0
+s6: Ran 611 tests in 814.551s OK (skipped=5) exit=0
+s7: Ran 619 tests in 834.252s OK (skipped=5) exit=0
+s8: Ran 620 tests in 803.750s OK (skipped=5) exit=0
+s9: Ran 620 tests in 1111.926s FAILED (failures=1, skipped=3) exit=1
+FAIL: test_65_group_worker_and_cache_only_recovery_preserve_every_dependency (test_layer2_large_fan_in.LargeLayer2FanInTests.test_65_group_worker_and_cache_only_recovery_preserve_every_dependency)
+test_layer2_large_fan_in alone at load 20: OK

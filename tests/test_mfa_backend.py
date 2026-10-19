@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from scripts import mfa_backend as backend
+from tongxing_production.source import mfa_backend as backend
 
 LOCAL = {'schemaVersion': 1, 'backend': 'macbook-local', 'runtime': {'version': 'fixture'}}
 REMOTE = {'schemaVersion': 1, 'backend': 'dgx-spark-ssh', 'runtime': {'version': 'fixture'}}

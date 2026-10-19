@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import build_english_source_package as english_source
+from tongxing_production.source import english_source_package as english_source
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import release_basis as basis
 from tongxing_production.audio import speech_job as handoff

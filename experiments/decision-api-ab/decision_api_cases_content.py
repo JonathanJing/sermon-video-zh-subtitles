@@ -11,9 +11,9 @@ import json
 from pathlib import Path
 import re
 
-from scripts import judge_english_source_for_translation as english
 from scripts import run_target_language_models as translation
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import english_source_judge as english
 from tongxing_production.source import sentence_interpretation as identity
 from scripts import target_language_policy as policy_tools
 
@@ -100,7 +100,7 @@ def _english_cases(root: Path, maximum: int) -> list[dict]:
         try:
             saved = _load(path)
             request, response = saved["request"], saved["response"]
-            from scripts.run_sentence_interpretation_models import RUN_SCHEMA
+            from tongxing_production.source.sentence_interpretation_models import RUN_SCHEMA
             if request.get("schemaVersion") != RUN_SCHEMA:
                 raise ValueError("original_request_schema_mismatch")
             if saved.get("requestSha256") != _sha(request) or saved.get("responseSha256") != _sha(response):

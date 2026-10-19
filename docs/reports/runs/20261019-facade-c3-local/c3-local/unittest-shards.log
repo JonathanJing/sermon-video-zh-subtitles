@@ -1,0 +1,15 @@
+s0.log: Ran 543 tests in 1112.466s OK (skipped=4)  exit 0
+s1.log: Ran 558 tests in 825.346s OK (skipped=5)  exit 0
+s2.log: Ran 577 tests in 905.372s OK (skipped=4)  exit 0
+s3.log: Ran 602 tests in 876.207s OK (skipped=3)  exit 0
+s4.log: Ran 603 tests in 1167.987s FAILED (errors=1, skipped=2)  exit 1
+s5.log: Ran 607 tests in 1254.158s OK (skipped=2)  exit 0
+s6.log: Ran 607 tests in 968.804s OK (skipped=5)  exit 0
+s7.log: Ran 615 tests in 1006.683s FAILED (failures=1, skipped=4)  exit 1
+s8.log: Ran 615 tests in 978.527s OK (skipped=4)  exit 0
+s9.log: Ran 616 tests in 1887.257s FAILED (failures=1, errors=1, skipped=5)  exit 1
+total=5943
+ERROR: test_cloud_run_jobs (unittest.loader._FailedTest.test_cloud_run_jobs)
+FAIL: test_129_group_actual_producer_can_assemble_and_resume_without_calls (test_layer2_large_fan_in.LargeLayer2FanInTests.test_129_group_actual_producer_can_assemble_and_resume_without_calls)
+ERROR: test_backend_app (unittest.loader._FailedTest.test_backend_app)
+FAIL: test_65_group_worker_and_cache_only_recovery_preserve_every_dependency (test_layer2_large_fan_in.LargeLayer2FanInTests.test_65_group_worker_and_cache_only_recovery_preserve_every_dependency)
