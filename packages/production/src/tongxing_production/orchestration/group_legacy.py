@@ -495,7 +495,8 @@ def text_qc_records(locale: str, receipt: dict, policies: list[dict] = ()) -> di
             provenance={"derivation": "legacy_text_qc_receipt", "mode": row.get("mode"),
                         "notRecorded": [] if qc_policy else ["qcPolicySha256"],
                         "ledger": {"kind": "text", "receiptJsonSha256": receipt_sha256, "position": ledger},
-                        "nextAction": row.get("nextAction")})
+                        "nextAction": row.get("nextAction"), "failedAttempts": row.get("failedAttempts"),
+                        "model": receipt["semanticIdentity"].get("model")})
     return out
 
 

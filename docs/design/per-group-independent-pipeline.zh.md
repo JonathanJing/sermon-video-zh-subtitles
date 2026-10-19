@@ -1,6 +1,6 @@
 # 逐组独立任务：从 Layer 2 到 Layer 3，发布前唯一合并
 
-状态：**设计稿；`DEV-GRP-001`（逐组记录、输入键、只读 `plan`）已实施，其余批次未实现**。backlog 前缀 `DEV-GRP`（见文末分批计划）。本页不改变任何现行门限、豁免规则或 schema；不授权付费、Spark 独占会话或发布。Layer 2 逐组返修（按组 ID 重做）由另一分支的“Layer 2 revise-by-group-ID”实现承担，对应 `DEV-GRP-002`；本页定义它写入的逐组记录合同和它下游的其余各步。
+状态：**设计稿；`DEV-GRP-001`（逐组记录、输入键、只读 `plan`）与 `DEV-GRP-003`（逐组预算上界）已实施，其余批次未实现**。backlog 前缀 `DEV-GRP`（见文末分批计划）。本页不改变任何现行门限、豁免规则或 schema；不授权付费、Spark 独占会话或发布。Layer 2 逐组返修（按组 ID 重做）由另一分支的“Layer 2 revise-by-group-ID”实现承担，对应 `DEV-GRP-002`；本页定义它写入的逐组记录合同和它下游的其余各步。
 
 ## 一、为什么要改
 
@@ -204,6 +204,14 @@ python scripts/group_tasks.py merge --run <run> --locale ko
 - **判定。** 每组每步输出 `fresh`／`expected_reusable`／`stale`／`failed`／`stopped`／`unknown`／`conflict`／`missing`／`not_applicable` 及原因。**从整篇运行产物读出的记录最多是 `expected_reusable`：只用于规划和预算估算，不是复用依据。**`fresh` 只给逐组流水线（`DEV-GRP-002` 起）写入时做完整校验的记录，派发（`DEV-GRP-006`）前还要用生产者自己的校验函数再核一次。有生产者 schema 的产物（音频筛查 v2、单元收据 v1）按 schema 校验，不合格的不读；文字 QC 与音频 QC 还要求修复账本仍停在该次运行写下的位置（`repairLedgerRoot`）。产出字节的步骤（T、R、C、S、A）过期时，读其产出的下游步骤一并过期；P、Q 只是判定，过期不外溢。操作者给出的组 ID 使该组 T 起过期。
 - **限制（如实）。** T/R 比较的是构成请求的输入（组英文、英文上下文、policy 的术语/经文/格式、模型设置、runner 身份）；精确请求哈希含凭据路由，派发时由 payload cache 再匹配。逐组规则、修订指令、文字 QC 的语义身份、S 的合成身份（除声音身份外）只记录不重算；batch 成员不在键内（待决定 1）。没有预算数字（`DEV-GRP-003`）。
 - **`15030286` 离线演练**（三语各 402 组，零模型调用，不写产物，约 6 秒）：T、R 三语全部 `fresh`；没有一个 round 写下 runner 身份（最终 round 无 payload-cache 成功收据，`run-identity.json` 只存合成哈希），所以 T/R 的实现身份记为未比较。P 三语全部 `stale`：运行分支把三个 15030286 插件登记为 `common.py`、`auto_qc_text_common.py`、`weekly_15030286_common.py` 四文件闭包，`dev` 没有这项登记，按 `dev` 算的插件身份不同；按运行分支的四文件闭包重算，三语插件身份与收据完全一致。Q 全部 `stale`：文字 QC 在 W `51e2b9…` 下运行，`dev` 是 G1 最终 W `df299e…`（[G1 记录](../reports/20261017-g1-implementation-generation.zh.md)）。es、ko 的 S `fresh`（声音身份 `fef760…` 未变、口播文字等于 candidate），A `stale`（筛查实现 `40bc41…` → `38c743…`），U `stale`（W 与上游 A）。zh-Hans 本次没有 Layer 3 产物，S/A/U 为 `missing`；三语 C 均为 `not_applicable`（文字 QC 全部 `full`）。
+
+### DEV-GRP-003 实施说明（2026-10-19）
+
+- **代码。** [`group_budget.py`](../../packages/production/src/tongxing_production/orchestration/group_budget.py) 按第六节计算：每次上界取 [运行档案](../weekly-run-profile.zh.md)（`config/weekly-run-profile.json`）的 Layer 2 与 QC 请求上限，用 `compute.provider_limits` 的价格算最坏情况；精简次数取 `review.condensation.MAX_ATTEMPTS`，二级 ASR 取 `compute.transcription_request` 的 180 秒整分钟预留；每句上限取 `review.text_qc.MAX_TEXT_REPAIR_ATTEMPTS`，已用次数取文字 QC 收据记下的修复账本次数。操作者点名的组按剩余次数 × 每次上界；只因某步过期的组只算一次需要重跑的付费步骤；`plan` 判为 `fresh` 的步骤记 $0，不占额度。
+- **预留。** 点名的组按操作者顺序在前，其余按 candidate 顺序；每个付费系统（`layer2`、`qc`、`secondaryAsr`）按运行档案的每 locale 上限分别扣减。放不下的组标 `repair_spend_cap`、不预留，已预留的组不变；次数用完的组标 `repair_limit_reached`、不预留（第八节在合并时降级）。`admit(budget, groupId)` 给派发器在调用前取该组的预留，未预留的组直接拒绝。
+- **文件。** `plan --budget-profile config/weekly-run-profile.json [--budget-scale week|clip]` 在每个 locale 下输出 `sermon-group-budget-v1`（只读、`humanApproval=false`，派发前须由操作者批准并按哈希绑定）。现行 Layer 2 v1–v4 与机器质检的预算授权格式不变、照旧可读；逐组明细与派发的接线随派发器（`DEV-GRP-006`/`007`）落地。
+- **`15030286` 离线结果（week 档）。** 每对翻译加复核上界 $0.12288（与 v8 按组号修订收据的 `worstCasePairCostMicrousd` 一致），每组回译加比对上界 $0.09216。三语文字 QC 因 W 变化全部过期：按最坏情况预留，整语言重跑文字 QC 需约 $37，超过 QC 每 locale 上限 $30，所以 77 组标为 `repair_spend_cap`。这是最坏情况的输入上界（16,384 token），不是实际花费。ko 点名 3 组时，3 组各预留 4 次，排在最前面全部预留。
+- **限制。** 二级 ASR 每次按一个被标出的单元、180 秒上限预留。QC 请求按请求上限计算最坏情况，没有用实际请求大小。合并第 4 步的校准试验费用属于 `DEV-GRP-004`。
 
 依赖：001 → 002、003 可并行 → 004、005 可并行 → 006 → 008 → 007。008 的失败路由与合并比较在 006 内先实现；降级显示依赖 L3／L4 的支持，未接通前达到上限的组使本 locale 走人工路径或暂停，不阻塞其他 locale。002 的逐组记录格式以 001 为准；若 002 先合入且格式不同，001 以适配层读取，不改已写记录。
 

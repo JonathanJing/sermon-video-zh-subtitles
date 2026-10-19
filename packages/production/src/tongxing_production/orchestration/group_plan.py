@@ -24,6 +24,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
+from . import group_budget
 from . import group_legacy as legacy
 from . import group_records as records
 
@@ -241,8 +242,12 @@ def _conflicting_keys(candidates: list[dict]) -> list[str]:
 
 
 def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | None = None,
-         store: records.RecordStore | None = None) -> dict:
-    """Build the plan report. ``directives`` maps locale -> group IDs the operator names."""
+         store: records.RecordStore | None = None, budget: dict | None = None) -> dict:
+    """Build the plan report. ``directives`` maps locale -> group IDs the operator names.
+
+    ``budget`` (``{"profile", "scale", "profileSha256"}``) adds each locale's per-group
+    budget (``group_budget``) for the groups that will spend money.
+    """
     _require(manifest.get("schemaVersion") == MANIFEST_SCHEMA, "invalid_plan_manifest")
     source = legacy.load_json(_path(manifest["source"], base))
     anchor = legacy.load_json(_path(manifest["anchor"], base))
@@ -270,7 +275,7 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
         _require([(group["translationGroupId"], group["sourceUnitIds"]) for group in groups]
                  == [(row["translationGroupId"], row["sourceUnitIds"]) for row in plan_rows],
                  f"candidate_groups_differ_from_layer1:{locale}")
-        rows = []
+        rows, selected_by_group = [], {}
         for group in groups:
             group_id = group["translationGroupId"]
             derived_records = derived[locale]["records"].get(group_id, {})
@@ -369,6 +374,7 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
                                          reasons=list(stages[stage].get("reasons", []))
                                          + [f"upstream_will_change:{up}" for up in upstream])
             rows.append({"translationGroupId": group_id, "sourceUnitIds": group["sourceUnitIds"], "stages": stages})
+            selected_by_group[group_id] = selected
         summary = {stage: dict(Counter(row["stages"][stage]["status"] for row in rows)) for stage in records.STAGES}
         redo = {stage: [row["translationGroupId"] for row in rows
                         if row["stages"][stage]["status"] in UNSETTLED
@@ -383,6 +389,10 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
                                                  for reason in row["stages"][stage].get("reasons", [])))
                              for stage in records.STAGES},
             "groups": rows}
+        if budget is not None:
+            report["locales"][locale]["budget"] = group_budget.budget(
+                layer1, locale, rows, selected_by_group, list(directives.get(locale, ())), policy,
+                budget["profile"], budget["scale"], profile_sha256=budget.get("profileSha256"))
     return report
 
 
@@ -402,6 +412,13 @@ def text_summary(report: dict) -> str:
             reasons = ", ".join(f"{reason} {count}" for reason, count in sorted(value["reasonCounts"][stage].items()))
             lines.append(f"  {stage} {records.STAGE_NAMES[stage]:<20} {counts}" + (f"  [{reasons}]" if reasons else ""))
         lines.append(f"  stale or missing paid-stage group steps: {value['paidStageRedoCount']}")
+        if "budget" in value:
+            totals = value["budget"]["totals"]
+            spend = ", ".join(f"{system} ${totals['reservedMicrousd'][system] / 1e6:.2f} of "
+                              f"${totals['capMicrousd'][system] / 1e6:.2f}" for system in group_budget.SYSTEMS)
+            counts = ", ".join(f"{status} {count}" for status, count in totals["counts"].items())
+            lines.append(f"  budget upper bound ({value['budget']['runProfile']['scale']}): {spend}; groups {counts}; "
+                         f"reused at $0: {value['budget']['reusedGroupCount']}")
     return "\n".join(lines)
 
 
@@ -432,6 +449,9 @@ def main(argv=None) -> int:
                          help="groups the operator names for redo (needs exactly one --locale)")
     command.add_argument("--records", type=Path, help="a per-group record store to consult as well")
     command.add_argument("--output", type=Path, help="write the full JSON plan here")
+    command.add_argument("--budget-profile", type=Path,
+                         help="weekly run profile (config/weekly-run-profile.json) for per-group budget upper bounds")
+    command.add_argument("--budget-scale", default="week", help="run profile scale for the caps (week or clip)")
     args = parser.parse_args(argv)
     manifest = legacy.load_json(args.manifest)
     if args.locale:
@@ -442,8 +462,12 @@ def main(argv=None) -> int:
     _require(not args.group_id or (args.locale and len(args.locale) == 1), "group_id_needs_one_locale")
     directives = {args.locale[0]: args.group_id} if args.group_id else {}
     base = args.manifest.resolve().parent
+    budget = None
+    if args.budget_profile:
+        budget = {"profile": legacy.load_json(args.budget_profile), "scale": args.budget_scale,
+                  "profileSha256": legacy.file_sha256(args.budget_profile)}
     report = plan(manifest, base, current_identities(manifest, base), directives=directives,
-                  store=records.RecordStore(args.records) if args.records else None)
+                  store=records.RecordStore(args.records) if args.records else None, budget=budget)
     if args.output:
         _write_new(args.output, json.dumps(report, ensure_ascii=False, indent=1) + "\n")
     print(text_summary(report))
