@@ -23,6 +23,7 @@
 | 测试 | 隔离运行时 tracker projection 报 `ports.Unbound` | 原门面同时绑定了 `tracker_projection_host` | 逐文件隔离运行受影响测试 | 测试显式导入 tracker 宿主 | 同文件 | #1165 |
 | 实验包 | 发布包里的 bridge 改用了 venv 里的包内 validator；在检出里运行则缺 schema root | 两条导入路径的先后顺序写反，退路也没有绑定宿主 | 全量 | 先试包内自带的 `scripts/sermon_log_contract.py`，退路导入宿主后再用包模块 | `experiments/local_experiment_log/tests` | #1165 |
 | 改写脚本 | `test_moved_module_keeps_a_repository_identity_key` 的期望值被改成了包内名 | 字符串改写把期望输出 `"scripts.sermon_accounting"` 当成了导入名 | 全量 | 还原期望值，并逐条复核其余被改写的字符串 | 同文件 | #1165 |
+| 评审 | Codex 指出 3 处函数内导入在独立运行 CLI 时报 `ports.Unbound`（`prepare_same_video.py`、`prepare_archive_sermon.py`、`serve_milmmt_v41_local.py`） | 改写脚本只在模块级导入前补宿主绑定，函数内导入由原门面绑定 | 发布后（PR 评审） | 共 22 个文件的函数内导入前补 `scripts.tongxing_host`，另有 4 个文件补模块级绑定；用新解释器复现 Unbound，补绑定后通过 | 这些文件的测试 243 个通过，mock-TTS 模块 31 个通过，dubbing discover OK；Codex 复审无发现 | #1165 `0d0754a6`、`11759ceb` |
 | 分片 | 分片序号用了 1–10，分片 0 没跑 | 序号从 0 开始 | 全量结束后 | 补跑分片 0，全部通过 | — | — |
 | 环境 | `test_backend_app`、`test_cloud_run_jobs` 无法导入 `tongxing_api` | worktree venv 没装 `services/api` | 全量 | `pip install -e ./services/api` 后 44 个通过 | — | — |
 | 已有问题 | `test_layer2_large_fan_in` 有 2 个用例报 `utc_clock_discontinuity_*` | 与本 PR 无关 | 受影响测试 | 在干净的 `origin/dev` 上同样失败；留作后续 | — | — |
@@ -33,6 +34,7 @@
 |---|---|---|---|---|---|
 | 预检 | 附录 A 也要扫描字符串里的 `from scripts import X`；删门面前对每个门面名做一次 `git grep -w` | 漏了 11 个测试文件 | 不会删掉还在用的门面 | C 批会话 | 门面退出计划附录 A |
 | 预检 | 删门面前先 grep 按字面路径读 `scripts/<名>.py` 的身份函数 | mock DAG 身份读了字面路径 | 不会在运行时才报文件缺失 | C 批会话 | — |
+| 预检 | 改写导入时，函数内的导入也要补宿主绑定：凡替换掉门面导入的地方都绑定一次 | Codex 的 3 条发现，共涉及 22 个文件 | 独立运行的 CLI 不会报 Unbound | C 批会话 | — |
 | 流程 | 每个改过的测试文件单独开进程运行，再跑全量 | 单独运行才暴露宿主未绑定 | 全量的执行顺序不会掩盖缺失的宿主导入 | C 批会话 | — |
 | 流程 | `worktree_venv.py` 也安装 `services/api` | 两个测试因导入失败 | 全量不需要手工补装 | 主会话 | — |
 
@@ -50,6 +52,6 @@ G1 的 W、T、计分、语速、预览绑定与渲染声音身份都不变。
 
 ## 遗留状态
 
-- 新的 L2 `code_identity()` 为 `b45c428a…3e9c`（dev 为 `e04411e9…9b7d`），在 PR 合并时生效。合并前须确认没有进行中的 L2 或统一 CLI 运行。
+- 新的 L2 `code_identity()` 为 `8053805c…8642`（评审修复后的 head `11759ceb`）（dev 为 `e04411e9…9b7d`），在 PR 合并时生效。合并前须确认没有进行中的 L2 或统一 CLI 运行。
 - 留到 G1 窗口的门面：`four_layer_measure`、`sermon_accounting`、`sermon_cache_observation`、`sermon_clock_evidence`、`sermon_log_profile`、`sermon_workflow_evidence`。
 - 本地 `artifacts/facade-c2-local` 是本次测试日志，可以删除。
