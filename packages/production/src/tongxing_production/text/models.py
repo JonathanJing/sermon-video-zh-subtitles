@@ -71,6 +71,7 @@ HISTORICAL_MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
 SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
 PAYLOAD_CACHE_SUCCESS_SCHEMA = "sermon-target-language-payload-cache-success-v2"
+ROUND_RUNNER_IDENTITY_SCHEMA = "sermon-layer2-round-runner-identity-v1"
 # Prototype implementation identity.  This is intentionally independent of the
 # legacy runner compatibility constant: any change to the cross-top-level-round
 # admission, receipt, or copying rules must mint a new value before reuse.
@@ -1080,6 +1081,17 @@ def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:
     return None
 
 
+def _carry_source(reuse_from: Path | None) -> dict[str, Any] | None:
+    """The reuse source a round may carry groups from, and the runner that source recorded."""
+    if reuse_from is None:
+        return None
+    source = Path(reuse_from) / "runner-identity.json"
+    recorded = producer._load(source) if source.is_file() else {}
+    runner = (recorded.get("runnerImplementationSha256")
+              if recorded.get("schemaVersion") == ROUND_RUNNER_IDENTITY_SCHEMA else None)
+    return {"root": str(Path(reuse_from).resolve()), "runnerImplementationSha256": runner}
+
+
 def carry_forward_group(prior_run: Path, out: Path, index: int,
                         group: dict[str, Any], prior_row: dict[str, Any],
                         policy: dict[str, Any]) -> dict[str, Any]:
@@ -1536,19 +1548,41 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             identity["failureCollection"] = failure_collector.identity
         identity_hash = policy_tools.canonical_sha256(identity)
         manifest = out / "run-identity.json"
+        round_runner, round_identity = RUNNER_PRODUCTION_IDENTITY_SHA256, identity_hash
         if manifest.exists():
-            accepted_hashes = {policy_tools.canonical_sha256({
+            accepted_hashes = {implementation_hash: policy_tools.canonical_sha256({
                 **identity, "runnerImplementationSha256": implementation_hash})
                 for implementation_hash in
                 {RUNNER_PRODUCTION_IDENTITY_SHA256, *COMPATIBLE_RUNNER_IDENTITIES}}
-            require(producer._load(manifest) in
-                    [{"sha256": accepted_hash} for accepted_hash in accepted_hashes],
+            saved_identity = producer._load(manifest)
+            require(saved_identity in
+                    [{"sha256": accepted_hash} for accepted_hash in accepted_hashes.values()],
                     "Output directory belongs to another source, policy, or group plan")
+            # The runner version that opened this round, not necessarily this code's.
+            round_runner = next(implementation_hash for implementation_hash, accepted_hash
+                                in sorted(accepted_hashes.items()) if saved_identity == {"sha256": accepted_hash})
+            round_identity = saved_identity["sha256"]
         else:
             require(not out.exists() or all(entry.name == "accounting" and entry.is_dir()
                                             for entry in out.iterdir()),
                     "Output directory is not empty")
             save_new(manifest, {"sha256": identity_hash})
+        # run-identity.json keeps only a hash; this records which runner the round ran
+        # under, so per-group reuse can compare it later. The payload-cache implementation
+        # is part of the matched identity only when the round uses the payload cache.
+        runner_path = out / "runner-identity.json"
+        runner_record = {"schemaVersion": ROUND_RUNNER_IDENTITY_SCHEMA,
+                         "runnerImplementationSha256": round_runner,
+                         "payloadCacheImplementationSha256": (PAYLOAD_CACHE_IMPLEMENTATION_SHA256
+                                                              if payload_cache_enabled else None),
+                         "runIdentitySha256": round_identity,
+                         # Groups carried forward keep their source round's caches byte for
+                         # byte; that round's runner (None when it recorded none) produced them.
+                         "carrySource": _carry_source(reuse_from)}
+        if runner_path.exists():
+            require(producer._load(runner_path) == runner_record, "Round runner identity changed")
+        else:
+            save_new(runner_path, runner_record)
         request_path = out / "request.json"
         if not request_path.exists():
             save_new(request_path, request)

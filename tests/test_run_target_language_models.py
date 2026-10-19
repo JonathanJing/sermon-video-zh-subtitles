@@ -431,6 +431,10 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertEqual((previous / "plugin-group-stop.json").read_bytes(), stop_bytes)
         self.assertEqual((previous / "group-0002-sol.json").read_bytes(), rejected_bytes)
         self.assertEqual((self.out / "group-0001-astra.json").read_bytes(), kept_bytes)
+        # The carried group's caches came from `previous`; the round names that source and its runner.
+        self.assertEqual(producer._load(self.out / "runner-identity.json")["carrySource"],
+                         {"root": str(previous.resolve()),
+                          "runnerImplementationSha256": subject.RUNNER_PRODUCTION_IDENTITY_SHA256})
         self.assertFalse((self.out / "plugin-group-stop.json").exists())
         self.assertEqual(len(evidence["groups"]), 2)
         self.assertTrue((self.out / "evidence.json").exists())
@@ -472,15 +476,30 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         plan = subject.group_plan(request, f.anchor)
         receipt = producer._load(self.out / "rule-preflight.json")
         manifest = self.out / "run-identity.json"
+        runner = self.out / "runner-identity.json"
+        self.assertEqual(producer._load(runner)["runnerImplementationSha256"], parent_hash)
         for implementation_hash in (parent_hash, *subject.COMPATIBLE_RUNNER_IDENTITIES):
             digest = policy_tools.canonical_sha256({
                 "request": request, "groupPlan": plan,
                 "runnerImplementationSha256": implementation_hash,
                 "rulePreflightSha256": policy_tools.canonical_sha256(receipt)})
             manifest.write_text(json.dumps({"sha256": digest}))
+            runner.unlink()  # each manifest stands for a round another runner version opened
             self.assertEqual(self.production_run(
                 f.source, f.anchor, f.policy, self.out, "fixture-key",
                 lambda *_: self.fail("verified paid calls must be reused")), evidence)
+            # The round records the runner version that opened it, not the current one.
+            self.assertEqual(producer._load(runner), {
+                "schemaVersion": subject.ROUND_RUNNER_IDENTITY_SCHEMA,
+                "runnerImplementationSha256": implementation_hash,
+                "payloadCacheImplementationSha256": None, "runIdentitySha256": digest,
+                "carrySource": None})
+        tampered = dict(producer._load(runner), runnerImplementationSha256=parent_hash)
+        if tampered != producer._load(runner):
+            runner.write_text(json.dumps(tampered))
+            with self.assertRaisesRegex(ValueError, "Round runner identity changed"):
+                self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key",
+                                    lambda *_: self.fail("a changed runner record must fail before calls"))
         manifest.write_text(json.dumps({"sha256": "0" * 64}))
         with self.assertRaisesRegex(ValueError, "Output directory belongs"):
             self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key",
