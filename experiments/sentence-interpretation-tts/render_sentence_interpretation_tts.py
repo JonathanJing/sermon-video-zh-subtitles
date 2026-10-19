@@ -22,8 +22,11 @@ from typing import Any, Callable
 
 try:
     from scripts import sermon_sentence_interpretation as interpretation
-except ImportError:  # Direct execution via ``python scripts/...``.
-    import sermon_sentence_interpretation as interpretation
+except ImportError:  # Direct execution of this file: add the repository root.
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts import sermon_sentence_interpretation as interpretation
 
 
 JOB_SCHEMA = "sermon-sentence-natural-tts-job-v1"

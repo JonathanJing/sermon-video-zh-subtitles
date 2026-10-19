@@ -48,7 +48,7 @@ python scripts/package_multilingual_fragment_poc.py \
   --layer2 artifacts/multilingual-poc/<run-id>/layer2 \
   --layer3 artifacts/multilingual-poc/<run-id>/layer3
 
-python scripts/screen_multilingual_voice_demos.py ... \
+python experiments/sermon-dubbing-poc/screen_multilingual_voice_demos.py ... \
   --out artifacts/multilingual-poc/<run-id>/layer3/asr-screening.json
 
 python scripts/finalize_multilingual_fragment_poc.py \
