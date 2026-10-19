@@ -61,6 +61,7 @@ class Run:
         self.source = {"anchors": {"artifact": {"jsonSha256": records.json_sha256(self.anchor)}}, "id": "source"}
         self.policy = {"terminology": {"terms": ["Romans"]}, "scripture": {"quoteCheckPolicy": "references_only"},
                        "formatting": {"digits": "keep"},
+                       "languageReview": {"requiredChecks": ["numbers"]},
                        "translator": {"model": "gpt-6.1-sol", "reasoningEffort": "high"},
                        "reviewer": {"model": "gpt-6.1-sol", "reasoningEffort": "medium"}}
         self.texts = copy.deepcopy(TEXT)
@@ -99,7 +100,8 @@ class Run:
         for index, (group_id, unit_ids) in enumerate(GROUPS, 1):
             stem = f"group-{index:04d}"
             text = TEXT[locale][group_id]  # what Layer 2 produced; the candidate may later differ
-            result = {"translationGroupId": group_id, "sourceUnitIds": unit_ids, "targetUtterances": [text]}
+            result = {"translationGroupId": group_id, "sourceUnitIds": unit_ids, "targetUtterances": [text],
+                      "coverage": [{"sourceUnitId": unit, "targetText": text} for unit in unit_ids]}
             prompt = {"translationGroupId": group_id, "sourceUnitIds": unit_ids,
                       "englishUnits": legacy.english_rows(anchor, unit_ids), "context": contexts[group_id],
                       "targetLocale": locale, "terminology": self.policy["terminology"],
@@ -111,7 +113,8 @@ class Run:
                            "messages": [{"role": "system", "content": f"{role} instruction"},
                                         {"role": "user", "content": json.dumps({**prompt, **extra}, ensure_ascii=False)}]}
                 reply = (dict(result, semanticReview={"status": "pass", "uncertainty": [], "issues": [],
-                                                      "checks": {"completeMeaning": "pass", "noAddedMeaning": "pass"}})
+                                                      "evidence": "Meaning preserved.",
+                                                      "checks": {name: "pass" for name in models.SEMANTIC_CHECKS}})
                          if role == "reviewer" else result)
                 write(rounds / f"{stem}-{suffix}.policy-preview.json",
                       {"role": role, "payload": payload, "payloadSha256": records.json_sha256(payload),
@@ -140,6 +143,7 @@ class Run:
                 "englishSourcePackageJsonSha256": layer1["englishSourcePackageJsonSha256"],
                 "anchorManifestJsonSha256": layer1["anchorManifestSha256"]}}},
             "semanticIdentitySha256": SEMANTIC, "repairLedger": {"priorFailedAttempts": {}},
+            "policyJsonSha256": records.json_sha256(self.produced_policy),
             "results": [{"groupId": g, "sourceUnitIds": s, "status": "pass", "mode": "full", "problems": [],
                          "nextAction": "keep", "failedAttempts": 0, "targetTextSha256": sha(TEXT[locale][g]),
                          "englishSha256": legacy.qc_english_sha256(legacy.english_rows(anchor, s)),
@@ -469,7 +473,7 @@ class PlanTests(unittest.TestCase):
             self.assertEqual(statuses(report, "ko", "g1")["S"], "fresh")
 
     def test_any_model_facing_policy_change_makes_t_and_r_stale_but_plugin_fields_do_not(self):
-        self.run.policy["languageReview"] = {"registerRules": ["Use a natural register."],
+        self.run.policy["languageReview"] = {"registerRules": ["Use a natural register."], "requiredChecks": ["numbers"],
                                              "pluginImplementationSha256": "1" * 64}
         self.run.produced_policy = copy.deepcopy(self.run.policy)
         self.assertEqual(statuses(self.plan(), "ko", "g1"), ALL_FRESH)
@@ -772,6 +776,94 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(report["locales"]["ko"]["groups"][0]["stages"]["P"]["codes"], ["numbers"])
         self.assertEqual(statuses(report, "ko", "g1")["P"], "failed")
         self.assertEqual(report["locales"]["ko"]["groups"][1]["stages"]["P"]["codes"], ["plugin_receipt_checks_incomplete"])
+
+    def test_layer2_caches_count_only_as_the_runner_would_accept_them(self):
+        self.run.build()
+        astra = self.run.root / "ko/round-001/group-0001-astra.json"
+        value = json.loads(astra.read_text())
+        value["result"]["coverage"] = []  # the runner rejects incomplete coverage
+        astra.write_text(json.dumps(value))
+        sol = self.run.root / "ko/round-001/group-0002-sol.json"
+        value = json.loads(sol.read_text())
+        del value["result"]["semanticReview"]["checks"]["noAddedMeaning"]  # an incomplete check set
+        sol.write_text(json.dumps(value))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        for group_id in ("g1", "g2"):
+            self.assertEqual((statuses(report, "ko", group_id)["T"], statuses(report, "ko", group_id)["R"]),
+                             ("missing", "missing"), group_id)
+        self.assertEqual(statuses(report, "ko", "g3")["T"], "fresh")
+
+    def test_plugin_and_text_qc_passes_need_the_producers_full_predicate(self):
+        self.run.build()
+        plugin = self.run.root / "ko/language-review.json"
+        receipt = json.loads(plugin.read_text())
+        receipt["groupReviews"][0]["checks"][0]["checkId"] = "register"  # not the policy's required check
+        plugin.write_text(json.dumps(receipt))
+        text_qc = self.run.root / "ko/text-qc.json"
+        receipt = json.loads(text_qc.read_text())
+        receipt["results"][1]["backTranslation"] = None
+        receipt["results"][2]["nextAction"] = "repair"
+        text_qc.write_text(json.dumps(receipt))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual(statuses(report, "ko", "g1")["P"], "failed")
+        self.assertEqual((statuses(report, "ko", "g2")["Q"], statuses(report, "ko", "g3")["Q"]), ("failed", "failed"))
+        self.assertEqual(statuses(report, "ko", "g4")["Q"], "fresh")
+
+    def test_text_qc_follows_its_policy_fields_but_not_plugin_fields(self):
+        self.run.produced_policy = copy.deepcopy(self.run.policy)
+        plugin_only = dict(self.run.policy, languageReview={"requiredChecks": ["numbers"], "pluginId": "new"})
+
+        def plan_with_prior(policy, *, prior=True):
+            self.run.policy = policy
+            manifest = json.loads(self.run.build().read_text())
+            write(self.run.root / "prior-policy.json", self.run.produced_policy)
+            for locale in manifest["locales"].values():
+                if prior:
+                    locale["priorPolicies"] = ["prior-policy.json"]
+            return group_plan.plan(manifest, self.run.root, identities())
+
+        self.assertEqual(statuses(plan_with_prior(plugin_only), "ko", "g1")["Q"], "fresh")  # a plugin migration
+        report = plan_with_prior(dict(plugin_only, terminology={"terms": ["Romans", "Habakkuk"]}))
+        self.assertIn("input_changed:qcPolicySha256", report["locales"]["ko"]["groups"][0]["stages"]["Q"]["reasons"])
+        # Without the screened policy, the QC policy identity is reported, not guessed.
+        report = plan_with_prior(plugin_only, prior=False)
+        self.assertIn("qcPolicySha256", report["locales"]["ko"]["groups"][0]["stages"]["Q"]["notCompared"])
+
+    def test_audio_qc_must_have_checked_the_synthesized_text(self):
+        self.run.build()
+        audio_qc = self.run.root / "ko/audio-qc.json"
+        receipt = json.loads(audio_qc.read_text())
+        receipt["results"][0]["textSha256"] = "0" * 64
+        audio_qc.write_text(json.dumps(receipt))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual(statuses(report, "ko", "g1")["U"], "missing")
+
+    def test_candidate_group_boundaries_must_be_the_layer1_ones(self):
+        self.run.build()
+        candidate_path = self.run.root / "ko/candidate.json"
+        candidate = json.loads(candidate_path.read_text())
+        candidate["groups"][1]["sourceUnitIds"] = ["u2"]
+        candidate_path.write_text(json.dumps(candidate))
+        with self.assertRaisesRegex(ValueError, "candidate_groups_differ_from_layer1:ko"):
+            group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+
+    def test_a_text_qc_receipt_without_back_translation_leaves_q_missing(self):
+        self.run.build()
+        text_qc = self.run.root / "ko/text-qc.json"
+        receipt = json.loads(text_qc.read_text())
+        receipt["semanticIdentity"] = None
+        text_qc.write_text(json.dumps(receipt))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual(statuses(report, "ko", "g1")["Q"], "missing")
+        self.assertEqual(statuses(report, "es", "g1"), ALL_FRESH)
+
+    def test_the_report_never_replaces_an_existing_file(self):
+        manifest = self.run.build()
+        before = manifest.read_bytes()
+        with patch.object(group_plan, "current_identities", return_value=identities()), redirect_stdout(io.StringIO()), \
+                self.assertRaisesRegex(ValueError, "output_exists"):
+            group_plan.main(["plan", "--manifest", str(manifest), "--output", str(manifest)])
+        self.assertEqual(manifest.read_bytes(), before)
 
     def test_cli_plan_prints_a_summary_and_writes_only_its_report(self):
         manifest = self.run.build()

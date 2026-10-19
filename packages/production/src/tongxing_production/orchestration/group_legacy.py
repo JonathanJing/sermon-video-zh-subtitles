@@ -107,10 +107,16 @@ def model_facing_policy_sha256(policy: dict, role: str) -> str:
     reviewer-only edit leaves translator requests unchanged (``compare_previews``).
     """
     _require(role in ROLES, f"unknown_layer2_role:{role}")
+    projection = _policy_projection(policy)
+    projection.pop(next(other for other in ROLES if other != role), None)
+    return records.json_sha256(projection)
+
+
+def _policy_projection(policy: dict) -> dict:
+    """The policy without the plugin and term-approval fields and ``componentSha256``."""
     from ..text import policy_preview
     projection = copy.deepcopy(policy)
     projection.pop("componentSha256", None)
-    projection.pop(next(other for other in ROLES if other != role), None)
     for pointer in policy_preview.PLUGIN_POLICY_FIELDS | policy_preview.APPROVAL_POLICY_FIELDS:
         *parents, leaf = pointer.strip("/").split("/")
         node = projection
@@ -118,6 +124,14 @@ def model_facing_policy_sha256(policy: dict, role: str) -> str:
             node = node.get(key) if isinstance(node, dict) else None
         if isinstance(node, dict):
             node.pop(leaf, None)
+    return projection
+
+
+def qc_policy_sha256(policy: dict) -> str:
+    """The policy as text QC reads it: no plugin, approval or Layer 2 model-role fields."""
+    projection = _policy_projection(policy)
+    for role in ROLES:
+        projection.pop(role, None)
     return records.json_sha256(projection)
 
 
@@ -193,6 +207,45 @@ def _round_group_files(root: Path) -> dict[str, dict]:
     return found
 
 
+def _coverage_ok(result: dict, group: dict, text: str) -> bool:
+    from ..text import models
+    coverage = result.get("coverage")
+    return (isinstance(coverage, list)
+            and [row.get("sourceUnitId") for row in coverage] == group["sourceUnitIds"]
+            and all(isinstance(row.get("targetText"), str) and models._coverage_substring(row["targetText"], text)
+                    for row in coverage))
+
+
+def translator_text(result: dict, group: dict) -> str | None:
+    """The draft text exactly as the runner accepts a translator reply, or None if it would reject it."""
+    from ..text import models
+    if result.get("translationGroupId") != group["translationGroupId"] or result.get("sourceUnitIds") != group["sourceUnitIds"]:
+        return None
+    try:
+        text = "".join(models._utterances(result.get("targetUtterances"), group["sourceUnitIds"]))
+    except (ValueError, TypeError):
+        return None
+    return text if _coverage_ok(result, group, text) else None
+
+
+def reviewer_result(result: dict, group: dict) -> tuple[str, bool] | None:
+    """``(reviewed text, passes)`` as the runner validates a reviewer reply, or None if malformed."""
+    from ..text import models
+    text = translator_text(result, group)  # same identity, utterance and coverage rules
+    if text is None:
+        return None
+    semantic = models.normalize_semantic_review(result.get("semanticReview"))
+    if not (isinstance(semantic, dict) and semantic.get("status") in {"pass", "fail"}
+            and isinstance(semantic.get("checks"), dict) and set(semantic["checks"]) == set(models.SEMANTIC_CHECKS)
+            and all(value in {"pass", "fail"} for value in semantic["checks"].values())
+            and isinstance(semantic.get("evidence"), str) and semantic["evidence"].strip()
+            and isinstance(semantic.get("uncertainty"), list) and isinstance(semantic.get("issues"), list)):
+        return None
+    passes = (semantic["status"] == "pass" and all(value == "pass" for value in semantic["checks"].values())
+              and not semantic["uncertainty"] and not semantic["issues"])
+    return text, passes
+
+
 def _round_layer1(root: Path, locale: str) -> dict | None:
     """The source a round translated, from the request the runner froze in it."""
     request_path = Path(root) / "request.json"
@@ -247,12 +300,12 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
             sol = load_json(files["sol"])
             result = sol.get("result") or {}
             group = by_group.get(result.get("translationGroupId"))
-            utterances = result_utterances(result) if group is not None else None
-            # A round whose translator cache cannot be read gives this group no T or R.
-            if utterances is None or result_utterances(load_json(files["astra"]).get("result") or {}) is None:
+            # Only a round whose replies the runner itself would accept gives this group T and R.
+            reviewed = reviewer_result(result, group) if group is not None else None
+            if reviewed is None or translator_text(load_json(files["astra"]).get("result") or {}, group) is None:
                 continue
             latest[group["translationGroupId"]] = (Path(root), files)
-            if joined_text(utterances) == joined_text(group["targetUtterances"]):
+            if reviewed[0] == joined_text(group["targetUtterances"]):
                 chosen[group["translationGroupId"]] = (Path(root), files)
     chosen = {**latest, **chosen}
     out = {}
@@ -281,7 +334,7 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
         provenance = {"derivation": "legacy_round_cache", "round": str(root), "stem": files["sol"].name[:10],
                       "notRecorded": [] if runner else ["stageImplementation"]}
         implementation = runner or NOT_RECORDED_SHA256
-        draft_sha = records.text_sha256(joined_text(result_utterances(astra["result"])))
+        draft_sha = records.text_sha256(translator_text(astra["result"], group))
         prompt_draft = _prompt(sol_preview).get("astraDraft")
         draft_utterances = result_utterances(prompt_draft) if isinstance(prompt_draft, dict) else None
         reviewed_draft = records.text_sha256(joined_text(draft_utterances)) if draft_utterances else None
@@ -291,17 +344,13 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
             {"draftTextSha256": draft_sha, "cacheSha256": file_sha256(files["astra"])}, "pass",
             spend={"kind": "paid_model_call", "model": astra.get("model"), "requestId": astra.get("requestId")},
             provenance=provenance)
-        semantic = (sol.get("result") or {}).get("semanticReview") or {}
-        # The runner's own acceptance: a pass status, every check passing, no uncertainty or issue.
-        status = ("pass" if semantic.get("status") == "pass" and not semantic.get("uncertainty")
-                  and not semantic.get("issues") and isinstance(semantic.get("checks"), dict)
-                  and semantic["checks"] and all(value == "pass" for value in semantic["checks"].values())
-                  else "fail")
-        codes = [] if status == "pass" else [f"semantic_{semantic.get('status')}"]
+        reviewed_text, passes = reviewer_result(sol["result"], group)
+        status = "pass" if passes else "fail"
+        codes = [] if passes else ["semantic_review_not_passed"]
         reviewer = records.make_record(
             "R", layer1, locale, group_id, group["sourceUnitIds"],
             _role_inputs(sol_preview, sol, reviewed_draft), implementation,
-            {"targetTextSha256": records.text_sha256(joined_text(result_utterances(sol["result"]) or [])),
+            {"targetTextSha256": records.text_sha256(reviewed_text),
              "cacheSha256": file_sha256(files["sol"])}, status, codes=codes,
             spend={"kind": "paid_model_call", "model": sol.get("model"), "requestId": sol.get("requestId")},
             provenance=provenance)
@@ -311,7 +360,8 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
 
 # --- P from the plugin receipt ---
 
-def plugin_records(layer1: dict, locale: str, anchor: dict, receipt: dict) -> dict[str, dict]:
+def plugin_records(layer1: dict, locale: str, anchor: dict, receipt: dict,
+                   required_checks: list[str] | None) -> dict[str, dict]:
     _require(receipt.get("schemaVersion") == "sermon-target-language-plugin-receipt-v1"
              and receipt.get("targetLocale") == locale, "invalid_plugin_receipt")
     receipt_layer1 = records.layer1_identity(receipt["englishSourcePackageJsonSha256"], receipt["anchorManifestSha256"])
@@ -322,7 +372,9 @@ def plugin_records(layer1: dict, locale: str, anchor: dict, receipt: dict) -> di
         failed = [check.get("checkId", "unnamed_check") for check in checks if check.get("status") != "pass"]
         ids = [check.get("checkId") for check in checks]
         # The producer passes a group only when its whole check set passes; recompute that here.
-        passed = row.get("status") == "pass" and bool(checks) and not failed and len(set(ids)) == len(ids)
+        # The producer accepts exactly the policy's required checks, in order (text/candidate.py).
+        passed = (row.get("status") == "pass" and bool(checks) and not failed
+                  and required_checks is not None and ids == list(required_checks))
         if row.get("status") == "pass" and not passed:
             failed = failed or ["plugin_receipt_checks_incomplete"]
         inputs = {"languageReviewPolicySha256": receipt["languageReviewPolicySha256"],
@@ -341,20 +393,29 @@ def plugin_records(layer1: dict, locale: str, anchor: dict, receipt: dict) -> di
 
 # --- Q from the text QC receipt ---
 
-def text_qc_records(locale: str, receipt: dict) -> dict[str, dict]:
+def text_qc_records(locale: str, receipt: dict, policies: list[dict] = ()) -> dict[str, dict]:
+    """Q per group. ``policies`` are frozen policies the run used; the one whose hash the receipt
+    names gives the QC-facing policy identity (none matching: not recorded)."""
     _require(receipt.get("schemaVersion") == "sermon-target-text-auto-qc-v1" and receipt.get("locale") == locale,
              "invalid_text_qc_receipt")
+    if not isinstance(receipt.get("semanticIdentity"), dict):
+        return {}  # back-translation never ran: no Q result for any group (the plan reports missing)
     context = receipt["semanticIdentity"]["settings"]["qcContext"]
     layer1 = records.layer1_identity(context["englishSourcePackageJsonSha256"], context["anchorManifestJsonSha256"])
     prior = (receipt.get("repairLedger") or {}).get("priorFailedAttempts") or {}
+    screened = next((policy for policy in policies if records.json_sha256(policy) == receipt.get("policyJsonSha256")), None)
+    qc_policy = qc_policy_sha256(screened) if screened is not None else None
     out = {}
     for row in receipt["results"]:
-        status = "pass" if row["status"] == "pass" else "fail"
         problems = [problem if isinstance(problem, str) else json.dumps(problem, sort_keys=True)
                     for problem in row.get("problems") or []]
+        # Formal admission (review/release_basis.py): back-translation present, pass and keep.
+        status = ("pass" if row.get("backTranslation") is not None and row.get("status") == "pass"
+                  and row.get("nextAction") == "keep" and not problems else "fail")
         out[row["groupId"]] = records.make_record(
             "Q", layer1, locale, row["groupId"], row["sourceUnitIds"],
             {"englishSha256": row["englishSha256"], "targetTextSha256": row["targetTextSha256"],
+             "qcPolicySha256": qc_policy,
              "semanticIdentitySha256": receipt["semanticIdentitySha256"],
              "repairPositionSha256": repair_position_sha256(prior, row["sourceUnitIds"])},
             receipt["implementationSha256"],
@@ -362,6 +423,7 @@ def text_qc_records(locale: str, receipt: dict) -> dict[str, dict]:
                 (row.get("backTranslation") or {}).get("requestSha256s") or [])},
             status, codes=(problems or [row.get("nextAction", "fail")]) if status == "fail" else (),
             provenance={"derivation": "legacy_text_qc_receipt", "mode": row.get("mode"),
+                        "notRecorded": [] if qc_policy else ["qcPolicySha256"],
                         "nextAction": row.get("nextAction"), "failedAttempts": row.get("failedAttempts"),
                         "model": receipt["semanticIdentity"].get("model")})
     return out
@@ -451,7 +513,8 @@ def audio_qc_records(locale: str, receipt: dict, speech: dict[str, dict]) -> dic
         synthesis = (speech.get(row["groupId"]) or {}).get("S")
         if (synthesis is None or job is None or job != synthesis["provenance"].get("jobJsonSha256")
                 or row["sourceUnitIds"] != synthesis["sourceUnitIds"]
-                or row["audioSha256"] != synthesis["outputs"]["audioSha256"]):
+                or row["audioSha256"] != synthesis["outputs"]["audioSha256"]
+                or row["textSha256"] != synthesis["inputs"]["textSha256"]):
             continue
         status = row["status"]
         verdict = "pass" if status == "pass" else ("fail" if status == "fail" else "unknown")

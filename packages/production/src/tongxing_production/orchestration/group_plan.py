@@ -118,12 +118,14 @@ def derive_records(manifest: dict, base: Path, layer1: dict, anchor: dict) -> di
                     locale, groups, [_path(p, base) for p in entry["layer2Rounds"]]).items():
                 by_group[group_id].update(stages)
         if entry.get("languageReview"):
+            required = (legacy.load_json(_path(entry["policy"], base)).get("languageReview") or {}).get("requiredChecks")
             for group_id, record in legacy.plugin_records(
-                    layer1, locale, anchor, legacy.load_json(_path(entry["languageReview"], base))).items():
+                    layer1, locale, anchor, legacy.load_json(_path(entry["languageReview"], base)), required).items():
                 by_group.setdefault(group_id, {})["P"] = record
         if entry.get("textQcReceipt"):
+            policies = [legacy.load_json(_path(path, base)) for path in [entry["policy"], *entry.get("priorPolicies", [])]]
             for group_id, record in legacy.text_qc_records(
-                    locale, legacy.load_json(_path(entry["textQcReceipt"], base))).items():
+                    locale, legacy.load_json(_path(entry["textQcReceipt"], base)), policies).items():
                 by_group.setdefault(group_id, {})["Q"] = record
         if entry.get("speechJob"):
             screening = legacy.load_json(_path(entry["asrScreening"], base)) if entry.get("asrScreening") else None
@@ -161,7 +163,10 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
     if stage == "P":
         return {"languageReviewPolicySha256": locale_identity.get("languageReviewPolicySha256"),
                 "englishUnitsSha256": legacy.english_units_sha256(rows), "targetTextSha256": target}
-    if stage in {"Q", "C"}:
+    if stage == "Q":
+        return {"englishSha256": legacy.qc_english_sha256(rows), "targetTextSha256": target,
+                "qcPolicySha256": legacy.qc_policy_sha256(policy)}
+    if stage == "C":
         # C's request hash is not recomputed here; its English, text and QC closure are.
         return {"englishSha256": legacy.qc_english_sha256(rows), "targetTextSha256": target}
     if stage == "S":
@@ -179,6 +184,7 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
         values = {}
         if "S" in records_for_group:
             values["audioSha256"] = records_for_group["S"]["outputs"].get("audioSha256")
+            values["textSha256"] = records_for_group["S"]["inputs"].get("textSha256")
         return values
     return {}
 
@@ -257,7 +263,8 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
         groups = candidate["groups"]
         known = {group["translationGroupId"] for group in groups}
         _require(listed <= known, f"directive_names_unknown_group:{sorted(listed - known)[:3]}")
-        _require([group["translationGroupId"] for group in groups] == [row["translationGroupId"] for row in plan_rows],
+        _require([(group["translationGroupId"], group["sourceUnitIds"]) for group in groups]
+                 == [(row["translationGroupId"], row["sourceUnitIds"]) for row in plan_rows],
                  f"candidate_groups_differ_from_layer1:{locale}")
         rows, selected_by_group = [], {}
         for group in groups:
@@ -391,6 +398,22 @@ def text_summary(report: dict) -> str:
     return "\n".join(lines)
 
 
+def _write_new(path: Path, text: str) -> None:
+    """Publish the report at a new path only; never replace a file, least of all the evidence read."""
+    import os
+    path = Path(path)
+    _require(not path.exists() and not path.is_symlink(), f"output_exists:{path}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    temporary.write_text(text, encoding="utf-8")
+    try:
+        os.link(temporary, path)  # fails instead of replacing a file created meanwhile
+    except FileExistsError as exc:
+        raise ValueError(f"output_exists:{path}") from exc
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -422,8 +445,7 @@ def main(argv=None) -> int:
     report = plan(manifest, base, current_identities(manifest, base), directives=directives,
                   store=records.RecordStore(args.records) if args.records else None, budget=budget)
     if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        _write_new(args.output, json.dumps(report, ensure_ascii=False, indent=1) + "\n")
     print(text_summary(report))
     return 0
 
