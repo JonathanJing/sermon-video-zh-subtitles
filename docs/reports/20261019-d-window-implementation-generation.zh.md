@@ -116,7 +116,7 @@ T 移出：`scripts/machine_qc_audio_transports.py`、`scripts/machine_qc_budget
 
 ## 验证
 
-本地（CI 自 2026-10-19 关闭）：完整 unittest 十个分片、pytest 风格文件、§5.5 测试 ID 清单、`git diff --check`、15 个包内命令的 `--help` 与旧门面对比。结果见 D 窗口代码 PR 与其[运行报告](https://github.com/JonathanJing/sermon-video-zh-subtitles/pulls?q=d-window-local)。这仍是代码测试，不是三语真实校准。
+本地（CI 自 2026-10-19 关闭）：完整 unittest 十个分片、pytest 风格文件、§5.5 测试 ID 清单、`git diff --check`、15 个包内命令的 `--help` 与旧门面对比。结果见[运行报告 #1145](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1145)：十个分片 5980 个用例中 1 个失败，是 `test_layer2_large_fan_in` 在高负载下的时钟不连续诊断，单独重跑两次通过，此前两次完整运行也通过；pytest 风格 1110 通过，1 个失败在干净 `dev` 上同样失败；测试 ID 5982 → 5979（6 个改名、3 个门面同一性测试删除、新增 v11 测试 1 个）。这仍是代码测试，不是三语真实校准。
 
 ## 合并后读回
 
