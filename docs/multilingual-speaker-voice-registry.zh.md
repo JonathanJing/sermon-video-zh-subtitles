@@ -74,7 +74,7 @@ python experiments/sermon-dubbing-poc/render_vietnamese_voice_demos.py \
 
 输出目录已由根 `.gitignore` 排除。已有单条 WAV 只有在其 receipt 完整匹配当前输入时才能恢复；不匹配时停止，不覆盖旧试听。
 
-两种 adapter 完成后，先用 [`screen_multilingual_voice_demos.py`](../experiments/sermon-dubbing-poc/screen_multilingual_voice_demos.py) 对完整矩阵做 Qwen3-ASR 回转写；相似度只用于安排复核优先级，不是发音或自然度裁判。再用 [`package_multilingual_voice_demos.py`](../experiments/sermon-dubbing-poc/package_multilingual_voice_demos.py) 核对 Registry 的完整讲员 × locale 矩阵，将 WAV 编码为 128 kbps、44.1 kHz、mono MP3，并逐个完整解码。原 `python3 scripts/package_multilingual_voice_demos.py` 命令仍可使用。交付 manifest 保持 `humanListeningStatus=pending`，不能因文件可播放或 ASR 相似度高就升级能力状态。
+两种 adapter 完成后，先用 [`screen_multilingual_voice_demos.py`](../experiments/sermon-dubbing-poc/screen_multilingual_voice_demos.py) 对完整矩阵做 Qwen3-ASR 回转写；相似度只用于安排复核优先级，不是发音或自然度裁判。再用 [`package_multilingual_voice_demos.py`](../experiments/sermon-dubbing-poc/package_multilingual_voice_demos.py) 核对 Registry 的完整讲员 × locale 矩阵，将 WAV 编码为 128 kbps、44.1 kHz、mono MP3，并逐个完整解码。原 `python3 experiments/sermon-dubbing-poc/package_multilingual_voice_demos.py` 命令仍可使用。交付 manifest 保持 `humanListeningStatus=pending`，不能因文件可播放或 ASR 相似度高就升级能力状态。
 
 ## 本轮 demo 授权与限制
 

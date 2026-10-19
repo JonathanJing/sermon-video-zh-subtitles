@@ -26,12 +26,12 @@
 
 ```bash
 # 预检，不调用模型
-python scripts/run_machine_qc_audio_test.py --out artifacts/machine-qc-audio/20261001 --preflight-only
+.venv/bin/python scripts/run_machine_qc_audio_test.py --out artifacts/machine-qc-audio/20261001 --preflight-only
 # 管线演练（全部假传输，豁免只在内存中构建）
-python scripts/run_machine_qc_audio_test.py --out artifacts/machine-qc-audio/20261001 --backend fake
+.venv/bin/python scripts/run_machine_qc_audio_test.py --out artifacts/machine-qc-audio/20261001 --backend fake
 # 实跑（Spark，dev Project；--state-dir 与文字驱动相同）
 python scripts/run_with_openai_environment.py --environment dev -- \
-  python scripts/run_machine_qc_audio_test.py --run-dir artifacts/dev-full-rerun-20261001 \
+  .venv/bin/python scripts/run_machine_qc_audio_test.py --run-dir artifacts/dev-full-rerun-20261001 \
   --out artifacts/machine-qc-audio/20261001 --state-dir artifacts/dev-full-rerun-20261001/machine-qc-state \
   --asr-model-path /models/Qwen3-ASR-0.6B --tts-checkpoint-map path/to/checkpoint-map.json --locales ko \
   --api-budget-authorization artifacts/budget-plan/qc-ko/api-budget-authorization.json

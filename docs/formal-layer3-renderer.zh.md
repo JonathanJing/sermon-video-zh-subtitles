@@ -6,7 +6,7 @@
 
 ### 单元口播指令输入
 
-`--unit-instructions <JSON 文件>` 接受 `sermon-unit-delivery-instructions-v1` 或 `-v2` 输入，由 [renderer 的 unit_instructions](../scripts/render_formal_target_language_speech.py) 校验。它绑定完整 speech job 的 JSON 身份、locale 和已批准文字；不能借口播指令更改批准文本或授予音色／发布资格。可只列需要覆盖的单元，但 `units` 必须是非空数组。
+`--unit-instructions <JSON 文件>` 接受 `sermon-unit-delivery-instructions-v1` 或 `-v2` 输入，由 [renderer 的 unit_instructions](../packages/production/src/tongxing_production/audio/renderer.py) 校验。它绑定完整 speech job 的 JSON 身份、locale 和已批准文字；不能借口播指令更改批准文本或授予音色／发布资格。可只列需要覆盖的单元，但 `units` 必须是非空数组。
 
 ```json
 {
