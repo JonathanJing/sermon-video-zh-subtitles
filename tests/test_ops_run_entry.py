@@ -118,3 +118,15 @@ def test_help_matches_the_facade(tmp_path, facade, module):
     assert old.returncode == new.returncode == 0, (old.stderr, new.stderr)
     normal = lambda text: " ".join(text.split())
     assert normal(old.stdout.replace(Path(facade).name, module)) == normal(new.stdout)
+
+
+def test_spawned_children_bind_the_host_before_unpickling(tmp_path):
+    """multiprocessing spawn re-runs the main script as __mp_main__ (spawn._fixup_main_from_path);
+    the Spark TTS replica pool's workers then import audio.renderer, which reads host rules at import."""
+    probe = ("import runpy, sys; runpy.run_path(sys.argv[1], run_name='__mp_main__'); "
+             "from tongxing_production.audio import renderer; print(renderer.RENDERER_SOUND_IDENTITY_SHA256)")
+    env = {**os.environ, "PYTHONPATH": ""}
+    result = subprocess.run([sys.executable, "-c", probe, str(ENTRY)], cwd=tmp_path, env=env,
+                            capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert len(result.stdout.strip()) == 64
