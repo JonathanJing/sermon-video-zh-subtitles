@@ -308,7 +308,7 @@ class SparkTests(unittest.TestCase):
         # interpreter's .pth files (the editable install) off sys.path, and its site-packages stand in for the image's.
         third_party = [p for p in sys.path if Path(p).name in ("site-packages", "dist-packages")]
         # The container commands clip_e2e_spark runs; the package entry binds the host itself.
-        scripts = (("tools/ops/run.py", "audio.renderer"), ("scripts/compact_formal_target_audio.py",),
+        scripts = (("tools/ops/run.py", "audio.renderer"), ("tools/ops/run.py", "audio.compaction"),
                    ("tools/ops/run.py", "audio.screening"), ("tools/ops/run.py", "review.qc_audio_run"))
 
         def launch(script, pythonpath):

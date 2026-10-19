@@ -6,7 +6,7 @@ Four subcommands, each one GPU or CPU container on Spark, in order:
 - ``render``: the formal renderer (``tools/ops/run.py audio.renderer --spark-production``)
   with every evidence file staged by content hash and mapped with ``--path-map``;
 - ``compact``: measured edge-silence compaction of the immutable raw render into a new root and
-  the assembled track (``compact_formal_target_audio.py``, CPU);
+  the assembled track (``tools/ops/run.py audio.compaction``, CPU);
 - ``screen``: the Qwen3-ASR back-transcription screen of that root
   (``tools/ops/run.py audio.screening``);
 - ``audio-qc``: the machine listening-waiver driver (``tools/ops/run.py review.qc_audio_run``) with the
@@ -310,7 +310,7 @@ def compact(args, runtime, spark, session) -> int:
                    "-e", "HF_HUB_OFFLINE=1", "-e", "TRANSFORMERS_OFFLINE=1",
                    "-e", "PYTHONDONTWRITEBYTECODE=1", "-e", "XDG_CACHE_HOME=/tmp/cache", "-e", "NUMBA_CACHE_DIR=/tmp/numba",
                    "-w", code, "--entrypoint", "python", runtime["images"]["pytorchFfmpeg"],
-                   f"{code}/scripts/compact_formal_target_audio.py",
+                   f"{code}/tools/ops/run.py", "audio.compaction",
                    "--source", blob("source"), "--anchor", blob("anchor"),
                    "--candidate", blob("candidate"), "--policy", blob("policy"),
                    "--human-review-receipt", blob("human-review-receipt"), "--adapter", blob("adapter"),

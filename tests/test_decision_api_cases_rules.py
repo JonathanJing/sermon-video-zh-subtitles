@@ -60,7 +60,7 @@ class RuleCasesTests(unittest.TestCase):
                 self.assertTrue(called.called)
                 self.assertIn('sentinel',result['labels'].values())
         case=next(c for c in cases if c['a']['adapter']=='target_audio_timing_plan')
-        with patch('scripts.target_audio_timing_plan.plan',return_value={'formalScheduleStatus':'sentinel','unchangedAudioCannotFitSerialTimeline':False}) as called:
+        with patch('tongxing_production.audio.timing_plan.plan',return_value={'formalScheduleStatus':'sentinel','unchangedAudioCannotFitSerialTimeline':False}) as called:
             self.assertEqual(rules.run_rule_a(case)['labels']['formalScheduleStatus'],'sentinel')
             called.assert_called_once()
     def test_questions_use_official_choice_shape_and_cover_oracle(self):
@@ -93,7 +93,7 @@ class RuleCasesTests(unittest.TestCase):
     def test_evidence_reference_files_exist(self):
         for name in ('candidate-artifact','candidate-revision','review-fail','review-pass','rubric','input-manifest','gate-waiting'):
             self.assertTrue((rules.ROOT/'tests/fixtures/rqc'/(name+'.json')).is_file())
-        self.assertTrue((rules.ROOT/'scripts/target_audio_timing_plan.py').is_file())
+        self.assertTrue((rules.ROOT/'packages/production/src/tongxing_production/audio/timing_plan.py').is_file())
 
 
 class RealRuleCasesTests(unittest.TestCase):

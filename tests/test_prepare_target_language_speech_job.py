@@ -10,9 +10,9 @@ from unittest.mock import patch
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from scripts import prepare_target_language_speech_job as subject
+from tongxing_production.audio import speech_job as subject
 from scripts import review_target_language_candidate as human_review
-from scripts import validate_target_language_audio_unit as audio_integrity
+from tongxing_production.audio import unit_integrity as audio_integrity
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as interpretation
 from scripts import target_language_policy as policy_tools
@@ -354,8 +354,8 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         self.assertEqual(self.validate_schema("sermon-target-language-audio-unit-receipt-v1.schema.json", receipt), [])
         audio_integrity.validate_receipt(job_path, 0, audio_path, receipt)
         receipt_path = self.root / "unit-receipt.json"
-        script = Path(__file__).parents[1] / "scripts/validate_target_language_audio_unit.py"
-        subprocess.run([sys.executable, str(script), "--job", str(job_path),
+        entry = Path(__file__).parents[1] / "tools/ops/run.py"
+        subprocess.run([sys.executable, str(entry), "audio.unit_integrity", "--job", str(job_path),
                         "--unit-index", "0", "--audio", str(audio_path), "--out", str(receipt_path)],
                        check=True, capture_output=True, text=True)
         saved = json.loads(receipt_path.read_text(encoding="utf-8"))

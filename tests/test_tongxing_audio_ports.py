@@ -18,7 +18,7 @@ from tongxing_production.review import release_basis as machine_basis
 from tongxing_production.review import waiver
 from tongxing_production.audio import renderer
 from scripts import render_multilingual_voice_demos as demos
-from scripts import review_target_language_audio as audio_review
+from tongxing_production.audio import human_review as audio_review
 from tongxing_production.audio import screening
 from scripts import sermon_accounting, sermon_local_model_observation
 from tongxing_production.orchestration import jobs as sermon_workflow_jobs

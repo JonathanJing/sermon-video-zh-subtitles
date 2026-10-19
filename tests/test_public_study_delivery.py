@@ -9,7 +9,8 @@ import pytest
 from scripts import build_full_video_app_release as builder
 from scripts import sermon_unified_delivery as delivery
 from scripts import delivery_contract as d
-from scripts import review_target_language_audio as audio_review
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import human_review as audio_review
 from scripts import study_artifacts
 
 

@@ -267,7 +267,7 @@ def stage_inputs(run: Run):
     timeline = run.dir / "l3" / "clip-timeline-map.json"
     if not timeline.exists():
         timeline.parent.mkdir(parents=True, exist_ok=True)
-        run.sh("timeline-map", [PY, ROOT / "scripts/clip_timeline_map.py", "--source", src / "source.json",
+        run.sh("timeline-map", [PY, ROOT / "tools/ops/run.py", "audio.clip_timeline", "--source", src / "source.json",
                                 "--anchor", src / "anchor.json", "--clip-media", inputs / "clip/source.mp4",
                                 "--out", timeline])
     anchor = read(src / "anchor.json")
@@ -524,7 +524,7 @@ def stage_audio(run: Run, locale: str, code: str):
         run.sh(f"voice-auth.{locale}", [PY, ROOT / "tools/ops/prepare_clip_voice_authorization.py", "--source", src,
                                         "--candidate", candidate, "--adapter", adapter,
                                         "--user-attestation", attestation(run, locale), "--out", voice])
-        run.sh(f"speech-job.{locale}", [PY, ROOT / "scripts/prepare_target_language_speech_job.py",
+        run.sh(f"speech-job.{locale}", [PY, ROOT / "tools/ops/run.py", "audio.speech_job",
                                         "--english-source-package", src, "--anchor", anchor, "--candidate", candidate,
                                         "--policy", policy, "--text-release-basis", waiver, "--adapter", adapter,
                                         "--speaker-registry", registry, "--clip-voice-authorization", voice,
@@ -559,7 +559,7 @@ def stage_audio(run: Run, locale: str, code: str):
     rendered = compacted_local / "spark-output" / "speech-job"
     package = l3 / "audio-package.json"
     if not package.exists():
-        run.sh(f"package.{locale}", [PY, ROOT / "scripts/build_target_language_audio_package.py", "--source", src,
+        run.sh(f"package.{locale}", [PY, ROOT / "tools/ops/run.py", "audio.package", "--source", src,
                                      "--anchor", anchor, "--candidate", candidate, "--job", rendered / "job.json",
                                      "--adapter", adapter, "--policy", policy, "--human-review-receipt", waiver,
                                      "--speaker-registry", registry, "--clip-voice-authorization", voice,
@@ -663,7 +663,7 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
     rendered = compacted_local / "spark-output" / "speech-job"
     package = repair / "audio-package.json"
     if not package.exists():
-        run.sh(f"package.{locale}.seed-{seed}", [PY, ROOT / "scripts/build_target_language_audio_package.py",
+        run.sh(f"package.{locale}.seed-{seed}", [PY, ROOT / "tools/ops/run.py", "audio.package",
                "--source", src, "--anchor", anchor, "--candidate", candidate, "--job", rendered / "job.json",
                "--adapter", adapter, "--policy", policy, "--human-review-receipt", waiver,
                "--speaker-registry", registry, "--clip-voice-authorization", voice,
