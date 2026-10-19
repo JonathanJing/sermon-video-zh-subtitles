@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from scripts import stage_speaker_clip_demo_ui as demo
+from tools.ops import stage_speaker_clip_demo_ui as demo
 
 
 class StageSpeakerClipUI(unittest.TestCase):

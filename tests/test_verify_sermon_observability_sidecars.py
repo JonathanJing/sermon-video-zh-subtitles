@@ -9,7 +9,7 @@ from unittest.mock import patch
 from scripts import sermon_accounting as accounting
 from scripts import build_tracker_dag_projection as tracker
 from scripts import sermon_log_profile as profile
-from scripts import verify_sermon_observability as verification
+from tools.development import verify_sermon_observability as verification
 from tongxing_production.observability import accounting as accounting_impl
 
 

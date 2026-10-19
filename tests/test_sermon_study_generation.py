@@ -4,9 +4,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from scripts import sermon_study_generation as g
-from scripts import sermon_unified_study as owner
 from scripts import sermon_provider_limits as limits
 from scripts.sermon_unified import contracts as c
+from tongxing_production.workflows.prepared import study as owner
 
 class GenerationTests(unittest.TestCase):
     def setUp(self):

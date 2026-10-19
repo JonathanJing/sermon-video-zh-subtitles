@@ -195,7 +195,7 @@ class DeliveryPortsTests(unittest.TestCase):
         self.assertIs(legacy.voice_demo(), stage_voice_demo_dev)
 
     def test_legacy_poster_renderer_ships_with_the_package(self):
-        from scripts import build_sermon_poster as poster
+        from tongxing_production.adapters.legacy import build_sermon_poster as poster
         import tomllib
         renderer = poster.renderer_source()
         self.assertEqual(renderer.name, 'render_sermon_poster.swift')

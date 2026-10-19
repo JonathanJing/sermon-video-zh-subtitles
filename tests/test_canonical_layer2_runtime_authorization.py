@@ -206,7 +206,7 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
 
     def test_continuation_ingests_v3_both_scopes_without_changing_legacy_shapes(self):
         from tests import test_sermon_unified_continuation as fixtures
-        from scripts import sermon_unified_continuation as continuation
+        from tongxing_production.workflows.prepared import continuation
         from scripts.sermon_unified import contracts as c
         f=fixtures.ContinuationTests();f.setUp();self.addCleanup(f.doCleanups)
         # This pre-existing continuation fixture freezes controller code to a
@@ -231,7 +231,7 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
 
     def test_continuation_ingests_exact_v4_reuse_binding(self):
         from tests import test_sermon_unified_continuation as fixtures
-        from scripts import sermon_unified_continuation as continuation
+        from tongxing_production.workflows.prepared import continuation
         from scripts.sermon_unified import contracts as c
         f=fixtures.ContinuationTests();f.setUp();self.addCleanup(f.doCleanups)
         self.base.code=controller.code_identity()

@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from scripts import run_multilingual_cd as cd
+from tools.ops import run_multilingual_cd as cd
 
 
 class MultilingualCDTest(unittest.TestCase):

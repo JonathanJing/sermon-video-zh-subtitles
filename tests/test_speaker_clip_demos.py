@@ -8,7 +8,7 @@ import tempfile
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from render_speaker_clip_demos import validate_scripts, validate_manifest
-from build_speaker_clip_demos import build, encode_audio, checked_video_receipt, sha
+from tools.ops.build_speaker_clip_demos import build, encode_audio, checked_video_receipt, sha
 
 class SpeakerClipsTests(unittest.TestCase):
     def setUp(self):
@@ -60,8 +60,8 @@ class SpeakerClipsTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         environment = {key: value for key, value in os.environ.items() if key != 'PYTHONPATH'}
         code = ('import sys; sys.path[0] = sys.argv[1]\n'
-                'import scripts.build_speaker_clip_demos as old, tools.ops.build_speaker_clip_demos as new\n'
-                'assert old is new and callable(new.validate_scripts)\n')
+                'import tools.ops.build_speaker_clip_demos as new\n'
+                'assert callable(new.validate_scripts)\n')
         with tempfile.TemporaryDirectory() as elsewhere:
             result = subprocess.run([sys.executable, '-c', code, str(root)], cwd=elsewhere, env=environment,
                                     capture_output=True, text=True)

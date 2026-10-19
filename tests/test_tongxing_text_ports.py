@@ -14,7 +14,8 @@ from scripts import canonical_layer2_controller as controller
 from scripts import four_layer_measure, layer2_api_concurrency, sermon_accounting, series_terminology
 from scripts import produce_target_language_candidate as candidate
 from scripts import prepare_target_language_speech_job as handoff
-from scripts import production_concurrency_profile, strict_budget_capability, sermon_openai_runtime
+from scripts import production_concurrency_profile, sermon_openai_runtime
+from tongxing_production.compute import budget_capability as strict_budget_capability
 from scripts import sermon_diagnostic_context, source_meaning_machine_adjudication as meaning
 from scripts import target_language_policy as policy
 from tongxing_production import path_aliases, ports
@@ -120,10 +121,10 @@ class TextPortsTests(unittest.TestCase):
         self.assertEqual(path_aliases.resolve('scripts/sermon_unified_audio.py'),
                          'packages/production/src/tongxing_production/audio/unified_stage.py')
         root = Path(host.ROOT)
+        # Keys outlive their import facades: frozen records still name the legacy path.
         for legacy, current in path_aliases.PATH_ALIASES.items():
             with self.subTest(legacy=legacy):
                 self.assertTrue((root / current).is_file())
-                self.assertTrue((root / legacy).is_file())  # the import facade
 
     def test_unbound_layer_fails_clearly(self):
         previous = text._current

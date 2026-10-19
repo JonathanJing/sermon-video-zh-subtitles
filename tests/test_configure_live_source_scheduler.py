@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "configure_live_source_scheduler.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "configure_live_source_scheduler.py"
 SPEC = importlib.util.spec_from_file_location("configure_live_source_scheduler", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = mod

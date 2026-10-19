@@ -10,9 +10,9 @@ import sys
 from unittest.mock import patch
 
 from scripts import sermon_accounting as accounting
-from scripts import sermon_dispatch_observation as dispatch
 from scripts import sermon_log_profile as profile
 from scripts import weekly_pipeline_report as report
+from tongxing_production.observability import dispatch_observation as dispatch
 from tests.test_weekly_pipeline_report import WeeklyPipelineReportTests
 from tests.test_sermon_clock_handshake import ClockHandshakeTests
 

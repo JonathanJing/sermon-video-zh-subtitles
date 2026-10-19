@@ -1,6 +1,6 @@
 # 固定 Layer 3 adapter 与恢复
 
-统一 owner 使用 `scripts.sermon_unified_audio.inspect(config_path)` 生成计划，随后调用
+统一 owner 使用 `tongxing_production.audio.unified_stage.inspect(config_path)` 生成计划，随后调用
 `execute(config_path, output_path, expected_plan_hash=plan["planHash"], allow_synthesis=...)`。
 配置只选择数据和白名单设置，不支持命令、shell、任意模块或 argv。
 

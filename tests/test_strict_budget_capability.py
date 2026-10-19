@@ -2,7 +2,7 @@
 import unittest
 
 from scripts import sermon_provider_limits as limits
-from scripts import strict_budget_capability as gate
+from tongxing_production.compute import budget_capability as gate
 
 
 def payload(model='gpt-6.1-sol'):

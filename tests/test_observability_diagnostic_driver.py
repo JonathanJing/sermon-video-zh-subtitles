@@ -7,9 +7,11 @@ import time
 import types
 import unittest
 from unittest.mock import patch
-from scripts import run_observability_diagnostic as driver
 from scripts import sermon_accounting as accounting
 from scripts import weekly_pipeline_report as weekly
+from tests import experiment_modules
+
+driver = experiment_modules.load("experiments/observability-diagnostic/run_observability_diagnostic.py")
 
 
 class DiagnosticDriverTests(unittest.TestCase):

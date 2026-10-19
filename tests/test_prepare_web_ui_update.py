@@ -5,7 +5,7 @@ import subprocess
 import pytest
 
 from scripts import prepare_dev_simulated_publication as staging
-from scripts import prepare_dev_web_ui_update as ui
+from tools.ops import prepare_dev_web_ui_update as ui
 
 
 def baseline(tmp_path, environment='production'):
