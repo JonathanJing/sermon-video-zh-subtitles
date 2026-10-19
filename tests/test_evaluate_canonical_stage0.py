@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import evaluate_canonical_stage0 as subject
+from tools.development import evaluate_canonical_stage0 as subject
 
 
 class Stage0EvidenceTests(unittest.TestCase):

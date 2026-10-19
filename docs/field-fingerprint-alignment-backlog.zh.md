@@ -157,7 +157,7 @@
 - `cmn-v1` 影子对照改为只对最终 15 秒缓冲计算：Mac 上 15 秒 48 kHz 的特征计算约 430 ms、影子约 460 ms，若每个失败的检查点都计算，慢手机会拖慢后续检查点。7／10／12 秒前缀不再计算影子，成功路径不受影响。
 - 已发布索引的 binding 仍写 `captureSeconds: 10`；published 匹配器接受 7–20 秒查询，早停是客户端采集策略，不改索引或发布合同。
 - 离线依据：[会场基准](reports/20261013-field-venue-mid-back-benchmark.zh.md) 中 iPhone 单声道由 10 秒单次 16/40 提到早停 23/35，双声道合并 13/40 提到 18/35，均 0 误跳；同一开发集，不是保留集成绩。
-- 本地证据：单元测试覆盖前缀连续性、早停停麦、全部未命中、慢匹配跳过旧前缀、中断、超时和取消；`scripts/verify_fingerprint_browser_capture.py` 在 Chrome 155 合成设备上通过两次（7/10/12 前缀、15 秒完整缓冲、10 秒处早停后占麦约 10.2 秒、流与 context 全部释放），另有一次冷启动超时未得结果。Safari、真机和会场未验证。
+- 本地证据：单元测试覆盖前缀连续性、早停停麦、全部未命中、慢匹配跳过旧前缀、中断、超时和取消；`tools/development/verify_fingerprint_browser_capture.py` 在 Chrome 155 合成设备上通过两次（7/10/12 前缀、15 秒完整缓冲、10 秒处早停后占麦约 10.2 秒、流与 context 全部释放），另有一次冷启动超时未得结果。Safari、真机和会场未验证。
 
 `FIELD-03` 保持 in_progress：Safari／iPhone 实测、低配设备总时长和会场 A/B 仍待证据。
 

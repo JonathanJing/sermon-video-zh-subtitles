@@ -11,7 +11,7 @@ from unittest import mock
 
 from scripts import clip_e2e_release as release
 from scripts import clip_e2e_spark as spark
-from scripts import run_clip_real_e2e as subject
+from tools.development import run_clip_real_e2e as subject
 
 ROOT = Path(__file__).resolve().parents[1]
 DISPLAY = {"series": "[test] s", "title": "[test] t", "speaker": "Speaker", "scripture": "Rev 9", "summary": "[test] x"}

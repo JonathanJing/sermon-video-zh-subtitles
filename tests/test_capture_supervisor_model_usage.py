@@ -7,7 +7,7 @@ import pytest
 
 from scripts import sermon_accounting as accounting
 from scripts import sermon_log_profile as profile
-from scripts import capture_supervisor_model_usage as capture
+from tools.ops import capture_supervisor_model_usage as capture
 from scripts import serve_milmmt_v41_local as local
 
 

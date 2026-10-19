@@ -18,7 +18,7 @@
 v2额外冻结以下内容：
 
 - `bindings`：每个文件的绝对或manifest相对路径及字节SHA。路径不参与plan hash；内容身份参与。
-- `executionAdmission.modules/closureSha256`：全部脚本、schema、既有legacy producer/publisher与网页资源及共享术语表。实际模型、音频、发布阶段还必须填写`runtimeSha256`，由`sermon_unified_runtime_identity.snapshot()`的规范JSON摘要生成，绑定Python、已安装分发版本和ffmpeg/ffprobe及编解码能力。
+- `executionAdmission.modules/closureSha256`：全部脚本、schema、既有legacy producer/publisher与网页资源及共享术语表。实际模型、音频、发布阶段还必须填写`runtimeSha256`，由`tongxing_production.compute.runtime_identity.snapshot()`的规范JSON摘要生成，绑定Python、已安装分发版本和ffmpeg/ffprobe及编解码能力。
 - `executionWindow`：America/Los_Angeles窗口用带时区时间表示；到期关闭新派发，不撤销在途请求。
 - `steps`：固定adapter、阶段、依赖、locale、配置binding、保守成本上限。无任意shell/import入口。
 - `source.window`：沿用原Supervisor批准、timeline和source descriptor。manifest URL用完整SHA-256；原Supervisor短URL hash不改写，经过原URL核对后桥接。

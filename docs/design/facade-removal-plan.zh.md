@@ -66,6 +66,8 @@
 
 1. **A 批：现在可删的 5 个。** 在没有进行中的 L2 和统一 CLI 运行时合并（§2）。验证：在删除批次所基于的 `dev` 上重跑附录 A，确认它们无调用方，`tests/test_tongxing_production_package.py` 与受影响的测试分片通过，`git diff --check`。
 2. **B 批：只剩测试的 35 个。** 改测试后删门面，与 A 批合并也可以，这样只多一代 L2 身份。
+
+   **A+B 执行记录（2026-10-19，`dev@c5f46d44`）。** 两批合在一个 PR，共删 75 个门面：tools 与实验叶子迁移合并后，重跑附录 A 得 8 个现在可删、67 个只剩测试。附录 A 原脚本漏了两类调用方，本次已修正：`from scripts.experiments import X` 与 `scripts.experiments.X` 字符串；文档里的 `python -m scripts.X` 与 `"$PRODUCTION_PYTHON" -m ...` 命令。原脚本会多算 16 个可删的，例如 `layer2_concurrency`、`ste_paired_admission` 的 `-m` 文档命令，以及 `build_blind_review_scores` 被另一实验导入。删除后合计为 `{'after': 165, 'stay': 23}`，共 188 个。
 3. **C 批：其余 124 个“改调用方后”。** 先定新 CLI 入口（§3.2 最后一条），再按层分批改导入方、argv、CI 列表和 runbook；每批重跑附录 A，确认目标门面计数归零后才删。
 4. **D：必须保留的 23 个。** 不在布局迁移里删。要删就和下一次需要重新校准的实现改动同开闭包窗口，由用户决定。
 
@@ -354,8 +356,10 @@ def closures():
 
 def survey():
     found = {f: collections.defaultdict(set) for f in facades}
-    path_re, mod_re = re.compile(r'scripts/([\w/]+)\.py\b'), re.compile(r'(?<![\w.])scripts\.(\w+)')
-    docs = re.compile(r'(?<![\w/.-])(?:python3?|\.venv/bin/python)(?:\s+-[A-Za-z]+)*\s+(?:\./)?scripts/([\w/]+)\.py')
+    path_re, mod_re = re.compile(r'scripts/([\w/]+)\.py\b'), re.compile(r'(?<![\w.])scripts\.((?:experiments\.)?\w+)')
+    # python scripts/x.py, or python -m scripts.x / scripts.experiments.x (also "$PRODUCTION_PYTHON")
+    docs = re.compile(r'(?<![\w/.-])(?:python3?|\.venv/bin/python|"\$PRODUCTION_PYTHON")(?:\s+-[A-Za-ln-z]+)*'
+                      r'\s+(?:(?:\./)?scripts/([\w/]+)\.py|-m\s+scripts\.((?:experiments\.)?\w+))')
     link = re.compile(r'\]\(([^)\s#]+\.py)(?:#[^)]*)?\)')
     for p in tracked:
         if pathlib.Path(p).suffix not in TEXT or p.startswith(('docs/reports/', 'docs/evidence/')):
@@ -368,8 +372,9 @@ def survey():
                     found[f]['link'].add(p)
             if not p.startswith('docs/design/'):                                # design docs describe the move itself
                 for m in docs.finditer(text):
-                    if m.group(1) in stem:
-                        found[stem[m.group(1)]]['doc'].add(p)
+                    name = m.group(1) or m.group(2).replace('.', '/')
+                    if name in stem:
+                        found[stem[name]]['doc'].add(p)
             continue
         if p.startswith('docs/design/'):
             continue
@@ -388,7 +393,7 @@ def survey():
                 if m.group(1) in stem:
                     found[stem[m.group(1)]]['spark'].add(p)
             hits = {(stem[m.group(1)], 'path') for m in path_re.finditer(line) if m.group(1) in stem}
-            hits |= {(stem[m.group(1)], 'mod') for m in mod_re.finditer(line) if m.group(1) in stem}
+            hits |= {(stem[n], 'mod') for n in (m.group(1).replace('.', '/') for m in mod_re.finditer(line)) if n in stem}
             hits |= {(stem[m.group(1)], 'path') for m in re.finditer(r'["\'](\w+)\.py["\']', line)
                      if m.group(1) in stem and 'scripts' in line}
             for f, how in hits:
@@ -404,10 +409,10 @@ def survey():
             for n in ast.walk(tree):
                 names = [a.name for a in n.names] if isinstance(n, ast.Import) else (
                     [n.module] if isinstance(n, ast.ImportFrom) and not n.level and n.module else [])
-                if isinstance(n, ast.ImportFrom) and n.module == 'scripts':
-                    names += ['scripts.' + a.name for a in n.names]
+                if isinstance(n, ast.ImportFrom) and n.module in ('scripts', 'scripts.experiments'):
+                    names += [n.module + '.' + a.name for a in n.names]
                 for nm in names:
-                    f = stem.get(nm.removeprefix('scripts.'))
+                    f = stem.get(nm.removeprefix('scripts.').replace('.', '/'))
                     if f:
                         found[f][kind or 'import'].add(p)
     for f in found:

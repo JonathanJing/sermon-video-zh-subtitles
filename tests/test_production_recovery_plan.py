@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
-from scripts import production_recovery_plan as subject
+from tools.ops import production_recovery_plan as subject
 from scripts import sermon_sentence_interpretation as identity
 from tests import test_render_formal_target_language_speech as fixtures
 
@@ -248,7 +248,7 @@ class RecoveryPlanTests(unittest.TestCase):
 
     def test_cli_stdout_only_no_models_and_schema(self):
         before = {p: identity.sha256(p) for p in self.root.rglob('*') if p.is_file()}
-        result = subprocess.run([sys.executable, '-m', 'scripts.production_recovery_plan',
+        result = subprocess.run([sys.executable, '-m', 'tools.ops.production_recovery_plan',
             '--job', str(self.job_path), '--render-root', str(self.root),
             '--expected-intents', str(self.expected_path), '--execution-state', str(self.state_path)],
             capture_output=True, text=True, check=True)

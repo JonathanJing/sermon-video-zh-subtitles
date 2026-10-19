@@ -1,6 +1,6 @@
 import unittest
 
-from scripts import spark_wait_ready as subject
+from tools.ops import spark_wait_ready as subject
 from scripts.spark_exclusive_session import SessionError
 
 

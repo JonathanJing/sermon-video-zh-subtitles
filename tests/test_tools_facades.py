@@ -67,7 +67,8 @@ def tool_facades():
 class ToolFacadeTests(unittest.TestCase):
     def test_facades_forward_to_one_implementation(self):
         facades = list(tool_facades())
-        self.assertGreaterEqual(len(facades), 36)
+        # 36 at the tools moves; facade-removal batch B deleted the 21 that only tests used.
+        self.assertGreaterEqual(len(facades), 15)
         environment = {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
         for name, target in facades:
             with self.subTest(name=name):

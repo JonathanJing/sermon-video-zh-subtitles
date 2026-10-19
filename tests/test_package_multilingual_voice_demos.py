@@ -12,37 +12,15 @@ import wave
 
 
 ROOT = Path(__file__).parents[1]
-SPEC = importlib.util.spec_from_file_location(
-    "package_multilingual_voice_demos", ROOT / "scripts/package_multilingual_voice_demos.py"
-)
+IMPLEMENTATION = ROOT / "experiments/sermon-dubbing-poc/package_multilingual_voice_demos.py"
+SPEC = importlib.util.spec_from_file_location("package_multilingual_voice_demos", IMPLEMENTATION)
 subject = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(subject)
-IMPLEMENTATION = ROOT / "experiments/sermon-dubbing-poc/package_multilingual_voice_demos.py"
 
 
 class MultilingualVoiceDemoPackageTest(unittest.TestCase):
-    def test_facade_loads_implementation_from_its_own_checkout(self):
-        with tempfile.TemporaryDirectory() as folder:
-            loaded = []
-            for name in ("checkout-one", "checkout-two"):
-                root = Path(folder) / name
-                facade = root / "scripts/package_multilingual_voice_demos.py"
-                implementation = root / "experiments/sermon-dubbing-poc/package_multilingual_voice_demos.py"
-                facade.parent.mkdir(parents=True)
-                implementation.parent.mkdir(parents=True)
-                shutil.copy2(ROOT / "scripts/package_multilingual_voice_demos.py", facade)
-                shutil.copy2(IMPLEMENTATION, implementation)
-                spec = importlib.util.spec_from_file_location(f"isolated_{name.replace('-', '_')}", facade)
-                module = importlib.util.module_from_spec(spec)
-                assert spec.loader is not None
-                spec.loader.exec_module(module)
-                self.assertEqual(Path(module._implementation.__file__).resolve(), implementation.resolve())
-                loaded.append(module)
-            self.assertIsNot(loaded[0]._implementation, loaded[1]._implementation)
-            self.assertIsNot(loaded[0].collect_tracks, loaded[1].collect_tracks)
-
-    def test_legacy_and_new_cli_from_external_cwd(self):
+    def test_cli_from_external_cwd(self):
         if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
             self.skipTest("ffmpeg and ffprobe are required for the synthetic audio fixture")
         with tempfile.TemporaryDirectory() as folder:
@@ -52,8 +30,7 @@ class MultilingualVoiceDemoPackageTest(unittest.TestCase):
                 {"targetLocale": "ko", "status": "unverified_poc"},
             ]}]}))
             outputs = []
-            for label, cli in (("legacy", ROOT / "scripts/package_multilingual_voice_demos.py"),
-                               ("experiment", IMPLEMENTATION)):
+            for label, cli in (("experiment", IMPLEMENTATION),):
                 root = outside / label
                 wav = root / "speaker/ko.wav"
                 wav.parent.mkdir(parents=True)
@@ -81,7 +58,6 @@ class MultilingualVoiceDemoPackageTest(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(json.loads(result.stdout)["trackCount"], 1)
                 outputs.append(json.loads((root / "delivery-manifest.json").read_text()))
-            self.assertEqual(outputs[0], outputs[1])
             self.assertEqual(outputs[0]["humanListeningStatus"], "pending")
 
     def test_duplicate_track_is_rejected_before_encoding(self):

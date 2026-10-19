@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import build_listening_sample as subject
+from tools.ops import build_listening_sample as subject
 from scripts import sermon_sentence_interpretation as identity
 
 

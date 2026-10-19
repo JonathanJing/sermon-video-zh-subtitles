@@ -1,7 +1,9 @@
 import json
 import unittest
 from tests import test_codex_layer2_diagnostic as fixtures
-from scripts.experiments import run_prepared_layer2 as command
+from tests import experiment_modules
+
+command = experiment_modules.load("experiments/layer2-translation-ab/run_prepared_layer2.py")
 
 class PreparedLayer2GateTests(unittest.TestCase):
     def setUp(self):
