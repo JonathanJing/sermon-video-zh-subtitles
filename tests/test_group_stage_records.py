@@ -722,6 +722,33 @@ class PlanTests(unittest.TestCase):
             self.assertEqual(row[stage]["status"], "stale", stage)
             self.assertIn("candidate_text_inconsistent", row[stage]["reasons"])
 
+    def test_upstream_records_without_bytes_invalidate_instead_of_crashing(self):
+        manifest = json.loads(self.run.build().read_text())
+        derived = group_plan.derive_records(manifest, self.run.root, self.run.layer1, self.run.anchor)
+        translator, synthesis = derived["ko"]["records"]["g1"]["T"], derived["ko"]["records"]["g1"]["S"]
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            store.put(records.make_record("T", translator["layer1"], "ko", "g1", ["u1"],
+                                          dict(translator["inputs"], revisionSha256="5" * 64),
+                                          translator["stageImplementationSha256"], {}, "unknown"))
+            store.put(records.make_record("S", synthesis["layer1"], "ko", "g1", ["u1"],
+                                          dict(synthesis["inputs"], synthesisIdentitySha256="6" * 64),
+                                          synthesis["stageImplementationSha256"], {}, "stopped", codes=["oom"]))
+            # Consumers of those byte-less upstreams exist, so their inputs are looked up.
+            for stage in ("R", "A", "U"):
+                store.put(derived["ko"]["records"]["g1"][stage])
+            del manifest["locales"]["ko"]["layer2Rounds"], manifest["locales"]["ko"]["speechJob"]
+            del manifest["locales"]["ko"]["audioQcReceipt"]
+            report = group_plan.plan(manifest, self.run.root, identities(), store=store)
+        row = statuses(report, "ko", "g1")
+        self.assertEqual((row["T"], row["R"], row["S"], row["A"], row["U"]),
+                         ("unknown", "stale", "stale", "stale", "stale"))
+        stages = report["locales"]["ko"]["groups"][0]["stages"]
+        self.assertIn("draftTextSha256", stages["R"]["notCompared"])
+        self.assertIn("upstream_will_change:T", stages["R"]["reasons"])
+        self.assertIn("upstream_will_change:S", stages["A"]["reasons"])
+        self.assertEqual(report["locales"]["ko"]["redoCounts"]["T"], 0)  # an unknown outcome is reconciled first
+
     def test_cli_plan_prints_a_summary_and_writes_only_its_report(self):
         manifest = self.run.build()
         output = self.run.root / "out" / "plan.json"
