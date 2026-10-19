@@ -140,7 +140,8 @@ def export(directory):
             timing = monotonic_interval(start, end) if key[1] == 'stage' else None
             # monotonicEndNs pairs with completedAt; recordedAt is the later write.
             completed = nanos(end.get("completedAt") or end["recordedAt"])
-            clock_shift = timing and abs((completed-begin)/1e9 - timing['elapsedSeconds']) > .01
+            clock_shift = timing and (abs((completed-begin)/1e9 - timing['elapsedSeconds']) > .01
+                                      or finish < completed - 10_000_000)
             recorded_finish = finish
             if clock_shift:
                 finish = begin + int(timing['monotonicEndNs']) - int(timing['monotonicStartNs'])

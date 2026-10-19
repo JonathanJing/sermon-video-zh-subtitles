@@ -155,18 +155,18 @@ class ClockPairingTests(unittest.TestCase):
     def test_delayed_ledger_write_after_endpoint_is_not_a_utc_step(self):
         self.assertFalse(self.session(write_delay=0.03) & self.STEP_DIAGNOSTICS)
 
-    def test_clock_pair_keeps_the_tightest_bracket(self):
-        calls = [0]
-        def stalled_now():
-            calls[0] += 1
-            if calls[0] == 1:
-                time.sleep(0.03)
-            return datetime.now(timezone.utc).isoformat()
-        with patch.object(accounting, 'now', side_effect=stalled_now):
-            ns, wall = accounting.clock_pair()
-        self.assertEqual(calls[0], 2)
-        offset = datetime.fromisoformat(wall).timestamp() - time.time() + (time.monotonic_ns() - ns) / 1e9
-        self.assertLess(abs(offset), 0.005)
+    def test_clock_pair_retries_a_split_read_and_keeps_the_tightest_bracket(self):
+        # Wide first bracket (a stall), tight second: the second pair wins.
+        reads = iter([0, 30_000_000, 40_000_000, 40_200_000])
+        with patch.object(accounting.time, 'monotonic_ns', side_effect=lambda: next(reads)), \
+                patch.object(accounting, 'now', side_effect=['stalled', 'paired']):
+            self.assertEqual(accounting.clock_pair(), (40_100_000, 'paired'))
+        # Every bracket wide: bounded retries, the narrowest is kept.
+        widths = [9, 3, 7, 5, 8, 6, 4, 9]
+        reads = iter([v for k, w in enumerate(widths) for v in (k * 100_000_000, k * 100_000_000 + w * 1_000_000)])
+        with patch.object(accounting.time, 'monotonic_ns', side_effect=lambda: next(reads)), \
+                patch.object(accounting, 'now', side_effect=['w%d' % k for k in range(8)]):
+            self.assertEqual(accounting.clock_pair(), (101_500_000, 'w1'))
 
     def test_genuine_utc_step_between_spans_is_still_reported(self):
         for step in (30.0, -30.0, 0.05):

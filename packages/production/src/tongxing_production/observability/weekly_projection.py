@@ -231,13 +231,15 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
         try:
             begin, finish = seconds(start['startedAt']), seconds(end['recordedAt'])
             # monotonicEndNs is read with completedAt, before logging may block;
-            # recordedAt is the later write. Older ledgers lack completedAt.
+            # recordedAt is the later write, so it may lag but never precede it.
+            # Older ledgers lack completedAt.
             completed = seconds(end.get('completedAt') or end['recordedAt'])
             ready = seconds(start['dependencyReadyAt']) if start.get('dependencyReadyAt') else None
             queued = seconds(start['queuedAt']) if start.get('queuedAt') else None
             ordered = [v for v in (ready, queued, begin, finish) if v is not None]
             timing = monotonic_interval(start, end)
-            utc_trusted = timing is None or abs((completed-begin)-end['elapsedSeconds']) <= TIMESTAMP_TOLERANCE_SECONDS
+            utc_trusted = timing is None or (abs((completed-begin)-end['elapsedSeconds']) <= TIMESTAMP_TOLERANCE_SECONDS
+                                             and finish >= completed - TIMESTAMP_TOLERANCE_SECONDS)
             if timing is None and (ordered != sorted(ordered) or end['elapsedSeconds'] < 0 or
                     end['elapsedSeconds'] > finish - begin + 0.01):
                 raise ValueError()
