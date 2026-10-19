@@ -1,0 +1,5 @@
+{
+  "scope": "post-G1 zh-Hans API-only preflight",
+  "candidateStatus": "ready",
+  "note": "Code, dev configuration, new budget plan, fresh output, environment binding and no-model candidate admission passed. Spark/page/drain skipped; no model call."
+}
