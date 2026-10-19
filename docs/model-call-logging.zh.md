@@ -50,7 +50,7 @@ Codex 的 `--json` 事件及 turn usage 来自[官方非交互模式文档](http
 set -o pipefail
 codex exec --ignore-user-config --json --model gpt-6-luna \
   -c 'service_tier="default"' '<approved-prompt>' \
-  | .venv/bin/python scripts/capture_supervisor_model_usage.py \
+  | .venv/bin/python tools/ops/capture_supervisor_model_usage.py \
       --format codex-exec-live --live --model gpt-6-luna \
       --service-tier default \
       --accounting-dir artifacts/<run>/accounting
@@ -61,7 +61,7 @@ codex exec --ignore-user-config --json --model gpt-6-luna \
 `--live` 明确要求实时管道：不要将保存的 JSONL 用 cat 重放后测速度，缓冲/重放耗时不能充当原调用耗时。历史日志只有附带原测量时间的版本化 observation 才能导入。其他宿主可以输出 `sermon-model-call-observation-v1` 的 fields JSONL：
 
 ```bash
-.venv/bin/python scripts/capture_supervisor_model_usage.py \
+.venv/bin/python tools/ops/capture_supervisor_model_usage.py \
   --format observations --accounting-dir artifacts/<run>/accounting \
   < observed-model-calls.jsonl
 ```

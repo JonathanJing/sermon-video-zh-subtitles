@@ -9,7 +9,7 @@
         --audio-qc artifacts/weekend-live/text-qc-<run>/state-v3/qc-receipts/audio/ko/<lineage>/entry-000001.json \
         --out artifacts/weekend-live/listening-<run>/ko
     python3 scripts/build_listening_sample.py verdicts --sheet-dir artifacts/weekend-live/listening-<run>/ko
-    python3 scripts/record_decision.py --run-dir <run> --question "ko 发布后抽查" --choice "<n 句通过，m 句有问题>" \
+    python3 tools/ops/record_decision.py --run-dir <run> --question "ko 发布后抽查" --choice "<n 句通过，m 句有问题>" \
         --decided-by "Jony (chat)" --governs <the audio package> \
         --evidence artifacts/weekend-live/listening-<run>/ko/listening-verdicts.json
 
