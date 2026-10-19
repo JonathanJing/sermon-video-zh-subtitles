@@ -50,7 +50,7 @@ def _anchor_issue(issue):
 def validate_source(source, anchor, context):
     from scripts import prepare_target_language_speech_job as speech
     from scripts import build_english_source_package as english
-    from scripts import sermon_sentence_interpretation as interpretation
+    from tongxing_production.source import sentence_interpretation as interpretation
     context = validate_context(context)
     c.require(c.canonical_sha256(source) == context['sourceCanonicalSha256'] and
         c.canonical_sha256(anchor) == context['anchorCanonicalSha256'], 'diagnostic_source_identity_changed')

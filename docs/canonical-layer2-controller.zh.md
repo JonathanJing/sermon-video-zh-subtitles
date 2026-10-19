@@ -31,10 +31,10 @@ inspectionConfig 而不列入本批执行 lanes。每个 lane 输出、输入及
 
 ```sh
 # 默认只读：不建 job/lock/output，不读取 API key。
-.venv/bin/python scripts/canonical_layer2_controller.py tick --config /absolute/execution.json
+.venv/bin/python tools/ops/run.py text.controller tick --config /absolute/execution.json
 
 # 只在该次来源、生产预算与运行授权已具备后使用；可能调用既有生产 API。
-.venv/bin/python scripts/canonical_layer2_controller.py tick \
+.venv/bin/python tools/ops/run.py text.controller tick \
   --config /absolute/execution.json --mode deterministic_execute
 ```
 
@@ -47,7 +47,7 @@ locale job；uncertain owner 继续占用该名额直到 reconciliation。当前
 修复循环因 `request_source_review` 停下、job 失败后，L1 含义备注到达时用显式命令重开，不调用模型：
 
 ```sh
-.venv/bin/python scripts/canonical_layer2_controller.py reopen-repair \
+.venv/bin/python tools/ops/run.py text.controller reopen-repair \
   --config /absolute/execution.json --locale zh-Hans \
   --expected-state-revision <shadow tick 输出的 stateRevision>
 ```

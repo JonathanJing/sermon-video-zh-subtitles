@@ -111,13 +111,14 @@ class SparkAudioWrapperTests(unittest.TestCase):
         self.assertEqual(remote.call_count, 1)
         self.assertFalse((self.args.out / 'dispatch.started.json').exists())
 
-    def test_worker_facades_import_outside_the_repo_with_only_the_container_path(self):
+    def test_worker_and_renderer_import_outside_the_repo_with_only_the_container_path(self):
         # Proposal §5.2. -S keeps this interpreter's editable install off sys.path; its site-packages stand in
-        # for the image's. The worker inserts the code root itself and imports the renderer facade lazily.
+        # for the image's. The worker inserts the code root itself and imports the renderer lazily.
         third_party = [p for p in sys.path if Path(p).name in ('site-packages', 'dist-packages')]
         probe = ('import sys; sys.path.insert(0, sys.argv[1]); '
                  'import scripts.experiments.replay_fixed_clip_local_models; '
-                 'from scripts.render_formal_target_language_speech import SparkQwenSynthesizer; print("ok")')
+                 'from scripts import tongxing_host; '
+                 'from tongxing_production.audio.renderer import SparkQwenSynthesizer; print("ok")')
 
         def launch(pythonpath):
             env = {'PATH': '/usr/bin:/bin', 'PYTHONPATH': ':'.join(pythonpath), 'PYTHONDONTWRITEBYTECODE': '1'}

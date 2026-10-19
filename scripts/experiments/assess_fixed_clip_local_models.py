@@ -13,7 +13,8 @@ import sys
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts.experiments import replay_fixed_clip_local_models as worker
-from scripts.screen_target_language_audio_units import tokens
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio.screening import tokens
 from scripts import target_audio_timing_plan
 
 

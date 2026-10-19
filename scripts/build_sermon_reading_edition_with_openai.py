@@ -932,7 +932,8 @@ def _main(args: argparse.Namespace) -> int:
         raise SystemExit("--repair-existing requires --review-manifest")
     api_key = ""
     if args.provider == "openai" and not args.repair_existing:
-        from scripts.sermon_openai_runtime import selected_route
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.openai_runtime import selected_route
         if selected_route() is None:
             raise ValueError("reading_edition_requires_explicit_dev_or_prod_launcher")
         api_key = os.environ.get("OPENAI_API_KEY", "")

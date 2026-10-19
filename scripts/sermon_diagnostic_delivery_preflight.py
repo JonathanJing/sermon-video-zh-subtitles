@@ -9,7 +9,8 @@ import os
 from pathlib import Path
 import stat
 
-from scripts import render_speculative_target_language_speech as preview
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import speculative as preview
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_diagnostic_preview_worker as worker

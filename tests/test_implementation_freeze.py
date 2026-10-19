@@ -6,11 +6,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import implementation_freeze as freeze
-from scripts import machine_quality_waiver as waiver
-from scripts import run_machine_qc_audio_test as audio_driver
-from scripts import run_machine_qc_clip_test as text_driver
-from tongxing_production.review import implementation_freeze as moved_freeze
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import implementation_freeze as freeze
+from tongxing_production.review import waiver
+from tongxing_production.review import qc_audio_run as audio_driver
+from tongxing_production.review import qc_text_run as text_driver
 
 
 class ImplementationFreezeTests(unittest.TestCase):
@@ -19,7 +19,6 @@ class ImplementationFreezeTests(unittest.TestCase):
         self.assertEqual(set(freeze.file_hashes()), set(waiver.IMPLEMENTATION_PHYSICAL_FILES))
 
     def test_guard_alias_and_spark_closure_bind_the_physical_generation(self):
-        self.assertIs(freeze, moved_freeze)
         self.assertEqual(freeze.ROOT, Path(__file__).resolve().parents[1])
         self.assertEqual([str(path) for path in freeze.closure_files(Path())],
                          list(waiver.IMPLEMENTATION_PHYSICAL_FILES))
@@ -53,14 +52,15 @@ class ImplementationFreezeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "64-hex"):
             freeze.mismatch("not-a-sha")
 
-    def test_facade_target_and_alias_resolver_each_invalidate_freeze(self):
+    def test_target_and_alias_resolver_each_invalidate_freeze(self):
         baseline = waiver.implementation_sha256()
         frozen_files = freeze.file_hashes()
         original = Path.read_bytes
-        for name in ("scripts/machine_quality_waiver.py",
-                     "packages/production/src/tongxing_production/review/waiver.py",
+        # The D closure window removed the scripts/ facades; only their targets are hashed.
+        for facade in ("scripts/machine_quality_waiver.py", "scripts/implementation_freeze.py"):
+            self.assertNotIn(facade, frozen_files)
+        for name in ("packages/production/src/tongxing_production/review/waiver.py",
                      "packages/production/src/tongxing_production/path_aliases.py",
-                     "scripts/implementation_freeze.py",
                      "packages/production/src/tongxing_production/review/implementation_freeze.py"):
             target = freeze.ROOT / name
             with self.subTest(name=name), patch.object(Path, "read_bytes",

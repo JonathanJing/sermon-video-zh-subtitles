@@ -2,7 +2,8 @@
 import os
 from pathlib import Path
 import uuid
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts.sermon_release_workflow import _safe_path
 
 

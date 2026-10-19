@@ -5,10 +5,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import run_machine_qc_clip_test as clip
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import qc_text_run as clip
 from scripts import run_spoken_condensation as driver
 from scripts import sermon_codex_transport as codex
-from scripts import spoken_condensation as condensation
+from tongxing_production.review import condensation
 from tests import auto_qc_fixtures as fixtures
 from tests import test_spoken_condensation as cases
 

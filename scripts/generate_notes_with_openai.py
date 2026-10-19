@@ -53,7 +53,8 @@ def main() -> int:
 
 
 def _main(args: argparse.Namespace) -> int:
-    from scripts.sermon_openai_runtime import reject_secret_override, selected_route
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute.openai_runtime import reject_secret_override, selected_route
     reject_secret_override(args.api_key_secret)
     if not args.api_key_secret and selected_route() is None:
         raise ValueError("local_notes_require_explicit_dev_or_prod_launcher")
@@ -605,7 +606,8 @@ def request_openai_notes(
 
 
 def _request_openai_notes(payload, api_key, timeout_seconds):
-    from scripts.sermon_openai_runtime import project_headers
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute.openai_runtime import project_headers
     started = time.perf_counter()
     model = str(payload.get("model") or DEFAULT_MODEL)
     attempt_id = record_api_started(model, request_metadata(payload))

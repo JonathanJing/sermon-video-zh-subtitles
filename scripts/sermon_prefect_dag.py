@@ -26,7 +26,8 @@ from scripts import sermon_log_profile as profile
 from scripts import sermon_model_resources as resources
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts.sermon_execution_harness import work_lock, utc_now
 from tongxing_production import path_aliases
 

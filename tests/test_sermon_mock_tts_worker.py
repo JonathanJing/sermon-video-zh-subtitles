@@ -19,7 +19,8 @@ from scripts import sermon_mock_tts_contract as contract
 from scripts import sermon_mock_tts_worker as worker
 from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_contracts as c
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 class WorkerFixture(unittest.TestCase):

@@ -4,7 +4,8 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import render_formal_target_language_speech as renderer
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer
 from scripts import sermon_accounting as accounting
 from scripts import weekly_pipeline_report as weekly
 from scripts import four_layer_progress as progress

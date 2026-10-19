@@ -11,13 +11,14 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from scripts import canonical_layer2_controller as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import controller as subject
 from scripts import canonical_durable_jobs as durable
 from scripts import record_decision
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 from scripts import build_english_source_package as english_source
 from scripts import produce_target_language_candidate as producer
-from scripts import sermon_sentence_interpretation as interpretation
+from tongxing_production.source import sentence_interpretation as interpretation
 from scripts import target_language_policy as policy_tools
 from tests import test_build_english_source_package as source_fixtures
 from tongxing_production.text import auto_repair, group_revision, policy_preview

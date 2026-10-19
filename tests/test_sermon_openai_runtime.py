@@ -8,7 +8,8 @@ from unittest.mock import patch
 from unittest.mock import Mock
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import sermon_openai_runtime as runtime
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import openai_runtime as runtime
 
 
 def selected(environment='dev'):

@@ -7,9 +7,10 @@ from unittest.mock import patch
 import wave
 
 from scripts import sermon_unified_source as subject
-from scripts import sermon_source_budget as budget
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import budget
 from scripts import judge_english_source_for_translation as judge
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 
 
 class UnifiedSourceTests(unittest.TestCase):
@@ -268,7 +269,7 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertFalse((self.root / 'source/english-source-candidate.json').exists())
 
     def test_sol_source_judge_budget_is_bounded_for_api(self):
-        from scripts import sermon_source_budget as budget
+        from tongxing_production.source import budget
         from scripts import sermon_provider_limits as limits
         from scripts import judge_english_source_for_translation as judge
         request = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high',

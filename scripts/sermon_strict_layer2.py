@@ -17,7 +17,8 @@ from scripts import sermon_review_contracts as c
 from scripts import sermon_review_observation as observation
 from scripts import sermon_log_profile as profile
 from scripts import sermon_accounting as accounting
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts.sermon_release_workflow import _safe_path
 
 RESPONSE_CONTRACT_VERSION = 'strict-layer2-response-v2'

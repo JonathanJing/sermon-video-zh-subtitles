@@ -10,7 +10,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts import sermon_review_budget as budget
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 def identity(unit='group-1', locale='zh-Hans'):

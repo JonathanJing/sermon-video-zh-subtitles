@@ -322,7 +322,8 @@ def execute(config_path, sunday, action, *, expected_source_run_root=None, expec
             raise ValueError("Workflow configuration changed while acquiring locks")
         current = _snapshot(config, sunday)
         if expected_release_revision is not None:
-            from scripts.sermon_workflow_jobs import _digest
+            from scripts import tongxing_host  # noqa: F401  binds the production package ports
+            from tongxing_production.orchestration.jobs import _digest
             if _digest(current) != expected_release_revision:
                 return {"executed": False, "snapshot": current}
         if expected_source_run_root:

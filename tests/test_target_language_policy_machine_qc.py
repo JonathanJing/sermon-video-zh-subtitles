@@ -6,14 +6,15 @@ import tempfile
 import unittest
 
 from scripts import build_english_source_package as english_source
-from scripts import machine_quality_release_basis as basis
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import release_basis as basis
 from scripts import prepare_target_language_speech_job as handoff
 from scripts import produce_target_language_candidate as producer
-from scripts import run_machine_qc_clip_test as clip_test
-from scripts import sermon_sentence_interpretation as interpretation
+from tongxing_production.review import qc_text_run as clip_test
+from tongxing_production.source import sentence_interpretation as interpretation
 from scripts import target_language_policy as subject
 from scripts import target_language_rule_preflight as rule_preflight
-from scripts import target_text_auto_qc as text_qc
+from tongxing_production.review import text_qc
 from scripts.language_review_plugins import auto_qc_text_common, es_weekly_auto, ko_weekly_auto
 # Module imports only, so their tests are not collected a second time here.
 from tests import auto_qc_fixtures as fixtures

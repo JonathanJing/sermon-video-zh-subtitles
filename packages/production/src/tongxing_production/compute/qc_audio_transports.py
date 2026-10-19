@@ -111,8 +111,7 @@ TRANSPORT_PHYSICAL_FILES = path_aliases.physical_closure_paths(TRANSPORT_IMPLEME
 
 def implementation_sha256() -> str:
     """This transport module; its hash joins every opinion's ``settings``."""
-    # Each key names the actual file read, including an executed facade and
-    # its package target when a legacy path moved.
+    # Each key names the actual file read: the package target when a legacy path moved.
     root = _checkout_root()
     return json_sha256({name: file_sha256(root / name) for name in TRANSPORT_PHYSICAL_FILES})
 

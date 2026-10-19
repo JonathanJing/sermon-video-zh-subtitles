@@ -87,7 +87,7 @@ python scripts/run_with_openai_environment.py --environment dev -- \
 
 ```sh
 python scripts/run_with_openai_environment.py --environment dev -- \
-  .venv/bin/python scripts/run_machine_qc_clip_test.py --run-dir artifacts/original-run \
+  .venv/bin/python tools/ops/run.py review.qc_text_run --run-dir artifacts/original-run \
   --out artifacts/original-text-qc --state-dir artifacts/original-state --locales ko --text-backend api \
   --api-budget-authorization artifacts/original-plan/qc-ko/api-budget-authorization.json
 ```

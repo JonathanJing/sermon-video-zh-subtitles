@@ -307,12 +307,13 @@ class SparkTests(unittest.TestCase):
         # Proposal §5.2. The images ship third-party packages but not tongxing_production: -S keeps this
         # interpreter's .pth files (the editable install) off sys.path, and its site-packages stand in for the image's.
         third_party = [p for p in sys.path if Path(p).name in ("site-packages", "dist-packages")]
-        scripts = ("render_formal_target_language_speech", "compact_formal_target_audio",
-                   "screen_target_language_audio_units", "run_machine_qc_audio_test")
+        # The container commands clip_e2e_spark runs; the package entry binds the host itself.
+        scripts = (("tools/ops/run.py", "audio.renderer"), ("scripts/compact_formal_target_audio.py",),
+                   ("tools/ops/run.py", "audio.screening"), ("tools/ops/run.py", "review.qc_audio_run"))
 
         def launch(script, pythonpath):
             env = {"PATH": "/usr/bin:/bin", "PYTHONPATH": pythonpath, "PYTHONDONTWRITEBYTECODE": "1"}
-            return subprocess.run([sys.executable, "-S", str(ROOT / "scripts" / f"{script}.py"), "--help"], cwd=cwd,
+            return subprocess.run([sys.executable, "-S", str(ROOT / script[0]), *script[1:], "--help"], cwd=cwd,
                                   env=env, capture_output=True, text=True, timeout=120)
         with tempfile.TemporaryDirectory() as cwd:
             before = launch(scripts[0], ":".join([*third_party, str(ROOT)]))

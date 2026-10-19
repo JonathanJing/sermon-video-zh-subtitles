@@ -2,7 +2,8 @@
 from scripts import prepare_target_language_speech_job as handoff
 from scripts import stage_formal_multilingual_dev as stage
 from scripts.sermon_release_workflow import _safe_path
-from scripts.sermon_workflow_jobs import _digest
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.jobs import _digest
 
 
 def validate_configuration(config):

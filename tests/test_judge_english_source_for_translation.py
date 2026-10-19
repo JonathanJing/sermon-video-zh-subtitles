@@ -7,7 +7,8 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 from scripts import build_english_source_package as layer1
 from scripts import judge_english_source_for_translation as subject
-from scripts import sermon_sentence_interpretation as anchors
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as anchors
 
 
 def write_json(path: Path, value: object) -> None:

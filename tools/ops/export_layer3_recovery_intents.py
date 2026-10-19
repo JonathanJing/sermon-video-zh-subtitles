@@ -22,7 +22,8 @@ _ROOT = str(Path(__file__).resolve().parents[2])
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from scripts import render_formal_target_language_speech as producer
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer as producer
 
 VERSION = "sermon-l3-recovery-intent-snapshot-v1"
 

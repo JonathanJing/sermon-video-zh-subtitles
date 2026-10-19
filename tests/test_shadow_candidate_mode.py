@@ -2,7 +2,8 @@ import json
 import unittest
 from unittest.mock import patch
 
-from scripts import canonical_layer2_controller as controller
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import controller
 from scripts import produce_target_language_candidate as produce
 from scripts import target_language_policy as policy_tools
 from tests import test_canonical_layer2_controller as fixtures

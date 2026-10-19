@@ -343,7 +343,8 @@ class ContinuationTests(unittest.TestCase):
 
         # Conversely a one-locale manifest cannot reduce an authorization
         # bound to a controller registering three independently spendable lanes.
-        from scripts import canonical_layer2_controller as controller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import controller
         for locale in ('ko', 'es'):
             f.base.fixture.config_data['locales'][locale] = {
                 'outputDirectory': 'outputs/' + locale,

@@ -40,9 +40,10 @@ import threading
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import run_machine_qc_clip_test as clip
-from scripts import spoken_condensation as condensation
-from scripts import target_audio_predicted_schedule as predicted
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import qc_text_run as clip
+from tongxing_production.review import condensation
+from tongxing_production.audio import predicted_schedule as predicted
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE_NAMESPACE = "spoken-condensation-v1"

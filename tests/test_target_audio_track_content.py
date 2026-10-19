@@ -8,8 +8,9 @@ import subprocess
 import tempfile
 import unittest
 
-from scripts import machine_quality_waiver as waiver
-from scripts import target_audio_auto_qc as qc
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import waiver
+from tongxing_production.review import audio_qc as qc
 
 
 @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg is not installed")

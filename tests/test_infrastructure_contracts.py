@@ -15,7 +15,7 @@ from scripts import sermon_mock_tts_contract as mock_tts
 from scripts import sermon_pipeline
 from scripts import sermon_prefect_dag as prefect
 from scripts import sermon_review_contracts as legacy
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 from tongxing_production import path_aliases, ports
 from tongxing_production.contracts import canonical, pipeline_definition, reasons, schemas
 from tongxing_production.review import contracts as review_contracts

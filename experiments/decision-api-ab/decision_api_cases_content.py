@@ -13,7 +13,8 @@ import re
 
 from scripts import judge_english_source_for_translation as english
 from scripts import run_target_language_models as translation
-from scripts import sermon_sentence_interpretation as identity
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as identity
 from scripts import target_language_policy as policy_tools
 
 LAST_MISSING: list[dict] = []

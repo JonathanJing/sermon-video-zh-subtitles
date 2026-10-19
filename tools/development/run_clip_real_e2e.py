@@ -48,7 +48,7 @@ SPEC_SCHEMA = "sermon-clip-real-e2e-run-v1"
 LOCALES = ("zh-Hans", "ko", "es")
 DEV_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app"
 PY = sys.executable
-WORKER_PATTERN = "canonical_layer2_controller.py worker"
+WORKER_PATTERN = "run.py text.controller worker"
 
 
 class Stop(Exception):
@@ -191,7 +191,8 @@ class Run:
         return Path(info.get("candidate") or self.l2 / "text" / locale / "candidate.json")
 
     def impl(self) -> str:
-        from scripts import machine_quality_waiver as waiver
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import waiver
         return waiver.implementation_sha256()
 
     def head(self) -> str:
@@ -318,7 +319,8 @@ def stage_layer2_setup(run: Run):
         write(l2 / "inspection.json", {"schemaVersion": "sermon-canonical-package-inspection-config-v1",
                                        "source": "src/source.json", "anchor": "src/anchor.json",
                                        "locales": {k: {"policy": f"policy/{k}-policy-clip.json"} for k in spec["locales"]}})
-        from scripts import canonical_layer2_controller as controller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import controller
         from scripts import layer2_auto_repair as auto_repair
         run_id = hashlib.sha256(("clip-real-e2e " + spec["name"] + " " + ",".join(spec["locales"])).encode()).hexdigest()
         write(l2 / "execution.json", {
@@ -381,7 +383,7 @@ def text_qc(run: Run, locale: str, candidate: Path, out_name: str) -> dict:
     shutil.copyfile(run.l2 / "policy" / f"{locale}-policy-clip.json", work / "policies" / f"{locale}-policy-clip.json")
     shutil.copyfile(candidate, work / locale / "candidate.json")
     run.sh(f"text-qc.{locale}.{out_name}",
-           [PY, ROOT / "scripts/run_machine_qc_clip_test.py", "--run-dir", work, "--out", out, "--state-dir", root / "state",
+           [PY, ROOT / "tools/ops/run.py", "review.qc_text_run", "--run-dir", work, "--out", out, "--state-dir", root / "state",
             "--locales", locale, "--text-backend", "api", "--api-budget-authorization", authorization,
             "--workers", 8, "--expected-implementation", run.impl()], launcher=True, check=False)
     summary = read(out / "summary.json")["locales"][locale]
@@ -392,7 +394,8 @@ def text_qc(run: Run, locale: str, candidate: Path, out_name: str) -> dict:
 
 def revise(run: Run, locale: str, receipt: str, number: int) -> Path:
     """A Layer 2 revision of one locale carrying its failed QC receipt (execution v5, gate 4)."""
-    from scripts import canonical_layer2_controller as controller
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.text import controller
     schema = getattr(controller, "QC_REPAIR_SCHEMA", None)
     require(schema is not None, "QC repair needs execution schema v5 (PR #402)")
     revision = run.dir / f"l2-{locale}-r{number}"
@@ -484,7 +487,8 @@ def stage_code(run: Run) -> str:
 
 
 def attestation(run: Run, locale: str) -> Path:
-    from scripts import sermon_sentence_interpretation as interp
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.source import sentence_interpretation as interp
     path = run.dir / "l3" / locale / "clip-user-rights-attestation.json"
     if not path.exists():
         template = read(run.spec["layer3"]["attestationTemplates"][locale])
@@ -835,15 +839,17 @@ def execute(run: Run, *, through: str | None = None) -> dict:
 
 def _route(out: Path):
     """Inside the explicit launcher: the non-secret route and the credential fingerprint."""
-    from scripts import machine_qc_budget_authorization as auth
-    from scripts.sermon_openai_runtime import selected_route
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import qc_budget_authorization as auth
+    from tongxing_production.compute.openai_runtime import selected_route
     route = selected_route()
     require(route is not None, "run inside scripts/run_with_openai_environment.py")
     write(out, {"openaiRoute": route, "credentialSha256": auth.credential_fingerprint(os.environ["OPENAI_API_KEY"])})
 
 
 def _drive(execution: Path, authorization: Path, locales: list[str], out: Path):
-    from scripts.canonical_layer2_controller import drive
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.text.controller import drive
     results = {}
     for locale in locales:
         result = drive(execution, locale, budget_authorization=authorization)

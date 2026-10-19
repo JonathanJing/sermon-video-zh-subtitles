@@ -18,11 +18,12 @@ import unittest
 from unittest import mock
 import wave
 
-from scripts import canonical_layer2_controller as controller
-from scripts import machine_qc_audio_transports as transports
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import controller
+from tongxing_production.compute import qc_audio_transports as transports
 from scripts import sermon_provider_limits as limits
-from scripts import sermon_sentence_interpretation as contract
-from scripts import sermon_source_budget as source_budget
+from tongxing_production.source import sentence_interpretation as contract
+from tongxing_production.source import budget as source_budget
 from scripts import sermon_source_text_review as source_review
 from scripts import source_meaning_machine_adjudication as machine
 from scripts import target_language_policy as policies

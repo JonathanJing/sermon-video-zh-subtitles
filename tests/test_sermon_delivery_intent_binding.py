@@ -249,7 +249,8 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
 
     def rewrite_intent_receipt_identity(self, receipt_hash):
         from scripts import sermon_review_contracts as contracts
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         old_id = self.strict_admissions['zh-Hans']['intentId']
         with self.boundary._locked() as (path, record, _, _):
             permission = record['intents'].pop(old_id)
@@ -313,7 +314,8 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
 
     def test_strict_missing_generation_reservation_blocks(self):
         from scripts import sermon_review_budget as budget
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         path = self.boundary.store.root / budget.STORE_ID / 'state.json'
         value = json.loads(path.read_text())
         key = next(key for key, row in value['reservations'].items() if row['request']['kind'] == 'initial_generation')
@@ -389,7 +391,8 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
 
     def test_strict_unrelated_ledger_mutation_during_validation_is_not_silently_accepted(self):
         from scripts import sermon_review_budget as budget
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         real = intent.preflight
         path = self.boundary.store.root / budget.STORE_ID / 'state.json'
         def mutate(*args, **kwargs):

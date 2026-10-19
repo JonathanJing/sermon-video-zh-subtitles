@@ -12,7 +12,8 @@ from scripts import sermon_mfa_identity as mfa_identity
 from scripts import sermon_fresh_source_causality as causality
 from scripts import sermon_accounting as accounting
 from scripts import sermon_provider_limits as limits
-from scripts import sermon_transcription_request as audio
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import transcription_request as audio
 from scripts import sermon_cached_fresh_diagnostic_source as cache
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_provider as provider

@@ -8,7 +8,8 @@ from unittest.mock import patch
 from scripts import canonical_layer2_budget as subject
 from scripts import check_run_start as start_check
 from scripts import sermon_review_budget as ledger
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from tests import test_canonical_layer2_budget as budget_fixtures
 from tongxing_production.contracts import canonical as canonical_contracts
 

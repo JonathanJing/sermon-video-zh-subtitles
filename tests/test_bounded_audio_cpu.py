@@ -4,7 +4,8 @@ import unittest
 
 from scripts.bounded_audio_cpu import BoundedAudioCPU
 from tests import test_formal_audio_batching as batch_fixtures
-from scripts import render_formal_target_language_speech as renderer
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer
 from unittest.mock import patch
 BatchEngine = batch_fixtures.BatchEngine
 

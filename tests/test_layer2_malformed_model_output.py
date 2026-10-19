@@ -62,7 +62,8 @@ class PolicyV4AdmissionTests(unittest.TestCase):
 
 class ApiJudgeTests(unittest.TestCase):
     def test_api_judge_refuses_an_authorization_not_bound_to_its_approval(self):
-        from scripts import run_machine_qc_clip_test as driver
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import qc_text_run as driver
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             bounds = {"globalBounds": {"requests": 10, "wallTimeMs": 1000, "costMicrousd": 1000},

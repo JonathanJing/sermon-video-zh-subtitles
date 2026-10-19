@@ -202,7 +202,7 @@ class PreviewWorkerTests(unittest.TestCase):
                 subject._outputs(self.root, self.spec, checked)
         unit_path.write_text(json.dumps(unit))
         facade = subject.preview.formal._audio.current().code.physical_path(
-            'scripts/render_speculative_target_language_speech.py')
+            'packages/production/src/tongxing_production/audio/speculative.py')
         original_open = Path.open
 
         def changed_open(path, *args, **kwargs):
