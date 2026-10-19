@@ -31,7 +31,7 @@ Layer 4 Dev catalog/release → Firebase HTTP/Range 验证
 Layer 2 生成器使用 Secret Manager 中现有的 OpenAI API key；它在一个新目录中写入四种语言候选和收据，不允许覆盖已有运行：
 
 ```bash
-python scripts/generate_multilingual_fragment_poc.py \
+python experiments/multilingual-fragment-poc/generate_multilingual_fragment_poc.py \
   --anchor-manifest /path/anchor-manifest.json \
   --english-source-package /path/english-source-package.json \
   --source-unit block-59-u001 --source-unit block-59-u002 \
@@ -44,18 +44,18 @@ python scripts/generate_multilingual_fragment_poc.py \
 Layer 3 renderer 完成 WAV 后，先打包并完整解码，再运行现有 ASR 筛查，最后一次性绑定 Layer 2/3/ASR 收据：
 
 ```bash
-python scripts/package_multilingual_fragment_poc.py \
+python experiments/multilingual-fragment-poc/package_multilingual_fragment_poc.py \
   --layer2 artifacts/multilingual-poc/<run-id>/layer2 \
   --layer3 artifacts/multilingual-poc/<run-id>/layer3
 
 python scripts/screen_multilingual_voice_demos.py ... \
   --out artifacts/multilingual-poc/<run-id>/layer3/asr-screening.json
 
-python scripts/finalize_multilingual_fragment_poc.py \
+python experiments/multilingual-fragment-poc/finalize_multilingual_fragment_poc.py \
   --layer2 artifacts/multilingual-poc/<run-id>/layer2 \
   --layer3 artifacts/multilingual-poc/<run-id>/layer3
 
-python scripts/finalize_multilingual_fragment_poc.py \
+python experiments/multilingual-fragment-poc/finalize_multilingual_fragment_poc.py \
   --layer2 artifacts/multilingual-poc/<run-id>/layer2 \
   --layer3 artifacts/multilingual-poc/<run-id>/layer3 \
   --check-only
@@ -66,7 +66,7 @@ python scripts/finalize_multilingual_fragment_poc.py \
 Firebase 的 JSON 包进入 Git，音频不进入 Git。部署前从已验证的 artifact 目录暂存 canonical 包和 MP3：
 
 ```bash
-python scripts/stage_multilingual_fragment_poc_firebase.py \
+python experiments/multilingual-fragment-poc/stage_multilingual_fragment_poc_firebase.py \
   --layer2 artifacts/multilingual-poc/<run-id>/layer2 \
   --layer3 artifacts/multilingual-poc/<run-id>/layer3 \
   --variant-media-dir /path/to/reviewed-dev-variant-mp3s \
