@@ -18,7 +18,7 @@ L1、L2 初译与审核、文本质检、L3、L4 均为 `not_run`。本轮只运
 
 ## 可以改进的地方
 
-无性能或成本结论。移动 `scripts/**/*.py` 会改变新鲜 Layer 2 code identity；合并前已核对没有运行中的 Layer 2 worker。负责人：本迁移 PR。
+无性能或成本结论。移动 `scripts/**/*.py` 会改变新鲜 Layer 2 code identity；准备 PR 时已核对没有运行中的 Layer 2 worker，合并前须再核对一次。负责人：本迁移 PR。
 
 ## 实际覆盖范围
 
@@ -26,4 +26,4 @@ targetedTests: 161 passed, 682 subtests passed (test_agent_api_trials, test_supe
 
 ## 遗留状态
 
-代码 PR #1108 按用户决定不经 CI 直接合并。没有生成模型产物、设备构建或远端作业。
+代码 PR #1108 待合并（按用户决定不经 CI）；本会话的权限设置不允许自行合并，交由用户执行。没有生成模型产物、设备构建或远端作业。
