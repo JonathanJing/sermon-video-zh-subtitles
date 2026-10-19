@@ -1,104 +1,63 @@
-"""Run the real unified CLI/owner with 100 persisted zero-provider transitions."""
-from __future__ import annotations
-import argparse
-from datetime import datetime,timedelta,timezone
-import json
-import math
-import os
+"""Compatibility entry point for ``tools/development/verify_sermon_unified_cli.py``.
+
+Keep the old direct CLI, ``python -m scripts.verify_sermon_unified_cli`` and the import path
+while the implementation lives in tools/development. The implementation is loaded
+by absolute path from this checkout, independent of the CWD; bare and
+``scripts.`` imports share one ``tools.development.verify_sermon_unified_cli`` module object.
+"""
+
+import importlib
+from importlib import util
 from pathlib import Path
-import subprocess
+import runpy
 import sys
-import time
-import wave
-from scripts.sermon_unified import contracts as c
 
 
-def verify(root, *, with_resource_policy=False, media_path=None):
-    root=Path(root).resolve();root.mkdir(parents=True,exist_ok=False)
-    if media_path is None:
-        media=root/'source.wav'
-        with wave.open(str(media),'wb') as f:
-            f.setparams((1,2,16000,0,'NONE','not compressed'));f.writeframes(b'\0\0'*1600)
-        duration=.1
-    else:
-        media=Path(media_path).resolve(strict=True)
-        probe=subprocess.run(['ffprobe','-v','error','-show_entries','format=duration',
-                              '-of','json',str(media)],capture_output=True,text=True,check=True)
-        duration=float(json.loads(probe.stdout)['format']['duration'])
-        if not math.isfinite(duration) or duration<=0:
-            raise ValueError('Media duration must be positive')
-    sha=c.file_sha(media);now=datetime.now(timezone.utc);modules=c.required_modules()
-    bindings={'media':{'path':str(media),'sha256':sha}}
-    if with_resource_policy:
-        policy=root/'resource-policy.json'
-        policy.write_text(json.dumps({'schemaVersion':'sermon-unified-resource-policy-v1',
-            'brokerRoot':str(root/'broker'),'capacities':{'cpu':1,'online_api':0,
-            'codex_cli':0,'spark_tts':0,'publisher':0}}))
-        bindings['resourcePolicy']={'path':str(policy),'sha256':c.file_sha(policy)}
-    steps=[{'id':'media','stageId':'media_verify','adapter':'media.verify','dependsOn':[],'scope':'media_verified'}]
-    for n in range(1,100):
-        p=root/f'fixed-{n}.json';p.write_text(json.dumps({'fixtureOnly':True,'fixtureSetId':'unified-cli-v2',
-            'mediaSha256':sha,'stageId':'media_verify'}))
-        bindings[f'f{n}']={'path':str(p),'sha256':c.file_sha(p)}
-        steps.append({'id':f'f{n}','stageId':'media_verify','adapter':'fixture.replay','configuration':f'f{n}',
-                      'dependsOn':[steps[-1]['id']],'scope':'media_verified'})
-    manifest={'schemaVersion':'sermon-unified-run-manifest-v2','productionRunId':'cli-fixture','runRevision':1,
-        'jobRoot':str(root/'jobroot'),'content':{'contentId':'fixture','pageId':'fixture','category':'podcast','sourceDate':None},
-        'source':{'sourceId':'fixture','mediaSha256':sha,'durationSeconds':duration,'window':{'startSeconds':0,'endSeconds':duration,
-            'timeBase':'source_media','approvalReceiptSha256':None}},'locales':['zh-Hans'],
-        'canaryScope':'media_verified','activeScope':'media_verified','finalScope':'dual_production_verified',
-        'policies':[{'locale':'zh-Hans','policySha256':'a'*64,'promptSha256':'b'*64,'pluginSha256':'c'*64}],
-        'budget':{'currency':'USD','limitMicroUsd':0},'transport':'fixture','fixtureSetId':'unified-cli-v2',
-        'executionAdmission':{'modules':modules,'closureSha256':c.closure(modules)},'bindings':bindings,
-        'executionWindow':{'timezone':'America/Los_Angeles','startsAt':(now-timedelta(minutes=1)).isoformat(),
-            'deadlineAt':(now+timedelta(minutes=10)).isoformat()},'steps':steps}
-    path=root/'manifest.json';path.write_text(json.dumps(manifest));store=root/'store'
-    env={k:v for k,v in os.environ.items() if not k.startswith(('OPENAI_', 'GEMINI_', 'GOOGLE_API_')) and k!='CODEX_API_KEY'}
-    def cli(*args,accepted=(0,)):
-        result=subprocess.run([sys.executable,str(c.ROOT/'scripts/sermon.py'),*args,'--state-root',str(store),'--json'],
-                              capture_output=True,text=True,timeout=240,env=env)
-        if result.returncode not in accepted:
-            raise RuntimeError(f'CLI {args[:2]} failed: {result.returncode} {result.stdout} {result.stderr}')
-        return json.loads(result.stdout)
-    plan=cli('run','plan','--manifest',str(path));start=time.monotonic()
-    submitted=cli('run','submit','--manifest',str(path),'--plan-hash',plan['plan']['planHash'])
-    key=submitted['subject']['id']
-    result=cli('job','wait','--run-id',key,'--timeout','180',accepted=(0,3,4))
-    event=cli('run','events','--run-id',key);progress=event['progress']
-    assert progress['completedSteps']==100, {'completedSteps':progress['completedSteps'],
-        'outcome':progress['outcome'],'blockedSteps':[{k:row.get(k) for k in ('id','process','reason')}
-            for row in progress['steps'] if row.get('reason') not in (None,'stage_complete')]}
-    assert progress['handoff']['count']==99 and progress['handoff']['p95Seconds']<=2, progress['handoff']
-    assert result['execution']['productionEligible'] is False
-    assert result['cost']['reservedMicroUsd']==0
-    report={'schemaVersion':'sermon-unified-cli-acceptance-v1','status':'passed','runKey':key,
-            'sourceMediaSha256':sha,'sourceDurationSeconds':duration,
-            'transitions':100,'wallSeconds':time.monotonic()-start,'handoff':progress['handoff'],
-            'newPaidRequests':0,'runtimeCodexTurns':0,'productionEligible':False,
-            'scope':'offline_real_cli_and_detached_owner','planHash':plan['plan']['planHash']}
-    if with_resource_policy:
-        from scripts.sermon_unified import resources
-        # Run success is persisted before the owner's terminal resource cleanup.
-        # Verify cleanup separately instead of racing job.wait's success receipt.
-        deadline=time.monotonic()+15
-        while True:
-            ledger=c.read(root/'broker'/resources.BROKER_LOCK_ID/'resources.json')
-            if all(row['status']=='released' for row in ledger['reservations'].values()):
-                break
-            if time.monotonic()>=deadline:
-                raise AssertionError('resource cleanup did not complete')
-            time.sleep(.05)
-        assert len(ledger['reservations'])==100
-        assert all(row['status']=='released' for row in ledger['reservations'].values())
-        report['resourceReservations']=100
-        report['heldAtCompletion']=0
-    (root/'acceptance.json').write_text(json.dumps(report,indent=2)+'\n')
-    return report
+_IMPLEMENTATION = (Path(__file__).resolve().parents[1] / "tools/development/verify_sermon_unified_cli.py").resolve()
+_MODULE_NAME = "tools.development.verify_sermon_unified_cli"
 
 
-if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True)
-    parser.add_argument('--with-resource-policy',action='store_true')
-    parser.add_argument('--media',type=Path,help='Use existing frozen source media instead of synthetic silence')
-    args=parser.parse_args()
-    print(json.dumps(verify(args.out,with_resource_policy=args.with_resource_policy,media_path=args.media),indent=2))
+def _load():
+    existing = sys.modules.get(_MODULE_NAME)
+    if existing is not None:
+        if Path(existing.__file__).resolve() != _IMPLEMENTATION:
+            raise ImportError(f"{_MODULE_NAME} is already loaded from another checkout")
+        return existing
+    spec = util.spec_from_file_location(_MODULE_NAME, _IMPLEMENTATION)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load {_IMPLEMENTATION}")
+    module = util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        del sys.modules[_MODULE_NAME]
+        raise
+    try:  # ``import tools.development.verify_sermon_unified_cli`` also reaches it through the namespace parent.
+        setattr(importlib.import_module("tools.development"), "verify_sermon_unified_cli", module)
+    except ImportError:
+        pass
+    return module
+
+
+if __name__ == "__main__":
+    runpy.run_path(str(_IMPLEMENTATION), run_name="__main__")
+else:
+    _implementation = _load()
+
+    class _Forward(type(sys)):
+        # A caller that loads this file with spec_from_file_location keeps this
+        # facade object; its reads, writes and mock patches reach the implementation.
+        def __getattr__(self, name):
+            return getattr(_implementation, name)
+
+        def __setattr__(self, name, value):
+            setattr(_implementation, name, value)
+
+        def __delattr__(self, name):
+            delattr(_implementation, name)
+
+    _facade = sys.modules.get(__name__)
+    if _facade is not None and _facade.__dict__ is globals():
+        _facade.__class__ = _Forward
+    sys.modules[__name__] = _implementation

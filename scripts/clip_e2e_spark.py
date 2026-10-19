@@ -19,7 +19,7 @@ serves the read-only admission socket, and the container runs offline except ``a
 ``*.started.json`` marker is written before dispatch; a marker without its result means the
 outcome is unknown and the stage refuses to run again until it is reconciled. Host, images and
 runtime paths come from ``config/clip-e2e/spark-runtime.json``; the stage directory and staged
-code directory are per run. ``scripts/run_clip_real_e2e.py`` drives these; see
+code directory are per run. ``tools/development/run_clip_real_e2e.py`` drives these; see
 docs/clip-real-e2e.zh.md.
 """
 from __future__ import annotations

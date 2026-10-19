@@ -2,7 +2,7 @@
 
 从一场已制作周次的讲道里截一段（约 16 句），用真实模型和真实配音走完 Layer 1–4，发布到 Firebase Dev 的隔离测试页。用来验证合并后的整条链路，以及新规则（读法、质检、预算、发布）在真实输出上的表现。
 
-入口是 [`scripts/run_clip_real_e2e.py`](../scripts/run_clip_real_e2e.py)。它只把现有的正式入口按顺序串起来，不另造规则：预算由 `plan_run_budgets.py` 规划，开工条件由 `check_run_start.py` 检查，Layer 2 走 canonical controller，质检、渲染和音频包也都用各自的正式脚本。
+入口是 [`tools/development/run_clip_real_e2e.py`](../tools/development/run_clip_real_e2e.py)。它只把现有的正式入口按顺序串起来，不另造规则：预算由 `plan_run_budgets.py` 规划，开工条件由 `check_run_start.py` 检查，Layer 2 走 canonical controller，质检、渲染和音频包也都用各自的正式脚本。
 
 零模型的模拟 E2E 见[固定三分钟 Dev 页面测试](dev-180s-page-test.zh.md)（`run_dev_180s_beta_e2e.sh`）。它不调用模型，也不占用 Spark，适合只验证发布链路的情况。
 
@@ -44,7 +44,7 @@
 ## 命令
 
 ```bash
-.venv/bin/python scripts/run_clip_real_e2e.py run --spec artifacts/<run>/run-spec.json --run-dir artifacts/<run>
+.venv/bin/python tools/development/run_clip_real_e2e.py run --spec artifacts/<run>/run-spec.json --run-dir artifacts/<run>
 ```
 
 - **续跑：** 同一条命令。已完成的阶段跳过；运行目录绑定首次使用的规格，改过的规格会被拒绝。
