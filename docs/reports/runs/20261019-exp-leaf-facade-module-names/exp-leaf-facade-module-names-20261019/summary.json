@@ -1,0 +1,10 @@
+{
+  "scope": "Rewrite 21 merged experiment facades to run moved code under the legacy module name, from origin/dev 9cfb3083",
+  "results": {
+    "targetedTests": "131 passed, 590 subtests passed (20 affected modules incl. test_experiment_leaf_facades pickle round trip)",
+    "moduleCli": "python -m scripts.<name> --help exits 0 for all 21 facades from an external CWD",
+    "secondWorktreeRun": "a first run from a second worktree showed 3 failures in checkout-binding tests because the shared venv binds tongxing_production to the main worktree; rerun in the main worktree passed",
+    "diffCheck": "git diff --check passed"
+  },
+  "limits": "Local deterministic tests only; no production, paid model, Spark, or public delivery. CI workflows disabled by user decision 2026-10-19."
+}
