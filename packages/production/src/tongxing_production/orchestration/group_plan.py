@@ -29,7 +29,11 @@ from . import group_records as records
 
 PLAN_SCHEMA = "sermon-group-plan-v1"
 MANIFEST_SCHEMA = "sermon-group-plan-inputs-v1"
-STATUS_ORDER = ("fresh", "failed", "stopped", "unknown", "stale", "missing")
+# ``fresh`` is reserved for records written with full validation by the per-group pipeline
+# (DEV-GRP-002 and later). A record read from a whole-sermon run's products is at best
+# ``expected_reusable``: an estimate for planning and budgets, not reuse authority, and the
+# dispatcher re-verifies it with the producers' own validators (DEV-GRP-006).
+STATUS_ORDER = ("fresh", "expected_reusable", "failed", "stopped", "unknown", "stale", "missing")
 VERDICT_STATUS = {"pass": "fresh", "fail": "failed", "stopped": "stopped", "unknown": "unknown"}
 # Statuses whose stage will produce new bytes, or whose bytes are in doubt.
 UNSETTLED = {"stale", "missing", "conflict"}
@@ -222,6 +226,8 @@ def evaluate(record: dict, layer1: dict, current: dict, implementation: str | No
         else:
             not_compared.append(name)
     status = "stale" if reasons else VERDICT_STATUS[record["verdict"]["status"]]
+    if status == "fresh" and str(record["provenance"].get("derivation", "")).startswith("legacy_"):
+        status = "expected_reusable"
     return {"status": status, "reasons": reasons, "codes": record["verdict"]["codes"],
             "inputKey": record["inputKey"], "compared": compared, "notCompared": not_compared}
 
@@ -248,6 +254,9 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
     derived = derive_records(manifest, base, layer1, anchor)
     directives = directives or {}
     report = {"schemaVersion": PLAN_SCHEMA, "mode": "read_only", "dispatched": False, "modelCalls": 0,
+              "reuseAuthority": ("expected_reusable records come from a whole-sermon run's products and are "
+                                 "planning estimates; only records written by the per-group pipeline are fresh, "
+                                 "and dispatch re-verifies reuse with the producers' validators"),
               "layer1": layer1, "locales": {}, "limits": list(LIMITS),
               "releaseEligible": False, "humanApproval": False}
     for locale, entry in manifest["locales"].items():
@@ -302,6 +311,21 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
                         # Without the current plugin file its identity cannot be checked.
                         result["status"] = "stale"
                         result["reasons"].append("plugin_not_supplied")
+                    if stage in {"Q", "U"}:
+                        # Reuse needs the ledger still at the position this QC run wrote.
+                        ledger = record["provenance"].get("ledger") or {}
+                        head = (legacy.ledger_head_sha256(_path(entry["repairLedgerRoot"], base), ledger.get("kind"),
+                                                          locale, ledger["lineageSha256"])
+                                if entry.get("repairLedgerRoot") and ledger.get("lineageSha256") else None)
+                        if head is None:
+                            result["status"] = "stale"
+                            result["reasons"].append("repair_ledger_not_supplied")
+                        elif record["inputs"]["repairPositionSha256"] != head:
+                            result["status"] = "stale"
+                            result["reasons"].append("input_changed:repairPositionSha256")
+                        else:
+                            result["compared"].append("repairPositionSha256")
+                            result["notCompared"].remove("repairPositionSha256")
                     if stage == "A" and current.get("asrSettingsSha256") is None:
                         # Without the desired settings, an ASR pass cannot be shown to still apply.
                         result["status"] = "stale"
@@ -369,7 +393,8 @@ def _reason_kind(reason: str) -> str:
 
 
 def text_summary(report: dict) -> str:
-    lines = [f"Group plan (read only, {report['modelCalls']} model calls, nothing dispatched)"]
+    lines = [f"Group plan (read only, {report['modelCalls']} model calls, nothing dispatched)",
+             "expected_reusable = read from old products: a planning estimate, not reuse authority"]
     for locale, value in report["locales"].items():
         lines.append(f"\n{locale}: {value['groupCount']} groups; operator-listed {len(value['directiveGroupIds'])}"
                      + ("" if value["candidateLayer1Current"] else "; CANDIDATE IS BOUND TO ANOTHER LAYER 1"))

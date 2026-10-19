@@ -142,7 +142,8 @@ class Run:
             "semanticIdentity": {"settings": {"qcContext": {
                 "englishSourcePackageJsonSha256": layer1["englishSourcePackageJsonSha256"],
                 "anchorManifestJsonSha256": layer1["anchorManifestSha256"]}}},
-            "semanticIdentitySha256": SEMANTIC, "repairLedger": {"priorFailedAttempts": {}},
+            "semanticIdentitySha256": SEMANTIC,
+            "repairLedger": {"lineageSha256": sha(f"text-ledger-{locale}"), "sequence": 1, "priorFailedAttempts": {}},
             "policyJsonSha256": records.json_sha256(self.produced_policy),
             "results": [{"groupId": g, "sourceUnitIds": s, "status": "pass", "mode": "full", "problems": [],
                          "nextAction": "keep", "targetTextSha256": sha(TEXT[locale][g]),
@@ -162,28 +163,40 @@ class Run:
             wav.parent.mkdir(parents=True, exist_ok=True)
             wav.write_bytes(f"wav{locale}{group_id}".encode("utf-8"))  # sha() of these bytes is ``audio``
             write(job / "receipts" / f"unit-{index:04d}.json", {
-                "targetLocale": locale, "jobJsonSha256": "a" * 64, "unitIndex": index,
+                "schemaVersion": "sermon-target-language-audio-unit-receipt-v1",
+                "targetLocale": locale, "jobJsonSha256": "a" * 64, "jobFileSha256": "b" * 64, "unitIndex": index,
                 "translationGroupId": group_id, "sourceUnitIds": unit_ids,
                 "targetTextSha256": sha(TEXT[locale][group_id]), "audioRelativePath": wav.relative_to(job).as_posix(),
-                "audioSha256": audio, "fullDecode": "pass"})
+                "audioSha256": audio, "codec": "pcm_s16le", "sampleRate": 24000, "channels": 1,
+                "durationSeconds": 2.0, "fullDecode": "pass", "humanListeningReview": "pending",
+                "releaseEligible": False})
             write(job / "asr-unit-cache-c1" / f"unit-{index:04d}.json", {
                 "identity": {"audioSha256": audio, "targetTextSha256": sha(TEXT[locale][group_id]),
-                             "implementationSha256": ASR}, "recognizedSha256": sha("recognized")})
+                             "implementationSha256": ASR},
+                "recognized": TEXT[locale][group_id], "recognizedSha256": sha(TEXT[locale][group_id])})
         write(job / "asr-screening.json", {
             "schemaVersion": "sermon-target-language-audio-screening-v2", "targetLocale": locale,
-            "targetLanguageSpeechJobJsonSha256": "a" * 64, "asrSettingsSha256": ASR_SETTINGS,
-            "results": [{"textGroupId": g, "status": "pass", "similarity": 1.0,
+            "targetLanguageSpeechJobJsonSha256": "a" * 64, "trackSha256": "c" * 64, "status": "pass",
+            "model": "Qwen/Qwen3-ASR-0.6B", "modelRevision": "test", "minSimilarity": 0.88, "coverage": 1.0,
+            "reviewedGroupIds": [g for g, _ in GROUPS],
+            "unitAudioSha256s": [sha(f"wav{locale}{g}") for g, _ in GROUPS],
+            "humanListeningStatus": "pending", "asrSettings": ASR_SETTINGS_VALUE, "asrSettingsSha256": ASR_SETTINGS,
+            "results": [{"textGroupId": g, "status": "pass", "similarity": 1.0, "differences": [],
+                         "recognized": TEXT[locale][g],
                          "audioSha256": sha(f"wav{locale}{g}"), "targetTextSha256": sha(TEXT[locale][g])}
                         for g, _ in GROUPS]})
         write(base / "audio-qc.json", {
             "schemaVersion": "sermon-target-audio-auto-qc-v1", "locale": locale, "implementationSha256": QC,
-            "durationNormalization": {"speechJobJsonSha256": "a" * 64}, "thresholds": THRESHOLDS, "repairLedger": {"priorFailedAttempts": {}},
+            "durationNormalization": {"speechJobJsonSha256": "a" * 64}, "thresholds": THRESHOLDS,
+            "repairLedger": {"lineageSha256": sha(f"audio-ledger-{locale}"), "sequence": 1, "priorFailedAttempts": {}},
             "results": [{"groupId": g, "sourceUnitIds": s, "audioSha256": sha(f"wav{locale}{g}"),
                          "textSha256": sha(TEXT[locale][g]), "sourceSeconds": 2.0, "status": "pass",
-                         "issues": []} for g, s in GROUPS]})
+                         "asrDecision": "pass", "nextAction": "keep", "issues": []} for g, s in GROUPS]})
+        for kind in ("text", "audio"):
+            write(self.root / "ledger" / kind / locale / sha(f"{kind}-ledger-{locale}") / "entry-000001.json", {"entry": 1})
         write(base / "asr-settings.json", ASR_SETTINGS_VALUE)
         return {"candidate": f"{locale}/candidate.json", "policy": "policy.json", "plugin": "plugin.py",
-                "asrSettings": f"{locale}/asr-settings.json",
+                "asrSettings": f"{locale}/asr-settings.json", "repairLedgerRoot": "ledger",
                 "languageReview": f"{locale}/language-review.json", "layer2Rounds": [f"{locale}/round-001"],
                 "textQcReceipt": f"{locale}/text-qc.json", "speechJob": f"{locale}/speech-job",
                 "asrScreening": f"{locale}/speech-job/asr-screening.json", "audioQcReceipt": f"{locale}/audio-qc.json"}
@@ -208,8 +221,10 @@ def statuses(report, locale, group_id):
     return {stage: value["status"] for stage, value in row["stages"].items()}
 
 
-ALL_FRESH = {"T": "fresh", "R": "fresh", "P": "fresh", "Q": "fresh", "C": "not_applicable",
-             "S": "fresh", "A": "fresh", "U": "fresh"}
+# Every product in the fixture is read from a whole-sermon run, so at best expected_reusable.
+ALL_FRESH = {"T": "expected_reusable", "R": "expected_reusable", "P": "expected_reusable", "Q": "expected_reusable",
+             "C": "not_applicable", "S": "expected_reusable", "A": "expected_reusable", "U": "expected_reusable"}
+FRESH = "expected_reusable"
 
 
 class InputKeyTests(unittest.TestCase):
@@ -355,7 +370,7 @@ class LegacyReaderTests(unittest.TestCase):
             (run.root / "ko/round-001/group-0001-payload-cache-success.json").unlink()
             report = group_plan.plan(json.loads((run.root / "inputs.json").read_text()), run.root, identities())
             translator = report["locales"]["ko"]["groups"][0]["stages"]["T"]
-            self.assertEqual(translator["status"], "fresh")
+            self.assertEqual(translator["status"], FRESH)
             self.assertIn("stageImplementation", translator["notCompared"])
             self.assertIn("stageImplementation", report["locales"]["ko"]["groups"][1]["stages"]["T"]["compared"])
             # A round that records its runner identity makes it comparable again.
@@ -417,7 +432,7 @@ class PlanTests(unittest.TestCase):
         self.run.texts["ko"]["g3"] = "하나님은 모든 것을 합력하여 선을 이루십니다."
         report = self.plan()
         changed = statuses(report, "ko", "g3")
-        self.assertEqual(changed["T"], "fresh")
+        self.assertEqual(changed["T"], FRESH)
         for stage in ("R", "P", "Q", "S", "A", "U"):
             self.assertEqual(changed[stage], "stale", stage)
         for group_id in ("g1", "g2", "g4"):
@@ -470,7 +485,7 @@ class PlanTests(unittest.TestCase):
             del manifest["locales"]["es"]["speechJob"]
             report = group_plan.plan(manifest, self.run.root, identities(), store=store)
             self.assertEqual(statuses(report, "es", "g1")["S"], "missing")
-            self.assertEqual(statuses(report, "ko", "g1")["S"], "fresh")
+            self.assertEqual(statuses(report, "ko", "g1")["S"], FRESH)
 
     def test_any_model_facing_policy_change_makes_t_and_r_stale_but_plugin_fields_do_not(self):
         self.run.policy["languageReview"] = {"registerRules": ["Use a natural register."], "requiredChecks": ["numbers"],
@@ -503,7 +518,7 @@ class PlanTests(unittest.TestCase):
         report = group_plan.plan(manifest, self.run.root, identities())
         self.assertEqual(statuses(report, "ko", "g1")["A"], "missing")
         self.assertEqual(statuses(report, "es", "g1")["U"], "missing")
-        self.assertEqual(statuses(report, "es", "g1")["A"], "fresh")
+        self.assertEqual(statuses(report, "es", "g1")["A"], FRESH)
 
     def test_store_records_feed_downstream_and_same_key_conflicts_are_reported(self):
         layer1 = self.run.layer1
@@ -613,7 +628,7 @@ class PlanTests(unittest.TestCase):
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
         self.assertEqual(statuses(report, "ko", "g1")["S"], "missing")
         self.assertEqual(statuses(report, "es", "g2")["S"], "missing")
-        self.assertEqual(statuses(report, "ko", "g2")["S"], "fresh")
+        self.assertEqual(statuses(report, "ko", "g2")["S"], FRESH)
 
     def test_a_success_receipt_for_other_caches_does_not_lend_its_runner(self):
         self.run.build()
@@ -668,8 +683,10 @@ class PlanTests(unittest.TestCase):
         receipt = json.loads(receipt_path.read_text())
         receipt_path.write_text(json.dumps(dict(receipt, fullDecode="fail")))
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        # The producer writes no receipt for a failed decode (its schema allows only pass), so the
+        # receipt is rejected: S is missing and nothing downstream of it is reused.
         self.assertEqual({k: v for k, v in statuses(report, "ko", "g3").items() if k in "SAU"},
-                         {"S": "failed", "A": "stale", "U": "stale"})
+                         {"S": "missing", "A": "missing", "U": "missing"})
         self.assertEqual(report["locales"]["ko"]["redoCounts"]["S"], 1)
 
     def test_asr_evidence_needs_the_desired_settings_and_follows_them(self):
@@ -699,7 +716,7 @@ class PlanTests(unittest.TestCase):
         self.run.policy = dict(self.run.policy, reviewer=dict(self.run.policy["reviewer"], promptVersion="review-v2"))
         report = self.plan()
         changed = statuses(report, "ko", "g1")
-        self.assertEqual((changed["T"], changed["R"]), ("fresh", "stale"))
+        self.assertEqual((changed["T"], changed["R"]), (FRESH, "stale"))
         self.assertIn("input_changed:modelFacingPolicySha256", report["locales"]["ko"]["groups"][0]["stages"]["R"]["reasons"])
 
     def test_a_review_the_runner_would_reject_is_not_a_pass(self):
@@ -726,7 +743,7 @@ class PlanTests(unittest.TestCase):
         candidate_path.write_text(json.dumps(candidate))
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
         row = report["locales"]["ko"]["groups"][0]["stages"]
-        self.assertEqual(row["T"]["status"], "fresh")
+        self.assertEqual(row["T"]["status"], FRESH)
         for stage in ("R", "P", "Q", "S", "A", "U"):
             self.assertEqual(row[stage]["status"], "stale", stage)
             self.assertIn("candidate_text_inconsistent", row[stage]["reasons"])
@@ -791,7 +808,7 @@ class PlanTests(unittest.TestCase):
         for group_id in ("g1", "g2"):
             self.assertEqual((statuses(report, "ko", group_id)["T"], statuses(report, "ko", group_id)["R"]),
                              ("missing", "missing"), group_id)
-        self.assertEqual(statuses(report, "ko", "g3")["T"], "fresh")
+        self.assertEqual(statuses(report, "ko", "g3")["T"], FRESH)
 
     def test_plugin_and_text_qc_passes_need_the_producers_full_predicate(self):
         self.run.build()
@@ -807,7 +824,7 @@ class PlanTests(unittest.TestCase):
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
         self.assertEqual(statuses(report, "ko", "g1")["P"], "failed")
         self.assertEqual((statuses(report, "ko", "g2")["Q"], statuses(report, "ko", "g3")["Q"]), ("failed", "failed"))
-        self.assertEqual(statuses(report, "ko", "g4")["Q"], "fresh")
+        self.assertEqual(statuses(report, "ko", "g4")["Q"], FRESH)
 
     def test_text_qc_follows_its_policy_fields_but_not_plugin_fields(self):
         self.run.produced_policy = copy.deepcopy(self.run.policy)
@@ -822,7 +839,7 @@ class PlanTests(unittest.TestCase):
                     locale["priorPolicies"] = ["prior-policy.json"]
             return group_plan.plan(manifest, self.run.root, identities())
 
-        self.assertEqual(statuses(plan_with_prior(plugin_only), "ko", "g1")["Q"], "fresh")  # a plugin migration
+        self.assertEqual(statuses(plan_with_prior(plugin_only), "ko", "g1")["Q"], FRESH)  # a plugin migration
         report = plan_with_prior(dict(plugin_only, terminology={"terms": ["Romans", "Habakkuk"]}))
         self.assertIn("input_changed:qcPolicySha256", report["locales"]["ko"]["groups"][0]["stages"]["Q"]["reasons"])
         # Without the screened policy, the QC policy identity is reported, not guessed.
@@ -864,6 +881,73 @@ class PlanTests(unittest.TestCase):
                 self.assertRaisesRegex(ValueError, "output_exists"):
             group_plan.main(["plan", "--manifest", str(manifest), "--output", str(manifest)])
         self.assertEqual(manifest.read_bytes(), before)
+
+    def test_records_from_old_products_are_estimates_and_pipeline_records_are_fresh(self):
+        manifest = json.loads(self.run.build().read_text())
+        derived = group_plan.derive_records(manifest, self.run.root, self.run.layer1, self.run.anchor)
+        synthesis = derived["ko"]["records"]["g1"]["S"]
+        report = group_plan.plan(manifest, self.run.root, identities())
+        self.assertEqual(statuses(report, "ko", "g1")["S"], "expected_reusable")
+        self.assertIn("planning estimate", report["reuseAuthority"])
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            # The same result written by the pipeline itself (not a legacy derivation).
+            store.put(records.make_record("S", synthesis["layer1"], "ko", "g1", ["u1"], synthesis["inputs"],
+                                          synthesis["stageImplementationSha256"], synthesis["outputs"], "pass"))
+            del manifest["locales"]["ko"]["speechJob"]
+            report = group_plan.plan(manifest, self.run.root, identities(), store=store)
+        self.assertEqual(statuses(report, "ko", "g1")["S"], "fresh")
+
+    def test_qc_reuse_needs_the_repair_ledger_still_at_its_position(self):
+        manifest = json.loads(self.run.build().read_text())
+        write(self.run.root / "ledger" / "text" / "ko" / sha("text-ledger-ko") / "entry-000002.json", {"entry": 2})
+        report = group_plan.plan(manifest, self.run.root, identities())
+        stage_q = report["locales"]["ko"]["groups"][0]["stages"]["Q"]
+        self.assertEqual(stage_q["status"], "stale")
+        self.assertIn("input_changed:repairPositionSha256", stage_q["reasons"])
+        self.assertEqual(statuses(report, "ko", "g1")["U"], FRESH)  # the audio ledger did not move
+        del manifest["locales"]["es"]["repairLedgerRoot"]
+        report = group_plan.plan(manifest, self.run.root, identities())
+        self.assertIn("repair_ledger_not_supplied", report["locales"]["es"]["groups"][0]["stages"]["Q"]["reasons"])
+        self.assertIn("repair_ledger_not_supplied", report["locales"]["es"]["groups"][0]["stages"]["U"]["reasons"])
+
+    def test_screening_and_unit_receipts_must_pass_their_producer_schemas(self):
+        self.run.build()
+        screening = self.run.root / "ko/speech-job/asr-screening.json"
+        value = json.loads(screening.read_text())
+        value["unexpected"] = True
+        screening.write_text(json.dumps(value))
+        unit = self.run.root / "es/speech-job/receipts/unit-0000.json"
+        value = json.loads(unit.read_text())
+        del value["codec"]
+        unit.write_text(json.dumps(value))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual(statuses(report, "ko", "g1")["A"], "missing")
+        self.assertEqual(statuses(report, "es", "g1")["S"], "missing")
+
+    def test_asr_results_need_the_transcript_the_screening_scored(self):
+        self.run.build()
+        cache = self.run.root / "ko/speech-job/asr-unit-cache-c1/unit-0000.json"
+        value = json.loads(cache.read_text())
+        value["recognized"] = "다른 전사"
+        cache.write_text(json.dumps(value))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual(statuses(report, "ko", "g1")["A"], "missing")
+
+    def test_plugin_checks_and_audio_qc_passes_follow_their_producers(self):
+        self.run.build()
+        plugin = self.run.root / "ko/language-review.json"
+        value = json.loads(plugin.read_text())
+        value["groupReviews"][0]["checks"][0]["evidence"] = " "
+        plugin.write_text(json.dumps(value))
+        audio_qc = self.run.root / "ko/audio-qc.json"
+        value = json.loads(audio_qc.read_text())
+        value["results"][1]["issues"] = ["clipping"]  # status still says pass
+        value["results"][2]["asrDecision"] = "needs_secondary_asr"
+        audio_qc.write_text(json.dumps(value))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual(statuses(report, "ko", "g1")["P"], "failed")
+        self.assertEqual((statuses(report, "ko", "g2")["U"], statuses(report, "ko", "g3")["U"]), ("failed", "failed"))
 
     def test_cli_plan_prints_a_summary_and_writes_only_its_report(self):
         manifest = self.run.build()
