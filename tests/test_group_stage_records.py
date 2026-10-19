@@ -747,7 +747,8 @@ class PlanTests(unittest.TestCase):
         self.assertIn("draftTextSha256", stages["R"]["notCompared"])
         self.assertIn("upstream_will_change:T", stages["R"]["reasons"])
         self.assertIn("upstream_will_change:S", stages["A"]["reasons"])
-        self.assertEqual(report["locales"]["ko"]["redoCounts"]["T"], 0)  # an unknown outcome is reconciled first
+        # The other groups lost their round caches (missing T); g1's unknown outcome is reconciled, not redone.
+        self.assertEqual(report["locales"]["ko"]["redoCounts"]["T"], len(GROUPS) - 1)
 
     def test_cli_plan_prints_a_summary_and_writes_only_its_report(self):
         manifest = self.run.build()
