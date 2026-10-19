@@ -153,7 +153,8 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
     upstream status invalidates the consumer instead.
     """
     rows = legacy.english_rows(anchor, group["sourceUnitIds"])
-    target = records.text_sha256(_candidate_text(group))
+    # T and R read no target text, so a plan row without one can still be compared.
+    target = records.text_sha256(_candidate_text(group)) if stage not in {"T", "R"} else None
     if stage in {"T", "R"}:
         role = "translator" if stage == "T" else "reviewer"
         values = {"englishUnitsSha256": legacy.english_units_sha256(rows),
@@ -191,6 +192,12 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
             values["textSha256"] = records_for_group["S"]["inputs"].get("textSha256")
         return values
     return {}
+
+
+def current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy: dict,
+                   locale_identity: dict, records_for_group: dict) -> dict:
+    """The current input values ``evaluate`` compares (used by the merge, ``group_assembly``)."""
+    return _current_inputs(stage, group, context, anchor, policy, locale_identity, records_for_group)
 
 
 def _candidate_text(group: dict) -> str:

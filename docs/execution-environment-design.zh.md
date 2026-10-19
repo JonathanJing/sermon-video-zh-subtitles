@@ -45,7 +45,7 @@ flowchart TB
 
 | 执行域 | 实际入口 / 数据 | 已有能力与限制 |
 |---|---|---|
-| MacBook 制作工具 | [本地 runbook](codex-local-production-runbook.zh.md)、[固定 L2 controller](../packages/production/src/tongxing_production/text/controller.py)、[workflow jobs](../scripts/sermon_workflow_jobs.py) | Python 调度下载、FFmpeg、包校验与生成；磁盘 job/lease/receipt 支持恢复。固定 L2 adapter 与 legacy PDF Supervisor 各有范围，尚非完整 canonical L1–4 自动生产 |
+| MacBook 制作工具 | [本地 runbook](codex-local-production-runbook.zh.md)、[固定 L2 controller](../packages/production/src/tongxing_production/text/controller.py)、[workflow jobs](../packages/production/src/tongxing_production/orchestration/jobs.py) | Python 调度下载、FFmpeg、包校验与生成；磁盘 job/lease/receipt 支持恢复。固定 L2 adapter 与 legacy PDF Supervisor 各有范围，尚非完整 canonical L1–4 自动生产 |
 | Apple Silicon 本地模型 | [语音运行合同](../experiments/sermon-dubbing-poc/SPEECH-RUNTIME.zh.md)、[speech backend](../experiments/sermon-dubbing-poc/speech_backend.py)、[正式 L3 renderer](formal-layer3-renderer.zh.md) | legacy weekly runner 的 MPS TTS 与 MLX ASR/ForcedAligner 作为 fallback；现有任务继续原后端恢复。正式多语言 renderer 有自己的授权音色/adapter 合同，尚无完整跨机自动 fallback。模型、revision、设备、精度与实际输入写入收据 |
 | DGX Spark | [Spark transport](../experiments/sermon-dubbing-poc/spark_transport.py)、[speech worker](../experiments/sermon-dubbing-poc/spark_speech_worker.py)、[训练说明](../experiments/sermon-dubbing-poc/TRAINING.zh.md) | 受控 SSH 传输、隔离 CUDA 环境、声音训练及预制本地模型计算默认路径；CPU 打包和正式 API 仍有独立执行边界。checkpoint 不匹配或语义失败不能靠换主机绕过 |
 | 云模型与控制会话 | [Layer 2 runner](../packages/production/src/tongxing_production/text/models.py)、[Supervisor](sermon-production-supervisor-agent.md) | L2 生产 policy 固定 Astra 初译、Sol 审校；文件转写与控制会话分别记录。现有 dual-PDF Agents API 的 `environment: none` 由本地执行受限工具，不是在云会话内托管完整后端 |
