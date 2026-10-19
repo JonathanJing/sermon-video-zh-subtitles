@@ -37,7 +37,7 @@
 
 已有 Agents API 会话使用[原身份恢复入口](codex-local-production-runbook.zh.md#旧-agents-api-会话恢复)。harness 不提供 `--agent-run-dir`／`--resume-agent-session`，不能只将本模板的 backend 改为 `agents-api` 来恢复旧会话。尤其不能把旧 Secret Manager 引用清空，或用新 Project 启动器替换原凭据绑定；恢复时直接向原 Agent 入口传入会话目录、恢复标志和原完整配置。
 
-1. 先调用[现有本地 PDF 入口](../scripts/run_codex_local_sermon_production.py)。保留来源刷新、源锁、租约、审批和 GCS 上传及远端验证；关闭 SendGrid 参数，由当前 Codex 对话汇报。仅操作员显式添加 `--skip-source-refresh` 时跳过来源刷新。下载授权可用 `--youtube-cookies` 传入现有文件。
+1. 先调用[现有本地 PDF 入口](../packages/production/src/tongxing_production/workflows/dual_pdf/codex_local.py)。保留来源刷新、源锁、租约、审批和 GCS 上传及远端验证；关闭 SendGrid 参数，由当前 Codex 对话汇报。仅操作员显式添加 `--skip-source-refresh` 时跳过来源刷新。下载授权可用 `--youtube-cookies` 传入现有文件。
 2. 必须获得此次子进程新写的 Supervisor `finalSnapshot` 才继续；没有新证据时保留旧报告但跳过音频执行，提示检查 PDF 日志。Supervisor 自己复核确定性产物，入口不把退出码当成完成证明。
 3. 调用[现有桥接器](../experiments/sermon-dubbing-poc/continue_saturday_dubbing.py) 的 `--execute`。PDF 等待并不自动阻断独立来源：桥接器重新验证两条路径，健康的同版本视频优先，未就绪时可继续已有直播归档兜底。桥接器拥有实际可执行性判断及候选锁。
 4. 候选结束仍停在原有审核要求。新入口不写人工审批，不执行音频 Firebase 部署，不发送消息，不修改 automation。

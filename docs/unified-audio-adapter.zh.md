@@ -77,7 +77,7 @@
 ## 只读计时与容量实验
 
 ```sh
-.venv/bin/python scripts/benchmark_audio_receipts.py \
+.venv/bin/python experiments/local-layer-latency/benchmark_audio_receipts.py \
   --job /absolute/render/job.json --out /absolute/new-benchmark.json
 ```
 

@@ -58,7 +58,7 @@
 
 Layer 1 身份变化影响全部语言；Layer 2/3 修订只使对应语言的下游失效。音频单元复用不免除重新排程、装配和适用的听审。9 月 20 日发音修订真实记录为 **8 个重新生成、118 个验证复用**；不能把最终复用检查的 0.649 秒当作 8 个发音的生成时间。
 
-翻译缓存和 partial repair 入口为 [models.py](../../packages/production/src/tongxing_production/text/models.py)，音频单元恢复入口为 [render_formal_target_language_speech.py](../../scripts/render_formal_target_language_speech.py)。把这些已有能力接入完整周编排、证明故障后新增调用的准确数量，仍是单独的集成验收。既有能力与边界见[效率研究](../reports/20260929-weekly-workflow-efficiency-findings.zh.md)。
+翻译缓存和 partial repair 入口为 [models.py](../../packages/production/src/tongxing_production/text/models.py)，音频单元恢复入口为 [render_formal_target_language_speech.py](../../packages/production/src/tongxing_production/audio/renderer.py)。把这些已有能力接入完整周编排、证明故障后新增调用的准确数量，仍是单独的集成验收。既有能力与边界见[效率研究](../reports/20260929-weekly-workflow-efficiency-findings.zh.md)。
 
 ## 控制职责及实现状态
 

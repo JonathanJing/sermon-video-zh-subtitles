@@ -22,7 +22,7 @@ Spark Agent 工作目录为 `/home/achillesjing/spark-agent-current`，存在 `r
 
 在 Spark 上设主机级固定路径的账本和 owner 锁，例如 `/home/achillesjing/.local/state/tongxing-spark-exclusive`。同一 developmentSessionId 绑定多次 runId，不按 run 各建独占目录。begin 在事务锁内持久化 active session；后续命令逐次核验 sessionId、owner 和 revision，不依赖 SSH 连接持续打开。运行级 GPU 锁仍保留。
 
-已实现 [scripts/spark_exclusive_session.py](../scripts/spark_exclusive_session.py) 的 inspect、begin、status、require、job-start／bind／end、finish、reconcile 和 resume-begin。主机状态固定存储，SSH 传输按代码 hash 部署 stdlib 模块，无推理或运行时安装。控制目标为当前四个受管 unit，以及抢占开始时冻结的全部运行容器；不可恢复的 AutoRemove 容器会在停止前拒绝。
+已实现 [scripts/spark_exclusive_session.py](../packages/production/src/tongxing_production/compute/spark_exclusive_session.py) 的 inspect、begin、status、require、job-start／bind／end、finish、reconcile 和 resume-begin。主机状态固定存储，SSH 传输按代码 hash 部署 stdlib 模块，无推理或运行时安装。控制目标为当前四个受管 unit，以及抢占开始时冻结的全部运行容器；不可恢复的 AutoRemove 容器会在停止前拒绝。
 
 | 阶段 | 行为及验收 |
 |---|---|
@@ -40,7 +40,7 @@ Spark Agent 工作目录为 `/home/achillesjing/spark-agent-current`，存在 `r
 
 `--preempt --allow-interrupted-restart` 对应用户的高优先级决定，不要求队列先空闲。私有备份保存 SQLite、旧队列和原生模型 slot 信息；原生模型请求被中断时由调用方重新提交保存的输入。原先仅 durable 排队／待输入的任务不阻碍服务恢复；实际执行中的原生派发或旧内存队列需先对账，因为旧 scheduler 重启会自动重排 running 任务。控制器不会为解除屏障而改写外国任务数据库。AutoRemove 重建、未绑定的 Mac CLI 未知占用的终态收据适配仍未接入，不能据此宣称所有外部进程均能自动续跑。
 
-受管 unit 现为 `job-reasoning-review.timer`、`spark-api.service`、`spark-agent.service`、`llama-performance-collector.service`、`llama-server.service`：定时器最先停、最后恢复，因为 2026-10-11 它在会话持有期间按计划重启了 llama-server，下一次派发因内存不足失败。主机上没有这个定时器时，快照记为 `not-found`，不停不启。旧会话的快照若缺某个 unit，`require` 返回 `snapshot_lacks_unit:<unit>`，须先 `finish` 再 `begin`。派发方不要只调一次 `require`：[`scripts/spark_wait_ready.py`](../scripts/spark_wait_ready.py) 对 `competing_service_active:*`、`competing_launcher_active` 和 `insufficient_available_memory` 轮询等待（默认 30 秒一次、最多 30 分钟），其他错误立即返回让人处理。
+受管 unit 现为 `job-reasoning-review.timer`、`spark-api.service`、`spark-agent.service`、`llama-performance-collector.service`、`llama-server.service`：定时器最先停、最后恢复，因为 2026-10-11 它在会话持有期间按计划重启了 llama-server，下一次派发因内存不足失败。主机上没有这个定时器时，快照记为 `not-found`，不停不启。旧会话的快照若缺某个 unit，`require` 返回 `snapshot_lacks_unit:<unit>`，须先 `finish` 再 `begin`。派发方不要只调一次 `require`：[`scripts/spark_wait_ready.py`](../tools/ops/spark_wait_ready.py) 对 `competing_service_active:*`、`competing_launcher_active` 和 `insufficient_available_memory` 轮询等待（默认 30 秒一次、最多 30 分钟），其他错误立即返回让人处理。
 
 ## 生命周期及异常恢复
 
