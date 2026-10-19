@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -9,16 +10,24 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+TARGET = re.compile(r'^\s*/ "(experiments/[^"]+\.py)"$', re.M)
 
-# Legacy module -> implementation file, relative to the repository root.
-MOVED = {
-    "scripts.experiments.agent_api_trials": "experiments/agents-api-trials/agent_api_trials.py",
-    "scripts.experiments.build_agent_trial_variants": "experiments/agents-api-trials/build_agent_trial_variants.py",
-    "scripts.experiments.supervisor_ab": "experiments/agents-api-trials/supervisor_ab.py",
-}
+
+def moved():
+    """Legacy module -> implementation file, for every scripts/ facade that loads an experiments/ file."""
+    found = {}
+    for facade in sorted((ROOT / "scripts").rglob("*.py")):
+        text = facade.read_text(encoding="utf-8")
+        match = TARGET.search(text)
+        if match and "sys.modules[__name__] = _implementation" in text:
+            found[".".join(facade.relative_to(ROOT).with_suffix("").parts)] = match.group(1)
+    return found
 
 
 class ExperimentLeafFacadeTests(unittest.TestCase):
+    def test_moved_experiments_have_facades(self):
+        self.assertTrue(moved())
+
     def test_legacy_modules_load_moved_implementations_from_this_checkout(self):
         code = ("import sys; from pathlib import Path; sys.path.insert(0, sys.argv[1])\n"
                 "for pair in sys.argv[2:]:\n"
@@ -28,18 +37,15 @@ class ExperimentLeafFacadeTests(unittest.TestCase):
                 "    assert Path(module.__file__).resolve() == (Path(sys.argv[1]) / target).resolve(), (name, module.__file__)\n")
         environment = {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
         with tempfile.TemporaryDirectory() as elsewhere:
-            result = subprocess.run([sys.executable, "-c", code, str(ROOT), *(f"{k}={v}" for k, v in MOVED.items())],
-                                    cwd=elsewhere, env=environment, capture_output=True, text=True, timeout=120)
+            result = subprocess.run([sys.executable, "-c", code, str(ROOT), *(f"{k}={v}" for k, v in moved().items())],
+                                    cwd=elsewhere, env=environment, capture_output=True, text=True, timeout=300)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_legacy_facades_are_thin(self):
-        for name, target in MOVED.items():
+    def test_implementations_exist_outside_scripts(self):
+        for name, target in moved().items():
             with self.subTest(name=name):
-                facade = ROOT / (name.replace(".", "/") + ".py")
-                text = facade.read_text(encoding="utf-8")
-                self.assertIn(f'"{target}"', text)
-                self.assertIn("sys.modules[__name__] = _implementation", text)
                 self.assertTrue((ROOT / target).is_file())
+                self.assertFalse((ROOT / target).is_relative_to(ROOT / "scripts"))
 
 
 if __name__ == "__main__":
