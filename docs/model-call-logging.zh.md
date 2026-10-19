@@ -89,7 +89,7 @@ ChatGPT 登录的 CLI worker 和 Codex 监督采集器都自动记录 v2 observa
 历史观测未记 tier 时仍未知。若另有匹配的 CLI response/resource receipt，可只读核对 model、usage、call/resource 身份和响应 hash，生成独立派生日志：
 
 ```bash
-.venv/bin/python scripts/project_codex_credit_usage.py \
+.venv/bin/python tools/ops/project_codex_credit_usage.py \
   --accounting-dir artifacts/<run>/cli/accounting \
   --cli-receipts-dir artifacts/<run>/cli/_cli_calls \
   --out-dir artifacts/<run>/credit-projection-new

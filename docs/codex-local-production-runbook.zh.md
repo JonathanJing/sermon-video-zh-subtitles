@@ -4,7 +4,7 @@
 
 并发、请求上限和新计划预算的当前规则见[周更运行配置](weekly-run-profile.zh.md)；既有运行保留冻结授权与缓存身份，API-only 阶段不占 Spark，GPU 阶段按原准入门执行。
 
-在 git worktree 里跑测试或脚本前，先执行 `python3 scripts/worktree_venv.py`。共享 `.venv` 的可编辑安装指向主 checkout，`PYTHONPATH` 管不到 `python -I` 启动的子进程；该脚本建 `<worktree>/.venv`，先导入本 worktree 的 `packages/production/src`，再用共享 `.venv` 的依赖（依赖仍装在共享 `.venv`）。
+在 git worktree 里跑测试或脚本前，先执行 `python3 tools/development/worktree_venv.py`。共享 `.venv` 的可编辑安装指向主 checkout，`PYTHONPATH` 管不到 `python -I` 启动的子进程；该脚本建 `<worktree>/.venv`，先导入本 worktree 的 `packages/production/src`，再用共享 `.venv` 的依赖（依赖仍装在共享 `.venv`）。
 
 ### 开工前：预算文件与开工检查（2026-10-13 起）
 
@@ -215,7 +215,7 @@ Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider
 
 - **代码身份冻结。** 运行开始时在运行计划里记下 `machine_quality_waiver.implementation_sha256()`（`python3 -c "from scripts import machine_quality_waiver as w; print(w.implementation_sha256())"`），之后每次调用 `run_machine_qc_clip_test.py`／`run_machine_qc_audio_test.py` 都带 `--expected-implementation <该值>`；代码不一致时驱动在任何模型调用之前以退出码 2 拒绝并打印各哈希文件的当前哈希。运行期间不改哈希文件集里的代码；要改就开新运行计划。2026-10-11 两次未察觉的改动让已签发的豁免失效，重签了两轮。
 - **一周一份预算授权。** `api-budget-authorization-<ISO 周>.json` 只写一份，筛查、校准、重签都复用它和同一账本（账本本就支持跨轮复用）；请求上限按三语 × 一次筛查 + 一次校准估，本周账本 27,292 次请求里 Layer 2 只占约 220 次，其余是哈希翻转导致的重签。超限即停并通知，不自动续。
-- **Spark 独占会话冻结定时器，派发前等待。** `spark_exclusive_session.py begin` 现在把 `job-reasoning-review.timer` 一起停掉、结束时最后恢复（主机上没有该定时器时记为 `not-found`）。派发链在每次派发前运行 `python3 scripts/spark_wait_ready.py --poll-seconds 30 --max-minutes 30`：只对 `competing_service_active:*`、`competing_launcher_active`、`insufficient_available_memory` 等会自行消退的状态轮询，其他错误立即返回；退出码 0 就绪、3 超时、1 需要人处理。
+- **Spark 独占会话冻结定时器，派发前等待。** `spark_exclusive_session.py begin` 现在把 `job-reasoning-review.timer` 一起停掉、结束时最后恢复（主机上没有该定时器时记为 `not-found`）。派发链在每次派发前运行 `.venv/bin/python tools/ops/spark_wait_ready.py --poll-seconds 30 --max-minutes 30`：只对 `competing_service_active:*`、`competing_launcher_active`、`insufficient_available_memory` 等会自行消退的状态轮询，其他错误立即返回；退出码 0 就绪、3 超时、1 需要人处理。
 
 ## CUV 证据与生产收尾
 

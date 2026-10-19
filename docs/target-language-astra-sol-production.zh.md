@@ -26,7 +26,7 @@ export POLICY=/absolute/path/frozen-target-language-policy-v2.json
 export OUT=/absolute/path/artifacts/layer2-locale-run
 export PLUGIN=/absolute/path/scripts/language_review_plugins/ko_sermon.py
 
-python scripts/run_target_language_models.py \
+.venv/bin/python scripts/run_target_language_models.py \
   --english-source-package "$SOURCE" --anchor "$ANCHOR" \
   --policy "$POLICY" --plugin "$PLUGIN" --out-dir "$OUT"
 ```
@@ -40,14 +40,14 @@ Sol 对任何一组报告 fail、问题或不确定性时，停止生成 `eviden
 为固定视频时轴制作较短口播稿时，用 `--revision-brief` 绑定先前完整证据，并仅重跑改变的组。修订提示以提案的自然句式和长度为目标，Astra 与 Sol 仍须对照英文修复必要含义；英文没有口播的编辑性经文出处不得重新加进音轨文字。讲员只说相对节号时，不补念上下文可推知却未说出的书卷或章号；英文在下一组才补完的句子，本组不能提前补全或重复。机器通过后仍须运行语言插件、生成新候选并交人工审核；实际配音时长和同步要在 Layer 3 测量，不能由文字长度或模型评价推断。
 
 ```bash
-python scripts/produce_target_language_candidate.py review-language \
+.venv/bin/python scripts/produce_target_language_candidate.py review-language \
   --english-source-package "$SOURCE" --anchor "$ANCHOR" \
   --policy "$POLICY" --request "$OUT/request.json" \
   --evidence "$OUT/evidence.json" --plugin "$PLUGIN" \
   --plugin-sha256 "$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["languageReview"]["pluginImplementationSha256"])' "$POLICY")" \
   --out "$OUT/language-receipt.json"
 
-python scripts/produce_target_language_candidate.py admit \
+.venv/bin/python scripts/produce_target_language_candidate.py admit \
   --english-source-package "$SOURCE" --anchor "$ANCHOR" \
   --policy "$POLICY" --request "$OUT/request.json" \
   --evidence "$OUT/evidence.json" --language-receipt "$OUT/language-receipt.json" \
