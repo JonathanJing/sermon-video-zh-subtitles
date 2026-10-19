@@ -89,7 +89,8 @@ class Run:
         base = self.root / locale
         groups = [{"translationGroupId": g, "sourceUnitIds": s, "targetUtterances": [self.texts[locale][g]]}
                   for g, s in GROUPS]
-        write(base / "candidate.json", {"englishSourcePackageJsonSha256": layer1["englishSourcePackageJsonSha256"],
+        write(base / "candidate.json", {"targetLocale": locale,
+                                        "englishSourcePackageJsonSha256": layer1["englishSourcePackageJsonSha256"],
                                         "anchorManifestSha256": layer1["anchorManifestSha256"], "groups": groups})
         rounds = base / "round-001"
         anchor = self.produced_anchor
@@ -120,6 +121,7 @@ class Run:
                                                           "model": settings["model"], "result": reply})
             def file_sha(name):
                 return hashlib.sha256((rounds / f"{stem}-{name}").read_bytes()).hexdigest()
+            write(rounds / "run-identity.json", {"sha256": sha(f"run-{locale}")})
             write(rounds / f"{stem}-payload-cache-success.json", {
                 "runnerImplementationSha256": RUN, "translationGroupId": group_id, "sourceUnitIds": unit_ids,
                 "roles": {role: {"cacheSha256": file_sha(f"{suffix}.json"),
@@ -353,9 +355,12 @@ class LegacyReaderTests(unittest.TestCase):
             self.assertIn("stageImplementation", translator["notCompared"])
             self.assertIn("stageImplementation", report["locales"]["ko"]["groups"][1]["stages"]["T"]["compared"])
             # A round that records its runner identity makes it comparable again.
-            write(run.root / "ko/round-001/runner-identity.json", {
-                "schemaVersion": "sermon-layer2-round-runner-identity-v1", "runnerImplementationSha256": "9" * 64,
-                "payloadCacheImplementationSha256": None, "runIdentitySha256": "a" * 64})
+            sidecar = {"schemaVersion": "sermon-layer2-round-runner-identity-v1", "runnerImplementationSha256": "9" * 64,
+                       "payloadCacheImplementationSha256": None, "runIdentitySha256": "a" * 64}
+            write(run.root / "ko/round-001/runner-identity.json", sidecar)  # names another round
+            report = group_plan.plan(json.loads((run.root / "inputs.json").read_text()), run.root, identities())
+            self.assertIn("stageImplementation", report["locales"]["ko"]["groups"][0]["stages"]["T"]["notCompared"])
+            write(run.root / "ko/round-001/runner-identity.json", dict(sidecar, runIdentitySha256=sha("run-ko")))
             report = group_plan.plan(json.loads((run.root / "inputs.json").read_text()), run.root, identities())
             translator = report["locales"]["ko"]["groups"][0]["stages"]["T"]
             self.assertEqual((translator["status"], translator["reasons"]), ("stale", ["stage_implementation_changed"]))
@@ -749,6 +754,24 @@ class PlanTests(unittest.TestCase):
         self.assertIn("upstream_will_change:S", stages["A"]["reasons"])
         # The other groups lost their round caches (missing T); g1's unknown outcome is reconciled, not redone.
         self.assertEqual(report["locales"]["ko"]["redoCounts"]["T"], len(GROUPS) - 1)
+
+    def test_a_candidate_for_another_locale_is_refused(self):
+        manifest = json.loads(self.run.build().read_text())
+        manifest["locales"]["ko"]["candidate"] = "es/candidate.json"
+        with self.assertRaisesRegex(ValueError, "candidate_belongs_to_another_locale:ko"):
+            group_plan.plan(manifest, self.run.root, identities())
+
+    def test_a_plugin_pass_needs_its_whole_check_set(self):
+        self.run.build()
+        receipt_path = self.run.root / "ko/language-review.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt["groupReviews"][0]["checks"][0]["status"] = "fail"  # status still says pass
+        receipt["groupReviews"][1]["checks"] = []
+        receipt_path.write_text(json.dumps(receipt))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual(report["locales"]["ko"]["groups"][0]["stages"]["P"]["codes"], ["numbers"])
+        self.assertEqual(statuses(report, "ko", "g1")["P"], "failed")
+        self.assertEqual(report["locales"]["ko"]["groups"][1]["stages"]["P"]["codes"], ["plugin_receipt_checks_incomplete"])
 
     def test_cli_plan_prints_a_summary_and_writes_only_its_report(self):
         manifest = self.run.build()
