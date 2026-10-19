@@ -10,7 +10,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts import sermon_job_liveness as subject
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from tests import test_canonical_layer2_controller as fixtures
 
 POLICY = {'schemaVersion': subject.SCHEMA, 'startTimeoutSeconds': .5,
@@ -178,7 +179,7 @@ class LivenessTests(unittest.TestCase):
         program = '''
 import sys,time
 from pathlib import Path
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 from scripts import sermon_job_liveness as liveness
 folder,mode,late=Path(sys.argv[1]),sys.argv[2],Path(sys.argv[3])
 if mode == 'no_start':

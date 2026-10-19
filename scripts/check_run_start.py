@@ -56,7 +56,8 @@ def git(*args) -> str:
 
 
 def check_code(expected_commit, expected_implementation):
-    from scripts import machine_quality_waiver as waiver
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import waiver
     from tongxing_production.review import implementation_freeze
     head = git("rev-parse", "HEAD")
     dirty = [line for line in git("status", "--porcelain", "--untracked-files=no").splitlines() if line]
@@ -87,8 +88,9 @@ def check_openai(environment, env_file):
 def selected_launcher_identity(environment, env_file):
     """Resolve the real launcher file read-only; retain only non-secret identity."""
     from scripts import run_with_openai_environment as launcher
-    from scripts.machine_qc_budget_authorization import credential_fingerprint
-    from scripts.sermon_openai_runtime import safe_route
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review.qc_budget_authorization import credential_fingerprint
+    from tongxing_production.compute.openai_runtime import safe_route
     selected = launcher.child_environment(Path(env_file) if env_file else ROOT / '.env.openai',
                                           environment, inherited={})
     route = safe_route({'schemaVersion': 'sermon-openai-runtime-route-v1',
@@ -102,7 +104,8 @@ def selected_launcher_identity(environment, env_file):
 
 
 def check_launcher_binding(plan_dir, environment, env_file):
-    from scripts import machine_qc_budget_authorization as auth
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import qc_budget_authorization as auth
     try:
         planned = json.loads((plan_dir / 'plan.json').read_text())
         stages = [stage for stage in planned['stages'] if stage['stage'].startswith('qc.') or stage['stage'] == 'layer2']
@@ -112,7 +115,9 @@ def check_launcher_binding(plan_dir, environment, env_file):
         qc_count = l2_count = 0
         for stage in stages:
             if stage['stage'] == 'layer2':
-                from scripts import canonical_layer2_budget as l2, canonical_layer2_controller as controller
+                from scripts import canonical_layer2_budget as l2
+                from scripts import tongxing_host  # noqa: F401  binds the production package ports
+                from tongxing_production.text import controller
                 config = controller.load_configuration(Path(stage['execution']))
                 admitted = l2.load_authorization(config, Path(stage['authorization']), controller.code_identity(), stage['authorizationSha256'])
                 if admitted.get('runtimeIdentity') != selected or stage.get('runtimeIdentity') != selected:
@@ -134,7 +139,9 @@ def check_launcher_binding(plan_dir, environment, env_file):
 
 def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False, as_reuse_source=False):
     """Read-only counterpart of durable source admission; never opens/migrates a ledger."""
-    from scripts import sermon_source_budget as source, sermon_workflow_jobs as jobs
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.source import budget as source
+    from tongxing_production.orchestration import jobs
     root = Path(root)
     path = root / 'source-budget.json'
     if not path.exists():
@@ -218,7 +225,9 @@ def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False
 
 
 def inspect_layer2_root(root, authority, *, locale_scope, reuse_roots=(), as_reuse_source=False):
-    from scripts import sermon_review_budget as ledger, sermon_workflow_jobs as jobs
+    from scripts import sermon_review_budget as ledger
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.orchestration import jobs
     root = Path(root).resolve()
     _,folder,_=jobs._paths(root,ledger.STORE_ID)
     path=folder/'state.json'
@@ -297,9 +306,12 @@ def inspect_layer2_calls(config):
                 raise ValueError(f'Layer 2 {locale} call marker requires reconciliation before dispatch: {marker.name}') from error
 
 def check_budget(plan_dir: Path):
-    from scripts import machine_qc_budget_authorization as qc_auth
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import qc_budget_authorization as qc_auth
     from scripts import plan_run_budgets as planner
-    from scripts import canonical_layer2_budget as l2_budget, canonical_layer2_controller as controller
+    from scripts import canonical_layer2_budget as l2_budget
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.text import controller
     problems = []
     resume_remaining = {}
     try:

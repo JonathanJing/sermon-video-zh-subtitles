@@ -19,7 +19,8 @@ if __package__ in {None, ''}:
 
 from scripts import canonical_pipeline_definition as pipeline
 from scripts import inspect_canonical_packages as packages
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts.sermon_release_workflow import _safe_path
 
 IDENTITY_SCHEMA = 'sermon-canonical-workflow-job-identity-v1'

@@ -19,7 +19,8 @@ from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_review_contracts as c
 from scripts import sermon_accounting as accounting
 from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_transcription_request as audio
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import transcription_request as audio
 from tests import test_sermon_diagnostic_provider as provider_fixtures
 config = provider_fixtures.config
 from tests.test_sermon_transcription_request import wav, riff_size

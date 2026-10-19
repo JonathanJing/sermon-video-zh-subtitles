@@ -9,7 +9,8 @@ from unittest.mock import patch
 from scripts import produce_target_language_candidate as subject
 from scripts import prepare_target_language_speech_job as handoff
 from scripts import review_target_language_candidate as human_review
-from scripts import sermon_sentence_interpretation as interpretation
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as interpretation
 from scripts import target_language_policy as policy_tools
 from scripts import four_layer_progress as progress
 from scripts import sermon_accounting as accounting

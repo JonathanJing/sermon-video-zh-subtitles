@@ -711,8 +711,8 @@ def _locale_capacity(config):
 
 
 def _worker_command(config, locale, job_id, code_sha, budget_authorization=None):
-    # The host keeps naming scripts/canonical_layer2_controller.py, so new requests
-    # match the argv existing durable jobs recorded.
+    # The host names the package entry (tools/ops/run.py text.controller); recovery
+    # compares this argv with the one the durable job recorded.
     command = _text.current().worker_command('worker', '--config', str(config.path),
             '--locale', locale, '--expected-configuration', config.sha256,
             '--expected-code', code_sha, '--expected-job', job_id)
@@ -1160,8 +1160,13 @@ def _reopen_plan(config, locale, view):
     require(not _unreconciled_paid_call(config, locale), 'unknown_paid_outcome_requires_reconciliation')
     key = failed[0]['jobId']
     request = jobs._read(_safe_path(config.job_root / key / 'request.json'))
+    # The worker argv starts with the host's entry prefix; a job recorded under another
+    # entry (the scripts/ facade before the D closure window) does not match it.
+    prefix = _text.current().worker_command()
     require(jobs._request_valid(request, key) and jobs._digest(request) == failed[0]['requestSha256']
-            and request['command'][2:7] == ['worker', '--config', str(config.path), '--locale', locale],
+            and request['command'][:len(prefix)] == prefix
+            and request['command'][len(prefix):len(prefix) + 5] == ['worker', '--config', str(config.path),
+                                                                    '--locale', locale],
             'original_execution_binding_changed')
     _, cache_enabled, cache_identity, _ = _payload_cache_for(config, locale)
     require(_command_option(request['command'], '--expected-payload-cache')

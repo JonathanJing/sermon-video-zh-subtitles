@@ -6,7 +6,8 @@ only a verified durable completed manifest permits release, including recovery.
 from pathlib import Path
 from scripts.sermon_unified import resources, contracts
 from scripts.sermon_execution_harness import atomic_json
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 def policy_from_path(path):

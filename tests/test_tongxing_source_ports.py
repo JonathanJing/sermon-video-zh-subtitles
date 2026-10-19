@@ -5,11 +5,13 @@ import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host as host
-from scripts import sermon_pipeline, sermon_openai_runtime, canonical_layer2_controller as controller
+from scripts import sermon_pipeline
+from tongxing_production.compute import openai_runtime as sermon_openai_runtime
+from tongxing_production.text import controller
 from scripts import build_english_source_package as builder
 from scripts import judge_english_source_for_translation as judge
 from scripts import run_sentence_interpretation_models as anchors_runner
-from scripts import sermon_sentence_interpretation as anchors
+from tongxing_production.source import sentence_interpretation as anchors
 from scripts import sermon_unified_source as stage
 from scripts import mfa_alignment
 from tongxing_production import ports

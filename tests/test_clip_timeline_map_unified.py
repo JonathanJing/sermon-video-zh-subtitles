@@ -5,7 +5,8 @@ import unittest
 import wave
 
 from scripts import clip_timeline_map as subject
-from scripts import sermon_sentence_interpretation as interpretation
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as interpretation
 
 
 def write_json(path: Path, value: object) -> Path:

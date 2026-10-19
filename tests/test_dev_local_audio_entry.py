@@ -14,8 +14,8 @@ from unittest.mock import MagicMock, patch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio import dev_profile as profiles
 from tongxing_production.audio import dev_receipts as receipts
-from scripts import render_formal_target_language_speech as tts
-from scripts import screen_target_language_audio_units as asr
+from tongxing_production.audio import renderer as tts
+from tongxing_production.audio import screening as asr
 from scripts import run_dev_local_audio_test as entry
 from tests import test_formal_audio_batching as fixtures
 

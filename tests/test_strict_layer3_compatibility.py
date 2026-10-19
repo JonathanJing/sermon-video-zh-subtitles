@@ -5,7 +5,8 @@ from unittest.mock import Mock, patch
 
 from scripts import build_target_language_audio_package as package
 from scripts import prepare_target_language_speech_job as speech
-from scripts import render_formal_target_language_speech as render
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer as render
 from scripts import review_target_language_audio as audio_review
 from scripts import target_language_policy as policies
 from scripts import sermon_review_contracts as contracts

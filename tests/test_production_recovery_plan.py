@@ -8,7 +8,8 @@ from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 from tools.ops import production_recovery_plan as subject
-from scripts import sermon_sentence_interpretation as identity
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as identity
 from tests import test_render_formal_target_language_speech as fixtures
 
 

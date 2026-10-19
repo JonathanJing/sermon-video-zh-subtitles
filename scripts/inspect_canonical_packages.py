@@ -19,7 +19,8 @@ from scripts import produce_target_language_candidate as producer
 from scripts import inspect_canonical_audio as audio_inspector
 from scripts import inspect_canonical_release as release_inspector
 from scripts.sermon_release_workflow import _safe_path
-from scripts.sermon_workflow_jobs import _digest, _read
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.jobs import _digest, _read
 
 SCHEMA = 'sermon-canonical-package-inspection-config-v1'
 SCHEMA_V2 = 'sermon-canonical-package-inspection-config-v2'

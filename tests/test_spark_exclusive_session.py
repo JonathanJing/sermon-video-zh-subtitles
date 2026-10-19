@@ -546,3 +546,12 @@ def test_snapshot_from_before_the_timer_is_refused_on_require(engine):
     engine.save(state, 'test_fixture_old_snapshot')
     with pytest.raises(SessionError, match='snapshot_lacks_unit:job-reasoning-review.timer'):
         engine.require('session', 'owner')
+
+
+def test_process_role_keeps_the_formal_renderer_a_worker_under_the_package_entry():
+    from scripts.spark_exclusive_session import process_role
+    renderer = ['/usr/bin/python', '/work/repo-x/tools/ops/run.py', 'audio.renderer', '--spark-production']
+    assert process_role('python3.12', renderer) == 'worker'
+    assert process_role('python3.12', ['/usr/bin/python', '/work/repo-x/scripts/render_formal_target_language_speech.py']) == 'worker'
+    assert process_role('python3.12', ['/usr/bin/python', '/work/repo-x/tools/ops/run.py', 'audio.screening']) is None
+    assert process_role('llama-server', ['/opt/llama-server', '--port', '8080']) == 'model'

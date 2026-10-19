@@ -1,5 +1,4 @@
-"""Review R1: the three standard-library review leaves live in the package; only the ledger keeps a facade."""
-import importlib
+"""Review R1: the three standard-library review leaves live in the package; their facades are gone."""
 import os
 from pathlib import Path
 import shutil
@@ -8,25 +7,18 @@ import sys
 import tempfile
 import unittest
 
-from scripts import machine_quality_waiver as waiver
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import waiver
 from tongxing_production import path_aliases
 
 ROOT = Path(__file__).resolve().parents[1]
+# Batch B removed the two acceptance facades and the D closure window the ledger's; the legacy keys still resolve.
 MOVED = {'machine_repair_ledger': 'repair_ledger',
          'audio_qc_human_acceptance': 'audio_qc_acceptance',
          'text_qc_human_acceptance': 'text_qc_acceptance'}
-# The two acceptance facades are gone; their legacy keys still resolve.
-FACADES = {'machine_repair_ledger': 'repair_ledger'}
 
 
 class ReviewLeafTests(unittest.TestCase):
-    def test_scripts_facades_are_the_package_modules(self):
-        for legacy, current in FACADES.items():
-            with self.subTest(module=legacy):
-                implementation = importlib.import_module('tongxing_production.review.' + current)
-                self.assertIs(importlib.import_module('scripts.' + legacy), implementation)
-                self.assertIs(sys.modules['scripts.' + legacy], implementation)
-
     def test_legacy_keys_resolve_into_the_package(self):
         for legacy, current in MOVED.items():
             key = 'scripts/' + legacy + '.py'
@@ -56,15 +48,15 @@ class ReviewLeafTests(unittest.TestCase):
             changed.write_bytes(moved)
             self.assertEqual(waiver.implementation_sha256(checkout), before)
 
-    def test_facades_import_with_only_the_spark_container_path(self):
+    def test_package_modules_import_with_only_the_spark_container_path(self):
         """Spark containers run without site-packages and put <code>/packages/production/src
         and <code> on PYTHONPATH (clip_e2e_spark.PACKAGE_SRC)."""
         from scripts import clip_e2e_spark
         environment = {key: value for key, value in os.environ.items() if key != 'PYTHONPATH'}
         environment['PYTHONPATH'] = os.pathsep.join([str(ROOT/clip_e2e_spark.PACKAGE_SRC), str(ROOT)])
-        code = ''.join(f'import scripts.{legacy} as m\n'
+        code = ''.join(f'import tongxing_production.review.{current} as m\n'
                        f'assert m.__name__ == "tongxing_production.review.{current}", m.__name__\n'
-                       for legacy, current in FACADES.items())
+                       for current in MOVED.values())
         with tempfile.TemporaryDirectory() as elsewhere:
             result = subprocess.run([sys.executable, '-S', '-c', code], cwd=elsewhere, env=environment,
                                     capture_output=True, text=True, timeout=60)

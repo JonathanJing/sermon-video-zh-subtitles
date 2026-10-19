@@ -12,8 +12,9 @@ import re
 from scripts import sermon_review_contracts as c
 from scripts import sermon_repair_planning as planning
 from scripts import sermon_review_budget as budget
-from scripts import sermon_workflow_jobs as jobs
-from scripts.canonical_layer2_controller import ADMISSION_LOCK
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
+from tongxing_production.text.controller import ADMISSION_LOCK
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_budget_adapter as execution
 from scripts import sermon_review_gate as gate

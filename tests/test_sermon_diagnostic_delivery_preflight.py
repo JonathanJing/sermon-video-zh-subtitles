@@ -107,7 +107,7 @@ class PreviewInspectionTests(unittest.TestCase):
         self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
         self.save_receipt()
         facade = subject.preview.formal._audio.current().code.physical_path(
-            'scripts/render_speculative_target_language_speech.py')
+            'packages/production/src/tongxing_production/audio/speculative.py')
         original_open = Path.open
 
         def changed_open(path, *args, **kwargs):

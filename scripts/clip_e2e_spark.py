@@ -3,13 +3,13 @@
 
 Four subcommands, each one GPU or CPU container on Spark, in order:
 
-- ``render``: the formal renderer (``render_formal_target_language_speech.py --spark-production``)
+- ``render``: the formal renderer (``tools/ops/run.py audio.renderer --spark-production``)
   with every evidence file staged by content hash and mapped with ``--path-map``;
 - ``compact``: measured edge-silence compaction of the immutable raw render into a new root and
   the assembled track (``compact_formal_target_audio.py``, CPU);
 - ``screen``: the Qwen3-ASR back-transcription screen of that root
-  (``screen_target_language_audio_units.py``);
-- ``audio-qc``: the machine listening-waiver driver (``run_machine_qc_audio_test.py``) with the
+  (``tools/ops/run.py audio.screening``);
+- ``audio-qc``: the machine listening-waiver driver (``tools/ops/run.py review.qc_audio_run``) with the
   local ASR, the speaker checkpoint and the secondary ``gpt-transcribe`` API through the explicit
   dev environment launcher on Spark. The Mac artifacts tree is mirrored on Spark and mounted at
   its original absolute path, so every hash-bound path in the packages resolves unchanged.
@@ -36,7 +36,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from scripts import sermon_sentence_interpretation as identity  # noqa: E402
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as identity  # noqa: E402
 
 RUNTIME = ROOT / "config/clip-e2e/spark-runtime.json"
 RUNTIME_SCHEMA = "sermon-clip-e2e-spark-runtime-v1"
@@ -160,7 +161,7 @@ def evidence_closure(job: dict, spark: Spark, remote_home: str) -> tuple[dict[st
 
     Returns (local, remote): files on this Mac, and files that exist only on Spark (the MFA
     runtime the Layer 1 alignment ran with), each verified where it lives."""
-    from scripts.render_formal_target_language_speech import _evidence_paths
+    from tongxing_production.audio.renderer import _evidence_paths
     pending, local, remote = _evidence_paths(job["inputs"]), {}, {}
     while pending:
         ref = pending.pop(0)
@@ -201,7 +202,7 @@ def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, 
                "-e", "PYTHONDONTWRITEBYTECODE=1", "-e", "XDG_CACHE_HOME=/tmp/cache", "-e", "TRITON_CACHE_DIR=/tmp/triton",
                "-e", "NUMBA_CACHE_DIR=/tmp/numba", "-e", "HF_HOME=/tmp/hf",
                "-w", f"/work/{code}", "--entrypoint", "/usr/bin/python", runtime["images"]["tts"],
-               f"/work/{code}/scripts/render_formal_target_language_speech.py",
+               f"/work/{code}/tools/ops/run.py", "audio.renderer",
                "--source", blob("source"), "--anchor", blob("anchor"),
                "--candidate", blob("candidate"), "--policy", blob("policy"),
                "--human-review-receipt", blob("human-review-receipt"),
@@ -382,7 +383,7 @@ def screen(args, runtime, spark, session) -> int:
         "-e", "TRITON_CACHE_DIR=/tmp/triton", "-e", "TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor",
         "-e", "XDG_CACHE_HOME=/tmp/cache",
         "-w", code, "--entrypoint", "python", runtime["images"]["pytorchFfmpeg"],
-        f"{code}/scripts/screen_target_language_audio_units.py",
+        f"{code}/tools/ops/run.py", "audio.screening",
         "--job", f"{work}/job.json", "--render-manifest", f"{work}/render-manifest.json", "--artifact-root", work,
         "--model-path", f"/model-cache/{runtime['asrSnapshot']}", "--model-revision", runtime["asrRevision"],
         "--batch-size", args.batch_size, "--unit-cache", f"{work}/{cache}",
@@ -450,7 +451,7 @@ def audio_qc(args, runtime, spark, session) -> int:
             "-w", code, "--entrypoint", "python", runtime["images"]["pytorchFfmpeg"],
             f"{code}/scripts/run_with_openai_environment.py", "--environment", args.openai_environment,
             "--env-file", "/secrets/openai.env",
-            "python", f"{code}/scripts/run_machine_qc_audio_test.py",
+            "python", f"{code}/tools/ops/run.py", "review.qc_audio_run",
             "--run-dir", run_dir, "--out", out, "--state-dir", state, "--locales", loc,
             "--audio-package", f"{loc}={package}", "--backend", "real",
             "--asr-model-path", f"/model-cache/{runtime['asrSnapshot']}",

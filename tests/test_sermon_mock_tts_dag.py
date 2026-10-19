@@ -22,7 +22,8 @@ from scripts import sermon_log_contract as logs
 from scripts import sermon_log_profile as profile
 from scripts import sermon_mock_tts_dag as dag
 from scripts import sermon_review_contracts as c
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts.sermon_diagnostic_dag_session import DiagnosticSession
 from tests.mock_tts_dag_fixture import MockTTSDAGFixture
 
@@ -282,7 +283,7 @@ import json, os, subprocess, sys, time
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
 from scripts import sermon_mock_tts_dag as dag
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 from scripts.sermon_diagnostic_dag_session import DiagnosticSession
 from tests.mock_tts_dag_fixture import MockTTSDAGFixture
 from tests.mock_tts_sdk_diagnostics import result_summary, preserve_evidence

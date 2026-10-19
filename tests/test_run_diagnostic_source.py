@@ -8,7 +8,8 @@ from unittest.mock import patch, MagicMock
 
 from scripts.experiments import run_diagnostic_source as subject
 from scripts.production_concurrency_profile import profile_v1
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts import judge_english_source_for_translation as judge
 from scripts import english_source_judge_cache as cache
 from scripts.sermon_unified import resources

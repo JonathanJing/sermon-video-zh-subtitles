@@ -15,7 +15,8 @@ from scripts import sermon_provider_limits as limits
 from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
-from scripts import sermon_transcription_request as transcription
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import transcription_request as transcription
 from scripts.sermon_release_workflow import _safe_path
 
 REASONS = ('possible_boundary_fragment', 'title_orthography', 'speech_restart', 'unusual_wording')

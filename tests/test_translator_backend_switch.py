@@ -7,7 +7,8 @@ from scripts import claude_layer2_transport as claude
 from scripts import run_target_language_models as models
 from scripts import sermon_provider_limits as limits
 from scripts import sermon_review_budget as ledger
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts import target_language_policy as policy_tools
 from tests import test_canonical_layer2_controller as fixtures
 
@@ -281,7 +282,7 @@ class ClaudeCliOpusBackendTests(unittest.TestCase):
     def test_controller_builds_one_subscription_transport_per_role(self):
         from pathlib import Path
         from unittest import mock
-        from scripts import canonical_layer2_controller as controller
+        from tongxing_production.text import controller
         built = []
 
         class Recording:

@@ -23,7 +23,8 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts.production_concurrency_profile import validate_profile
 from scripts.sermon_unified import resources
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts import english_source_judge_cache as immutable
 
 ROOT = Path(__file__).resolve().parents[2]

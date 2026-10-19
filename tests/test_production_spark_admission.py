@@ -8,8 +8,9 @@ from tongxing_production.compute import legacy_openai  # C4: the remote-call gro
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
 from scripts import production_spark_admission as admission
 from scripts import spark_exclusive_session as sessions
-from scripts import mfa_spark, render_formal_target_language_speech as speech
-from scripts import sermon_source_budget as budgets
+from scripts import mfa_spark
+from tongxing_production.audio import renderer as speech
+from tongxing_production.source import budget as budgets
 from scripts import sermon_provider_http as provider_http
 from scripts import run_codex_layer2_test as layer2
 from tests import test_codex_layer2_diagnostic as fixtures

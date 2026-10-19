@@ -141,7 +141,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import sys
 from scripts.experiments import replay_fixed_clip_local_models as worker
-from scripts.render_formal_target_language_speech import write_pcm16
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio.renderer import write_pcm16
 assert 'scripts.validate_target_language_audio_unit' not in sys.modules
 root = Path(sys.argv[1])
 with ThreadPoolExecutor(max_workers=4) as pool:

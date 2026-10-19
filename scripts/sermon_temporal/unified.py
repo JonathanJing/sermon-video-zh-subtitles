@@ -41,7 +41,8 @@ def execute(request):
 
 def transfer(root,key,expected_revision, *, scheduler):
     from scripts.sermon_unified import runtime as r, contracts as c
-    from scripts import sermon_workflow_jobs as jobs
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.orchestration import jobs
     if scheduler not in ('canonical','temporal'):
         raise c.ContractError('scheduler_invalid',2)
     with jobs._lock(Path(root),c.digest({'unifiedPump':key})) as (_,_,held):

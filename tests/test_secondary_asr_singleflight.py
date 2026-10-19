@@ -9,9 +9,10 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import machine_qc_audio_transports as transports
-from scripts import machine_qc_budget_authorization as auth
-from scripts.sermon_source_budget import SourceBudget
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import qc_audio_transports as transports
+from tongxing_production.review import qc_budget_authorization as auth
+from tongxing_production.source.budget import SourceBudget
 from tests.auto_qc_fixtures import speech_wav
 from tests.test_source_budget_settlement import AUTHORITY
 from tests.test_run_machine_qc_audio_test import OPENAI_ENV
@@ -27,7 +28,7 @@ class SecondarySingleflightTests(unittest.TestCase):
         self.addCleanup(self.environment.stop)
 
     def secondary(self, send, *, cache='cache', concurrency=1, cap=10):
-        from scripts.sermon_openai_runtime import selected_route
+        from tongxing_production.compute.openai_runtime import selected_route
         store = SourceBudget(self.root/'budget', copy.deepcopy(AUTHORITY), verify=lambda: None,
                              transport=send, max_concurrent=concurrency)
         # Trusted already-authorized synthetic ledger seam; no provider or GPU.

@@ -75,7 +75,8 @@ def main():
  started=time.perf_counter()
  import torch,soundfile as sf
  from qwen_asr import Qwen3ASRModel
- from scripts.screen_target_language_audio_units import tokens
+ from scripts import tongxing_host  # noqa: F401  binds the production package ports
+ from tongxing_production.audio.screening import tokens
  report['runtimeImportSeconds']=time.perf_counter()-started
  assert torch.cuda.is_available(),'CUDA required; no CPU fallback'
  report['torchVersion']=torch.__version__

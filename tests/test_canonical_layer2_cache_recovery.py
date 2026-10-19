@@ -9,8 +9,9 @@ from unittest.mock import patch
 
 from scripts import canonical_layer2_cache_recovery as subject
 from scripts import canonical_layer2_reconciliation as reconciliation
-from scripts import canonical_layer2_controller as layer2
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import controller as layer2
+from tongxing_production.orchestration import jobs
 from scripts import sermon_accounting as accounting
 from scripts import weekly_pipeline_report as weekly
 from tests import test_canonical_layer2_controller as fixtures

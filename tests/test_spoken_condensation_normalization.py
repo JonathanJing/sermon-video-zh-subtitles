@@ -3,8 +3,9 @@ import copy
 
 import pytest
 
-from scripts import spoken_condensation as condensation
-from scripts import target_audio_predicted_schedule as predicted
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import condensation
+from tongxing_production.audio import predicted_schedule as predicted
 from tests.test_target_audio_spoken_length import synthesis
 
 BASE = "시편 101편을 읽으십시오."

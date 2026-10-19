@@ -20,13 +20,14 @@ import statistics
 import subprocess
 from typing import Any, Callable
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 try:
-    from scripts import sermon_sentence_interpretation as interpretation
+    from tongxing_production.source import sentence_interpretation as interpretation
 except ImportError:  # Direct execution of this file: add the repository root.
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from scripts import sermon_sentence_interpretation as interpretation
+    from tongxing_production.source import sentence_interpretation as interpretation
 
 
 JOB_SCHEMA = "sermon-sentence-natural-tts-job-v1"
