@@ -5,7 +5,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting, sermon_cached_fresh_diagnostic_source as cache
+from scripts import sermon_cached_fresh_diagnostic_source as cache
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import sermon_fresh_diagnostic as entry

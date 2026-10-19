@@ -126,7 +126,7 @@ class ArchiveCaptionTests(unittest.TestCase):
             archive.reviewed_inputs(run, media_probe=self.probe)
 
     def test_translation_accounting_records_usage_without_changing_model_settings(self):
-        from scripts.sermon_accounting import record_api_attempt, read_events
+        from tongxing_production.observability.accounting import record_api_attempt, read_events
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             run = root / "run"

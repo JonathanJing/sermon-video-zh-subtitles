@@ -11,7 +11,8 @@ from unittest.mock import patch
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
 from scripts import sermon_pipeline as pipeline
 from scripts import run_post_live_subtitle_generation as production
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 
 
 class ParallelReadingTest(unittest.TestCase):

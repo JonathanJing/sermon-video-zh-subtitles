@@ -174,7 +174,7 @@ class DiagnosticFlowTests(unittest.TestCase):
         self.assertEqual(self.session.calls, [('source', None), ('locale', 'ko'), ('preview', 'ko'),
                                              ('locale', 'zh-Hans'), ('preview', 'zh-Hans'), ('delivery', None)])
         self.assertTrue(all(row['humanAcceptance'] == 'pending' and not row['productionEligible'] for row in results.values()))
-        from scripts import sermon_accounting as accounting
+        from tongxing_production.observability import accounting
         events, errors = accounting.read_events(self.root / 'logs'); self.assertFalse(errors)
         starts = {event['spanId']: event for event in events if event['event'] == 'stage_started'}
         self.assertEqual(starts[results['preview.ko']['completionSpans'][0]]['dependsOn'],
@@ -384,7 +384,7 @@ class DiagnosticFlowTests(unittest.TestCase):
 
 class ActualDiagnosticFlowTests(unittest.TestCase):
     def test_actual_source_strict_locale_worker_delivery_and_replay_preserve_original_store(self):
-        from scripts import sermon_accounting as accounting
+        from tongxing_production.observability import accounting
         from scripts import sermon_diagnostic_dag_session as sessions
         from scripts import sermon_review_budget as budget
         from tests.diagnostic_dag_fixture import DiagnosticDAGFixture

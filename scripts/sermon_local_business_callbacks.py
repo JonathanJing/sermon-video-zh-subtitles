@@ -19,7 +19,7 @@ from unittest.mock import patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio import renderer
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_delivery_intent_binding as delivery
 from tongxing_production.observability import profile
 from scripts import sermon_review_contracts as contracts

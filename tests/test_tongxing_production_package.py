@@ -11,7 +11,8 @@ import sys
 import tempfile
 import unittest
 
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_SRC = ROOT / "packages/production/src/tongxing_production"
@@ -183,7 +184,7 @@ class ProductionPackageTests(unittest.TestCase):
         self.assertEqual(accounting.code_module_name(key), "tongxing_production.compute.provider_limits")
         self.assertEqual(accounting.code_module_name("packages/production/src/tongxing_production/compute/__init__.py"),
                          "tongxing_production.compute")
-        self.assertEqual(accounting.code_module_name("scripts/sermon_accounting.py"), "scripts.sermon_accounting")
+        self.assertEqual(accounting.code_module_name("scripts/sermon_accounting.py"), "tongxing_production.observability.accounting")
         identity = accounting.execution_identity()
         self.assertIn(key, identity["loadedProjectCodeSha256"])
         self.assertIn(key, accounting.safe_execution_identity(identity)["loadedProjectCodeSha256"])

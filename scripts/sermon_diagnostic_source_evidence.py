@@ -9,7 +9,7 @@ fixed paths beneath that run root are read; receipt paths are never followed.
 from pathlib import Path
 import json
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_provider_limits as limits
 from scripts import sermon_public_snapshot as public

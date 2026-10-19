@@ -3,7 +3,9 @@ import argparse
 import json
 from pathlib import Path
 
-from scripts import sermon_accounting as accounting, sermon_diagnostic_attempts as attempts
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import sermon_diagnostic_attempts as attempts
+from tongxing_production.observability import accounting
 from scripts import sermon_review_contracts as c
 from scripts import sermon_public_snapshot as public
 

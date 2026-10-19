@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.sermon_accounting import diagnostic_event, format_diagnostic, read_events, receipt_integrity, profile_integrity, _with_report_snapshot
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import diagnostic_event, format_diagnostic, read_events, receipt_integrity, profile_integrity, _with_report_snapshot
 
 LEVELS = {"DEBUG": 10, "INFO": 20, "WARNING": 30, "ERROR": 40, "CRITICAL": 50}
 

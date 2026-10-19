@@ -535,7 +535,7 @@ def start_producer_candidate(config_path, week, run, executor, *, root=ROOT, med
                 else:
                     validate_frozen(read(plan["work"] / "job.json"))
             write_json(plan["work"] / "producer-reading-handoff.json", handoff)
-            from scripts.sermon_accounting import subprocess_environment
+            from tongxing_production.observability.accounting import subprocess_environment
             with (plan["work"] / "bridge-runner.log").open("a") as log:
                 result = runner(plan["command"], stdout=log, stderr=subprocess.STDOUT, check=False, timeout=21660,
                                 env=subprocess_environment())

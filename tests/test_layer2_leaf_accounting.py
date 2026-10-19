@@ -5,7 +5,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts import run_target_language_models as runner
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts import weekly_pipeline_report as weekly
 from tests import test_run_target_language_models as fixture_module
 

@@ -13,7 +13,7 @@ REPO = Path(__file__).resolve().parents[1]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from tongxing_production.observability import completion
 from tongxing_production.observability import profile
 from scripts import sermon_mock_tts_contract as contract

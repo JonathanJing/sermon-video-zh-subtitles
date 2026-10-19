@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as offline
 from scripts import sermon_fresh_diagnostic as fresh
 from scripts import sermon_fresh_source_prefect as engine

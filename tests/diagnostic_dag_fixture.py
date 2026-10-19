@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 import unittest
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as callbacks
 from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_diagnostic_source_evidence as evidence

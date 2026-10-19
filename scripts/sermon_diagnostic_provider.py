@@ -21,7 +21,7 @@ import sys
 import time
 import urllib.request
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from tongxing_production.observability import completion
 from scripts import sermon_pipeline as pipeline
 from scripts import sermon_provider_error as errors

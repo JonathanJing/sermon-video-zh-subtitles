@@ -17,7 +17,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.source import sentence_interpretation as interpretation
 from scripts import target_language_policy as policy_tools
 from tongxing_production.observability import progress
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 
 
 def write_json(path: Path, value: object) -> None:

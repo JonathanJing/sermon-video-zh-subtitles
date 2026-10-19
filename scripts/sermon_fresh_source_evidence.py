@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 from scripts import sermon_mfa_identity as mfa_identity
 from scripts import sermon_fresh_source_causality as causality
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_provider_limits as limits
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import transcription_request as audio

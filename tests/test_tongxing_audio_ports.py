@@ -21,7 +21,8 @@ from tongxing_production.audio import renderer
 from scripts import render_multilingual_voice_demos as demos
 from scripts import review_target_language_audio as audio_review
 from tongxing_production.audio import screening
-from scripts import sermon_accounting, sermon_local_model_observation
+from scripts import sermon_local_model_observation
+from tongxing_production.observability import accounting as sermon_accounting
 from tongxing_production.orchestration import jobs as sermon_workflow_jobs
 from scripts import spark_tts_replica_pool, spark_tts_window_scheduler
 from tongxing_production.review import audio_qc as target_audio_auto_qc

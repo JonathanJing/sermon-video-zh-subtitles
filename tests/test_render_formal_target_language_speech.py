@@ -13,7 +13,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.audio import renderer as subject
 from tongxing_production.observability import measure
 from tongxing_production.observability import progress
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import weekly_pipeline_report as weekly
 from tests import test_build_target_language_audio_package as fixture_module
 

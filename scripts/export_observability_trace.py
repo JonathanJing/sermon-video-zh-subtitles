@@ -11,7 +11,7 @@ from pathlib import Path
 import sys
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import cache_observation as cache
 from scripts import sermon_local_model_observation as local_model

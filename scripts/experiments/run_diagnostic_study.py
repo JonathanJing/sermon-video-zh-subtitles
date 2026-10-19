@@ -8,7 +8,8 @@ import sys
 from types import SimpleNamespace
 if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
-from scripts import codex_layer2_diagnostic as diagnostic, sermon_codex_transport as codex, sermon_accounting as accounting
+from scripts import codex_layer2_diagnostic as diagnostic, sermon_codex_transport as codex
+from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import study_artifacts
 from tongxing_production.workflows.prepared import study_generation as generation

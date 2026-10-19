@@ -13,7 +13,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from scripts import tracker_projection_host  # noqa: F401  binds the read-only report ports
 from tongxing_production.observability.projections import tracker_dag_projection as public
 from tongxing_production.observability import progress as tracker
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from tongxing_production.observability import log_contract as contract
 from tongxing_production.observability import profile
 from scripts import sermon_run_progress as progress

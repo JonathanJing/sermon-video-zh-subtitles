@@ -6,7 +6,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_dag_session as session
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
@@ -410,7 +411,7 @@ class CrossCommitMigrationTests(unittest.TestCase):
 from copy import deepcopy
 from pathlib import Path
 import subprocess
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host; from tongxing_production.observability import accounting
 from scripts import sermon_review_contracts as c
 from scripts import sermon_public_snapshot as public
 from scripts.sermon_diagnostic_dag_session import DiagnosticSession

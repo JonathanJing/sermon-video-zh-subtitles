@@ -31,7 +31,7 @@ from tongxing_production.observability import model_call_observation as observat
 from scripts import codex_layer2_resources as cli_resources
 from scripts import english_source_judge_cache as judge_cache
 from scripts import production_concurrency_profile as profile_tools
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import mfa_backend
 from scripts.production_concurrency_profile import validate_profile, load_profile
 from scripts.sermon_unified import resources

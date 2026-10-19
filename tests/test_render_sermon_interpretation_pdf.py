@@ -13,7 +13,7 @@ from tongxing_production.workflows.dual_pdf import interpretation_pdf as impleme
 
 class RenderSermonInterpretationPdfTest(unittest.TestCase):
     def test_legacy_import_identity(self):
-        from scripts import sermon_accounting
+        from tongxing_production.observability import accounting as sermon_accounting
         from tongxing_production import path_aliases
 
         self.assertIs(mod, implementation)

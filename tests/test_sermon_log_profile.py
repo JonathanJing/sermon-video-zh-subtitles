@@ -11,7 +11,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from tongxing_production.observability import log_contract as contract
 from tongxing_production.observability import outbox
 from tongxing_production.observability import profile
@@ -223,7 +223,7 @@ for i in range(3):
             with profile.session(tmp,'synthetic',work_kind='production',evidence_mode='synthetic'):
                 with accounting.stage('parent',work_unit_id='l2.zh-Hans.group.001',depends_on=[]) as parent:
                     env=accounting.subprocess_environment()
-                    code="from scripts import sermon_accounting as a\nwith a.stage('child',depends_on=[]):a.record_workload('child',{'segmentCount':1})"
+                    code="from scripts import tongxing_host; from tongxing_production.observability import accounting as a\nwith a.stage('child',depends_on=[]):a.record_workload('child',{'segmentCount':1})"
                     subprocess.run([sys.executable,'-c',code],env=env,check=True,capture_output=True)
                     broken=dict(env);broken.pop(profile.PROFILE_ENV);broken.pop(profile.CONTEXT_ENV)
                     result=subprocess.run([sys.executable,'-c',code],env=broken,capture_output=True)
@@ -336,7 +336,7 @@ class DurableProfileContextTests(unittest.TestCase):
         from tongxing_production.orchestration import jobs
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);ledger=root/'accounting';jobroot=root/'jobs'
-            code="from scripts import sermon_accounting as a\nwith a.stage('worker',depends_on=[]):a.record_workload('worker',{'segmentCount':1})"
+            code="from scripts import tongxing_host; from tongxing_production.observability import accounting as a\nwith a.stage('worker',depends_on=[]):a.record_workload('worker',{'segmentCount':1})"
             command=[sys.executable,'-c',code]
             with profile.session(ledger,'synthetic',work_kind='production',evidence_mode='synthetic'):
                 with accounting.stage('dispatch',work_unit_id='l2.zh-Hans.group.001',depends_on=[]) as dispatch:

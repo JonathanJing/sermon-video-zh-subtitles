@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import clock_evidence as clock
 from tongxing_production.observability import profile
@@ -20,8 +20,8 @@ from scripts import weekly_pipeline_report as report
 CHILD = '''
 import json,sys
 from pathlib import Path
-from scripts import sermon_accounting as accounting
-from scripts import sermon_clock_evidence as clock
+from scripts import tongxing_host; from tongxing_production.observability import accounting
+from tongxing_production.observability import clock_evidence as clock
 launch,dependency=json.loads(Path(sys.argv[1]).read_text())
 with accounting.accounting_session(Path(sys.argv[2]),'clock.child'):
     started=clock.worker_started(launch)

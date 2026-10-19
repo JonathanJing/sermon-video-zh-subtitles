@@ -18,7 +18,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import sermon_accounting
+from tongxing_production.observability import accounting as sermon_accounting
 from tongxing_production.observability import measure as four_layer_measure
 from tongxing_production.observability import progress as four_layer_progress
 

@@ -8,7 +8,7 @@ from scripts import build_english_source_package as english
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as anchors
 from scripts import target_language_policy as policies
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import weekly_pipeline_report as weekly
 from scripts import canonical_layer2_cache_recovery as recovery
 from tongxing_production.text import controller

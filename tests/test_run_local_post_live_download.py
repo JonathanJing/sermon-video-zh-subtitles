@@ -38,7 +38,7 @@ def args_for(root: Path):
 
 class LocalPostLiveDownloadTest(unittest.TestCase):
     def test_legacy_import_and_path_identity(self):
-        from scripts import sermon_accounting
+        from tongxing_production.observability import accounting as sermon_accounting
         from tongxing_production import path_aliases
 
         root = SCRIPT_PATH.parents[1]

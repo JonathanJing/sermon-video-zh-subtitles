@@ -14,7 +14,7 @@ import time
 from scripts import sermon_agent_diagnostics as diagnostic
 from scripts import sermon_agent_diagnostics_contracts as c
 from scripts import sermon_agents_api as api
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_provider_limits as pricing
 from tongxing_production.observability import profile
 from scripts import sermon_strict_layer2 as immutable

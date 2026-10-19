@@ -24,7 +24,7 @@ from backend.cloud import access_secret as cloud_access_secret
 from backend.cloud import upload_file_to_gcs
 from scripts import review_prompts
 from scripts import series_terminology
-from scripts.sermon_accounting import _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata
+from tongxing_production.observability.accounting import _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata
 
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 SECRET_RESOURCE_RE = re.compile(

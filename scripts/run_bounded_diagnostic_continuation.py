@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 
 from scripts import run_bounded_diagnostic as run
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_provider as provider
 from scripts import tongxing_host  # noqa: F401  binds the production package ports

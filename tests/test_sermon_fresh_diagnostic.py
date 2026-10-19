@@ -18,7 +18,7 @@ from scripts import sermon_diagnostic_provider as provider
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 from scripts import sermon_strict_layer2 as immutable
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as callbacks
 from scripts import sermon_public_snapshot as aggregate
 from tongxing_production import path_aliases
@@ -104,7 +104,7 @@ class FreshPreloadTests(unittest.TestCase):
             from unittest.mock import patch
             sys.path.insert(0, sys.argv[1])
             from scripts import sermon_fresh_diagnostic as entry
-            from scripts import sermon_accounting as accounting
+            from scripts import tongxing_host; from tongxing_production.observability import accounting
             from scripts import sermon_strict_layer2 as strict
             from tests.test_sermon_strict_layer2 import StrictAdapterTests
             fixture = StrictAdapterTests()
@@ -155,8 +155,8 @@ class FreshPreloadTests(unittest.TestCase):
             directory = Path(sys.argv[2])
             sys.path.insert(0, str(repository))
             from scripts import sermon_fresh_diagnostic as entry
-            from scripts import sermon_accounting as accounting
-            from scripts import sermon_log_profile as profile
+            from scripts import tongxing_host; from tongxing_production.observability import accounting
+            from tongxing_production.observability import profile
             from tongxing_production.path_aliases import resolve
             assert 'tongxing_production.observability.workflow_evidence' not in sys.modules
             with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('network forbidden')) as network:

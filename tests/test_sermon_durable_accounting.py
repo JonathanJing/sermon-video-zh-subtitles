@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import completion
 from tongxing_production.observability import durable

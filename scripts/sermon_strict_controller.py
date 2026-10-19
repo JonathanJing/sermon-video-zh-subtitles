@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
 from scripts import sermon_repair_planning as planning
 from scripts import sermon_review_budget as budget

@@ -24,7 +24,8 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts import sermon_identity_sidecars as sidecars
 from scripts import sermon_observability as observer
 from scripts.sermon_execution_harness import atomic_json, utc_now, work_lock

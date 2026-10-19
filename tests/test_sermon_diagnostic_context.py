@@ -12,7 +12,8 @@ from scripts import prepare_target_language_speech_job as speech
 from scripts import build_english_source_package as english
 from scripts import produce_target_language_candidate as producer
 from scripts import target_language_policy as policies
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tests import test_sermon_strict_locale as locale_fixtures
 
 

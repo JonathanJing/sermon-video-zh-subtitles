@@ -10,7 +10,8 @@ from scripts import run_bounded_diagnostic as bounded
 from scripts import sermon_strict_candidate_bridge as bridge, sermon_review_contracts as c
 from scripts import sermon_review_budget as budget, sermon_diagnostic_provider as provider
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import sermon_diagnostic_attempts as attempts, sermon_accounting as accounting
+from scripts import sermon_diagnostic_attempts as attempts
+from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
 from scripts import target_language_policy as policies, produce_target_language_candidate as producer
 from tests import test_sermon_diagnostic_provider as fixtures

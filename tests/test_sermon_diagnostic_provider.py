@@ -15,7 +15,8 @@ from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_budget_adapter as adapter
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts import sermon_strict_candidate_bridge as bridge
 from tests import test_sermon_strict_layer2 as fixtures
 

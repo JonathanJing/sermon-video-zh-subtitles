@@ -42,7 +42,7 @@ class BusinessCallbacksTests(unittest.TestCase):
             candidate=c.read_snapshot(__import__('pathlib').Path(result['result']['output'])/'candidate.json')[0]
             self.assertFalse(candidate['releaseEligible'])
             self.assertEqual(candidate['humanReview']['translation'],'pending')
-        from scripts import sermon_accounting as accounting
+        from tongxing_production.observability import accounting
         rows,errors=accounting.read_events(f.f.root/'logs');self.assertFalse(errors)
         starts={r['spanId']:r for r in rows if r['event']=='stage_started'}
         self.assertEqual(starts[source['completionSpans'][0]]['dependsOn'],asr['completionSpans'])
@@ -104,7 +104,7 @@ class BusinessCallbacksTests(unittest.TestCase):
 
     def test_ambient_accounting_outside_fixture_is_rejected_before_write(self):
         from tongxing_production.observability import profile
-        from scripts import sermon_accounting as accounting
+        from tongxing_production.observability import accounting
         import tempfile
         from pathlib import Path
         with tempfile.TemporaryDirectory() as temp:

@@ -13,7 +13,7 @@ from unittest.mock import patch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio import renderer as formal
 from tongxing_production.audio import speculative as subject
-from scripts import sermon_accounting as ledger_accounting
+from tongxing_production.observability import accounting as ledger_accounting
 from tests import test_prepare_target_language_speech_job as speech_fixture
 from tests import test_render_formal_target_language_speech as formal_fixture
 

@@ -24,7 +24,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio import speculative as preview
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_execution_harness as harness

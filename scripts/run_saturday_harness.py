@@ -164,7 +164,7 @@ def run(args, *, runner=bounded_process):
         before = signature(args.supervisor_report)
         # Child owns leases, approval checks, logs and publication verification.
         try:
-            from scripts.sermon_accounting import subprocess_environment
+            from tongxing_production.observability.accounting import subprocess_environment
             child_env = subprocess_environment()
             child_env["SERMON_DUBBING_CONFIG"] = str(args.bridge_config.resolve())
             result = runner(pdf_command, cwd=ROOT, stdout=sys.stderr, stderr=sys.stderr, check=False,

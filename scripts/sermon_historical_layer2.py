@@ -8,7 +8,9 @@ from copy import deepcopy
 from pathlib import Path
 
 from scripts import sermon_review_contracts as c, sermon_review_budget as budget
-from scripts import sermon_strict_layer2 as strict, sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import sermon_strict_layer2 as strict
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_attempts as attempts
 from scripts import sermon_public_snapshot as aggregate
 from scripts.sermon_release_workflow import _safe_path

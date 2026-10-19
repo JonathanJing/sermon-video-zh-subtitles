@@ -26,7 +26,7 @@ def resume_in_clean_process(payload_path):
     import importlib
     import json
     from pathlib import Path
-    from scripts import sermon_accounting as accounting
+    from tongxing_production.observability import accounting
     from scripts import sermon_bounded_business_callbacks as offline
     from scripts import sermon_review_contracts as c
     from scripts.sermon_diagnostic_dag_session import DiagnosticSession

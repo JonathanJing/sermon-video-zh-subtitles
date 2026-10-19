@@ -11,7 +11,7 @@ import subprocess
 import sys
 import time
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from tongxing_production.observability import completion
 from tongxing_production.observability import durable
 from tongxing_production.observability import profile

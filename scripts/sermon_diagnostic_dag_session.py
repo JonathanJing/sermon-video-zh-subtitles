@@ -12,7 +12,7 @@ from pathlib import Path
 
 from scripts import run_bounded_diagnostic as bounded
 from scripts import run_bounded_diagnostic_continuation as entry
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as offline
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile

@@ -11,7 +11,7 @@ from scripts import build_english_source_package as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as anchors
 from tongxing_production.observability import progress
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 
 
 def write_json(path: Path, value: object) -> None:

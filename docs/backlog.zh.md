@@ -419,7 +419,7 @@ H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI
 
 #### 当前代码基线与调整位置
 
-独立核对 PR #207 编辑前 head `1a7b4a54df22f836c09cf30238642d22cc62d7a8`（报告运行基线为 `dev@7e534bb6eaf2a414def5bbd99167d6898a07b5b5`）。[schema](../schemas/sermon-accounting-log-contract-v1.schema.json) 已有 `dependsOn/blockedBy/clockDomainId`、monotonic、`usageStatus/missingReasons`、`segment_reviewed` 与 RQC evidence；[validator](../packages/production/src/tongxing_production/observability/log_contract.py) 已校验单调区间、状态和重放身份；[accounting](../scripts/sermon_accounting.py) 的 `stage` 已接受依赖并返回 span ID，区分 inline dispatch 观测与资源队列。不能把这些能力描述成尚不存在；旧[日志合同](workflow-accounting-log-contract.zh.md)的待实现措辞属于其冻结时点，不作为当前源码缺失证明。
+独立核对 PR #207 编辑前 head `1a7b4a54df22f836c09cf30238642d22cc62d7a8`（报告运行基线为 `dev@7e534bb6eaf2a414def5bbd99167d6898a07b5b5`）。[schema](../schemas/sermon-accounting-log-contract-v1.schema.json) 已有 `dependsOn/blockedBy/clockDomainId`、monotonic、`usageStatus/missingReasons`、`segment_reviewed` 与 RQC evidence；[validator](../packages/production/src/tongxing_production/observability/log_contract.py) 已校验单调区间、状态和重放身份；[accounting](../packages/production/src/tongxing_production/observability/accounting.py) 的 `stage` 已接受依赖并返回 span ID，区分 inline dispatch 观测与资源队列。不能把这些能力描述成尚不存在；旧[日志合同](workflow-accounting-log-contract.zh.md)的待实现措辞属于其冻结时点，不作为当前源码缺失证明。
 
 | 归属 | 当前可核对行为 | 待调整的生成／消费机制 |
 |---|---|---|

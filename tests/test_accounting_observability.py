@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 from tongxing_production import path_aliases
 from tongxing_production.observability import accounting as accounting_impl
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile as log_profile
 from scripts import export_observability_trace as safe_export

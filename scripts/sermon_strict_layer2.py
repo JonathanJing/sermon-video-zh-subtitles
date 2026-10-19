@@ -16,7 +16,7 @@ from scripts import target_language_policy as policies
 from scripts import sermon_review_contracts as c
 from tongxing_production.observability import review_observation as observation
 from tongxing_production.observability import profile
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from scripts.sermon_release_workflow import _safe_path

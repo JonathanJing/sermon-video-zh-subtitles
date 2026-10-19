@@ -8,7 +8,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts.experiments import benchmark_layer2_bounded as subject
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tests import test_run_target_language_models as fixtures
 
 

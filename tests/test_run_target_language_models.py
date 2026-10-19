@@ -14,7 +14,7 @@ from scripts import run_target_language_models as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import measure
 from tongxing_production.observability import progress
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import produce_target_language_candidate as producer
 from scripts import target_language_policy as policy_tools
 from tests import test_produce_target_language_candidate as fixture_module
@@ -511,7 +511,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         ledger_path = self.out.parent / "four-layer-progress.json"
         from tongxing_production.observability import measure
         from tongxing_production.observability import progress
-        from scripts import sermon_accounting as accounting
+        from tongxing_production.observability import accounting
         progress.save(ledger_path, progress.new_ledger("test-page", ["ko"]))
         step = "L2-02@ko"
         with measure.producer_step(ledger_path, step, locale="ko"):

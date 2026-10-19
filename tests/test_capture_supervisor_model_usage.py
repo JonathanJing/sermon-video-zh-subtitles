@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 from tools.ops import capture_supervisor_model_usage as capture
