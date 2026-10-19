@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest import mock
-from scripts import sermon_cuv_translation as mod
+from tongxing_production.text import cuv_translation as mod
 from scripts.cuv_scripture import DEFAULT_LIBRARY_PATH, DEFAULT_PROVENANCE_PATH
 
 

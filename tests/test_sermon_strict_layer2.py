@@ -15,7 +15,7 @@ from scripts import sermon_strict_layer2 as s
 from scripts import sermon_review_contracts as c
 from scripts import sermon_accounting as accounting
 from scripts import sermon_log_profile as profile
-from scripts import target_language_policy as policies
+from tongxing_production.text import policy as policies
 from tests import test_produce_target_language_candidate as legacy_fixtures
 from tests.test_sermon_review_contracts import load
 
@@ -34,9 +34,9 @@ class StrictAdapterTests(unittest.TestCase):
         policy=policies.freeze_strict_policy(draft,rubric)
         self.args=[s.material_bytes(v) for v in (f.source,f.anchor,policy,rubric)]
         self.group={k:f.evidence['groups'][0][k] for k in ('translationGroupId','sourceUnitIds')}
-        from scripts import produce_target_language_candidate as producer
-        from scripts import run_target_language_models as models
-        from scripts import target_language_rule_preflight as rule_preflight
+        from tongxing_production.text import candidate as producer
+        from tongxing_production.text import models
+        from tongxing_production.text import rule_preflight
         request = producer.prepare_request(f.source, f.anchor, policy, strict_rubric=rubric)
         self.rule_preflight = rule_preflight.preflight(
             request, policy, f.plugin_path, [{k: row[k] for k in ('translationGroupId', 'sourceUnitIds')} for row in f.evidence['groups']])
@@ -640,7 +640,7 @@ class StrictAdapterTests(unittest.TestCase):
             transport.assert_not_called()
 
     def test_duplicate_model_json_keys_do_not_silently_choose_last_value(self):
-        from scripts import run_target_language_models as shared
+        from tongxing_production.text import models as shared
         payload={'id':'fixture-duplicate','model':'gpt-6-astra',
             'choices':[{'finish_reason':'stop','message':{'content':'{"translationGroupId":"bad","translationGroupId":"g1"}'}}]}
         def caller(key,request,*,response_observer):

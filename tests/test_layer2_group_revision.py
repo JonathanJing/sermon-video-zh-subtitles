@@ -17,9 +17,9 @@ from scripts import canonical_durable_jobs as durable
 from tools.ops import record_decision
 from tongxing_production.orchestration import jobs
 from tongxing_production.source import english_source_package as english_source
-from scripts import produce_target_language_candidate as producer
+from tongxing_production.text import candidate as producer
 from tongxing_production.source import sentence_interpretation as interpretation
-from scripts import target_language_policy as policy_tools
+from tongxing_production.text import policy as policy_tools
 from tests import test_build_english_source_package as source_fixtures
 from tongxing_production.text import auto_repair, group_revision, policy_preview
 

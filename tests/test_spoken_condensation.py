@@ -6,7 +6,7 @@ import unittest
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import seeded_errors as seeded
 from tongxing_production.review import waiver
-from scripts import run_target_language_models as runner
+from tongxing_production.text import models as runner
 from tongxing_production.review import condensation
 from tongxing_production.audio import predicted_schedule as predicted
 from tongxing_production.review import text_qc

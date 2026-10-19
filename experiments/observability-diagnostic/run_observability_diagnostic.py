@@ -35,9 +35,10 @@ def files(root):
 
 
 def cache_replay(inputs, source_media, out, forbidden):
-    from scripts import run_target_language_models as models
-    from scripts import produce_target_language_candidate as producer
-    from scripts import target_language_policy as policies
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.text import models
+    from tongxing_production.text import candidate as producer
+    from tongxing_production.text import policy as policies
     from scripts.sermon_workflow_evidence import collect_workflow_evidence
     report = {'scope': 'new_deterministic_replay_of_historical_paid_results_not_new_inference', 'locales': []}
     with accounting.accounting_session(out/'accounting', 'real_clip_trilingual_cached_replay', {'mode':'dry_run'}):

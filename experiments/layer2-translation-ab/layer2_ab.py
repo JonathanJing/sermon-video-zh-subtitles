@@ -31,10 +31,11 @@ from typing import Any, Callable
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the repository root
     sys.path.insert(0, str(ROOT))
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as production
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import models as production
 from scripts import sermon_pipeline
-from scripts import target_language_policy as policy_tools
+from tongxing_production.text import policy as policy_tools
 
 
 MODELS = {"A": "gpt-6-astra", "B": "gpt-6-sol", "C": "gpt-6-luna"}

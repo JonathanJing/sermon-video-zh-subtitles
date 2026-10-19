@@ -6,7 +6,7 @@ import unittest
 import wave
 from unittest import mock
 
-from scripts import sermon_cuv_translation as mod
+from tongxing_production.text import cuv_translation as mod
 from scripts.cuv_scripture import CuvLibrary
 
 

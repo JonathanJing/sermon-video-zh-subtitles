@@ -25,9 +25,9 @@ from scripts import sermon_diagnostic_dag_session as sessions
 from scripts import sermon_diagnostic_prefect_flow as flow
 from scripts import sermon_fresh_diagnostic_source as source_adapter
 from scripts import sermon_cached_fresh_diagnostic_source as cached_source
-from scripts import target_language_policy as policy_builder
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as models
+from tongxing_production.text import policy as policy_builder
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import models
 from scripts.sermon_release_workflow import _safe_path
 
 TERMINAL_REASONS=frozenset({'diagnostic_continuation_code_changed','diagnostic_dag_binding_changed',
@@ -94,7 +94,7 @@ def preload_execution_modules(plugin_paths=()):
                  'tongxing_production.audio.renderer','render_multilingual_voice_demos',
                  'tongxing_production.audio.unit_integrity','sermon_local_model_observation',
                  'sermon_model_call_report','sermon_model_call_observation','tongxing_production.compute.openai_runtime',
-                 'sermon_trace_artifacts','sermon_review_diagnostics','sermon_preview_checkpoint_manifest',
+                 'sermon_trace_artifacts','tongxing_production.text.review_diagnostics','sermon_preview_checkpoint_manifest',
                  'sermon_fresh_source_evidence','sermon_historical_layer2','sermon_historical_native_seed','sermon_historical_identity','tongxing_production.source.producer_compatibility','tongxing_production.source.failure'):
         # A dotted name is a package module whose scripts/ facade the D closure window removed.
         importlib.import_module(name if '.' in name else 'scripts.'+name)

@@ -11,8 +11,8 @@ from scripts import sermon_strict_candidate_bridge as bridge
 from tongxing_production.audio import speech_job as speech
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import english_source_package as english
-from scripts import produce_target_language_candidate as producer
-from scripts import target_language_policy as policies
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import policy as policies
 from scripts import sermon_accounting as accounting
 from tests import test_sermon_strict_locale as locale_fixtures
 

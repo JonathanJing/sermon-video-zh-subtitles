@@ -26,7 +26,7 @@ from tongxing_production.source import sentence_interpretation as contract
 from tongxing_production.source import budget as source_budget
 from tongxing_production.source import text_review as source_review
 from scripts import source_meaning_machine_adjudication as machine
-from scripts import target_language_policy as policies
+from tongxing_production.text import policy as policies
 
 WINDOW_START = 63.32
 MEDIA_SECONDS = 20

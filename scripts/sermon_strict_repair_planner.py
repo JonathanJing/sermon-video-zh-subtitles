@@ -17,7 +17,7 @@ from tongxing_production.orchestration import jobs
 from tongxing_production.text.controller import ADMISSION_LOCK
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_budget_adapter as execution
-from scripts import sermon_review_gate as gate
+from tongxing_production.text import strict_review_gate as gate
 from scripts import sermon_accounting as accounting
 from scripts import sermon_log_profile as profile
 from scripts import sermon_review_observation as observation

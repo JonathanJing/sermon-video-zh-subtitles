@@ -56,7 +56,7 @@ class RunBudgetInputFeasibilityTests(unittest.TestCase):
         # Actual serialized reviewer inputs include generated text, UTF-8 and
         # JSON escaping. The ceiling safely covers every admitted payload;
         # generation beyond it is rejected, never silently counted as free.
-        from scripts.run_target_language_models import model_payload
+        from tongxing_production.text.models import model_payload
         for candidate in ('한글' * 300, '\\"\n' * 500):
             payload = model_payload('reviewer', {'instruction': 'Review source and draft',
                 'input': {'englishUnits': [{'english': 'Source'}], 'astraDraft': candidate}}, policy, selected)
@@ -106,7 +106,7 @@ class RunBudgetInputFeasibilityTests(unittest.TestCase):
         from tongxing_production.source import english_source_package as english
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.source import sentence_interpretation as anchors
-        from scripts import target_language_policy as policies
+        from tongxing_production.text import policy as policies
         source=sf.EnglishSourcePackageTests();source.setUp();self.addCleanup(source.doCleanups)
         segments=[]
         for index in range(count):

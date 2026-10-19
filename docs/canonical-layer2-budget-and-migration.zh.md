@@ -13,7 +13,7 @@ result = drive(execution_config, target_locale, budget_authorization=authorizati
 
 没有 `budget_authorization` 时拒绝派发。Legacy `Controller` 不带新参数时保留原作用域，不能据此宣称 legacy 请求也有预算保护。
 
-授权 JSON 的 schema 标识为 `sermon-canonical-layer2-budget-authorization-v1`，字段由 `scripts/canonical_layer2_budget.py::load_authorization` 严格校验：
+授权 JSON 的 schema 标识为 `sermon-canonical-layer2-budget-authorization-v1`，字段由 `packages/production/src/tongxing_production/text/budget.py::load_authorization` 严格校验：
 
 - `productionRunId`、`configurationSha256`、`codeIdentitySha256` 绑定执行对象。
 - `requestLimits` 使用已有 `sermon-openai-chat-request-limits-v1`，限制完整输入、`max_completion_tokens`、service tier 和墙钟时间。

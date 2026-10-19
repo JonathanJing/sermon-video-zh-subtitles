@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from scripts import sermon_cuv_translation as mod
+from tongxing_production.text import cuv_translation as mod
 
 
 class VisualContextTests(unittest.TestCase):

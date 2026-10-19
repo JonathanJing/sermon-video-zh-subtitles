@@ -17,7 +17,7 @@ from scripts import sermon_accounting as accounting
 from scripts import weekly_pipeline_report as weekly
 from tongxing_production.orchestration import jobs
 from scripts import sermon_execution_harness as harness
-from scripts import target_language_policy as policies
+from tongxing_production.text import policy as policies
 from tests import test_inspect_canonical_packages as fixtures
 from tongxing_production.text import controller as layer2
 from tongxing_production.text import stat_memo
