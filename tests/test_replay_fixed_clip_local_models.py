@@ -106,7 +106,7 @@ class FixedClipReplayTests(unittest.TestCase):
 
     def test_full_tts_batches_receipts_and_no_model_on_resume(self):
         report, model, _ = self.tts()
-        from scripts import sermon_source_producer_compatibility as compatibility
+        from tongxing_production.source import producer_compatibility as compatibility
         implementation = Path(__file__).resolve().parents[1] / compatibility.resolve(
             'scripts/render_formal_target_language_speech.py')
         self.assertEqual(worker.read(self.tts_args.out / 'run.json')['synthesizerImplementationSha256'],

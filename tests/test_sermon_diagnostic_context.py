@@ -9,7 +9,7 @@ from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_locale as locale
 from scripts import sermon_strict_candidate_bridge as bridge
 from scripts import prepare_target_language_speech_job as speech
-from scripts import build_english_source_package as english
+from tongxing_production.source import english_source_package as english
 from scripts import produce_target_language_candidate as producer
 from scripts import target_language_policy as policies
 from scripts import sermon_accounting as accounting

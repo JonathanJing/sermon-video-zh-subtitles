@@ -103,7 +103,7 @@ class RunBudgetInputFeasibilityTests(unittest.TestCase):
     def bind_real_groups(self, count):
         """Build reviewed Layer 1 through actual builders, not a mocked group count."""
         from tests import test_build_english_source_package as sf
-        from scripts import build_english_source_package as english
+        from tongxing_production.source import english_source_package as english
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.source import sentence_interpretation as anchors
         from scripts import target_language_policy as policies

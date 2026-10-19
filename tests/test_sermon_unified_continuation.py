@@ -8,7 +8,7 @@ from unittest.mock import patch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import sermon_unified  # noqa: F401  binds the orchestration these stages compose
 from tongxing_production.workflows.prepared import continuation as subject
-from scripts import build_english_source_package as english
+from tongxing_production.source import english_source_package as english
 from scripts.sermon_unified import contracts as c, runtime
 from tests import test_sermon_unified_source as source_fixture
 from tests import test_sermon_unified_cli as cli_fixture

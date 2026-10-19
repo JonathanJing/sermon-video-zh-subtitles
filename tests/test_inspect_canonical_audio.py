@@ -5,7 +5,7 @@ import unittest
 from scripts import inspect_canonical_audio as subject
 from scripts import inspect_canonical_packages as packages
 from scripts import review_target_language_audio as review
-from scripts import build_english_source_package as english
+from tongxing_production.source import english_source_package as english
 from tests import test_build_target_language_audio_package as fixtures
 
 

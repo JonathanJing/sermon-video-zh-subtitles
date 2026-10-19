@@ -15,7 +15,8 @@ import re
 import tempfile
 import threading
 
-from scripts import build_english_source_package as source_builder
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import english_source_package as source_builder
 from scripts import prepare_target_language_speech_job as handoff
 from scripts import sermon_accounting as accounting
 from scripts import sermon_bounded_business_callbacks as bounded

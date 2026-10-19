@@ -27,7 +27,7 @@ def payload(content='synthetic'):
 
 class LegacyChatShapeTests(unittest.TestCase):
     def test_actual_standalone_source_judge_strict_schema_reaches_transport(self):
-        from scripts import judge_english_source_for_translation as judge
+        from tongxing_production.source import english_source_judge as judge
         from tests.test_judge_english_source_for_translation import EnglishSourceMachineJudgeTests
         fixture=EnglishSourceMachineJudgeTests();fixture.setUp()
         self.addCleanup(fixture.doCleanups)

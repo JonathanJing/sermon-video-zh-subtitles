@@ -172,7 +172,7 @@ jobs:
           scripts/generate_notes_with_openai.py
           scripts/post_live_run_status.py
           scripts/render_sermon_interpretation_pdf.py
-          scripts/review_prompts.py
+          packages/production/src/tongxing_production/source/review_prompts.py
           scripts/run_codex_local_sermon_production.py
           scripts/run_post_live_subtitle_generation.py
           scripts/run_sermon_production_supervisor_agent.py

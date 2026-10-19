@@ -10,7 +10,7 @@ from scripts import sermon_accounting as accounting
 from scripts import sermon_completion as completion
 from scripts import sermon_log_profile as profile
 from scripts import sermon_review_contracts as c
-from scripts import sermon_source_producer_compatibility as compatibility
+from tongxing_production.source import producer_compatibility as compatibility
 from tests.test_accounting_log_contract import fixture
 
 

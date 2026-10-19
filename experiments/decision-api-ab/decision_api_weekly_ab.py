@@ -414,7 +414,7 @@ def authority(directory, cases, max_usd, max_requests, authorization_note, previ
     })
     # Keys stay the scripts/ names; a file that moved into the production
     # package is hashed where it lives now, not as its import facade.
-    from scripts import sermon_source_producer_compatibility as compatibility
+    from tongxing_production.source import producer_compatibility as compatibility
     code = {name: hashlib.sha256((ROOT / compatibility.resolve(name)).read_bytes()).hexdigest() for name in deps}
     result = {"schemaVersion": "decision-ab-budget-authority-v1",
             "root": str(Path(directory).resolve()), "caseSetSha256": digest(cases),

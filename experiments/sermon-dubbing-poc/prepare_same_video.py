@@ -277,7 +277,8 @@ def text_evidence(run, paths, summary, duration):
     require(raw == read(paths["rawEnglish"]), "Raw English is not reconstructed from the same-video ASR")
     corrected = raw
     if summary.get("sourceTextReview"):
-        from scripts.sermon_source_text_review import apply_review
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.source.text_review import apply_review
         review = Path(summary["sourceTextReview"]["reviewPath"])
         corrected, provenance = apply_review(raw, review, paths["sourceAudio"], asr)
         require(summary["sourceTextReview"] == provenance, "Source correction evidence changed")

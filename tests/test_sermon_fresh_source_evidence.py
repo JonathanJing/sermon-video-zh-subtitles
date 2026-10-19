@@ -160,13 +160,13 @@ def pin_producers(identity, compatibility, table):
 
 class MigratedCachedFreshEvidenceTests(unittest.TestCase):
     def migration_fixture(self, *, approved_identity=False):
-        from scripts import sermon_source_producer_compatibility as compatibility
+        from tongxing_production.source import producer_compatibility as compatibility
         from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
         f = fresh_fixtures.FreshSourceTests(); self.addCleanup(f.doCleanups); f.setUp()
         # Build the synthetic historical package with its historical producer
         # identities from the outset. Updating only the plan after generating a
         # current package would create an internally inconsistent old receipt.
-        from scripts import build_english_source_package as source_builder
+        from tongxing_production.source import english_source_package as source_builder
         original_sha = source_builder.file_sha256
         repository = Path(__file__).resolve().parents[1]
         historical = {repository / compatibility.resolve(path): sha
@@ -209,7 +209,7 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
         return f, root, plan, runtime
 
     def test_synthetic_approved_identity_v2_migration_zero_calls_and_tamper_rejection(self):
-        from scripts import sermon_source_producer_compatibility as compatibility
+        from tongxing_production.source import producer_compatibility as compatibility
         from scripts import sermon_log_profile as profile
         f, root, plan, runtime = self.migration_fixture(approved_identity=True)
         repository = Path(subject.cache.__file__).resolve().parents[1]
@@ -246,7 +246,7 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
                 subject.validate_fresh_source_evidence(root, plan, runtime, result['context'], result['evidence'])
 
     def test_actual_current_unknown_revision_rejects_without_calls_locks_or_cache_artifacts(self):
-        from scripts import sermon_source_producer_compatibility as compatibility
+        from tongxing_production.source import producer_compatibility as compatibility
         f, root, plan, runtime = self.migration_fixture()
         repository = Path(subject.cache.__file__).resolve().parents[1]
         actual = {path: subject.cache._ref(repository/compatibility.resolve(path))['bytesSha256']
