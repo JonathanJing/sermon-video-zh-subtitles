@@ -138,7 +138,7 @@ class FullFreshDAG(mock.MockTTSDAG):
             and self.invocation_binding['planSha256'] == self.plan_sha256, 'mock_dag_invocation_changed')
         c.require(all(source_engine.source._sha(path) == digest for path, digest in self.binding['inputFiles'].items())
             and all(source_engine.source._sha(row['path']) == row['sha256'] for row in self.binding['recipe']['files'].values())
-            and all(mock.diagnostic._hash_file(mock.diagnostic.pilot.REPO/name) == digest
+            and all(mock.code_sha256(name) == digest
                 for name, digest in self.binding['codeFiles'].items()), 'fresh_full_input_or_code_changed')
         c.require(self.root == _safe_path(self.session.root/'fresh-full-dag'/self.plan_sha256, recursive=True)
             and self.fixture_root == _safe_path(self.session.root), 'fresh_full_scope_changed')
