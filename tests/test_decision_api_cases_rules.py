@@ -7,7 +7,8 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from scripts.experiments import decision_api_cases_rules as rules
+from tests import experiment_modules
+rules = experiment_modules.load("experiments/decision-api-ab/decision_api_cases_rules.py")
 
 class RuleCasesTests(unittest.TestCase):
     def test_smoke_counts_and_json_shared_evidence(self):

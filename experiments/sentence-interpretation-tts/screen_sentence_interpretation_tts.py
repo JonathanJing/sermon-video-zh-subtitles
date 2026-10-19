@@ -9,10 +9,11 @@ from pathlib import Path
 import re
 from typing import Any, Callable
 
-try:
-    from scripts.render_sentence_interpretation_tts import JOB_SCHEMA, sha256, write_json
-except ImportError:  # Direct execution via ``python scripts/...``.
-    from render_sentence_interpretation_tts import JOB_SCHEMA, sha256, write_json
+import sys
+
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling module of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
+from render_sentence_interpretation_tts import JOB_SCHEMA, sha256, write_json
 
 
 MODEL = "mlx-community/Qwen3-ASR-0.6B-8bit"

@@ -187,7 +187,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
     return {
         "cloudRunConfig": [
             sys.executable,
-            "scripts/validate_cloud_run_realtime_config.py",
+            "tools/ops/validate_cloud_run_realtime_config.py",
             "--service",
             args.service,
             "--project",
@@ -199,7 +199,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "cloudRunUpdatePlan": [
             sys.executable,
-            "scripts/prepare_cloud_run_realtime_update_plan.py",
+            "tools/ops/prepare_cloud_run_realtime_update_plan.py",
             "--config-report",
             str(paths["cloudRunConfig"]),
             "--service",
@@ -215,7 +215,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "cloudRunUpdateDryRun": [
             sys.executable,
-            "scripts/apply_cloud_run_realtime_update_plan.py",
+            "tools/ops/apply_cloud_run_realtime_update_plan.py",
             "--plan",
             str(paths["cloudRunUpdatePlan"]),
             "--out",
@@ -223,7 +223,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "cloudRunApiPreflight": [
             sys.executable,
-            "scripts/run_cloud_run_realtime_preflight.py",
+            "tools/ops/run_cloud_run_realtime_preflight.py",
             "--base-url",
             args.base_url,
             "--cloud-run-config-report",
@@ -298,7 +298,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "webRealtimeContract": [
             sys.executable,
-            "scripts/validate_web_realtime_contract.py",
+            "tools/ops/validate_web_realtime_contract.py",
             "--out",
             str(paths["webRealtimeContract"]),
         ],
@@ -394,7 +394,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
 def production_matrix_command(paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/collect_production_evidence_matrix.py",
+        "tools/ops/collect_production_evidence_matrix.py",
         "--cloud-run-config-report",
         str(paths["cloudRunConfig"]),
         "--cloud-run-api-preflight-report",
@@ -459,7 +459,7 @@ def production_matrix_command(paths: dict[str, Path]) -> list[str]:
 def goal_audit_command(paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/audit_production_goal_readiness.py",
+        "tools/ops/audit_production_goal_readiness.py",
         "--cloud-run-config-report",
         str(paths["cloudRunConfig"]),
         "--cloud-run-api-preflight-report",

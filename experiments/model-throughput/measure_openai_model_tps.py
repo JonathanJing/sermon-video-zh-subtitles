@@ -4,7 +4,7 @@
 Run only through the explicit dev launcher, so the dev project and dev key are used:
 
   python3 scripts/run_with_openai_environment.py --environment dev -- \
-    python3 scripts/measure_openai_model_tps.py --rounds 3
+    python3 experiments/model-throughput/measure_openai_model_tps.py --rounds 3
 
 Each request is a streamed chat completion with the same fixed prompt, the same
 reasoning effort and a capped max_completion_tokens. Tiers alternate within each

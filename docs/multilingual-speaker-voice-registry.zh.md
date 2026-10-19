@@ -48,7 +48,7 @@ Speaker Voice Registry（长期缓存依赖）───────────�
 
 统一试听文稿位于 [`multilingual-voice-demo-script-v1.json`](../experiments/sermon-dubbing-poc/multilingual-voice-demo-script-v1.json)。四种文字表达相同短段落的意思，scope 固定为 `voice_capability_audition_not_sermon_translation`；它们不是讲员原话、某周证道译文或正式字幕。
 
-[`render_multilingual_voice_demos.py`](../scripts/render_multilingual_voice_demos.py) 以讲员为单位加载现有 SFT checkpoint，再顺序生成本讲员的中文、韩语和西班牙语，避免每种语言重复加载模型。[`render_vietnamese_voice_demos.py`](../scripts/render_vietnamese_voice_demos.py) 只消费 Registry 的越南语 adapter override，以同一讲员已授权原声参考进行零样本克隆。两个 renderer 的输出不能互换审核状态。每条输出绑定：
+[`render_multilingual_voice_demos.py`](../scripts/render_multilingual_voice_demos.py) 以讲员为单位加载现有 SFT checkpoint，再顺序生成本讲员的中文、韩语和西班牙语，避免每种语言重复加载模型。[`render_vietnamese_voice_demos.py`](../experiments/sermon-dubbing-poc/render_vietnamese_voice_demos.py) 只消费 Registry 的越南语 adapter override，以同一讲员已授权原声参考进行零样本克隆。两个 renderer 的输出不能互换审核状态。每条输出绑定：
 
 - registry、统一文稿和 renderer hash；
 - speaker、checkpoint ref/hash、locale 和 Qwen language 参数；

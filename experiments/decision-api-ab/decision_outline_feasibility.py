@@ -13,8 +13,10 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from scripts.experiments import decision_api_weekly_ab as ab
-from scripts.experiments.decision_semantic_study_cases import RUNS, INSTRUCTIONS, CHOICES, _video_id
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
+import decision_api_weekly_ab as ab
+from decision_semantic_study_cases import RUNS, INSTRUCTIONS, CHOICES, _video_id
 
 SCHEMA = "decision-outline-machine-feasibility-v1"
 FRAMING = """Read the complete outline section against the supplied original English.

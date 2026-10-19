@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "refresh_production_preflight_evidence.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "refresh_production_preflight_evidence.py"
 SPEC = importlib.util.spec_from_file_location("refresh_production_preflight_evidence", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
@@ -319,7 +319,7 @@ class RefreshProductionPreflightEvidenceTest(unittest.TestCase):
 
     def test_refresh_redaction_preserves_token_option_names(self):
         text = (
-            "python3 scripts/run_cloud_run_realtime_preflight.py "
+            "python3 tools/ops/run_cloud_run_realtime_preflight.py "
             "--create-realtime-session --internal-task-token $INTERNAL_TASK_TOKEN "
             "--update-secrets OPERATOR_ADMIN_TOKEN=operator-admin-token:latest,"
             "INTERNAL_TASK_TOKEN=internal-task-token:latest"
