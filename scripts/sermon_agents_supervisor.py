@@ -18,6 +18,7 @@ from typing import Any
 import uuid
 
 from scripts import sermon_production_supervisor as production
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting as sermon_accounting
 from scripts import sermon_end_to_end as workflow
 from scripts.sermon_agents_api import AgentsAPIClient, AgentsAPIError, run_agent_session, _write_json
