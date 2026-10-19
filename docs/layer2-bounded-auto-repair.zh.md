@@ -139,7 +139,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 1. `scripts/run_target_language_models.py`：1105 行和 `_stop_after_plugin_group_failure` 增加"收集失败"模式和运行中早停。默认行为不变。
 2. 插件续跑：现在 `require_plugin_stop_repair` 要求复用插件停止的运行时必须附带对该组的 reviewer 重译，与"不改写译文"冲突。收集失败模式不写 `plugin-group-stop.json`，避开了这条限制；但插件修好后（policy 里的 `pluginImplementationSha256` 变了）还没有零调用的续跑路径：现有的 cache-only 迁移 `migrate_target_language_model_cache.migrate` 要求旧运行有完整的 `evidence.json`，并用旧插件重新准入，而插件失败的运行没有证据、旧插件也会再次拒绝。需要扩展迁移：从已保存的模型缓存直接校验并重建，不经旧插件准入，再用新插件重放。
 3. 新增 `scripts/layer2_auto_repair.py`：读失败清单 → 分类 → 系统性判断 → 生成修复说明 → 调用 runner 重跑 → 回译 QC（只查改过的组）→ 循环，直到全部通过或停止；全部通过后在最终成品上校准、签发豁免。分类用循环自己的路由表；`plan_repair` 需要 D1 收据，runner 只存 Sol 原始结果，第一版不经过它，直接用失败码和账本判断。
-4. 每个语言的循环在自己那个 locale job 的租约内运行；同时活跃的语言数取执行配置（v1 为 1，v2 profile 和 v3 的 `maxActiveLocales` 最多 3），不另设上限。`scripts/run_scripture_gated_round.py` 和 controller 调用这个循环，而不是直接调用 runner。
+4. 每个语言的循环在自己那个 locale job 的租约内运行；同时活跃的语言数取执行配置（v1 为 1，v2 profile 和 v3 的 `maxActiveLocales` 最多 3），不另设上限。`tools/ops/run_scripture_gated_round.py` 和 controller 调用这个循环，而不是直接调用 runner。
 5. 正式执行路径：现在的独立入口跑不了修复。`--budget-config` 入口拒绝 `--partial-repair-brief` 和 `--reuse-from`；没有预算绑定的 API 请求会被拒绝；runner 在 transport 带 `execution_identity` 时禁止跨运行复用缓存。所以需要 controller 原生的修订和缓存复用，加上持久的预算预留，而不是让 controller 去调这些独立参数。已按此实现为执行配置 v3（见第八节）：修复在 controller worker 内完成，独立入口的限制保持不变。
 
 ## 六、验收
