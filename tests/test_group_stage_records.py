@@ -29,7 +29,8 @@ QC = "4" * 64
 RENDERER = "5" * 64
 ASR = "6" * 64
 SEMANTIC = "7" * 64
-ASR_SETTINGS = "8" * 64
+ASR_SETTINGS_VALUE = {"protocol": "formal-back-asr-batch-v1", "model": "Qwen/Qwen3-ASR-0.6B", "batchSize": 4}
+ASR_SETTINGS = records.json_sha256(ASR_SETTINGS_VALUE)
 THRESHOLDS = {"asrMinSimilarity": 0.88, "maxSilenceRatio": 0.6}
 UNITS = [("u1", "Hey, church, it is a joy to be with you."), ("u2", "Turn with me to Romans 8."),
          ("u3", "Verse 28 says this."), ("u4", "God works for the good."), ("u5", "Let us pray.")]
@@ -172,7 +173,9 @@ class Run:
             "results": [{"groupId": g, "sourceUnitIds": s, "audioSha256": sha(f"wav{locale}{g}"),
                          "textSha256": sha(TEXT[locale][g]), "sourceSeconds": 2.0, "status": "pass",
                          "issues": []} for g, s in GROUPS]})
+        write(base / "asr-settings.json", ASR_SETTINGS_VALUE)
         return {"candidate": f"{locale}/candidate.json", "policy": "policy.json", "plugin": "plugin.py",
+                "asrSettings": f"{locale}/asr-settings.json",
                 "languageReview": f"{locale}/language-review.json", "layer2Rounds": [f"{locale}/round-001"],
                 "textQcReceipt": f"{locale}/text-qc.json", "speechJob": f"{locale}/speech-job",
                 "asrScreening": f"{locale}/speech-job/asr-screening.json", "audioQcReceipt": f"{locale}/audio-qc.json"}
@@ -182,8 +185,8 @@ def identities(**changes):
     value = {"runnerImplementationSha256": RUN, "machineQcImplementationSha256": QC,
              "rendererSoundIdentitySha256": RENDERER, "asrImplementationSha256": ASR,
              "audioQcThresholdsSha256": records.json_sha256(THRESHOLDS),
-             "locales": {locale: {"pluginImplementationSha256": PLUGIN, "languageReviewPolicySha256": LANGUAGE_POLICY}
-                         for locale in TEXT}}
+             "locales": {locale: {"pluginImplementationSha256": PLUGIN, "languageReviewPolicySha256": LANGUAGE_POLICY,
+                                  "asrSettingsSha256": ASR_SETTINGS} for locale in TEXT}}
     for key, item in changes.items():
         if key == "plugin":
             value["locales"]["ko"]["pluginImplementationSha256"] = item
@@ -240,6 +243,12 @@ class InputKeyTests(unittest.TestCase):
         for bad in ([], {"audioSha256": "short"}):
             with self.subTest(outputs=bad), self.assertRaisesRegex(ValueError, "invalid_record_outputs"):
                 records.validate_record(dict(record, outputs=bad))
+        for missing in ({}, {"audioSha256": None}):
+            with self.subTest(outputs=missing), self.assertRaisesRegex(ValueError, "record_missing_required_output"):
+                records.validate_record(dict(record, outputs=missing))
+        failed = records.make_record("S", self.layer1, "ko", "g1", ["u1"], self.inputs, "e" * 64, {}, "fail",
+                                     codes=["full_decode_failed"])
+        self.assertEqual(failed["outputs"], {})  # a failure need not name bytes
         with self.assertRaisesRegex(ValueError, "codes_only_on_fail_or_stop"):
             records.make_record("S", self.layer1, "ko", "g1", ["u1"], self.inputs, "e" * 64, {}, "pass",
                                 codes=["x"])
@@ -648,6 +657,28 @@ class PlanTests(unittest.TestCase):
         self.assertEqual({k: v for k, v in statuses(report, "ko", "g3").items() if k in "SAU"},
                          {"S": "failed", "A": "stale", "U": "stale"})
         self.assertEqual(report["locales"]["ko"]["redoCounts"]["S"], 1)
+
+    def test_asr_evidence_needs_the_desired_settings_and_follows_them(self):
+        changed = identities()
+        changed["locales"]["ko"]["asrSettingsSha256"] = records.json_sha256(dict(ASR_SETTINGS_VALUE, batchSize=8))
+        changed["locales"]["es"]["asrSettingsSha256"] = None
+        report = self.plan(changed)
+        stage_a = report["locales"]["ko"]["groups"][0]["stages"]["A"]
+        self.assertEqual(stage_a["status"], "stale")
+        self.assertIn("input_changed:asrSettingsSha256", stage_a["reasons"])
+        self.assertEqual(statuses(report, "ko", "g1")["U"], "stale")
+        stage_a = report["locales"]["es"]["groups"][0]["stages"]["A"]
+        self.assertEqual((stage_a["status"], stage_a["reasons"]), ("stale", ["asr_settings_not_supplied"]))
+
+    def test_a_shortening_group_without_condensation_is_missing_it(self):
+        self.run.build()
+        receipt_path = self.run.root / "ko/text-qc.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt["results"][0]["mode"] = "shorten"
+        receipt_path.write_text(json.dumps(receipt))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual(statuses(report, "ko", "g1")["C"], "missing")
+        self.assertEqual(statuses(report, "ko", "g1")["S"], "stale")
 
     def test_cli_plan_prints_a_summary_and_writes_only_its_report(self):
         manifest = self.run.build()

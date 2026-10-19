@@ -84,6 +84,9 @@ def current_identities(manifest: dict, base: Path) -> dict:
         locales[locale] = {
             "pluginImplementationSha256": (candidate.plugin_implementation_sha256(_path(entry["plugin"], base))
                                            if entry.get("plugin") else None),
+            # The ASR settings the next screening would run with; the screening hashes them the same way.
+            "asrSettingsSha256": (records.json_sha256(legacy.load_json(_path(entry["asrSettings"], base)))
+                                  if entry.get("asrSettings") else None),
             "languageReviewPolicySha256": identity["languageReviewPolicySha256"],
         }
     return {"runnerImplementationSha256": models.RUNNER_PRODUCTION_IDENTITY_SHA256,
@@ -163,7 +166,8 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
         return {"textSha256": condensed or target}
     if stage == "A":
         spoken = (records_for_group.get("S") or {}).get("inputs", {}).get("textSha256")
-        values = {"targetTextSha256": spoken or target}
+        values = {"targetTextSha256": spoken or target,
+                  "asrSettingsSha256": locale_identity.get("asrSettingsSha256")}
         if "S" in records_for_group:
             values["audioSha256"] = records_for_group["S"]["outputs"]["audioSha256"]
         return values
@@ -253,7 +257,7 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
                 if stage == "C":
                     # C runs only for groups the text QC sends to shortening; full text bypasses it.
                     mode = (selected.get("Q") or {}).get("provenance", {}).get("mode")
-                    if mode == "full" or (not candidates and mode is not None):
+                    if mode == "full":  # every other mode shortens and needs a C result
                         stages[stage] = {"status": "not_applicable", "reasons": [f"text_qc_mode:{mode}"]}
                         continue
                 if not candidates:
@@ -278,6 +282,10 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
                 results = []
                 for record in candidates:
                     result = evaluate(record, layer1, current, implementation)
+                    if stage == "A" and current.get("asrSettingsSha256") is None:
+                        # Without the desired settings, an ASR pass cannot be shown to still apply.
+                        result["status"] = "stale"
+                        result["reasons"].append("asr_settings_not_supplied")
                     if stage == "R" and record["outputs"].get("targetTextSha256") != records.text_sha256(
                             legacy.joined_text(group["targetUtterances"])):
                         # The candidate holds R's reviewed text unless something replaced it later.
