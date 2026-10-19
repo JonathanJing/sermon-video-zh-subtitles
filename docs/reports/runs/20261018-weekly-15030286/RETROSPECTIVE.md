@@ -7,6 +7,8 @@
 - 本报告：Layer 1、文字质检、音频质检、学习产物、Layer 4，广播版 Layer 1，以及 `CONVERSATION.md`（对话列表）和 `LOG-EXCERPTS.md`（第三层里程碑和生产部署回执）。
 - `20261018-weekly-15030286-broadcast`：广播版 Layer 2、Layer 3。
 - `20261018-weekly-15030286-l2l3`：三语最终 Layer 2 候选（zh-g1、es-g2、ko-g2）、人工文字审核产物、西语第二次配音（种子 43）。
+- `CODEX-CONVERSATION.md`：Codex 侧 08:29–17:02 的脱敏对话记录（中文页面实际执行会话）。
+- `ZH-PAGE-RECORD.md`：中文页面的记录清单、时间线和最短路径分析。
 
 本周 Layer 2 主目录（3.8 MB）、Layer 3 主目录（4.2 MB）和韩语第二次配音超出上限，没有整体导出；数值在下文引用，原件留在本机 `artifacts/weekend-live/` 下对应目录。
 
