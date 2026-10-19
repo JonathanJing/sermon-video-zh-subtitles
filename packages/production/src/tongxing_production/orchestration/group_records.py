@@ -184,7 +184,9 @@ def validate_record(record: dict) -> dict:
         _require(all(_is_sha(record["outputs"].get(name)) for name in REQUIRED_OUTPUTS.get(record["stage"], ())),
                  "record_missing_required_output")
     _require(isinstance(record["verdict"], dict) and set(record["verdict"]) == {"status", "codes"}
-             and record["verdict"]["status"] in VERDICTS and isinstance(record["verdict"]["codes"], list),
+             and record["verdict"]["status"] in VERDICTS and isinstance(record["verdict"]["codes"], list)
+             and all(isinstance(code, str) and code for code in record["verdict"]["codes"])
+             and (record["verdict"]["status"] in {"fail", "stopped"} or not record["verdict"]["codes"]),
              "invalid_record_verdict")
     _require(isinstance(record["spend"], dict) and isinstance(record["spend"].get("kind"), str),
              "invalid_record_spend")

@@ -144,12 +144,12 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
     a downstream input is compared with the upstream bytes the plan actually reuses.
     """
     rows = legacy.english_rows(anchor, group["sourceUnitIds"])
-    target = records.text_sha256(legacy.joined_text(group["targetUtterances"]))
+    target = records.text_sha256(_candidate_text(group))
     if stage in {"T", "R"}:
         role = "translator" if stage == "T" else "reviewer"
         values = {"englishUnitsSha256": legacy.english_units_sha256(rows),
                   "englishContextSha256": records.json_sha256(context),
-                  "modelFacingPolicySha256": legacy.model_facing_policy_sha256(policy),
+                  "modelFacingPolicySha256": legacy.model_facing_policy_sha256(policy, role),
                   "modelSettingsSha256": legacy.model_settings_sha256(policy[role]["model"],
                                                                       policy[role].get("reasoningEffort"))}
         if stage == "R" and "T" in records_for_group:
@@ -178,6 +178,12 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
             values["audioSha256"] = records_for_group["S"]["outputs"]["audioSha256"]
         return values
     return {}
+
+
+def _candidate_text(group: dict) -> str:
+    """The text QC and speech read: ``targetText``, which must equal the joined utterances."""
+    joined = legacy.joined_text(group["targetUtterances"])
+    return group.get("targetText", joined)
 
 
 def _current_implementation(stage: str, identities: dict, locale_identity: dict) -> str | None:
@@ -287,12 +293,16 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
                 results = []
                 for record in candidates:
                     result = evaluate(record, layer1, current, implementation)
+                    if stage == "P" and implementation is None:
+                        # Without the current plugin file its identity cannot be checked.
+                        result["status"] = "stale"
+                        result["reasons"].append("plugin_not_supplied")
                     if stage == "A" and current.get("asrSettingsSha256") is None:
                         # Without the desired settings, an ASR pass cannot be shown to still apply.
                         result["status"] = "stale"
                         result["reasons"].append("asr_settings_not_supplied")
                     if stage == "R" and record["outputs"].get("targetTextSha256") != records.text_sha256(
-                            legacy.joined_text(group["targetUtterances"])):
+                            _candidate_text(group)):
                         # The candidate holds R's reviewed text unless something replaced it later.
                         result["status"] = "stale"
                         result["reasons"].append("output_differs_from_candidate")
@@ -305,6 +315,13 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
                     continue
                 best, record = min(results, key=lambda item: STATUS_ORDER.index(item[0]["status"]))
                 stages[stage], selected[stage] = best, record
+            if group.get("targetText", legacy.joined_text(group["targetUtterances"])) != legacy.joined_text(
+                    group["targetUtterances"]):
+                # The candidate contradicts itself; nothing downstream of its text can be reused.
+                for stage, value in stages.items():
+                    if value["status"] not in {"not_applicable", "missing"} and stage != "T":
+                        stages[stage] = dict(value, status="stale",
+                                             reasons=list(value.get("reasons", [])) + ["candidate_text_inconsistent"])
             if derived[locale]["candidateLayer1"] != layer1:
                 # A candidate made from another Layer 1 is not current, whatever its records say.
                 for stage, value in stages.items():
