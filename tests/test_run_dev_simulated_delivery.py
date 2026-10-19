@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts import run_dev_simulated_delivery as runner
+from tools.development import run_dev_simulated_delivery as runner
 
 
 def test_resume_preserves_successful_stages_and_refuses_tampered_outputs(tmp_path):

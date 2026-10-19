@@ -6,7 +6,7 @@ from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
 
-import scripts.apply_cloud_run_realtime_update_plan as mod
+from tools.ops import apply_cloud_run_realtime_update_plan as mod
 
 
 class ApplyCloudRunRealtimeUpdatePlanTest(unittest.TestCase):
@@ -165,7 +165,7 @@ def write_plan(root: Path, *, include_update_secret=False) -> Path:
                 {
                     "argv": [
                         "python3",
-                        "scripts/validate_cloud_run_realtime_config.py",
+                        "tools/ops/validate_cloud_run_realtime_config.py",
                         "--service",
                         "sermon-zh-caption-web",
                     ]
@@ -173,7 +173,7 @@ def write_plan(root: Path, *, include_update_secret=False) -> Path:
                 {
                     "argv": [
                         "python3",
-                        "scripts/run_cloud_run_realtime_preflight.py",
+                        "tools/ops/run_cloud_run_realtime_preflight.py",
                         "--internal-task-token",
                         "$INTERNAL_TASK_TOKEN",
                         "--out",

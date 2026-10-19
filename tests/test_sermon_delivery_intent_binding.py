@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_delivery_intent as intent
+from tongxing_production.delivery import intent
 from scripts import sermon_delivery_intent_binding as subject
 from tests import test_inspect_canonical_packages as inspection_fixtures
 
@@ -436,7 +436,7 @@ class FormalStrictDeliveryTests(unittest.TestCase):
         from scripts import sermon_strict_candidate_bridge as bridge
         from scripts import sermon_strict_gate_admission as admission
         from scripts import review_target_language_candidate as human
-        from scripts import build_formal_dev_release_assets as builder
+        from tongxing_production.delivery import formal_assets as builder
         from tests import test_sermon_strict_budget_adapter as budget_fixtures
         from tests import test_stage_formal_multilingual_dev as formal_fixtures
         self.base = StrictDeliveryBindingTests()

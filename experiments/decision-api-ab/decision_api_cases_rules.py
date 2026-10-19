@@ -410,7 +410,8 @@ def run_rule_a(case):
                                 evidence['targetLocale'],evidence['policy']['minSimilarity'])
         return {'labels':{'status':status}}
     if adapter=='target_audio_timing_plan':
-        from scripts.target_audio_timing_plan import plan
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.audio.timing_plan import plan
         evidence.pop('taskPolicy');result=plan(**evidence)
         return {'labels':{'formalScheduleStatus':result['formalScheduleStatus'],
                           'unchangedAudioCannotFitSerialTimeline':str(result['unchangedAudioCannotFitSerialTimeline']).lower()}}

@@ -153,7 +153,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             ],
             [
                 "python3",
-                "scripts/refresh_production_preflight_evidence.py",
+                "tools/ops/refresh_production_preflight_evidence.py",
                 "--sunday",
                 args.sunday,
                 "--out",

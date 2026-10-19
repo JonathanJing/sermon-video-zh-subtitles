@@ -44,7 +44,7 @@ class SermonPipelineTest(unittest.TestCase):
     def test_alignment_preflight_failure_prevents_transcription(self):
         args = SimpleNamespace(output_mode="reading", reading_aligner="mfa", glossary=None,
                                english_transcript_only=False)
-        with mock.patch("scripts.mfa_backend.preflight", side_effect=RuntimeError("MFA unavailable")), \
+        with mock.patch("tongxing_production.source.mfa_backend.preflight", side_effect=RuntimeError("MFA unavailable")), \
                 mock.patch.object(mod, "transcribe_with_fingerprint") as transcribe:
             with self.assertRaisesRegex(RuntimeError, "MFA unavailable"):
                 mod.produce_pipeline(args, "unused-key", 10.0, 1.0, 3.0, Path("unused"))
@@ -66,7 +66,7 @@ class SermonPipelineTest(unittest.TestCase):
             english = [{"id": 0, "start": 0.0, "end": 2.0, "text": "Hello world.",
                         "words": [{"word": "Hello", "start": 0.0, "end": 1.0},
                                   {"word": "world.", "start": 1.0, "end": 2.0}]}]
-            with mock.patch("scripts.mfa_backend.preflight", return_value={"backend": "local"}), \
+            with mock.patch("tongxing_production.source.mfa_backend.preflight", return_value={"backend": "local"}), \
                     mock.patch.object(mod, "load_glossary", return_value={}), \
                     patch_both("stage", side_effect=lambda *a, **k: nullcontext()), \
                     mock.patch.object(mod, "clip_and_normalize"), \
@@ -96,7 +96,7 @@ class SermonPipelineTest(unittest.TestCase):
                 reading_chunk_seconds=1200.0,
             )
             chunks = [{"start": 0.0, "end": 2.0, "text": "Hello world."}]
-            with mock.patch("scripts.mfa_backend.preflight") as preflight, \
+            with mock.patch("tongxing_production.source.mfa_backend.preflight") as preflight, \
                     mock.patch.object(mod, "load_glossary", return_value={}), \
                     patch_both("stage", side_effect=lambda *a, **k: nullcontext()), \
                     mock.patch.object(mod, "clip_and_normalize"), \

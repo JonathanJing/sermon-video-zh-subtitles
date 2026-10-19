@@ -18,12 +18,12 @@ import tempfile
 from urllib.error import HTTPError
 from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
-try:
-    from scripts import assemble_multilingual_hosting as hosting
-    from scripts import verify_multilingual_hosting as http
-except ImportError:
-    import assemble_multilingual_hosting as hosting
-    import verify_multilingual_hosting as http
+if __package__ in (None, ""):  # run directly: reach the repository root
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.adapters.legacy import assemble_multilingual_hosting as hosting  # noqa: E402
+from tongxing_production.adapters.legacy import verify_multilingual_hosting as http  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = 'ai-for-god-caption-dev'

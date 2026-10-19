@@ -19,12 +19,15 @@ import shutil
 import subprocess
 import tempfile
 
+if __package__ in (None, ""):  # run directly: reach the repository root
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.adapters.legacy import verify_multilingual_hosting as http  # noqa: E402
 try:
     from scripts import align_firebase_dev_v3 as dev
-    from scripts import verify_multilingual_hosting as http
 except ImportError:
     import align_firebase_dev_v3 as dev
-    import verify_multilingual_hosting as http
 
 
 SCHEMA = "sermon-firebase-dev-weekly-dry-run-v1"

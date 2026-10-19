@@ -7,7 +7,7 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from scripts import english_source_judge_cache as cache
+from tongxing_production.source import english_source_judge_cache as cache
 from tests.test_api_cli_outcomes import reconciliation_evidence
 
 

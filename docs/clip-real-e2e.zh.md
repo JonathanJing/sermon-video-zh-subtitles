@@ -60,7 +60,7 @@
 
 | 阶段 | 做什么 | 结果 |
 |---|---|---|
-| `inputs` | `build_dev_180s_simulated_inputs.py --clip-spec` 截出片段的英文来源、锚点和媒体；`clip_timeline_map.py` 生成片段时间轴映射 | 片段输入在 `artifacts/dev-180s-page-test-20261004/clip-e2e-<name>/inputs/`（输入构建器只写自己的测试根目录）；运行目录里有 `l2/src/` 的副本和 `l3/clip-timeline-map.json` |
+| `inputs` | `build_dev_180s_simulated_inputs.py --clip-spec` 截出片段的英文来源、锚点和媒体；`tools/ops/run.py audio.clip_timeline` 生成片段时间轴映射 | 片段输入在 `artifacts/dev-180s-page-test-20261004/clip-e2e-<name>/inputs/`（输入构建器只写自己的测试根目录）；运行目录里有 `l2/src/` 的副本和 `l3/clip-timeline-map.json` |
 | `layer2-setup` | 每种语言：把源周次的冻结政策收窄到本片段的来源范围和术语后重新冻结（片段里出现、但源周次回执没有译法的术语会被拒绝）；写 canonical 执行配置（v3）；在 launcher 里取得非秘密的 API 路由和凭据指纹，写入质检输入 | `l2/policy/`、`l2/execution.json`、`l2/qc-inputs.json` |
 | `layer2` | 规划 Layer 2 预算 → 开工检查 → 逐语言 tick controller，直到全部 `succeeded`；有语言 `blocked` 就停 | `l2/text/<语言>/candidate.json` |
 | `qc.<语言>` | 为该语言规划质检预算（文本质检、校准、音频质检共用一个根）→ 开工检查 → 文本质检。失败的组带着质检收据回到 Layer 2，开新修订（执行配置 v5，[gate 4](layer2-bounded-auto-repair.zh.md)），再质检新候选，最多 `maxRevisions` 次 | `textqc-<语言>/`；修订在 `l2-<语言>-r<N>/` |

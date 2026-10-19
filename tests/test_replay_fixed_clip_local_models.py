@@ -106,7 +106,7 @@ class FixedClipReplayTests(unittest.TestCase):
 
     def test_full_tts_batches_receipts_and_no_model_on_resume(self):
         report, model, _ = self.tts()
-        from scripts import sermon_source_producer_compatibility as compatibility
+        from tongxing_production.source import producer_compatibility as compatibility
         implementation = Path(__file__).resolve().parents[1] / compatibility.resolve(
             'scripts/render_formal_target_language_speech.py')
         self.assertEqual(worker.read(self.tts_args.out / 'run.json')['synthesizerImplementationSha256'],
@@ -143,14 +143,12 @@ import sys
 from scripts.experiments import replay_fixed_clip_local_models as worker
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio.renderer import write_pcm16
-assert 'scripts.validate_target_language_audio_unit' not in sys.modules
 root = Path(sys.argv[1])
 with ThreadPoolExecutor(max_workers=4) as pool:
     results = list(pool.map(lambda i: worker.audio_output(root, {'groupId': f'g{i}'},
                                                        [0.2, -0.2] * 800, 16000), range(4)))
 assert len(results) == 4
 assert all(row['audioSeconds'] > 0 for row in results)
-assert 'scripts.validate_target_language_audio_unit' not in sys.modules
 '''
         completed = subprocess.run([sys.executable, '-c', script, str(self.root)],
                                    text=True, capture_output=True, timeout=30)

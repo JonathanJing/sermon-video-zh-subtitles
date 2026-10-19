@@ -6,9 +6,9 @@ IDs, so "what is the current status of DEV-R242-011" meant reading a very
 large file. This prints every table row that names the ID, newest section
 first, with its section heading and line number:
 
-    python3 scripts/backlog_ids.py DEV-R242-011      one ID
-    python3 scripts/backlog_ids.py DEV-R242          a prefix
-    python3 scripts/backlog_ids.py --prefixes        every prefix with its row count and sections
+    python3 tools/development/backlog_ids.py DEV-R242-011      one ID
+    python3 tools/development/backlog_ids.py DEV-R242          a prefix
+    python3 tools/development/backlog_ids.py --prefixes        every prefix with its row count and sections
 
 A row names an ID in its first cell. A cell such as ``DEV-L4-001/005`` names
 both ``DEV-L4-001`` and ``DEV-L4-005``. The file is read top to bottom and the

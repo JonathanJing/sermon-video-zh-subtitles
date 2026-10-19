@@ -5,7 +5,8 @@ import tempfile
 import unittest
 import wave
 
-from scripts import run_multilingual_prosody_poc as subject
+from tests import experiment_modules
+subject = experiment_modules.load("experiments/multilingual-prosody-poc/run_multilingual_prosody_poc.py")
 
 
 def canonical(value):

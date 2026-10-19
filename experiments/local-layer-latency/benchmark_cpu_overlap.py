@@ -55,7 +55,8 @@ def save(path, value):
 def prepare(speech_job_path, out, checkpoint_manifest_path, indices=None):
     # Reuse real human/source validators without manufacturing a subset source
     # package or changing its approval identity.
-    from scripts import prepare_target_language_speech_job as speech
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import speech_job as speech
     original = read(speech_job_path)
     require(original.get("schemaVersion") == speech.SPEECH_JOB_SCHEMA
             and original.get("targetLocale") == "zh-Hans" and original.get("synthesisEligible") is True,

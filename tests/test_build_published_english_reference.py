@@ -1,12 +1,11 @@
 import hashlib
 import json
 from pathlib import Path
-import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from delivery_contract import project_human_catalog
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery.contract import project_human_catalog
 from tongxing_production.delivery.published_english_reference import build_reference, canonical_sha
 
 CHECKS = ('sourceIdentity', 'transcriptCompleteness', 'wordAlignment', 'sentenceAndPauseBoundaries')

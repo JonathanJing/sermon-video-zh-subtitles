@@ -23,10 +23,11 @@ import time
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
-try:
-    from scripts import assemble_multilingual_v3_update as weekly
-except ImportError:
-    import assemble_multilingual_v3_update as weekly
+if __package__ in (None, ""):  # run directly: reach the repository root
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.adapters.legacy import assemble_multilingual_v3_update as weekly  # noqa: E402
 
 
 SOURCE_PAGE = "2026-09-27-weekend-sermon-drive-530"

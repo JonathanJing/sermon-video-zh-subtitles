@@ -6,7 +6,7 @@ import unittest
 from tests import experiment_modules
 
 subject = experiment_modules.load("experiments/multilingual-prosody-poc/prepare_longform_adaptive_prosody_poc.py")
-from scripts.run_multilingual_prosody_poc import PLAN_SCHEMA, canonical_sha
+PLAN_SCHEMA, canonical_sha = subject.PLAN_SCHEMA, subject.canonical_sha
 
 
 class LongformAdaptivePreparationTest(unittest.TestCase):

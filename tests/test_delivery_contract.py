@@ -2,8 +2,9 @@ import copy
 import hashlib
 import json
 import pytest
-from scripts import delivery_contract as d
-from scripts import study_artifacts as study
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import contract as d
+from tongxing_production.delivery import study_artifacts as study
 
 SHA = 'a' * 64
 NOW = '2026-10-04T20:00:00+00:00'

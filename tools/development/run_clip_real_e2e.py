@@ -267,7 +267,7 @@ def stage_inputs(run: Run):
     timeline = run.dir / "l3" / "clip-timeline-map.json"
     if not timeline.exists():
         timeline.parent.mkdir(parents=True, exist_ok=True)
-        run.sh("timeline-map", [PY, ROOT / "scripts/clip_timeline_map.py", "--source", src / "source.json",
+        run.sh("timeline-map", [PY, ROOT / "tools/ops/run.py", "audio.clip_timeline", "--source", src / "source.json",
                                 "--anchor", src / "anchor.json", "--clip-media", inputs / "clip/source.mp4",
                                 "--out", timeline])
     anchor = read(src / "anchor.json")
@@ -521,10 +521,10 @@ def stage_audio(run: Run, locale: str, code: str):
     voice = l3 / "clip-voice-authorization.json"
     job_dir = l3 / "speech-job"
     if not (job_dir / "job.json").exists():
-        run.sh(f"voice-auth.{locale}", [PY, ROOT / "scripts/prepare_clip_voice_authorization.py", "--source", src,
+        run.sh(f"voice-auth.{locale}", [PY, ROOT / "tools/ops/prepare_clip_voice_authorization.py", "--source", src,
                                         "--candidate", candidate, "--adapter", adapter,
                                         "--user-attestation", attestation(run, locale), "--out", voice])
-        run.sh(f"speech-job.{locale}", [PY, ROOT / "scripts/prepare_target_language_speech_job.py",
+        run.sh(f"speech-job.{locale}", [PY, ROOT / "tools/ops/run.py", "audio.speech_job",
                                         "--english-source-package", src, "--anchor", anchor, "--candidate", candidate,
                                         "--policy", policy, "--text-release-basis", waiver, "--adapter", adapter,
                                         "--speaker-registry", registry, "--clip-voice-authorization", voice,
@@ -559,7 +559,7 @@ def stage_audio(run: Run, locale: str, code: str):
     rendered = compacted_local / "spark-output" / "speech-job"
     package = l3 / "audio-package.json"
     if not package.exists():
-        run.sh(f"package.{locale}", [PY, ROOT / "scripts/build_target_language_audio_package.py", "--source", src,
+        run.sh(f"package.{locale}", [PY, ROOT / "tools/ops/run.py", "audio.package", "--source", src,
                                      "--anchor", anchor, "--candidate", candidate, "--job", rendered / "job.json",
                                      "--adapter", adapter, "--policy", policy, "--human-review-receipt", waiver,
                                      "--speaker-registry", registry, "--clip-voice-authorization", voice,
@@ -663,7 +663,7 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
     rendered = compacted_local / "spark-output" / "speech-job"
     package = repair / "audio-package.json"
     if not package.exists():
-        run.sh(f"package.{locale}.seed-{seed}", [PY, ROOT / "scripts/build_target_language_audio_package.py",
+        run.sh(f"package.{locale}.seed-{seed}", [PY, ROOT / "tools/ops/run.py", "audio.package",
                "--source", src, "--anchor", anchor, "--candidate", candidate, "--job", rendered / "job.json",
                "--adapter", adapter, "--policy", policy, "--human-review-receipt", waiver,
                "--speaker-registry", registry, "--clip-voice-authorization", voice,
@@ -722,7 +722,7 @@ def stage_layer4(run: Run):
     if not (l4 / "baseline").exists():
         cache = (["--cache-public", page["baselineCachePublic"], "--cache-receipt", page["baselineCacheReceipt"]]
                  if page.get("baselineCachePublic") else [])
-        run.sh("layer4-baseline", [PY, ROOT / "scripts/prepare_dev_simulated_publication.py", "baseline",
+        run.sh("layer4-baseline", [PY, ROOT / "tools/ops/prepare_dev_simulated_publication.py", "baseline",
                                    "--environment", "dev", "--out", l4 / "baseline", *cache])
     if not run.publish:
         run.mark("layer4", "prepared_not_published")
@@ -732,7 +732,7 @@ def stage_layer4(run: Run):
     if not state_path.exists():
         if workflow.exists() and any(workflow.iterdir()):
             raise Stop("Layer 4 publish files exist without a terminal receipt; reconcile before retry")
-        run.sh("layer4-publish", [PY, ROOT / "scripts/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
+        run.sh("layer4-publish", [PY, ROOT / "tools/development/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
                                   "--prepared", l4 / "work/prepared", "--out", workflow, "--machine-checked", "--execute"])
     state = read(state_path)
     report_path = workflow / "run-report.json"
@@ -767,7 +767,7 @@ def stage_layer4(run: Run):
     smoke = next((path for path in receipts if passed_smoke(path)), None)
     if smoke is None:
         smoke = l4 / f"browser-smoke-retry-{len(receipts) + 1}.json"
-        run.sh("layer4-smoke", [PY, ROOT / "scripts/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
+        run.sh("layer4-smoke", [PY, ROOT / "tools/ops/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
                                 page["pageId"], "--settle-ms", "15000", "--no-session", "--out", smoke])
         require(passed_smoke(smoke), "Layer 4 browser smoke did not pass")
     run.mark("layer4", "done", pageId=page["pageId"], smoke="pass", smokeReceipt=str(smoke),

@@ -12,10 +12,10 @@ from tongxing_production.review import repair_ledger as ledger
 from tongxing_production.audio import screening as audio_screen
 from tongxing_production.review import text_qc as text_screen
 from tongxing_production.review.audio_qc import THRESHOLDS, TRACK_ENVELOPE
-from scripts import prepare_target_language_speech_job as speech
+from tongxing_production.audio import speech_job as speech
 from tongxing_production.source import sentence_interpretation as interpretation
 from scripts import sermon_unified_reviews as reviews
-from scripts import stage_formal_multilingual_dev as stage
+from tongxing_production.delivery import formal_stage as stage
 # Reuse the speech-job fixture without collecting its tests a second time here.
 from tests import test_prepare_target_language_speech_job as speech_fixture
 from tests import auto_qc_fixtures as fixtures
@@ -393,7 +393,7 @@ class TextWaiverTests(unittest.TestCase):
         # The condensed script may be dubbed, but Layer 4 never takes it as the full text.
         write_json(self.waiver_path, receipt)
         self.prepare("condensed-job", self.waiver_path)
-        from scripts import build_full_video_app_release as builder
+        from tongxing_production.delivery import app_release as builder
         with self.assertRaisesRegex(ValueError, "condensed for dubbing cannot be the full text"):
             builder.admitted_text(self.candidate_path, self.waiver_path,
                                   basis.json_sha256(self.source_package), "ko")

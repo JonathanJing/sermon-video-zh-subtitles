@@ -1,6 +1,7 @@
 import copy
 import unittest
-from scripts import sermon_workflow_experiment as s
+from tests import experiment_modules
+s = experiment_modules.load("experiments/workflow-experiment/sermon_workflow_experiment.py")
 
 class WorkflowExperimentTests(unittest.TestCase):
     def setUp(self):

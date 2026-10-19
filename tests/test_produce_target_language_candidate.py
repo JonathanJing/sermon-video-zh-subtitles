@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts import produce_target_language_candidate as subject
-from scripts import prepare_target_language_speech_job as handoff
+from tongxing_production.audio import speech_job as handoff
 from scripts import review_target_language_candidate as human_review
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as interpretation
@@ -15,7 +15,7 @@ from scripts import target_language_policy as policy_tools
 from scripts import four_layer_progress as progress
 from scripts import sermon_accounting as accounting
 from scripts import build_four_layer_tracker_snapshot as tracker_snapshot
-from scripts import build_english_source_package as english_source
+from tongxing_production.source import english_source_package as english_source
 from tests import test_build_english_source_package as source_fixtures
 
 

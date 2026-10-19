@@ -9,8 +9,9 @@ from pathlib import Path
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts.experiments import decision_api_weekly_ab as ab
-from scripts.experiments.decision_api_cases_rules import build_rule_cases
+from tests import experiment_modules
+ab = experiment_modules.load("experiments/decision-api-ab/decision_api_weekly_ab.py")
+build_rule_cases = experiment_modules.load("experiments/decision-api-ab/decision_api_cases_rules.py").build_rule_cases
 
 
 class RunnerTests(unittest.TestCase):

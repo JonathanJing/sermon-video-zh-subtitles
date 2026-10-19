@@ -5,7 +5,7 @@ from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
 
-import scripts.run_realtime_public_sse_smoke as mod
+from tools.ops import run_realtime_public_sse_smoke as mod
 
 
 class RealtimePublicSseSmokeTest(unittest.TestCase):

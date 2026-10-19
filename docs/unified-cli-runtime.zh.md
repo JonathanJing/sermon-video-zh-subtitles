@@ -89,7 +89,7 @@ owner在人工等待期间持续观察持久stateRevision，新的审核证据�
 `sermon_unified_observability.bounded_packet`提供显式字节上限的诊断包，带遗漏数量，不携带全文，也不授予执行或批准权限。
 
 ```bash
-.venv/bin/python -m scripts.sermon_workflow_experiment \
+.venv/bin/python experiments/workflow-experiment/sermon_workflow_experiment.py \
   --protocol /absolute/protocol.json --receipt /absolute/cold-a.json
 .venv/bin/python tools/development/verify_sermon_unified_cli.py --out /absolute/new-empty-fixture-dir
 ```
