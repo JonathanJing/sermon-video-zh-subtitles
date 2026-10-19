@@ -2,7 +2,7 @@
 
 ## 结论先行
 
-交付类型：本地测试。目录迁移叶子批次（#1123）在提交 `910b30d4` 上通过定向检查：`measure_codex_cli_tps.py`、`measure_openai_model_tps.py`、`benchmark_audio_receipts.py`、`target_audio_capacity_experiment.py`、`run_observability_diagnostic.py`、`sermon_workflow_experiment.py` 移入 `experiments/`，旧 `scripts/` 路径改为绑定本 checkout 的兼容门面。没有正式生产、模型请求、Spark 使用或发布。
+交付类型：本地测试。目录迁移叶子批次（#1123）在提交 `910b30d4` 上完成定向检查（45 项通过；1 项失败在干净 dev 上同样存在，非本迁移引起）：`measure_codex_cli_tps.py`、`measure_openai_model_tps.py`、`benchmark_audio_receipts.py`、`target_audio_capacity_experiment.py`、`run_observability_diagnostic.py`、`sermon_workflow_experiment.py` 移入 `experiments/`，旧 `scripts/` 路径改为绑定本 checkout 的兼容门面。没有正式生产、模型请求、Spark 使用或发布。
 
 ## 总时间
 
