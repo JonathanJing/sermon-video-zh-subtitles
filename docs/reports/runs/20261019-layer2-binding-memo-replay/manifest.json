@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-layer2-binding-memo-replay",
+  "runs": [
+    {
+      "label": "replay-base",
+      "source": "<scratchpad>/replay-base",
+      "skipped": {
+        ".lock": 4,
+        ".json": 178,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": "replay-after",
+      "source": "<scratchpad>/replay-after",
+      "skipped": {
+        ".lock": 4,
+        ".json": 178,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "replay-base",
+      "path": "out/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 129718,
+      "truncated": true,
+      "sha256": "cb309c5bd52fbec8e847e43aca4f184980099cfe73a25d6ed195688e4a3be6ad",
+      "redactions": {}
+    },
+    {
+      "run": "replay-base",
+      "path": "out/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 318455,
+      "truncated": false,
+      "sha256": "84f5923fb2ad07a59529ca965c93b7978586f3864c3538efa73a6d06fb0d8018",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "replay-base",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 420,
+      "truncated": false,
+      "sha256": "c954c939568e1f784292533530f85caae2189c9f1403d4fba894d98164f6cc46",
+      "redactions": {}
+    },
+    {
+      "run": "replay-base",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 894,
+      "truncated": false,
+      "sha256": "cefad7c5406003286c0ff4853efed7327740577c976b94652a45fb2db5b28711",
+      "redactions": {}
+    },
+    {
+      "run": "replay-after",
+      "path": "out/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 129727,
+      "truncated": true,
+      "sha256": "60b72b328b7e5505b1eacb9321eeac1f175ba422488fba64e304c0048e78c87d",
+      "redactions": {}
+    },
+    {
+      "run": "replay-after",
+      "path": "out/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 318697,
+      "truncated": false,
+      "sha256": "0bd0e732329a92ee15de4bb88d3cc77c04853b13a8703c6cffa9754b7a3d6645",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "replay-after",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 442,
+      "truncated": false,
+      "sha256": "33d65a9970b282520a5dba6acb4c1bf221f82481ab4ed04453b841c774f8be96",
+      "redactions": {}
+    },
+    {
+      "run": "replay-after",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 916,
+      "truncated": false,
+      "sha256": "5a7fe9e1032ca424604d80ef8f24861120aa6c7fc55bb862017577a9185f6400",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
