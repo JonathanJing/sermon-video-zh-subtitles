@@ -128,7 +128,7 @@
 然后生成最终 PDF：
 
 ```bash
-.venv/bin/python scripts/render_mobile_pdf_from_srt.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.mobile_pdf \
   --layout reading \
   --input <pipeline_outdir>/reading-edition-v2/sermon_zh_reading_revised.srt \
   --secondary-input <pipeline_outdir>/reading-edition-v2/sermon_en_reading_revised.srt \

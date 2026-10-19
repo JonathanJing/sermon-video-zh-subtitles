@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-zh-Hans-post-g1-text-qc-paid",
+  "runs": [
+    {
+      "label": "text",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-g1-qc-20261017/zh-Hans/text",
+      "skipped": {
+        ".lock": 1,
+        ".json": 4
+      }
+    },
+    {
+      "label": ".api-budget",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/plans/post-g1-qc-20261017/qc-zh-Hans/.api-budget",
+      "skipped": {
+        ".lock": 213,
+        ".json": 212
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "text",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 3142,
+      "truncated": false,
+      "sha256": "39415882785efbce4d2388bd4dc97bea23c8f4ff5d076842c8b9358cc7398138",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "text",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 214,
+      "truncated": false,
+      "sha256": "441a57a384f6e6f4b74150ff28eb62feeb0ea5cb86da019e8c26913d3319b793",
+      "redactions": {}
+    },
+    {
+      "run": "text",
+      "path": "zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 1387,
+      "truncated": false,
+      "sha256": "b1aed5416c8a9f68a0b38f19312cf781288a35e81aeb6820a89f62680212caaf",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": ".api-budget",
+      "path": "source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 202558,
+      "truncated": false,
+      "source": "source-budget.json",
+      "sha256": "ac1f4616755ec79307c9234864f53419914795aff1637d7eac514eff41dba7f8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -28,12 +28,12 @@
 包化后的新运行写入 `sermon-cuv-translation-v3` manifest。`implementationIdentity` 同时绑定 CUV 实现文件、Layer 2 的项目代码闭包（`scripts/`、production package、schemas 与共享术语）和计时委派所用 POC 目录的全部 Python 文件（`experiments/sermon-dubbing-poc/**/*.py`）。任一闭包代码变化都阻断旧缓存复用及当前代码下的离线验证。模型请求、报告和审校扩展仍使用原有 v1 格式。v1/v2 manifest 与收据保持原样，只能在对应的冻结旧 checkout 离线 `validate`。新代码不从旧版本输出目录续跑，也不以 `--reuse-from` 或 `repair-timing` 跨版本使用其缓存；后续制作须开新输出目录，按新身份取得所需证据。
 
 ```bash
-.venv/bin/python scripts/sermon_cuv_translation.py run \
+.venv/bin/python tools/ops/run.py text.cuv_translation run \
   --parent-job /absolute/path/to/dubbing-v2/job.json \
   --workers 3 \
   --out artifacts/cuv-scripture/new-translation
 
-.venv/bin/python scripts/sermon_cuv_translation.py validate \
+.venv/bin/python tools/ops/run.py text.cuv_translation validate \
   --out artifacts/cuv-scripture/new-translation
 ```
 
@@ -118,7 +118,7 @@
 仅在上一版完整合成与正式 timing 报告齐全后使用；字数预警、局部 WAV 观察不能代替完整证据。
 
 ```bash
-.venv/bin/python scripts/sermon_cuv_translation.py repair-timing \
+.venv/bin/python tools/ops/run.py text.cuv_translation repair-timing \
   --prior-translation artifacts/cuv-scripture/prior-translation \
   --parent-job /absolute/path/to/current-dubbing/job.json \
   --timing-report /absolute/path/to/current-dubbing/synchronization/report.json \

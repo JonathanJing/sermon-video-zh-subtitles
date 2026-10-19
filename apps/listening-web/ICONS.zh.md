@@ -46,7 +46,7 @@
 维护检查：
 
 ```sh
-python3 scripts/check_tongxing_icon_alignment.py
+python3 tools/development/check_tongxing_icon_alignment.py
 ```
 
 该命令从 `App`、`Shared`、`ListeningActivityExtension` 提取字面量和条件表达式中的符号名称，核对 SVG 覆盖、运行时注册表、两端资源字节、HTML 引用和共享 CSS 前缀。动态计算的符号名称须在新增时人工核对。

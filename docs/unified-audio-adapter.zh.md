@@ -64,7 +64,7 @@
 可选 ASR 裁决细节：
 
 ```sh
-.venv/bin/python scripts/target_audio_recovery.py \
+.venv/bin/python tools/ops/run.py audio.recovery \
   --audio-package /absolute/audio-package.json --artifact-root /absolute/render \
   --group GROUP_ID --reason asr_misrecognition --evidence '实际听审依据' \
   --corrected-transcript '正确转写' --out /absolute/new-adjudication.json

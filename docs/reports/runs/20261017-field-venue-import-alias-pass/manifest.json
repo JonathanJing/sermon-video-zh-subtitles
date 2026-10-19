@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-field-venue-import-alias-pass",
+  "runs": [
+    {
+      "label": "field-venue-import-alias-pass-20261017",
+      "source": "/private/tmp/field-venue-exp-leaf-20261017/artifacts/field-venue-import-alias-pass-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "field-venue-import-alias-pass-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 660,
+      "truncated": false,
+      "sha256": "86f3f803b45c4dde0b2809de87ba81a38d389f17e5300bd3a9bf01fee2907a92",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

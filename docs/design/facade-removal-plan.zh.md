@@ -20,7 +20,7 @@
 
 下面三个身份覆盖 `scripts/` 下全部文件，不论门面属于哪一类，删一个就会改变它们。所以门面应当成批删除，一次只产生一代新身份。
 
-1. **L2 代码身份。** [`text/controller.py`](../../packages/production/src/tongxing_production/text/controller.py) 的 `code_identity()` 哈希全部 `scripts/**/*.py` 与 `packages/production/src/**/*.py`，worker 在付费调用和候选准入前复核。删除批次只在没有进行中的 L2 run 时合并（与 #499、#1036 的做法相同），合并后的 run 用新身份。
+1. **L2 代码身份。** [`text/controller.py`](../../packages/production/src/tongxing_production/text/controller.py) 的 `code_identity()` 哈希全部 `scripts/**/*.py` 与 `packages/production/src/**/*.py`（另有几个点名文件，包括[包内命令入口](package-cli-entry.zh.md) `tools/ops/run.py`），worker 在付费调用和候选准入前复核。删除批次只在没有进行中的 L2 run 时合并（与 #499、#1036 的做法相同），合并后的 run 用新身份。
 2. **统一 CLI 执行准入。** [`scripts/sermon_unified/__init__.py`](../../scripts/sermon_unified/__init__.py) 的 `required_modules()` 把每个 `scripts/**/*.py` 放进 manifest 的 `executionAdmission.modules`，[`contracts.closure()`](../../packages/production/src/tongxing_production/orchestration/unified/contracts.py) 按路径读字节。删掉的文件会让冻结 manifest 续跑时报 `execution_module_invalid`，所以删除前已冻结的统一 CLI 运行必须到达终态。
 3. **实验身份。** 例如 `scripts/experiments/decision_api_weekly_ab.py` 的预算 authority 对 `scripts/` 全部文件 `rglob` 取哈希。按用户 2026-10-17 的决定（[T6 核查](t6-review-gate-closure-20261018.zh.md)：保留旧快照；今后重启另建新计划），旧实验在自己的旧 revision 上只读复验，不要求 `dev` 保留门面；重启时另冻结新身份。
 
@@ -50,7 +50,7 @@
 - **Spark 容器。** `scripts/clip_e2e_spark.py` 在容器检出里运行 `{code}/scripts/compact_formal_target_audio.py`，改为容器内能运行的新入口。同文件另外三条容器命令指向必须保留的门面（§3.3）。
 - **CI。** `python-tests.yml` 的 py_compile 列表与 `tongxing-ios.yml` 的 `shared_contracts` 列出 20 个门面路径。CI 自 2026-10-19 关闭，列表仍在仓库里，删门面时同批改，避免重新启用 CI 后出现永远找不到的路径。
 - **Markdown 链接（29）。** 包括 `docs/backlog.zh.md` 与 `docs/design/` 里指向门面文件的链接（阶段 5 没改这两处）。删门面时同批改指实现文件，否则链接断掉；`docs/reports/`、`docs/evidence/` 不计。
-- **现行文档命令（38）。** 包内 CLI 不能裸跑：门面先导入 `scripts.tongxing_host` 绑定端口，所以阶段 5 只把解释器改成 `.venv/bin/python`，命令仍写门面路径。删这些门面之前要先有一个能绑定宿主的新入口，例如由生产包提供、内部先绑定宿主的 console script，再把 runbook 改过去。这是待定的设计项，本文不定。指向 `tools/`、`experiments/` 的命令已改为新路径。
+- **现行文档命令（38）。** 包内 CLI 不能裸跑：门面先导入 `scripts.tongxing_host` 绑定端口，所以阶段 5 只把解释器改成 `.venv/bin/python`，命令仍写门面路径。2026-10-19 已定：[包内命令入口](package-cli-entry.zh.md)是分发器 `tools/ops/run.py <模块> [参数]`，它先绑定宿主再调用模块的 `main()`，不用包内 console script。同日把这 38 个门面的全部现行文档命令（37 个文件、84 处）改到这个入口或 `tools/` 路径，门面本身没删。必须保留门面的 11 个命令仍写 `scripts/` 路径。
 
 ### 3.3 必须保留（23）
 
@@ -68,7 +68,7 @@
 2. **B 批：只剩测试的 35 个。** 改测试后删门面，与 A 批合并也可以，这样只多一代 L2 身份。
 
    **A+B 执行记录（2026-10-19，`dev@c5f46d44`）。** 两批合在一个 PR，共删 75 个门面：tools 与实验叶子迁移合并后，重跑附录 A 得 8 个现在可删、67 个只剩测试。附录 A 原脚本漏了两类调用方，本次已修正：`from scripts.experiments import X` 与 `scripts.experiments.X` 字符串；文档里的 `python -m scripts.X` 与 `"$PRODUCTION_PYTHON" -m ...` 命令。原脚本会多算 16 个可删的，例如 `layer2_concurrency`、`ste_paired_admission` 的 `-m` 文档命令，以及 `build_blind_review_scores` 被另一实验导入。删除后合计为 `{'after': 165, 'stay': 23}`，共 188 个。
-3. **C 批：其余 124 个“改调用方后”。** 先定新 CLI 入口（§3.2 最后一条），再按层分批改导入方、argv、CI 列表和 runbook；每批重跑附录 A，确认目标门面计数归零后才删。
+3. **C 批：其余 124 个“改调用方后”（`dev@cb99733c` 上重跑为 133 个）。** 新 CLI 入口与 runbook 改指已完成（§3.2 最后一条），按 §6 的层批改导入方、argv、Spark、CI 列表和链接；每批重跑附录 A，确认目标门面计数归零后才删。
 4. **D：必须保留的 23 个。** 不在布局迁移里删。要删就和下一次需要重新校准的实现改动同开闭包窗口，由用户决定。
 
 每批都按提案 §9 的“后续迁移批次”验收，并记录新的 L2 代码身份；不得用删除门面来回退。
@@ -266,6 +266,47 @@
 | `verify_v3_bucket_video.py` | `adapters/legacy/verify_v3_bucket_video.py` |  | 1 |  |  |  | 1 |  |  | 改调用方后 |
 | `weekly_poster_template.py` | `delivery/posters/template.py` | 2 |  |  |  |  |  |  |  | 改调用方后 |
 | `worktree_venv.py` | `tools/development/worktree_venv.py` | 1 |  | 1 |  |  |  |  |  | 改调用方后 |
+
+## 6 C 批计划
+
+基线：`dev@cb99733c`，加上[包内命令入口](package-cli-entry.zh.md)那个 PR 的 runbook 改指，2026-10-19 用附录 A 重跑。tools 与实验叶子迁出后共 **250** 个门面：现在可删 26 个，改调用方后 201 个，必须保留 23 个。改调用方后的 201 个里，68 个只剩测试（B 批，由并行会话处理）。其余 **133** 个是 C 批：93 个在 C1–C8 改完调用方后删除；另外 40 个还有一个调用方在 G1 物理闭包里（几乎都是 `scripts/tongxing_host.py`，它的字节在 W、计分、语速三个闭包里；另有 `audio/renderer.py` 和被 policy 冻结的 `language_review_plugins/auto_qc_text_common.py`）。这 40 个在所属层批里只改闭包外的调用方，删除和闭包内的那处改动并入 G1 窗口（§4 第 4 条）。
+
+### 6.1 每批都要做的事
+
+1. **重取普查。** 在合并时的 `dev` 上重跑附录 A。批内要删的门面以计数归零为准，下表是 2026-10-19 的快照。
+2. **导入方** 改为包内模块名。调用方原来靠导入门面顺带绑定宿主的，改完后要自己 `from scripts import tongxing_host`（`tools/ops` 文件用 `prepare_dev_simulated_publication.py` 的写法），否则第一次调用端口就报 `ports.Unbound`。
+3. **argv 与路径常量。** 包内命令改为 `[sys.executable, ROOT / "tools/ops/run.py", "<模块>", …]`；`tools/`、`experiments/` 的命令写新路径；工具文件里 usage 文字提到的 `scripts/<x>.py` 同批改。
+4. **身份键不改。** 下面这些普查计成 argv，其实是身份键，经 `path_aliases.resolve` 或宿主的 `implementation_path` 读实现文件，删门面后照样能用：`source/mfa_identity.py` 的 `ADAPTER`，`delivery/app_workflow.py` 的 `implementation_identity()`，`experiments/local_experiment_log/deploy_tools.py` 的 bundle 文件名，`workflows/dual_pdf/post_live.py` 的 `*_IMPLEMENTATION` 与 `REVIEW_PROMPTS_SCRIPT`。同理不改：观测包为 experiment-log bundle 保留的 `except ImportError: import sermon_*` 退路，以及 `config/`、`data/` 里的冻结记录。
+5. **CI 列表**（`python-tests.yml` 的 py_compile、`tongxing-ios.yml` 的 `shared_contracts`、`tracker-tests.yml`、`prefect-pilot.yml`）改为实现路径。
+6. **链接** 改指实现文件，包括 `docs/backlog.zh.md`、`docs/design/`、`apps/*/README`；`docs/reports/`、`docs/evidence/` 不改。
+7. **测试** 改为导入包模块；“门面与包模块是同一对象”的断言随门面一起删掉。B 批合入之前不碰它正在改的测试文件。
+8. **合并条件** 同 §2：没有进行中的 L2 run，也没有已冻结、未终结的统一 CLI 运行；一批只产生一代 L2 身份，PR 里记下新的 `code_identity()`。`experiments/` 与 `scripts/experiments/` 里的旧实验代码可以改（§2 第 3 条）；Spark 诊断链的容器只设 `PYTHONPATH`，所以改它的导入前，先确认容器的 `PYTHONPATH` 里有 `packages/production/src`。
+
+### 6.2 批次
+
+每批只依赖入口 PR，彼此之间没有内容依赖：每批改的是指向**本批**门面的全部调用方，不管调用方文件属于哪一层，而且改后指向包模块或 `tools/` 路径，不指向别的门面。几批会改到同一批共享文件（测试、`python-tests.yml`、`docs/backlog.zh.md`、`tools/development/run_clip_real_e2e.py`），所以合并后一批之前先 rebase 到最新 `dev`。下面的顺序按风险从低到高排。
+
+| 批 | 范围 | 删除 | 只改闭包外调用方（G1） | 导入方／测试文件 |
+|---|---|---|---|---|
+| C1 | `tools/`、`experiments/` 目标 | 27 | 0 | 10／31 |
+| C2 | observability、orchestration、workflows/prepared | 13 | 6 | 76／124 |
+| C3 | Layer 1 source | 10 | 4 | 25／45 |
+| C4 | Layer 2 text | 9 | 3 | 33／75 |
+| C5 | Layer 3 audio | 6 | 2 | 26／30 |
+| C6 | Layer 4 delivery 与 adapters/legacy | 18 | 3 | 22／43 |
+| C7 | compute、review、contracts、storage | 4 | 21 | 87／136 |
+| C8 | workflows/dual_pdf（Cloud Run 命令） | 6 | 1 | 15／53 |
+| 合计 | | **93** | **40** | |
+
+- **C1 tools 与实验（删 27）。** tools：`backlog_ids`、`check_tongxing_icon_alignment`、`ci_change_scope`、`docs_change_gate`、`firebase_dev_app_shell_update`、`patch_firebase_dev_app_banner`、`pipeline_compatibility_gate`、`prepare_clip_voice_authorization`、`prepare_cloud_run_realtime_update_plan`、`record_decision`、`render_tongxing_page_header`、`run_dev_simulated_delivery`、`run_unittest_ci`、`smoke_published_page`、`validate_web_realtime_contract`、`verify_dev_180s_page_test`、`worktree_venv`；实验：`experiments/benchmark_layer2_bounded`、`experiments/build_agent_trial_variants`、`experiments/claude_translation_ab`、`field_venue_independent_truth`、`generate_multilingual_fragment_poc`、`measure_codex_cli_tps`、`measure_openai_model_tps`、`render_sentence_interpretation_tts`、`render_vietnamese_voice_demos`、`run_multilingual_prosody_poc`。调用方：`python-tests.yml` 的四条（含 `run_unittest_ci`）；argv 在 `scripts/refresh_production_preflight_evidence.py`（两个 Cloud Run 校验工具）、`tools/development/run_clip_real_e2e.py`（`smoke_published_page`、`prepare_clip_voice_authorization`、`run_dev_simulated_delivery`）和 `scripts/run_dev_180s_beta_e2e.sh` 里；工具与实验文件自己的 usage 文字；`docs/backlog.zh.md`、`docs/agent-api-trials.zh.md`、`docs/multilingual-speaker-voice-registry.zh.md` 的链接；10 个导入方，多是同一实验线里的兄弟脚本。没有生产导入方，最先做。
+- **C2 观测（删 13，G1 6）。** 删 `build_four_layer_tracker_snapshot`、`build_tracker_dag_projection`、`codex_credit_usage`、`four_layer_progress`、`outcome_marker`、`sermon_completion`、`sermon_durable_accounting`、`sermon_log_contract`、`sermon_log_outbox`、`sermon_model_call_observation`、`sermon_model_call_report`、`sermon_review_observation`、`sermon_study_generation`。只改调用方：`four_layer_measure`、`sermon_accounting`、`sermon_cache_observation`、`sermon_clock_evidence`、`sermon_log_profile`、`sermon_workflow_evidence`。调用方：`tools/ops/tracker-publisher/publish.mjs` 的 `BUILDER` 改为 `tools/ops/run.py observability.projections.four_layer_tracker_snapshot`，入口会绑定 tracker 宿主，LaunchAgent 不用改；`tracker-tests.yml` 两条；`apps/tracker-web/README.zh.md` 与 backlog 的链接；`pipeline_compatibility_gate.py` 的 argv。`sermon_accounting` 有 69 个导入方，自成一个提交。
+- **C3 Layer 1（删 10，G1 4）。** 删 `judge_english_source_for_translation`、`mfa_alignment`、`mfa_backend`、`mfa_spark`、`prepare_sentence_interpretation_shadow`、`review_prompts`、`sermon_mfa_identity`、`sermon_source_failure`、`sermon_source_producer_compatibility`、`sermon_unified_source`。只改调用方：`build_english_source_package`、`english_source_judge_cache`、`run_sentence_interpretation_models`、`sermon_source_text_review`。调用方：`python-tests.yml` 的 `review_prompts`；`scripts/sermon_fresh_source_evidence.py`、`scripts/sermon_cached_fresh_diagnostic_source.py` 和 `experiments/decision-api-ab/decision_api_weekly_ab.py` 的 argv；backlog 与 `docs/design/l1-l2-remaining-migration.zh.md` 的链接。身份键 `mfa_identity.ADAPTER`、`REVIEW_PROMPTS_SCRIPT` 不改（§6.1 第 4 条）。保留这两个键时，Source 包与 MFA 身份不变，因为它们读的是实现文件。
+- **C4 Layer 2（删 9，G1 3）。** 删 `canonical_layer2_budget`、`canonical_layer2_cache_recovery`、`layer2_auto_repair`、`run_target_language_models`、`sermon_cuv_translation`、`sermon_review_diagnostics`、`sermon_review_gate`、`target_language_policy_preview`、`target_language_rule_preflight`。只改调用方：`layer2_human_ruling`、`produce_target_language_candidate`、`target_language_policy`。调用方主要是导入方与 backlog 链接。五个语言插件的 `except ImportError` 注释提到 `produce_target_language_candidate.py`：插件被 policy 冻结，不改，那个门面本来也属于 G1。
+- **C5 Layer 3（删 6，G1 2）。** 删 `build_target_language_audio_package`、`compact_formal_target_audio`、`inspect_canonical_audio`、`review_target_language_audio`、`target_audio_timing_plan`、`validate_target_language_audio_unit`。只改调用方：`clip_timeline_map`（`audio/renderer.py` 在 W 里）、`prepare_target_language_speech_job`。调用方：`clip_e2e_spark.py` 的 compaction 容器命令改为 `{code}/tools/ops/run.py audio.compaction`（[入口](package-cli-entry.zh.md) §5），只在没有未对账 Spark 结果的 clip 运行时合并；`tools/development/run_clip_real_e2e.py` 与 `decision_api_weekly_ab.py` 的 argv；backlog 链接。
+- **C6 Layer 4（删 18，G1 3）。** 删 `assemble_multilingual_hosting`、`assemble_multilingual_v3_update`、`bind_published_alignment_catalog`、`build_formal_dev_release_assets`、`build_multilingual_catalog`、`delivery_contract`、`deploy_multilingual_hosting`、`guarded_hosting_publish`、`multilingual_dev_preview`、`prepare_dev_simulated_publication`、`refresh_multilingual_hosting_with_legacy`、`release_asset_io`、`seal_multilingual_dev_catalog`、`sermon_app_delivery`、`sermon_delivery_intent`、`sermon_unified_delivery`、`verify_multilingual_hosting`、`verify_v3_bucket_video`。只改调用方：`build_full_video_app_release`、`stage_formal_multilingual_dev`、`study_artifacts`。调用方：`tongxing-ios.yml` 的 9 条 `shared_contracts`（含两个 G1 门面）；`tools/ops/run_multilingual_cd.py` 的三条 argv 与裸名导入退路；`tools/development/run_clip_real_e2e.py`、`scripts/run_dev_180s_beta_e2e.sh` 的 `prepare_dev_simulated_publication`（改为 `tools/ops/` 命令）；`pipeline_compatibility_gate.py`；`tools/ops/guarded_hosting_publish.py` 与 `prepare_dev_simulated_publication.py` 的 docstring。`app_workflow.implementation_identity()` 的键不改，所以 App 交付冻结计划不失效。
+- **C7 横切基础（删 4，G1 21）。** 删 `codex_layer2_resources`、`scripture_adjudication`、`scripture_machine_adjudication`、`sermon_provider_error`。只改调用方的有 21 个，都是宿主端口背后的模块：`api_cli_outcomes`、`bounded_audio_cpu`、`canonical_pipeline_definition`、`claude_layer2_transport`、`codex_layer2_transport`、`layer2_api_concurrency`、`machine_audio_waiver_acceptance`、`openai_layer2_transport`、`production_concurrency_profile`、`production_spark_admission`、`sermon_codex_transport`、`sermon_provider_http`、`sermon_provider_limits`、`sermon_public_snapshot`、`sermon_review_budget`、`sermon_review_contracts`、`sermon_unified_reviews`、`source_meaning_machine_adjudication`、`spark_exclusive_session`、`spark_tts_replica_pool`、`spark_tts_window_scheduler`。调用方：`prefect-pilot.yml`；`spark_exclusive_session` 的 argv 在 `tools/ops/run_scripture_gated_round.py`、`scripts/experiments/spark_session_round.sh`、`tools/development/run_clip_real_e2e.py` 里，改为 `tools/ops/run.py compute.spark_exclusive_session`；`decision_api_weekly_ab.py`。导入方最多（87 个文件），可以按模块拆成几个提交，但一起合并。
+- **C8 dual_pdf（删 6，G1 1）。** 删 `post_live_run_status`、`render_mobile_pdf_from_srt`、`render_sermon_interpretation_pdf`、`run_codex_local_sermon_production`、`run_post_live_subtitle_generation`、`run_post_live_timeline_job`。只改调用方：`sermon_pipeline`。调用方：`backend/app.py` 拼的 `run_post_live_subtitle_generation.py`，`scripts/sermon_production_supervisor.py` 拼的它与 `run_post_live_timeline_job.py`；`build_post_live_timeline.py`、`build_multistage_post_live_timeline.py` 的提示文字；`post_live.py` 的 `SERMON_PIPELINE_SCRIPT`、`MOBILE_PDF_SCRIPT` 和 `render_sermon_interpretation_pdf.py` 命令；`run_saturday_harness.py`；两个 sermon-dubbing-poc 实验脚本；`python-tests.yml` 四条；backlog 链接。`Dockerfile` 现在只复制 `tools/ops/sermon_unified_preflight.py`，要同批加上 `COPY tools/ops/run.py`，否则镜像里的 backend 找不到入口。Cloud Run 的重建与部署是另一步，由用户决定；已部署的镜像带着旧门面，不受影响。dual_pdf 身份哈希的是 `*_IMPLEMENTATION`，改 argv 不改变它。风险最高，放最后。
+- **G1 窗口（并入 §4 第 4 条的 D）。** 上面 40 个只改了闭包外调用方的门面，到窗口时只剩闭包内的引用：`tongxing_host.py` 的 `from scripts import …` 包装与 `_module('scripts.…')` 端口、`renderer.py` 的 `clip_timeline_map`、`auto_qc_text_common.py`（要冻结新 policy）。它们与 23 个必须保留门面、三个 `worker_command` 以及 `clip_e2e_spark.py` 的另外三条容器命令一起改、一起删，只重新校准一次。
 
 ## 附录 A 调用方普查脚本
 

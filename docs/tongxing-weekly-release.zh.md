@@ -45,7 +45,7 @@
 旧 `sermon-multilingual-v3-stage-manifest-v1` 候选只需保留原始文件与审核证据，按实际选择的配置重新生成清单；组装器不自动迁移或替旧清单补齐文件。输出状态固定为 `validated_not_deployed`，不能直接作为上线收据。bucket 配置还须传 `--video-file`；入口如下：
 
 ```bash
-.venv/bin/python scripts/assemble_multilingual_v3_update.py \
+.venv/bin/python tools/ops/run.py adapters.legacy.assemble_multilingual_v3_update \
   --base-public artifacts/<已核对的完整正式站快照>/public \
   --stage-public artifacts/<本周已审公开资产>/public \
   --stage-manifest artifacts/<本周已审公开资产>/stage-manifest.json \
@@ -57,7 +57,7 @@
 上例用于 bucket 配置；旧 Hosting 视频配置不传 `--video-file` 和 `--base-firebase-json`。bucket 配置的候选同时输出带精确 302 与视频 CSP 的 `firebase.json`，但组装器不上传对象、不部署站点。发布后以如下命令单独取得视频的线上收据；它会完整读回一次 MP4 核对 SHA，并检查旧同源 URL 的 302、首尾 206／Range 和 CORS，因此会产生一次视频大小的下载流量：
 
 ```bash
-.venv/bin/python scripts/verify_v3_bucket_video.py \
+.venv/bin/python tools/ops/run.py adapters.legacy.verify_v3_bucket_video \
   --origin https://ai-for-god-sermon-audio.web.app \
   --catalog artifacts/<本周已发布候选>/public/multilingual-v3.json \
   --page-id <本周pageId> \
@@ -67,7 +67,7 @@
 组装后的本地候选可再独立运行只读检查，先固定当前干净代码 commit 和 `build-report.json` 的文件 SHA-256：
 
 ```bash
-.venv/bin/python scripts/inspect_multilingual_v3_release.py \
+.venv/bin/python tools/ops/run.py adapters.legacy.inspect_multilingual_v3_release \
   --candidate artifacts/<本周-v3-候选> \
   --baseline artifacts/<原始完整正式站快照>/public \
   --expected-commit <40位代码commit> \
@@ -144,7 +144,7 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py prepare \
 **Production 站点已有 `multilingual-v2.json` 时，不直接部署这个 legacy-only 包。** 旧发行器不会把多语言目录和正式资源纳入它的严格清单；`deploy_firebase.py --execute` 会先读取 Production v2 catalog 并默认拒绝覆盖。将这份已准备的 legacy release 与当前已通过 Production HTTP 核验的完整多语言候选合成一个新候选：
 
 ```bash
-.venv/bin/python scripts/refresh_multilingual_hosting_with_legacy.py \
+.venv/bin/python tools/ops/run.py adapters.legacy.refresh_multilingual_hosting_with_legacy \
   --base-candidate /absolute/path/to/current-production-multilingual-candidate \
   --legacy-release /absolute/path/to/prepared-legacy-release \
   --prior-http-verification /absolute/path/to/previous-production-http-verification.json \
@@ -195,14 +195,14 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 
 ```bash
 # 页面先发布并 HTTP 验证；不传 art 时准备来源绑定的各语言 brief。
-.venv/bin/python scripts/build_multilingual_sermon_posters.py \
+.venv/bin/python tools/ops/run.py delivery.posters.build \
   --release artifacts/weekly-release/new-release \
   --page-id '<本周完整 pageId>' \
   --origin https://ai-for-god-sermon-audio.web.app \
   --out artifacts/sermon-poster/YYYY-MM-DD/multilingual
 
 # ImageGen 主视觉完成后：自动合成三语；加入英语参考 JSON 则合成四语。
-.venv/bin/python scripts/build_multilingual_sermon_posters.py \
+.venv/bin/python tools/ops/run.py delivery.posters.build \
   --release artifacts/weekly-release/new-release \
   --page-id '<本周完整 pageId>' \
   --origin https://ai-for-god-sermon-audio.web.app \
@@ -225,12 +225,12 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 临时制作、历史周次重做或仅补某一种语言：复用该周已验证的 v3／v4 发布目录，明确 `--page-id`，用 `--locales zh-Hans`（或实际所需语言）限定范围。下例以中文单语补图为例；三次调用的来源、页面、语言、origin 和输出目录相同，渲染与目视记录共用同一主视觉及 prompt：
 
 ```bash
-.venv/bin/python scripts/build_multilingual_sermon_posters.py --release /path/to/verified-release \
+.venv/bin/python tools/ops/run.py delivery.posters.build --release /path/to/verified-release \
   --page-id '<精确 pageId>' --locales zh-Hans \
   --origin https://ai-for-god-sermon-audio.web.app \
   --out artifacts/sermon-poster/YYYY-MM-DD/ad-hoc-zh-v1
 # 按来源 brief 完成无文字主视觉及实际 prompt 后：
-.venv/bin/python scripts/build_multilingual_sermon_posters.py --release /path/to/verified-release \
+.venv/bin/python tools/ops/run.py delivery.posters.build --release /path/to/verified-release \
   --page-id '<精确 pageId>' --locales zh-Hans \
   --origin https://ai-for-god-sermon-audio.web.app \
   --art /path/to/shared-art.png --art-prompt /path/to/actual-imagegen-prompt.txt \

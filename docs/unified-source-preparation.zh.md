@@ -10,8 +10,8 @@ execute(config_path)   # 有界 ASR → 既有 MFA → anchor → 机器 judge �
 CLI 等价入口：
 
 ```sh
-.venv/bin/python scripts/sermon_unified_source.py inspect --config /absolute/source-preparation.json
-.venv/bin/python scripts/sermon_unified_source.py execute --config /absolute/source-preparation.json
+.venv/bin/python tools/ops/run.py source.unified_stage inspect --config /absolute/source-preparation.json
+.venv/bin/python tools/ops/run.py source.unified_stage execute --config /absolute/source-preparation.json
 ```
 
 它不下载来源、不翻译、不发布。结果始终保留 `productionEligible=false`；机器检查通过后返回准备阶段 `succeeded`、`kind=english_source_candidate`、`review=human_pending` 与候选路径，后续原有英文全文/对齐/整句人审仍独立等待；不能把准备阶段成功提升为 `ready_for_translation`。机器检查失败则返回 blocked。
