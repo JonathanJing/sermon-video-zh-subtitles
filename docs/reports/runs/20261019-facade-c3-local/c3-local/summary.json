@@ -1,0 +1,66 @@
+{
+  "status": "passed_with_load_flakes_and_env_errors",
+  "facadesDeleted": 8,
+  "surveyBefore": {
+    "after": 165,
+    "checkout": "dev@5eb39da3"
+  },
+  "surveyAfter": {
+    "after": 157
+  },
+  "facadesKept": {
+    "G1 closure (tongxing_host.py)": [
+      "build_english_source_package",
+      "english_source_judge_cache",
+      "run_sentence_interpretation_models",
+      "sermon_source_text_review"
+    ],
+    "waits for C2 (pinned diagnostic Source files)": [
+      "mfa_backend",
+      "sermon_mfa_identity"
+    ]
+  },
+  "unittestShards": {
+    "count": 10,
+    "tests": 5943,
+    "failures": 2,
+    "errors": 2,
+    "failureKind": "load flake x2, env import error x2"
+  },
+  "targetedTests": {
+    "modules": 45,
+    "tests": 584,
+    "failures": "2 load flakes in test_layer2_large_fan_in; module passes alone"
+  },
+  "pytestStyle": {
+    "passed": 1111,
+    "failed": 1,
+    "failedPreexistingOnDev": 1
+  },
+  "testIdsBefore": {
+    "unittest": 5943
+  },
+  "testIdsAfter": {
+    "unittest": 5943
+  },
+  "renamedTests": 1,
+  "removedFacadeIdentityAssertions": 1,
+  "identities": {
+    "L2code": {
+      "dev@5eb39da3": "e04411e924de8d251f2d3975b2e897e8be0c1309e62f56ce7e8c5dac74279b7d",
+      "c3": "5064ae2cfb865004b339bc46161939a40a19647bc1f82f3729517a319694eb8e"
+    },
+    "W": "1c28f4aa38c0 (unchanged)",
+    "T": "8ec15fe1556b (unchanged)",
+    "scoring": "9f2ff8077671 (unchanged)",
+    "rate": "8f50c233e07b (unchanged)",
+    "preview": "794bb5f1c7ac (unchanged)",
+    "sourceBuilderSha256": "51a2e2a00a6a6720f47067807c6cb5922c9094ec57111b8b47f628bdfe8fd250 (unchanged)",
+    "anchorGeneratorSha256": "5aa19b0580febb3652f9b694cf2ac9f1cbba1c241320c02396a99f0a63a439c1 (unchanged)",
+    "mfaAdapterSha256": "e1dd12f3fc5bff6d99bd89d28e9ac764c2662b54222bcef1f911772e5adac8bd (unchanged)"
+  },
+  "providerCalls": 0,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "productionWrites": 0
+}
