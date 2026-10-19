@@ -12,7 +12,7 @@ from tongxing_production.review import repair_ledger as ledger
 from tongxing_production.audio import screening as audio_screen
 from tongxing_production.review import text_qc as text_screen
 from tongxing_production.review.audio_qc import THRESHOLDS, TRACK_ENVELOPE
-from scripts import prepare_target_language_speech_job as speech
+from tongxing_production.audio import speech_job as speech
 from tongxing_production.source import sentence_interpretation as interpretation
 from scripts import sermon_unified_reviews as reviews
 from scripts import stage_formal_multilingual_dev as stage

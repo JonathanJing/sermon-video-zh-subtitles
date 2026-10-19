@@ -1,7 +1,8 @@
 import copy
 import math
 import unittest
-from scripts import target_audio_timing_plan as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import timing_plan as subject
 
 
 class TimingPlanTests(unittest.TestCase):

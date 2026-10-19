@@ -6,7 +6,7 @@ import unittest
 import wave
 from unittest.mock import patch
 
-from scripts import compact_formal_target_audio as subject
+from tongxing_production.audio import compaction as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as identity
 from tests import test_render_formal_target_language_speech as render_tests

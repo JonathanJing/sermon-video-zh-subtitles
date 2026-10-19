@@ -14,7 +14,8 @@ from unittest import mock
 
 from jsonschema import Draft202012Validator
 from tools.ops import audit_portable_media as subject
-from scripts import review_target_language_audio as review
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import human_review as review
 
 
 def write_json(path, value):

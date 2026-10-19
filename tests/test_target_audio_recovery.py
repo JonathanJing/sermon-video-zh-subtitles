@@ -4,7 +4,8 @@ import unittest
 from unittest.mock import patch
 from tests import test_render_formal_target_language_speech as fixtures
 from scripts import target_audio_recovery as recovery
-from scripts import validate_target_language_audio_unit as integrity
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import unit_integrity as integrity
 
 
 class RecoveryTests(unittest.TestCase):

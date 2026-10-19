@@ -43,7 +43,8 @@ class DiagnosticDriverTests(unittest.TestCase):
             self.assertEqual(report['transcriptSha256'],hashlib.sha256((out/'fresh-local-asr.json').read_bytes()).hexdigest())
 
     def test_audio_locale_wrappers_follow_actual_serial_invocations(self):
-        from scripts import inspect_canonical_audio as audio
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.audio import inspect as audio
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);assets=root/'assets';assets.mkdir();package=assets/'package.json';package.write_text(json.dumps({'units':[{'audio':{'sha256':'a'*64}}]}))
             inputs=[{'locale':locale,'artifactRoot':str(assets),'package':str(package),'trackedFiles':[str(package)],

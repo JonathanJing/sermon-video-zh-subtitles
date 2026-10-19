@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts import produce_target_language_candidate as subject
-from scripts import prepare_target_language_speech_job as handoff
+from tongxing_production.audio import speech_job as handoff
 from scripts import review_target_language_candidate as human_review
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as interpretation

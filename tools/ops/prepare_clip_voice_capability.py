@@ -6,16 +6,12 @@ import argparse
 import json
 from pathlib import Path
 
-if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
+if __package__ in (None, ""):  # run directly from tools/ops: reach the repository root
     import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
-try:
-    from scripts import tongxing_host  # noqa: F401  binds the production package ports
-    from scripts import prepare_target_language_speech_job as speech
-    from tongxing_production.source import sentence_interpretation as interpretation
-except ImportError:
-    import prepare_target_language_speech_job as speech
-    from tongxing_production.source import sentence_interpretation as interpretation
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.audio import speech_job as speech  # noqa: E402
+from tongxing_production.source import sentence_interpretation as interpretation  # noqa: E402
 
 
 def artifact(path: Path, *, json_artifact: bool) -> dict[str, str]:
