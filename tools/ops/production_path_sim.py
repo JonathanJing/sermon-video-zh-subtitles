@@ -63,6 +63,7 @@ class Scenario:
     overhead: float = 0.0
     text_override: dict[str, float] = field(default_factory=dict)
     prebuilt: tuple[str, ...] = ()
+    audio_minutes_override: float | None = None
     locales: tuple[Locale, ...] = (
         Locale("zh-Hans", 416),
         Locale("es", 402),
@@ -137,6 +138,8 @@ def sample_tts_rework(scenario: Scenario, groups: int, rng: random.Random) -> fl
 
 
 def audio_review_minutes(scenario: Scenario, durations: StageDurations) -> float:
+    if scenario.audio_minutes_override is not None:
+        return scenario.audio_minutes_override
     if scenario.audio_review == "none":
         return 0.0
     if scenario.audio_review == "full":
@@ -325,6 +328,92 @@ def simulate(scenario: Scenario, trials: int, seed: int) -> dict:
     }
 
 
+def _with_durations(scenario: Scenario, **kwargs: float) -> Scenario:
+    return replace(scenario, durations=replace(scenario.durations, **kwargs))
+
+
+def sweep_rows(trials: int, seed: int) -> dict[str, list[dict]]:
+    """One-parameter sweeps for the four paths that matter."""
+
+    base = {
+        "batch_family": SCENARIOS["batch_family_clean"],
+        "batch_separate": SCENARIOS["batch_separate_clean"],
+        "stream_separate": SCENARIOS["stream_separate"],
+        "stream_textfirst": SCENARIOS["stream_textfirst"],
+    }
+    out: dict[str, list[dict]] = {}
+
+    text_review_values = [0.0, 15.0, 30.0, 45.0, 60.0]
+    rows = []
+    for value in text_review_values:
+        row = {"value": value, "paths": {}}
+        for name, scenario in base.items():
+            changed = _with_durations(scenario, text_review=value)
+            if value == 0:
+                changed = replace(changed, text_review=False)
+            row["paths"][name] = simulate(changed, trials, seed)["first_p50"]
+        rows.append(row)
+    out["text_review"] = rows
+
+    audio_values = [0.0, 3.0, 10.0, 33.0]
+    rows = []
+    for value in audio_values:
+        row = {"value": value, "paths": {}}
+        for name, scenario in base.items():
+            changed = replace(scenario, audio_minutes_override=value)
+            row["paths"][name] = simulate(changed, trials, seed)["first_audio_p50"]
+        rows.append(row)
+    out["audio_review"] = rows
+
+    deploy_values = [5.0, 10.0, 20.0, 30.0]
+    rows = []
+    for value in deploy_values:
+        row = {"value": value, "paths": {}}
+        for name, scenario in base.items():
+            changed = _with_durations(
+                scenario, deploy=value, family_deploy=value
+            )
+            row["paths"][name] = simulate(changed, trials, seed)["first_p50"]
+        rows.append(row)
+    out["deploy"] = rows
+
+    tts_values = [10.0, 14.0, 20.0, 28.0]
+    rows = []
+    for value in tts_values:
+        row = {"value": value, "paths": {}}
+        for name, scenario in base.items():
+            changed = _with_durations(scenario, tts=value)
+            row["paths"][name] = simulate(changed, trials, seed)["first_p50"]
+        rows.append(row)
+    out["tts"] = rows
+    return out
+
+
+def format_sweep_markdown(sweeps: dict[str, list[dict]]) -> str:
+    titles = {
+        "text_review": "文字审稿（分钟）",
+        "audio_review": "音频审听（分钟，影响首个音频页）",
+        "deploy": "部署（分钟）",
+        "tts": "TTS（分钟）",
+    }
+    lines: list[str] = []
+    for key, rows in sweeps.items():
+        lines.append(f"### {titles[key]}")
+        lines.append("")
+        lines.append("| 值 | 整篇 family | 独立页 | 逐组独立页 | 逐组文字先行 |")
+        lines.append("|---:|---:|---:|---:|---:|")
+        for row in rows:
+            p = row["paths"]
+            lines.append(
+                "| {value:.0f} | {batch_family:.1f} | {batch_separate:.1f} | "
+                "{stream_separate:.1f} | {stream_textfirst:.1f} |".format(
+                    value=row["value"], **p
+                )
+            )
+        lines.append("")
+    return "\n".join(lines)
+
+
 SCENARIOS: dict[str, Scenario] = {
     "batch_family_clean": Scenario(
         name="batch_family_clean",
@@ -405,6 +494,7 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=20261018)
     parser.add_argument("--audio", choices=["spot", "full", "none"])
     parser.add_argument("--text-review", choices=["human", "none"])
+    parser.add_argument("--sweep", action="store_true")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     scenarios = list(SCENARIOS.values())
@@ -412,6 +502,13 @@ def main() -> int:
         scenarios = [replace(s, audio_review=args.audio) for s in scenarios]
     if args.text_review == "none":
         scenarios = [replace(s, text_review=False) for s in scenarios]
+    if args.sweep:
+        sweeps = sweep_rows(args.trials, args.seed)
+        if args.json:
+            print(json.dumps(sweeps, ensure_ascii=False, indent=2))
+        else:
+            print(format_sweep_markdown(sweeps))
+        return 0
     rows = [simulate(s, args.trials, args.seed) for s in scenarios]
     if args.json:
         print(json.dumps(rows, ensure_ascii=False, indent=2))

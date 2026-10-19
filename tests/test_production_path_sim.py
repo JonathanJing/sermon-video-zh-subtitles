@@ -9,6 +9,7 @@ from tools.ops.production_path_sim import (
     SCENARIOS,
     simulate,
     simulate_once,
+    sweep_rows,
 )
 
 
@@ -57,6 +58,23 @@ def test_group_rework_has_a_shorter_tail_than_whole_rework() -> None:
     stream = simulate(SCENARIOS["stream_separate"], trials=120, seed=7)
     assert stream["first_p90"] < batch["first_p90"]
     assert stream["first_p90"] < 75.0
+
+
+def test_text_review_sweep_is_monotonic() -> None:
+    rows = sweep_rows(20, seed=1)["text_review"]
+    values = [row["paths"]["stream_textfirst"] for row in rows]
+    assert values == sorted(values)
+
+
+def test_audio_review_leaves_text_page_unchanged() -> None:
+    fast = simulate_once(
+        replace(SCENARIOS["stream_textfirst"], audio_minutes_override=0.0), seed=1
+    )
+    slow = simulate_once(
+        replace(SCENARIOS["stream_textfirst"], audio_minutes_override=33.0), seed=1
+    )
+    assert fast.first_page == slow.first_page
+    assert min(slow.pages.values()) > min(fast.pages.values())
 
 
 def test_machine_checked_text_first_is_faster_than_reviewed() -> None:
