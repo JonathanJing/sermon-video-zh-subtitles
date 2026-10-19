@@ -230,11 +230,14 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
         if end['status'] in {'cancelled','outcome_unknown'}: issue('incomplete_execution_outcome')
         try:
             begin, finish = seconds(start['startedAt']), seconds(end['recordedAt'])
+            # monotonicEndNs is read with completedAt, before logging may block;
+            # recordedAt is the later write. Older ledgers lack completedAt.
+            completed = seconds(end.get('completedAt') or end['recordedAt'])
             ready = seconds(start['dependencyReadyAt']) if start.get('dependencyReadyAt') else None
             queued = seconds(start['queuedAt']) if start.get('queuedAt') else None
             ordered = [v for v in (ready, queued, begin, finish) if v is not None]
             timing = monotonic_interval(start, end)
-            utc_trusted = timing is None or abs((finish-begin)-end['elapsedSeconds']) <= TIMESTAMP_TOLERANCE_SECONDS
+            utc_trusted = timing is None or abs((completed-begin)-end['elapsedSeconds']) <= TIMESTAMP_TOLERANCE_SECONDS
             if timing is None and (ordered != sorted(ordered) or end['elapsedSeconds'] < 0 or
                     end['elapsedSeconds'] > finish - begin + 0.01):
                 raise ValueError()
@@ -256,7 +259,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             'dependencyRecorded': isinstance(start.get('dependsOn'), list),
             'parent': start.get('parentSpanId'), 'begin': begin, 'finish': finish,
             'dependencyReadyAt': start.get('dependencyReadyAt'), 'ready': ready,
-            'elapsedSeconds': end['elapsedSeconds'],
+            'elapsedSeconds': end['elapsedSeconds'], 'completed': completed,
             'queueWaitSeconds': begin - queued if queued is not None else None,
             'dependencyReadyToQueueSeconds': queued - ready if ready is not None and queued is not None else None}
         if timing:
@@ -268,7 +271,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
         if node.get('clockDomainId'):
             offsets[node['clockDomainId']].extend([
                 node['begin'] - int(node['monotonicStartNs']) / 1e9,
-                node['finish'] - int(node['monotonicEndNs']) / 1e9])
+                node['completed'] - int(node['monotonicEndNs']) / 1e9])
     unstable_domains = {domain for domain, values in offsets.items()
                         if max(values) - min(values) > TIMESTAMP_TOLERANCE_SECONDS}
     if unstable_domains:
@@ -454,7 +457,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
     totals = {executor: round(sum(n['elapsedSeconds'] for n in leaves.values() if n['executorType'] == executor), 6)
               for executor in sorted(EXECUTOR_TYPES)}
     telemetry = telemetry_projection(events, nodes, leaves, shared_clock, diagnostics, starts, ends, usage)
-    safe_nodes = [{**{k: v for k, v in n.items() if k not in {'dependsOn', 'parent', 'begin', 'finish', 'ready'}},
+    safe_nodes = [{**{k: v for k, v in n.items() if k not in {'dependsOn', 'parent', 'begin', 'finish', 'completed', 'ready'}},
                    'dependsOnSha256': [digest(dep) for dep in n['dependsOn']],
                    'parentSpanSha256': digest(n['parent']) if n['parent'] else None,
                    'models': sorted({_label(e.get('model')) for e in events
