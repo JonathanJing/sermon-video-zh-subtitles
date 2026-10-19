@@ -935,7 +935,9 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             # direct-paid closure, the prior files' hashes and the copied bytes. What a hit
             # writes is bound to the inputs admitted in memory. Drift of the config, code,
             # package or prior snapshot on disk is caught before every paid dispatch
-            # (bound_call) and at post_model_binding, so a drifted run saves no candidate.
+            # (bound_call), at post_model_binding and before the candidate is saved, so a
+            # drifted run saves no candidate; drift during the candidate writes fails the
+            # worker at final_package_validation.
             for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing',
                               'verify_execution', 'paid_response_provenance', 'record_reuse',
                               'validate_recovery_source', 'recover_returned_response'):
@@ -992,7 +994,13 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     'languageReviewSha256': jobs._digest(receipt)})
             with accounting.stage('layer2.final_package_validation.' + locale, depends_on=[candidate_span],
                     executor_type='deterministic_program', work_unit_id='l2.' + locale + '.final_package_validation'):
-                checked = package_view(fresh_config)
+                # The last current_binding() runs before the candidate is written; recheck the
+                # configuration and code after the writes so drift there cannot end in success.
+                # (current_binding() itself requires the node to still be 'ready'.)
+                final_config = load_configuration(config.path)
+                require(final_config.sha256 == expected_configuration and code_identity() == expected_code,
+                        'worker_configuration_or_code_changed_during_models')
+                checked = package_view(final_config)
                 require(checked['nodes']['text.' + locale]['status'] == 'validated', 'worker_candidate_not_validated')
             recovery_receipt_sha = None
             if partial_recovery is not None:

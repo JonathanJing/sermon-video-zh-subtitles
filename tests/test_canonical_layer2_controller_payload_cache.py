@@ -325,6 +325,42 @@ class CanonicalLayer2PayloadCacheTests(unittest.TestCase):
         self.assertEqual(error, "worker_configuration_or_code_changed_during_models")
         self.assertEqual(verifications, 4)
 
+    def drift_during_candidate_write(self, drift):
+        self.make_prior()
+        self.enable_v6()
+        caller = self.api_caller(forbidden=True)
+        code = {"value": "c" * 64}
+        self.drift_code = lambda: code.update(value="d" * 64)
+        original = subject.models.save_new
+
+        def save_new(path, value, *args, **kwargs):
+            result = original(path, value, *args, **kwargs)
+            if Path(path).name == "candidate.json":
+                drift()
+            return result
+
+        with patch.object(subject, "code_identity", side_effect=lambda: code["value"]), \
+                patch.object(subject.models, "save_new", side_effect=save_new), \
+                self.active() as (config, expected_code, key, _):
+            with self.assertRaises(ValueError) as raised:
+                subject.execute(config.path, "zh-Hans", config.sha256, expected_code, key,
+                                caller=caller, api_key="fixture-key",
+                                expected_payload_cache=config.payload_cache["zh-Hans"]["identity"])
+        self.assertEqual(self.base.calls, [])
+        return str(raised.exception)
+
+    def test_configuration_edit_during_candidate_writes_fails_final_validation(self):
+        def drift():
+            self.base.config_data["layer2PayloadCache"]["cacheRequired"] = False
+            self.base.save_config()
+
+        self.assertEqual(self.drift_during_candidate_write(drift),
+                         "worker_configuration_or_code_changed_during_models")
+
+    def test_code_edit_during_candidate_writes_fails_final_validation(self):
+        self.assertEqual(self.drift_during_candidate_write(lambda: self.drift_code()),
+                         "worker_configuration_or_code_changed_during_models")
+
     def test_paid_dispatch_after_drift_is_blocked_before_the_call(self):
         self.make_prior()
         for path in self.prior.glob("group-0002-*"):
