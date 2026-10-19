@@ -3,8 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts import judge_english_source_for_translation as judge
-from scripts import build_english_source_package as layer1
+from tongxing_production.source import english_source_judge as judge
+from tongxing_production.source import english_source_package as layer1
 
 
 def row(sentence_id, failing=()):

@@ -21,7 +21,8 @@ from scripts import sermon_log_profile as profile
 from scripts import sermon_mock_tts_dag as mock
 from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_contracts as c
-from scripts import sermon_source_failure as failure
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import failure
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path
 

@@ -13,7 +13,8 @@ from pathlib import Path
 import stat
 from types import SimpleNamespace
 
-from scripts import sermon_mfa_identity as mfa_identity
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import mfa_identity
 from scripts import sermon_fresh_source_causality as causality
 from scripts import sermon_accounting as accounting
 from scripts import sermon_diagnostic_attempts as attempts
@@ -182,7 +183,7 @@ def _capture(new_plan, subject, parent_plan_path, authorization):
         c.require(c.canonical_sha256(causal) == causal_hash, 'fresh_causality_receipt_changed')
         refs.append(oldroot/'fresh-source-causality.json')
     repository = Path(__file__).resolve().parents[1]
-    from scripts import sermon_source_producer_compatibility as compatibility
+    from tongxing_production.source import producer_compatibility as compatibility
     producers = {}; current_producers={}
     for name in SOURCE_MODULES:
         # Keys stay the legacy identity names; a moved file is read at its alias.

@@ -28,8 +28,9 @@ from pathlib import Path
 if __package__ in (None, ''):
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import build_english_source_package as source_builder
-from scripts import judge_english_source_for_translation as source_judge
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import english_source_package as source_builder
+from tongxing_production.source import english_source_judge as source_judge
 from scripts import build_full_video_app_release as release
 from scripts import delivery_contract as contract
 from scripts import produce_target_language_candidate as candidate_validator

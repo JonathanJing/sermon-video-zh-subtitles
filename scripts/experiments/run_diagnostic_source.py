@@ -18,21 +18,21 @@ from types import SimpleNamespace
 
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from scripts import sermon_unified_source as source
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import unified_stage as source
 from tongxing_production.source import budget
 from tongxing_production.compute import transcription_request as transcription
 from tongxing_production.orchestration import jobs
-from scripts import build_english_source_package as english
+from tongxing_production.source import english_source_package as english
 from tongxing_production.source import sentence_interpretation as anchors
-from scripts import judge_english_source_for_translation as judge
+from tongxing_production.source import english_source_judge as judge
 from scripts import sermon_codex_transport as codex
 from scripts import sermon_model_call_observation as observation
 from scripts import codex_layer2_resources as cli_resources
-from scripts import english_source_judge_cache as judge_cache
+from tongxing_production.source import english_source_judge_cache as judge_cache
 from scripts import production_concurrency_profile as profile_tools
 from scripts import sermon_accounting as accounting
-from scripts import mfa_backend
+from tongxing_production.source import mfa_backend
 from scripts.production_concurrency_profile import validate_profile, load_profile
 from scripts.sermon_unified import resources
 from scripts.sermon_execution_harness import work_lock

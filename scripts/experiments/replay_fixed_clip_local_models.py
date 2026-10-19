@@ -300,7 +300,7 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
     target_locale = binding['targetLocale'] if general else 'zh-Hans'
     checkpoint, voice = speaker_context(args.registry, args.checkpoint_map, target_locale)
     offline()
-    from scripts import sermon_source_producer_compatibility as compatibility
+    from tongxing_production.source import producer_compatibility as compatibility
     identity = {'schemaVersion': 'fixed-clip-local-tts-run-v1', **FLAGS,
                 'mediaSha256': binding['sourceMediaSha256'] if general else MEDIA_SHA,
                 'sourceUnitCount': binding['sourceUnitCount'] if general else 39, 'groupCount': len(groups),

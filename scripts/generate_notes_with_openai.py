@@ -22,7 +22,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from backend.cloud import access_secret as cloud_access_secret
 from backend.cloud import upload_file_to_gcs
-from scripts import review_prompts
+from tongxing_production.source import review_prompts
 from scripts import series_terminology
 from scripts.sermon_accounting import _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata
 

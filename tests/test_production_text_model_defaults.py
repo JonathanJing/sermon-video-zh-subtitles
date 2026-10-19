@@ -12,7 +12,7 @@ from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live 
 from scripts import sermon_pipeline, generate_notes_with_openai as notes
 from scripts import run_post_live_subtitle_generation as post_live
 from scripts import sermon_production_supervisor as supervisor
-from scripts import sermon_source_text_review as source_review
+from tongxing_production.source import text_review as source_review
 
 
 class TextRoleDefaultTests(unittest.TestCase):
@@ -119,7 +119,7 @@ class LegacyBoundedCacheIdentityTests(unittest.TestCase):
         import hashlib
         from scripts import build_sermon_reading_edition_with_openai as reading
         from scripts import review_sermon_subtitles_with_openai as review
-        from scripts import run_sentence_interpretation_models as sentence
+        from tongxing_production.source import sentence_interpretation_models as sentence
         from scripts import sermon_provider_limits as limits
         segment={'id':0,'start':0.,'end':1.,'text':'Hello.'}
         block={**segment,'en':'Hello.','zh':'你好。'}
@@ -196,7 +196,7 @@ class LegacyExecutionCacheIdentityTests(unittest.TestCase):
     def test_all_api_cache_readers_bind_project_credential_and_transport_before_lookup(self):
         from scripts import build_sermon_reading_edition_with_openai as reading
         from scripts import review_sermon_subtitles_with_openai as review
-        from scripts import run_sentence_interpretation_models as sentence
+        from tongxing_production.source import sentence_interpretation_models as sentence
         segment={'id':0,'start':0.,'end':1.,'text':'Hello.'}
         block={**segment,'en':'Hello.','zh':'你好。'}
         route={'environment':'dev','projectId':'proj_a','credentialAlias':'tongxing-dev-runtime','identitySource':'configured_runtime'}
@@ -249,7 +249,7 @@ class LegacyExecutionCacheIdentityTests(unittest.TestCase):
         from scripts import api_cli_outcomes as outcomes
         from scripts.production_spark_admission import SessionBoundCaller
         from scripts import review_sermon_subtitles_with_openai as review
-        from scripts import run_sentence_interpretation_models as sentence
+        from tongxing_production.source import sentence_interpretation_models as sentence
         rows=[{'id':0,'text':'Hello.','zh':'你好。'}]
         with tempfile.TemporaryDirectory() as tmp:
             for role,purpose in [('subtitle','subtitle-review'),('sentence','sentence-interpretation')]:
