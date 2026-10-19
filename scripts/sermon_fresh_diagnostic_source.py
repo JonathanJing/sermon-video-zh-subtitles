@@ -10,18 +10,19 @@ from pathlib import Path
 import unicodedata
 import tempfile
 
-from scripts import sermon_review_contracts as c
-from scripts import sermon_review_budget as budget
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
+from tongxing_production.review import review_budget as budget
 from scripts import sermon_strict_layer2 as immutable
 from tongxing_production.source import sentence_interpretation as anchors
-from scripts import build_english_source_package as english
+from tongxing_production.source import english_source_package as english
 from scripts import sermon_diagnostic_context as diagnostic
-from scripts import sermon_accounting as accounting
-from scripts import sermon_public_snapshot as aggregate
-from scripts import mfa_backend
-from scripts import sermon_completion as completion
+from tongxing_production.observability import accounting
+from tongxing_production.storage import snapshot as aggregate
+from tongxing_production.source import mfa_backend
+from tongxing_production.observability import completion
 from scripts import sermon_fresh_source_causality as causality
-from scripts import sermon_mfa_identity as mfa_identity
+from tongxing_production.source import mfa_identity
 from scripts.sermon_release_workflow import _safe_path
 
 
