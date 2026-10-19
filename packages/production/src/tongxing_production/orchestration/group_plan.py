@@ -30,6 +30,9 @@ from . import group_records as records
 PLAN_SCHEMA = "sermon-group-plan-v1"
 MANIFEST_SCHEMA = "sermon-group-plan-inputs-v1"
 STATUS_ORDER = ("fresh", "failed", "stopped", "unknown", "stale", "missing")
+VERDICT_STATUS = {"pass": "fresh", "fail": "failed", "stopped": "stopped", "unknown": "unknown"}
+# Statuses whose stage will produce new bytes, or whose bytes are in doubt.
+UNSETTLED = {"stale", "missing", "conflict"}
 PAID_STAGES = ("T", "R", "Q", "C")
 LIMITS = (
     "T and R freshness compares the inputs the request is built from (English, English context, "
@@ -60,7 +63,7 @@ def group_plan_rows(anchor: dict) -> list[dict]:
             for unit in anchor["sourceUnits"]]
 
 
-def current_identities(manifest: dict) -> dict:
+def current_identities(manifest: dict, base: Path) -> dict:
     """Current stage implementation identities, read from this checkout's code.
 
     Needs the configured host (tools/ops/group_tasks.py imports it); tests pass these
@@ -72,10 +75,10 @@ def current_identities(manifest: dict) -> dict:
     from ..review import audio_qc, waiver
     locales = {}
     for locale, entry in manifest["locales"].items():
-        policy = legacy.load_json(Path(entry["policy"]))
+        policy = legacy.load_json(_path(entry["policy"], base))
         identity = policy_tools.validate_policy(policy)
         locales[locale] = {
-            "pluginImplementationSha256": (candidate.plugin_implementation_sha256(Path(entry["plugin"]))
+            "pluginImplementationSha256": (candidate.plugin_implementation_sha256(_path(entry["plugin"], base))
                                            if entry.get("plugin") else None),
             "languageReviewPolicySha256": identity["languageReviewPolicySha256"],
         }
@@ -119,7 +122,7 @@ def derive_records(manifest: dict, base: Path, layer1: dict, anchor: dict) -> di
                 by_group.setdefault(group_id, {}).update(stages)
         if entry.get("audioQcReceipt"):
             for group_id, record in legacy.audio_qc_records(
-                    candidate_layer1, locale, legacy.load_json(_path(entry["audioQcReceipt"], base))).items():
+                    locale, legacy.load_json(_path(entry["audioQcReceipt"], base)), by_group).items():
                 by_group.setdefault(group_id, {})["U"] = record
         out[locale] = {"candidate": candidate, "candidateLayer1": candidate_layer1, "records": by_group}
     return out
@@ -127,14 +130,18 @@ def derive_records(manifest: dict, base: Path, layer1: dict, anchor: dict) -> di
 
 def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy: dict,
                     locale_identity: dict, records_for_group: dict) -> dict:
-    """Current values for the inputs this plan can recompute; the rest are not compared."""
+    """Current values for the inputs this plan can recompute; the rest are not compared.
+
+    ``records_for_group`` holds the record already selected for each upstream stage, so
+    a downstream input is compared with the upstream bytes the plan actually reuses.
+    """
     rows = legacy.english_rows(anchor, group["sourceUnitIds"])
     target = records.text_sha256(legacy.joined_text(group["targetUtterances"]))
     if stage in {"T", "R"}:
         role = "translator" if stage == "T" else "reviewer"
         values = {"englishUnitsSha256": legacy.english_units_sha256(rows),
                   "englishContextSha256": records.json_sha256(context),
-                  "policyPromptSha256": legacy.policy_prompt_sha256(policy),
+                  "modelFacingPolicySha256": legacy.model_facing_policy_sha256(policy),
                   "modelSettingsSha256": legacy.model_settings_sha256(policy[role]["model"],
                                                                       policy[role].get("reasoningEffort"))}
         if stage == "R" and "T" in records_for_group:
@@ -143,7 +150,8 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
     if stage == "P":
         return {"languageReviewPolicySha256": locale_identity.get("languageReviewPolicySha256"),
                 "englishUnitsSha256": legacy.english_units_sha256(rows), "targetTextSha256": target}
-    if stage == "Q":
+    if stage in {"Q", "C"}:
+        # C's request hash is not recomputed here; its English, text and QC closure are.
         return {"englishSha256": legacy.qc_english_sha256(rows), "targetTextSha256": target}
     if stage == "S":
         return {"textSha256": target}
@@ -187,10 +195,17 @@ def evaluate(record: dict, layer1: dict, current: dict, implementation: str | No
                 reasons.append(f"input_changed:{name}")
         else:
             not_compared.append(name)
-    status = "stale" if reasons else {"pass": "fresh", "fail": "failed", "stopped": "stopped",
-                                      "unknown": "unknown"}[record["verdict"]["status"]]
+    status = "stale" if reasons else VERDICT_STATUS[record["verdict"]["status"]]
     return {"status": status, "reasons": reasons, "codes": record["verdict"]["codes"],
             "inputKey": record["inputKey"], "compared": compared, "notCompared": not_compared}
+
+
+def _conflicting_keys(candidates: list[dict]) -> list[str]:
+    """Input keys that more than one different record claims."""
+    by_key: dict[str, set[bytes]] = {}
+    for record in candidates:
+        by_key.setdefault(record["inputKey"], set()).add(records.canonical_bytes(record))
+    return sorted(key for key, versions in by_key.items() if len(versions) > 1)
 
 
 def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | None = None,
@@ -222,35 +237,41 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
         rows = []
         for group in groups:
             group_id = group["translationGroupId"]
-            have = dict(derived[locale]["records"].get(group_id, {}))
-            stored = {}
-            if store is not None:
-                for stage in records.STAGES:
-                    stored[stage] = store.records(locale, group_id, stage)
+            derived_records = derived[locale]["records"].get(group_id, {})
+            selected: dict[str, dict] = {}
             stages = {}
             for stage in records.STAGES:
-                current = _current_inputs(stage, group, contexts[group_id], anchor, policy, locale_identity, have)
-                if stage == "U":
-                    current["thresholdsSha256"] = identities.get("audioQcThresholdsSha256")
-                implementation = _current_implementation(stage, identities, locale_identity)
-                candidates = ([have[stage]] if stage in have else []) + stored.get(stage, [])
+                candidates = ([derived_records[stage]] if stage in derived_records else []) + (
+                    store.records(locale, group_id, stage) if store is not None else [])
                 if stage == "C" and not candidates:
-                    mode = (have.get("Q") or {}).get("provenance", {}).get("mode")
+                    mode = (selected.get("Q") or {}).get("provenance", {}).get("mode")
                     stages[stage] = ({"status": "not_applicable", "reasons": [f"text_qc_mode:{mode}"]}
                                      if mode == "full" else {"status": "missing", "reasons": ["no_record"]})
                     continue
                 if not candidates:
                     stages[stage] = {"status": "missing", "reasons": ["no_record"]}
                     continue
-                results = [evaluate(record, layer1, current, implementation) for record in candidates]
-                if stage == "R":
-                    # The candidate holds R's reviewed text unless something replaced it later.
-                    target = records.text_sha256(legacy.joined_text(group["targetUtterances"]))
-                    for record, result in zip(candidates, results):
-                        if record["outputs"].get("targetTextSha256") != target:
-                            result["status"] = "stale"
-                            result["reasons"].append("output_differs_from_candidate")
-                stages[stage] = min(results, key=lambda item: STATUS_ORDER.index(item["status"]))
+                conflicting = _conflicting_keys(candidates)
+                if conflicting:
+                    # One input key admits one result; two different results stay visible.
+                    stages[stage] = {"status": "conflict", "reasons": ["conflicting_records_same_input_key"],
+                                     "inputKeys": conflicting}
+                    continue
+                current = _current_inputs(stage, group, contexts[group_id], anchor, policy, locale_identity, selected)
+                if stage == "U":
+                    current["thresholdsSha256"] = identities.get("audioQcThresholdsSha256")
+                implementation = _current_implementation(stage, identities, locale_identity)
+                results = []
+                for record in candidates:
+                    result = evaluate(record, layer1, current, implementation)
+                    if stage == "R" and record["outputs"].get("targetTextSha256") != records.text_sha256(
+                            legacy.joined_text(group["targetUtterances"])):
+                        # The candidate holds R's reviewed text unless something replaced it later.
+                        result["status"] = "stale"
+                        result["reasons"].append("output_differs_from_candidate")
+                    results.append((result, record))
+                best, record = min(results, key=lambda item: STATUS_ORDER.index(item[0]["status"]))
+                stages[stage], selected[stage] = best, record
             if group_id in listed:
                 stages["T"] = dict(stages["T"], status="stale",
                                    reasons=list(stages["T"].get("reasons", [])) + ["operator_directive"])
@@ -258,14 +279,14 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
                 if stages[stage]["status"] in {"not_applicable"}:
                     continue
                 upstream = [up for up in records.UPSTREAM[stage] if up in records.PRODUCES
-                            and stages[up]["status"] in {"stale", "missing"}]
-                if upstream and stages[stage]["status"] != "missing":
+                            and stages[up]["status"] in UNSETTLED]
+                if upstream and stages[stage]["status"] not in {"missing", "conflict"}:
                     stages[stage] = dict(stages[stage], status="stale",
                                          reasons=list(stages[stage].get("reasons", []))
                                          + [f"upstream_will_change:{up}" for up in upstream])
             rows.append({"translationGroupId": group_id, "sourceUnitIds": group["sourceUnitIds"], "stages": stages})
         summary = {stage: dict(Counter(row["stages"][stage]["status"] for row in rows)) for stage in records.STAGES}
-        redo = {stage: [row["translationGroupId"] for row in rows if row["stages"][stage]["status"] in {"stale", "missing"}]
+        redo = {stage: [row["translationGroupId"] for row in rows if row["stages"][stage]["status"] in UNSETTLED]
                 for stage in records.STAGES}
         report["locales"][locale] = {
             "groupCount": len(rows), "directiveGroupIds": sorted(listed),
@@ -316,7 +337,8 @@ def main(argv=None) -> int:
                                            if key in args.locale})
     _require(not args.group_id or (args.locale and len(args.locale) == 1), "group_id_needs_one_locale")
     directives = {args.locale[0]: args.group_id} if args.group_id else {}
-    report = plan(manifest, args.manifest.resolve().parent, current_identities(manifest), directives=directives,
+    base = args.manifest.resolve().parent
+    report = plan(manifest, base, current_identities(manifest, base), directives=directives,
                   store=records.RecordStore(args.records) if args.records else None)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

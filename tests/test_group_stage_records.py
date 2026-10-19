@@ -65,6 +65,7 @@ class Run:
         self.texts = copy.deepcopy(TEXT)
         # Products are bound to the source they were made from; a test may then change the source.
         self.produced_anchor = copy.deepcopy(self.anchor)
+        self.produced_policy = copy.deepcopy(self.policy)
         self.produced_layer1 = self.layer1
 
     @property
@@ -109,7 +110,8 @@ class Run:
                                         {"role": "user", "content": json.dumps({**prompt, **extra}, ensure_ascii=False)}]}
                 reply = dict(result, semanticReview={"status": "pass"}) if role == "reviewer" else result
                 write(rounds / f"{stem}-{suffix}.policy-preview.json",
-                      {"payload": payload, "payloadSha256": records.json_sha256(payload)})
+                      {"payload": payload, "payloadSha256": records.json_sha256(payload),
+                       "policy": self.produced_policy, "policySha256": records.json_sha256(self.produced_policy)})
                 write(rounds / f"{stem}-{suffix}.json", {"payloadSha256": sha(f"{locale}{group_id}{role}route"),
                                                           "requestId": f"req-{locale}-{group_id}-{role}",
                                                           "model": settings["model"], "result": reply})
@@ -149,11 +151,13 @@ class Run:
                              "implementationSha256": ASR}, "recognizedSha256": sha("recognized")})
         write(job / "asr-screening.json", {
             "schemaVersion": "sermon-target-language-audio-screening-v2", "targetLocale": locale,
-            "asrSettingsSha256": ASR_SETTINGS,
-            "results": [{"textGroupId": g, "status": "pass", "similarity": 1.0} for g, _ in GROUPS]})
+            "targetLanguageSpeechJobJsonSha256": "a" * 64, "asrSettingsSha256": ASR_SETTINGS,
+            "results": [{"textGroupId": g, "status": "pass", "similarity": 1.0,
+                         "audioSha256": sha(f"wav{locale}{g}"), "targetTextSha256": sha(TEXT[locale][g])}
+                        for g, _ in GROUPS]})
         write(base / "audio-qc.json", {
             "schemaVersion": "sermon-target-audio-auto-qc-v1", "locale": locale, "implementationSha256": QC,
-            "thresholds": THRESHOLDS, "repairLedger": {"priorFailedAttempts": {}},
+            "durationNormalization": {"speechJobJsonSha256": "a" * 64}, "thresholds": THRESHOLDS, "repairLedger": {"priorFailedAttempts": {}},
             "results": [{"groupId": g, "sourceUnitIds": s, "audioSha256": sha(f"wav{locale}{g}"),
                          "textSha256": sha(TEXT[locale][g]), "sourceSeconds": 2.0, "status": "pass",
                          "issues": []} for g, s in GROUPS]})
@@ -222,6 +226,9 @@ class InputKeyTests(unittest.TestCase):
                              ("inputs", dict(self.inputs, textSha256="0" * 64))):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 records.validate_record(dict(record, **{field: value}))
+        for bad in ([], {"audioSha256": "short"}):
+            with self.subTest(outputs=bad), self.assertRaisesRegex(ValueError, "invalid_record_outputs"):
+                records.validate_record(dict(record, outputs=bad))
         with self.assertRaisesRegex(ValueError, "codes_only_on_fail_or_stop"):
             records.make_record("S", self.layer1, "ko", "g1", ["u1"], self.inputs, "e" * 64, {}, "pass",
                                 codes=["x"])
@@ -391,7 +398,7 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(report["locales"]["ko"]["groups"][0]["stages"]["Q"]["status"], "failed")
         self.assertEqual(report["locales"]["ko"]["groups"][0]["stages"]["Q"]["codes"], ["english_leak"])
         es = statuses(report, "es", "g1")
-        self.assertEqual((es["S"], es["A"], es["U"]), ("missing", "missing", "stale"))
+        self.assertEqual((es["S"], es["A"], es["U"]), ("missing", "missing", "missing"))
 
     def test_store_records_for_another_locale_are_never_used(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -405,6 +412,94 @@ class PlanTests(unittest.TestCase):
             report = group_plan.plan(manifest, self.run.root, identities(), store=store)
             self.assertEqual(statuses(report, "es", "g1")["S"], "missing")
             self.assertEqual(statuses(report, "ko", "g1")["S"], "fresh")
+
+    def test_any_model_facing_policy_change_makes_t_and_r_stale_but_plugin_fields_do_not(self):
+        self.run.policy["languageReview"] = {"registerRules": ["Use a natural register."],
+                                             "pluginImplementationSha256": "1" * 64}
+        self.run.produced_policy = copy.deepcopy(self.run.policy)
+        self.assertEqual(statuses(self.plan(), "ko", "g1"), ALL_FRESH)
+        plugin_only = copy.deepcopy(self.run.policy)
+        plugin_only["languageReview"]["pluginImplementationSha256"] = "2" * 64
+        plugin_only["componentSha256"] = {"x": "3" * 64}
+        self.run.policy = plugin_only
+        self.assertEqual(statuses(self.plan(), "ko", "g1"), ALL_FRESH)
+        for change in ({"languageReview": dict(plugin_only["languageReview"], registerRules=["Formal."])},
+                       {"translator": dict(plugin_only["translator"], promptVersion="v2")}):
+            self.run.policy = dict(plugin_only, **change)
+            report = self.plan()
+            self.assertEqual(statuses(report, "es", "g2")["T"], "stale", change)
+            self.assertIn("input_changed:modelFacingPolicySha256",
+                          report["locales"]["es"]["groups"][1]["stages"]["T"]["reasons"])
+
+    def test_asr_and_audio_qc_verdicts_count_only_for_the_screened_job(self):
+        manifest = json.loads(self.run.build().read_text())
+        screening = self.run.root / "ko/speech-job/asr-screening.json"
+        value = json.loads(screening.read_text())
+        value["targetLanguageSpeechJobJsonSha256"] = "b" * 64
+        screening.write_text(json.dumps(value))
+        audio_qc = self.run.root / "es/audio-qc.json"
+        value = json.loads(audio_qc.read_text())
+        value["durationNormalization"]["speechJobJsonSha256"] = "b" * 64
+        audio_qc.write_text(json.dumps(value))
+        report = group_plan.plan(manifest, self.run.root, identities())
+        self.assertEqual(statuses(report, "ko", "g1")["A"], "missing")
+        self.assertEqual(statuses(report, "es", "g1")["U"], "missing")
+        self.assertEqual(statuses(report, "es", "g1")["A"], "fresh")
+
+    def test_store_records_feed_downstream_and_same_key_conflicts_are_reported(self):
+        layer1 = self.run.layer1
+        manifest = json.loads(self.run.build().read_text())
+        derived = group_plan.derive_records(manifest, self.run.root, layer1, self.run.anchor)
+        translator = derived["ko"]["records"]["g1"]["T"]
+        reviewer = derived["ko"]["records"]["g1"]["R"]
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            # A stored T whose draft differs from what the stored R reviewed.
+            other_draft = records.make_record("T", translator["layer1"], "ko", "g1", ["u1"], translator["inputs"],
+                                              translator["stageImplementationSha256"],
+                                              dict(translator["outputs"], draftTextSha256="0" * 64), "pass")
+            store.put(other_draft)
+            store.put(reviewer)
+            del manifest["locales"]["ko"]["layer2Rounds"]
+            report = group_plan.plan(manifest, self.run.root, identities(), store=store)
+            stage_r = report["locales"]["ko"]["groups"][0]["stages"]["R"]
+            self.assertEqual(stage_r["status"], "stale")
+            self.assertIn("input_changed:draftTextSha256", stage_r["reasons"])
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            conflicting = dict(copy.deepcopy(translator), verdict={"status": "unknown", "codes": []})
+            store.put(conflicting)
+            report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root,
+                                     identities(), store=store)
+            stage_t = report["locales"]["ko"]["groups"][0]["stages"]["T"]
+            self.assertEqual((stage_t["status"], stage_t["inputKeys"]), ("conflict", [translator["inputKey"]]))
+            self.assertEqual(statuses(report, "ko", "g1")["R"], "stale")
+
+    def test_a_stored_condensation_is_compared_with_the_current_text(self):
+        layer1 = self.run.layer1
+        manifest = json.loads(self.run.build().read_text())
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            store.put(records.make_record(
+                "C", layer1, "ko", "g1", ["u1"],
+                {"condensationRequestSha256": "c" * 64, "englishSha256": "0" * 64,
+                 "targetTextSha256": sha(TEXT["ko"]["g1"])}, QC, {"spokenTextSha256": "d" * 64}, "pass"))
+            report = group_plan.plan(manifest, self.run.root, identities(), store=store)
+            stage_c = report["locales"]["ko"]["groups"][0]["stages"]["C"]
+            self.assertEqual(stage_c["status"], "stale")
+            self.assertIn("input_changed:englishSha256", stage_c["reasons"])
+            self.assertIn("condensationRequestSha256", stage_c["notCompared"])
+
+    def test_current_identities_resolve_policy_and_plugin_beside_the_manifest(self):
+        from tongxing_production.text import candidate
+        from tongxing_production.text import policy as policy_tools
+        manifest = json.loads(self.run.build().read_text())
+        seen = []
+        with patch.object(policy_tools, "validate_policy", return_value={"languageReviewPolicySha256": LANGUAGE_POLICY}), \
+                patch.object(candidate, "plugin_implementation_sha256", side_effect=lambda path: seen.append(path) or PLUGIN):
+            current = group_plan.current_identities(manifest, self.run.root)
+        self.assertEqual(seen, [self.run.root / "plugin.py"] * 2)
+        self.assertEqual(current["locales"]["ko"]["pluginImplementationSha256"], PLUGIN)
 
     def test_cli_plan_prints_a_summary_and_writes_only_its_report(self):
         manifest = self.run.build()

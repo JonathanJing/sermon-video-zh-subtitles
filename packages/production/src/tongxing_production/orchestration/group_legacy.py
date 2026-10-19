@@ -94,8 +94,25 @@ def group_contexts(anchor: dict, plan: list[dict]) -> dict[str, dict]:
     return contexts
 
 
-def policy_prompt_sha256(material: dict) -> str:
-    return records.json_sha256({key: material.get(key) for key in ("terminology", "scripture", "formatting")})
+def model_facing_policy_sha256(policy: dict) -> str:
+    """The frozen policy without the fields no model reads.
+
+    Uses the same field lists as ``policy_preview.classify_policy_change``: plugin and
+    term-approval fields and ``componentSha256`` change no translator or reviewer
+    instruction; every other field (terminology, scripture, formatting, register
+    rules, prompt versions, model settings) does.
+    """
+    from ..text import policy_preview
+    projection = copy.deepcopy(policy)
+    projection.pop("componentSha256", None)
+    for pointer in policy_preview.PLUGIN_POLICY_FIELDS | policy_preview.APPROVAL_POLICY_FIELDS:
+        *parents, leaf = pointer.strip("/").split("/")
+        node = projection
+        for key in parents:
+            node = node.get(key) if isinstance(node, dict) else None
+        if isinstance(node, dict):
+            node.pop(leaf, None)
+    return records.json_sha256(projection)
 
 
 def model_settings_sha256(model: str, effort: str | None) -> str:
@@ -145,7 +162,8 @@ def _role_inputs(preview: dict, cache: dict, draft_text_sha256: str | None) -> d
         "requestFingerprintSha256": cache["payloadSha256"],
         "englishUnitsSha256": english_units_sha256(prompt["englishUnits"]),
         "englishContextSha256": records.json_sha256(prompt["context"]),
-        "policyPromptSha256": policy_prompt_sha256(prompt),
+        "modelFacingPolicySha256": (model_facing_policy_sha256(preview["policy"])
+                                    if isinstance(preview.get("policy"), dict) else None),
         "modelRulesSha256": records.json_sha256(prompt["modelRules"]) if "modelRules" in prompt else None,
         "revisionSha256": records.json_sha256(extra) if extra else None,
         "modelSettingsSha256": model_settings_sha256(payload["model"], payload.get("reasoning_effort")),
@@ -177,6 +195,17 @@ def _round_layer1(root: Path, locale: str) -> dict | None:
     if request.get("targetLocale") != locale:
         return None
     return records.layer1_identity(request["englishSourcePackageJsonSha256"], request["anchorManifestSha256"])
+
+
+def _carried_from(files: dict, source_root: Path) -> bool:
+    """Whether this group's T and R caches are byte copies of the same stem in ``source_root``."""
+    if not source_root.is_dir():
+        return False
+    for name in ("astra", "sol"):
+        source = source_root / files[name].name
+        if not source.is_file() or file_sha256(source) != file_sha256(files[name]):
+            return False
+    return True
 
 
 def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[str, dict]:
@@ -214,10 +243,15 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
         runner = success.get("runnerImplementationSha256") if success else None
         round_runner = Path(root) / "runner-identity.json"
         if runner is None and round_runner.is_file():
-            # Rounds record their runner since sermon-layer2-round-runner-identity-v1.
+            # Rounds record their runner since sermon-layer2-round-runner-identity-v1. A group
+            # carried byte for byte from the round's reuse source keeps that source's runner,
+            # which may be unrecorded (None).
             recorded = load_json(round_runner)
             if recorded.get("schemaVersion") == "sermon-layer2-round-runner-identity-v1":
                 runner = recorded.get("runnerImplementationSha256")
+                carry = recorded.get("carrySource")
+                if isinstance(carry, dict) and _carried_from(files, Path(carry.get("root", ""))):
+                    runner = carry.get("runnerImplementationSha256")
         provenance = {"derivation": "legacy_round_cache", "round": str(root), "stem": files["sol"].name[:10],
                       "notRecorded": [] if runner else ["stageImplementation"]}
         implementation = runner or NOT_RECORDED_SHA256
@@ -328,47 +362,60 @@ def speech_records(locale: str, speech_job: Path, screening: dict | None) -> dic
             codes=() if unit.get("fullDecode") == "pass" else ["full_decode_failed"],
             spend={"kind": "local_tts"},
             provenance={"derivation": "legacy_formal_render", "unitIndex": intent.get("unitIndex"),
-                        "batch": batch, "speechJob": str(speech_job)})}
+                        "jobJsonSha256": intent.get("jobJsonSha256"), "batch": batch,
+                        "speechJob": str(speech_job)})}
         cached = next((load_json(directory / f"{stem}.json") for directory in reversed(asr_dirs)
                        if (directory / f"{stem}.json").is_file()), None)
         row = screened.get(group_id)
-        if cached is not None and cached["identity"].get("audioSha256") == audio and screening is not None:
+        # A verdict counts only when the screening receipt measured this job's audio and text.
+        bound = (screening is not None and row is not None
+                 and screening.get("targetLanguageSpeechJobJsonSha256") == intent.get("jobJsonSha256")
+                 and row.get("audioSha256") == audio and row.get("targetTextSha256") == intent["textSha256"])
+        if cached is not None and cached["identity"].get("audioSha256") == audio and bound:
             identity = cached["identity"]
-            verdict = "pass" if row is not None and row.get("status") == "pass" else (
-                "fail" if row is not None else "unknown")
+            verdict = "pass" if row.get("status") == "pass" else "fail"
             stages["A"] = records.make_record(
                 "A", layer1, locale, group_id, intent["sourceUnitIds"],
                 {"audioSha256": audio, "targetTextSha256": identity["targetTextSha256"],
                  "asrSettingsSha256": screening["asrSettingsSha256"]},
                 identity["implementationSha256"], {"recognizedSha256": cached.get("recognizedSha256")}, verdict,
                 codes=[f"asr_{row.get('status')}"] if verdict == "fail" else (), spend={"kind": "local_asr"},
-                provenance={"derivation": "legacy_formal_back_asr",
-                            "similarity": None if row is None else row.get("similarity")})
+                provenance={"derivation": "legacy_formal_back_asr", "similarity": row.get("similarity")})
         out[group_id] = stages
     return out
 
 
 # --- U from the audio QC receipt ---
 
-def audio_qc_records(layer1: dict, locale: str, receipt: dict) -> dict[str, dict]:
+def audio_qc_records(locale: str, receipt: dict, speech: dict[str, dict]) -> dict[str, dict]:
+    """U per group, only where the receipt measured the speech job ``speech`` came from.
+
+    The receipt binds the speech job, not the source package, so each record takes its
+    Layer 1 identity and source units from that job's S record; rows for another job,
+    other units or other audio get no record.
+    """
     _require(receipt.get("schemaVersion") == "sermon-target-audio-auto-qc-v1" and receipt.get("locale") == locale,
              "invalid_audio_qc_receipt")
     prior = (receipt.get("repairLedger") or {}).get("priorFailedAttempts") or {}
     thresholds = records.json_sha256(receipt["thresholds"])
+    job = (receipt.get("durationNormalization") or {}).get("speechJobJsonSha256")
     out = {}
     for row in receipt["results"]:
+        synthesis = (speech.get(row["groupId"]) or {}).get("S")
+        if (synthesis is None or job is None or job != synthesis["provenance"].get("jobJsonSha256")
+                or row["sourceUnitIds"] != synthesis["sourceUnitIds"]
+                or row["audioSha256"] != synthesis["outputs"]["audioSha256"]):
+            continue
         status = row["status"]
         verdict = "pass" if status == "pass" else ("fail" if status == "fail" else "unknown")
         out[row["groupId"]] = records.make_record(
-            "U", layer1, locale, row["groupId"], row["sourceUnitIds"],
+            "U", synthesis["layer1"], locale, row["groupId"], row["sourceUnitIds"],
             {"audioSha256": row["audioSha256"], "textSha256": row["textSha256"],
              "sourceSecondsSha256": records.json_sha256(float(row["sourceSeconds"])),
              "thresholdsSha256": thresholds,
              "repairPositionSha256": repair_position_sha256(prior, row["sourceUnitIds"])},
             receipt["implementationSha256"], {}, verdict,
             codes=list(row.get("issues") or []) if verdict == "fail" else (),
-            # The receipt binds the speech job, not the source package; Layer 1 is the
-            # locale's, supplied by the caller from the same run.
-            provenance={"derivation": "legacy_audio_qc_receipt", "layer1": "supplied_by_run_manifest",
-                        "status": status})
+            provenance={"derivation": "legacy_audio_qc_receipt", "layer1": "from_speech_job",
+                        "speechJobJsonSha256": job, "status": status})
     return out

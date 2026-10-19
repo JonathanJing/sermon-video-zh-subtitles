@@ -35,14 +35,14 @@ VERDICTS = ("pass", "fail", "stopped", "unknown")
 # The named inputs each stage's key binds (section 4). A record must carry exactly
 # these; a builder that omits one cannot mint a key that later looks complete.
 STAGE_INPUTS = {
-    # The bounded payload holds the group English, English context, policy material,
-    # rules, revision brief and model settings; the fingerprint adds the route.
+    # The bounded payload holds the group English, English context, the model-facing
+    # policy, rules, revision brief and model settings; the fingerprint adds the route.
     "T": ("boundedPayloadSha256", "requestFingerprintSha256", "englishUnitsSha256",
-          "englishContextSha256", "policyPromptSha256", "modelRulesSha256", "revisionSha256",
+          "englishContextSha256", "modelFacingPolicySha256", "modelRulesSha256", "revisionSha256",
           "modelSettingsSha256"),
     # The review payload also carries T's draft.
     "R": ("boundedPayloadSha256", "requestFingerprintSha256", "englishUnitsSha256",
-          "englishContextSha256", "policyPromptSha256", "modelRulesSha256", "revisionSha256",
+          "englishContextSha256", "modelFacingPolicySha256", "modelRulesSha256", "revisionSha256",
           "modelSettingsSha256", "draftTextSha256"),
     # The plugin implementation is this stage's implementation identity.
     "P": ("languageReviewPolicySha256", "englishUnitsSha256", "targetTextSha256"),
@@ -172,6 +172,11 @@ def validate_record(record: dict) -> dict:
     _require(record["releaseEligible"] is False and record["humanApproval"] is False,
              "group_record_is_never_release_or_human_approval")
     _require(record["stageName"] == STAGE_NAMES.get(record["stage"]), "record_stage_name_mismatch")
+    _require(isinstance(record["sourceUnitIds"], list) and record["sourceUnitIds"]
+             and all(isinstance(unit, str) and unit for unit in record["sourceUnitIds"]), "invalid_source_unit_ids")
+    _require(isinstance(record["outputs"], dict)
+             and all(isinstance(name, str) and (value is None or _is_sha(value))
+                     for name, value in record["outputs"].items()), "invalid_record_outputs")
     _require(isinstance(record["verdict"], dict) and set(record["verdict"]) == {"status", "codes"}
              and record["verdict"]["status"] in VERDICTS and isinstance(record["verdict"]["codes"], list),
              "invalid_record_verdict")
