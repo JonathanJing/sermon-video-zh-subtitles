@@ -2,9 +2,10 @@
 
 The implementation lives in `experiments/agents-api-trials/build_agent_trial_variants.py`. Keep the old direct CLI,
 module CLI and import path; resolve it from this file, independent of the CWD.
+The implementation runs under this module's name, so pickled objects and
+spawn-based workers still import it through the old path.
 """
 
-import hashlib
 from importlib import util
 from pathlib import Path
 import runpy
@@ -15,27 +16,22 @@ _IMPLEMENTATION = (
     Path(__file__).resolve().parents[2]
     / "experiments/agents-api-trials/build_agent_trial_variants.py"
 ).resolve()
-_MODULE_NAME = (
-    "_agents_api_trials_build_agent_trial_variants_"
-    + hashlib.sha256(str(_IMPLEMENTATION).encode()).hexdigest()
-)
 
 
 def _load():
-    existing = sys.modules.get(_MODULE_NAME)
-    if existing is not None:
-        if Path(existing.__file__).resolve() != _IMPLEMENTATION:
-            raise ImportError("build_agent_trial_variants module cache points to another checkout")
-        return existing
-    spec = util.spec_from_file_location(_MODULE_NAME, _IMPLEMENTATION)
+    spec = util.spec_from_file_location(__name__, _IMPLEMENTATION)
     if spec is None or spec.loader is None:
         raise ImportError(f"Cannot load build_agent_trial_variants: {_IMPLEMENTATION}")
     module = util.module_from_spec(spec)
-    sys.modules[_MODULE_NAME] = module
+    facade = sys.modules.get(__name__)
+    sys.modules[__name__] = module
     try:
         spec.loader.exec_module(module)
     except BaseException:
-        del sys.modules[_MODULE_NAME]
+        if facade is None:
+            sys.modules.pop(__name__, None)
+        else:
+            sys.modules[__name__] = facade
         raise
     return module
 
