@@ -207,6 +207,35 @@ class ExportRunDigestTests(unittest.TestCase):
                 (dest / "INDEX.md").write_text(leak)
                 self.assertEqual(digest.main([str(dest), "--verify"]), 1, leak)
 
+    def test_private_drive_links_are_replaced_and_verify_catches_them(self):
+        folder = "https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz?usp=sharing"
+        layer1 = self.run / "layer1-broadcast-20261018" / "output"
+        layer1.mkdir(parents=True)
+        (layer1 / "summary.json").write_text(json.dumps({"status": "ok", "sourceUrl": folder}))
+        (self.run / "upload.log").write_text(
+            f"source {folder}\nsee [doc](https://docs.google.com/document/d/1xYz/edit)\n"
+            "https://www.dropbox.com/scl/fi/abc/broadcast.mp4?rlkey=xyz&dl=0 https://1drv.ms/f/s!Abc\n"
+            "https://onedrive.live.com/?id=X https://www.icloud.com/iclouddrive/0abc#broadcast\n")
+        dest = self.export()
+        summary = json.loads((dest / self.run.name / "layer1-broadcast-20261018" / "output" / "summary.json").read_text())
+        self.assertEqual(summary, {"status": "ok", "sourceUrl": "<private-drive-link>"})
+        log = (dest / self.run.name / "upload.log").read_text()
+        for host in ("drive.google", "docs.google", "dropbox", "1drv", "onedrive", "icloud"):
+            self.assertNotIn(host, log)
+        self.assertEqual(log.count("<private-drive-link>"), 6)
+        self.assertEqual(digest.verify(dest, []), [])
+
+        leaked = dest / self.run.name / "layer1-broadcast-20261018" / "output" / "summary.json"
+        leaked.write_text(json.dumps({"status": "ok", "sourceUrl": folder}))
+        self.assertEqual(digest.main([str(dest), "--verify"]), 1)
+        self.assertIn("private_drive_link", " ".join(digest.verify(dest, [])))
+        leaked.write_text(json.dumps({"status": "ok", "sourceUrl": "<private-drive-link>"}))
+        (dest / "RETROSPECTIVE.md").write_text(f"来源：[广播版]({folder})\n")
+        self.assertEqual(digest.main([str(dest), "--verify"]), 1)
+        # Public pages on the same providers are not share links.
+        (dest / "RETROSPECTIVE.md").write_text("https://www.dropbox.com/home https://docs.google.com/forms\n")
+        self.assertEqual(digest.main([str(dest), "--verify"]), 0)
+
     def test_tidy_whitespace_satisfies_git_diff_check_and_skips_binary(self):
         (self.run / "render.log").write_text("UserWarning: x  \r\n  indented\t\n\n\n")
         dest = self.export()
