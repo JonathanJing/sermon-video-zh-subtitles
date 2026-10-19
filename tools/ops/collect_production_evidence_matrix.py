@@ -1526,7 +1526,7 @@ def state_from_no_caption_asr_plan(report: dict[str, Any] | None, path: str | No
         "translationCommand": "scripts/translate_playback_with_openai.py" in command_text and "gpt-5.4-mini" in command_text,
         "exportCommand": "scripts/export_playback_captions.py" in command_text and "--gcs-dry-run" in command_text,
         "offlineValidationCommand": "scripts/validate_offline_chain.py" in command_text and "not_realtime_chain" in criteria_text,
-        "readinessCommand": "scripts/validate_production_readiness.py" in command_text
+        "readinessCommand": "tools/ops/validate_production_readiness.py" in command_text
         and "--allow-missing-realtime" in command_text,
         "asrSourceCriterion": "caption_source.kind=openai_asr" in criteria_text,
         "noSecretMaterialFlags": report.get("apiKeyMaterialIncluded") is False

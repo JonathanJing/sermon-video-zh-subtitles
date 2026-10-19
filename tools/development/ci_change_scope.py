@@ -16,7 +16,7 @@ import sys
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.docs_change_gate import changed_paths, documentation_only, is_documentation_path
+from tools.development.docs_change_gate import changed_paths, documentation_only, is_documentation_path
 
 
 def change_scope(paths: list[str], event: str) -> str:

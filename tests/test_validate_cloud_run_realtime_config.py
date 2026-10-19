@@ -4,7 +4,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.validate_cloud_run_realtime_config as mod
+from tools.ops import validate_cloud_run_realtime_config as mod
 
 
 class ValidateCloudRunRealtimeConfigTest(unittest.TestCase):

@@ -4,7 +4,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.collect_production_evidence_matrix as mod
+from tools.ops import collect_production_evidence_matrix as mod
 
 
 class CollectProductionEvidenceMatrixTest(unittest.TestCase):
@@ -1738,7 +1738,7 @@ def no_caption_asr_plan():
                 "--expected-translation-model",
                 "gpt-5.4-mini",
             ],
-            ["python3", "scripts/validate_production_readiness.py", "--allow-missing-realtime"],
+            ["python3", "tools/ops/validate_production_readiness.py", "--allow-missing-realtime"],
         ],
         "passCriteria": [
             "run_offline_archive_preflight.py reports decision=use_asr_fallback.",

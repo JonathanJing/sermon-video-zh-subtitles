@@ -5,7 +5,7 @@
 不修改生产 prompt，也不把离线通过当作 API／模型效果验收。
 
 ```sh
-.venv/bin/python -m scripts.experiments.ste_paired_admission \
+.venv/bin/python experiments/layer2-translation-ab/ste_paired_admission.py \
   --plan /absolute/plan.json --out /absolute/new-admission.json
 ```
 

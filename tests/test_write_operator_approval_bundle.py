@@ -207,7 +207,7 @@ def unblock_plan(no_caption_plan=None):
                 "state": "approval_required",
                 "requiresApproval": True,
                 "reason": "Apply the approved Cloud Run realtime update plan.",
-                "commands": [["python3", "scripts/apply_cloud_run_realtime_update_plan.py", "--approve"]],
+                "commands": [["python3", "tools/ops/apply_cloud_run_realtime_update_plan.py", "--approve"]],
             },
             {
                 "id": "publish_sunday_manifest_to_gcs",
@@ -230,7 +230,7 @@ def unblock_plan(no_caption_plan=None):
                 "sourceRow": "cloud_run_api_preflight",
                 "state": "pending",
                 "requiresApproval": False,
-                "commands": [["python3", "scripts/run_cloud_run_realtime_preflight.py"]],
+                "commands": [["python3", "tools/ops/run_cloud_run_realtime_preflight.py"]],
             },
             {
                 "id": "rerun_deployed_public_sse_smoke",
@@ -240,7 +240,7 @@ def unblock_plan(no_caption_plan=None):
                 "commands": [
                     [
                         "python3",
-                        "scripts/run_realtime_public_sse_smoke.py",
+                        "tools/ops/run_realtime_public_sse_smoke.py",
                         "--web-realtime-contract-report",
                         "artifacts/evidence/web-realtime-contract.json",
                     ]
@@ -285,7 +285,7 @@ def cloud_dry_run():
             "--remove-env-vars",
             "REALTIME_EVENT_GCS_PREFIX",
         ],
-        "wouldValidate": [["python3", "scripts/validate_cloud_run_realtime_config.py"]],
+        "wouldValidate": [["python3", "tools/ops/validate_cloud_run_realtime_config.py"]],
     }
 
 
@@ -353,7 +353,7 @@ def live_1130_run_plan():
         "liveValidationCommands": [
             [
                 "python3",
-                "scripts/run_realtime_public_sse_smoke.py",
+                "tools/ops/run_realtime_public_sse_smoke.py",
                 "--web-realtime-contract-report",
                 "artifacts/evidence/web-realtime-contract.json",
             ],

@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from scripts import firebase_dev_app_shell_update as shell
+from tools.ops import firebase_dev_app_shell_update as shell
 from scripts import align_firebase_dev_v3 as dev
 
 

@@ -2,8 +2,7 @@ import io
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 
-from scripts import backlog_ids as subject
-from tools.development import backlog_ids as implementation
+from tools.development import backlog_ids as subject
 
 SAMPLE = """# Backlog
 
@@ -28,9 +27,6 @@ SAMPLE = """# Backlog
 
 
 class BacklogIdTests(unittest.TestCase):
-    def test_legacy_import_resolves_to_tool_module(self):
-        self.assertIs(subject, implementation)
-
     def test_combined_ids_expand_and_rows_are_ordered_newest_section_first(self):
         found = subject.lookup("DEV-L4-005", SAMPLE)
         self.assertEqual([(row[0], row[1]) for row in found], [("DEV-L4-005", "2026-10-10：状态刷新")])

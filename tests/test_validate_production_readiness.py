@@ -9,7 +9,7 @@ from pathlib import Path
 from scripts.build_playback_simulation import refresh_polished_layers
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "validate_production_readiness.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "validate_production_readiness.py"
 SPEC = importlib.util.spec_from_file_location("validate_production_readiness", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

@@ -244,13 +244,13 @@ def post_approval_validation_stage(
         "commands": [
             [
                 "python3",
-                "scripts/validate_cloud_run_realtime_config.py",
+                "tools/ops/validate_cloud_run_realtime_config.py",
                 "--out",
                 "artifacts/evidence/cloud-run-realtime-config.json",
             ],
             [
                 "python3",
-                "scripts/run_cloud_run_realtime_preflight.py",
+                "tools/ops/run_cloud_run_realtime_preflight.py",
                 "--base-url",
                 "<CLOUD_RUN_BASE_URL>",
                 "--cloud-run-config-report",
@@ -263,7 +263,7 @@ def post_approval_validation_stage(
             ],
             [
                 "python3",
-                "scripts/run_realtime_public_sse_smoke.py",
+                "tools/ops/run_realtime_public_sse_smoke.py",
                 "--base-url",
                 "<CLOUD_RUN_BASE_URL>",
                 "--sunday",
@@ -385,7 +385,7 @@ def final_readiness_audit_stage(
         "commands": [
             [
                 "python3",
-                "scripts/refresh_production_preflight_evidence.py",
+                "tools/ops/refresh_production_preflight_evidence.py",
                 "--sunday",
                 args.sunday,
                 "--out",

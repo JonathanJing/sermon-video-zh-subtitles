@@ -7,7 +7,7 @@ import wave
 from tests import experiment_modules
 
 subject = experiment_modules.load("experiments/multilingual-prosody-poc/assemble_adaptive_phrase_audio.py")
-from scripts.run_multilingual_prosody_poc import PLAN_SCHEMA
+PLAN_SCHEMA = subject.PLAN_SCHEMA
 
 
 def write_wav(path: Path, seconds: float, rate: int = 1000):

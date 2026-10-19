@@ -3,7 +3,7 @@ import hashlib
 from pathlib import Path
 import unittest
 
-from scripts import pipeline_compatibility_gate as gate
+from tools.development import pipeline_compatibility_gate as gate
 from tongxing_production import path_aliases
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -175,7 +175,7 @@ def live_plan(*, remove_browser_evidence=False, remove_asr_model=False):
         "liveValidationCommands": [
             [
                 "python3",
-                "scripts/run_realtime_public_sse_smoke.py",
+                "tools/ops/run_realtime_public_sse_smoke.py",
                 "--web-realtime-contract-report",
                 "artifacts/evidence/web-realtime-contract.json",
             ],
@@ -264,7 +264,7 @@ def go_live_sequence(live, *, remove_asr_stage=False, incomplete_asr_stage=False
                     "--out",
                     "artifacts/evidence/no-caption-offline-chain-validation.json",
                 ],
-                ["python3", "scripts/validate_production_readiness.py", "--out", "artifacts/evidence/asr-route-readiness.json"],
+                ["python3", "tools/ops/validate_production_readiness.py", "--out", "artifacts/evidence/asr-route-readiness.json"],
             ],
             "requiredModels": {
                 "offlineAsr": "gpt-4o-transcribe",

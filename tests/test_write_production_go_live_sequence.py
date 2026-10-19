@@ -419,7 +419,7 @@ def write_reports(root: Path, **overrides):
             "liveValidationCommands": [
                 [
                     "python3",
-                    "scripts/run_realtime_public_sse_smoke.py",
+                    "tools/ops/run_realtime_public_sse_smoke.py",
                     "--web-realtime-contract-report",
                     "artifacts/evidence/web-realtime-contract.json",
                 ],

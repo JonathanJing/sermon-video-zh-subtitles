@@ -8,7 +8,7 @@ import wave
 from unittest import mock
 
 from tongxing_production.audio import package as subject
-from scripts import prepare_clip_voice_authorization as clip_voice
+from tools.ops import prepare_clip_voice_authorization as clip_voice
 from tools.ops import prepare_clip_voice_capability as clip_capability
 from tongxing_production.audio import clip_timeline as timeline_map
 from tongxing_production.audio import unit_integrity
