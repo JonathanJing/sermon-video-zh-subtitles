@@ -2,7 +2,7 @@
 
 ## 结论先行
 
-交付类型：本地测试。目录迁移叶子批次（#1141）在提交 `837a10a8` 上通过定向检查：`21 legacy scripts/ facades`、`tests/test_experiment_leaf_facades.py` 移入 `experiments/`，旧 `scripts/` 路径改为绑定本 checkout 的兼容门面。没有正式生产、模型请求、Spark 使用或发布。
+交付类型：本地测试。后续 PR #1141 在提交 `837a10a8` 上通过定向检查：已合并迁移批次（#1023、#1113、#1115、#1119、#1123）的 21 个 `scripts/` 门面改为以旧模块名执行迁移后的实现，使 pickle 与 spawn 能经旧路径导入；实现文件未改。没有正式生产、模型请求、Spark 使用或发布。
 
 ## 总时间
 
