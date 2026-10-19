@@ -45,7 +45,7 @@ Layer 1 冻结（媒体 hash + 批准窗口 + 源包 + 锚点与组边界）    
 | 返修花费上限 | 首轮的 10% | **逐组**（第六节） | 首轮花费与本次要修哪几组无关 |
 | 回译比对、确定性文字检查 | 整篇 `target_text_auto_qc` | **逐组判定** | 回译只给本组目标文字，比对只给本组英文与回译；按请求缓存（`review/qc_text_run.py`） |
 | 文字长度离群 | 与全篇中位数比较（`review/text_qc.py` `candidate_length_median`） | **合并** | 中位数是整篇统计量；一组变化可能翻转别组结论。合并时重算，判离群的组以组 ID 退回逐组段 |
-| TTS 单元 | renderer 单元 intent 含 `jobJsonSha256`、`candidateJsonSha256`、`unitIndex`、batch 窗口 | **逐组（preview_only）** | 声音只由本组文字与合成身份决定；整 job 哈希和位置只是装配信息（`_reusable_audio` 已把三个整 job 字段排除在复用比较外） |
+| TTS 单元 | renderer 单元 intent 含 `jobJsonSha256`、`candidateJsonSha256`、`unitIndex`、batch 窗口 | **逐组（preview_only）** | 声音只由本组文字与合成身份决定；整 job 哈希和位置只是装配信息（`_reusable_audio` 已把三个整 job 字段排除在复用比较外）。决定 1 的 A/B 未通过，batch 窗口仍属声音身份 |
 | ASR 回查、单句声学检查 | 单句 | **逐组** | 结论只看本句 WAV 字节与预期文字 |
 | 单句时长异常（与全篇语速中位数比较，`review/audio_qc.py`） | 整篇统计 | **逐组判定用冻结语速文件；合并重算中位数** | 逐组判定改用已绑定合成身份的 `sermon-target-speech-rate-v2`；合并时照现行方法再算一次，不一致的组退回 |
 | 8 秒预算预测 | 整篇 `predicted_schedule budget` | **合并前计划** | 排程是前缀依赖：一组变长会推后其后各组，直到空隙吸收。预测确定性、零调用，每次合并前全篇重算 |
@@ -176,7 +176,7 @@ python scripts/group_tasks.py merge --run <run> --locale ko
 |---|---|---|
 | [组审核收据](../multilingual-intralayer-review-decoupling.zh.md) `record-group` / `approve-groups`（`sermon-target-language-group-review-receipt-v1`） | 人工路径的逐组决定与合并聚合 | 无；机器路径不用它 |
 | `render_speculative_target_language_speech.py --group-id` 与正式 `--speculative-from` | S 的 preview 生成与合并时采纳 | 输入从“整份 machine-pass candidate”放宽为“该组的 T–Q 记录”；支持口播文字；正式 batch8 路径也走采纳（现在 `--spark-production` 跳过） |
-| renderer `--reuse-from` | 采纳旧正式单元 | 比较时去掉 `unitIndex` 与 batch 窗口成员（决定 1） |
+| renderer `--reuse-from` | 采纳旧正式单元 | ~~比较时去掉 `unitIndex` 与 batch 窗口成员~~：决定 1 的 A/B 未通过，不做 |
 | Layer 2 payload cache（v6）与预算 v4 `$0 reused` | T、R 复用 | 从“prior root 列表”改为按组键直接查找 |
 | `qc_text_run` 按请求缓存、`english_source_judge_cache` 单飞模式 | Q 与校准试验复用 | 校准 v4 的稳定选组 |
 | `machine_repair_ledger` | 逐句返修次数 | 并行追加压力测试 |
@@ -192,7 +192,7 @@ python scripts/group_tasks.py merge --run <run> --locale ko
 | `DEV-GRP-002` | Layer 2 逐组 T、R、P 与按组 ID 返修（另一分支的 revise-by-group-ID 实现）；合并第 1–2 步的 candidate 组装；并行 worker 与单飞锁 | 从逐组记录组装的 candidate 与整篇路径逐字节相同；过期或 `unknown` 记录阻止组装；未知结果只停止同一 provider 路由的新付费派发；并行与串行结果相同 |
 | `DEV-GRP-003` | 逐组预算：额度按第六节计算；预算授权加逐组明细 | 全缓存重放后仍能修授权的组；超出单组上界时派发前停止且不影响其他组；`$0 reused` 不占额度；旧授权 v4 照旧可读 |
 | `DEV-GRP-004` | Q 逐组判定；长度离群移至合并；校准 v4 稳定选组与试验缓存 | 未变组零新调用；改 k 组只为 k 组的试验付费，另加为满足每类最少新组数而补选的未变组（有上限，计入预算）；校准 `inputs` 等于新成品；v3 收据照旧验证；注错检出率与误报率在同一夹具上与 v3 一致 |
-| `DEV-GRP-005` | S、A、U 逐组：preview 生成接受逐组记录；声音身份去掉位置与 batch 成员；A、U 按 WAV 哈希缓存；冻结语速文件做逐组时长判定 | preview 不能进入音频包；正式只采纳同字节；改一组只重合成该组；真实 A/B 通过后，batch 成员变化不触发重合成；未通过则 batch 成员留在键内；A/B 绑定测过的合成身份，身份一变即失效（决定 1） |
+| `DEV-GRP-005` | S、A、U 逐组：preview 生成接受逐组记录；声音身份去掉位置与 batch 成员；A、U 按 WAV 哈希缓存；冻结语速文件做逐组时长判定 | preview 不能进入音频包；正式只采纳同字节；改一组只重合成该组；真实 A/B 通过后，batch 成员变化不触发重合成；未通过则 batch 成员留在键内；A/B 绑定测过的合成身份，身份一变即失效（决定 1）。2026-10-19 A/B 未通过：batch 成员留在键内 |
 | `DEV-GRP-006` | 合并第 3–10 步与合并清单；合并失败映射回组 ID | 合并产物通过未修改的 L3 包验证器与 L4 builder；8 秒超限报告正确的组；5% 规则边界；合并不调用翻译模型 |
 | `DEV-GRP-008` | 第八节的出错隔离与逐组降级：失败路由表；达到上限的组在合并时改显英文或只显字幕；5% 门限按 locale；合并清单逐组比较，变化组必须等于受影响组。降级要接通豁免、L3 音频包与 L4 release 对“改显英文／只显字幕”句的支持（[豁免文档](../machine-quality-waiver.zh.md)“还没有接上”第 3 项） | 一组失败时其他组记录哈希不变；多出一组变化即拒绝合并；降级组正确显示；不配音 > 5% 写 `audio_unavailable`、失去译文 > 5% 暂停，且只影响本 locale；`unknown` 组只阻塞本 locale 合并 |
 | `DEV-GRP-007` | 操作者命令 `plan`/`redo`/`status`/`merge`；runbook 与 tracker 接线 | 先在已有运行上零付费演练；再经授权做一次小规模真实返修（建议 1 个 locale、≤ 3 组），记录复用率、新调用数、墙钟与人工等待，导出运行报告 |
@@ -202,7 +202,7 @@ python scripts/group_tasks.py merge --run <run> --locale ko
 - **代码。** [`group_records.py`](../../packages/production/src/tongxing_production/orchestration/group_records.py) 定义 [`sermon-group-stage-record-v1`](../../schemas/sermon-group-stage-record-v1.schema.json)、每步的输入名单（`STAGE_INPUTS`）、输入键与只追加的记录目录（`<locale>/<group>/<stage>/<inputKey>.json`，同键第二次写入只能字节相同）。键 = 步骤 + Layer 1 身份 + locale + 组 ID + 命名输入哈希 + 步骤实现身份，不含位置。步骤实现身份：T/R 为 runner 生产身份，P 为插件实现，Q/C/U 为机器质检闭包 W，S 为 renderer 声音身份，A 为 ASR 筛查实现。[`group_legacy.py`](../../packages/production/src/tongxing_production/orchestration/group_legacy.py) 从整篇运行的产物读出逐组记录（只读）：T/R 取 round 缓存与 policy preview，Layer 1 取该 round 冻结的 `request.json`；P 取插件收据；Q 取文字 QC 收据；S 取正式 renderer 单元 intent 与单元收据；A 取回听 ASR 缓存与筛查收据；U 取音频 QC 收据。产物没有记录的值写入 `provenance.notRecorded`，不借用当前代码的值。
 - **命令。** 第九节的占位命令定为 `tools/ops/group_tasks.py`（运维入口，绑定宿主后读当前实现身份）：`.venv/bin/python tools/ops/group_tasks.py plan --manifest <inputs.json> [--locale ko --group-id <组 ID>…] [--records <记录目录>] [--output plan.json]`。`inputs.json`（`sermon-group-plan-inputs-v1`）列出源包、锚点及每个 locale 的 candidate、policy、插件、插件收据、Layer 2 round 目录（旧到新）、文字 QC 收据、speech job 目录、筛查收据、音频 QC 收据，以及下一次筛查要用的 ASR 设置（`asrSettings`；不给时 A 不能判为可复用）和运行用过的旧冻结 policy（`priorPolicies`，用来算文字 QC 收据看到的 QC 侧 policy 身份）；缺的产物在 `plan` 中显示为 `missing`。读取旧产物时按生产代码自己的接受条件判定：翻译与复核回复按 runner 的组身份、覆盖与语义复核检查，插件按 policy 的 `requiredChecks`，文字 QC 按正式准入的 pass／keep 与回译条件。`--output` 只写新文件，不覆盖已有文件。
 - **判定。** 每组每步输出 `fresh`／`expected_reusable`／`stale`／`failed`／`stopped`／`unknown`／`conflict`／`missing`／`not_applicable` 及原因。**从整篇运行产物读出的记录最多是 `expected_reusable`：只用于规划和预算估算，不是复用依据。**`fresh` 只给逐组流水线（`DEV-GRP-002` 起）写入时做完整校验的记录，派发（`DEV-GRP-006`）前还要用生产者自己的校验函数再核一次。有生产者 schema 的产物（音频筛查 v2、单元收据 v1）按 schema 校验，不合格的不读；文字 QC 与音频 QC 还要求修复账本仍停在该次运行写下的位置（`repairLedgerRoot`）。产出字节的步骤（T、R、C、S、A）过期时，读其产出的下游步骤一并过期；P、Q 只是判定，过期不外溢。操作者给出的组 ID 使该组 T 起过期。
-- **限制（如实）。** T/R 比较的是构成请求的输入（组英文、英文上下文、policy 的术语/经文/格式、模型设置、runner 身份）；精确请求哈希含凭据路由，派发时由 payload cache 再匹配。逐组规则、修订指令、文字 QC 的语义身份、S 的合成身份（除声音身份外）只记录不重算；batch 成员不在键内（待决定 1）。没有预算数字（`DEV-GRP-003`）。
+- **限制（如实）。** T/R 比较的是构成请求的输入（组英文、英文上下文、policy 的术语/经文/格式、模型设置、runner 身份）；精确请求哈希含凭据路由，派发时由 payload cache 再匹配。逐组规则、修订指令、文字 QC 的语义身份、S 的合成身份（除声音身份外）只记录不重算；batch 成员尚未进入键：决定 1 的 A/B 未通过，它应留在键内，由 `DEV-GRP-005` 补上。没有预算数字（`DEV-GRP-003`）。
 - **`15030286` 离线演练**（三语各 402 组，零模型调用，不写产物，约 6 秒）：T、R 三语全部 `fresh`；没有一个 round 写下 runner 身份（最终 round 无 payload-cache 成功收据，`run-identity.json` 只存合成哈希），所以 T/R 的实现身份记为未比较。P 三语全部 `stale`：运行分支把三个 15030286 插件登记为 `common.py`、`auto_qc_text_common.py`、`weekly_15030286_common.py` 四文件闭包，`dev` 没有这项登记，按 `dev` 算的插件身份不同；按运行分支的四文件闭包重算，三语插件身份与收据完全一致。Q 全部 `stale`：文字 QC 在 W `51e2b9…` 下运行，`dev` 是 G1 最终 W `df299e…`（[G1 记录](../reports/20261017-g1-implementation-generation.zh.md)）。es、ko 的 S `fresh`（声音身份 `fef760…` 未变、口播文字等于 candidate），A `stale`（筛查实现 `40bc41…` → `38c743…`），U `stale`（W 与上游 A）。zh-Hans 本次没有 Layer 3 产物，S/A/U 为 `missing`；三语 C 均为 `not_applicable`（文字 QC 全部 `full`）。
 
 ### DEV-GRP-003 实施说明（2026-10-19）
@@ -218,5 +218,7 @@ python scripts/group_tasks.py merge --run <run> --locale ko
 ## 十二、决定（2026-10-19 用户确认）
 
 1. **batch 成员不属于声音身份（同意，A/B 通过后生效）。** 复用以字节为准（字节已经过 A、U 检查），batch 窗口只记为来源信息，不进 S 的输入键。生效条件：`DEV-GRP-005` 做一次真实 A/B，每个 locale 至少 10 组句子，同一组句子按批合成与单独补合成各一份，盲听比较。若有任何一对被听出音色、语速或音量差异，这项改动不生效，batch 成员继续留在键内（同 [正式 renderer](../formal-layer3-renderer.zh.md) 现行规则）。A/B 结果写入运行报告，并按哈希绑定它测过的合成身份：S 键里的 `synthesisIdentitySha256`（adapter、checkpoint、speaker、语言参数、normalization、种子与解码设置）加 renderer 声音身份与运行时。豁免只在当前合成身份与测过的完全相同时成立；其中任何一项改变，batch 成员先回到键内，直到新身份上再做一次 A/B 并通过。合并后的整轨听感抽查照旧。工具：[`tools/ops/batch_identity_ab.py`](../../tools/ops/batch_identity_ab.py)（模块 [`audio/batch_identity_ab.py`](../../packages/production/src/tongxing_production/audio/batch_identity_ab.py)）。`select` 从正式 speech job 按时长均匀选组，并绑定测过的合成身份（`TESTED_FIELDS`：声音、解码与 batch 实现字段）；`pack` 把这些组的正式批合成 WAV 与 `render_speculative_target_language_speech.py --group-id` 的单独渲染配成盲听对，X/Y 随机，密钥另存并按哈希绑定；`record` 要求每一对都有判定，任何一对 `audible_difference` 即不通过；`applies(result, intent)` 只在当前合成身份与测过的相同时为真。工具本身不渲染、不调模型；单独渲染要在 Spark 独占会话里跑。
+
+   **结果（2026-10-19）：未通过，本项改动不生效。** 15030286 盲听：ko 10 对中 5 对、es 10 对中 4 对被判有差别（被测身份 ko `f6bdd661bc29`、es `9a246266ab1a`），batch 成员继续留在键内。单独渲染的种子是 43 加单元序号；批渲染的种子是 43 加窗口起点，8 条序列共用一条随机流。只有 es 一对两边种子相同，它仍被判有差别。所以单独补合成在结构上复现不了批内声音；以后若重提此豁免，先说明怎样复现批内随机流，或改为评估整轨一致性。见[运行报告](../reports/runs/20261019-grp005-ab-listening/RETROSPECTIVE.md)。
 2. **校准 v4 稳定选组（同意）。** 选组种子改为 `H(注错类别, 组内容哈希)` 的稳定排序，试验按请求或字节哈希缓存；不放宽检出率、误报率或“在本次成品上校准”的规则。缓解：每类注错保留最少新组数，优先从本次改过的组中选；改过的组不够时才补选未变组，补选的组要为新试验付费，数量有上限并计入预算授权。因此“改 k 组只为 k 组付费”的条件写为“k 组加补选组”。具体数值随 `DEV-GRP-004` 的金样一并评审。
 3. **未知结果只停同一 provider 路由（用户决定）。** 一组付费调用结果未知时，只停止同一 provider 路由（供应商与项目／凭据路由，含该路由下所有模型）的新付费派发，直到对账完成；其他路由上的所有组、所有 locale 照常派发。未知的组本身仍要先对账再归入通过或失败，该组所在 locale 的合并仍等待它（合并不能含 `unknown`）。用户确认这一范围不另行修订成本规则，[AGENTS.md](../../AGENTS.md) 不变式 5 已注明逐组流水线的停止范围是该 provider 路由；路由内的停止与对账照旧。
