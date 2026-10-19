@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts import sermon_accounting as accounting
 
 ASR_CHECKPOINT_SHA256 = "862bbc832b05f3f4ec19dd632b701d61a6d3f5c7906360a10d72a79870642a80"

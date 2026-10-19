@@ -5,8 +5,11 @@ import math
 from pathlib import Path
 try:
     from scripts import sermon_sentence_interpretation as identity
-except ImportError:
-    import sermon_sentence_interpretation as identity
+except ImportError:  # Direct execution of this file: add the repository root.
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts import sermon_sentence_interpretation as identity
 
 
 def plan(*, speech_job_sha256, sound_identity_sha256, unit_indices, max_generated_units,

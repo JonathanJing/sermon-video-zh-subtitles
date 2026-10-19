@@ -7,9 +7,12 @@ import time
 try:
     from scripts import validate_target_language_audio_unit as integrity
     from scripts import sermon_sentence_interpretation as identity
-except ImportError:
-    import validate_target_language_audio_unit as integrity
-    import sermon_sentence_interpretation as identity
+except ImportError:  # Direct execution of this file: add the repository root.
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts import validate_target_language_audio_unit as integrity
+    from scripts import sermon_sentence_interpretation as identity
 
 
 def benchmark(job_path, *, progress=None):
