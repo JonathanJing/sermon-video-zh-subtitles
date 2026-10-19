@@ -44,7 +44,7 @@ Web 根据显式环境和 catalog 的 `diagnosticOnly`／`simulationOnly` 标记
 
 ```bash
 python -m scripts.sermon_cost_isolation validate-config --config /path/to/routes.json
-python -m scripts.import_openai_costs \
+python tools/ops/import_openai_costs.py \
   --config /path/to/routes.json \
   --export /path/to/captured-costs-export.json > /path/to/normalized-daily-costs.json
 python -m scripts.sermon_cost_isolation reconcile \

@@ -28,7 +28,7 @@
 | 子项 | 入口与恢复行为 |
 |---|---|
 | 01 | legacy screen/align 的 `--speech-batch-size 1/2/4/8`，默认 4；一批一次 SSH/Docker/hash/load，逐单元计算和保存。输入上限 8 个、32 MiB，已有缓存不进入推理。`speech-dispatch` 持久化 started/完成单元/最终状态，非阻塞文件锁覆盖派发；started/unknown/failed_invalid 下次先停止。批次内驻留不等同常驻服务，仍需每批启动 |
-| 02 | `scripts.experiments.layer2_concurrency freeze/inspect`（实现位于 `experiments/local-layer-latency/`） 只准备／检查独立 workers1/2/3 配置；已有生产 runner 保持有限排队、按源顺序聚合。整批 started marker 预检在任何新增请求前阻止未知结果重放；成功组与返回 raw 仍可局部恢复 |
+| 02 | `experiments/local-layer-latency/layer2_concurrency.py freeze/inspect` 只准备／检查独立 workers1/2/3 配置；已有生产 runner 保持有限排队、按源顺序聚合。整批 started marker 预检在任何新增请求前阻止未知结果重放；成功组与返回 raw 仍可局部恢复 |
 | 03 | formal renderer 与 back-ASR 均有 `--batch-size 1/2/4/8`，默认 1；固定窗口只生成缺失单元，每批核对数量、索引和身份。TTS 非1使用新 batch/设备/代码/seed/全窗口输入身份；ASR 可用 `--unit-cache` 写不可覆盖逐单元缓存，全部命中不加载模型 |
 | 04 | legacy renderer 的 `--cpu-workers 0/1/2`，默认1；`--cpu-queue-batches 1..4`，默认2。GPU 调用仍在主线程，CPU 队列满则背压；所有写入 drain 后流式组装整轨。已有回执不覆盖，多个已诊断坏单元绑定 hash/identity 后逐个进入旧 repair 链 |
 
@@ -68,13 +68,13 @@ PYTHONPATH=experiments/sermon-dubbing-poc "$PRODUCTION_PYTHON" -m unittest \
 
 ```sh
 PRODUCTION_PYTHON=/absolute/path/to/production-env/bin/python
-"$PRODUCTION_PYTHON" -m scripts.experiments.layer2_concurrency freeze \
+"$PRODUCTION_PYTHON" experiments/local-layer-latency/layer2_concurrency.py freeze \
   --english-source-package /absolute/path/to/english-source-package.json \
   --anchor /absolute/path/to/anchor-manifest.json \
   --policy /absolute/path/to/current-policy.json \
   --plugin /absolute/path/to/language-plugin.py \
   --out-dir /absolute/path/to/new-workers-experiment
-"$PRODUCTION_PYTHON" -m scripts.experiments.layer2_concurrency inspect \
+"$PRODUCTION_PYTHON" experiments/local-layer-latency/layer2_concurrency.py inspect \
   --experiment-dir /absolute/path/to/new-workers-experiment
 ```
 

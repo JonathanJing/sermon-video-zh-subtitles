@@ -19,8 +19,10 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
 
-from scripts.run_multilingual_prosody_poc import canonical_sha, read_object, write_json
+from run_multilingual_prosody_poc import canonical_sha, read_object, write_json
 
 SCHEMA = "sermon-english-acoustic-pause-evidence-poc-v1"
 SAMPLE_RATE = 16000

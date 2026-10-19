@@ -16,7 +16,7 @@ if __package__ in (None, ""):
 
 try:
     from scripts import firebase_dev_four_layer_bucket_dry_run as dry
-    from scripts.patch_firebase_dev_app_banner import patch_public
+    from tools.ops.patch_firebase_dev_app_banner import patch_public
 except ImportError:
     import firebase_dev_four_layer_bucket_dry_run as dry
     from patch_firebase_dev_app_banner import patch_public

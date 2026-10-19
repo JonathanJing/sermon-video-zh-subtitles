@@ -17,8 +17,8 @@ with ``sys.executable`` import the worktree package too, and scripts that look
 for ``$REPO/.venv/bin/python`` find this venv. Install dependencies into the
 shared venv; rerun this after its Python version changes.
 
-    python3 scripts/worktree_venv.py             create or refresh <worktree>/.venv
-    python3 scripts/worktree_venv.py --check     only report what .venv/bin/python -I imports
+    python3 tools/development/worktree_venv.py             create or refresh <worktree>/.venv
+    python3 tools/development/worktree_venv.py --check     only report what .venv/bin/python -I imports
 """
 from __future__ import annotations
 

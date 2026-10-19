@@ -38,7 +38,7 @@ class Write1130LiveRealtimeRunPlanTest(unittest.TestCase):
         self.assertIn("scripts/run_realtime_stabilizer_loop.py", stabilizer_command)
         self.assertEqual(stabilizer_command[stabilizer_command.index("--model") + 1], "gpt-5.4-mini")
         live_validation_commands = json.dumps(report["liveValidationCommands"])
-        self.assertIn("scripts/run_realtime_public_sse_smoke.py", live_validation_commands)
+        self.assertIn("tools/ops/run_realtime_public_sse_smoke.py", live_validation_commands)
         self.assertIn("--web-realtime-contract-report", live_validation_commands)
         self.assertIn("artifacts/evidence/web-realtime-contract.json", live_validation_commands)
         offline_commands = json.dumps(report["postLiveOfflineHandoff"]["commands"])

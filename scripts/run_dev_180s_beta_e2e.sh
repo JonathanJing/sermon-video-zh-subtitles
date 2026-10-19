@@ -122,11 +122,11 @@ echo "Commit $COMMIT  run $RUN_ID  out $OUT"
 if [[ -n "${CLIP_SPEC:-}" ]]; then
   stage build-inputs "$PY" scripts/build_dev_180s_simulated_inputs.py --clip-spec "$CLIP_SPEC" --run-id "$RUN_ID" --out "$OUT/inputs"
 else
-  stage verify-clip  "$PY" -m scripts.verify_dev_180s_page_test --source-run "$SOURCE_RUN" --out "$OUT/preflight"
+  stage verify-clip  "$PY" tools/development/verify_dev_180s_page_test.py --source-run "$SOURCE_RUN" --out "$OUT/preflight"
   stage build-inputs "$PY" scripts/build_dev_180s_simulated_inputs.py --run-id "$RUN_ID" --out "$OUT/inputs"
 fi
 stage baseline      "$PY" tools/ops/prepare_dev_simulated_publication.py baseline --out "$OUT/baseline" ${BASELINE_ARGS[@]+"${BASELINE_ARGS[@]}"}
-DELIVERY=("$PY" scripts/run_dev_simulated_delivery.py --baseline "$OUT/baseline"
+DELIVERY=("$PY" tools/development/run_dev_simulated_delivery.py --baseline "$OUT/baseline"
           --prepared "$OUT/inputs/work/prepared" --out "$OUT/workflow" --source-video "$SOURCE_VIDEO")
 stage delivery-preflight "${DELIVERY[@]}"
 

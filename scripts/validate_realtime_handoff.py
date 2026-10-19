@@ -156,7 +156,7 @@ def add_operator_choices_check(checks: list[dict[str, Any]], name: str, choices:
 def add_live_validation_commands_check(checks: list[dict[str, Any]], name: str, commands: Any) -> None:
     command_text = json.dumps(commands if isinstance(commands, list) else [], ensure_ascii=False)
     observed = {
-        "hasSseSmoke": "scripts/run_realtime_public_sse_smoke.py" in command_text,
+        "hasSseSmoke": "tools/ops/run_realtime_public_sse_smoke.py" in command_text,
         "hasWebContractReport": "--web-realtime-contract-report" in command_text,
         "hasSessionValidator": "scripts/validate_realtime_session.py" in command_text,
         "hasRealtimeModel": "gpt-realtime-translate" in command_text,
@@ -196,7 +196,7 @@ def add_no_caption_asr_stage_check(checks: list[dict[str, Any]], name: str, stag
         "hasTranslate": "scripts/translate_playback_with_openai.py" in command_text,
         "hasExport": "scripts/export_playback_captions.py" in command_text,
         "hasOfflineChainValidation": "scripts/validate_offline_chain.py" in command_text,
-        "hasProductionReadinessValidation": "scripts/validate_production_readiness.py" in command_text,
+        "hasProductionReadinessValidation": "tools/ops/validate_production_readiness.py" in command_text,
         "hasAsrModel": "gpt-4o-transcribe" in command_text and required_models.get("offlineAsr") == "gpt-4o-transcribe",
         "hasTranslationModel": "gpt-5.4-mini" in command_text and required_models.get("offlineTranslation") == "gpt-5.4-mini",
         "forbidsRealtimeOffline": required_models.get("forbiddenOfflineModel") == "gpt-realtime-translate",

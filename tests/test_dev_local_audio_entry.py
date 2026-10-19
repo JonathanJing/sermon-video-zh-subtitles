@@ -16,7 +16,7 @@ from tongxing_production.audio import dev_profile as profiles
 from tongxing_production.audio import dev_receipts as receipts
 from tongxing_production.audio import renderer as tts
 from tongxing_production.audio import screening as asr
-from scripts import run_dev_local_audio_test as entry
+from tools.development import run_dev_local_audio_test as entry
 from tests import test_formal_audio_batching as fixtures
 
 
