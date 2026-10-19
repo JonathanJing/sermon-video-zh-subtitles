@@ -2,11 +2,11 @@
 
 ## 结论先行
 
-交付类型：本地测试。目录迁移叶子批次（#1108/#1111/#1117/#1121）在提交 `fdfb2000` 上通过定向检查：`four reworked experiment leaf branches` 移入 `experiments/`，旧 `scripts/` 路径改为绑定本 checkout 的兼容门面。没有正式生产、模型请求、Spark 使用或发布。
+交付类型：本地测试。在 origin/dev 9cfb3083 与 #1108、#1111、#1117、#1121 四个返工分支的本地合并（`fdfb2000`）上运行全量 `tests/`：6949 项通过，1 项失败（`test_codex_shared_pool_transport::test_busy_before_started_is_proven_no_dispatch`，dev 包代码上确定性失败，与本迁移无关）。没有正式生产、模型请求、Spark 使用或发布。
 
 ## 总时间
 
-定向 pytest 墙钟约 5404 秒；收集测试 ID、命令行冒烟和人工检查未计时，本报告不声称总墙钟时间。
+全量 pytest 墙钟 5404 秒（约 1 小时 30 分）；收集测试 ID、命令行冒烟和人工检查未计时，本报告不声称总墙钟时间。
 
 ## 各层模型、耗时与速度
 
