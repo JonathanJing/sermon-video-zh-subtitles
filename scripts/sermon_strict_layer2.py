@@ -320,7 +320,7 @@ def _payload(prepared,role,request):
 def _transport_rejection(output,payload_sha256):
     path=output.with_suffix('.rejection.json')
     if not path.exists():return None
-    from scripts.sermon_pipeline import KNOWN_REQUEST_REJECTIONS
+    from tongxing_production.workflows.dual_pdf.pipeline import KNOWN_REQUEST_REJECTIONS
     evidence,_=c.read_snapshot(path)
     call,_=c.read_snapshot(output.with_suffix('.call.json'))
     started,_=c.read_snapshot(output.with_suffix('.started.json'))
@@ -353,7 +353,7 @@ def call_model(prepared,role,request,output,api_key,caller,*,attempt_number=1,ca
     payload_sha256=policies.canonical_sha256(_payload(prepared,role,request))
     rejection=_transport_rejection(output,payload_sha256)
     if rejection is not None:
-        from scripts.sermon_pipeline import TransportRejection
+        from tongxing_production.workflows.dual_pdf.pipeline import TransportRejection
         details = output.with_suffix('.rejection-diagnostic.json')
         diagnostic = None
         if details.exists():
@@ -371,7 +371,7 @@ def call_model(prepared,role,request,output,api_key,caller,*,attempt_number=1,ca
     def request_started(model_call_id):
         save_once(output.with_suffix('.call.json'),{'modelCallId':label(model_call_id)})
     def request_rejected(error,model_call_id):
-        from scripts.sermon_pipeline import TransportRejection
+        from tongxing_production.workflows.dual_pdf.pipeline import TransportRejection
         c.require(type(error) is TransportRejection,'invalid_strict_transport_rejection')
         try:
             save_once(output.with_suffix('.rejection.json'),{
@@ -623,7 +623,7 @@ def _validate_cached_review_evidence(receipt,manifest,output,prepared=None,input
                 rejection is not None and saved['rejectionSha256']==c.canonical_sha256(rejection) and
                 saved['modelCallId']==receipt['modelCallId']==rejection['modelCallId'] and
                 saved['payloadSha256']==payload_sha256,'strict_rejection_diagnostic_binding_changed')
-            from scripts.sermon_pipeline import TransportRejection
+            from tongxing_production.workflows.dual_pdf.pipeline import TransportRejection
             TransportRejection(rejection['httpStatus'],saved['diagnostic'])
         if structural.exists():
             c.require(prepared is not None and inputs is not None,'strict_review_diagnostic_context_required')
@@ -672,7 +672,7 @@ def review(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=Fa
                         output,api_key,caller,cache_only=cache_only,attempt_number=attempt_number)
             except accounting.AccountingWriteError:raise
             except Exception as exc:
-                from scripts.sermon_pipeline import PreDispatchRejection
+                from tongxing_production.workflows.dual_pdf.pipeline import PreDispatchRejection
                 # No model was invoked. Let the budget adapter persist and
                 # settle this typed guard result without fabricating a review.
                 if isinstance(exc,PreDispatchRejection):raise

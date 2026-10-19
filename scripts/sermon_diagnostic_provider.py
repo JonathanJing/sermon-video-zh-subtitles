@@ -23,7 +23,7 @@ import urllib.request
 
 from scripts import sermon_accounting as accounting
 from scripts import sermon_completion as completion
-from scripts import sermon_pipeline as pipeline
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 from scripts import sermon_provider_error as errors
 from scripts import sermon_log_profile as profile
 from scripts import sermon_provider_limits as limits

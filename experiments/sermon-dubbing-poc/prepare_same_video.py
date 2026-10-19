@@ -175,14 +175,14 @@ def production_plan(run, source, *, python=sys.executable, title=None, speaker=N
     pipeline = run / "pipeline"
     start, end = source_window(source)
     media = run / "source" / ("video" + (Path(source["path"]).suffix or ".media"))
-    commands = [[python, str(ROOT / "scripts/sermon_pipeline.py"), "--input", str(media), "--outdir", str(pipeline),
+    commands = [[python, str(ROOT / "tools/ops/run.py"), "workflows.dual_pdf.pipeline", "--input", str(media), "--outdir", str(pipeline),
         "--slug", "sermon_" + source["sourceId"], "--output-mode", "reading", "--start-time", timecode(start),
         "--end-time", timecode(end), "--reference-model", "gpt-transcribe", "--zh-model", "gpt-6-astra",
         "--en-correction-model", "gpt-6-astra", "--reasoning-effort", "medium"],
         [python, str(ROOT / "scripts/build_sermon_reading_edition_with_openai.py"), "--source-pipeline", str(pipeline),
          "--outdir", str(pipeline / "reading-edition-v2"), "--provider", "openai", "--model", "gpt-6-astra", "--reasoning-effort", "medium", "--passes", "2"]]
     if title and speaker:
-        from scripts.run_post_live_subtitle_generation import build_reading_pdf_command, build_sermon_interpretation_command
+        from tongxing_production.workflows.dual_pdf.post_live import build_reading_pdf_command, build_sermon_interpretation_command
         args = argparse.Namespace(sunday=source["week"], sermon_title=title, speaker=speaker, start_time=timecode(start), end_time=timecode(end),
                                   interpretation_model="gpt-6-astra", interpretation_reasoning_effort="medium")
         commands.append(build_reading_pdf_command(args, pipeline, source["canonicalURL"]))
@@ -225,7 +225,7 @@ def initialize(source, run, *, root=ROOT, media_probe=probe, title=None, speaker
 
 
 def text_evidence(run, paths, summary, duration):
-    from scripts.sermon_pipeline import clean_text, reference_chunks_to_reading_segments, source_file_identity
+    from tongxing_production.workflows.dual_pdf.pipeline import clean_text, reference_chunks_to_reading_segments, source_file_identity
     pipeline = run / "pipeline"
     single = pipeline / "asr_reference.json"
     model = summary.get("models", {}).get("referenceAsr")
@@ -359,7 +359,7 @@ def render_reviewed_pdfs(run, contract, inputs, *, runner=subprocess.run, python
     if destination.exists():
         validate_pdf_receipt(run, paths)
         return
-    from scripts.run_post_live_subtitle_generation import build_reading_pdf_command
+    from tongxing_production.workflows.dual_pdf.post_live import build_reading_pdf_command
     notes = read(paths["outline"])
     require(all(isinstance(notes.get(key), str) and notes[key].strip() for key in ("sermonTitle", "speaker")),
             "Same-video PDFs require verified title and speaker in companion metadata")
@@ -373,7 +373,7 @@ def render_reviewed_pdfs(run, contract, inputs, *, runner=subprocess.run, python
         if isinstance(notes.get("seriesZh"), str) and notes["seriesZh"].strip():
             reading[reading.index("--subtitle") + 1] = f"{notes['seriesZh'].strip()} · 中英对照阅读版"
         reading[reading.index("--out") + 1] = str(staging / "sermon_zh_en_reading.pdf")
-        companion = [python, str(ROOT / "scripts/render_sermon_interpretation_pdf.py"), "--input", str(paths["outline"]),
+        companion = [python, str(ROOT / "tools/ops/run.py"), "workflows.dual_pdf.interpretation_pdf", "--input", str(paths["outline"]),
             "--out", str(staging / "sermon_interpretation_zh.pdf"), "--qa-out", str(staging / "sermon_interpretation_zh.qa.json")]
         frozen = {key: sha256(path) for key, path in paths.items() if key in PDF_BINDINGS}
         from concurrent.futures import ThreadPoolExecutor

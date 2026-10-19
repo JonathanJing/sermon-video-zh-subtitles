@@ -10,7 +10,8 @@ from tongxing_production.source import producer_compatibility as compat
 from scripts import sermon_review_contracts as c
 from tongxing_production.source import failure
 from scripts import sermon_fresh_diagnostic as entry,sermon_log_profile as profile,sermon_accounting as accounting
-from scripts.sermon_pipeline import PreDispatchRejection
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf.pipeline import PreDispatchRejection
 from tests import test_mfa_alignment as alignment_fixtures
 from tests import test_sermon_fresh_diagnostic as source_fixtures
 

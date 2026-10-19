@@ -145,7 +145,8 @@ class FreshCausalityTests(unittest.TestCase):
         self.assertEqual(len(self.f.f.transport.observations)-before,2)
 
     def test_interrupted_model_log_recovery_keeps_old_run_partial(self):
-        from scripts import sermon_pipeline as pipeline, sermon_log_contract as contract
+        from scripts import sermon_log_contract as contract
+        from tongxing_production.workflows.dual_pdf import pipeline
         before=len(self.f.f.transport.observations)
         with patch.object(accounting,'execution_identity',return_value=self.plan['executionIdentity']):
             session=entry.FreshDiagnosticSession(self.plan,offline_transport=self.f.f.transport)

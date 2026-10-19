@@ -5,8 +5,9 @@ new file, and closures that list the legacy monolith also list it.
 """
 import unittest
 
-from scripts import run_post_live_subtitle_generation as post_live
-from scripts import sermon_pipeline
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import post_live as post_live
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from tongxing_production import path_aliases
 from tongxing_production.source import post_live_english
 

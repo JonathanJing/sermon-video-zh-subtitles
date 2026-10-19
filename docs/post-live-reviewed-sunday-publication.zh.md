@@ -491,7 +491,7 @@ mode=generate-reviewed  使用已确认 local start/end 跑正式字幕生成
 
 ### Cloud Run Job：完整音频与人工时间窗审核
 
-生产环境不要依赖 Cloud Run service 的 inline worker。`scripts/run_post_live_timeline_job.py`
+生产环境不要依赖 Cloud Run service 的 inline worker。`tools/ops/run.py workflows.dual_pdf.timeline`
 用于独立 Cloud Run Job，按以下顺序执行：
 
 1. 从 `LIVE_SOURCE_MONITOR_STATE_URI` 读取已捕获的 YouTube watch URL。

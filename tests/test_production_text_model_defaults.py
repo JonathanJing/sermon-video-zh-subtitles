@@ -9,8 +9,10 @@ from unittest.mock import Mock, patch
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
-from scripts import sermon_pipeline, generate_notes_with_openai as notes
-from scripts import run_post_live_subtitle_generation as post_live
+from scripts import generate_notes_with_openai as notes
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import post_live as post_live
 from scripts import sermon_production_supervisor as supervisor
 from tongxing_production.source import text_review as source_review
 

@@ -29,7 +29,8 @@ class ErrorDiagnosticsTests(unittest.TestCase):
         import urllib.error
         import urllib.request
         from unittest.mock import Mock
-        from scripts import sermon_pipeline as pipeline
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         for message,expected in (('API_KEY=private /Users/private source','http_request_rejected'),
                 ('Audio file might be corrupted or unsupported; private','Audio file might be corrupted or unsupported')):
             raw=json.dumps({'error':{'message':message}}).encode()

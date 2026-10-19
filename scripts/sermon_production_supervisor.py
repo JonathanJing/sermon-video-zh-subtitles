@@ -23,7 +23,8 @@ if str(REPO_ROOT) not in sys.path:
 from backend.cloud import read_gcs_text, write_gcs_text  # noqa: E402
 from backend.leases import LeaseGuard, LeaseHandle, acquire_lease, release_lease  # noqa: E402
 from backend.observability import stable_hash, url_summary  # noqa: E402
-from scripts import live_source_monitor, run_post_live_subtitle_generation  # noqa: E402
+from scripts import live_source_monitor, tongxing_host  # noqa: E402,F401  tongxing_host binds the package ports
+from tongxing_production.workflows.dual_pdf import post_live as run_post_live_subtitle_generation  # noqa: E402
 
 
 DEFAULT_BUCKET = "sermon-zh-artifacts-ai-for-god"
@@ -355,7 +356,7 @@ def recommend_action(
             human=False,
         )
     if timeline_status in {"failed", "error"}:
-        from scripts.run_post_live_timeline_job import resumable_archive_failure
+        from tongxing_production.workflows.dual_pdf.timeline import resumable_archive_failure
         if resumable_archive_failure(timeline_report, sunday=sunday, live_url=live_url):
             return action(
                 "resume_failed_timeline",
@@ -473,7 +474,7 @@ def run_timeline_probe(
         ensure_source_lock(config, snapshot, guard=guard)
         command = build_timeline_command(config, snapshot)
         if action_name == "resume_failed_timeline":
-            from scripts.run_post_live_timeline_job import resumable_archive_failure
+            from tongxing_production.workflows.dual_pdf.timeline import resumable_archive_failure
             failed = read_first_json(*artifact_read_locations(
                 snapshot["locations"].get("timelineReportLocal"), snapshot["locations"].get("timelineReportGcs"),
             ))
@@ -712,7 +713,7 @@ def validate_generation_archive_identity(locations: dict[str, str]) -> None:
     canonical = run_post_live_subtitle_generation.newest_downloaded_audio(run_root / "download")
     if canonical is None:
         raise RuntimeError("Generation archive is missing; restore the verified timeline audio to the canonical download directory.")
-    from scripts.run_post_live_timeline_job import archive_file_sha256
+    from tongxing_production.workflows.dual_pdf.timeline import archive_file_sha256
     digest = timeline.get("audioSha256")
     size = timeline.get("audioSizeBytes")
     if digest is None:
@@ -734,7 +735,8 @@ def validate_generation_archive_identity(locations: dict[str, str]) -> None:
 def build_timeline_command(config: SupervisorConfig, snapshot: dict[str, Any]) -> list[str]:
     command = [
         config.python_executable,
-        str(REPO_ROOT / "scripts" / "run_post_live_timeline_job.py"),
+        str(REPO_ROOT / "tools" / "ops" / "run.py"),
+        "workflows.dual_pdf.timeline",
         "--sunday",
         config.sunday,
         "--state-file",
@@ -780,7 +782,8 @@ def build_generation_command(
 ) -> list[str]:
     command = [
         config.python_executable,
-        str(REPO_ROOT / "scripts" / "run_post_live_subtitle_generation.py"),
+        str(REPO_ROOT / "tools" / "ops" / "run.py"),
+        "workflows.dual_pdf.post_live",
         "--sunday",
         config.sunday,
         "--state-file",

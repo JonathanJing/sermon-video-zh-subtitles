@@ -23,7 +23,7 @@ from tongxing_production.delivery import app_workflow as workflow
 from scripts import sermon_end_to_end as end_to_end
 from scripts import sermon_production_supervisor as supervisor
 from tongxing_production.orchestration import jobs
-from scripts import run_codex_local_sermon_production as local
+from tongxing_production.workflows.dual_pdf import codex_local as local
 from scripts import run_sermon_production_supervisor_agent as agent
 from tests import test_sermon_app_delivery as fixtures
 from tests import test_run_codex_local_sermon_production as local_fixtures
@@ -164,7 +164,7 @@ class AppDeliveryWorkflowTests(unittest.TestCase):
             self.assertFalse(observed['workflowComplete'])
 
     def test_two_actual_supervisor_cli_processes_admit_one_fixed_bundle_job(self):
-        command = [sys.executable, '-m', 'scripts.run_codex_local_sermon_production',
+        command = [sys.executable, str(workflow.ROOT / 'tools/ops/run.py'), 'workflows.dual_pdf.codex_local',
             '--app-delivery-config', str(self.path), '--sunday', '2026-10-04',
             '--mode', 'execute', '--out', str(self.root/'first-report.json')]
         second = list(command); second[-1] = str(self.root/'second-report.json')

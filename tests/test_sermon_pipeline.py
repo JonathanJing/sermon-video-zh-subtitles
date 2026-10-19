@@ -15,7 +15,8 @@ from tongxing_production.compute import legacy_openai  # C4: the remote-call gro
 # The implementation moved to tongxing_production.workflows.dual_pdf.pipeline (W3a);
 # the scripts/ path is a facade naming the same module object.
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
-from scripts import sermon_pipeline as mod  # noqa: E402
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as mod  # noqa: E402
 
 
 class SermonPipelineTest(unittest.TestCase):

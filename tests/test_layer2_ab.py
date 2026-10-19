@@ -57,7 +57,8 @@ class Layer2ABTests(unittest.TestCase):
 
     def test_real_run_binds_outcomes_and_recovers_returned_started_marker(self):
         from unittest.mock import patch
-        from scripts import sermon_pipeline
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
         def http(_url, key, payload, **kwargs):
             return self.fake_call(key, payload)
         original = subject.production.save_new
@@ -84,7 +85,7 @@ class Layer2ABTests(unittest.TestCase):
 
     def test_real_run_unknown_started_marker_never_redispatches(self):
         from unittest.mock import patch
-        from scripts import sermon_pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
         with patch.dict("os.environ", {}, clear=True), patch.object(legacy_openai, "json_request", side_effect=TimeoutError("unknown")) as dispatched:
             with self.assertRaises(TimeoutError):
                 self.run_subject(caller=sermon_pipeline.chat_json)

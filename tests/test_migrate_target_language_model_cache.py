@@ -6,7 +6,8 @@ from unittest.mock import patch
 from scripts import migrate_target_language_model_cache as subject
 from scripts import run_target_language_models as models
 from scripts import target_language_policy as policies
-from scripts import sermon_pipeline as sermon_pipeline_module
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline_module
 from tests import test_run_target_language_models as fixtures
 
 

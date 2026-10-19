@@ -11,7 +11,8 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from scripts import run_codex_local_sermon_production as local
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import codex_local as local
 from scripts import run_sermon_production_supervisor_agent as supervisor
 from scripts import sermon_accounting as accounting
 

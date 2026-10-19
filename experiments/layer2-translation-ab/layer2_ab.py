@@ -33,7 +33,8 @@ if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the 
     sys.path.insert(0, str(ROOT))
 from scripts import produce_target_language_candidate as producer
 from scripts import run_target_language_models as production
-from scripts import sermon_pipeline
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from scripts import target_language_policy as policy_tools
 
 

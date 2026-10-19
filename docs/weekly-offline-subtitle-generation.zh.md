@@ -74,7 +74,7 @@ mariners_<youtube_video_id>
 
 ## 推荐 CLI
 
-线程里沉淀出的可复用 CLI 已迁移到当前 repo 的 `scripts/sermon_pipeline.py`。运行前确认 `.env` 或当前 shell 有 `OPENAI_API_KEY`。
+线程里沉淀出的可复用 CLI 已迁移到当前 repo 的 `tools/ops/run.py workflows.dual_pdf.pipeline`。运行前确认 `.env` 或当前 shell 有 `OPENAI_API_KEY`。
 
 ```bash
 .venv/bin/python tools/ops/run.py workflows.dual_pdf.pipeline \
@@ -234,9 +234,9 @@ systematic translation offset: none
   --end-time 00:55:36
 ```
 
-该脚本会从周六 `discover-source` 保存的 state 读取直播 URL，确认 YouTube metadata 已经是 `post_live` / `was_live`，再下载归档音频并调用 `scripts/sermon_pipeline.py`。如果还在直播或归档未稳定，它会返回 `waiting_for_post_live`，供 Scheduler 下次重试。
+该脚本会从周六 `discover-source` 保存的 state 读取直播 URL，确认 YouTube metadata 已经是 `post_live` / `was_live`，再下载归档音频并调用 `tools/ops/run.py workflows.dual_pdf.pipeline`。如果还在直播或归档未稳定，它会返回 `waiting_for_post_live`，供 Scheduler 下次重试。
 
-自动化会在 `scripts/sermon_pipeline.py` 完成后调用，先生成逐句版手机 PDF：
+自动化会在 `tools/ops/run.py workflows.dual_pdf.pipeline` 完成后调用，先生成逐句版手机 PDF：
 
 ```bash
 .venv/bin/python tools/ops/run.py workflows.dual_pdf.mobile_pdf \

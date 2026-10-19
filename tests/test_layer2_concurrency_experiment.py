@@ -15,7 +15,8 @@ from scripts import layer2_api_concurrency as api_concurrency
 from scripts import weekly_pipeline_report as weekly
 from tests import experiment_modules
 experiment = experiment_modules.load("experiments/local-layer-latency/layer2_concurrency.py")
-from scripts import sermon_pipeline as sermon_pipeline_module
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline_module
 from tests import test_run_target_language_models as fixtures
 
 

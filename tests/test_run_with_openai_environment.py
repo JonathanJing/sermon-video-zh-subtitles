@@ -54,7 +54,8 @@ class RuntimeEnvironmentTests(unittest.TestCase):
         self.assertNotIn(b'fake-prod', result.stdout + result.stderr)
 
     def test_legacy_dotenv_cannot_override_selected_key(self):
-        from scripts.sermon_pipeline import load_env
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf.pipeline import load_env
         from unittest.mock import patch
         legacy = self.path.parent / '.env'
         legacy.write_text('OPENAI_API_KEY=stale\n')
