@@ -5,7 +5,8 @@ import tempfile
 import unittest
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts.experiments import layer2_ab as subject
+from tests import experiment_modules
+subject = experiment_modules.load("experiments/layer2-translation-ab/layer2_ab.py")
 from scripts import target_language_policy as policy_tools
 from tests import test_produce_target_language_candidate as fixture_module
 

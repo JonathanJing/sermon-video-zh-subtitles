@@ -41,7 +41,7 @@ class RunNoCaptionArchiveAsrRouteTest(unittest.TestCase):
                         ],
                     },
                 )
-            if "scripts/validate_production_readiness.py" in command:
+            if "tools/ops/validate_production_readiness.py" in command:
                 write_json_arg(
                     command,
                     {
@@ -133,7 +133,7 @@ class RunNoCaptionArchiveAsrRouteTest(unittest.TestCase):
                         ],
                     },
                 )
-            if "scripts/validate_production_readiness.py" in command:
+            if "tools/ops/validate_production_readiness.py" in command:
                 write_json_arg(command, {"status": "failed", "failedChecks": ["sunday_manifest"]})
                 return completed(2, stdout="failed", stderr="")
             return completed(0, stdout="ok", stderr="")

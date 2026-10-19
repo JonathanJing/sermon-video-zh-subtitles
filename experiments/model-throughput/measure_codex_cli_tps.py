@@ -7,7 +7,7 @@ runs the same interleaved round order. The CLI never receives an API key: every
 OPENAI_* variable and CODEX_API_KEY is removed from the child environment, as in
 codex_layer2_transport.py.
 
-  python3 scripts/measure_codex_cli_tps.py --rounds 3
+  python3 experiments/model-throughput/measure_codex_cli_tps.py --rounds 3
 
 Limits of the CLI route, all recorded in the output:
 - `codex exec --json` emits whole messages, not token deltas, so no first-token
@@ -35,8 +35,10 @@ import time
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling module of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
 
-from scripts.measure_openai_model_tps import PROMPT, TIERS  # noqa: E402
+from measure_openai_model_tps import PROMPT, TIERS  # noqa: E402
 
 DEFAULT_CLI = Path.home() / ".local" / "bin" / "codex"
 SCHEMA_VERSION = "codex-cli-model-tps-v1"

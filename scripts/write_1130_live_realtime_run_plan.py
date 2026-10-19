@@ -137,7 +137,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
         "liveValidationCommands": [
             [
                 "python3",
-                "scripts/run_realtime_public_sse_smoke.py",
+                "tools/ops/run_realtime_public_sse_smoke.py",
                 "--base-url",
                 base_url,
                 "--sunday",

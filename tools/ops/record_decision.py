@@ -2,12 +2,12 @@
 """Record an operator decision as one JSON line, replacing hand-written
 ``*.evidence.txt`` notes.
 
-    python3 scripts/record_decision.py --run-dir <run> \
+    python3 tools/ops/record_decision.py --run-dir <run> \
         --question "zh 片尾超出批准窗口 0.74 s，怎么处理" \
         --choice "允许片尾容差 ≤ 1 s" --decided-by "Jony (chat)" \
         --governs artifacts/weekend-live/layer3-54475d42/zh-Hans/schedule-c4.json \
         --evidence "用户原话：允许片尾容差≤1 s"
-    python3 scripts/record_decision.py --run-dir <run> --check
+    python3 tools/ops/record_decision.py --run-dir <run> --check
 
 Each line in ``decisions.ndjson`` records when, what was asked, what was chosen,
 who decided and through which channel, the artifacts the decision governs and its

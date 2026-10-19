@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Source-bound, non-production Layer 2 translator comparison.
 
-Run with ``python -m scripts.experiments.layer2_ab --help``. The three arms
+Run with ``python experiments/layer2-translation-ab/layer2_ab.py --help``. The three arms
 share one approved English source, group plan, policy body, prompts, reasoning
 effort, and independent Sol reviewer. Only the translator model differs.
 Outputs contain model text and belong in ignored artifacts, never in Git.
@@ -24,9 +24,13 @@ from pathlib import Path
 import secrets
 import statistics
 import subprocess
+import sys
 import time
 from typing import Any, Callable
 
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the repository root
+    sys.path.insert(0, str(ROOT))
 from scripts import produce_target_language_candidate as producer
 from scripts import run_target_language_models as production
 from scripts import sermon_pipeline

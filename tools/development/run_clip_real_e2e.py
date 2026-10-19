@@ -521,7 +521,7 @@ def stage_audio(run: Run, locale: str, code: str):
     voice = l3 / "clip-voice-authorization.json"
     job_dir = l3 / "speech-job"
     if not (job_dir / "job.json").exists():
-        run.sh(f"voice-auth.{locale}", [PY, ROOT / "scripts/prepare_clip_voice_authorization.py", "--source", src,
+        run.sh(f"voice-auth.{locale}", [PY, ROOT / "tools/ops/prepare_clip_voice_authorization.py", "--source", src,
                                         "--candidate", candidate, "--adapter", adapter,
                                         "--user-attestation", attestation(run, locale), "--out", voice])
         run.sh(f"speech-job.{locale}", [PY, ROOT / "scripts/prepare_target_language_speech_job.py",
@@ -732,7 +732,7 @@ def stage_layer4(run: Run):
     if not state_path.exists():
         if workflow.exists() and any(workflow.iterdir()):
             raise Stop("Layer 4 publish files exist without a terminal receipt; reconcile before retry")
-        run.sh("layer4-publish", [PY, ROOT / "scripts/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
+        run.sh("layer4-publish", [PY, ROOT / "tools/development/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
                                   "--prepared", l4 / "work/prepared", "--out", workflow, "--machine-checked", "--execute"])
     state = read(state_path)
     report_path = workflow / "run-report.json"
@@ -767,7 +767,7 @@ def stage_layer4(run: Run):
     smoke = next((path for path in receipts if passed_smoke(path)), None)
     if smoke is None:
         smoke = l4 / f"browser-smoke-retry-{len(receipts) + 1}.json"
-        run.sh("layer4-smoke", [PY, ROOT / "scripts/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
+        run.sh("layer4-smoke", [PY, ROOT / "tools/ops/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
                                 page["pageId"], "--settle-ms", "15000", "--no-session", "--out", smoke])
         require(passed_smoke(smoke), "Layer 4 browser smoke did not pass")
     run.mark("layer4", "done", pageId=page["pageId"], smoke="pass", smokeReceipt=str(smoke),

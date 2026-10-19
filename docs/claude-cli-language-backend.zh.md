@@ -51,7 +51,7 @@ claude -p --model claude-opus-5-5 --effort high --output-format json \
 运行（Mac）：
 
 ```
-python3 -m scripts.experiments.claude_translation_ab \
+python3 experiments/layer2-translation-ab/claude_translation_ab.py \
   --baseline artifacts/codex-cli-layer2-180s-20261005 \
   --out artifacts/claude-opus55-vs-sol61-ab-20261008
 ```
@@ -80,7 +80,7 @@ Jony 在 Mac 上跑完，摘要见 PR #299 的评论：13 组 Opus 全部更快�
 
 ```
 for locale in zh-Hans ko es; do
-  python3 -m scripts.experiments.claude_translation_ab --review \
+  python3 experiments/layer2-translation-ab/claude_translation_ab.py --review \
     --baseline <该语言的 605 秒 Layer 2 输出目录> \
     --out artifacts/claude-opus55-vs-sol61-ab-605s-$locale
 done

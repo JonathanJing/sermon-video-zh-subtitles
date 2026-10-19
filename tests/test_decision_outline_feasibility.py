@@ -7,10 +7,10 @@ import unittest
 from contextlib import nullcontext
 from types import SimpleNamespace
 from unittest.mock import patch
-from scripts.experiments import decision_api_weekly_ab as ab
 from tests import experiment_modules
 
 e = experiment_modules.load("experiments/decision-api-ab/decision_outline_feasibility.py")
+ab = e.ab  # the runner module the experiment itself imported
 
 class OutlineFeasibilityTests(unittest.TestCase):
     def setUp(self):
