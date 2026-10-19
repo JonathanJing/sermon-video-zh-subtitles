@@ -341,7 +341,8 @@ def text_qc_records(locale: str, receipt: dict) -> dict[str, dict]:
                 (row.get("backTranslation") or {}).get("requestSha256s") or [])},
             status, codes=(problems or [row.get("nextAction", "fail")]) if status == "fail" else (),
             provenance={"derivation": "legacy_text_qc_receipt", "mode": row.get("mode"),
-                        "nextAction": row.get("nextAction")})
+                        "nextAction": row.get("nextAction"), "failedAttempts": row.get("failedAttempts"),
+                        "model": receipt["semanticIdentity"].get("model")})
     return out
 
 

@@ -131,12 +131,12 @@ class Run:
                              for g, s in GROUPS]})
         write(base / "text-qc.json", {
             "schemaVersion": "sermon-target-text-auto-qc-v1", "locale": locale, "implementationSha256": QC,
-            "semanticIdentity": {"settings": {"qcContext": {
+            "semanticIdentity": {"model": "gpt-6.1-sol", "settings": {"qcContext": {
                 "englishSourcePackageJsonSha256": layer1["englishSourcePackageJsonSha256"],
                 "anchorManifestJsonSha256": layer1["anchorManifestSha256"]}}},
             "semanticIdentitySha256": SEMANTIC, "repairLedger": {"priorFailedAttempts": {}},
             "results": [{"groupId": g, "sourceUnitIds": s, "status": "pass", "mode": "full", "problems": [],
-                         "nextAction": "keep", "targetTextSha256": sha(TEXT[locale][g]),
+                         "nextAction": "keep", "failedAttempts": 0, "targetTextSha256": sha(TEXT[locale][g]),
                          "englishSha256": legacy.qc_english_sha256(legacy.english_rows(anchor, s)),
                          "backTranslation": {"requestSha256s": [sha(f"bt{locale}{g}")]}} for g, s in GROUPS]})
         job = base / "speech-job"
@@ -667,3 +667,126 @@ class PlanTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GroupBudgetTests(unittest.TestCase):
+    """DEV-GRP-003: the allowance follows the selected groups, never the first round."""
+
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.run = Run(Path(self.directory.name))
+        self.profile = json.loads((ROOT / "config/weekly-run-profile.json").read_text())
+
+    def plan(self, current=None, *, scale="week", profile=None, **options):
+        manifest = json.loads(self.run.build().read_text())
+        return group_plan.plan(manifest, self.run.root, current or identities(),
+                               budget={"profile": profile or self.profile, "scale": scale}, **options)
+
+    def bounds(self):
+        from tongxing_production.orchestration import group_budget
+        return group_budget.per_try_bounds(self.profile, self.run.policy, "gpt-6.1-sol")
+
+    def test_a_named_group_gets_every_try_it_has_left_even_after_a_full_cache_replay(self):
+        from tongxing_production.review import text_qc
+        report = self.plan(directives={"ko": ["g2"]})
+        budget = report["locales"]["ko"]["budget"]
+        self.assertEqual([row["translationGroupId"] for row in budget["groups"]], ["g2"])
+        row = budget["groups"][0]
+        self.assertEqual((row["basis"], row["status"], row["tries"]),
+                         ("operator_directive", "reserved", text_qc.MAX_TEXT_REPAIR_ATTEMPTS))
+        bounds = self.bounds()
+        per_try = bounds["translation"]["costMicrousd"]
+        self.assertEqual(row["reserve"]["layer2"]["costMicrousd"], per_try * row["tries"])
+        self.assertEqual(row["reserve"]["qc"]["costMicrousd"], bounds["textQc"]["costMicrousd"] * row["tries"])
+        self.assertGreater(per_try, 0)
+        # Nothing else spends money: every other group is reused at $0.
+        self.assertEqual(budget["reusedGroupCount"], 3)
+        self.assertEqual(report["locales"]["es"]["budget"]["groups"], [])
+
+    def test_ledger_attempts_shrink_the_tries_and_an_exhausted_group_reserves_nothing(self):
+        from tongxing_production.review import text_qc
+        self.run.build()
+        receipt_path = self.run.root / "ko/text-qc.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt["results"][1]["failedAttempts"] = 3
+        receipt["results"][2]["failedAttempts"] = text_qc.MAX_TEXT_REPAIR_ATTEMPTS
+        receipt_path.write_text(json.dumps(receipt))
+        manifest = json.loads((self.run.root / "inputs.json").read_text())
+        report = group_plan.plan(manifest, self.run.root, identities(), directives={"ko": ["g2", "g3"]},
+                                 budget={"profile": self.profile, "scale": "week"})
+        rows = {row["translationGroupId"]: row for row in report["locales"]["ko"]["budget"]["groups"]}
+        self.assertEqual((rows["g2"]["tries"], rows["g2"]["status"]), (text_qc.MAX_TEXT_REPAIR_ATTEMPTS - 3, "reserved"))
+        self.assertEqual((rows["g3"]["tries"], rows["g3"]["status"]), (0, "repair_limit_reached"))
+        self.assertEqual(rows["g3"]["reserve"]["layer2"]["costMicrousd"], 0)
+
+    def test_a_group_that_does_not_fit_stops_before_dispatch_and_others_keep_their_reservation(self):
+        from tongxing_production.orchestration import group_budget
+        bounds = self.bounds()
+        one_group = bounds["translation"]["costMicrousd"] * 4
+        profile = copy.deepcopy(self.profile)
+        # Room for one named group's layer-2 tries, not two.
+        profile["layer2"]["capUsdPerLocale"]["week"] = (one_group + one_group // 2) / 1_000_000
+        report = self.plan(profile=profile, directives={"ko": ["g3", "g1", "g4"]})
+        budget = report["locales"]["ko"]["budget"]
+        self.assertEqual([(row["translationGroupId"], row["status"]) for row in budget["groups"]],
+                         [("g3", "reserved"), ("g1", "repair_spend_cap"), ("g4", "repair_spend_cap")])
+        self.assertEqual(group_budget.admit(budget, "g3"), budget["groups"][0]["reserve"])
+        with self.assertRaisesRegex(ValueError, "repair_spend_cap:g1"):
+            group_budget.admit(budget, "g1")
+        with self.assertRaisesRegex(ValueError, "group_not_budgeted:g2"):
+            group_budget.admit(budget, "g2")
+        self.assertEqual(budget["totals"]["reservedMicrousd"]["layer2"], one_group)
+
+    def test_only_the_paid_steps_that_will_run_again_are_budgeted(self):
+        plugin = self.plan(identities(plugin="9" * 64))
+        self.assertEqual(plugin["locales"]["ko"]["budget"]["groups"], [])  # P runs locally at no cost
+        qc = self.plan(identities(machineQcImplementationSha256="9" * 64))
+        rows = qc["locales"]["ko"]["budget"]["groups"]
+        self.assertEqual({tuple(row["steps"]) for row in rows}, {("textQc",)})
+        self.assertEqual(rows[0]["reserve"]["qc"]["costMicrousd"], self.bounds()["textQc"]["costMicrousd"])
+        self.assertEqual(rows[0]["reserve"]["layer2"]["costMicrousd"], 0)
+        voice = self.plan(identities(rendererSoundIdentitySha256="9" * 64))
+        self.assertEqual({tuple(row["steps"]) for row in voice["locales"]["es"]["budget"]["groups"]},
+                         {("secondaryAsr",)})
+
+    def test_a_failed_synthesis_is_budgeted_for_new_audio(self):
+        self.run.build()
+        receipt_path = self.run.root / "es/speech-job/receipts/unit-0001.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt_path.write_text(json.dumps(dict(receipt, fullDecode="fail")))
+        manifest = json.loads((self.run.root / "inputs.json").read_text())
+        report = group_plan.plan(manifest, self.run.root, identities(), budget={"profile": self.profile, "scale": "week"})
+        rows = report["locales"]["es"]["budget"]["groups"]
+        self.assertEqual([(row["translationGroupId"], row["steps"]) for row in rows], [("g2", ["secondaryAsr"])])
+
+    def test_a_shortened_group_also_budgets_condensation(self):
+        self.run.build()
+        receipt_path = self.run.root / "ko/text-qc.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt["results"][0]["mode"] = "shorten"
+        receipt_path.write_text(json.dumps(receipt))
+        manifest = json.loads((self.run.root / "inputs.json").read_text())
+        report = group_plan.plan(manifest, self.run.root, identities(), directives={"ko": ["g1"]},
+                                 budget={"profile": self.profile, "scale": "week"})
+        row = report["locales"]["ko"]["budget"]["groups"][0]
+        self.assertIn("condensation", row["steps"])
+        bounds = self.bounds()
+        self.assertEqual(row["perTry"]["qc"]["costMicrousd"],
+                         bounds["textQc"]["costMicrousd"] + bounds["condensation"]["costMicrousd"])
+
+    def test_bounds_come_from_the_profile_limits_and_the_owning_constants(self):
+        from tongxing_production.compute import provider_limits as limits
+        from tongxing_production.compute import transcription_request as transcription
+        from tongxing_production.review import condensation
+        bounds = self.bounds()
+        layer2, qc = self.profile["layer2"]["requestLimits"], self.profile["qc"]["requestLimits"]
+        self.assertEqual(bounds["translation"]["costMicrousd"],
+                         2 * limits._cost("gpt-6.1-sol", layer2["maxInputTokens"], layer2["maxCompletionTokens"]))
+        call = limits._cost("gpt-6.1-sol", qc["maxInputTokens"], qc["maxCompletionTokens"])
+        self.assertEqual(bounds["textQc"]["costMicrousd"], 2 * call)
+        self.assertEqual(bounds["condensation"]["costMicrousd"], condensation.MAX_ATTEMPTS * call)
+        self.assertEqual(bounds["secondaryAsr"]["costMicrousd"],
+                         -(-transcription.MAX_DURATION_SECONDS // 60) * transcription.MICROUSD_PER_MINUTE)
+        with self.assertRaisesRegex(ValueError, "unknown_profile_scale"):
+            self.plan(scale="month")

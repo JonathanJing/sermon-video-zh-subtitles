@@ -32,7 +32,7 @@ English index: [backlog.md](./backlog.md)
 |---|---|---|
 | `DEV-GRP-001` | P0 / `done` | 逐组记录 schema、输入键函数和只读 `plan`。完成条件：设计第十一节的过期判定金样通过，在 `15030286` 已有产物上离线 `plan` 零调用。2026-10-18 已实施：`orchestration/group_records.py`（schema `sermon-group-stage-record-v1`、输入键、只追加记录目录）、`group_legacy.py`（从整篇运行产物读出逐组记录）、`group_plan.py` 与 `tools/ops/group_tasks.py plan`；18 个金样测试通过；`15030286` 三语 402 组离线 `plan` 零调用、不写产物，结果与限制见设计第十一节“DEV-GRP-001 实施说明” |
 | `DEV-GRP-002` | P0 / `in_progress` | Layer 2 逐组翻译、复核、插件与按组 ID 返修（revise-by-group-ID 分支实现），从逐组记录组装 candidate、并行 worker。完成条件：组装结果与整篇路径逐字节相同，未知结果停止新付费派发。既有归属 `DEV-L2-001` |
-| `DEV-GRP-003` | P0 / `pending` | 返修额度按所选组的剩余次数与每次上界计算，预算授权加逐组明细。完成条件：全缓存重放后仍可修授权组。既有归属 `DEV-R242-026`、`DEV-COST-002` |
+| `DEV-GRP-003` | P0 / `done` | 返修额度按所选组的剩余次数与每次上界计算，预算授权加逐组明细。完成条件：全缓存重放后仍可修授权组。既有归属 `DEV-R242-026`、`DEV-COST-002`。2026-10-19 已实施：`orchestration/group_budget.py` 与 `plan --budget-profile`，输出 `sermon-group-budget-v1` 逐组明细，`admit` 供派发前检查；现行 Layer 2/QC 授权格式不变。派发接线随 `DEV-GRP-006`/`007`。详见设计第十一节“DEV-GRP-003 实施说明” |
 | `DEV-GRP-004` | P1 / `pending` | 文字 QC 逐组判定，长度离群移到合并；校准 v4 稳定选组与试验缓存（需评审豁免合同）。完成条件：改 k 组只为 k 组的试验付费，检出率与误报率与 v3 同夹具一致。既有归属 `DEV-QC-001` |
 | `DEV-GRP-005` | P1 / `pending` | TTS、ASR 回查、单句音频 QC 逐组；preview 接受逐组记录，声音身份去掉位置与 batch 成员（待用户决定）。完成条件：改一组只重合成该组，preview 不进入音频包。既有归属 `DEV-L3-001` |
 | `DEV-GRP-006` | P0 / `pending` | 合并：组装 candidate 与音频包、排程与 8 秒检查、字幕、整轨核对、筛查与豁免、合并清单；失败映射回组 ID。完成条件：产物通过未修改的 L3 验证器与 L4 builder |
