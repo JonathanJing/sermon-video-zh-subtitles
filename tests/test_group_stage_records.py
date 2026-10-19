@@ -1,0 +1,419 @@
+"""DEV-GRP-001: per-group stage records, input keys and the read-only plan.
+
+The golden cases of docs/design/per-group-independent-pipeline.zh.md section 11: the
+same inputs give the same key; any Layer 1 change makes everything stale; a plugin
+change makes only P stale; one group's new text makes only that group stale from R
+on; records never cross locales; and ``plan`` makes no call and writes nothing.
+"""
+import copy
+import hashlib
+import io
+import json
+from contextlib import redirect_stdout
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+
+from scripts import tongxing_host  # noqa: F401  (binds the package host)
+from tongxing_production.orchestration import group_legacy as legacy
+from tongxing_production.orchestration import group_plan
+from tongxing_production.orchestration import group_records as records
+from tongxing_production.text import models
+
+ROOT = Path(__file__).resolve().parents[1]
+RUN = "1" * 64
+PLUGIN = "2" * 64
+LANGUAGE_POLICY = "3" * 64
+QC = "4" * 64
+RENDERER = "5" * 64
+ASR = "6" * 64
+SEMANTIC = "7" * 64
+ASR_SETTINGS = "8" * 64
+THRESHOLDS = {"asrMinSimilarity": 0.88, "maxSilenceRatio": 0.6}
+UNITS = [("u1", "Hey, church, it is a joy to be with you."), ("u2", "Turn with me to Romans 8."),
+         ("u3", "Verse 28 says this."), ("u4", "God works for the good."), ("u5", "Let us pray.")]
+GROUPS = [("g1", ["u1"]), ("g2", ["u2", "u3"]), ("g3", ["u4"]), ("g4", ["u5"])]
+TEXT = {"ko": {"g1": "성도 여러분, 안녕하세요.", "g2": "로마서 8장을 펴십시오. 28절입니다.",
+               "g3": "하나님은 선을 이루십니다.", "g4": "기도합시다."},
+        "es": {"g1": "Hola, iglesia.", "g2": "Abran Romanos 8. El versículo 28 dice.",
+               "g3": "Dios obra para bien.", "g4": "Oremos."}}
+
+
+def sha(text):
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def write(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+class Run:
+    """A small whole-sermon run: two locales, four groups, products for every stage."""
+
+    def __init__(self, root: Path):
+        self.root = root
+        self.anchor = {"sourceUnits": [{"sourceUnitId": u, "english": e} for u, e in UNITS],
+                       "translationRequests": [{"translationGroupId": g, "sourceUnitIds": s} for g, s in GROUPS]}
+        self.source = {"anchors": {"artifact": {"jsonSha256": records.json_sha256(self.anchor)}}, "id": "source"}
+        self.policy = {"terminology": {"terms": ["Romans"]}, "scripture": {"quoteCheckPolicy": "references_only"},
+                       "formatting": {"digits": "keep"},
+                       "translator": {"model": "gpt-6.1-sol", "reasoningEffort": "high"},
+                       "reviewer": {"model": "gpt-6.1-sol", "reasoningEffort": "medium"}}
+        self.texts = copy.deepcopy(TEXT)
+        # Products are bound to the source they were made from; a test may then change the source.
+        self.produced_anchor = copy.deepcopy(self.anchor)
+        self.produced_layer1 = self.layer1
+
+    @property
+    def layer1(self):
+        return records.layer1_identity(records.json_sha256(self.source), records.json_sha256(self.anchor))
+
+    def build(self):
+        write(self.root / "source.json", self.source)
+        write(self.root / "anchor.json", self.anchor)
+        write(self.root / "policy.json", self.policy)
+        locales = {}
+        for locale in self.texts:
+            locales[locale] = self._locale(locale)
+        manifest = {"schemaVersion": group_plan.MANIFEST_SCHEMA, "source": "source.json", "anchor": "anchor.json",
+                    "locales": locales}
+        return write(self.root / "inputs.json", manifest)
+
+    def _locale(self, locale):
+        layer1 = self.produced_layer1
+        base = self.root / locale
+        groups = [{"translationGroupId": g, "sourceUnitIds": s, "targetUtterances": [self.texts[locale][g]]}
+                  for g, s in GROUPS]
+        write(base / "candidate.json", {"englishSourcePackageJsonSha256": layer1["englishSourcePackageJsonSha256"],
+                                        "anchorManifestSha256": layer1["anchorManifestSha256"], "groups": groups})
+        rounds = base / "round-001"
+        anchor = self.produced_anchor
+        contexts = legacy.group_contexts(anchor, group_plan.group_plan_rows(anchor))
+        write(rounds / "request.json", {"targetLocale": locale, **layer1})
+        for index, (group_id, unit_ids) in enumerate(GROUPS, 1):
+            stem = f"group-{index:04d}"
+            text = TEXT[locale][group_id]  # what Layer 2 produced; the candidate may later differ
+            result = {"translationGroupId": group_id, "sourceUnitIds": unit_ids, "targetUtterances": [text]}
+            prompt = {"translationGroupId": group_id, "sourceUnitIds": unit_ids,
+                      "englishUnits": legacy.english_rows(anchor, unit_ids), "context": contexts[group_id],
+                      "targetLocale": locale, "terminology": self.policy["terminology"],
+                      "scripture": self.policy["scripture"], "formatting": self.policy["formatting"]}
+            for role, suffix, settings, extra in (
+                    ("translator", "astra", self.policy["translator"], {}),
+                    ("reviewer", "sol", self.policy["reviewer"], {"astraDraft": result})):
+                payload = {"model": settings["model"], "reasoning_effort": settings["reasoningEffort"],
+                           "messages": [{"role": "system", "content": f"{role} instruction"},
+                                        {"role": "user", "content": json.dumps({**prompt, **extra}, ensure_ascii=False)}]}
+                reply = dict(result, semanticReview={"status": "pass"}) if role == "reviewer" else result
+                write(rounds / f"{stem}-{suffix}.policy-preview.json",
+                      {"payload": payload, "payloadSha256": records.json_sha256(payload)})
+                write(rounds / f"{stem}-{suffix}.json", {"payloadSha256": sha(f"{locale}{group_id}{role}route"),
+                                                          "requestId": f"req-{locale}-{group_id}-{role}",
+                                                          "model": settings["model"], "result": reply})
+            write(rounds / f"{stem}-payload-cache-success.json", {"runnerImplementationSha256": RUN})
+        # Every product below is what the run produced (TEXT); only the candidate may move on.
+        write(base / "language-review.json", {
+            "schemaVersion": "sermon-target-language-plugin-receipt-v1", **layer1, "targetLocale": locale,
+            "languageReviewPolicySha256": LANGUAGE_POLICY, "pluginId": f"{locale}-test", "pluginImplementationSha256": PLUGIN,
+            "groupReviews": [{"translationGroupId": g, "sourceUnitIds": s, "targetTextSha256": sha(TEXT[locale][g]),
+                              "status": "pass", "checks": [{"checkId": "numbers", "status": "pass", "evidence": "ok"}]}
+                             for g, s in GROUPS]})
+        write(base / "text-qc.json", {
+            "schemaVersion": "sermon-target-text-auto-qc-v1", "locale": locale, "implementationSha256": QC,
+            "semanticIdentity": {"settings": {"qcContext": {
+                "englishSourcePackageJsonSha256": layer1["englishSourcePackageJsonSha256"],
+                "anchorManifestJsonSha256": layer1["anchorManifestSha256"]}}},
+            "semanticIdentitySha256": SEMANTIC, "repairLedger": {"priorFailedAttempts": {}},
+            "results": [{"groupId": g, "sourceUnitIds": s, "status": "pass", "mode": "full", "problems": [],
+                         "nextAction": "keep", "targetTextSha256": sha(TEXT[locale][g]),
+                         "englishSha256": legacy.qc_english_sha256(legacy.english_rows(anchor, s)),
+                         "backTranslation": {"requestSha256s": [sha(f"bt{locale}{g}")]}} for g, s in GROUPS]})
+        job = base / "speech-job"
+        for index, (group_id, unit_ids) in enumerate(GROUPS):
+            audio = sha(f"wav{locale}{group_id}")
+            write(job / "receipts" / f"unit-{index:04d}.intent.json", {
+                "schemaVersion": "sermon-formal-target-speech-render-v2", "unitIndex": index,
+                "jobJsonSha256": "a" * 64, "sourceJsonSha256": layer1["englishSourcePackageJsonSha256"],
+                "anchorJsonSha256": layer1["anchorManifestSha256"], "targetLocale": locale, "groupId": group_id,
+                "sourceUnitIds": unit_ids, "textSha256": sha(TEXT[locale][group_id]), "rendererSha256": RENDERER,
+                "speakerId": "speaker", "seed": 43, "temperature": 0.7, "batchWindowStart": 0,
+                "batchWindowUnitIndices": [0, 1, 2, 3]})
+            write(job / "receipts" / f"unit-{index:04d}.json", {
+                "translationGroupId": group_id, "targetTextSha256": sha(TEXT[locale][group_id]),
+                "audioSha256": audio, "fullDecode": "pass"})
+            write(job / "asr-unit-cache-c1" / f"unit-{index:04d}.json", {
+                "identity": {"audioSha256": audio, "targetTextSha256": sha(TEXT[locale][group_id]),
+                             "implementationSha256": ASR}, "recognizedSha256": sha("recognized")})
+        write(job / "asr-screening.json", {
+            "schemaVersion": "sermon-target-language-audio-screening-v2", "targetLocale": locale,
+            "asrSettingsSha256": ASR_SETTINGS,
+            "results": [{"textGroupId": g, "status": "pass", "similarity": 1.0} for g, _ in GROUPS]})
+        write(base / "audio-qc.json", {
+            "schemaVersion": "sermon-target-audio-auto-qc-v1", "locale": locale, "implementationSha256": QC,
+            "thresholds": THRESHOLDS, "repairLedger": {"priorFailedAttempts": {}},
+            "results": [{"groupId": g, "sourceUnitIds": s, "audioSha256": sha(f"wav{locale}{g}"),
+                         "textSha256": sha(TEXT[locale][g]), "sourceSeconds": 2.0, "status": "pass",
+                         "issues": []} for g, s in GROUPS]})
+        return {"candidate": f"{locale}/candidate.json", "policy": "policy.json", "plugin": "plugin.py",
+                "languageReview": f"{locale}/language-review.json", "layer2Rounds": [f"{locale}/round-001"],
+                "textQcReceipt": f"{locale}/text-qc.json", "speechJob": f"{locale}/speech-job",
+                "asrScreening": f"{locale}/speech-job/asr-screening.json", "audioQcReceipt": f"{locale}/audio-qc.json"}
+
+
+def identities(**changes):
+    value = {"runnerImplementationSha256": RUN, "machineQcImplementationSha256": QC,
+             "rendererSoundIdentitySha256": RENDERER, "asrImplementationSha256": ASR,
+             "audioQcThresholdsSha256": records.json_sha256(THRESHOLDS),
+             "locales": {locale: {"pluginImplementationSha256": PLUGIN, "languageReviewPolicySha256": LANGUAGE_POLICY}
+                         for locale in TEXT}}
+    for key, item in changes.items():
+        if key == "plugin":
+            value["locales"]["ko"]["pluginImplementationSha256"] = item
+        else:
+            value[key] = item
+    return value
+
+
+def statuses(report, locale, group_id):
+    row = next(row for row in report["locales"][locale]["groups"] if row["translationGroupId"] == group_id)
+    return {stage: value["status"] for stage, value in row["stages"].items()}
+
+
+ALL_FRESH = {"T": "fresh", "R": "fresh", "P": "fresh", "Q": "fresh", "C": "not_applicable",
+             "S": "fresh", "A": "fresh", "U": "fresh"}
+
+
+class InputKeyTests(unittest.TestCase):
+    def setUp(self):
+        self.layer1 = records.layer1_identity("a" * 64, "b" * 64)
+        self.inputs = {"textSha256": "c" * 64, "synthesisIdentitySha256": "d" * 64}
+
+    def key(self, **changes):
+        arguments = {"stage": "S", "layer1": self.layer1, "target_locale": "ko", "translation_group_id": "g1",
+                     "inputs": self.inputs, "stage_implementation_sha256": "e" * 64} | changes
+        return records.input_key(**arguments)
+
+    def test_same_inputs_give_the_same_key_and_any_change_another(self):
+        self.assertEqual(self.key(), self.key(inputs=dict(reversed(list(self.inputs.items())))))
+        variants = [self.key(target_locale="es"), self.key(translation_group_id="g2"),
+                    self.key(stage_implementation_sha256="f" * 64),
+                    self.key(layer1=records.layer1_identity("a" * 64, "0" * 64)),
+                    self.key(inputs=dict(self.inputs, textSha256="0" * 64))]
+        self.assertEqual(len({self.key(), *variants}), 6)
+
+    def test_every_stage_names_its_inputs_and_rejects_others(self):
+        self.assertEqual(set(records.STAGE_INPUTS), set(records.STAGES))
+        with self.assertRaisesRegex(ValueError, "stage_inputs_mismatch"):
+            self.key(inputs={"textSha256": "c" * 64})
+        with self.assertRaisesRegex(ValueError, "stage_inputs_mismatch"):
+            self.key(inputs=dict(self.inputs, unitIndex="0" * 64))
+        with self.assertRaisesRegex(ValueError, "stage_input_not_sha256"):
+            self.key(inputs=dict(self.inputs, textSha256="short"))
+
+    def test_records_are_never_release_or_approval_and_keys_cannot_be_edited(self):
+        record = records.make_record("S", self.layer1, "ko", "g1", ["u1"], self.inputs, "e" * 64,
+                                     {"audioSha256": "9" * 64}, "pass")
+        self.assertFalse(record["releaseEligible"])
+        self.assertFalse(record["humanApproval"])
+        for field, value in (("releaseEligible", True), ("humanApproval", True), ("inputKey", "0" * 64),
+                             ("inputs", dict(self.inputs, textSha256="0" * 64))):
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                records.validate_record(dict(record, **{field: value}))
+        with self.assertRaisesRegex(ValueError, "codes_only_on_fail_or_stop"):
+            records.make_record("S", self.layer1, "ko", "g1", ["u1"], self.inputs, "e" * 64, {}, "pass",
+                                codes=["x"])
+
+    def test_store_is_append_only_and_never_serves_another_locale(self):
+        record = records.make_record("S", self.layer1, "ko", "g1", ["u1"], self.inputs, "e" * 64,
+                                     {"audioSha256": "9" * 64}, "pass")
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            path = store.put(record)
+            self.assertEqual(store.put(copy.deepcopy(record)), path)
+            path.write_text(path.read_text().replace("9" * 64, "8" * 64))
+            with self.assertRaisesRegex(ValueError, "already_written_with_other_bytes"):
+                store.put(record)
+            path.unlink()
+            store.put(record)
+            self.assertEqual(store.records("ko", "g1", "S"), [record])
+            self.assertEqual(store.records("es", "g1", "S"), [])
+            # A ko record copied under es is refused, never served as es evidence.
+            target = Path(directory) / "es" / "g1" / "S" / path.name
+            target.parent.mkdir(parents=True)
+            target.write_bytes(path.read_bytes())
+            with self.assertRaisesRegex(ValueError, "record_filed_under_other_identity"):
+                store.records("es", "g1", "S")
+
+    def test_record_schema_matches_the_python_contract(self):
+        from jsonschema import Draft202012Validator
+        schema = json.loads((ROOT / "schemas/sermon-group-stage-record-v1.schema.json").read_text())
+        Draft202012Validator.check_schema(schema)
+        record = records.make_record("S", self.layer1, "ko", "g1", ["u1"], self.inputs, "e" * 64,
+                                     {"audioSha256": "9" * 64}, "pass")
+        Draft202012Validator(schema).validate(record)
+        self.assertEqual(set(schema["required"]), set(record))
+        self.assertEqual(schema["properties"]["stage"]["enum"], list(records.STAGES))
+
+
+class LegacyReaderTests(unittest.TestCase):
+    def test_group_boundaries_and_context_match_the_layer2_runner(self):
+        run = Run(Path("unused"))
+        request = {"sourceUnits": [{"sourceUnitId": u["sourceUnitId"], "english": u["english"]}
+                                   for u in run.anchor["sourceUnits"]]}
+        plan_rows = models.group_plan(request, run.anchor)
+        self.assertEqual(group_plan.group_plan_rows(run.anchor), plan_rows)
+        contexts = legacy.group_contexts(run.anchor, plan_rows)
+        for index, row in enumerate(plan_rows):
+            self.assertEqual(contexts[row["translationGroupId"]], models.surrounding_context(request, plan_rows, index))
+        no_requests = {"sourceUnits": run.anchor["sourceUnits"]}
+        self.assertEqual(group_plan.group_plan_rows(no_requests), models.group_plan(request, no_requests))
+
+    def test_wrapped_utterances_are_read_like_the_runner(self):
+        wrapped = {"sourceUnitIds": ["u1"], "targetUtterances": [{"sourceUnitIds": ["u1"], "targetText": "안녕"}]}
+        self.assertEqual(legacy.result_utterances(wrapped), ["안녕"])
+        self.assertIsNone(legacy.result_utterances({"sourceUnitIds": ["u1"], "targetUtterances": [{"x": 1}]}))
+
+    def test_synthesis_identity_ignores_assembly_and_batch_fields(self):
+        intent = {"seed": 43, "speakerId": "s", "unitIndex": 1, "jobJsonSha256": "a" * 64,
+                  "batchWindowUnitIndices": [0, 1], "candidateJsonSha256": "b" * 64}
+        moved = dict(intent, unitIndex=9, jobJsonSha256="c" * 64, batchWindowUnitIndices=[8, 9],
+                     candidateJsonSha256="d" * 64)
+        self.assertEqual(legacy.synthesis_identity_sha256(intent), legacy.synthesis_identity_sha256(moved))
+        self.assertNotEqual(legacy.synthesis_identity_sha256(intent),
+                            legacy.synthesis_identity_sha256(dict(intent, seed=44)))
+
+    def test_missing_runner_identity_is_reported_not_borrowed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            run = Run(Path(directory))
+            run.build()
+            (run.root / "ko/round-001/group-0001-payload-cache-success.json").unlink()
+            report = group_plan.plan(json.loads((run.root / "inputs.json").read_text()), run.root, identities())
+            translator = report["locales"]["ko"]["groups"][0]["stages"]["T"]
+            self.assertEqual(translator["status"], "fresh")
+            self.assertIn("stageImplementation", translator["notCompared"])
+            self.assertIn("stageImplementation", report["locales"]["ko"]["groups"][1]["stages"]["T"]["compared"])
+
+
+class PlanTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.run = Run(Path(self.directory.name))
+
+    def plan(self, current=None, **options):
+        manifest = json.loads(self.run.build().read_text())
+        return group_plan.plan(manifest, self.run.root, current or identities(), **options)
+
+    def test_an_unchanged_run_is_fresh_everywhere_without_any_call_or_write(self):
+        self.run.build()
+        before = sorted((p.relative_to(self.run.root), p.read_bytes()) for p in self.run.root.rglob("*") if p.is_file())
+        with patch.object(models, "_model_call", side_effect=AssertionError("no model call")):
+            report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        after = sorted((p.relative_to(self.run.root), p.read_bytes()) for p in self.run.root.rglob("*") if p.is_file())
+        self.assertEqual(before, after)
+        self.assertEqual((report["dispatched"], report["modelCalls"], report["releaseEligible"],
+                          report["humanApproval"]), (False, 0, False, False))
+        for locale in TEXT:
+            for group_id, _ in GROUPS:
+                self.assertEqual(statuses(report, locale, group_id), ALL_FRESH)
+            self.assertEqual(report["locales"][locale]["paidStageRedoCount"], 0)
+
+    def test_any_layer1_change_makes_every_group_and_locale_stale(self):
+        self.run.anchor["sourceUnits"][4]["english"] = "Let us pray together."
+        self.run.source["anchors"]["artifact"]["jsonSha256"] = records.json_sha256(self.run.anchor)
+        report = self.plan()
+        for locale in TEXT:
+            for group_id, _ in GROUPS:
+                values = report["locales"][locale]["groups"]
+                row = next(r for r in values if r["translationGroupId"] == group_id)
+                for stage in ("T", "R", "P", "Q", "S", "A", "U"):
+                    self.assertEqual(row["stages"][stage]["status"], "stale", (locale, group_id, stage))
+                    self.assertIn("layer1_identity_changed", row["stages"][stage]["reasons"])
+
+    def test_a_plugin_change_makes_only_p_stale(self):
+        report = self.plan(identities(plugin="9" * 64))
+        for group_id, _ in GROUPS:
+            self.assertEqual(statuses(report, "ko", group_id), dict(ALL_FRESH, P="stale"))
+            self.assertEqual(statuses(report, "es", group_id), ALL_FRESH)
+        self.assertEqual(report["locales"]["ko"]["paidStageRedoCount"], 0)
+
+    def test_one_group_with_new_text_is_stale_from_r_on_and_no_other_group_moves(self):
+        self.run.texts["ko"]["g3"] = "하나님은 모든 것을 합력하여 선을 이루십니다."
+        report = self.plan()
+        changed = statuses(report, "ko", "g3")
+        self.assertEqual(changed["T"], "fresh")
+        for stage in ("R", "P", "Q", "S", "A", "U"):
+            self.assertEqual(changed[stage], "stale", stage)
+        for group_id in ("g1", "g2", "g4"):
+            self.assertEqual(statuses(report, "ko", group_id), ALL_FRESH)
+        for group_id, _ in GROUPS:
+            self.assertEqual(statuses(report, "es", group_id), ALL_FRESH)
+
+    def test_operator_named_groups_redo_from_t_and_only_those_groups(self):
+        report = self.plan(directives={"ko": ["g2"]})
+        self.assertEqual(statuses(report, "ko", "g2"),
+                         {"T": "stale", "R": "stale", "P": "stale", "Q": "stale", "C": "not_applicable",
+                          "S": "stale", "A": "stale", "U": "stale"})
+        self.assertIn("operator_directive", report["locales"]["ko"]["groups"][1]["stages"]["T"]["reasons"])
+        for group_id in ("g1", "g3", "g4"):
+            self.assertEqual(statuses(report, "ko", group_id), ALL_FRESH)
+        self.assertEqual(report["locales"]["ko"]["directiveGroupIds"], ["g2"])
+        with self.assertRaisesRegex(ValueError, "directive_names_unknown_group"):
+            self.plan(directives={"ko": ["g9"]})
+
+    def test_voice_and_qc_changes_rerun_only_their_stages(self):
+        voice = self.plan(identities(rendererSoundIdentitySha256="9" * 64))
+        self.assertEqual(statuses(voice, "ko", "g1"), dict(ALL_FRESH, S="stale", A="stale", U="stale"))
+        qc = self.plan(identities(machineQcImplementationSha256="9" * 64))
+        self.assertEqual(statuses(qc, "ko", "g1"), dict(ALL_FRESH, Q="stale", U="stale"))
+        asr = self.plan(identities(asrImplementationSha256="9" * 64))
+        self.assertEqual(statuses(asr, "es", "g4"), dict(ALL_FRESH, A="stale", U="stale"))
+
+    def test_a_recorded_failure_stays_failed_and_missing_products_are_missing(self):
+        receipt_path = self.run.root / "ko/text-qc.json"
+        self.run.build()
+        receipt = json.loads(receipt_path.read_text())
+        receipt["results"][0].update(status="fail", problems=["english_leak"], nextAction="repair")
+        receipt_path.write_text(json.dumps(receipt))
+        manifest = json.loads((self.run.root / "inputs.json").read_text())
+        del manifest["locales"]["es"]["speechJob"]
+        report = group_plan.plan(manifest, self.run.root, identities())
+        self.assertEqual(report["locales"]["ko"]["groups"][0]["stages"]["Q"]["status"], "failed")
+        self.assertEqual(report["locales"]["ko"]["groups"][0]["stages"]["Q"]["codes"], ["english_leak"])
+        es = statuses(report, "es", "g1")
+        self.assertEqual((es["S"], es["A"], es["U"]), ("missing", "missing", "stale"))
+
+    def test_store_records_for_another_locale_are_never_used(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            layer1 = self.run.layer1
+            store.put(records.make_record("S", layer1, "ko", "g1", ["u1"],
+                                          {"textSha256": "0" * 64, "synthesisIdentitySha256": "0" * 64},
+                                          RENDERER, {"audioSha256": "0" * 64}, "pass"))
+            manifest = json.loads(self.run.build().read_text())
+            del manifest["locales"]["es"]["speechJob"]
+            report = group_plan.plan(manifest, self.run.root, identities(), store=store)
+            self.assertEqual(statuses(report, "es", "g1")["S"], "missing")
+            self.assertEqual(statuses(report, "ko", "g1")["S"], "fresh")
+
+    def test_cli_plan_prints_a_summary_and_writes_only_its_report(self):
+        manifest = self.run.build()
+        output = self.run.root / "out" / "plan.json"
+        stdout = io.StringIO()
+        with patch.object(group_plan, "current_identities", return_value=identities()), redirect_stdout(stdout):
+            self.assertEqual(group_plan.main(["plan", "--manifest", str(manifest), "--locale", "ko",
+                                              "--group-id", "g4", "--output", str(output)]), 0)
+        report = json.loads(output.read_text())
+        self.assertEqual(list(report["locales"]), ["ko"])
+        self.assertEqual(report["locales"]["ko"]["redoCounts"]["T"], 1)
+        self.assertIn("0 model calls, nothing dispatched", stdout.getvalue())
+        with patch.object(group_plan, "current_identities", return_value=identities()), \
+                self.assertRaisesRegex(ValueError, "group_id_needs_one_locale"):
+            group_plan.main(["plan", "--manifest", str(manifest), "--group-id", "g4"])
+
+
+if __name__ == "__main__":
+    unittest.main()

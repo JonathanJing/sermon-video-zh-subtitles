@@ -1,6 +1,6 @@
 # 逐组独立任务：从 Layer 2 到 Layer 3，发布前唯一合并
 
-状态：**设计稿，未实现**。backlog 前缀 `DEV-GRP`（见文末分批计划）。本页不改变任何现行门限、豁免规则或 schema；不授权付费、Spark 独占会话或发布。Layer 2 逐组返修（按组 ID 重做）由另一分支的“Layer 2 revise-by-group-ID”实现承担，对应 `DEV-GRP-002`；本页定义它写入的逐组记录合同和它下游的其余各步。
+状态：**设计稿；`DEV-GRP-001`（逐组记录、输入键、只读 `plan`）已实施，其余批次未实现**。backlog 前缀 `DEV-GRP`（见文末分批计划）。本页不改变任何现行门限、豁免规则或 schema；不授权付费、Spark 独占会话或发布。Layer 2 逐组返修（按组 ID 重做）由另一分支的“Layer 2 revise-by-group-ID”实现承担，对应 `DEV-GRP-002`；本页定义它写入的逐组记录合同和它下游的其余各步。
 
 ## 一、为什么要改
 
@@ -196,6 +196,14 @@ python scripts/group_tasks.py merge --run <run> --locale ko
 | `DEV-GRP-006` | 合并第 3–10 步与合并清单；合并失败映射回组 ID | 合并产物通过未修改的 L3 包验证器与 L4 builder；8 秒超限报告正确的组；5% 规则边界；合并不调用翻译模型 |
 | `DEV-GRP-008` | 第八节的出错隔离与逐组降级：失败路由表；达到上限的组在合并时改显英文或只显字幕；5% 门限按 locale；合并清单逐组比较，变化组必须等于受影响组。降级要接通豁免、L3 音频包与 L4 release 对“改显英文／只显字幕”句的支持（[豁免文档](../machine-quality-waiver.zh.md)“还没有接上”第 3 项） | 一组失败时其他组记录哈希不变；多出一组变化即拒绝合并；降级组正确显示；不配音 > 5% 写 `audio_unavailable`、失去译文 > 5% 暂停，且只影响本 locale；`unknown` 组只阻塞本 locale 合并 |
 | `DEV-GRP-007` | 操作者命令 `plan`/`redo`/`status`/`merge`；runbook 与 tracker 接线 | 先在已有运行上零付费演练；再经授权做一次小规模真实返修（建议 1 个 locale、≤ 3 组），记录复用率、新调用数、墙钟与人工等待，导出运行报告 |
+
+### DEV-GRP-001 实施说明（2026-10-18）
+
+- **代码。** [`group_records.py`](../../packages/production/src/tongxing_production/orchestration/group_records.py) 定义 [`sermon-group-stage-record-v1`](../../schemas/sermon-group-stage-record-v1.schema.json)、每步的输入名单（`STAGE_INPUTS`）、输入键与只追加的记录目录（`<locale>/<group>/<stage>/<inputKey>.json`，同键第二次写入只能字节相同）。键 = 步骤 + Layer 1 身份 + locale + 组 ID + 命名输入哈希 + 步骤实现身份，不含位置。步骤实现身份：T/R 为 runner 生产身份，P 为插件实现，Q/C/U 为机器质检闭包 W，S 为 renderer 声音身份，A 为 ASR 筛查实现。[`group_legacy.py`](../../packages/production/src/tongxing_production/orchestration/group_legacy.py) 从整篇运行的产物读出逐组记录（只读）：T/R 取 round 缓存与 policy preview，Layer 1 取该 round 冻结的 `request.json`；P 取插件收据；Q 取文字 QC 收据；S 取正式 renderer 单元 intent 与单元收据；A 取回听 ASR 缓存与筛查收据；U 取音频 QC 收据。产物没有记录的值写入 `provenance.notRecorded`，不借用当前代码的值。
+- **命令。** 第九节的占位命令定为 `tools/ops/group_tasks.py`（运维入口，绑定宿主后读当前实现身份）：`.venv/bin/python tools/ops/group_tasks.py plan --manifest <inputs.json> [--locale ko --group-id <组 ID>…] [--records <记录目录>] [--output plan.json]`。`inputs.json`（`sermon-group-plan-inputs-v1`）列出源包、锚点及每个 locale 的 candidate、policy、插件、插件收据、Layer 2 round 目录（旧到新）、文字 QC 收据、speech job 目录、筛查收据与音频 QC 收据；缺的产物在 `plan` 中显示为 `missing`。
+- **判定。** 每组每步输出 `fresh`／`stale`／`failed`／`stopped`／`unknown`／`missing`／`not_applicable` 及原因。产出字节的步骤（T、R、C、S、A）过期时，读其产出的下游步骤一并过期；P、Q 只是判定，过期不外溢。操作者给出的组 ID 使该组 T 起过期。
+- **限制（如实）。** T/R 比较的是构成请求的输入（组英文、英文上下文、policy 的术语/经文/格式、模型设置、runner 身份）；精确请求哈希含凭据路由，派发时由 payload cache 再匹配。逐组规则、修订指令、文字 QC 的语义身份、S 的合成身份（除声音身份外）只记录不重算；batch 成员不在键内（待决定 1）。没有预算数字（`DEV-GRP-003`）。
+- **`15030286` 离线演练**（三语各 402 组，零模型调用，不写产物，约 6 秒）：T、R 三语全部 `fresh`；没有一个 round 写下 runner 身份（最终 round 无 payload-cache 成功收据，`run-identity.json` 只存合成哈希），所以 T/R 的实现身份记为未比较。P 三语全部 `stale`：运行分支把三个 15030286 插件登记为 `common.py`、`auto_qc_text_common.py`、`weekly_15030286_common.py` 四文件闭包，`dev` 没有这项登记，按 `dev` 算的插件身份不同；按运行分支的四文件闭包重算，三语插件身份与收据完全一致。Q 全部 `stale`：文字 QC 在 W `51e2b9…` 下运行，`dev` 是 G1 最终 W `df299e…`（[G1 记录](../reports/20261017-g1-implementation-generation.zh.md)）。es、ko 的 S `fresh`（声音身份 `fef760…` 未变、口播文字等于 candidate），A `stale`（筛查实现 `40bc41…` → `38c743…`），U `stale`（W 与上游 A）。zh-Hans 本次没有 Layer 3 产物，S/A/U 为 `missing`；三语 C 均为 `not_applicable`（文字 QC 全部 `full`）。
 
 依赖：001 → 002、003 可并行 → 004、005 可并行 → 006 → 008 → 007。008 的失败路由与合并比较在 006 内先实现；降级显示依赖 L3／L4 的支持，未接通前达到上限的组使本 locale 走人工路径或暂停，不阻塞其他 locale。002 的逐组记录格式以 001 为准；若 002 先合入且格式不同，001 以适配层读取，不改已写记录。
 
