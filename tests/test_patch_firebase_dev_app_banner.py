@@ -4,7 +4,6 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import patch_firebase_dev_app_banner as legacy
 from tools.ops import patch_firebase_dev_app_banner as banner
 
 
@@ -24,9 +23,6 @@ class DevBannerPatchTests(unittest.TestCase):
         (self.source / "dev-preview-label.mjs").write_text(self.label_before)
         for name in ("index.html", "dev-preview-label.mjs"):
             os.link(self.source / name, self.candidate / name)
-
-    def test_old_import_is_package_module(self):
-        self.assertIs(legacy, banner)
 
     def test_all_banner_copy_and_link_change_without_writing_hardlinked_source(self):
         banner.patch_public(self.candidate)

@@ -18,7 +18,9 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from scripts.experiments import decision_api_weekly_ab as ab
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
+import decision_api_weekly_ab as ab
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import english_source_judge as english
 from scripts import run_target_language_models as translation
@@ -155,7 +157,7 @@ def bounded_generic_cases(stage, items, kind, cluster, maximum):
 
 
 def prepare(args):
-    from scripts.experiments.decision_semantic_challenges import build_challenges
+    from decision_semantic_challenges import build_challenges
     old = []
     for name in ("20261006-pilot-01", "20261006-expanded-02"):
         old.extend(ab.read(ROOT / "artifacts/decision-api-weekly-ab" / name / "cases.json"))
@@ -175,7 +177,7 @@ def prepare(args):
         cases.extend(bounded_generic_cases(stage, real_items(selected, stage),
                     "unadjudicated_real_semantic_input", "reused-source-development",
                     5 if stage == "E02" else 15))
-    from scripts.experiments.decision_semantic_study_cases import build_study_items
+    from decision_semantic_study_cases import build_study_items
     study = build_study_items(Path(args.source_root))
     study_groups = {}
     for item in study:

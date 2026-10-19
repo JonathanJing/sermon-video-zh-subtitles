@@ -4,7 +4,8 @@ from contextlib import redirect_stderr
 from unittest import mock
 import unittest
 
-from scripts import measure_openai_model_tps as tps
+from tests import experiment_modules
+tps = experiment_modules.load("experiments/model-throughput/measure_openai_model_tps.py")
 
 
 class TimingMetricsTests(unittest.TestCase):

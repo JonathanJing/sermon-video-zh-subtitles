@@ -44,7 +44,7 @@ candidate、policy 和 Text human receipt 由已验证的上游 lane 提供，�
 `audio` 中另行覆盖。生产 source voice 授权路径可使用现有 producer 支持的
 `sourceVoiceAuthorization`；具体授权组合仍由原有 speech-job validator 检查。
 
-Audio adapter 使用 `build_target_language_audio_package.build_package` 在内存
+Audio adapter 使用 `tongxing_production.audio.package.build_package` 在内存
 重建 package，核对现有音频的 hash、decode、unit receipt、时间表、字幕、
 job 与声线授权。重建结果不会写回；必须另有已保存且一致的 Audio Package。
 这会运行本机 ffprobe/ffmpeg 的只读媒体检查，完整视频可能耗时；不是 TTS。

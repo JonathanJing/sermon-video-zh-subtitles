@@ -7,12 +7,12 @@ import unittest
 import wave
 from unittest import mock
 
-from scripts import build_target_language_audio_package as subject
-from scripts import prepare_clip_voice_authorization as clip_voice
+from tongxing_production.audio import package as subject
+from tools.ops import prepare_clip_voice_authorization as clip_voice
 from tools.ops import prepare_clip_voice_capability as clip_capability
-from scripts import clip_timeline_map as timeline_map
-from scripts import validate_target_language_audio_unit as unit_integrity
-from scripts import prepare_target_language_speech_job as speech
+from tongxing_production.audio import clip_timeline as timeline_map
+from tongxing_production.audio import unit_integrity
+from tongxing_production.audio import speech_job as speech
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as interpretation
 from tests import test_prepare_target_language_speech_job as base_tests

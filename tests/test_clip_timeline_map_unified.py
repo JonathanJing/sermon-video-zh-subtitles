@@ -4,7 +4,7 @@ import tempfile
 import unittest
 import wave
 
-from scripts import clip_timeline_map as subject
+from tongxing_production.audio import clip_timeline as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as interpretation
 

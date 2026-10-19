@@ -101,9 +101,10 @@ def local_asr(source, model, window, out):
 
 
 def audio_validation(inputs, out):
-    from scripts import inspect_canonical_audio as audio
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import inspect as audio
     from scripts import inspect_canonical_packages as packages
-    from scripts import build_target_language_audio_package as builder
+    from tongxing_production.audio import package as builder
     from scripts.sermon_workflow_evidence import collect_workflow_evidence
     report={'scope':'new_read_only_validation_of_historical_audio_and_reviews_not_new_tts_or_human_signoff','locales':[]}
     previous=[]

@@ -90,9 +90,9 @@ def preload_execution_modules(plugin_paths=()):
     """Call BEFORE freezing a fresh plan; imports only fixed local stage code."""
     for name in ('sermon_workflow_evidence','sermon_diagnostic_delivery_preflight','sermon_dev_diagnostic_snapshot',
                  'sermon_native_preview_runtime','sermon_strict_candidate_bridge','sermon_strict_controller',
-                 'sermon_strict_budget_adapter','sermon_strict_locale','prepare_target_language_speech_job',
+                 'sermon_strict_budget_adapter','sermon_strict_locale','tongxing_production.audio.speech_job',
                  'tongxing_production.audio.renderer','render_multilingual_voice_demos',
-                 'validate_target_language_audio_unit','sermon_local_model_observation',
+                 'tongxing_production.audio.unit_integrity','sermon_local_model_observation',
                  'sermon_model_call_report','sermon_model_call_observation','tongxing_production.compute.openai_runtime',
                  'sermon_trace_artifacts','sermon_review_diagnostics','sermon_preview_checkpoint_manifest',
                  'sermon_fresh_source_evidence','sermon_historical_layer2','sermon_historical_native_seed','sermon_historical_identity','tongxing_production.source.producer_compatibility','tongxing_production.source.failure'):

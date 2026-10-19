@@ -143,14 +143,12 @@ import sys
 from scripts.experiments import replay_fixed_clip_local_models as worker
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio.renderer import write_pcm16
-assert 'scripts.validate_target_language_audio_unit' not in sys.modules
 root = Path(sys.argv[1])
 with ThreadPoolExecutor(max_workers=4) as pool:
     results = list(pool.map(lambda i: worker.audio_output(root, {'groupId': f'g{i}'},
                                                        [0.2, -0.2] * 800, 16000), range(4)))
 assert len(results) == 4
 assert all(row['audioSeconds'] > 0 for row in results)
-assert 'scripts.validate_target_language_audio_unit' not in sys.modules
 '''
         completed = subprocess.run([sys.executable, '-c', script, str(self.root)],
                                    text=True, capture_output=True, timeout=30)

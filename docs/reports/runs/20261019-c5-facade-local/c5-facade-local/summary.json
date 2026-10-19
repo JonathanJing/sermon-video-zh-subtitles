@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "status": "passed_with_load_flakes",
+  "pullRequest": 1157,
+  "head": "73553cf7",
+  "base": "dev@5eb39da3",
+  "facadesDeleted": [
+    "build_target_language_audio_package",
+    "compact_formal_target_audio",
+    "inspect_canonical_audio",
+    "review_target_language_audio",
+    "target_audio_timing_plan",
+    "validate_target_language_audio_unit",
+    "clip_timeline_map"
+  ],
+  "facadesKept": {
+    "prepare_target_language_speech_job": "scripts/tongxing_host.py port list; needs a closure window"
+  },
+  "identity": {
+    "rendererSoundIdentitySha256": "fef7604882470137f46f1b01fbd06c7c3c9a07166da91003243608785fa47f0b (unchanged)",
+    "previewExecutionBindingSha256": "794bb5f1c7ac87bbddbd75b27633958835373b1d71c6c01a3b3355e7aa9c9de9 (unchanged)",
+    "layer2CodeIdentityBefore": "e04411e924de8d251f2d3975b2e897e8be0c1309e62f56ce7e8c5dac74279b7d",
+    "layer2CodeIdentityAfter": "d103ca21a93452811d40b5157f6e73b339638229ba0f169684d194e0b55d78a0"
+  },
+  "tests": {
+    "targeted": "438 passed, 3 skipped",
+    "unittestShards": "10 shards, 5,944 cases; failures only load flakes and the services/api venv gap",
+    "pytestStyle": "1110 passed, 1 known dev failure",
+    "testIdInventory": "5943 = 5943, no differences",
+    "postRebase": "test_ops_run_entry, test_clip_real_e2e, test_compact_formal_target_audio: 42 passed"
+  },
+  "notRun": [
+    "Spark container execution",
+    "real clip E2E"
+  ]
+}

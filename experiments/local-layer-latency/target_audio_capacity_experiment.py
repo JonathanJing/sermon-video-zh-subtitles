@@ -43,12 +43,8 @@ def plan(*, speech_job_sha256, sound_identity_sha256, unit_indices, max_generate
 
 
 def _quality_evidence(row, experiment):
-    try:
-        from scripts import review_target_language_audio as review
-        from scripts import validate_target_language_audio_unit as integrity
-    except ImportError:
-        import review_target_language_audio as review
-        import validate_target_language_audio_unit as integrity
+    from tongxing_production.audio import human_review as review
+    from tongxing_production.audio import unit_integrity as integrity
     if not {'speechJobPath', 'audioPackagePath', 'humanReviewReceiptPath'} <= row.keys():
         raise ValueError('Capacity comparison requires bound job, package, and human receipt files')
     job_path = Path(row['speechJobPath'])

@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts import worktree_venv as subject
+from tools.development import worktree_venv as subject
 
 
 def _package(src: Path, label: str) -> None:

@@ -110,7 +110,7 @@ execute 的结果保存 `artifactClosure` 和 `audioPackage` 引用，human revi
 
 ## ASR 细节与原有听审入口
 
-`review_target_language_audio.py prepare --details-template-out NEW_DETAILS.json` 可选生成
+`tools/ops/run.py audio.human_review prepare --details-template-out NEW_DETAILS.json` 可选生成
 绑定当前筛查收据的逐项空表与五种原因选项。操作员填写后，`approve --adjudication-details
 DETAILS.json --artifact-root ROOT` 校验每项 unit/track/text hash；修音频、修文字或未裁定的项
 不能被批准。空缺的可选细节不使既有整体批准失效，也不当作已得到逐项真值。

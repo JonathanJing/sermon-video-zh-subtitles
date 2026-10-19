@@ -5,7 +5,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts.experiments import decision_api_cases_content as c
+from tests import experiment_modules
+c = experiment_modules.load("experiments/decision-api-ab/decision_api_cases_content.py")
 
 
 def response(model, result):
