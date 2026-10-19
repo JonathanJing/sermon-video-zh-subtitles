@@ -80,3 +80,9 @@ def main(argv=None):
 
 if __name__ == "__main__":
     raise SystemExit(main())
+elif __name__ == "__mp_main__":
+    # A multiprocessing "spawn" child re-runs the parent's main script under this name
+    # before it unpickles its target (the Spark TTS replica pool does this). The scripts/
+    # facades bound the host when they ran there; bind it here so the target's package
+    # modules import with their ports configured.
+    bind_host()
