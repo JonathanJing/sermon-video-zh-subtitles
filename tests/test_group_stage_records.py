@@ -115,7 +115,13 @@ class Run:
                 write(rounds / f"{stem}-{suffix}.json", {"payloadSha256": sha(f"{locale}{group_id}{role}route"),
                                                           "requestId": f"req-{locale}-{group_id}-{role}",
                                                           "model": settings["model"], "result": reply})
-            write(rounds / f"{stem}-payload-cache-success.json", {"runnerImplementationSha256": RUN})
+            def file_sha(name):
+                return hashlib.sha256((rounds / f"{stem}-{name}").read_bytes()).hexdigest()
+            write(rounds / f"{stem}-payload-cache-success.json", {
+                "runnerImplementationSha256": RUN, "translationGroupId": group_id, "sourceUnitIds": unit_ids,
+                "roles": {role: {"cacheSha256": file_sha(f"{suffix}.json"),
+                                 "previewSha256": file_sha(f"{suffix}.policy-preview.json")}
+                          for role, suffix in (("translator", "astra"), ("reviewer", "sol"))}})
         # Every product below is what the run produced (TEXT); only the candidate may move on.
         write(base / "language-review.json", {
             "schemaVersion": "sermon-target-language-plugin-receipt-v1", **layer1, "targetLocale": locale,
@@ -143,8 +149,13 @@ class Run:
                 "sourceUnitIds": unit_ids, "textSha256": sha(TEXT[locale][group_id]), "rendererSha256": RENDERER,
                 "speakerId": "speaker", "seed": 43, "temperature": 0.7, "batchWindowStart": 0,
                 "batchWindowUnitIndices": [0, 1, 2, 3]})
+            wav = job / "languages" / locale / "audio" / f"unit-{index:04d}.wav"
+            wav.parent.mkdir(parents=True, exist_ok=True)
+            wav.write_bytes(f"wav{locale}{group_id}".encode("utf-8"))  # sha() of these bytes is ``audio``
             write(job / "receipts" / f"unit-{index:04d}.json", {
-                "translationGroupId": group_id, "targetTextSha256": sha(TEXT[locale][group_id]),
+                "targetLocale": locale, "jobJsonSha256": "a" * 64, "unitIndex": index,
+                "translationGroupId": group_id, "sourceUnitIds": unit_ids,
+                "targetTextSha256": sha(TEXT[locale][group_id]), "audioRelativePath": wav.relative_to(job).as_posix(),
                 "audioSha256": audio, "fullDecode": "pass"})
             write(job / "asr-unit-cache-c1" / f"unit-{index:04d}.json", {
                 "identity": {"audioSha256": audio, "targetTextSha256": sha(TEXT[locale][group_id]),
@@ -503,6 +514,10 @@ class PlanTests(unittest.TestCase):
     def test_a_stored_condensation_is_compared_with_the_current_text(self):
         layer1 = self.run.layer1
         manifest = json.loads(self.run.build().read_text())
+        receipt_path = self.run.root / "ko/text-qc.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt["results"][0]["mode"] = "shorten"
+        receipt_path.write_text(json.dumps(receipt))
         with tempfile.TemporaryDirectory() as directory:
             store = records.RecordStore(Path(directory))
             store.put(records.make_record(
@@ -525,6 +540,114 @@ class PlanTests(unittest.TestCase):
             current = group_plan.current_identities(manifest, self.run.root)
         self.assertEqual(seen, [self.run.root / "plugin.py"] * 2)
         self.assertEqual(current["locales"]["ko"]["pluginImplementationSha256"], PLUGIN)
+
+    def test_a_candidate_bound_to_another_layer1_is_never_fresh(self):
+        self.run.build()
+        candidate_path = self.run.root / "ko/candidate.json"
+        candidate = json.loads(candidate_path.read_text())
+        candidate["anchorManifestSha256"] = "0" * 64
+        candidate_path.write_text(json.dumps(candidate))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertFalse(report["locales"]["ko"]["candidateLayer1Current"])
+        stage_t = report["locales"]["ko"]["groups"][0]["stages"]["T"]
+        self.assertEqual(stage_t["status"], "stale")
+        self.assertIn("candidate_layer1_changed", stage_t["reasons"])
+        self.assertIn("BOUND TO ANOTHER LAYER 1", group_plan.text_summary(report))
+        self.assertEqual(statuses(report, "es", "g1"), ALL_FRESH)
+
+    def test_compatible_records_under_different_keys_are_a_conflict(self):
+        manifest = json.loads(self.run.build().read_text())
+        derived = group_plan.derive_records(manifest, self.run.root, self.run.layer1, self.run.anchor)
+        translator = derived["ko"]["records"]["g1"]["T"]
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            # Differs only in an input this plan does not recompute, and its paid outcome is unknown.
+            store.put(records.make_record("T", translator["layer1"], "ko", "g1", ["u1"],
+                                          dict(translator["inputs"], revisionSha256="5" * 64),
+                                          translator["stageImplementationSha256"], translator["outputs"], "unknown"))
+            report = group_plan.plan(manifest, self.run.root, identities(), store=store)
+        stage_t = report["locales"]["ko"]["groups"][0]["stages"]["T"]
+        self.assertEqual((stage_t["status"], stage_t["reasons"]), ("conflict", ["multiple_compatible_input_keys"]))
+
+    def test_records_claiming_other_units_are_a_conflict(self):
+        manifest = json.loads(self.run.build().read_text())
+        derived = group_plan.derive_records(manifest, self.run.root, self.run.layer1, self.run.anchor)
+        synthesis = derived["ko"]["records"]["g2"]["S"]
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            store.put(records.make_record("S", synthesis["layer1"], "ko", "g2", ["u2"], synthesis["inputs"],
+                                          synthesis["stageImplementationSha256"], synthesis["outputs"], "pass"))
+            report = group_plan.plan(manifest, self.run.root, identities(), store=store)
+        stage_s = report["locales"]["ko"]["groups"][1]["stages"]["S"]
+        self.assertEqual((stage_s["status"], stage_s["reasons"]), ("conflict", ["record_source_units_mismatch"]))
+
+    def test_speech_results_need_their_own_intent_binding_and_bytes(self):
+        self.run.build()
+        receipt_path = self.run.root / "ko/speech-job/receipts/unit-0000.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt_path.write_text(json.dumps(dict(receipt, jobJsonSha256="b" * 64)))
+        (self.run.root / "es/speech-job/languages/es/audio/unit-0001.wav").write_bytes(b"changed")
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual(statuses(report, "ko", "g1")["S"], "missing")
+        self.assertEqual(statuses(report, "es", "g2")["S"], "missing")
+        self.assertEqual(statuses(report, "ko", "g2")["S"], "fresh")
+
+    def test_a_success_receipt_for_other_caches_does_not_lend_its_runner(self):
+        self.run.build()
+        success = self.run.root / "ko/round-001/group-0001-payload-cache-success.json"
+        value = json.loads(success.read_text())
+        value["roles"]["translator"]["cacheSha256"] = "0" * 64
+        success.write_text(json.dumps(value))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertIn("stageImplementation", report["locales"]["ko"]["groups"][0]["stages"]["T"]["notCompared"])
+
+    def test_full_text_groups_ignore_historical_condensation(self):
+        manifest = json.loads(self.run.build().read_text())
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            store.put(records.make_record(
+                "C", self.run.layer1, "ko", "g1", ["u1"],
+                {"condensationRequestSha256": "c" * 64, "englishSha256": "0" * 64, "targetTextSha256": "0" * 64},
+                QC, {"spokenTextSha256": "d" * 64}, "pass"))
+            report = group_plan.plan(manifest, self.run.root, identities(), store=store)
+        self.assertEqual(statuses(report, "ko", "g1"), ALL_FRESH)
+
+    def test_condensed_speech_is_compared_with_the_condensed_text(self):
+        manifest = json.loads(self.run.build().read_text())
+        receipt_path = self.run.root / "ko/text-qc.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt["results"][0]["mode"] = "shorten"
+        receipt_path.write_text(json.dumps(receipt))
+        rows = legacy.english_rows(self.run.anchor, ["u1"])
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            # C produced exactly the text S synthesized.
+            store.put(records.make_record(
+                "C", self.run.layer1, "ko", "g1", ["u1"],
+                {"condensationRequestSha256": "c" * 64, "englishSha256": legacy.qc_english_sha256(rows),
+                 "targetTextSha256": sha(TEXT["ko"]["g1"])}, QC, {"spokenTextSha256": sha(TEXT["ko"]["g1"])}, "pass"))
+            fresh = group_plan.plan(manifest, self.run.root, identities(), store=store)
+        self.assertEqual(statuses(fresh, "ko", "g1"), dict(ALL_FRESH, C="fresh"))
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            store.put(records.make_record(
+                "C", self.run.layer1, "ko", "g1", ["u1"],
+                {"condensationRequestSha256": "c" * 64, "englishSha256": legacy.qc_english_sha256(rows),
+                 "targetTextSha256": sha(TEXT["ko"]["g1"])}, QC, {"spokenTextSha256": "e" * 64}, "pass"))
+            shorter = group_plan.plan(manifest, self.run.root, identities(), store=store)
+        stage_s = shorter["locales"]["ko"]["groups"][0]["stages"]["S"]
+        self.assertEqual(stage_s["status"], "stale")
+        self.assertIn("input_changed:textSha256", stage_s["reasons"])
+
+    def test_a_failed_synthesis_invalidates_its_consumers_and_is_redone(self):
+        self.run.build()
+        receipt_path = self.run.root / "ko/speech-job/receipts/unit-0002.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt_path.write_text(json.dumps(dict(receipt, fullDecode="fail")))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual({k: v for k, v in statuses(report, "ko", "g3").items() if k in "SAU"},
+                         {"S": "failed", "A": "stale", "U": "stale"})
+        self.assertEqual(report["locales"]["ko"]["redoCounts"]["S"], 1)
 
     def test_cli_plan_prints_a_summary_and_writes_only_its_report(self):
         manifest = self.run.build()

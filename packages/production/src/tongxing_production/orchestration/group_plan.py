@@ -33,6 +33,10 @@ STATUS_ORDER = ("fresh", "failed", "stopped", "unknown", "stale", "missing")
 VERDICT_STATUS = {"pass": "fresh", "fail": "failed", "stopped": "stopped", "unknown": "unknown"}
 # Statuses whose stage will produce new bytes, or whose bytes are in doubt.
 UNSETTLED = {"stale", "missing", "conflict"}
+# A byte-producing stage in these states has no valid output for its consumers either.
+UNUSABLE_OUTPUT = UNSETTLED | {"failed", "stopped", "unknown"}
+# Of those, the ones a redo may dispatch again; an unknown paid outcome is reconciled first.
+REDO = UNSETTLED | {"failed", "stopped"}
 PAID_STAGES = ("T", "R", "Q", "C")
 LIMITS = (
     "T and R freshness compares the inputs the request is built from (English, English context, "
@@ -154,9 +158,12 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
         # C's request hash is not recomputed here; its English, text and QC closure are.
         return {"englishSha256": legacy.qc_english_sha256(rows), "targetTextSha256": target}
     if stage == "S":
-        return {"textSha256": target}
+        # A shortened group is synthesized from C's spoken text, not the full translation.
+        condensed = (records_for_group.get("C") or {}).get("outputs", {}).get("spokenTextSha256")
+        return {"textSha256": condensed or target}
     if stage == "A":
-        values = {"targetTextSha256": target}
+        spoken = (records_for_group.get("S") or {}).get("inputs", {}).get("textSha256")
+        values = {"targetTextSha256": spoken or target}
         if "S" in records_for_group:
             values["audioSha256"] = records_for_group["S"]["outputs"]["audioSha256"]
         return values
@@ -243,13 +250,20 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
             for stage in records.STAGES:
                 candidates = ([derived_records[stage]] if stage in derived_records else []) + (
                     store.records(locale, group_id, stage) if store is not None else [])
-                if stage == "C" and not candidates:
+                if stage == "C":
+                    # C runs only for groups the text QC sends to shortening; full text bypasses it.
                     mode = (selected.get("Q") or {}).get("provenance", {}).get("mode")
-                    stages[stage] = ({"status": "not_applicable", "reasons": [f"text_qc_mode:{mode}"]}
-                                     if mode == "full" else {"status": "missing", "reasons": ["no_record"]})
-                    continue
+                    if mode == "full" or (not candidates and mode is not None):
+                        stages[stage] = {"status": "not_applicable", "reasons": [f"text_qc_mode:{mode}"]}
+                        continue
                 if not candidates:
                     stages[stage] = {"status": "missing", "reasons": ["no_record"]}
+                    continue
+                wrong_units = sorted({record["inputKey"] for record in candidates
+                                      if record["sourceUnitIds"] != group["sourceUnitIds"]})
+                if wrong_units:
+                    stages[stage] = {"status": "conflict", "reasons": ["record_source_units_mismatch"],
+                                     "inputKeys": wrong_units}
                     continue
                 conflicting = _conflicting_keys(candidates)
                 if conflicting:
@@ -270,8 +284,20 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
                         result["status"] = "stale"
                         result["reasons"].append("output_differs_from_candidate")
                     results.append((result, record))
+                compatible = sorted({result["inputKey"] for result, _ in results if result["status"] != "stale"})
+                if len(compatible) > 1:
+                    # Keys that differ only in inputs not compared here cannot be told apart.
+                    stages[stage] = {"status": "conflict", "reasons": ["multiple_compatible_input_keys"],
+                                     "inputKeys": compatible}
+                    continue
                 best, record = min(results, key=lambda item: STATUS_ORDER.index(item[0]["status"]))
                 stages[stage], selected[stage] = best, record
+            if derived[locale]["candidateLayer1"] != layer1:
+                # A candidate made from another Layer 1 is not current, whatever its records say.
+                for stage, value in stages.items():
+                    if value["status"] not in {"not_applicable", "missing"}:
+                        stages[stage] = dict(value, status="stale",
+                                             reasons=list(value.get("reasons", [])) + ["candidate_layer1_changed"])
             if group_id in listed:
                 stages["T"] = dict(stages["T"], status="stale",
                                    reasons=list(stages["T"].get("reasons", [])) + ["operator_directive"])
@@ -279,14 +305,16 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
                 if stages[stage]["status"] in {"not_applicable"}:
                     continue
                 upstream = [up for up in records.UPSTREAM[stage] if up in records.PRODUCES
-                            and stages[up]["status"] in UNSETTLED]
+                            and stages[up]["status"] in UNUSABLE_OUTPUT]
                 if upstream and stages[stage]["status"] not in {"missing", "conflict"}:
                     stages[stage] = dict(stages[stage], status="stale",
                                          reasons=list(stages[stage].get("reasons", []))
                                          + [f"upstream_will_change:{up}" for up in upstream])
             rows.append({"translationGroupId": group_id, "sourceUnitIds": group["sourceUnitIds"], "stages": stages})
         summary = {stage: dict(Counter(row["stages"][stage]["status"] for row in rows)) for stage in records.STAGES}
-        redo = {stage: [row["translationGroupId"] for row in rows if row["stages"][stage]["status"] in UNSETTLED]
+        redo = {stage: [row["translationGroupId"] for row in rows
+                        if row["stages"][stage]["status"] in UNSETTLED
+                        or (stage in records.PRODUCES and row["stages"][stage]["status"] in REDO)]
                 for stage in records.STAGES}
         report["locales"][locale] = {
             "groupCount": len(rows), "directiveGroupIds": sorted(listed),
@@ -308,7 +336,8 @@ def _reason_kind(reason: str) -> str:
 def text_summary(report: dict) -> str:
     lines = [f"Group plan (read only, {report['modelCalls']} model calls, nothing dispatched)"]
     for locale, value in report["locales"].items():
-        lines.append(f"\n{locale}: {value['groupCount']} groups; operator-listed {len(value['directiveGroupIds'])}")
+        lines.append(f"\n{locale}: {value['groupCount']} groups; operator-listed {len(value['directiveGroupIds'])}"
+                     + ("" if value["candidateLayer1Current"] else "; CANDIDATE IS BOUND TO ANOTHER LAYER 1"))
         for stage in records.STAGES:
             counts = ", ".join(f"{status} {count}" for status, count in sorted(value["summary"][stage].items()))
             reasons = ", ".join(f"{reason} {count}" for reason, count in sorted(value["reasonCounts"][stage].items()))

@@ -197,6 +197,20 @@ def _round_layer1(root: Path, locale: str) -> dict | None:
     return records.layer1_identity(request["englishSourcePackageJsonSha256"], request["anchorManifestSha256"])
 
 
+def _success_binds(success: dict | None, group: dict, files: dict) -> bool:
+    """Whether a payload-cache success receipt describes exactly these cache and preview files."""
+    if not isinstance(success, dict):
+        return False
+    roles = success.get("roles") or {}
+    return (success.get("translationGroupId") == group["translationGroupId"]
+            and success.get("sourceUnitIds") == group["sourceUnitIds"]
+            and all(isinstance(roles.get(role), dict)
+                    and roles[role].get("cacheSha256") == file_sha256(files[cache])
+                    and roles[role].get("previewSha256") == file_sha256(files[preview])
+                    for role, cache, preview in (("translator", "astra", "astraPreview"),
+                                                 ("reviewer", "sol", "solPreview"))))
+
+
 def _carried_from(files: dict, source_root: Path) -> bool:
     """Whether this group's T and R caches are byte copies of the same stem in ``source_root``."""
     if not source_root.is_dir():
@@ -241,7 +255,7 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
         astra, astra_preview = load_json(files["astra"]), load_json(files["astraPreview"])
         sol, sol_preview = load_json(files["sol"]), load_json(files["solPreview"])
         success = load_json(files["success"]) if files["success"].is_file() else None
-        runner = success.get("runnerImplementationSha256") if success else None
+        runner = success.get("runnerImplementationSha256") if _success_binds(success, group, files) else None
         round_runner = Path(root) / "runner-identity.json"
         if runner is None and round_runner.is_file():
             # Rounds record their runner since sermon-layer2-round-runner-identity-v1. A group
@@ -348,8 +362,17 @@ def speech_records(locale: str, speech_job: Path, screening: dict | None) -> dic
         if not unit_path.is_file():
             continue  # an intent without a completed unit receipt is not a result
         intent, unit = load_json(intent_path), load_json(unit_path)
-        _require(intent.get("targetLocale") == locale and unit.get("translationGroupId") == intent.get("groupId")
-                 and unit.get("targetTextSha256") == intent.get("textSha256"), f"speech_unit_mismatch:{stem}")
+        _require(intent.get("targetLocale") == locale, f"speech_intent_locale_mismatch:{stem}")
+        # The unit receipt must be the result of this very intent, and its bytes must still be there.
+        audio_path = Path(speech_job) / str(unit.get("audioRelativePath", ""))
+        if (unit.get("translationGroupId") != intent.get("groupId")
+                or unit.get("targetTextSha256") != intent.get("textSha256")
+                or unit.get("targetLocale") != locale or unit.get("unitIndex") != intent.get("unitIndex")
+                or unit.get("jobJsonSha256") != intent.get("jobJsonSha256")
+                or unit.get("sourceUnitIds") != intent.get("sourceUnitIds")
+                or not audio_path.resolve().is_relative_to(Path(speech_job).resolve())
+                or not audio_path.is_file() or file_sha256(audio_path) != unit.get("audioSha256")):
+            continue
         layer1 = records.layer1_identity(intent["sourceJsonSha256"], intent["anchorJsonSha256"])
         group_id = intent["groupId"]
         audio = unit["audioSha256"]
