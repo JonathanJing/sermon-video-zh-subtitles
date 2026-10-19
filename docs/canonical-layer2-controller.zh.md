@@ -106,6 +106,31 @@ provider outcome、损坏 bytes 或 intermediate reused 来源都会在任何新
 operation 的未派发组才可按新授权付费。完成后在新 lane 写
 `partial-round-recovery-receipt.json`，绑定旧 failed job 与新 successor job；旧 state 不改写。
 
+### 缓存命中不逐次复核绑定
+
+worker 的完整绑定复核（执行配置、代码身份、package view、durable 身份）只在三处运行：worker 准入、每次
+付费派发前（`bound_call`，取得 API 槽位前后各一次），以及结束时（`post_model_binding`、候选保存前、
+`final_package_validation`）。缓存命中与来源核对方法（`verify_execution`、`record_reuse`、
+`recover_returned_response`、`paid_response_provenance`、`validate_recovery_source`）不再在前后各复核一次；
+它们各自的核对照旧：预算授权与运行身份、direct-paid 闭环（响应必须等于原付费记录）、prior 文件哈希与
+复制后字节复查。
+
+运行中途改了配置、代码、package 输入或 prior 快照时：读到被改的组在读取时失败；之后的付费调用在派发前
+被拒；其余情况在结束复核时拒绝，不保存候选。代价是不再 fail-fast：漂移后的命中组会继续跑到结束。
+
+漂移后、结束复核前写下的持久产物仍然安全：
+- **预算账本的复用行**：`record_reuse` 只在响应与批准来源账本的直接付费记录逐字节一致时写 `$0 reused`
+  行，绑定准入时内存中的 source/anchor/policy 与 payload 指纹。复用行永远不能当后续复用或 partial
+  recovery 的来源（`_direct_paid_provenance` 要求无 `settlement`）。
+- **payload-cache 成功收据与组缓存副本**：收据绑定准入时内存中的请求（source、anchor、policy 哈希）和
+  原付费响应的字节哈希，不绑定 job 的配置身份或最终结果；失败 job 的收据本来就可被后续运行复用。后续
+  运行复用时重新核对请求绑定、文件哈希和付费闭环，用自己的代码重新解析响应、重跑语义门与逐组语言插件；
+  输入不同的运行直接拒收。
+- **partial-recovery 读取**：只读，每次独立核对失败轮与原付费账本的闭环。
+
+该改动改变代码身份：已有 job 保留冻结的 `--expected-code`，在新代码上恢复按原规则报
+`worker_configuration_or_code_changed`；只有新准入的 job 按此执行。没有 schema、配置字段或迁移变化。
+
 ## 按组号修订（execution v8）
 
 操作者看完候选、只想改几组时用这条路径（2026-10-18 周产出的教训：改动只能写进插件、policy 哈希一变，v6 缓存重放拒收旧成功收据，v7 只能单组串行、修复上限按“重放调用为 0”只剩约 4 组，最后整篇重新付费）。唯一必需的输入是**已有候选 + 每个语言的组号列表**，每组可附一句备注；怎么改由译者模型和独立复核决定，列表外的一切不动。

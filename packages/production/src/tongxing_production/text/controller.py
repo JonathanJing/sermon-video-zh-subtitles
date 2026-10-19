@@ -929,30 +929,18 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     current_binding()
                     progress.progress('model_request')
                     return caller(key, payload)
-            # Preserve passive transport metadata. Cache-sensitive methods get
-            # wrappers below so a hit rechecks config/code/package identity just
-            # like a paid dispatch; otherwise prior bytes could change between
-            # admission and copy without ever entering bound_call().
-            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing'):
-                if hasattr(caller, attribute):
-                    setattr(bound_call, attribute, getattr(caller, attribute))
-            if hasattr(caller, 'verify_execution'):
-                def verify_execution(key):
-                    current_binding()
-                    result = caller.verify_execution(key)
-                    current_binding()
-                    return result
-                bound_call.verify_execution = verify_execution
-            for attribute in ('paid_response_provenance', 'record_reuse',
+            # Cache-hit and provenance methods pass through without a binding recheck
+            # (docs/canonical-layer2-controller.zh.md, "缓存命中不逐次复核绑定"). Each still
+            # verifies its own evidence: the budget authorization and runtime, the exact
+            # direct-paid closure, the prior files' hashes and the copied bytes. What a hit
+            # writes is bound to the inputs admitted in memory. Drift of the config, code,
+            # package or prior snapshot on disk is caught before every paid dispatch
+            # (bound_call) and at post_model_binding, so a drifted run saves no candidate.
+            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing',
+                              'verify_execution', 'paid_response_provenance', 'record_reuse',
                               'validate_recovery_source', 'recover_returned_response'):
                 if hasattr(caller, attribute):
-                    operation = getattr(caller, attribute)
-                    def guarded(*args, _operation=operation, **kwargs):
-                        current_binding()
-                        result = _operation(*args, **kwargs)
-                        current_binding()
-                        return result
-                    setattr(bound_call, attribute, guarded)
+                    setattr(bound_call, attribute, getattr(caller, attribute))
             model_completion = []
             revision = None
             with (budget_tools.request_limits(budget_binding['limits']) if budget_binding else nullcontext()):
