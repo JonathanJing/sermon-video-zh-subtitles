@@ -9,7 +9,8 @@ import time
 import uuid
 
 from scripts import sermon_accounting as accounting
-from scripts.sermon_workflow_jobs import _digest
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.jobs import _digest
 
 SCHEMA = 'sermon-decision-observation-v1'
 CODE = 'decision_observation'

@@ -1,4 +1,4 @@
-"""Infrastructure I0b: the two standard-library compute leaves live in the package behind facades."""
+"""Infrastructure I0b: the two standard-library compute leaves live in the package; the D window removed their facades."""
 import os
 from pathlib import Path
 import shutil
@@ -8,8 +8,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import machine_qc_audio_transports as transports
-from scripts import machine_quality_waiver as waiver
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import qc_audio_transports as transports
+from tongxing_production.review import waiver
 from tongxing_production import path_aliases
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,14 +18,6 @@ MOVED = {'sermon_openai_runtime': 'openai_runtime', 'sermon_transcription_reques
 
 
 class ComputeLeafTests(unittest.TestCase):
-    def test_scripts_facades_are_the_package_modules(self):
-        import importlib
-        for legacy, current in MOVED.items():
-            with self.subTest(module=legacy):
-                implementation = importlib.import_module('tongxing_production.compute.' + current)
-                self.assertIs(importlib.import_module('scripts.' + legacy), implementation)
-                self.assertIs(sys.modules['scripts.' + legacy], implementation)
-
     def test_closure_keys_stay_legacy_and_resolve_into_the_package(self):
         for legacy, current in MOVED.items():
             key = 'scripts/' + legacy + '.py'
@@ -56,14 +49,15 @@ class ComputeLeafTests(unittest.TestCase):
             with patch.object(transports, '_checkout_root', return_value=checkout):
                 self.assertEqual(transports.implementation_sha256(), before)
 
-    def test_facades_import_with_only_the_spark_container_path(self):
+    def test_package_modules_import_with_only_the_spark_container_path(self):
         """Spark containers run without site-packages and put <code>/packages/production/src
         and <code> on PYTHONPATH (clip_e2e_spark.PACKAGE_SRC)."""
         from scripts import clip_e2e_spark
         environment = {key: value for key, value in os.environ.items() if key != 'PYTHONPATH'}
         environment['PYTHONPATH'] = os.pathsep.join([str(ROOT/clip_e2e_spark.PACKAGE_SRC), str(ROOT)])
         code = ('import sys\n'
-                'import scripts.sermon_openai_runtime as a, scripts.sermon_transcription_request as b\n'
+                'import tongxing_production.compute.openai_runtime as a\n'
+                'import tongxing_production.compute.transcription_request as b\n'
                 'assert a.__name__ == "tongxing_production.compute.openai_runtime", a.__name__\n'
                 'assert b.__name__ == "tongxing_production.compute.transcription_request", b.__name__\n')
         with tempfile.TemporaryDirectory() as elsewhere:

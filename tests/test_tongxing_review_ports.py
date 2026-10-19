@@ -17,23 +17,24 @@ from scripts import tongxing_host as host
 from scripts import build_english_source_package as english_package
 from scripts import cuv_scripture, english_scripture_coverage, scripture_candidate_queue, scripture_editions
 from scripts import english_source_judge_cache as judge_cache
-from scripts import export_run_digest, sermon_codex_transport, sermon_transcription_request
+from scripts import export_run_digest, sermon_codex_transport
+from tongxing_production.compute import transcription_request as sermon_transcription_request
 from scripts import layer2_human_ruling as human_ruling
-from scripts import machine_qc_audio_transports as audio_transports
-from scripts import machine_quality_waiver as waiver
+from tongxing_production.compute import qc_audio_transports as audio_transports
+from tongxing_production.review import waiver
 from scripts import prepare_target_language_speech_job as handoff
 from scripts import produce_target_language_candidate as candidate
 from scripts import production_spark_admission, spark_exclusive_session
-from scripts import render_formal_target_language_speech as renderer
+from tongxing_production.audio import renderer
 from scripts import run_sentence_interpretation_models as interpretation_models
-from scripts import screen_target_language_audio_units as screening
+from tongxing_production.audio import screening
 from scripts import scripture_machine_adjudication as scripture_machine
 from scripts import sermon_production_supervisor as supervisor
-from scripts import sermon_sentence_interpretation as interpretation
-from scripts import sermon_source_budget as source_budget
+from tongxing_production.source import sentence_interpretation as interpretation
+from tongxing_production.source import budget as source_budget
 from scripts import sermon_source_text_review as text_review
 from scripts import study_artifacts
-from scripts import target_audio_predicted_schedule as predicted
+from tongxing_production.audio import predicted_schedule as predicted
 from scripts import target_language_policy as policy
 from tongxing_production import ports
 from tongxing_production.delivery import backend as delivery
@@ -203,14 +204,15 @@ class ReviewPortsTests(unittest.TestCase):
         # The host still loads what the moved producers imported at load time
         # (tongxing_host.EAGER_PRODUCER_IMPORTS), which reaches part of the waiver
         # closure as before; the review binding must not load anything more.
-        lazy = ('target_audio_predicted_schedule', 'render_formal_target_language_speech',
-                'machine_qc_audio_transports', 'layer2_human_ruling', 'english_source_judge_cache',
+        lazy = ('layer2_human_ruling', 'english_source_judge_cache',
                 'run_sentence_interpretation_models', 'sermon_production_supervisor', 'cuv_scripture',
                 'scripture_editions', 'english_scripture_coverage', 'scripture_candidate_queue', 'export_run_digest',
                 'sermon_codex_transport', 'spark_exclusive_session')
         code = ("import sys; from scripts import tongxing_host; "
                 f"print([m for m in {lazy!r} if 'scripts.' + m in sys.modules]"
-                " + [m for m in ('tongxing_production.compute.spark_exclusive_session',) if m in sys.modules])")
+                " + [m for m in ('tongxing_production.compute.spark_exclusive_session',"
+                " 'tongxing_production.audio.predicted_schedule', 'tongxing_production.audio.renderer',"
+                " 'tongxing_production.compute.qc_audio_transports') if m in sys.modules])")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), '[]')

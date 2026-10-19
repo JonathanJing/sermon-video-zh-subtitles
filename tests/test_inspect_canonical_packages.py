@@ -9,7 +9,8 @@ from scripts import review_target_language_candidate as review
 from tests import test_produce_target_language_candidate as fixtures
 from tests import test_build_english_source_package as source_fixtures
 from scripts import build_english_source_package as english
-from scripts import sermon_sentence_interpretation as anchors
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as anchors
 from scripts import target_language_policy as policies
 
 

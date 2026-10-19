@@ -227,7 +227,8 @@ def safe_audio(root, row):
 
 
 def audio_output(root, group, wave, sample_rate):
-    from scripts.render_formal_target_language_speech import _cpu_audio_input, write_pcm16
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio.renderer import _cpu_audio_input, write_pcm16
     wave = _cpu_audio_input(wave)
     require(wave and all(math.isfinite(float(value)) for value in wave) and
             any(value != 0 for value in wave), 'tts_wave_nonfinite_or_silent')
@@ -363,7 +364,8 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
         attempts, pool = {}, None
         if replicas == 8 and not all(receipts):
             from scripts import spark_tts_replica_pool as pool_module
-            from scripts.render_formal_target_language_speech import SparkQwenSynthesizer
+            from scripts import tongxing_host  # noqa: F401  binds the production package ports
+            from tongxing_production.audio.renderer import SparkQwenSynthesizer
             from scripts.spark_tts_window_scheduler import ParallelBatchEngine
             windows = {}
             for index, start in enumerate(range(0, len(groups), batch_size)):
@@ -393,7 +395,8 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
                 check_frozen(binding)
             if model is None:
                 if factory is None:
-                    from scripts.render_formal_target_language_speech import QwenSynthesizer
+                    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+                    from tongxing_production.audio.renderer import QwenSynthesizer
                     factory = QwenSynthesizer
                 began = time.perf_counter()
                 load=lambda: factory(checkpoint, device=args.device, dtype='bfloat16', attention=args.attention)
@@ -422,7 +425,8 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
                         'tts_requires_mono_model_output')
             # Validate the whole model window before any CPU write. GPU transfer
             # happens here on the caller; workers only encode/decode/hash bytes.
-            from scripts.render_formal_target_language_speech import _cpu_audio_input
+            from scripts import tongxing_host  # noqa: F401  binds the production package ports
+            from tongxing_production.audio.renderer import _cpu_audio_input
             for expected, value in zip(selected, values):
                 pending_outputs.append(cpu.submit(writer, root, expected,
                     _cpu_audio_input(value['wave']) if cpu_workers else value['wave'], value['sampleRate']))

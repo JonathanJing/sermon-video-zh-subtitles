@@ -90,12 +90,13 @@ def preload_execution_modules(plugin_paths=()):
     for name in ('sermon_workflow_evidence','sermon_diagnostic_delivery_preflight','sermon_dev_diagnostic_snapshot',
                  'sermon_native_preview_runtime','sermon_strict_candidate_bridge','sermon_strict_controller',
                  'sermon_strict_budget_adapter','sermon_strict_locale','prepare_target_language_speech_job',
-                 'render_formal_target_language_speech','render_multilingual_voice_demos',
+                 'tongxing_production.audio.renderer','render_multilingual_voice_demos',
                  'validate_target_language_audio_unit','sermon_local_model_observation',
-                 'sermon_model_call_report','sermon_model_call_observation','sermon_openai_runtime',
+                 'sermon_model_call_report','sermon_model_call_observation','tongxing_production.compute.openai_runtime',
                  'sermon_trace_artifacts','sermon_review_diagnostics','sermon_preview_checkpoint_manifest',
                  'sermon_fresh_source_evidence','sermon_historical_layer2','sermon_historical_native_seed','sermon_historical_identity','sermon_source_producer_compatibility','sermon_source_failure'):
-        importlib.import_module('scripts.'+name)
+        # A dotted name is a package module whose scripts/ facade the D closure window removed.
+        importlib.import_module(name if '.' in name else 'scripts.'+name)
     repository=Path(__file__).resolve().parents[1]
     for path in plugin_paths:
         path=_safe_path(Path(path))

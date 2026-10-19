@@ -332,7 +332,8 @@ if __name__=='__main__':unittest.main()
 class DurableProfileContextTests(unittest.TestCase):
     def test_detached_job_restores_private_bounded_context_and_runs_once(self):
         import time
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);ledger=root/'accounting';jobroot=root/'jobs'
             code="from scripts import sermon_accounting as a\nwith a.stage('worker',depends_on=[]):a.record_workload('worker',{'segmentCount':1})"
@@ -360,7 +361,8 @@ class DurableProfileContextTests(unittest.TestCase):
             self.assertEqual(contract.replay_integrity(rows)['status'],'consistent')
 
     def test_changed_context_before_worker_never_executes(self):
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);jobroot=root/'jobs';identity={'stage':'context-tamper'};key=jobs._digest(identity)
             with profile.session(root/'ledger','synthetic',work_kind='production',evidence_mode='synthetic'):

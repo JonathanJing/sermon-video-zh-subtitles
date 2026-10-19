@@ -514,12 +514,12 @@ class ApiCliOutcomeTests(unittest.TestCase):
         def changed(api_key,payload):calls.append(2);return {'new':True}
         for kind in ('route','key','implementation'):
             with self.subTest(kind=kind),tempfile.TemporaryDirectory() as tmp:
-                with patch('scripts.sermon_openai_runtime.selected_route',return_value=route):
+                with patch('tongxing_production.compute.openai_runtime.selected_route',return_value=route):
                     wrapped=SessionBoundCaller(first,requires_spark=False,outcome_directory=tmp)
                     wrapped('secret-original',{'request':1})
                     old=outcomes.request_identity(first,('secret-original',{'request':1}),{},wrapped.purpose)
                     newroute={**route,'environment':'prod','credentialAlias':'tongxing-prod-runtime'} if kind=='route' else route
-                    with patch('scripts.sermon_openai_runtime.selected_route',return_value=newroute):
+                    with patch('tongxing_production.compute.openai_runtime.selected_route',return_value=newroute):
                         caller=changed if kind=='implementation' else first
                         key='secret-changed' if kind=='key' else 'secret-original'
                         self.assertNotEqual(old,outcomes.request_identity(caller,(key,{'request':1}),{},wrapped.purpose))

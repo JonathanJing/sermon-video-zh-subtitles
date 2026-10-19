@@ -77,7 +77,8 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
     """Read durable workflow evidence and return a sanitized supervisor snapshot."""
     validate_config(config)
     if config.app_delivery_config is not None:
-        from scripts import sermon_app_delivery_workflow
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.delivery import app_workflow as sermon_app_delivery_workflow
         return sermon_app_delivery_workflow.snapshot(config.app_delivery_config, sunday=config.sunday)
     state = read_supervisor_state(config.state_file)
     source = run_post_live_subtitle_generation.selected_source_from_state(state)

@@ -33,7 +33,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.sermon_openai_runtime import bind_request, selected_route  # noqa: E402
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.openai_runtime import bind_request, selected_route  # noqa: E402
 
 CHAT_URL = "https://api.openai.com/v1/chat/completions"
 TIERS = ("default", "fast")

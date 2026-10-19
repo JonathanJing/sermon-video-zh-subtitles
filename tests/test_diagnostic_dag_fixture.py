@@ -11,7 +11,8 @@ from scripts import sermon_diagnostic_dag_session as session_module
 from scripts import sermon_diagnostic_source_evidence as source_evidence
 from scripts import sermon_diagnostic_prefect_flow as flow
 from scripts import sermon_review_contracts as c
-from scripts import render_speculative_target_language_speech as preview
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import speculative as preview
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 from tests.test_render_speculative_target_language_speech import FakeSynth
 

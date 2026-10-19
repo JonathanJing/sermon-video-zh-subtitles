@@ -11,7 +11,8 @@ from pathlib import Path
 import random
 import secrets
 from urllib.parse import urlsplit
-from scripts import sermon_sentence_interpretation as identity
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as identity
 from scripts import produce_target_language_candidate as candidate
 from scripts.experiments import layer2_ab
 from scripts.experiments.build_blind_review_scores import blank_score

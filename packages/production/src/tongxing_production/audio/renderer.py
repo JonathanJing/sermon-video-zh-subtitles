@@ -38,7 +38,7 @@ from . import package
 from . import unit_integrity as integrity
 # Accounting, producer timing, the voice checkpoint reader and the Korean spoken-number
 # rules come through AudioBackend records; the tables below read the rules at import,
-# so this module imports after the host binds the audio backend (its facade does).
+# so this module imports after the host binds the audio backend (scripts/tongxing_host.py).
 from . import hosted as hosted_module
 from .hosted import accounting, demos, ko_spoken_numerals, measure
 
@@ -55,9 +55,9 @@ def _module_file_sha256(module) -> str:
 def preview_execution_binding_sha256(*, code=None) -> str:
     """Bind preview routing and its producer code before cache or formal reuse."""
     code = code or _audio.current().code
+    # The D closure window removed the scripts/ preview facade; the binding hashes the
+    # implementation it ran.
     return identity.json_sha256({
-        'scripts/render_speculative_target_language_speech.py': identity.sha256(
-            code.physical_path('scripts/render_speculative_target_language_speech.py')),
         'packages/production/src/tongxing_production/audio/speculative.py': identity.sha256(
             code.physical_path('packages/production/src/tongxing_production/audio/speculative.py')),
         'packages/production/src/tongxing_production/path_aliases.py': identity.sha256(

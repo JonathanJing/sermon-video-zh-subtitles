@@ -6,9 +6,10 @@ import unittest
 from unittest.mock import patch
 
 from scripts import canonical_durable_jobs as durable
-from scripts import canonical_layer2_controller as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import controller as subject
 from scripts import sermon_review_budget as review_budget
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 from tests import test_canonical_layer2_controller as controller_fixtures
 
 

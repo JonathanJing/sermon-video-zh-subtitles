@@ -25,7 +25,8 @@ from pathlib import Path
 import json
 import re
 
-from scripts import canonical_layer2_controller as controller
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import controller
 from scripts import produce_target_language_candidate as producer
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
@@ -34,7 +35,7 @@ from scripts import sermon_review_gate as gate
 from scripts import sermon_strict_candidate_bridge as bridge
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 from scripts import sermon_accounting as accounting
 from scripts import sermon_log_profile as profile
 from scripts import sermon_review_observation as observations

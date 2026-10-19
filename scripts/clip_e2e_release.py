@@ -56,7 +56,8 @@ def prepare(out: Path, *, page_id: str, date: str, locales: list[str], source_pa
             lanes: dict, display: dict, default_pass: str, template: Path = TEMPLATE) -> dict:
     """Write and execute the frozen delivery plan; ``lanes[locale]`` has candidate, textQcOut, audioPackage, audioQcOut."""
     from scripts import build_full_video_app_release as release
-    from scripts import machine_quality_release_basis as basis
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import release_basis as basis
     from scripts import sermon_unified_delivery as delivery
     from scripts import study_artifacts
     from scripts.build_dev_180s_simulated_inputs import read, save, ref

@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 try:
-    from scripts import sermon_sentence_interpretation as identity
+    from tongxing_production.source import sentence_interpretation as identity
 except ImportError:  # Direct execution of this file: add the repository root.
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from scripts import sermon_sentence_interpretation as identity
+    from tongxing_production.source import sentence_interpretation as identity
 
 
 def plan(*, speech_job_sha256, sound_identity_sha256, unit_indices, max_generated_units,

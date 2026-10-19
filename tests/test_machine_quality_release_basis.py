@@ -5,14 +5,15 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import machine_quality_release_basis as basis
-from scripts import machine_quality_waiver as waiver
-from scripts import machine_repair_ledger as ledger
-from scripts import screen_target_language_audio_units as audio_screen
-from scripts import target_text_auto_qc as text_screen
-from scripts.target_audio_auto_qc import THRESHOLDS, TRACK_ENVELOPE
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import release_basis as basis
+from tongxing_production.review import waiver
+from tongxing_production.review import repair_ledger as ledger
+from tongxing_production.audio import screening as audio_screen
+from tongxing_production.review import text_qc as text_screen
+from tongxing_production.review.audio_qc import THRESHOLDS, TRACK_ENVELOPE
 from scripts import prepare_target_language_speech_job as speech
-from scripts import sermon_sentence_interpretation as interpretation
+from tongxing_production.source import sentence_interpretation as interpretation
 from scripts import sermon_unified_reviews as reviews
 from scripts import stage_formal_multilingual_dev as stage
 # Reuse the speech-job fixture without collecting its tests a second time here.
@@ -182,7 +183,7 @@ class TextWaiverTests(unittest.TestCase):
         self.assertEqual(waiver.waive("ko", self.candidate, unjoined, None, matched)["status"], "blocked_calibration")
 
     def test_calibration_hashes_source_unit_joins_and_audio_spans(self):
-        from scripts import auto_qc_seeded_errors as seeded
+        from tongxing_production.review import seeded_errors as seeded
         groups = [{"groupId": "g1", "english": "Same English", "targetText": "相同译文", "sourceUnitIds": ["u1"]}]
         units = [{"groupId": "g1", "wav": b"same bytes", "text": "相同译文", "sourceSeconds": 2}]
         baseline = seeded.calibration_inputs(groups, units, None, self.policy, self.candidate)

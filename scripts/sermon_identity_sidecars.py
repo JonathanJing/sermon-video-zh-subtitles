@@ -6,7 +6,8 @@ import re
 
 from scripts import sermon_accounting as accounting
 from scripts import sermon_trace_artifacts as artifacts
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 def rows_in_snapshot(data):

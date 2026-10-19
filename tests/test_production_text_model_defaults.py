@@ -81,7 +81,7 @@ class TextRoleDefaultTests(unittest.TestCase):
         response = Mock(status_code=200, content=json.dumps(envelope).encode())
         response.json.return_value = envelope
         payload = {'model': 'gpt-6.1-sol', 'reasoning': {'effort': 'high'}, 'input': [{'role': 'user', 'content': [{'type': 'input_text', 'text': 'source'}]}]}
-        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_ACCOUNTING_DIR':tmp}), patch.object(notes.requests, 'post', return_value=response) as api, patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_ACCOUNTING_DIR':tmp}), patch.object(notes.requests, 'post', return_value=response) as api, patch('tongxing_production.compute.openai_runtime.project_headers', return_value={}):
             result = notes.request_openai_notes(payload, 'synthetic-key', session_verifier=lambda: {'status':'offline_test'})
         api.assert_called_once()
         self.assertEqual(json.loads(notes.extract_response_text(result)), {'summaryZh': 'sample'})
@@ -218,10 +218,10 @@ class LegacyExecutionCacheIdentityTests(unittest.TestCase):
                         if role=='subtitle':return review.review_batch(key,[block],[block],0,root,'gpt-6.1-sol','medium')
                         if role=='sentence':return sentence.cached_call(out=root,stage='test',payload={'model':'gpt-6.1-sol','reasoning_effort':'high','messages':[{'role':'user','content':'synthetic'}],'response_format':{'type':'json_object'}},api_key=key,requested_model='gpt-6.1-sol',caller=fake)
                         return reading.edit_batch(key,[block],[block],0,root,model='gpt-6.1-sol',reasoning_effort='high',qa_pass=role=='reading-qa',provider='openai',codex_cli=Path('unused'),schema_path=Path('unused'))
-                    with patch('scripts.sermon_openai_runtime.selected_route',return_value=route),patch_both("chat_json", side_effect=fake),patch.object(review,'chat_json',side_effect=fake),patch.object(reading,'chat_json',side_effect=fake):
+                    with patch('tongxing_production.compute.openai_runtime.selected_route',return_value=route),patch_both("chat_json", side_effect=fake),patch.object(review,'chat_json',side_effect=fake),patch.object(reading,'chat_json',side_effect=fake):
                         run('synthetic-key-a');run('synthetic-key-a');self.assertEqual(len(calls),1)
                         run('synthetic-key-b');self.assertEqual(len(calls),2)
-                        with patch('scripts.sermon_openai_runtime.selected_route',return_value={**route,'projectId':'proj_b'}):run('synthetic-key-a')
+                        with patch('tongxing_production.compute.openai_runtime.selected_route',return_value={**route,'projectId':'proj_b'}):run('synthetic-key-a')
                         self.assertEqual(len(calls),3)
                         fake.execution_identity={'revision':'changed'}
                         with patch.object(sermon_pipeline._chat_json,'execution_identity',{'revision':'changed'},create=True):run('synthetic-key-a')

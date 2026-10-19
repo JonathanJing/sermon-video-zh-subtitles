@@ -10,11 +10,12 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import canonical_layer2_controller as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import controller as subject
 from scripts import canonical_durable_jobs as durable
 from scripts import sermon_accounting as accounting
 from scripts import weekly_pipeline_report as weekly
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 from scripts import sermon_execution_harness as harness
 from scripts import target_language_policy as policies
 from tests import test_inspect_canonical_packages as fixtures
@@ -114,7 +115,8 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         def admitted(root, ident, command, *, timeout_seconds, liveness_policy):
             with jobs._lock(root, subject.ADMISSION_LOCK) as (_, _, held):
                 self.assertFalse(held)
-            self.assertEqual(command[:3], [sys.executable, str((Path(__file__).resolve().parents[1] / 'scripts/canonical_layer2_controller.py')), 'worker'])
+            self.assertEqual(command[:4], [sys.executable, str((Path(__file__).resolve().parents[1] / 'tools/ops/run.py')),
+                                           'text.controller', 'worker'])
             self.assertEqual(timeout_seconds, 21600)
             self.assertEqual(liveness_policy, subject.LIVENESS_POLICY)
             self.assertEqual(ident['workUnitId'], 'text.zh-Hans')
@@ -382,7 +384,8 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         self.assertTrue(any(e['event'] == 'run_finished' and e['status'] == 'failed' for e in events))
 
     def test_two_real_controllers_launch_one_durable_attempt_and_preserve_failure(self):
-        command = [sys.executable, str((Path(__file__).resolve().parents[1] / 'scripts/canonical_layer2_controller.py')), 'tick', '--config', str(self.path),
+        command = [sys.executable, str((Path(__file__).resolve().parents[1] / 'tools/ops/run.py')), 'text.controller',
+                   'tick', '--config', str(self.path),
                    '--mode', 'deterministic_execute']
         children = [subprocess.Popen(command, cwd=subject.ROOT, env={'OPENAI_API_KEY': '', 'CODEX_HOME': str(self.root / 'invalid-auth')},
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) for _ in range(2)]
@@ -487,11 +490,13 @@ class CodeIdentityClosureTests(unittest.TestCase):
 
     def test_moved_package_code_changes_the_code_identity(self):
         moved = (subject.ROOT / 'packages/production/src/tongxing_production/source/sentence_interpretation.py').resolve()
-        facade = (subject.ROOT / 'scripts/sermon_sentence_interpretation.py').resolve()
-        self.assertTrue(moved.is_file() and facade.is_file())
+        # Its scripts/ facade is gone (D closure window); a scripts/ file still counts.
+        self.assertFalse((subject.ROOT / 'scripts/sermon_sentence_interpretation.py').exists())
+        host = (subject.ROOT / 'scripts/tongxing_host.py').resolve()
+        self.assertTrue(moved.is_file() and host.is_file())
         baseline = subject.code_identity()
         original = Path.read_bytes
-        for edited in (moved, facade):
+        for edited in (moved, host):
             with self.subTest(path=edited.relative_to(subject.ROOT)), self.unmemoized(), \
                     patch.object(Path, 'read_bytes', lambda path: original(path) + (b'#' if path == edited else b'')):
                 self.assertNotEqual(subject.code_identity(), baseline)

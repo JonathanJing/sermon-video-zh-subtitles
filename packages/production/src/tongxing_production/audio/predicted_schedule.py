@@ -70,8 +70,7 @@ def _check_identity(identity: dict, locale: str) -> None:
 
 def rate_implementation_sha256() -> str:
     """Bind the rate's fitting/counting code and complete spoken-rule dependency closure."""
-    # Each key names the actual file read, including the executed facade and
-    # package target when a legacy path moved.
+    # Each key names the actual file read: the package target when a legacy path moved.
     root = _audio.current().core.repo_root
     files = {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
              for name in RATE_PHYSICAL_FILES}

@@ -171,7 +171,8 @@ def main():
         result['checkpointHashSeconds'] = time.perf_counter() - started
         started = time.perf_counter()
         sys.path.insert(0, str(args.renderer_root.resolve()))
-        from scripts import render_formal_target_language_speech as formal
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.audio import renderer as formal
         import torch
         result['runtimeImportSeconds'] = time.perf_counter() - started
         result['rendererSha256'] = sha(formal.__file__)

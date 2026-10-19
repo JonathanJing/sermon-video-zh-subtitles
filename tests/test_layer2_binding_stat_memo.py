@@ -9,10 +9,10 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import canonical_layer2_controller as subject
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import backend as text_backend
 from tongxing_production.text import controller as layer2
+from tongxing_production.text import controller as subject
 from tongxing_production.text import stat_memo
 from tests import test_canonical_layer2_controller_payload_cache as payload_fixtures
 

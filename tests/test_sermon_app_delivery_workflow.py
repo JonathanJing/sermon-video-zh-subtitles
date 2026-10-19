@@ -18,10 +18,11 @@ from unittest.mock import patch
 
 from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
 from scripts import sermon_app_delivery as app
-from scripts import sermon_app_delivery_workflow as workflow
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import app_workflow as workflow
 from scripts import sermon_end_to_end as end_to_end
 from scripts import sermon_production_supervisor as supervisor
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 from scripts import run_codex_local_sermon_production as local
 from scripts import run_sermon_production_supervisor_agent as agent
 from tests import test_sermon_app_delivery as fixtures
@@ -53,10 +54,10 @@ class AppDeliveryWorkflowTests(unittest.TestCase):
     def fail_worker_spawn(self, exception):
         original = subprocess.Popen
         def spawn(command, *args, **kwargs):
-            # The job worker the store spawns (the scripts/ entry the host names since G1).
+            # The job worker the store spawns (the package entry and module the host names).
             from tongxing_production.orchestration import jobs_host
-            worker = jobs_host.current().worker_command(Path('/unused'), 'unused', 0)[1]
-            if len(command) > 1 and command[1] == worker:
+            worker = jobs_host.current().worker_command(Path('/unused'), 'unused', 0)[:3]
+            if command[:3] == worker:
                 raise exception
             return original(command, *args, **kwargs)
         with patch.object(jobs.subprocess, 'Popen', side_effect=spawn):
@@ -244,7 +245,7 @@ class AppDeliveryWorkflowTests(unittest.TestCase):
         with patch.object(jobs, 'start_job') as start:
             self.assertFalse(workflow.start(self.path)['dispatched'])
         start.assert_not_called()
-        process = subprocess.run([sys.executable, '-m', 'scripts.sermon_app_delivery_workflow',
+        process = subprocess.run([sys.executable, str(workflow.ROOT / 'tools/ops/run.py'), 'delivery.app_workflow',
             'recover', '--config', str(self.path), '--expected-job', key], cwd=workflow.ROOT,
             capture_output=True, text=True, timeout=20)
         self.assertEqual(process.returncode, 0, process.stderr)
@@ -419,7 +420,7 @@ class AppDeliveryWorkflowTests(unittest.TestCase):
         hidden = original.with_name(original.name + '-offline')
         original.rename(hidden)
         try:
-            process = subprocess.run([sys.executable, '-m', 'scripts.sermon_app_delivery_workflow',
+            process = subprocess.run([sys.executable, str(workflow.ROOT / 'tools/ops/run.py'), 'delivery.app_workflow',
                 'inspect-bundle', '--bundle', str(self.config.output/key)], cwd=workflow.ROOT,
                 capture_output=True, text=True, timeout=20)
             self.assertEqual(process.returncode, 0, process.stderr)
@@ -476,7 +477,7 @@ class AppDeliveryWorkflowTests(unittest.TestCase):
         hidden = original.with_name(original.name+'-offline')
         original.rename(hidden)
         try:
-            process = subprocess.run([sys.executable, '-m', 'scripts.sermon_app_delivery_workflow',
+            process = subprocess.run([sys.executable, str(workflow.ROOT / 'tools/ops/run.py'), 'delivery.app_workflow',
                 'inspect-bundle', '--bundle', str(bundle)], cwd=workflow.ROOT,
                 capture_output=True, text=True, timeout=20)
             self.assertEqual(process.returncode, 0, process.stderr)

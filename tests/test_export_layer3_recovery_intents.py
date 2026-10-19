@@ -8,7 +8,8 @@ import unittest
 from unittest.mock import patch
 
 from tools.ops import export_layer3_recovery_intents as subject
-from scripts import render_formal_target_language_speech as producer
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer as producer
 from tests import test_render_formal_target_language_speech as render_fixtures
 
 

@@ -10,11 +10,12 @@ if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 try:
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from scripts import prepare_target_language_speech_job as speech
-    from scripts import sermon_sentence_interpretation as interpretation
+    from tongxing_production.source import sentence_interpretation as interpretation
 except ImportError:
     import prepare_target_language_speech_job as speech
-    import sermon_sentence_interpretation as interpretation
+    from tongxing_production.source import sentence_interpretation as interpretation
 
 
 def artifact(path: Path, *, json_artifact: bool) -> dict[str, str]:

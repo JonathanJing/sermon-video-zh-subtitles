@@ -17,7 +17,8 @@ from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_candidate_bridge as bridge
 from scripts import sermon_strict_controller as controller
 from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts.sermon_release_workflow import _safe_path
 
 

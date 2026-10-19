@@ -5,8 +5,9 @@ import hashlib
 import json
 import math
 
-from scripts import target_audio_auto_qc as audio_qc
-from scripts.target_audio_predicted_schedule import speech_units
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import audio_qc
+from tongxing_production.audio.predicted_schedule import speech_units
 
 ENGLISH = [
     "Turn with me to Revelation 3:4, where Jesus speaks to the church in Sardis.",
@@ -110,14 +111,14 @@ SECONDARY_ASR = "large-asr"
 # The production TTS behind the fixtures' rendered audio: the speech job's adapter names
 # the synthesis settings, the audio package's voice names the model and checkpoint.
 def speech_job(locale: str = "ko") -> dict:
-    from scripts.target_audio_predicted_schedule import SYNTHESIS_IDENTITY_FIELDS
+    from tongxing_production.audio.predicted_schedule import SYNTHESIS_IDENTITY_FIELDS
     adapter = {field: f"{field}-1" for field in SYNTHESIS_IDENTITY_FIELDS}
     adapter.update(provider="local", model="tts")
     return {"targetLocale": locale, "adapter": adapter}
 
 
 def render_identity(locale: str = "ko") -> dict:
-    from scripts.target_audio_predicted_schedule import synthesis_identity
+    from tongxing_production.audio.predicted_schedule import synthesis_identity
     return {"provider": "local", "model": "tts", "checkpointSha256": "e" * 64,
             "synthesis": synthesis_identity(speech_job(locale))}
 
@@ -133,7 +134,7 @@ PACKAGE_VOICE = {"provider": "local", "model": "tts", "checkpointSha256": "e" * 
 
 
 def _asr_settings(model: str, backend: str) -> dict:
-    from scripts.screen_target_language_audio_units import SCORING, implementation_sha256
+    from tongxing_production.audio.screening import SCORING, implementation_sha256
     return {"protocol": "fake-asr-v1", "model": model, "modelRevision": None, "language": "auto",
             "minSimilarity": audio_qc.THRESHOLDS["asrMinSimilarity"], "scoring": SCORING,
             "implementationSha256": implementation_sha256(), "runtime": {"backend": backend, "temperature": 0.0}}

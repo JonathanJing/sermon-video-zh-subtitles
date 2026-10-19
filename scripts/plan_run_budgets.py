@@ -43,7 +43,8 @@ def file_sha256(path):
 
 
 def qc_files(out, locale, profile, scale, *, approved_by, evidence, reviewed_at, reuse, context, reuse_sources=()):
-    from scripts import machine_qc_budget_authorization as auth
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import qc_budget_authorization as auth
     qc = profile["qc"]
     directory = out / f"qc-{locale}"
     root = str((directory / ".api-budget").resolve())
@@ -76,7 +77,8 @@ def qc_files(out, locale, profile, scale, *, approved_by, evidence, reviewed_at,
 
 def inspect_reuse_source_reference(reference, context):
     """Read-only plan evidence: recheck the exact selected prior authority."""
-    from scripts import machine_qc_budget_authorization as auth
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import qc_budget_authorization as auth
     from scripts.check_run_start import inspect_source_root
     if set(reference) != {'plan', 'planSha256', 'authorization', 'authorizationSha256', 'budgetRoot', 'authority'}:
         raise ValueError('Invalid selected reuse source reference')
@@ -95,7 +97,8 @@ def inspect_reuse_source_reference(reference, context):
 
 def resume_qc_stage(path, context):
     """Reference an unchanged prior authority; never grant missing replay-root calls."""
-    from scripts import machine_qc_budget_authorization as auth
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import qc_budget_authorization as auth
     from scripts import canonical_layer2_budget as l2
     from scripts.check_run_start import inspect_source_root
     value = auth.validate(path, context=context, require_scope=True)
@@ -123,7 +126,8 @@ def resume_qc_stage(path, context):
 
 def layer2_backend_of(execution):
     """The one Layer 2 backend every lane policy of this execution freezes."""
-    from scripts import canonical_layer2_controller as controller
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.text import controller
     from scripts import run_target_language_models as models
     config = controller.load_configuration(execution)
     backends = {models.production_backend(controller._json(lane["policy"])) for lane in config.lanes.values()}
@@ -144,7 +148,8 @@ def layer2_cap_per_locale(profile, scale, backend):
 
 
 def layer2_spec(execution, locales, profile, scale):
-    from scripts import canonical_layer2_controller as controller
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.text import controller
     from scripts import sermon_provider_limits as limits
     config = controller.load_configuration(execution)
     if sorted(config.lanes) != sorted(locales):
@@ -193,7 +198,8 @@ def layer2_spec(execution, locales, profile, scale):
 def layer2_files(out, execution, locales, profile, scale, *, approved_by, evidence, reviewed_at,
                  prepared=None, reuse_budget_roots=None):
     from scripts import canonical_layer2_budget as budget_tools
-    from scripts import canonical_layer2_controller as controller
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.text import controller
     config, per_locale, sizing = prepared or layer2_spec(execution, locales, profile, scale)
     layer2 = profile["layer2"]
     runtime_identity = budget_tools.selected_runtime_identity()
@@ -278,7 +284,8 @@ def main(argv=None):
                         help="Approved direct-paid canonical Layer 2 ledger root; repeat for every locale/root")
     parser.add_argument("--profile", type=Path, default=PROFILE)
     args = parser.parse_args(argv)
-    from scripts import machine_qc_budget_authorization as auth
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import qc_budget_authorization as auth
     if args.reuse_from and args.resume_qc_authorization:
         parser.error("Choose replay-only --reuse-from or --resume-qc-authorization, not both")
     from scripts.sermon_provider_limits import validate_request_limits
@@ -406,7 +413,8 @@ def main(argv=None):
             stages.append(resumes[locale] if locale in resumes else qc_files(
                 args.out, locale, profile, args.scale, reuse=reuse[locale], context=contexts[locale],
                 reuse_sources=reuse_sources[locale], **common))
-    from scripts import machine_quality_waiver as waiver
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import waiver
     plan = {"schemaVersion": PLAN_SCHEMA, "createdAt": now, "scale": args.scale, "locales": locales,
             "profileSha256": file_sha256(args.profile), "profile": str(args.profile.resolve()),
             "totalUsd": args.total_usd, "settledUsd": args.settled_usd, "approvedBy": args.approved_by,

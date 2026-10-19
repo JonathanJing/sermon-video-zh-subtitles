@@ -14,8 +14,8 @@ from scripts import tongxing_host as host
 from scripts import build_full_video_app_release as builder
 from scripts import guarded_hosting_publish as publisher
 from scripts import machine_audio_waiver_acceptance as audio_waivers
-from scripts import machine_quality_release_basis as machine_basis
-from scripts import sermon_app_delivery_workflow as app_workflow
+from tongxing_production.review import release_basis as machine_basis
+from tongxing_production.delivery import app_workflow
 from scripts import sermon_unified_delivery as unified_delivery
 from scripts import sermon_unified_reviews as reviews
 from scripts import stage_formal_multilingual_dev as formal_stage
@@ -27,7 +27,7 @@ from tongxing_production.text import backend as text
 
 
 def app_workflow_module():
-    return sys.modules['scripts.sermon_app_delivery_workflow']
+    return sys.modules['tongxing_production.delivery.app_workflow']
 
 
 class DeliveryPortsTests(unittest.TestCase):
@@ -52,10 +52,10 @@ class DeliveryPortsTests(unittest.TestCase):
         import inspect
         parameters = list(inspect.signature(app_workflow._worker_command).parameters)
         recorded = app_workflow._worker_command(*[config if name == 'config' else 'b' * 64 for name in parameters])
-        self.assertEqual(delivery.current().worker_command(*recorded[2:]), recorded)
+        self.assertEqual(delivery.current().worker_command(*recorded[3:]), recorded)
         self.assertEqual(recorded[0], sys.executable)
-        # D4: the workflow moved into the package; recorded requests still name the scripts/ entry point.
-        self.assertEqual(recorded[1], str(host.ROOT / 'scripts/sermon_app_delivery_workflow.py'))
+        # The D closure window removed the scripts/ facade; requests name the package entry.
+        self.assertEqual(recorded[1:3], [str(host.ROOT / 'tools/ops/run.py'), 'delivery.app_workflow'])
 
     def test_app_workflow_identity_hashes_the_moved_files_under_their_legacy_keys(self):
         from tongxing_production import path_aliases
@@ -174,7 +174,7 @@ class DeliveryPortsTests(unittest.TestCase):
                 "'tongxing_production.delivery.baseline', 'tongxing_production.delivery.app_release', "
                 "'tongxing_production.delivery.formal_stage', 'tongxing_production.delivery.formal_assets', "
                 "'scripts.machine_audio_waiver_acceptance', 'scripts.sermon_unified_delivery', "
-                "'scripts.sermon_app_delivery_workflow', 'tongxing_production.delivery.app_workflow', "
+                "'tongxing_production.delivery.app_workflow', 'tongxing_production.delivery.app_workflow', "
                 "'tongxing_production.delivery.app_delivery', 'tongxing_production.adapters.legacy.assemble_multilingual_hosting', "
                 "'weekly_release') if m in sys.modules]; print(loaded)")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)

@@ -31,7 +31,9 @@ class SparkSelectedHostTests(unittest.TestCase):
 class Layer2CallMarkerTests(unittest.TestCase):
     def setUp(self):
         from tests.test_canonical_layer2_controller import CanonicalLayer2ControllerTests
-        from scripts import canonical_layer2_controller as controller, sermon_review_budget as budget
+        from scripts import sermon_review_budget as budget
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import controller
         from tests.test_sermon_review_budget import authority, identity, request, result
         fixture=CanonicalLayer2ControllerTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         self.config=controller.load_configuration(fixture.path)
@@ -77,7 +79,9 @@ class Layer2CallMarkerTests(unittest.TestCase):
 
     def test_actual_plan_consumer_refuses_settled_ledger_with_unrestored_lane_marker(self):
         from tests.test_run_start_tools import PlanTests, run_plan
-        from scripts import canonical_layer2_budget as l2, canonical_layer2_controller as controller, sermon_review_budget as budget
+        from scripts import canonical_layer2_budget as l2, sermon_review_budget as budget
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import controller
         from tests.test_sermon_review_budget import identity, request, result
         fixture=PlanTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         directory=fixture.base/'layer2-marker-plan'

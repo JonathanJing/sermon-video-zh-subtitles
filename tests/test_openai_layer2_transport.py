@@ -92,8 +92,8 @@ class OpenAILayer2TransportTests(unittest.TestCase):
                     'scripts.run_target_language_models.require_plugin_identity'), patch(
                     'scripts.run_target_language_models.rule_preflight.preflight'), patch(
                     'scripts.production_spark_admission.require_session'), patch(
-                    'scripts.canonical_layer2_controller.load_configuration', return_value=config), patch(
-                    'scripts.canonical_layer2_controller.drive', return_value={'status': 'waiting'}) as drive, patch.object(
+                    'tongxing_production.text.controller.load_configuration', return_value=config), patch(
+                    'tongxing_production.text.controller.drive', return_value={'status': 'waiting'}) as drive, patch.object(
                     transport, 'OpenAILayer2Transport') as factory:
                 if mismatch:
                     with self.assertRaisesRegex(ValueError, 'standalone_budget_inputs_not_registered'):

@@ -10,11 +10,12 @@ import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host as host
-from scripts import canonical_layer2_controller as controller
+from tongxing_production.text import controller
 from scripts import four_layer_measure, layer2_api_concurrency, sermon_accounting, series_terminology
 from scripts import produce_target_language_candidate as candidate
 from scripts import prepare_target_language_speech_job as handoff
-from scripts import production_concurrency_profile, sermon_openai_runtime
+from scripts import production_concurrency_profile
+from tongxing_production.compute import openai_runtime as sermon_openai_runtime
 from tongxing_production.compute import budget_capability as strict_budget_capability
 from scripts import sermon_diagnostic_context, source_meaning_machine_adjudication as meaning
 from scripts import target_language_policy as policy
@@ -50,9 +51,11 @@ class TextPortsTests(unittest.TestCase):
     def test_worker_command_keeps_the_recorded_argv(self):
         config = type('Config', (), {'path': Path('/run/config.json'), 'sha256': 'a' * 64})()
         recorded = controller._worker_command(config, 'ko', 'b' * 64, 'c' * 64)
-        self.assertEqual(text.current().worker_command(*recorded[2:]), recorded)
+        self.assertEqual(text.current().worker_command(*recorded[3:]), recorded)
         self.assertEqual(recorded[0], sys.executable)
-        self.assertEqual(Path(recorded[1]), Path(host.ROOT) / 'scripts/canonical_layer2_controller.py')
+        # The D closure window removed the scripts/ facade; requests name the package entry.
+        self.assertEqual(Path(recorded[1]), Path(host.ROOT) / 'tools/ops/run.py')
+        self.assertEqual(recorded[2], 'text.controller')
 
     def test_compute_limits_and_wrappers_reach_the_implementation(self):
         compute = text.current().compute

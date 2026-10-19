@@ -7,7 +7,8 @@ import wave
 from unittest.mock import patch
 
 from scripts import compact_formal_target_audio as subject
-from scripts import sermon_sentence_interpretation as identity
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as identity
 from tests import test_render_formal_target_language_speech as render_tests
 
 
@@ -103,7 +104,7 @@ class CompactAudioTests(unittest.TestCase):
         self.assertEqual(subject.integrity.probe_full_decode(track)['codec'], 'mp3')
         self.assertTrue((destination / 'review/leading-silence-trim.json').is_file())
         # The delivery MP3 keeps the master's waveform in every audible window.
-        from scripts import target_audio_auto_qc as qc
+        from tongxing_production.review import audio_qc as qc
         settings = qc.TRACK_ENVELOPE
         reference = qc._mono_pcm(track.with_suffix('.wav'), settings['sampleRate'])
         compressed = qc._mono_pcm(track, settings['sampleRate'])

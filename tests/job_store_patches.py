@@ -10,7 +10,8 @@ injection reaches every caller.
 from contextlib import contextmanager
 from unittest.mock import patch
 
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from tongxing_production.storage import files
 
 

@@ -84,7 +84,7 @@ class LegacyChatShapeTests(unittest.TestCase):
         route={'environment':'dev','projectId':'proj_original','credentialAlias':'tongxing-dev-runtime'}
         for role in ('translation','correction'):
             for changed in ('project','key','caller'):
-                with self.subTest(role=role,changed=changed),tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch('scripts.sermon_openai_runtime.selected_route',return_value=route) as selected:
+                with self.subTest(role=role,changed=changed),tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch('tongxing_production.compute.openai_runtime.selected_route',return_value=route) as selected:
                     root=Path(tmp);segments=[{'id':0,'start':0.0,'end':1.0,'text':'Hello.'}]
                     response={'choices':[{'message':{'content':json.dumps({'id':0,'zh':'您好。'} if role=='translation' else {'segments':[{'id':0,'text':'Hello.'}]})}}]}
                     def run(key='synthetic-key'):

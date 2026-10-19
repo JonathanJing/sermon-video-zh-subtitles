@@ -31,7 +31,8 @@ from scripts import sermon_provider_http as http
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 SCHEMA = 'sermon-diagnostic-provider-v1'
 
@@ -537,7 +538,7 @@ class DiagnosticProvider:
         any unknown outcome blocks it. All attempts count against the same40USD.
         No token cap is invented for duration-billed audio; tokens stay unknown.
         """
-        from scripts import sermon_transcription_request as audio
+        from tongxing_production.compute import transcription_request as audio
         prepared=audio.build_request(wav_bytes,self.config['sourceAudioSha256'])
         payload=prepared['identity'];operation_id=strict.label(operation_id)
         recovered=self._cached_source(operation_id,payload)

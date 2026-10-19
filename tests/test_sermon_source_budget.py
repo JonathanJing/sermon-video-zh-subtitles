@@ -6,8 +6,9 @@ import threading
 import unittest
 from pathlib import Path
 
-from scripts import sermon_source_budget as subject
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import budget as subject
+from tongxing_production.orchestration import jobs
 
 
 class SourceBudgetConcurrencyTests(unittest.TestCase):

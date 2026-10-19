@@ -19,11 +19,12 @@ from types import SimpleNamespace
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts import sermon_unified_source as source
-from scripts import sermon_source_budget as budget
-from scripts import sermon_transcription_request as transcription
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import budget
+from tongxing_production.compute import transcription_request as transcription
+from tongxing_production.orchestration import jobs
 from scripts import build_english_source_package as english
-from scripts import sermon_sentence_interpretation as anchors
+from tongxing_production.source import sentence_interpretation as anchors
 from scripts import judge_english_source_for_translation as judge
 from scripts import sermon_codex_transport as codex
 from scripts import sermon_model_call_observation as observation

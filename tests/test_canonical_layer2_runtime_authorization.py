@@ -8,7 +8,8 @@ import os
 from pathlib import Path
 import unittest
 from unittest.mock import patch
-from scripts import canonical_layer2_budget as b, canonical_layer2_controller as controller
+from scripts import canonical_layer2_budget as b
+from tongxing_production.text import controller
 from scripts import run_target_language_models as models, plan_run_budgets as planner, check_run_start as check
 from tests import test_canonical_layer2_budget as fixtures
 from tests.test_run_machine_qc_audio_test import OPENAI_ENV

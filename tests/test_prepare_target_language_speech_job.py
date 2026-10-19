@@ -13,7 +13,8 @@ from jsonschema import Draft202012Validator, FormatChecker
 from scripts import prepare_target_language_speech_job as subject
 from scripts import review_target_language_candidate as human_review
 from scripts import validate_target_language_audio_unit as audio_integrity
-from scripts import sermon_sentence_interpretation as interpretation
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as interpretation
 from scripts import target_language_policy as policy_tools
 from scripts import four_layer_progress as progress
 from scripts import sermon_accounting as accounting
