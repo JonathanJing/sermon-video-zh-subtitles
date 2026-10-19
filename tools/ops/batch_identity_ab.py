@@ -13,6 +13,7 @@ import sys
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from scripts import tongxing_host  # noqa: F401  (configures the package host the renderer reads)
 from tongxing_production.audio import batch_identity_ab
 
 if __name__ == "__main__":

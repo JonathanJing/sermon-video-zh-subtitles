@@ -16,6 +16,7 @@ import tempfile
 import unittest
 import wave
 
+from scripts import tongxing_host  # noqa: F401  (binds the package host)
 from tongxing_production.audio import batch_identity_ab as ab
 
 INTENT = {"schemaVersion": ab.INTENT_SCHEMA, "adapterId": "qwen3_tts_sft", "adapterFileSha256": "1" * 64,
@@ -59,9 +60,16 @@ class Job:
             relative = f"languages/ko/audio/unit-{index:04d}.wav"
             audio = tone(self.job / relative, 0.5 + 0.1 * index, 0.3)
             (self.job / "receipts").mkdir(parents=True, exist_ok=True)
-            (self.job / "receipts" / f"unit-{index:04d}.intent.json").write_text(json.dumps(dict(
-                INTENT, unitIndex=index, groupId=group, sourceUnitIds=[f"u{index}"], textSha256=text_sha,
-                jobJsonSha256="a" * 64, batchWindowStart=index - index % 8)))
+            start = index - index % 8
+            intent = dict(INTENT, unitIndex=index, groupId=group, sourceUnitIds=[f"u{index}"], textSha256=text_sha,
+                          jobJsonSha256="a" * 64, batchWindowStart=start,
+                          batchWindowUnitIndices=list(range(start, start + 8)))
+            (self.job / "receipts" / f"unit-{index:04d}.intent.json").write_text(json.dumps(intent))
+            # The renderer's batch seed is the base seed plus the window start.
+            (self.job / "receipts" / f"unit-{index:04d}.render.json").write_text(json.dumps({
+                "identity": intent, "audioSha256": audio,
+                "generationBatch": {"unitIndices": list(range(start, start + 8)), "seed": 43 + start,
+                                    "seedPolicy": INTENT["batchSeedPolicy"], "batchSize": 8}}))
             (self.job / "receipts" / f"unit-{index:04d}.json").write_text(json.dumps({
                 "translationGroupId": group, "audioRelativePath": relative, "audioSha256": audio,
                 "durationSeconds": 0.5 + 0.1 * index, "fullDecode": "pass"}))
@@ -71,7 +79,7 @@ class Job:
             index = int(group[1:])
             audio = tone(self.preview / "units" / f"unit-{index:04d}.wav", 0.5 + 0.1 * index, gain)
             sound = {"groupId": group, "textSha256": self.texts[group], "unitIndex": index,
-                     **{field: INTENT[field] for field in ab.SAME_VOICE_FIELDS}, **(voice or {})}
+                     **{field: INTENT[field] for field in ab.PREVIEW_MATCH_FIELDS}, **(voice or {})}
             (self.preview / "receipts").mkdir(parents=True, exist_ok=True)
             (self.preview / "receipts" / f"unit-{index:04d}.json").write_text(json.dumps({
                 "schemaVersion": ab.PREVIEW_UNIT_SCHEMA, "status": "preview_only", "fullDecode": "pass",
@@ -104,9 +112,14 @@ class BatchIdentityAbTests(unittest.TestCase):
             ab.select(self.job.job, count=20)
 
     def test_a_job_mixing_synthesis_stacks_cannot_be_one_ab(self):
+        # A unit genuinely rendered by another stack: its intent and commit agree with each other.
         intent_path = self.job.job / "receipts" / "unit-0003.intent.json"
-        value = json.loads(intent_path.read_text())
-        intent_path.write_text(json.dumps(dict(value, batchSize=4)))
+        commit_path = self.job.job / "receipts" / "unit-0003.render.json"
+        intent = dict(json.loads(intent_path.read_text()), batchSize=4)
+        intent_path.write_text(json.dumps(intent))
+        commit = json.loads(commit_path.read_text())
+        commit_path.write_text(json.dumps(dict(commit, identity=intent,
+                                               generationBatch=dict(commit["generationBatch"], batchSize=4))))
         with self.assertRaisesRegex(ValueError, "mixes_synthesis_identities"):
             ab.select(self.job.job)
 
@@ -129,6 +142,44 @@ class BatchIdentityAbTests(unittest.TestCase):
             ab.pack(selection, self.job.preview, self.job.root / "packet")
         with self.assertRaisesRegex(ValueError, "preview_missing_groups"):
             ab.pack(selection, self.job.root / "no-preview", self.job.root / "packet2")
+
+    def test_the_batch_arm_must_be_the_committed_batch_render(self):
+        # Silence compaction rewrote unit 3's bytes after the batch render committed them.
+        wav = self.job.job / "languages/ko/audio/unit-0003.wav"
+        compacted = tone(wav, 0.6, 0.2)
+        receipt_path = self.job.job / "receipts/unit-0003.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt_path.write_text(json.dumps(dict(receipt, audioSha256=compacted)))
+        # Unit 5 claims a scalar render.
+        commit_path = self.job.job / "receipts/unit-0005.render.json"
+        commit = json.loads(commit_path.read_text())
+        commit_path.write_text(json.dumps(dict(commit, generationBatch=None)))
+        (self.job.job / "receipts/unit-0007.render.json").unlink()
+        selection = ab.select(self.job.job)
+        chosen = {group["unitIndex"] for group in selection["groups"]}
+        self.assertFalse(chosen & {3, 5, 7})
+        self.assertEqual(len(chosen), 10)
+
+    def test_a_preview_with_another_seed_or_decoding_is_refused(self):
+        selection = ab.select(self.job.job)
+        self.assertEqual(selection["previewRender"]["settings"]["seed"], 43)
+        for change in ({"seed": 42}, {"dtype": "float32"}, {"attention": "eager"}):
+            with self.subTest(change=change):
+                self.job.render_alone(selection["previewRender"]["groupIds"], voice=change)
+                with self.assertRaisesRegex(ValueError, "preview_differs_beyond_batching"):
+                    ab.pack(selection, self.job.preview, self.job.root / f"packet-{list(change)[0]}")
+
+    def test_duplicate_verdicts_and_bad_times_are_refused(self):
+        selection, packet = self.packed()
+        quiet = [{"pair": pair["pair"], "verdict": "no_audible_difference"} for pair in packet["pairs"]]
+        twice = [{"pair": 1, "verdict": "audible_difference"}] + quiet
+        with self.assertRaisesRegex(ValueError, "duplicate_pair_verdicts"):
+            ab.record(self.job.root / "packet", twice, "Jony", "2026-10-19T20:00:00Z")
+        for when in ("yesterday", "2026-10-19T20:00:00"):
+            with self.subTest(when=when), self.assertRaisesRegex(ValueError, "iso_time_with_timezone"):
+                ab.record(self.job.root / "packet", quiet, "Jony", when)
+        result = ab.record(self.job.root / "packet", quiet, "Jony", "2026-10-19T20:00:00Z")
+        self.assertEqual(result["humanListening"]["listenedAt"], "2026-10-19T20:00:00+00:00")
 
     def test_one_audible_difference_fails_and_every_pair_needs_a_verdict(self):
         selection, packet = self.packed()

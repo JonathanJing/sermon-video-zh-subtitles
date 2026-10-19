@@ -16,6 +16,7 @@ leaving batch membership out of a key.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 import hashlib
 import json
 import math
@@ -46,6 +47,9 @@ VERDICTS = ("no_audible_difference", "audible_difference")
 # Voice fields the preview arm must share with the formal arm.
 SAME_VOICE_FIELDS = ("targetLocale", "adapterId", "model", "modelRevision", "conditioningRef", "checkpointSha256",
                      "speakerId", "speakerKey", "languageParameter", "operationPoliciesFileSha256")
+# Everything but batching: the alone arm must also use the formal arm's seed and decoding.
+PREVIEW_MATCH_FIELDS = SAME_VOICE_FIELDS + ("seed", "temperature", "repetitionPenalty", "maxNewTokens", "dtype",
+                                            "attention", "deliveryInstruction", "ratePolicy")
 
 
 def _require(condition: bool, message: str) -> None:
@@ -102,6 +106,17 @@ def pcm_metrics(path: Path) -> dict:
 
 # --- select ---------------------------------------------------------------------------
 
+def _batch_commit_binds(commit: dict, intent: dict, audio_sha256: str) -> bool:
+    """Whether the formal renderer's commit says this very intent generated these bytes in a batch.
+
+    A WAV whose hash is not the committed one (for example after silence compaction) is not
+    the batch arm, and neither is a unit the commit does not place in its intent's window.
+    """
+    from . import renderer  # the formal renderer's own rule for a committed batch window
+    return (commit.get("identity") == intent and commit.get("audioSha256") == audio_sha256
+            and intent.get("batchSize", 1) > 1 and renderer._generation_batch_matches(commit, intent))
+
+
 def select(speech_job: Path, count: int = MINIMUM_GROUPS_PER_LOCALE, *, exclude: set[str] = frozenset()) -> dict:
     """Pick ``count`` groups spread over the job's unit durations, deterministically.
 
@@ -119,11 +134,15 @@ def select(speech_job: Path, count: int = MINIMUM_GROUPS_PER_LOCALE, *, exclude:
         receipt_path = speech_job / "receipts" / f"{stem}.json"
         if not receipt_path.is_file():
             continue
-        intent, receipt = _load(intent_path), _load(receipt_path)
+        commit_path = speech_job / "receipts" / f"{stem}.render.json"
+        if not commit_path.is_file():
+            continue
+        intent, receipt, commit = _load(intent_path), _load(receipt_path), _load(commit_path)
         wav = speech_job / receipt["audioRelativePath"]
         if (intent.get("groupId") in exclude or receipt.get("fullDecode") != "pass"
                 or receipt.get("translationGroupId") != intent.get("groupId")
-                or not wav.is_file() or file_sha256(wav) != receipt.get("audioSha256")):
+                or not wav.is_file() or file_sha256(wav) != receipt.get("audioSha256")
+                or not _batch_commit_binds(commit, intent, receipt["audioSha256"])):
             continue
         units.append({"unitIndex": intent["unitIndex"], "translationGroupId": intent["groupId"],
                       "sourceUnitIds": intent["sourceUnitIds"], "textSha256": intent["textSha256"],
@@ -143,6 +162,9 @@ def select(speech_job: Path, count: int = MINIMUM_GROUPS_PER_LOCALE, *, exclude:
             "groups": [{key: value for key, value in unit.items() if key != "tested"} for unit in chosen],
             "previewRender": {"renderer": "render_speculative_target_language_speech.py",
                               "groupIds": [unit["translationGroupId"] for unit in chosen],
+                              # pack refuses a preview rendered with anything else.
+                              "settings": {"seed": tested["seed"], "dtype": tested["dtype"],
+                                           "attention": tested["attention"], "instruct": tested["deliveryInstruction"]},
                               "note": "Run on Spark inside a begun exclusive session; it renders each group alone "
                                       "(preview_only) with the candidate, adapter and policies of this job."},
             "humanApproval": False}
@@ -182,9 +204,9 @@ def pack(selection: dict, preview: Path, out: Path, *, rng=secrets.SystemRandom(
         _require(file_sha256(formal) == group["audioSha256"], f"formal_audio_changed:{group['translationGroupId']}")
         alone = previews[group["translationGroupId"]]
         sound = alone["receipt"].get("soundIdentity") or {}
-        # The alone arm must say the same text with the same voice; only the batch differs.
+        # The alone arm must say the same text with the same voice, seed and decoding; only the batch differs.
         _require(sound.get("textSha256") == group["textSha256"]
-                 and all(sound.get(field) == selection["testedIdentity"].get(field) for field in SAME_VOICE_FIELDS),
+                 and all(sound.get(field) == selection["testedIdentity"].get(field) for field in PREVIEW_MATCH_FIELDS),
                  f"preview_differs_beyond_batching:{group['translationGroupId']}")
         arms = [("batch", formal), ("alone", alone["wav"])]
         rng.shuffle(arms)
@@ -220,8 +242,14 @@ def record(packet_dir: Path, verdicts: list[dict], listener: str, listened_at: s
     packet, key_path = _load(packet_dir / "packet.json"), packet_dir / "key.json"
     _require(packet.get("schemaVersion") == PACKET_SCHEMA and file_sha256(key_path) == packet["keySha256"],
              "packet_or_key_changed")
-    _require(isinstance(listener, str) and listener.strip() and isinstance(listened_at, str) and listened_at,
-             "listener_and_time_required")
+    _require(isinstance(listener, str) and listener.strip(), "listener_required")
+    try:
+        heard_at = datetime.fromisoformat(str(listened_at).replace("Z", "+00:00"))
+    except ValueError:
+        heard_at = None
+    _require(heard_at is not None and heard_at.tzinfo is not None, "listened_at_needs_iso_time_with_timezone")
+    pairs = [row.get("pair") for row in verdicts]
+    _require(len(pairs) == len(set(pairs)), "duplicate_pair_verdicts")
     by_pair = {row.get("pair"): row for row in verdicts}
     _require(sorted(by_pair) == [pair["pair"] for pair in packet["pairs"]]
              and all(row.get("verdict") in VERDICTS for row in verdicts), "every_pair_needs_one_verdict")
@@ -238,7 +266,7 @@ def record(packet_dir: Path, verdicts: list[dict], listener: str, listened_at: s
             "audibleDifferencePairs": different, "verdicts": [by_pair[pair] for pair in sorted(by_pair)],
             "result": "pass" if not different else "fail",
             # A person listened; this is a listening judgment, not a release or content approval.
-            "humanListening": {"listener": listener, "listenedAt": listened_at},
+            "humanListening": {"listener": listener, "listenedAt": heard_at.isoformat()},
             "releaseEligible": False}
 
 
