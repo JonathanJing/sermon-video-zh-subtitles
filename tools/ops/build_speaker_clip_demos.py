@@ -8,9 +8,13 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
-if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+import sys
+
+# The renderer and its own imports are bare scripts/ modules. Reach them however this
+# file is loaded: run directly, as tools.ops.build_speaker_clip_demos, or through the facade.
+_SCRIPTS = str(Path(__file__).resolve().parents[2] / "scripts")
+if _SCRIPTS not in sys.path:
+    sys.path.append(_SCRIPTS)
 from render_speaker_clip_demos import validate_scripts
 
 PREFIX = '/voice-demos/speaker-clips-v2/'
