@@ -46,7 +46,8 @@ STAGE_INPUTS = {
           "modelSettingsSha256", "draftTextSha256"),
     # The plugin implementation is this stage's implementation identity.
     "P": ("languageReviewPolicySha256", "englishUnitsSha256", "targetTextSha256"),
-    "Q": ("englishSha256", "targetTextSha256", "semanticIdentitySha256", "repairPositionSha256"),
+    # Text QC also reads the policy (terminology and name checks), not its plugin or model-role fields.
+    "Q": ("englishSha256", "targetTextSha256", "qcPolicySha256", "semanticIdentitySha256", "repairPositionSha256"),
     "C": ("condensationRequestSha256", "englishSha256", "targetTextSha256"),
     # Sound is decided by the spoken text and the synthesis identity alone; the job
     # and candidate hashes, unit index and batch window are assembly information.
