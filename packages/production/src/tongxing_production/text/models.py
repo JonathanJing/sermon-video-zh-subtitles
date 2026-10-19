@@ -1081,6 +1081,17 @@ def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:
     return None
 
 
+def _carry_source(reuse_from: Path | None) -> dict[str, Any] | None:
+    """The reuse source a round may carry groups from, and the runner that source recorded."""
+    if reuse_from is None:
+        return None
+    source = Path(reuse_from) / "runner-identity.json"
+    recorded = producer._load(source) if source.is_file() else {}
+    runner = (recorded.get("runnerImplementationSha256")
+              if recorded.get("schemaVersion") == ROUND_RUNNER_IDENTITY_SCHEMA else None)
+    return {"root": str(Path(reuse_from).resolve()), "runnerImplementationSha256": runner}
+
+
 def carry_forward_group(prior_run: Path, out: Path, index: int,
                         group: dict[str, Any], prior_row: dict[str, Any],
                         policy: dict[str, Any]) -> dict[str, Any]:
@@ -1564,7 +1575,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          "runnerImplementationSha256": round_runner,
                          "payloadCacheImplementationSha256": (PAYLOAD_CACHE_IMPLEMENTATION_SHA256
                                                               if payload_cache_enabled else None),
-                         "runIdentitySha256": round_identity}
+                         "runIdentitySha256": round_identity,
+                         # Groups carried forward keep their source round's caches byte for
+                         # byte; that round's runner (None when it recorded none) produced them.
+                         "carrySource": _carry_source(reuse_from)}
         if runner_path.exists():
             require(producer._load(runner_path) == runner_record, "Round runner identity changed")
         else:

@@ -431,6 +431,10 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertEqual((previous / "plugin-group-stop.json").read_bytes(), stop_bytes)
         self.assertEqual((previous / "group-0002-sol.json").read_bytes(), rejected_bytes)
         self.assertEqual((self.out / "group-0001-astra.json").read_bytes(), kept_bytes)
+        # The carried group's caches came from `previous`; the round names that source and its runner.
+        self.assertEqual(producer._load(self.out / "runner-identity.json")["carrySource"],
+                         {"root": str(previous.resolve()),
+                          "runnerImplementationSha256": subject.RUNNER_PRODUCTION_IDENTITY_SHA256})
         self.assertFalse((self.out / "plugin-group-stop.json").exists())
         self.assertEqual(len(evidence["groups"]), 2)
         self.assertTrue((self.out / "evidence.json").exists())
@@ -488,7 +492,8 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             self.assertEqual(producer._load(runner), {
                 "schemaVersion": subject.ROUND_RUNNER_IDENTITY_SCHEMA,
                 "runnerImplementationSha256": implementation_hash,
-                "payloadCacheImplementationSha256": None, "runIdentitySha256": digest})
+                "payloadCacheImplementationSha256": None, "runIdentitySha256": digest,
+                "carrySource": None})
         tampered = dict(producer._load(runner), runnerImplementationSha256=parent_hash)
         if tampered != producer._load(runner):
             runner.write_text(json.dumps(tampered))
