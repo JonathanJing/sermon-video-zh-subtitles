@@ -30,7 +30,7 @@ QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVer
 
 额度耗尽时的后续方向见[API fallback 设计](codex-quota-api-fallback-design.zh.md)：需要明确拒绝证据、独立调用身份、入口验收和绑定预算；目前没有实现或启用。不能通过更换环境变量、认证或删除 started marker 将未决调用转到 API。
 
-合并后用真实模型把一段周次片段完整跑到 Dev 测试页（Layer 1–4、按语言质检、质检失败回 Layer 2 修订、Spark 配音与音频质检、受控发布），按[真实模型片段 E2E](clip-real-e2e.zh.md)用 `scripts/run_clip_real_e2e.py` 和一份运行规格执行，可断点续跑。
+合并后用真实模型把一段周次片段完整跑到 Dev 测试页（Layer 1–4、按语言质检、质检失败回 Layer 2 修订、Spark 配音与音频质检、受控发布），按[真实模型片段 E2E](clip-real-e2e.zh.md)用 `tools/development/run_clip_real_e2e.py` 和一份运行规格执行，可断点续跑。
 
 真实Dev音频测试按[已接入的参数入口](local-production-next-dev-test-parameters.zh.md#已接入的音频入口)运行`python -m scripts.run_dev_local_audio_test tts|back-asr`：自动读取profile选配音batch2、回转写batch4，显式batch1作基线、回转写8作对照。此入口保留正式producer门禁与独立回执；合并dev和CI不会自动运行GPU或付费模型。
 

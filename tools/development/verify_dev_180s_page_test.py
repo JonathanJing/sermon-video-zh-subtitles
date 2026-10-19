@@ -9,10 +9,10 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-# Support both python -m scripts.<name> and direct script invocation.
-if __package__ in (None, ''):
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+# Loaded as tools.development.<name> or run directly: ``scripts`` imports need the repo root.
+_ROOT = str(Path(__file__).resolve().parents[2])
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 from scripts.sermon_unified import contracts as c
 
 MEDIA_SHA = '79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b'

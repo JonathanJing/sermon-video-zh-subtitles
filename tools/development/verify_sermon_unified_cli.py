@@ -10,6 +10,10 @@ import subprocess
 import sys
 import time
 import wave
+# Loaded as tools.development.<name> or run directly: ``scripts`` imports need the repo root.
+_ROOT = str(Path(__file__).resolve().parents[2])
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 from scripts.sermon_unified import contracts as c
 
 

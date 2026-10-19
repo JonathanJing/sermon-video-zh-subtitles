@@ -14,7 +14,7 @@
   --out artifacts/dev-180s-page-test-20261004/<unique-run-id>/baseline \
   --cache-public <verified-cache-public> --cache-receipt <verified-baseline-receipt>
 
-.venv/bin/python scripts/run_dev_simulated_delivery.py \
+.venv/bin/python tools/development/run_dev_simulated_delivery.py \
   --baseline artifacts/dev-180s-page-test-20261004/<unique-run-id>/baseline \
   --prepared artifacts/dev-180s-page-test-20261004/<unique-run-id>/inputs/work/prepared \
   --source-video <hash-bound-cached-source.mp4> \

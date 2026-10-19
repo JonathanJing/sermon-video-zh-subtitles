@@ -76,6 +76,6 @@ python3 -m unittest tests.test_sermon_trace_export tests.test_sermon_observabili
 
 测试覆盖父子关系、跨 run 隔离、错误状态、缺少结束、时钟异常、脱敏、协议字段形式和原账本保护，以及实际 loopback HTTP、拒收/非法响应、代理/重定向隔离和旧 PID 保护。Trace 是执行观察视图；原账本继续作为费用与执行收据来源，生产质量与人工验收仍走原有门槛。
 
-实际服务验证使用 [verify_sermon_observability.py](../scripts/verify_sermon_observability.py)，会停止再恢复本任务 Jaeger，因此应在没有其他操作员正在观察时运行。它验证真实账本快照送达、断线保留、Badger 重启恢复、稳定 ID 重送，以及观察器自动发现新完成阶段。验证报告保存在 `artifacts/observability/verification/`。2026-09-06 已在 Jaeger UI 目视确认原周六任务的 14 个父子 spans、生成阶段及缓存标签，另一个 trace 包含 4 个 spans。
+实际服务验证使用 [verify_sermon_observability.py](../tools/development/verify_sermon_observability.py)，会停止再恢复本任务 Jaeger，因此应在没有其他操作员正在观察时运行。它验证真实账本快照送达、断线保留、Badger 重启恢复、稳定 ID 重送，以及观察器自动发现新完成阶段。验证报告保存在 `artifacts/observability/verification/`。2026-09-06 已在 Jaeger UI 目视确认原周六任务的 14 个父子 spans、生成阶段及缓存标签，另一个 trace 包含 4 个 spans。
 
 最终实际验证收据为 `artifacts/observability/verification/2026-09-06T203308.050644_0000-8e4b71b0/receipt.json`：11 步通过，2 个真实 traces、18 个 spans 在重启后无需重发即可查询，重送不重复；运行中的测试观察器自动发现并送达新增账本的 4 个 spans。原始账本 SHA 不变。测试观察器已停止，正式观察器按上面列出的三个扫描根和 v3 数字修正版账本运行。

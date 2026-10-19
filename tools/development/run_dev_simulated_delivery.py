@@ -12,12 +12,14 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+import sys
 import time
 from urllib.request import Request, urlopen
 
-if __package__ in (None, ''):
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+# Loaded as tools.development.<name> or run directly: ``scripts`` imports need the repo root.
+_ROOT = str(Path(__file__).resolve().parents[2])
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
 from scripts import build_full_video_app_release as builder
 from scripts import delivery_contract as contract

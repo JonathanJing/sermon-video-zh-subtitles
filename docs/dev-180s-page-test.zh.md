@@ -7,7 +7,7 @@
 ## 生成与发布
 
 ```sh
-.venv/bin/python -m scripts.verify_dev_180s_page_test --help
+.venv/bin/python tools/development/verify_dev_180s_page_test.py --help
 .venv/bin/python -m scripts.build_dev_180s_simulated_inputs --help
 .venv/bin/python -m scripts.prepare_dev_simulated_publication --help
 ```

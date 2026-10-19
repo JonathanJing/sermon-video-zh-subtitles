@@ -14,13 +14,15 @@ import subprocess
 import sys
 import time
 
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+# Loaded as tools.development.<name> or run directly: ``scripts`` imports need the repo root.
+_ROOT = str(Path(__file__).resolve().parents[2])
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
 from scripts import evaluate_backend_four_layer_dry_run as backend
 from scripts import pipeline_compatibility_gate as compatibility
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SUITES = {
     'canonical_packages': ('tests.test_inspect_canonical_packages', 'tests.test_inspect_canonical_audio',
                            'tests.test_inspect_canonical_release', 'tests.test_canonical_pipeline_definition',

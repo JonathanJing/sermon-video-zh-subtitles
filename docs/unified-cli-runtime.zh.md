@@ -91,7 +91,7 @@ owner在人工等待期间持续观察持久stateRevision，新的审核证据�
 ```bash
 .venv/bin/python -m scripts.sermon_workflow_experiment \
   --protocol /absolute/protocol.json --receipt /absolute/cold-a.json
-.venv/bin/python -m scripts.verify_sermon_unified_cli --out /absolute/new-empty-fixture-dir
+.venv/bin/python tools/development/verify_sermon_unified_cli.py --out /absolute/new-empty-fixture-dir
 ```
 
 fixture使用真正CLI和脱离聊天的owner，固定100次转移、零API，要求交接p95≤2秒。它不证明模型速度、内容质量、设备播放或15小时完整交付。容量和STE A/B工具只在固定质量/声音/输入及相应授权下执行；真实实验收据仍须另外取得。
