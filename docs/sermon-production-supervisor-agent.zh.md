@@ -218,7 +218,7 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 Scheduler 配置脚本支持 `production-supervisor`：
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url 'https://sermon-zh-caption-web-...' \

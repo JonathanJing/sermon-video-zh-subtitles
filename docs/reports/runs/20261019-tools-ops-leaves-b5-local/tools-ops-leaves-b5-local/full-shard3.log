@@ -1,0 +1,4 @@
+FAIL: test_two_real_commits_accept_new_authorization_without_code_gate_mock (test_sermon_diagnostic_dag_session.CrossCommitMigrationTests.test_two_real_commits_accept_new_authorization_without_code_gate_mock)
+Ran 1492 tests in 1190.799s
+FAILED (failures=1, skipped=11, expected failures=1)
+exit 1

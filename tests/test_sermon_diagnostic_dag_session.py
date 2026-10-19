@@ -394,9 +394,10 @@ class CrossCommitMigrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
             repo = Path(directory)
             source = Path(__file__).resolve().parents[1]
-            for name in ('scripts','tests','schemas','config'):
+            # tools/: legacy scripts/ facades of moved tools load their implementation from there.
+            for name in ('scripts','tests','schemas','config','tools'):
                 shutil.copytree(source/name,repo/name,
-                    ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+                    ignore=shutil.ignore_patterns('__pycache__','*.pyc','node_modules'))
             (repo/'docs').mkdir()
             shutil.copy2(source/'docs/series-terminology.zh.md',repo/'docs/series-terminology.zh.md')
             def command(*args):
