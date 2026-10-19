@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-19T17:44:40.595345+00:00",
+  "endedAt": "2026-10-19T17:44:47.705345+00:00",
+  "scope": "把 7 个开发驱动与校验工具从 scripts/ 移到 tools/development/ (PR #1131); affected unit tests and package test; 7013 test IDs identical before/after; CLI/import equivalence vs origin/dev"
+}
