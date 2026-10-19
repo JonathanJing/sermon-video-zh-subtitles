@@ -83,7 +83,7 @@ iOS 自 `927f73ed`（2026-10-03）起使用 `text.bubble.fill`（跟随字幕开
 
 ```sh
 python scripts/stage_production_ui.py stage --base <完整生产快照> --overlay <已验证图标覆盖快照> --out <新候选>
-python scripts/run_multilingual_cd.py --mode production --candidate <新候选> --out <新收据目录> --execute --expected-commit <main SHA> --expected-build-report-sha256 <候选报告 SHA>
+python tools/ops/run_multilingual_cd.py --mode production --candidate <新候选> --out <新收据目录> --execute --expected-commit <main SHA> --expected-build-report-sha256 <候选报告 SHA>
 ```
 
 CD 入口沿用生产站点锁，部署前验证完整线上基线、代码身份与候选哈希，只部署 Hosting；之后流式核验所有文件 SHA、SVG MIME、音频 Range 和原视频 redirect。反馈后端不部署。任何 baseline 漂移、额外文件、symlink 或内容变动均拒绝本次 UI 发布；需先辨明新基线并重新生成候选。回滚可恢复本次绑定的完整旧快照及原配置，不删除既有资产。HTTP、浏览器、设备和现场验收分别记录。

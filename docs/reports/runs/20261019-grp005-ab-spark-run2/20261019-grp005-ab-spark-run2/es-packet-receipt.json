@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-batch-identity-ab-packet-v1",
+  "targetLocale": "es",
+  "selectionSha256": "4e32b84e4672dd4e18f28517332f64fb7f1f9d1391df6f3fca2674d6b6bada59",
+  "testedIdentitySha256": "9a246266ab1acf30cfd9dd62651ce06f6912314c45db0c640f92166d0025851d",
+  "keySha256": "adb1de1bad0af83fcc624c6f5bad7d1d57e07daaa05bfbce9379f23ba92e00b8",
+  "pairs": 10,
+  "keyExported": false
+}

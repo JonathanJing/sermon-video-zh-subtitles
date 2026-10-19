@@ -5,7 +5,7 @@
 先用固定 [L2 controller](canonical-layer2-controller.zh.md) 的默认 shadow 获取当前 `stateRevision`，检查原 job 与缓存，然后执行：
 
 ```sh
-python scripts/canonical_layer2_cache_recovery.py \
+.venv/bin/python scripts/canonical_layer2_cache_recovery.py \
   --config /absolute/execution.json --locale zh-Hans \
   --expected-state-revision <当前shadow的精确stateRevision>
 ```

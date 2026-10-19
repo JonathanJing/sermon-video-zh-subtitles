@@ -31,7 +31,7 @@ Layer 4 Dev catalog/release → Firebase HTTP/Range 验证
 Layer 2 生成器使用 Secret Manager 中现有的 OpenAI API key；它在一个新目录中写入四种语言候选和收据，不允许覆盖已有运行：
 
 ```bash
-python scripts/generate_multilingual_fragment_poc.py \
+python experiments/multilingual-fragment-poc/generate_multilingual_fragment_poc.py \
   --anchor-manifest /path/anchor-manifest.json \
   --english-source-package /path/english-source-package.json \
   --source-unit block-59-u001 --source-unit block-59-u002 \
@@ -44,18 +44,18 @@ python scripts/generate_multilingual_fragment_poc.py \
 Layer 3 renderer 完成 WAV 后，先打包并完整解码，再运行现有 ASR 筛查，最后一次性绑定 Layer 2/3/ASR 收据：
 
 ```bash
-python scripts/package_multilingual_fragment_poc.py \
+python experiments/multilingual-fragment-poc/package_multilingual_fragment_poc.py \
   --layer2 artifacts/multilingual-poc/<run-id>/layer2 \
   --layer3 artifacts/multilingual-poc/<run-id>/layer3
 
-python scripts/screen_multilingual_voice_demos.py ... \
+python experiments/sermon-dubbing-poc/screen_multilingual_voice_demos.py ... \
   --out artifacts/multilingual-poc/<run-id>/layer3/asr-screening.json
 
-python scripts/finalize_multilingual_fragment_poc.py \
+python experiments/multilingual-fragment-poc/finalize_multilingual_fragment_poc.py \
   --layer2 artifacts/multilingual-poc/<run-id>/layer2 \
   --layer3 artifacts/multilingual-poc/<run-id>/layer3
 
-python scripts/finalize_multilingual_fragment_poc.py \
+python experiments/multilingual-fragment-poc/finalize_multilingual_fragment_poc.py \
   --layer2 artifacts/multilingual-poc/<run-id>/layer2 \
   --layer3 artifacts/multilingual-poc/<run-id>/layer3 \
   --check-only
@@ -66,7 +66,7 @@ python scripts/finalize_multilingual_fragment_poc.py \
 Firebase 的 JSON 包进入 Git，音频不进入 Git。部署前从已验证的 artifact 目录暂存 canonical 包和 MP3：
 
 ```bash
-python scripts/stage_multilingual_fragment_poc_firebase.py \
+python experiments/multilingual-fragment-poc/stage_multilingual_fragment_poc_firebase.py \
   --layer2 artifacts/multilingual-poc/<run-id>/layer2 \
   --layer3 artifacts/multilingual-poc/<run-id>/layer3 \
   --variant-media-dir /path/to/reviewed-dev-variant-mp3s \
@@ -75,7 +75,7 @@ python scripts/stage_multilingual_fragment_poc_firebase.py \
 
 暂存脚本要求 Layer 2/3 哈希绑定，并要求 Layer 3、`weekly.json`、release JSON 与 MP3 的 SHA-256 完全一致。页面列出的每个音频变体（包括默认变体）都必须从独立保留的、已校验 artifact 目录提供；干净 checkout 缺少其中任何一份时直接停止，不能部署会 404 的页面。`--variant-media-dir` 可以省略，但仅限 release 没有额外变体。若 catalog 含英文来源页，`sourceWindow` 必须显式声明 `timebase=sermon_relative_seconds` 和完整来源媒体中的 `sourceMediaOffsetSeconds`；脚本先把证道相对时间转换成完整视频绝对时间，再截取原始讲员音频、完整解码并核对固定哈希。禁止把证道相对秒数直接用作完整聚会视频的 seek 位置。这条 `en` lane 是 Layer 1 对照，不是假装成目标语言翻译。`firebase/dev/public/media/` 被 `.gitignore` 排除，避免把生成媒体提交到仓库。
 
-Dev 浏览器会按 `multilingual.json → release JSON → content JSON / MP3` 的 SHA-256 绑定校验后切换播放。改动 JSON 时先运行 `python scripts/seal_multilingual_dev_catalog.py` 更新绑定；部署前运行 `python scripts/seal_multilingual_dev_catalog.py --check`、`node --test tests/test_dev_integrity.mjs`，并核对暂存 MP3 与 release 中每个音频变体的 SHA-256。任一环节不符时，浏览器保留当前内容与播放并显示重试入口。当前片段没有与英文来源窗口同钟的目标语言音轨或指纹索引，Dev 页面不提供现场自动定位；此限制不改变 iOS 或正式 Web 已有的定位功能。
+Dev 浏览器会按 `multilingual.json → release JSON → content JSON / MP3` 的 SHA-256 绑定校验后切换播放。改动 JSON 时先运行 `.venv/bin/python scripts/seal_multilingual_dev_catalog.py` 更新绑定；部署前运行 `.venv/bin/python scripts/seal_multilingual_dev_catalog.py --check`、`node --test tests/test_dev_integrity.mjs`，并核对暂存 MP3 与 release 中每个音频变体的 SHA-256。任一环节不符时，浏览器保留当前内容与播放并显示重试入口。当前片段没有与英文来源窗口同钟的目标语言音轨或指纹索引，Dev 页面不提供现场自动定位；此限制不改变 iOS 或正式 Web 已有的定位功能。
 
 ## 当前模型能力与越南语决策
 

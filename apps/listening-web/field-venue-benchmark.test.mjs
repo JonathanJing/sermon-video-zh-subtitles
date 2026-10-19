@@ -144,9 +144,52 @@ test('filesystem errors do not reveal private paths', () => {
 });
 
 test('independent truth requires a private output file', () => {
-  const cli = new URL('../../scripts/field_venue_independent_truth.py', import.meta.url);
-  const r = spawnSync('python3', [cli.pathname, 'manifest.json', '--data-root', '.'], {encoding: 'utf8'});
-  assert.equal(r.status, 2);
-  assert.match(r.stderr, /required: --out/);
-  assert.equal(r.stdout, '');
+  const entrypoints = [
+    new URL('../../scripts/field_venue_independent_truth.py', import.meta.url),
+    new URL('../../experiments/field-fingerprint-benchmark/field_venue_independent_truth.py', import.meta.url),
+  ];
+  const results = entrypoints.map(cli => spawnSync('python3', [cli.pathname, 'manifest.json', '--data-root', '.'], {
+    encoding: 'utf8', cwd: tmpdir(),
+  }));
+  for (const r of results) {
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /required: --out/);
+    assert.equal(r.stdout, '');
+  }
+  assert.equal(results[0].stderr, results[1].stderr);
+});
+
+test('legacy independent truth imports resolve the adjacent implementation', () => {
+  const repo = new URL('../../', import.meta.url).pathname;
+  const implementation = new URL('../../experiments/field-fingerprint-benchmark/field_venue_independent_truth.py', import.meta.url).pathname;
+  const script = `
+import hashlib, os, pickle, sys, tempfile
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+with tempfile.TemporaryDirectory() as temporary:
+    os.chdir(temporary)
+    Path('field_venue_independent_truth.py').write_text('raise AssertionError("ambient shadow loaded")')
+    from scripts import field_venue_independent_truth as legacy
+    from scripts.field_venue_independent_truth import METHOD_VERSION, checked_file, decode
+    assert METHOD_VERSION == 'band-energy-global-v1+waveform-local-v1'
+    assert legacy.checked_file is checked_file and legacy.decode is decode
+    assert Path(checked_file.__code__.co_filename).resolve() == Path(sys.argv[2]).resolve()
+    marker = object()
+    legacy.np = marker
+    assert legacy.np is marker and legacy.global_peak.__globals__['np'] is marker
+    legacy.decode = marker
+    assert legacy.decode is marker and legacy.waveform_peak.__globals__['decode'] is marker
+    legacy.decode = decode
+    wildcard = {}
+    exec('from scripts.field_venue_independent_truth import *', wildcard)
+    assert wildcard['checked_file'] is checked_file
+    assert wildcard['METHOD_VERSION'] == METHOD_VERSION
+    assert pickle.loads(pickle.dumps(checked_file)) is checked_file
+    payload = Path('synthetic.bin')
+    payload.write_bytes(b'synthetic-only')
+    assert checked_file(Path(temporary).resolve(), {'path': payload.name, 'sha256': hashlib.sha256(payload.read_bytes()).hexdigest()}) == payload.resolve()
+`;
+  const result = spawnSync('python3', ['-c', script, repo, implementation], {encoding: 'utf8', cwd: tmpdir()});
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, '');
 });

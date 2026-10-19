@@ -24,7 +24,7 @@
 ## 逐单元恢复清单
 
 ```sh
-.venv/bin/python -m scripts.production_recovery_plan \
+.venv/bin/python tools/ops/production_recovery_plan.py \
   --job /resolved/path/job.json --render-root /resolved/path/render-root \
   --expected-intents artifacts/diagnostics/expected-intents.json \
   --execution-state artifacts/diagnostics/owner.json
@@ -32,10 +32,10 @@
 
 输出 JSON 到 stdout。只读取得已有 formal render lock 的 shared/nonblocking 锁，不新建锁；busy 表示 active。检查 lock inode、输入／产物 SHA 和路径，拒绝 symlink 和读中变化。
 
-`expected-intents.json` 必须是当前 canonical renderer 对目标 job/settings 产生的完整 `_intent`，逐 unitIndex 排列，不能把旧 intent 复制后冒充当前身份。当前可用只读 [`export_layer3_recovery_intents.py`](../scripts/export_layer3_recovery_intents.py) 从当前 producer 重建，不能推断缺失设置或消费旧 stored intent。必须显式提供完整 [settings v1](../schemas/sermon-l3-recovery-render-settings-v1.schema.json) 与所有 canonical 输入/批准/voice/checkpoint map/operation policies；必要时带已有 `--anchor-exception-receipt`。查看完整参数：
+`expected-intents.json` 必须是当前 canonical renderer 对目标 job/settings 产生的完整 `_intent`，逐 unitIndex 排列，不能把旧 intent 复制后冒充当前身份。当前可用只读 [`export_layer3_recovery_intents.py`](../tools/ops/export_layer3_recovery_intents.py) 从当前 producer 重建，不能推断缺失设置或消费旧 stored intent。必须显式提供完整 [settings v1](../schemas/sermon-l3-recovery-render-settings-v1.schema.json) 与所有 canonical 输入/批准/voice/checkpoint map/operation policies；必要时带已有 `--anchor-exception-receipt`。查看完整参数：
 
 ```sh
-.venv/bin/python -m scripts.export_layer3_recovery_intents --help
+.venv/bin/python tools/ops/export_layer3_recovery_intents.py --help
 ```
 
 在原 job 的已有 shared/nonblocking formal lock 内验证输入，stdout 输出 [snapshot v1](../schemas/sermon-l3-recovery-intent-snapshot-v1.schema.json)，保存到新 ignored 文件再传 `--expected-intents`。原目录缺锁时拒绝，不新建生产锁；隔离副本可在测试准备时另建自己的锁并保留哈希证据。snapshot 包含 job 的 canonical/bytes SHA、每单元当前 `_intent`、resolved renderRoot、显式 settings 与输入/producer SHA。checkpoint 只验证声明绑定，不打开权重；`checkpointWeightsVerified=false`，不能用快照授权合成或认定当前 GPU 权重可用。

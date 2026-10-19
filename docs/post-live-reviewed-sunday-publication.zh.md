@@ -146,7 +146,7 @@ API 返回的 `liveStreamingDetails.actualEndTime` 会归一化为现有 `live_s
 当前生产默认应使用本机下载完整音频和视频，再由 Cloud Run 继续时间轴与审核流程：
 
 ```bash
-python3 scripts/run_local_post_live_download.py \
+.venv/bin/python scripts/run_local_post_live_download.py \
   --sunday YYYY-MM-DD \
   --live-url 'https://www.youtube.com/watch?v=<VIDEO_ID>' \
   --youtube-api-key-secret projects/ai-for-god/secrets/youtube-data-api-key/versions/latest
@@ -259,7 +259,7 @@ operator 需要看 `analysis.suggestedWindow`、`startCandidates`、`endCandidat
 输出目录要包含时间窗，避免覆盖：
 
 ```bash
-python3 scripts/sermon_pipeline.py \
+.venv/bin/python scripts/sermon_pipeline.py \
   --input artifacts/post-live-subtitles/YYYY-MM-DD/<VIDEO_ID>/download/source_audio.m4a \
   --start-time HH:MM \
   --end-time HH:MM \
@@ -510,7 +510,7 @@ Discord 通知只提供机器建议窗口和证据路径。Operator 必须独立
 Scheduler 应先配置 timeline probe job，不再在定时器里硬编码播放器时间作为正式 `startTime/endTime`：
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --service-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app \
   --job-id sermon-post-live-timeline-probe \

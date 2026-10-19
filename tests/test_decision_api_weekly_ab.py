@@ -22,6 +22,12 @@ class RunnerTests(unittest.TestCase):
         self.bound = ab.authority(self.root, [self.case], Decimal('20'), 200, 'user test authority')
         self.ledger = ab.Ledger(self.root, self.bound)
 
+    def test_authority_hashes_every_moved_experiment_file(self):
+        line = ab.ROOT / 'experiments/decision-api-ab'
+        files = {str(path.relative_to(ab.ROOT)) for path in line.glob('*.py')}
+        self.assertGreaterEqual(len(files), 8)
+        self.assertLessEqual(files, set(self.bound['codeDependencies']))
+
     def response(self):
         answers = []
         for q in self.case['b']['questions']:

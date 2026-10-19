@@ -1,7 +1,7 @@
 # STE paired A/B 的软件准入
 
 延续[原候选与 paired A/B 计划](backlog-2026-10-04.zh.md#运行前签字清单)，
-入口为 `scripts/experiments/ste_paired_admission.py`。它只冻结和验证实验，不运行模型，
+入口为 `experiments/layer2-translation-ab/ste_paired_admission.py`。它只冻结和验证实验，不运行模型，
 不修改生产 prompt，也不把离线通过当作 API／模型效果验收。
 
 ```sh

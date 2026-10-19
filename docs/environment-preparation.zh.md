@@ -207,7 +207,7 @@ shasum -a 256 /absolute/path/to/full-source.mp4 \
 首次正式运行前，先准备并冻结 source/anchor、policy、terminology、locale plugin、候选/工作目录、预算 config 和预算授权，再运行 controller 只读检查。已存在同一 run 时复用其身份，不能为通过检查而改写 job root、locale、budget 或缓存目录。
 
 ```bash
-.venv/bin/python scripts/sermon_unified_preflight.py \
+.venv/bin/python tools/ops/sermon_unified_preflight.py \
   --config /absolute/path/to/sermon-canonical-layer2-execution.json
 ```
 
@@ -293,7 +293,7 @@ shasum -a 256 /absolute/path/to/full-source.mp4 \
   ```
 
   Production `--execute` 前还应核实当前身份有目标 Hosting site 所需角色、项目预算/审计已启用，并由 release preflight 对线上完整 baseline 做 CAS/哈希核对。没有用于本次网站的完整旧文件树、配置、目录版本和回退点时先准备/恢复 baseline；不要从空目录新建全站候选。当前文档未定义一个适用于所有新 Mac 的通用完整站点下载/恢复命令，因此应把“从正式 artifact/备份取得 snapshot 并核对其 receipt”作为本地环境未完成项交接；不能临时拼 HTTP 下载脚本替代完整 snapshot 保管流程。
-- 正式部署入口 `scripts/run_multilingual_cd.py` 显式指定 `--mode dev` 或 `--mode production`；不要依赖默认 project、当前 Firebase alias 或本机 `.firebaserc` 推断目标。
+- 正式部署入口 `tools/ops/run_multilingual_cd.py` 显式指定 `--mode dev` 或 `--mode production`；不要依赖默认 project、当前 Firebase alias 或本机 `.firebaserc` 推断目标。
 - `--execute` 对代码 checkout 有严格要求：Dev/Production 对应分支干净、commit 与远端一致，并传入代码 commit 与 `build-report.json` SHA。
 - Bucket 视频配置还需要正确的环境 bucket 权限、不可变对象路径、完整视频、字节数/hash、Content-Type 和 baseline `firebase.json`；不能将视频文件悄悄塞进 Hosting manifest。
 - 发布约 700 MB 内容候选走本机受控 CD，而不是把本机媒体路径塞进 GitHub Actions。
@@ -317,7 +317,7 @@ shasum -a 256 /absolute/path/to/full-source.mp4 \
 正式 CD 先只做预检，不带 `--execute`：
 
 ```bash
-.venv/bin/python scripts/run_multilingual_cd.py \
+.venv/bin/python tools/ops/run_multilingual_cd.py \
   --mode production \
   --candidate artifacts/<本周候选目录> \
   --out artifacts/<本周-production-cd收据目录> \

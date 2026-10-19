@@ -129,11 +129,13 @@ class ProductionPackageTests(unittest.TestCase):
         facades = sorted(path.stem for path in (ROOT / "scripts").glob("*.py")
                          if "sys.modules[__name__] = _implementation" in path.read_text(encoding="utf-8"))
         self.assertTrue(facades)
-        code = ("import sys; sys.path[0] = sys.argv[1]\n"
+        code = ("import sys; from pathlib import Path; sys.path[0] = sys.argv[1]\n"
                 "for name in sys.argv[2:]:\n"
                 "    module = __import__(name)\n"
-                # Operator and development tools live outside the production package.
-                "    assert module.__name__.startswith(('tongxing_production.', 'tools.ops.', 'tools.development.')), (name, module.__name__)\n")
+                # Operator/development tools, experiment facades and research audits live outside the production package.
+                "    target = Path(module.__file__).resolve()\n"
+                "    experiment_root = Path(sys.argv[1]).resolve().parent / 'experiments'\n"
+                "    assert module.__name__.startswith(('tongxing_production.', 'tools.ops.', 'tools.development.')) or target.is_relative_to(experiment_root), (name, module.__name__, str(target))\n")
         environment = {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
         with tempfile.TemporaryDirectory() as elsewhere:
             result = subprocess.run([sys.executable, "-c", code, str(ROOT / "scripts"), *facades],

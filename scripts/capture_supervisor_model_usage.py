@@ -1,96 +1,67 @@
-"""Capture content-free supervision usage from a live Codex exec JSONL pipe.
+"""Compatibility entry point for ``tools/ops/capture_supervisor_model_usage.py``.
 
-Codex turn durations include tools/queueing and are session throughput, never
-decode TPS. Normalized observations from future hosts can also be imported.
-This collector neither launches models nor stores prompts/tool output.
+Keep the old direct CLI, ``python -m scripts.capture_supervisor_model_usage`` and the import path
+while the implementation lives in tools/ops. The implementation is loaded
+by absolute path from this checkout, independent of the CWD; bare and
+``scripts.`` imports share one ``tools.ops.capture_supervisor_model_usage`` module object.
 """
-from __future__ import annotations
-import argparse
-from contextlib import ExitStack
-import json
+
+import importlib
+from importlib import util
 from pathlib import Path
+import runpy
 import sys
 
-if __package__ in (None, ''):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_model_call_observation as observations
+_IMPLEMENTATION = (Path(__file__).resolve().parents[1] / "tools/ops/capture_supervisor_model_usage.py").resolve()
+_MODULE_NAME = "tools.ops.capture_supervisor_model_usage"
 
 
-def capture_codex(lines, model, *, service_tier=None):
-    """Receiver-observed turn intervals; requires a live stream, not file replay."""
-    stack, receipt = None, None
-    completed, failed = 0, 0
+def _load():
+    existing = sys.modules.get(_MODULE_NAME)
+    if existing is not None:
+        if Path(existing.__file__).resolve() != _IMPLEMENTATION:
+            raise ImportError(f"{_MODULE_NAME} is already loaded from another checkout")
+        return existing
+    spec = util.spec_from_file_location(_MODULE_NAME, _IMPLEMENTATION)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load {_IMPLEMENTATION}")
+    module = util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = module
     try:
-        for line in lines:
-            try:
-                row = json.loads(line)
-            except (ValueError, TypeError):
-                raise ValueError('invalid_monitor_json_line') from None
-            if not isinstance(row, dict):
-                raise ValueError('invalid_monitor_event')
-            kind = row.get('type')
-            if kind == 'turn.started':
-                if stack is not None:
-                    raise ValueError('overlapping_monitor_turns')
-                stack = ExitStack()
-                receipt = stack.enter_context(observations.invocation(model, backend='agent_session',
-                    provider='codex', role='supervisor', timing_scope='agent_session_including_tools',
-                    usage_source='host_telemetry', service_tier=service_tier))
-            elif kind in {'turn.completed', 'turn.failed'}:
-                if stack is None:
-                    raise ValueError('monitor_turn_start_not_observed')
-                receipt['usage'] = row.get('usage')
-                active, stack = stack, None
-                if kind == 'turn.failed':
-                    error = RuntimeError('monitor_turn_failed')
-                    active.__exit__(RuntimeError, error, None)
-                    failed += 1
-                else:
-                    active.close()
-                    completed += 1
-                receipt = None
-            # Ignore item/command/text/error bodies entirely; never persist them.
-        if stack is not None:
-            raise InterruptedError('monitor_turn_finish_not_observed')
-    except BaseException as exc:
-        if stack is not None:
-            stack.__exit__(type(exc), exc, exc.__traceback__)
+        spec.loader.exec_module(module)
+    except BaseException:
+        del sys.modules[_MODULE_NAME]
         raise
-    return {'status': 'needs_attention' if failed else 'captured', 'completedTurns': completed, 'failedTurns': failed,
-            'timingEvidence': 'receiver_monotonic_live_stream', 'generationTokensPerSecond': None}
+    try:  # ``import tools.ops.capture_supervisor_model_usage`` also reaches it through the namespace parent.
+        setattr(importlib.import_module("tools.ops"), "capture_supervisor_model_usage", module)
+    except ImportError:
+        pass
+    return module
 
 
-def import_observations(lines):
-    """Versioned host observations retain original measurement times/identities."""
-    count = 0
-    for line in lines:
-        try:
-            fields = observations.safe_observation(json.loads(line))
-        except (ValueError, TypeError):
-            raise ValueError('invalid_monitor_observation') from None
-        observations._emit(fields)
-        count += 1
-    return {'status': 'imported', 'observations': count}
+if __name__ == "__main__":
+    runpy.run_path(str(_IMPLEMENTATION), run_name="__main__")
+else:
+    _implementation = _load()
 
+    class _Forward(type(sys)):
+        # A caller that loads this file with spec_from_file_location keeps this
+        # facade object; its reads, writes and mock patches reach the implementation.
+        def __getattr__(self, name):
+            return getattr(_implementation, name)
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--accounting-dir', required=True, type=Path)
-    parser.add_argument('--format', choices=('codex-exec-live', 'observations'), required=True)
-    parser.add_argument('--model', help='Configured Codex model identity (host may not report actual model)')
-    parser.add_argument('--service-tier', choices=('default', 'fast', 'ultrafast'),
-                        help='Explicit configured Codex tier for credit estimates; omitted remains unknown')
-    parser.add_argument('--live', action='store_true', help='Assert stdin is a live model stream; never use on a saved file')
-    args = parser.parse_args()
-    if args.format == 'codex-exec-live' and (not args.live or not args.model):
-        parser.error('Codex capture requires --live and --model; saved logs need original timestamp observations')
-    with accounting.accounting_session(args.accounting_dir, 'supervisor_usage_capture'):
-        result = capture_codex(sys.stdin, args.model, service_tier=args.service_tier) if args.format == 'codex-exec-live' else import_observations(sys.stdin)
-    print(json.dumps(result))
-    return 1 if result['status'] == 'needs_attention' else 0
+        def __setattr__(self, name, value):
+            setattr(_implementation, name, value)
 
+        def __delattr__(self, name):
+            delattr(_implementation, name)
 
-if __name__ == '__main__':
-    raise SystemExit(main())
+    def __getattr__(name):
+        # Also serves a spec-loaded copy that was never put in sys.modules.
+        return getattr(_implementation, name)
+
+    _facade = sys.modules.get(__name__)
+    if _facade is not None and _facade.__dict__ is globals():
+        _facade.__class__ = _Forward
+    sys.modules[__name__] = _implementation

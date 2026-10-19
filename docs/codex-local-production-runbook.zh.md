@@ -4,7 +4,7 @@
 
 并发、请求上限和新计划预算的当前规则见[周更运行配置](weekly-run-profile.zh.md)；既有运行保留冻结授权与缓存身份，API-only 阶段不占 Spark，GPU 阶段按原准入门执行。
 
-在 git worktree 里跑测试或脚本前，先执行 `python3 scripts/worktree_venv.py`。共享 `.venv` 的可编辑安装指向主 checkout，`PYTHONPATH` 管不到 `python -I` 启动的子进程；该脚本建 `<worktree>/.venv`，先导入本 worktree 的 `packages/production/src`，再用共享 `.venv` 的依赖（依赖仍装在共享 `.venv`）。
+在 git worktree 里跑测试或脚本前，先执行 `python3 tools/development/worktree_venv.py`。共享 `.venv` 的可编辑安装指向主 checkout，`PYTHONPATH` 管不到 `python -I` 启动的子进程；该脚本建 `<worktree>/.venv`，先导入本 worktree 的 `packages/production/src`，再用共享 `.venv` 的依赖（依赖仍装在共享 `.venv`）。
 
 ### 开工前：预算文件与开工检查（2026-10-13 起）
 
@@ -30,7 +30,7 @@ QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVer
 
 额度耗尽时的后续方向见[API fallback 设计](codex-quota-api-fallback-design.zh.md)：需要明确拒绝证据、独立调用身份、入口验收和绑定预算；目前没有实现或启用。不能通过更换环境变量、认证或删除 started marker 将未决调用转到 API。
 
-合并后用真实模型把一段周次片段完整跑到 Dev 测试页（Layer 1–4、按语言质检、质检失败回 Layer 2 修订、Spark 配音与音频质检、受控发布），按[真实模型片段 E2E](clip-real-e2e.zh.md)用 `scripts/run_clip_real_e2e.py` 和一份运行规格执行，可断点续跑。
+合并后用真实模型把一段周次片段完整跑到 Dev 测试页（Layer 1–4、按语言质检、质检失败回 Layer 2 修订、Spark 配音与音频质检、受控发布），按[真实模型片段 E2E](clip-real-e2e.zh.md)用 `tools/development/run_clip_real_e2e.py` 和一份运行规格执行，可断点续跑。
 
 真实Dev音频测试按[已接入的参数入口](local-production-next-dev-test-parameters.zh.md#已接入的音频入口)运行`python -m scripts.run_dev_local_audio_test tts|back-asr`：自动读取profile选配音batch2、回转写batch4，显式batch1作基线、回转写8作对照。此入口保留正式producer门禁与独立回执；合并dev和CI不会自动运行GPU或付费模型。
 
@@ -215,7 +215,7 @@ Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider
 
 - **代码身份冻结。** 运行开始时在运行计划里记下 `machine_quality_waiver.implementation_sha256()`（`python3 -c "from scripts import machine_quality_waiver as w; print(w.implementation_sha256())"`），之后每次调用 `run_machine_qc_clip_test.py`／`run_machine_qc_audio_test.py` 都带 `--expected-implementation <该值>`；代码不一致时驱动在任何模型调用之前以退出码 2 拒绝并打印各哈希文件的当前哈希。运行期间不改哈希文件集里的代码；要改就开新运行计划。2026-10-11 两次未察觉的改动让已签发的豁免失效，重签了两轮。
 - **一周一份预算授权。** `api-budget-authorization-<ISO 周>.json` 只写一份，筛查、校准、重签都复用它和同一账本（账本本就支持跨轮复用）；请求上限按三语 × 一次筛查 + 一次校准估，本周账本 27,292 次请求里 Layer 2 只占约 220 次，其余是哈希翻转导致的重签。超限即停并通知，不自动续。
-- **Spark 独占会话冻结定时器，派发前等待。** `spark_exclusive_session.py begin` 现在把 `job-reasoning-review.timer` 一起停掉、结束时最后恢复（主机上没有该定时器时记为 `not-found`）。派发链在每次派发前运行 `python3 scripts/spark_wait_ready.py --poll-seconds 30 --max-minutes 30`：只对 `competing_service_active:*`、`competing_launcher_active`、`insufficient_available_memory` 等会自行消退的状态轮询，其他错误立即返回；退出码 0 就绪、3 超时、1 需要人处理。
+- **Spark 独占会话冻结定时器，派发前等待。** `spark_exclusive_session.py begin` 现在把 `job-reasoning-review.timer` 一起停掉、结束时最后恢复（主机上没有该定时器时记为 `not-found`）。派发链在每次派发前运行 `.venv/bin/python tools/ops/spark_wait_ready.py --poll-seconds 30 --max-minutes 30`：只对 `competing_service_active:*`、`competing_launcher_active`、`insufficient_available_memory` 等会自行消退的状态轮询，其他错误立即返回；退出码 0 就绪、3 超时、1 需要人处理。
 
 ## CUV 证据与生产收尾
 
@@ -263,6 +263,20 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
 ```
 
 不要把 cookies 文件加入 Git、GCS artifact 或 automation prompt。
+
+## Broadcast Message 网盘上传检查（2026-10-18 起）
+
+周六晚间另有一份证道录像上传到公开 Google Drive 文件夹「Broadcast Message Files」：<https://drive.google.com/drive/folders/1PsAKaZhYCXsNfzYFkFBTng66N1tPw1sF>（文件夹 ID `1PsAKaZhYCXsNfzYFkFBTng66N1tPw1sF`，所有者在公开视图中隐藏）。首个观察样本是 `20261018 BROADCAST MESSAGE.mp4`（`video/mp4`，1,085,721,714 字节），页面内嵌的两个时间戳为洛杉矶时间 2026-10-17 18:47:54 与 18:50:01；未登录视图不标明哪个是创建、哪个是修改时间，上传落在这两分钟内。
+
+本机 Claude 定时任务 `sermon-drive-upload-watch`（「每周六 证道视频上传检查」）只检测上传，规则如下：
+
+- **时间。** cron `*/10 18-19 * * 6`（本机洛杉矶时间），实际检查窗口为周六 18:40–20:00；18:40 前的唤醒直接退出，最后一次约 19:50 加调度延迟。App 关闭时到点不跑，下次打开时补跑。
+- **读取方式。** 匿名 HTTP GET 文件夹页面，解析内嵌的 `_DRIVE_ivd` 文件列表（文件 ID、名称、MIME、大小、两个毫秒时间戳），不用浏览器、不登录 Google、不读 cookies。
+- **匹配规则。** 本周文件名须以即将到来的周日日期 `YYYYMMDD` 开头（周六运行即次日，例如 10/24 检查 `20261025`）。本周（上一个周日 00:00 后）上传但名称不符的文件单独列为 `otherRecentFiles`，提示可能改名，不算命中。
+- **结果与通知。** `found_new` 首次发现时发 macOS 通知并推送一行（文件名 · GB · 最早时间 PT），同一文件 ID 只通知一次；19:45 后仍无匹配为 `missing_final`，每周只通知一次并列出文件夹现有文件；连续两次读取失败（文件夹转私有或页面格式改变）通知 `error`，不静默跳过。通知状态记在任务目录的 `state.json`。
+- **位置。** 脚本与提示词只在本机 `~/.claude/scheduled-tasks/sermon-drive-upload-watch/`（`check_upload.py`、`SKILL.md`、`state.json`），不在仓库内；可用 `--now <ISO 时间> --no-notify` 模拟某一时刻、`--ignore-window` 跳过窗口检查。
+
+边界：该检查只读，不下载视频，不写 GCS state，不建立 Layer 1 来源身份，也不启动任何生产阶段。检测到文件不等于确认它与周六直播或周日讲道同篇，也不等于确认可用于生产；要把它作为来源，须另行核实使用授权与来源署名，并按[四层合同](multilingual-production-interfaces.zh.md)从 Layer 1 开始绑定 source ID、URL、媒体哈希与时长。
 
 ## 完成标准
 

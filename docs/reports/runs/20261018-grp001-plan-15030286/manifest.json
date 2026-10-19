@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-grp001-plan-15030286",
+  "runs": [
+    {
+      "label": "20261018-grp001-plan-15030286",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261018-grp001-plan-15030286",
+      "skipped": {
+        ".json": 3,
+        ".txt": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-grp001-plan-15030286",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 114,
+      "truncated": false,
+      "sha256": "587be27cf5205ef1e61ef94f4a87a3e9776f784f2f053ef798909b621ba8b1a5",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-grp001-plan-15030286",
+      "path": "plan-ko-redo3.log",
+      "kind": "log",
+      "bytes": 794,
+      "truncated": false,
+      "sha256": "97e73960d78b01d3576781b9d27ad55382cfcfc4db630b438204bbb511e8bd83",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-grp001-plan-15030286",
+      "path": "plan.log",
+      "kind": "log",
+      "bytes": 1705,
+      "truncated": false,
+      "sha256": "955677e740d4b2541f0cf5c7eac074ab1577ded1f264ca241ff6061a645add54",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-grp001-plan-15030286",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 7091,
+      "truncated": false,
+      "sha256": "3680840e6bc56f62b0daacddd3bd6026b3575132aff2ade2fa770b7c6356ae07",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-grp001-plan-15030286",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 73,
+      "truncated": false,
+      "sha256": "b57109c08aaabbafdf27ba677210273f5aac00884f1a29ce9aa6ec8b207fcef3",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

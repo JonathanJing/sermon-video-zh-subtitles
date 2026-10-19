@@ -6,7 +6,7 @@
 
 ### 单元口播指令输入
 
-`--unit-instructions <JSON 文件>` 接受 `sermon-unit-delivery-instructions-v1` 或 `-v2` 输入，由 [renderer 的 unit_instructions](../scripts/render_formal_target_language_speech.py) 校验。它绑定完整 speech job 的 JSON 身份、locale 和已批准文字；不能借口播指令更改批准文本或授予音色／发布资格。可只列需要覆盖的单元，但 `units` 必须是非空数组。
+`--unit-instructions <JSON 文件>` 接受 `sermon-unit-delivery-instructions-v1` 或 `-v2` 输入，由 [renderer 的 unit_instructions](../packages/production/src/tongxing_production/audio/renderer.py) 校验。它绑定完整 speech job 的 JSON 身份、locale 和已批准文字；不能借口播指令更改批准文本或授予音色／发布资格。可只列需要覆盖的单元，但 `units` 必须是非空数组。
 
 ```json
 {
@@ -49,7 +49,7 @@
 .venv/bin/python scripts/ko_spoken_numerals.py --job <韩语 speech job.json> --out <新的 unit-instructions.json>
 ```
 
-改读会改变受影响单元的声音身份，需在新的 render 目录重新合成。提前配音（speculative）renderer 仍只接受 v1 策略。
+改读会改变受影响单元的声音身份，需在新的 render 目录重新合成。提前配音（speculative）renderer 接受 v1 策略，也接受上面登记过的 v2 改读策略；但它从不改读：所选组中只要有一组会被该策略的规则改写，就在写出任何产物前拒绝，被改写的组留给正式 renderer 合成。
 
 列出的单元以其 `instruction` 覆盖全局 `--instruct`；未列出的单元继续使用全局指令。指令或口播形式变化时用新 job／render 目录，重新生成输入绑定，保留原 intent、commit、WAV 和收据。batch>1 的窗口身份包含邻组输入：一个单元的指令变化可能使整个窗口的声音身份变化，不承诺只重合成该单元。
 

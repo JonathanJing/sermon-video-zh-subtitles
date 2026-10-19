@@ -94,7 +94,7 @@ sermon-sat-post-live-subtitles  */10 18-23 * * SAT  action=post-live-subtitles
 Dry-run configuration example:
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url 'https://sermon-zh-caption-web-...' \
@@ -111,7 +111,7 @@ python3 scripts/configure_live_source_scheduler.py \
 If `ENABLE_INLINE_WORKER` is disabled, this endpoint only returns the planned command; for production long-running work, prefer putting that command in a Cloud Run Job. Manual run shape:
 
 ```bash
-python3 scripts/run_post_live_subtitle_generation.py \
+.venv/bin/python scripts/run_post_live_subtitle_generation.py \
   --sunday YYYY-MM-DD \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
   --slug mariners_<youtube_video_id> \
