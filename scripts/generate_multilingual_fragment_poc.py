@@ -1,295 +1,52 @@
-#!/usr/bin/env python3
-"""Generate machine-reviewed Layer 2 candidates for a bounded sermon fragment.
+"""Compatibility entry point for the multilingual fragment POC.
 
-This is a shadow/POC producer. It never grants human approval or production
-release eligibility, even when the model review passes.
+The implementation lives in `experiments/multilingual-fragment-poc/generate_multilingual_fragment_poc.py`. Keep the old direct CLI,
+module CLI and import path; resolve it from this file, independent of the CWD.
 """
-from __future__ import annotations
 
-import argparse
 import hashlib
-import json
+from importlib import util
 from pathlib import Path
+import runpy
 import sys
-from typing import Any
-
-import requests
-from jsonschema import Draft202012Validator
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from backend.cloud import access_secret as cloud_access_secret
-
-
-RESPONSES_URL = "https://api.openai.com/v1/responses"
-LOCALES = {
-    "zh-Hans": {"name": "Simplified Chinese", "modelLanguage": "Chinese"},
-    "ko": {"name": "Korean", "modelLanguage": "Korean"},
-    "es": {"name": "Spanish", "modelLanguage": "Spanish"},
-    "vi": {"name": "Vietnamese", "modelLanguage": "Vietnamese"},
-}
-PROMPT_VERSION = "sermon-fragment-translation-poc-v2"
-REVIEW_VERSION = "sermon-fragment-semantic-judge-poc-v1"
+_IMPLEMENTATION = (
+    Path(__file__).resolve().parents[1]
+    / "experiments/multilingual-fragment-poc/generate_multilingual_fragment_poc.py"
+).resolve()
+_MODULE_NAME = (
+    "_multilingual_fragment_poc_generate_multilingual_fragment_poc_"
+    + hashlib.sha256(str(_IMPLEMENTATION).encode()).hexdigest()
+)
 
 
-def canonical_sha(value: object) -> str:
-    raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
-    return hashlib.sha256(raw).hexdigest()
-
-
-def validate_source_inputs(anchors: dict[str, Any], package: dict[str, Any]) -> None:
-    """Bind this shadow run to one eligible Layer 1 package before paid calls."""
-    for value, schema_name in (
-        (anchors, "sermon-sentence-anchor-manifest-v2"),
-        (package, "sermon-english-source-package-v1"),
-    ):
-        schema = json.loads((REPO_ROOT / "schemas" / f"{schema_name}.schema.json").read_text(encoding="utf-8"))
-        errors = list(Draft202012Validator(schema).iter_errors(value))
-        if errors:
-            raise ValueError(f"Invalid {schema_name}: {errors[0].message}")
-    if package["status"] == "candidate_ready_for_translation":
-        if package["candidateTranslationEligible"] is not True or package["translationEligible"] is not False:
-            raise ValueError("Layer 1 candidate translation gate is not eligible")
-    elif package["status"] == "ready_for_translation":
-        if package["translationEligible"] is not True:
-            raise ValueError("Layer 1 production translation gate is not eligible")
-    else:
-        raise ValueError("Layer 1 package is blocked for translation")
-    if package["sourceLocale"] != "en" or package["anchors"]["artifact"]["jsonSha256"] != canonical_sha(anchors):
-        raise ValueError("Layer 1 package and anchor manifest belong to different runs")
-    if package["anchors"]["sourceUnitCount"] != len(anchors["sourceUnits"]):
-        raise ValueError("Layer 1 package and anchor manifest have different unit coverage")
-
-
-def response_text(data: dict[str, Any]) -> str:
-    if isinstance(data.get("output_text"), str):
-        return data["output_text"]
-    for item in data.get("output", []):
-        for content in item.get("content", []):
-            text = content.get("text") or content.get("output_text")
-            if isinstance(text, str) and text.strip():
-                return text
-    raise ValueError("OpenAI response did not contain output text")
-
-
-def request_json(api_key: str, model: str, system: str, user: object) -> tuple[str, dict[str, Any]]:
-    if model == 'gpt-6.1-sol':
-        from scripts.sermon_codex_transport import chat_json
-        response = chat_json('', {'model': model, 'reasoning_effort': 'high', 'service_tier': 'fast',
-            'response_format': {'type': 'json_object'}, 'messages': [
-                {'role': 'system', 'content': system},
-                {'role': 'user', 'content': json.dumps(user, ensure_ascii=False)}]})
-        return response['id'], json.loads(response['choices'][0]['message']['content'])
-    response = requests.post(
-        RESPONSES_URL,
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        json={
-            "model": model,
-            "input": [
-                {"role": "system", "content": [{"type": "input_text", "text": system}]},
-                {"role": "user", "content": [{"type": "input_text", "text": json.dumps(user, ensure_ascii=False)}]},
-            ],
-            "reasoning": {"effort": "medium"},
-            "text": {"format": {"type": "json_object"}},
-        },
-        timeout=180,
-    )
-    if response.status_code >= 400:
-        try:
-            detail = response.json().get("error", {}).get("message", "request failed")
-        except Exception:
-            detail = "request failed"
-        raise RuntimeError(f"OpenAI Responses API failed ({response.status_code}): {detail}")
-    payload = response.json()
-    parsed = json.loads(response_text(payload))
-    if not isinstance(parsed, dict):
-        raise ValueError("OpenAI JSON output must be an object")
-    return str(payload.get("id") or "missing-response-id"), parsed
-
-
-def index_output(value: dict[str, Any], source_ids: list[str], *, review: bool,
-                 target_locales: list[str] | None = None) -> dict[str, dict[str, dict[str, Any]]]:
-    expected_locales = target_locales or list(LOCALES)
-    result: dict[str, dict[str, dict[str, Any]]] = {}
-    for locale_item in value.get("locales", []):
-        locale = locale_item.get("targetLocale")
-        if locale not in expected_locales or locale in result:
-            raise ValueError(f"Unexpected or duplicate locale: {locale}")
-        units: dict[str, dict[str, Any]] = {}
-        for item in locale_item.get("units", []):
-            source_id = item.get("sourceUnitId")
-            if source_id not in source_ids or source_id in units:
-                raise ValueError(f"Unexpected or duplicate source unit: {locale}/{source_id}")
-            if not review and not str(item.get("targetText", "")).strip():
-                raise ValueError(f"Empty target text: {locale}/{source_id}")
-            units[source_id] = item
-        if list(units) != source_ids:
-            raise ValueError(f"Unit order or coverage differs for {locale}")
-        result[locale] = units
-    if set(result) != set(expected_locales):
-        raise ValueError("Locale coverage differs")
-    return result
-
-
-def build_shadow_groups(fragment_id: str, locale: str, policy_sha: str,
-                        units: list[tuple]) -> list[dict[str, Any]]:
-    """Keep each reviewed source unit intact as one target utterance."""
-    groups = []
-    for source_id, text, result, checks, passed in units:
-        target_text = text.strip()
-        groups.append({
-            "translationGroupId": f"{fragment_id}-{locale}-{source_id}",
-            "sourceUnitIds": [source_id],
-            "targetUtterances": [target_text],
-            "targetText": target_text,
-            "coverage": [{"sourceUnitId": source_id, "targetText": target_text}],
-            "semanticReview": {
-                "status": "pass" if passed else "fail",
-                "checks": checks,
-                "evidence": result.get("evidence") or f"Independent semantic review of {source_id}.",
-                "uncertainty": result.get("uncertainty") or [],
-                "issues": result.get("issues") or [],
-            },
-            "languageReview": {
-                "status": "pass" if passed else "fail",
-                "pluginId": "gpt-language-review-poc-v1",
-                "policySha256": policy_sha,
-                "checks": [{"checkId": "target_language_and_natural_narration",
-                            "status": "pass" if passed else "fail",
-                            "evidence": f"Reviewed as {LOCALES[locale]['name']} narration; human review remains pending."}],
-            },
-        })
-    return groups
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--anchor-manifest", type=Path, required=True)
-    parser.add_argument("--english-source-package", type=Path, required=True)
-    parser.add_argument("--source-unit", action="append", dest="source_units", required=True)
-    parser.add_argument("--target-locale", action="append", choices=tuple(LOCALES),
-                        help="Target locale for this POC; repeat for multiple locales (default: all four)")
-    parser.add_argument("--api-key-secret", required=True)
-    parser.add_argument("--model", default="gpt-6.1-sol")
-    parser.add_argument("--fragment-id", default="2026-09-20-lion-of-judah")
-    parser.add_argument("--out", type=Path, required=True)
-    args = parser.parse_args()
-    target_locales = args.target_locale or list(LOCALES)
-    if len(target_locales) != len(set(target_locales)):
-        raise SystemExit("Target locales must be unique")
-    if args.out.exists():
-        raise SystemExit(f"Output already exists; use a new immutable run directory: {args.out}")
-
-    anchors = json.loads(args.anchor_manifest.read_text(encoding="utf-8"))
-    package = json.loads(args.english_source_package.read_text(encoding="utf-8"))
-    validate_source_inputs(anchors, package)
-    by_id = {item["sourceUnitId"]: item for item in anchors["sourceUnits"]}
-    if len(args.source_units) != len(set(args.source_units)) or any(item not in by_id for item in args.source_units):
-        raise SystemExit("Selected source unit IDs must exist and be unique")
-    selected = [
-        {"sourceUnitId": unit_id, "english": by_id[unit_id]["english"], "start": by_id[unit_id]["start"], "end": by_id[unit_id]["end"]}
-        for unit_id in args.source_units
-    ]
-    policy = {
-        "schemaVersion": "sermon-target-language-policy-poc-v1",
-        "scope": "machine_reviewed_fragment_poc_not_production",
-        "sourceLocale": "en",
-        "targetLocales": target_locales,
-        "rules": [
-            "Translate each source unit independently without merging, dropping, or inventing meaning.",
-            "Preserve negation, names, numbers, Bible references, imagery, and speaker emphasis.",
-            "When the English source says 'the Word' to refer to Scripture, translate that reference explicitly rather than replacing it with a broader term such as 'truth' or 'message'.",
-            "Use natural spoken target-language phrasing suitable for narration.",
-            "Human translation approval remains required for production.",
-        ],
-    }
-    translation_input = {"targetLocales": [{"targetLocale": key, "language": LOCALES[key]["name"]} for key in target_locales], "sourceUnits": selected}
-    api_key = '' if args.model == 'gpt-6.1-sol' else cloud_access_secret(args.api_key_secret)
-    translator_id, translation = request_json(
-        api_key,
-        args.model,
-        "You are the translation stage of a sermon localization POC. Return strict JSON only with shape {locales:[{targetLocale,units:[{sourceUnitId,targetText}]}]}. Follow the supplied policy. Do not combine units. Do not add devotional honorifics or theological titles (for example Lord or 主) unless they are explicit in that source unit.",
-        {"policy": policy, **translation_input},
-    )
-    translated = index_output(translation, args.source_units, review=False, target_locales=target_locales)
-    reviewer_id, review = request_json(
-        api_key,
-        args.model,
-        "You are an independent semantic judge. Compare every translation to its English source. Return strict JSON only with shape {locales:[{targetLocale,units:[{sourceUnitId,status,completeMeaning,negationsNumbersNames,quotationAttribution,noAddedMeaning,evidence,uncertainty,issues}]}]}. Each status/check is pass or fail. Use empty arrays when none. Be fail-closed.",
-        {"policy": policy, "sourceUnits": selected, "translations": translation},
-    )
-    reviewed = index_output(review, args.source_units, review=True, target_locales=target_locales)
-    del api_key
-
-    args.out.mkdir(parents=True, exist_ok=False)
-    (args.out / "translation-policy.json").write_text(json.dumps(policy, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    policy_sha = canonical_sha(policy)
-    source_package_sha = canonical_sha(package)
-    anchor_sha = canonical_sha(anchors)
-    all_pass = True
-    candidates = []
-    for locale in target_locales:
-        units = []
-        for source_id in args.source_units:
-            result = reviewed[locale][source_id]
-            checks = {name: result.get(name) for name in ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")}
-            unit_pass = result.get("status") == "pass" and set(checks.values()) == {"pass"} and not result.get("issues")
-            all_pass = all_pass and unit_pass
-            units.append((source_id, translated[locale][source_id]["targetText"], result, checks, unit_pass))
-        locale_dir = args.out / locale
-        locale_dir.mkdir()
-        review_units = [{
-            "sourceUnitId": item[0],
-            "targetText": item[1],
-            "status": "pass" if item[4] else "fail",
-            "checks": item[3],
-            "issues": item[2].get("issues") or [],
-            "uncertainty": item[2].get("uncertainty") or [],
-        } for item in units]
-        review_path = locale_dir / "machine-review-units.json"
-        review_path.write_text(json.dumps(review_units, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        locale_pass = all(item[4] for item in units)
-        groups = build_shadow_groups(args.fragment_id, locale, policy_sha, units)
-        group_ids = [group["translationGroupId"] for group in groups]
-        candidate = {
-            "schemaVersion": "sermon-target-language-candidate-v2",
-            "sourceLocale": "en",
-            "targetLocale": locale,
-            "englishSourcePackageJsonSha256": source_package_sha,
-            "anchorManifestSha256": anchor_sha,
-            "translationPolicySha256": policy_sha,
-            "status": "machine_review_pass_human_review_pending" if locale_pass else "translation_draft",
-            "releaseEligible": False,
-            "generation": {
-                "translator": {"model": args.model, "promptVersion": PROMPT_VERSION, "requestIds": [translator_id]},
-                "reviewer": {"model": args.model, "promptVersion": REVIEW_VERSION, "requestIds": [reviewer_id]},
-            },
-            "groups": groups,
-            "modelReview": {"status": "pass" if locale_pass else "fail", "reviewedGroupIds": group_ids},
-            "humanReview": {"translation": "pending", "reviewer": None, "reviewedAt": None, "reviewedGroupIds": []},
-        }
-        candidate_path = locale_dir / "target-language-candidate.json"
-        candidate_path.write_text(json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        candidates.append({"targetLocale": locale, "path": str(candidate_path.relative_to(args.out)), "jsonSha256": canonical_sha(candidate), "status": candidate["status"], "machineReviewUnits": {"path": str(review_path.relative_to(args.out)), "jsonSha256": canonical_sha(review_units)}})
-    receipt = {
-        "schemaVersion": "sermon-multilingual-fragment-poc-v1",
-        "scope": "layer_2_shadow_poc",
-        "productionEligible": False,
-        "humanApproval": False,
-        "sourcePackageId": package["packageId"],
-        "selectedSourceUnits": selected,
-        "translatorRequestId": translator_id,
-        "reviewerRequestId": reviewer_id,
-        "allMachineChecksPass": all_pass,
-        "candidates": candidates,
-    }
-    (args.out / "layer2-receipt.json").write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"out": str(args.out), "allMachineChecksPass": all_pass, "locales": target_locales}))
-    return 0 if all_pass else 2
+def _load():
+    existing = sys.modules.get(_MODULE_NAME)
+    if existing is not None:
+        if Path(existing.__file__).resolve() != _IMPLEMENTATION:
+            raise ImportError("generate_multilingual_fragment_poc module cache points to another checkout")
+        return existing
+    spec = util.spec_from_file_location(_MODULE_NAME, _IMPLEMENTATION)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load generate_multilingual_fragment_poc: {_IMPLEMENTATION}")
+    module = util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        del sys.modules[_MODULE_NAME]
+        raise
+    return module
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    runpy.run_path(str(_IMPLEMENTATION), run_name="__main__")
+else:
+    _implementation = _load()
+
+    def __getattr__(name):
+        # Also supports callers that load this facade with spec_from_file_location.
+        return getattr(_implementation, name)
+
+    sys.modules[__name__] = _implementation

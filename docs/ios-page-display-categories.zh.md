@@ -49,7 +49,7 @@ App 按界面语言选择标签：精确 locale → 简体中文 `zh-CN` / `zh-H
 从仓库根目录执行（使用已安装 `requirements.txt` 的 Python 环境）：
 
 ```sh
-python scripts/update_catalog_display_categories.py \
+.venv/bin/python tools/ops/update_catalog_display_categories.py \
   --catalog artifacts/catalog-input.json \
   --updates artifacts/category-updates.json \
   --output artifacts/catalog-category-candidate.json

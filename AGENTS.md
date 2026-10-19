@@ -36,5 +36,5 @@ Purpose: help attendees follow English sermons in their own language, on time an
 | Supervisor state or tools | [Supervisor contract](docs/sermon-production-supervisor-agent.md) |
 | Sunday live captions or offline backup | [Live POC instructions](experiments/local-live-poc/AGENTS.md) or [fallback skill](skills/live-caption-zh-fallback/SKILL.md) |
 | iOS client | [iOS instructions](apps/tongxing-ios/AGENTS.md) |
-| Priorities, stable IDs and status | [Dev backlog](docs/backlog.zh.md), the only top-level backlog; find an ID's rows with `python3 scripts/backlog_ids.py <ID or prefix>` |
+| Priorities, stable IDs and status | [Dev backlog](docs/backlog.zh.md), the only top-level backlog; find an ID's rows with `python3 tools/development/backlog_ids.py <ID or prefix>` |
 | Benchmark, model trial or post-training | README Discovery links and that experiment's contract |

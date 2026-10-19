@@ -77,7 +77,7 @@ mariners_<youtube_video_id>
 线程里沉淀出的可复用 CLI 已迁移到当前 repo 的 `scripts/sermon_pipeline.py`。运行前确认 `.env` 或当前 shell 有 `OPENAI_API_KEY`。
 
 ```bash
-python3 scripts/sermon_pipeline.py \
+.venv/bin/python scripts/sermon_pipeline.py \
   --input artifacts/<slug>/full_archive_<timestamp>/full_audio_139.m4a \
   --start-time 00:24:15.800 \
   --end-time 00:55:35.182 \
@@ -226,7 +226,7 @@ systematic translation offset: none
 当前 repo 已接入自动化脚本：
 
 ```bash
-python3 scripts/run_post_live_subtitle_generation.py \
+.venv/bin/python scripts/run_post_live_subtitle_generation.py \
   --sunday YYYY-MM-DD \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
   --slug mariners_<youtube_video_id> \
@@ -239,7 +239,7 @@ python3 scripts/run_post_live_subtitle_generation.py \
 自动化会在 `scripts/sermon_pipeline.py` 完成后调用，先生成逐句版手机 PDF：
 
 ```bash
-python3 scripts/render_mobile_pdf_from_srt.py \
+.venv/bin/python scripts/render_mobile_pdf_from_srt.py \
   --input <pipeline_outdir>/sermon_zh_relative.srt \
   --secondary-input <pipeline_outdir>/sermon_en_relative.srt \
   --out <pipeline_outdir>/sermon_zh_mobile.pdf \

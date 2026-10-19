@@ -70,7 +70,7 @@ These are absolute offsets in the full downloaded media, not relative offsets in
 Before running, make sure `OPENAI_API_KEY` is already present in the environment, or pass `--api-key-secret`.
 
 ```bash
-python3 scripts/run_post_live_subtitle_generation.py \
+.venv/bin/python scripts/run_post_live_subtitle_generation.py \
   --sunday 2026-07-26 \
   --state-file artifacts/live-source-monitor/state.json \
   --work-root artifacts/post-live-runs \
@@ -125,11 +125,11 @@ For the Supervisor path, the fresh deterministic `recommendedAction.action == "c
 The stable workflow is implemented mainly by these scripts:
 
 - [../scripts/live_source_monitor.py](../scripts/live_source_monitor.py)
-- [../scripts/run_post_live_subtitle_generation.py](../scripts/run_post_live_subtitle_generation.py)
-- [../scripts/sermon_pipeline.py](../scripts/sermon_pipeline.py)
-- [../scripts/render_mobile_pdf_from_srt.py](../scripts/render_mobile_pdf_from_srt.py)
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py](../packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py)
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/pipeline.py](../packages/production/src/tongxing_production/workflows/dual_pdf/pipeline.py)
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/mobile_pdf.py](../packages/production/src/tongxing_production/workflows/dual_pdf/mobile_pdf.py)
 - [../scripts/generate_notes_with_openai.py](../scripts/generate_notes_with_openai.py)
-- [../scripts/render_sermon_interpretation_pdf.py](../scripts/render_sermon_interpretation_pdf.py)
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/interpretation_pdf.py](../packages/production/src/tongxing_production/workflows/dual_pdf/interpretation_pdf.py)
 
 ## Secondary but working paths
 

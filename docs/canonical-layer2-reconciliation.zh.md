@@ -7,7 +7,7 @@
 先通过 [L2 controller](canonical-layer2-controller.zh.md) 默认 shadow 获得当前 `stateRevision`，检查对应候选及原 job 证据，再显式调用：
 
 ```sh
-python scripts/canonical_layer2_reconciliation.py \
+.venv/bin/python scripts/canonical_layer2_reconciliation.py \
   --config /absolute/execution.json --locale zh-Hans \
   --expected-state-revision <shadow输出的精确stateRevision>
 ```
