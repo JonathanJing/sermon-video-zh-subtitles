@@ -27,9 +27,9 @@ class MultilingualCDTest(unittest.TestCase):
             output /= "deployment-receipt.json"
             receipt = {"status": ("deployed_verification_pending" if "--execute" in args
                                   else "prepared_not_deployed")}
-        elif "--preflight-baseline" in args or args[1] == "preflight":
+        elif "--preflight-baseline" in args or "preflight" in args[1:3]:
             receipt = {"status": "pass", "buildReportSha256": build_hash}
-        elif "deploy_multilingual_hosting.py" in args[0] or args[1] == "deploy":
+        elif "adapters.legacy.deploy_multilingual_hosting" in args or "deploy" in args[1:3]:
             preflight = Path(args[args.index("--preflight") + 1])
             receipt = {"status": ("deployed_http_verification_pending" if "--execute" in args
                                   else "validated_not_deployed"),
@@ -78,7 +78,7 @@ class MultilingualCDTest(unittest.TestCase):
 
         def wrong_http(*args):
             self.fake_command(*args)
-            if args[0].endswith("verify_multilingual_hosting.py") and "--preflight-baseline" not in args:
+            if "adapters.legacy.verify_multilingual_hosting" in args and "--preflight-baseline" not in args:
                 Path(args[args.index("--out") + 1]).write_text(json.dumps({
                     "status": "pass", "buildReportSha256": "0" * 64}))
 
@@ -112,7 +112,8 @@ class MultilingualCDTest(unittest.TestCase):
                                 execute=False, legacy_release=legacy)
         self.assertEqual(result["feedbackDeploymentStatus"], "prepared_not_deployed")
         self.assertIn("deploy_feedback.py", self.commands[1][0])
-        self.assertIn("deploy_multilingual_hosting.py", self.commands[2][0])
+        self.assertEqual(self.commands[2][:2], (str(cd.ROOT / "tools/ops/run.py"),
+                                                "adapters.legacy.deploy_multilingual_hosting"))
 
     def test_ui_overlay_requires_bound_code_and_preserves_feedback(self):
         from scripts import stage_production_ui as ui

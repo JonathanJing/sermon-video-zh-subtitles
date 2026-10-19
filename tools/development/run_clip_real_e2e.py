@@ -722,7 +722,7 @@ def stage_layer4(run: Run):
     if not (l4 / "baseline").exists():
         cache = (["--cache-public", page["baselineCachePublic"], "--cache-receipt", page["baselineCacheReceipt"]]
                  if page.get("baselineCachePublic") else [])
-        run.sh("layer4-baseline", [PY, ROOT / "scripts/prepare_dev_simulated_publication.py", "baseline",
+        run.sh("layer4-baseline", [PY, ROOT / "tools/ops/prepare_dev_simulated_publication.py", "baseline",
                                    "--environment", "dev", "--out", l4 / "baseline", *cache])
     if not run.publish:
         run.mark("layer4", "prepared_not_published")

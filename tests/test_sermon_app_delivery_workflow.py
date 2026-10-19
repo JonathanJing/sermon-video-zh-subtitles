@@ -17,7 +17,7 @@ import unittest
 from unittest.mock import patch
 
 from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
-from scripts import sermon_app_delivery as app
+from tongxing_production.delivery import app_delivery as app
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.delivery import app_workflow as workflow
 from scripts import sermon_end_to_end as end_to_end

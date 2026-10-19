@@ -8,7 +8,8 @@ import subprocess
 
 import pytest
 from scripts import build_dev_180s_simulated_inputs as fixture
-from scripts import delivery_contract as contract
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import contract
 
 pytestmark = pytest.mark.skipif(not shutil.which('ffmpeg') or not shutil.which('ffprobe'), reason='needs ffmpeg')
 

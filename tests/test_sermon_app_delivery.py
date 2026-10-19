@@ -14,7 +14,8 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_app_delivery as app
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import app_delivery as app
 from tongxing_production.source import english_source_package as source_builder
 from tests import test_build_english_source_package as source_fixtures
 from tests import test_stage_formal_multilingual_dev as audio_fixtures

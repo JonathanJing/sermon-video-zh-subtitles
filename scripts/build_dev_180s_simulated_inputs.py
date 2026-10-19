@@ -31,12 +31,12 @@ if __package__ in (None, ''):
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import english_source_package as source_builder
 from tongxing_production.source import english_source_judge as source_judge
-from scripts import build_full_video_app_release as release
-from scripts import delivery_contract as contract
+from tongxing_production.delivery import app_release as release
+from tongxing_production.delivery import contract
 from scripts import produce_target_language_candidate as candidate_validator
-from scripts import sermon_unified_delivery as delivery
+from tongxing_production.delivery import unified_stage as delivery
 from scripts import sermon_unified_reviews as reviews
-from scripts import study_artifacts
+from tongxing_production.delivery import study_artifacts
 
 ROOT = Path(__file__).resolve().parents[1]
 SIM = 'simulation test only - not a real human approval'

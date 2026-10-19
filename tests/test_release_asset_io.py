@@ -3,7 +3,8 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from scripts import release_asset_io as assets
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import asset_io as assets
 
 
 class ReleaseAssetIOTests(unittest.TestCase):

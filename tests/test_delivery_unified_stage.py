@@ -10,7 +10,7 @@ import unittest
 from scripts import machine_audio_waiver_acceptance as acceptance
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import release_basis as basis
-from scripts import sermon_unified_delivery as stage
+from tongxing_production.delivery import unified_stage as stage
 from tongxing_production.delivery import unified_stage
 
 

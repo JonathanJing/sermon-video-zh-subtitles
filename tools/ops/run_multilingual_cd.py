@@ -17,18 +17,22 @@ import sys
 if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
-try:
-    from scripts import assemble_multilingual_hosting as hosting
-except ImportError:
-    import assemble_multilingual_hosting as hosting
+if __package__ in (None, ""):  # run directly: reach the repository root
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.adapters.legacy import assemble_multilingual_hosting as hosting  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[2]
+ENTRY = ROOT / "tools/ops/run.py"
+# Each command is the package entry plus the legacy adapter module it runs.
+VERIFY = (ENTRY, "adapters.legacy.verify_multilingual_hosting")
 MODES = {
-    "dev": {"branch": "dev", "script": ROOT / "scripts/multilingual_dev_preview.py",
+    "dev": {"branch": "dev", "command": (ENTRY, "adapters.legacy.multilingual_dev_preview"),
             "schema": {"sermon-multilingual-dev-preview-v1", "sermon-multilingual-dev-preview-v2",
                        "sermon-multilingual-dev-preview-v3"}},
-    "production": {"branch": "main", "script": ROOT / "scripts/deploy_multilingual_hosting.py",
+    "production": {"branch": "main", "command": (ENTRY, "adapters.legacy.deploy_multilingual_hosting"),
                    "schema": {"sermon-multilingual-hosting-candidate-v1",
                               "sermon-production-voice-overlay-v1",
                               "sermon-production-ui-overlay-v1"}},
@@ -293,21 +297,21 @@ def release(mode: str, candidate: Path, out: Path, *, execute: bool,
             deployment = out / "deployment.json"
             verification = out / "http-verification.json"
             if mode == "dev":
-                tool = str(MODES[mode]["script"])
-                run_command(tool, "preflight", "--candidate", str(candidate), "--out", str(preflight))
-                args = [tool, "deploy", "--candidate", str(candidate),
+                tool = [str(part) for part in MODES[mode]["command"]]
+                run_command(*tool, "preflight", "--candidate", str(candidate), "--out", str(preflight))
+                args = [*tool, "deploy", "--candidate", str(candidate),
                         "--preflight", str(preflight), "--out", str(deployment)]
-                verify_args = [tool, "verify", "--candidate", str(candidate),
+                verify_args = [*tool, "verify", "--candidate", str(candidate),
                                "--out", str(verification)]
             else:
-                tool = str(MODES[mode]["script"])
-                run_command(str(ROOT / "scripts/verify_multilingual_hosting.py"),
+                tool = [str(part) for part in MODES[mode]["command"]]
+                run_command(*map(str, VERIFY),
                             "--candidate", str(candidate),
                             "--origin", "https://ai-for-god-sermon-audio.web.app",
                             "--preflight-baseline", "--out", str(preflight))
-                args = [tool, "--candidate", str(candidate),
+                args = [*tool, "--candidate", str(candidate),
                         "--preflight", str(preflight), "--out", str(deployment)]
-                verify_args = [str(ROOT / "scripts/verify_multilingual_hosting.py"),
+                verify_args = [*map(str, VERIFY),
                                "--candidate", str(candidate),
                                "--origin", "https://ai-for-god-sermon-audio.web.app",
                                "--out", str(verification)]

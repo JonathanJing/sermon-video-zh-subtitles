@@ -37,11 +37,11 @@ import re
 from pathlib import Path
 import stat
 
-from scripts import sermon_delivery_intent as intent
-from scripts import inspect_canonical_packages as packages
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import intent
+from scripts import inspect_canonical_packages as packages
 from tongxing_production.audio import speech_job as handoff
-from scripts import stage_formal_multilingual_dev as stage
+from tongxing_production.delivery import formal_stage as stage
 from scripts import sermon_review_contracts as contracts
 from scripts import sermon_review_budget as budget
 from scripts import sermon_strict_gate_admission as admission
