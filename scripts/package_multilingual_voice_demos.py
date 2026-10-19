@@ -1,12 +1,14 @@
 """Compatibility entry point for the multilingual voice demo experiment.
 
-Keep the old direct CLI, module CLI, and import path while the implementation
-lives with the experiment. Resolve it from this file, independent of the CWD.
+The implementation lives in `experiments/sermon-dubbing-poc/package_multilingual_voice_demos.py`. Keep the old direct CLI,
+module CLI and import path; resolve it from this file, independent of the CWD.
+The implementation runs under this module's name, so pickled objects and
+spawn-based workers still import it through the old path.
 """
 
-import hashlib
 from importlib import util
 from pathlib import Path
+import runpy
 import sys
 
 
@@ -14,40 +16,33 @@ _IMPLEMENTATION = (
     Path(__file__).resolve().parents[1]
     / "experiments/sermon-dubbing-poc/package_multilingual_voice_demos.py"
 ).resolve()
-_MODULE_NAME = (
-    "_sermon_dubbing_poc_package_multilingual_voice_demos_"
-    + hashlib.sha256(str(_IMPLEMENTATION).encode()).hexdigest()
-)
 
 
 def _load():
-    existing = sys.modules.get(_MODULE_NAME)
-    if existing is not None:
-        if Path(existing.__file__).resolve() != _IMPLEMENTATION:
-            raise ImportError("Voice demo packager module cache points to another checkout")
-        return existing
-    spec = util.spec_from_file_location(_MODULE_NAME, _IMPLEMENTATION)
+    spec = util.spec_from_file_location(__name__, _IMPLEMENTATION)
     if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot load voice demo packager: {_IMPLEMENTATION}")
+        raise ImportError(f"Cannot load package_multilingual_voice_demos: {_IMPLEMENTATION}")
     module = util.module_from_spec(spec)
-    sys.modules[_MODULE_NAME] = module
+    facade = sys.modules.get(__name__)
+    sys.modules[__name__] = module
     try:
         spec.loader.exec_module(module)
     except BaseException:
-        del sys.modules[_MODULE_NAME]
+        if facade is None:
+            sys.modules.pop(__name__, None)
+        else:
+            sys.modules[__name__] = facade
         raise
     return module
 
 
-_implementation = _load()
-
-
-def __getattr__(name):
-    # Also supports callers that load this facade with spec_from_file_location.
-    return getattr(_implementation, name)
-
-
 if __name__ == "__main__":
-    _implementation.main()
+    runpy.run_path(str(_IMPLEMENTATION), run_name="__main__")
 else:
+    _implementation = _load()
+
+    def __getattr__(name):
+        # Also supports callers that load this facade with spec_from_file_location.
+        return getattr(_implementation, name)
+
     sys.modules[__name__] = _implementation
