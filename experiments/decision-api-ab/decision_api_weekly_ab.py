@@ -405,8 +405,10 @@ def authority(directory, cases, max_usd, max_requests, authorization_note, previ
             "scripts/target_audio_timing_plan.py",
             "scripts/render_formal_target_language_speech.py",
             "scripts/sermon_production_supervisor.py"]
+    # The whole experiment line is hashed: the semantic and outline runners
+    # reuse this authority, so their moved files must change it too.
     deps = sorted(set(deps) | {
-        str(path.relative_to(ROOT)) for folder in ("scripts", "schemas", "config")
+        str(path.relative_to(ROOT)) for folder in ("scripts", "schemas", "config", "experiments/decision-api-ab")
         for path in (ROOT / folder).rglob("*")
         if path.is_file() and path.suffix in {".py", ".json", ".md"}
     })
