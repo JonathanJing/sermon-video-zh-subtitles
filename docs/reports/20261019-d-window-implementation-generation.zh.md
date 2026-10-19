@@ -23,9 +23,9 @@ G1 结束时 W 为 `df299eca0e9f`。[#1056](https://github.com/JonathanJing/serm
 | 语速（`audio.predicted_schedule.rate_implementation_sha256`） | `88cfb1d8aa030283c0c67b22afb4a5d8448b2a263868ecb3ed83a8dc303bb185` | `8f50c233e07bf130d569e15b91abeb35a231f26d18b3e3874b2c7de3581ed9f2` |
 | 预览执行绑定 `previewExecutionBindingSha256` | `ca586cd70ffdd31a016c8ed007eb354aab63a35203831012095a3b4179b3d594` | `794bb5f1c7ac87bbddbd75b27633958835373b1d71c6c01a3b3355e7aa9c9de9` |
 | `RENDERER_SOUND_IDENTITY_SHA256` | `fef7604882470137f46f1b01fbd06c7c3c9a07166da91003243608785fa47f0b` | `fef7604882470137f46f1b01fbd06c7c3c9a07166da91003243608785fa47f0b`（不变） |
-| L2 `text.controller.code_identity()` | `3a22f8b23b1c5416cbbb5ef5701eaa4acf575637a5ad0700a393f9e23b6809dc` | `b00992e39d6fcc69ba5749c7366465e6cdf6c8c27fff1b4db0d2392c46913c58` |
+| L2 `text.controller.code_identity()` | `016b322484ac22bfd15be7ff204e3f840c9751f3f1227cdddefe5bdf3e959b01` | `09d5395bab2bca459dd2bc937de39d64488a2d048d133107082cf60c303cbef5` |
 
-物理清单：W 仍是 28 个逻辑键，物理文件 50 → 30；T 12 → 7，计分 9 → 8，语速 13 → 10。W 逐文件映射的规范 JSON 校验值 `a88e08308d35…` → `ac453ba815da1a731122f3c81ea96b6b14de9ab9f78901edd00dfff6c18339b0`。L2 代码身份的入站值已含 #1134、#1138 两次变化。
+物理清单：W 仍是 28 个逻辑键，物理文件 50 → 30；T 12 → 7，计分 9 → 8，语速 13 → 10。W 逐文件映射的规范 JSON 校验值 `a88e08308d35…` → `ac453ba815da1a731122f3c81ea96b6b14de9ab9f78901edd00dfff6c18339b0`。L2 代码身份不在四个身份里，`scripts/` 下任何文件变化都会改变它：表中两值取自 `dev@8dd0c7ff`（其后 #1141 改了实验门面）与合入它之后的分支头；四个身份和预览绑定在 `a5bd24df` 与 `8dd0c7ff` 上相同。
 
 ### 为什么变
 
