@@ -43,8 +43,8 @@ def load_baseline(filename):
 
 def prepare(saved, operation):
     from scripts import sermon_accounting as accounting
-    from scripts import sermon_completion as completion
-    from scripts import sermon_log_contract as contract
+    from tongxing_production.observability import completion
+    from tongxing_production.observability import log_contract as contract
     from scripts import sermon_logs
 
     baseline, baseline_sha = load_baseline('sermon_completion')

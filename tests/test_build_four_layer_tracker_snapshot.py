@@ -7,8 +7,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import build_four_layer_tracker_snapshot as tracker
-from scripts import four_layer_progress
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import tracker_projection_host  # noqa: F401  binds the read-only report ports
+from tongxing_production.observability.projections import four_layer_tracker_snapshot as tracker
+from tongxing_production.observability import progress as four_layer_progress
 
 
 class TrackerSnapshotTest(unittest.TestCase):
@@ -118,7 +120,7 @@ class TrackerSnapshotTest(unittest.TestCase):
         self.assertEqual(by_locale["es"]["fingerprint"]["status"], "not_generated")
 
     def test_snapshot_shows_measured_execution_without_promoting_step(self):
-        from scripts import four_layer_measure
+        from tongxing_production.observability import measure as four_layer_measure
         report = four_layer_measure.timing_audit(self.ledger, [
             {"event": "workflow_started", "workflowId": "w1",
              "metadata": {"pageId": self.ledger["pageId"], "target": "dev",
@@ -386,7 +388,8 @@ class TrackerDagSnapshotIntegrationTest(unittest.TestCase):
     def test_missing_or_unreadable_bound_accounting_fails_instead_of_overwriting(self):
         with self.assertRaisesRegex(ValueError, "ledger_run_binding_mismatch"):
             tracker.build_snapshot(self.ledger, dag_accounting_dir=self.root / "missing", dag_run_id=self.run_id)
-        from scripts import build_tracker_dag_projection as dag
+        from scripts import tracker_projection_host  # noqa: F401  binds the read-only report ports
+        from tongxing_production.observability.projections import tracker_dag_projection as dag
         with patch.object(dag, "_snapshot", side_effect=PermissionError("private path must not escape")), \
                 self.assertRaisesRegex(ValueError, "^ledger_run_binding_mismatch$"):
             tracker.build_snapshot(self.ledger, dag_accounting_dir=self.accounting, dag_run_id=self.run_id)
@@ -398,7 +401,8 @@ class TrackerDagSnapshotIntegrationTest(unittest.TestCase):
                 tracker.build_snapshot(self.ledger, **kwargs)
 
     def test_legacy_snapshot_does_not_auto_scan_or_gain_dag(self):
-        from scripts import build_tracker_dag_projection as dag
+        from scripts import tracker_projection_host  # noqa: F401  binds the read-only report ports
+        from tongxing_production.observability.projections import tracker_dag_projection as dag
         with patch.object(dag, "build_projection", side_effect=AssertionError("must be opt-in")):
             result = tracker.build_snapshot(self.ledger)
         self.assertNotIn("dag", result)
@@ -412,8 +416,8 @@ class TrackerDagSnapshotIntegrationTest(unittest.TestCase):
         previous = output.read_bytes()
         before = self.events_path.read_bytes()
         bundle = self.root / "private-progress.json"
-        cli = Path(__file__).resolve().parents[1] / "scripts/build_four_layer_tracker_snapshot.py"
-        command = [sys.executable, str(cli), "--ledger", str(self.ledger_path),
+        cli = Path(__file__).resolve().parents[1] / "tools/ops/run.py"
+        command = [sys.executable, str(cli), "observability.projections.four_layer_tracker_snapshot", "--ledger", str(self.ledger_path),
                    "--out", str(output), "--dag-accounting-dir", str(self.accounting),
                    "--dag-run-id", self.run_id, "--dag-progress-inputs", str(bundle)]
         for payload in (None, '{"plan":', '["wrong-shape"]'):
@@ -432,8 +436,8 @@ class TrackerDagSnapshotIntegrationTest(unittest.TestCase):
         bundle = self.root / "private-progress.json"
         bundle.write_text(json.dumps(inputs(frozen, [receipt(frozen, "private-unit")])))
         output = self.root / "public-snapshot.json"
-        cli = Path(__file__).resolve().parents[1] / "scripts/build_four_layer_tracker_snapshot.py"
-        command = [sys.executable, str(cli), "--ledger", str(self.ledger_path),
+        cli = Path(__file__).resolve().parents[1] / "tools/ops/run.py"
+        command = [sys.executable, str(cli), "observability.projections.four_layer_tracker_snapshot", "--ledger", str(self.ledger_path),
                    "--out", str(output), "--dag-accounting-dir", str(self.accounting),
                    "--dag-run-id", self.run_id, "--dag-progress-inputs", str(bundle)]
         result = subprocess.run(command, capture_output=True, text=True)

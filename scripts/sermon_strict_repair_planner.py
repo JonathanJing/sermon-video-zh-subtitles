@@ -19,8 +19,8 @@ from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_budget_adapter as execution
 from scripts import sermon_review_gate as gate
 from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
-from scripts import sermon_review_observation as observation
+from tongxing_production.observability import profile
+from tongxing_production.observability import review_observation as observation
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA='sermon-strict-repair-history-v1'

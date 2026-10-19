@@ -12,10 +12,10 @@ import sys
 import time
 
 from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
-from scripts import sermon_durable_accounting as durable
-from scripts import sermon_log_profile as profile
-from scripts import sermon_log_contract as log_contract
+from tongxing_production.observability import completion
+from tongxing_production.observability import durable
+from tongxing_production.observability import profile
+from tongxing_production.observability import log_contract
 from scripts import sermon_mock_tts_contract as contract
 from scripts import sermon_mock_tts_worker as worker
 from scripts import sermon_public_snapshot as public

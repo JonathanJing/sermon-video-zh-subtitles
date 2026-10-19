@@ -9,11 +9,13 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import build_tracker_dag_projection as public
-from scripts import four_layer_progress as tracker
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import tracker_projection_host  # noqa: F401  binds the read-only report ports
+from tongxing_production.observability.projections import tracker_dag_projection as public
+from tongxing_production.observability import progress as tracker
 from scripts import sermon_accounting as accounting
-from scripts import sermon_log_contract as contract
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import log_contract as contract
+from tongxing_production.observability import profile
 from scripts import sermon_run_progress as progress
 from scripts import weekly_pipeline_report as weekly
 
@@ -473,8 +475,8 @@ class PublicDagTests(unittest.TestCase):
 
     def test_bounded_cli_and_separate_output_cannot_overwrite_ledger(self):
         self.write()
-        cli = Path(__file__).resolve().parents[1] / "scripts/build_tracker_dag_projection.py"
-        command = [sys.executable, str(cli), "--accounting-dir", str(self.root), "--run-id", RUN, "--at", AT]
+        cli = Path(__file__).resolve().parents[1] / "tools/ops/run.py"
+        command = [sys.executable, str(cli), "observability.projections.tracker_dag_projection", "--accounting-dir", str(self.root), "--run-id", RUN, "--at", AT]
         result = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)["schemaVersion"], public.SCHEMA)

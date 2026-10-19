@@ -14,7 +14,8 @@ from tongxing_production.compute import legacy_openai  # C4: the remote-call gro
 from scripts import sermon_strict_layer2 as s
 from scripts import sermon_review_contracts as c
 from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts import target_language_policy as policies
 from tests import test_produce_target_language_candidate as legacy_fixtures
 from tests.test_sermon_review_contracts import load

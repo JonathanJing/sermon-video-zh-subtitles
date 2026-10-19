@@ -13,7 +13,8 @@ from unittest.mock import patch
 
 from scripts import sermon_diagnostic_prefect_flow as flow
 from scripts import sermon_review_contracts as c
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 
 
 class SessionFixture:
@@ -395,7 +396,7 @@ class ActualDiagnosticFlowTests(unittest.TestCase):
             dag = flow.DiagnosticDAG(session, config)
             path = f.root / 'budget' / budget.STORE_ID / 'provider-run/state.json'
             original = c.read_snapshot(path)[0]
-            from scripts import sermon_log_profile as profile
+            from tongxing_production.observability import profile
             with profile.session(f.root/'flow-logs', 'flow-context-check', work_kind='control',
                                  evidence_mode='synthetic', production_run_id=f.context['runId']):
                 dag.freeze()

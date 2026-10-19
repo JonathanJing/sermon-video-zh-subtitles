@@ -21,7 +21,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.audio import renderer
 from scripts import sermon_accounting as accounting
 from scripts import sermon_delivery_intent_binding as delivery
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import profile
 from scripts import sermon_review_contracts as contracts
 from scripts import sermon_strict_gate_admission as admission
 from scripts import sermon_strict_layer3_preparation as preparation

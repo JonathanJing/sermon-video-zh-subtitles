@@ -599,7 +599,7 @@ class FormalStrictDeliveryTests(unittest.TestCase):
         self.assertFalse(self.args.out.exists())
 
     def test_formal_operation_emits_measured_program_span_and_safe_output_identity(self):
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import profile
         logs = self.formal.root / 'formal-logs'
         finished = []
         with profile.session(logs, 'formal-test', work_kind='production', evidence_mode='synthetic'):

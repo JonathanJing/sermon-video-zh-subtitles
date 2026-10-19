@@ -14,8 +14,8 @@ if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
 from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import completion
+from tongxing_production.observability import profile
 from scripts import sermon_mock_tts_contract as contract
 from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_contracts as c

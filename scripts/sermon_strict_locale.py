@@ -10,7 +10,7 @@ from pathlib import Path
 from scripts import produce_target_language_candidate as producer
 from scripts import run_target_language_models as models
 from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import profile
 from scripts import sermon_repair_planning as planning
 from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_contracts as c

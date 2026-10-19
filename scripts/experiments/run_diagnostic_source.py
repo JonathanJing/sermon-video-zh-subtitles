@@ -27,7 +27,7 @@ from scripts import build_english_source_package as english
 from tongxing_production.source import sentence_interpretation as anchors
 from scripts import judge_english_source_for_translation as judge
 from scripts import sermon_codex_transport as codex
-from scripts import sermon_model_call_observation as observation
+from tongxing_production.observability import model_call_observation as observation
 from scripts import codex_layer2_resources as cli_resources
 from scripts import english_source_judge_cache as judge_cache
 from scripts import production_concurrency_profile as profile_tools

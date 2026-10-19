@@ -5,7 +5,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from scripts import sermon_workflow_evidence as evidence
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import workflow_evidence as evidence
 
 
 class WorkflowEvidenceTests(unittest.TestCase):

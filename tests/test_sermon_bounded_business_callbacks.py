@@ -103,7 +103,7 @@ class BusinessCallbacksTests(unittest.TestCase):
         self.assertEqual(self.transport.observations,[])
 
     def test_ambient_accounting_outside_fixture_is_rejected_before_write(self):
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import profile
         from scripts import sermon_accounting as accounting
         import tempfile
         from pathlib import Path

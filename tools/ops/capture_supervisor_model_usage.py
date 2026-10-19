@@ -17,7 +17,8 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 from scripts import sermon_accounting as accounting
-from scripts import sermon_model_call_observation as observations
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import model_call_observation as observations
 
 
 def capture_codex(lines, model, *, service_tier=None):

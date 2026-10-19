@@ -10,8 +10,9 @@ import unittest
 from unittest.mock import patch
 
 from scripts import sermon_accounting as accounting
-from scripts import sermon_clock_evidence as clock
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import clock_evidence as clock
+from tongxing_production.observability import profile
 from scripts import sermon_dag_evidence as evidence
 from scripts import weekly_pipeline_report as report
 

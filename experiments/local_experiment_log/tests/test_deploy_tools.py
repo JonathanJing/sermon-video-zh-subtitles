@@ -51,7 +51,7 @@ class DeploymentTests(unittest.TestCase):
         self.assertTrue((self.root/receipt['current_target']).is_dir())
 
     def test_installed_validator_reads_both_contract_versions(self):
-        from scripts import sermon_log_contract as contract
+        from tongxing_production.observability import log_contract as contract
         from tests.test_accounting_log_contract import fixture
         repository = Path(__file__).resolve().parents[3]
         implementation = repository / resolve('scripts/sermon_log_contract.py')

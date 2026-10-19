@@ -13,7 +13,7 @@ from pathlib import Path
 import time
 
 from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import profile
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict

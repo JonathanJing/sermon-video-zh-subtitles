@@ -18,11 +18,13 @@ import tempfile
 import uuid
 
 from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import completion
 from scripts import sermon_dag_evidence as evidence
 from scripts import sermon_diagnostic_prefect_flow as diagnostic
-from scripts import sermon_durable_accounting as durable
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import durable
+from tongxing_production.observability import profile
+from tongxing_production import path_aliases
 from scripts import sermon_mock_tts_contract as contract
 from scripts import sermon_mock_tts_control as control
 from scripts import sermon_public_snapshot as public
@@ -92,7 +94,8 @@ def _code_files():
     paths.update('scripts/'+name for name in ('sermon_mock_tts_dag.py', 'sermon_mock_tts_control.py',
         'sermon_mock_tts_contract.py', 'sermon_mock_tts_worker.py', 'sermon_durable_accounting.py',
         'sermon_completion.py', 'sermon_diagnostic_dag_session.py', 'sermon_diagnostic_prefect_flow.py'))
-    return {name: diagnostic._hash_file(diagnostic.pilot.REPO/name) for name in sorted(paths)}
+    # Keys stay the legacy scripts/ names; a member moved into the package is read where it lives.
+    return {name: diagnostic._hash_file(diagnostic.pilot.REPO/path_aliases.resolve(name)) for name in sorted(paths)}
 
 
 def policy_and_faults(units, config):

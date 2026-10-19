@@ -13,7 +13,8 @@ from scripts import run_bounded_diagnostic as run
 from scripts import sermon_accounting as accounting
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c

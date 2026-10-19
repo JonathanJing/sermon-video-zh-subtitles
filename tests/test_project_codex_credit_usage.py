@@ -9,9 +9,10 @@ from unittest.mock import patch
 
 
 from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from tongxing_production.observability import accounting as accounting_impl
-from scripts import sermon_model_call_observation as observation
+from tongxing_production.observability import model_call_observation as observation
 from tools.ops import project_codex_credit_usage as projection
 
 

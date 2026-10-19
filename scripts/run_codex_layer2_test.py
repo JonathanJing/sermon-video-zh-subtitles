@@ -325,7 +325,7 @@ def main():
     parser.add_argument('--reuse-from', type=Path, help='Prior diagnostic output for a one-group revision')
     parser.add_argument('--partial-repair-brief', type=Path, help='Source-bound one-group repair instruction JSON')
     args = parser.parse_args()
-    from scripts.outcome_marker import run_with_outcome
+    from tongxing_production.orchestration.outcome_marker import run_with_outcome
     run_with_outcome(args.out_dir / 'outcome.json', 'codex-layer2-test', lambda: run_test(
         args.fixture_dir, args.policy, args.out_dir, cli_path=args.codex_cli,
         reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds,

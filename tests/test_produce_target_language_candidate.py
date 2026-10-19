@@ -12,9 +12,10 @@ from scripts import review_target_language_candidate as human_review
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as interpretation
 from scripts import target_language_policy as policy_tools
-from scripts import four_layer_progress as progress
+from tongxing_production.observability import progress
 from scripts import sermon_accounting as accounting
-from scripts import build_four_layer_tracker_snapshot as tracker_snapshot
+from scripts import tracker_projection_host  # noqa: F401  binds the read-only report ports
+from tongxing_production.observability.projections import four_layer_tracker_snapshot as tracker_snapshot
 from scripts import build_english_source_package as english_source
 from tests import test_build_english_source_package as source_fixtures
 

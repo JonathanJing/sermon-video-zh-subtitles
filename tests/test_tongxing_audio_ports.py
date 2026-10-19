@@ -13,7 +13,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host as host
-from scripts import bounded_audio_cpu, four_layer_measure, ko_spoken_numerals, production_spark_admission
+from scripts import bounded_audio_cpu, ko_spoken_numerals, production_spark_admission
+from tongxing_production.observability import measure as four_layer_measure
 from tongxing_production.review import release_basis as machine_basis
 from tongxing_production.review import waiver
 from tongxing_production.audio import renderer

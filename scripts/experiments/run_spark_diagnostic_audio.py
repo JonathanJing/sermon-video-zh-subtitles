@@ -371,7 +371,7 @@ def main(argv=None):
         print(json.dumps(preflight(args), ensure_ascii=False))
         return
     # Mark completion on both paths so waiters need no polling of result files.
-    from scripts.outcome_marker import run_with_outcome
+    from tongxing_production.orchestration.outcome_marker import run_with_outcome
     receipt = run_with_outcome(ROOT / relative(args.out) / 'outcome.json', 'spark-diagnostic-audio-execute',
                                lambda: execute(args))
     print(json.dumps(receipt, ensure_ascii=False))

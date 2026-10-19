@@ -14,8 +14,8 @@ from scripts import run_target_language_models as shared
 from scripts import produce_target_language_candidate as producer
 from scripts import target_language_policy as policies
 from scripts import sermon_review_contracts as c
-from scripts import sermon_review_observation as observation
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import review_observation as observation
+from tongxing_production.observability import profile
 from scripts import sermon_accounting as accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs

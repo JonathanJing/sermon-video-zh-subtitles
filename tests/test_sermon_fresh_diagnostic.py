@@ -15,7 +15,8 @@ from scripts import sermon_fresh_diagnostic as entry
 from scripts import sermon_review_contracts as c
 from scripts import sermon_review_budget as budget
 from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts import sermon_strict_layer2 as immutable
 from scripts import sermon_accounting as accounting
 from scripts import sermon_bounded_business_callbacks as callbacks
@@ -157,7 +158,7 @@ class FreshPreloadTests(unittest.TestCase):
             from scripts import sermon_accounting as accounting
             from scripts import sermon_log_profile as profile
             from tongxing_production.path_aliases import resolve
-            assert 'scripts.sermon_workflow_evidence' not in sys.modules
+            assert 'tongxing_production.observability.workflow_evidence' not in sys.modules
             with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('network forbidden')) as network:
                 frozen = entry.preload_execution_modules([
                     repository / 'scripts/language_review_plugins/diagnostic_structural.py'])

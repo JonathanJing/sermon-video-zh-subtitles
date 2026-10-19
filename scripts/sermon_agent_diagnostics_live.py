@@ -16,7 +16,7 @@ from scripts import sermon_agent_diagnostics_contracts as c
 from scripts import sermon_agents_api as api
 from scripts import sermon_accounting as accounting
 from scripts import sermon_provider_limits as pricing
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import profile
 from scripts import sermon_strict_layer2 as immutable
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs

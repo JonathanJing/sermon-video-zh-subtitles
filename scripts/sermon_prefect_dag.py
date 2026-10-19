@@ -22,7 +22,7 @@ import time
 
 from scripts import sermon_accounting as accounting
 from scripts import sermon_dag_contract as contract
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import profile
 from scripts import sermon_model_resources as resources
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c

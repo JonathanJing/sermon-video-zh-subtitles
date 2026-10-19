@@ -12,18 +12,19 @@ import tempfile
 import uuid
 
 from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
-from scripts import sermon_durable_accounting as durable
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import completion
+from tongxing_production.observability import durable
 from scripts import sermon_fresh_diagnostic as fresh
 from scripts import sermon_fresh_source_prefect as source_engine
 from scripts import sermon_fresh_source_stages as stages
-from scripts import sermon_log_contract as log
+from tongxing_production.observability import log_contract as log
 from scripts import sermon_logs as logs
 from scripts import sermon_mock_tts_contract as contract
 from scripts import sermon_mock_tts_dag as mock
 from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_contracts as c
-from scripts import sermon_review_observation as _review_observation  # preload summary-consumer closure
+from tongxing_production.observability import review_observation as _review_observation  # preload summary-consumer closure
 from scripts import sermon_source_failure as failure
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path

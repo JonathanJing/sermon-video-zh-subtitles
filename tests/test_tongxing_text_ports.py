@@ -11,7 +11,8 @@ from unittest.mock import patch
 
 from scripts import tongxing_host as host
 from tongxing_production.text import controller
-from scripts import four_layer_measure, layer2_api_concurrency, sermon_accounting, series_terminology
+from scripts import layer2_api_concurrency, sermon_accounting, series_terminology
+from tongxing_production.observability import measure as four_layer_measure
 from scripts import produce_target_language_candidate as candidate
 from scripts import prepare_target_language_speech_job as handoff
 from scripts import production_concurrency_profile

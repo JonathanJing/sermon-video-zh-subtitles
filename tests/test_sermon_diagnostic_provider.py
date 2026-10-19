@@ -183,7 +183,7 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(rejected['cost']['estimatedUsd'],0)
         self.assertIsNone(rejected['responseId'])
         self.assertTrue(all(v is None for v in rejected['usage'].values()))
-        from scripts import sermon_log_contract as log_contract
+        from tongxing_production.observability import log_contract
         self.assertFalse(any(r['code']=='missing_model_finish'
             for r in log_contract.replay_integrity(rows)['diagnostics']))
         self.assertEqual(len(self.calls),1)

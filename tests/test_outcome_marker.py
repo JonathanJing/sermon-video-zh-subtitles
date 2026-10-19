@@ -5,7 +5,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import outcome_marker
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import outcome_marker
 from scripts.experiments import run_spark_diagnostic_audio as runner
 from tongxing_production.orchestration import outcome_marker as package_outcome_marker
 

@@ -10,7 +10,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from scripts import build_english_source_package as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as anchors
-from scripts import four_layer_progress as progress
+from tongxing_production.observability import progress
 from scripts import sermon_accounting as accounting
 
 

@@ -103,7 +103,7 @@ class MLXEngine:
             raise ValueError("unexpected EOS configuration")
 
     def translate(self, source, emit, cancelled):
-        from scripts import sermon_model_call_observation as model_calls
+        from tongxing_production.observability import model_call_observation as model_calls
         from scripts import sermon_accounting as accounting
         name = 'milmmt.warmup' if source == WARMUP else 'milmmt.translate'
         with accounting.stage(name, billing='local', executor_type='production_model'):

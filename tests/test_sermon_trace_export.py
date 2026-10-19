@@ -205,7 +205,7 @@ class ReceiptExportTests(unittest.TestCase):
 
     def test_outbox_postappend_preack_replay_is_exported_once(self):
         from scripts import sermon_accounting as accounting
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import profile
         import copy
         logdir=self.work/'profile-log'
         with profile.session(logdir,'export-replay-test',work_kind='production',evidence_mode='synthetic'):

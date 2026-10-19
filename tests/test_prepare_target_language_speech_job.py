@@ -16,7 +16,7 @@ from scripts import validate_target_language_audio_unit as audio_integrity
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as interpretation
 from scripts import target_language_policy as policy_tools
-from scripts import four_layer_progress as progress
+from tongxing_production.observability import progress
 from scripts import sermon_accounting as accounting
 
 
