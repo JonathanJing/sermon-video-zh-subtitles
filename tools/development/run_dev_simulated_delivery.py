@@ -21,10 +21,11 @@ _ROOT = str(Path(__file__).resolve().parents[2])
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from scripts import build_full_video_app_release as builder
-from scripts import delivery_contract as contract
-from scripts import guarded_hosting_publish as publisher
-from scripts import prepare_dev_simulated_publication as preparation
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import app_release as builder
+from tongxing_production.delivery import contract
+from tongxing_production.delivery import publication as publisher
+from tongxing_production.delivery import baseline as preparation
 from scripts.sermon_execution_harness import atomic_json
 
 

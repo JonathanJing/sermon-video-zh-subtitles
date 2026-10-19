@@ -18,12 +18,12 @@ if __package__ in (None, ""):
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-try:
-    from scripts import assemble_multilingual_v3_update as weekly
-    from scripts.assemble_multilingual_hosting import digest, load, regular_files
-except ImportError:
-    import assemble_multilingual_v3_update as weekly
-    from assemble_multilingual_hosting import digest, load, regular_files
+if __package__ in (None, ""):  # run directly: reach the repository root
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.adapters.legacy import assemble_multilingual_v3_update as weekly  # noqa: E402
+from tongxing_production.adapters.legacy.assemble_multilingual_hosting import digest, load, regular_files  # noqa: E402
 
 
 def storage_url(bucket: str, page_id: str, sha: str) -> str:

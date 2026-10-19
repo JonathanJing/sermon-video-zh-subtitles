@@ -11,13 +11,13 @@ import subprocess
 
 import pytest
 
-from scripts import build_full_video_app_release as builder
-from scripts import delivery_contract as d
+from tongxing_production.delivery import app_release as builder
+from tongxing_production.delivery import contract as d
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import release_basis as basis
 from tongxing_production.audio import screening as audio_screen
-from scripts import sermon_unified_delivery as delivery
-from scripts import study_artifacts
+from tongxing_production.delivery import unified_stage as delivery
+from tongxing_production.delivery import study_artifacts
 from tongxing_production.review.audio_qc import THRESHOLDS
 from tests import auto_qc_fixtures as qc_fixtures
 from tests.test_machine_quality_release_basis import (IMPLEMENTATION, SECONDARY_ASR, calibration, issue_audio,

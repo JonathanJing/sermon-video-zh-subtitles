@@ -30,7 +30,7 @@ try:
     from tongxing_production.audio import renderer as layer3
     from scripts import run_target_language_models as layer2_runner
     from scripts import produce_target_language_candidate as layer2_producer
-    from scripts.release_asset_io import copy_bound_asset
+    from tongxing_production.delivery.asset_io import copy_bound_asset
 except ImportError:
     import prepare_sentence_interpretation_shadow as layer1
     import prepare_multilingual_weekly_plan as planner

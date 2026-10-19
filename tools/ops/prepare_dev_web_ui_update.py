@@ -16,9 +16,10 @@ _ROOT = str(Path(__file__).resolve().parents[2])
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from scripts import delivery_contract as contract
-from scripts import prepare_dev_simulated_publication as staging
-from scripts import build_full_video_app_release as builder
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import contract
+from tongxing_production.delivery import baseline as staging
+from tongxing_production.delivery import app_release as builder
 
 UI_FILES = ('index.html', 'style.css', 'app.mjs', 'i18n.mjs',
             'published-weeks.mjs', 'reading-mode.mjs', 'locales-reader.mjs',

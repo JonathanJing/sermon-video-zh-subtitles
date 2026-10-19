@@ -6,7 +6,8 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from tools.ops import prepare_v3_bucket_video_migration as migration
-from scripts import assemble_multilingual_v3_update as weekly
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.adapters.legacy import assemble_multilingual_v3_update as weekly
 from tests.test_assemble_multilingual_v3_update import page_fixture, catalog, write
 
 

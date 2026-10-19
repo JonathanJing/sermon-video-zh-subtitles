@@ -125,7 +125,7 @@ else
   stage verify-clip  "$PY" -m scripts.verify_dev_180s_page_test --source-run "$SOURCE_RUN" --out "$OUT/preflight"
   stage build-inputs "$PY" scripts/build_dev_180s_simulated_inputs.py --run-id "$RUN_ID" --out "$OUT/inputs"
 fi
-stage baseline      "$PY" scripts/prepare_dev_simulated_publication.py baseline --out "$OUT/baseline" ${BASELINE_ARGS[@]+"${BASELINE_ARGS[@]}"}
+stage baseline      "$PY" tools/ops/prepare_dev_simulated_publication.py baseline --out "$OUT/baseline" ${BASELINE_ARGS[@]+"${BASELINE_ARGS[@]}"}
 DELIVERY=("$PY" scripts/run_dev_simulated_delivery.py --baseline "$OUT/baseline"
           --prepared "$OUT/inputs/work/prepared" --out "$OUT/workflow" --source-video "$SOURCE_VIDEO")
 stage delivery-preflight "${DELIVERY[@]}"
