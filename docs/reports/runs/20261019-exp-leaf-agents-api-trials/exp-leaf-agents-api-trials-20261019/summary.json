@@ -1,0 +1,10 @@
+{
+  "scope": "Move Agents API trial experiments from scripts/experiments to experiments/agents-api-trials, from origin/dev 06d65999",
+  "results": {
+    "targetedTests": "161 passed, 682 subtests passed (test_agent_api_trials, test_supervisor_ab, test_tongxing_production_package, test_experiment_leaf_facades)",
+    "testIdInventory": "6969 IDs before, 6972 after; no IDs removed, 3 new facade tests added",
+    "legacyCli": "--help via legacy and new paths exits 0 from an external CWD; variant builder regenerated config/agent-trials with no diff",
+    "diffCheck": "git diff --check passed"
+  },
+  "limits": "Local deterministic tests only; no production, paid model, Spark, or public delivery. CI workflows disabled by user decision 2026-10-19."
+}
