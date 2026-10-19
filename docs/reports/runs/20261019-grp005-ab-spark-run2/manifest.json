@@ -1,0 +1,252 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-grp005-ab-spark-run2",
+  "runs": [
+    {
+      "label": "20261019-grp005-ab-spark-run2",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261019-grp005-ab-spark-run2",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-packet-receipt.json",
+      "kind": "whole",
+      "bytes": 381,
+      "truncated": false,
+      "sha256": "351a0a2baa2a81a06e937d21b61bff5a70805d533775512466e54c108d88e3ba",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-render.log",
+      "kind": "log",
+      "bytes": 1631,
+      "truncated": false,
+      "sha256": "a2123c94cd3e216f7fe19b3b24c489c03ce135b7f0e256652463896ef12cc8cc",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-unit-0007.receipt.json",
+      "kind": "whole",
+      "bytes": 1972,
+      "truncated": false,
+      "sha256": "1648093c15a17f3c6a59e59bbbf1b017682299e425ccd7c7e0dad06523290155",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-unit-0014.receipt.json",
+      "kind": "whole",
+      "bytes": 1974,
+      "truncated": false,
+      "sha256": "86d8dcecdb828ba7728c1d937d675bb8700a03c927b950537aa72a26021ab2f2",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-unit-0085.receipt.json",
+      "kind": "whole",
+      "bytes": 1974,
+      "truncated": false,
+      "sha256": "dfa8796d9e9279d46a3059081875df7df2e858c8a7832a47d40e018acc90b9ec",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-unit-0109.receipt.json",
+      "kind": "whole",
+      "bytes": 1975,
+      "truncated": false,
+      "sha256": "1c729884fdedecaeab98c9b93ff491cd2fb0ba79ece6a58ac49033364b6842e5",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-unit-0153.receipt.json",
+      "kind": "whole",
+      "bytes": 1975,
+      "truncated": false,
+      "sha256": "7ada8198fac7e8be8294e33ad4d1130b874520cec7158bbf0fc957267a505177",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-unit-0184.receipt.json",
+      "kind": "whole",
+      "bytes": 1975,
+      "truncated": false,
+      "sha256": "75cf4d07ef27d38dde63597812b40f7ea72da49504d69875f51223ca7b03e258",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-unit-0260.receipt.json",
+      "kind": "whole",
+      "bytes": 1975,
+      "truncated": false,
+      "sha256": "66cddfc855edcf825c23a043be274c9e9beebdbc86ecc01e68cafd129a0b8e57",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-unit-0302.receipt.json",
+      "kind": "whole",
+      "bytes": 1976,
+      "truncated": false,
+      "sha256": "5470c8903833edd3b0b8acb6fb68beb78a1981bda8c3b964c1fe7c5d3eeb9c41",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-unit-0362.receipt.json",
+      "kind": "whole",
+      "bytes": 1975,
+      "truncated": false,
+      "sha256": "e9af820a928363d64a612176e3d99446432d3cabf8cd7354818767692f3f1b71",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "es-unit-0381.receipt.json",
+      "kind": "whole",
+      "bytes": 1975,
+      "truncated": false,
+      "sha256": "d23e08c9fffdff6f36f0b8ef22d70e3348b75e0df5b746d68bd4351b65734280",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-packet-receipt.json",
+      "kind": "whole",
+      "bytes": 381,
+      "truncated": false,
+      "sha256": "a68461757d0e64b0454c92d2d897fda7d4ba6c0e12638a17ecb0540e71a2c331",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-render.log",
+      "kind": "log",
+      "bytes": 1631,
+      "truncated": false,
+      "sha256": "c5d23aa8a6942e520c0546b636ac000c4475fc22cf24be80889c98953139294d",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-unit-0020.receipt.json",
+      "kind": "whole",
+      "bytes": 1973,
+      "truncated": false,
+      "sha256": "77935c1beb23798c6e3d1eced8ceff3ef75a5899b127afcaf9161cc71364667c",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-unit-0035.receipt.json",
+      "kind": "whole",
+      "bytes": 1973,
+      "truncated": false,
+      "sha256": "e8237f698f6505e72ad9d326766c1b07cc668bc61d82786a12fc7f9d320bca19",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-unit-0068.receipt.json",
+      "kind": "whole",
+      "bytes": 1973,
+      "truncated": false,
+      "sha256": "2904e38a087b0cd8efa5b0f2a6245577bbc52cafa41eb6032ebd7a5013094ac0",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-unit-0095.receipt.json",
+      "kind": "whole",
+      "bytes": 1973,
+      "truncated": false,
+      "sha256": "fc7e3ba9fbf81d72ae9db932fde520d3b7fbd6af8d5384038c77b725bafe7c0f",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-unit-0097.receipt.json",
+      "kind": "whole",
+      "bytes": 1973,
+      "truncated": false,
+      "sha256": "13fbdeca96a471b8e01076de47b542b546d1baf24e172655e1e31f7f47c9b231",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-unit-0127.receipt.json",
+      "kind": "whole",
+      "bytes": 1974,
+      "truncated": false,
+      "sha256": "0643be9c2cd8cb553c9aefa8aa5f4b003d52b60e8e9e34c87eaf1611bd614c10",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-unit-0206.receipt.json",
+      "kind": "whole",
+      "bytes": 1974,
+      "truncated": false,
+      "sha256": "ea19e7ff318fb8e722babf69b7f80f3f9505340579a9cde604139718f23f8b48",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-unit-0254.receipt.json",
+      "kind": "whole",
+      "bytes": 1973,
+      "truncated": false,
+      "sha256": "9f5cd8c21c3e322e3ea047e2e70592936e200642896738fb191869aa356fbb2f",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-unit-0302.receipt.json",
+      "kind": "whole",
+      "bytes": 1975,
+      "truncated": false,
+      "sha256": "df8646acaf81cf69bc1ab27f27986894de144a7bc7afbbea7996e971031889c8",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "ko-unit-0315.receipt.json",
+      "kind": "whole",
+      "bytes": 1974,
+      "truncated": false,
+      "sha256": "1bb0fa439c66ff5ef4ee4058578f16260eecd988f253752b2a45a46be42e025d",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 515,
+      "truncated": false,
+      "sha256": "00d50e2e26e0de3e07903d4447f2a803e05437857cce6353660969c1f8bac8ed",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-run2",
+      "path": "spark-session-receipt.json",
+      "kind": "whole",
+      "bytes": 1017,
+      "truncated": false,
+      "sha256": "62d1e66f3d1004cc401aaf8c5c9143fb45221d01139996eafe2a8389e20379c0",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
