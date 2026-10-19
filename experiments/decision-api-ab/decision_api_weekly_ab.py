@@ -395,9 +395,9 @@ def previous_budget(directory, successor):
                 "authoritySha256": digest(bound), "estimatedOrReservedMicrousd": consumed}
 
 def authority(directory, cases, max_usd, max_requests, authorization_note, previous_run=None):
-    deps = ["scripts/experiments/decision_api_weekly_ab.py",
-            "scripts/experiments/decision_api_cases_content.py",
-            "scripts/experiments/decision_api_cases_rules.py",
+    deps = ["experiments/decision-api-ab/decision_api_weekly_ab.py",
+            "experiments/decision-api-ab/decision_api_cases_content.py",
+            "experiments/decision-api-ab/decision_api_cases_rules.py",
             "scripts/judge_english_source_for_translation.py",
             "scripts/sermon_repair_planning.py",
             "scripts/sermon_provider_error.py",
