@@ -5,7 +5,8 @@ each group already has. This module reads the products a whole-sermon run left
 behind and expresses them as ``sermon-group-stage-record-v1`` records in memory:
 
 * T and R from the Layer 2 round caches (``group-NNNN-astra``/``-sol`` with their
-  policy previews, plus the payload-cache success receipt when the round wrote one);
+  policy previews; the runner identity from the payload-cache success receipt or the
+  round's ``runner-identity.json``);
 * P from the language plugin receipt;
 * Q from the machine text QC receipt;
 * S from the formal renderer's unit intents and unit receipts;
@@ -211,6 +212,12 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
         sol, sol_preview = load_json(files["sol"]), load_json(files["solPreview"])
         success = load_json(files["success"]) if files["success"].is_file() else None
         runner = success.get("runnerImplementationSha256") if success else None
+        round_runner = Path(root) / "runner-identity.json"
+        if runner is None and round_runner.is_file():
+            # Rounds record their runner since sermon-layer2-round-runner-identity-v1.
+            recorded = load_json(round_runner)
+            if recorded.get("schemaVersion") == "sermon-layer2-round-runner-identity-v1":
+                runner = recorded.get("runnerImplementationSha256")
         provenance = {"derivation": "legacy_round_cache", "round": str(root), "stem": files["sol"].name[:10],
                       "notRecorded": [] if runner else ["stageImplementation"]}
         implementation = runner or NOT_RECORDED_SHA256

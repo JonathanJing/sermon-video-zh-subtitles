@@ -295,6 +295,13 @@ class LegacyReaderTests(unittest.TestCase):
             self.assertEqual(translator["status"], "fresh")
             self.assertIn("stageImplementation", translator["notCompared"])
             self.assertIn("stageImplementation", report["locales"]["ko"]["groups"][1]["stages"]["T"]["compared"])
+            # A round that records its runner identity makes it comparable again.
+            write(run.root / "ko/round-001/runner-identity.json", {
+                "schemaVersion": "sermon-layer2-round-runner-identity-v1", "runnerImplementationSha256": "9" * 64,
+                "payloadCacheImplementationSha256": None, "runIdentitySha256": "a" * 64})
+            report = group_plan.plan(json.loads((run.root / "inputs.json").read_text()), run.root, identities())
+            translator = report["locales"]["ko"]["groups"][0]["stages"]["T"]
+            self.assertEqual((translator["status"], translator["reasons"]), ("stale", ["stage_implementation_changed"]))
 
 
 class PlanTests(unittest.TestCase):
