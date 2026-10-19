@@ -30,12 +30,12 @@
 | E01 | [英文硬检查和模型裁判](../packages/production/src/tongxing_production/source/english_source_judge.py)：deterministic_review、run，默认 Sol 6.1 high |
 | E02 | [独立审核器](../packages/production/src/tongxing_production/text/models.py)：review_prompt 明确先纠正 targetUtterances 再返回 semanticReview；保留冻结术语／经文规则与插件 |
 | E03 | [修复规划](../scripts/sermon_repair_planning.py)：plan_repair、build_ambiguous_packet、validate_ambiguous_proposal；[受限 proposal](../scripts/sermon_bounded_decision.py)：propose 的 injected responder，无执行权 |
-| E04 | [音频单元文本筛查](../scripts/screen_target_language_audio_units.py)：相似度及短句精确规则；[人工音频审核](../scripts/review_target_language_audio.py)负责疑点裁决 |
-| E05 | [实测时长诊断](../scripts/target_audio_timing_plan.py)：plan 调用同一正式 scheduler，modelCalls=0 |
-| E06 | [大纲／默想生成](../scripts/sermon_study_generation.py)和[人工审核消费](../packages/production/src/tongxing_production/delivery/study_artifacts.py) |
-| E07 | [provider 分类](../scripts/sermon_provider_error.py)、[确定性推荐](../scripts/sermon_production_supervisor.py)、[CLI Supervisor 与 verify_decision](../scripts/run_sermon_production_supervisor_agent.py) |
+| E04 | [音频单元文本筛查](../packages/production/src/tongxing_production/audio/screening.py)：相似度及短句精确规则；[人工音频审核](../packages/production/src/tongxing_production/audio/human_review.py)负责疑点裁决 |
+| E05 | [实测时长诊断](../packages/production/src/tongxing_production/audio/timing_plan.py)：plan 调用同一正式 scheduler，modelCalls=0 |
+| E06 | [大纲／默想生成](../packages/production/src/tongxing_production/workflows/prepared/study_generation.py)和[人工审核消费](../packages/production/src/tongxing_production/delivery/study_artifacts.py) |
+| E07 | [provider 分类](../packages/production/src/tongxing_production/compute/sermon_provider_error.py)、[确定性推荐](../scripts/sermon_production_supervisor.py)、[CLI Supervisor 与 verify_decision](../scripts/run_sermon_production_supervisor_agent.py) |
 | E08 | [反馈字段和类别](../services/feedback/core.mjs)、[人工管理](../services/feedback/admin.mjs) |
-| 计时 | [accounting](../scripts/sermon_accounting.py)、[bounded decision observation](../scripts/sermon_decision_accounting.py)、[日志合同](bounded-decision-accounting.zh.md) |
+| 计时 | [accounting](../packages/production/src/tongxing_production/observability/accounting.py)、[bounded decision observation](../scripts/sermon_decision_accounting.py)、[日志合同](bounded-decision-accounting.zh.md) |
 | harness 参考 | [Supervisor A/B](../scripts/experiments/supervisor_ab.py)、[Layer 2 A/B](../scripts/experiments/layer2_ab.py)。复用 hash、独立目录、原始响应、轮换顺序与恢复身份；不直接复用旧 model/backend 或虚构统计实现 |
 
 本地已核验的候选素材：
