@@ -41,7 +41,7 @@
 
 本批只修正测试选择，不修改 draft 的 macOS 跳过策略、required check 名称、客户端协议或发布行为。`native-client` 成功且 `contract-validation`／`ios-validation` skipped 仍不是 Swift／模拟器通过。未知路径走全检查的策略和真实设备验收仍待后续，不能据本批关闭矩阵全部验收。随后补充的 [共用 Release v2 夹具](shared-client-release-contracts.zh.md) 以同一 18 个场景验证 Web／原生并修正入站证据检查；catalog／text-only 等其他共用 fixture 尚未齐备，E6 仍需客户端兼容性审核。
 
-2026-10-01 CI 减负补充：Python 的选择范围由 [路径分类器](../scripts/ci_change_scope.py) 给出，固定 `unittest` 汇总须确认分类成功、对应检查成功且其他检查按计划跳过。错误 scope、失败或取消均不能通过。
+2026-10-01 CI 减负补充：Python 的选择范围由 [路径分类器](../tools/development/ci_change_scope.py) 给出，固定 `unittest` 汇总须确认分类成功、对应检查成功且其他检查按计划跳过。错误 scope、失败或取消均不能通过。
 
 | 改动范围 | Python workflow |
 |---|---|

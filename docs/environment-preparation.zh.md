@@ -207,7 +207,7 @@ shasum -a 256 /absolute/path/to/full-source.mp4 \
 首次正式运行前，先准备并冻结 source/anchor、policy、terminology、locale plugin、候选/工作目录、预算 config 和预算授权，再运行 controller 只读检查。已存在同一 run 时复用其身份，不能为通过检查而改写 job root、locale、budget 或缓存目录。
 
 ```bash
-.venv/bin/python scripts/sermon_unified_preflight.py \
+.venv/bin/python tools/ops/sermon_unified_preflight.py \
   --config /absolute/path/to/sermon-canonical-layer2-execution.json
 ```
 

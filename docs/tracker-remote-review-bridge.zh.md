@@ -123,6 +123,6 @@ JSON 是结果投影，Agent 读取前仍须通过本地校验入口确认指令
 ## 参考
 
 - [当前 Tracker 发布器](../tools/ops/tracker-publisher/publish.mjs)与[只读规则](../infra/firebase/tracker/firestore.rules)
-- [四层进度账本](../scripts/four_layer_progress.py)、[音频审核入口](../scripts/review_target_language_audio.py)、[音频审核收据 v2](../schemas/sermon-target-language-audio-human-review-receipt-v2.schema.json)
+- [四层进度账本](../packages/production/src/tongxing_production/observability/progress.py)、[音频审核入口](../packages/production/src/tongxing_production/audio/human_review.py)、[音频审核收据 v2](../schemas/sermon-target-language-audio-human-review-receipt-v2.schema.json)
 - [Firebase Callable Functions](https://firebase.google.com/docs/functions/callable)、[Firestore 实时监听](https://firebase.google.com/docs/firestore/query-data/listen)、[Firestore 事务](https://firebase.google.com/docs/firestore/manage-data/transactions)
 - [OpenAI Agents API 自托管执行环境](https://developers.openai.com/api/docs/guides/agents-api/environments/self-hosted)（可选后续运行方式，不是第一版依赖）
