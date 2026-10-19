@@ -81,11 +81,13 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
     speech.validate_adapter(adapter, candidate["targetLocale"], registry,
                             source_package=source, candidate=candidate,
                             preview_only=True)
+    # A preview is preview_only and never enters an audio package, so a voice authorized for
+    # this locale's production dubbing may render it, as may a demo voice. Formal adoption of a
+    # dubbing-purpose preview (renderer --speculative-from) is a separate gate and stays closed.
+    dubbing = "chinese_dubbing" if candidate["targetLocale"] == "zh-Hans" else "multilingual_dubbing"
     formal.require(adapter["adapterId"] == "qwen3_tts_sft"
-                   and (adapter["authorizationPurpose"] == "multilingual_voice_demo"
-                        or (candidate["targetLocale"] == "zh-Hans"
-                            and adapter["authorizationPurpose"] == "chinese_dubbing")),
-                   "Speculative speech requires a registered demo/Chinese voice purpose")
+                   and adapter["authorizationPurpose"] in {"multilingual_voice_demo", dubbing},
+                   "Speculative speech requires a registered demo or this locale's dubbing voice purpose")
     policies = formal.package.read_object(operation_policies_path)
     formal.require(all(isinstance(policies.get(name), dict)
                        and identity.json_sha256(policies[name]) == adapter[field]

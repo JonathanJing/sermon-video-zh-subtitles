@@ -200,8 +200,25 @@ class SpeculativeRenderTests(unittest.TestCase):
     def test_chinese_only_voice_purpose_cannot_render_korean_preview(self):
         self.fixture.adapter["authorizationPurpose"] = "chinese_dubbing"
         speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
-        with self.assertRaisesRegex(ValueError, "demo/Chinese voice purpose"):
+        with self.assertRaisesRegex(ValueError, "demo or this locale's dubbing voice purpose"):
             self.render(group_ids=["g1"])
+
+    def test_a_locale_dubbing_voice_renders_a_preview_only_unit(self):
+        # The registry authorizes the voice for production dubbing; the preview stays preview_only.
+        self.fixture.registry["speakers"][0]["authorization"]["purposes"].append("multilingual_dubbing")
+        speech_fixture.write_json(self.fixture.registry_path, self.fixture.registry)
+        self.fixture.adapter["registryJsonSha256"] = subject.identity.json_sha256(self.fixture.registry)
+        self.fixture.adapter["authorizationPurpose"] = "multilingual_dubbing"
+        speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
+        result = self.render(group_ids=["g1"])
+        receipt = json.loads((self.out / "receipts/unit-0000.json").read_text())
+        self.assertEqual((receipt["status"], receipt["fullDecode"]), ("preview_only", "pass"))
+        manifest = json.loads((self.out / "speculative-manifest.json").read_text()) \
+            if (self.out / "speculative-manifest.json").is_file() else None
+        for value in [receipt] + ([manifest] if manifest else []):
+            self.assertIsNot(value.get("releaseEligible"), True)
+            self.assertIsNot(value.get("synthesisEligible"), True)
+        self.assertTrue(result)
 
     def test_committed_partial_audio_resumes_without_synthesis(self):
         self.render(group_ids=["g1"])
@@ -293,6 +310,21 @@ class FormalAdmissionTests(unittest.TestCase):
         manifest.pop('previewExecutionBindingSha256')
         manifest_path.write_text(json.dumps(manifest))
         with self.assertRaisesRegex(ValueError, 'frozen checkout'):
+            self.formal_render()
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_formal_adoption_of_a_dubbing_purpose_preview_stays_closed(self):
+        # The preview lane may render with the locale's dubbing voice; adopting such a preview
+        # into a formal render is a separate gate that this change leaves closed.
+        registry_path, adapter_path = self.spec_root / "registry.json", self.spec_root / "adapter.json"
+        registry = formal.package.read_object(registry_path)
+        registry["speakers"][0]["authorization"]["purposes"].append("multilingual_dubbing")
+        formal.write_json_atomic(registry_path, registry)
+        adapter = formal.package.read_object(adapter_path)
+        adapter.update(authorizationPurpose="multilingual_dubbing",
+                       registryJsonSha256=subject.identity.json_sha256(registry))
+        formal.write_json_atomic(adapter_path, adapter)
+        with self.assertRaisesRegex(ValueError, "Speculative voice purpose was not authorized"):
             self.formal_render()
         self.assertEqual(FakeSynth.calls, [])
 
