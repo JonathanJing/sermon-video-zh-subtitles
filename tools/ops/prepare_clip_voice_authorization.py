@@ -6,6 +6,9 @@ import argparse
 import json
 from pathlib import Path
 
+if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 try:
     from scripts import prepare_target_language_speech_job as speech
     from scripts import sermon_sentence_interpretation as interpretation

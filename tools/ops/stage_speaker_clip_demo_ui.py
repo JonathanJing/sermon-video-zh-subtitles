@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import tempfile
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 PREFIX = "voice-demos/speaker-clips-v2"
 SCHEMA = "sermon-speaker-clip-demo-ui-overlay-v2"
 WEB = ROOT / "apps/listening-web"
