@@ -30,8 +30,8 @@
    - 规则匹配不能保证完全，合并报告 PR 前仍要看一眼 diff。
 5. **自动接入。** 下列入口退出时（成功或失败）自动生成报告，并打印公开命令：
    - 三分钟 e2e：`scripts/run_dev_180s_beta_e2e.sh`
-   - 机器质检文字驱动：`scripts/run_machine_qc_clip_test.py`
-   - 机器质检音频驱动：`scripts/run_machine_qc_audio_test.py`
+   - 机器质检文字驱动：`tongxing_production.review.qc_text_run`
+   - 机器质检音频驱动：`tongxing_production.review.qc_audio_run`
 
    其他入口（每周正式生产、Spark 诊断等）由执行运行的 agent 在结束时手动导出，见 [AGENTS.md](../AGENTS.md) 和[本地生产 runbook](codex-local-production-runbook.zh.md#运行报告)。
 6. **云端怎么用。** 云端会话读报告 PR 的文件，填写或评审 `RETROSPECTIVE.md`，问题另开修复 PR。复盘填好后合并报告 PR；跨轮比较就读 `docs/reports/runs/` 下的历次 `INDEX.md`。
