@@ -318,6 +318,21 @@ class CodeIdentityMemoTests(unittest.TestCase):
         (self.root / 'scripts/tool.py').unlink()
         self.assertNotEqual(layer2.code_identity(), self.baseline)
 
+    def test_single_file_ancestor_swapped_for_a_symlink_is_not_memoized(self):
+        for directory in ('docs', 'tools/ops'):
+            with self.subTest(directory=directory):
+                original, moved = self.root / directory, self.root / (directory + '-moved')
+                original.rename(moved)
+                os.symlink(moved, original)
+                try:
+                    calls = self.compute.calls
+                    with self.assertRaises(ValueError):
+                        layer2.code_identity()
+                    self.assertEqual(self.compute.calls, calls + 1)
+                finally:
+                    original.unlink()
+                    moved.rename(original)
+                self.assertEqual(layer2.code_identity(), self.baseline)
 
 class SharedListingTests(unittest.TestCase):
     def setUp(self):

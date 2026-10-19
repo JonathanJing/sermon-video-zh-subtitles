@@ -552,7 +552,11 @@ def code_identity():
     return _BINDING_MEMO.get(
         ('code', str(root)),
         lambda: (stat_memo.tree(root / 'scripts', ('.py',)) + stat_memo.tree(root / 'packages/production/src', ('.py',))
-                 + stat_memo.tree(root / 'schemas', ('.json',)) + stat_memo.files(*single)),
+                 + stat_memo.tree(root / 'schemas', ('.json',)) + stat_memo.files(*single)
+                 # _safe_path rejects a symlinked ancestor; a directory swapped for a symlink to
+                 # itself keeps every leaf's lstat identity, so the ancestors' kind is fingerprinted too.
+                 + stat_memo.ancestors(*single, root / 'scripts', root / 'packages/production/src',
+                                       root / 'schemas')),
         lambda: _code_identity_of(root, single))
 
 
