@@ -404,7 +404,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
         from scripts import sermon_pipeline as pipeline
         with tempfile.TemporaryDirectory() as tmp, \
              patch.dict('os.environ', {'SERMON_ACCOUNTING_DIR':tmp}), \
-             patch('scripts.strict_budget_capability.require_bounded_api_payload'), \
+             patch('tongxing_production.compute.budget_capability.require_bounded_api_payload'), \
              patch.object(legacy_openai, 'json_request', side_effect=TimeoutError('unknown')) as request, \
              patch.object(pipeline.time, 'sleep'):
             with self.assertRaises(TimeoutError):

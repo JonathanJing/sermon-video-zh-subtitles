@@ -102,18 +102,18 @@ Execute 模式另外暴露两个受限工具：
 
 ```bash
 # 新建受控 session；目录内保存 session 状态、工具请求与结果。
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow
 
 # 恢复同一个 session，不重复创建或重跑已记录的阶段。
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow \
   --resume-agent-session
 
 # 显式切回既有 SDK / Responses 控制层。
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend sdk
 ```
 
@@ -124,14 +124,14 @@ Session 创建结果不明时停止自动创建，先核对持久记录；pendin
 本地生产入口会自动选择当前或下一个 Sunday，并把工作目录保存在仓库忽略的 `artifacts/` 下：
 
 ```bash
-.venv/bin/python scripts/run_codex_local_sermon_production.py --mode execute
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local --mode execute
 ```
 
 公开 YouTube 回放默认不使用 cookies。只有出现下载授权问题时，operator 才应显式提供授权导出的 Netscape `cookies.txt`：
 
 ```bash
 SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt \
-  .venv/bin/python scripts/run_codex_local_sermon_production.py --mode execute
+  .venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local --mode execute
 ```
 
 脚本不会把 cookie 内容或本地 cookie 路径写入公开报告。
@@ -218,7 +218,7 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 Scheduler 配置脚本支持 `production-supervisor`：
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url 'https://sermon-zh-caption-web-...' \

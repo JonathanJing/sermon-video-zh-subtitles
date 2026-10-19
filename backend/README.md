@@ -190,7 +190,7 @@ Secret Manager resource names.
 Cloud Scheduler can be configured with a redacted dry run first:
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url "$SERVICE_URL"
@@ -295,7 +295,7 @@ When offline artifacts, the promoted Sunday manifest, and realtime JSONL are all
 available, run the combined production gate:
 
 ```bash
-python3 scripts/run_sunday_evidence_bundle.py \
+python3 tools/ops/run_sunday_evidence_bundle.py \
   --sunday 2026-06-28 \
   --session-id <worker_session_id> \
   --artifact-location gcs \
@@ -510,7 +510,7 @@ python3 scripts/run_realtime_stabilizer_loop.py \
 The output is `artifacts/realtime-stable-corrections/stable-corrections.json`
 plus a report and raw model-output JSONL. The loop report includes
 `stableCaption` and `stableLatency`; production evidence should include it with
-`scripts/collect_production_evidence_matrix.py --realtime-stabilizer-loop-report`
+`tools/ops/collect_production_evidence_matrix.py --realtime-stabilizer-loop-report`
 and should show windowed `caption_stable` events with p95 stable latency between
 3000 and 6000 ms. This is the bridge from low-latency draft captions to
 higher-quality stable captions.

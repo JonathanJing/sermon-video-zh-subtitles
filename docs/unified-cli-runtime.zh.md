@@ -18,7 +18,7 @@
 v2额外冻结以下内容：
 
 - `bindings`：每个文件的绝对或manifest相对路径及字节SHA。路径不参与plan hash；内容身份参与。
-- `executionAdmission.modules/closureSha256`：全部脚本、schema、既有legacy producer/publisher与网页资源及共享术语表。实际模型、音频、发布阶段还必须填写`runtimeSha256`，由`sermon_unified_runtime_identity.snapshot()`的规范JSON摘要生成，绑定Python、已安装分发版本和ffmpeg/ffprobe及编解码能力。
+- `executionAdmission.modules/closureSha256`：全部脚本、schema、既有legacy producer/publisher与网页资源及共享术语表。实际模型、音频、发布阶段还必须填写`runtimeSha256`，由`tongxing_production.compute.runtime_identity.snapshot()`的规范JSON摘要生成，绑定Python、已安装分发版本和ffmpeg/ffprobe及编解码能力。
 - `executionWindow`：America/Los_Angeles窗口用带时区时间表示；到期关闭新派发，不撤销在途请求。
 - `steps`：固定adapter、阶段、依赖、locale、配置binding、保守成本上限。无任意shell/import入口。
 - `source.window`：沿用原Supervisor批准、timeline和source descriptor。manifest URL用完整SHA-256；原Supervisor短URL hash不改写，经过原URL核对后桥接。
@@ -91,7 +91,7 @@ owner在人工等待期间持续观察持久stateRevision，新的审核证据�
 ```bash
 .venv/bin/python -m scripts.sermon_workflow_experiment \
   --protocol /absolute/protocol.json --receipt /absolute/cold-a.json
-.venv/bin/python -m scripts.verify_sermon_unified_cli --out /absolute/new-empty-fixture-dir
+.venv/bin/python tools/development/verify_sermon_unified_cli.py --out /absolute/new-empty-fixture-dir
 ```
 
 fixture使用真正CLI和脱离聊天的owner，固定100次转移、零API，要求交接p95≤2秒。它不证明模型速度、内容质量、设备播放或15小时完整交付。容量和STE A/B工具只在固定质量/声音/输入及相应授权下执行；真实实验收据仍须另外取得。

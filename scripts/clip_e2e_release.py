@@ -146,4 +146,4 @@ def prepare(out: Path, *, page_id: str, date: str, locales: list[str], source_pa
 
 
 if __name__ == "__main__":
-    raise SystemExit("Run through scripts/run_clip_real_e2e.py (stage layer4); see docs/clip-real-e2e.zh.md")
+    raise SystemExit("Run through tools/development/run_clip_real_e2e.py (stage layer4); see docs/clip-real-e2e.zh.md")

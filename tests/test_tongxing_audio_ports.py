@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 from scripts import tongxing_host as host
 from scripts import bounded_audio_cpu, four_layer_measure, ko_spoken_numerals, production_spark_admission
-from scripts import dev_audio_test_profile, machine_quality_release_basis as machine_basis
+from scripts import machine_quality_release_basis as machine_basis
 from scripts import machine_quality_waiver as waiver
 from scripts import render_formal_target_language_speech as renderer
 from scripts import render_multilingual_voice_demos as demos
@@ -23,6 +23,7 @@ from scripts import screen_target_language_audio_units as screening
 from scripts import sermon_accounting, sermon_local_model_observation, sermon_workflow_jobs
 from scripts import spark_tts_replica_pool, spark_tts_window_scheduler
 from scripts import target_audio_auto_qc
+from tongxing_production.audio import dev_profile as dev_audio_test_profile
 from scripts import target_audio_predicted_schedule as predicted
 from scripts.language_review_plugins import auto_qc_text_common as plugin_rules
 from tongxing_production import path_aliases, ports

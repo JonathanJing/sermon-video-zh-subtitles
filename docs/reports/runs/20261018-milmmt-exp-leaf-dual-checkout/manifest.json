@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-milmmt-exp-leaf-dual-checkout",
+  "runs": [
+    {
+      "label": "milmmt-exp-leaf-dual-checkout",
+      "source": "~/.codex/worktrees/milmmt-exp-leaf/sermon-video-zh-subtitles/artifacts/milmmt-exp-leaf-dual-checkout",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "milmmt-exp-leaf-dual-checkout",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 307,
+      "truncated": false,
+      "sha256": "2bd500cc7a7568f3989a6f40f7009c2a4911511541888daa7ebc4406b7a59037",
+      "redactions": {}
+    },
+    {
+      "run": "milmmt-exp-leaf-dual-checkout",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 126,
+      "truncated": false,
+      "sha256": "decc381d3b7465127bba5bc33f28c791ef865ff8a5d194c8f29e91d534b38483",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

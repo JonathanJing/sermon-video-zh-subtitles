@@ -1,12 +1,14 @@
 import copy
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from render_speaker_clip_demos import validate_scripts, validate_manifest
-from build_speaker_clip_demos import build, encode_audio, checked_video_receipt, sha
+from tools.ops.build_speaker_clip_demos import build, encode_audio, checked_video_receipt, sha
 
 class SpeakerClipsTests(unittest.TestCase):
     def setUp(self):
@@ -52,5 +54,20 @@ class SpeakerClipsTests(unittest.TestCase):
     def test_foreign_generation_manifest_is_rejected(self):
         with self.assertRaisesRegex(ValueError,'identity differs'):
             validate_manifest({'registryJsonSha256':'0'*64}, {'schemaVersion':'registry'}, {'locales':[]})
+
+    def test_builder_imports_through_package_paths(self):
+        # Only the repo root on sys.path: the builder must still reach its bare scripts/ siblings.
+        root = Path(__file__).resolve().parents[1]
+        environment = {key: value for key, value in os.environ.items() if key != 'PYTHONPATH'}
+        code = ('import sys; sys.path[0] = sys.argv[1]\n'
+                'import tools.ops.build_speaker_clip_demos as new\n'
+                'assert callable(new.validate_scripts)\n')
+        with tempfile.TemporaryDirectory() as elsewhere:
+            result = subprocess.run([sys.executable, '-c', code, str(root)], cwd=elsewhere, env=environment,
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            result = subprocess.run([sys.executable, '-m', 'tools.ops.build_speaker_clip_demos', '--help'],
+                                    cwd=root, env=environment, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
 
 if __name__=='__main__':unittest.main()

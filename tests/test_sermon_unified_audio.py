@@ -3,9 +3,12 @@ import json
 import unittest
 from unittest.mock import patch
 from tests import test_render_formal_target_language_speech as fixture
-from scripts import sermon_unified_audio as audio
 from scripts import ko_spoken_numerals
-from scripts import target_audio_capacity_experiment as capacity
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import unified_stage as audio
+from tests import experiment_modules
+
+capacity = experiment_modules.load("experiments/local-layer-latency/target_audio_capacity_experiment.py")
 
 
 class UnifiedAudioTests(unittest.TestCase):

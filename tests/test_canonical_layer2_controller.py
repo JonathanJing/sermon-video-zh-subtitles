@@ -489,6 +489,17 @@ class CodeIdentityClosureTests(unittest.TestCase):
                 self.assertNotEqual(subject.code_identity(), baseline)
         self.assertEqual(subject.code_identity(), baseline)
 
+    def test_package_command_entry_changes_the_code_identity(self):
+        # Layer 2 commands also run through tools/ops/run.py; an edited dispatcher must not
+        # resume a job under the old codeIdentitySha256.
+        entry = (subject.ROOT / 'tools/ops/run.py').resolve()
+        self.assertTrue(entry.is_file())
+        baseline = subject.code_identity()
+        original = Path.read_bytes
+        with patch.object(Path, 'read_bytes', lambda path: original(path) + (b'#' if path == entry else b'')):
+            self.assertNotEqual(subject.code_identity(), baseline)
+        self.assertEqual(subject.code_identity(), baseline)
+
 
 if __name__ == '__main__':
     unittest.main()

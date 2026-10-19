@@ -6,8 +6,8 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from build_published_english_reference import build_reference, canonical_sha
 from delivery_contract import project_human_catalog
+from tongxing_production.delivery.published_english_reference import build_reference, canonical_sha
 
 CHECKS = ('sourceIdentity', 'transcriptCompleteness', 'wordAlignment', 'sentenceAndPauseBoundaries')
 

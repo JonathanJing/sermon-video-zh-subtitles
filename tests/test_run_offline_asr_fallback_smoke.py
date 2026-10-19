@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
-SCRIPT_PATH = SCRIPT_DIR / "run_offline_asr_fallback_smoke.py"
+SCRIPT_PATH = SCRIPT_DIR.parent / "tools" / "ops" / "run_offline_asr_fallback_smoke.py"
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 SPEC = importlib.util.spec_from_file_location("run_offline_asr_fallback_smoke", SCRIPT_PATH)

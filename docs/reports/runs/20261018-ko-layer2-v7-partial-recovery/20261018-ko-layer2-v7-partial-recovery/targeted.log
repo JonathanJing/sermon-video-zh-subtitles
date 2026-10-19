@@ -1,0 +1,10 @@
+Korean Layer 2 v7 partial recovery
+==================================
+Status: failed durable job
+Terminal error: layer2_reuse_operation_missing
+
+Round 1 recovered 804 exact translator/reviewer roles from the approved direct-paid predecessor root at zero new cost. It reran semantic and Korean plugin checks for all 402 groups; 394 passed and 8 remained in the failure report.
+
+Round 2 issued 10 new bounded provider calls for five selected repair groups. Every provider call returned and settled successfully. Groups 5 and 9 passed. Groups 10, 24 and 25 passed independent semantic review but remained blocked by deterministic number checks. Groups 162, 316 and 335 were inherited as repair_spend_cap.
+
+Round 3 carried four unchanged groups successfully, then stopped before a provider call. Group 5 had been newly paid in the destination ledger during round 2. Its success sidecar therefore named the destination direct-paid root, while record_reuse searched only the approved predecessor root. The run failed closed. No unknown provider outcome, candidate, language review, partial recovery receipt or Layer 3 artifact was produced.

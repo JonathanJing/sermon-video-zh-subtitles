@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "sermon-local-test-outcome-v1",
+  "status": "succeeded",
+  "startedAt": "2026-10-18T03:29:18Z",
+  "finishedAt": "2026-10-18T03:29:49Z",
+  "exitCode": 0,
+  "commitSha": "fa0e50e5265c605d0475031d844bca5c060d4d6e",
+  "branch": "codex/layer2-partial-round-recovery",
+  "deliveryType": "test",
+  "productionDispatch": false
+}

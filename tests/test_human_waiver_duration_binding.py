@@ -1,9 +1,9 @@
 """Human acceptance cannot bypass frozen duration normalization binding."""
 import copy
 import pytest
-from scripts import audio_qc_human_acceptance as acceptance_rules
 from scripts import machine_audio_waiver_acceptance as v3
 from scripts import target_audio_auto_qc as qc
+from tongxing_production.review import audio_qc_acceptance as acceptance_rules
 from tests.test_machine_quality_release_basis import audio_fixture
 from tests.test_target_audio_spoken_length import job
 

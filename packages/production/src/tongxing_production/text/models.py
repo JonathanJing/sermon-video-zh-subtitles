@@ -337,7 +337,8 @@ def _require_payload_cache_response_not_refused(response: dict[str, Any], role: 
 
 def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
                               payload_sha256: str, request: dict[str, Any],
-                              group: dict[str, Any]) -> dict[str, Any] | None:
+                              group: dict[str, Any], *,
+                              allow_policy_binding_miss: bool = False) -> dict[str, Any] | None:
     """Return a new-format, group-success-bound exact-payload cache.
 
     Merely having a parsed or raw response is not success evidence.  Older roots
@@ -357,6 +358,12 @@ def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
         receipt = producer._load(receipt_path)
     except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
         raise ValueError(f"Prior payload cache success receipt is corrupt: {receipt_path}") from exc
+    request_binding = receipt.get("requestBinding") if isinstance(receipt, dict) else None
+    current_binding = _request_cache_binding(request)
+    stable_binding_keys = ("targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256")
+    policy_binding_matches = (isinstance(request_binding, dict)
+                              and request_binding.get("translationPolicySha256")
+                              == current_binding["translationPolicySha256"])
     require(isinstance(receipt, dict)
             and set(receipt) == {"schemaVersion", "runnerImplementationSha256",
                                  "payloadCacheImplementationSha256", "requestBinding",
@@ -366,7 +373,10 @@ def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
             and receipt.get("runnerImplementationSha256") == RUNNER_PRODUCTION_IDENTITY_SHA256
             and receipt.get("payloadCacheImplementationSha256")
                 == PAYLOAD_CACHE_IMPLEMENTATION_SHA256
-            and receipt.get("requestBinding") == _request_cache_binding(request)
+            and isinstance(request_binding, dict)
+            and set(request_binding) == set(current_binding)
+            and all(request_binding.get(key) == current_binding[key] for key in stable_binding_keys)
+            and (policy_binding_matches or allow_policy_binding_miss)
             and receipt.get("translationGroupId") == group["translationGroupId"]
             and receipt.get("sourceUnitIds") == group["sourceUnitIds"]
             and receipt.get("humanApproval") is False,
@@ -437,6 +447,11 @@ def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
         raise ValueError(f"Prior payload cache reviewer payload is invalid: {receipt_path}") from exc
     require(reviewer_input.get("astraDraft") == cached_results["translator"],
             f"Prior payload cache reviewer is not bound to its translator draft: {receipt_path}")
+    # This old-policy success receipt cannot authorize a new policy. A v7
+    # partial recovery may still use the independently proved direct-paid
+    # response path below after this receipt and every bound byte validated.
+    if not policy_binding_matches:
+        return None
     selected = roles[role]
     if selected["cacheKeySha256"] != _payload_cache_key(role, payload_sha256):
         return None
@@ -550,10 +565,26 @@ def _require_replayed_payload_cache(output: Path, selected: dict[str, Any], role
     """
     raw = output.with_suffix('.raw.json')
     preview = output.with_suffix('.policy-preview.json')
+    origin_preview = selected['path'].with_suffix('.policy-preview.json')
     binding = selected['binding']
+    # A v7 partial recovery may deliberately run a repaired deterministic
+    # plugin under a newly frozen policy. The provider payload and returned
+    # response remain byte-identical, while the destination preview correctly
+    # records the new plugin implementation hash. Accept that one preview-only
+    # difference only when the policy comparator proves a plugin-only migration.
+    preview_matches = _file_sha256(preview) == binding['previewSha256']
+    if not preview_matches:
+        require(origin_preview.is_file() and not origin_preview.is_symlink()
+                and _file_sha256(origin_preview) == binding['previewSha256'],
+                f"Replayed payload cache source preview changed: {origin_preview}")
+        change = policy_preview.compare_previews(
+            producer._load(origin_preview), producer._load(preview), prior_outcome='succeeded')
+        require(change['classification'] == 'plugin_only_migration'
+                and change['modelPayloadUnchanged'] is True
+                and change['blockedByPriorOutcome'] is False,
+                f"Replayed payload cache policy changed beyond the plugin: {preview}")
     require(_file_sha256(output) == binding['cacheSha256']
-            and _file_sha256(raw) == binding['rawSha256']
-            and _file_sha256(preview) == binding['previewSha256'],
+            and _file_sha256(raw) == binding['rawSha256'],
             f"Replayed payload cache bytes changed: {output}")
     cached = producer._load(output)
     raw_record = producer._load(raw)
@@ -1736,7 +1767,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             translator_payload = model_payload("translator", translate_prompt, policy)
             payload_translator_cache = _successful_payload_cache(
                 payload_cache_from, stem, "translator",
-                _model_fingerprint(translator_payload, caller, api_key), request, group)
+                _model_fingerprint(translator_payload, caller, api_key), request, group,
+                allow_policy_binding_miss=partial_recovery_from is not None)
             if payload_translator_cache is None and partial_recovery_from is not None:
                 payload_translator_cache = _returned_payload_cache(
                     partial_recovery_from, stem, "translator",
@@ -1841,7 +1873,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             reviewer_payload = model_payload("reviewer", review_prompt, policy)
             payload_reviewer_cache = _successful_payload_cache(
                 payload_cache_from, stem, "reviewer",
-                _model_fingerprint(reviewer_payload, caller, api_key), request, group)
+                _model_fingerprint(reviewer_payload, caller, api_key), request, group,
+                allow_policy_binding_miss=partial_recovery_from is not None)
             if payload_reviewer_cache is None and partial_recovery_from is not None:
                 payload_reviewer_cache = _returned_payload_cache(
                     partial_recovery_from, stem, "reviewer",

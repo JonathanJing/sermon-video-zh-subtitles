@@ -56,7 +56,7 @@ owner接线顺序为：adapter预检与预算检查→broker reservation→保�
 真实CLI／脱离聊天owner的零provider路径：
 
 ```sh
-.venv/bin/python -m scripts.verify_sermon_unified_cli \
+.venv/bin/python tools/development/verify_sermon_unified_cli.py \
   --out artifacts/<new-empty-verification-directory> --with-resource-policy
 ```
 

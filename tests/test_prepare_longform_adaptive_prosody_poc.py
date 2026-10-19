@@ -3,7 +3,9 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import prepare_longform_adaptive_prosody_poc as subject
+from tests import experiment_modules
+
+subject = experiment_modules.load("experiments/multilingual-prosody-poc/prepare_longform_adaptive_prosody_poc.py")
 from scripts.run_multilingual_prosody_poc import PLAN_SCHEMA, canonical_sha
 
 

@@ -79,13 +79,11 @@ class ProductionWheelResourceTests(unittest.TestCase):
                             for package, name in RESOURCES]
             run("-c", code, str(site), str(ROOT), *(str(path) for path in source_paths))
 
-            # The two retained script entry points must still reach the installed
+            # The retained script entry point must still reach the installed
             # package when invoked by absolute path from outside the checkout.
             cli_env = dict(env, PYTHONPATH=str(site))
-            for script in ("build_sermon_poster.py", "build_multilingual_sermon_posters.py"):
-                with self.subTest(script=script):
-                    result = run(str(ROOT / "scripts" / script), "--help", environment=cli_env)
-                    self.assertIn("--page-id", result.stdout)
+            result = run(str(ROOT / "scripts/build_multilingual_sermon_posters.py"), "--help", environment=cli_env)
+            self.assertIn("--page-id", result.stdout)
 
 
 if __name__ == "__main__":

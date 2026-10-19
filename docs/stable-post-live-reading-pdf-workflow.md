@@ -70,7 +70,7 @@ These are absolute offsets in the full downloaded media, not relative offsets in
 Before running, make sure `OPENAI_API_KEY` is already present in the environment, or pass `--api-key-secret`.
 
 ```bash
-.venv/bin/python scripts/run_post_live_subtitle_generation.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.post_live \
   --sunday 2026-07-26 \
   --state-file artifacts/live-source-monitor/state.json \
   --work-root artifacts/post-live-runs \

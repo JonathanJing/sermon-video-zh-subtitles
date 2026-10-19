@@ -46,8 +46,23 @@ if __name__ == "__main__":
 else:
     _implementation = _load()
 
+    class _Forward(type(sys)):
+        # A caller that loads this file with spec_from_file_location keeps this
+        # facade object; its reads, writes and mock patches reach the implementation.
+        def __getattr__(self, name):
+            return getattr(_implementation, name)
+
+        def __setattr__(self, name, value):
+            setattr(_implementation, name, value)
+
+        def __delattr__(self, name):
+            delattr(_implementation, name)
+
     def __getattr__(name):
-        # Callers that load this file with spec_from_file_location keep the facade.
+        # Also serves a spec-loaded copy that was never put in sys.modules.
         return getattr(_implementation, name)
 
+    _facade = sys.modules.get(__name__)
+    if _facade is not None and _facade.__dict__ is globals():
+        _facade.__class__ = _Forward
     sys.modules[__name__] = _implementation

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "sermon-run-summary-v1",
+  "status": "complete_web_published",
+  "scope": "zh_hans_poster_and_weekly_announcement",
+  "pageId": "resi-20261018-15030286",
+  "locale": "zh-Hans",
+  "posterSha256": "9f67e356b799c91e8aa24fd8f18c2d314e8a56e1f968f2a4942c610affb5df2c",
+  "posterPreviewSha256": "0081887402b0d0df753b5edfcaa46dc9e356149a27efee63bcf71abfb2e04044",
+  "announcementCatalogSha256": "7b374591a3abeb5980dc4a8c6803285ee77774fbb7591e99dbaca3964b39acdd",
+  "hostingVersion": "sites/ai-for-god-sermon-audio/versions/457567bed866aec7",
+  "catalogsUnchanged": true,
+  "modelCalls": 0,
+  "deviceAcceptance": "not_run"
+}

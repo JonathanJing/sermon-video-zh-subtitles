@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "tests": 85,
+  "skipped": 0,
+  "subtests": 549,
+  "testIdsBefore": 7013,
+  "testIdsAfter": 7013,
+  "providerCalls": 0,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "productionWrites": 0
+}

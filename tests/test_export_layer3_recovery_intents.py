@@ -7,7 +7,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import export_layer3_recovery_intents as subject
+from tools.ops import export_layer3_recovery_intents as subject
 from scripts import render_formal_target_language_speech as producer
 from tests import test_render_formal_target_language_speech as render_fixtures
 
@@ -234,7 +234,7 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(json.loads(output.getvalue())["validation"]["modelCalls"], 0)
 
     def test_current_snapshot_is_accepted_by_readonly_planner(self):
-        from scripts import production_recovery_plan as planner
+        from tools.ops import production_recovery_plan as planner
         context = producer.checked_context(self.paths, self.map_path, self.policies_path, assembly_only=True)
         producer.render_units(context, self.paths, self.root, self.map_path,
                               synth_factory=render_fixtures.FakeSynth)

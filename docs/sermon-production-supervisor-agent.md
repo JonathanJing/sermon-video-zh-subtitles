@@ -90,18 +90,18 @@ The following parameters are integrated in the local runner. Check the verificat
 
 ```bash
 # Create a controlled session and persist its state and tool results.
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow
 
 # Resume that same session.
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow \
   --resume-agent-session
 
 # Explicit SDK / Responses rollback.
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend sdk
 ```
 
@@ -141,7 +141,7 @@ The approval binds the Sunday, source URL hash, approved times, approver, and cu
 These older API/Scheduler parameters do not demonstrate an Agents API integration on this path. The referenced post-live Job is retired; any recovery would first rebuild and verify a suitable Job, then select the SDK backend explicitly. Configure a rebuilt API trigger in shadow mode first:
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url 'https://sermon-zh-caption-web-...' \

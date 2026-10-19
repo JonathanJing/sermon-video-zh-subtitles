@@ -112,10 +112,10 @@ class Layer2PayloadCacheReuseTests(unittest.TestCase):
                 partial_recovery_from=None,
                 reuse_from=None, backfill_payload_cache_success=False,
                 partial_repair_brief=None,
-                source=None, policy=None):
+                source=None, policy=None, plugin=None):
         return subject.run_accounted(
             source or self.fixture.source, self.fixture.anchor, policy or self.fixture.policy,
-            out, "fixture-key", caller, None, self.fixture.plugin_path, None, reuse_from,
+            out, "fixture-key", caller, None, plugin or self.fixture.plugin_path, None, reuse_from,
             partial_repair_brief=partial_repair_brief,
             payload_cache_from=payload_cache_from,
             partial_recovery_from=partial_recovery_from,
@@ -205,6 +205,51 @@ class Layer2PayloadCacheReuseTests(unittest.TestCase):
             self.execute(self.current, replay, payload_cache_from=self.prior,
                          partial_recovery_from=self.prior,
                          emit_payload_cache_success=True)
+        self.assertEqual(replay.calls, [])
+
+    def test_partial_round_recovery_formally_revalidates_a_plugin_only_policy_change(self):
+        paid = _BudgetAwareCaller(self)
+        original = self.execute(self.prior, paid, emit_payload_cache_success=True)
+        (self.prior / "group-0001-payload-cache-success.json").unlink()
+
+        replacement = self.root / "replacement-plugin.py"
+        replacement.write_text(
+            self.fixture.plugin_path.read_text(encoding="utf-8")
+            + "\n# Deterministic scanner repair; model-facing rules stay unchanged.\n",
+            encoding="utf-8")
+        changed = copy.deepcopy(self.fixture.policy)
+        changed.pop("componentSha256")
+        changed["languageReview"]["pluginImplementationSha256"] = (
+            producer.plugin_implementation_sha256(replacement))
+        changed = subject.policy_tools.freeze_policy(changed)
+        self.assertNotEqual(changed["componentSha256"], self.fixture.policy["componentSha256"])
+
+        replay = _BudgetAwareCaller(self, forbidden=True)
+        recovered = self.execute(
+            self.current, replay, payload_cache_from=self.prior,
+            partial_recovery_from=self.prior,
+            emit_payload_cache_success=True, policy=changed, plugin=replacement)
+        self.assertEqual(
+            [row["targetUtterances"] for row in recovered["groups"]],
+            [row["targetUtterances"] for row in original["groups"]])
+        self.assertEqual(replay.calls, [])
+        self.assertEqual(len(replay.reused), 4)
+        self.assertEqual(recovered["translationPolicySha256"],
+                         subject.policy_tools.canonical_sha256(changed))
+
+    def test_partial_round_recovery_refuses_a_model_facing_policy_change(self):
+        paid = _BudgetAwareCaller(self)
+        self.execute(self.prior, paid, emit_payload_cache_success=True)
+        changed = copy.deepcopy(self.fixture.policy)
+        changed.pop("componentSha256")
+        changed["translator"]["promptVersion"] += "-changed"
+        changed = subject.policy_tools.freeze_policy(changed)
+        replay = _BudgetAwareCaller(self, forbidden=True)
+        with self.assertRaisesRegex(ValueError, "Partial recovery payload identity changed"):
+            self.execute(
+                self.current, replay, payload_cache_from=self.prior,
+                partial_recovery_from=self.prior,
+                emit_payload_cache_success=True, policy=changed)
         self.assertEqual(replay.calls, [])
 
     def test_partial_round_recovery_rejects_incomplete_started_response_before_dispatch(self):

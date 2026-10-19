@@ -1,4 +1,4 @@
-"""Review R1: the three standard-library review leaves live in the package behind facades."""
+"""Review R1: the three standard-library review leaves live in the package; only the ledger keeps a facade."""
 import importlib
 import os
 from pathlib import Path
@@ -15,11 +15,13 @@ ROOT = Path(__file__).resolve().parents[1]
 MOVED = {'machine_repair_ledger': 'repair_ledger',
          'audio_qc_human_acceptance': 'audio_qc_acceptance',
          'text_qc_human_acceptance': 'text_qc_acceptance'}
+# The two acceptance facades are gone; their legacy keys still resolve.
+FACADES = {'machine_repair_ledger': 'repair_ledger'}
 
 
 class ReviewLeafTests(unittest.TestCase):
     def test_scripts_facades_are_the_package_modules(self):
-        for legacy, current in MOVED.items():
+        for legacy, current in FACADES.items():
             with self.subTest(module=legacy):
                 implementation = importlib.import_module('tongxing_production.review.' + current)
                 self.assertIs(importlib.import_module('scripts.' + legacy), implementation)
@@ -62,7 +64,7 @@ class ReviewLeafTests(unittest.TestCase):
         environment['PYTHONPATH'] = os.pathsep.join([str(ROOT/clip_e2e_spark.PACKAGE_SRC), str(ROOT)])
         code = ''.join(f'import scripts.{legacy} as m\n'
                        f'assert m.__name__ == "tongxing_production.review.{current}", m.__name__\n'
-                       for legacy, current in MOVED.items())
+                       for legacy, current in FACADES.items())
         with tempfile.TemporaryDirectory() as elsewhere:
             result = subprocess.run([sys.executable, '-S', '-c', code], cwd=elsewhere, env=environment,
                                     capture_output=True, text=True, timeout=60)

@@ -4,7 +4,9 @@ import copy
 import unittest
 
 from scripts.experiments import build_blind_review_scores as builder
-from scripts.experiments import summarize_model_production_ab as summary
+from tests import experiment_modules
+
+summary = experiment_modules.load("experiments/layer2-translation-ab/summarize_model_production_ab.py")
 
 
 class BlindReviewScoreTests(unittest.TestCase):

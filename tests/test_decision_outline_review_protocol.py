@@ -1,7 +1,9 @@
 """Synthetic-only tests of source isolation, human preflight, and timing bounds."""
 import copy
 import unittest
-from scripts.experiments import decision_outline_review_protocol as p
+from tests import experiment_modules
+
+p = experiment_modules.load("experiments/decision-api-ab/decision_outline_review_protocol.py")
 
 
 def cases():

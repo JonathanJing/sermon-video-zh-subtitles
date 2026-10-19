@@ -1275,6 +1275,9 @@ class BackendAppTest(unittest.TestCase):
         self.assertIn("pip install", text)
         self.assertIn("COPY backend/", text)
         self.assertIn('CMD ["python", "-m", "backend.app"]', text)
+        # Layer 2 code_identity() hashes these tools/ files, so the image must carry them.
+        for path in ("tools/ops/sermon_unified_preflight.py", "tools/ops/run.py"):
+            self.assertIn(f"COPY {path} /app/{path}", text)
 
 
 if __name__ == "__main__":

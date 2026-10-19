@@ -4,7 +4,7 @@
 
 2026-10-06，Jony 在项目线程里确定了以下规则：
 
-- 中文、韩语、西语都改为**机器质检通过后自动发布**。人工改为发布后抽查，发现问题再发修订版。证道起止时间仍由人输入。抽查用 `scripts/build_listening_sample.py build` 生成（2026-10-11 复盘 `DEV-R242-031`）：每语言列出任何机器检查未通过的全部句子（ASR 初筛，给了音频 QC 时也算）加随机 10 句（种子默认为音频包哈希，同一包每次抽同一批；未标记的不足 10 句时如实记实际抽到的句数），每行带译文、冻结英文、单句音频路径和空白结论格。生成前逐项核对，任何一项不符就不出表：候选是音频包绑定的那份，每句文字哈希与候选组一致；锚点清单是候选绑定的那份（`anchorManifestSha256`），每句都有英文；ASR 初筛收据必须给出，且语音任务、语言、音轨和每句的组、文字、音频哈希都与音频包一致；音频 QC 收据必须是 `sermon-target-audio-auto-qc-v1`，按包内顺序逐句覆盖全部句子，且每行都指向本包的音频和文字，截断或只含部分句子的收据会被拒绝；表中每句的音频文件当场重算哈希，仍与包里记录的一致。清单记下每份输入的哈希。周一听完把结论填进表格，运行 `build_listening_sample.py verdicts --sheet-dir <表目录>`：只能改「结论」格，其余格须与生成时一字不差，每行都有结论（`通过` 或 `问题：…`）才写出 `listening-verdicts.json`，它绑定表格和清单的哈希；再用 `record_decision.py --governs <音频包> --evidence <表目录>/listening-verdicts.json` 记录。这些文件是复核辅助，不是收据，不改动任何包或豁免，`humanApproval` 保持 false。
+- 中文、韩语、西语都改为**机器质检通过后自动发布**。人工改为发布后抽查，发现问题再发修订版。证道起止时间仍由人输入。抽查用 `tools/ops/build_listening_sample.py build` 生成（2026-10-11 复盘 `DEV-R242-031`）：每语言列出任何机器检查未通过的全部句子（ASR 初筛，给了音频 QC 时也算）加随机 10 句（种子默认为音频包哈希，同一包每次抽同一批；未标记的不足 10 句时如实记实际抽到的句数），每行带译文、冻结英文、单句音频路径和空白结论格。生成前逐项核对，任何一项不符就不出表：候选是音频包绑定的那份，每句文字哈希与候选组一致；锚点清单是候选绑定的那份（`anchorManifestSha256`），每句都有英文；ASR 初筛收据必须给出，且语音任务、语言、音轨和每句的组、文字、音频哈希都与音频包一致；音频 QC 收据必须是 `sermon-target-audio-auto-qc-v1`，按包内顺序逐句覆盖全部句子，且每行都指向本包的音频和文字，截断或只含部分句子的收据会被拒绝；表中每句的音频文件当场重算哈希，仍与包里记录的一致。清单记下每份输入的哈希。周一听完把结论填进表格，运行 `build_listening_sample.py verdicts --sheet-dir <表目录>`：只能改「结论」格，其余格须与生成时一字不差，每行都有结论（`通过` 或 `问题：…`）才写出 `listening-verdicts.json`，它绑定表格和清单的哈希；再用 `record_decision.py --governs <音频包> --evidence <表目录>/listening-verdicts.json` 记录。这些文件是复核辅助，不是收据，不改动任何包或豁免，`humanApproval` 保持 false。
 - “每句最多落后 8 秒”是同传听感的目标，保留。时长控制前移到 TTS 之前，不再依靠事后批例外（例如 10/4 的 62 秒）。
 - 翻译和复核可以用同一个模型，前提是有可测量的质量证据。
 - 修复按**单句**计数：先修 2 次，不行再修 2 次，每句最多 4 次。次数记在持久的修复账本里（`scripts/machine_repair_ledger.py`），文字和音频各一本，按语言、英文源包和锚点分开，按冻结英文句（source unit）累计，不按候选或组 ID 计，所以换修订、重新分组或改组名都不会清零。每次 QC 先读账本最新位置，从中取已失败次数，写进收据的 `repairLedger`；跑完后以独占方式追加一条不可改的记录，按哈希串链。调用方不能再自己传次数（音频 `priorFailedAttempts` 直接拒绝）；同一位置的两次 QC 只有先追加的那次有效，从零重来或改低次数的收据追加不进去。签发豁免时必须给出账本根目录（`--repair-ledger-root`，即这次生产运行的持久状态目录），且所用 QC 必须是账本最新一条、整条链前后一致。删除账本文件会让链断开，签发直接失败。5% 也按句子（英文 source unit）计算，一个含多句的组按它的句数计入。
@@ -101,7 +101,7 @@ python scripts/run_spoken_condensation.py --candidate full-candidate.json --budg
 .venv/bin/python scripts/machine_quality_release_basis.py text ... --candidate spoken-candidate.json \
   --condensation-binding condensation-binding.json --out spoken-text-waiver.json
 # 用译文豁免进入第 3 层：写出 speech job v3
-.venv/bin/python scripts/prepare_target_language_speech_job.py ... --text-release-basis text-waiver.json --out speech-job
+.venv/bin/python tools/ops/run.py audio.speech_job ... --text-release-basis text-waiver.json --out speech-job
 # 试听豁免收据（代替人工试听收据）；ASR 标出的句子必须有强 ASR 复核
 .venv/bin/python scripts/machine_quality_release_basis.py audio --package audio-package.json --screening screening.json \
   --audio-qc audio-qc.json --track-check track-check.json --text-waiver spoken-text-waiver.json \
@@ -109,7 +109,7 @@ python scripts/run_spoken_condensation.py --candidate full-candidate.json --budg
   --calibration calibration.json --secondary-asr-model gpt-transcribe --repair-ledger-root run/repair-ledger \
   --out audio-waiver.json
 # 第 4 层：精简过的配音要带同一份精简绑定（sermon_unified_delivery 的 inputs.condensation_binding 同理）
-.venv/bin/python scripts/build_full_video_app_release.py prepare ... --condensation-binding ko=condensation-binding.json
+.venv/bin/python tools/ops/run.py delivery.app_release prepare ... --condensation-binding ko=condensation-binding.json
 # 在已有 Dev 运行上一次跑完整条试听链（预检、整轨核对、音频 QC、注错校准、试听豁免），见 [机器试听豁免驱动](machine-qc-audio-driver.zh.md)
 python scripts/run_with_openai_environment.py --environment dev -- .venv/bin/python scripts/run_machine_qc_audio_test.py \
   --run-dir <run> --out artifacts/machine-qc-audio/<run> --state-dir <文字驱动的状态目录> \

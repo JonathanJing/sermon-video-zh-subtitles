@@ -57,7 +57,7 @@ Firebase 官方建议每个开发环境使用独立 project。听译 App 应建�
 - 当前 `deploy_firebase.py` 已强制显式传入 `--project` 和 `--site`，并先校验完整发布清单；继续保留这个 fail-closed 接口。
 - Dev 和 Production 使用不同的 project ID、site ID、短期凭据／服务身份和预算告警。不要在仓库提交 `.firebaserc`、token 或 service-account key。
 - 代码 PR 和每周内容发布分开。Firebase PR 预览如启用，只能使用独立 Dev project 的合成 fixture；正式 Dev 页面继续要求已审产物。预览渠道仍连接其所属项目的真实后端，不得用 Production project 预览未经审查的变更。
-- 正式 Dev／Production 内容发布使用 `scripts/run_multilingual_cd.py` 的显式入口：先逐文件核对线上基线，随后部署并完成 HTTP/SHA、音轨 Range 与语言深链核验。`--execute` 只接受干净、与远端同 SHA 的 `dev`／`main` checkout，以及明确输入的代码 SHA 和候选报告 SHA。`main` push 本身不自动部署；签名 iOS 包／TestFlight 也只在原生 App 发版时单独构建。
+- 正式 Dev／Production 内容发布使用 `tools/ops/run_multilingual_cd.py` 的显式入口：先逐文件核对线上基线，随后部署并完成 HTTP/SHA、音轨 Range 与语言深链核验。`--execute` 只接受干净、与远端同 SHA 的 `dev`／`main` checkout，以及明确输入的代码 SHA 和候选报告 SHA。`main` push 本身不自动部署；签名 iOS 包／TestFlight 也只在原生 App 发版时单独构建。
 - 发布收据、候选目录和媒体均保留在 ignored artifacts，不上传到 Git。GitHub Actions 目前负责代码门禁；约 700 MB 的内容候选使用本机受控 CD。未来若迁到 GitHub runner，必须先定义候选存储、凭据、环境审核和同站点串行部署，不能把本机路径写进云端工作流。
 - 多语言功能先在 Dev App 验证 locale 选择、资源缺失降级、音频切换和旧中文周次回归；通过不等于自动发布 Production。
 

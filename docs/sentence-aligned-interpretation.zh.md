@@ -162,14 +162,14 @@ end   = start + measured_natural_audio_duration
   --draft <translation-draft.json> \
   --out <independent-review-request.json>
 
-.venv/bin/python scripts/run_sentence_interpretation_models.py \
+.venv/bin/python tools/ops/run.py source.sentence_interpretation_models \
   --anchor-manifest <anchor-manifest.json> \
   --out artifacts/sentence-interpretation-poc/<run-id>/models-gpt-6-astra \
   --model gpt-6-astra \
   --reasoning-effort medium \
   --api-key-secret projects/<project>/secrets/openai-api-key/versions/latest
 
-artifacts/model-routing/macbook-tts/runtime/bin/python scripts/render_sentence_interpretation_tts.py prepare \
+artifacts/model-routing/macbook-tts/runtime/bin/python experiments/sentence-interpretation-tts/render_sentence_interpretation_tts.py prepare \
   --anchor-manifest <anchor-manifest.json> \
   --semantic-candidate <semantic-candidate.json> \
   --checkpoint artifacts/model-routing/macbook-tts/checkpoint \
@@ -181,7 +181,7 @@ artifacts/model-routing/macbook-tts/runtime/bin/python experiments/sermon-dubbin
   --out artifacts/sentence-interpretation-poc/<run-id>/tts/render \
   --device mps --batch-size 4
 
-artifacts/model-routing/macbook-tts/runtime/bin/python scripts/render_sentence_interpretation_tts.py finalize \
+artifacts/model-routing/macbook-tts/runtime/bin/python experiments/sentence-interpretation-tts/render_sentence_interpretation_tts.py finalize \
   --anchor-manifest <anchor-manifest.json> \
   --semantic-candidate <semantic-candidate.json> \
   --job artifacts/sentence-interpretation-poc/<run-id>/tts/job/job.json \
@@ -189,7 +189,7 @@ artifacts/model-routing/macbook-tts/runtime/bin/python scripts/render_sentence_i
   --out artifacts/sentence-interpretation-poc/<run-id>/tts/final
 
 HF_HUB_OFFLINE=1 artifacts/english-word-timeline-poc/runtime/bin/python \
-  scripts/screen_sentence_interpretation_tts.py \
+  experiments/sentence-interpretation-tts/screen_sentence_interpretation_tts.py \
   --job artifacts/sentence-interpretation-poc/<run-id>/tts/job/job.json \
   --render artifacts/sentence-interpretation-poc/<run-id>/tts/render \
   --out artifacts/sentence-interpretation-poc/<run-id>/tts/screening \

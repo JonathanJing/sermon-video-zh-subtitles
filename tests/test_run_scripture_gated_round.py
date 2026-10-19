@@ -13,7 +13,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from scripts import cuv_scripture
-from scripts import run_scripture_gated_round as round_tool
+from tools.ops import run_scripture_gated_round as round_tool
 from scripts import scripture_adjudication as adjudication
 
 ROOT = Path(__file__).resolve().parents[1]

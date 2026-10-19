@@ -769,7 +769,7 @@ class AudioWaiverTests(unittest.TestCase):
                 stage.validate_audio_screening_review(package, legacy, screening)
 
     def test_person_may_accept_failed_units_as_waiver_v3(self):
-        from scripts import audio_qc_human_acceptance as acceptance_rules
+        from tongxing_production.review import audio_qc_acceptance as acceptance_rules
         package, screening, qc, text = audio_fixture(flagged=True)
         failed = copy.deepcopy(qc)
         failed["status"] = "fail"

@@ -7,7 +7,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from scripts import audit_production_release_bindings as binding
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tools.ops import audit_production_release_bindings as binding
 
 
 PAGE = "2026-09-27-test"

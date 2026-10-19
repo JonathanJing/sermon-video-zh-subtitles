@@ -30,7 +30,7 @@ QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVer
 
 额度耗尽时的后续方向见[API fallback 设计](codex-quota-api-fallback-design.zh.md)：需要明确拒绝证据、独立调用身份、入口验收和绑定预算；目前没有实现或启用。不能通过更换环境变量、认证或删除 started marker 将未决调用转到 API。
 
-合并后用真实模型把一段周次片段完整跑到 Dev 测试页（Layer 1–4、按语言质检、质检失败回 Layer 2 修订、Spark 配音与音频质检、受控发布），按[真实模型片段 E2E](clip-real-e2e.zh.md)用 `scripts/run_clip_real_e2e.py` 和一份运行规格执行，可断点续跑。
+合并后用真实模型把一段周次片段完整跑到 Dev 测试页（Layer 1–4、按语言质检、质检失败回 Layer 2 修订、Spark 配音与音频质检、受控发布），按[真实模型片段 E2E](clip-real-e2e.zh.md)用 `tools/development/run_clip_real_e2e.py` 和一份运行规格执行，可断点续跑。
 
 真实Dev音频测试按[已接入的参数入口](local-production-next-dev-test-parameters.zh.md#已接入的音频入口)运行`python -m scripts.run_dev_local_audio_test tts|back-asr`：自动读取profile选配音batch2、回转写batch4，显式batch1作基线、回转写8作对照。此入口保留正式producer门禁与独立回执；合并dev和CI不会自动运行GPU或付费模型。
 
@@ -83,7 +83,7 @@ OpenAI 云端转写与语言 API 保持不变。legacy 每周 TTS 和配音质�
 已有完整本地礼拜录像、且不应重新下载时，可先用 `sermon_pipeline.py` 的 `--english-source-only` 从原文件和已批准的绝对窗口生成英文 ASR、MFA 词时间与 `summary.json`。该模式要求 reading/MFA，写入 `status=english_source_candidate`，不调用中文翻译，也不授予 Layer 2 正式资格。`summary.json` 将原媒体 SHA-256 绑定到 `pipelineInputIdentity.sourceAudio`；仍须用同一媒体哈希、来源 URL hash 和窗口另存人工范围收据，再生成锚点、机器裁判和英文人工审核收据。没有可用的本机或 Spark MFA 时，默认按预检要求停在付费转写之前。若操作员明确授权这份媒体的外部转写，可单独选择 `--english-transcript-only`：它保存原始英文 ASR 和 `transcript-only-summary.json`，不运行 MFA、翻译或正式 Layer 1 放行；MFA 恢复后以同一 `--outdir` 运行 `--english-source-only`，按输入身份复用仍有效的 ASR 缓存。
 
 ```bash
-.venv/bin/python scripts/sermon_pipeline.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.pipeline \
   --input /absolute/path/to/service-complete.mp4 \
   --start-time HH:MM:SS --end-time HH:MM:SS \
   --slug weekly-source --outdir /absolute/path/to/ignored/run/pipeline \
@@ -128,7 +128,7 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 ```bash
 .venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
-  .venv/bin/python scripts/run_codex_local_sermon_production.py \
+  .venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode execute --agent-backend codex-cli --model gpt-6-luna --reasoning-effort medium --service-tier fast \
   --notify-sendgrid-secret '' --notify-recipients-secret '' --notify-sender-secret ''
 ```

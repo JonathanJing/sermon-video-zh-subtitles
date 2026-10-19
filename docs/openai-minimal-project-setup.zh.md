@@ -28,7 +28,7 @@ python3 scripts/run_with_openai_environment.py --environment prod --check
 
 # 用显式环境启动现有命令；后面的 producer 参数仍须按原合同提供。
 python3 scripts/run_with_openai_environment.py --environment dev -- \
-  .venv/bin/python scripts/run_target_language_models.py --help
+  .venv/bin/python tools/ops/run.py text.models --help
 ```
 
 实际生成时将 `--help` 替换为生产命令及其参数。必须从启动器进入；直接运行旧 producer 仍遵循原环境／`.env`／Secret Manager 行为，不会自动切换到两项目配置。现有 `sermon_pipeline.load_env` 使用 setdefault，不覆盖启动器已选择的 key。

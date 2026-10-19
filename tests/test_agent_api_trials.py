@@ -8,7 +8,9 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts.experiments import agent_api_trials as trials
+from tests import experiment_modules
+
+trials = experiment_modules.load("experiments/agents-api-trials/agent_api_trials.py")
 
 
 def decision(**tier):

@@ -9,7 +9,7 @@ from unittest import mock
 
 from scripts import build_target_language_audio_package as subject
 from scripts import prepare_clip_voice_authorization as clip_voice
-from scripts import prepare_clip_voice_capability as clip_capability
+from tools.ops import prepare_clip_voice_capability as clip_capability
 from scripts import clip_timeline_map as timeline_map
 from scripts import validate_target_language_audio_unit as unit_integrity
 from scripts import prepare_target_language_speech_job as speech
