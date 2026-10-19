@@ -6,6 +6,7 @@ change makes only P stale; one group's new text makes only that group stale from
 on; records never cross locales; and ``plan`` makes no call and writes nothing.
 """
 import copy
+import shutil
 import hashlib
 import io
 import json
@@ -83,7 +84,37 @@ class Run:
             locales[locale] = self._locale(locale)
         manifest = {"schemaVersion": group_plan.MANIFEST_SCHEMA, "source": "source.json", "anchor": "anchor.json",
                     "locales": locales}
-        return write(self.root / "inputs.json", manifest)
+        path = write(self.root / "inputs.json", manifest)
+        self.link_ledgers()
+        return path
+
+    def link_ledgers(self):
+        """Record each QC receipt as the head of a real repair ledger, as the producer would.
+
+        Called again after a test edits a receipt; a receipt the producer could not have
+        appended (inconsistent attempt counts) is left without a ledger.
+        """
+        from tongxing_production.review import repair_ledger
+        root = self.root / "ledger"
+        shutil.rmtree(root, ignore_errors=True)
+        layer1 = self.produced_layer1
+        for locale in self.texts:
+            for kind, name in (("text", "text-qc.json"), ("audio", "audio-qc.json")):
+                path = self.root / locale / name
+                if not path.is_file():
+                    continue
+                receipt = json.loads(path.read_text())
+                value = repair_ledger.lineage(kind, locale, layer1["englishSourcePackageJsonSha256"],
+                                              layer1["anchorManifestSha256"])
+                receipt["repairLedger"] = repair_ledger.position(value, [])
+                for row in receipt.get("results") or []:
+                    if row.get("failedAttempts") in (None, 0, 1):
+                        row["failedAttempts"] = int(row.get("status") == "fail")
+                path.write_text(json.dumps(receipt, ensure_ascii=False))
+                try:
+                    repair_ledger.append(root, value, receipt)
+                except ValueError:
+                    pass
 
     def _locale(self, locale):
         layer1 = self.produced_layer1
@@ -143,7 +174,7 @@ class Run:
                 "englishSourcePackageJsonSha256": layer1["englishSourcePackageJsonSha256"],
                 "anchorManifestJsonSha256": layer1["anchorManifestSha256"]}}},
             "semanticIdentitySha256": SEMANTIC,
-            "repairLedger": {"lineageSha256": sha(f"text-ledger-{locale}"), "sequence": 1, "priorFailedAttempts": {}},
+            "repairLedger": None,  # set by link_ledgers
             "policyJsonSha256": records.json_sha256(self.produced_policy),
             "results": [{"groupId": g, "sourceUnitIds": s, "status": "pass", "mode": "full", "problems": [],
                          "nextAction": "keep", "failedAttempts": 0, "targetTextSha256": sha(TEXT[locale][g]),
@@ -188,12 +219,11 @@ class Run:
         write(base / "audio-qc.json", {
             "schemaVersion": "sermon-target-audio-auto-qc-v1", "locale": locale, "implementationSha256": QC,
             "durationNormalization": {"speechJobJsonSha256": "a" * 64}, "thresholds": THRESHOLDS,
-            "repairLedger": {"lineageSha256": sha(f"audio-ledger-{locale}"), "sequence": 1, "priorFailedAttempts": {}},
+            "repairLedger": None,  # set by link_ledgers
             "results": [{"groupId": g, "sourceUnitIds": s, "audioSha256": sha(f"wav{locale}{g}"),
                          "textSha256": sha(TEXT[locale][g]), "sourceSeconds": 2.0, "status": "pass",
-                         "asrDecision": "pass", "nextAction": "keep", "issues": []} for g, s in GROUPS]})
-        for kind in ("text", "audio"):
-            write(self.root / "ledger" / kind / locale / sha(f"{kind}-ledger-{locale}") / "entry-000001.json", {"entry": 1})
+                         "asrDecision": "pass", "nextAction": "keep", "failedAttempts": 0, "issues": []}
+                        for g, s in GROUPS]})
         write(base / "asr-settings.json", ASR_SETTINGS_VALUE)
         return {"candidate": f"{locale}/candidate.json", "policy": "policy.json", "plugin": "plugin.py",
                 "asrSettings": f"{locale}/asr-settings.json", "repairLedgerRoot": "ledger",
@@ -466,6 +496,7 @@ class PlanTests(unittest.TestCase):
         receipt = json.loads(receipt_path.read_text())
         receipt["results"][0].update(status="fail", problems=["english_leak"], nextAction="repair")
         receipt_path.write_text(json.dumps(receipt))
+        self.run.link_ledgers()
         manifest = json.loads((self.run.root / "inputs.json").read_text())
         del manifest["locales"]["es"]["speechJob"]
         report = group_plan.plan(manifest, self.run.root, identities())
@@ -515,6 +546,7 @@ class PlanTests(unittest.TestCase):
         value = json.loads(audio_qc.read_text())
         value["durationNormalization"]["speechJobJsonSha256"] = "b" * 64
         audio_qc.write_text(json.dumps(value))
+        self.run.link_ledgers()
         report = group_plan.plan(manifest, self.run.root, identities())
         self.assertEqual(statuses(report, "ko", "g1")["A"], "missing")
         self.assertEqual(statuses(report, "es", "g1")["U"], "missing")
@@ -556,6 +588,7 @@ class PlanTests(unittest.TestCase):
         receipt = json.loads(receipt_path.read_text())
         receipt["results"][0]["mode"] = "shorten"
         receipt_path.write_text(json.dumps(receipt))
+        self.run.link_ledgers()
         with tempfile.TemporaryDirectory() as directory:
             store = records.RecordStore(Path(directory))
             store.put(records.make_record(
@@ -656,6 +689,7 @@ class PlanTests(unittest.TestCase):
         receipt = json.loads(receipt_path.read_text())
         receipt["results"][0]["mode"] = "shorten"
         receipt_path.write_text(json.dumps(receipt))
+        self.run.link_ledgers()
         rows = legacy.english_rows(self.run.anchor, ["u1"])
         with tempfile.TemporaryDirectory() as directory:
             store = records.RecordStore(Path(directory))
@@ -707,6 +741,7 @@ class PlanTests(unittest.TestCase):
         receipt = json.loads(receipt_path.read_text())
         receipt["results"][0]["mode"] = "shorten"
         receipt_path.write_text(json.dumps(receipt))
+        self.run.link_ledgers()
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
         self.assertEqual(statuses(report, "ko", "g1")["C"], "missing")
         self.assertEqual(statuses(report, "ko", "g1")["S"], "stale")
@@ -789,6 +824,7 @@ class PlanTests(unittest.TestCase):
         receipt["groupReviews"][0]["checks"][0]["status"] = "fail"  # status still says pass
         receipt["groupReviews"][1]["checks"] = []
         receipt_path.write_text(json.dumps(receipt))
+        self.run.link_ledgers()
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
         self.assertEqual(report["locales"]["ko"]["groups"][0]["stages"]["P"]["codes"], ["numbers"])
         self.assertEqual(statuses(report, "ko", "g1")["P"], "failed")
@@ -805,9 +841,9 @@ class PlanTests(unittest.TestCase):
         del value["result"]["semanticReview"]["checks"]["noAddedMeaning"]  # an incomplete check set
         sol.write_text(json.dumps(value))
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
-        for group_id in ("g1", "g2"):
-            self.assertEqual((statuses(report, "ko", group_id)["T"], statuses(report, "ko", group_id)["R"]),
-                             ("missing", "missing"), group_id)
+        self.assertEqual((statuses(report, "ko", "g1")["T"], statuses(report, "ko", "g1")["R"]), ("missing", "missing"))
+        # g2's translation is valid; only its review is not, so T is kept for a recovery to review.
+        self.assertEqual((statuses(report, "ko", "g2")["T"], statuses(report, "ko", "g2")["R"]), (FRESH, "missing"))
         self.assertEqual(statuses(report, "ko", "g3")["T"], FRESH)
 
     def test_plugin_and_text_qc_passes_need_the_producers_full_predicate(self):
@@ -821,6 +857,7 @@ class PlanTests(unittest.TestCase):
         receipt["results"][1]["backTranslation"] = None
         receipt["results"][2]["nextAction"] = "repair"
         text_qc.write_text(json.dumps(receipt))
+        self.run.link_ledgers()
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
         self.assertEqual(statuses(report, "ko", "g1")["P"], "failed")
         self.assertEqual((statuses(report, "ko", "g2")["Q"], statuses(report, "ko", "g3")["Q"]), ("failed", "failed"))
@@ -852,6 +889,7 @@ class PlanTests(unittest.TestCase):
         receipt = json.loads(audio_qc.read_text())
         receipt["results"][0]["textSha256"] = "0" * 64
         audio_qc.write_text(json.dumps(receipt))
+        self.run.link_ledgers()
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
         self.assertEqual(statuses(report, "ko", "g1")["U"], "missing")
 
@@ -870,6 +908,7 @@ class PlanTests(unittest.TestCase):
         receipt = json.loads(text_qc.read_text())
         receipt["semanticIdentity"] = None
         text_qc.write_text(json.dumps(receipt))
+        self.run.link_ledgers()
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
         self.assertEqual(statuses(report, "ko", "g1")["Q"], "missing")
         self.assertEqual(statuses(report, "es", "g1"), ALL_FRESH)
@@ -899,12 +938,18 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(statuses(report, "ko", "g1")["S"], "fresh")
 
     def test_qc_reuse_needs_the_repair_ledger_still_at_its_position(self):
+        from tongxing_production.review import repair_ledger
         manifest = json.loads(self.run.build().read_text())
-        write(self.run.root / "ledger" / "text" / "ko" / sha("text-ledger-ko") / "entry-000002.json", {"entry": 2})
+        # Another QC run appended after this receipt: it is no longer the ledger head.
+        layer1 = self.run.produced_layer1
+        value = repair_ledger.lineage("text", "ko", layer1["englishSourcePackageJsonSha256"], layer1["anchorManifestSha256"])
+        later = json.loads((self.run.root / "ko/text-qc.json").read_text())
+        later["repairLedger"] = repair_ledger.position(value, repair_ledger.load(self.run.root / "ledger", value))
+        repair_ledger.append(self.run.root / "ledger", value, later)
         report = group_plan.plan(manifest, self.run.root, identities())
         stage_q = report["locales"]["ko"]["groups"][0]["stages"]["Q"]
         self.assertEqual(stage_q["status"], "stale")
-        self.assertIn("input_changed:repairPositionSha256", stage_q["reasons"])
+        self.assertIn("repair_ledger_head_moved", stage_q["reasons"])
         self.assertEqual(statuses(report, "ko", "g1")["U"], FRESH)  # the audio ledger did not move
         del manifest["locales"]["es"]["repairLedgerRoot"]
         report = group_plan.plan(manifest, self.run.root, identities())
@@ -945,9 +990,18 @@ class PlanTests(unittest.TestCase):
         value["results"][1]["issues"] = ["clipping"]  # status still says pass
         value["results"][2]["asrDecision"] = "needs_secondary_asr"
         audio_qc.write_text(json.dumps(value))
+        self.run.link_ledgers()
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
         self.assertEqual(statuses(report, "ko", "g1")["P"], "failed")
         self.assertEqual((statuses(report, "ko", "g2")["U"], statuses(report, "ko", "g3")["U"]), ("failed", "failed"))
+
+    def test_a_round_that_stopped_before_review_keeps_its_translation(self):
+        self.run.build()
+        for suffix in ("sol.json", "sol.policy-preview.json", "payload-cache-success.json"):
+            (self.run.root / f"ko/round-001/group-0003-{suffix}").unlink()
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual((statuses(report, "ko", "g3")["T"], statuses(report, "ko", "g3")["R"]), (FRESH, "missing"))
+        self.assertEqual(report["locales"]["ko"]["redoCounts"]["T"], 0)  # no paid retranslation is planned
 
     def test_cli_plan_prints_a_summary_and_writes_only_its_report(self):
         manifest = self.run.build()

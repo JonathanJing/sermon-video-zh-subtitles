@@ -156,18 +156,24 @@ def result_utterances(result: dict) -> list[str] | None:
         return None
 
 
-def ledger_position_sha256(lineage_sha256: str, sequence: int) -> str:
-    """A QC run's place in its repair ledger: the lineage and the entry it wrote."""
-    return records.json_sha256({"lineageSha256": lineage_sha256, "sequence": int(sequence)})
+def ledger_head_current(ledger_root: Path, kind: str, locale: str, layer1: dict, receipt_sha256: str,
+                        position: dict) -> bool:
+    """Whether a QC receipt is still the head of an intact repair ledger.
 
-
-def ledger_head_sha256(ledger_root: Path, kind: str, locale: str, lineage_sha256: str) -> str | None:
-    """The ledger's current head position (how many entries the lineage holds), or None."""
-    directory = Path(ledger_root) / kind / locale / lineage_sha256
-    if not directory.is_dir():
-        return None
-    entries = [path for path in directory.glob("entry-[0-9][0-9][0-9][0-9][0-9][0-9].json")]
-    return ledger_position_sha256(lineage_sha256, len(entries))
+    Uses the producer's own rules (review/repair_ledger.py): the whole chain loads, its
+    last entry records this receipt, and the receipt screened from the position before it.
+    """
+    from ..review import repair_ledger
+    value = repair_ledger.lineage(kind, locale, layer1["englishSourcePackageJsonSha256"],
+                                  layer1["anchorManifestSha256"])
+    if repair_ledger.json_sha256(value) != (position or {}).get("lineageSha256"):
+        return False
+    try:
+        entries = repair_ledger.load(Path(ledger_root), value)
+    except (ValueError, OSError, json.JSONDecodeError):
+        return False
+    return (bool(entries) and entries[-1].get("qcJsonSha256") == receipt_sha256
+            and position == repair_ledger.position(value, entries[:-1]))
 
 
 def _schema_valid(value: Any, schema: str, label: str) -> bool:
@@ -266,6 +272,28 @@ def reviewer_result(result: dict, group: dict) -> tuple[str, bool] | None:
     return text, passes
 
 
+def _round_runner(root: Path, files: dict, success: dict | None, group: dict,
+                  names=("astra", "sol")) -> str | None:
+    """The runner that produced these caches, or None when nothing binding records it."""
+    runner = success.get("runnerImplementationSha256") if _success_binds(success, group, files) else None
+    round_runner = Path(root) / "runner-identity.json"
+    if runner is None and round_runner.is_file():
+        # Rounds record their runner since sermon-layer2-round-runner-identity-v1. A group
+        # carried byte for byte from the round's reuse source keeps that source's runner,
+        # which may be unrecorded (None).
+        recorded = load_json(round_runner)
+        run_identity = Path(root) / "run-identity.json"
+        # The sidecar speaks for this round only if it names this round's run identity.
+        if (recorded.get("schemaVersion") == "sermon-layer2-round-runner-identity-v1"
+                and run_identity.is_file()
+                and recorded.get("runIdentitySha256") == load_json(run_identity).get("sha256")):
+            runner = recorded.get("runnerImplementationSha256")
+            carry = recorded.get("carrySource")
+            if isinstance(carry, dict) and _carried_from(files, Path(carry.get("root", "")), names):
+                runner = carry.get("runnerImplementationSha256")
+    return runner
+
+
 def _round_layer1(root: Path, locale: str) -> dict | None:
     """The source a round translated, from the request the runner froze in it."""
     request_path = Path(root) / "request.json"
@@ -291,11 +319,11 @@ def _success_binds(success: dict | None, group: dict, files: dict) -> bool:
                                                  ("reviewer", "sol", "solPreview"))))
 
 
-def _carried_from(files: dict, source_root: Path) -> bool:
-    """Whether this group's T and R caches are byte copies of the same stem in ``source_root``."""
+def _carried_from(files: dict, source_root: Path, names=("astra", "sol")) -> bool:
+    """Whether this group's caches are byte copies of the same stem in ``source_root``."""
     if not source_root.is_dir():
         return False
-    for name in ("astra", "sol"):
+    for name in names:
         source = source_root / files[name].name
         if not source.is_file() or file_sha256(source) != file_sha256(files[name]):
             return False
@@ -328,29 +356,42 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
             if reviewed[0] == joined_text(group["targetUtterances"]):
                 chosen[group["translationGroupId"]] = (Path(root), files)
     chosen = {**latest, **chosen}
+    # A translator reply whose review never ran (the round stopped first) still gives T,
+    # so a recovery reviews it instead of paying to translate again.
+    translator_only: dict[str, tuple[Path, dict]] = {}
+    for root in rounds:
+        if _round_layer1(Path(root), locale) is None:
+            continue
+        for path in sorted(Path(root).glob("group-[0-9][0-9][0-9][0-9]-astra.json")):
+            stem = path.name.removesuffix("-astra.json")
+            files = {"astra": path, "astraPreview": Path(root) / f"{stem}-astra.policy-preview.json",
+                     "success": Path(root) / f"{stem}-payload-cache-success.json"}
+            result = load_json(path).get("result") or {}
+            group = by_group.get(result.get("translationGroupId"))
+            if group is not None and files["astraPreview"].is_file() and translator_text(result, group) is not None:
+                translator_only[group["translationGroupId"]] = (Path(root), files)
     out = {}
+    for group_id, (root, files) in translator_only.items():
+        if group_id in chosen:
+            continue
+        group = by_group[group_id]
+        astra, astra_preview = load_json(files["astra"]), load_json(files["astraPreview"])
+        runner = _round_runner(root, files, None, group, names=("astra",))
+        out[group_id] = {"T": records.make_record(
+            "T", _round_layer1(root, locale), locale, group_id, group["sourceUnitIds"],
+            _role_inputs(astra_preview, astra, None), runner or NOT_RECORDED_SHA256,
+            {"draftTextSha256": records.text_sha256(translator_text(astra["result"], group)),
+             "cacheSha256": file_sha256(files["astra"])}, "pass",
+            spend={"kind": "paid_model_call", "model": astra.get("model"), "requestId": astra.get("requestId")},
+            provenance={"derivation": "legacy_round_cache", "round": str(root), "stem": files["astra"].name[:10],
+                        "reviewed": False, "notRecorded": [] if runner else ["stageImplementation"]})}
     for group_id, (root, files) in chosen.items():
         group = by_group[group_id]
         layer1 = _round_layer1(root, locale)
         astra, astra_preview = load_json(files["astra"]), load_json(files["astraPreview"])
         sol, sol_preview = load_json(files["sol"]), load_json(files["solPreview"])
         success = load_json(files["success"]) if files["success"].is_file() else None
-        runner = success.get("runnerImplementationSha256") if _success_binds(success, group, files) else None
-        round_runner = Path(root) / "runner-identity.json"
-        if runner is None and round_runner.is_file():
-            # Rounds record their runner since sermon-layer2-round-runner-identity-v1. A group
-            # carried byte for byte from the round's reuse source keeps that source's runner,
-            # which may be unrecorded (None).
-            recorded = load_json(round_runner)
-            run_identity = Path(root) / "run-identity.json"
-            # The sidecar speaks for this round only if it names this round's run identity.
-            if (recorded.get("schemaVersion") == "sermon-layer2-round-runner-identity-v1"
-                    and run_identity.is_file()
-                    and recorded.get("runIdentitySha256") == load_json(run_identity).get("sha256")):
-                runner = recorded.get("runnerImplementationSha256")
-                carry = recorded.get("carrySource")
-                if isinstance(carry, dict) and _carried_from(files, Path(carry.get("root", ""))):
-                    runner = carry.get("runnerImplementationSha256")
+        runner = _round_runner(root, files, success, group)
         provenance = {"derivation": "legacy_round_cache", "round": str(root), "stem": files["sol"].name[:10],
                       "notRecorded": [] if runner else ["stageImplementation"]}
         implementation = runner or NOT_RECORDED_SHA256
@@ -428,8 +469,10 @@ def text_qc_records(locale: str, receipt: dict, policies: list[dict] = ()) -> di
     context = receipt["semanticIdentity"]["settings"]["qcContext"]
     layer1 = records.layer1_identity(context["englishSourcePackageJsonSha256"], context["anchorManifestJsonSha256"])
     ledger = receipt.get("repairLedger") or {}
-    position = (ledger_position_sha256(ledger["lineageSha256"], ledger["sequence"])
-                if isinstance(ledger.get("lineageSha256"), str) and isinstance(ledger.get("sequence"), int) else None)
+    # The full producer position: lineage, sequence, previous entry and prior attempts.
+    position = records.json_sha256(ledger) if isinstance(ledger.get("lineageSha256"), str) else None
+    from ..review import repair_ledger
+    receipt_sha256 = repair_ledger.json_sha256(receipt)
     screened = next((policy for policy in policies if records.json_sha256(policy) == receipt.get("policyJsonSha256")), None)
     qc_policy = qc_policy_sha256(screened) if screened is not None else None
     out = {}
@@ -451,7 +494,7 @@ def text_qc_records(locale: str, receipt: dict, policies: list[dict] = ()) -> di
             status, codes=(problems or [row.get("nextAction", "fail")]) if status == "fail" else (),
             provenance={"derivation": "legacy_text_qc_receipt", "mode": row.get("mode"),
                         "notRecorded": [] if qc_policy else ["qcPolicySha256"],
-                        "ledger": {"kind": "text", "lineageSha256": ledger.get("lineageSha256")},
+                        "ledger": {"kind": "text", "receiptJsonSha256": receipt_sha256, "position": ledger},
                         "nextAction": row.get("nextAction"), "failedAttempts": row.get("failedAttempts"),
                         "model": receipt["semanticIdentity"].get("model")})
     return out
@@ -507,18 +550,20 @@ def speech_records(locale: str, speech_job: Path, screening: dict | None) -> dic
             provenance={"derivation": "legacy_formal_render", "unitIndex": intent.get("unitIndex"),
                         "jobJsonSha256": intent.get("jobJsonSha256"), "batch": batch,
                         "speechJob": str(speech_job)})}
-        cached = next((load_json(directory / f"{stem}.json") for directory in reversed(asr_dirs)
-                       if (directory / f"{stem}.json").is_file()), None)
         row = screened.get(group_id)
         # A verdict counts only when the screening receipt measured this job's audio and text.
         bound = (screening is not None and row is not None
                  and screening.get("targetLanguageSpeechJobJsonSha256") == intent.get("jobJsonSha256")
                  and row.get("audioSha256") == audio and row.get("targetTextSha256") == intent["textSha256"])
-        # The cached transcript must be the one the screening scored, and hash to what it says.
-        if (cached is not None and cached["identity"].get("audioSha256") == audio and bound
-                and isinstance(cached.get("recognized"), str)
-                and cached.get("recognizedSha256") == records.text_sha256(cached["recognized"])
-                and cached["recognized"] == row.get("recognized")):
+        # Any of the job's ASR caches may hold the run the screening scored: the transcript must
+        # be that row's and hash to what the cache says.
+        cached = next((value for value in (load_json(directory / f"{stem}.json") for directory in reversed(asr_dirs)
+                                           if (directory / f"{stem}.json").is_file())
+                       if bound and value["identity"].get("audioSha256") == audio
+                       and isinstance(value.get("recognized"), str)
+                       and value.get("recognizedSha256") == records.text_sha256(value["recognized"])
+                       and value["recognized"] == row.get("recognized")), None)
+        if cached is not None:
             identity = cached["identity"]
             verdict = "pass" if row.get("status") == "pass" else "fail"
             stages["A"] = records.make_record(
@@ -544,8 +589,9 @@ def audio_qc_records(locale: str, receipt: dict, speech: dict[str, dict]) -> dic
     _require(receipt.get("schemaVersion") == "sermon-target-audio-auto-qc-v1" and receipt.get("locale") == locale,
              "invalid_audio_qc_receipt")
     ledger = receipt.get("repairLedger") or {}
-    position = (ledger_position_sha256(ledger["lineageSha256"], ledger["sequence"])
-                if isinstance(ledger.get("lineageSha256"), str) and isinstance(ledger.get("sequence"), int) else None)
+    position = records.json_sha256(ledger) if isinstance(ledger.get("lineageSha256"), str) else None
+    from ..review import repair_ledger
+    receipt_sha256 = repair_ledger.json_sha256(receipt)
     thresholds = records.json_sha256(receipt["thresholds"])
     job = (receipt.get("durationNormalization") or {}).get("speechJobJsonSha256")
     out = {}
@@ -570,6 +616,6 @@ def audio_qc_records(locale: str, receipt: dict, speech: dict[str, dict]) -> dic
             receipt["implementationSha256"], {}, verdict,
             codes=(list(row.get("issues") or []) or ["audio_qc_pass_incomplete"]) if verdict == "fail" else (),
             provenance={"derivation": "legacy_audio_qc_receipt", "layer1": "from_speech_job",
-                        "ledger": {"kind": "audio", "lineageSha256": ledger.get("lineageSha256")},
+                        "ledger": {"kind": "audio", "receiptJsonSha256": receipt_sha256, "position": ledger},
                         "speechJobJsonSha256": job, "status": status})
     return out

@@ -319,15 +319,14 @@ def plan(manifest: dict, base: Path, identities: dict, *, directives: dict | Non
                     if stage in {"Q", "U"}:
                         # Reuse needs the ledger still at the position this QC run wrote.
                         ledger = record["provenance"].get("ledger") or {}
-                        head = (legacy.ledger_head_sha256(_path(entry["repairLedgerRoot"], base), ledger.get("kind"),
-                                                          locale, ledger["lineageSha256"])
-                                if entry.get("repairLedgerRoot") and ledger.get("lineageSha256") else None)
-                        if head is None:
+                        if not entry.get("repairLedgerRoot") or not ledger.get("position"):
                             result["status"] = "stale"
                             result["reasons"].append("repair_ledger_not_supplied")
-                        elif record["inputs"]["repairPositionSha256"] != head:
+                        elif not legacy.ledger_head_current(_path(entry["repairLedgerRoot"], base), ledger["kind"],
+                                                            locale, record["layer1"], ledger["receiptJsonSha256"],
+                                                            ledger["position"]):
                             result["status"] = "stale"
-                            result["reasons"].append("input_changed:repairPositionSha256")
+                            result["reasons"].append("repair_ledger_head_moved")
                         else:
                             result["compared"].append("repairPositionSha256")
                             result["notCompared"].remove("repairPositionSha256")
