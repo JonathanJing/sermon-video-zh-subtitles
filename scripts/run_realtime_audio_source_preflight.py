@@ -58,6 +58,10 @@ else:
         def __delattr__(self, name):
             delattr(_implementation, name)
 
+    def __getattr__(name):
+        # Also serves a spec-loaded copy that was never put in sys.modules.
+        return getattr(_implementation, name)
+
     _facade = sys.modules.get(__name__)
     if _facade is not None and _facade.__dict__ is globals():
         _facade.__class__ = _Forward
