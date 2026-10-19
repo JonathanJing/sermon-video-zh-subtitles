@@ -2,7 +2,7 @@
 
 [门面退出计划](facade-removal-plan.zh.md) §3.2、§6 · [目录布局提案](repository-layout-proposal.zh.md) §6、§8.1
 
-状态：**已实现**。入口是 [`tools/ops/run.py`](../../tools/ops/run.py)，测试是 [`tests/test_ops_run_entry.py`](../../tests/test_ops_run_entry.py)，基线是 `dev@9cfb3083`（2026-10-19）。本文回答门面退出计划 §3.2 最后一条留下的设计项：runbook 命令离开 `scripts/` 门面路径之后，用什么入口运行包内命令。本 PR 不删除门面。
+状态：**已实现**。入口是 [`tools/ops/run.py`](../../tools/ops/run.py)，测试是 [`tests/test_ops_run_entry.py`](../../tests/test_ops_run_entry.py)，基线是 `dev@cb99733c`（2026-10-19）。本文回答门面退出计划 §3.2 最后一条留下的设计项：runbook 命令离开 `scripts/` 门面路径之后，用什么入口运行包内命令。本 PR 不删除门面。
 
 ## 1 问题
 
@@ -40,7 +40,7 @@ tongxing_production.ports.Unbound: tongxing_production.text needs a configured T
 
 ## 3 宿主绑定
 
-宿主仍是 `scripts/tongxing_host.py`。它不是门面，不在 213 个门面之内，而且它自己的字节进了 G1 的 W、计分、语速三个物理闭包，所以改它要开 G1 窗口。分发器只导入它，不改它。`scripts/tracker_projection_host.py` 只配置延迟加载的报表端口，所以总是一起绑定：目前只有两个 tracker 投影门面需要它，多绑定一次没有副作用。统一 CLI 的宿主 `scripts/sermon_unified/__init__.py` 不绑定，因为统一 CLI 的入口 `scripts/sermon.py` 不是门面，继续直接运行。
+宿主仍是 `scripts/tongxing_host.py`。它不是门面，不在 250 个门面之内，而且它自己的字节进了 G1 的 W、计分、语速三个物理闭包，所以改它要开 G1 窗口。分发器只导入它，不改它。`scripts/tracker_projection_host.py` 只配置延迟加载的报表端口，所以总是一起绑定：目前只有两个 tracker 投影门面需要它，多绑定一次没有副作用。统一 CLI 的宿主 `scripts/sermon_unified/__init__.py` 不绑定，因为统一 CLI 的入口 `scripts/sermon.py` 不是门面，继续直接运行。
 
 ## 4 Layer 2 controller 与 durable worker 不改
 
@@ -48,7 +48,7 @@ tongxing_production.ports.Unbound: tongxing_production.text needs a configured T
 
 ## 5 Spark 容器
 
-`scripts/run_clip_real_e2e.py` 用 `git archive HEAD` 把检出解到 Spark 的 `/work/repo-<sha8>`。`clip_e2e_spark.py` 的容器命令设 `PYTHONPATH={code}/packages/production/src:{code}`，并以 `python` 为 entrypoint。`tools/` 在归档里，所以 C 批（门面退出计划 §6 C5）把 compaction 命令改成：
+`tools/development/run_clip_real_e2e.py` 用 `git archive HEAD` 把检出解到 Spark 的 `/work/repo-<sha8>`。`clip_e2e_spark.py` 的容器命令设 `PYTHONPATH={code}/packages/production/src:{code}`，并以 `python` 为 entrypoint。`tools/` 在归档里，所以 C 批（门面退出计划 §6 C5）把 compaction 命令改成：
 
 ```text
 python {code}/tools/ops/run.py audio.compaction --source … --anchor … …
