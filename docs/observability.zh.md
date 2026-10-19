@@ -85,7 +85,7 @@ sermon-sat-post-live-subtitles  */10 18-23 * * SAT  action=post-live-subtitles
 dry-run 配置示例：
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url 'https://sermon-zh-caption-web-...' \

@@ -187,7 +187,7 @@ keeps the event token in memory only, posts one `gpt-5.4-mini` stable correction
 and validates the saved realtime JSONL with `--require-stable-correction`:
 
 ```bash
-python3 scripts/realtime_stabilized_smoke_test.py \
+python3 tools/ops/realtime_stabilized_smoke_test.py \
   --audio-file authorized-smoke.wav \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
   --backend-url https://CLOUD_RUN_URL \
@@ -258,7 +258,7 @@ the production matrix with `--realtime-stabilizer-loop-report`.
 Build the combined evidence command first:
 
 ```bash
-python3 scripts/run_sunday_evidence_bundle.py \
+python3 tools/ops/run_sunday_evidence_bundle.py \
   --sunday YYYY-MM-DD \
   --session-id <worker_session_id> \
   --artifact-location gcs \

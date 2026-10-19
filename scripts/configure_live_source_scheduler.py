@@ -1,256 +1,68 @@
 #!/usr/bin/env python3
-"""Configure Cloud Scheduler to trigger live-source discovery or post-live subtitles."""
+"""Compatibility entry point for ``tools/ops/configure_live_source_scheduler.py``.
 
-from __future__ import annotations
+Keep the old direct CLI, ``python -m scripts.configure_live_source_scheduler`` and the import path
+while the implementation lives in tools/ops. The implementation is loaded
+by absolute path from this checkout, independent of the CWD; bare and
+``scripts.`` imports share one ``tools.ops.configure_live_source_scheduler`` module object.
+"""
 
-import argparse
-import json
-import os
-import subprocess
-from dataclasses import dataclass
-from typing import Any, Callable
-from urllib.parse import quote
-
-
-DEFAULT_JOB_ID = "sermon-live-source-discovery"
-DEFAULT_SCHEDULE = "55 9 * * SUN"
-DEFAULT_TIMEZONE = "America/Los_Angeles"
-DEFAULT_TOKEN_ENV = "INTERNAL_TASK_TOKEN"
+import importlib
+from importlib import util
+from pathlib import Path
+import runpy
+import sys
 
 
-@dataclass(frozen=True)
-class SchedulerPlan:
-    job_id: str
-    endpoint: str
-    payload: dict[str, Any]
-    update_command: list[str]
-    create_command: list[str]
+_IMPLEMENTATION = (Path(__file__).resolve().parents[1] / "tools/ops/configure_live_source_scheduler.py").resolve()
+_MODULE_NAME = "tools.ops.configure_live_source_scheduler"
 
 
-def main() -> int:
-    args = parse_args()
-    token = os.getenv(args.internal_task_token_env, "")
-    if args.apply and not token:
-        raise SystemExit(f"{args.internal_task_token_env} is required with --apply")
-    plan = build_scheduler_plan(args, internal_task_token=token or "REDACTED")
-    if args.apply:
-        result = ensure_scheduler_job(plan)
-    else:
-        result = {
-            "status": "dry-run",
-            "message": "Pass --apply after setting INTERNAL_TASK_TOKEN to create or update the job.",
-        }
-    print(json.dumps(sanitized_report(plan, result), ensure_ascii=False, indent=2, sort_keys=True))
-    return 0
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--project", required=True, help="Google Cloud project id.")
-    parser.add_argument("--location", default="us-west1", help="Cloud Scheduler location.")
-    parser.add_argument("--job-id", default=DEFAULT_JOB_ID)
-    parser.add_argument("--service-url", required=True, help="Cloud Run service base URL.")
-    parser.add_argument(
-        "--action",
-        default="discover-source",
-        choices=[
-            "discover-source",
-            "post-live-subtitles",
-            "production-supervisor",
-        ],
-    )
-    parser.add_argument(
-        "--sunday",
-        default="current",
-        help="Sunday route value. Use current so the backend resolves the active Sunday at runtime.",
-    )
-    parser.add_argument("--schedule", default=DEFAULT_SCHEDULE, help="Cron schedule in the configured timezone.")
-    parser.add_argument("--timezone", default=DEFAULT_TIMEZONE)
-    parser.add_argument("--service", default="auto", choices=["auto", "830", "1000", "sat-auto", "sat400", "sat530"])
-    parser.add_argument("--operator-alert-time", default="09:58")
-    parser.add_argument("--expected-title")
-    parser.add_argument("--manual-url", action="append", default=[])
-    parser.add_argument("--include-candidates", action="store_true")
-    parser.add_argument("--no-auto-generate", action="store_true")
-    parser.add_argument("--slug", help="Post-live subtitle artifact slug.")
-    parser.add_argument("--start-time", help="Post-live subtitle sermon start time.")
-    parser.add_argument("--end-time", help="Post-live subtitle sermon end time.")
-    parser.add_argument("--plan-only", action="store_true", help="Ask post-live endpoint to plan without running.")
-    parser.add_argument("--supervisor-mode", choices=["shadow", "execute"], default="shadow")
-    parser.add_argument("--agent-model", default="gpt-6-luna")
-    parser.add_argument("--max-turns", type=int, default=8)
-    parser.add_argument("--attempt-deadline", default="180s")
-    parser.add_argument("--internal-task-token-env", default=DEFAULT_TOKEN_ENV)
-    parser.add_argument("--apply", action="store_true", help="Run gcloud. Default is a redacted dry run.")
-    return parser.parse_args()
-
-
-def build_scheduler_plan(args: argparse.Namespace, *, internal_task_token: str) -> SchedulerPlan:
-    endpoint = admin_endpoint(args.service_url, args.sunday, args.action)
-    payload = scheduler_payload(args)
-    message_body = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    headers = f"Content-Type=application/json,X-Internal-Task-Token={internal_task_token}"
-    base = [
-        "gcloud",
-        "scheduler",
-        "jobs",
-    ]
-    common = [
-        "http",
-        args.job_id,
-        "--project",
-        args.project,
-        "--location",
-        args.location,
-        "--schedule",
-        args.schedule,
-        "--time-zone",
-        args.timezone,
-        "--uri",
-        endpoint,
-        "--http-method",
-        "POST",
-        "--headers",
-        headers,
-        "--message-body",
-        message_body,
-        "--attempt-deadline",
-        args.attempt_deadline,
-    ]
-    create_command = [
-        *base,
-        "create",
-        *common,
-        "--description",
-        "Sunday sermon live-source discovery or post-live subtitle generation.",
-    ]
-    update_command = [*base, "update", *common]
-    return SchedulerPlan(
-        job_id=args.job_id,
-        endpoint=endpoint,
-        payload=payload,
-        update_command=update_command,
-        create_command=create_command,
-    )
-
-
-def scheduler_payload(args: argparse.Namespace) -> dict[str, Any]:
-    if args.action == "production-supervisor":
-        return production_supervisor_payload(args)
-    if args.action == "post-live-timeline":
-        raise ValueError("post-live-timeline has been retired; provide operator-confirmed --start-time and --end-time with post-live-subtitles.")
-    if args.action == "post-live-subtitles":
-        return post_live_payload(args)
-    return discovery_payload(args)
-
-
-def discovery_payload(args: argparse.Namespace) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "triggerSource": "cloud-scheduler",
-        "service": args.service,
-        "operatorAlertTime": args.operator_alert_time,
-        "autoGenerate": not args.no_auto_generate,
-    }
-    if args.expected_title:
-        payload["expectedTitle"] = args.expected_title
-    if args.manual_url:
-        payload["manualUrls"] = args.manual_url
-    if args.include_candidates:
-        payload["includeCandidates"] = True
-    return payload
-
-
-def post_live_payload(args: argparse.Namespace) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "triggerSource": "cloud-scheduler",
-        "mode": "generate-reviewed",
-    }
-    if args.slug:
-        payload["slug"] = args.slug
-    if args.start_time:
-        payload["startTime"] = args.start_time
-    if args.end_time:
-        payload["endTime"] = args.end_time
-    if args.plan_only:
-        payload["planOnly"] = True
-    return payload
-
-
-def production_supervisor_payload(args: argparse.Namespace) -> dict[str, Any]:
-    return {
-        "triggerSource": "cloud-scheduler",
-        "mode": args.supervisor_mode,
-        "model": args.agent_model,
-        "agentBackend": "codex-cli", "reasoningEffort": "medium", "serviceTier": "fast",
-        "maxTurns": args.max_turns,
-    }
-
-
-def admin_endpoint(service_url: str, sunday: str, action: str) -> str:
-    base = service_url.rstrip("/")
-    endpoint_action = action
-    return f"{base}/api/admin/sundays/{quote(sunday, safe='')}/{quote(endpoint_action, safe='')}"
-
-
-def ensure_scheduler_job(
-    plan: SchedulerPlan,
-    *,
-    runner: Callable[..., subprocess.CompletedProcess] = subprocess.run,
-) -> dict[str, Any]:
-    update = runner(plan.update_command, capture_output=True, text=True)
-    if update.returncode == 0:
-        return {"status": "updated", "jobId": plan.job_id}
-    create = runner(plan.create_command, capture_output=True, text=True)
-    if create.returncode == 0:
-        return {"status": "created", "jobId": plan.job_id}
-    return {
-        "status": "failed",
-        "jobId": plan.job_id,
-        "updateReturnCode": update.returncode,
-        "createReturnCode": create.returncode,
-        "stderr": redact_text((create.stderr or update.stderr or "")[:400]),
-    }
-
-
-def sanitized_report(plan: SchedulerPlan, result: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "schemaVersion": 1,
-        "status": result.get("status"),
-        "jobId": plan.job_id,
-        "endpoint": plan.endpoint,
-        "payload": plan.payload,
-        "commands": {
-            "update": redact_command(plan.update_command),
-            "create": redact_command(plan.create_command),
-        },
-        "result": {key: value for key, value in result.items() if key != "stderr"},
-        "authMaterialIncluded": False,
-        "secretResourceNamesIncluded": False,
-    }
-
-
-def redact_command(command: list[str]) -> list[str]:
-    redacted = []
-    for item in command:
-        redacted.append(redact_text(item))
-    return redacted
-
-
-def redact_text(text: str) -> str:
-    return re_redact_header_token(text)
-
-
-def re_redact_header_token(text: str) -> str:
-    marker = "X-Internal-Task-Token="
-    if marker not in text:
-        return text
-    before, after = text.split(marker, 1)
-    for separator in [",", " ", "\n"]:
-        if separator in after:
-            token, rest = after.split(separator, 1)
-            return f"{before}{marker}REDACTED{separator}{rest}"
-    return f"{before}{marker}REDACTED"
+def _load():
+    existing = sys.modules.get(_MODULE_NAME)
+    if existing is not None:
+        if Path(existing.__file__).resolve() != _IMPLEMENTATION:
+            raise ImportError(f"{_MODULE_NAME} is already loaded from another checkout")
+        return existing
+    spec = util.spec_from_file_location(_MODULE_NAME, _IMPLEMENTATION)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load {_IMPLEMENTATION}")
+    module = util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        del sys.modules[_MODULE_NAME]
+        raise
+    try:  # ``import tools.ops.configure_live_source_scheduler`` also reaches it through the namespace parent.
+        setattr(importlib.import_module("tools.ops"), "configure_live_source_scheduler", module)
+    except ImportError:
+        pass
+    return module
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    runpy.run_path(str(_IMPLEMENTATION), run_name="__main__")
+else:
+    _implementation = _load()
+
+    class _Forward(type(sys)):
+        # A caller that loads this file with spec_from_file_location keeps this
+        # facade object; its reads, writes and mock patches reach the implementation.
+        def __getattr__(self, name):
+            return getattr(_implementation, name)
+
+        def __setattr__(self, name, value):
+            setattr(_implementation, name, value)
+
+        def __delattr__(self, name):
+            delattr(_implementation, name)
+
+    def __getattr__(name):
+        # Also serves a spec-loaded copy that was never put in sys.modules.
+        return getattr(_implementation, name)
+
+    _facade = sys.modules.get(__name__)
+    if _facade is not None and _facade.__dict__ is globals():
+        _facade.__class__ = _Forward
+    sys.modules[__name__] = _implementation

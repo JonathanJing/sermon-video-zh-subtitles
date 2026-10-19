@@ -1,133 +1,68 @@
 #!/usr/bin/env python3
-"""Smoke-test the offline ASR fallback on an extracted/authorized audio sample."""
+"""Compatibility entry point for ``tools/ops/run_offline_asr_fallback_smoke.py``.
 
-from __future__ import annotations
+Keep the old direct CLI, ``python -m scripts.run_offline_asr_fallback_smoke`` and the import path
+while the implementation lives in tools/ops. The implementation is loaded
+by absolute path from this checkout, independent of the CWD; bare and
+``scripts.`` imports share one ``tools.ops.run_offline_asr_fallback_smoke`` module object.
+"""
 
-import argparse
-from datetime import datetime, timezone
-import json
+import importlib
+from importlib import util
 from pathlib import Path
-import re
+import runpy
 import sys
-from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-SCRIPT_DIR = REPO_ROOT / "scripts"
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-
-import offline_live_sermon_subtitles as offline  # noqa: E402
+_IMPLEMENTATION = (Path(__file__).resolve().parents[1] / "tools/ops/run_offline_asr_fallback_smoke.py").resolve()
+_MODULE_NAME = "tools.ops.run_offline_asr_fallback_smoke"
 
 
-DEFAULT_OUT_DIR = Path("artifacts/evidence/offline-asr-fallback-smoke")
-
-
-def main() -> int:
-    args = parse_args()
-    report = run_smoke(args)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
-    print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
-    return 0 if report["status"] == "ok" else 2
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--audio-file",
-        type=Path,
-        required=True,
-        help="Authorized audio sample, usually extracted from a no-caption archive rehearsal.",
-    )
-    parser.add_argument("--api-key-secret", required=True, help="Secret Manager resource for the OpenAI API key.")
-    parser.add_argument("--model", default=offline.DEFAULT_ASR_MODEL)
-    parser.add_argument("--fallback-duration-ms", type=int)
-    parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
-    parser.add_argument("--out", type=Path)
-    args = parser.parse_args()
-    args.audio_file = resolve_repo_path(args.audio_file)
-    args.out_dir = resolve_repo_path(args.out_dir)
-    args.out = resolve_repo_path(args.out or (args.out_dir / "report.json"))
-    if not args.audio_file.is_file():
-        raise SystemExit(f"--audio-file not found: {args.audio_file}")
-    offline.validate_secret_resource_name(args.api_key_secret)
-    return args
-
-
-def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
+def _load():
+    existing = sys.modules.get(_MODULE_NAME)
+    if existing is not None:
+        if Path(existing.__file__).resolve() != _IMPLEMENTATION:
+            raise ImportError(f"{_MODULE_NAME} is already loaded from another checkout")
+        return existing
+    spec = util.spec_from_file_location(_MODULE_NAME, _IMPLEMENTATION)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load {_IMPLEMENTATION}")
+    module = util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = module
     try:
-        cues = offline.transcribe_audio_to_cues(
-            audio_path=args.audio_file,
-            api_key_secret=args.api_key_secret,
-            model=args.model,
-            fallback_duration_ms=args.fallback_duration_ms,
-        )
-    except Exception as exc:
-        return {
-            "schemaVersion": 1,
-            "status": "failed",
-            "generatedAt": datetime.now(timezone.utc).isoformat(),
-            "source": source_summary(args.audio_file),
-            "asr": {"provider": "openai", "model": args.model},
-            "error": sanitize_error_message(str(exc)),
-            "apiKeyMaterialIncluded": False,
-            "secretResourceNamesIncluded": False,
-        }
-
-    args.out_dir.mkdir(parents=True, exist_ok=True)
-    vtt_path = args.out_dir / "asr-smoke.en.vtt"
-    srt_path = args.out_dir / "asr-smoke.en.srt"
-    vtt_path.write_text(offline.render_vtt(cues), encoding="utf-8")
-    srt_path.write_text(offline.render_srt(cues), encoding="utf-8")
-    return {
-        "schemaVersion": 1,
-        "status": "ok" if cues else "no_cues",
-        "generatedAt": datetime.now(timezone.utc).isoformat(),
-        "source": source_summary(args.audio_file),
-        "asr": {"provider": "openai", "model": args.model},
-        "cueCount": len(cues),
-        "outputs": {
-            "vtt": safe_display_path(vtt_path),
-            "srt": safe_display_path(srt_path),
-        },
-        "apiKeyMaterialIncluded": False,
-        "secretResourceNamesIncluded": False,
-    }
-
-
-def source_summary(path: Path) -> dict[str, Any]:
-    return {
-        "kind": "authorized_extracted_audio_sample",
-        "path": safe_display_path(path),
-        "bytes": path.stat().st_size if path.is_file() else None,
-    }
-
-
-def sanitize_error_message(message: str) -> str:
-    clean = str(message or "unknown error")
-    clean = re.sub(r"sk-[A-Za-z0-9_-]+", "sk-REDACTED", clean)
-    clean = re.sub(
-        r"projects/[^/\s]+/secrets/[^/\s]+(?:/versions/[^/\s]+)?",
-        "projects/REDACTED/secrets/REDACTED/versions/REDACTED",
-        clean,
-    )
-    return clean[:500]
-
-
-def resolve_repo_path(path: Path) -> Path:
-    return path if path.is_absolute() else REPO_ROOT / path
-
-
-def safe_display_path(path: Path) -> str:
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(REPO_ROOT).as_posix()
-    except ValueError:
-        return resolved.name
+        spec.loader.exec_module(module)
+    except BaseException:
+        del sys.modules[_MODULE_NAME]
+        raise
+    try:  # ``import tools.ops.run_offline_asr_fallback_smoke`` also reaches it through the namespace parent.
+        setattr(importlib.import_module("tools.ops"), "run_offline_asr_fallback_smoke", module)
+    except ImportError:
+        pass
+    return module
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    runpy.run_path(str(_IMPLEMENTATION), run_name="__main__")
+else:
+    _implementation = _load()
+
+    class _Forward(type(sys)):
+        # A caller that loads this file with spec_from_file_location keeps this
+        # facade object; its reads, writes and mock patches reach the implementation.
+        def __getattr__(self, name):
+            return getattr(_implementation, name)
+
+        def __setattr__(self, name, value):
+            setattr(_implementation, name, value)
+
+        def __delattr__(self, name):
+            delattr(_implementation, name)
+
+    def __getattr__(name):
+        # Also serves a spec-loaded copy that was never put in sys.modules.
+        return getattr(_implementation, name)
+
+    _facade = sys.modules.get(__name__)
+    if _facade is not None and _facade.__dict__ is globals():
+        _facade.__class__ = _Forward
+    sys.modules[__name__] = _implementation
