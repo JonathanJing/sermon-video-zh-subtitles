@@ -63,6 +63,37 @@ def payload_sha256(value: Any) -> str:
     return hashlib.sha256(payload_bytes(value)).hexdigest()
 
 
+def _write_once(path: Path, data: bytes, mismatch: str) -> None:
+    """Install ``data`` at ``path`` once; a second write must carry the same bytes.
+
+    The file and its directory entry are synced, so a crash cannot leave a durable
+    record that names a payload or resolution which was never made durable.
+    """
+    if path.exists():
+        _require(path.read_bytes() == data, mismatch)
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.{os.urandom(4).hex()}.tmp")
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            os.link(temporary, path)  # never replaces an existing entry
+        except FileExistsError:
+            _require(path.read_bytes() == data, mismatch)
+            return
+        directory = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 class PayloadStore:
     """Append-only, content-addressed payloads next to a ``RecordStore``."""
 
@@ -77,24 +108,7 @@ class PayloadStore:
         data = payload_bytes(value)
         _require(len(data) <= records.MAX_RECORD_BYTES, "payload_too_large")
         sha = hashlib.sha256(data).hexdigest()
-        path = self.path(sha)
-        if path.exists():
-            _require(path.read_bytes() == data, "payload_bytes_differ_from_their_hash")
-            return sha
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = path.with_name(f".{path.name}.{os.getpid()}.{os.urandom(4).hex()}.tmp")
-        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
-        try:
-            with os.fdopen(descriptor, "wb") as stream:
-                stream.write(data)
-                stream.flush()
-                os.fsync(stream.fileno())
-            try:
-                os.link(temporary, path)
-            except FileExistsError:
-                _require(path.read_bytes() == data, "payload_bytes_differ_from_their_hash")
-        finally:
-            temporary.unlink(missing_ok=True)
+        _write_once(self.path(sha), data, "payload_bytes_differ_from_their_hash")
         return sha
 
     def get(self, sha256: str) -> Any:
@@ -103,6 +117,54 @@ class PayloadStore:
         data = path.read_bytes()
         _require(hashlib.sha256(data).hexdigest() == sha256, f"payload_changed:{sha256}")
         return json.loads(data.decode("utf-8"))
+
+
+RESOLUTION_SCHEMA = "sermon-group-record-resolution-v1"
+RESOLUTION_DIRECTORY = "_resolutions"
+
+
+class ResolutionStore:
+    """Reconciled outcomes of ``unknown`` records, append-only next to the records.
+
+    The record store keeps one record per input key, so a reconciled attempt cannot be
+    written over its ``unknown`` record. Its resolution is stored here instead: the full
+    reconciled record (same stage, group, inputs, implementation and key) bound to the
+    hash of the ``unknown`` record it settles. ``select`` reads it in that record's place.
+    """
+
+    def __init__(self, root: Path):
+        self.root = Path(root) / RESOLUTION_DIRECTORY
+
+    def path(self, record: dict) -> Path:
+        return (self.root / record["targetLocale"] / record["translationGroupId"] / record["stage"]
+                / f"{record['inputKey']}.json")
+
+    def put(self, unknown: dict, resolved: dict) -> Path:
+        records.validate_record(unknown)
+        records.validate_record(resolved)
+        same = ("stage", "layer1", "targetLocale", "translationGroupId", "sourceUnitIds", "inputs",
+                "stageImplementationSha256", "inputKey")
+        _require(unknown["verdict"]["status"] == "unknown" and resolved["verdict"]["status"] != "unknown"
+                 and all(unknown[key] == resolved[key] for key in same), "resolution_must_settle_the_same_attempt")
+        document = {"schemaVersion": RESOLUTION_SCHEMA, "unknownRecordSha256": records.json_sha256(unknown),
+                    "resolved": resolved}
+        path = self.path(unknown)
+        _write_once(path, records.canonical_bytes(document) + b"\n", "resolution_already_written_with_other_bytes")
+        return path
+
+    def resolved(self, unknown: dict) -> dict | None:
+        path = self.path(unknown)
+        if not path.is_file():
+            return None
+        _require(not path.is_symlink(), "invalid_resolution_file")
+        document = json.loads(path.read_text(encoding="utf-8"))
+        _require(isinstance(document, dict) and document.get("schemaVersion") == RESOLUTION_SCHEMA
+                 and document.get("unknownRecordSha256") == records.json_sha256(unknown),
+                 f"resolution_belongs_to_another_record:{unknown['inputKey']}")
+        resolved = records.validate_record(document["resolved"])
+        _require(resolved["inputKey"] == unknown["inputKey"] and resolved["verdict"]["status"] != "unknown",
+                 "invalid_resolution")
+        return resolved
 
 
 def evidence_row(row: dict) -> dict:
@@ -130,74 +192,130 @@ def _usable(record: dict, layer1: dict, locale: str, unit_ids: list[str], equiva
         return "legacy_planning_only"
     if derivation == EQUIVALENCE_DERIVATION and not equivalence_check:
         return "equivalence_record_outside_check"
+    # An input the record did not record cannot be compared, so it cannot prove a production merge current.
+    if record["provenance"].get("notRecorded") and not equivalence_check:
+        return "inputs_not_recorded"
     if record["layer1"] != layer1 or record["targetLocale"] != locale or record["sourceUnitIds"] != unit_ids:
         return "other_identity"
     return None
 
 
-def select(store: records.RecordStore, layer1: dict, locale: str, plan: list[dict], *,
-           plugin_implementation_sha256: str, language_review_policy_sha256: str,
+def select(store: records.RecordStore, anchor: dict, policy: dict, layer1: dict, locale: str, plan: list[dict],
+           identities: dict, *, resolutions: ResolutionStore | None = None,
            equivalence_check: bool = False) -> dict[str, dict[str, dict]]:
-    """One passing T, R and P record per group, chained R to T and P to R.
+    """One current, passing T, R and P record per group.
 
-    Raises ``AssemblyRefused`` naming every group that has no usable record, only a
-    failed, stopped or unknown one, or more than one candidate for a stage.
+    A record counts only when its inputs and implementation match the current ones as
+    ``group_plan.evaluate`` compares them (English, English context, model-facing policy,
+    model settings, runner; for P the plugin, language-review policy, English and the
+    reviewed text), R names the draft of the chosen T, and P reviewed R's text. An
+    ``unknown`` record blocks its group until a resolution settles it. ``identities``
+    gives ``runnerImplementationSha256``, ``pluginImplementationSha256`` and
+    ``languageReviewPolicySha256``; the runner may be ``None`` only in the equivalence
+    check, which then does not compare it.
+
+    Raises ``AssemblyRefused`` naming every group without exactly one such chain.
     """
+    from . import group_plan
+    runner = identities.get("runnerImplementationSha256")
+    _require(runner is not None or equivalence_check, "runner_identity_required")
+    locale_identity = {"pluginImplementationSha256": identities["pluginImplementationSha256"],
+                       "languageReviewPolicySha256": identities["languageReviewPolicySha256"]}
+    contexts = legacy_contexts(anchor, plan)
     reasons: dict[str, list[str]] = {}
     chosen: dict[str, dict[str, dict]] = {}
 
     def refuse(reason: str, group_id: str) -> None:
         reasons.setdefault(reason, []).append(group_id)
 
+    def current(stage: str, group: dict, record: dict, upstream: dict, implementation: str | None) -> bool:
+        values = group_plan.current_inputs(stage, group, contexts[group["translationGroupId"]], anchor, policy,
+                                           locale_identity, upstream)
+        return not group_plan.evaluate(record, layer1, values, implementation)["reasons"]
+
+    def attempt_is_current(stage: str, group: dict, record: dict) -> bool:
+        """Whether an attempt ran under the current inputs, upstream bytes aside."""
+        if stage in {"T", "R"}:
+            return current(stage, group, record, {}, runner)
+        english = group_plan.current_inputs("T", group, contexts[group["translationGroupId"]], anchor, policy,
+                                            locale_identity, {})["englishUnitsSha256"]
+        expected = {"languageReviewPolicySha256": identities["languageReviewPolicySha256"],
+                    "englishUnitsSha256": english}
+        return not group_plan.evaluate(record, layer1, expected, identities["pluginImplementationSha256"])["reasons"]
+
     for group in plan:
         group_id, unit_ids = group["translationGroupId"], group["sourceUnitIds"]
-        found = {stage: store.records(locale, group_id, stage) for stage in ASSEMBLED_STAGES}
-        usable = {}
-        for stage, rows in found.items():
+        usable: dict[str, list[dict]] = {}
+        blocked = False
+        for stage in ASSEMBLED_STAGES:
             kept = []
-            for record in rows:
+            for record in store.records(locale, group_id, stage):
                 problem = _usable(record, layer1, locale, unit_ids, equivalence_check)
-                if problem is None:
-                    kept.append(record)
-                elif problem != "other_identity":
-                    refuse(f"{stage}:{problem}", group_id)
+                if problem is not None:
+                    if problem != "other_identity":
+                        refuse(f"{stage}:{problem}", group_id)
+                    continue
+                if record["verdict"]["status"] == "unknown":
+                    settled = resolutions.resolved(record) if resolutions is not None else None
+                    if settled is not None:
+                        record = dict(settled, _resolvesUnknownSha256=records.json_sha256(record))
+                    else:
+                        # An unsettled attempt under the current inputs blocks; one under old
+                        # inputs is stale and cannot be chosen anyway.
+                        if attempt_is_current(stage, group, record):
+                            refuse("unknown_outcome_needs_reconciliation", group_id)
+                            blocked = True
+                        continue
+                kept.append(record)
             usable[stage] = kept
-        if any(record["verdict"]["status"] == "unknown" for rows in usable.values() for record in rows):
-            refuse("unknown_outcome_needs_reconciliation", group_id)
+        if blocked:
             continue
-        reviewed = [record for record in usable["R"] if record["verdict"]["status"] == "pass"
-                    and records._is_sha(record["outputs"].get("evidenceRowSha256"))]
-        if len(reviewed) != 1:
-            refuse("R:" + ("missing_or_not_passed" if not reviewed else "conflict"), group_id)
-            continue
-        review = reviewed[0]
-        draft = review["inputs"].get("draftTextSha256")
         drafts = [record for record in usable["T"] if record["verdict"]["status"] == "pass"
-                  and (draft is None or record["outputs"].get("draftTextSha256") == draft)]
-        if len(drafts) != 1:
-            refuse("T:" + ("missing_or_not_passed" if not drafts else "conflict"), group_id)
+                  and current("T", group, record, {}, runner)]
+        pairs = [(draft, review) for draft in drafts for review in usable["R"]
+                 if review["verdict"]["status"] == "pass"
+                 and records._is_sha(review["outputs"].get("evidenceRowSha256"))
+                 and current("R", group, review, {"T": draft}, runner)]
+        if len(pairs) != 1:
+            refuse(("T" if not drafts else "R") + ":" + ("conflict" if len(pairs) > 1 else "missing_or_not_current"),
+                   group_id)
             continue
+        draft, review = pairs[0]
         target = review["outputs"]["targetTextSha256"]
-        plugins = [record for record in usable["P"]
-                   if record["stageImplementationSha256"] == plugin_implementation_sha256
-                   and record["inputs"].get("languageReviewPolicySha256") == language_review_policy_sha256
-                   and record["inputs"].get("targetTextSha256") == target]
+        english = group_plan.current_inputs("T", group, contexts[group_id], anchor, policy, locale_identity,
+                                            {})["englishUnitsSha256"]
+        expected = {"languageReviewPolicySha256": identities["languageReviewPolicySha256"],
+                    "englishUnitsSha256": english, "targetTextSha256": target}
+        plugins = [record for record in usable["P"] if not group_plan.evaluate(
+            record, layer1, expected, identities["pluginImplementationSha256"])["reasons"]]
         passed = [record for record in plugins if record["verdict"]["status"] == "pass"
                   and records._is_sha(record["outputs"].get("groupReviewSha256"))]
         if len(passed) != 1:
             refuse("P:" + ("conflict" if len(passed) > 1 else
                            "failed" if plugins else "missing_for_current_plugin_and_text"), group_id)
             continue
-        chosen[group_id] = {"T": drafts[0], "R": review, "P": passed[0]}
+        chosen[group_id] = {"T": draft, "R": review, "P": passed[0]}
     if reasons:
         raise AssemblyRefused(reasons)
     return chosen
 
 
+def legacy_contexts(anchor: dict, plan: list[dict]) -> dict[str, dict]:
+    """The English context each group's request carries (the plan computes it the same way)."""
+    from . import group_legacy
+    return group_legacy.group_contexts(anchor, plan)
+
+
 def assemble(source: dict, anchor: dict, policy: dict, request: dict, rule_receipt: dict | None,
              plugin_path: Path, store: records.RecordStore, payloads: PayloadStore, *,
+             resolutions: ResolutionStore | None = None, runner_implementation_sha256: str | None = None,
              equivalence_check: bool = False) -> dict[str, Any]:
-    """Evidence, plugin receipt and candidate from the records, plus a manifest of what was used."""
+    """Evidence, plugin receipt and candidate from the records, plus a manifest of what was used.
+
+    The runner identity defaults to this checkout's ``RUNNER_PRODUCTION_IDENTITY_SHA256``;
+    only the equivalence check may leave it uncompared (``runner_implementation_sha256=None``
+    with ``equivalence_check=True``), because historical rounds ran under older runners.
+    """
     from ..text import candidate as producer
     from ..text import models
     from ..text import policy as policy_tools
@@ -207,8 +325,12 @@ def assemble(source: dict, anchor: dict, policy: dict, request: dict, rule_recei
     plugin_sha = policy["languageReview"]["pluginImplementationSha256"]
     # The identity the plugin receipt itself carries for this policy.
     review_policy_sha = policy_tools.validate_policy(policy)["languageReviewPolicySha256"]
-    chosen = select(store, layer1, locale, plan, plugin_implementation_sha256=plugin_sha,
-                    language_review_policy_sha256=review_policy_sha, equivalence_check=equivalence_check)
+    runner = (runner_implementation_sha256 if runner_implementation_sha256 is not None or equivalence_check
+              else models.RUNNER_PRODUCTION_IDENTITY_SHA256)
+    identities = {"runnerImplementationSha256": runner, "pluginImplementationSha256": plugin_sha,
+                  "languageReviewPolicySha256": review_policy_sha}
+    chosen = select(store, anchor, policy, layer1, locale, plan, identities, resolutions=resolutions,
+                    equivalence_check=equivalence_check)
     rows = []
     for group in plan:
         review = chosen[group["translationGroupId"]]["R"]
@@ -237,9 +359,11 @@ def assemble(source: dict, anchor: dict, policy: dict, request: dict, rule_recei
     manifest = {
         "schemaVersion": ASSEMBLY_SCHEMA, "layer1": layer1, "targetLocale": locale,
         "translationPolicySha256": request["translationPolicySha256"],
+        # The full selected record by hash: two stores may hold different bytes under one key.
         "groups": [{"translationGroupId": group["translationGroupId"],
-                    "records": {stage: chosen[group["translationGroupId"]][stage]["inputKey"]
+                    "records": {stage: _manifest_entry(chosen[group["translationGroupId"]][stage])
                                 for stage in ASSEMBLED_STAGES}} for group in plan],
+        "runnerImplementationSha256": runner,
         "evidenceSha256": records.json_sha256(evidence),
         "languageReviewSha256": records.json_sha256(receipt),
         "candidateSha256": records.json_sha256(candidate),
@@ -247,6 +371,15 @@ def assemble(source: dict, anchor: dict, policy: dict, request: dict, rule_recei
         "releaseEligible": False, "humanApproval": False,
     }
     return {"evidence": evidence, "languageReview": receipt, "candidate": candidate, "manifest": manifest}
+
+
+def _manifest_entry(record: dict) -> dict:
+    settles = record.get("_resolvesUnknownSha256")
+    plain = {key: value for key, value in record.items() if key != "_resolvesUnknownSha256"}
+    entry = {"inputKey": plain["inputKey"], "recordSha256": records.json_sha256(plain)}
+    if settles is not None:
+        entry["resolvesUnknownRecordSha256"] = settles
+    return entry
 
 
 def file_bytes(value: Any) -> bytes:
@@ -262,7 +395,9 @@ def equivalence_records(evidence: dict, receipt: dict, legacy: dict[str, dict],
     only with ``equivalence_check=True``. ``legacy`` holds each group's T and R records read
     from the run's round caches (``group_legacy.layer2_records``); their inputs, draft and
     runner identity are carried over, the R output is the evidence row itself. Nothing is
-    invented: a group without a round-cache T and R gets no records, and its ID is returned.
+    invented: a group whose round cache has no passing T and R, or whose cached review
+    produced other text (an operator ruling or manual edit), gets no records, and its ID
+    is returned.
     """
     layer1 = records.layer1_identity(evidence["englishSourcePackageJsonSha256"], evidence["anchorManifestSha256"])
     locale = evidence["targetLocale"]
@@ -271,10 +406,13 @@ def equivalence_records(evidence: dict, receipt: dict, legacy: dict[str, dict],
         _require(review["translationGroupId"] == row["translationGroupId"], "receipt_order_differs_from_evidence")
         group_id, units = row["translationGroupId"], row["sourceUnitIds"]
         prior = legacy.get(group_id) or {}
-        if "T" not in prior or "R" not in prior:
+        target_sha = records.text_sha256("".join(row["targetUtterances"]))
+        # Only a round-cache review that passed and produced this very text reconstructs it.
+        if ("T" not in prior or "R" not in prior or prior["T"]["verdict"]["status"] != "pass"
+                or prior["R"]["verdict"]["status"] != "pass"
+                or prior["R"]["outputs"].get("targetTextSha256") != target_sha):
             skipped.append(group_id)
             continue
-        target_sha = records.text_sha256("".join(row["targetUtterances"]))
 
         def carried(record: dict) -> dict:
             return {"derivation": EQUIVALENCE_DERIVATION, "from": record["provenance"].get("derivation"),
@@ -284,11 +422,8 @@ def equivalence_records(evidence: dict, receipt: dict, legacy: dict[str, dict],
         store.put(records.make_record("T", layer1, locale, group_id, units, translator["inputs"],
                                       translator["stageImplementationSha256"], translator["outputs"], "pass",
                                       spend=translator["spend"], provenance=carried(translator)))
-        passed = row["semanticReview"].get("status") == "pass"
         store.put(records.make_record("R", layer1, locale, group_id, units, reviewer["inputs"],
-                                      reviewer["stageImplementationSha256"], reviewed_outputs(row, payloads),
-                                      "pass" if passed else "fail",
-                                      codes=() if passed else ["semantic_review_not_passed"],
+                                      reviewer["stageImplementationSha256"], reviewed_outputs(row, payloads), "pass",
                                       spend=reviewer["spend"], provenance=carried(reviewer)))
         store.put(records.make_record("P", layer1, locale, group_id, units,
                                       {"languageReviewPolicySha256": receipt["languageReviewPolicySha256"],
