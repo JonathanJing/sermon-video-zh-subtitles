@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-19T17:41:30.118416+00:00",
+  "endedAt": "2026-10-19T17:42:07.358416+00:00",
+  "scope": "把 4 个语音演示运维工具从 scripts/ 移到 tools/ops/ (PR #1129); affected unit tests and package test; 7013 test IDs identical before/after; CLI/import equivalence vs origin/dev"
+}
