@@ -11,10 +11,11 @@ if __package__ in (None, ""):
 
 from experiments.local_experiment_log.contract import canonical, digest, validate_event
 
-try:
-    from tongxing_production.observability import log_contract as accounting
-except ImportError:  # the release bundle ships the contract as scripts/sermon_log_contract.py (deploy_tools)
+try:  # the release bundle ships the contract as scripts/sermon_log_contract.py (deploy_tools)
     from scripts import sermon_log_contract as accounting
+except ImportError:  # a checkout: the scripts/ facade is gone, use the package module
+    from scripts import tongxing_host  # noqa: F401  binds the schema root the validator reads
+    from tongxing_production.observability import log_contract as accounting
 
 CONTEXT_KEYS = {"runId", "workflowId", "workUnitId", "attemptId", "decisionId", "productionRunId",
                 "engineeringRunId", "executorType", "workKind", "evidenceMode", "eventId", "producerId",

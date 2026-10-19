@@ -184,7 +184,7 @@ class ProductionPackageTests(unittest.TestCase):
         self.assertEqual(accounting.code_module_name(key), "tongxing_production.compute.provider_limits")
         self.assertEqual(accounting.code_module_name("packages/production/src/tongxing_production/compute/__init__.py"),
                          "tongxing_production.compute")
-        self.assertEqual(accounting.code_module_name("scripts/sermon_accounting.py"), "tongxing_production.observability.accounting")
+        self.assertEqual(accounting.code_module_name("scripts/sermon_accounting.py"), "scripts.sermon_accounting")
         identity = accounting.execution_identity()
         self.assertIn(key, identity["loadedProjectCodeSha256"])
         self.assertIn(key, accounting.safe_execution_identity(identity)["loadedProjectCodeSha256"])
