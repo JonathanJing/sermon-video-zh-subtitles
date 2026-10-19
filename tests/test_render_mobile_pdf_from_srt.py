@@ -14,6 +14,7 @@ from tongxing_production.workflows.dual_pdf import mobile_pdf as implementation
 class RenderMobilePdfFromSrtTest(unittest.TestCase):
     def test_legacy_import_and_interpretation_font_symbols(self):
         from scripts import render_sermon_interpretation_pdf as interpretation
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.observability import accounting as sermon_accounting
         from tongxing_production import path_aliases
 

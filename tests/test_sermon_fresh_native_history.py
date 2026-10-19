@@ -123,6 +123,7 @@ class NativeFreshFreezeTests(unittest.TestCase):
         self.assertNotEqual(flow._inventory({'locales':{}},scoped)[str(self.model_path.resolve())],inventory[str(self.model_path.resolve())])
 
     def test_real_preflight_stage_completes_before_locale_and_enters_dag_dependencies(self):
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.observability import accounting
         session=self.session;session.evidence_mode='synthetic';session._historical_reuse={}
         captured={}

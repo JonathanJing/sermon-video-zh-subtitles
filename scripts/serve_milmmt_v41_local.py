@@ -103,6 +103,7 @@ class MLXEngine:
             raise ValueError("unexpected EOS configuration")
 
     def translate(self, source, emit, cancelled):
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.observability import model_call_observation as model_calls
         from tongxing_production.observability import accounting
         name = 'milmmt.warmup' if source == WARMUP else 'milmmt.translate'
@@ -364,6 +365,7 @@ def write_state(path, value):
 
 
 def serve(args):
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.observability import accounting
     # Main-thread session exports attribution to the dedicated MLX worker.
     # The existing service state directory keeps logs outside tracked source.

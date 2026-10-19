@@ -69,6 +69,7 @@ def validate_request(request):
         and label(request['attemptId']) and len(request['attemptId']) <= 70
         and request['targetLocale'] in LOCALES and request['jobId'] == job_id(request),
         'mock_tts_request_identity_invalid')
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.observability import completion
     c.require(type(request['attemptNumber']) is int and 1 <= request['attemptNumber'] <= 3
         and ((request['attemptNumber'] == 1 and request['retryOfRequestSha256'] is None)

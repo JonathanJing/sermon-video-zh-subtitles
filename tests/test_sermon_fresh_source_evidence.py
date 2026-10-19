@@ -210,6 +210,7 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
 
     def test_synthetic_approved_identity_v2_migration_zero_calls_and_tamper_rejection(self):
         from scripts import sermon_source_producer_compatibility as compatibility
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.observability import profile
         f, root, plan, runtime = self.migration_fixture(approved_identity=True)
         repository = Path(subject.cache.__file__).resolve().parents[1]
@@ -267,6 +268,7 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
 class CurrentMFAEvidenceTests(unittest.TestCase):
     def test_actual_builders_over_synthetic_mfa_receipt_replay_no_alignment_and_runtime_drift_rejected(self):
         from scripts import sermon_fresh_diagnostic_source as adapter
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.observability import profile
         f = fresh_fixtures.FreshSourceTests(); self.addCleanup(f.doCleanups); f.setUp()
         folder = f.root/'budget'/budget.STORE_ID/'provider-run'
