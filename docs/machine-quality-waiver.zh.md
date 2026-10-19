@@ -61,57 +61,57 @@ ASR 还保护完整韩文数字词、已知书卷名和常用人名，以及冻�
 
 ```bash
 # 用已有正式音频拟合语速（rows: [{text, audioSeconds, audioSha256}]，--speech-job 为这些音频的 job）
-python scripts/target_audio_predicted_schedule.py fit --input rate-input.json --speech-job measured-job.json --out rate.json
+.venv/bin/python scripts/target_audio_predicted_schedule.py fit --input rate-input.json --speech-job measured-job.json --out rate.json
 # TTS 前预测排程（groups: [{gid, sourceStart, sourceEnd, text}]，时间相对 clip；--speech-job 为本次要合成的 job）
-python scripts/target_audio_predicted_schedule.py budget --input groups.json --rate rate.json --speech-job job.json --out budget.json
+.venv/bin/python scripts/target_audio_predicted_schedule.py budget --input groups.json --rate rate.json --speech-job job.json --out budget.json
 # 单句音频 QC（units: [{groupId, text, sourceSeconds, wavPath, asr: {primary, secondary?}, sourceUnitIds}]，
 # 每个 ASR 结果为 {similarity, recognized, audioSha256, textSha256, model, modelRevision?, settings, settingsSha256}，
 # similarity 由 asr_opinion 按筛查算法从 recognized 算出）；
 # 失败次数取自音频修复账本，本次结果随即追加进去
-python scripts/target_audio_auto_qc.py --input units.json --speech-job speech-job.json --repair-ledger-root run/repair-ledger \
+.venv/bin/python scripts/target_audio_auto_qc.py --input units.json --speech-job speech-job.json --repair-ledger-root run/repair-ledger \
   --source source-package.json --anchor anchor.json --out audio-qc.json
 # 整轨核对（读取音频包里的排程、单句音频和音轨；MP3 需要 ffmpeg 和同名 .wav 母带）
-python scripts/target_audio_auto_qc.py --track-package audio-package.json --out track-check.json
+.venv/bin/python scripts/target_audio_auto_qc.py --track-package audio-package.json --out track-check.json
 # 精简（本机 Codex CLI，Sol 6.1 high，按请求缓存；写出精简记录和 L2 revision brief，同输入重跑复用，不覆盖已有证据；--backend fake 只验证流程）
 python scripts/run_spoken_condensation.py --candidate full-candidate.json --budget budget.json \
   --anchor anchor.json --policy policy.json --out artifacts/<run>/condensation/ko --state-dir artifacts/<run>/state
 # 已有精简记录时也可单独导出 brief
-python scripts/spoken_condensation.py brief --record condensation.json --candidate full-candidate.json --out brief.json
+.venv/bin/python scripts/spoken_condensation.py brief --record condensation.json --candidate full-candidate.json --out brief.json
 # 口播候选生成后绑回记录，再写出口播 QC 的输入（精简组带 condensation）
-python scripts/spoken_condensation.py bind --record condensation.json --candidate full-candidate.json \
+.venv/bin/python scripts/spoken_condensation.py bind --record condensation.json --candidate full-candidate.json \
   --anchor anchor.json --spoken-candidate spoken-candidate.json --policy policy.json --out condensation-binding.json
-python scripts/spoken_condensation.py qc-groups --binding condensation-binding.json --anchor anchor.json \
+.venv/bin/python scripts/spoken_condensation.py qc-groups --binding condensation-binding.json --anchor anchor.json \
   --spoken-candidate spoken-candidate.json --out spoken-qc-groups.json
 # 在已有 Dev 运行上跑文字链：文字 QC（回译）、注错校准和译文豁免；口播稿加 --spoken-binding
-python scripts/run_machine_qc_clip_test.py --run-dir <run> --out artifacts/<run>/machine-qc \
+.venv/bin/python scripts/run_machine_qc_clip_test.py --run-dir <run> --out artifacts/<run>/machine-qc \
   --state-dir artifacts/<run>/state --locales ko [--spoken-binding ko=condensation-binding.json]
 # 离线注错校准（不含回译和 ASR transport，因此不能单独解锁豁免；spokenGroups 为上面的 qc-groups 输出）
-python scripts/auto_qc_seeded_errors.py --input calibration-input.json --out calibration.json
+.venv/bin/python scripts/auto_qc_seeded_errors.py --input calibration-input.json --out calibration.json
 # 豁免决定
-python scripts/machine_quality_waiver.py --locale ko --candidate candidate.json \
+.venv/bin/python scripts/machine_quality_waiver.py --locale ko --candidate candidate.json \
   --text-qc text-qc.json --audio-qc audio-qc.json --audio-package audio-package.json \
   --calibration calibration.json --out waiver.json
 # 译文豁免收据（代替人工译文审核收据）
-python scripts/machine_quality_release_basis.py text --source source.json --anchor anchor.json \
+.venv/bin/python scripts/machine_quality_release_basis.py text --source source.json --anchor anchor.json \
   --candidate candidate.json --text-qc text-qc.json --calibration calibration.json \
   --repair-ledger-root run/repair-ledger --out text-waiver.json
 # 文字 QC 也可在代码里注入模型 transport：调用方先取 machine_repair_ledger.position，
 # 传给 target_text_auto_qc.screen(repair_position=...)，再 machine_repair_ledger.append 追加本次结果
 # 口播稿有精简组时，还要给精简绑定；这份收据只能作口播稿依据，不能当完整译文的依据
-python scripts/machine_quality_release_basis.py text ... --candidate spoken-candidate.json \
+.venv/bin/python scripts/machine_quality_release_basis.py text ... --candidate spoken-candidate.json \
   --condensation-binding condensation-binding.json --out spoken-text-waiver.json
 # 用译文豁免进入第 3 层：写出 speech job v3
-python scripts/prepare_target_language_speech_job.py ... --text-release-basis text-waiver.json --out speech-job
+.venv/bin/python scripts/prepare_target_language_speech_job.py ... --text-release-basis text-waiver.json --out speech-job
 # 试听豁免收据（代替人工试听收据）；ASR 标出的句子必须有强 ASR 复核
-python scripts/machine_quality_release_basis.py audio --package audio-package.json --screening screening.json \
+.venv/bin/python scripts/machine_quality_release_basis.py audio --package audio-package.json --screening screening.json \
   --audio-qc audio-qc.json --track-check track-check.json --text-waiver spoken-text-waiver.json \
   --anchor anchor.json --spoken-candidate spoken-candidate.json \
   --calibration calibration.json --secondary-asr-model gpt-transcribe --repair-ledger-root run/repair-ledger \
   --out audio-waiver.json
 # 第 4 层：精简过的配音要带同一份精简绑定（sermon_unified_delivery 的 inputs.condensation_binding 同理）
-python scripts/build_full_video_app_release.py prepare ... --condensation-binding ko=condensation-binding.json
+.venv/bin/python scripts/build_full_video_app_release.py prepare ... --condensation-binding ko=condensation-binding.json
 # 在已有 Dev 运行上一次跑完整条试听链（预检、整轨核对、音频 QC、注错校准、试听豁免），见 [机器试听豁免驱动](machine-qc-audio-driver.zh.md)
-python scripts/run_with_openai_environment.py --environment dev -- python scripts/run_machine_qc_audio_test.py \
+python scripts/run_with_openai_environment.py --environment dev -- .venv/bin/python scripts/run_machine_qc_audio_test.py \
   --run-dir <run> --out artifacts/machine-qc-audio/<run> --state-dir <文字驱动的状态目录> \
   --asr-model-path <Qwen3-ASR 目录> --tts-checkpoint-map <checkpoint map> --locales ko \
   --api-budget-authorization <已批准的计划中 qc.ko 授权 v4 路径>

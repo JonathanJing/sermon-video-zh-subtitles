@@ -349,7 +349,7 @@ If the config verifier fails, generate the approval bundle before changing the
 service:
 
 ```bash
-python3 scripts/prepare_cloud_run_realtime_update_plan.py \
+python3 tools/ops/prepare_cloud_run_realtime_update_plan.py \
   --config-report artifacts/evidence/cloud-run-realtime-config.json \
   --service sermon-zh-caption-web \
   --project ai-for-god \
@@ -464,7 +464,7 @@ checks, and sanitized command results.
 Validate the browser-side iPad/iPhone mic contract as its own local evidence:
 
 ```bash
-python3 scripts/validate_web_realtime_contract.py \
+python3 tools/ops/validate_web_realtime_contract.py \
   --out artifacts/evidence/web-realtime-contract.json
 ```
 

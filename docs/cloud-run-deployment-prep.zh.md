@@ -406,7 +406,7 @@ tokens 存在，并且敏感 env var 没有以 plaintext direct value 形式配�
 如果 config verifier 失败，先生成审批包，再改 service：
 
 ```bash
-python3 scripts/prepare_cloud_run_realtime_update_plan.py \
+python3 tools/ops/prepare_cloud_run_realtime_update_plan.py \
   --config-report artifacts/evidence/cloud-run-realtime-config.json \
   --service sermon-zh-caption-web \
   --project ai-for-god \
@@ -510,7 +510,7 @@ python3 tools/ops/run_realtime_audio_source_preflight.py \
 把浏览器侧 iPad/iPhone mic contract 也单独验证成一份本地 evidence：
 
 ```bash
-python3 scripts/validate_web_realtime_contract.py \
+python3 tools/ops/validate_web_realtime_contract.py \
   --out artifacts/evidence/web-realtime-contract.json
 ```
 
