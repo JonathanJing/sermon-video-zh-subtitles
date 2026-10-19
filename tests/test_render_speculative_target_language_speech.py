@@ -220,6 +220,41 @@ class SpeculativeRenderTests(unittest.TestCase):
             self.assertIsNot(value.get("synthesisEligible"), True)
         self.assertTrue(result)
 
+    def use_normalization(self, normalization):
+        policies = json.loads(self.policies.read_text())
+        policies["normalization"] = normalization
+        speech_fixture.write_json(self.policies, policies)
+        self.fixture.adapter["normalizationPolicySha256"] = subject.identity.json_sha256(normalization)
+        speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
+
+    def test_registered_spoken_forms_policy_renders_groups_it_leaves_unchanged(self):
+        # The formal job's policy; neither fixture group has a chapter or verse number.
+        self.use_normalization(subject.formal.FROZEN_V3_NORMALIZATION_POLICY)
+        result = self.render(group_ids=["g1", "g2"])
+        self.assertEqual(result["renderedGroupIds"], ["g1", "g2"])
+        self.assertEqual([call[0] for call in FakeSynth.calls],
+                         [group["targetText"] for group in self.fixture.candidate["groups"]])
+
+    def test_a_group_the_spoken_forms_rule_rewrites_is_refused_before_any_output(self):
+        policy = subject.formal.FROZEN_V3_NORMALIZATION_POLICY
+        self.use_normalization(policy)
+        rule = policy["spokenForms"]["ko"]
+        rewrite = ("ko", lambda text: text.replace("함께", "같이"))
+        with patch.dict(subject.formal.SPOKEN_FORM_RULES, {rule: rewrite}):
+            with self.assertRaisesRegex(ValueError, "may not rewrite target text"):
+                self.render(group_ids=["g1", "g2"])
+            self.assertFalse(self.out.exists())
+            self.assertEqual(self.render(group_ids=["g1"])["renderedGroupIds"], ["g1"])
+        self.assertEqual(len(FakeSynth.calls), 1)
+
+    def test_an_unregistered_rewriting_policy_is_refused(self):
+        policy = copy.deepcopy(subject.formal.FROZEN_V3_NORMALIZATION_POLICY)
+        policy["spokenForms"]["ko"] = "operator-supplied-rule"
+        self.use_normalization(policy)
+        with self.assertRaisesRegex(ValueError, "may not rewrite target text"):
+            self.render(group_ids=["g1"])
+        self.assertEqual(FakeSynth.calls, [])
+
     def test_committed_partial_audio_resumes_without_synthesis(self):
         self.render(group_ids=["g1"])
         audio = self.out / "units/unit-0000.wav"
