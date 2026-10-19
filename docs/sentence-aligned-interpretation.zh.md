@@ -162,7 +162,7 @@ end   = start + measured_natural_audio_duration
   --draft <translation-draft.json> \
   --out <independent-review-request.json>
 
-.venv/bin/python scripts/run_sentence_interpretation_models.py \
+.venv/bin/python tools/ops/run.py source.sentence_interpretation_models \
   --anchor-manifest <anchor-manifest.json> \
   --out artifacts/sentence-interpretation-poc/<run-id>/models-gpt-6-astra \
   --model gpt-6-astra \

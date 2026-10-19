@@ -83,7 +83,7 @@ OpenAI 云端转写与语言 API 保持不变。legacy 每周 TTS 和配音质�
 已有完整本地礼拜录像、且不应重新下载时，可先用 `sermon_pipeline.py` 的 `--english-source-only` 从原文件和已批准的绝对窗口生成英文 ASR、MFA 词时间与 `summary.json`。该模式要求 reading/MFA，写入 `status=english_source_candidate`，不调用中文翻译，也不授予 Layer 2 正式资格。`summary.json` 将原媒体 SHA-256 绑定到 `pipelineInputIdentity.sourceAudio`；仍须用同一媒体哈希、来源 URL hash 和窗口另存人工范围收据，再生成锚点、机器裁判和英文人工审核收据。没有可用的本机或 Spark MFA 时，默认按预检要求停在付费转写之前。若操作员明确授权这份媒体的外部转写，可单独选择 `--english-transcript-only`：它保存原始英文 ASR 和 `transcript-only-summary.json`，不运行 MFA、翻译或正式 Layer 1 放行；MFA 恢复后以同一 `--outdir` 运行 `--english-source-only`，按输入身份复用仍有效的 ASR 缓存。
 
 ```bash
-.venv/bin/python scripts/sermon_pipeline.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.pipeline \
   --input /absolute/path/to/service-complete.mp4 \
   --start-time HH:MM:SS --end-time HH:MM:SS \
   --slug weekly-source --outdir /absolute/path/to/ignored/run/pipeline \
@@ -128,7 +128,7 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 ```bash
 .venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
-  .venv/bin/python scripts/run_codex_local_sermon_production.py \
+  .venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode execute --agent-backend codex-cli --model gpt-6-luna --reasoning-effort medium --service-tier fast \
   --notify-sendgrid-secret '' --notify-recipients-secret '' --notify-sender-secret ''
 ```

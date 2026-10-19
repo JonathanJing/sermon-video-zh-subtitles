@@ -34,7 +34,7 @@
 每次执行退出时自动汇总；进程被强制终止后，可只读事件、重新生成汇总：
 
 ```bash
-.venv/bin/python scripts/sermon_accounting.py artifacts/post-live-runs/YYYY-MM-DD/accounting
+.venv/bin/python tools/ops/run.py observability.accounting artifacts/post-live-runs/YYYY-MM-DD/accounting
 ```
 
 若中断留下不完整的 JSONL 行，汇总保留其余有效事件，`ledgerIntegrity` 明确标记损坏行号、字节数、hash 和无法归属的未知费用，不抄录损坏正文。原始字节保留；下次追加先隔开未结束行，避免损坏后续运行记录。

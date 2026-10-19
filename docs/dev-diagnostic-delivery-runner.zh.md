@@ -10,7 +10,7 @@
 .venv/bin/python scripts/build_dev_180s_simulated_inputs.py \
   --run-id <unique-run-id> --out artifacts/dev-180s-page-test-20261004/<unique-run-id>/inputs
 
-.venv/bin/python scripts/prepare_dev_simulated_publication.py baseline \
+.venv/bin/python tools/ops/prepare_dev_simulated_publication.py baseline \
   --out artifacts/dev-180s-page-test-20261004/<unique-run-id>/baseline \
   --cache-public <verified-cache-public> --cache-receipt <verified-baseline-receipt>
 
