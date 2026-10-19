@@ -41,7 +41,7 @@ result = drive(execution_config, target_locale, budget_authorization=authorizati
 ## 跨版本缓存迁移
 
 ```sh
-python scripts/migrate_target_language_model_cache.py \
+.venv/bin/python scripts/migrate_target_language_model_cache.py \
   --old-source /absolute/old-source.json --source /absolute/source.json \
   --anchor /absolute/anchor.json \
   --old-policy /absolute/old-policy.json --policy /absolute/policy.json \
@@ -87,7 +87,7 @@ python scripts/run_with_openai_environment.py --environment dev -- \
 
 ```sh
 python scripts/run_with_openai_environment.py --environment dev -- \
-  python scripts/run_machine_qc_clip_test.py --run-dir artifacts/original-run \
+  .venv/bin/python scripts/run_machine_qc_clip_test.py --run-dir artifacts/original-run \
   --out artifacts/original-text-qc --state-dir artifacts/original-state --locales ko --text-backend api \
   --api-budget-authorization artifacts/original-plan/qc-ko/api-budget-authorization.json
 ```

@@ -45,7 +45,7 @@
 
 | 已有基础 | 本方案复用的内容 | 尚需新增的内容 |
 |---|---|---|
-| [周六生产 Runbook](./codex-local-production-runbook.zh.md)、[生产脚本](../scripts/run_post_live_subtitle_generation.py) | 来源、人工证道窗口、英文、翻译、模型与 QA 记录；当前默认 Astra Medium | 面向听觉的中文口播稿、时长预算与语音审核 |
+| [周六生产 Runbook](./codex-local-production-runbook.zh.md)、[生产脚本](../packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py) | 来源、人工证道窗口、英文、翻译、模型与 QA 记录；当前默认 Astra Medium | 面向听觉的中文口播稿、时长预算与语音审核 |
 | [Context Pack 方案](./saturday-to-sunday-context-pack-plan.zh.md)、[导出脚本](../scripts/export_saturday_live_context.py) | 稳定 segment ID、英文顺序、时间与内容来源 | 独立的 dubbing manifest；不把 Pack readiness 当成语音发布批准 |
 | [周日实时字幕 POC](../experiments/local-live-poc/README.md) | 必要时单独提供字幕；后续研究现场偏离时可参考其 ASR/录音恢复契约 | 首版配音播放器、中文音频总线与接收端验收 |
 | [历史 Voxtral TTS POC](../scripts/run_voxtral_tts_poc.py) | 可参考 SRT 读取、片段选取、manifest 与音色授权检查的实现 | 新 TTS adapter、按原片时间装配、整篇回听和现场路由 |
@@ -93,7 +93,7 @@ flowchart TD
 | 11. 混音与发布审核 | FFmpeg `loudnorm` / `ffprobe` + 人工完整视频回看 | 全长中文音轨 → 冻结播放包与 QA | 听感、响度、真峰值、素材与审核 hash 一致；无模型审核替代真人批准 |
 | 12. 周日播放与分发 | 单一媒体时钟的播放器 + 独立音频输出路由；无模型 | 已批准播放包 → 会众实际听到的中文 | 同步、暂停/跳转、音量、耳机/中文区终端、紧急静音及恢复 |
 
-模型名中的 `gpt-6-astra`、`gpt-transcribe` 是当前项目配置，见[生产参数](../scripts/run_post_live_subtitle_generation.py)。本次未调用这些接口；后续先用既有 provider 做小样可用性验证，不假定其他账号或端点具有相同名称和权限。
+模型名中的 `gpt-6-astra`、`gpt-transcribe` 是当前项目配置，见[生产参数](../packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py)。本次未调用这些接口；后续先用既有 provider 做小样可用性验证，不假定其他账号或端点具有相同名称和权限。
 
 Qwen 的官方实现提供英中 ASR 与词/字级 forced alignment；应分块后映射回全局时间轴，不能把整个证道一次塞入 aligner。[Qwen3-ASR 官方实现](https://github.com/QwenLM/Qwen3-ASR#forcedaligner-usage)
 

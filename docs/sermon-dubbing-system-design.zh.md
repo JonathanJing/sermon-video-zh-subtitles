@@ -41,7 +41,7 @@ MacBook 负责来源资料、任务协调、本地 ASR/对齐和静态应用构�
 
 ### GPT-Transcribe：视频英文转写与原声风险复查
 
-当前周六英文文件转写使用模型 ID `gpt-transcribe`。`SupervisorConfig` 的 `timeline_model` 与 `reference_model` 均为该值；[run_post_live_subtitle_generation.py](../scripts/run_post_live_subtitle_generation.py)和[sermon_pipeline.py](../scripts/sermon_pipeline.py)也保留对应默认配置。它接收从视频提取的音频，生成英文；并不直接理解视频画面。
+当前周六英文文件转写使用模型 ID `gpt-transcribe`。`SupervisorConfig` 的 `timeline_model` 与 `reference_model` 均为该值；[run_post_live_subtitle_generation.py](../packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py)和[sermon_pipeline.py](../packages/production/src/tongxing_production/workflows/dual_pdf/pipeline.py)也保留对应默认配置。它接收从视频提取的音频，生成英文；并不直接理解视频画面。
 
 选择它是为了延续已验证的英文转写主流程和来源回执，集中处理内容准确性。OpenAI 当前官方模型页列明文件语音转写、领域上下文和关键词提示能力；该页的模型别名/快照列表目前为 `gpt-transcribe`。这是本次核对的配置依据，不承诺未来别名永不变化。[OpenAI 模型说明](https://developers.openai.com/api/docs/models/gpt-transcribe)
 
