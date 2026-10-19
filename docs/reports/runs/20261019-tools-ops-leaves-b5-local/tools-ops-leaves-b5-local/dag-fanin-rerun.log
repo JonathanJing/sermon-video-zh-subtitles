@@ -1,0 +1,29 @@
+....................F..                                   [100%]
+=================================== FAILURES ===================================
+_ LargeLayer2FanInTests.test_129_group_actual_producer_can_assemble_and_resume_without_calls _
+
+self = <test_layer2_large_fan_in.LargeLayer2FanInTests testMethod=test_129_group_actual_producer_can_assemble_and_resume_without_calls>
+
+    def test_129_group_actual_producer_can_assemble_and_resume_without_calls(self):
+        c,f,calls,caller=self.fixture(129)
+        out=c.output
+        first=models.run_accounted(f.source,f.anchor,f.policy,out,'fixture-key',caller,None,f.plugin_path,None,None)
+        self.assertEqual(len(first['groups']),129);self.assertEqual(len(calls),258)
+        (out/'evidence.json').unlink()
+        second=models.run_accounted(f.source,f.anchor,f.policy,out,'',lambda *_:self.fail('cache called transport'),None,
+                                    f.plugin_path,None,None,cache_only=True)
+        self.assertEqual(first,second)
+>       self.assert_dag(out/'accounting',129)
+
+tests/test_layer2_large_fan_in.py:109:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_layer2_large_fan_in.py:69: in assert_dag
+    for run in runs:self.assertEqual(run['status'],'projected',run['diagnostics'])
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 'partial' != 'projected'
+E   - partial
+E   + projected
+E    : ['utc_clock_discontinuity_local_duration_preserved', 'utc_clock_discontinuity_between_spans', 'run_utc_wall_untrusted']
+=========================== short test summary info ============================
+FAILED tests/test_layer2_large_fan_in.py::LargeLayer2FanInTests::test_129_group_actual_producer_can_assemble_and_resume_without_calls
+1 failed, 22 passed, 15 subtests passed in 175.24s (0:02:55)
