@@ -1,0 +1,5 @@
+stable pairs (identical across two dev@e8b197be runs)=     198
+missing in after run=       0
+pairs before1=    1085 before2=    1085 after=    1085
+per-path counts identical
+harness: 232 tests, 2 v3_update mutation tests fail identically in all runs (rmtree disabled to keep temp dirs)

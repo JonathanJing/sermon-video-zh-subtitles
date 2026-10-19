@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import sermon_source_text_review as review_module
+from tongxing_production.source import text_review as review_module
 
 
 def digest(contents):

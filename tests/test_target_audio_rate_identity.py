@@ -26,7 +26,7 @@ def consumers(value):
 def test_each_real_dependency_mutation_invalidates_stored_coefficients(monkeypatch, dependency):
     fitted = rate()
     original = Path.read_bytes
-    from scripts import sermon_source_producer_compatibility as compatibility
+    from tongxing_production.source import producer_compatibility as compatibility
     key = dependency if dependency.startswith(("packages/", "scripts/")) else "scripts/" + dependency
     target = Path(__file__).resolve().parents[1] / compatibility.resolve(key)
     baseline = fitted["rateImplementationSha256"]

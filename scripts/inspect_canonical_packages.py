@@ -13,10 +13,11 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts import canonical_pipeline_definition as pipeline
-from scripts import build_english_source_package as english
-from scripts import prepare_target_language_speech_job as handoff
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import english_source_package as english
+from tongxing_production.audio import speech_job as handoff
 from scripts import produce_target_language_candidate as producer
-from scripts import inspect_canonical_audio as audio_inspector
+from tongxing_production.audio import inspect as audio_inspector
 from scripts import inspect_canonical_release as release_inspector
 from scripts.sermon_release_workflow import _safe_path
 from scripts import tongxing_host  # noqa: F401  binds the production package ports

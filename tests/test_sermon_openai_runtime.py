@@ -77,7 +77,7 @@ class RuntimeBindingTests(unittest.TestCase):
             self.assertEqual(request.get_header('Openai-project'), 'proj_prod')
 
     def test_judge_rejects_secret_override_before_cloud_access(self):
-        from scripts import judge_english_source_for_translation as judge
+        from tongxing_production.source import english_source_judge as judge
         import sys
         argv = ['judge', '--aligned-segments', 'unused', '--anchor-manifest', 'unused',
                 '--out', 'unused', '--api-key-secret', 'legacy-secret']

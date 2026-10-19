@@ -11,14 +11,14 @@ import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host as host
-from scripts import build_full_video_app_release as builder
-from scripts import guarded_hosting_publish as publisher
+from tongxing_production.delivery import app_release as builder
+from tongxing_production.delivery import publication as publisher
 from scripts import machine_audio_waiver_acceptance as audio_waivers
 from tongxing_production.review import release_basis as machine_basis
 from tongxing_production.delivery import app_workflow
-from scripts import sermon_unified_delivery as unified_delivery
+from tongxing_production.delivery import unified_stage as unified_delivery
 from scripts import sermon_unified_reviews as reviews
-from scripts import stage_formal_multilingual_dev as formal_stage
+from tongxing_production.delivery import formal_stage
 from tongxing_production import ports
 from tongxing_production.delivery import backend as delivery
 from tongxing_production.storage import hosting as hosting_adapter
@@ -136,7 +136,7 @@ class DeliveryPortsTests(unittest.TestCase):
 
     def test_google_auth_is_imported_only_by_the_hosting_adapter_when_a_session_opens(self):
         code = ("import sys; from scripts import tongxing_host; "
-                "from scripts import guarded_hosting_publish, prepare_dev_simulated_publication; "
+                "from tongxing_production.delivery import baseline, publication; "
                 "print(sorted(m for m in sys.modules if m == 'google.auth' or m.startswith('google.auth.')))")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -173,7 +173,7 @@ class DeliveryPortsTests(unittest.TestCase):
                 "loaded = [m for m in ('scripts.build_full_video_app_release', 'tongxing_production.delivery.publication', "
                 "'tongxing_production.delivery.baseline', 'tongxing_production.delivery.app_release', "
                 "'tongxing_production.delivery.formal_stage', 'tongxing_production.delivery.formal_assets', "
-                "'scripts.machine_audio_waiver_acceptance', 'scripts.sermon_unified_delivery', "
+                "'scripts.machine_audio_waiver_acceptance', 'tongxing_production.delivery.unified_stage', "
                 "'tongxing_production.delivery.app_workflow', 'tongxing_production.delivery.app_workflow', "
                 "'tongxing_production.delivery.app_delivery', 'tongxing_production.adapters.legacy.assemble_multilingual_hosting', "
                 "'weekly_release') if m in sys.modules]; print(loaded)")

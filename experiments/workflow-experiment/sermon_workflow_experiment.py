@@ -1,5 +1,11 @@
 """Offline validation/comparison of matched workflow experiments; never dispatches."""
 import math
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the repository root
+    sys.path.insert(0, str(ROOT))
 from scripts.sermon_unified import contracts as c
 
 ARMS = {'durable_workflow', 'bounded_packet', 'full_context'}

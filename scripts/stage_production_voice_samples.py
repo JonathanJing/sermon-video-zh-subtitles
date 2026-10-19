@@ -13,16 +13,18 @@ import shutil
 import sys
 import tempfile
 
+if __package__ in (None, ""):  # run directly: reach the repository root
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.adapters.legacy import assemble_multilingual_hosting as hosting  # noqa: E402
+from tongxing_production.adapters.legacy import verify_multilingual_hosting as http  # noqa: E402
 try:
-    from scripts import assemble_multilingual_hosting as hosting
     from scripts import stage_voice_demo_dev as dev_demo
     from scripts import build_multilingual_voice_preview as voice_preview
-    from scripts import verify_multilingual_hosting as http
 except ImportError:
-    import assemble_multilingual_hosting as hosting
     import stage_voice_demo_dev as dev_demo
     import build_multilingual_voice_preview as voice_preview
-    import verify_multilingual_hosting as http
 
 
 ROOT = Path(__file__).resolve().parents[1]

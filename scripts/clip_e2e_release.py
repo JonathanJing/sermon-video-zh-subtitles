@@ -55,13 +55,13 @@ def validate_display(display: dict, locales: list[str]) -> None:
 def prepare(out: Path, *, page_id: str, date: str, locales: list[str], source_path: Path, anchor_path: Path,
             lanes: dict, display: dict, default_pass: str, template: Path = TEMPLATE) -> dict:
     """Write and execute the frozen delivery plan; ``lanes[locale]`` has candidate, textQcOut, audioPackage, audioQcOut."""
-    from scripts import build_full_video_app_release as release
+    from tongxing_production.delivery import app_release as release
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.review import release_basis as basis
-    from scripts import sermon_unified_delivery as delivery
-    from scripts import study_artifacts
+    from tongxing_production.delivery import unified_stage as delivery
+    from tongxing_production.delivery import study_artifacts
     from scripts.build_dev_180s_simulated_inputs import read, save, ref
-    from scripts.delivery_contract import sha as json_sha
+    from tongxing_production.delivery.contract import sha as json_sha
     require(page_id.startswith(("mockup-", "dev-")), "clip E2E pages must use an isolated mockup-/dev- page ID")
     require(isinstance(default_pass, str) and "not a human review" in default_pass,
             "the default-pass statement must say it is not a human review")

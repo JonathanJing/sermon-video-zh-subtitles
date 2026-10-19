@@ -68,7 +68,7 @@ class WriteNoCaptionAsrFallbackPlanTest(unittest.TestCase):
         )
         self.assertEqual(validate_command[validate_command.index("--expected-asr-model") + 1], "gpt-4o-transcribe")
         self.assertEqual(validate_command[validate_command.index("--expected-translation-model") + 1], "gpt-5.4-mini")
-        readiness_command = next(command for command in report["commands"] if "scripts/validate_production_readiness.py" in command)
+        readiness_command = next(command for command in report["commands"] if "tools/ops/validate_production_readiness.py" in command)
         self.assertIn("--allow-missing-realtime", readiness_command)
         self.assertIn("use_asr_fallback", " ".join(report["passCriteria"]))
         self.assertIn("no requested English caption track", " ".join(report["passCriteria"]))

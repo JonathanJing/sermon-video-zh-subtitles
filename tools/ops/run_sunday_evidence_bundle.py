@@ -13,9 +13,9 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-VALIDATE_PRODUCTION = REPO_ROOT / "scripts" / "validate_production_readiness.py"
-COLLECT_MATRIX = REPO_ROOT / "scripts" / "collect_production_evidence_matrix.py"
-AUDIT_GOAL = REPO_ROOT / "scripts" / "audit_production_goal_readiness.py"
+VALIDATE_PRODUCTION = REPO_ROOT / "tools" / "ops" / "validate_production_readiness.py"
+COLLECT_MATRIX = REPO_ROOT / "tools" / "ops" / "collect_production_evidence_matrix.py"
+AUDIT_GOAL = REPO_ROOT / "tools" / "ops" / "audit_production_goal_readiness.py"
 DEFAULT_WORK_ROOT = Path("/tmp/sermon-worker")
 DEFAULT_REALTIME_EVENT_DIR = Path("/tmp/sermon-realtime-events")
 

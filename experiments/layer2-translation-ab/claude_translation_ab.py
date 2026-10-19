@@ -18,11 +18,18 @@ import hashlib
 import json
 from pathlib import Path
 import statistics
+import sys
 from datetime import datetime, timezone
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the repository root
+    sys.path.insert(0, str(ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
 
 from scripts.codex_layer2_transport import CodexLayer2Transport, output_schema
 from scripts.claude_layer2_transport import ClaudeLayer2Transport
-from scripts.experiments.codex_translation_ab import save, save_or_check, sha, validate
+from codex_translation_ab import save, save_or_check, sha, validate
 from scripts.run_target_language_models import SEMANTIC_CHECKS, save_new
 from scripts.target_language_policy import canonical_sha256
 from scripts.target_language_policy_preview import SCHEMA as PREVIEW_SCHEMA

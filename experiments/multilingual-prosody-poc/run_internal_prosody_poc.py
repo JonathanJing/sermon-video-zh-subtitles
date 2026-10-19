@@ -18,8 +18,10 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
 
-from scripts.run_multilingual_prosody_poc import PLAN_SCHEMA, canonical_sha, read_object, write_json
+from run_multilingual_prosody_poc import PLAN_SCHEMA, canonical_sha, read_object, write_json
 
 
 SPEC_SCHEMA = "sermon-internal-prosody-poc-spec-v1"

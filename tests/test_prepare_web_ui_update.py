@@ -4,7 +4,8 @@ import subprocess
 
 import pytest
 
-from scripts import prepare_dev_simulated_publication as staging
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import baseline as staging
 from tools.ops import prepare_dev_web_ui_update as ui
 
 
@@ -158,7 +159,7 @@ def test_prior_unknown_production_outcome_cannot_start_another_publish(tmp_path)
 
 
 def test_production_overlay_is_accepted_by_dev_shell_without_copying_baseline_modules(tmp_path, monkeypatch):
-    from scripts import firebase_dev_app_shell_update as shell
+    from tools.ops import firebase_dev_app_shell_update as shell
     base = baseline(tmp_path)
     repo, _ = committed_ui(tmp_path, monkeypatch)
     out = tmp_path / 'candidate'

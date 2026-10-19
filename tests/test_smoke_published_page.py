@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from scripts import smoke_published_page as smoke
+from tools.ops import smoke_published_page as smoke
 
 ORIGIN = "https://x.web.app"
 PAGE = "resi-20261011-54475d42"

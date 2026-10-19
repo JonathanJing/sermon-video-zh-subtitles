@@ -24,8 +24,8 @@ if _ROOT not in sys.path:
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as identity
-from scripts import validate_target_language_audio_unit as integrity
-from scripts import build_target_language_audio_package as package
+from tongxing_production.audio import unit_integrity as integrity
+from tongxing_production.audio import package
 
 VERSION = 'sermon-production-recovery-plan-v1'
 PACKAGE_FIELDS = {'jobJsonSha256', 'jobFileSha256', 'candidateJsonSha256'}

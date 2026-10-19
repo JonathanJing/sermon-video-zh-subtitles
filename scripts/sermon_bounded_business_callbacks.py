@@ -21,7 +21,8 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.observability import profile
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
-from scripts import build_english_source_package as source_builder
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import english_source_package as source_builder
 from scripts.sermon_release_workflow import _safe_path
 
 OFFLINE_KEY = 'offline-fixture'

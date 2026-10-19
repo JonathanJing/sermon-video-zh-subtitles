@@ -174,7 +174,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             ],
             [
                 "python3",
-                "scripts/validate_production_readiness.py",
+                "tools/ops/validate_production_readiness.py",
                 "--offline-report",
                 f"{artifact_dir}/report.json",
                 "--playback-js",

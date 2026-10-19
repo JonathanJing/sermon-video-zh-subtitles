@@ -36,11 +36,6 @@ class DispatchObservationTests(unittest.TestCase):
             for source in (overlay/'scripts').glob('*.py'):
                 if source.name != '__init__.py':
                     shutil.copy2(source, root/'scripts'/source.name)
-            # Root/PD currently own uncommitted Source helper additions. Include
-            # them as local code, but this probe never executes Source or a model.
-            for name in ('sermon_source_failure.py', 'sermon_source_producer_compatibility.py'):
-                if (repository/'scripts'/name).is_file():
-                    shutil.copy2(repository/'scripts'/name, root/'scripts'/name)
             (root/'scripts/__init__.py').write_text('')
             code = '''
 import sys,json,socket

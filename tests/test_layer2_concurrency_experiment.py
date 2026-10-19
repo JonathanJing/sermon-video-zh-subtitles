@@ -14,7 +14,8 @@ from tongxing_production.observability import accounting
 from scripts import target_language_policy as policies
 from scripts import layer2_api_concurrency as api_concurrency
 from scripts import weekly_pipeline_report as weekly
-from scripts.experiments import layer2_concurrency as experiment
+from tests import experiment_modules
+experiment = experiment_modules.load("experiments/local-layer-latency/layer2_concurrency.py")
 from scripts import sermon_pipeline as sermon_pipeline_module
 from tests import test_run_target_language_models as fixtures
 

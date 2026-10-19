@@ -30,6 +30,8 @@ import uuid
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
 
 VERSION = "decision-weekly-ab-runner-v2"
 ENDPOINTS = {"chat": "https://api.openai.com/v1/chat/completions",
@@ -257,9 +259,9 @@ def normalize_b(case, response):
 
 def normalize_a(case, response):
     if case["a"].get("adapter", "").startswith("semantic_"):
-        from scripts.experiments.decision_semantic_eval import normalize_a as semantic_normalize
+        from decision_semantic_eval import normalize_a as semantic_normalize
         return semantic_normalize(case, response)
-    from scripts.experiments.decision_api_cases_content import normalize_content_a
+    from decision_api_cases_content import normalize_content_a
     return normalize_content_a(case, response)
 
 def measured_usage(response, kind):
@@ -414,7 +416,7 @@ def authority(directory, cases, max_usd, max_requests, authorization_note, previ
     })
     # Keys stay the scripts/ names; a file that moved into the production
     # package is hashed where it lives now, not as its import facade.
-    from scripts import sermon_source_producer_compatibility as compatibility
+    from tongxing_production.source import producer_compatibility as compatibility
     code = {name: hashlib.sha256((ROOT / compatibility.resolve(name)).read_bytes()).hexdigest() for name in deps}
     result = {"schemaVersion": "decision-ab-budget-authority-v1",
             "root": str(Path(directory).resolve()), "caseSetSha256": digest(cases),
@@ -544,7 +546,7 @@ def measured_attempt(case, arm, *, mode, directory, ledger=None, dispatcher=disp
         row["status"] = "no_executable_baseline"
         return finish()
     if arm == "A" and case["a"]["kind"] == "program":
-        from scripts.experiments.decision_api_cases_rules import run_rule_a
+        from decision_api_cases_rules import run_rule_a
         before = time.monotonic()
         result = run_rule_a(case)
         row["timings"].update(evidencePreparationMs=0,
@@ -671,11 +673,11 @@ def summarize(cases, rows):
             "liveResultIsProductionEvidence":False,"humanGoldCompleted":False}
 
 def prepare(args):
-    from scripts.experiments.decision_api_cases_rules import build_rule_cases
-    from scripts.experiments.decision_api_cases_content import build_content_cases, get_content_case_report
+    from decision_api_cases_rules import build_rule_cases
+    from decision_api_cases_content import build_content_cases, get_content_case_report
     cases = build_content_cases(Path(args.source_root), max_cases=args.max_content_cases)
     if args.real_rule_cases:
-        from scripts.experiments.decision_api_cases_rules import build_real_rule_cases
+        from decision_api_cases_rules import build_real_rule_cases
         cases += build_real_rule_cases(Path(args.source_root), max_cases=args.real_rule_cases)
     if not args.content_only:
         cases += build_rule_cases()

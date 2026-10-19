@@ -10,7 +10,8 @@ from pathlib import Path
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import produce_target_language_candidate as producer
-from scripts import prepare_target_language_speech_job as handoff
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import speech_job as handoff
 from scripts.sermon_release_workflow import _safe_path
 
 

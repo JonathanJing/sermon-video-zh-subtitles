@@ -5,7 +5,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = (ROOT / ".github/workflows/python-tests.yml").read_text(encoding="utf-8")
-ICON_CHECK = "run: python scripts/check_tongxing_icon_alignment.py"
+ICON_CHECK = "run: python tools/development/check_tongxing_icon_alignment.py"
 
 
 def job_text(name: str) -> str:

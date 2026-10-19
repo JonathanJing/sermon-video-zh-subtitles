@@ -10,12 +10,19 @@ import math
 from pathlib import Path
 import random
 import secrets
+import sys
 from urllib.parse import urlsplit
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the repository root
+    sys.path.insert(0, str(ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as identity
 from scripts import produce_target_language_candidate as candidate
-from scripts.experiments import layer2_ab
-from scripts.experiments.build_blind_review_scores import blank_score
+import layer2_ab
+from build_blind_review_scores import blank_score
 
 SCHEMA = 'sermon-ste-paired-plan-v1'
 CASE_TAGS = {'spoken_reference', 'omitted_reference', 'quote_or_paraphrase',

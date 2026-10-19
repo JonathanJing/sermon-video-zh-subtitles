@@ -115,7 +115,7 @@ def add_cloud_run_config_step(steps: list[dict[str, Any]], row: dict[str, Any] |
             "commands": [
                 [
                     "python3",
-                    "scripts/apply_cloud_run_realtime_update_plan.py",
+                    "tools/ops/apply_cloud_run_realtime_update_plan.py",
                     "--plan",
                     update_plan,
                     "--approve",
@@ -125,7 +125,7 @@ def add_cloud_run_config_step(steps: list[dict[str, Any]], row: dict[str, Any] |
                 ],
                 [
                     "python3",
-                    "scripts/validate_cloud_run_realtime_config.py",
+                    "tools/ops/validate_cloud_run_realtime_config.py",
                     "--out",
                     "artifacts/evidence/cloud-run-realtime-config.json",
                 ],
@@ -236,7 +236,7 @@ def add_cloud_run_api_step(steps: list[dict[str, Any]], row: dict[str, Any] | No
         step["commands"] = [
             [
                 "python3",
-                "scripts/run_cloud_run_realtime_preflight.py",
+                "tools/ops/run_cloud_run_realtime_preflight.py",
                 "--base-url",
                 DEFAULT_CLOUD_RUN_BASE_URL,
                 "--cloud-run-config-report",
@@ -262,7 +262,7 @@ def add_public_sse_step(steps: list[dict[str, Any]], row: dict[str, Any] | None)
         step["commands"] = [
             [
                 "python3",
-                "scripts/run_realtime_public_sse_smoke.py",
+                "tools/ops/run_realtime_public_sse_smoke.py",
                 "--base-url",
                 DEFAULT_CLOUD_RUN_BASE_URL,
                 "--sunday",

@@ -5,10 +5,11 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import deploy_multilingual_hosting as deploy
-from scripts import assemble_multilingual_hosting as hosting
-from scripts import multilingual_dev_preview as preview
-from scripts import verify_multilingual_hosting as verifier
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.adapters.legacy import deploy_multilingual_hosting as deploy
+from tongxing_production.adapters.legacy import assemble_multilingual_hosting as hosting
+from tongxing_production.adapters.legacy import multilingual_dev_preview as preview
+from tongxing_production.adapters.legacy import verify_multilingual_hosting as verifier
 from tongxing_production.adapters.legacy import production_content_release_admission as gate
 from tests import test_verify_multilingual_hosting as http_fixture
 from tests.test_assemble_multilingual_hosting import write

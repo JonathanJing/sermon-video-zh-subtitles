@@ -11,7 +11,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.observability import completion
 from tongxing_production.observability import profile
 from scripts import sermon_review_contracts as c
-from scripts import sermon_source_producer_compatibility as compatibility
+from tongxing_production.source import producer_compatibility as compatibility
 from tests.test_accounting_log_contract import fixture
 
 

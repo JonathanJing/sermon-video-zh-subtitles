@@ -18,7 +18,7 @@
 4. 随后运行 `seal --prepared PREPARED --http-verification HTTP.json --out SEALED`。它只消费所选用户资产的 HTTP 收据，避免 Release Package 自引用哈希。输出各所选语言的 `published_http_verified` Release Package 和 `/multilingual-v3.json`。`SEALED/seal-report.json` 列出全部文件、SHA 和字节数，并记录 `ready_for_catalog_deployment`。此时包内的 `published_http_verified` 字段只绑定前述用户资产收据，不证明最终包与目录已经上线核验。
 5. `seal` 生成的 catalog 只包含本次一个页面，不读取旧 catalog。存在旧 v3 周次时，必须将这个单页目录合入经基线核对的完整旧 catalog，保留旧周次和语言。不能将单页输出作为完整周更目录直接覆盖。随后进行第二次部署，更新三份 Release Package 和合并后的目录。发布后再次核对三个最终包与目录的公开 GET／SHA，并单独核验音频 206／Range。App、设备与现场验收仍分别留证。
 
-后续周更的完整基线、stage manifest、历史保留和候选检查入口见[每周发行合同](tongxing-weekly-release.zh.md#v3-周更发布清单与验收)。`scripts/assemble_multilingual_v3_update.py` 读取完整旧目录和单页 stage 目录，但仍要求该合同规定的完整 stage 资产及清单。不能直接把上述 16 文件的 `SEALED/public/` 当作已满足其输入合同。这里描述误用单页目录的风险，没有断言历史目录已被覆盖或历史资产已丢失。
+后续周更的完整基线、stage manifest、历史保留和候选检查入口见[每周发行合同](tongxing-weekly-release.zh.md#v3-周更发布清单与验收)。`tools/ops/run.py adapters.legacy.assemble_multilingual_v3_update` 读取完整旧目录和单页 stage 目录，但仍要求该合同规定的完整 stage 资产及清单。不能直接把上述 16 文件的 `SEALED/public/` 当作已满足其输入合同。这里描述误用单页目录的风险，没有断言历史目录已被覆盖或历史资产已丢失。
 
 发布目录：
 
@@ -73,7 +73,7 @@ Firebase 部署后，2 个 UI 文件、1 份绑定接口和 3 份索引均 HTTP 
 
 `VerifiedPublishedTranscript` 校验页面、语言、来源与完整候选身份，Repository 校验正式包和内容／字幕字节哈希。坏缓存不可用；英文补充资料缺失或绑定不匹配时只隐藏英文，不阻止已批准译文。全文和字幕可以从已验证缓存读取；英文补充资料目前只在线读取，未宣称英文离线可用。
 
-`scripts/bind_published_alignment_catalog.py --public <候选/public> --page-id <pageId>` 将已核验的定位补充资产绑定到现有 v3 字段 `sourceMediaSha256` 和各语言 `audioFingerprint`／`alignment` capability，供原生定位消费者使用；无 schema 变更。phase9 候选的 119 个公开文件中只有 `multilingual-v3.json` 变化，已批准包和资源保持原字节。2026-09-27 已部署并回读，目录 SHA 为 `595fbc1ba844dbc00b2fbe4d9d14763883d4a30255a52ebb8f6fd083cecb4e41`，HTTP 收据位于主仓库 `artifacts/drive-source-20260926-1730/layer4-app-hosting-phase9-ios-alignment-20260927-v1/phase9-http-receipt.json`。
+`tools/ops/run.py delivery.published_alignment_catalog --public <候选/public> --page-id <pageId>` 将已核验的定位补充资产绑定到现有 v3 字段 `sourceMediaSha256` 和各语言 `audioFingerprint`／`alignment` capability，供原生定位消费者使用；无 schema 变更。phase9 候选的 119 个公开文件中只有 `multilingual-v3.json` 变化，已批准包和资源保持原字节。2026-09-27 已部署并回读，目录 SHA 为 `595fbc1ba844dbc00b2fbe4d9d14763883d4a30255a52ebb8f6fd083cecb4e41`，HTTP 收据位于主仓库 `artifacts/drive-source-20260926-1730/layer4-app-hosting-phase9-ios-alignment-20260927-v1/phase9-http-receipt.json`。
 
 定向验证：定位目录脚本 5 项通过；Core 实际执行 55 项通过、5 项 opt-in 跳过；Storage 20 项通过；生产三语读取检查 1 项通过，中文 419 组、韩语与西语各 420 组全文及口播字幕均有匹配英文；iOS 17.5 双文稿原生 UI 测试通过。Debug 与 Release 模拟器构建成功。iOS 独有的竖栏 API 限定在 iOS 编译条件下，macOS SwiftPM 校验可运行。
 

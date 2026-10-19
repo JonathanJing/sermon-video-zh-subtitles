@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from scripts import codex_layer2_diagnostic as subject
 from scripts import run_codex_layer2_test as command
-from scripts import build_english_source_package as english
+from tongxing_production.source import english_source_package as english
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import target_language_policy as policies
 from scripts import run_target_language_models as runner

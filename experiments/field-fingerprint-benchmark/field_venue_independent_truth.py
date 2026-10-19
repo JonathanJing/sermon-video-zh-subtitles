@@ -11,7 +11,6 @@ the Codex desktop bundled Python does. Example (from the repository root):
     experiments/field-fingerprint-benchmark/field_venue_independent_truth.py \
     MANIFEST --data-root CHECKOUT --out TRUTH.json
 
-The original scripts/field_venue_independent_truth.py CLI remains available.
 """
 
 import argparse

@@ -230,7 +230,7 @@ def route_commands(args: argparse.Namespace, paths: dict[str, Path]) -> list[lis
         ],
         [
             sys.executable,
-            "scripts/validate_production_readiness.py",
+            "tools/ops/validate_production_readiness.py",
             "--offline-report",
             str(paths["offlineReport"]),
             "--playback-js",
@@ -343,7 +343,7 @@ def check_state(report: dict[str, Any], name: str) -> str | None:
 
 def step_name(command: list[str]) -> str:
     for item in command:
-        if item.startswith("scripts/") and item.endswith(".py"):
+        if item.startswith(("scripts/", "tools/")) and item.endswith(".py"):
             return Path(item).stem
     return Path(command[0]).stem if command else "unknown"
 
