@@ -1,64 +1,64 @@
 #!/usr/bin/env python3
-"""Bind reviewed short and long voice probes to one source and locale."""
-from __future__ import annotations
+"""Compatibility entry point for ``tools/ops/prepare_clip_voice_capability.py``.
 
-import argparse
-import json
+Keep the old direct CLI, ``python -m scripts.prepare_clip_voice_capability`` and the import path
+while the implementation lives in tools/ops. The implementation is loaded
+by absolute path from this checkout, independent of the CWD; bare and
+``scripts.`` imports share one ``tools.ops.prepare_clip_voice_capability`` module object.
+"""
+
+import importlib
+from importlib import util
 from pathlib import Path
-
-try:
-    from scripts import prepare_target_language_speech_job as speech
-    from scripts import sermon_sentence_interpretation as interpretation
-except ImportError:
-    import prepare_target_language_speech_job as speech
-    import sermon_sentence_interpretation as interpretation
+import runpy
+import sys
 
 
-def artifact(path: Path, *, json_artifact: bool) -> dict[str, str]:
-    if not path.is_file():
-        raise ValueError(f"Missing clip voice capability evidence: {path}")
-    result = {"path": str(path.resolve()), "sha256": interpretation.sha256(path)}
-    if json_artifact:
-        result["jsonSha256"] = interpretation.json_sha256(speech._load(path))
-    return result
+_IMPLEMENTATION = (Path(__file__).resolve().parents[1] / "tools/ops/prepare_clip_voice_capability.py").resolve()
+_MODULE_NAME = "tools.ops.prepare_clip_voice_capability"
 
 
-def prepare(source_path: Path, adapter_path: Path, short_approval_path: Path,
-            short_audio_path: Path, long_approval_path: Path, long_manifest_path: Path,
-            long_audio_path: Path, out: Path) -> dict:
-    if out.exists():
-        raise ValueError("Clip voice capability receipt is immutable; choose a new path")
-    source, adapter = speech._load(source_path), speech._load(adapter_path)
-    receipt = {
-        "schemaVersion": "sermon-clip-voice-capability-v1",
-        "scope": "this_clip_locale_probe_capability_only",
-        "englishSourcePackageJsonSha256": interpretation.json_sha256(source),
-        "targetLocale": adapter["targetLocale"],
-        "speakerId": adapter["speakerId"],
-        "checkpointSha256": adapter["conditioningSha256"],
-        "shortDemoApproval": artifact(short_approval_path, json_artifact=True),
-        "shortDemoAudio": artifact(short_audio_path, json_artifact=False),
-        "longProbeApproval": artifact(long_approval_path, json_artifact=True),
-        "longProbeManifest": artifact(long_manifest_path, json_artifact=True),
-        "longProbeAudio": artifact(long_audio_path, json_artifact=False),
-    }
-    speech.validate_clip_voice_capability(receipt, source, adapter)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    interpretation.write_json(out, receipt)
-    return receipt
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    for name in ("source", "adapter", "short-approval", "short-audio", "long-approval",
-                 "long-manifest", "long-audio", "out"):
-        parser.add_argument(f"--{name}", type=Path, required=True)
-    args = parser.parse_args()
-    receipt = prepare(args.source, args.adapter, args.short_approval, args.short_audio,
-                      args.long_approval, args.long_manifest, args.long_audio, args.out)
-    print(json.dumps({"status": "clip_probe_reviewed", "targetLocale": receipt["targetLocale"],
-                      "receipt": str(args.out)}, ensure_ascii=False))
+def _load():
+    existing = sys.modules.get(_MODULE_NAME)
+    if existing is not None:
+        if Path(existing.__file__).resolve() != _IMPLEMENTATION:
+            raise ImportError(f"{_MODULE_NAME} is already loaded from another checkout")
+        return existing
+    spec = util.spec_from_file_location(_MODULE_NAME, _IMPLEMENTATION)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load {_IMPLEMENTATION}")
+    module = util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        del sys.modules[_MODULE_NAME]
+        raise
+    try:  # ``import tools.ops.prepare_clip_voice_capability`` also reaches it through the namespace parent.
+        setattr(importlib.import_module("tools.ops"), "prepare_clip_voice_capability", module)
+    except ImportError:
+        pass
+    return module
 
 
 if __name__ == "__main__":
-    main()
+    runpy.run_path(str(_IMPLEMENTATION), run_name="__main__")
+else:
+    _implementation = _load()
+
+    class _Forward(type(sys)):
+        # A caller that loads this file with spec_from_file_location keeps this
+        # facade object; its reads, writes and mock patches reach the implementation.
+        def __getattr__(self, name):
+            return getattr(_implementation, name)
+
+        def __setattr__(self, name, value):
+            setattr(_implementation, name, value)
+
+        def __delattr__(self, name):
+            delattr(_implementation, name)
+
+    _facade = sys.modules.get(__name__)
+    if _facade is not None and _facade.__dict__ is globals():
+        _facade.__class__ = _Forward
+    sys.modules[__name__] = _implementation

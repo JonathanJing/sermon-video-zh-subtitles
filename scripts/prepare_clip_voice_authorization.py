@@ -1,61 +1,64 @@
 #!/usr/bin/env python3
-"""Bind one user voice permission statement to one approved Dev clip candidate."""
-from __future__ import annotations
+"""Compatibility entry point for ``tools/ops/prepare_clip_voice_authorization.py``.
 
-import argparse
-import json
+Keep the old direct CLI, ``python -m scripts.prepare_clip_voice_authorization`` and the import path
+while the implementation lives in tools/ops. The implementation is loaded
+by absolute path from this checkout, independent of the CWD; bare and
+``scripts.`` imports share one ``tools.ops.prepare_clip_voice_authorization`` module object.
+"""
+
+import importlib
+from importlib import util
 from pathlib import Path
-
-try:
-    from scripts import prepare_target_language_speech_job as speech
-    from scripts import sermon_sentence_interpretation as interpretation
-except ImportError:
-    import prepare_target_language_speech_job as speech
-    import sermon_sentence_interpretation as interpretation
+import runpy
+import sys
 
 
-def prepare(source_path: Path, candidate_path: Path, adapter_path: Path,
-            user_attestation_path: Path, out: Path) -> dict:
-    if out.exists():
-        raise ValueError("Clip voice authorization is immutable; choose a new path")
-    for path in (source_path, candidate_path, adapter_path, user_attestation_path):
-        if not path.is_file():
-            raise ValueError(f"Missing clip voice authorization input: {path}")
-    source, candidate, adapter = (speech._load(path) for path in (
-        source_path, candidate_path, adapter_path))
-    receipt = {
-        "schemaVersion": "sermon-clip-voice-authorization-v1",
-        "scope": "this_clip_dev_audio_only",
-        "englishSourcePackageJsonSha256": interpretation.json_sha256(source),
-        "targetLanguageCandidateJsonSha256": interpretation.json_sha256(candidate),
-        "targetLocale": candidate["targetLocale"],
-        "speakerId": adapter["speakerId"],
-        "voiceCheckpointSha256": adapter["conditioningSha256"],
-        "userRightsAttestation": {
-            "path": str(user_attestation_path.resolve()),
-            "sha256": interpretation.sha256(user_attestation_path),
-            "jsonSha256": interpretation.json_sha256(speech._load(user_attestation_path)),
-        },
-    }
-    speech.validate_clip_voice_authorization(receipt, source, candidate, adapter)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    interpretation.write_json(out, receipt)
-    return receipt
+_IMPLEMENTATION = (Path(__file__).resolve().parents[1] / "tools/ops/prepare_clip_voice_authorization.py").resolve()
+_MODULE_NAME = "tools.ops.prepare_clip_voice_authorization"
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, required=True)
-    parser.add_argument("--candidate", type=Path, required=True)
-    parser.add_argument("--adapter", type=Path, required=True)
-    parser.add_argument("--user-attestation", type=Path, required=True)
-    parser.add_argument("--out", type=Path, required=True)
-    args = parser.parse_args()
-    result = prepare(args.source, args.candidate, args.adapter,
-                     args.user_attestation, args.out)
-    print(json.dumps({"status": "clip_bound", "targetLocale": result["targetLocale"],
-                      "receipt": str(args.out)}, ensure_ascii=False))
+def _load():
+    existing = sys.modules.get(_MODULE_NAME)
+    if existing is not None:
+        if Path(existing.__file__).resolve() != _IMPLEMENTATION:
+            raise ImportError(f"{_MODULE_NAME} is already loaded from another checkout")
+        return existing
+    spec = util.spec_from_file_location(_MODULE_NAME, _IMPLEMENTATION)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load {_IMPLEMENTATION}")
+    module = util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        del sys.modules[_MODULE_NAME]
+        raise
+    try:  # ``import tools.ops.prepare_clip_voice_authorization`` also reaches it through the namespace parent.
+        setattr(importlib.import_module("tools.ops"), "prepare_clip_voice_authorization", module)
+    except ImportError:
+        pass
+    return module
 
 
 if __name__ == "__main__":
-    main()
+    runpy.run_path(str(_IMPLEMENTATION), run_name="__main__")
+else:
+    _implementation = _load()
+
+    class _Forward(type(sys)):
+        # A caller that loads this file with spec_from_file_location keeps this
+        # facade object; its reads, writes and mock patches reach the implementation.
+        def __getattr__(self, name):
+            return getattr(_implementation, name)
+
+        def __setattr__(self, name, value):
+            setattr(_implementation, name, value)
+
+        def __delattr__(self, name):
+            delattr(_implementation, name)
+
+    _facade = sys.modules.get(__name__)
+    if _facade is not None and _facade.__dict__ is globals():
+        _facade.__class__ = _Forward
+    sys.modules[__name__] = _implementation
