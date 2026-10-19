@@ -94,17 +94,23 @@ def group_contexts(anchor: dict, plan: list[dict]) -> dict[str, dict]:
     return contexts
 
 
-def model_facing_policy_sha256(policy: dict) -> str:
+ROLES = ("translator", "reviewer")
+
+
+def model_facing_policy_sha256(policy: dict, role: str) -> str:
     """The frozen policy without the fields no model reads.
 
     Uses the same field lists as ``policy_preview.classify_policy_change``: plugin and
     term-approval fields and ``componentSha256`` change no translator or reviewer
     instruction; every other field (terminology, scripture, formatting, register
-    rules, prompt versions, model settings) does.
+    rules, prompt versions, model settings) does. Only ``role``'s own block counts: a
+    reviewer-only edit leaves translator requests unchanged (``compare_previews``).
     """
+    _require(role in ROLES, f"unknown_layer2_role:{role}")
     from ..text import policy_preview
     projection = copy.deepcopy(policy)
     projection.pop("componentSha256", None)
+    projection.pop(next(other for other in ROLES if other != role), None)
     for pointer in policy_preview.PLUGIN_POLICY_FIELDS | policy_preview.APPROVAL_POLICY_FIELDS:
         *parents, leaf = pointer.strip("/").split("/")
         node = projection
@@ -162,8 +168,9 @@ def _role_inputs(preview: dict, cache: dict, draft_text_sha256: str | None) -> d
         "requestFingerprintSha256": cache["payloadSha256"],
         "englishUnitsSha256": english_units_sha256(prompt["englishUnits"]),
         "englishContextSha256": records.json_sha256(prompt["context"]),
-        "modelFacingPolicySha256": (model_facing_policy_sha256(preview["policy"])
-                                    if isinstance(preview.get("policy"), dict) else None),
+        "modelFacingPolicySha256": (model_facing_policy_sha256(preview["policy"], preview.get("role"))
+                                    if isinstance(preview.get("policy"), dict) and preview.get("role") in ROLES
+                                    else None),
         "modelRulesSha256": records.json_sha256(prompt["modelRules"]) if "modelRules" in prompt else None,
         "revisionSha256": records.json_sha256(extra) if extra else None,
         "modelSettingsSha256": model_settings_sha256(payload["model"], payload.get("reasoning_effort")),
@@ -281,7 +288,11 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
             spend={"kind": "paid_model_call", "model": astra.get("model"), "requestId": astra.get("requestId")},
             provenance=provenance)
         semantic = (sol.get("result") or {}).get("semanticReview") or {}
-        status = "pass" if semantic.get("status") == "pass" else "fail"
+        # The runner's own acceptance: a pass status, every check passing, no uncertainty or issue.
+        status = ("pass" if semantic.get("status") == "pass" and not semantic.get("uncertainty")
+                  and not semantic.get("issues") and isinstance(semantic.get("checks"), dict)
+                  and semantic["checks"] and all(value == "pass" for value in semantic["checks"].values())
+                  else "fail")
         codes = [] if status == "pass" else [f"semantic_{semantic.get('status')}"]
         reviewer = records.make_record(
             "R", layer1, locale, group_id, group["sourceUnitIds"],

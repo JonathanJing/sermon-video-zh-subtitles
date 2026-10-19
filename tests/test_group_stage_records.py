@@ -109,9 +109,11 @@ class Run:
                 payload = {"model": settings["model"], "reasoning_effort": settings["reasoningEffort"],
                            "messages": [{"role": "system", "content": f"{role} instruction"},
                                         {"role": "user", "content": json.dumps({**prompt, **extra}, ensure_ascii=False)}]}
-                reply = dict(result, semanticReview={"status": "pass"}) if role == "reviewer" else result
+                reply = (dict(result, semanticReview={"status": "pass", "uncertainty": [], "issues": [],
+                                                      "checks": {"completeMeaning": "pass", "noAddedMeaning": "pass"}})
+                         if role == "reviewer" else result)
                 write(rounds / f"{stem}-{suffix}.policy-preview.json",
-                      {"payload": payload, "payloadSha256": records.json_sha256(payload),
+                      {"role": role, "payload": payload, "payloadSha256": records.json_sha256(payload),
                        "policy": self.produced_policy, "policySha256": records.json_sha256(self.produced_policy)})
                 write(rounds / f"{stem}-{suffix}.json", {"payloadSha256": sha(f"{locale}{group_id}{role}route"),
                                                           "requestId": f"req-{locale}-{group_id}-{role}",
@@ -240,6 +242,9 @@ class InputKeyTests(unittest.TestCase):
                              ("inputs", dict(self.inputs, textSha256="0" * 64))):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 records.validate_record(dict(record, **{field: value}))
+        for verdict in ({"status": "pass", "codes": ["x"]}, {"status": "fail", "codes": [3]}):
+            with self.subTest(verdict=verdict), self.assertRaisesRegex(ValueError, "invalid_record_verdict"):
+                records.validate_record(dict(record, verdict=verdict))
         for bad in ([], {"audioSha256": "short"}):
             with self.subTest(outputs=bad), self.assertRaisesRegex(ValueError, "invalid_record_outputs"):
                 records.validate_record(dict(record, outputs=bad))
@@ -679,6 +684,43 @@ class PlanTests(unittest.TestCase):
         report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
         self.assertEqual(statuses(report, "ko", "g1")["C"], "missing")
         self.assertEqual(statuses(report, "ko", "g1")["S"], "stale")
+
+    def test_a_reviewer_only_policy_change_starts_at_review(self):
+        self.run.produced_policy = copy.deepcopy(self.run.policy)
+        self.run.policy = dict(self.run.policy, reviewer=dict(self.run.policy["reviewer"], promptVersion="review-v2"))
+        report = self.plan()
+        changed = statuses(report, "ko", "g1")
+        self.assertEqual((changed["T"], changed["R"]), ("fresh", "stale"))
+        self.assertIn("input_changed:modelFacingPolicySha256", report["locales"]["ko"]["groups"][0]["stages"]["R"]["reasons"])
+
+    def test_a_review_the_runner_would_reject_is_not_a_pass(self):
+        self.run.build()
+        sol = self.run.root / "ko/round-001/group-0001-sol.json"
+        value = json.loads(sol.read_text())
+        value["result"]["semanticReview"]["uncertainty"] = ["Is this the right verse?"]
+        sol.write_text(json.dumps(value))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        self.assertEqual(statuses(report, "ko", "g1")["R"], "failed")
+
+    def test_without_the_plugin_file_p_is_never_fresh(self):
+        current = identities()
+        current["locales"]["ko"]["pluginImplementationSha256"] = None
+        report = self.plan(current)
+        stage_p = report["locales"]["ko"]["groups"][0]["stages"]["P"]
+        self.assertEqual((stage_p["status"], stage_p["reasons"]), ("stale", ["plugin_not_supplied"]))
+
+    def test_a_candidate_whose_text_disagrees_with_its_utterances_is_not_reused(self):
+        self.run.build()
+        candidate_path = self.run.root / "ko/candidate.json"
+        candidate = json.loads(candidate_path.read_text())
+        candidate["groups"][0]["targetText"] = "다른 문장입니다."
+        candidate_path.write_text(json.dumps(candidate))
+        report = group_plan.plan(json.loads((self.run.root / "inputs.json").read_text()), self.run.root, identities())
+        row = report["locales"]["ko"]["groups"][0]["stages"]
+        self.assertEqual(row["T"]["status"], "fresh")
+        for stage in ("R", "P", "Q", "S", "A", "U"):
+            self.assertEqual(row[stage]["status"], "stale", stage)
+            self.assertIn("candidate_text_inconsistent", row[stage]["reasons"])
 
     def test_cli_plan_prints_a_summary_and_writes_only_its_report(self):
         manifest = self.run.build()
