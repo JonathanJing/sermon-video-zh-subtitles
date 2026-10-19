@@ -156,8 +156,28 @@ def result_utterances(result: dict) -> list[str] | None:
         return None
 
 
-def repair_position_sha256(prior_failed: dict, unit_ids: list[str]) -> str:
-    return records.json_sha256({unit: int(prior_failed.get(unit, 0)) for unit in unit_ids})
+def ledger_position_sha256(lineage_sha256: str, sequence: int) -> str:
+    """A QC run's place in its repair ledger: the lineage and the entry it wrote."""
+    return records.json_sha256({"lineageSha256": lineage_sha256, "sequence": int(sequence)})
+
+
+def ledger_head_sha256(ledger_root: Path, kind: str, locale: str, lineage_sha256: str) -> str | None:
+    """The ledger's current head position (how many entries the lineage holds), or None."""
+    directory = Path(ledger_root) / kind / locale / lineage_sha256
+    if not directory.is_dir():
+        return None
+    entries = [path for path in directory.glob("entry-[0-9][0-9][0-9][0-9][0-9][0-9].json")]
+    return ledger_position_sha256(lineage_sha256, len(entries))
+
+
+def _schema_valid(value: Any, schema: str, label: str) -> bool:
+    """Whether a product passes its producer's checked-in schema."""
+    from ..audio import backend as _audio
+    try:
+        _audio.current().schemas.validate(value, schema, label)
+    except (ValueError, TypeError, LookupError):
+        return False
+    return True
 
 
 def synthesis_identity_sha256(intent: dict) -> str:
@@ -369,11 +389,16 @@ def plugin_records(layer1: dict, locale: str, anchor: dict, receipt: dict,
     out = {}
     for row in receipt["groupReviews"]:
         checks = row.get("checks") if isinstance(row.get("checks"), list) else []
-        failed = [check.get("checkId", "unnamed_check") for check in checks if check.get("status") != "pass"]
+        # The producer accepts a check only as exactly {checkId, status, evidence} with evidence.
+        well_formed = all(isinstance(check, dict) and set(check) == {"checkId", "status", "evidence"}
+                          and check["status"] in {"pass", "fail"} and isinstance(check["evidence"], str)
+                          and check["evidence"].strip() for check in checks)
+        failed = [check.get("checkId", "unnamed_check") for check in checks
+                  if not isinstance(check, dict) or check.get("status") != "pass"]
         ids = [check.get("checkId") for check in checks]
         # The producer passes a group only when its whole check set passes; recompute that here.
         # The producer accepts exactly the policy's required checks, in order (text/candidate.py).
-        passed = (row.get("status") == "pass" and bool(checks) and not failed
+        passed = (row.get("status") == "pass" and bool(checks) and not failed and well_formed
                   and required_checks is not None and ids == list(required_checks))
         if row.get("status") == "pass" and not passed:
             failed = failed or ["plugin_receipt_checks_incomplete"]
@@ -402,7 +427,9 @@ def text_qc_records(locale: str, receipt: dict, policies: list[dict] = ()) -> di
         return {}  # back-translation never ran: no Q result for any group (the plan reports missing)
     context = receipt["semanticIdentity"]["settings"]["qcContext"]
     layer1 = records.layer1_identity(context["englishSourcePackageJsonSha256"], context["anchorManifestJsonSha256"])
-    prior = (receipt.get("repairLedger") or {}).get("priorFailedAttempts") or {}
+    ledger = receipt.get("repairLedger") or {}
+    position = (ledger_position_sha256(ledger["lineageSha256"], ledger["sequence"])
+                if isinstance(ledger.get("lineageSha256"), str) and isinstance(ledger.get("sequence"), int) else None)
     screened = next((policy for policy in policies if records.json_sha256(policy) == receipt.get("policyJsonSha256")), None)
     qc_policy = qc_policy_sha256(screened) if screened is not None else None
     out = {}
@@ -417,13 +444,14 @@ def text_qc_records(locale: str, receipt: dict, policies: list[dict] = ()) -> di
             {"englishSha256": row["englishSha256"], "targetTextSha256": row["targetTextSha256"],
              "qcPolicySha256": qc_policy,
              "semanticIdentitySha256": receipt["semanticIdentitySha256"],
-             "repairPositionSha256": repair_position_sha256(prior, row["sourceUnitIds"])},
+             "repairPositionSha256": position},
             receipt["implementationSha256"],
             {"backTranslationRequestsSha256": records.json_sha256(
                 (row.get("backTranslation") or {}).get("requestSha256s") or [])},
             status, codes=(problems or [row.get("nextAction", "fail")]) if status == "fail" else (),
             provenance={"derivation": "legacy_text_qc_receipt", "mode": row.get("mode"),
                         "notRecorded": [] if qc_policy else ["qcPolicySha256"],
+                        "ledger": {"kind": "text", "lineageSha256": ledger.get("lineageSha256")},
                         "nextAction": row.get("nextAction"), "failedAttempts": row.get("failedAttempts"),
                         "model": receipt["semanticIdentity"].get("model")})
     return out
@@ -437,7 +465,12 @@ def speech_records(locale: str, speech_job: Path, screening: dict | None) -> dic
     if screening is not None:
         _require(screening.get("schemaVersion") == "sermon-target-language-audio-screening-v2"
                  and screening.get("targetLocale") == locale, "invalid_audio_screening_receipt")
-        screened = {row["textGroupId"]: row for row in screening["results"]}
+        # A screening receipt its own schema rejects gives no A results at all.
+        if (_schema_valid(screening, "sermon-target-language-audio-screening-v2.schema.json", "audio screening")
+                and screening["asrSettingsSha256"] == records.json_sha256(screening["asrSettings"])):
+            screened = {row["textGroupId"]: row for row in screening["results"]}
+        else:
+            screening = None
     asr_dirs = sorted(Path(speech_job).glob("asr-unit-cache-*"))
     out = {}
     for intent_path in sorted(receipts.glob("unit-[0-9][0-9][0-9][0-9].intent.json")):
@@ -447,6 +480,8 @@ def speech_records(locale: str, speech_job: Path, screening: dict | None) -> dic
             continue  # an intent without a completed unit receipt is not a result
         intent, unit = load_json(intent_path), load_json(unit_path)
         _require(intent.get("targetLocale") == locale, f"speech_intent_locale_mismatch:{stem}")
+        if not _schema_valid(unit, "sermon-target-language-audio-unit-receipt-v1.schema.json", "audio unit receipt"):
+            continue
         # The unit receipt must be the result of this very intent, and its bytes must still be there.
         audio_path = Path(speech_job) / str(unit.get("audioRelativePath", ""))
         if (unit.get("translationGroupId") != intent.get("groupId")
@@ -479,8 +514,11 @@ def speech_records(locale: str, speech_job: Path, screening: dict | None) -> dic
         bound = (screening is not None and row is not None
                  and screening.get("targetLanguageSpeechJobJsonSha256") == intent.get("jobJsonSha256")
                  and row.get("audioSha256") == audio and row.get("targetTextSha256") == intent["textSha256"])
+        # The cached transcript must be the one the screening scored, and hash to what it says.
         if (cached is not None and cached["identity"].get("audioSha256") == audio and bound
-                and records._is_sha(cached.get("recognizedSha256"))):
+                and isinstance(cached.get("recognized"), str)
+                and cached.get("recognizedSha256") == records.text_sha256(cached["recognized"])
+                and cached["recognized"] == row.get("recognized")):
             identity = cached["identity"]
             verdict = "pass" if row.get("status") == "pass" else "fail"
             stages["A"] = records.make_record(
@@ -505,27 +543,33 @@ def audio_qc_records(locale: str, receipt: dict, speech: dict[str, dict]) -> dic
     """
     _require(receipt.get("schemaVersion") == "sermon-target-audio-auto-qc-v1" and receipt.get("locale") == locale,
              "invalid_audio_qc_receipt")
-    prior = (receipt.get("repairLedger") or {}).get("priorFailedAttempts") or {}
+    ledger = receipt.get("repairLedger") or {}
+    position = (ledger_position_sha256(ledger["lineageSha256"], ledger["sequence"])
+                if isinstance(ledger.get("lineageSha256"), str) and isinstance(ledger.get("sequence"), int) else None)
     thresholds = records.json_sha256(receipt["thresholds"])
     job = (receipt.get("durationNormalization") or {}).get("speechJobJsonSha256")
     out = {}
     for row in receipt["results"]:
         synthesis = (speech.get(row["groupId"]) or {}).get("S")
+        # The producer passes a unit only with no issues and a passing ASR decision; admission adds keep.
+        row_passes = (row.get("status") == "pass" and not row.get("issues") and row.get("asrDecision") == "pass"
+                      and row.get("nextAction", "keep") == "keep")
         if (synthesis is None or job is None or job != synthesis["provenance"].get("jobJsonSha256")
                 or row["sourceUnitIds"] != synthesis["sourceUnitIds"]
                 or row["audioSha256"] != synthesis["outputs"]["audioSha256"]
                 or row["textSha256"] != synthesis["inputs"]["textSha256"]):
             continue
         status = row["status"]
-        verdict = "pass" if status == "pass" else ("fail" if status == "fail" else "unknown")
+        verdict = "pass" if row_passes else ("fail" if status in {"fail", "pass"} else "unknown")
         out[row["groupId"]] = records.make_record(
             "U", synthesis["layer1"], locale, row["groupId"], row["sourceUnitIds"],
             {"audioSha256": row["audioSha256"], "textSha256": row["textSha256"],
              "sourceSecondsSha256": records.json_sha256(float(row["sourceSeconds"])),
              "thresholdsSha256": thresholds,
-             "repairPositionSha256": repair_position_sha256(prior, row["sourceUnitIds"])},
+             "repairPositionSha256": position},
             receipt["implementationSha256"], {}, verdict,
-            codes=list(row.get("issues") or []) if verdict == "fail" else (),
+            codes=(list(row.get("issues") or []) or ["audio_qc_pass_incomplete"]) if verdict == "fail" else (),
             provenance={"derivation": "legacy_audio_qc_receipt", "layer1": "from_speech_job",
+                        "ledger": {"kind": "audio", "lineageSha256": ledger.get("lineageSha256")},
                         "speechJobJsonSha256": job, "status": status})
     return out
