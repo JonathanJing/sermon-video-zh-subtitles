@@ -10,7 +10,7 @@ import sys
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 LOCAL_REQUIREMENTS = [
@@ -107,7 +107,7 @@ LOCAL_REQUIREMENTS = [
             "scripts/export_playback_captions.py",
             "scripts/promote_sunday_manifest.py",
             "scripts/validate_sunday_manifest.py",
-            "scripts/run_sunday_evidence_bundle.py",
+            "tools/ops/run_sunday_evidence_bundle.py",
         ],
         "needles": ["sermon.zh.live-aligned.vtt", "sermon.zh.live-aligned.srt", "playback-simulation.generated.js"],
     },

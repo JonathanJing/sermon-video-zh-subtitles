@@ -14,11 +14,13 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_MODEL = "gpt-realtime-translate"
 EXPECTED_TARGET_LANGUAGE = "zh"
 EXPECTED_AUDIO_SOURCE_KIND = "ipad_mic"
 
+if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
 try:
     from validate_realtime_session import (  # type: ignore
         parse_jsonl,

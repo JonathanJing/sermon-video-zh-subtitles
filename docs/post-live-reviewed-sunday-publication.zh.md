@@ -510,7 +510,7 @@ Discord 通知只提供机器建议窗口和证据路径。Operator 必须独立
 Scheduler 应先配置 timeline probe job，不再在定时器里硬编码播放器时间作为正式 `startTime/endTime`：
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --service-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app \
   --job-id sermon-post-live-timeline-probe \

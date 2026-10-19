@@ -12,7 +12,7 @@ import sys
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 VALIDATE_PRODUCTION = REPO_ROOT / "scripts" / "validate_production_readiness.py"
 COLLECT_MATRIX = REPO_ROOT / "scripts" / "collect_production_evidence_matrix.py"
 AUDIT_GOAL = REPO_ROOT / "scripts" / "audit_production_goal_readiness.py"

@@ -14,7 +14,7 @@ import sys
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BASE_URL = "https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app"
 DEFAULT_SERVICE = "sermon-zh-caption-web"
 DEFAULT_PROJECT = "ai-for-god"

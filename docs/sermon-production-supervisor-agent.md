@@ -141,7 +141,7 @@ The approval binds the Sunday, source URL hash, approved times, approver, and cu
 These older API/Scheduler parameters do not demonstrate an Agents API integration on this path. The referenced post-live Job is retired; any recovery would first rebuild and verify a suitable Job, then select the SDK backend explicitly. Configure a rebuilt API trigger in shadow mode first:
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url 'https://sermon-zh-caption-web-...' \

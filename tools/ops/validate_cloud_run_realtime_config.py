@@ -11,7 +11,7 @@ import sys
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 SENSITIVE_ENV_TOKENS = ("KEY", "TOKEN", "SECRET", "COOKIE", "WEBHOOK")
 RESOURCE_REF_ENV_NAMES = {"OPENAI_API_KEY_SECRET"}
 
