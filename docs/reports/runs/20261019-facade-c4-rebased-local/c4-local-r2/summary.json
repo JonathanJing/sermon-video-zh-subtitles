@@ -1,0 +1,50 @@
+{
+  "status": "passed",
+  "facadesDeleted": 9,
+  "surveyBefore": {
+    "total": 84,
+    "checkout": "dev@377e2b4e"
+  },
+  "surveyAfter": {
+    "total": 75
+  },
+  "unittestShards": {
+    "count": 10,
+    "tests": 5977,
+    "failures": 0,
+    "errors": 0
+  },
+  "rebaseRecheck": {
+    "head": "8ccfb417",
+    "base": "dev@c7b3397e",
+    "tests": 57,
+    "failures": 0
+  },
+  "pytestStyle": {
+    "passed": 1111,
+    "failed": 1,
+    "failedPreexistingOnDev": 1
+  },
+  "testIdsBefore": {
+    "unittest": 5935
+  },
+  "testIdsAfter": {
+    "unittest": 5935
+  },
+  "renamedTests": 3,
+  "identities": {
+    "L2code": {
+      "dev@c7b3397e": "8378a3b25c52892ac9b09c25f3f7ebfc38a7d8455ce6e5bd9cd6d27059a51357",
+      "c4@8ccfb417": "06c025cf18964d84998f438ae905aa5fd96a2fdffeee8c5f1c5902944dd6fc14"
+    },
+    "W": "1c28f4aa38c0 (unchanged)",
+    "T": "8ec15fe1556b (unchanged)",
+    "scoring": "9f2ff8077671 (unchanged)",
+    "rate": "8f50c233e07b (unchanged)",
+    "preview": "794bb5f1c7ac (unchanged)"
+  },
+  "providerCalls": 0,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "productionWrites": 0
+}

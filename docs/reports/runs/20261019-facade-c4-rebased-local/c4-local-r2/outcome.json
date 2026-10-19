@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-19T23:01:54Z",
+  "endedAt": "2026-10-19T23:38:19Z",
+  "scope": "Facade removal batch C4 rebased onto dev after C3/C1/C5/C6 merged: full unittest suite in 10 shards on 586fe78b (dev@377e2b4e + C4, PYTHONPATH=services/api/src), pytest-style files, §5.5 test-ID inventory, Appendix A, identity readback; after a further rebase onto dev@c7b3397e (#1150, package controller/stat_memo only) the overlapping and new tests rerun on 8ccfb417.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch (also fails on clean dev)"
+  ]
+}
