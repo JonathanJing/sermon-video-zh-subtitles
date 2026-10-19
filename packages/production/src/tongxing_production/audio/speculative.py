@@ -95,9 +95,17 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
                                            ("asrScreening", "asrScreeningPolicySha256"),
                                            ("subtitle", "subtitlePolicySha256"))),
                    "Speculative speech operation policy differs from adapter")
-    formal.require(policies["normalization"].get("policy")
-                   == "exact_human_approved_target_text_no_rewrite",
+    # A registered spoken-forms policy (the formal job's) is allowed, but a preview never
+    # speaks a rewritten form: render() refuses any selected group its rule would change.
+    normalization = policies["normalization"]
+    registered = normalization in formal.REGISTERED_NORMALIZATION_POLICIES
+    formal.require(normalization.get("policy") == formal.EXACT_TEXT_POLICY or registered,
                    "Speculative speech may not rewrite target text")
+    rule = normalization["spokenForms"].get(candidate["targetLocale"]) if registered else None
+    spell = formal.SPOKEN_FORM_RULES[rule][1] if rule is not None else None
+    data["spokenFormGroupIds"] = sorted(
+        group["translationGroupId"] for group in candidate["groups"]
+        if spell is not None and spell(group["targetText"]) != group["targetText"])
     mapping = demos.read_object(checkpoint_map_path, "checkpoint map")
     formal.require(mapping.get("schemaVersion") == "sermon-speaker-checkpoint-map-v1",
                    "Unsupported checkpoint map")
@@ -183,6 +191,8 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
     formal.require(bool(selected) and selected <= available
                    and (group_ids is None or len(group_ids) == len(selected)),
                    "Unknown, empty, or duplicate speculative group selection")
+    formal.require(not selected & set(context["spokenFormGroupIds"]),
+                   "Speculative speech may not rewrite target text")
     out = out.resolve()
     out.mkdir(parents=True, exist_ok=True)
     manifest_path = out / "manifest.json"
