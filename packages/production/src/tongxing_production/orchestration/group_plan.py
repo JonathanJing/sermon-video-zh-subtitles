@@ -140,7 +140,9 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
     """Current values for the inputs this plan can recompute; the rest are not compared.
 
     ``records_for_group`` holds the record already selected for each upstream stage, so
-    a downstream input is compared with the upstream bytes the plan actually reuses.
+    a downstream input is compared with the upstream bytes the plan actually reuses. A
+    non-pass upstream record may name no bytes; the input is then not compared, and the
+    upstream status invalidates the consumer instead.
     """
     rows = legacy.english_rows(anchor, group["sourceUnitIds"])
     target = records.text_sha256(_candidate_text(group))
@@ -152,7 +154,7 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
                   "modelSettingsSha256": legacy.model_settings_sha256(policy[role]["model"],
                                                                       policy[role].get("reasoningEffort"))}
         if stage == "R" and "T" in records_for_group:
-            values["draftTextSha256"] = records_for_group["T"]["outputs"]["draftTextSha256"]
+            values["draftTextSha256"] = records_for_group["T"]["outputs"].get("draftTextSha256")
         return values
     if stage == "P":
         return {"languageReviewPolicySha256": locale_identity.get("languageReviewPolicySha256"),
@@ -169,12 +171,12 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
         values = {"targetTextSha256": spoken or target,
                   "asrSettingsSha256": locale_identity.get("asrSettingsSha256")}
         if "S" in records_for_group:
-            values["audioSha256"] = records_for_group["S"]["outputs"]["audioSha256"]
+            values["audioSha256"] = records_for_group["S"]["outputs"].get("audioSha256")
         return values
     if stage == "U":
         values = {}
         if "S" in records_for_group:
-            values["audioSha256"] = records_for_group["S"]["outputs"]["audioSha256"]
+            values["audioSha256"] = records_for_group["S"]["outputs"].get("audioSha256")
         return values
     return {}
 
