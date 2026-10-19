@@ -132,7 +132,7 @@ class ProductionPackageTests(unittest.TestCase):
         code = ("import sys; from pathlib import Path; sys.path[0] = sys.argv[1]\n"
                 "for name in sys.argv[2:]:\n"
                 "    module = __import__(name)\n"
-                # Operator/development tools and experiment facades live outside the production package.
+                # Operator/development tools, experiment facades and research audits live outside the production package.
                 "    target = Path(module.__file__).resolve()\n"
                 "    experiment_root = Path(sys.argv[1]).resolve().parent / 'experiments'\n"
                 "    assert module.__name__.startswith(('tongxing_production.', 'tools.ops.', 'tools.development.')) or target.is_relative_to(experiment_root), (name, module.__name__, str(target))\n")

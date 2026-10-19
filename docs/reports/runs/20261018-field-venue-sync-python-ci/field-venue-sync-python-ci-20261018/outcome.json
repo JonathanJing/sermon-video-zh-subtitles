@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "local-exp-leaf-ci-observation-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "PR 1019 exact-head Python CI after dev merge",
+  "headSha": "1e7a024620645a28946cc3eba01675a80b86b459",
+  "workflowRunId": 39108155476,
+  "workflowConclusion": "success",
+  "jobs": {
+    "changes": "success",
+    "rootGroups": "success (8 of 8)",
+    "unittest": "success",
+    "nativeContracts": "skipped"
+  },
+  "reviewStatus": "current-head code and security reviews unavailable due account usage limits",
+  "realVenue": "not_run",
+  "spark": "not_run",
+  "paidProviderCalls": 0
+}

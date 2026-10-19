@@ -1,0 +1,13 @@
+{
+  "scope": "PR 1036 ordinary merge of origin/dev 7734f841 and focused regression",
+  "results": {
+    "merge": "ordinary merge completed without conflict",
+    "focusedTests": "105 ran; 104 passed and 1 conditional skip in 27.530 seconds",
+    "diffCheck": "git diff origin/dev...HEAD --check passed",
+    "baseLayer2CodeIdentity": "a2daffa3c69ba5820403708307f998dbcf40cc51a6ee6879b03ce3d5193f2af7",
+    "candidateLayer2CodeIdentity": "41eea8f21acbdc18f62b7df2c9112290564ebe844ec74d7e802ae540ec7bb372",
+    "baseW": "df299eca0e9f11689e7a88654b7b2616df1e10bd8cd60a9847e3561d5db41b10",
+    "candidateW": "df299eca0e9f11689e7a88654b7b2616df1e10bd8cd60a9847e3561d5db41b10"
+  },
+  "limits": "Local code and identity evidence only. Formal Layer 2 candidates remain human-review pending; Layer 3 was not run here."
+}

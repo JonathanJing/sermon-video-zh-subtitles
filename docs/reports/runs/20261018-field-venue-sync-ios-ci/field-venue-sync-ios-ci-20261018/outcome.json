@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "local-exp-leaf-ci-observation-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "PR 1019 exact-head Tongxing iOS routed CI",
+  "headSha": "1e7a024620645a28946cc3eba01675a80b86b459",
+  "workflowRunId": 39108155412,
+  "workflowConclusion": "success",
+  "jobs": {
+    "changes": "success",
+    "nativeClient": "success",
+    "contractValidation": "skipped",
+    "iosValidation": "skipped"
+  },
+  "note": "Path and draft routing skipped full iOS validation; no device acceptance",
+  "realVenue": "not_run",
+  "spark": "not_run",
+  "paidProviderCalls": 0
+}

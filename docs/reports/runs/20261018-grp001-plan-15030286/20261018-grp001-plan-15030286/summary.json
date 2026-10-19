@@ -1,0 +1,313 @@
+{
+  "schemaVersion": "sermon-group-plan-dry-run-summary-v1",
+  "backlogId": "DEV-GRP-001",
+  "source": "15030286",
+  "mode": "read_only",
+  "dispatched": false,
+  "modelCalls": 0,
+  "productsWritten": 0,
+  "releaseEligible": false,
+  "humanApproval": false,
+  "codeBranch": "claude/dev-grp-001-group-records",
+  "codeBase": "origin/dev@65d12f22",
+  "plans": {
+    "all_locales": {
+      "wallSeconds": 6.91,
+      "layer1": {
+        "englishSourcePackageJsonSha256": "137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9",
+        "anchorManifestSha256": "2587ffdd446ea3c1feee26980fc2bb6f22da3bfea12c614bbf45f036ffb1d1fb"
+      },
+      "locales": {
+        "zh-Hans": {
+          "groupCount": 402,
+          "directiveGroupIds": [],
+          "candidateLayer1Current": true,
+          "summary": {
+            "T": {
+              "fresh": 402
+            },
+            "R": {
+              "fresh": 402
+            },
+            "P": {
+              "stale": 402
+            },
+            "Q": {
+              "stale": 402
+            },
+            "C": {
+              "not_applicable": 402
+            },
+            "S": {
+              "missing": 402
+            },
+            "A": {
+              "missing": 402
+            },
+            "U": {
+              "missing": 402
+            }
+          },
+          "redoCounts": {
+            "T": 0,
+            "R": 0,
+            "P": 402,
+            "Q": 402,
+            "C": 0,
+            "S": 402,
+            "A": 402,
+            "U": 402
+          },
+          "paidStageRedoCount": 402,
+          "reasonCounts": {
+            "T": {},
+            "R": {},
+            "P": {
+              "stage_implementation_changed": 402
+            },
+            "Q": {
+              "stage_implementation_changed": 402
+            },
+            "C": {
+              "text_qc_mode": 402
+            },
+            "S": {
+              "no_record": 402
+            },
+            "A": {
+              "no_record": 402
+            },
+            "U": {
+              "no_record": 402
+            }
+          }
+        },
+        "es": {
+          "groupCount": 402,
+          "directiveGroupIds": [],
+          "candidateLayer1Current": true,
+          "summary": {
+            "T": {
+              "fresh": 402
+            },
+            "R": {
+              "fresh": 402
+            },
+            "P": {
+              "stale": 402
+            },
+            "Q": {
+              "stale": 402
+            },
+            "C": {
+              "not_applicable": 402
+            },
+            "S": {
+              "fresh": 402
+            },
+            "A": {
+              "stale": 402
+            },
+            "U": {
+              "stale": 402
+            }
+          },
+          "redoCounts": {
+            "T": 0,
+            "R": 0,
+            "P": 402,
+            "Q": 402,
+            "C": 0,
+            "S": 0,
+            "A": 402,
+            "U": 402
+          },
+          "paidStageRedoCount": 402,
+          "reasonCounts": {
+            "T": {},
+            "R": {},
+            "P": {
+              "stage_implementation_changed": 402
+            },
+            "Q": {
+              "stage_implementation_changed": 402
+            },
+            "C": {
+              "text_qc_mode": 402
+            },
+            "S": {},
+            "A": {
+              "stage_implementation_changed": 402
+            },
+            "U": {
+              "stage_implementation_changed": 402,
+              "upstream_will_change": 402
+            }
+          }
+        },
+        "ko": {
+          "groupCount": 402,
+          "directiveGroupIds": [],
+          "candidateLayer1Current": true,
+          "summary": {
+            "T": {
+              "fresh": 402
+            },
+            "R": {
+              "fresh": 402
+            },
+            "P": {
+              "stale": 402
+            },
+            "Q": {
+              "stale": 402
+            },
+            "C": {
+              "not_applicable": 402
+            },
+            "S": {
+              "fresh": 402
+            },
+            "A": {
+              "stale": 402
+            },
+            "U": {
+              "stale": 402
+            }
+          },
+          "redoCounts": {
+            "T": 0,
+            "R": 0,
+            "P": 402,
+            "Q": 402,
+            "C": 0,
+            "S": 0,
+            "A": 402,
+            "U": 402
+          },
+          "paidStageRedoCount": 402,
+          "reasonCounts": {
+            "T": {},
+            "R": {},
+            "P": {
+              "stage_implementation_changed": 402
+            },
+            "Q": {
+              "stage_implementation_changed": 402
+            },
+            "C": {
+              "text_qc_mode": 402
+            },
+            "S": {},
+            "A": {
+              "stage_implementation_changed": 402
+            },
+            "U": {
+              "stage_implementation_changed": 402,
+              "upstream_will_change": 402
+            }
+          }
+        }
+      }
+    },
+    "ko_redo_3_groups": {
+      "wallSeconds": 2.25,
+      "locales": {
+        "ko": {
+          "groupCount": 402,
+          "directiveGroupIds": [
+            "translation-chunk-0001-u028",
+            "translation-chunk-0003-u015",
+            "translation-chunk-0005-u032"
+          ],
+          "candidateLayer1Current": true,
+          "summary": {
+            "T": {
+              "fresh": 399,
+              "stale": 3
+            },
+            "R": {
+              "fresh": 399,
+              "stale": 3
+            },
+            "P": {
+              "stale": 402
+            },
+            "Q": {
+              "stale": 402
+            },
+            "C": {
+              "not_applicable": 402
+            },
+            "S": {
+              "fresh": 399,
+              "stale": 3
+            },
+            "A": {
+              "stale": 402
+            },
+            "U": {
+              "stale": 402
+            }
+          },
+          "redoCounts": {
+            "T": 3,
+            "R": 3,
+            "P": 402,
+            "Q": 402,
+            "C": 0,
+            "S": 3,
+            "A": 402,
+            "U": 402
+          },
+          "paidStageRedoCount": 408,
+          "reasonCounts": {
+            "T": {
+              "operator_directive": 3
+            },
+            "R": {
+              "upstream_will_change": 3
+            },
+            "P": {
+              "stage_implementation_changed": 402,
+              "upstream_will_change": 3
+            },
+            "Q": {
+              "stage_implementation_changed": 402,
+              "upstream_will_change": 3
+            },
+            "C": {
+              "text_qc_mode": 402
+            },
+            "S": {
+              "upstream_will_change": 3
+            },
+            "A": {
+              "stage_implementation_changed": 402,
+              "upstream_will_change": 3
+            },
+            "U": {
+              "stage_implementation_changed": 402,
+              "upstream_will_change": 405
+            }
+          }
+        }
+      }
+    }
+  },
+  "limits": [
+    "T and R freshness compares the inputs the request is built from (English, English context, policy terminology/scripture/formatting, model settings, runner identity); the exact request hash is matched again at dispatch.",
+    "Per-group model rules, revision instructions and the text QC semantic identity are recorded but not recomputed here.",
+    "Synthesis identity beyond the renderer sound identity is recorded but not recomputed; batch membership is outside the key (open decision 1).",
+    "Records derived from a whole-sermon run carry what its products recorded; a missing value is reported, never filled from current code.",
+    "No budget figure: per-group budgets are DEV-GRP-003."
+  ],
+  "findings": [
+    "T and R are fresh for all 1206 groups; no final round recorded the runner identity, so T/R implementation is not compared.",
+    "P is stale for all groups under dev: the run branch registers the three 15030286 plugins with a four-file closure (common, auto_qc_text_common, weekly_15030286_common) that dev lacks; with that closure the plugin identities equal the receipts (zh cf80992cd9a8, es 8ddaf2fda084, ko 741db793fa58).",
+    "Q is stale for all groups: text QC ran under QC closure 51e2b9cae580, dev holds the final G1 closure df299eca0e9f.",
+    "es/ko S fresh (renderer sound identity fef760488247 unchanged, spoken text equals candidate); A stale (screening 40bc41198d5f -> 38c7433cc876); U stale (QC closure and upstream A).",
+    "zh-Hans has no Layer 3 products in this run (S/A/U missing); C is not applicable everywhere (all text QC modes full).",
+    "A ko redo of 3 listed groups marks T stale only for those 3 groups, R and S stale only for those 3 (upstream)."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-field-venue-sync-ios-ci",
+  "runs": [
+    {
+      "label": "field-venue-sync-ios-ci-20261018",
+      "source": "/private/tmp/field-venue-exp-leaf-20261017/artifacts/field-venue-sync-ios-ci-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "field-venue-sync-ios-ci-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 605,
+      "truncated": false,
+      "sha256": "59c2e7a8c68ce6794e2f08d32dd84b6ad50175e6b7da255fe6dfd7c7387fd6d0",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

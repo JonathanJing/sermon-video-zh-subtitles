@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-grp005-ab-spark-attempt1",
+  "runs": [
+    {
+      "label": "20261019-grp005-ab-spark-attempt1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261019-grp005-ab-spark-attempt1",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261019-grp005-ab-spark-attempt1",
+      "path": "ko-render.log",
+      "kind": "log",
+      "bytes": 1138,
+      "truncated": false,
+      "sha256": "63424411a68e67882b7a1742f2a91520104529c0cf1c5689b94247c87d692225",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-attempt1",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 548,
+      "truncated": false,
+      "sha256": "da84af63da784804512984ae45f08fc1c079bee863aaca1c8e6ba9b358144f8d",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-spark-attempt1",
+      "path": "spark-session-receipt.json",
+      "kind": "whole",
+      "bytes": 916,
+      "truncated": false,
+      "sha256": "67ad0c8c927da10318bb606adc29ed7fb140f5306a842f7142c17e631146deaa",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
