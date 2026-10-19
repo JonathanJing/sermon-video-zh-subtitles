@@ -14,13 +14,16 @@ from pathlib import Path
 import subprocess
 import sys
 
+if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 try:
     from scripts import assemble_multilingual_hosting as hosting
 except ImportError:
     import assemble_multilingual_hosting as hosting
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 MODES = {
     "dev": {"branch": "dev", "script": ROOT / "scripts/multilingual_dev_preview.py",
             "schema": {"sermon-multilingual-dev-preview-v1", "sermon-multilingual-dev-preview-v2",

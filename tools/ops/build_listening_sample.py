@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Build, then close, the post-publication listening sample sheet for one locale.
 
-    python3 scripts/build_listening_sample.py build \
+    python3 tools/ops/build_listening_sample.py build \
         --audio-package artifacts/weekend-live/layer3-<run>/ko/audio-package-c5.json \
         --candidate artifacts/weekend-live/layer2-<run>/recovered/ko/candidate.json \
         --anchors <the anchor manifest the candidate names in anchorManifestSha256> \
         --screening artifacts/weekend-live/layer3-<run>/ko/<speech job>/speech-job/asr-screening-receipt-c5.json \
         --audio-qc artifacts/weekend-live/text-qc-<run>/state-v3/qc-receipts/audio/ko/<lineage>/entry-000001.json \
         --out artifacts/weekend-live/listening-<run>/ko
-    python3 scripts/build_listening_sample.py verdicts --sheet-dir artifacts/weekend-live/listening-<run>/ko
+    python3 tools/ops/build_listening_sample.py verdicts --sheet-dir artifacts/weekend-live/listening-<run>/ko
     python3 tools/ops/record_decision.py --run-dir <run> --question "ko 发布后抽查" --choice "<n 句通过，m 句有问题>" \
         --decided-by "Jony (chat)" --governs <the audio package> \
         --evidence artifacts/weekend-live/listening-<run>/ko/listening-verdicts.json
@@ -50,6 +50,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 try:
     from scripts import sermon_sentence_interpretation as identity
 except ImportError:  # pragma: no cover - direct CLI runs from scripts/
@@ -201,7 +204,7 @@ def markdown(sample: dict) -> str:
              f"音频包 `{sample['audioPackageJsonSha256'][:12]}`，候选 `{sample['targetLanguageCandidateJsonSha256'][:12]}`，"
              f"共 {sample['unitCount']} 句；机器标记 {sample['flaggedCount']} 句全部列出，{random_note}"
              f"（种子 `{sample['seed'][:12]}`）。每行听一遍音频，把「结论」的 `[ ]` 改成 `通过` 或 `问题：…`。", "",
-             f"填完运行 `python3 scripts/build_listening_sample.py verdicts --sheet-dir <本目录>`，它检查每行都有结论并写出 "
+             f"填完运行 `python3 tools/ops/build_listening_sample.py verdicts --sheet-dir <本目录>`，它检查每行都有结论并写出 "
              f"`{VERDICTS}`；再用 `record_decision.py --governs {package} --evidence <本目录>/{VERDICTS}` 记录。"
              "本表是复核辅助，不是收据。", "",
              "| 序 | 组 | 译文 | 英文 | 音频 | 秒 | 来源 | 结论 |", "|---|---|---|---|---|---|---|---|"]

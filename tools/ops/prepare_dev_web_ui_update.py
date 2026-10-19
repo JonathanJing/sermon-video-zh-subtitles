@@ -9,9 +9,12 @@ from pathlib import Path
 import shutil
 import subprocess
 
-if __package__ in (None, ''):
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import sys
+
+# Loaded as tools.ops.<name> or run directly: ``from scripts import`` needs the repo root.
+_ROOT = str(Path(__file__).resolve().parents[2])
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
 from scripts import delivery_contract as contract
 from scripts import prepare_dev_simulated_publication as staging

@@ -13,7 +13,7 @@
 | 后端 API 与 producer 代码 | 反馈／会话 API、权限、Layer 1–4 producer 或共享合同改变的 PR | 部署实际改变的服务并验证授权、写入／读回和失败路径；每周生产入口仍消费经审候选，不把代码合并当作内容发布。 |
 | 每周证道内容 | producer 变动时跑快速模拟流程；每次周产检查来源、包、hash、审核和文件清单 | 按当周发布计划，将已批准包追加到 Dev／Production；记录线上资产、Web、同版本 iOS 设备及现场的各自结果。 |
 
-当前 [Python CI](../.github/workflows/python-tests.yml) 已包含 Web 和反馈 API 测试，[iOS CI](../.github/workflows/tongxing-ios.yml) 会按原生／合同改动选择 Swift 或模拟器检查；固定 `unittest`／`native-client` 检查仍须返回结果。[分支与环境流程](development-branch-and-firebase-environments.zh.md)规定 `dev`／`main` 分离，`main` push 不自动部署，约 700 MB 的内容候选使用本机受控 CD。已有 [`run_multilingual_cd.py`](../scripts/run_multilingual_cd.py) 要求显式 `--execute`、代码和候选 hash，但其当前 schema 范围不能直接证明新 v3 周更已发布。
+当前 [Python CI](../.github/workflows/python-tests.yml) 已包含 Web 和反馈 API 测试，[iOS CI](../.github/workflows/tongxing-ios.yml) 会按原生／合同改动选择 Swift 或模拟器检查；固定 `unittest`／`native-client` 检查仍须返回结果。[分支与环境流程](development-branch-and-firebase-environments.zh.md)规定 `dev`／`main` 分离，`main` push 不自动部署，约 700 MB 的内容候选使用本机受控 CD。已有 [`run_multilingual_cd.py`](../tools/ops/run_multilingual_cd.py) 要求显式 `--execute`、代码和候选 hash，但其当前 schema 范围不能直接证明新 v3 周更已发布。
 
 ## P0：下一次完整周产需要的交付边界
 

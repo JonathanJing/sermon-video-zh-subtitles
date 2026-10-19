@@ -16,13 +16,16 @@ import tempfile
 
 from jsonschema import Draft202012Validator
 
+if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 try:
     from scripts import stage_formal_multilingual_dev as stage
 except ImportError:
     import stage_formal_multilingual_dev as stage
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 PAGE_ID = "2026-09-27-weekend-sermon-drive-530"
 PAGE_DATA_SHA256 = "fa071d1b7678eeaad7c5ae4c1539d2b6f8b908322b2e12283881b0be304362f3"
 LOCALES = ("zh-Hans", "ko", "es")

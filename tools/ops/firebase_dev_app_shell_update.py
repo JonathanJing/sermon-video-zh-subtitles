@@ -22,6 +22,9 @@ import subprocess
 import sys
 import tempfile
 
+if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 try:
     from scripts import align_firebase_dev_v3 as dev
     from scripts import firebase_dev_weekly_dry_run as dry
@@ -32,7 +35,7 @@ except ImportError:
     import verify_multilingual_hosting as http
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SHELL_SUFFIXES = {".js", ".mjs", ".css", ".svg", ".png", ".html"}
 DERIVED = {"index.html", "style.css"}
 PRESERVED = {"engagement.json", "multilingual-v3.json", "firebase.json"}
