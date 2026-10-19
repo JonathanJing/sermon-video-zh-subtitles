@@ -106,6 +106,25 @@ provider outcome、损坏 bytes 或 intermediate reused 来源都会在任何新
 operation 的未派发组才可按新授权付费。完成后在新 lane 写
 `partial-round-recovery-receipt.json`，绑定旧 failed job 与新 successor job；旧 state 不改写。
 
+### Worker 绑定复核的 stat 备忘
+
+worker 在每次模型调用、缓存命中复核（`verify_execution`、`record_reuse`、`recover_returned_response`、
+`paid_response_provenance`、`validate_recovery_source`）前后都重算绑定：执行配置、代码身份、package
+view 与 durable 身份，一组约 12 次。其中 v6/v7 的 prior root 与 partial-recovery 快照（每次重读并
+摘要数千个文件）和代码身份由进程内 stat 备忘复用（`text/stat_memo.py`）：只要它们读过的每个路径的
+`lstat` 身份 `(dev, ino, mode, size, mtime_ns, ctime_ns)` 与目录条目名都没变，就沿用上次结果；任一
+变化就整体重算。调用次数和位置不变，执行配置文件、package view 与 durable 身份仍每次完整重算。
+
+能发现：内容写入、截断、追加、chmod、rename/替换、删除和新增条目；同大小改写后再用 `os.utime`
+还原 mtime 也会改变 ctime。发现不了：不更新 ctime 的改动（需把系统时钟往回拨、直写块设备，或不维护
+ctime 的文件系统）。时间戳粒度内的竞态由 racy 规则关闭：只有 ctime 早于取样时刻 3 秒以上、且计算
+期间身份未变的结果才会入备忘；失败结果从不入备忘。备忘只在单个进程内，新 worker 先完整计算一次。
+
+该备忘只改本地开销，不改任何身份的算法或取值：配置、快照、代码身份的摘要与改动前逐字节相同。但编辑
+`controller.py` 并新增 `stat_memo.py` 本身改变代码身份，所以已有 job 保留其冻结的 `--expected-code`，
+在新代码上恢复会按原规则报 `worker_configuration_or_code_changed`；只有新准入的 job 使用它。没有
+schema、配置字段或迁移变化。
+
 ## 按组号修订（execution v8）
 
 操作者看完候选、只想改几组时用这条路径（2026-10-18 周产出的教训：改动只能写进插件、policy 哈希一变，v6 缓存重放拒收旧成功收据，v7 只能单组串行、修复上限按“重放调用为 0”只剩约 4 组，最后整篇重新付费）。唯一必需的输入是**已有候选 + 每个语言的组号列表**，每组可附一句备注；怎么改由译者模型和独立复核决定，列表外的一切不动。

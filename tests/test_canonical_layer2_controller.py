@@ -18,6 +18,8 @@ from scripts import sermon_workflow_jobs as jobs
 from scripts import sermon_execution_harness as harness
 from scripts import target_language_policy as policies
 from tests import test_inspect_canonical_packages as fixtures
+from tongxing_production.text import controller as layer2
+from tongxing_production.text import stat_memo
 
 
 class CanonicalLayer2ControllerTests(unittest.TestCase):
@@ -477,6 +479,12 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
 
 
 class CodeIdentityClosureTests(unittest.TestCase):
+    @staticmethod
+    def unmemoized():
+        # A patched read leaves the file's stat identity unchanged, which the binding memo
+        # would rightly treat as unchanged; a fresh memo forces the full hash for the closure check.
+        return patch.object(layer2, '_BINDING_MEMO', stat_memo.StatMemo())
+
     def test_moved_package_code_changes_the_code_identity(self):
         moved = (subject.ROOT / 'packages/production/src/tongxing_production/source/sentence_interpretation.py').resolve()
         facade = (subject.ROOT / 'scripts/sermon_sentence_interpretation.py').resolve()
@@ -484,7 +492,7 @@ class CodeIdentityClosureTests(unittest.TestCase):
         baseline = subject.code_identity()
         original = Path.read_bytes
         for edited in (moved, facade):
-            with self.subTest(path=edited.relative_to(subject.ROOT)), \
+            with self.subTest(path=edited.relative_to(subject.ROOT)), self.unmemoized(), \
                     patch.object(Path, 'read_bytes', lambda path: original(path) + (b'#' if path == edited else b'')):
                 self.assertNotEqual(subject.code_identity(), baseline)
         self.assertEqual(subject.code_identity(), baseline)
@@ -496,7 +504,8 @@ class CodeIdentityClosureTests(unittest.TestCase):
         self.assertTrue(entry.is_file())
         baseline = subject.code_identity()
         original = Path.read_bytes
-        with patch.object(Path, 'read_bytes', lambda path: original(path) + (b'#' if path == entry else b'')):
+        with self.unmemoized(), \
+                patch.object(Path, 'read_bytes', lambda path: original(path) + (b'#' if path == entry else b'')):
             self.assertNotEqual(subject.code_identity(), baseline)
         self.assertEqual(subject.code_identity(), baseline)
 
