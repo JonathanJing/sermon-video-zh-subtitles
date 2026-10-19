@@ -118,7 +118,7 @@ E1.0 的第一份实现 PR 必须提交 JSON Schema Draft 2020-12、对应严格
 
 `recordedAt/startedAt/completedAt` 是 UTC 关联时间；新采集器另保存不含设备身份的 `clockDomainId` 与可选十进制字符串 `monotonicStartNs/monotonicEndNs`，避免 JSON 纳秒超出安全整数。相同进程的时钟域在重启后更换。
 
-- UTC／monotonic 配对：`startedAt` 与 `monotonicStartNs`、`completedAt` 与 `monotonicEndNs` 是同一时刻的两次读数，由 `clock_pair()` 用前后两次 monotonic 读数夹住 UTC 读数，夹距超过 1 ms（线程在两次读之间被换出）就重读，误差不超过夹距一半。`recordedAt` 是之后写日志的时刻，可能晚于端点（等锁、等 GIL），但不会早于端点：`recordedAt` 比 `completedAt` 早 10 ms 以上即是墙钟回拨；只在旧日志缺 `completedAt` 时用它代替端点。写日志期间的墙钟前跳与慢写无法区分。投影仍以 10 ms 容差比较各 span 的 UTC−monotonic 偏移，真实的墙钟跳变照常报告为 `utc_clock_discontinuity_*`。
+- UTC／monotonic 配对：`startedAt` 与 `monotonicStartNs`、`completedAt` 与 `monotonicEndNs` 是同一时刻的两次读数，由 `clock_pair()` 用前后两次 monotonic 读数夹住 UTC 读数，夹距超过 1 ms（线程在两次读之间被换出）就重读，误差不超过夹距一半。`recordedAt` 是之后写日志的时刻，可能晚于端点（等锁、等 GIL），但不会早于端点：`recordedAt` 比 `completedAt` 早 10 ms 以上即是墙钟回拨；只在旧日志缺 `completedAt` 时用它代替端点。写日志期间的墙钟前跳与慢写无法区分。monotonic 时钟不被校时，UTC 受 NTP 调频，二者偏移会匀速漂移（本机实测 7.9 ppm，27 分钟约 13 ms）；投影按 monotonic 顺序比较相邻读数的偏移变化，容差为 10 ms 加 100 ppm × 两次读数的 monotonic 间隔，单个 span 内也按其时长给同样的漂移余量。真实的墙钟跳变落在两次相邻读数之间，照常报告为 `utc_clock_discontinuity_*`。
 - 实测执行耗时：同一可信时钟域 `elapsedSeconds = (endNs-startNs)/1e9`；保留现有 monotonic 计时，不以 UTC 差覆盖。UTC 回拨不使 duration 变负。
 - 跨进程 monotonic 不直接相减，除非有明确且经过验证的共享时钟域合同；跨机器更不能相减。跨重启／人工长等待使用持久化 UTC 事件并附 `timingQuality`，没有时钟校准证据时为估计或 unknown。
 - `dependencyWait` 需要 step admission 与全部前置满足事件；`queueWait` 需要 queue_entered 与 execution_started。ready 不等于 queued，`startedAt` 不能补造它们。任一端缺失时为 null。

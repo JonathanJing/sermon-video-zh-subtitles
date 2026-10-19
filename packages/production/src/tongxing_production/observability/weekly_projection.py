@@ -6,7 +6,8 @@ from datetime import datetime
 import hashlib
 import json
 from .accounting import EXECUTOR_TYPES, INTERNAL_TIMING_WORKLOADS, READABLE_SCHEMAS, _label, _number, _safe_metadata, safe_execution_identity, read_events, read_event_snapshot, receipt_integrity, profile_integrity
-from .clock_evidence import monotonic_interval, handshake_windows, _hash as clock_hash
+from .clock_evidence import (monotonic_interval, handshake_windows, unstable_clock_domains,
+    utc_offset_allowance, UTC_STEP_TOLERANCE_SECONDS, _hash as clock_hash)
 from .cache_observation import CODE as CACHE_CODE, safe_observation as safe_cache_observation
 from .workflow_evidence import _summary, PATHS
 from . import backend as _observability
@@ -17,7 +18,7 @@ def safe_observation(fields):
 
 TOKENS = ('inputTokens', 'cachedInputTokens', 'outputTokens', 'reasoningTokens')
 ACTIVE = {'deterministic_program', 'production_model', 'decision_agent'}
-TIMESTAMP_TOLERANCE_SECONDS = 0.01
+TIMESTAMP_TOLERANCE_SECONDS = UTC_STEP_TOLERANCE_SECONDS
 # These affect UTC correlation only. They never exempt an invalid/missing DAG
 # edge, interval, outcome, or cross-process clock witness. Boundary warnings
 # are eligible only when complete monotonic observations already prove a jump.
@@ -238,7 +239,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             queued = seconds(start['queuedAt']) if start.get('queuedAt') else None
             ordered = [v for v in (ready, queued, begin, finish) if v is not None]
             timing = monotonic_interval(start, end)
-            utc_trusted = timing is None or (abs((completed-begin)-end['elapsedSeconds']) <= TIMESTAMP_TOLERANCE_SECONDS
+            utc_trusted = timing is None or (abs((completed-begin)-end['elapsedSeconds']) <= utc_offset_allowance(end['elapsedSeconds'])
                                              and finish >= completed - TIMESTAMP_TOLERANCE_SECONDS)
             if timing is None and (ordered != sorted(ordered) or end['elapsedSeconds'] < 0 or
                     end['elapsedSeconds'] > finish - begin + 0.01):
@@ -268,14 +269,13 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             nodes[ident].update(timing, utcTimingTrusted=utc_trusted)
     # A wall clock may jump BETWEEN individually sound intervals. Compare the
     # UTC/monotonic offset across all observations in each process clock domain.
-    offsets = defaultdict(list)
+    observations = defaultdict(list)
     for node in nodes.values():
         if node.get('clockDomainId'):
-            offsets[node['clockDomainId']].extend([
-                node['begin'] - int(node['monotonicStartNs']) / 1e9,
-                node['completed'] - int(node['monotonicEndNs']) / 1e9])
-    unstable_domains = {domain for domain, values in offsets.items()
-                        if max(values) - min(values) > TIMESTAMP_TOLERANCE_SECONDS}
+            observations[node['clockDomainId']].extend([
+                (int(node['monotonicStartNs']) / 1e9, node['begin']),
+                (int(node['monotonicEndNs']) / 1e9, node['completed'])])
+    unstable_domains = unstable_clock_domains(observations)
     if unstable_domains:
         issue('utc_clock_discontinuity_between_spans')
         for node in nodes.values():

@@ -12,7 +12,7 @@ import sys
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.sermon_clock_evidence import monotonic_interval
+from scripts.sermon_clock_evidence import monotonic_interval, utc_offset_allowance
 from scripts.sermon_accounting import READABLE_SCHEMAS, SCHEMA, read_events, receipt_integrity, profile_integrity
 
 # Export only known application labels. Unknown labels retain a hash, never text.
@@ -140,7 +140,8 @@ def export(directory):
             timing = monotonic_interval(start, end) if key[1] == 'stage' else None
             # monotonicEndNs pairs with completedAt; recordedAt is the later write.
             completed = nanos(end.get("completedAt") or end["recordedAt"])
-            clock_shift = timing and (abs((completed-begin)/1e9 - timing['elapsedSeconds']) > .01
+            clock_shift = timing and (abs((completed-begin)/1e9 - timing['elapsedSeconds']) >
+                                      utc_offset_allowance(timing['elapsedSeconds'])
                                       or finish < completed - 10_000_000)
             recorded_finish = finish
             if clock_shift:

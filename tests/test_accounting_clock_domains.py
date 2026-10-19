@@ -168,6 +168,17 @@ class ClockPairingTests(unittest.TestCase):
                 patch.object(accounting, 'now', side_effect=['w%d' % k for k in range(8)]):
             self.assertEqual(accounting.clock_pair(), (101_500_000, 'w1'))
 
+    def test_steady_rate_drift_is_not_a_step_but_a_step_on_top_of_it_is(self):
+        # 40 minutes of readings every 30 s at the measured 7.9 ppm drift.
+        readings = [(m, 1_800_000_000 + m * (1 + 7.9e-6)) for m in range(0, 2400, 30)]
+        offsets = [u - m for m, u in readings]
+        self.assertGreater(max(offsets) - min(offsets), 0.01)  # the old whole-run check flagged this
+        self.assertFalse(clocks.unstable_clock_domains({'d': readings}))
+        for step in (0.05, -0.05, 0.015, 30):
+            with self.subTest(step=step):
+                stepped = [(m, u + (step if m >= 1200 else 0)) for m, u in readings]
+                self.assertEqual(clocks.unstable_clock_domains({'d': stepped}), {'d'})
+
     def test_genuine_utc_step_between_spans_is_still_reported(self):
         for step in (30.0, -30.0, 0.05):
             with self.subTest(step=step):
