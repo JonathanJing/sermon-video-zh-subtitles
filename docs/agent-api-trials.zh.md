@@ -2,7 +2,7 @@
 
 2026-10-08 用户要求：失败排查、预检先于占用资源、失败样例库、“反驳者”、先把数据理顺，分别用 Agents API 测试；按风险分三档用 Decisions API 测试；复用 dev 的 API key。本页是这六项试验的入口和判分规则。**代码和离线测试不证明真实调用效果；结论以本机实跑的 `summary.json` 为准。**
 
-入口：[`scripts/experiments/agent_api_trials.py`](../scripts/experiments/agent_api_trials.py)。数据：[`config/agent-trials/`](../config/agent-trials/)。
+入口：[`experiments/agents-api-trials/agent_api_trials.py`](../experiments/agents-api-trials/agent_api_trials.py)。数据：[`config/agent-trials/`](../config/agent-trials/)。
 
 ## 范围与安全边界
 
@@ -29,7 +29,7 @@
 先用假后端确认接线，不调用任何 API：
 
 ```sh
-.venv/bin/python scripts/experiments/agent_api_trials.py all --backend fake --out artifacts/agent-api-trials/plumbing
+.venv/bin/python experiments/agents-api-trials/agent_api_trials.py all --backend fake --out artifacts/agent-api-trials/plumbing
 ```
 
 当前 `--backend live` 在创建 Agents／Decisions 客户端、写运行产物和发送请求前明确拒绝：`live_trials_blocked_until_canonical_budget_adapter`。dev 启动器只绑定项目和凭据，不构成预算授权。必须先实现并验证 canonical budget configuration／authorization adapter，才可重新开放真实 API 试验；本文的调用规模、恢复规则和历史结果不授权新的付费运行。`timeline` 与 `--backend fake` 仍可离线执行。
