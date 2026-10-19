@@ -228,8 +228,11 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
         if end['status'] not in {'completed', 'failed', 'cancelled', 'outcome_unknown'}:
             issue('unknown_span_status'); continue
         if end['status'] in {'cancelled','outcome_unknown'}: issue('incomplete_execution_outcome')
+        # completedAt is sampled with monotonicEndNs; recordedAt is stamped
+        # later at write time. Ledgers without completedAt keep recordedAt.
+        finished_at = end.get('completedAt') or end['recordedAt']
         try:
-            begin, finish = seconds(start['startedAt']), seconds(end['recordedAt'])
+            begin, finish = seconds(start['startedAt']), seconds(finished_at)
             ready = seconds(start['dependencyReadyAt']) if start.get('dependencyReadyAt') else None
             queued = seconds(start['queuedAt']) if start.get('queuedAt') else None
             ordered = [v for v in (ready, queued, begin, finish) if v is not None]
@@ -250,7 +253,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             'workUnitId': start.get('workUnitId'), 'executorType': executor,
             'attemptSha256': digest(start['attemptId']) if start.get('attemptId') else None,
             'workflowSha256': digest(start['workflowId']) if start.get('workflowId') else None,
-            'startedAt': start['startedAt'], 'finishedAt': end['recordedAt'], 'cacheHit': start.get('cacheHit'),
+            'startedAt': start['startedAt'], 'finishedAt': finished_at, 'cacheHit': start.get('cacheHit'),
             'queuedAt': start.get('queuedAt'),
             'status': end['status'], 'dependsOn': start.get('dependsOn') or [],
             'dependencyRecorded': isinstance(start.get('dependsOn'), list),

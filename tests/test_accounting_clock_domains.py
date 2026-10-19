@@ -4,6 +4,8 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import threading
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 from scripts import sermon_accounting as accounting
@@ -118,3 +120,58 @@ class ClockDomainTests(unittest.TestCase):
             rows,_=accounting.read_events(root)
             start=next(e for e in rows if e['event']=='stage_started');end=next(e for e in rows if e['event']=='stage_finished' and e['spanId']==start['spanId'])
             self.assertIsNotNone(clocks.monotonic_interval(start,end))
+
+
+class ClockPairTests(unittest.TestCase):
+    """A stage's monotonic and UTC readings must describe one instant."""
+
+    def record(self, root, stages=12):
+        with accounting.accounting_session(root,'clock_pair_fixture'):
+            previous=None
+            for index in range(stages):
+                name=f'unit.{index}'
+                with accounting.stage(name,work_unit_id=name,depends_on=[] if previous is None else [previous]) as span:pass
+                previous=span
+        return weekly.project(root)['runs']
+
+    def assert_projected(self, runs):
+        self.assertTrue(runs)
+        for run in runs:
+            self.assertNotIn('utc_clock_discontinuity_between_spans',run['diagnostics'])
+            self.assertEqual(run['status'],'projected',run['diagnostics'])
+
+    def test_switch_between_paired_reads_does_not_spread_utc_offset(self):
+        # Virtual clocks: every other UTC read stalls 30 ms, as a thread or GIL
+        # switch between the monotonic and UTC reads would on a saturated host.
+        virtual=[0];calls=[0];epoch=datetime.fromisoformat('2026-10-19T00:00:00+00:00')
+        def monotonic_ns():
+            virtual[0]+=1_000;return virtual[0]
+        def now():
+            calls[0]+=1
+            if calls[0]%2:virtual[0]+=30_000_000
+            return (epoch+timedelta(microseconds=virtual[0]//1_000)).isoformat()
+        fake_time=SimpleNamespace(monotonic_ns=monotonic_ns,monotonic=lambda:monotonic_ns()/1e9)
+        with tempfile.TemporaryDirectory() as tmp, patch.object(accounting,'time',fake_time), \
+                patch.object(accounting,'now',now):
+            self.assert_projected(self.record(Path(tmp)))
+        self.assertGreater(calls[0],0)
+
+    def test_cpu_contention_does_not_spread_utc_offset(self):
+        stop=threading.Event()
+        def burn():
+            while not stop.is_set():sum(i*i for i in range(1_000))
+        burners=[threading.Thread(target=burn,daemon=True) for _ in range(4)]
+        for thread in burners:thread.start()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                runs=self.record(Path(tmp),stages=4)
+        finally:
+            stop.set()
+            for thread in burners:thread.join()
+        self.assert_projected(runs)
+
+    def test_wide_bracket_is_retried_and_tightest_pair_kept(self):
+        readings=iter([0,5_000_000, 10_000_000,10_000_100])
+        with patch.object(accounting,'time',SimpleNamespace(monotonic_ns=lambda:next(readings))), \
+                patch.object(accounting,'now',side_effect=['first','second']):
+            self.assertEqual(accounting.clock_pair(),(10_000_050,'second'))

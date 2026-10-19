@@ -374,6 +374,29 @@ def now():
     return datetime.now(timezone.utc).isoformat()
 
 
+# A stage timestamp pairs one monotonic reading with one UTC reading. Weekly
+# projection compares their offset across spans within 10 ms, so a thread or
+# GIL switch between the two reads must not leak into the pair. Bracket UTC
+# between two monotonic reads and retry a wide bracket; the midpoint is then
+# within half the bracket of the UTC read.
+CLOCK_PAIR_MAX_BRACKET_NS = 1_000_000
+CLOCK_PAIR_ATTEMPTS = 4
+
+
+def clock_pair():
+    """Return ``(monotonic_ns, utc_iso)`` observed at the same instant."""
+    best = None
+    for _ in range(CLOCK_PAIR_ATTEMPTS):
+        before = time.monotonic_ns()
+        utc = now()
+        after = time.monotonic_ns()
+        if best is None or after - before < best[0]:
+            best = (after - before, before + (after - before) // 2, utc)
+        if after - before <= CLOCK_PAIR_MAX_BRACKET_NS:
+            break
+    return best[1], best[2]
+
+
 def _number(value):
     return value if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0 and value < float("inf") else None
 
@@ -531,7 +554,7 @@ class StageOutcome:
                 or re.fullmatch(r'[a-f0-9]{64}', artifact_sha256) is None):
             raise ValueError('invalid_stage_artifact_hash')
         self._artifact_sha256 = artifact_sha256
-        self._outcome = (status, error, time.monotonic_ns(), now())
+        self._outcome = (status, error, *clock_pair())
         return self.span_id
 
 
@@ -588,9 +611,10 @@ def _stage_context(name, *, cache_hit=False, billing="local", executor_type=None
             "executorType": executor_type, "dependsOn": None if depends_on is None else _labels(depends_on),
             "blockedBy": _labels(blocked_by), "dependencyReadyAt": dependency_ready_at,
             "queuedAt": queued_at, **identities}
-    started_ns = time.monotonic_ns()
-    base.update(clockDomainId=clock_domain(), monotonicStartNs=str(started_ns))
-    _emit({**base, "event": "stage_started", "startedAt": now()})
+    domain = clock_domain()
+    started_ns, started_at = clock_pair()
+    base.update(clockDomainId=domain, monotonicStartNs=str(started_ns))
+    _emit({**base, "event": "stage_started", "startedAt": started_at})
     profile_context = log_profile.context(executorType=executor_type,
         workUnitId=identities['workUnitId'] or (log_profile.current() or {}).get('workUnitId'),
         attemptId=identities['attemptId'], parentSpanId=parent) if log_profile.current() is not None else nullcontext()
@@ -617,7 +641,7 @@ def _stage_context(name, *, cache_hit=False, billing="local", executor_type=None
         error = exc
         if result._outcome is None or result._outcome[0] == 'completed':
             # This candidate has not yet been written; never amend a ledger fact.
-            result._outcome = ('failed', exc, time.monotonic_ns(), now())
+            result._outcome = ('failed', exc, *clock_pair())
             result._artifact_sha256 = None
         raise
     finally:

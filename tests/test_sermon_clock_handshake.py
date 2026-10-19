@@ -69,7 +69,8 @@ class ClockHandshakeTests(unittest.TestCase):
         session,_,_,_,_=self.execute()
         events,errors=accounting.read_events(self.root/'logs');self.assertFalse(errors)
         end=next(e for e in events if e['event']=='stage_finished' and e['stage']=='clock.source')
-        end['recordedAt']=(datetime.fromisoformat(end['recordedAt'])-timedelta(seconds=30)).isoformat().replace('+00:00','Z')
+        for key in ('completedAt','recordedAt'):
+            end[key]=(datetime.fromisoformat(end[key])-timedelta(seconds=30)).isoformat().replace('+00:00','Z')
         run=report.project_run(session['runId'],events)
         self.assertEqual(run['status'],'partial')
         self.assertIsNone(run['endToEndWallSeconds'])
