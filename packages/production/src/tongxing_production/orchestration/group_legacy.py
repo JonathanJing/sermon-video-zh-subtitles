@@ -396,7 +396,8 @@ def speech_records(locale: str, speech_job: Path, screening: dict | None) -> dic
         bound = (screening is not None and row is not None
                  and screening.get("targetLanguageSpeechJobJsonSha256") == intent.get("jobJsonSha256")
                  and row.get("audioSha256") == audio and row.get("targetTextSha256") == intent["textSha256"])
-        if cached is not None and cached["identity"].get("audioSha256") == audio and bound:
+        if (cached is not None and cached["identity"].get("audioSha256") == audio and bound
+                and records._is_sha(cached.get("recognizedSha256"))):
             identity = cached["identity"]
             verdict = "pass" if row.get("status") == "pass" else "fail"
             stages["A"] = records.make_record(

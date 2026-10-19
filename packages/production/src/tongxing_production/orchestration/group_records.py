@@ -63,6 +63,9 @@ UPSTREAM = {"T": (), "R": ("T",), "P": ("R",), "Q": ("R",), "C": ("R",),
 # Stages that produce bytes a downstream stage consumes. P and Q are verdicts: a
 # change to the plugin or the text QC reruns only that step (section 7).
 PRODUCES = {"T", "R", "C", "S", "A"}
+# The output each byte-producing stage must name when it passes; consumers compare it.
+REQUIRED_OUTPUTS = {"T": ("draftTextSha256",), "R": ("targetTextSha256",), "C": ("spokenTextSha256",),
+                    "S": ("audioSha256",), "A": ("recognizedSha256",)}
 
 SHA256 = re.compile(r"[0-9a-f]{64}")
 GROUP_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,159}")
@@ -177,6 +180,9 @@ def validate_record(record: dict) -> dict:
     _require(isinstance(record["outputs"], dict)
              and all(isinstance(name, str) and (value is None or _is_sha(value))
                      for name, value in record["outputs"].items()), "invalid_record_outputs")
+    if record["verdict"]["status"] == "pass":
+        _require(all(_is_sha(record["outputs"].get(name)) for name in REQUIRED_OUTPUTS.get(record["stage"], ())),
+                 "record_missing_required_output")
     _require(isinstance(record["verdict"], dict) and set(record["verdict"]) == {"status", "codes"}
              and record["verdict"]["status"] in VERDICTS and isinstance(record["verdict"]["codes"], list),
              "invalid_record_verdict")
