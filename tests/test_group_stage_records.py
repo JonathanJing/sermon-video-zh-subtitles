@@ -233,6 +233,19 @@ class InputKeyTests(unittest.TestCase):
             records.make_record("S", self.layer1, "ko", "g1", ["u1"], self.inputs, "e" * 64, {}, "pass",
                                 codes=["x"])
 
+    def test_store_leaves_no_partial_record_when_a_write_fails(self):
+        record = records.make_record("S", self.layer1, "ko", "g1", ["u1"], self.inputs, "e" * 64,
+                                     {"audioSha256": "9" * 64}, "pass")
+        with tempfile.TemporaryDirectory() as directory:
+            store = records.RecordStore(Path(directory))
+            target = store.path("ko", "g1", "S", record["inputKey"])
+            with patch.object(records.os, "fsync", side_effect=OSError("disk full")), self.assertRaises(OSError):
+                store.put(record)
+            self.assertFalse(target.exists())
+            self.assertEqual(list(target.parent.iterdir()), [])
+            self.assertEqual(store.put(record), target)  # a retry succeeds
+            self.assertEqual(store.records("ko", "g1", "S"), [record])
+
     def test_store_is_append_only_and_never_serves_another_locale(self):
         record = records.make_record("S", self.layer1, "ko", "g1", ["u1"], self.inputs, "e" * 64,
                                      {"audioSha256": "9" * 64}, "pass")
@@ -291,6 +304,18 @@ class LegacyReaderTests(unittest.TestCase):
         self.assertEqual(legacy.synthesis_identity_sha256(intent), legacy.synthesis_identity_sha256(moved))
         self.assertNotEqual(legacy.synthesis_identity_sha256(intent),
                             legacy.synthesis_identity_sha256(dict(intent, seed=44)))
+
+    def test_an_unreadable_translator_cache_gives_no_translation_record(self):
+        with tempfile.TemporaryDirectory() as directory:
+            run = Run(Path(directory))
+            run.build()
+            astra = run.root / "ko/round-001/group-0002-astra.json"
+            value = json.loads(astra.read_text())
+            value["result"]["targetUtterances"] = [{"unexpected": 1}]
+            astra.write_text(json.dumps(value))
+            report = group_plan.plan(json.loads((run.root / "inputs.json").read_text()), run.root, identities())
+            self.assertEqual(statuses(report, "ko", "g2")["T"], "missing")
+            self.assertEqual(statuses(report, "ko", "g2")["R"], "missing")
 
     def test_missing_runner_identity_is_reported_not_borrowed(self):
         with tempfile.TemporaryDirectory() as directory:

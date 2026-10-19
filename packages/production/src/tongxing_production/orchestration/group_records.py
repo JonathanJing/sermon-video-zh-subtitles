@@ -212,15 +212,30 @@ class RecordStore:
                          record["inputKey"])
         data = canonical_bytes(record) + b"\n"
         path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
-        except FileExistsError:
+        if path.exists():
             _require(path.read_bytes() == data, "record_key_already_written_with_other_bytes")
             return path
-        with os.fdopen(descriptor, "wb") as stream:
-            stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
+        # Write and sync a private temporary file, then link it into place: a crash can
+        # leave only the temporary file, never a truncated record under the key.
+        temporary = path.with_name(f".{path.name}.{os.getpid()}.{os.urandom(4).hex()}.tmp")
+        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
+        try:
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(data)
+                stream.flush()
+                os.fsync(stream.fileno())
+            try:
+                os.link(temporary, path)  # never replaces an existing key
+            except FileExistsError:
+                _require(path.read_bytes() == data, "record_key_already_written_with_other_bytes")
+                return path
+            directory = os.open(path.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
+        finally:
+            temporary.unlink(missing_ok=True)
         return path
 
     def records(self, target_locale: str, translation_group_id: str, stage: str) -> list[dict]:

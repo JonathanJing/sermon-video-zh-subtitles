@@ -227,7 +227,8 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
             result = sol.get("result") or {}
             group = by_group.get(result.get("translationGroupId"))
             utterances = result_utterances(result) if group is not None else None
-            if utterances is None:
+            # A round whose translator cache cannot be read gives this group no T or R.
+            if utterances is None or result_utterances(load_json(files["astra"]).get("result") or {}) is None:
                 continue
             latest[group["translationGroupId"]] = (Path(root), files)
             if joined_text(utterances) == joined_text(group["targetUtterances"]):
@@ -255,7 +256,7 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
         provenance = {"derivation": "legacy_round_cache", "round": str(root), "stem": files["sol"].name[:10],
                       "notRecorded": [] if runner else ["stageImplementation"]}
         implementation = runner or NOT_RECORDED_SHA256
-        draft_sha = records.text_sha256(joined_text(result_utterances(astra["result"]) or []))
+        draft_sha = records.text_sha256(joined_text(result_utterances(astra["result"])))
         prompt_draft = _prompt(sol_preview).get("astraDraft")
         draft_utterances = result_utterances(prompt_draft) if isinstance(prompt_draft, dict) else None
         reviewed_draft = records.text_sha256(joined_text(draft_utterances)) if draft_utterances else None
