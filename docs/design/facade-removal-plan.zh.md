@@ -20,7 +20,7 @@
 
 下面三个身份覆盖 `scripts/` 下全部文件，不论门面属于哪一类，删一个就会改变它们。所以门面应当成批删除，一次只产生一代新身份。
 
-1. **L2 代码身份。** [`text/controller.py`](../../packages/production/src/tongxing_production/text/controller.py) 的 `code_identity()` 哈希全部 `scripts/**/*.py` 与 `packages/production/src/**/*.py`，worker 在付费调用和候选准入前复核。删除批次只在没有进行中的 L2 run 时合并（与 #499、#1036 的做法相同），合并后的 run 用新身份。
+1. **L2 代码身份。** [`text/controller.py`](../../packages/production/src/tongxing_production/text/controller.py) 的 `code_identity()` 哈希全部 `scripts/**/*.py` 与 `packages/production/src/**/*.py`（另有几个点名文件，包括[包内命令入口](package-cli-entry.zh.md) `tools/ops/run.py`），worker 在付费调用和候选准入前复核。删除批次只在没有进行中的 L2 run 时合并（与 #499、#1036 的做法相同），合并后的 run 用新身份。
 2. **统一 CLI 执行准入。** [`scripts/sermon_unified/__init__.py`](../../scripts/sermon_unified/__init__.py) 的 `required_modules()` 把每个 `scripts/**/*.py` 放进 manifest 的 `executionAdmission.modules`，[`contracts.closure()`](../../packages/production/src/tongxing_production/orchestration/unified/contracts.py) 按路径读字节。删掉的文件会让冻结 manifest 续跑时报 `execution_module_invalid`，所以删除前已冻结的统一 CLI 运行必须到达终态。
 3. **实验身份。** 例如 `scripts/experiments/decision_api_weekly_ab.py` 的预算 authority 对 `scripts/` 全部文件 `rglob` 取哈希。按用户 2026-10-17 的决定（[T6 核查](t6-review-gate-closure-20261018.zh.md)：保留旧快照；今后重启另建新计划），旧实验在自己的旧 revision 上只读复验，不要求 `dev` 保留门面；重启时另冻结新身份。
 

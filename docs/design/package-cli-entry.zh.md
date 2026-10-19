@@ -32,7 +32,7 @@ tongxing_production.ports.Unbound: tongxing_production.text needs a configured T
 
 | 方案 | 结论 | 理由 |
 |---|---|---|
-| A `tools/ops/run.py <module>` | **采用** | 宿主属于检出，而 `tools/ops` 正是放绑定检出的命令的地方（与 `tools/ops/prepare_dev_simulated_publication.py` 同一写法）。只用 `PYTHONPATH` 的环境也能运行，包括 Spark 容器和不经 pip 生成的 worktree venv。不在 L2 `code_identity()` 的文件集合里（§5）。只有一个文件，命令只有一种写法，附录 A 的普查可以直接 grep |
+| A `tools/ops/run.py <module>` | **采用** | 宿主属于检出，而 `tools/ops` 正是放绑定检出的命令的地方（与 `tools/ops/prepare_dev_simulated_publication.py` 同一写法）。只用 `PYTHONPATH` 的环境也能运行，包括 Spark 容器和不经 pip 生成的 worktree venv。它作为单个文件明确列进 L2 `code_identity()`（§6），不会把整个 `tools/` 卷进去。只有一个文件，命令只有一种写法，附录 A 的普查可以直接 grep |
 | B `python -m tongxing_production.cli <module>` | 不采用 | 包要反过来导入 `scripts.tongxing_host`，违反 `tests/test_tongxing_production_package.py` 的 `FORBIDDEN_IMPORTS`。包还得自己找检出根，而共享 `.venv` 的 editable 安装指向主检出，worktree 会悄悄运行别处的代码。另外在 `packages/` 下新增文件会改变 L2 代码身份 |
 | C `pyproject.toml` 里每个模块一个 console script | 不采用 | 与 B 一样是反向依赖。entry point 在安装时写入，`worktree_venv.py` 只写 `.pth`、不跑 pip，所以 worktree 里没有这些命令；Spark 镜像不安装生产包，也没有。每加一个命令都要改 pyproject 并重装所有 venv，需要维护的名字有 35 个以上 |
 
@@ -58,7 +58,7 @@ python {code}/tools/ops/run.py audio.compaction --source … --anchor … …
 
 ## 6 身份影响
 
-- **L2 `code_identity()`**（`text/controller.py`）哈希 `scripts/**/*.py`、`packages/production/src/**/*.py`、`schemas/**/*.json`、术语表和 `tools/ops/sermon_unified_preflight.py`。`tools/ops/run.py` 不在其中，所以本 PR **不改变** L2 代码身份；放进包里（方案 B）就会改变。以后 C 批删除门面时照样会改变它。
+- **L2 `code_identity()`**（`text/controller.py`）哈希 `scripts/**/*.py`、`packages/production/src/**/*.py`、`schemas/**/*.json`、术语表、`tools/ops/sermon_unified_preflight.py` 和 **`tools/ops/run.py`**。分发器决定运行哪个模块、怎样绑定宿主，而 L2 命令（如 `text.reconciliation`）现在经它运行；门面原来就在 `scripts/**` 的哈希里，改由分发器运行后，它也必须进闭包，否则改过的分发器能以旧的 `codeIdentitySha256` 和预算授权续跑（#1134 的 Codex P1）。所以本 PR **产生一代新的 L2 代码身份**：只在没有进行中的 L2 run 时合并，合并后的 run 用新身份，与删门面批次相同。`tests/test_canonical_layer2_controller.py` 的 `test_package_command_entry_changes_the_code_identity` 验证改分发器会改变身份。`text/controller.py` 不在 W、T、计分、语速任何闭包里，这一改动不碰 G1。Cloud Run 镜像（`Dockerfile`）同批复制 `tools/ops/run.py`，否则镜像里 `code_identity()` 读不到它；`test_backend_app` 检查这两条 `COPY`。
 - **统一 CLI 执行准入。** `required_modules()` 包含全部被跟踪的 `tools/**/*.py`。新文件让新 manifest 的闭包多一项，而已冻结的 manifest 续跑时会因 `required_modules() ⊄ modules` 报 `execution_closure_incomplete`。所以本 PR 与删门面批次一样，只在没有已冻结、未终结的统一 CLI 运行时合并。
 - **G1 身份。** `tools/ops/run.py` 不在 W、T、计分、语速任何一个物理闭包里，四个身份值不变。
 - **dual_pdf 身份**哈希 `path_aliases.resolve(...)` 指向的实现文件，不哈希子进程 argv 里的门面路径，所以 C8 改 argv 不影响它。
