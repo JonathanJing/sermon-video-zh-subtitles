@@ -139,10 +139,14 @@ class RevisionFixture:
 
     def decide(self, governs=None):
         run = self.root / "run"
+        # Rows are stamped to the second; two identical decisions inside one second would be one
+        # indistinguishable row twice, so each fixture decision gets its own second.
+        self.decisions = getattr(self, "decisions", 0) + 1
         row = record_decision.record(run, question="Which es/zh groups need revision?",
                                      choice="Revise the listed groups only", decided_by="Operator (chat)",
                                      governs=[str(governs or self.prior_path)],
-                                     evidence=["operator listed group numbers"])
+                                     evidence=["operator listed group numbers"],
+                                     now=lambda: f"2026-10-19T00:00:{self.decisions:02d}+00:00")
         return run / record_decision.FILE_NAME, policy_tools.canonical_sha256(row)
 
     def revision_request(self, groups, *, decision=None, **extra):

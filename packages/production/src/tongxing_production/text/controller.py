@@ -23,6 +23,7 @@ from . import candidate as producer
 from . import group_revision
 from . import models
 from . import rule_preflight
+from . import stat_memo
 from contextlib import nullcontext
 
 
@@ -89,6 +90,10 @@ PARTIAL_RECOVERY_RECEIPT_SCHEMA = 'sermon-canonical-layer2-partial-recovery-rece
 MAX_PAYLOAD_CACHE_GROUPS = 4096
 MAX_PAYLOAD_CACHE_FILE_BYTES = 4 * 1024 * 1024
 MAX_AUTO_REPAIR_LOCALES = 3
+# The worker rechecks its binding around every guarded operation (current_binding in
+# run_worker); these derivations are reused while every file they read keeps its stat
+# identity, and recomputed in full otherwise (text/stat_memo.py says what that detects).
+_BINDING_MEMO = stat_memo.StatMemo()
 
 
 def _auto_repair_binding(value, *, allow_qc=False):
@@ -176,6 +181,12 @@ def _payload_cache_snapshot(root):
     """
     root = _safe_path(root)
     require(root.is_dir() and not root.is_symlink(), 'invalid_payload_cache_root')
+    # Every file read below is a direct entry of root.
+    return _BINDING_MEMO.get(('payloadCache', str(root)), lambda: stat_memo.listing(root),
+                             lambda: _payload_cache_snapshot_of(root))
+
+
+def _payload_cache_snapshot_of(root):
     receipts = {}
     markers = []
     for entry in root.iterdir():
@@ -258,6 +269,18 @@ def _partial_recovery_snapshot(failed_job_root, failed_job_id, round_root,
             and round_root.is_dir() and not round_root.is_symlink()
             and direct_budget_root.is_dir() and not direct_budget_root.is_symlink(),
             'invalid_partial_recovery_source')
+    # The failed job's folder, the round's direct entries and the budget ledger
+    # (with the lock paths budget._store_snapshot refuses as links) are all it reads.
+    return _BINDING_MEMO.get(
+        ('partialRecovery', str(failed_job_root), failed_job_id, str(round_root), str(direct_budget_root), locale),
+        lambda: (stat_memo.listing(failed_job_root / failed_job_id) + stat_memo.listing(round_root)
+                 + stat_memo.listing(direct_budget_root) + stat_memo.listing(direct_budget_root / '.locks')
+                 + stat_memo.listing(direct_budget_root / budget_tools.budget.STORE_ID)),
+        lambda: _partial_recovery_snapshot_of(failed_job_root, failed_job_id, round_root,
+                                              direct_budget_root, locale))
+
+
+def _partial_recovery_snapshot_of(failed_job_root, failed_job_id, round_root, direct_budget_root, locale):
     folder = _safe_path(failed_job_root / failed_job_id)
     request_path, state_path = folder / 'request.json', folder / 'state.json'
     request, state = jobs._read(request_path), jobs._read(state_path)
@@ -491,10 +514,19 @@ def code_identity():
     # Code that moved into the production package runs from there; scripts/
     # keeps only its import facade, so the package source is part of the closure. Package commands
     # also run through tools/ops/run.py, which binds the host and picks the module, so it is hashed too.
-    root = _text.current().core.repo_root
+    root = _safe_path(_text.current().core.repo_root)
+    single = (root / 'docs/series-terminology.zh.md', root / 'tools/ops/sermon_unified_preflight.py',
+              root / 'tools/ops/run.py')
+    return _BINDING_MEMO.get(
+        ('code', str(root)),
+        lambda: (stat_memo.tree(root / 'scripts', ('.py',)) + stat_memo.tree(root / 'packages/production/src', ('.py',))
+                 + stat_memo.tree(root / 'schemas', ('.json',)) + stat_memo.files(*single)),
+        lambda: _code_identity_of(root, single))
+
+
+def _code_identity_of(root, single):
     files = sorted([*root.joinpath('scripts').rglob('*.py'), *root.joinpath('packages/production/src').rglob('*.py'),
-                    *root.joinpath('schemas').rglob('*.json'), root / 'docs/series-terminology.zh.md',
-                    root / 'tools/ops/sermon_unified_preflight.py', root / 'tools/ops/run.py'])
+                    *root.joinpath('schemas').rglob('*.json'), *single])
     return jobs._digest({str(p.relative_to(root)): hashlib.sha256(_safe_path(p).read_bytes()).hexdigest() for p in files})
 
 
