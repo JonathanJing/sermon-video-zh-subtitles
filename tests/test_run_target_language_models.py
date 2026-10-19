@@ -472,15 +472,29 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         plan = subject.group_plan(request, f.anchor)
         receipt = producer._load(self.out / "rule-preflight.json")
         manifest = self.out / "run-identity.json"
+        runner = self.out / "runner-identity.json"
+        self.assertEqual(producer._load(runner)["runnerImplementationSha256"], parent_hash)
         for implementation_hash in (parent_hash, *subject.COMPATIBLE_RUNNER_IDENTITIES):
             digest = policy_tools.canonical_sha256({
                 "request": request, "groupPlan": plan,
                 "runnerImplementationSha256": implementation_hash,
                 "rulePreflightSha256": policy_tools.canonical_sha256(receipt)})
             manifest.write_text(json.dumps({"sha256": digest}))
+            runner.unlink()  # each manifest stands for a round another runner version opened
             self.assertEqual(self.production_run(
                 f.source, f.anchor, f.policy, self.out, "fixture-key",
                 lambda *_: self.fail("verified paid calls must be reused")), evidence)
+            # The round records the runner version that opened it, not the current one.
+            self.assertEqual(producer._load(runner), {
+                "schemaVersion": subject.ROUND_RUNNER_IDENTITY_SCHEMA,
+                "runnerImplementationSha256": implementation_hash,
+                "payloadCacheImplementationSha256": None, "runIdentitySha256": digest})
+        tampered = dict(producer._load(runner), runnerImplementationSha256=parent_hash)
+        if tampered != producer._load(runner):
+            runner.write_text(json.dumps(tampered))
+            with self.assertRaisesRegex(ValueError, "Round runner identity changed"):
+                self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key",
+                                    lambda *_: self.fail("a changed runner record must fail before calls"))
         manifest.write_text(json.dumps({"sha256": "0" * 64}))
         with self.assertRaisesRegex(ValueError, "Output directory belongs"):
             self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key",
