@@ -214,6 +214,13 @@ def test_catalog_only_candidate_reuses_published_edition_targets_byte_for_byte()
         contract.build_mixed_source_candidate(
             legacy, family_page_id='family-page', locale_editions={'zh-Hans': 'family-page'},
             generated_at='2026-10-18T17:00:00Z')
+    other_week = copy.deepcopy(legacy)
+    next(p for p in other_week['pages'] if p['id'] == 'broadcast-edition')['date'] = '2026-10-11'
+    with pytest.raises(ValueError, match='different sermon date'):
+        contract.build_mixed_source_candidate(
+            other_week, family_page_id='family-page',
+            locale_editions={'zh-Hans': 'broadcast-edition', 'es': 'family-page', 'ko': 'family-page'},
+            generated_at='2026-10-18T17:00:00Z')
 
 
 def test_v5_rejects_cross_hash_video_and_release_reuse():

@@ -296,6 +296,10 @@ def build_mixed_source_candidate(baseline, *, family_page_id, locale_editions, g
     for locale, edition_id in locale_editions.items():
         require(edition_id in pages and locale in pages[edition_id]['targets'],
                 'Mixed-source edition target is missing')
+        # A typo naming another week's edition would publish it under this family and
+        # absorb (remove) its own archive page; only same-sermon editions qualify.
+        require(pages[edition_id]['date'] == family['date'],
+                'Mixed-source edition is from a different sermon date')
         edition = promote_page_to_per_target(pages[edition_id])
         target = edition['targets'][locale]
         require(target['editionId'] == edition_id, 'Mixed-source edition identity changed')
