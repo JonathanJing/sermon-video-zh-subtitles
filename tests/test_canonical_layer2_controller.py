@@ -19,6 +19,7 @@ from tongxing_production.orchestration import jobs
 from scripts import sermon_execution_harness as harness
 from tongxing_production.text import policy as policies
 from tests import test_inspect_canonical_packages as fixtures
+from tests import tree_paths
 from tongxing_production.text import controller as layer2
 from tongxing_production.text import stat_memo
 
@@ -374,7 +375,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
     def test_actual_worker_api_without_budget_stops_before_any_model_cache(self):
         with self.active() as (config, code, key, _):
             result = subprocess.run(subject._worker_command(config, 'zh-Hans', key, code),
-                cwd=subject.ROOT, env={'OPENAI_API_KEY': '', 'CODEX_HOME': str(self.root / 'invalid-auth')}, capture_output=True, text=True, timeout=10)
+                cwd=subject.ROOT, env=tree_paths.child_env({'OPENAI_API_KEY': '', 'CODEX_HOME': str(self.root / 'invalid-auth')}), capture_output=True, text=True, timeout=10)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('bound_budget_authorization_required', result.stderr)
         self.assertEqual({p.name for p in self.output.iterdir()}, {'accounting'})
@@ -387,7 +388,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         command = [sys.executable, str((Path(__file__).resolve().parents[1] / 'tools/ops/run.py')), 'text.controller',
                    'tick', '--config', str(self.path),
                    '--mode', 'deterministic_execute']
-        children = [subprocess.Popen(command, cwd=subject.ROOT, env={'OPENAI_API_KEY': '', 'CODEX_HOME': str(self.root / 'invalid-auth')},
+        children = [subprocess.Popen(command, cwd=subject.ROOT, env=tree_paths.child_env({'OPENAI_API_KEY': '', 'CODEX_HOME': str(self.root / 'invalid-auth')}),
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) for _ in range(2)]
         outputs = []
         try:

@@ -4,7 +4,7 @@
 
 并发、请求上限和新计划预算的当前规则见[周更运行配置](weekly-run-profile.zh.md)；既有运行保留冻结授权与缓存身份，API-only 阶段不占 Spark，GPU 阶段按原准入门执行。
 
-在 git worktree 里跑测试或脚本前，先执行 `python3 tools/development/worktree_venv.py`。共享 `.venv` 的可编辑安装指向主 checkout，`PYTHONPATH` 管不到 `python -I` 启动的子进程；该脚本建 `<worktree>/.venv`，先导入本 worktree 的 `packages/production/src`，再用共享 `.venv` 的依赖（依赖仍装在共享 `.venv`）。
+在 git worktree 里跑测试或脚本前，先执行 `python3 tools/development/worktree_venv.py`。共享 `.venv` 的可编辑安装指向主 checkout，`PYTHONPATH` 管不到 `python -I` 启动的子进程；该脚本建 `<worktree>/.venv`，先导入本 worktree 的 `packages/production/src` 与 `services/api/src`，再用共享 `.venv` 的依赖（依赖仍装在共享 `.venv`）。只用共享 `.venv` 跑 pytest 时见 [CONTRIBUTING](../CONTRIBUTING.zh.md#在-git-worktree-里跑测试)。
 
 ### 开工前：预算文件与开工检查（2026-10-13 起）
 
