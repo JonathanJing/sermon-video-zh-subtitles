@@ -1,0 +1,2427 @@
+{
+  "schemaVersion": "sermon-target-language-human-review-receipt-v1",
+  "decision": "approved",
+  "targetLocale": "es",
+  "englishSourcePackageJsonSha256": "137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9",
+  "anchorManifestJsonSha256": "2587ffdd446ea3c1feee26980fc2bb6f22da3bfea12c614bbf45f036ffb1d1fb",
+  "translationPolicySha256": "491469278f28b56b20bb1f0ad1903a049d20c2d08fddd90a5c24d39cdbd92dd7",
+  "candidateJsonSha256": "938dac2ab590ced25f96caade3ee6564376b74573ed80d4834128582c5715c24",
+  "reviewer": "Jony",
+  "reviewedAt": "2026-10-18T15:30:07+00:00",
+  "reviewedGroupIds": [
+    "translation-chunk-0000-u001",
+    "translation-chunk-0000-u002",
+    "translation-chunk-0000-u003",
+    "translation-chunk-0000-u004",
+    "translation-chunk-0000-u005",
+    "translation-chunk-0000-u006",
+    "translation-chunk-0000-u007",
+    "translation-chunk-0000-u008",
+    "translation-chunk-0000-u009",
+    "translation-chunk-0000-u010",
+    "translation-chunk-0000-u011",
+    "translation-chunk-0000-u012",
+    "translation-chunk-0000-u013",
+    "translation-chunk-0000-u014",
+    "translation-chunk-0000-u015",
+    "translation-chunk-0000-u016",
+    "translation-chunk-0000-u017",
+    "translation-chunk-0000-u018",
+    "translation-chunk-0000-u019",
+    "translation-chunk-0000-u020",
+    "translation-chunk-0000-u021",
+    "translation-chunk-0000-u022",
+    "translation-chunk-0000-u023",
+    "translation-chunk-0000-u024",
+    "translation-chunk-0000-u025",
+    "translation-chunk-0000-u026",
+    "translation-chunk-0000-u027",
+    "translation-chunk-0000-u028",
+    "translation-chunk-0000-u029",
+    "translation-chunk-0000-u030",
+    "translation-chunk-0000-u031",
+    "translation-chunk-0000-u032",
+    "translation-chunk-0000-u033",
+    "translation-chunk-0000-u034",
+    "translation-chunk-0000-u035",
+    "translation-chunk-0000-u036",
+    "translation-chunk-0000-u037",
+    "translation-chunk-0000-u038",
+    "translation-chunk-0000-u039",
+    "translation-chunk-0000-u040",
+    "translation-chunk-0001-u001",
+    "translation-chunk-0001-u002",
+    "translation-chunk-0001-u003",
+    "translation-chunk-0001-u004",
+    "translation-chunk-0001-u005",
+    "translation-chunk-0001-u006",
+    "translation-chunk-0001-u007",
+    "translation-chunk-0001-u008",
+    "translation-chunk-0001-u009",
+    "translation-chunk-0001-u010",
+    "translation-chunk-0001-u011",
+    "translation-chunk-0001-u012",
+    "translation-chunk-0001-u013",
+    "translation-chunk-0001-u014",
+    "translation-chunk-0001-u015",
+    "translation-chunk-0001-u016",
+    "translation-chunk-0001-u017",
+    "translation-chunk-0001-u018",
+    "translation-chunk-0001-u019",
+    "translation-chunk-0001-u020",
+    "translation-chunk-0001-u021",
+    "translation-chunk-0001-u022",
+    "translation-chunk-0001-u023",
+    "translation-chunk-0001-u024",
+    "translation-chunk-0001-u025",
+    "translation-chunk-0001-u026",
+    "translation-chunk-0001-u027",
+    "translation-chunk-0001-u028",
+    "translation-chunk-0001-u029",
+    "translation-chunk-0001-u030",
+    "translation-chunk-0001-u031",
+    "translation-chunk-0001-u032",
+    "translation-chunk-0001-u033",
+    "translation-chunk-0001-u034",
+    "translation-chunk-0001-u035",
+    "translation-chunk-0001-u036",
+    "translation-chunk-0001-u037",
+    "translation-chunk-0001-u038",
+    "translation-chunk-0001-u039",
+    "translation-chunk-0001-u040",
+    "translation-chunk-0001-u041",
+    "translation-chunk-0001-u042",
+    "translation-chunk-0002-u001",
+    "translation-chunk-0002-u002",
+    "translation-chunk-0002-u003",
+    "translation-chunk-0002-u004",
+    "translation-chunk-0002-u005",
+    "translation-chunk-0002-u006",
+    "translation-chunk-0002-u007",
+    "translation-chunk-0002-u008",
+    "translation-chunk-0002-u009",
+    "translation-chunk-0002-u010",
+    "translation-chunk-0002-u011",
+    "translation-chunk-0002-u012",
+    "translation-chunk-0002-u013",
+    "translation-chunk-0002-u014",
+    "translation-chunk-0002-u015",
+    "translation-chunk-0002-u016",
+    "translation-chunk-0002-u017",
+    "translation-chunk-0002-u018",
+    "translation-chunk-0002-u019",
+    "translation-chunk-0002-u020",
+    "translation-chunk-0002-u021",
+    "translation-chunk-0002-u022",
+    "translation-chunk-0002-u023",
+    "translation-chunk-0002-u024",
+    "translation-chunk-0002-u025",
+    "translation-chunk-0002-u026",
+    "translation-chunk-0002-u027",
+    "translation-chunk-0002-u028",
+    "translation-chunk-0002-u029",
+    "translation-chunk-0002-u030",
+    "translation-chunk-0002-u031",
+    "translation-chunk-0002-u032",
+    "translation-chunk-0002-u033",
+    "translation-chunk-0002-u034",
+    "translation-chunk-0002-u035",
+    "translation-chunk-0002-u036",
+    "translation-chunk-0002-u037",
+    "translation-chunk-0002-u038",
+    "translation-chunk-0002-u039",
+    "translation-chunk-0002-u040",
+    "translation-chunk-0002-u041",
+    "translation-chunk-0003-u001",
+    "translation-chunk-0003-u002",
+    "translation-chunk-0003-u003",
+    "translation-chunk-0003-u004",
+    "translation-chunk-0003-u005",
+    "translation-chunk-0003-u006",
+    "translation-chunk-0003-u007",
+    "translation-chunk-0003-u008",
+    "translation-chunk-0003-u009",
+    "translation-chunk-0003-u010",
+    "translation-chunk-0003-u011",
+    "translation-chunk-0003-u012",
+    "translation-chunk-0003-u013",
+    "translation-chunk-0003-u014",
+    "translation-chunk-0003-u015",
+    "translation-chunk-0003-u016",
+    "translation-chunk-0003-u017",
+    "translation-chunk-0003-u018",
+    "translation-chunk-0003-u019",
+    "translation-chunk-0003-u020",
+    "translation-chunk-0003-u021",
+    "translation-chunk-0003-u022",
+    "translation-chunk-0003-u023",
+    "translation-chunk-0003-u024",
+    "translation-chunk-0003-u025",
+    "translation-chunk-0003-u026",
+    "translation-chunk-0003-u027",
+    "translation-chunk-0003-u028",
+    "translation-chunk-0003-u029",
+    "translation-chunk-0003-u030",
+    "translation-chunk-0003-u031",
+    "translation-chunk-0003-u032",
+    "translation-chunk-0003-u033",
+    "translation-chunk-0003-u034",
+    "translation-chunk-0003-u035",
+    "translation-chunk-0003-u036",
+    "translation-chunk-0003-u037",
+    "translation-chunk-0003-u038",
+    "translation-chunk-0003-u039",
+    "translation-chunk-0004-u001",
+    "translation-chunk-0004-u002",
+    "translation-chunk-0004-u003",
+    "translation-chunk-0004-u004",
+    "translation-chunk-0004-u005",
+    "translation-chunk-0004-u006",
+    "translation-chunk-0004-u007",
+    "translation-chunk-0004-u008",
+    "translation-chunk-0004-u009",
+    "translation-chunk-0004-u010",
+    "translation-chunk-0004-u011",
+    "translation-chunk-0004-u012",
+    "translation-chunk-0004-u013",
+    "translation-chunk-0004-u014",
+    "translation-chunk-0004-u015",
+    "translation-chunk-0004-u016",
+    "translation-chunk-0004-u017",
+    "translation-chunk-0004-u018",
+    "translation-chunk-0004-u019",
+    "translation-chunk-0004-u020",
+    "translation-chunk-0004-u021",
+    "translation-chunk-0004-u022",
+    "translation-chunk-0004-u023",
+    "translation-chunk-0004-u024",
+    "translation-chunk-0004-u025",
+    "translation-chunk-0004-u026",
+    "translation-chunk-0004-u027",
+    "translation-chunk-0004-u028",
+    "translation-chunk-0004-u029",
+    "translation-chunk-0004-u030",
+    "translation-chunk-0004-u031",
+    "translation-chunk-0004-u032",
+    "translation-chunk-0004-u033",
+    "translation-chunk-0004-u034",
+    "translation-chunk-0004-u035",
+    "translation-chunk-0004-u036",
+    "translation-chunk-0004-u037",
+    "translation-chunk-0005-u001",
+    "translation-chunk-0005-u002",
+    "translation-chunk-0005-u003",
+    "translation-chunk-0005-u004",
+    "translation-chunk-0005-u005",
+    "translation-chunk-0005-u006",
+    "translation-chunk-0005-u007",
+    "translation-chunk-0005-u008",
+    "translation-chunk-0005-u009",
+    "translation-chunk-0005-u010",
+    "translation-chunk-0005-u011",
+    "translation-chunk-0005-u012",
+    "translation-chunk-0005-u013",
+    "translation-chunk-0005-u014",
+    "translation-chunk-0005-u015",
+    "translation-chunk-0005-u016",
+    "translation-chunk-0005-u017",
+    "translation-chunk-0005-u018",
+    "translation-chunk-0005-u019",
+    "translation-chunk-0005-u020",
+    "translation-chunk-0005-u021",
+    "translation-chunk-0005-u022",
+    "translation-chunk-0005-u023",
+    "translation-chunk-0005-u024",
+    "translation-chunk-0005-u025",
+    "translation-chunk-0005-u026",
+    "translation-chunk-0005-u027",
+    "translation-chunk-0005-u028",
+    "translation-chunk-0005-u029",
+    "translation-chunk-0005-u030",
+    "translation-chunk-0005-u031",
+    "translation-chunk-0005-u032",
+    "translation-chunk-0005-u033",
+    "translation-chunk-0005-u034",
+    "translation-chunk-0005-u035",
+    "translation-chunk-0005-u036",
+    "translation-chunk-0005-u037",
+    "translation-chunk-0005-u038",
+    "translation-chunk-0005-u039",
+    "translation-chunk-0005-u040",
+    "translation-chunk-0005-u041",
+    "translation-chunk-0005-u042",
+    "translation-chunk-0005-u043",
+    "translation-chunk-0006-u001",
+    "translation-chunk-0006-u002",
+    "translation-chunk-0006-u003",
+    "translation-chunk-0006-u004",
+    "translation-chunk-0006-u005",
+    "translation-chunk-0006-u006",
+    "translation-chunk-0006-u007",
+    "translation-chunk-0006-u008",
+    "translation-chunk-0006-u009",
+    "translation-chunk-0006-u010",
+    "translation-chunk-0006-u011",
+    "translation-chunk-0006-u012",
+    "translation-chunk-0006-u013",
+    "translation-chunk-0006-u014",
+    "translation-chunk-0006-u015",
+    "translation-chunk-0006-u016",
+    "translation-chunk-0006-u017",
+    "translation-chunk-0006-u018",
+    "translation-chunk-0006-u019",
+    "translation-chunk-0006-u020",
+    "translation-chunk-0006-u021",
+    "translation-chunk-0006-u022",
+    "translation-chunk-0006-u023",
+    "translation-chunk-0006-u024",
+    "translation-chunk-0006-u025",
+    "translation-chunk-0006-u026",
+    "translation-chunk-0006-u027",
+    "translation-chunk-0006-u028",
+    "translation-chunk-0006-u029",
+    "translation-chunk-0006-u030",
+    "translation-chunk-0006-u031",
+    "translation-chunk-0006-u032",
+    "translation-chunk-0006-u033",
+    "translation-chunk-0006-u034",
+    "translation-chunk-0006-u035",
+    "translation-chunk-0006-u036",
+    "translation-chunk-0006-u037",
+    "translation-chunk-0006-u038",
+    "translation-chunk-0006-u039",
+    "translation-chunk-0006-u040",
+    "translation-chunk-0007-u001",
+    "translation-chunk-0007-u002",
+    "translation-chunk-0007-u003",
+    "translation-chunk-0007-u004",
+    "translation-chunk-0007-u005",
+    "translation-chunk-0007-u006",
+    "translation-chunk-0007-u007",
+    "translation-chunk-0007-u008",
+    "translation-chunk-0007-u009",
+    "translation-chunk-0007-u010",
+    "translation-chunk-0007-u011",
+    "translation-chunk-0007-u012",
+    "translation-chunk-0007-u013",
+    "translation-chunk-0007-u014",
+    "translation-chunk-0007-u015",
+    "translation-chunk-0007-u016",
+    "translation-chunk-0007-u017",
+    "translation-chunk-0007-u018",
+    "translation-chunk-0007-u019",
+    "translation-chunk-0007-u020",
+    "translation-chunk-0007-u021",
+    "translation-chunk-0007-u022",
+    "translation-chunk-0007-u023",
+    "translation-chunk-0007-u024",
+    "translation-chunk-0007-u025",
+    "translation-chunk-0007-u026",
+    "translation-chunk-0007-u027",
+    "translation-chunk-0007-u028",
+    "translation-chunk-0007-u029",
+    "translation-chunk-0007-u030",
+    "translation-chunk-0007-u031",
+    "translation-chunk-0007-u032",
+    "translation-chunk-0007-u033",
+    "translation-chunk-0007-u034",
+    "translation-chunk-0008-u001",
+    "translation-chunk-0008-u002",
+    "translation-chunk-0008-u003",
+    "translation-chunk-0008-u004",
+    "translation-chunk-0008-u005",
+    "translation-chunk-0008-u006",
+    "translation-chunk-0008-u007",
+    "translation-chunk-0008-u008",
+    "translation-chunk-0008-u009",
+    "translation-chunk-0008-u010",
+    "translation-chunk-0008-u011",
+    "translation-chunk-0008-u012",
+    "translation-chunk-0008-u013",
+    "translation-chunk-0008-u014",
+    "translation-chunk-0008-u015",
+    "translation-chunk-0008-u016",
+    "translation-chunk-0008-u017",
+    "translation-chunk-0008-u018",
+    "translation-chunk-0008-u019",
+    "translation-chunk-0008-u020",
+    "translation-chunk-0008-u021",
+    "translation-chunk-0008-u022",
+    "translation-chunk-0008-u023",
+    "translation-chunk-0008-u024",
+    "translation-chunk-0008-u025",
+    "translation-chunk-0008-u026",
+    "translation-chunk-0008-u027",
+    "translation-chunk-0008-u028",
+    "translation-chunk-0008-u029",
+    "translation-chunk-0008-u030",
+    "translation-chunk-0008-u031",
+    "translation-chunk-0008-u032",
+    "translation-chunk-0008-u033",
+    "translation-chunk-0008-u034",
+    "translation-chunk-0009-u001",
+    "translation-chunk-0009-u002",
+    "translation-chunk-0009-u003",
+    "translation-chunk-0009-u004",
+    "translation-chunk-0009-u005",
+    "translation-chunk-0009-u006",
+    "translation-chunk-0009-u007",
+    "translation-chunk-0009-u008",
+    "translation-chunk-0009-u009",
+    "translation-chunk-0009-u010",
+    "translation-chunk-0009-u011",
+    "translation-chunk-0009-u012",
+    "translation-chunk-0009-u013",
+    "translation-chunk-0009-u014",
+    "translation-chunk-0009-u015",
+    "translation-chunk-0009-u016",
+    "translation-chunk-0009-u017",
+    "translation-chunk-0009-u018",
+    "translation-chunk-0009-u019",
+    "translation-chunk-0009-u020",
+    "translation-chunk-0009-u021",
+    "translation-chunk-0009-u022",
+    "translation-chunk-0009-u023",
+    "translation-chunk-0009-u024",
+    "translation-chunk-0009-u025",
+    "translation-chunk-0009-u026",
+    "translation-chunk-0009-u027",
+    "translation-chunk-0009-u028",
+    "translation-chunk-0009-u029",
+    "translation-chunk-0009-u030",
+    "translation-chunk-0009-u031",
+    "translation-chunk-0009-u032",
+    "translation-chunk-0009-u033",
+    "translation-chunk-0009-u034",
+    "translation-chunk-0009-u035",
+    "translation-chunk-0009-u036",
+    "translation-chunk-0010-u001",
+    "translation-chunk-0010-u002",
+    "translation-chunk-0010-u003",
+    "translation-chunk-0010-u004",
+    "translation-chunk-0010-u005",
+    "translation-chunk-0010-u006",
+    "translation-chunk-0010-u007",
+    "translation-chunk-0010-u008",
+    "translation-chunk-0010-u009",
+    "translation-chunk-0010-u010",
+    "translation-chunk-0010-u011",
+    "translation-chunk-0010-u012",
+    "translation-chunk-0010-u013",
+    "translation-chunk-0010-u014",
+    "translation-chunk-0010-u015",
+    "translation-chunk-0010-u016"
+  ],
+  "groupReviews": [
+    {
+      "translationGroupId": "translation-chunk-0000-u001",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u002",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u003",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u004",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u005",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u006",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u007",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u008",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u009",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u010",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u011",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u012",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u013",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u014",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u015",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u016",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u017",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u018",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u019",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u020",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u021",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u022",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u023",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u024",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u025",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u026",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u027",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u028",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u029",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u030",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u031",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u032",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u033",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u034",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u035",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u036",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u037",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u038",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u039",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0000-u040",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u001",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u002",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u003",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u004",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u005",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u006",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u007",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u008",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u009",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u010",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u011",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u012",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u013",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u014",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u015",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u016",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u017",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u018",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u019",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u020",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u021",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u022",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u023",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u024",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u025",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u026",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u027",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u028",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u029",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u030",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u031",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u032",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u033",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u034",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u035",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u036",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u037",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u038",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u039",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u040",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u041",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0001-u042",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u001",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u002",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u003",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u004",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u005",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u006",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u007",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u008",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u009",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u010",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u011",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u012",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u013",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u014",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u015",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u016",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u017",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u018",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u019",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u020",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u021",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u022",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u023",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u024",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u025",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u026",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u027",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u028",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u029",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u030",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u031",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u032",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u033",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u034",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u035",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u036",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u037",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u038",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u039",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u040",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0002-u041",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u001",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u002",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u003",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u004",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u005",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u006",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u007",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u008",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u009",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u010",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u011",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u012",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u013",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u014",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u015",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u016",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u017",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u018",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u019",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u020",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u021",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u022",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u023",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u024",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u025",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u026",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u027",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u028",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u029",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u030",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u031",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u032",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u033",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u034",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u035",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u036",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u037",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u038",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0003-u039",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u001",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u002",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u003",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u004",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u005",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u006",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u007",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u008",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u009",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u010",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u011",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u012",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u013",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u014",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u015",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u016",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u017",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u018",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u019",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u020",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u021",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u022",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u023",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u024",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u025",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u026",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u027",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u028",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u029",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u030",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u031",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u032",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u033",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u034",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u035",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u036",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0004-u037",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u001",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u002",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u003",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u004",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u005",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u006",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u007",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u008",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u009",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u010",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u011",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u012",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u013",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u014",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u015",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u016",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u017",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u018",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u019",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u020",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u021",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u022",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u023",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u024",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u025",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u026",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u027",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u028",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u029",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u030",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u031",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u032",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u033",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u034",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u035",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u036",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u037",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u038",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u039",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u040",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u041",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u042",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0005-u043",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u001",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u002",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u003",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u004",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u005",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u006",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u007",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u008",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u009",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u010",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u011",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u012",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u013",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u014",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u015",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u016",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u017",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u018",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u019",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u020",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u021",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u022",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u023",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u024",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u025",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u026",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u027",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u028",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u029",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u030",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u031",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u032",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u033",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u034",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u035",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u036",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u037",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u038",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u039",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0006-u040",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u001",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u002",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u003",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u004",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u005",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u006",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u007",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u008",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u009",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u010",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u011",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u012",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u013",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u014",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u015",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u016",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u017",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u018",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u019",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u020",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u021",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u022",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u023",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u024",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u025",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u026",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u027",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u028",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u029",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u030",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u031",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u032",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u033",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0007-u034",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u001",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u002",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u003",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u004",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u005",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u006",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u007",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u008",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u009",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u010",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u011",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u012",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u013",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u014",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u015",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u016",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u017",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u018",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u019",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u020",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u021",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u022",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u023",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u024",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u025",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u026",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u027",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u028",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u029",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u030",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u031",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u032",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u033",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0008-u034",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u001",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u002",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u003",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u004",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u005",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u006",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u007",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u008",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u009",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u010",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u011",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u012",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u013",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u014",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u015",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u016",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u017",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u018",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u019",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u020",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u021",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u022",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u023",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u024",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u025",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u026",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u027",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u028",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u029",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u030",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u031",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u032",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u033",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u034",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u035",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u036",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u001",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u002",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u003",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u004",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u005",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u006",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u007",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u008",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u009",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u010",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u011",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u012",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u013",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u014",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u015",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u016",
+      "decision": "approved",
+      "evidence": "Operator Jony read the complete Spanish text against the English (side-by-side review document) and listened to the full Spanish audio, approving both in chat at 2026-10-18T15:30:07+00:00: 西语文字音频全程通过"
+    }
+  ]
+}
