@@ -9,7 +9,8 @@ from unittest.mock import patch
 
 from poc import sha256
 import run_weekly_dubbing as runner
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from test_resume_integrity import candidate_fixture
 from weekly_dubbing import read
 

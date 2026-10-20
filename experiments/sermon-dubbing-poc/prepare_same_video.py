@@ -202,7 +202,8 @@ def production_plan(run, source, *, python=sys.executable, title=None, speaker=N
 
 def initialize(source, run, *, root=ROOT, media_probe=probe, title=None, speaker=None, python=sys.executable):
     run = Path(run).resolve()
-    from scripts.sermon_accounting import accounting_session, stage
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability.accounting import accounting_session, stage
     with accounting_session(run.parent / "accounting" / run.name, "same_video_intake", evidence_directory=run):
         with stage("same_video.validate_source"):
             cached = run.exists()
@@ -393,7 +394,8 @@ def render_reviewed_pdfs(run, contract, inputs, *, runner=subprocess.run, python
 def seal_reviewed(run, source=None, *, root=ROOT, media_probe=probe, runner=subprocess.run, python=sys.executable):
     run = Path(run).resolve()
     path = run / HANDOFF_NAME
-    from scripts.sermon_accounting import accounting_session, stage
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability.accounting import accounting_session, stage
     with accounting_session(run / "accounting", "same_video_handoff", evidence_directory=run):
         with stage("same_video.validate_reviewed", cache_hit=path.exists()):
             if path.exists():

@@ -9,7 +9,10 @@ from scripts import sermon_historical_layer2 as h, sermon_strict_layer2 as stric
 from scripts import run_bounded_diagnostic as bounded
 from scripts import sermon_strict_candidate_bridge as bridge, sermon_review_contracts as c
 from scripts import sermon_review_budget as budget, sermon_diagnostic_provider as provider
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import sermon_diagnostic_attempts as attempts, sermon_accounting as accounting, sermon_log_profile as profile
+from tongxing_production.observability import accounting
+from tongxing_production.observability import profile
 from tongxing_production.text import policy as policies
 from tongxing_production.text import candidate as producer
 from tests import test_sermon_diagnostic_provider as fixtures

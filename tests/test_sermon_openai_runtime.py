@@ -86,9 +86,9 @@ class RuntimeBindingTests(unittest.TestCase):
                 judge.main()
 
     def test_actual_ledger_and_report_capture_safe_configured_route(self):
-        from scripts import sermon_accounting as accounting
-        from scripts import sermon_log_profile as profile
-        from scripts.sermon_model_call_report import report
+        from tongxing_production.observability import accounting
+        from tongxing_production.observability import profile
+        from tongxing_production.observability.model_call_report import report
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, selected(), clear=True):
             with profile.session(tmp, 'runtime-test', work_kind='engineering', evidence_mode='synthetic'):
                 with accounting.stage('model-call', executor_type='production_model'), profile.context(logicalCallId='runtime-call'):
@@ -102,8 +102,8 @@ class RuntimeBindingTests(unittest.TestCase):
             self.assertEqual(calls[0]['openaiRoute']['identitySource'], 'configured_runtime')
 
     def test_imported_api_observation_does_not_inherit_local_route(self):
-        from scripts import sermon_accounting as accounting
-        from scripts import sermon_model_call_observation as observation
+        from tongxing_production.observability import accounting
+        from tongxing_production.observability import model_call_observation as observation
         captured = []
         with patch.object(observation, '_emit', side_effect=captured.append):
             with observation.invocation('foreign-model', backend='api', provider='openai', role='supervisor'):

@@ -45,7 +45,8 @@ from tongxing_production.delivery import formal_stage as stage
 from scripts import sermon_review_contracts as contracts
 from scripts import sermon_review_budget as budget
 from scripts import sermon_strict_gate_admission as admission
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'private-sermon-delivery-release-binding-v1'

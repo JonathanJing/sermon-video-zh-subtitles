@@ -11,7 +11,8 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.sermon_accounting import accounting_session, record_workload, stage
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import accounting_session, record_workload, stage
 from poc import sha256, write_json
 from weekly_dubbing import read, validate_frozen, normalize_mp3
 

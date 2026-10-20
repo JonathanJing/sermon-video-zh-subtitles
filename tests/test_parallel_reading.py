@@ -12,7 +12,7 @@ from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 from tongxing_production.workflows.dual_pdf import post_live as production
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 
 
 class ParallelReadingTest(unittest.TestCase):

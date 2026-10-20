@@ -743,7 +743,7 @@ class LoadedCodeIdentityTests(unittest.TestCase):
     still record the modules importing the entry used to load (review finding on #556)."""
 
     def run_identity(self, imports):
-        code = (imports + "; from scripts import sermon_accounting; import json; "
+        code = (imports + "; from scripts import tongxing_host; from tongxing_production.observability import accounting as sermon_accounting; import json; "
                 "print(json.dumps(sorted(sermon_accounting.execution_identity()['loadedProjectCodeSha256'])))")
         result = subprocess.run([sys.executable, "-c", code], cwd=Path(__file__).resolve().parents[1],
                                 capture_output=True, text=True, timeout=120)

@@ -150,7 +150,8 @@ def run_call(directory, call, payload, source, schema, *, execution):
 
 def usage_totals(responses):
     keys = ['inputTokens', 'cachedInputTokens', 'outputTokens', 'reasoningTokens']
-    from scripts.sermon_model_call_observation import normalize_usage
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability.model_call_observation import normalize_usage
     rows = [normalize_usage(r.get('usage')) if r.get('schemaVersion', '').startswith('codex') else (r.get('usage') or {})
             for r in responses]
     return {key: sum(row[key] for row in rows) if all(type(row.get(key)) is int for row in rows) else None

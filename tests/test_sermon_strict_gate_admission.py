@@ -138,7 +138,7 @@ class AdmissionTests(unittest.TestCase):
         self.assertEqual(len(self.boundary.reconcile()['intents']), 2)
 
     def test_profile_records_group_decisions_and_commit_failure_keeps_unique_intent(self):
-        from scripts import sermon_accounting as accounting
+        from tongxing_production.observability import accounting
         with self.f.f.session():
             with patch.object(accounting,'record_log',side_effect=accounting.AccountingWriteError('fault')):
                 result=self.admit()

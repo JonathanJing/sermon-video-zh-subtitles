@@ -11,7 +11,7 @@ from scripts import sermon_bounded_decision as decision
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from scripts.sermon_decision_accounting import Observation
-from scripts.sermon_accounting import AccountingWriteError
+from tongxing_production.observability.accounting import AccountingWriteError
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'sermon-decision-budget-v1'

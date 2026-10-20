@@ -12,7 +12,7 @@ from scripts.canonical_pipeline_definition import LOCALES, VERSION, _sha
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration.jobs import _digest
 from scripts.sermon_decision_accounting import Observation
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 
 PACKET_SCHEMA = 'sermon-decision-state-v1'
 DECISION_SCHEMA = 'sermon-decision-v1'

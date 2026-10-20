@@ -8,11 +8,12 @@ import json
 from pathlib import Path
 import unittest
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as callbacks
 from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_diagnostic_source_evidence as evidence
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_provider_limits as limits

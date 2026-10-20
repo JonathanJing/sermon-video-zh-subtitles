@@ -11,8 +11,11 @@ from unittest.mock import patch
 
 from scripts import tongxing_host as host
 from tongxing_production.text import controller
-from scripts import four_layer_measure, layer2_api_concurrency, sermon_accounting, series_terminology
+from scripts import layer2_api_concurrency, series_terminology
+from tongxing_production.observability import accounting as sermon_accounting
+from tongxing_production.observability import measure as four_layer_measure
 from tongxing_production.text import candidate
+from scripts import four_layer_measure, layer2_api_concurrency, sermon_accounting, series_terminology
 from scripts import prepare_target_language_speech_job as handoff
 from scripts import production_concurrency_profile
 from tongxing_production.compute import openai_runtime as sermon_openai_runtime

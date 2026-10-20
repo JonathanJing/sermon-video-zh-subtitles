@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_source_evidence as evidence
 from scripts import sermon_provider_limits as limits
 from scripts import sermon_review_budget as budget

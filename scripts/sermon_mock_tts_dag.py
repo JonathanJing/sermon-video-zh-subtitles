@@ -17,12 +17,14 @@ import re
 import tempfile
 import uuid
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import completion
 from scripts import sermon_dag_evidence as evidence
 from scripts import sermon_diagnostic_prefect_flow as diagnostic
-from scripts import sermon_durable_accounting as durable
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import durable
+from tongxing_production.observability import profile
+from tongxing_production import path_aliases
 from scripts import sermon_mock_tts_contract as contract
 from scripts import sermon_mock_tts_control as control
 from scripts import sermon_public_snapshot as public
@@ -86,13 +88,18 @@ def _graph(units, *, source_node='source.existing'):
     return nodes
 
 
+def code_sha256(name):
+    # Keys stay the legacy scripts/ names; a member moved into the package is read where it lives.
+    return diagnostic._hash_file(diagnostic.pilot.REPO/path_aliases.resolve(name))
+
+
 def _code_files():
     identity = accounting.execution_identity()
     paths = set(identity['loadedProjectCodeSha256'])
     paths.update('scripts/'+name for name in ('sermon_mock_tts_dag.py', 'sermon_mock_tts_control.py',
         'sermon_mock_tts_contract.py', 'sermon_mock_tts_worker.py', 'sermon_durable_accounting.py',
         'sermon_completion.py', 'sermon_diagnostic_dag_session.py', 'sermon_diagnostic_prefect_flow.py'))
-    return {name: diagnostic._hash_file(diagnostic.pilot.REPO/name) for name in sorted(paths)}
+    return {name: code_sha256(name) for name in sorted(paths)}
 
 
 def policy_and_faults(units, config):
@@ -196,7 +203,7 @@ class MockTTSDAG:
             and self.binding['permissions'] == PERMISSIONS
             and execution['mockImplementationSha256'] == contract.implementation_sha256(),
             'mock_dag_frozen_plan_changed')
-        c.require(all(diagnostic._hash_file(diagnostic.pilot.REPO/name) == digest
+        c.require(all(code_sha256(name) == digest
             for name, digest in execution['codeFiles'].items()), 'mock_dag_code_identity_changed')
         c.require(self.root == _safe_path(self.session.root/'mock-tts-dag'/self.plan_sha256, recursive=True),
             'mock_dag_scope_changed')

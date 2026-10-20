@@ -6,9 +6,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import completion
+from tongxing_production.observability import profile
 from scripts import sermon_review_contracts as c
 from tongxing_production.source import producer_compatibility as compatibility
 from tests.test_accounting_log_contract import fixture
@@ -282,8 +283,8 @@ class CompletionTests(unittest.TestCase):
             'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
         repository=Path(__file__).resolve().parents[1]
         before,after=compatibility.FACADE_REMOVAL_HISTORICAL_SHA256,compatibility.FACADE_REMOVAL_SOURCE_SHA256
-        for path,sha in after.items():
-            self.assertEqual(sha,c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        # The two producers changed again in v12 (C batches); v11's current side is v12's historical side.
+        self.assertEqual(after,compatibility.C_FACADE_REMOVAL_HISTORICAL_SHA256)
         self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.FACADE_REMOVAL_CHANGED))
         planned={compatibility.resolve(path):sha for path,sha in after.items()}
         step=compatibility.verify(before,after,planned,binding)
@@ -294,5 +295,23 @@ class CompletionTests(unittest.TestCase):
         # Generations do not compose: a v9 parent cannot jump straight to the D-window checkout.
         with self.assertRaises(c.ContractError):
             compatibility.verify(compatibility.JOBS_SPLIT_HISTORICAL_SHA256,after,planned,binding)
+
+    def test_c_batch_generation_covers_only_the_two_producer_imports(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.C_FACADE_REMOVAL_HISTORICAL_SHA256,compatibility.C_FACADE_REMOVAL_SOURCE_SHA256
+        for path in compatibility.C_FACADE_REMOVAL_CHANGED:
+            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.C_FACADE_REMOVAL_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.C_FACADE_REMOVAL_MIGRATION)
+        self.assertEqual(step['changedModules'],compatibility.C_FACADE_REMOVAL_CHANGED)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['productionEligible']),(0,0,False))
+        # Generations do not compose: a v10 parent cannot jump straight to the C-batch checkout.
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.FACADE_REMOVAL_HISTORICAL_SHA256,after,planned,binding)
 
 if __name__=='__main__':unittest.main()

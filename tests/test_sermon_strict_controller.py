@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 from unittest.mock import Mock
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_controller as controller

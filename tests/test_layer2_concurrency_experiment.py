@@ -9,7 +9,8 @@ import time
 import unittest
 
 from tongxing_production.text import models as runner
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tongxing_production.text import policy as policies
 from scripts import layer2_api_concurrency as api_concurrency
 from scripts import weekly_pipeline_report as weekly

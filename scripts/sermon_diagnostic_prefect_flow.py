@@ -17,12 +17,13 @@ import tempfile
 import threading
 from types import SimpleNamespace
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_historical_identity as historical_identity
 from scripts import sermon_dag_evidence as dag_evidence
 from scripts import sermon_bounded_business_callbacks as offline
 from scripts import sermon_diagnostic_preview_worker as preview_worker
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts import sermon_prefect_dag as pilot
 from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_contracts as c

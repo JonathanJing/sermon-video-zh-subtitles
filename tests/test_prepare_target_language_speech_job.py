@@ -16,8 +16,8 @@ from tongxing_production.audio import unit_integrity as audio_integrity
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as interpretation
 from tongxing_production.text import policy as policy_tools
-from scripts import four_layer_progress as progress
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import progress
+from tongxing_production.observability import accounting
 
 
 def write_json(path: Path, value: object) -> None:

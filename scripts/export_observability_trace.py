@@ -11,11 +11,12 @@ from pathlib import Path
 import sys
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import sermon_accounting as accounting
-from scripts import sermon_cache_observation as cache
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import cache_observation as cache
 from scripts import sermon_local_model_observation as local_model
 from scripts import sermon_decision_accounting as decision
-from scripts import sermon_workflow_evidence as evidence
+from tongxing_production.observability import workflow_evidence as evidence
 from scripts import weekly_pipeline_report as weekly
 
 LABELS = {'event', 'eventId', 'runId', 'workflow', 'workflowId', 'parentWorkflowId', 'spanId', 'parentSpanId',
@@ -26,7 +27,7 @@ TIMES = {'recordedAt', 'startedAt', 'dependencyReadyAt', 'queuedAt'}
 
 def safe_event(row):
     if 'contractVersion' in row:
-        from scripts.sermon_log_contract import validate_event
+        from tongxing_production.observability.log_contract import validate_event
         validate_event(row)
         result = json.loads(json.dumps(row))
         # Schema has already rejected free text/host paths. Preserve every safe

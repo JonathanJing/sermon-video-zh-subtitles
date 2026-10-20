@@ -14,8 +14,9 @@ from unittest.mock import patch
 
 from scripts import sermon_dev_diagnostic_snapshot as dev
 from scripts import sermon_diagnostic_dag_session as sessions
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as immutable
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture

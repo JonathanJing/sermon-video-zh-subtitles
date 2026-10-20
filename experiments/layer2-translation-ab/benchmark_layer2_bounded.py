@@ -25,11 +25,10 @@ if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the 
 if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
     sys.path.append(str(Path(__file__).resolve().parent))
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import models as production
-from scripts import sermon_accounting as accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 from scripts import sermon_provider_http as transport
 from scripts import sermon_provider_limits as provider_limits

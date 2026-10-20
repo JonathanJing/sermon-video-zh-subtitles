@@ -36,9 +36,9 @@ from scripts import sermon_strict_candidate_bridge as bridge
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_layer2 as strict
 from tongxing_production.orchestration import jobs
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
-from scripts import sermon_review_observation as observations
+from tongxing_production.observability import accounting
+from tongxing_production.observability import profile
+from tongxing_production.observability import review_observation as observations
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'sermon-strict-gate-admission-v1'

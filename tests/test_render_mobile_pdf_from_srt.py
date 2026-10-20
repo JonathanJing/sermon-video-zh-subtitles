@@ -13,8 +13,9 @@ from tongxing_production.workflows.dual_pdf import mobile_pdf as mod
 
 class RenderMobilePdfFromSrtTest(unittest.TestCase):
     def test_legacy_import_and_interpretation_font_symbols(self):
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.workflows.dual_pdf import interpretation_pdf as interpretation
-        from scripts import sermon_accounting
+        from tongxing_production.observability import accounting as sermon_accounting
         from tongxing_production import path_aliases
 
         self.assertEqual(interpretation.MOBILE_PAGE_SIZE, mod.MOBILE_PAGE_SIZE)

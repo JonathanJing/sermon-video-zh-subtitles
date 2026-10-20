@@ -11,7 +11,8 @@ import os
 import shutil
 import time
 
-from scripts import sermon_accounting as accounting  # eager identity inventory
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting  # eager identity inventory
 from scripts import sermon_diagnostic_attempts as attempts
 from scripts import sermon_diagnostic_delivery_preflight as delivery
 from scripts import sermon_diagnostic_provider as provider

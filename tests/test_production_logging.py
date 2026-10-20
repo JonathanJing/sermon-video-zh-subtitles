@@ -14,7 +14,8 @@ from unittest.mock import AsyncMock, patch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.dual_pdf import codex_local as local
 from scripts import run_sermon_production_supervisor_agent as supervisor
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 
 
 class ProductionLoggingTests(unittest.TestCase):
@@ -268,7 +269,7 @@ class ProductionLoggingTests(unittest.TestCase):
 
     def test_inherited_parent_and_actual_local_child_share_run_and_workflow_links(self):
         child_code = """import json, sys
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host; from tongxing_production.observability import accounting
 accounting.execution_identity = lambda: {}
 accounting.resource_snapshot = lambda directory: {}
 with accounting.accounting_session(sys.argv[1], 'fixture_generation_child') as child:

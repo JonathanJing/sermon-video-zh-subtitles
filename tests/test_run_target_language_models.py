@@ -11,9 +11,10 @@ import unittest
 from pathlib import Path
 
 from tongxing_production.text import models as subject
-from scripts import four_layer_measure as measure
-from scripts import four_layer_progress as progress
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import measure
+from tongxing_production.observability import progress
+from tongxing_production.observability import accounting
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import policy as policy_tools
 from tests import test_produce_target_language_candidate as fixture_module
@@ -508,9 +509,9 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
     def test_progress_ledger_tracks_translation_and_review_groups_separately(self):
         f = self.fixture
         ledger_path = self.out.parent / "four-layer-progress.json"
-        from scripts import four_layer_measure as measure
-        from scripts import four_layer_progress as progress
-        from scripts import sermon_accounting as accounting
+        from tongxing_production.observability import measure
+        from tongxing_production.observability import progress
+        from tongxing_production.observability import accounting
         progress.save(ledger_path, progress.new_ledger("test-page", ["ko"]))
         step = "L2-02@ko"
         with measure.producer_step(ledger_path, step, locale="ko"):

@@ -10,11 +10,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as offline
 from scripts import sermon_fresh_diagnostic as fresh
 from scripts import sermon_fresh_source_prefect as engine
-from scripts import sermon_log_contract as log
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import log_contract as log
 from scripts import sermon_review_contracts as c
 from scripts import sermon_public_snapshot as public
 from tests import test_sermon_fresh_source_causality as fixtures

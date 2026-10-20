@@ -182,7 +182,8 @@ def validate_caption_receipt(run, source):
 
 
 def translate(run):
-    from scripts.sermon_accounting import accounting_session
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability.accounting import accounting_session
     run = Path(run).resolve()
     with accounting_session(run / "pipeline/accounting", "archive_caption_translate", evidence_directory=run / "pipeline"):
         return _translate(run)
@@ -246,7 +247,8 @@ def reviewed_inputs(run, media_probe=probe):
 
 
 def seal_reviewed(run, media_probe=probe, *, runner=None):
-    from scripts.sermon_accounting import accounting_session
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability.accounting import accounting_session
     run = Path(run).resolve()
     with accounting_session(run / "accounting", "archive_caption_handoff", evidence_directory=run):
         return _seal_reviewed(run, media_probe=media_probe, runner=runner)

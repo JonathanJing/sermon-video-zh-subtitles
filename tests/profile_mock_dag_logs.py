@@ -49,10 +49,11 @@ def fingerprints(root):
 
 
 def prepare(saved, operation):
-    from scripts import sermon_accounting as accounting
-    from scripts import sermon_completion as completion
-    from scripts import sermon_durable_accounting as durable
-    from scripts import sermon_log_contract as contract
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability import accounting
+    from tongxing_production.observability import completion
+    from tongxing_production.observability import durable
+    from tongxing_production.observability import log_contract as contract
     from scripts import sermon_logs
     from scripts import sermon_review_contracts as c
     from scripts import weekly_pipeline_report as weekly

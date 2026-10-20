@@ -18,10 +18,11 @@ import threading
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import english_source_package as source_builder
 from tongxing_production.audio import speech_job as handoff
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as bounded
 from scripts import sermon_local_business_callbacks as local
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts import sermon_prefect_dag as pilot
 from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_contracts as c
