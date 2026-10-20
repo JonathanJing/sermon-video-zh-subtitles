@@ -493,7 +493,7 @@ Before any offline translation or stable-correction run, preflight the text
 model through the same OpenAI Responses route used by production:
 
 ```bash
-python3 scripts/run_openai_model_access_preflight.py \
+python3 tools/ops/run_openai_model_access_preflight.py \
   --cloud-run-service sermon-zh-caption-web \
   --project ai-for-god \
   --region us-west1 \

@@ -13,7 +13,7 @@
 日期、输入 state、工作目录、Supervisor 报告和桥接配置均须显式传入。下面是命令模板；替换已核实的日期和配置路径，配置的 `weeks` 必须包含该日期。secret 参数是资源引用，不填写密钥值。
 
 ```bash
-.venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
+.venv/bin/python tools/ops/run_with_openai_environment.py --environment prod -- \
   .venv/bin/python scripts/run_saturday_harness.py \
   --mode inspect --agent-backend codex-cli \
   --sunday YYYY-MM-DD \

@@ -41,7 +41,7 @@
 结束后按[运行报告流程](test-run-retrospective.zh.md)导出并开报告 PR：
 
 ```sh
-.venv/bin/python scripts/export_run_digest.py artifacts/agent-api-trials/20261008-expanded --name 20261008-agent-api-trials-expanded
+.venv/bin/python tools/development/export_run_digest.py artifacts/agent-api-trials/20261008-expanded --name 20261008-agent-api-trials-expanded
 scripts/publish_run_report.sh artifacts/run-reports/20261008-agent-api-trials-expanded
 ```
 

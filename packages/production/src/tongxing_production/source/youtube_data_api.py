@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
-"""Small YouTube Data API client for public video and livestream metadata."""
+"""Small YouTube Data API client for public video and livestream metadata.
+
+    .venv/bin/python tools/ops/run.py source.youtube_data_api --video-id ID --api-key-secret NAME
+"""
 
 from __future__ import annotations
 
 import argparse
 import json
 import re
-import sys
 from pathlib import Path
 from typing import Any
 
 import requests
 
 
+from . import backend as _source
+
+
 VIDEOS_LIST_URL = "https://www.googleapis.com/youtube/v3/videos"
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 
 class YouTubeDataApiError(RuntimeError):
@@ -29,9 +31,7 @@ def main() -> int:
     parser.add_argument("--api-key-secret", required=True)
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
-    from backend.cloud import access_secret
-
-    metadata = video_metadata(args.video_id, api_key=access_secret(args.api_key_secret))
+    metadata = video_metadata(args.video_id, api_key=_source.current().provider.access_secret(args.api_key_secret))
     report = {
         "status": "ok" if metadata else "not_found",
         "metadata": metadata,

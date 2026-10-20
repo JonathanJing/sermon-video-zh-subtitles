@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 NAMES = {f"OPENAI_{env}_{suffix}" for env in ("DEV", "PROD")
          for suffix in ("API_KEY", "PROJECT_ID")}
 

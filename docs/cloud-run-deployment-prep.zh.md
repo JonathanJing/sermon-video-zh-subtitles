@@ -536,7 +536,7 @@ realtime。
 跑离线翻译或 stable-correction 前，先用生产同款 OpenAI Responses 路径预检文本模型：
 
 ```bash
-python3 scripts/run_openai_model_access_preflight.py \
+python3 tools/ops/run_openai_model_access_preflight.py \
   --cloud-run-service sermon-zh-caption-web \
   --project ai-for-god \
   --region us-west1 \

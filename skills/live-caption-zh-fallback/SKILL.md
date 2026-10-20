@@ -46,7 +46,7 @@ Open the local page for requested UI/timing review. Preserve the public AI-assis
 
 ## Optional publication
 
-Publish already verified files with the existing artifact uploader (`scripts/upload_file_to_gcs.py --help`) to the authorized destination. `prepare_live_link_playback.py --gcs-bucket BUCKET --gcs-prefix runs/DATE/ID` is for runs that still need extraction; `--gcs-dry-run` previews uploads but still performs extraction/build. Reuse an already approved destination and credential route. Ask only if publication itself lacks authorization or its destination is unresolved.
+Publish already verified files with the existing artifact uploader (`tools/ops/upload_file_to_gcs.py --help`) to the authorized destination. `prepare_live_link_playback.py --gcs-bucket BUCKET --gcs-prefix runs/DATE/ID` is for runs that still need extraction; `--gcs-dry-run` previews uploads but still performs extraction/build. Reuse an already approved destination and credential route. Ask only if publication itself lacks authorization or its destination is unresolved.
 
 Before public delivery, check generated browser files/manifests for raw secrets, private identifiers and Secret Manager resource names. Verify the actual remote result; local generation or a dry-run is not publication. Preserve source access restrictions and avoid cookie exports.
 

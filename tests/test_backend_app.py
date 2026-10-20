@@ -1278,6 +1278,9 @@ class BackendAppTest(unittest.TestCase):
         # Layer 2 code_identity() hashes these tools/ files, so the image must carry them.
         for path in ("tools/ops/sermon_unified_preflight.py", "tools/ops/run.py"):
             self.assertIn(f"COPY {path} /app/{path}", text)
+        # backend/worker.py runs these through their scripts/ facades.
+        for path in ("tools/ops/run_openai_model_access_preflight.py", "tools/ops/upload_file_to_gcs.py"):
+            self.assertIn(f"COPY {path} /app/{path}", text)
 
 
 if __name__ == "__main__":

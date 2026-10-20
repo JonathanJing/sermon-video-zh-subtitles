@@ -144,10 +144,10 @@ Skills 是 Codex 的操作说明，不是外部运行凭据，也不能代替仓
 
 ```bash
 # 要运行 Dev/Beta/实验时
-.venv/bin/python scripts/run_with_openai_environment.py --environment dev --check
+.venv/bin/python tools/ops/run_with_openai_environment.py --environment dev --check
 
 # 只有已经配置正式 Project key 时才执行
-.venv/bin/python scripts/run_with_openai_environment.py --environment prod --check
+.venv/bin/python tools/ops/run_with_openai_environment.py --environment prod --check
 ```
 
 若文件尚不存在，按仓库示例创建空模板（不会覆盖已存在文件），然后在本机安全地填写值：

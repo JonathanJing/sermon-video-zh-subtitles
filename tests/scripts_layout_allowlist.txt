@@ -122,7 +122,6 @@ scripts/run_dgx_sermon_a0_baseline.py
 scripts/run_dgx_sermon_hymt2_baseline.py
 scripts/run_dgx_sermon_source_probe.py
 scripts/run_diagnostic_new_attempt.py
-scripts/run_journal.py
 scripts/run_live_sermon_benchmark_source_audio_audit.py
 scripts/run_local_asr_benchmark.py
 scripts/run_local_asr_gpt_reaudit.py

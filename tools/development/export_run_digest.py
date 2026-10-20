@@ -29,8 +29,8 @@ docs-only PR that adds it as ``docs/reports/runs/<name>/``. The repository is
 public, so that script re-checks the redaction before anything is pushed.
 
 Usage (repo root):
-  .venv/bin/python scripts/export_run_digest.py artifacts/dev-180s-page-test-20261004/<run-id>
-  .venv/bin/python scripts/export_run_digest.py RUN_DIR [RUN_DIR ...] --name 20261008-8x8-round2
+  .venv/bin/python tools/development/export_run_digest.py artifacts/dev-180s-page-test-20261004/<run-id>
+  .venv/bin/python tools/development/export_run_digest.py RUN_DIR [RUN_DIR ...] --name 20261008-8x8-round2
   scripts/publish_run_report.sh artifacts/run-reports/<name>
 """
 from __future__ import annotations
@@ -47,7 +47,7 @@ import shutil
 import sys
 from datetime import datetime, timezone
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 SCHEMA = "sermon-run-digest-v1"
@@ -532,7 +532,7 @@ def _duration(seconds: float) -> str:
 
 def time_lines(dest: Path, entries: list[dict], runs: list[dict]) -> list[str]:
     """Wall, compute, waiting and rework time per run, from the journal, else outcome, else timings.tsv."""
-    from scripts import run_journal
+    from tools.development import run_journal
     lines = []
     for run in runs:
         label, files = run["label"], [e for e in entries if e["run"] == run["label"] and "omitted" not in e]
@@ -676,7 +676,7 @@ def write_report(run_dirs: list[Path], label: str) -> Path | None:
         if not dirs or main([*map(str, dirs), "--name", name]) != 0:
             raise RuntimeError("no report written")
     except (Exception, SystemExit) as error:  # The run's own result must stand.
-        print(f"Run report not written ({error}); export it by hand with scripts/export_run_digest.py",
+        print(f"Run report not written ({error}); export it by hand with tools/development/export_run_digest.py",
               file=sys.stderr)
         return None
     print(f"Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/{name}", file=sys.stderr)

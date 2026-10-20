@@ -3,7 +3,7 @@
 
 Run only through the explicit dev launcher, so the dev project and dev key are used:
 
-  python3 scripts/run_with_openai_environment.py --environment dev -- \
+  python3 tools/ops/run_with_openai_environment.py --environment dev -- \
     python3 experiments/model-throughput/measure_openai_model_tps.py --rounds 3
 
 Each request is a streamed chat completion with the same fixed prompt, the same
@@ -203,7 +203,7 @@ def main(argv=None):
         print(str(exc), file=sys.stderr)
         return 2
     if route is None or route["environment"] != "dev":
-        print("Run through: scripts/run_with_openai_environment.py --environment dev -- ...", file=sys.stderr)
+        print("Run through: tools/ops/run_with_openai_environment.py --environment dev -- ...", file=sys.stderr)
         return 2
     if not os.environ.get("OPENAI_API_KEY"):
         print("selected_openai_key_missing", file=sys.stderr)

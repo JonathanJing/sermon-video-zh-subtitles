@@ -248,7 +248,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "requiredModelAccess": [
             sys.executable,
-            "scripts/run_openai_model_access_preflight.py",
+            "tools/ops/run_openai_model_access_preflight.py",
             "--cloud-run-service",
             args.service,
             "--project",
@@ -262,7 +262,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "alternativeModelAccess": [
             sys.executable,
-            "scripts/run_openai_model_access_preflight.py",
+            "tools/ops/run_openai_model_access_preflight.py",
             "--cloud-run-service",
             args.service,
             "--project",
