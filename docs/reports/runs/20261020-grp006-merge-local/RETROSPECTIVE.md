@@ -70,3 +70,16 @@
 ## 外部可见的变化
 
 无。Dev 页面、TestFlight、生产目录均 not_run；本报告与代码 PR 是仅有的外部变化。
+
+
+## 追加：旧产物一致性检查（2026-10-20）
+
+新增 `group_tasks.py verify --manifest --locale`：从整篇产物读出逐组 T/R 记录，逐组比较 candidate 文本、插件收据的 `targetTextSha256`/检查项与请求 ID，不重新执行插件。
+
+`15030286` 三语结果（零模型调用）：
+
+- ko：402 组，0 mismatch，3.86 s
+- es：402 组，0 mismatch，4.72 s
+- zh-Hans：402 组，0 mismatch，4.19 s
+
+这补上了插件闭包漂移下仍可做的离线验证：录制证据自洽，但不是新的插件执行或发布批准。
