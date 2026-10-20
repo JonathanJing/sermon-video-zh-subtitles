@@ -87,6 +87,35 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertEqual({row["outcome"] for row in report["results"]}, {"refused"})
         self.assertEqual(caller.calls, [])
 
+    def test_second_merge_without_changes_is_stable(self):
+        self.run_all()
+        first = group_pipeline.merge(self.config)
+        self.assertEqual(first["outcome"], "candidate_ready_layer3_pending")
+        second = group_pipeline.merge(self.config)
+        self.assertEqual(second["outcome"], "candidate_ready_layer3_pending")
+        self.assertEqual(second["changedGroupIds"], [])
+        self.assertEqual(first["candidateSha256"], second["candidateSha256"])
+        directory = self.root / "merge" / self.config["locale"]
+        self.assertEqual(json.loads((directory / "merge-manifest.json").read_text(encoding="utf-8")),
+                         json.loads((directory / "merge-manifest.json").read_text(encoding="utf-8")))
+
+    def test_merge_refuses_an_affected_list_that_does_not_match(self):
+        self.run_all()
+        self.assertEqual(group_pipeline.merge(self.config)["outcome"], "candidate_ready_layer3_pending")
+        refused = group_pipeline.merge(self.config, affected=[self.plan[0]["translationGroupId"]])
+        self.assertEqual(refused["outcome"], "refused")
+        self.assertEqual(refused["missingChangedGroupIds"], [self.plan[0]["translationGroupId"]])
+        self.assertEqual(refused["reasons"], {"changed_groups_not_affected": [self.plan[0]["translationGroupId"]]})
+
+    def test_changed_groups_compares_selected_record_hashes(self):
+        current = {"groups": [{"translationGroupId": "g1", "records": {"T": {"inputKey": "a", "recordSha256": "1"}}},
+                              {"translationGroupId": "g2", "records": {"R": {"inputKey": "b", "recordSha256": "2"}}}]}
+        previous = {"assembly": {"groups": [
+            {"translationGroupId": "g1", "records": {"T": {"inputKey": "a", "recordSha256": "1"}}},
+            {"translationGroupId": "g2", "records": {"R": {"inputKey": "old", "recordSha256": "0"}}}]}}
+        self.assertEqual(group_pipeline._changed_groups(previous, current), {"g2"})
+        self.assertEqual(group_pipeline._changed_groups(None, current), {"g1", "g2"})
+
     def test_merge_before_any_run_refuses_with_group_ids(self):
         report = group_pipeline.merge(self.config)
         self.assertEqual(report["outcome"], "refused")
@@ -99,6 +128,7 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertEqual(group_pipeline.main(["status", "--config", str(self.config_path)]), 0)
         self.assertEqual(group_pipeline.main(["merge", "--config", str(self.config_path)]), 4)
         self.run_all()
+        self.assertEqual(group_pipeline.main(["merge", "--config", str(self.config_path)]), 0)
         self.assertEqual(group_pipeline.main(["merge", "--config", str(self.config_path)]), 0)
 
 

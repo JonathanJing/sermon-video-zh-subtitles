@@ -224,8 +224,14 @@ def run(config: dict, groups: list[str], *, budget: dict | None, budget_sha256: 
             "budgetSha256": budget_sha256, "status": final, "releaseEligible": False, "humanApproval": False}
 
 
-def merge(config: dict) -> dict:
-    """Assemble the locale candidate from its group records and write the merge manifest."""
+def merge(config: dict, *, affected=()) -> dict:
+    """Assemble the locale candidate from its group records and write the merge manifest.
+
+    ``affected`` are the group IDs this revision was allowed to change (the operator's
+    list plus groups the merge sent back). When a previous merge manifest exists, the
+    set of groups whose records changed must equal it exactly: an unexpected change
+    refuses the merge and names the extra groups (DEV-GRP-008).
+    """
     from ..review import qc_text_run, text_qc
     from ..text import candidate as producer
     source = legacy.load_json(config["source"])
@@ -242,6 +248,18 @@ def merge(config: dict) -> dict:
     except group_assembly.AssemblyRefused as exc:
         return {"schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "outcome": "refused",
                 "reasons": exc.reasons, "releaseEligible": False, "humanApproval": False}
+    directory = Path(config["merge"]) / locale
+    previous = _previous_manifest(directory)
+    # The first merge has nothing to compare with: every group is new, not "changed".
+    changed = set() if previous is None else _changed_groups(previous, assembled["manifest"])
+    if previous is not None and changed != set(affected):
+        unexpected = sorted(changed - set(affected))
+        missing = sorted(set(affected) - changed)
+        return {"schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "outcome": "refused",
+                "reasons": {"changed_groups_not_affected": (unexpected or missing)},
+                "changedGroupIds": sorted(changed), "affectedGroupIds": sorted(set(affected)),
+                "unexpectedGroupIds": unexpected, "missingChangedGroupIds": missing,
+                "releaseEligible": False, "humanApproval": False}
     candidate = assembled["candidate"]
     outliers = []
     rows = qc_text_run.qc_groups(candidate, anchor)
@@ -254,7 +272,6 @@ def merge(config: dict) -> dict:
         return {"schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "outcome": "refused",
                 "reasons": {"text_length_outlier": [row["translationGroupId"] for row in outliers]},
                 "outliers": outliers, "releaseEligible": False, "humanApproval": False}
-    directory = Path(config["merge"]) / locale
     _write_once(directory / "candidate.json", group_assembly.file_bytes(candidate))
     _write_once(directory / "evidence.json", group_assembly.file_bytes(assembled["evidence"]))
     _write_once(directory / "language-review.json", group_assembly.file_bytes(assembled["languageReview"]))
@@ -265,13 +282,36 @@ def merge(config: dict) -> dict:
         "completedSteps": ["readiness", "candidate_assembly", "whole_text_checks"],
         "pendingSteps": list(PENDING_STEPS), "pendingReason": "Layer 3 merge steps are not wired in this adapter yet",
         "textLengthOutliers": [], "candidateSha256": assembled["manifest"]["candidateSha256"],
-        "l3Handoff": L3_HANDOFF,
+        "l3Handoff": L3_HANDOFF, "changedGroupIds": sorted(changed),
+        "affectedGroupIds": sorted(set(affected)),
         "releaseEligible": False, "humanApproval": False,
     }
     _validate_merge_manifest(manifest)
     data = (json.dumps(manifest, ensure_ascii=False, indent=1) + "\n").encode("utf-8")
     _write_once(directory / "merge-manifest.json", data)
     return {**manifest, "outcome": "candidate_ready_layer3_pending", "directory": str(directory)}
+
+
+def _previous_manifest(directory: Path) -> dict | None:
+    path = Path(directory) / "merge-manifest.json"
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _group_record_hashes(assembly_manifest: dict) -> dict[str, str]:
+    """One hash per group over the records the assembly actually used."""
+    return {row["translationGroupId"]: records.json_sha256(row["records"])
+            for row in (assembly_manifest or {}).get("groups") or []}
+
+
+def _changed_groups(previous: dict | None, current: dict) -> set[str]:
+    """Groups whose selected-record hashes differ from the previous merge (all on first)."""
+    current_hashes = _group_record_hashes(current)
+    if previous is None:
+        return set(current_hashes)
+    previous_hashes = _group_record_hashes((previous or {}).get("assembly") or {})
+    return {group_id for group_id, sha in current_hashes.items() if previous_hashes.get(group_id) != sha}
 
 
 def _validate_merge_manifest(manifest: dict) -> None:
@@ -336,6 +376,8 @@ def main(argv=None) -> int:
     run_command.add_argument("--output", type=Path)
     merge_command = sub.add_parser("merge", help="assemble the locale candidate from group records")
     merge_command.add_argument("--config", type=Path, required=True)
+    merge_command.add_argument("--affected", nargs="+", default=[],
+                               help="group IDs this revision may change; must equal the changed set")
     merge_command.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     if args.command == "plan":
@@ -352,7 +394,7 @@ def main(argv=None) -> int:
         report = run(config, args.group_id, budget=budget, budget_sha256=budget_sha,
                      caller=caller, api_key=api_key)
     else:
-        report = merge(config)
+        report = merge(config, affected=args.affected)
     if args.output:
         _write_report(args.output, report)
     print(text_summary(report))

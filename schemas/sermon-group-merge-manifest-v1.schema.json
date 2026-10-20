@@ -6,55 +6,145 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schemaVersion", "targetLocale", "layer1", "translationPolicySha256", "groupCount", "assembly",
-    "completedSteps", "pendingSteps", "pendingReason", "textLengthOutliers", "candidateSha256",
-    "l3Handoff", "releaseEligible", "humanApproval"
+    "schemaVersion",
+    "targetLocale",
+    "layer1",
+    "translationPolicySha256",
+    "groupCount",
+    "assembly",
+    "completedSteps",
+    "pendingSteps",
+    "pendingReason",
+    "textLengthOutliers",
+    "candidateSha256",
+    "l3Handoff",
+    "releaseEligible",
+    "humanApproval"
   ],
   "properties": {
-    "schemaVersion": {"const": "sermon-group-merge-manifest-v1"},
-    "targetLocale": {"type": "string", "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"},
+    "schemaVersion": {
+      "const": "sermon-group-merge-manifest-v1"
+    },
+    "targetLocale": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+    },
     "layer1": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["englishSourcePackageJsonSha256", "anchorManifestSha256"],
+      "required": [
+        "englishSourcePackageJsonSha256",
+        "anchorManifestSha256"
+      ],
       "properties": {
-        "englishSourcePackageJsonSha256": {"$ref": "#/$defs/sha256"},
-        "anchorManifestSha256": {"$ref": "#/$defs/sha256"}
+        "englishSourcePackageJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "anchorManifestSha256": {
+          "$ref": "#/$defs/sha256"
+        }
       }
     },
-    "translationPolicySha256": {"$ref": "#/$defs/sha256"},
-    "groupCount": {"type": "integer", "minimum": 1},
+    "translationPolicySha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "groupCount": {
+      "type": "integer",
+      "minimum": 1
+    },
     "assembly": {
       "type": "object",
-      "required": ["schemaVersion", "groups", "evidenceSha256", "languageReviewSha256",
-                   "candidateSha256", "releaseEligible", "humanApproval"],
+      "required": [
+        "schemaVersion",
+        "groups",
+        "evidenceSha256",
+        "languageReviewSha256",
+        "candidateSha256",
+        "releaseEligible",
+        "humanApproval"
+      ],
       "properties": {
-        "equivalenceCheck": {"const": false},
-        "releaseEligible": {"const": false},
-        "humanApproval": {"const": false}
+        "equivalenceCheck": {
+          "const": false
+        },
+        "releaseEligible": {
+          "const": false
+        },
+        "humanApproval": {
+          "const": false
+        }
       }
     },
     "completedSteps": {
       "type": "array",
-      "items": {"enum": ["readiness", "candidate_assembly", "whole_text_checks"]},
+      "items": {
+        "enum": [
+          "readiness",
+          "candidate_assembly",
+          "whole_text_checks"
+        ]
+      },
       "minItems": 1,
       "uniqueItems": true
     },
     "pendingSteps": {
       "type": "array",
-      "items": {"enum": ["calibration", "text_release_basis", "speech_job_v3", "formal_render",
-                         "schedule_and_subtitles", "track_package", "screening_and_audio_qc",
-                         "listening_waiver"]},
+      "items": {
+        "enum": [
+          "calibration",
+          "text_release_basis",
+          "speech_job_v3",
+          "formal_render",
+          "schedule_and_subtitles",
+          "track_package",
+          "screening_and_audio_qc",
+          "listening_waiver"
+        ]
+      },
       "uniqueItems": true
     },
-    "pendingReason": {"type": "string", "minLength": 1},
-    "textLengthOutliers": {"type": "array", "maxItems": 0},
-    "candidateSha256": {"$ref": "#/$defs/sha256"},
-    "l3Handoff": {"type": "string", "minLength": 1},
-    "releaseEligible": {"const": false},
-    "humanApproval": {"const": false}
+    "pendingReason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "textLengthOutliers": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "candidateSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "l3Handoff": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseEligible": {
+      "const": false
+    },
+    "humanApproval": {
+      "const": false
+    },
+    "changedGroupIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "affectedGroupIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    }
   },
   "$defs": {
-    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
   }
 }
